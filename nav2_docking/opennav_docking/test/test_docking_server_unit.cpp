@@ -42,7 +42,7 @@ public:
 
   std::optional<bool> getDockBackward()
   {
-    return dock_backwards_;
+    return params_->dock_backwards;
   }
 };
 
@@ -269,6 +269,17 @@ TEST(DockingServerTests, testDynamicParams)
   EXPECT_EQ(node->get_parameter("fixed_frame").as_string(), std::string("hi"));
   EXPECT_EQ(node->get_parameter("max_retries").as_int(), 7);
   EXPECT_EQ(node->get_parameter("rotation_angular_tolerance").as_double(), 0.42);
+
+  // Test setting invalid value
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("controller_frequency", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("controller_frequency").as_double(), 0.2);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("initial_perception_timeout", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("initial_perception_timeout").as_double(), 1.0);
 
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());

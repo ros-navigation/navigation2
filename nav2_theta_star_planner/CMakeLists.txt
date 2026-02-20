@@ -23,6 +23,7 @@ set(library_name ${PROJECT_NAME})
 add_library(${library_name} SHARED
   src/theta_star.cpp
   src/theta_star_planner.cpp
+  src/parameter_handler.cpp
 )
 target_include_directories(${library_name}
   PUBLIC

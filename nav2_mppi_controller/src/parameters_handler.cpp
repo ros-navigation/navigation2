@@ -30,6 +30,10 @@ ParametersHandler::ParametersHandler(
 ParametersHandler::~ParametersHandler()
 {
   auto node = node_.lock();
+  if (post_set_param_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_param_handler_.get());
+  }
+  post_set_param_handler_.reset();
   if (on_set_param_handler_ && node) {
     node->remove_on_set_parameters_callback(on_set_param_handler_.get());
   }
@@ -42,21 +46,53 @@ void ParametersHandler::start()
 
   auto get_param = getParamGetter(node_name_);
   get_param(verbose_, "verbose", false);
-
+  post_set_param_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &ParametersHandler::updateParametersCallback, this,
+      std::placeholders::_1));
   on_set_param_handler_ = node->add_on_set_parameters_callback(
     std::bind(
-      &ParametersHandler::dynamicParamsCallback, this,
+      &ParametersHandler::validateParameterUpdatesCallback, this,
       std::placeholders::_1));
 }
 
 rcl_interfaces::msg::SetParametersResult
-ParametersHandler::dynamicParamsCallback(
-  std::vector<rclcpp::Parameter> parameters)
+ParametersHandler::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
   result.reason = "";
 
+  std::vector<rclcpp::Parameter> plugin_params;
+  for (auto & param : parameters) {
+    const std::string & param_name = param.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    plugin_params.push_back(param);
+  }
+
+  if (!plugin_params.empty()) {
+    for (auto & param : plugin_params) {
+      const std::string & param_name = param.get_name();
+      if (auto callback = get_pre_callbacks_.find(param_name);
+        callback != get_pre_callbacks_.end())
+      {
+        callback->second(param, result);
+      }
+    }
+  }
+
+  if (!result.successful) {
+    RCLCPP_WARN(logger_, "%s", result.reason.c_str());
+  }
+  return result;
+}
+
+void ParametersHandler::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
   std::lock_guard<std::mutex> lock(parameters_change_mutex_);
   std::vector<rclcpp::Parameter> plugin_params;
   for (auto & param : parameters) {
@@ -68,42 +104,18 @@ ParametersHandler::dynamicParamsCallback(
   }
 
   if (!plugin_params.empty()) {
-    for (auto & pre_cb : pre_callbacks_) {
-      pre_cb();
-    }
-
     for (auto & param : plugin_params) {
       const std::string & param_name = param.get_name();
-      if (auto pre_callback = get_pre_callbacks_.find(param_name);
-        pre_callback != get_pre_callbacks_.end())
+      if (auto callback = get_param_callbacks_.find(param_name);
+        callback != get_param_callbacks_.end())
       {
-        pre_callback->second(param, result);
+        callback->second(param);
       }
     }
-
-    if (result.successful) {
-      for (auto & param : plugin_params) {
-        const std::string & param_name = param.get_name();
-        if (auto callback = get_param_callbacks_.find(param_name);
-          callback != get_param_callbacks_.end())
-        {
-          callback->second(param, result);
-        }
-      }
-    }
-
-    // Only call post callbacks if all updates were successful
-    if (result.successful) {
-      for (auto & post_cb : post_callbacks_) {
-        post_cb();
-      }
+    for (auto & post_cb : post_callbacks_) {
+      post_cb();
     }
   }
-
-  if (!result.successful) {
-    RCLCPP_WARN(logger_, "%s", result.reason.c_str());
-  }
-  return result;
 }
 
 }  // namespace mppi

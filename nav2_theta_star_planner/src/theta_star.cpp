@@ -20,21 +20,16 @@
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
 
-namespace theta_star
+namespace nav2_theta_star_planner
 {
 
-ThetaStar::ThetaStar()
-: w_traversal_cost_(1.0),
-  w_euc_cost_(2.0),
-  w_heuristic_cost_(1.0),
-  how_many_corners_(8),
-  allow_unknown_(true),
-  size_x_(0),
+ThetaStar::ThetaStar(Parameters * params)
+: size_x_(0),
   size_y_(0),
-  terminal_checking_interval_(5000),
   index_generated_(0)
 {
   exp_node = new tree_node;
+  params_ = params;
 }
 
 void ThetaStar::setStartAndGoal(
@@ -66,7 +61,7 @@ bool ThetaStar::generatePath(std::vector<coordsW> & raw_path, std::function<bool
   while (!queue_.empty()) {
     nodes_opened++;
 
-    if (nodes_opened % terminal_checking_interval_ == 0 && cancel_checker()) {
+    if (nodes_opened % params_->terminal_checking_interval == 0 && cancel_checker()) {
       clearQueue();
       throw nav2_core::PlannerCancelled("Planner was canceled");
     }
@@ -118,7 +113,7 @@ void ThetaStar::setNeighbors(const tree_node * curr_data)
   tree_node * m_id = nullptr;
   double g_cost, h_cost, cal_cost;
 
-  for (int i = 0; i < how_many_corners_; i++) {
+  for (int i = 0; i < params_->how_many_corners; i++) {
     mx = curr_data->x + moves[i].x;
     my = curr_data->y + moves[i].y;
 
@@ -277,4 +272,4 @@ void ThetaStar::clearStart()
   costmap_->setCost(mx_start, my_start, nav2_costmap_2d::FREE_SPACE);
 }
 
-}  //  namespace theta_star
+}  //  namespace nav2_theta_star_planner
