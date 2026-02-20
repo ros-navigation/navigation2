@@ -38,7 +38,7 @@ class TestServiceServer : public ServiceServer<std_srvs::srv::Empty>
 public:
   TestServiceServer(
     const std::string & name,
-    const rclcpp::Node::SharedPtr & provided_node,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & provided_node,
     CallbackType callback)
   : ServiceServer(name, provided_node, callback)
   {}
@@ -52,7 +52,7 @@ TEST(ServiceServer, can_handle_all_introspection_modes)
 
   for (const auto & mode : introspection_modes) {
     int a = 0;
-    auto node = rclcpp::Node::make_shared("test_node_" + mode);
+    auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node_" + mode);
     node->declare_parameter("introspection_mode", mode);
 
     auto callback = [&a](const std::shared_ptr<rmw_request_id_t>,
@@ -68,7 +68,7 @@ TEST(ServiceServer, can_handle_all_introspection_modes)
     auto client_node = rclcpp::Node::make_shared("client_node_" + mode);
     auto client = client_node->create_client<std_srvs::srv::Empty>("empty_srv_" + mode);
     rclcpp::executors::SingleThreadedExecutor node_executor;
-    node_executor.add_node(node);
+    node_executor.add_node(node->get_node_base_interface());
     rclcpp::executors::SingleThreadedExecutor client_node_executor;
     client_node_executor.add_node(client_node);
 
@@ -86,7 +86,7 @@ TEST(ServiceServer, can_handle_all_introspection_modes)
 TEST(ServiceServer, rejects_requests_when_inactive)
 {
   int a = 0;
-  auto node = rclcpp::Node::make_shared("test_node_inactive");
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node_inactive");
 
   auto callback = [&a](
     const std::shared_ptr<rmw_request_id_t>,
@@ -102,7 +102,7 @@ TEST(ServiceServer, rejects_requests_when_inactive)
   auto client_node = rclcpp::Node::make_shared("client_node_inactive");
   auto client = client_node->create_client<std_srvs::srv::Empty>("empty_srv_inactive");
   rclcpp::executors::SingleThreadedExecutor node_executor;
-  node_executor.add_node(node);
+  node_executor.add_node(node->get_node_base_interface());
   rclcpp::executors::SingleThreadedExecutor client_node_executor;
   client_node_executor.add_node(client_node);
 
@@ -122,7 +122,7 @@ TEST(ServiceServer, rejects_requests_when_inactive)
 TEST(ServiceServer, accepts_requests_after_activation)
 {
   int a = 0;
-  auto node = rclcpp::Node::make_shared("test_node_activate");
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node_activate");
 
   auto callback = [&a](
     const std::shared_ptr<rmw_request_id_t>,
@@ -136,7 +136,7 @@ TEST(ServiceServer, accepts_requests_after_activation)
   auto client_node = rclcpp::Node::make_shared("client_node_activate");
   auto client = client_node->create_client<std_srvs::srv::Empty>("empty_srv_activate");
   rclcpp::executors::SingleThreadedExecutor node_executor;
-  node_executor.add_node(node);
+  node_executor.add_node(node->get_node_base_interface());
   rclcpp::executors::SingleThreadedExecutor client_node_executor;
   client_node_executor.add_node(client_node);
 
