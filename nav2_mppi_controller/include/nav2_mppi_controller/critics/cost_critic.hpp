@@ -58,7 +58,7 @@ protected:
     */
   inline bool inCollision(float cost, float x, float y, float theta)
   {
-    // If consider_footprint_ check footprint scort for collision
+    // If consider_footprint_ check footprint score for collision
     float score_cost = cost;
     if (consider_footprint_ &&
       (cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))
