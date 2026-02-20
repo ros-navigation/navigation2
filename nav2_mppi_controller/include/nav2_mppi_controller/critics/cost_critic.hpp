@@ -56,7 +56,8 @@ protected:
     * @param theta theta of pose
     * @return bool if in collision
     */
-  inline bool inCollision(float cost, float x, float y, float theta)
+  inline bool inCollision(float cost, float x, float y, float theta,
+    const nav2_costmap_2d::Footprint & footprint)
   {
     // If consider_footprint_ check footprint score for collision
     float score_cost = cost;
@@ -65,7 +66,7 @@ protected:
     {
       score_cost = static_cast<float>(collision_checker_.footprintCostAtPose(
           static_cast<double>(x), static_cast<double>(y), static_cast<double>(theta),
-          costmap_ros_->getRobotFootprint()));
+          footprint));
     }
 
     switch (static_cast<unsigned char>(score_cost)) {
