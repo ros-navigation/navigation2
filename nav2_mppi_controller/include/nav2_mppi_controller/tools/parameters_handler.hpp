@@ -69,14 +69,6 @@ public:
   void start();
 
   /**
-    * @brief Pre parameter change callback
-    * This callback is executed before parameters are updated.
-    * It allows for modification of incoming parameter changes before they are applied.
-    * @param parameters List of parameters that are being updated.
-    */
-  void modifyParametersCallback(std::vector<rclcpp::Parameter> & parameters);
-
-  /**
     * @brief Validate incoming parameter updates before applying them.
     * This callback is triggered when one or more parameters are about to be updated.
     * It checks the validity of parameter values and rejects updates that would lead
@@ -109,20 +101,12 @@ public:
   template<typename T>
   void addPostCallback(T && callback);
 
-    /**
-      * @brief Set a callback to process after parameter changes for a specific parameter
-      * @param name Name of parameter
-      * @param callback Callback function
-      */
-  template<typename T>
-  void addPostCallback(const std::string & name, T && callback);
-
   /**
     * @brief Set a callback to process before parameter changes
     * @param callback Callback function
     */
   template<typename T>
-  void addPreCallback(T && callback);
+  void addPreCallback(const std::string & name, T && callback);
 
   /**
     * @brief Set a parameter to a dynamic parameter callback
@@ -194,8 +178,6 @@ protected:
 
   std::mutex parameters_change_mutex_;
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
-  rclcpp::node_interfaces::PreSetParametersCallbackHandle::SharedPtr
-    pre_set_param_handler_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr
     on_set_param_handler_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr
@@ -206,12 +188,10 @@ protected:
 
   bool verbose_{false};
 
-  std::unordered_map<std::string, std::function<get_param_func_t>> get_param_callbacks_;
-  std::unordered_map<std::string, std::function<get_param_func_t>> get_pre_callbacks_;
   std::unordered_map<std::string,
-    std::function<void(const rclcpp::Parameter &)>> get_post_callbacks_;
+    std::function<void(const rclcpp::Parameter &)>> get_param_callbacks_;
+  std::unordered_map<std::string, std::function<get_param_func_t>> get_pre_callbacks_;
 
-  std::vector<std::function<pre_callback_t>> pre_callbacks_;
   std::vector<std::function<post_callback_t>> post_callbacks_;
 };
 
@@ -239,15 +219,9 @@ void ParametersHandler::addPostCallback(T && callback)
 }
 
 template<typename T>
-void ParametersHandler::addPostCallback(const std::string & name, T && callback)
+void ParametersHandler::addPreCallback(const std::string & name, T && callback)
 {
-  get_post_callbacks_[name] = callback;
-}
-
-template<typename T>
-void ParametersHandler::addPreCallback(T && callback)
-{
-  pre_callbacks_.push_back(callback);
+  get_pre_callbacks_[name] = callback;
 }
 
 template<typename SettingT, typename ParamT>
@@ -278,15 +252,7 @@ template<typename T>
 void ParametersHandler::setParamCallback(
   T & setting, const std::string & name, ParameterType param_type)
 {
-  if (param_type == ParameterType::Dynamic &&
-    get_post_callbacks_.find(name) != get_post_callbacks_.end())
-  {
-    return;
-  }
-
-  if (param_type == ParameterType::Static &&
-    get_param_callbacks_.find(name) != get_param_callbacks_.end())
-  {
+  if (get_param_callbacks_.find(name) != get_param_callbacks_.end()) {
     return;
   }
 
@@ -311,9 +277,9 @@ void ParametersHandler::setParamCallback(
     };
 
   if (param_type == ParameterType::Dynamic) {
-    addPostCallback(name, dynamic_callback);
+    addParamCallback(name, dynamic_callback);
   } else {
-    addParamCallback(name, static_callback);
+    addPreCallback(name, static_callback);
   }
 }
 

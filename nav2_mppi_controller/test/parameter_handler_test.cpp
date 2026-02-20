@@ -72,7 +72,8 @@ TEST(ParameterHandlerTest, asTypeConversionTest)
 TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
 {
   bool pre_triggered = false, post_triggered = false, dynamic_triggered = false;
-  auto preCb = [&]() {
+  auto preCb = [&](const rclcpp::Parameter & /*param*/,
+    rcl_interfaces::msg::SetParametersResult & /*result*/) {
       if (post_triggered) {
         throw std::runtime_error("Post-callback triggered before pre-callback!");
       }
@@ -86,8 +87,7 @@ TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
       post_triggered = true;
     };
 
-  auto dynamicCb = [&](const rclcpp::Parameter & /*param*/,
-    rcl_interfaces::msg::SetParametersResult & /*result*/) {
+  auto dynamicCb = [&](const rclcpp::Parameter & /*param*/) {
       dynamic_triggered = true;
     };
 
@@ -96,14 +96,14 @@ TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
   bool val = false;
 
   ParametersHandlerWrapper a;
-  a.addPreCallback(preCb);
+  a.addPreCallback(".blah_blah", preCb);
+  a.addPreCallback(".use_sim_time", preCb);
   a.addPostCallback(postCb);
   a.addParamCallback(".use_sim_time", dynamicCb);
   a.setParamCallback(val, ".blah_blah");
 
   // Dynamic callback should not trigger, wrong parameter, but val should be updated
   std::vector<rclcpp::Parameter> params{random_param};
-  a.modifyParametersCallback(params);
   a.validateParameterUpdatesCallback(params);
   a.updateParametersCallback(params);
   EXPECT_FALSE(dynamic_triggered);
@@ -114,7 +114,6 @@ TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
   // Now dynamic parameter bool should be updated, right param called!
   pre_triggered = false, post_triggered = false;
   std::vector<rclcpp::Parameter> params2{random_param2};
-  a.modifyParametersCallback(params2);
   a.validateParameterUpdatesCallback(params2);
   a.updateParametersCallback(params2);
   EXPECT_TRUE(dynamic_triggered);

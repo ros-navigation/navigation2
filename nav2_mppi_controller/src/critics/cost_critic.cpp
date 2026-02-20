@@ -42,7 +42,7 @@ void CostCritic::initialize()
     const rclcpp::Parameter & weight) {
       weight_ = weight.as_double() / 254.0f;
     };
-  parameters_handler_->addPostCallback(name_ + ".cost_weight", weightDynamicCb);
+  parameters_handler_->addParamCallback(name_ + ".cost_weight", weightDynamicCb);
 
   collision_checker_.setCostmap(costmap_);
   possible_collision_cost_ = findCircumscribedCost(costmap_ros_);

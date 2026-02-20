@@ -38,10 +38,6 @@ ParametersHandler::~ParametersHandler()
     node->remove_on_set_parameters_callback(on_set_param_handler_.get());
   }
   on_set_param_handler_.reset();
-  if (pre_set_param_handler_ && node) {
-    node->remove_pre_set_parameters_callback(pre_set_param_handler_.get());
-  }
-  pre_set_param_handler_.reset();
 }
 
 void ParametersHandler::start()
@@ -58,30 +54,6 @@ void ParametersHandler::start()
     std::bind(
       &ParametersHandler::validateParameterUpdatesCallback, this,
       std::placeholders::_1));
-  pre_set_param_handler_ = node->add_pre_set_parameters_callback(
-    std::bind(
-      &ParametersHandler::modifyParametersCallback, this,
-      std::placeholders::_1));
-}
-
-void ParametersHandler::modifyParametersCallback(
-  std::vector<rclcpp::Parameter> & parameters)
-{
-  bool found = false;
-  for (auto & param : parameters) {
-    const std::string & param_name = param.get_name();
-    if (param_name.find(name_ + ".") != 0) {
-      continue;
-    }
-    found = true;
-    break;
-  }
-
-  if (found) {
-    for (auto & pre_cb : pre_callbacks_) {
-      pre_cb();
-    }
-  }
 }
 
 rcl_interfaces::msg::SetParametersResult
@@ -104,8 +76,8 @@ ParametersHandler::validateParameterUpdatesCallback(
   if (!plugin_params.empty()) {
     for (auto & param : plugin_params) {
       const std::string & param_name = param.get_name();
-      if (auto callback = get_param_callbacks_.find(param_name);
-        callback != get_param_callbacks_.end())
+      if (auto callback = get_pre_callbacks_.find(param_name);
+        callback != get_pre_callbacks_.end())
       {
         callback->second(param, result);
       }
@@ -134,8 +106,8 @@ void ParametersHandler::updateParametersCallback(
   if (!plugin_params.empty()) {
     for (auto & param : plugin_params) {
       const std::string & param_name = param.get_name();
-      if (auto callback = get_post_callbacks_.find(param_name);
-        callback != get_post_callbacks_.end())
+      if (auto callback = get_param_callbacks_.find(param_name);
+        callback != get_param_callbacks_.end())
       {
         callback->second(param);
       }
