@@ -98,6 +98,16 @@ public:
   void onInitialize() override;
 
   /**
+   * @brief Deactivate the layer
+   */
+  void deactivate() override;
+
+  /**
+   * @brief Activate the layer
+   */
+  void activate() override;
+
+  /**
    * @brief Update the bounds of the master costmap by this layer's update dimensions
    * @param robot_x X pose of robot
    * @param robot_y Y pose of robot

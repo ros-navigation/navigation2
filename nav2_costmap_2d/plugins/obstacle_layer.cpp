@@ -66,15 +66,6 @@ namespace nav2_costmap_2d
 
 ObstacleLayer::~ObstacleLayer()
 {
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
   for (auto & notifier : observation_notifiers_) {
     notifier.reset();
   }
@@ -399,7 +390,7 @@ ObstacleLayer::updateParametersCallback(
         current_ = false;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled") {
+      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
         current_ = false;
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
@@ -848,6 +839,7 @@ ObstacleLayer::deactivate()
     node->remove_on_set_parameters_callback(on_set_params_handler_.get());
   }
   on_set_params_handler_.reset();
+
   for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
     if (observation_subscribers_[i] != NULL) {
       observation_subscribers_[i]->unsubscribe();

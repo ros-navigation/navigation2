@@ -78,15 +78,6 @@ InflationLayer::InflationLayer()
 
 InflationLayer::~InflationLayer()
 {
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
   delete access_;
 }
 
@@ -105,15 +96,6 @@ InflationLayer::onInitialize()
     inflate_unknown_ = node->declare_or_get_parameter(name_ + "." + "inflate_unknown", false);
     inflate_around_unknown_ = node->declare_or_get_parameter(
       name_ + "." + "inflate_around_unknown", false);
-
-    post_set_params_handler_ = node->add_post_set_parameters_callback(
-    std::bind(
-      &InflationLayer::updateParametersCallback,
-      this, std::placeholders::_1));
-    on_set_params_handler_ = node->add_on_set_parameters_callback(
-      std::bind(
-        &InflationLayer::validateParameterUpdatesCallback,
-        this, std::placeholders::_1));
   }
 
   current_ = true;
@@ -123,6 +105,32 @@ InflationLayer::onInitialize()
   need_reinflation_ = false;
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
+}
+
+void InflationLayer::activate()
+{
+  auto node = node_.lock();
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &InflationLayer::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &InflationLayer::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void InflationLayer::deactivate()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
 void
@@ -472,7 +480,9 @@ InflationLayer::updateParametersCallback(
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "inflation_radius") {
+      if (param_name == name_ + "." + "inflation_radius" &&
+        inflation_radius_ != parameter.as_double())
+      {
         inflation_radius_ = parameter.as_double();
         need_reinflation_ = true;
         need_cache_recompute = true;
@@ -486,7 +496,7 @@ InflationLayer::updateParametersCallback(
         current_ = false;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled") {
+      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
         need_reinflation_ = true;
         current_ = false;
@@ -494,8 +504,8 @@ InflationLayer::updateParametersCallback(
         inflate_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
         current_ = false;
-      } else if (param_name == name_ + "." + "inflate_around_unknown" && // NOLINT
-        inflate_around_unknown_ != parameter.as_bool())
+      } else if (param_name == name_ + "." + "inflate_unknown" && // NOLINT
+        inflate_unknown_ != parameter.as_bool())
       {
         inflate_around_unknown_ = parameter.as_bool();
         need_reinflation_ = true;

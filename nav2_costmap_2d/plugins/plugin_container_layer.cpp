@@ -236,7 +236,7 @@ void PluginContainerLayer::updateParametersCallback(
         combination_method_ = combination_method_from_int(parameter.as_int());
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled") {
+      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
         current_ = false;
       }
