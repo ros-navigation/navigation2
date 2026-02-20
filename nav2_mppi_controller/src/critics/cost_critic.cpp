@@ -191,7 +191,8 @@ void CostCritic::score(CriticData & data)
     float pose_cost = 0.0f;
     float & traj_cost = repulsive_cost(i);
 
-    for (int j = 0; j < strided_traj_cols; j++) {
+    // iterate over the trajectory backwards, as collisions are more likely towards the end of the trajectory
+    for (int j = strided_traj_cols - 1; j >=0; j--) {
       float Tx = traj_x(i, j);
       float Ty = traj_y(i, j);
       unsigned int x_i = 0u, y_i = 0u;
