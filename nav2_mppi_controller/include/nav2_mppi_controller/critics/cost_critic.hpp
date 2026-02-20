@@ -59,6 +59,12 @@ protected:
   inline bool inCollision(float cost, float x, float y, float theta,
     const nav2_costmap_2d::Footprint & footprint)
   {
+    // if the center cost guarantees a collision, return before doing an expensive footprint check
+    if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+      cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+      return true;
+    }
+
     // If consider_footprint_ check footprint score for collision
     float score_cost = cost;
     if (consider_footprint_ &&
