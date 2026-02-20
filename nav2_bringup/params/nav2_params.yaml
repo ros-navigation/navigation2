@@ -298,7 +298,7 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      plugins: ["static_layer", "obstacle_layer", "bounded_tracking_error_layer", "inflation_layer"]
       filters: ["keepout_filter", "speed_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
@@ -331,6 +331,16 @@ global_costmap:
           raytrace_min_range: 0.0
           obstacle_max_range: 2.5
           obstacle_min_range: 0.0
+      bounded_tracking_error_layer:
+        plugin: "nav2_costmap_2d::BoundedTrackingErrorLayer"
+        enabled: true
+        tracking_feedback_topic: "tracking_feedback"
+        path_topic: "plan"
+        look_ahead: 3.0  # Max 3.0 meters, short enough to be convex on curves
+        step: 5
+        corridor_width: 1.5
+        corridor_cost: 250  # 1-254, robot strongly prefers corridor but can escape
+        wall_thickness: 2  # Cells of thickness for corridor walls
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
