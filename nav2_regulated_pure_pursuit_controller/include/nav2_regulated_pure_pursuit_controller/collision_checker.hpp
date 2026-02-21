@@ -67,7 +67,7 @@ public:
   bool isCollisionImminent(
     const geometry_msgs::msg::PoseStamped &,
     const double &, const double &,
-    const double &);
+    const double &, const double &);
 
   /**
    * @brief checks for collision at projected pose

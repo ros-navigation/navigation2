@@ -286,9 +286,12 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Collision checking on this velocity heading
+  const double dist_to_path_end =
+    nav2_util::geometry_utils::calculate_path_length(transformed_plan);
   const double & carrot_dist = hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
   if (params_->use_collision_detection &&
-    collision_checker_->isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist))
+    collision_checker_->isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist,
+      dist_to_path_end))
   {
     throw nav2_core::NoValidControl("RegulatedPurePursuitController detected collision ahead!");
   }
