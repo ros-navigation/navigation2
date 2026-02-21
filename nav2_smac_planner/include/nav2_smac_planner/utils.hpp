@@ -25,7 +25,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "tf2/utils.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_costmap_2d/inflation_layer_interface.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include <rclcpp/rclcpp.hpp>
@@ -78,7 +78,7 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
   std::vector<std::shared_ptr<nav2_costmap_2d::Layer>>::iterator layer;
 
   // check if the costmap has an inflation layer
-  const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(costmap);
+  const auto inflation_layer = nav2_costmap_2d::InflationLayerInterface::getInflationLayer(costmap);
   if (inflation_layer != nullptr) {
     double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
     double resolution = costmap->getCostmap()->getResolution();
