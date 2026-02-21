@@ -610,10 +610,9 @@ ObstacleLayer::updateCosts(
     return;
   }
 
-  // if not current due to reset, set current now after clearing
+  // set was_reset to false again
   if (!current_ && was_reset_) {
     was_reset_ = false;
-    current_ = true;
   }
 
   if (footprint_clearing_enabled_) {
@@ -837,7 +836,6 @@ void
 ObstacleLayer::reset()
 {
   resetMaps();
-  resetBuffersLastUpdated();
   current_ = false;
   was_reset_ = true;
 }
