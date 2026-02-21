@@ -509,13 +509,6 @@ rcl_interfaces::msg::SetParametersResult StaticLayer::validateParameterUpdatesCa
       RCLCPP_WARN(
         logger_, "%s is not a dynamic parameter "
         "cannot be changed while running. Rejecting parameter update.", param_name.c_str());
-    } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0 && param_name == name_ + "." + "transform_tolerance") {
-        RCLCPP_WARN(
-        logger_, "The value of transform_tolerance '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
-      }
     } else if (param_type == ParameterType::PARAMETER_BOOL && // NOLINT
       param_name == name_ + "." + "restore_cleared_footprint")
     {
@@ -542,11 +535,7 @@ StaticLayer::updateParametersCallback(
       continue;
     }
 
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "transform_tolerance") {
-        transform_tolerance_ = tf2::durationFromSec(parameter.as_double());
-      }
-    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+    if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
 

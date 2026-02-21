@@ -126,6 +126,7 @@ void PluginContainerLayer::activate()
     std::bind(
       &PluginContainerLayer::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
+
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
   {
