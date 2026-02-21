@@ -771,7 +771,7 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
         param_name.c_str(), parameter.as_double());
         result.successful = false;
       } else if (parameter.as_double() < 0.0 && // NOLINT
-        (param_name != "origin_x" || param_name != "origin_y"))
+        (param_name != "origin_x" && param_name != "origin_y"))
       {
         RCLCPP_WARN(
         get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
