@@ -527,7 +527,7 @@ rcl_interfaces::msg::SetParametersResult VoxelLayer::validateParameterUpdatesCal
         "cannot be changed while running. Rejecting parameter update.");
       result.successful = false;
     } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0) {
+      if (parameter.as_double() < 0.0 && param_name == name_ + "." + "z_resolution") {
         RCLCPP_WARN(
         logger_, "The value of parameter '%s' is incorrectly set to %f, "
         "it should be >=0. Ignoring parameter update.",

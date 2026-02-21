@@ -630,6 +630,18 @@ TEST_F(TestNode, testDynParamsSet)
   EXPECT_EQ(costmap->get_parameter("inflation_layer.inflate_around_unknown").as_bool(), true);
   EXPECT_EQ(costmap->get_parameter("inflation_layer.enabled").as_bool(), false);
 
+  // Setting invalid inflation radius should not update the parameter
+  auto invalid_result = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("inflation_layer.inflation_radius", -1.0)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    invalid_result);
+
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.inflation_radius").as_double(), 0.0);
+
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
   costmap->on_shutdown(rclcpp_lifecycle::State());
