@@ -97,6 +97,41 @@ TEST(DynParamTestNode, testDynParamsSet)
     "[[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]");
   EXPECT_EQ(costmap->get_parameter("robot_base_frame").as_string(), "test_frame");
 
+  // Try setting publish frequency to 0, should be rejected
+  auto results3 = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("publish_frequency", 0.0),
+  });
+
+  node_executor.spin_all(std::chrono::milliseconds(50));
+  costmap_executor.spin_all(std::chrono::milliseconds(50));
+
+  EXPECT_EQ(costmap->get_parameter("publish_frequency").as_double(), 4.567);
+
+  // Try setting robot_radius to a negative value, should be rejected
+  auto results4 = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("robot_radius", -1.0),
+  });
+
+  node_executor.spin_all(std::chrono::milliseconds(50));
+  costmap_executor.spin_all(std::chrono::milliseconds(50));
+
+  EXPECT_EQ(costmap->get_parameter("robot_radius").as_double(), 1.234);
+
+  // Try setting width and height to 0, should be rejected
+  auto results5 = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("width", 0),
+    rclcpp::Parameter("height", 0),
+  });
+
+  node_executor.spin_all(std::chrono::milliseconds(50));
+  costmap_executor.spin_all(std::chrono::milliseconds(50));
+
+  EXPECT_EQ(costmap->get_parameter("width").as_int(), 2);
+  EXPECT_EQ(costmap->get_parameter("height").as_int(), 3);
+
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
   costmap->on_shutdown(rclcpp_lifecycle::State());

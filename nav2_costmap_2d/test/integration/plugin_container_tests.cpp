@@ -499,6 +499,8 @@ TEST_F(TestNode, testOverwriteCombinationMethods) {
     "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
+  node_->declare_parameter("pclayer_b.combination_method", 0);
+
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -508,8 +510,6 @@ TEST_F(TestNode, testOverwriteCombinationMethods) {
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
   addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
-
-  node_->set_parameter(rclcpp::Parameter("pclayer_b.combination_method", 0));
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
     std::make_shared<nav2_costmap_2d::StaticLayer>();
@@ -557,6 +557,8 @@ TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
     "pclayer_a.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
+  node_->declare_parameter("pclayer_a.combination_method", 2);
+
   node_->declare_parameter(
     "pclayer_b.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
@@ -564,6 +566,8 @@ TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
   node_->declare_parameter(
     "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_b.combination_method", 2);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
 
@@ -574,9 +578,6 @@ TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
   addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
-
-  node_->set_parameter(rclcpp::Parameter("pclayer_a.combination_method", 2));
-  node_->set_parameter(rclcpp::Parameter("pclayer_b.combination_method", 2));
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
     std::make_shared<nav2_costmap_2d::StaticLayer>();
@@ -645,7 +646,7 @@ TEST_F(TestNode, testDynParamsSetPluginContainerLayer)
   std::vector<std::string> plugins_str;
   plugins_str.push_back("plugin_container_layer_a");
   plugins_str.push_back("plugin_container_layer_b");
-  costmap->set_parameter(rclcpp::Parameter("plugins", plugins_str));
+  costmap->declare_parameter("plugins", plugins_str);
 
   costmap->declare_parameter(
     "plugin_container_layer_a.plugin",
@@ -683,8 +684,8 @@ TEST_F(TestNode, testDynParamsSetPluginContainerLayer)
     rclcpp::ParameterValue(std::string("nav2_costmap_2d::InflationLayer")));
 
 
-  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("map")));
-  costmap->set_parameter(rclcpp::Parameter("robot_base_frame", std::string("base_link")));
+  costmap->declare_parameter("global_frame", std::string("map"));
+  costmap->declare_parameter("robot_base_frame", std::string("base_link"));
 
   costmap->on_configure(rclcpp_lifecycle::State());
 

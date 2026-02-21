@@ -98,21 +98,39 @@ void VoxelLayer::onInitialize()
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);
   matchSize();
+}
 
+void VoxelLayer::activate()
+{
+  ObstacleLayer::activate();
+  auto node = node_.lock();
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
-      &VoxelLayer::dynamicParametersCallback,
+      &VoxelLayer::updateParametersCallback,
       this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &VoxelLayer::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void VoxelLayer::deactivate()
+{
+  ObstacleLayer::deactivate();
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
 VoxelLayer::~VoxelLayer()
 {
-  auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
-  }
-  dyn_params_handler_.reset();
 }
 
 void VoxelLayer::matchSize()
@@ -492,19 +510,43 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
   delete[] local_voxel_map;
 }
 
-/**
-  * @brief Callback executed when a parameter change is detected
-  * @param event ParameterEvent message
-  */
-rcl_interfaces::msg::SetParametersResult
-VoxelLayer::dynamicParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult VoxelLayer::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    if (param_name == name_ + "." + "publish_voxel_map") {
+      RCLCPP_WARN(
+        logger_, "publish voxel map is not a dynamic parameter "
+        "cannot be changed while running. Rejecting parameter update.");
+      result.successful = false;
+    } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0 && param_name == name_ + "." + "z_resolution") {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+VoxelLayer::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  rcl_interfaces::msg::SetParametersResult result;
   bool resize_map_needed = false;
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(name_ + ".") != 0) {
@@ -544,11 +586,6 @@ VoxelLayer::dynamicParametersCallback(
         current_ = false;
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
-      } else if (param_name == name_ + "." + "publish_voxel_map") {
-        RCLCPP_WARN(
-          logger_, "publish voxel map is not a dynamic parameter "
-          "cannot be changed while running. Rejecting parameter update.");
-        continue;
       }
 
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
@@ -573,9 +610,6 @@ VoxelLayer::dynamicParametersCallback(
   if (resize_map_needed) {
     matchSize();
   }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_costmap_2d
