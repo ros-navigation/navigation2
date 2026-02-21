@@ -143,12 +143,6 @@ public:
   template<typename T>
   void addParamCallback(const std::string & name, T && callback);
 
-  template<typename T>
-  void addPreParamCallback(const std::string & name, T && callback)
-  {
-    get_pre_callbacks_[name] = callback;
-  }
-
 protected:
   /**
     * @brief Gets parameter
