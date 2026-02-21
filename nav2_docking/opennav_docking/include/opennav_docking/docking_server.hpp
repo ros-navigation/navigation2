@@ -33,6 +33,7 @@
 #include "opennav_docking/types.hpp"
 #include "opennav_docking/dock_database.hpp"
 #include "opennav_docking/navigator.hpp"
+#include "opennav_docking/parameter_handler.hpp"
 #include "opennav_docking_core/charging_dock.hpp"
 #include "tf2_ros/transform_listener.hpp"
 
@@ -221,44 +222,12 @@ protected:
    */
   void undockRobot();
 
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  // Parameter handler
+  std::unique_ptr<opennav_docking::ParameterHandler> param_handler_;
+  Parameters * params_;
 
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-
-  // Mutex for dynamic parameters and dock database
-  std::shared_ptr<std::mutex> mutex_;
-
-  // Frequency to run control loops
-  double controller_frequency_;
-  // Timeout for initially detecting the charge dock
-  double initial_perception_timeout_;
-  // Timeout after making contact with dock for charging to start
-  // If this is exceeded, the robot returns to the staging pose and retries
-  double wait_charge_timeout_;
-  // Timeout to approach into the dock and reset its approach is retrying
-  double dock_approach_timeout_;
-  // Timeout to rotate to the dock
-  double rotate_to_dock_timeout_;
-  // When undocking, these are the tolerances for arriving at the staging pose
-  double undock_linear_tolerance_, undock_angular_tolerance_;
   // Maximum number of times the robot will return to staging pose and retry docking
-  int max_retries_, num_retries_;
-  // This is the root frame of the robot - typically "base_link"
-  std::string base_frame_;
-  // This is our fixed frame for controlling - typically "odom"
-  std::string fixed_frame_;
-  // Does the robot drive backwards onto the dock? Default is forwards
-  std::optional<bool> dock_backwards_;
-  // The tolerance to the dock's staging pose not requiring navigation
-  double dock_prestaging_tolerance_;
-  // Angular tolerance to exit the rotation loop when rotate_to_dock is enabled
-  double rotation_angular_tolerance_;
+  int num_retries_;
 
   // This is a class member so it can be accessed in publish feedback
   rclcpp::Time action_start_time_;

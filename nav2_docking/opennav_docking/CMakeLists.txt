@@ -53,6 +53,7 @@ add_library(${library_name} SHARED
   src/docking_server.cpp
   src/dock_database.cpp
   src/navigator.cpp
+  src/parameter_handler.cpp
 )
 target_include_directories(${library_name}
   PUBLIC
