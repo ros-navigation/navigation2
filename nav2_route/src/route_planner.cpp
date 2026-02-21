@@ -40,16 +40,12 @@ void RoutePlanner::configure(
 
 void RoutePlanner::activate()
 {
-  if(edge_scorer_) {
-    edge_scorer_->activate();
-  }
+  edge_scorer_->activate();
 }
 
 void RoutePlanner::deactivate()
 {
-  if(edge_scorer_) {
-    edge_scorer_->deactivate();
-  }
+  edge_scorer_->deactivate();
 }
 
 Route RoutePlanner::findRoute(

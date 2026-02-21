@@ -179,7 +179,6 @@ TEST(FollowingServerTests, ErrorExceptions)
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
-  node_thread.reset();
   node.reset();
 }
 
