@@ -140,7 +140,7 @@ class NavTester(Node):
             self.limits = [50.0, 0.0]
             # Permissive array: all received speed limits must match to 'limits' from above
             self.limit_passed = [False, False]
-            self.plan_sub = self.create_subscription(
+            self.speed_limit_sub = self.create_subscription(
                 SpeedLimit, 'speed_limit', self.speedLimitCallback, volatile_qos
             )
 
@@ -390,7 +390,7 @@ class NavTester(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             self.info_msg('Shutting down navigation lifecycle manager...')
@@ -405,7 +405,7 @@ class NavTester(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             self.info_msg('Shutting down localization lifecycle manager...')

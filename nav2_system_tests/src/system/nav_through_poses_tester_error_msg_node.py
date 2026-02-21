@@ -141,7 +141,7 @@ class NavTester(Node):
             self.getStampedPoseMsg(self.goal_pose),
             self.getStampedPoseMsg(self.goal_pose),
         ]
-        goal_msg.behavior_tree = behavior_tree
+        goal_msg.behavior_tree = behavior_tree if behavior_tree is not None else ''
 
         self.info_msg('Sending goal request...')
         send_goal_future = self.action_client.send_goal_async(goal_msg)
