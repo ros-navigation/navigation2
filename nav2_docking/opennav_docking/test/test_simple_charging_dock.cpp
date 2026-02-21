@@ -444,6 +444,8 @@ TEST(SimpleChargingDockTests, DetectorLifecycle)
     "my_dock.detector_service_name",
     rclcpp::ParameterValue("test_detector_service"));
   node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(true));
+  node->configure();
+  node->activate();
 
   // Create a mock service to prevent timeout
   bool service_called = false;
@@ -456,6 +458,7 @@ TEST(SimpleChargingDockTests, DetectorLifecycle)
       service_called = true;
       response->success = true;
     });
+  service->on_activate();
 
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
   dock->configure(node, "my_dock", nullptr);
@@ -544,6 +547,8 @@ TEST(SimpleChargingDockTests, DetectorServiceTimeout)
   node->declare_parameter("my_dock.use_external_detection_pose", true);
   node->declare_parameter("my_dock.detector_service_name", "slow_service");
   node->declare_parameter("my_dock.detector_service_timeout", 0.1);
+  node->configure();
+  node->activate();
 
   // Create a mock service that never responds in time
   auto mock_service = node->create_service<std_srvs::srv::Trigger>(
@@ -554,6 +559,7 @@ TEST(SimpleChargingDockTests, DetectorServiceTimeout)
     {
       std::this_thread::sleep_for(200ms);
     });
+  mock_service->on_activate();
 
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
   dock->configure(node, "my_dock", nullptr);
@@ -580,6 +586,8 @@ TEST(SimpleChargingDockTests, DetectorServiceFailure)
       {"my_dock.detector_service_timeout", 0.1}
     });
   auto node = std::make_shared<nav2::LifecycleNode>("test_detector_failure", options);
+  node->configure();
+  node->activate();
 
   // Create a service that responds slower than the client's timeout.
   auto slow_service = node->create_service<std_srvs::srv::Trigger>(
@@ -590,6 +598,7 @@ TEST(SimpleChargingDockTests, DetectorServiceFailure)
     {
       std::this_thread::sleep_for(200ms);
     });
+  slow_service->on_activate();
 
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
   dock->configure(node, "my_dock", nullptr);

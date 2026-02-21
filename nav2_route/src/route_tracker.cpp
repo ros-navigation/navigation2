@@ -138,6 +138,16 @@ void RouteTracker::publishFeedback(
   action_server_->publish_feedback(std::move(feedback));
 }
 
+void RouteTracker::activate()
+{
+  operations_manager_->activate();
+}
+
+void RouteTracker::deactivate()
+{
+  operations_manager_->deactivate();
+}
+
 TrackerResult RouteTracker::trackRoute(
   const Route & route, const nav_msgs::msg::Path & path,
   ReroutingState & rerouting_info)

@@ -149,6 +149,8 @@ TEST(DatabaseTests, reloadDbService)
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
+  node->configure();
+  node->activate();
 
   // Call service with a filepath
   auto client =
