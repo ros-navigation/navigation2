@@ -81,7 +81,7 @@ void Optimizer::getParams()
   auto getParam = parameters_handler_->getParamGetter(name_);
   auto getParentParam = parameters_handler_->getParamGetter("");
 
-  // Guard: reject dynamic updates to kinematic params when speed limit is active
+  // Reject dynamic updates to kinematic params when speed limit is active
   auto kinematic_guard = [this](
     const rclcpp::Parameter & param,
     rcl_interfaces::msg::SetParametersResult & result) {
