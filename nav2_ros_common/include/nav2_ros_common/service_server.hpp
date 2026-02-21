@@ -75,9 +75,11 @@ public:
       lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
     {
       this->on_activate();
-      RCLCPP_INFO(
-          logger_, "Service '%s' auto activated (node already active)",
-          service_name_.c_str());
+      RCLCPP_WARN(
+      logger_,
+      "Service '%s' was automatically activated (node is already in the active state). "
+      "Consider creating all ROS interfaces before the server is active.",
+      service_name_.c_str());
     }
   }
 

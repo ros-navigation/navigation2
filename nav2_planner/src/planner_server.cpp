@@ -195,8 +195,6 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   is_path_valid_service_->on_deactivate();
 
-  dyn_params_handler_.reset();
-
   // destroy bond connection
   destroyBond();
 
