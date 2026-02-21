@@ -99,7 +99,7 @@ void Optimizer::getParams()
     "vx_max", "vx_min", "vy_max", "wz_max",
     "ax_max", "ax_min", "ay_max", "ay_min", "az_max"};
   for (const auto & p : kinematic_params) {
-    parameters_handler_->addPreParamCallback(name_ + "." + p, kinematic_guard);
+    parameters_handler_->addPreCallback(name_ + "." + p, kinematic_guard);
   }
 
   getParam(s.model_dt, "model_dt", 0.05f);
