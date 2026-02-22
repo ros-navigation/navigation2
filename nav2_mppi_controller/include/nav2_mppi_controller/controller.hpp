@@ -104,28 +104,14 @@ public:
   void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
 protected:
-  /**
-    * @brief Visualize trajectories
-    * @param cmd_stamp Command stamp
-    * @param optimal_trajectory Optimal trajectory, if already computed
-    */
-  void visualize(
-    const builtin_interfaces::msg::Time & cmd_stamp,
-    const Eigen::ArrayXXf & optimal_trajectory);
-
   std::string name_;
   nav2::LifecycleNode::WeakPtr parent_;
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  nav2::Publisher<nav2_msgs::msg::Trajectory>::SharedPtr opt_traj_pub_;
-
   std::unique_ptr<ParametersHandler> parameters_handler_;
   Optimizer optimizer_;
   TrajectoryVisualizer trajectory_visualizer_;
-
-  bool visualize_;
-  bool publish_optimal_trajectory_;
 };
 
 }  // namespace nav2_mppi_controller

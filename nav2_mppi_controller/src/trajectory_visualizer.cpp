@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <memory>
+#include <vector>
+#include <algorithm>
 #include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 
 namespace mppi
@@ -25,15 +27,38 @@ void TrajectoryVisualizer::on_configure(
   auto node = parent.lock();
   logger_ = node->get_logger();
   frame_id_ = frame_id;
-  trajectories_publisher_ =
-    node->create_publisher<visualization_msgs::msg::MarkerArray>("~/candidate_trajectories");
-  optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("~/optimal_path");
   parameters_handler_ = parameters_handler;
-
-  auto getParam = parameters_handler->getParamGetter(name + ".TrajectoryVisualizer");
-
+  auto getParam = parameters_handler->getParamGetter(name + ".Visualization");
   getParam(trajectory_step_, "trajectory_step", 5);
   getParam(time_step_, "time_step", 3);
+  getParam(publish_trajectories_with_total_cost_, "publish_trajectories_with_total_cost", false);
+  getParam(publish_trajectories_with_individual_cost_, "publish_trajectories_with_individual_cost",
+      false);
+  getParam(publish_optimal_footprints_, "publish_optimal_footprints", false);
+  getParam(publish_optimal_trajectory_msg_, "publish_optimal_trajectory_msg", false);
+  getParam(publish_transformed_path_, "publish_transformed_path", false);
+  getParam(publish_optimal_path_, "publish_optimal_path", false);
+  getParam(footprint_downsample_factor_, "footprint_downsample_factor", 3);
+
+  if (publish_trajectories_with_total_cost_ || publish_trajectories_with_individual_cost_) {
+    trajectories_publisher_ =
+      node->create_publisher<visualization_msgs::msg::MarkerArray>("~/candidate_trajectories");
+  }
+  if (publish_transformed_path_) {
+    transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>(
+      "~/transformed_global_plan");
+  }
+  if (publish_optimal_path_) {
+    optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("~/optimal_path");
+  }
+  if (publish_optimal_footprints_) {
+    optimal_footprints_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+      "~/optimal_footprints");
+  }
+  if (publish_optimal_trajectory_msg_) {
+    optimal_trajectory_msg_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
+      "~/optimal_trajectory");
+  }
 
   reset();
 }
@@ -41,19 +66,48 @@ void TrajectoryVisualizer::on_configure(
 void TrajectoryVisualizer::on_cleanup()
 {
   trajectories_publisher_.reset();
+  transformed_path_pub_.reset();
   optimal_path_pub_.reset();
+  optimal_footprints_pub_.reset();
+  optimal_trajectory_msg_pub_.reset();
 }
 
 void TrajectoryVisualizer::on_activate()
 {
-  trajectories_publisher_->on_activate();
-  optimal_path_pub_->on_activate();
+  if (trajectories_publisher_) {
+    trajectories_publisher_->on_activate();
+  }
+  if (transformed_path_pub_) {
+    transformed_path_pub_->on_activate();
+  }
+  if (optimal_path_pub_) {
+    optimal_path_pub_->on_activate();
+  }
+  if (optimal_footprints_pub_) {
+    optimal_footprints_pub_->on_activate();
+  }
+  if (optimal_trajectory_msg_pub_) {
+    optimal_trajectory_msg_pub_->on_activate();
+  }
 }
 
 void TrajectoryVisualizer::on_deactivate()
 {
-  trajectories_publisher_->on_deactivate();
-  optimal_path_pub_->on_deactivate();
+  if (trajectories_publisher_) {
+    trajectories_publisher_->on_deactivate();
+  }
+  if (transformed_path_pub_) {
+    transformed_path_pub_->on_deactivate();
+  }
+  if (optimal_path_pub_) {
+    optimal_path_pub_->on_deactivate();
+  }
+  if (optimal_footprints_pub_) {
+    optimal_footprints_pub_->on_deactivate();
+  }
+  if (optimal_trajectory_msg_pub_) {
+    optimal_trajectory_msg_pub_->on_deactivate();
+  }
 }
 
 void TrajectoryVisualizer::add(
@@ -105,30 +159,30 @@ void TrajectoryVisualizer::add(
 }
 
 void TrajectoryVisualizer::add(
-  const models::Trajectories & trajectories, const std::string & marker_namespace)
+  const models::Trajectories & trajectories,
+  const Eigen::ArrayXf & total_costs,
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & individual_critics_cost,
+  const builtin_interfaces::msg::Time & cmd_stamp)
 {
-  if (trajectories_publisher_->get_subscription_count() == 0) {
-    return;
-  }
+  // Check if we should visualize per-critic costs
+  bool visualize_per_critic = !individual_critics_cost.empty() &&
+    publish_trajectories_with_individual_cost_ &&
+    trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0;
 
   size_t n_rows = trajectories.x.rows();
-  size_t n_cols = trajectories.x.cols();
-  const float shape_1 = static_cast<float>(n_cols);
-  points_->markers.reserve(floor(n_rows / trajectory_step_) * floor(n_cols * time_step_));
+  points_->markers.reserve(n_rows / trajectory_step_);
 
-  for (size_t i = 0; i < n_rows; i += trajectory_step_) {
-    for (size_t j = 0; j < n_cols; j += time_step_) {
-      const float j_flt = static_cast<float>(j);
-      float blue_component = 1.0f - j_flt / shape_1;
-      float green_component = j_flt / shape_1;
+  // Visualize total costs if requested
+  if (publish_trajectories_with_total_cost_) {
+    utils::createTrajectoryMarkers(trajectories, total_costs, "Total Costs", cmd_stamp,
+      frame_id_, trajectory_step_, time_step_, marker_id_, *points_);
+  }
 
-      auto pose = utils::createPose(trajectories.x(i, j), trajectories.y(i, j), 0.03);
-      auto scale = utils::createScale(0.03, 0.03, 0.03);
-      auto color = utils::createColor(0, green_component, blue_component, 1);
-      auto marker = utils::createMarker(
-        marker_id_++, pose, scale, color, frame_id_, marker_namespace);
-
-      points_->markers.push_back(marker);
+  // Visualize each critic's contribution if requested
+  if (visualize_per_critic) {
+    for (const auto & [critic_name, costs] : individual_critics_cost) {
+      utils::createTrajectoryMarkers(trajectories, costs, critic_name, cmd_stamp,
+        frame_id_, trajectory_step_, time_step_, marker_id_, *points_);
     }
   }
 }
@@ -140,17 +194,101 @@ void TrajectoryVisualizer::reset()
   optimal_path_ = std::make_unique<nav_msgs::msg::Path>();
 }
 
-void TrajectoryVisualizer::visualize()
+void TrajectoryVisualizer::visualize(
+  nav_msgs::msg::Path plan,
+  const Eigen::ArrayXXf & optimal_trajectory,
+  const models::ControlSequence & control_sequence,
+  float model_dt,
+  const builtin_interfaces::msg::Time & stamp,
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
+  const models::Trajectories & candidate_trajectories,
+  const Eigen::ArrayXf & costs,
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & critic_costs)
 {
-  if (trajectories_publisher_->get_subscription_count() > 0) {
+  // Create header with frame from costmap
+  std_msgs::msg::Header header;
+  header.stamp = stamp;
+  header.frame_id = costmap_ros->getGlobalFrameID();
+
+  // Visualize trajectories with total costs
+  if (publish_trajectories_with_total_cost_ ||
+    (!publish_trajectories_with_individual_cost_ || critic_costs.empty()))
+  {
+    add(candidate_trajectories, costs, {}, stamp);
+  }
+
+  // Visualize trajectories with individual critic costs
+  if (publish_trajectories_with_individual_cost_ && !critic_costs.empty()) {
+    add(candidate_trajectories, costs, critic_costs, stamp);
+  }
+
+  // Add optimal trajectory to populate optimal_path_
+  if (publish_optimal_path_ && optimal_trajectory.rows() > 0) {
+    add(optimal_trajectory, "Optimal Trajectory", stamp);
+  }
+
+  // Publish trajectories
+  if (trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0) {
     trajectories_publisher_->publish(std::move(points_));
   }
 
-  if (optimal_path_pub_->get_subscription_count() > 0) {
+  // Publish optimal path if enabled
+  if (publish_optimal_path_ && optimal_path_pub_ &&
+    optimal_path_pub_->get_subscription_count() > 0)
+  {
+    optimal_path_pub_->publish(std::move(optimal_path_));
+  }
+
+  // Publish optimal footprints if enabled
+  if (publish_optimal_footprints_ && optimal_footprints_pub_ &&
+    optimal_footprints_pub_->get_subscription_count() > 0 &&
+    costmap_ros != nullptr && optimal_trajectory.rows() > 0)
+  {
+    auto footprints_msg = utils::createFootprintMarkers(
+      optimal_trajectory, header, costmap_ros, footprint_downsample_factor_);
+    optimal_footprints_pub_->publish(std::move(footprints_msg));
+  }
+
+  // Publish optimal trajectory message if enabled
+  if (publish_optimal_trajectory_msg_ && optimal_trajectory_msg_pub_ &&
+    optimal_trajectory_msg_pub_->get_subscription_count() > 0)
+  {
+    auto trajectory_msg = utils::toTrajectoryMsg(
+      optimal_trajectory,
+      control_sequence,
+      model_dt,
+      header);
+    optimal_trajectory_msg_pub_->publish(std::move(trajectory_msg));
+  }
+
+  reset();
+
+  // Publish transformed path
+  if (transformed_path_pub_ && transformed_path_pub_->get_subscription_count() > 0) {
+    auto plan_ptr = std::make_unique<nav_msgs::msg::Path>(plan);
+    transformed_path_pub_->publish(std::move(plan_ptr));
+  }
+}
+
+void TrajectoryVisualizer::visualize(nav_msgs::msg::Path plan)
+{
+  // Simplified version for testing that only publishes what's been added
+  if (trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0) {
+    trajectories_publisher_->publish(std::move(points_));
+  }
+
+  if (publish_optimal_path_ && optimal_path_pub_ &&
+    optimal_path_pub_->get_subscription_count() > 0)
+  {
     optimal_path_pub_->publish(std::move(optimal_path_));
   }
 
   reset();
+
+  if (transformed_path_pub_ && transformed_path_pub_->get_subscription_count() > 0) {
+    auto plan_ptr = std::make_unique<nav_msgs::msg::Path>(plan);
+    transformed_path_pub_->publish(std::move(plan_ptr));
+  }
 }
 
 }  // namespace mppi

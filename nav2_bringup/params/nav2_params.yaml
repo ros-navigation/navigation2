@@ -151,12 +151,18 @@ controller_server:
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"
-      visualize: true
-      publish_optimal_trajectory: true
       regenerate_noises: true
-      TrajectoryVisualizer:
+      Visualization:
+        publish_critics_stats: false
+        publish_optimal_trajectory_msg: false
+        publish_transformed_path: false
+        publish_trajectories_with_total_cost: false
+        publish_trajectories_with_individual_cost: false
+        publish_optimal_footprints: false
+        publish_optimal_path: false
         trajectory_step: 5
         time_step: 3
+        footprint_downsample_factor: 3
       TrajectoryValidator:
         # The validator can be configured with additional parameters if needed.
         plugin: "mppi::DefaultOptimalTrajectoryValidator"

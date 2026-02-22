@@ -19,14 +19,20 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/trajectory.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 #include "nav2_mppi_controller/models/trajectories.hpp"
+#include "nav2_mppi_controller/models/control_sequence.hpp"
 
 namespace mppi
 {
@@ -78,15 +84,46 @@ public:
     const builtin_interfaces::msg::Time & cmd_stamp);
 
   /**
-    * @brief Add candidate trajectories to visualize
+    * @brief Add candidate trajectories with costs to visualize
     * @param trajectories Candidate trajectories
+    * @param total_costs Total cost array for each trajectory
+    * @param individual_critics_cost Optional vector of (critic_name, cost_array) pairs for per-critic visualization
+    * @param cmd_stamp Timestamp for the markers
     */
-  void add(const models::Trajectories & trajectories, const std::string & marker_namespace);
+  void add(
+    const models::Trajectories & trajectories,
+    const Eigen::ArrayXf & total_costs,
+    const std::vector<std::pair<std::string, Eigen::ArrayXf>> & individual_critics_cost = {},
+    const builtin_interfaces::msg::Time & cmd_stamp = builtin_interfaces::msg::Time());
 
   /**
-    * @brief Visualize the plan
+    * @brief Visualize all trajectory data in one call
+    * @param plan Transformed plan to visualize
+    * @param optimal_trajectory Optimal trajectory
+    * @param control_sequence Control sequence for optimal trajectory
+    * @param model_dt Model time step
+    * @param stamp Timestamp for the visualization
+    * @param costmap_ros Costmap ROS pointer
+    * @param candidate_trajectories Generated candidate trajectories
+    * @param costs Total costs for each trajectory
+    * @param critic_costs Per-critic costs for each trajectory
     */
-  void visualize();
+  void visualize(
+    nav_msgs::msg::Path plan,
+    const Eigen::ArrayXXf & optimal_trajectory,
+    const models::ControlSequence & control_sequence,
+    float model_dt,
+    const builtin_interfaces::msg::Time & stamp,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
+    const models::Trajectories & candidate_trajectories,
+    const Eigen::ArrayXf & costs,
+    const std::vector<std::pair<std::string, Eigen::ArrayXf>> & critic_costs);
+
+  /**
+    * @brief Visualize without optimizer (for testing)
+    * @param plan Transformed plan to visualize
+    */
+  void visualize(nav_msgs::msg::Path plan);
 
   /**
     * @brief Reset object
@@ -97,7 +134,10 @@ protected:
   std::string frame_id_;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     trajectories_publisher_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_path_pub_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr optimal_path_pub_;
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr optimal_footprints_pub_;
+  nav2::Publisher<nav2_msgs::msg::Trajectory>::SharedPtr optimal_trajectory_msg_pub_;
 
   std::unique_ptr<nav_msgs::msg::Path> optimal_path_;
   std::unique_ptr<visualization_msgs::msg::MarkerArray> points_;
@@ -107,6 +147,13 @@ protected:
 
   size_t trajectory_step_{0};
   size_t time_step_{0};
+  bool publish_trajectories_with_total_cost_{false};
+  bool publish_trajectories_with_individual_cost_{false};
+  bool publish_optimal_footprints_{false};
+  bool publish_optimal_trajectory_msg_{false};
+  bool publish_transformed_path_{false};
+  bool publish_optimal_path_{false};
+  int footprint_downsample_factor_{3};
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };

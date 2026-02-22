@@ -36,10 +36,49 @@ TEST(TrajectoryVisualizerTests, StateTransition)
   vis.on_cleanup();
 }
 
+TEST(TrajectoryVisualizerTests, VisPathRepub)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  std::string name = "test";
+
+  // Set parameter to enable transformed path publishing
+  node->declare_parameter(
+    "my_name.Visualization.publish_transformed_path", rclcpp::ParameterValue(true));
+
+  auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
+
+  nav_msgs::msg::Path received_path;
+  nav_msgs::msg::Path pub_path;
+  pub_path.header.frame_id = "fake_frame";
+  pub_path.poses.resize(5);
+
+  auto my_sub = node->create_subscription<nav_msgs::msg::Path>(
+    "~/transformed_global_plan",
+    [&](const nav_msgs::msg::Path msg) {received_path = msg;});
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+
+  TrajectoryVisualizer vis;
+  vis.on_configure(node, "my_name", "map", parameters_handler.get());
+  vis.on_activate();
+  vis.visualize(pub_path);
+
+  executor.spin_some();
+  EXPECT_EQ(received_path.poses.size(), 5u);
+  EXPECT_EQ(received_path.header.frame_id, "fake_frame");
+}
+
+
 TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
+
+  // Set parameter to enable trajectory publishing
+  node->declare_parameter(
+    "my_name.Visualization.publish_trajectories_with_total_cost", rclcpp::ParameterValue(true));
+
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
 
   visualization_msgs::msg::MarkerArray received_msg;
@@ -56,7 +95,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   vis.on_activate();
   builtin_interfaces::msg::Time bogus_stamp;
   vis.add(optimal_trajectory, "Optimal Trajectory", bogus_stamp);
-  vis.visualize();
+  vis.visualize(nav_msgs::msg::Path{});
 
   executor.spin_some();
   EXPECT_EQ(received_msg.markers.size(), 0u);
@@ -64,7 +103,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   // Now populated with content, should publish
   optimal_trajectory = Eigen::ArrayXXf::Ones(20, 3);
   vis.add(optimal_trajectory, "Optimal Trajectory", bogus_stamp);
-  vis.visualize();
+  vis.visualize(nav_msgs::msg::Path{});
 
   executor.spin_some();
 
@@ -104,7 +143,16 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
+
+  // Set parameter to enable trajectory publishing
+  node->declare_parameter(
+    "my_name.Visualization.publish_trajectories_with_total_cost", rclcpp::ParameterValue(true));
+
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
+
+  builtin_interfaces::msg::Time cmd_stamp;
+  cmd_stamp.sec = 5;
+  cmd_stamp.nanosec = 10;
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
@@ -119,22 +167,32 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   candidate_trajectories.y = Eigen::ArrayXXf::Ones(200, 12);
   candidate_trajectories.yaws = Eigen::ArrayXXf::Ones(200, 12);
 
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Random(200);
+
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
-  vis.add(candidate_trajectories, "Candidate Trajectories");
-  vis.visualize();
+  vis.add(candidate_trajectories, costs, {}, cmd_stamp);
+  nav_msgs::msg::Path bogus_path;
+  vis.visualize(bogus_path);
 
   executor.spin_some();
-  // 40 * 4, for 5 trajectory steps + 3 point steps
-  EXPECT_EQ(received_msg.markers.size(), 160u);
+  // 200 trajectories / 5 trajectory_step = 40 LINE_STRIP markers
+  // Each LINE_STRIP contains 12 cols / 3 time_step = 4 points
+  EXPECT_EQ(received_msg.markers.size(), 40u);
 }
 
 TEST(TrajectoryVisualizerTests, VisOptimalPath)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
+
+  // Set parameter to enable optimal path publishing
+  node->declare_parameter(
+    "my_name.Visualization.publish_optimal_path", rclcpp::ParameterValue(true));
+
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
+
   builtin_interfaces::msg::Time cmd_stamp;
   cmd_stamp.sec = 5;
   cmd_stamp.nanosec = 10;
@@ -153,7 +211,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
   vis.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
-  vis.visualize();
+  vis.visualize(nav_msgs::msg::Path{});
 
   executor.spin_some();
   EXPECT_EQ(received_path.poses.size(), 0u);
@@ -166,7 +224,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
     optimal_trajectory(i, 2) = static_cast<float>(i);
   }
   vis.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
-  vis.visualize();
+  vis.visualize(nav_msgs::msg::Path{});
 
   executor.spin_some();
 
