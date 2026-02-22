@@ -32,7 +32,7 @@
 
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_msgs/msg/trajectory.hpp"
+#include "nav_msgs/msg/trajectory.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "rclcpp/rclcpp.hpp"
@@ -171,19 +171,20 @@ inline geometry_msgs::msg::TwistStamped toTwistStamped(
   return twist;
 }
 
-inline std::unique_ptr<nav2_msgs::msg::Trajectory> toTrajectoryMsg(
+inline std::unique_ptr<nav_msgs::msg::Trajectory> toTrajectoryMsg(
   const Eigen::ArrayXXf & trajectory,
   const models::ControlSequence & control_sequence,
   const double & model_dt,
   const std_msgs::msg::Header & header)
 {
-  auto trajectory_msg = std::make_unique<nav2_msgs::msg::Trajectory>();
+  auto trajectory_msg = std::make_unique<nav_msgs::msg::Trajectory>();
   trajectory_msg->header = header;
   trajectory_msg->points.resize(trajectory.rows());
 
   for (int i = 0; i < trajectory.rows(); ++i) {
     auto & curr_pt = trajectory_msg->points[i];
-    curr_pt.time_from_start = rclcpp::Duration::from_seconds(i * model_dt);
+    curr_pt.header.frame_id = header.frame_id;
+    curr_pt.header.stamp = header.stamp + rclcpp::Duration::from_seconds(i * model_dt);
     curr_pt.pose.position.x = trajectory(i, 0);
     curr_pt.pose.position.y = trajectory(i, 1);
     tf2::Quaternion quat;
