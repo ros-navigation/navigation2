@@ -27,6 +27,7 @@
 #include "tf2_ros/buffer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_util
 {
@@ -42,12 +43,10 @@ public:
   BaseFootprintPublisherListener(tf2::BufferCore & buffer, bool spin_thread, rclcpp::Node & node)
   : tf2_ros::TransformListener(buffer, spin_thread)
   {
-    node.declare_parameter(
-      "base_link_frame", rclcpp::ParameterValue(std::string("base_link")));
-    node.declare_parameter(
-      "base_footprint_frame", rclcpp::ParameterValue(std::string("base_footprint")));
-    base_link_frame_ = node.get_parameter("base_link_frame").as_string();
-    base_footprint_frame_ = node.get_parameter("base_footprint_frame").as_string();
+    base_link_frame_ = nav2::declare_or_get_parameter(
+      &node, "base_link_frame", std::string("base_link"));
+    base_footprint_frame_ = nav2::declare_or_get_parameter(
+      &node, "base_footprint_frame", std::string("base_footprint"));
     tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node);
   }
 

@@ -87,7 +87,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_INFO(
         get_logger(), "Created progress_checker : %s of type %s",
         params_->progress_checker_ids[i].c_str(), params_->progress_checker_types[i].c_str());
-      progress_checker->initialize(node, params_->progress_checker_ids[i]);
       progress_checkers_.insert({params_->progress_checker_ids[i], progress_checker});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(
@@ -116,7 +115,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_INFO(
         get_logger(), "Created goal checker : %s of type %s",
         params_->goal_checker_ids[i].c_str(), params_->goal_checker_types[i].c_str());
-      goal_checker->initialize(node, params_->goal_checker_ids[i], costmap_ros_);
       goal_checkers_.insert({params_->goal_checker_ids[i], goal_checker});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
@@ -142,8 +140,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_INFO(
         get_logger(), "Created path handler : %s of type %s",
         params_->path_handler_ids[i].c_str(), params_->path_handler_types[i].c_str());
-      path_handler->initialize(node, get_logger(), params_->path_handler_ids[i], costmap_ros_,
-        costmap_ros_->getTfBuffer());
       path_handlers_.insert({params_->path_handler_ids[i], path_handler});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
@@ -237,7 +233,20 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   tracking_feedback_pub_->on_activate();
   action_server_->activate();
   param_handler_->activate();
+
+  // activate goal checker, progress checker and path handler
   auto node = shared_from_this();
+  for (auto & pc : progress_checkers_) {
+    pc.second->initialize(node, pc.first);
+  }
+  for (auto & gc : goal_checkers_) {
+    gc.second->initialize(node, gc.first, costmap_ros_);
+  }
+  for (auto & ph : path_handlers_) {
+    ph.second->initialize(
+      node, get_logger(), ph.first, costmap_ros_,
+      costmap_ros_->getTfBuffer());
+  }
 
   // create bond connection
   createBond();
@@ -731,22 +740,39 @@ void ControllerServer::computeAndPublishVelocity()
       throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
     }
 
-
-    //
+    // Calculate closest point and position error from path
     const auto path_search_result = nav2_util::distance_from_path(
       current_path_, robot_pose_in_path_frame.pose, start_index_, params_->search_window);
+
+    // Calculate heading error
+    double heading_tracking_error = 0.0;
+    if (path_search_result.closest_segment_index <
+      current_path_.poses.size() - 1)
+    {
+      const auto & path_segment_start =
+        current_path_.poses[path_search_result.closest_segment_index].pose;
+      const auto & path_segment_end =
+        current_path_.poses[path_search_result.closest_segment_index + 1].pose;
+      double path_yaw = std::atan2(
+        path_segment_end.position.y - path_segment_start.position.y,
+        path_segment_end.position.x - path_segment_start.position.x);
+      double robot_yaw = tf2::getYaw(robot_pose_in_path_frame.pose.orientation);
+      heading_tracking_error = angles::shortest_angular_distance(
+        robot_yaw, path_yaw);
+    }
 
     // Create tracking error message
     auto tracking_feedback_msg = std::make_unique<nav2_msgs::msg::TrackingFeedback>();
     tracking_feedback_msg->header = pose.header;
-    tracking_feedback_msg->tracking_error = path_search_result.distance;
+    tracking_feedback_msg->position_tracking_error = path_search_result.distance;
+    tracking_feedback_msg->heading_tracking_error = heading_tracking_error;
     tracking_feedback_msg->current_path_index = path_search_result.closest_segment_index;
     tracking_feedback_msg->robot_pose = pose;
     tracking_feedback_msg->distance_to_goal = current_distance_to_goal;
     tracking_feedback_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
+    start_index_ = path_search_result.closest_segment_index;
     tracking_feedback_msg->remaining_path_length =
       nav2_util::geometry_utils::calculate_path_length(current_path_, start_index_);
-    start_index_ = path_search_result.closest_segment_index;
 
     // Update current tracking error and publish
     current_tracking_feedback = *tracking_feedback_msg;

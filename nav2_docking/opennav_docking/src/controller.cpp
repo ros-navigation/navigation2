@@ -21,6 +21,8 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "tf2/utils.hpp"
 
+using rcl_interfaces::msg::ParameterType;
+
 namespace opennav_docking
 {
 
@@ -32,76 +34,51 @@ Controller::Controller(
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.k_phi", rclcpp::ParameterValue(3.0));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.k_delta", rclcpp::ParameterValue(2.0));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.beta", rclcpp::ParameterValue(0.4));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.lambda", rclcpp::ParameterValue(2.0));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.v_linear_min", rclcpp::ParameterValue(0.1));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.v_linear_max", rclcpp::ParameterValue(0.25));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.v_angular_max", rclcpp::ParameterValue(0.75));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.rotate_to_heading_max_angular_accel", rclcpp::ParameterValue(3.2));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.use_collision_detection", rclcpp::ParameterValue(true));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.costmap_topic",
-    rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.footprint_topic", rclcpp::ParameterValue(
-      std::string("local_costmap/published_footprint")));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.transform_tolerance", rclcpp::ParameterValue(0.1));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.projection_time", rclcpp::ParameterValue(5.0));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.simulation_time_step", rclcpp::ParameterValue(0.1));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
+  std::string costmap_topic, footprint_topic;
+  k_phi_ = node->declare_or_get_parameter("controller.k_phi", 3.0);
+  k_delta_ = node->declare_or_get_parameter("controller.k_delta", 2.0);
+  beta_ = node->declare_or_get_parameter("controller.beta", 0.4);
+  lambda_ = node->declare_or_get_parameter("controller.lambda", 2.0);
+  v_linear_min_ = node->declare_or_get_parameter("controller.v_linear_min", 0.1);
+  v_linear_max_ = node->declare_or_get_parameter("controller.v_linear_max", 0.25);
+  v_angular_max_ = node->declare_or_get_parameter("controller.v_angular_max", 0.75);
+  slowdown_radius_ = node->declare_or_get_parameter("controller.slowdown_radius", 0.25);
+  rotate_to_heading_angular_vel_ = node->declare_or_get_parameter(
+    "controller.rotate_to_heading_angular_vel", 1.0);
+  rotate_to_heading_max_angular_accel_ = node->declare_or_get_parameter(
+    "controller.rotate_to_heading_max_angular_accel", 3.2);
+  use_collision_detection_ = node->declare_or_get_parameter(
+    "controller.use_collision_detection", true);
+  costmap_topic = node->declare_or_get_parameter("controller.costmap_topic",
+    std::string("local_costmap/costmap_raw"));
+  footprint_topic = node->declare_or_get_parameter("controller.footprint_topic",
+    std::string("local_costmap/published_footprint"));
+  transform_tolerance_ = node->declare_or_get_parameter(
+    "controller.transform_tolerance", 0.1);
+  projection_time_ = node->declare_or_get_parameter(
+    "controller.projection_time", 5.0);
+  simulation_time_step_ = node->declare_or_get_parameter(
+    "controller.simulation_time_step", 0.1);
+  dock_collision_threshold_ = node->declare_or_get_parameter(
+    "controller.dock_collision_threshold", 0.3);
 
-  node->get_parameter("controller.k_phi", k_phi_);
-  node->get_parameter("controller.k_delta", k_delta_);
-  node->get_parameter("controller.beta", beta_);
-  node->get_parameter("controller.lambda", lambda_);
-  node->get_parameter("controller.v_linear_min", v_linear_min_);
-  node->get_parameter("controller.v_linear_max", v_linear_max_);
-  node->get_parameter("controller.v_angular_max", v_angular_max_);
-  node->get_parameter("controller.slowdown_radius", slowdown_radius_);
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
     k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, v_linear_min_, v_linear_max_,
     v_angular_max_);
 
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&Controller::dynamicParametersCallback, this, std::placeholders::_1));
-
-  node->get_parameter("controller.use_collision_detection", use_collision_detection_);
-  node->get_parameter("controller.projection_time", projection_time_);
-  node->get_parameter("controller.simulation_time_step", simulation_time_step_);
-  node->get_parameter("controller.transform_tolerance", transform_tolerance_);
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &Controller::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &Controller::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 
   if (use_collision_detection_) {
-    std::string costmap_topic, footprint_topic;
-    node->get_parameter("controller.costmap_topic", costmap_topic);
-    node->get_parameter("controller.footprint_topic", footprint_topic);
-    node->get_parameter("controller.dock_collision_threshold", dock_collision_threshold_);
     configureCollisionChecker(node, costmap_topic, footprint_topic, transform_tolerance_);
   }
-
-  node->get_parameter("controller.rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
-  node->get_parameter(
-    "controller.rotate_to_heading_max_angular_accel",
-    rotate_to_heading_max_angular_accel_);
 
   trajectory_pub_ =
     node->create_publisher<nav_msgs::msg::Path>("docking_trajectory");
@@ -234,12 +211,35 @@ void Controller::configureCollisionChecker(
     *costmap_sub_, *footprint_sub_, node->get_name());
 }
 
-rcl_interfaces::msg::SetParametersResult
-Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult Controller::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find("controller.") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+Controller::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
-  rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
@@ -281,9 +281,6 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
       control_law_->setSpeedLimit(v_linear_min_, v_linear_max_, v_angular_max_);
     }
   }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace opennav_docking

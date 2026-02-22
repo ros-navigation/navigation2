@@ -22,6 +22,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/a_star.hpp"
@@ -34,7 +35,10 @@ class LatticeWrap : public nav2_smac_planner::SmacPlannerLattice
 public:
   void callDynamicParams(std::vector<rclcpp::Parameter> parameters)
   {
-    dynamicParametersCallback(parameters);
+    auto result = validateParameterUpdatesCallback(parameters);
+    if (result.successful) {
+      updateParametersCallback(parameters);
+    }
   }
 
   int getCoarseSearchResolution()
@@ -50,6 +54,11 @@ public:
   int getMaxOnApproachIterations()
   {
     return _max_on_approach_iterations;
+  }
+
+  double getMaxPlanningTime()
+  {
+    return _max_planning_time;
   }
 
   nav2_smac_planner::GoalHeadingMode getGoalHeadingMode()
@@ -247,9 +256,18 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   // test edge cases Goal heading mode, make sure we don't reset the goal when invalid
   std::vector<rclcpp::Parameter> parameters;
   parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
+
   parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
+
+  // test invalid max planning time
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.max_planning_time", -1.0));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getMaxPlanningTime(), 10.0);
 
   // test coarse resolution edge cases.
   // Negative coarse search resolution
@@ -273,10 +291,10 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   parameters.push_back(
     rclcpp::Parameter(
       "test.lattice_filepath",
-      ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
+      nav2::get_package_share_directory("nav2_smac_planner") +
       "/sample_primitives/test/output.json"));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
-  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 4);
 
 
   // So instead, let's call manually on a change

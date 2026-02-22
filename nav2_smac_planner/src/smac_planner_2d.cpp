@@ -61,42 +61,22 @@ void SmacPlanner2D::configure(
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlanner2D", name.c_str());
 
   // General planner params
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".tolerance", rclcpp::ParameterValue(0.125));
-  _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
-  node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".cost_travel_multiplier", rclcpp::ParameterValue(1.0));
-  node->get_parameter(name + ".cost_travel_multiplier", _search_info.cost_penalty);
+  _tolerance = static_cast<float>(node->declare_or_get_parameter(name + ".tolerance", 0.125));
+  _downsample_costmap = node->declare_or_get_parameter(name + ".downsample_costmap", false);
+  _downsampling_factor = node->declare_or_get_parameter(name + ".downsampling_factor", 1);
+  _search_info.cost_penalty =
+    node->declare_or_get_parameter(name + ".cost_travel_multiplier", 1.0);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".allow_unknown", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".allow_unknown", _allow_unknown);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
-  node->get_parameter(name + ".max_iterations", _max_iterations);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
-  node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".terminal_checking_interval", rclcpp::ParameterValue(5000));
-  node->get_parameter(name + ".terminal_checking_interval", _terminal_checking_interval);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".use_final_approach_orientation", _use_final_approach_orientation);
+  _allow_unknown = node->declare_or_get_parameter(name + ".allow_unknown", true);
+  _max_iterations = node->declare_or_get_parameter(name + ".max_iterations", 1000000);
+  _max_on_approach_iterations =
+    node->declare_or_get_parameter(name + ".max_on_approach_iterations", 1000);
+  _terminal_checking_interval =
+    node->declare_or_get_parameter(name + ".terminal_checking_interval", 5000);
+  _use_final_approach_orientation =
+    node->declare_or_get_parameter(name + ".use_final_approach_orientation", false);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".max_planning_time", rclcpp::ParameterValue(2.0));
-  node->get_parameter(name + ".max_planning_time", _max_planning_time);
-  // Note that we need to declare it here to prevent the parameter from being declared in the
-  // dynamic reconfigure callback
-  nav2::declare_parameter_if_not_declared(
-    node, "introspection_mode", rclcpp::ParameterValue("disabled"));
+  _max_planning_time = node->declare_or_get_parameter(name + ".max_planning_time", 2.0);
 
   _motion_model = MotionModel::TWOD;
 
@@ -166,8 +146,14 @@ void SmacPlanner2D::activate()
   }
   auto node = _node.lock();
   // Add callback for dynamic parameters
-  _dyn_params_handler = node->add_on_set_parameters_callback(
-    std::bind(&SmacPlanner2D::dynamicParametersCallback, this, _1));
+  _post_set_params_handler = node->add_post_set_parameters_callback(
+    std::bind(
+      &SmacPlanner2D::updateParametersCallback,
+      this, std::placeholders::_1));
+  _on_set_params_handler = node->add_on_set_parameters_callback(
+    std::bind(
+      &SmacPlanner2D::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 }
 
 void SmacPlanner2D::deactivate()
@@ -181,10 +167,14 @@ void SmacPlanner2D::deactivate()
   }
   // shutdown dyn_param_handler
   auto node = _node.lock();
-  if (_dyn_params_handler && node) {
-    node->remove_on_set_parameters_callback(_dyn_params_handler.get());
+  if (_post_set_params_handler && node) {
+    node->remove_post_set_parameters_callback(_post_set_params_handler.get());
   }
-  _dyn_params_handler.reset();
+  _post_set_params_handler.reset();
+  if (_on_set_params_handler && node) {
+    node->remove_on_set_parameters_callback(_on_set_params_handler.get());
+  }
+  _on_set_params_handler.reset();
 }
 
 void SmacPlanner2D::cleanup()
@@ -352,16 +342,50 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   return plan;
 }
 
-rcl_interfaces::msg::SetParametersResult
-SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult SmacPlanner2D::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(_name + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        _logger, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (parameter.as_int() <= 0 &&
+        (param_name != _name + ".max_on_approach_iterations" &&
+        param_name != _name + ".max_iterations"))
+      {
+        RCLCPP_WARN(
+        _logger, "The value of parameter '%s' is incorrectly set to %ld, "
+        "it should be >0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_int());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+SmacPlanner2D::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
+{
   std::lock_guard<std::mutex> lock_reinit(_mutex);
 
   bool reinit_a_star = false;
   bool reinit_downsampler = false;
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(_name + ".") != 0) {
@@ -443,8 +467,6 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
       }
     }
   }
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_smac_planner

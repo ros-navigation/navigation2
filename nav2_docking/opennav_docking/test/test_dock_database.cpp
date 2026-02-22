@@ -17,6 +17,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "opennav_docking/dock_database.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 // These sets of tests are admittedly incomplete without a dummy docking plugin.
 // Integration tests handle coverage more fully than the database lookups and population.
@@ -30,8 +31,8 @@ namespace opennav_docking
 class DbShim : public opennav_docking::DockDatabase
 {
 public:
-  DbShim()
-  : DockDatabase()
+  explicit DbShim(std::mutex & mutex)
+  : DockDatabase(mutex)
   {}
 
   void populateOne()
@@ -54,7 +55,8 @@ public:
 TEST(DatabaseTests, ObjectLifecycle)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  opennav_docking::DockDatabase db;
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
   db.activate();
   db.deactivate();
@@ -68,7 +70,8 @@ TEST(DatabaseTests, initializeBogusPlugins)
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::vector<std::string> plugins{"dockv1", "dockv2"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
-  opennav_docking::DockDatabase db;
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
 
   plugins.clear();
@@ -79,7 +82,8 @@ TEST(DatabaseTests, initializeBogusPlugins)
 TEST(DatabaseTests, findTests)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  DbShim db;
+  std::mutex mutex;
+  DbShim db(mutex);
   db.populateOne();
 
   db.findDockPlugin("");
@@ -104,10 +108,10 @@ TEST(DatabaseTests, getDockInstancesBadConversionFile)
   node->declare_parameter(
     "dock_database",
     rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("opennav_docking") +
+      nav2::get_package_share_directory("opennav_docking") +
       "/dock_files/test_dock_bad_conversion_file.yaml"));
-
-  opennav_docking::DockDatabase db;
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
 
   EXPECT_EQ(db.plugin_size(), 1u);
@@ -126,7 +130,8 @@ TEST(DatabaseTests, getDockInstancesWrongPath)
   // Set a wrong path
   node->declare_parameter("dock_database", rclcpp::ParameterValue("file_does_not_exist.yaml"));
 
-  opennav_docking::DockDatabase db;
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
 
   EXPECT_EQ(db.plugin_size(), 1u);
@@ -141,7 +146,8 @@ TEST(DatabaseTests, reloadDbService)
   node->declare_parameter(
     "dockv1.plugin",
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
-  opennav_docking::DockDatabase db;
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
 
   // Call service with a filepath
@@ -149,7 +155,7 @@ TEST(DatabaseTests, reloadDbService)
     node->create_client<nav2_msgs::srv::ReloadDockDatabase>("test/reload_database");
 
   auto request = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
-  request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
+  request->filepath = nav2::get_package_share_directory("opennav_docking") +
     "/dock_files/test_dock_file.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));
   auto result = client->async_call(request);
@@ -160,7 +166,7 @@ TEST(DatabaseTests, reloadDbService)
 
   // Try again with a bogus file
   auto request2 = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
-  request2->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
+  request2->filepath = nav2::get_package_share_directory("opennav_docking") +
     "/file_does_not_exist.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));
   auto result2 = client->async_call(request2);
@@ -180,8 +186,8 @@ TEST(DatabaseTests, reloadDbMutexLocked)
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
 
   // This mutex is locked when dock / undock is called
-  auto mutex = std::make_shared<std::mutex>();
-  mutex->lock();
+  std::mutex mutex;
+  mutex.lock();
   opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
 
@@ -190,7 +196,7 @@ TEST(DatabaseTests, reloadDbMutexLocked)
     node->create_client<nav2_msgs::srv::ReloadDockDatabase>("test/reload_database");
 
   auto request = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
-  request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
+  request->filepath = nav2::get_package_share_directory("opennav_docking") +
     "/dock_files/test_dock_file.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));
   auto result = client->async_call(request);
@@ -199,7 +205,7 @@ TEST(DatabaseTests, reloadDbMutexLocked)
     rclcpp::FutureReturnCode::SUCCESS);
   EXPECT_FALSE(result.get()->success);
 
-  mutex->unlock();
+  mutex.unlock();
 }
 
 }  // namespace opennav_docking

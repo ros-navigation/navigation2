@@ -87,7 +87,6 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) override;
 
-  std::string plugin_name_;
   const std::vector<std::string> default_progress_checker_ids_{"progress_checker"};
   const std::vector<std::string> default_progress_checker_types_{
     "nav2_controller::SimpleProgressChecker"};

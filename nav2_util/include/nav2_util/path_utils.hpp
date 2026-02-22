@@ -100,6 +100,16 @@ unsigned int removePosesAfterFirstConstraint(
   bool enforce_path_inversion,
   float rotation_threshold);
 
+/**
+ * @brief Checks if the global path is updated
+ * @param new_path new path to the goal
+ * @param old_path current path to the goal
+ * @return whether the path is updated for the current goal
+ */
+bool isPathUpdated(
+  nav_msgs::msg::Path & new_path,
+  nav_msgs::msg::Path & old_path);
+
 }  // namespace nav2_util
 
 #endif  // NAV2_UTIL__PATH_UTILS_HPP_

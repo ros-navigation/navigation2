@@ -21,6 +21,7 @@ nav2_package()
 set(library_name nav2_navfn_planner)
 
 add_library(${library_name} SHARED
+  src/parameter_handler.cpp
   src/navfn_planner.cpp
   src/navfn.cpp
 )

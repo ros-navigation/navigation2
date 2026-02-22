@@ -28,6 +28,7 @@
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
+#include "nav2_navfn_planner/parameter_handler.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -210,28 +211,11 @@ protected:
   // The global frame of the costmap
   std::string global_frame_, name_;
 
-  // Whether or not the planner should be allowed to plan through unknown space
-  bool allow_unknown_, use_final_approach_orientation_;
-
-  // If the goal is obstructed, the tolerance specifies how many meters the planner
-  // can relax the constraint in x and y before failing
-  double tolerance_;
-
-  // Whether to use the astar planner or default dijkstras
-  bool use_astar_;
-
   // parent node weak ptr
   nav2::LifecycleNode::WeakPtr node_;
 
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param parameters list of changed parameters
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  Parameters * params_;
+  std::unique_ptr<nav2_navfn_planner::ParameterHandler> param_handler_;
 };
 
 }  // namespace nav2_navfn_planner

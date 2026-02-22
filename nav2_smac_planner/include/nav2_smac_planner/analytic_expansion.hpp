@@ -43,6 +43,7 @@ public:
   typedef typename NodeT::Coordinates Coordinates;
   typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
   typedef typename NodeT::CoordinateVector CoordinateVector;
+  using NodeContext = typename NodeT::NodeContext;
 
   /**
    * @struct nav2_smac_planner::AnalyticExpansion::AnalyticExpansionNodes
@@ -107,6 +108,12 @@ public:
    * @param collision_checker Collision checker to use
    */
   void setCollisionChecker(GridCollisionChecker * collision_checker);
+
+  /**
+   * @brief Sets the shared context to use
+   * @param ctx Shared context pointer
+   */
+  void setContext(NodeContext * ctx);
 
   /**
    * @brief Attempt an analytic path completion
@@ -187,6 +194,7 @@ protected:
   unsigned int _dim_3_size;
   GridCollisionChecker * _collision_checker;
   std::list<std::unique_ptr<NodeT>> _detached_nodes;
+  NodeContext * _ctx = nullptr;
 };
 
 }  // namespace nav2_smac_planner

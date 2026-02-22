@@ -1,0 +1,204 @@
+#! /usr/bin/env python3
+# Copyright 2025 Arjo Chakravarty
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+This is a Python3 API for costmap 2d messages from the stack.
+
+It provides the basic conversion, get/set,
+and handling semantics found in the costmap 2d C++ API.
+"""
+
+from typing import Optional
+
+from builtin_interfaces.msg import Time
+from nav_msgs.msg import OccupancyGrid
+import numpy as np
+from numpy.typing import NDArray
+
+
+class PyOccupancyGrid:
+    """
+    PyOccupancyGrid.
+
+    Occupancy grid Python3 API for OccupancyGrids to populate from published messages
+    """
+
+    def __init__(self, occupancy_map: OccupancyGrid) -> None:
+        """
+        Initialize costmap2D.
+
+        Args
+        ----
+            occupancy_map (OccupancyGrid): 2D OccupancyGrid Map
+
+        Returns
+        -------
+            None
+
+        """
+        self.size_x: int = occupancy_map.info.width
+        self.size_y: int = occupancy_map.info.height
+        self.resolution: float = occupancy_map.info.resolution
+        self.origin_x: float = occupancy_map.info.origin.position.x
+        self.origin_y: float = occupancy_map.info.origin.position.y
+        self.global_frame_id: str = occupancy_map.header.frame_id
+        self.costmap_timestamp: Time = occupancy_map.header.stamp
+        # Extract costmap
+        self.costmap: NDArray[np.int8] = np.array(occupancy_map.data, dtype=np.int8)
+
+    def getSizeInCellsX(self) -> int:
+        """Get map width in cells."""
+        return self.size_x
+
+    def getSizeInCellsY(self) -> int:
+        """Get map height in cells."""
+        return self.size_y
+
+    def getSizeInMetersX(self) -> float:
+        """Get x axis map size in meters."""
+        return (self.size_x - 1 + 0.5) * self.resolution
+
+    def getSizeInMetersY(self) -> float:
+        """Get y axis map size in meters."""
+        return (self.size_y - 1 + 0.5) * self.resolution
+
+    def getOriginX(self) -> float:
+        """Get the origin x axis of the map [m]."""
+        return self.origin_x
+
+    def getOriginY(self) -> float:
+        """Get the origin y axis of the map [m]."""
+        return self.origin_y
+
+    def getResolution(self) -> float:
+        """Get map resolution [m/cell]."""
+        return self.resolution
+
+    def getGlobalFrameID(self) -> str:
+        """Get global frame_id."""
+        return self.global_frame_id
+
+    def getCostmapTimestamp(self) -> Time:
+        """Get costmap timestamp."""
+        return self.costmap_timestamp
+
+    def getCostXY(self, mx: int, my: int) -> np.int8:
+        """
+        Get the cost of a cell in the costmap using map coordinate XY.
+
+        Args
+        ----
+            mx (int): map coordinate X to get cost
+            my (int): map coordinate Y to get cost
+
+        Returns
+        -------
+            np.int8: cost of a cell
+
+        """
+        return np.int8(self.costmap[self.getIndex(mx, my)])
+
+    def getCostIdx(self, index: int) -> np.int8:
+        """
+        Get the cost of a cell in the costmap using Index.
+
+        Args
+        ----
+            index (int): index of cell to get cost
+
+        Returns
+        -------
+            np.int8: cost of a cell
+
+        """
+        return np.int8(self.costmap[index])
+
+    def setCost(self, mx: int, my: int, cost: np.int8) -> None:
+        """
+        Set the cost of a cell in the costmap using map coordinate XY.
+
+        Args
+        ----
+            mx (int): map coordinate X to get cost
+            my (int): map coordinate Y to get cost
+            cost (np.int8): The cost to set the cell
+
+        Returns
+        -------
+            None
+
+        """
+        self.costmap[self.getIndex(mx, my)] = cost
+
+    def mapToWorld(self, mx: int, my: int) -> tuple[float, float]:
+        """
+        Get the world coordinate XY using map coordinate XY.
+
+        Args
+        ----
+            mx (int): map coordinate X to get world coordinate
+            my (int): map coordinate Y to get world coordinate
+
+        Returns
+        -------
+            tuple of float: wx, wy
+            wx (float) [m]: world coordinate X
+            wy (float) [m]: world coordinate Y
+
+        """
+        wx = self.origin_x + (mx + 0.5) * self.resolution
+        wy = self.origin_y + (my + 0.5) * self.resolution
+        return (wx, wy)
+
+    def worldToMapValidated(self, wx: float, wy: float) -> tuple[Optional[int], Optional[int]]:
+        """
+        Get the map coordinate XY using world coordinate XY.
+
+        Args
+        ----
+            wx (float) [m]: world coordinate X to get map coordinate
+            wy (float) [m]: world coordinate Y to get map coordinate
+
+        Returns
+        -------
+            (None, None): if coordinates are invalid
+            tuple of int: mx, my (if coordinates are valid)
+            mx (int): map coordinate X
+            my (int): map coordinate Y
+
+        """
+        if wx < self.origin_x or wy < self.origin_y:
+            return (None, None)
+        mx = int((wx - self.origin_x) // self.resolution)
+        my = int((wy - self.origin_y) // self.resolution)
+        if mx < self.size_x and my < self.size_y:
+            return (mx, my)
+        return (None, None)
+
+    def getIndex(self, mx: int, my: int) -> int:
+        """
+        Get the index of the cell using map coordinate XY.
+
+        Args
+        ----
+            mx (int): map coordinate X to get Index
+            my (int): map coordinate Y to get Index
+
+        Returns
+        -------
+            int: The index of the cell
+
+        """
+        return my * self.size_x + mx

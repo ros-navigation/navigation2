@@ -38,37 +38,20 @@ public:
   typedef Node2D * NodePtr;
   typedef std::unique_ptr<std::vector<Node2D>> Graph;
   typedef std::vector<NodePtr> NodeVector;
-
-  /**
-   * @class nav2_smac_planner::Node2D::Coordinates
-   * @brief Node2D implementation of coordinate structure
-   */
-  struct Coordinates
-  {
-    Coordinates() {}
-    Coordinates(const float & x_in, const float & y_in)
-    : x(x_in), y(y_in)
-    {}
-
-    inline bool operator==(const Coordinates & rhs) const
-    {
-      return this->x == rhs.x && this->y == rhs.y;
-    }
-
-    inline bool operator!=(const Coordinates & rhs) const
-    {
-      return !(*this == rhs);
-    }
-
-    float x, y;
-  };
+  using Coordinates = nav2_smac_planner::Coordinates2D;
   typedef std::vector<Coordinates> CoordinateVector;
+
+  struct NodeContext
+  {
+    float cost_travel_multiplier;
+    std::vector<int> neighbors_grid_offsets;
+  };
 
   /**
    * @brief A constructor for nav2_smac_planner::Node2D
    * @param index The index of this node for self-reference
    */
-  explicit Node2D(const uint64_t index);
+  explicit Node2D(const uint64_t index, NodeContext * ctx);
 
   /**
    * @brief A destructor for nav2_smac_planner::Node2D
@@ -229,9 +212,9 @@ public:
    * @param Index Index of point
    * @return coordinates of point
    */
-  static inline Coordinates getCoords(const uint64_t & index)
+  inline Coordinates getCoords(const uint64_t & index)
   {
-    const unsigned int & size_x = _neighbors_grid_offsets[3];
+    const unsigned int & size_x = _ctx->neighbors_grid_offsets[3];
     return Coordinates(index % size_x, index / size_x);
   }
 
@@ -241,7 +224,7 @@ public:
    * @param node Node index of new
    * @return Heuristic cost between the nodes
    */
-  static float getHeuristicCost(
+  float getHeuristicCost(
     const Coordinates & node_coords,
     const CoordinateVector & goals_coords);
 
@@ -255,6 +238,7 @@ public:
    * @param search_info Search parameters, unused by 2D node
    */
   static void initMotionModel(
+    NodeContext * ctx,
     const MotionModel & motion_model,
     unsigned int & size_x,
     unsigned int & size_y,
@@ -284,8 +268,6 @@ public:
 
   Node2D * parent;
   Coordinates pose;
-  static float cost_travel_multiplier;
-  static std::vector<int> _neighbors_grid_offsets;
 
 private:
   float _cell_cost;
@@ -294,6 +276,7 @@ private:
   bool _was_visited;
   bool _is_queued;
   bool _in_collision{false};
+  NodeContext * _ctx = nullptr;
 };
 
 }  // namespace nav2_smac_planner

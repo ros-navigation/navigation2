@@ -45,7 +45,6 @@ nav2_add_gtest(test_savitzky_golay_smoother
 )
 target_link_libraries(test_savitzky_golay_smoother
   savitzky_golay_smoother
-  ament_index_cpp::ament_index_cpp
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core

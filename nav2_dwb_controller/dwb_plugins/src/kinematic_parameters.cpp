@@ -38,10 +38,8 @@
 #include <string>
 #include <vector>
 
-#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
-using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
@@ -69,49 +67,36 @@ void KinematicsHandler::initialize(
   plugin_name_ = plugin_name;
   logger_ = nh->get_logger();
 
-  declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".max_vel_theta",
-    rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".min_speed_xy",
-    rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".max_speed_xy",
-    rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".min_speed_theta",
-    rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".acc_lim_theta",
-    rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".decel_lim_theta",
-    rclcpp::ParameterValue(0.0));
-
   KinematicParameters kinematics;
 
-  nh->get_parameter(plugin_name + ".min_vel_x", kinematics.min_vel_x_);
-  nh->get_parameter(plugin_name + ".min_vel_y", kinematics.min_vel_y_);
-  nh->get_parameter(plugin_name + ".max_vel_x", kinematics.max_vel_x_);
-  nh->get_parameter(plugin_name + ".max_vel_y", kinematics.max_vel_y_);
-  nh->get_parameter(plugin_name + ".max_vel_theta", kinematics.max_vel_theta_);
-  nh->get_parameter(plugin_name + ".min_speed_xy", kinematics.min_speed_xy_);
-  nh->get_parameter(plugin_name + ".max_speed_xy", kinematics.max_speed_xy_);
-  nh->get_parameter(plugin_name + ".min_speed_theta", kinematics.min_speed_theta_);
-  nh->get_parameter(plugin_name + ".acc_lim_x", kinematics.acc_lim_x_);
-  nh->get_parameter(plugin_name + ".acc_lim_y", kinematics.acc_lim_y_);
-  nh->get_parameter(plugin_name + ".acc_lim_theta", kinematics.acc_lim_theta_);
-  nh->get_parameter(plugin_name + ".decel_lim_x", kinematics.decel_lim_x_);
-  nh->get_parameter(plugin_name + ".decel_lim_y", kinematics.decel_lim_y_);
-  nh->get_parameter(plugin_name + ".decel_lim_theta", kinematics.decel_lim_theta_);
+  kinematics.min_vel_x_ = nh->declare_or_get_parameter(
+    plugin_name + ".min_vel_x", 0.0);
+  kinematics.min_vel_y_ = nh->declare_or_get_parameter(
+    plugin_name + ".min_vel_y", 0.0);
+  kinematics.max_vel_x_ = nh->declare_or_get_parameter(
+    plugin_name + ".max_vel_x", 0.0);
+  kinematics.max_vel_y_ = nh->declare_or_get_parameter(
+    plugin_name + ".max_vel_y", 0.0);
+  kinematics.max_vel_theta_ = nh->declare_or_get_parameter(
+    plugin_name + ".max_vel_theta", 0.0);
+  kinematics.min_speed_xy_ = nh->declare_or_get_parameter(
+    plugin_name + ".min_speed_xy", 0.0);
+  kinematics.max_speed_xy_ = nh->declare_or_get_parameter(
+    plugin_name + ".max_speed_xy", 0.0);
+  kinematics.min_speed_theta_ = nh->declare_or_get_parameter(
+    plugin_name + ".min_speed_theta", 0.0);
+  kinematics.acc_lim_x_ = nh->declare_or_get_parameter(
+    plugin_name + ".acc_lim_x", 0.0);
+  kinematics.acc_lim_y_ = nh->declare_or_get_parameter(
+    plugin_name + ".acc_lim_y", 0.0);
+  kinematics.acc_lim_theta_ = nh->declare_or_get_parameter(
+    plugin_name + ".acc_lim_theta", 0.0);
+  kinematics.decel_lim_x_ = nh->declare_or_get_parameter(
+    plugin_name + ".decel_lim_x", 0.0);
+  kinematics.decel_lim_y_ = nh->declare_or_get_parameter(
+    plugin_name + ".decel_lim_y", 0.0);
+  kinematics.decel_lim_theta_ = nh->declare_or_get_parameter(
+    plugin_name + ".decel_lim_theta", 0.0);
 
   kinematics.base_max_vel_x_ = kinematics.max_vel_x_;
   kinematics.base_max_vel_y_ = kinematics.max_vel_y_;

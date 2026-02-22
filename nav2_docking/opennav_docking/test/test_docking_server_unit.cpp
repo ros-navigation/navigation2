@@ -42,7 +42,7 @@ public:
 
   std::optional<bool> getDockBackward()
   {
-    return dock_backwards_;
+    return params_->dock_backwards;
   }
 };
 
@@ -89,11 +89,11 @@ TEST(DockingServerTests, testErrorExceptions)
     "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
 
-  node->on_configure(rclcpp_lifecycle::State());
-  node->on_activate(rclcpp_lifecycle::State());
-
   node->declare_parameter("exception_to_throw", rclcpp::ParameterValue(""));
   node->declare_parameter("dock_action_called", rclcpp::ParameterValue(false));
+
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
 
   // Error codes docking
   std::vector<std::string> error_ids{
@@ -270,6 +270,17 @@ TEST(DockingServerTests, testDynamicParams)
   EXPECT_EQ(node->get_parameter("max_retries").as_int(), 7);
   EXPECT_EQ(node->get_parameter("rotation_angular_tolerance").as_double(), 0.42);
 
+  // Test setting invalid value
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("controller_frequency", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("controller_frequency").as_double(), 0.2);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("initial_perception_timeout", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("initial_perception_timeout").as_double(), 1.0);
+
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
@@ -388,7 +399,7 @@ TEST(DockingServerTests, StopDetectionOnSuccess)
   node->declare_parameter("dock_action_called", true);
   // Note: isCharging() in TestFailureDock returns false, so it will wait for charge
   // which will succeed because the plugin is a charger. We'll set the timeout low.
-  node->set_parameter(rclcpp::Parameter("wait_charge_timeout", 0.1));
+  node->declare_parameter("wait_charge_timeout", rclcpp::ParameterValue(0.1));
 
   node->on_configure(rclcpp_lifecycle::State());
   node->on_activate(rclcpp_lifecycle::State());

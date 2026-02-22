@@ -23,6 +23,7 @@ set(executable_name opennav_following)
 set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
+  src/parameter_handler.cpp
   src/following_server.cpp
 )
 target_include_directories(${library_name}
@@ -80,7 +81,6 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
-  find_package(ament_index_cpp REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
   ament_find_gtest()

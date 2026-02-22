@@ -164,7 +164,10 @@ def generate_launch_description() -> LaunchDescription:
                 name='lifecycle_manager_localization',
                 output='screen',
                 arguments=['--ros-args', '--log-level', log_level],
-                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
+                parameters=[
+                    configured_params,
+                    {'autostart': autostart}, {'node_names': lifecycle_nodes}
+                ],
             ),
         ],
     )
@@ -209,7 +212,7 @@ def generate_launch_description() -> LaunchDescription:
                             {'yaml_filename': map_yaml_file},
                         ],
                         remappings=remappings,
-                        extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}]
+                        extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
                     ),
                 ],
             ),
@@ -229,6 +232,7 @@ def generate_launch_description() -> LaunchDescription:
                         plugin='nav2_lifecycle_manager::LifecycleManager',
                         name='lifecycle_manager_localization',
                         parameters=[
+                            configured_params,
                             {'autostart': autostart, 'node_names': lifecycle_nodes}
                         ],
                         extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],

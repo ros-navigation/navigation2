@@ -23,66 +23,58 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 
-class PlannerShim : public nav2_planner::PlannerServer
+TEST(WPTest, test_parameter_exceptions)
 {
-public:
-  PlannerShim()
-  : nav2_planner::PlannerServer(rclcpp::NodeOptions())
-  {
-  }
-
-  // Since we cannot call configure/activate due to costmaps
-  // requiring TF
-  void setDynamicCallback()
-  {
-    auto node = shared_from_this();
-    // Add callback for dynamic parameters
-    dyn_params_handler_ = node->add_on_set_parameters_callback(
-      std::bind(&PlannerShim::dynamicParamsShim, this, std::placeholders::_1));
-  }
-
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParamsShim(std::vector<rclcpp::Parameter> parameters)
-  {
-    rcl_interfaces::msg::SetParametersResult result;
-    result.successful = true;
-    dynamicParametersCallback(parameters);
-    return result;
-  }
-};
+  std::string nodeName = "test_node";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  std::vector<std::string> invalid_ids = {"invalid_planner"};
+  node->declare_parameter("planner_plugins", invalid_ids);
+  node->declare_parameter("invalid_planner.plugin", rclcpp::PARAMETER_STRING);
+  EXPECT_THROW(std::make_unique<nav2_planner::ParameterHandler>(node, node->get_logger()),
+    std::runtime_error);
+}
 
 TEST(WPTest, test_dynamic_parameters)
 {
-  auto planner = std::make_shared<PlannerShim>();
-  planner->setDynamicCallback();
+  std::string nodeName = "test_node";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  auto param_handler_ = std::make_unique<nav2_planner::ParameterHandler>(
+    node, node->get_logger());
+  param_handler_->activate();
+  auto params_ = param_handler_->getParams();
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
-    planner->get_node_base_interface(), planner->get_node_topics_interface(),
-    planner->get_node_graph_interface(),
-    planner->get_node_services_interface());
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("expected_planner_frequency", 100.0),
       rclcpp::Parameter("allow_partial_planning", true)});
 
   rclcpp::spin_until_future_complete(
-    planner->get_node_base_interface(),
+    node->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(planner->get_parameter("expected_planner_frequency").as_double(), 100.0);
-  EXPECT_TRUE(planner->get_parameter("allow_partial_planning").as_bool());
+  EXPECT_EQ(params_->max_planner_duration, 0.01);
+  EXPECT_TRUE(params_->partial_plan_allowed);
 
-  // test edge case for = 0
+  // test invalid value, should be rejected
   results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("expected_planner_frequency", -1.0),
-      rclcpp::Parameter("allow_partial_planning", false)});
+    {rclcpp::Parameter("expected_planner_frequency", -1.0)});
 
   rclcpp::spin_until_future_complete(
-    planner->get_node_base_interface(),
+    node->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(planner->get_parameter("expected_planner_frequency").as_double(), -1.0);
-  EXPECT_FALSE(planner->get_parameter("allow_partial_planning").as_bool());
+  EXPECT_EQ(params_->max_planner_duration, 0.01);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("allow_partial_planning", false)});
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+  EXPECT_FALSE(params_->partial_plan_allowed);
 }
 
 int main(int argc, char ** argv)

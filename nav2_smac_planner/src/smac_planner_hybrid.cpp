@@ -68,118 +68,68 @@ void SmacPlannerHybrid::configure(
   bool smooth_path;
 
   // General planner params
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
-  node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
+  _downsample_costmap = node->declare_or_get_parameter(name + ".downsample_costmap", false);
+  _downsampling_factor = node->declare_or_get_parameter(name + ".downsampling_factor", 1);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".angle_quantization_bins", rclcpp::ParameterValue(72));
-  node->get_parameter(name + ".angle_quantization_bins", angle_quantizations);
+  angle_quantizations = node->declare_or_get_parameter(name + ".angle_quantization_bins", 72);
   _angle_bin_size = 2.0 * M_PI / angle_quantizations;
   _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".tolerance", rclcpp::ParameterValue(0.25));
-  _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".allow_unknown", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".allow_unknown", _allow_unknown);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
-  node->get_parameter(name + ".max_iterations", _max_iterations);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
-  node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".terminal_checking_interval", rclcpp::ParameterValue(5000));
-  node->get_parameter(name + ".terminal_checking_interval", _terminal_checking_interval);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".smooth_path", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".smooth_path", smooth_path);
+  _tolerance = static_cast<float>(node->declare_or_get_parameter(name + ".tolerance", 0.25));
+  _allow_unknown = node->declare_or_get_parameter(name + ".allow_unknown", true);
+  _max_iterations = node->declare_or_get_parameter(name + ".max_iterations", 1000000);
+  _max_on_approach_iterations =
+    node->declare_or_get_parameter(name + ".max_on_approach_iterations", 1000);
+  _terminal_checking_interval =
+    node->declare_or_get_parameter(name + ".terminal_checking_interval", 5000);
+  smooth_path = node->declare_or_get_parameter(name + ".smooth_path", true);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
-  node->get_parameter(name + ".minimum_turning_radius", _minimum_turning_radius_global_coords);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".allow_primitive_interpolation", rclcpp::ParameterValue(false));
-  node->get_parameter(
-    name + ".allow_primitive_interpolation", _search_info.allow_primitive_interpolation);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".cache_obstacle_heuristic", _search_info.cache_obstacle_heuristic);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
-  node->get_parameter(name + ".reverse_penalty", _search_info.reverse_penalty);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".change_penalty", rclcpp::ParameterValue(0.0));
-  node->get_parameter(name + ".change_penalty", _search_info.change_penalty);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.2));
-  node->get_parameter(name + ".non_straight_penalty", _search_info.non_straight_penalty);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".cost_penalty", rclcpp::ParameterValue(2.0));
-  node->get_parameter(name + ".cost_penalty", _search_info.cost_penalty);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".retrospective_penalty", rclcpp::ParameterValue(0.015));
-  node->get_parameter(name + ".retrospective_penalty", _search_info.retrospective_penalty);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
-  node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".analytic_expansion_max_cost", rclcpp::ParameterValue(200.0));
-  node->get_parameter(
-    name + ".analytic_expansion_max_cost", _search_info.analytic_expansion_max_cost);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".analytic_expansion_max_cost_override", rclcpp::ParameterValue(false));
-  node->get_parameter(
-    name + ".analytic_expansion_max_cost_override",
-    _search_info.analytic_expansion_max_cost_override);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".use_quadratic_cost_penalty", rclcpp::ParameterValue(false));
-  node->get_parameter(
-    name + ".use_quadratic_cost_penalty", _search_info.use_quadratic_cost_penalty);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".downsample_obstacle_heuristic", rclcpp::ParameterValue(true));
-  node->get_parameter(
-    name + ".downsample_obstacle_heuristic", _search_info.downsample_obstacle_heuristic);
+  _minimum_turning_radius_global_coords =
+    node->declare_or_get_parameter(name + ".minimum_turning_radius", 0.4);
+  _search_info.allow_primitive_interpolation =
+    node->declare_or_get_parameter(name + ".allow_primitive_interpolation", false);
+  _search_info.cache_obstacle_heuristic =
+    node->declare_or_get_parameter(name + ".cache_obstacle_heuristic", false);
+  _search_info.reverse_penalty =
+    node->declare_or_get_parameter(name + ".reverse_penalty", 2.0);
+  _search_info.change_penalty =
+    node->declare_or_get_parameter(name + ".change_penalty", 0.0);
+  _search_info.non_straight_penalty =
+    node->declare_or_get_parameter(name + ".non_straight_penalty", 1.2);
+  _search_info.cost_penalty =
+    node->declare_or_get_parameter(name + ".cost_penalty", 2.0);
+  _search_info.retrospective_penalty =
+    node->declare_or_get_parameter(name + ".retrospective_penalty", 0.015);
+  _search_info.analytic_expansion_ratio =
+    node->declare_or_get_parameter(name + ".analytic_expansion_ratio", 3.5);
+  _search_info.analytic_expansion_max_cost =
+    node->declare_or_get_parameter(name + ".analytic_expansion_max_cost", 200.0);
+  _search_info.analytic_expansion_max_cost_override =
+    node->declare_or_get_parameter(name + ".analytic_expansion_max_cost_override", false);
+  _search_info.use_quadratic_cost_penalty =
+    node->declare_or_get_parameter(name + ".use_quadratic_cost_penalty", false);
+  _search_info.downsample_obstacle_heuristic =
+    node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".analytic_expansion_max_length", rclcpp::ParameterValue(3.0));
-  node->get_parameter(name + ".analytic_expansion_max_length", analytic_expansion_max_length_m);
+  analytic_expansion_max_length_m =
+    node->declare_or_get_parameter(name + ".analytic_expansion_max_length", 3.0);
   _search_info.analytic_expansion_max_length =
     analytic_expansion_max_length_m / _costmap->getResolution();
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
-  node->get_parameter(name + ".max_planning_time", _max_planning_time);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".lookup_table_size", rclcpp::ParameterValue(20.0));
-  node->get_parameter(name + ".lookup_table_size", _lookup_table_size);
+  _max_planning_time = node->declare_or_get_parameter(name + ".max_planning_time", 5.0);
+  _lookup_table_size = node->declare_or_get_parameter(name + ".lookup_table_size", 20.0);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".debug_visualizations", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".debug_visualizations", _debug_visualizations);
+  _debug_visualizations = node->declare_or_get_parameter(name + ".debug_visualizations", false);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
-  node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
-  // Note that we need to declare it here to prevent the parameter from being declared in the
-  // dynamic reconfigure callback
-  nav2::declare_parameter_if_not_declared(
-    node, "introspection_mode", rclcpp::ParameterValue("disabled"));
+  _motion_model_for_search =
+    node->declare_or_get_parameter(name + ".motion_model_for_search", std::string("DUBIN"));
 
-  std::string goal_heading_type;
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".goal_heading_mode", rclcpp::ParameterValue("DEFAULT"));
-  node->get_parameter(name + ".goal_heading_mode", goal_heading_type);
+  std::string goal_heading_type =
+    node->declare_or_get_parameter(name + ".goal_heading_mode", std::string("DEFAULT"));
   _goal_heading_mode = fromStringToGH(goal_heading_type);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".coarse_search_resolution", rclcpp::ParameterValue(1));
-  node->get_parameter(name + ".coarse_search_resolution", _coarse_search_resolution);
+  _coarse_search_resolution =
+    node->declare_or_get_parameter(name + ".coarse_search_resolution", 1);
 
   if (_goal_heading_mode == GoalHeadingMode::UNKNOWN) {
     std::string error_msg = "Unable to get GoalHeader type. Given '" + goal_heading_type + "' "
@@ -322,12 +272,18 @@ void SmacPlannerHybrid::activate()
   }
   auto node = _node.lock();
   // Add callback for dynamic parameters
-  _dyn_params_handler = node->add_on_set_parameters_callback(
-    std::bind(&SmacPlannerHybrid::dynamicParametersCallback, this, _1));
+  _post_set_params_handler = node->add_post_set_parameters_callback(
+    std::bind(
+      &SmacPlannerHybrid::updateParametersCallback,
+      this, std::placeholders::_1));
+  _on_set_params_handler = node->add_on_set_parameters_callback(
+    std::bind(
+      &SmacPlannerHybrid::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 
   // Special case handling to obtain resolution changes in global costmap
   auto resolution_remote_cb = [this](const rclcpp::Parameter & p) {
-      dynamicParametersCallback(
+      updateParametersCallback(
         {rclcpp::Parameter("resolution", rclcpp::ParameterValue(p.as_double()))});
     };
   _remote_param_subscriber = std::make_shared<rclcpp::ParameterEventHandler>(_node.lock());
@@ -351,10 +307,14 @@ void SmacPlannerHybrid::deactivate()
   }
   // shutdown dyn_param_handler
   auto node = _node.lock();
-  if (_dyn_params_handler && node) {
-    node->remove_on_set_parameters_callback(_dyn_params_handler.get());
+  if (_post_set_params_handler && node) {
+    node->remove_post_set_parameters_callback(_post_set_params_handler.get());
   }
-  _dyn_params_handler.reset();
+  _post_set_params_handler.reset();
+  if (_on_set_params_handler && node) {
+    node->remove_on_set_parameters_callback(_on_set_params_handler.get());
+  }
+  _on_set_params_handler.reset();
 }
 
 void SmacPlannerHybrid::cleanup()
@@ -362,7 +322,6 @@ void SmacPlannerHybrid::cleanup()
   RCLCPP_INFO(
     _logger, "Cleaning up plugin %s of type SmacPlannerHybrid",
     _name.c_str());
-  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
   _a_star.reset();
   _smoother.reset();
   if (_costmap_downsampler) {
@@ -614,10 +573,99 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   return plan;
 }
 
-rcl_interfaces::msg::SetParametersResult
-SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult SmacPlannerHybrid::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(_name + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        _logger, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      } else if (param_name == _name + ".minimum_turning_radius" && // NOLINT
+        parameter.as_double() < _costmap->getResolution() * _downsampling_factor)
+      {
+        RCLCPP_WARN(
+          _logger, "The value of parameter minimum_turning_radius is incorrectly set to %f, "
+          "it should be >= costmap resolution * downsampling factor (%f). "
+          "Ignoring parameter update.",
+          parameter.as_double(),
+          _costmap->getResolution() * _downsampling_factor);
+        result.successful = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (parameter.as_int() <= 0 && (param_name != _name + ".max_on_approach_iterations" && // NOLINT
+        param_name != _name + ".max_iterations"))
+      {
+        RCLCPP_WARN(
+        _logger, "The value of parameter '%s' is incorrectly set to %ld, "
+        "it should be >0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_int());
+        result.successful = false;
+      } else if (param_name == _name + ".angle_quantization_bins") {
+        unsigned int angle_quantizations = static_cast<unsigned int>(parameter.as_int());
+        if (angle_quantizations % _coarse_search_resolution != 0) {
+          RCLCPP_WARN(
+            _logger,
+            "The value of parameter angle_quantization_bins is incorrectly set to %u, "
+            "it should be an increment of the coarse_search_resolution (%u). "
+            "Ignoring parameter update.",
+            angle_quantizations,
+            _coarse_search_resolution);
+          result.successful = false;
+        }
+      } else if (param_name == _name + ".coarse_search_resolution") {
+        if (_angle_quantizations % static_cast<unsigned int>(parameter.as_int()) != 0) {
+          RCLCPP_WARN(
+            _logger,
+            "The value of parameter coarse_search_resolution is incorrectly set to %ld, "
+            "it should be an increment of the angle_quantization_bins (%u). "
+            "Ignoring parameter update.",
+            parameter.as_int(),
+            _angle_quantizations);
+          result.successful = false;
+        }
+      }
+    } else if (param_type == ParameterType::PARAMETER_STRING) {
+      if (param_name == _name + ".motion_model_for_search") {
+        MotionModel motion_model = fromString(parameter.as_string());
+        if (motion_model == MotionModel::UNKNOWN) {
+          RCLCPP_WARN(
+            _logger,
+            "Unable to get MotionModel search type. Given '%s', "
+            "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP, STATE_LATTICE. "
+            "Ignoring parameter update.",
+            parameter.as_string().c_str());
+          result.successful = false;
+        }
+      } else if (param_name == _name + ".goal_heading_mode") {
+        GoalHeadingMode goal_heading_mode = fromStringToGH(parameter.as_string());
+        if (goal_heading_mode == GoalHeadingMode::UNKNOWN) {
+          RCLCPP_WARN(
+            _logger,
+            "Unable to get GoalHeader type. Given '%s' Valid options are DEFAULT, "
+            "BIDIRECTIONAL, ALL_DIRECTION. Ignoring parameter update.",
+            parameter.as_string().c_str());
+          result.successful = false;
+        }
+      }
+    }
+  }
+  return result;
+}
+
+void
+SmacPlannerHybrid::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
+{
   std::lock_guard<std::mutex> lock_reinit(_mutex);
 
   bool reinit_collision_checker = false;
@@ -645,13 +693,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         if (_smoother) {
           reinit_smoother = true;
         }
-
-        if (parameter.as_double() < _costmap->getResolution() * _downsampling_factor) {
-          RCLCPP_ERROR(
-            _logger, "Min turning radius cannot be less than the search grid cell resolution!");
-          result.successful = false;
-        }
-
         _minimum_turning_radius_global_coords = static_cast<float>(parameter.as_double());
       } else if (param_name == _name + ".reverse_penalty") {
         reinit_a_star = true;
@@ -739,43 +780,13 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         int angle_quantizations = parameter.as_int();
         _angle_bin_size = 2.0 * M_PI / angle_quantizations;
         _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
-
-        if (_angle_quantizations % _coarse_search_resolution != 0) {
-          RCLCPP_WARN(
-            _logger, "coarse iteration should be an increment of the "
-            "number of angular bins configured. Disabling course research!"
-          );
-          _coarse_search_resolution = 1;
-        }
       } else if (param_name == _name + ".coarse_search_resolution") {
         _coarse_search_resolution = parameter.as_int();
-        if (_coarse_search_resolution <= 0) {
-          RCLCPP_WARN(
-            _logger, "coarse iteration resolution selected as <= 0. "
-            "Disabling course research!"
-          );
-          _coarse_search_resolution = 1;
-        }
-        if (_angle_quantizations % _coarse_search_resolution != 0) {
-          RCLCPP_WARN(
-            _logger,
-            "coarse iteration should be an increment of the "
-            "number of angular bins configured. Disabling course research!"
-          );
-          _coarse_search_resolution = 1;
-        }
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == _name + ".motion_model_for_search") {
         reinit_a_star = true;
         _motion_model = fromString(parameter.as_string());
-        if (_motion_model == MotionModel::UNKNOWN) {
-          RCLCPP_WARN(
-            _logger,
-            "Unable to get MotionModel search type. Given '%s', "
-            "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
-            _motion_model_for_search.c_str());
-        }
       } else if (param_name == _name + ".goal_heading_mode") {
         std::string goal_heading_type = parameter.as_string();
         GoalHeadingMode goal_heading_mode = fromStringToGH(goal_heading_type);
@@ -783,15 +794,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
           _logger,
           "GoalHeadingMode type set to '%s'.",
           goal_heading_type.c_str());
-        if (goal_heading_mode == GoalHeadingMode::UNKNOWN) {
-          RCLCPP_WARN(
-            _logger,
-            "Unable to get GoalHeader type. Given '%s', "
-            "Valid options are DEFAULT, BIDIRECTIONAL, ALL_DIRECTION. ",
-            goal_heading_type.c_str());
-        } else {
-          _goal_heading_mode = goal_heading_mode;
-        }
+        _goal_heading_mode = goal_heading_mode;
       }
     }
   }
@@ -863,8 +866,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       _smoother->initialize(_minimum_turning_radius_global_coords);
     }
   }
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_smac_planner

@@ -1,5 +1,5 @@
 <!--
-  This Behavior Tree replans the global path once every 15 seconds or if the path becomes invalid. It also has
+  This Behavior Tree replans the global path once every 15 seconds or if the path becomes invalid and not close enough to goal. It also has
   recovery actions specific to planning / control as well as general system issues.
   This will be continuous if a kinematically valid planner is selected.
 -->
@@ -19,7 +19,9 @@
                 <Inverter>
                   <GlobalUpdatedGoal/>
                 </Inverter>
-                <IsPathValid path="{path}"/>
+                <IsGoalNearby path="{path}" proximity_threshold="4.0" max_robot_pose_search_dist="1.5"/>
+                <TruncatePathLocal input_path="{path}" output_path="{remaining_path}" distance_forward="-1" distance_backward="0.0" />
+                <IsPathValid path="{remaining_path}"/>
               </ReactiveSequence>
               <ComputePathToPose goal="{goal}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
             </Fallback>

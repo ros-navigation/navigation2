@@ -45,9 +45,9 @@ PathSearchResult distance_from_path(
 
   if (start_index >= path.poses.size()) {
     throw std::runtime_error(
-            "Invalid operation: requested start index (" + std::to_string(start_index) +
+            "Requested start index (" + std::to_string(start_index) +
             ") is greater than or equal to path size (" + std::to_string(path.poses.size()) +
-            "). Application is not properly managing state.");
+            ").");
   }
 
   double distance_traversed = 0.0;
@@ -217,6 +217,16 @@ unsigned int removePosesAfterFirstConstraint(
     cropped_path.poses.begin() + first_after_constraint, cropped_path.poses.end());
   path = cropped_path;
   return first_after_constraint;
+}
+
+bool isPathUpdated(
+  nav_msgs::msg::Path & new_path,
+  nav_msgs::msg::Path & old_path)
+{
+  return old_path.poses.size() != 0 &&
+         new_path.poses.size() != 0 &&
+         new_path.poses.size() != old_path.poses.size() &&
+         old_path.poses.back().pose.position == new_path.poses.back().pose.position;
 }
 
 }  // namespace nav2_util

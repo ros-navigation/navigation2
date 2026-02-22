@@ -22,11 +22,12 @@
 #include <algorithm>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_theta_star_planner/parameter_handler.hpp"
 
 const double INF_COST = DBL_MAX;
 const int UNKNOWN_COST = 255;
-const int OBS_COST = 254;
-const int LETHAL_COST = 252;
+const int OCCUPIED_COST = 254;
+const int MAX_NON_OBSTACLE_COST = 252;
 
 struct coordsM
 {
@@ -56,30 +57,17 @@ struct comp
   }
 };
 
-namespace theta_star
+namespace nav2_theta_star_planner
 {
 class ThetaStar
 {
 public:
   coordsM src_{}, dst_{};
   nav2_costmap_2d::Costmap2D * costmap_{};
-
-  /// weight on the costmap traversal cost
-  double w_traversal_cost_;
-  /// weight on the euclidean distance cost (used for calculations of g_cost)
-  double w_euc_cost_;
-  /// weight on the heuristic cost (used for h_cost calculations)
-  double w_heuristic_cost_;
-  /// parameter to set the number of adjacent nodes to be searched on
-  int how_many_corners_;
-  /// parameter to set weather the planner can plan through unknown space
-  bool allow_unknown_;
   /// the x-directional and y-directional lengths of the map respectively
   int size_x_, size_y_;
-  /// the interval at which the planner checks if it has been cancelled
-  int terminal_checking_interval_;
 
-  ThetaStar();
+  explicit ThetaStar(Parameters * params);
 
   ~ThetaStar() = default;
 
@@ -92,14 +80,13 @@ public:
   bool generatePath(std::vector<coordsW> & raw_path, std::function<bool()> cancel_checker);
 
   /**
-   * @brief this function checks whether the cost of a point(cx, cy) on the costmap is less than the LETHAL_COST
+   * @brief this function checks whether the cost of a point(cx, cy) on the costmap is less than or equal to the MAX_NON_OBSTACLE_COST
    * @return the result of the check
    */
   inline bool isSafe(const int & cx, const int & cy) const
   {
-    return (costmap_->getCost(
-             cx,
-             cy) == UNKNOWN_COST && allow_unknown_) || costmap_->getCost(cx, cy) < LETHAL_COST;
+    return (costmap_->getCost(cx, cy) == UNKNOWN_COST && params_->allow_unknown) ||
+           costmap_->getCost(cx, cy) <= MAX_NON_OBSTACLE_COST;
   }
 
   /**
@@ -110,8 +97,8 @@ public:
     const geometry_msgs::msg::PoseStamped & goal);
 
   /**
-   * @brief checks whether the start and goal points have costmap costs greater than LETHAL_COST
-   * @return true if the cost of any one of the points is greater than LETHAL_COST
+   * @brief checks whether the start and goal points have costmap costs greater than MAX_NON_OBSTACLE_COST
+   * @return true if the cost of any one of the points is greater than MAX_NON_OBSTACLE_COST
    */
   bool isUnsafeToPlan() const
   {
@@ -145,6 +132,8 @@ protected:
   /// such that the data for all the nodes (in open and closed lists) could be stored
   /// consecutively in nodes_data_
   int index_generated_;
+
+  Parameters * params_;
 
   const coordsM moves[8] = {{0, 1},
     {0, -1},
@@ -193,16 +182,19 @@ protected:
   /**
    * @brief it is an overloaded function to ease the cost calculations while performing the LOS check
    * @param cost denotes the total straight line traversal cost; it adds the traversal cost for the node (cx, cy) at every instance; it is also being returned
-   * @return false if the traversal cost is greater than / equal to the LETHAL_COST and true otherwise
+   * @return false if the traversal cost is greater than the MAX_NON_OBSTACLE_COST and true otherwise
    */
   bool isSafe(const int & cx, const int & cy, double & cost) const
   {
     double curr_cost = getCost(cx, cy);
-    if ((costmap_->getCost(cx, cy) == UNKNOWN_COST && allow_unknown_) || curr_cost < LETHAL_COST) {
+    if ((costmap_->getCost(cx, cy) == UNKNOWN_COST && params_->allow_unknown) ||
+      curr_cost <= MAX_NON_OBSTACLE_COST)
+    {
       if (costmap_->getCost(cx, cy) == UNKNOWN_COST) {
-        curr_cost = OBS_COST - 1;
+        curr_cost = OCCUPIED_COST - 1;
       }
-      cost += w_traversal_cost_ * curr_cost * curr_cost / LETHAL_COST / LETHAL_COST;
+      cost += params_->w_traversal_cost * curr_cost * curr_cost / MAX_NON_OBSTACLE_COST /
+        MAX_NON_OBSTACLE_COST;
       return true;
     } else {
       return false;
@@ -226,7 +218,8 @@ protected:
   inline double getTraversalCost(const int & cx, const int & cy)
   {
     double curr_cost = getCost(cx, cy);
-    return w_traversal_cost_ * curr_cost * curr_cost / LETHAL_COST / LETHAL_COST;
+    return params_->w_traversal_cost * curr_cost * curr_cost / MAX_NON_OBSTACLE_COST /
+           MAX_NON_OBSTACLE_COST;
   }
 
   /**
@@ -236,7 +229,7 @@ protected:
    */
   inline double getEuclideanCost(const int & ax, const int & ay, const int & bx, const int & by)
   {
-    return w_euc_cost_ * std::hypot(ax - bx, ay - by);
+    return params_->w_euc_cost * std::hypot(ax - bx, ay - by);
   }
 
   /**
@@ -246,7 +239,7 @@ protected:
    */
   inline double getHCost(const int & cx, const int & cy)
   {
-    return w_heuristic_cost_ * std::hypot(cx - dst_.x, cy - dst_.y);
+    return params_->w_heuristic_cost * std::hypot(cx - dst_.x, cy - dst_.y);
   }
 
   /**
@@ -317,6 +310,6 @@ protected:
     queue_ = std::priority_queue<tree_node *, std::vector<tree_node *>, comp>();
   }
 };
-}   //  namespace theta_star
+}   //  namespace nav2_theta_star_planner
 
 #endif  //  NAV2_THETA_STAR_PLANNER__THETA_STAR_HPP_

@@ -273,6 +273,34 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   EXPECT_TRUE(pgc.getTolerances(pose_tol, vel_tol));
   EXPECT_EQ(pose_tol.position.x, 200.0);
   EXPECT_EQ(pose_tol.position.y, 200.0);
+
+  // Test setting invalid values
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.rot_stopped_velocity", -1.0)}
+  );
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(),
+    results);
+  // Value should remain unchanged
+  EXPECT_EQ(x->get_parameter("test.rot_stopped_velocity").as_double(), 100.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test2.xy_goal_tolerance", -1.0)}
+  );
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(),
+    results);
+  // Value should remain unchanged
+  EXPECT_EQ(x->get_parameter("test2.xy_goal_tolerance").as_double(), 200.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test3.path_length_tolerance", -1.0)}
+  );
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(),
+    results);
+  // Value should remain unchanged
+  EXPECT_EQ(x->get_parameter("test3.path_length_tolerance").as_double(), 200.0);
 }
 
 TEST(StoppedGoalChecker, is_reached)

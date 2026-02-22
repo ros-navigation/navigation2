@@ -96,10 +96,11 @@ repos:
         language: system
         types: [python]
         entry: ament_pep257
-    -   id: ament_mypy
-        name: ament_mypy
-        description: Check Python code style using mypy.
-        language: system
-        types: [python]
-        args: ["--config", "tools/pyproject.toml"]
-        entry: ament_mypy
+    # Commented out until https://github.com/ros-navigation/navigation2/issues/5830 is fixed
+    # -   id: ament_mypy
+    #     name: ament_mypy
+    #     description: Check Python code style using mypy.
+    #     language: system
+    #     types: [python]
+    #     args: ["--config", "tools/pyproject.toml"]
+    #     entry: ament_mypy

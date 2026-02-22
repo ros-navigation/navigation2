@@ -23,63 +23,44 @@
 #include "nav2_waypoint_follower/waypoint_follower.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-class WPShim : public nav2_waypoint_follower::WaypointFollower
-{
-public:
-  WPShim()
-  : nav2_waypoint_follower::WaypointFollower(rclcpp::NodeOptions())
-  {
-  }
-
-  void configure()
-  {
-    rclcpp_lifecycle::State state;
-    this->on_configure(state);
-  }
-
-  void activate()
-  {
-    rclcpp_lifecycle::State state;
-    this->on_activate(state);
-  }
-
-  void deactivate()
-  {
-    rclcpp_lifecycle::State state;
-    this->on_deactivate(state);
-  }
-
-  void cleanup()
-  {
-    rclcpp_lifecycle::State state;
-    this->on_cleanup(state);
-  }
-};
-
 TEST(WPTest, test_dynamic_parameters)
 {
-  auto follower = std::make_shared<WPShim>();
-  follower->configure();
-  follower->activate();
+  std::string nodeName = "test_node";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  auto param_handler_ = std::make_unique<nav2_waypoint_follower::ParameterHandler>(
+    node, node->get_logger());
+  param_handler_->activate();
+  auto params_ = param_handler_->getParams();
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
-    follower->get_node_base_interface(), follower->get_node_topics_interface(),
-    follower->get_node_graph_interface(),
-    follower->get_node_services_interface());
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("loop_rate", 100),
       rclcpp::Parameter("stop_on_failure", false)});
 
   rclcpp::spin_until_future_complete(
-    follower->get_node_base_interface(),
+    node->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(follower->get_parameter("loop_rate").as_int(), 100);
-  EXPECT_EQ(follower->get_parameter("stop_on_failure").as_bool(), false);
-  follower->deactivate();
-  follower->cleanup();
-  follower.reset();
+  EXPECT_EQ(params_->loop_rate, 100);
+  EXPECT_EQ(params_->stop_on_failure, false);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("loop_rate", 0)});
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  // Invalid value should not be set
+  EXPECT_EQ(params_->loop_rate, 100);
+
+  node->deactivate();
+  node->cleanup();
+  node.reset();
 }
 
 int main(int argc, char ** argv)

@@ -21,7 +21,6 @@ namespace nav2_smoother
 {
 using namespace nav2_util::geometry_utils;  // NOLINT
 using namespace std::chrono;  // NOLINT
-using nav2::declare_parameter_if_not_declared;
 using nav2_util::PathSegment;
 
 void SimpleSmoother::configure(
@@ -35,28 +34,20 @@ void SimpleSmoother::configure(
   auto node = parent.lock();
   logger_ = node->get_logger();
 
-  declare_parameter_if_not_declared(
-    node, name + ".tolerance", rclcpp::ParameterValue(1e-10));
-  declare_parameter_if_not_declared(
-    node, name + ".max_its", rclcpp::ParameterValue(1000));
-  declare_parameter_if_not_declared(
-    node, name + ".w_data", rclcpp::ParameterValue(0.2));
-  declare_parameter_if_not_declared(
-    node, name + ".w_smooth", rclcpp::ParameterValue(0.3));
-  declare_parameter_if_not_declared(
-    node, name + ".do_refinement", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, name + ".refinement_num", rclcpp::ParameterValue(2));
-  declare_parameter_if_not_declared(
-    node, name + ".enforce_path_inversion", rclcpp::ParameterValue(true));
-
-  node->get_parameter(name + ".tolerance", tolerance_);
-  node->get_parameter(name + ".max_its", max_its_);
-  node->get_parameter(name + ".w_data", data_w_);
-  node->get_parameter(name + ".w_smooth", smooth_w_);
-  node->get_parameter(name + ".do_refinement", do_refinement_);
-  node->get_parameter(name + ".refinement_num", refinement_num_);
-  node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
+  tolerance_ = node->declare_or_get_parameter(
+    name + ".tolerance", 1e-10);
+  max_its_ = node->declare_or_get_parameter(
+    name + ".max_its", 1000);
+  data_w_ = node->declare_or_get_parameter(
+    name + ".w_data", 0.2);
+  smooth_w_ = node->declare_or_get_parameter(
+    name + ".w_smooth", 0.3);
+  do_refinement_ = node->declare_or_get_parameter(
+    name + ".do_refinement", true);
+  refinement_num_ = node->declare_or_get_parameter(
+    name + ".refinement_num", 2);
+  enforce_path_inversion_ = node->declare_or_get_parameter(
+    name + ".enforce_path_inversion", true);
 }
 
 bool SimpleSmoother::smooth(

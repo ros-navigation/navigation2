@@ -27,7 +27,6 @@
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/smoother.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 
 using namespace nav2_smac_planner;  // NOLINT
 
@@ -179,7 +178,6 @@ TEST(SmootherTest, test_full_smoother)
   EXPECT_NEAR(plan.poses.end()[-2].pose.orientation.w, 0.0, 1e-3);
 
   delete costmap;
-  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 int main(int argc, char ** argv)
