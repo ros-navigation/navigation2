@@ -209,7 +209,13 @@ NavFn::setNavArr(int xs, int ys)
 
   nx = xs;
   ny = ys;
-  ns = nx * ny;
+  auto new_ns = nx * ny;
+
+  if (new_ns == ns) {
+    return;
+  }
+
+  ns = new_ns;
 
   if (costarr) {
     delete[] costarr;
@@ -341,13 +347,16 @@ void
 NavFn::setupNavFn(bool keepit)
 {
   // reset values in propagation arrays
-  for (int i = 0; i < ns; i++) {
-    potarr[i] = POT_HIGH;
-    if (!keepit) {
-      costarr[i] = COST_NEUTRAL;
+  std::fill(potarr, potarr + ns, POT_HIGH);
+  if (!keepit) {
+    if constexpr (std::is_same<COSTTYPE, unsigned char>::value || std::is_same<COSTTYPE, char>::value) {
+      std::memset(costarr, COST_NEUTRAL, ns * sizeof(COSTTYPE));
+    } else {
+      std::fill(costarr, costarr + ns, COST_NEUTRAL);
     }
-    gradx[i] = grady[i] = 0.0;
   }
+  std::memset(gradx, 0, ns * sizeof(float));
+  std::memset(grady, 0, ns * sizeof(float));
 
   // outer bounds of cost array
   COSTTYPE * pc;
@@ -382,6 +391,7 @@ NavFn::setupNavFn(bool keepit)
   int k = goal[0] + goal[1] * nx;
   initCost(k, 0);
 
+#ifdef DEBUG
   // find # of obstacle cells
   pc = costarr;
   int ntot = 0;
@@ -391,6 +401,7 @@ NavFn::setupNavFn(bool keepit)
     }
   }
   nobs = ntot;
+#endif // DEBUG
 }
 
 
@@ -635,12 +646,12 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
       }
     }
   }
-
+#ifdef DEBUG
   RCLCPP_DEBUG(
     rclcpp::get_logger("rclcpp"),
     "[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n",
     cycle, nc, (int)((nc * 100.0) / (ns - nobs)), nwv);
-
+#endif // DEBUG
   return (cycle < cycles) ? true : false;
 }
 
