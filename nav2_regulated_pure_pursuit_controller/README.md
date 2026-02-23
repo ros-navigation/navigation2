@@ -105,6 +105,7 @@ Unlike conventional Pure Pursuit variants, DWPP computes command velocities that
 | `interpolate_curvature_after_goal` | Needs use_fixed_curvature_lookahead to be true. Interpolate a carrot after the goal dedicated to the curvature calculation (to avoid oscillations at the end of the path) |
 | `min_distance_to_obstacle` | The shortest distance at which the robot is allowed to be from an obstacle along its trajectory. Set <= 0.0 to disable. It is limited to maximum distance of lookahead distance selected. |
 | `use_dynamic_window` | Whether to use the Dynamic Window Pure Pursuit (DWPP) Algorithm. This algorithm computes optimal path tracking velocity commands under velocity and acceleration constraints. |
+| `allow_obstacle_checking_beyond_goal` | Whether to continue obstacle checking past the goal position up to `min_distance_to_obstacle`. When enabled, obstacles located beyond the goal along the projected trajectory may prevent motion. Requires `use_velocity_scaled_lookahead_dist` to be enabled and `min_distance_to_obstacle` > 0.0. |
 
 Example fully-described XML with default parameter values:
 
@@ -161,6 +162,7 @@ controller_server:
       cost_scaling_gain: 1.0
       inflation_cost_scaling_factor: 3.0
       use_dynamic_window: false
+      allow_obstacle_checking_beyond_goal: false
 ```
 
 ## Topics
