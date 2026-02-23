@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Sequence
+
 import launch
 import yaml
 
 
+@launch.frontend.expose_substitution('has-node-params')
 class HasNodeParams(launch.Substitution):
     """
     Substitution that checks if a param file contains parameters for a node.
@@ -40,6 +43,18 @@ class HasNodeParams(launch.Substitution):
         self.__source_file: list[launch.Substitution] = \
             normalize_to_list_of_substitutions(source_file)
         self.__node_name = node_name
+
+    @classmethod
+    def parse(cls, data: Sequence[launch.SomeSubstitutionsType]):
+        num_args = len(data)
+        if num_args != 2:
+            raise TypeError(
+                f'has-node-params substitution takes 2 arguments, got {num_args}')
+        kwargs = {
+            'source_file': data[0],
+            'node_name': data[1],
+        }
+        return cls, kwargs
 
     @property
     def name(self) -> list[launch.Substitution]:
