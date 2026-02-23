@@ -639,6 +639,51 @@ TEST(RegulatedPurePursuitTest, testObstacleBeyondGoal)
   ctrl->cleanup();
 }
 
+TEST(RegulatedPurePursuitTest, testParameterWarnings)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+
+  // min_distance_to_obstacle > lookahead_dist (fixed lookahead)
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_collision_detection", rclcpp::ParameterValue(true));
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_velocity_scaled_lookahead_dist", rclcpp::ParameterValue(false));
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".lookahead_dist", rclcpp::ParameterValue(0.6));
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".min_distance_to_obstacle", rclcpp::ParameterValue(1.5));
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".allow_obstacle_checking_beyond_goal", rclcpp::ParameterValue(false));
+  ctrl->configure(node, name, tf, costmap);
+  ctrl->cleanup();
+
+  // min_distance_to_obstacle > max_lookahead_dist (velocity scaled)
+  node->set_parameter(rclcpp::Parameter(name + ".use_velocity_scaled_lookahead_dist", true));
+  node->set_parameter(rclcpp::Parameter(name + ".max_lookahead_dist", 1.0));
+  node->set_parameter(rclcpp::Parameter(name + ".min_distance_to_obstacle", 2.0));
+  ctrl->configure(node, name, tf, costmap);
+  ctrl->cleanup();
+
+  // allow_obstacle_checking_beyond_goal without velocity scaled lookahead
+  node->set_parameter(rclcpp::Parameter(name + ".use_velocity_scaled_lookahead_dist", false));
+  node->set_parameter(rclcpp::Parameter(name + ".allow_obstacle_checking_beyond_goal", true));
+  node->set_parameter(rclcpp::Parameter(name + ".min_distance_to_obstacle", 1.0));
+  ctrl->configure(node, name, tf, costmap);
+  ctrl->cleanup();
+
+  // allow_obstacle_checking_beyond_goal with min_distance_to_obstacle <= 0.0
+  node->set_parameter(rclcpp::Parameter(name + ".use_velocity_scaled_lookahead_dist", true));
+  node->set_parameter(rclcpp::Parameter(name + ".min_distance_to_obstacle", -1.0));
+  ctrl->configure(node, name, tf, costmap);
+  ctrl->cleanup();
+}
+
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
