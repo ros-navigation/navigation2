@@ -670,6 +670,7 @@ SmacPlannerHybrid::updateParametersCallback(const std::vector<rclcpp::Parameter>
 
   bool reinit_collision_checker = false;
   bool reinit_a_star = false;
+  bool reinit_lookup_table = false;
   bool reinit_downsampler = false;
   bool reinit_smoother = false;
 
@@ -687,9 +688,11 @@ SmacPlannerHybrid::updateParametersCallback(const std::vector<rclcpp::Parameter>
         _tolerance = static_cast<float>(parameter.as_double());
       } else if (param_name == _name + ".lookup_table_size") {
         reinit_a_star = true;
+        reinit_lookup_table = true;
         _lookup_table_size = parameter.as_double();
       } else if (param_name == _name + ".minimum_turning_radius") {
         reinit_a_star = true;
+        reinit_lookup_table = true;
         if (_smoother) {
           reinit_smoother = true;
         }
@@ -722,6 +725,7 @@ SmacPlannerHybrid::updateParametersCallback(const std::vector<rclcpp::Parameter>
         RCLCPP_INFO(_logger, "Costmap resolution changed. Reinitializing SmacPlannerHybrid.");
         reinit_collision_checker = true;
         reinit_a_star = true;
+        reinit_lookup_table = true;
         reinit_downsampler = true;
         reinit_smoother = true;
       }
@@ -738,6 +742,7 @@ SmacPlannerHybrid::updateParametersCallback(const std::vector<rclcpp::Parameter>
       } else if (param_name == _name + ".allow_primitive_interpolation") {
         _search_info.allow_primitive_interpolation = parameter.as_bool();
         reinit_a_star = true;
+        reinit_lookup_table = true;
       } else if (param_name == _name + ".smooth_path") {
         if (parameter.as_bool()) {
           reinit_smoother = true;
@@ -751,6 +756,7 @@ SmacPlannerHybrid::updateParametersCallback(const std::vector<rclcpp::Parameter>
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == _name + ".downsampling_factor") {
         reinit_a_star = true;
+        reinit_lookup_table = true;
         reinit_downsampler = true;
         _downsampling_factor = parameter.as_int();
       } else if (param_name == _name + ".max_iterations") {
@@ -777,6 +783,7 @@ SmacPlannerHybrid::updateParametersCallback(const std::vector<rclcpp::Parameter>
       } else if (param_name == _name + ".angle_quantization_bins") {
         reinit_collision_checker = true;
         reinit_a_star = true;
+        reinit_lookup_table = true;
         int angle_quantizations = parameter.as_int();
         _angle_bin_size = 2.0 * M_PI / angle_quantizations;
         _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
@@ -786,6 +793,7 @@ SmacPlannerHybrid::updateParametersCallback(const std::vector<rclcpp::Parameter>
     } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == _name + ".motion_model_for_search") {
         reinit_a_star = true;
+        reinit_lookup_table = true;
         _motion_model = fromString(parameter.as_string());
       } else if (param_name == _name + ".goal_heading_mode") {
         std::string goal_heading_type = parameter.as_string();
@@ -827,7 +835,11 @@ SmacPlannerHybrid::updateParametersCallback(const std::vector<rclcpp::Parameter>
 
     // Re-Initialize A* template
     if (reinit_a_star) {
-      _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(_motion_model, _search_info);
+      if (reinit_lookup_table) {
+        _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(_motion_model, _search_info);
+      } else {
+        _a_star->setSearchInfo(_search_info);
+      }
       _a_star->initialize(
         _allow_unknown,
         _max_iterations,
