@@ -18,6 +18,10 @@
 #include <memory>
 #include <string>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 
@@ -97,6 +101,15 @@ protected:
   inline float findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap);
 
   /**
+   * @brief Determine the number of threads to use for OpenMP parallelization.
+   *        If num_threads_ > 0, use that value directly.
+   *        If num_threads_ == -1 (auto), use half the available cores (memory-bound heuristic).
+   *        If OpenMP is disabled at build time, always returns 1.
+   * @return Number of threads to use
+   */
+  int getOptimalThreadCount();
+
+  /**
     * @brief An implementation of worldToMap fully using floats
     * @param wx Float world X coord
     * @param wy Float world Y coord
@@ -150,6 +163,7 @@ protected:
   float near_goal_distance_;
   std::string inflation_layer_name_;
 
+  int num_threads_{-1};
   unsigned int power_{0};
 };
 
