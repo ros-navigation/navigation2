@@ -171,6 +171,18 @@ TEST_F(IsWithinPathTrackingBoundsTestFixture, test_tick_is_within_path_tracking_
 
   tree_->rootNode()->executeTick();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+
+  // Using negative value, should return same result as it is forced to be positive in the node
+  xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <IsWithinPathTrackingBounds max_position_error_left="-0.5" max_position_error_right="-0.2" max_heading_error="-3.14" tracking_feedback="{tracking_feedback}"/>
+        </BehaviorTree>
+      </root>)";
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  tree_->rootNode()->executeTick();
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)

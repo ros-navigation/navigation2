@@ -25,8 +25,6 @@ IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   logger_ = node->get_logger();
   clock_ = node->get_clock();
-
-  initialize();
 }
 
 void IsWithinPathTrackingBoundsCondition::initialize()
@@ -36,11 +34,11 @@ void IsWithinPathTrackingBoundsCondition::initialize()
   getInput<double>("max_heading_error", max_heading_error_);
   getInput<nav2_msgs::msg::TrackingFeedback>("tracking_feedback", tracking_feedback_);
   if (max_position_error_right_ < 0.0) {
-    RCLCPP_WARN(logger_, "max_error_right should be positive, using absolute value");
+    RCLCPP_WARN(logger_, "max_position_error_right should be positive, using absolute value");
     max_position_error_right_ = std::abs(max_position_error_right_);
   }
   if (max_position_error_left_ < 0.0) {
-    RCLCPP_WARN(logger_, "max_error_left should be positive, using absolute value");
+    RCLCPP_WARN(logger_, "max_position_error_left should be positive, using absolute value");
     max_position_error_left_ = std::abs(max_position_error_left_);
   }
   if (max_heading_error_ < 0.0) {
