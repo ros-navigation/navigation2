@@ -96,8 +96,7 @@ void Optimizer::getParams()
     };
 
   const std::vector<std::string> kinematic_params = {
-    "vx_max", "vx_min", "vy_max", "wz_max",
-    "ax_max", "ax_min", "ay_max", "ay_min", "az_max"};
+    "vx_max", "vx_min", "vy_max", "wz_max"};
   for (const auto & p : kinematic_params) {
     parameters_handler_->addPreCallback(name_ + "." + p, kinematic_guard);
   }
