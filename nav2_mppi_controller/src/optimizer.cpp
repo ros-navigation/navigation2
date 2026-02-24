@@ -590,11 +590,11 @@ void Optimizer::updateControlSequence()
   softmaxes /= softmaxes.sum();
 
   auto softmax_mat = softmaxes.matrix();
-  control_sequence_.vx = state_.cvx.transpose().matrix() * softmax_mat;
-  control_sequence_.wz = state_.cwz.transpose().matrix() * softmax_mat;
+  control_sequence_.vx.matrix().noalias() = state_.cvx.transpose().matrix() * softmax_mat;
+  control_sequence_.wz.matrix().noalias() = state_.cwz.transpose().matrix() * softmax_mat;
 
   if (is_holo) {
-    control_sequence_.vy = state_.cvy.transpose().matrix() * softmax_mat;
+    control_sequence_.vy.matrix().noalias() = state_.cvy.transpose().matrix() * softmax_mat;
   }
 
   utils::savitskyGolayFilter(control_sequence_, control_history_, settings_);
