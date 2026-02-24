@@ -58,6 +58,16 @@ void GracefulController::configure(
         FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
   }
 
+  double max_valid_cost = costmap_ros_->getUseRadius() ?
+    static_cast<double>(nav2_costmap_2d::MAX_NON_OBSTACLE) :
+    static_cast<double>(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+  if (max_valid_cost - static_cast<double>(params_->obstacle_cost_margin) < 0.0) {
+    RCLCPP_WARN(
+      logger_, "obstacle_cost_margin (%d) is higher than max cost (%d).",
+      params_->obstacle_cost_margin, nav2_costmap_2d::MAX_NON_OBSTACLE);
+    throw nav2_core::ControllerException("obstacle_cost_margin is higher than max cost.");
+  }
+
   // Publishers
   local_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan");
   motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("motion_target");
@@ -313,6 +323,8 @@ bool GracefulController::validateTargetPoseOnApproach(
   nav_msgs::msg::Path & trajectory, geometry_msgs::msg::TransformStamped & costmap_transform,
   geometry_msgs::msg::TwistStamped & cmd_vel)
 {
+  // Not approaching goal with large lookahead and don't evaluate shortcut trajectories
+  // when we do not prefer rotating to goal at the end.
   if (dist_to_goal >= params_->max_lookahead || !params_->prefer_final_rotation) {
     return false;
   }
@@ -330,12 +342,6 @@ bool GracefulController::validateTargetPoseOnApproach(
 
     // Check if the final rotation path is risky
     double safety_threshold = max_valid_cost - static_cast<double>(params_->obstacle_cost_margin);
-    if (safety_threshold < 0.0) {
-      RCLCPP_WARN(
-        logger_, "obstacle_cost_margin (%d) is higher than max cost (%d).",
-        params_->obstacle_cost_margin, nav2_costmap_2d::MAX_NON_OBSTACLE);
-      throw nav2_core::NoValidControl("obstacle_cost_margin is higher than max cost.");
-    }
     if (getMaxCost(trajectory, costmap_transform) >= safety_threshold) {
       // Try to find a better approach by searching spiral curves
       findBestApproachTrajectory(
@@ -596,9 +602,7 @@ bool GracefulController::findBestApproachTrajectory(
           reversing);
         double speed = std::abs(cmd.linear.x);
         // Avoid division by zero
-        if (speed < 1e-3) {
-          speed = 1e-3;
-        }
+        speed = std::max(speed, 1e-3);
         double step_dist = nav2_util::geometry_utils::euclidean_distance(
           current_pose.pose, next_pose.pose);
         double step_time = step_dist / speed;
@@ -608,11 +612,11 @@ bool GracefulController::findBestApproachTrajectory(
       // Selection logic: Pick the fastest among the safe ones
       if (eta < best_eta) {
         best_eta = eta;
-        found_valid = candidate_cost < safety_cost;
-        if (found_valid) {
+        if (candidate_cost < safety_cost) {
           best_trajectory = candidate_path;
           best_cmd_vel = candidate_cmd_vel;
           target_pose = candidate_pose;
+          found_valid = true;
         }
       }
     }
