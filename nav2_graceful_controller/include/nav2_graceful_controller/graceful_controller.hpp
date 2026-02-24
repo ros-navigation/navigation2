@@ -239,6 +239,8 @@ protected:
   // True from the time a new path arrives until we have completed an initial rotation
   bool do_initial_rotation_;
 
+  std::optional<double> safe_approach_angle_;
+
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr local_plan_pub_;
   nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr motion_target_pub_;
   nav2::Publisher<visualization_msgs::msg::Marker>::SharedPtr slowdown_pub_;
