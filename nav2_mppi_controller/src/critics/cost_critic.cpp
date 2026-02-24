@@ -177,6 +177,13 @@ void CostCritic::score(CriticData & data)
     data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
     Eigen::Stride<-1, -1>(outer_stride, 1));
 
+#pragma omp parallel for \
+  default(none) \
+  shared(repulsive_cost, costmap, near_goal, footprint, \
+    strided_traj_rows, strided_traj_cols, traj_x, traj_y, traj_yaw) \
+  reduction(&&:all_trajectories_collide) \
+  schedule(dynamic) \
+  num_threads(4)
   for (int i = 0; i < strided_traj_rows; ++i) {
     bool trajectory_collide = false;
     float pose_cost = 0.0f;
