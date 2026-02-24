@@ -742,7 +742,6 @@ SmacPlannerHybrid::updateParametersCallback(const std::vector<rclcpp::Parameter>
       } else if (param_name == _name + ".allow_primitive_interpolation") {
         _search_info.allow_primitive_interpolation = parameter.as_bool();
         reinit_a_star = true;
-        reinit_lookup_table = true;
       } else if (param_name == _name + ".smooth_path") {
         if (parameter.as_bool()) {
           reinit_smoother = true;
