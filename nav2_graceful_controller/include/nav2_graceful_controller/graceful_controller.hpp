@@ -127,7 +127,7 @@ protected:
     geometry_msgs::msg::TwistStamped & cmd_vel);
 
   /**
-   * @brief Validate a given target pose for calculating command velocity
+   * @brief Validate a given target pose for calculating command velocity on approach to goal
    * @param target_pose Target pose to validate
    * @param dist_to_target Distance to target pose
    * @param dist_to_goal Distance to navigation goal
