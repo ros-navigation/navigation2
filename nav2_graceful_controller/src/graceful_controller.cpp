@@ -258,6 +258,7 @@ void GracefulController::newPathReceived(const nav_msgs::msg::Path & /*raw_globa
 {
   goal_reached_ = false;
   do_initial_rotation_ = true;
+  safe_approach_angle_.reset();
 }
 
 void GracefulController::setSpeedLimit(
@@ -574,6 +575,9 @@ bool GracefulController::findBestApproachTrajectory(
 
   for (int i = 0; i < 2 * M_PI / params_->final_rotation_search_step; ++i) {
     double angle = static_cast<double>(i) * params_->final_rotation_search_step;
+    if (safe_approach_angle_.has_value()) {
+      angle += safe_approach_angle_.value();
+    }
 
     // Create candidate pose
     auto candidate_pose = target_pose;
@@ -610,13 +614,18 @@ bool GracefulController::findBestApproachTrajectory(
       }
 
       // Selection logic: Pick the fastest among the safe ones
-      if (eta < best_eta) {
+      bool same_approach_angle = safe_approach_angle_.has_value() && i == 0;
+      if (eta < best_eta || same_approach_angle) {
         best_eta = eta;
         if (candidate_cost < safety_cost) {
           best_trajectory = candidate_path;
           best_cmd_vel = candidate_cmd_vel;
           target_pose = candidate_pose;
           found_valid = true;
+          safe_approach_angle_ = angle;
+          if (same_approach_angle) {
+            break;
+          }
         }
       }
     }
