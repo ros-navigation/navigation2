@@ -585,7 +585,8 @@ void Optimizer::updateControlSequence()
 
   auto costs_normalized = costs_ - costs_.minCoeff();
   const float inv_temp = 1.0f / s.temperature;
-  auto softmaxes = (-inv_temp * costs_normalized).exp().eval();
+  constexpr float kMaxExponent = 80.0f;
+  auto softmaxes = ((-inv_temp * costs_normalized).cwiseMax(-kMaxExponent)).exp().eval();
   softmaxes /= softmaxes.sum();
 
   auto softmax_mat = softmaxes.matrix();
