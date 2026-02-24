@@ -20,6 +20,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(OpenMP REQUIRED)
 
 nav2_package()
 
@@ -63,6 +64,7 @@ target_link_libraries(mppi_controller PUBLIC
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
   visualization_msgs::visualization_msgs
+  Eigen3::Eigen
 )
 
 target_link_libraries(mppi_controller PRIVATE
@@ -126,6 +128,7 @@ target_link_libraries(mppi_critics PUBLIC
 )
 target_link_libraries(mppi_critics PRIVATE
   pluginlib::pluginlib
+  OpenMP::OpenMP_CXX
 )
 
 add_library(mppi_trajectory_validators SHARED
