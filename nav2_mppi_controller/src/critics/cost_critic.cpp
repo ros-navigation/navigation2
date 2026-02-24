@@ -13,9 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <chrono>
 #include <cmath>
-#include <iostream>
 #include "nav2_mppi_controller/critics/cost_critic.hpp"
 #include "nav2_costmap_2d/inflation_layer_interface.hpp"
 #include "nav2_core/controller_exceptions.hpp"
@@ -179,13 +177,6 @@ void CostCritic::score(CriticData & data)
     data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
     Eigen::Stride<-1, -1>(outer_stride, 1));
 
-  // Debug profiling counters
-  footprint_checks_ = 0;
-  size_t point_lookups = 0;
-  size_t free_skips = 0;
-  size_t collisions = 0;
-  auto score_start = std::chrono::steady_clock::now();
-
   for (int i = 0; i < strided_traj_rows; ++i) {
     bool trajectory_collide = false;
     float pose_cost = 0.0f;
@@ -204,9 +195,7 @@ void CostCritic::score(CriticData & data)
         pose_cost = 255.0f;  // NO_INFORMATION in float
       } else {
         pose_cost = static_cast<float>(costmap->getCost(getIndex(x_i, y_i)));
-        point_lookups++;
         if (pose_cost < 1.0f) {
-          free_skips++;
           continue;  // In free space
         }
       }
@@ -214,7 +203,6 @@ void CostCritic::score(CriticData & data)
       if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j), footprint)) {
         traj_cost = collision_cost_;
         trajectory_collide = true;
-        collisions++;
         break;
       }
 
@@ -229,51 +217,6 @@ void CostCritic::score(CriticData & data)
     }
 
     all_trajectories_collide &= trajectory_collide;
-  }
-
-  auto score_end = std::chrono::steady_clock::now();
-  double score_us = std::chrono::duration<double, std::micro>(score_end - score_start).count();
-
-  // Averaging accumulators
-  static size_t score_count = 0;
-  static double score_us_accum = 0.0;
-  static size_t fp_checks_accum = 0;
-  static size_t point_lookups_accum = 0;
-  static size_t free_skips_accum = 0;
-  static size_t collisions_accum = 0;
-  constexpr size_t kAvgWindow = 20;
-  constexpr double kSlowThresholdUs = 30000.0;
-
-  score_us_accum += score_us;
-  fp_checks_accum += footprint_checks_;
-  point_lookups_accum += point_lookups;
-  free_skips_accum += free_skips;
-  collisions_accum += collisions;
-  score_count++;
-
-  // Print per-call if slow
-  if (score_us > kSlowThresholdUs) {
-    std::cout << "[SLOW CostCritic] " << score_us << "us"
-      << " fp_checks=" << footprint_checks_
-      << " lookups=" << point_lookups
-      << " free=" << free_skips
-      << " collisions=" << collisions << std::endl;
-  }
-
-  if (score_count >= kAvgWindow) {
-    std::cout << "CostCritic avg(" << kAvgWindow << "): "
-      << score_us_accum / kAvgWindow << "us"
-      << " fp_checks=" << fp_checks_accum / kAvgWindow
-      << " lookups=" << point_lookups_accum / kAvgWindow
-      << " free=" << free_skips_accum / kAvgWindow
-      << " collisions=" << collisions_accum / kAvgWindow
-      << " possible_collision_cost=" << possible_collision_cost_
-      // << " circumscribed_cost_=" << circumscribed_cost_
-      // << " circumscribed_radius_=" << circumscribed_radius_
-      << std::endl;
-    score_us_accum = 0.0;
-    fp_checks_accum = point_lookups_accum = free_skips_accum = collisions_accum = 0;
-    score_count = 0;
   }
 
   if (power_ > 1u) {

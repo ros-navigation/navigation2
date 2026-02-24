@@ -73,7 +73,6 @@ protected:
       score_cost = static_cast<float>(collision_checker_.footprintCostAtPose(
           static_cast<double>(x), static_cast<double>(y), static_cast<double>(theta),
           footprint));
-      footprint_checks_++;
     }
 
     switch (static_cast<unsigned char>(score_cost)) {
@@ -152,7 +151,6 @@ protected:
   std::string inflation_layer_name_;
 
   unsigned int power_{0};
-  size_t footprint_checks_;
 };
 
 }  // namespace mppi::critics
