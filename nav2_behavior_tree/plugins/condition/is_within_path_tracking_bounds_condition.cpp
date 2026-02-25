@@ -55,7 +55,11 @@ BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
   getInput<nav2_msgs::msg::TrackingFeedback>("tracking_feedback", tracking_feedback_);
   // Check if tracking feedback is not set yet
   if (tracking_feedback_ == nav2_msgs::msg::TrackingFeedback()) {
-    RCLCPP_ERROR(logger_, "Failed to get tracking feedback from blackboard");
+    RCLCPP_ERROR_THROTTLE(
+      logger_,
+      *clock_,
+      1000,
+      "Failed to get tracking feedback from blackboard");
     return BT::NodeStatus::FAILURE;
   }
   double position_tracking_error = tracking_feedback_.position_tracking_error;
