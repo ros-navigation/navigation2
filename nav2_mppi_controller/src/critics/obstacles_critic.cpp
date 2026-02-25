@@ -15,7 +15,7 @@
 
 #include <cmath>
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
-#include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_costmap_2d/inflation_layer_interface.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 
 namespace mppi::critics
@@ -78,7 +78,7 @@ float ObstaclesCritic::findCircumscribedCost(
   }
 
   // check if the costmap has an inflation layer
-  const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(
+  const auto inflation_layer = nav2_costmap_2d::InflationLayerInterface::getInflationLayer(
     costmap,
     inflation_layer_name_);
   if (inflation_layer != nullptr) {

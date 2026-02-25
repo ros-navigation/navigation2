@@ -499,6 +499,7 @@ _environments:
     RCUTILS_LOGGING_USE_STDOUT: "0"
     DEBIAN_FRONTEND: "noninteractive"
     PYTHONUNBUFFERED: "1"
+    OMP_NUM_THREADS: "4"
 
 executors:
   release_exec:

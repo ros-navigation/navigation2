@@ -27,6 +27,13 @@ find_package(nav2_ros_common REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(point_cloud_transport REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+option(ENABLE_OPENMP "Enable OpenMP parallelization" OFF)
+
+if(ENABLE_OPENMP)
+  find_package(OpenMP REQUIRED)
+endif()
 
 nav2_package()
 
@@ -66,6 +73,7 @@ target_link_libraries(nav2_costmap_2d_core PUBLIC
 
 add_library(layers SHARED
   plugins/inflation_layer.cpp
+  plugins/legacy_inflation_layer.cpp
   plugins/static_layer.cpp
   plugins/obstacle_layer.cpp
   src/observation_buffer.cpp
@@ -90,7 +98,19 @@ target_link_libraries(layers PUBLIC
   tf2::tf2
   nav2_ros_common::nav2_ros_common
   point_cloud_transport::point_cloud_transport
+  Eigen3::Eigen
 )
+
+# Link OpenMP if enabled
+if(ENABLE_OPENMP)
+  message(STATUS "OpenMP ENABLED for nav2_costmap_2d layers (${OpenMP_CXX_VERSION})")
+  target_link_libraries(layers PRIVATE OpenMP::OpenMP_CXX)
+  target_compile_options(layers PRIVATE -fopenmp)
+else()
+  message(STATUS "OpenMP DISABLED for nav2_costmap_2d layers")
+  target_compile_options(layers PRIVATE -Wno-unknown-pragmas)
+endif()
+
 target_link_libraries(layers PRIVATE
   pluginlib::pluginlib
 )
@@ -226,5 +246,8 @@ ament_export_dependencies(
   nav2_ros_common
   point_cloud_transport
 )
+
+ament_export_dependencies(Eigen3)
+
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()
