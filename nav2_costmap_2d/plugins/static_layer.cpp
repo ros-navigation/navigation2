@@ -513,8 +513,9 @@ rcl_interfaces::msg::SetParametersResult StaticLayer::validateParameterUpdatesCa
       param_name == name_ + "." + "restore_cleared_footprint")
     {
       if (!footprint_clearing_enabled_) {
-        RCLCPP_WARN(logger_, "restore_cleared_footprint cannot be used "
-                      "when footprint_clearing_enabled is False. Rejecting parameter update.");
+        RCLCPP_WARN(
+          logger_, "restore_cleared_footprint cannot be used "
+          "when footprint_clearing_enabled is False. Rejecting parameter update.");
         result.successful = false;
       }
     }
