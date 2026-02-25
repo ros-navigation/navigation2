@@ -246,10 +246,17 @@ bool PlannerServer::isServerInactive(
 void PlannerServer::waitForCostmap()
 {
   if (params_->costmap_update_timeout > rclcpp::Duration(0, 0)) {
+    auto waiting_start = now();
+    bool was_waiting = !costmap_ros_->isCurrent();
     try {
       costmap_ros_->waitUntilCurrent(params_->costmap_update_timeout);
     } catch (const std::runtime_error & ex) {
       throw nav2_core::PlannerTimedOut(ex.what());
+    }
+    if (was_waiting) {
+      RCLCPP_INFO(
+        get_logger(), "Global costmap became current after %.3f s",
+        (now() - waiting_start).seconds());
     }
   }
 }

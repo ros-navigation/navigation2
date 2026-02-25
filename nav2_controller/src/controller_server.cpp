@@ -518,11 +518,17 @@ void ControllerServer::computeControl()
       // Don't compute a trajectory until costmap is valid (after clear costmap)
       rclcpp::Rate r(100);
       auto waiting_start = now();
+      bool was_waiting = !costmap_ros_->isCurrent();
       while (!costmap_ros_->isCurrent()) {
         if (now() - waiting_start > params_->costmap_update_timeout) {
           throw nav2_core::ControllerTimedOut("Costmap timed out waiting for update");
         }
         r.sleep();
+      }
+      if (was_waiting) {
+        RCLCPP_INFO(
+          get_logger(), "Local costmap became current after %.3f s",
+          (now() - waiting_start).seconds());
       }
 
       updateGlobalPath();
