@@ -480,9 +480,9 @@
     </Condition>
 
     <Condition ID="IsWithinPathTrackingBounds">
-      <input_port name="max_position_error_left">Maximum distance the robot can deviate from the path in meters on the left side</input_port>
-      <input_port name="max_position_error_right">Maximum distance the robot can deviate from the path in meters on the right side</input_port>
-      <input_port name="max_heading_error">Maximum heading error in radians</input_port>
+      <input_port name="max_error_left">Maximum distance the robot can deviate from the path in meters on the left side</input_port>
+      <input_port name="max_error_right">Maximum distance the robot can deviate from the path in meters on the right side</input_port>
+      <input_port name="max_error_heading">Maximum heading error in radians</input_port>
       <input_port name="tracking_feedback">Tracking feedback from the controller server</input_port>
     </Condition>
 

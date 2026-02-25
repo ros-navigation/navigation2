@@ -87,7 +87,7 @@ TEST_F(IsWithinPathTrackingBoundsTestFixture, test_tick_is_within_path_tracking_
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <IsWithinPathTrackingBounds max_position_error_left="0.5" max_position_error_right="0.5" max_heading_error="3.14" tracking_feedback="{tracking_feedback}"/>
+          <IsWithinPathTrackingBounds max_error_left="0.5" max_error_right="0.5" max_error_heading="3.14" tracking_feedback="{tracking_feedback}"/>
         </BehaviorTree>
       </root>)";
 
@@ -96,6 +96,10 @@ TEST_F(IsWithinPathTrackingBoundsTestFixture, test_tick_is_within_path_tracking_
   nav2_msgs::msg::TrackingFeedback tracking_feedback;
   tracking_feedback.position_tracking_error = 0.25;
   tracking_feedback.heading_tracking_error = 1.0;
+
+  tree_->rootNode()->executeTick();
+  // Should return failure because tracking feedback is not set yet on the blackboard
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
 
   config_->blackboard->set("tracking_feedback", tracking_feedback);
 
@@ -110,14 +114,14 @@ TEST_F(IsWithinPathTrackingBoundsTestFixture, test_tick_is_within_path_tracking_
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <IsWithinPathTrackingBounds max_position_error_left="0.5" max_position_error_right="0.5" max_heading_error="3.14" tracking_feedback="{tracking_feedback}"/>
+          <IsWithinPathTrackingBounds max_error_left="0.5" max_error_right="0.5" max_error_heading="3.14" tracking_feedback="{tracking_feedback}"/>
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   nav2_msgs::msg::TrackingFeedback tracking_feedback;
-  tracking_feedback.position_tracking_error = 0.75;  // Exceeds max_position_error_left
+  tracking_feedback.position_tracking_error = 0.75;  // Exceeds max_error_left
   tracking_feedback.heading_tracking_error = 1.0;
 
   config_->blackboard->set("tracking_feedback", tracking_feedback);
@@ -134,7 +138,7 @@ TEST_F(IsWithinPathTrackingBoundsTestFixture,
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <IsWithinPathTrackingBounds max_position_error_left="0.5" max_position_error_right="0.5" max_heading_error="3.14" tracking_feedback="{tracking_feedback}"/>
+          <IsWithinPathTrackingBounds max_error_left="0.5" max_error_right="0.5" max_error_heading="3.14" tracking_feedback="{tracking_feedback}"/>
         </BehaviorTree>
       </root>)";
 
@@ -142,7 +146,7 @@ TEST_F(IsWithinPathTrackingBoundsTestFixture,
 
   nav2_msgs::msg::TrackingFeedback tracking_feedback;
   tracking_feedback.position_tracking_error = 0.25;
-  tracking_feedback.heading_tracking_error = 4.0;  // Exceeds max_heading_error
+  tracking_feedback.heading_tracking_error = 4.0;  // Exceeds max_error_heading
 
   config_->blackboard->set("tracking_feedback", tracking_feedback);
 
@@ -157,7 +161,7 @@ TEST_F(IsWithinPathTrackingBoundsTestFixture, test_tick_is_within_path_tracking_
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <IsWithinPathTrackingBounds max_position_error_left="0.5" max_position_error_right="0.2" max_heading_error="3.14" tracking_feedback="{tracking_feedback}"/>
+          <IsWithinPathTrackingBounds max_error_left="0.5" max_error_right="0.2" max_error_heading="3.14" tracking_feedback="{tracking_feedback}"/>
         </BehaviorTree>
       </root>)";
 
@@ -177,7 +181,7 @@ TEST_F(IsWithinPathTrackingBoundsTestFixture, test_tick_is_within_path_tracking_
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <IsWithinPathTrackingBounds max_position_error_left="-0.5" max_position_error_right="-0.2" max_heading_error="-3.14" tracking_feedback="{tracking_feedback}"/>
+          <IsWithinPathTrackingBounds max_error_left="-0.5" max_error_right="-0.2" max_error_heading="-3.14" tracking_feedback="{tracking_feedback}"/>
         </BehaviorTree>
       </root>)";
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));

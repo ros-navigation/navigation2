@@ -61,11 +61,11 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("max_position_error_left", 0.5,
+      BT::InputPort<double>("max_error_left", 0.5,
         "Maximum allowed position tracking error left side"),
-      BT::InputPort<double>("max_position_error_right", 0.5,
+      BT::InputPort<double>("max_error_right", 0.5,
         "Maximum allowed position tracking error on the right side"),
-      BT::InputPort<double>("max_heading_error", 3.14,
+      BT::InputPort<double>("max_error_heading", 3.14,
         "Maximum allowed heading tracking error in radians"),
       BT::InputPort<nav2_msgs::msg::TrackingFeedback>("tracking_feedback",
         "Current tracking feedback message")
@@ -76,9 +76,9 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("IsWithinPathTrackingBoundsCondition")};
 
-  double max_position_error_left_;
-  double max_position_error_right_;
-  double max_heading_error_;
+  double max_error_left_;
+  double max_error_right_;
+  double max_error_heading_;
   nav2_msgs::msg::TrackingFeedback tracking_feedback_;
 };
 

@@ -29,21 +29,20 @@ IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
 
 void IsWithinPathTrackingBoundsCondition::initialize()
 {
-  getInput<double>("max_position_error_left", max_position_error_left_);
-  getInput<double>("max_position_error_right", max_position_error_right_);
-  getInput<double>("max_heading_error", max_heading_error_);
-  getInput<nav2_msgs::msg::TrackingFeedback>("tracking_feedback", tracking_feedback_);
-  if (max_position_error_right_ < 0.0) {
-    RCLCPP_WARN(logger_, "max_position_error_right should be positive, using absolute value");
-    max_position_error_right_ = std::abs(max_position_error_right_);
+  getInput<double>("max_error_left", max_error_left_);
+  getInput<double>("max_error_right", max_error_right_);
+  getInput<double>("max_error_heading", max_error_heading_);
+  if (max_error_right_ < 0.0) {
+    RCLCPP_WARN_ONCE(logger_, "max_error_right should be positive, using absolute value");
+    max_error_right_ = std::abs(max_error_right_);
   }
-  if (max_position_error_left_ < 0.0) {
-    RCLCPP_WARN(logger_, "max_position_error_left should be positive, using absolute value");
-    max_position_error_left_ = std::abs(max_position_error_left_);
+  if (max_error_left_ < 0.0) {
+    RCLCPP_WARN_ONCE(logger_, "max_error_left should be positive, using absolute value");
+    max_error_left_ = std::abs(max_error_left_);
   }
-  if (max_heading_error_ < 0.0) {
-    RCLCPP_WARN(logger_, "max_heading_error should be positive, using absolute value");
-    max_heading_error_ = std::abs(max_heading_error_);
+  if (max_error_heading_ < 0.0) {
+    RCLCPP_WARN_ONCE(logger_, "max_error_heading should be positive, using absolute value");
+    max_error_heading_ = std::abs(max_error_heading_);
   }
 }
 
@@ -53,16 +52,22 @@ BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
     initialize();
   }
 
+  getInput<nav2_msgs::msg::TrackingFeedback>("tracking_feedback", tracking_feedback_);
+  // Check if tracking feedback is not set yet
+  if (tracking_feedback_ == nav2_msgs::msg::TrackingFeedback()) {
+    RCLCPP_ERROR(logger_, "Failed to get tracking feedback from blackboard");
+    return BT::NodeStatus::FAILURE;
+  }
   double position_tracking_error = tracking_feedback_.position_tracking_error;
   double heading_tracking_error = tracking_feedback_.heading_tracking_error;
   bool is_within_position_bounds;
   if (position_tracking_error >= 0.0) {  // Positive or zero = left side (or on path)
-    is_within_position_bounds = (position_tracking_error <= max_position_error_left_);
+    is_within_position_bounds = (position_tracking_error <= max_error_left_);
   } else {  // Negative = right side
-    is_within_position_bounds = (std::abs(position_tracking_error) <= max_position_error_right_);
+    is_within_position_bounds = (std::abs(position_tracking_error) <= max_error_right_);
   }
 
-  bool is_within_heading_bounds = std::abs(heading_tracking_error) <= max_heading_error_;
+  bool is_within_heading_bounds = std::abs(heading_tracking_error) <= max_error_heading_;
 
   if (is_within_position_bounds && is_within_heading_bounds) {
     return BT::NodeStatus::SUCCESS;
