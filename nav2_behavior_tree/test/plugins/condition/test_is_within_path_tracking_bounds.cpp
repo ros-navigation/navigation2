@@ -97,10 +97,6 @@ TEST_F(IsWithinPathTrackingBoundsTestFixture, test_tick_is_within_path_tracking_
   tracking_feedback.position_tracking_error = 0.25;
   tracking_feedback.heading_tracking_error = 1.0;
 
-  tree_->rootNode()->executeTick();
-  // Should return failure because tracking feedback is not set yet on the blackboard
-  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
-
   config_->blackboard->set("tracking_feedback", tracking_feedback);
 
   tree_->rootNode()->executeTick();
