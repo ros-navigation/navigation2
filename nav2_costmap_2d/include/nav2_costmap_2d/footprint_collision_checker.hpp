@@ -50,12 +50,17 @@ public:
   explicit FootprintCollisionChecker(CostmapT costmap);
   /**
    * @brief Find the footprint cost in oriented footprint
+   * @param footprint The footprint to check
+   * @param check_full_area If true, checks the full area after perimeter check (default: false)
+   * @return The maximum cost found (perimeter only or full area depending on parameter)
    */
-  double footprintCost(const Footprint & footprint);
+  double footprintCost(const Footprint & footprint, bool check_full_area = false);
   /**
    * @brief Find the footprint cost a a post with an unoriented footprint
    */
-  double footprintCostAtPose(double x, double y, double theta, const Footprint & footprint);
+  double footprintCostAtPose(
+    double x, double y, double theta, const Footprint & footprint,
+    bool check_full_area = false);
   /**
    * @brief Get the cost for a line segment
    */
