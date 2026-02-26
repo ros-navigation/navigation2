@@ -479,6 +479,13 @@
       <input_port name="max_robot_pose_search_dist">Maximum forward integrated distance along the path (starting from the last detected pose) to bound the search for the closest pose to the robot. When set to infinity (default), whole path is searched every time</input_port>
     </Condition>
 
+    <Condition ID="IsWithinPathTrackingBounds">
+      <input_port name="max_error_left">Maximum distance the robot can deviate from the path in meters on the left side</input_port>
+      <input_port name="max_error_right">Maximum distance the robot can deviate from the path in meters on the right side</input_port>
+      <input_port name="max_error_heading">Maximum heading error in radians</input_port>
+      <input_port name="tracking_feedback">Tracking feedback from the controller server</input_port>
+    </Condition>
+
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
 
