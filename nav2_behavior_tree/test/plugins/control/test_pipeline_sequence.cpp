@@ -62,7 +62,7 @@ PipelineSequenceTestFixture::third_child_ = nullptr;
 TEST_F(PipelineSequenceTestFixture, test_failure_on_idle_child)
 {
   first_child_->changeStatus(BT::NodeStatus::IDLE);
-  EXPECT_THROW(bt_node_->executeTick(), std::runtime_error);
+  EXPECT_THROW(bt_node_->executeTick(), BT::NodeExecutionError);
 }
 
 TEST_F(PipelineSequenceTestFixture, test_failure)
