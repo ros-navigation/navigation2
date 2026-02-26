@@ -52,7 +52,8 @@ BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
     initialize();
   }
 
-  // If not set yet (like on starting to track), pass as initialization should always be within tracking bounds
+  // If not set yet (like on starting to track)
+  // pass as initialization should always be within tracking bounds
   if (!getInput<nav2_msgs::msg::TrackingFeedback>("tracking_feedback", tracking_feedback_)) {
     return BT::NodeStatus::SUCCESS;
   }
