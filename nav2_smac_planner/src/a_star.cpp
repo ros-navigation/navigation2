@@ -128,9 +128,8 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
       _search_info);
 
   // Always set context pointers to ensure newly allocated objects get their contexts restored
-  _expander->setContext(_shared_ctx.get());
   _goal_manager.setContext(_shared_ctx.get());
-
+  _expander->setContext(_shared_ctx.get());
   _expander->setCollisionChecker(_collision_checker);
 }
 
