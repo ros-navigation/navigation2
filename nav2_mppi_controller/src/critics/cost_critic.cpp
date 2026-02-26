@@ -196,19 +196,44 @@ void CostCritic::score(CriticData & data)
         }
       }
 
-      if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
+      float cost_for_scoring = pose_cost;
+      bool use_footprint_cost = consider_footprint_ &&
+        (pose_cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f);
+
+      if (use_footprint_cost) {
+        cost_for_scoring = static_cast<float>(collision_checker_.footprintCostAtPose(
+            static_cast<double>(Tx), static_cast<double>(Ty), static_cast<double>(traj_yaw(i, j)),
+            costmap_ros_->getRobotFootprint()));
+      }
+
+      // Check for collision based on the appropriate cost
+      bool in_collision = false;
+
+      switch (static_cast<unsigned char>(cost_for_scoring)) {
+        case (nav2_costmap_2d::LETHAL_OBSTACLE):
+          in_collision = true;
+          break;
+        case (nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE):
+          in_collision = use_footprint_cost ? false : true;
+          break;
+        case (nav2_costmap_2d::NO_INFORMATION):
+          in_collision = is_tracking_unknown_ ? false : true;
+          break;
+        default:
+          in_collision = false;
+      }
+
+      if (in_collision) {
         traj_cost = collision_cost_;
         trajectory_collide = true;
         break;
       }
 
       // Let near-collision trajectory points be punished severely
-      // Note that we collision check based on the footprint actual,
-      // but score based on the center-point cost regardless
-      if (pose_cost >= static_cast<float>(near_collision_cost_)) {
+      if (cost_for_scoring >= near_collision_cost_ && !near_goal) {
         traj_cost += critical_cost_;
       } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
-        traj_cost += pose_cost;
+        traj_cost += cost_for_scoring;
       }
     }
 
