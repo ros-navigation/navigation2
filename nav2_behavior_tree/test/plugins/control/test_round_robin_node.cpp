@@ -61,7 +61,7 @@ TEST_F(RoundRobinNodeTestFixture, test_failure_on_idle_child)
 {
   first_child_->changeStatus(BT::NodeStatus::IDLE);
   // NodeExecutionError is introduced in BT.CPP 4.9.0
-  #if RCLCPP_VERSION_GTE(29, 6, 0)
+  #if RCLCPP_VERSION_GTE(30, 1, 5)
   EXPECT_THROW(bt_node_->executeTick(), BT::NodeExecutionError);
   #else
   EXPECT_THROW(bt_node_->executeTick(), BT::LogicError);
