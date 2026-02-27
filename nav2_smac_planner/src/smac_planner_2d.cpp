@@ -444,7 +444,7 @@ SmacPlanner2D::updateParametersCallback(const std::vector<rclcpp::Parameter> & p
   if (reinit_a_star || reinit_downsampler) {
     // Re-Initialize A* template
     if (reinit_a_star) {
-      _a_star = std::make_unique<AStarAlgorithm<Node2D>>(_motion_model, _search_info);
+      _a_star->setSearchInfo(_search_info);
       _a_star->initialize(
         _allow_unknown,
         _max_iterations,

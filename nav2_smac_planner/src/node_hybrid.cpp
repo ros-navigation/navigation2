@@ -61,6 +61,7 @@ void HybridMotionTable::initDubin(
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
     min_turning_radius == search_info.minimum_turning_radius &&
+    allow_primitive_interpolation == search_info.allow_primitive_interpolation &&
     motion_model == MotionModel::DUBIN)
   {
     return;
@@ -69,6 +70,7 @@ void HybridMotionTable::initDubin(
   num_angle_quantization = num_angle_quantization_in;
   num_angle_quantization_float = static_cast<float>(num_angle_quantization);
   min_turning_radius = search_info.minimum_turning_radius;
+  allow_primitive_interpolation = search_info.allow_primitive_interpolation;
   motion_model = MotionModel::DUBIN;
 
   // angle must meet 3 requirements:
@@ -188,6 +190,7 @@ void HybridMotionTable::initReedsShepp(
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
     min_turning_radius == search_info.minimum_turning_radius &&
+    allow_primitive_interpolation == search_info.allow_primitive_interpolation &&
     motion_model == MotionModel::REEDS_SHEPP)
   {
     return;
@@ -196,6 +199,7 @@ void HybridMotionTable::initReedsShepp(
   num_angle_quantization = num_angle_quantization_in;
   num_angle_quantization_float = static_cast<float>(num_angle_quantization);
   min_turning_radius = search_info.minimum_turning_radius;
+  allow_primitive_interpolation = search_info.allow_primitive_interpolation;
   motion_model = MotionModel::REEDS_SHEPP;
 
   float angle = 2.0 * asin(sqrt(2.0) / (2 * min_turning_radius));
