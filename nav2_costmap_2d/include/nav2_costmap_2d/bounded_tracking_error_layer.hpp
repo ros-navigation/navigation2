@@ -152,6 +152,12 @@ protected:
   void trackingCallback(const nav2_msgs::msg::TrackingFeedback::SharedPtr msg);
 
   /**
+   * @brief Callback for goal pose updates.
+   * @param msg Incoming goal pose message.
+   */
+  void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+
+  /**
    * @brief Callback for dynamic parameter updates.
    * @param parameters Vector of parameters being updated.
    * @return Result indicating success or failure of parameter update.
@@ -164,8 +170,10 @@ protected:
 private:
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
+  nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
   std::mutex data_mutex_;
   nav_msgs::msg::Path last_path_;
+  geometry_msgs::msg::PoseStamped last_goal_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   size_t step_size_;
