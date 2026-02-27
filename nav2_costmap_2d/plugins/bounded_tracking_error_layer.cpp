@@ -127,7 +127,6 @@ void BoundedTrackingErrorLayer::goalCallback(const geometry_msgs::msg::PoseStamp
       node->get_logger(),
       "New goal received, clearing corridor");
 
-    // Clear corridor data
     last_path_ = nav_msgs::msg::Path();
     last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
   }
@@ -158,6 +157,8 @@ void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPt
   }
 
   // Check for path discontinuity (replanning detection)
+  // Discontinuity indicates the planner has generated a significantly different path,
+  // requiring corridor to be rebuilt from scratch
   bool path_discontinuity = false;
   if (!last_path_.poses.empty() && msg->poses.size() >= 2) {
     size_t old_size = last_path_.poses.size();
@@ -171,8 +172,8 @@ void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPt
     } else if (old_size >= 2) {
       double threshold = corridor_width_ * 0.5;
 
-      // Compare points if size stays same and points change
-
+      // Compare midpoint and endpoint positions between old and new paths
+      // to detect significant path changes even when size remains the same
       size_t old_mid_idx = old_size / 2;
       size_t new_mid_idx = new_size / 2;
       double mid_dx = msg->poses[new_mid_idx].pose.position.x -
@@ -198,7 +199,6 @@ void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPt
   }
 
   if (path_discontinuity) {
-    // Clear corridor on replanning
     last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
   }
 
@@ -260,13 +260,16 @@ WallPolygons BoundedTrackingErrorLayer::getWallPolygons(
   double outer_half_width = corridor_width_ * 0.5;
   double inner_half_width = (corridor_width_ - (wall_thickness_ * resolution * 2.0)) * 0.5;
 
+  // Math: Let n_hat = (-dy/|d|, dx/|d|) be the unit normal to path segment d.
+  // Left Wall:  P_out = Pi + n_hat * (width/2), P_in = Pi + n_hat * (width/2 - thickness * res)
+  // Right Wall: P_out = Pi - n_hat * (width/2), P_in = Pi - n_hat * (width/2 - thickness * res)
+
   size_t estimated_points = (segment.poses.size() / step_size_) + 1;
   walls.left_outer.reserve(estimated_points);
   walls.left_inner.reserve(estimated_points);
   walls.right_outer.reserve(estimated_points);
   walls.right_inner.reserve(estimated_points);
 
-  // Process path points with step size
   for (size_t current_index = 0; current_index < segment.poses.size();
     current_index += step_size_)
   {
@@ -283,8 +286,9 @@ WallPolygons BoundedTrackingErrorLayer::getWallPolygons(
     double dy = next_pose.pose.position.y - py;
 
     // Calculate perpendicular direction for wall points
+    // Given direction vector (dx, dy), the perpendicular is (-dy, dx) normalized
     double norm = std::hypot(dx, dy);
-    if (norm < 1e-6) {
+    if (norm < 1e-6) {  // Avoid division by zero for very close points
       continue;
     }
 
@@ -405,6 +409,8 @@ void BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
+  // Build left wall polygon by connecting outer and inner edges
+  // Creates a closed polygon: outer edge forward, inner edge backward
   std::vector<geometry_msgs::msg::Point> left_wall_polygon;
   left_wall_polygon.reserve(walls.left_outer.size() + walls.left_inner.size());
 
@@ -424,6 +430,7 @@ void BoundedTrackingErrorLayer::updateCosts(
     left_wall_polygon.push_back(point);
   }
 
+  // Build right wall polygon similarly
   std::vector<geometry_msgs::msg::Point> right_wall_polygon;
   right_wall_polygon.reserve(walls.right_outer.size() + walls.right_inner.size());
 
