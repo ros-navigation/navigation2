@@ -132,7 +132,7 @@ protected:
     feedback.header.frame_id = "map";
     feedback.header.stamp = node_->now();
     feedback.current_path_index = path_index;
-    feedback.tracking_error = error;
+    feedback.position_tracking_error = error;
 
     feedback.robot_pose.header = feedback.header;
     feedback.robot_pose.pose.position.x = path_index * 0.1;
@@ -203,7 +203,6 @@ TEST_F(BoundedTrackingErrorLayerTestFixture, test_path_segment_bounds)
   EXPECT_FALSE(segment.poses.empty());
   EXPECT_LT(segment.poses.size(), path.poses.size());
 
-  // Check segment boundaries make sense
   double first_x = segment.poses.front().pose.position.x;
   double last_x = segment.poses.back().pose.position.x;
   double robot_x = tracking_error.robot_pose.pose.position.x;
