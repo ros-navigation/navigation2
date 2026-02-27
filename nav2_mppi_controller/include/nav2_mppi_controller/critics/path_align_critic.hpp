@@ -112,27 +112,28 @@ protected:
    * @return Squared distance from point to segment
    *
    * @note Returns squared distance to avoid sqrt() computation
-   * @note Handles degenerate (zero-length) segments
+   * @note Handles degenerate (zero-length) segments by returning distance to start point
    */
-inline float distSqToSegment(float px, float py, Eigen::Index seg_idx) const
-{
-  const float dpx = px - path_x_cache_(seg_idx);
-  const float dpy = py - path_y_cache_(seg_idx);
-  
-  const float inv_len_sq = segment_inv_len_sq_(seg_idx);
-  if (inv_len_sq < 1e-6f) [[unlikely]] {
-    return dpx * dpx + dpy * dpy;
+  inline float distSqToSegment(float px, float py, Eigen::Index seg_idx) const
+  {
+    const float dpx = px - path_x_cache_(seg_idx);
+    const float dpy = py - path_y_cache_(seg_idx);
+
+    const float inv_len_sq = segment_inv_len_sq_(seg_idx);
+
+    if (inv_len_sq < 1e-6f) [[unlikely]] {
+      return dpx * dpx + dpy * dpy;
+    }
+
+    const float dx = segment_dx_(seg_idx);
+    const float dy = segment_dy_(seg_idx);
+    const float t = std::clamp((dpx * dx + dpy * dy) * inv_len_sq, 0.0f, 1.0f);
+
+    const float dist_x = dpx - t * dx;
+    const float dist_y = dpy - t * dy;
+
+    return dist_x * dist_x + dist_y * dist_y;
   }
-
-  const float dx = segment_dx_(seg_idx);
-  const float dy = segment_dy_(seg_idx);
-  const float t = std::clamp((dpx * dx + dpy * dy) * inv_len_sq, 0.0f, 1.0f);
-  
-  const float dist_x = dpx - t * dx;
-  const float dist_y = dpy - t * dy;
-
-  return dist_x * dist_x + dist_y * dist_y;
-}
 
   size_t offset_from_furthest_{0};
   int trajectory_point_step_{0};
