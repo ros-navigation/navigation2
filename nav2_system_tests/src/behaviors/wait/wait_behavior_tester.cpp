@@ -50,9 +50,12 @@ WaitBehaviorTester::WaitBehaviorTester()
   publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
 
-  subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&WaitBehaviorTester::amclPoseCallback, this, std::placeholders::_1));
+  subscription_ = nav2::interfaces::create_subscription<
+    geometry_msgs::msg::PoseWithCovarianceStamped>(
+    node_,
+    "amcl_pose",
+    std::bind(&WaitBehaviorTester::amclPoseCallback, this, std::placeholders::_1),
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 }
 
 WaitBehaviorTester::~WaitBehaviorTester()

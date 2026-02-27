@@ -29,6 +29,7 @@
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 #include "rviz_common/panel.hpp"
 #include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
@@ -109,8 +110,8 @@ private:
   // Docking / Undocking action feedback subscribers
   nav2::Subscription<Dock::Impl::FeedbackMessage>::SharedPtr docking_feedback_sub_;
   nav2::Subscription<Undock::Impl::FeedbackMessage>::SharedPtr undocking_feedback_sub_;
-  nav2::Subscription<Dock::Impl::GoalStatusMessage>::SharedPtr docking_goal_status_sub_;
-  nav2::Subscription<Undock::Impl::GoalStatusMessage>::SharedPtr undocking_goal_status_sub_;
+  nav2::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr docking_goal_status_sub_;
+  nav2::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr undocking_goal_status_sub_;
 
   // Goal related state
   DockGoalHandle::SharedPtr dock_goal_handle_;

@@ -144,7 +144,7 @@ protected:
   nav2::ServiceClient<nav2_msgs::srv::RemoveShapes>::SharedPtr remove_shapes_client_;
 
   // Output map subscriber
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr vo_map_sub_;
+  nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr vo_map_sub_;
   // Output map published by VectorObjectServer
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr map_;
 

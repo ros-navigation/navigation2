@@ -27,6 +27,9 @@
 #include "nav2_ros_common/subscription.hpp"
 #include "nav2_ros_common/action_client.hpp"
 #include "rclcpp_action/client.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 
 namespace nav2
 {
@@ -183,34 +186,47 @@ inline rclcpp::PublisherOptions createPublisherOptions(
 }
 
 /**
- * @brief Create a subscription to a topic using Nav2 QoS profiles and SubscriptionOptions
+ * @brief Create a subscription to a topic using Nav2 QoS profiles and SubscriptionOptions.
+ *
+ * If the node is not a lifecycle node, the subscription will be auto-activated.
+ *
  * @param node Node to create the subscription on
  * @param topic_name Name of topic
  * @param callback Callback function to handle incoming messages
  * @param qos QoS settings for the subscription (default is nav2::qos::StandardTopicQoS())
  * @param callback_group The callback group to use (if provided)
- * @return A shared pointer to the created subscription
+ * @return A shared pointer to the created nav2::Subscription
  */
 template<typename MessageT, typename NodeT, typename CallbackT>
-typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
+typename nav2::Subscription<MessageT>::SharedPtr
+create_subscription(
   const NodeT & node,
   const std::string & topic_name,
   CallbackT && callback,
   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
 {
-  bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
-    node, "allow_parameter_qos_overrides", true);
+  bool allow_parameter_qos_overrides =
+    nav2::declare_or_get_parameter(node, "allow_parameter_qos_overrides", true);
 
-  auto params_interface = node->get_node_parameters_interface();
-  auto topics_interface = node->get_node_topics_interface();
-  return rclcpp::create_subscription<MessageT, CallbackT>(
-    params_interface,
-    topics_interface,
-    topic_name,
-    qos,
-    std::forward<CallbackT>(callback),
-    createSubscriptionOptions(topic_name, allow_parameter_qos_overrides, callback_group));
+  auto options = createSubscriptionOptions(
+     topic_name, allow_parameter_qos_overrides, callback_group);
+
+  auto sub = std::make_shared<nav2::Subscription<MessageT>>(
+     node,
+     topic_name,
+     std::forward<CallbackT>(callback),
+     qos,
+     options);
+
+  // Auto-activate if the node is not a base lifecycle node
+  auto lc_node = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
+  if (!lc_node) {
+    // Not a lifecycle node, auto-activate the subscription
+    sub->on_activate();
+  }
+
+  return sub;
 }
 
 /**

@@ -36,6 +36,8 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_costmap_2d/costmap_filters/binary_filter.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
+
 
 using namespace std::chrono_literals;
 
@@ -106,9 +108,12 @@ public:
   explicit BinaryStateSubscriber(const std::string & binary_state_topic, bool default_state)
   : Node("binary_state_sub"), binary_state_updated_(false)
   {
-    subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
-      binary_state_topic, rclcpp::QoS(10),
-      std::bind(&BinaryStateSubscriber::binaryStateCallback, this, std::placeholders::_1));
+    subscriber_ = nav2::interfaces::create_subscription<std_msgs::msg::Bool>(
+      shared_from_this(),
+      binary_state_topic,
+      std::bind(&BinaryStateSubscriber::binaryStateCallback, this, std::placeholders::_1),
+      rclcpp::QoS(10));
+
 
     // Initialize with default state
     msg_.data = default_state;
