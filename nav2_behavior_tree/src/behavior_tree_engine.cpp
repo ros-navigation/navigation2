@@ -41,11 +41,6 @@ BehaviorTreeEngine::BehaviorTreeEngine(
 
   // clock for throttled debug log
   clock_ = node->get_clock();
-
-  // FIXME: the next two line are needed for back-compatibility with BT.CPP 3.8.x
-  // Note that the can be removed, once we migrate from BT.CPP 4.5.x to 4.6+
-  BT::ReactiveSequence::EnableException(false);
-  BT::ReactiveFallback::EnableException(false);
 }
 
 BtStatus
