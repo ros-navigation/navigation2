@@ -99,9 +99,6 @@ list(APPEND plugin_libs nav2_clear_costmap_service_bt_node)
 add_library(nav2_is_stuck_condition_bt_node SHARED plugins/condition/is_stuck_condition.cpp)
 list(APPEND plugin_libs nav2_is_stuck_condition_bt_node)
 
-add_library(nav2_is_stopped_condition_bt_node SHARED plugins/condition/is_stopped_condition.cpp)
-list(APPEND plugin_libs nav2_is_stopped_condition_bt_node)
-
 add_library(nav2_transform_available_condition_bt_node SHARED plugins/condition/transform_available_condition.cpp)
 list(APPEND plugin_libs nav2_transform_available_condition_bt_node)
 
@@ -116,12 +113,6 @@ list(APPEND plugin_libs nav2_globally_updated_goal_condition_bt_node)
 
 add_library(nav2_goal_updated_condition_bt_node SHARED plugins/condition/goal_updated_condition.cpp)
 list(APPEND plugin_libs nav2_goal_updated_condition_bt_node)
-
-add_library(nav2_is_path_valid_condition_bt_node SHARED plugins/condition/is_path_valid_condition.cpp)
-list(APPEND plugin_libs nav2_is_path_valid_condition_bt_node)
-
-add_library(nav2_is_pose_occupied_condition_bt_node SHARED plugins/condition/is_pose_occupied_condition.cpp)
-list(APPEND plugin_libs nav2_is_pose_occupied_condition_bt_node)
 
 add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
 list(APPEND plugin_libs nav2_time_expired_condition_bt_node)
@@ -272,6 +263,15 @@ list(APPEND plugin_libs opennav_follow_action_bt_node)
 
 add_library(opennav_follow_cancel_bt_node SHARED plugins/action/follow_object_cancel_node.cpp)
 list(APPEND plugin_libs opennav_follow_cancel_bt_node)
+
+add_library(check_stop_status_action_bt_node SHARED plugins/action/check_stop_status_action.cpp)
+list(APPEND plugin_libs check_stop_status_action_bt_node)
+
+add_library(check_pose_occupancy_action_bt_node SHARED plugins/action/check_pose_occupancy_action.cpp)
+list(APPEND plugin_libs check_pose_occupancy_action_bt_node)
+
+add_library(validate_path_action_bt_node SHARED plugins/action/validate_path_action.cpp)
+list(APPEND plugin_libs validate_path_action_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}

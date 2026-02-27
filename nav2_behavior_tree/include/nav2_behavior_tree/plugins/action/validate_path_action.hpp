@@ -12,59 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_PATH_VALID_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_PATH_VALID_CONDITION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__VALIDATE_PATH_ACTION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__VALIDATE_PATH_ACTION_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "behaviortree_cpp/condition_node.h"
+#include "behaviortree_cpp/action_node.h"
 #include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
 #include "nav2_ros_common/service_client.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
-
+#include "nav2_behavior_tree/bt_service_node.hpp"
 
 namespace nav2_behavior_tree
 {
 
 /**
- * @brief A BT::ConditionNode that returns SUCCESS when the IsPathValid
- * service returns true and FAILURE otherwise
+ * @brief A nav2_behavior_tree::BtServiceNode class that removes goals that are in collision in on the global costmap
+ *        wraps nav2_msgs::srv::GetCosts
+ * @note It will re-initialize when halted.
  */
-class IsPathValidCondition : public BT::ConditionNode
+class ValidatePath : public BtServiceNode<nav2_msgs::srv::IsPathValid>
 {
 public:
   /**
-   * @brief A constructor for nav2_behavior_tree::IsPathValidCondition
-   * @param condition_name Name for the XML tag for this node
+   * @brief A constructor for nav2_behavior_tree::ValidatePath
+   * @param service_node_name Service name this node creates a client for
    * @param conf BT node configuration
    */
-  IsPathValidCondition(
-    const std::string & condition_name,
+  ValidatePath(
+    const std::string & service_node_name,
     const BT::NodeConfiguration & conf);
 
-  IsPathValidCondition() = delete;
-
   /**
-   * @brief The main override required by a BT action
+   * @brief The main override required by a BT service
    * @return BT::NodeStatus Status of tick execution
    */
-  BT::NodeStatus tick() override;
+  void on_tick() override;
 
-  /**
-   * @brief Function to read parameters and initialize class variables
-   */
-  void initialize();
+  BT::NodeStatus on_completion(std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
+  override;
 
-  /**
-   * @brief Creates list of BT ports
-   * @return BT::PortsList Containing node-specific ports
-   */
   static BT::PortsList providedPorts()
   {
     // Register JSON definitions for the types used in the ports
@@ -72,42 +65,38 @@ public:
     BT::RegisterJsonDefinition<std::chrono::milliseconds>();
     BT::RegisterJsonDefinition<std::vector<geometry_msgs::msg::PoseStamped>>();
 
-    return {
-      BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
-      BT::InputPort<std::chrono::milliseconds>("server_timeout"),
-      BT::InputPort<unsigned int>("max_cost", 254, "Maximum cost of the path"),
-      BT::InputPort<bool>(
+    return providedBasicPorts(
+      {
+        BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
+        BT::InputPort<unsigned int>("max_cost", 254, "Maximum cost of the path"),
+        BT::InputPort<bool>(
         "consider_unknown_as_obstacle", false,
         "Whether to consider unknown cost as obstacle"),
-      BT::InputPort<std::string>(
+        BT::InputPort<std::string>(
         "layer_name", "",
         "Name of the costmap layer to check against (empty = full costmap)"),
-      BT::InputPort<std::string>(
+        BT::InputPort<std::string>(
         "footprint", "",
         "Custom footprint specification as bracketed array of arrays, e.g., "
         "[[x1,y1],[x2,y2],...] (empty = use robot footprint)"),
-      BT::InputPort<bool>(
+        BT::InputPort<bool>(
         "check_full_path", false,
         "Whether to check all poses (true) or stop at first invalid pose (false)"),
-      BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+        BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
         "collision_poses",
         "Poses in the path that are in collision")
-    };
+    });
   }
 
 private:
-  nav2::LifecycleNode::SharedPtr node_;
-  nav2::ServiceClient<nav2_msgs::srv::IsPathValid>::SharedPtr client_;
-  // The timeout value while waiting for a response from the
-  // is path valid service
-  std::chrono::milliseconds server_timeout_;
   unsigned int max_cost_;
   bool consider_unknown_as_obstacle_;
   std::string layer_name_;
   std::string footprint_;
   bool check_full_path_;
+  nav_msgs::msg::Path path_;
 };
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_PATH_VALID_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__VALIDATE_PATH_ACTION_HPP_

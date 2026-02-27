@@ -21,12 +21,12 @@
 #include "nav2_util/odometry_utils.hpp"
 
 #include "utils/test_behavior_tree_fixture.hpp"
-#include "nav2_behavior_tree/plugins/condition/is_stopped_condition.hpp"
+#include "nav2_behavior_tree/plugins/action/check_stop_status_action.hpp"
 
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
-class IsStoppedTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+class CheckStopStatusTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
   void SetUp()
@@ -37,7 +37,7 @@ public:
     // shorten duration_stopped  from default to make the test faster
     std::chrono::milliseconds duration = 100ms;
     config_->input_ports["duration_stopped"] = std::to_string(duration.count()) + "ms";
-    bt_node_ = std::make_shared<nav2_behavior_tree::IsStoppedCondition>("is_stopped", *config_);
+    bt_node_ = std::make_shared<nav2_behavior_tree::CheckStopStatus>("check_stop_status", *config_);
   }
 
   void TearDown()
@@ -47,17 +47,17 @@ public:
   }
 
 protected:
-  static std::shared_ptr<nav2_behavior_tree::IsStoppedCondition> bt_node_;
+  static std::shared_ptr<nav2_behavior_tree::CheckStopStatus> bt_node_;
   static std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 };
 
-std::shared_ptr<nav2_behavior_tree::IsStoppedCondition>
-IsStoppedTestFixture::bt_node_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::CheckStopStatus>
+CheckStopStatusTestFixture::bt_node_ = nullptr;
 std::shared_ptr<nav2_util::OdomSmoother>
-IsStoppedTestFixture::odom_smoother_ = nullptr;
+CheckStopStatusTestFixture::odom_smoother_ = nullptr;
 
 
-TEST_F(IsStoppedTestFixture, test_behavior)
+TEST_F(CheckStopStatusTestFixture, test_behavior)
 {
   auto odom_pub = node_->create_publisher<nav_msgs::msg::Odometry>(
     "odom",

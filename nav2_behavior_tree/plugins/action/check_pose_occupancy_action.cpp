@@ -12,60 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_behavior_tree/plugins/condition/is_pose_occupied_condition.hpp"
-#include <chrono>
-#include <memory>
 #include <string>
+#include <memory>
+#include <limits>
+
+#include "nav2_behavior_tree/plugins/action/check_pose_occupancy_action.hpp"
 
 namespace nav2_behavior_tree
 {
 
-IsPoseOccupiedCondition::IsPoseOccupiedCondition(
-  const std::string & condition_name,
+CheckPoseOccupancy::CheckPoseOccupancy(
+  const std::string & service_node_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf),
-  use_footprint_(true), consider_unknown_as_obstacle_(false), cost_threshold_(254)
+: BtServiceNode<nav2_msgs::srv::GetCosts>(service_node_name, conf,
+    "/global_costmap/get_cost_global_costmap")
 {
-  initialize();
 }
 
-void IsPoseOccupiedCondition::initialize()
+
+void CheckPoseOccupancy::on_tick()
 {
   getInput<double>("cost_threshold", cost_threshold_);
   getInput<bool>("use_footprint", use_footprint_);
   getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
-  getInputOrBlackboard("server_timeout", server_timeout_);
-  createROSInterfaces();
-}
-
-void IsPoseOccupiedCondition::createROSInterfaces()
-{
-  std::string service_new;
-  getInput<std::string>("service_name", service_new);
-  if (service_new != service_name_ || !client_) {
-    service_name_ = service_new;
-    node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-    client_ =
-      node_->create_client<nav2_msgs::srv::GetCosts>(
-      service_name_,
-      false /* Does not create and spin an internal executor*/);
-  }
-}
-
-BT::NodeStatus IsPoseOccupiedCondition::tick()
-{
-  if (!BT::isStatusActive(status())) {
-    initialize();
-  }
   geometry_msgs::msg::PoseStamped pose;
   getInput("pose", pose);
 
-  auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
-  request->use_footprint = use_footprint_;
-  request->poses.push_back(pose);
+  request_ = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
+  request_->use_footprint = use_footprint_;
+  request_->poses.push_back(pose);
+}
 
-  auto response = client_->invoke(request, server_timeout_);
-
+BT::NodeStatus CheckPoseOccupancy::on_completion(
+  std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
+{
   if (!response->success) {
     RCLCPP_ERROR(
       node_->get_logger(),
@@ -82,10 +62,10 @@ BT::NodeStatus IsPoseOccupiedCondition::tick()
   }
 }
 
-}  // namespace nav2_behavior_tree
+}   // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::IsPoseOccupiedCondition>("IsPoseOccupied");
+  factory.registerNodeType<nav2_behavior_tree::CheckPoseOccupancy>("CheckPoseOccupancy");
 }
