@@ -62,7 +62,7 @@ BT::NodeStatus CheckPoseOccupancy::on_completion(
   }
 }
 
-}   // namespace nav2_behavior_tree
+}  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)

@@ -32,9 +32,7 @@ namespace nav2_behavior_tree
 {
 
 /**
- * @brief A nav2_behavior_tree::BtServiceNode class that removes goals that are in collision in on the global costmap
- *        wraps nav2_msgs::srv::GetCosts
- * @note It will re-initialize when halted.
+ * @brief A nav2_behavior_tree::BtServiceNode class that checks if a pose is occupied by calling the GetCosts service on the costmap
  */
 class CheckPoseOccupancy : public BtServiceNode<nav2_msgs::srv::GetCosts>
 {
@@ -54,9 +52,18 @@ public:
    */
   void on_tick() override;
 
+  /**
+   * @brief Function to perform some user-defined operation after receiving a result from the service
+   * @param response The response received from the service
+   * @return BT::NodeStatus Status of tick execution after processing the response
+   */
   BT::NodeStatus on_completion(std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
   override;
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     // Register JSON definitions for the types used in the ports

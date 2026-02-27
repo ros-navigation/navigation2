@@ -31,6 +31,9 @@ using namespace std::chrono_literals; // NOLINT
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief A nav2_behavior_tree::ActionNodeBase class that checks if the robot has been stopped for a specified duration
+ */
 class CheckStopStatus : public BT::ActionNodeBase
 {
 public:
