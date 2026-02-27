@@ -1,0 +1,16 @@
+
+<!--
+  This Behavior Tree plans once to the goal and then continuously checks if the robot is within bounds of the path tracking feedback.
+  If the robot goes out of bounds, it will fail immediately.
+-->
+<root BTCPP_format="4" main_tree_to_execute="NavigateToPoseWBoundsCheck">
+  <BehaviorTree ID="NavigateToPoseWBoundsCheck">
+    <Sequence>
+      <ComputePathToPose goal="{goal}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
+      <ReactiveSequence>
+        <IsWithinPathTrackingBounds max_error_left="0.2" max_error_right="0.2" max_error_heading="3.14" tracking_feedback="{tracking_feedback}"/>
+        <FollowPath path="{path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}" error_msg="{follow_path_error_msg}" tracking_feedback="{tracking_feedback}"/>
+      </ReactiveSequence>
+    </Sequence>
+  </BehaviorTree>
+</root>
