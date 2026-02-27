@@ -194,6 +194,12 @@ protected:
    */
   void onGoalExit(bool force_stop);
   /**
+   * @brief Wait for costmap to become current, with timeout
+   * @return Duration in seconds spent waiting for the costmap (0.0 if already current)
+   * @throw nav2_core::ControllerTimedOut if costmap update times out
+   */
+  double waitForCostmap();
+  /**
    * @brief Checks if goal is reached
    * @return true or false
    */

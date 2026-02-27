@@ -137,8 +137,9 @@ protected:
   /**
    * @brief Wait for costmap to be valid with updated sensor data or repopulate after a
    * clearing recovery. Blocks until true without timeout.
+   * @return Duration in seconds spent waiting for the costmap (0.0 if already current)
    */
-  void waitForCostmap();
+  double waitForCostmap();
 
   /**
    * @brief Check if an action server has a preemption request and replaces the goal
