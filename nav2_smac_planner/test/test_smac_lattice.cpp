@@ -106,6 +106,7 @@ TEST(SmacTest, test_smac_lattice)
       return false;
     };
 
+  std::vector<geometry_msgs::msg::PoseStamped> no_viapoints{};
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
@@ -150,7 +151,7 @@ TEST(SmacTest, test_smac_lattice)
   planner->activate();
 
   try {
-    planner->createPlan(start, goal, dummy_cancel_checker);
+    planner->createPlan(start, goal, no_viapoints, dummy_cancel_checker);
   } catch (...) {
   }
 
@@ -177,7 +178,7 @@ TEST(SmacTest, test_smac_lattice)
   goal.pose.position.x = 0.01;
   goal.pose.position.y = 0.01;
 
-  nav_msgs::msg::Path plan = planner->createPlan(start, goal, dummy_cancel_checker);
+  nav_msgs::msg::Path plan = planner->createPlan(start, goal, no_viapoints, dummy_cancel_checker);
   EXPECT_EQ(plan.poses.size(), 1);  // single point path
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -191,7 +192,8 @@ TEST(SmacTest, test_smac_lattice)
   executor.spin_until_future_complete(results);
   goal.pose.position.x = 4.0;
   goal.pose.position.y = 4.0;
-  EXPECT_THROW(planner->createPlan(start, goal, dummy_cancel_checker), std::runtime_error);
+  EXPECT_THROW(planner->createPlan(
+    start, goal, no_viapoints, dummy_cancel_checker), std::runtime_error);
 
   planner->deactivate();
   planner->cleanup();
