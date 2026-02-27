@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
+#include "nav2_msgs/srv/is_path_valid.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_msgs/action/spin.hpp"
@@ -116,6 +117,7 @@ public:
 public:
   std::unique_ptr<DummyService<nav2_msgs::srv::ClearEntireCostmap>> clear_local_costmap_server;
   std::unique_ptr<DummyService<nav2_msgs::srv::ClearEntireCostmap>> clear_global_costmap_server;
+  std::unique_ptr<DummyService<nav2_msgs::srv::IsPathValid>> validate_path_server;
   std::unique_ptr<DummyComputePathToPoseActionServer> compute_path_to_pose_server;
   std::unique_ptr<DummyFollowPathActionServer> follow_path_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Spin>> spin_server;
