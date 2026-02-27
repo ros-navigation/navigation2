@@ -516,20 +516,7 @@ void ControllerServer::computeControl()
       }
 
       // Don't compute a trajectory until costmap is valid (after clear costmap)
-      rclcpp::Rate r(100);
-      auto waiting_start = now();
-      bool was_waiting = !costmap_ros_->isCurrent();
-      while (!costmap_ros_->isCurrent()) {
-        if (now() - waiting_start > params_->costmap_update_timeout) {
-          throw nav2_core::ControllerTimedOut("Costmap timed out waiting for update");
-        }
-        r.sleep();
-      }
-      if (was_waiting) {
-        RCLCPP_INFO(
-          get_logger(), "Local costmap became current after %.3f s",
-          (now() - waiting_start).seconds());
-      }
+      double costmap_wait = waitForCostmap();
 
       updateGlobalPath();
 
@@ -544,8 +531,11 @@ void ControllerServer::computeControl()
       if (!loop_rate.sleep()) {
         RCLCPP_WARN(
           get_logger(),
-          "Control loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz.",
-          params_->controller_frequency, 1 / cycle_duration.seconds());
+          "Control loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz."
+          "%s",
+          params_->controller_frequency, 1 / cycle_duration.seconds(),
+          costmap_wait > 0.0 ?
+            (" Waited " + std::to_string(costmap_wait) + "s for costmap update.").c_str() : "");
         loop_rate.reset();
       }
     }
@@ -629,6 +619,23 @@ void ControllerServer::computeControl()
 
   // TODO(orduno) #861 Handle a pending preemption and set controller name
   action_server_->succeeded_current();
+}
+
+double ControllerServer::waitForCostmap()
+{
+  if (params_->costmap_update_timeout > rclcpp::Duration(0, 0)) {
+    auto waiting_start = now();
+    bool was_waiting = !costmap_ros_->isCurrent();
+    try {
+      costmap_ros_->waitUntilCurrent(params_->costmap_update_timeout);
+    } catch (const std::runtime_error & ex) {
+      throw nav2_core::ControllerTimedOut(ex.what());
+    }
+    if (was_waiting) {
+      return (now() - waiting_start).seconds();
+    }
+  }
+  return 0.0;
 }
 
 void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
