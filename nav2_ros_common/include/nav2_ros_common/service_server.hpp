@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Maurice Alexander Purnawan
+// Copyright (c) 2026 Maurice Alexander Purnawan
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,59 +17,95 @@
 
 #include <string>
 #include <memory>
+#include <utility>
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "rclcpp_lifecycle/managed_entity.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 
 namespace nav2
 {
 
 /**
  * @class nav2::ServiceServer
- * @brief A simple wrapper on ROS2 services server
+ * @brief A simple wrapper on ROS2 services server that integrates with Lifecycle states.
  */
 template<class ServiceT>
-class ServiceServer
+class ServiceServer : public rclcpp_lifecycle::SimpleManagedEntity
 {
 public:
+  RCLCPP_SMART_PTR_DEFINITIONS(ServiceServer)
+
   using RequestType = typename ServiceT::Request;
   using ResponseType = typename ServiceT::Response;
   using CallbackType = std::function<void (const std::shared_ptr<rmw_request_id_t>,
       const std::shared_ptr<RequestType>, std::shared_ptr<ResponseType>)>;
-  using SharedPtr = std::shared_ptr<ServiceServer<ServiceT>>;
-  using UniquePtr = std::unique_ptr<ServiceServer<ServiceT>>;
 
+  /**
+   * @brief Constructor for nav2::ServiceServer
+   */
   template<typename NodeT>
   explicit ServiceServer(
     const std::string & service_name,
     const NodeT & node,
     CallbackType callback,
     rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
-  : service_name_(service_name), callback_(callback)
+  : service_name_(service_name),
+    callback_(callback),
+    logger_(node->get_logger())
   {
     server_ = rclcpp::create_service<ServiceT>(
       node->get_node_base_interface(),
       node->get_node_services_interface(),
       service_name,
-      [this](const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<RequestType> request, std::shared_ptr<ResponseType> response) {
-        this->callback_(request_header, request, response);
-      },
+      std::bind(&ServiceServer::handle_service, this, std::placeholders::_1,
+            std::placeholders::_2, std::placeholders::_3),
       rclcpp::ServicesQoS(),  // Use consistent QoS settings
       callback_group);
 
     nav2::setIntrospectionMode(
       this->server_,
       node->get_node_parameters_interface(), node->get_clock());
+
+    auto lifecycle_node = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
+    if (lifecycle_node) {
+      if(lifecycle_node->get_current_state().id() ==
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      {
+        this->on_activate();
+        RCLCPP_WARN(
+        logger_,
+        "Service '%s' was automatically activated (node is already in the active state). "
+        "Consider creating all ROS interfaces before the server is active.",
+        service_name_.c_str());
+      }
+    }
   }
 
 protected:
+  void handle_service(
+    const std::shared_ptr<rmw_request_id_t> header,
+    const std::shared_ptr<RequestType> request,
+    std::shared_ptr<ResponseType> response)
+  {
+    if (!this->is_activated()) {
+      RCLCPP_ERROR(
+      logger_, "Service '%s' called while not activated. Rejecting request.",
+      service_name_.c_str());
+      return;
+    }
+    callback_(header, request, response);
+  }
+
+private:
   std::string service_name_;
   CallbackType callback_;
   typename rclcpp::Service<ServiceT>::SharedPtr server_;
+  rclcpp::Logger logger_;
 };
 
 }  // namespace nav2
-
 
 #endif  // NAV2_ROS_COMMON__SERVICE_SERVER_HPP_

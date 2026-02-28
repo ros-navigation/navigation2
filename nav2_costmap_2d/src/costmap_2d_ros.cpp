@@ -326,6 +326,8 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   on_set_params_handler = this->add_on_set_parameters_callback(
     std::bind(&Costmap2DROS::validateParameterUpdatesCallback, this, _1));
 
+  get_cost_service_->on_activate();
+
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -333,6 +335,7 @@ nav2::CallbackReturn
 Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+  get_cost_service_->on_deactivate();
 
   remove_post_set_parameters_callback(post_set_params_handler_.get());
   post_set_params_handler_.reset();

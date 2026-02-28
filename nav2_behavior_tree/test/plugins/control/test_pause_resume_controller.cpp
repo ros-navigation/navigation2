@@ -29,6 +29,8 @@ public:
     nav2_behavior_tree::BehaviorTreeTestFixture::SetUpTestCase();
 
     ASSERT_TRUE(node_);
+    node_->configure();
+    node_->activate();
     pause_client_ = node_->create_client<std_srvs::srv::Trigger>("pause", true);
     resume_client_ = node_->create_client<std_srvs::srv::Trigger>("resume", true);
 

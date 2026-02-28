@@ -90,4 +90,18 @@ int EdgeScorer::numPlugins() const
   return plugins_.size();
 }
 
+void EdgeScorer::activate()
+{
+  for (auto & plugin : plugins_) {
+    plugin->activate();
+  }
+}
+
+void EdgeScorer::deactivate()
+{
+  for (auto & plugin : plugins_) {
+    plugin->deactivate();
+  }
+}
+
 }  // namespace nav2_route

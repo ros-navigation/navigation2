@@ -77,6 +77,16 @@ public:
    */
   int numPlugins() const;
 
+  /**
+   * @brief Activate the edge scorer
+   */
+  void activate();
+
+  /**
+   * @brief Deactivate the edge scorer
+   */
+  void deactivate();
+
 protected:
   pluginlib::ClassLoader<EdgeCostFunction> plugin_loader_;
   std::vector<EdgeCostFunction::Ptr> plugins_;

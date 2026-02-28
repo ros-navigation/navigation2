@@ -100,6 +100,16 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const ReroutingState & rerouting_info);
 
+  /**
+   * @brief Activate the operations manager, prepare for processing
+   */
+  void activate();
+
+  /**
+   * @brief Deactivate the operations manager, clear state
+   */
+  void deactivate();
+
 protected:
   /**
    * @brief Processes a vector of operations plugins, by trigger
