@@ -59,7 +59,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
 {
   // This must be a valid motion model for analytic expansion to be attempted
   if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP ||
-    _motion_model == MotionModel::STATE_LATTICE)
+    _motion_model == MotionModel::STATE_LATTICE || _motion_model == MotionModel::OMNI)
   {
     // See if we are closer and should be expanding more often
     const Coordinates node_coords =
@@ -375,6 +375,12 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
   float score = std::numeric_limits<float>::max();
   float min_turn_rad = _ctx->motion_table.min_turning_radius;
   const float max_min_turn_rad = 4.0 * min_turn_rad;  // Up to 4x the turning radius
+
+  // SE2 produces straight-line paths independent of turning radius, skip refinement
+  if (_ctx->motion_table.motion_model == MotionModel::OMNI) {
+    return best_score;
+  }
+
   while (min_turn_rad < max_min_turn_rad) {
     min_turn_rad += 0.5;  // In Grid Coords, 1/2 cell steps
     ompl::base::StateSpacePtr state_space;

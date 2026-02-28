@@ -27,6 +27,7 @@
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
 #include "ompl/base/spaces/ReedsSheppStateSpace.h"
+#include "ompl/base/spaces/SE2StateSpace.h"
 
 #include "nav2_smac_planner/node_lattice.hpp"
 
@@ -73,7 +74,11 @@ void LatticeMotionTable::initMotionModel(
   num_angle_quantization = lattice_metadata.number_of_headings;
 
   if (!state_space) {
-    if (!allow_reverse_expansion) {
+    if (lattice_metadata.motion_model == "omni") {
+      // Holonomic robots: straight-line analytic expansion
+      state_space = std::make_shared<ompl::base::SE2StateSpace>();
+      motion_model = MotionModel::OMNI;
+    } else if (!allow_reverse_expansion) {
       state_space = std::make_shared<ompl::base::DubinsStateSpace>(
         lattice_metadata.min_turning_radius);
       motion_model = MotionModel::DUBIN;
@@ -378,10 +383,10 @@ void NodeLattice::initMotionModel(
   unsigned int & /*num_angle_quantization*/,
   SearchInfo & search_info)
 {
-  if (motion_model != MotionModel::STATE_LATTICE) {
+  if (motion_model != MotionModel::STATE_LATTICE && motion_model != MotionModel::OMNI) {
     throw std::runtime_error(
             "Invalid motion model for Lattice node. Please select"
-            " STATE_LATTICE and provide a valid lattice file.");
+            " STATE_LATTICE or OMNI and provide a valid lattice file.");
   }
 
   ctx->motion_table.initMotionModel(size_x, search_info);
