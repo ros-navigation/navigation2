@@ -142,6 +142,9 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     max_planner_duration_ = 0.0;
   }
 
+  // Configure pose classifier plugins (if any specified in params)
+  pose_classifier_.configure(shared_from_this(), tf_, costmap_ros_);
+
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
@@ -179,6 +182,8 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->activate();
   }
+
+  pose_classifier_.activate();
 
   auto node = shared_from_this();
 
@@ -221,6 +226,8 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     it->second->deactivate();
   }
 
+  pose_classifier_.deactivate();
+
   dyn_params_handler_.reset();
 
   // destroy bond connection
@@ -238,6 +245,8 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   action_server_poses_.reset();
   plan_publisher_.reset();
   tf_.reset();
+
+  pose_classifier_.cleanup();
 
   costmap_ros_->cleanup();
 
@@ -485,8 +494,11 @@ PlannerServer::computePlan()
     if (!transformPosesToGlobalFrame(action_server_pose_, start, goal_pose)) {
       return;
     }
-
-    result->path = getPlan(start, goal_pose, goal->planner_id);
+    if (goal->plan_in_static) {
+      result->path = getPlanWithoutObstacles(start, goal_pose, goal->planner_id);
+    } else {
+      result->path = getPlan(start, goal_pose, goal->planner_id);
+    }
 
     if (!validatePath(action_server_pose_, goal_pose, result->path, goal->planner_id)) {
       return;

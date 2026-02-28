@@ -18,6 +18,7 @@ find_package(tf2_ros REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(nav2_core REQUIRED)
+find_package(nav2_pose_classifiers REQUIRED)
 
 nav2_package()
 
@@ -44,10 +45,12 @@ set(dependencies
   nav2_costmap_2d
   pluginlib
   nav2_core
+  nav2_pose_classifiers
 )
 
 add_library(${library_name} SHARED
   src/planner_server.cpp
+  src/pose_classifier.cpp
 )
 
 ament_target_dependencies(${library_name}

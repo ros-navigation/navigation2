@@ -40,6 +40,8 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
+#include "nav2_planner/pose_classifier.hpp"
+#include "nav2_planner/path_splitter.hpp"
 
 namespace nav2_planner
 {
@@ -264,6 +266,9 @@ protected:
 
   // Service to deterime if the path is valid
   rclcpp::Service<nav2_msgs::srv::IsPathValid>::SharedPtr is_path_valid_service_;
+
+  // Pose classifier — loads ClassifierBase plugins, dispatches classify() per pose
+  PoseClassifier pose_classifier_;
 };
 
 }  // namespace nav2_planner
