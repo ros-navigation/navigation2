@@ -79,7 +79,7 @@ BehaviorTreeEngine::run(
   } catch (const BT::NodeExecutionError & ex) {
     RCLCPP_ERROR(
       rclcpp::get_logger("BehaviorTreeEngine"),
-      "BT Exception at Node: [%s] (Path: %s). Original error: %s",
+      "BT Exception at Node: [%s] (Path: %s). Original error: %s. Exiting with failure.",
       ex.failedNode().registration_name.c_str(),
       ex.failedNode().node_path.c_str(),
       ex.originalMessage().c_str());
