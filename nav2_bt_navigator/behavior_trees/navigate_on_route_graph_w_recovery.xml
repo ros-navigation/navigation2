@@ -24,7 +24,7 @@
                   <Inverter>
                     <GlobalUpdatedGoal/>
                   </Inverter>
-                  <IsPathValid path="{path}"/> <!-- Base it on the complete connected 'path', not simply the 'route_path' -->
+                  <ValidatePath path="{path}"/> <!-- Base it on the complete connected 'path', not simply the 'route_path' -->
                 </ReactiveSequence>
                 <Sequence name="ComputeAndSmoothRoute">
                   <!-- Compute the route -->

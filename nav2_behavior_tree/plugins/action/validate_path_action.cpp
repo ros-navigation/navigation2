@@ -12,59 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_behavior_tree/plugins/condition/is_path_valid_condition.hpp"
-#include <chrono>
-#include <memory>
 #include <string>
-#include <sstream>
-#include <vector>
+#include <memory>
+#include <limits>
+
+#include "nav2_behavior_tree/plugins/action/validate_path_action.hpp"
 
 namespace nav2_behavior_tree
 {
 
-IsPathValidCondition::IsPathValidCondition(
-  const std::string & condition_name,
+ValidatePath::ValidatePath(
+  const std::string & service_node_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf),
-  max_cost_(254), consider_unknown_as_obstacle_(false), layer_name_(""), footprint_(""),
-  check_full_path_(false)
+: BtServiceNode<nav2_msgs::srv::IsPathValid>(service_node_name, conf, "is_path_valid")
 {
-  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  client_ =
-    node_->create_client<nav2_msgs::srv::IsPathValid>(
-    "is_path_valid",
-    false /* Does not create and spin an internal executor*/);
 }
 
-void IsPathValidCondition::initialize()
+
+void ValidatePath::on_tick()
 {
-  getInputOrBlackboard("server_timeout", server_timeout_);
   getInput<unsigned int>("max_cost", max_cost_);
   getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
   getInput<std::string>("layer_name", layer_name_);
   getInput<std::string>("footprint", footprint_);
   getInput<bool>("check_full_path", check_full_path_);
+  getInput("path", path_);
+
+  request_ = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
+  request_->path = path_;
+  request_->max_cost = max_cost_;
+  request_->consider_unknown_as_obstacle = consider_unknown_as_obstacle_;
+  request_->layer_name = layer_name_;
+  request_->footprint = footprint_;
+  request_->check_full_path = check_full_path_;
 }
 
-BT::NodeStatus IsPathValidCondition::tick()
+BT::NodeStatus ValidatePath::on_completion(
+  std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
 {
-  if (!BT::isStatusActive(status())) {
-    initialize();
-  }
-
-  nav_msgs::msg::Path path;
-  getInput("path", path);
-
-  auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
-
-  request->path = path;
-  request->max_cost = max_cost_;
-  request->consider_unknown_as_obstacle = consider_unknown_as_obstacle_;
-  request->layer_name = layer_name_;
-  request->footprint = footprint_;
-  request->check_full_path = check_full_path_;
-  auto response = client_->invoke(request, server_timeout_);
-
   // Check if validation was successful
   if (!response->success) {
     RCLCPP_ERROR(
@@ -92,8 +77,8 @@ BT::NodeStatus IsPathValidCondition::tick()
         ss << ", ";
       }
       // Add the collision pose if index is valid
-      if (idx >= 0 && static_cast<size_t>(idx) < path.poses.size()) {
-        collision_poses.push_back(path.poses[idx]);
+      if (idx >= 0 && static_cast<size_t>(idx) < path_.poses.size()) {
+        collision_poses.push_back(path_.poses[idx]);
       }
     }
     ss << "]";
@@ -111,5 +96,5 @@ BT::NodeStatus IsPathValidCondition::tick()
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::IsPathValidCondition>("IsPathValid");
+  factory.registerNodeType<nav2_behavior_tree::ValidatePath>("ValidatePath");
 }
