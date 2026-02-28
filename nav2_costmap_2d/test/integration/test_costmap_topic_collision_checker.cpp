@@ -28,6 +28,7 @@
 #include "../testing_helper.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
@@ -38,6 +39,7 @@
 #include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -48,19 +50,14 @@ class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 public:
   DummyCostmapSubscriber(
     nav2::LifecycleNode::SharedPtr node,
-    std::string & topic_name)
+    const std::string & topic_name)
   : CostmapSubscriber(node, topic_name)
   {}
 
-  void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
+  void setCostmap(
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> & msg)
   {
-    costmap_msg_ = msg;
-    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
-      msg->metadata.size_x, msg->metadata.size_y,
-      msg->metadata.resolution, msg->metadata.origin.position.x,
-      msg->metadata.origin.position.y);
-
-    processCurrentCostmapMsg();
+    costmapCallback(*msg);
   }
 };
 
@@ -236,8 +233,15 @@ protected:
   void publishCostmap()
   {
     layers_->updateMap(x_, y_, yaw_);
-    costmap_sub_->setCostmap(
-      std::make_shared<nav2_msgs::msg::Costmap>(toCostmapMsg(layers_->getCostmap())));
+    auto * cm = layers_->getCostmap();
+    auto ros_msg = toCostmapMsg(cm);
+
+    auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+    stamped->header = ros_msg.header;
+    stamped->metadata = ros_msg.metadata;
+    stamped->costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(*cm);
+
+    costmap_sub_->setCostmap(stamped);
   }
 
   void publishPose(double x, double y, double /*theta*/, const rclcpp::Time & stamp)

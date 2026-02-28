@@ -17,12 +17,14 @@
 
 #include <string>
 #include <memory>
+#include <mutex>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/msg/costmap_update.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -49,16 +51,18 @@ public:
   {
     logger_ = parent->get_logger();
 
-    // Could be using a user rclcpp::Node, so need to use the Nav2 factory to create the
-    // subscription to convert nav2::LifecycleNode, rclcpp::Node or rclcpp_lifecycle::LifecycleNode
-    costmap_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
+    costmap_sub_ = nav2::interfaces::create_subscription<nav2_costmap_2d::Costmap2DStamped>(
       parent, topic_name_,
-      std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
+      [this](const nav2_costmap_2d::Costmap2DStamped & msg) {
+        costmapCallback(msg);
+      },
       nav2::qos::LatchedSubscriptionQoS(3), callback_group);
 
     costmap_update_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::CostmapUpdate>(
       parent, topic_name_ + "_updates",
-      std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1),
+      [this](const nav2_msgs::msg::CostmapUpdate::ConstSharedPtr & msg) {
+        costmapUpdateCallback(msg);
+      },
       nav2::qos::LatchedSubscriptionQoS(), callback_group);
   }
 
@@ -74,7 +78,7 @@ public:
   /**
    * @brief Callback for the costmap topic
    */
-  void costmapCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr & msg);
+  void costmapCallback(const nav2_costmap_2d::Costmap2DStamped & msg);
   /**
    * @brief Callback for the costmap's update topic
    */
@@ -87,19 +91,11 @@ public:
 
 protected:
   bool isCostmapReceived() {return costmap_ != nullptr;}
-  void processCurrentCostmapMsg();
 
-  bool haveCostmapParametersChanged();
-  bool hasCostmapSizeChanged();
-  bool hasCostmapResolutionChanged();
-  bool hasCostmapOriginPositionChanged();
-
-  nav2::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
+  nav2::Subscription<nav2_costmap_2d::Costmap2DStamped>::SharedPtr costmap_sub_;
   nav2::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr costmap_update_sub_;
 
   std::shared_ptr<Costmap2D> costmap_;
-  nav2_msgs::msg::Costmap::ConstSharedPtr costmap_msg_;
-
   std::string topic_name_;
   std::string frame_id_;
   std::mutex costmap_msg_mutex_;
