@@ -70,16 +70,17 @@ public:
       node->get_node_parameters_interface(), node->get_clock());
 
     auto lifecycle_node = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
-    if (lifecycle_node &&
-      lifecycle_node->get_current_state().id() ==
-      lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-    {
-      this->on_activate();
-      RCLCPP_WARN(
-      logger_,
-      "Service '%s' was automatically activated (node is already in the active state). "
-      "Consider creating all ROS interfaces before the server is active.",
-      service_name_.c_str());
+    if (lifecycle_node) {
+      if(lifecycle_node->get_current_state().id() ==
+        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      {
+        this->on_activate();
+        RCLCPP_WARN(
+        logger_,
+        "Service '%s' was automatically activated (node is already in the active state). "
+        "Consider creating all ROS interfaces before the server is active.",
+        service_name_.c_str());
+      }
     }
   }
 
@@ -90,7 +91,7 @@ protected:
     std::shared_ptr<ResponseType> response)
   {
     if (!this->is_activated()) {
-      RCLCPP_DEBUG(
+      RCLCPP_ERROR(
       logger_, "Service '%s' called while not activated. Rejecting request.",
       service_name_.c_str());
       return;

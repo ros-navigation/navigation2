@@ -30,6 +30,11 @@
 
 namespace nav2
 {
+class LifecycleNode;
+}
+
+namespace nav2
+{
 
 namespace interfaces
 {
@@ -279,8 +284,18 @@ typename nav2::ServiceServer<SrvT>::SharedPtr create_service(
         std::shared_ptr<Response>)>;
   CallbackFn cb = std::forward<CallbackT>(callback);
 
-  return std::make_shared<nav2::ServiceServer<SrvT>>(
+  auto srv = std::make_shared<nav2::ServiceServer<SrvT>>(
     service_name, node, cb, callback_group);
+
+  // Register the service as  managed entity
+  auto lifecycle_node = std::dynamic_pointer_cast<nav2::LifecycleNode>(node);
+  if (lifecycle_node) {
+    lifecycle_node->add_managed_entity(srv);
+  } else {
+    srv->on_activate();
+  }
+
+  return srv;
 }
 
 /**
