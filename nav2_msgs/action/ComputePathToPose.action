@@ -3,9 +3,12 @@ geometry_msgs/PoseStamped goal
 geometry_msgs/PoseStamped start
 string planner_id
 bool use_start # If false, use current robot pose as path start, if true, use start above instead
+bool plan_in_static
+bool classify_paths
 ---
 #result definition
 nav_msgs/Path path
+ClassifiedPathArray paths
 builtin_interfaces/Duration planning_time
 ---
 #feedback definition
