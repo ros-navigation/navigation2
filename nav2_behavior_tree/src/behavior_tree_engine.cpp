@@ -21,6 +21,7 @@
 #include "tinyxml2.h" //NOLINT
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/version.h"
 #include "behaviortree_cpp/json_export.h"
 #include "behaviortree_cpp/utils/shared_library.h"
 #include "nav2_behavior_tree/json_utils.hpp"
@@ -40,11 +41,6 @@ BehaviorTreeEngine::BehaviorTreeEngine(
 
   // clock for throttled debug log
   clock_ = node->get_clock();
-
-  // FIXME: the next two line are needed for back-compatibility with BT.CPP 3.8.x
-  // Note that the can be removed, once we migrate from BT.CPP 4.5.x to 4.6+
-  BT::ReactiveSequence::EnableException(false);
-  BT::ReactiveFallback::EnableException(false);
 }
 
 BtStatus
@@ -79,6 +75,16 @@ BehaviorTreeEngine::run(
           1.0 / (loopRate.period().count() * 1.0e-9));
       }
     }
+  #if RCLCPP_VERSION_GTE(30, 1, 5)
+  } catch (const BT::NodeExecutionError & ex) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("BehaviorTreeEngine"),
+      "BT Exception at Node: [%s] (Path: %s). Original error: %s. Exiting with failure.",
+      ex.failedNode().registration_name.c_str(),
+      ex.failedNode().node_path.c_str(),
+      ex.originalMessage().c_str());
+    return BtStatus::FAILED;
+  #endif
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       rclcpp::get_logger("BehaviorTreeEngine"),
