@@ -154,12 +154,14 @@ TEST(ServiceServer, accepts_requests_after_activation)
   // Activate
   server.on_activate();
   ASSERT_TRUE(server.is_activated());
+  // Active
   send_request_and_spin();
   EXPECT_EQ(a, 1);
   // Deactivate
   server.on_deactivate();
   ASSERT_FALSE(server.is_activated());
   a = 0;
+  // Inactive again
   send_request_and_spin();
   EXPECT_EQ(a, 0);
 }
