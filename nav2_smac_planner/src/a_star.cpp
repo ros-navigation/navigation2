@@ -121,9 +121,7 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
     _y_size = y_size;
   }
 
-  // Always initialize/update the motion model so dynamic penalty parameters
-  // take effect immediately without requiring a costmap resize.
-  // NodeT::initMotionModel bypasses expensive recalculations internally if geometry hasn't changed.
+  // Always refresh the motion model so dynamic penalty parameters take effect immediately
   NodeT::initMotionModel(_shared_ctx.get(), _motion_model, _x_size, _y_size, _dim3_size,
       _search_info);
 
