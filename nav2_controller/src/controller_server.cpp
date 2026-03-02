@@ -535,7 +535,7 @@ void ControllerServer::computeControl()
           "%s",
           params_->controller_frequency, 1 / cycle_duration.seconds(),
           costmap_wait > 0.0 ?
-            (" Waited " + std::to_string(costmap_wait) + "s for costmap update.").c_str() : "");
+          (" Waited " + std::to_string(costmap_wait) + "s for costmap update.").c_str() : "");
         loop_rate.reset();
       }
     }

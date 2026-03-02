@@ -453,7 +453,7 @@ void PlannerServer::computePlanThroughPoses()
         "%s",
         1 / params_->max_planner_duration, 1 / cycle_duration.seconds(),
         costmap_wait > 0.0 ?
-          (" Waited " + std::to_string(costmap_wait) + "s for costmap update.").c_str() : "");
+        (" Waited " + std::to_string(costmap_wait) + "s for costmap update.").c_str() : "");
     }
 
     action_server_poses_->succeeded_current(result);
@@ -563,7 +563,7 @@ PlannerServer::computePlan()
         "%s",
         1 / params_->max_planner_duration, 1 / cycle_duration.seconds(),
         costmap_wait > 0.0 ?
-          (" Waited " + std::to_string(costmap_wait) + "s for costmap update.").c_str() : "");
+        (" Waited " + std::to_string(costmap_wait) + "s for costmap update.").c_str() : "");
     }
     action_server_pose_->succeeded_current(result);
   } catch (nav2_core::InvalidPlanner & ex) {
