@@ -575,6 +575,7 @@ bool GracefulController::findBestApproachTrajectory(
 
   for (int i = 0; i < 2 * M_PI / params_->final_rotation_search_step; ++i) {
     double angle = static_cast<double>(i) * params_->final_rotation_search_step;
+    // Prioritize previously selected approach angles
     if (safe_approach_angle_.has_value()) {
       angle += safe_approach_angle_.value();
     }
