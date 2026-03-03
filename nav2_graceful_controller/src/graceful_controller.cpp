@@ -615,8 +615,7 @@ bool GracefulController::findBestApproachTrajectory(
       }
 
       // Selection logic: Pick the fastest among the safe ones
-      // Reuse known safe approach angle if still valid
-      if (eta < best_eta || safe_approach_angle_.value_or(1e3 /*Never in (-PI, PI]*/) == angle) {
+      if (eta < best_eta) {
         best_eta = eta;
         if (candidate_cost < safety_cost) {
           best_trajectory = candidate_path;
@@ -624,6 +623,7 @@ bool GracefulController::findBestApproachTrajectory(
           target_pose = candidate_pose;
           found_valid = true;
           safe_approach_angle_ = angle;
+          // Reuse known safe approach angle if still valid
           if (safe_approach_angle_.value_or(1e3 /*Never in (-PI, PI]*/) == angle) {
             break;
           }
