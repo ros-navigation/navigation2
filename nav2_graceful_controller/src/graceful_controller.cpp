@@ -622,11 +622,11 @@ bool GracefulController::findBestApproachTrajectory(
           best_cmd_vel = candidate_cmd_vel;
           target_pose = candidate_pose;
           found_valid = true;
-          safe_approach_angle_ = angle;
           // Reuse known safe approach angle if still valid
           if (safe_approach_angle_.value_or(1e3 /*Never in (-PI, PI]*/) == angle) {
             break;
           }
+          safe_approach_angle_ = angle;
         }
       }
     }
