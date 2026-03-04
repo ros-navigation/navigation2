@@ -47,12 +47,12 @@ void ReroutingService::serviceCb(
   response->success = true;
 }
 
-void ReroutingService::activate()
+void ReroutingService::on_activate()
 {
   service_->on_activate();
 }
 
-void ReroutingService::deactivate()
+void ReroutingService::on_deactivate()
 {
   service_->on_deactivate();
 }

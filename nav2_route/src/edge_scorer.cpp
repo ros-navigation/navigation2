@@ -90,17 +90,17 @@ int EdgeScorer::numPlugins() const
   return plugins_.size();
 }
 
-void EdgeScorer::activate()
+void EdgeScorer::on_activate()
 {
   for (auto & plugin : plugins_) {
-    plugin->activate();
+    plugin->on_activate();
   }
 }
 
-void EdgeScorer::deactivate()
+void EdgeScorer::on_deactivate()
 {
   for (auto & plugin : plugins_) {
-    plugin->deactivate();
+    plugin->on_deactivate();
   }
 }
 

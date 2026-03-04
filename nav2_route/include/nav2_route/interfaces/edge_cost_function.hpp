@@ -84,12 +84,12 @@ public:
   /**
    * @brief Activate scorer plugin to allow processing of service requests and scoring
    */
-  virtual void activate() {}
+  virtual void on_activate() {}
 
   /**
    * @brief Deactivate scorer plugin to stop processing of service requests and scoring
    */
-  virtual void deactivate() {}
+  virtual void on_deactivate() {}
 };
 
 }  // namespace nav2_route

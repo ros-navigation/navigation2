@@ -174,6 +174,7 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
+  is_path_valid_service_->on_deactivate();
   action_server_pose_->deactivate();
   action_server_poses_->deactivate();
   plan_publisher_->on_deactivate();
@@ -193,8 +194,6 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     it->second->deactivate();
   }
 
-  is_path_valid_service_->on_deactivate();
-
   // destroy bond connection
   destroyBond();
 
@@ -206,6 +205,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  is_path_valid_service_.reset();
   action_server_pose_.reset();
   action_server_poses_.reset();
   plan_publisher_.reset();
@@ -219,7 +219,6 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
 
   planners_.clear();
-  is_path_valid_service_.reset();
   costmap_thread_.reset();
   costmap_ = nullptr;
   return nav2::CallbackReturn::SUCCESS;

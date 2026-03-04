@@ -56,12 +56,12 @@ public:
   /**
    * @brief Activate
    */
-  void activate();
+  void on_activate();
 
   /**
    * @brief Deactivate
    */
-  void deactivate();
+  void on_deactivate();
 
   /**
    * @brief Get name of the plugin for parameter scope mapping

@@ -103,12 +103,12 @@ public:
   /**
    * @brief Activate the operations manager, prepare for processing
    */
-  void activate();
+  void on_activate();
 
   /**
    * @brief Deactivate the operations manager, clear state
    */
-  void deactivate();
+  void on_deactivate();
 
 protected:
   /**

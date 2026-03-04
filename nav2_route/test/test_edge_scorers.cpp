@@ -123,7 +123,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // AdjustEdgesScorer
 
-  scorer.activate();
+  scorer.on_activate();
 
   // Send service to set an edge as invalid
   auto srv_client =

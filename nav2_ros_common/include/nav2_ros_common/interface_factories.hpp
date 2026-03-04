@@ -28,10 +28,6 @@
 #include "nav2_ros_common/action_client.hpp"
 #include "rclcpp_action/client.hpp"
 
-namespace nav2
-{
-class LifecycleNode;
-}
 
 namespace nav2
 {
@@ -288,10 +284,8 @@ typename nav2::ServiceServer<SrvT>::SharedPtr create_service(
     service_name, node, cb, callback_group);
 
   // Register the service as  managed entity
-  auto lifecycle_node = std::dynamic_pointer_cast<nav2::LifecycleNode>(node);
-  if (lifecycle_node) {
-    lifecycle_node->add_managed_entity(srv);
-  } else {
+  auto lifecycle_node = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
+  if (!lifecycle_node) {
     srv->on_activate();
   }
 

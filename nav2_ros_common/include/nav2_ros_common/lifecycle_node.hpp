@@ -225,6 +225,12 @@ public:
 
     this->add_managed_entity(srv);
 
+    if(get_current_state().id() ==
+      lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+    {
+      srv->on_activate();
+    }
+
     return srv;
   }
 
@@ -299,16 +305,6 @@ public:
       get_logger(),
       "Lifecycle node %s does not have error state implemented", get_name());
     return nav2::CallbackReturn::SUCCESS;
-  }
-
-  /**
-   * @brief Public bridge to register a managed entity with the underlying lifecycle node.
-   * This allows the node to automatically handle the entity state transitions.
-   * @param entity The managed entity to add (e.g., ServiceServer, Publisher, etc.)
-   */
-  void add_managed_entity(std::weak_ptr<rclcpp_lifecycle::ManagedEntityInterface> entity)
-  {
-    this->rclcpp_lifecycle::LifecycleNode::add_managed_entity(entity);
   }
 
   /**

@@ -67,12 +67,12 @@ public:
   /**
    * @brief Activate route tracker
    */
-  void activate();
+  void on_activate();
 
   /**
    * @brief Deactivate route tracker
    */
-  void deactivate();
+  void on_deactivate();
 
   /**
    * @brief Determine if a node is to be considered achieved at the current position

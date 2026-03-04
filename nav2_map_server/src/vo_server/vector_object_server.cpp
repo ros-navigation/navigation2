@@ -79,10 +79,10 @@ VectorObjectServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
+  map_pub_->on_activate();
   add_shapes_service_->on_activate();
   get_shapes_service_->on_activate();
   remove_shapes_service_->on_activate();
-  map_pub_->on_activate();
 
   // Trigger map to be published
   process_map_ = true;

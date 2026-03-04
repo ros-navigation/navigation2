@@ -57,9 +57,14 @@ TEST(DatabaseTests, ObjectLifecycle)
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nullptr);
-  db.activate();
-  db.deactivate();
+  bool initialized = db.initialize(node, nullptr);
+  EXPECT_FALSE(initialized);
+
+  //  ONLY activate if initialization was successful
+  if (initialized) {
+    db.activate();
+    db.deactivate();
+  }
 
   EXPECT_EQ(db.plugin_size(), 0u);
   EXPECT_EQ(db.instance_size(), 0u);
@@ -151,6 +156,7 @@ TEST(DatabaseTests, reloadDbService)
   db.initialize(node, nullptr);
   node->configure();
   node->activate();
+  db.activate();
 
   // Call service with a filepath
   auto client =

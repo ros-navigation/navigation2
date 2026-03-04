@@ -64,12 +64,12 @@ public:
   /**
    * @brief Activate the route planner, prepare for planning
    */
-  virtual void activate();
+  virtual void on_activate();
 
   /**
    * @brief Deactivate the route planner, clear state
    */
-  virtual void deactivate();
+  virtual void on_deactivate();
 
   /**
    * @brief Find the route from start to goal on the graph

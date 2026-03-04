@@ -61,6 +61,15 @@ PauseResumeController::PauseResumeController(
   resume_srv_->on_activate();
 }
 
+PauseResumeController::~PauseResumeController()
+{
+  pause_srv_->on_deactivate();
+  resume_srv_->on_deactivate();
+
+  pause_srv_.reset();
+  resume_srv_.reset();
+}
+
 BT::NodeStatus PauseResumeController::tick()
 {
   unsigned int children_count = children_nodes_.size();

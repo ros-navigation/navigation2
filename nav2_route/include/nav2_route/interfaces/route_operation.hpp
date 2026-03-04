@@ -91,12 +91,12 @@ public:
   /**
    * @brief Activate operation plugin to allow processing of service requests
    */
-  virtual void activate() {}
+  virtual void on_activate() {}
 
   /**
    * @brief Deactivate operation plugin to stop processing of service requests
    */
-  virtual void deactivate() {}
+  virtual void on_deactivate() {}
 
   /**
    * @brief An API to get the name of a particular operation for triggering, query

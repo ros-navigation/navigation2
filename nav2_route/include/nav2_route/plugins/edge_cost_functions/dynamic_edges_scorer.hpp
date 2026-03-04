@@ -86,12 +86,12 @@ public:
   /**
    * @brief Activate plugin to allow processing of service requests and scoring
    */
-  void activate();
+  void on_activate();
 
   /**
    * @brief Deactivate plugin to stop processing of service requests and scoring
    */
-  void deactivate();
+  void on_deactivate();
 
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("DynamicEdgesScorer")};

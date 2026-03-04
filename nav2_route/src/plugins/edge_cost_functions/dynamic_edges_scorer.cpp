@@ -40,12 +40,12 @@ void DynamicEdgesScorer::configure(
   closed_edges_.clear();
 }
 
-void DynamicEdgesScorer::activate()
+void DynamicEdgesScorer::on_activate()
 {
   service_->on_activate();
 }
 
-void DynamicEdgesScorer::deactivate()
+void DynamicEdgesScorer::on_deactivate()
 {
   service_->on_deactivate();
 }

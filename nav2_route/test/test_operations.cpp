@@ -185,6 +185,7 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
 
   node->configure();
   node->activate();
+  manager.on_activate();
 
   auto node_thread = std::make_unique<nav2::NodeThread>(node);
   // 7. Create client node for service calls

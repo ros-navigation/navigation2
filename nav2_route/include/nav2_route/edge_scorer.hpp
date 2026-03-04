@@ -80,12 +80,12 @@ public:
   /**
    * @brief Activate the edge scorer
    */
-  void activate();
+  void on_activate();
 
   /**
    * @brief Deactivate the edge scorer
    */
-  void deactivate();
+  void on_deactivate();
 
 protected:
   pluginlib::ClassLoader<EdgeCostFunction> plugin_loader_;
