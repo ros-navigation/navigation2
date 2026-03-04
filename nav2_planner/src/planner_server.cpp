@@ -533,7 +533,8 @@ PlannerServer::computePlan()
     // Split path into classified segments if requested
     if (goal->classify_paths) {
       if (pose_classifier_.hasClassifiers()) {
-        auto split_result = path_splitter_.splitPath(result->path, pose_classifier_);
+        auto split_result = path_splitter_.splitPath(
+          result->path, pose_classifier_, publish_classified_paths_);
         result->paths = split_result.classified_path_array;
 
         if (publish_classified_paths_) {

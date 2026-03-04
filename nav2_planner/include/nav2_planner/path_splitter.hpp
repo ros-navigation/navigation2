@@ -32,10 +32,11 @@ namespace nav2_planner
  * @class PathSplitter
  * @brief Splits a planner path into ClassifiedPathArray segments.
  *
- * Pipeline:
- *   1. Classify each pose via PoseClassifier (first-match plugin dispatch)
- *   2. Apply hysteresis filter (N consecutive flips required to change state)
+ * Pipeline (single-pass for stages 1-3):
+ *   1. Classify each pose via PoseClassifier
+ *   2. Apply hysteresis filter (N consecutive flips to confirm transition)
  *   3. Group consecutive same-type poses into segments
+ *   --- post-pass ---
  *   4. Merge segments shorter than min_segment_poses into neighbors
  *   5. Add 1-pose overlap at segment boundaries (controller handoff)
  *
@@ -60,34 +61,34 @@ public:
 
   /**
    * @brief Split a path into classified segments.
-   * @param path            Input path from the planner
-   * @param pose_classifier Reference to the PoseClassifier for per-pose classification
+   * @param path                   Input path from the planner
+   * @param pose_classifier        Reference to PoseClassifier for per-pose classification
+   * @param build_classified_poses If true, populates result.classified_poses for visualization
    * @return SplitResult containing raw classified poses and the final ClassifiedPathArray
    */
   SplitResult splitPath(
     const nav_msgs::msg::Path & path,
-    PoseClassifier & pose_classifier);
+    PoseClassifier & pose_classifier,
+    bool build_classified_poses = false);
 
 private:
   struct Segment
   {
     uint16_t class_type;
-    size_t start_idx;  // inclusive index into raw_classes
+    size_t start_idx;  // inclusive index into path.poses
     size_t end_idx;    // exclusive
   };
 
-  std::vector<uint16_t> classifyAllPoses(
+  // Stage 1+2+3 (single pass): classify, hysteresis filter, and group into segments
+  std::vector<Segment> classifyAndGroup(
     const nav_msgs::msg::Path & path,
-    PoseClassifier & pose_classifier);
+    PoseClassifier & pose_classifier,
+    std::vector<nav2_msgs::msg::ClassifiedPose> * classified_poses);
 
-  std::vector<uint16_t> applyHysteresis(
-    const std::vector<uint16_t> & raw_classes);
-
-  std::vector<Segment> groupSegments(
-    const std::vector<uint16_t> & classes);
-
+  // Stage 4: merge short segments into neighbors
   void mergeShortSegments(std::vector<Segment> & segments);
 
+  // Stage 5: build ClassifiedPathArray with 1-pose overlap at boundaries
   nav2_msgs::msg::ClassifiedPathArray buildResult(
     const nav_msgs::msg::Path & path,
     const std::vector<Segment> & segments);
