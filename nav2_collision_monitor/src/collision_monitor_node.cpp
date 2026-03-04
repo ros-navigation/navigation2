@@ -115,26 +115,29 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  // Activating lifecycle publisher
+  // 1. Activate all input subscriptions first (before any publishers or timers)
+  cmd_vel_in_sub_->on_activate();
+  for (std::shared_ptr<Source> source : sources_) {
+    source->activate();
+  }
+  for (std::shared_ptr<Polygon> polygon : polygons_) {
+    polygon->activate();
+  }
+
+  // 2. Activate publishers
   cmd_vel_out_pub_->on_activate();
   if (state_pub_) {
     state_pub_->on_activate();
   }
   collision_points_marker_pub_->on_activate();
 
-  // Activating polygons
-  for (std::shared_ptr<Polygon> polygon : polygons_) {
-    polygon->activate();
-  }
-
-  // Since polygons are being published when cmd_vel_in appears,
-  // we need to publish polygons first time to display them at startup
+  // 3. Publish polygons first time to display them at startup
   publishPolygons();
 
-  // Activating main worker
+  // 4. Activate main worker
   process_active_ = true;
 
-  // Creating bond connection
+  // 5. Creating bond connection last
   createBond();
 
   return nav2::CallbackReturn::SUCCESS;
@@ -156,7 +159,13 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     polygon->deactivate();
   }
 
-  // Deactivating lifecycle publishers
+  // Deactivating sources
+  for (std::shared_ptr<Source> source : sources_) {
+    source->deactivate();
+  }
+
+  // Deactivating lifecycle publishers and subscribers
+  cmd_vel_in_sub_->on_deactivate();
   cmd_vel_out_pub_->on_deactivate();
   if (state_pub_) {
     state_pub_->on_deactivate();

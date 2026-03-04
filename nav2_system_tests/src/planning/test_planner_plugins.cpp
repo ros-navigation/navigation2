@@ -154,8 +154,9 @@ TEST(testPluginMap, Failures)
   rclcpp_lifecycle::State state;
   obj->declare_parameter("expected_planner_frequency", rclcpp::ParameterValue(100000.0));
   obj->onConfigure(state);
-  obj->create_subscription<nav_msgs::msg::Path>(
+  auto plan_sub = obj->create_subscription<nav_msgs::msg::Path>(
     "plan", callback);
+  plan_sub->on_activate();
 
   geometry_msgs::msg::PoseStamped start;
   geometry_msgs::msg::PoseStamped goal;

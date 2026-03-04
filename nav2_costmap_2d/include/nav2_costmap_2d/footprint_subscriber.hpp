@@ -51,10 +51,9 @@ public:
   {
     // Use lifecycle node's create_subscription when parent is a LifecycleNode so the
     // subscription is added to managed entities and deactivated with the node
-    auto node_base = std::shared_ptr<rclcpp::Node>(parent);
-    auto lc_node = std::dynamic_pointer_cast<nav2::LifecycleNode>(node_base);
+    auto lc_node = std::dynamic_pointer_cast<nav2::LifecycleNode>(parent);
     if (lc_node) {
-      footprint_sub_ = lc_node->create_subscription<geometry_msgs::msg::PolygonStamped>(
+      footprint_sub_ = lc_node->template create_subscription<geometry_msgs::msg::PolygonStamped>(
         topic_name,
         std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1),
         nav2::qos::StandardTopicQoS());
@@ -91,6 +90,18 @@ public:
   bool getFootprintInRobotFrame(
     std::vector<geometry_msgs::msg::Point> & footprint,
     std_msgs::msg::Header & footprint_header);
+
+  /**
+   * @brief Activate the subscription (for lifecycle-managed nav2::Subscription).
+   * Call from node on_activate when using a lifecycle node.
+   */
+  void on_activate();
+
+  /**
+   * @brief Deactivate the subscription.
+   * Call from node on_deactivate when using a lifecycle node.
+   */
+  void on_deactivate();
 
 protected:
   /**

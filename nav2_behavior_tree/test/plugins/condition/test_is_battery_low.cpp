@@ -30,6 +30,8 @@ public:
   static void SetUpTestCase()
   {
     node_ = std::make_shared<nav2::LifecycleNode>("test_is_battery_low");
+    node_->configure();
+    node_->activate();
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_node(node_->get_node_base_interface());
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
@@ -59,6 +61,10 @@ public:
     delete config_;
     config_ = nullptr;
     battery_pub_.reset();
+    if (node_) {
+      node_->deactivate();
+      node_->cleanup();
+    }
     node_.reset();
     factory_.reset();
     executor_.reset();

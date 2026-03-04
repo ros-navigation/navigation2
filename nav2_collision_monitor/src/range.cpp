@@ -67,6 +67,16 @@ void Range::configure()
     nav2::qos::SensorDataQoS());
 }
 
+void Range::activate()
+{
+  data_sub_->on_activate();
+}
+
+void Range::deactivate()
+{
+  data_sub_->on_deactivate();
+}
+
 bool Range::getData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)

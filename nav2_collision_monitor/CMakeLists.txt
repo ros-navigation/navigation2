@@ -33,6 +33,7 @@ add_library(${monitor_library_name} SHARED
   src/circle.cpp
   src/source.cpp
   src/scan.cpp
+  src/lifecycle_point_cloud_subscription.cpp
   src/pointcloud.cpp
   src/polygon_source.cpp
   src/range.cpp
@@ -70,6 +71,7 @@ add_library(${detector_library_name} SHARED
   src/circle.cpp
   src/source.cpp
   src/scan.cpp
+  src/lifecycle_point_cloud_subscription.cpp
   src/pointcloud.cpp
   src/polygon_source.cpp
   src/costmap.cpp

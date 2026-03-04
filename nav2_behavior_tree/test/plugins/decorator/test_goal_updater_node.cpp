@@ -33,6 +33,8 @@ public:
   static void SetUpTestCase()
   {
     node_ = std::make_shared<nav2::LifecycleNode>("goal_updater_test_fixture");
+    node_->configure();
+    node_->activate();
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -62,6 +64,10 @@ public:
   {
     delete config_;
     config_ = nullptr;
+    if (node_) {
+      node_->deactivate();
+      node_->cleanup();
+    }
     node_.reset();
     factory_.reset();
   }

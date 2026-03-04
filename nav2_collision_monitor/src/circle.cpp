@@ -147,6 +147,22 @@ void Circle::createSubscription(std::string & polygon_sub_topic)
   }
 }
 
+void Circle::activate()
+{
+  if (radius_sub_) {
+    radius_sub_->on_activate();
+  }
+  Polygon::activate();
+}
+
+void Circle::deactivate()
+{
+  if (radius_sub_) {
+    radius_sub_->on_deactivate();
+  }
+  Polygon::deactivate();
+}
+
 void Circle::updatePolygon(double radius)
 {
   // Update circle radius

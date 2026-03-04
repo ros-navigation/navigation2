@@ -72,14 +72,17 @@ public:
     min_hold_pct_ = this->declare_parameter<double>("min_hold_pct", 0.90);
     max_time_to_resume_ = this->declare_parameter<double>("max_time_to_resume", 0.6);
     max_false_stop_pct_ = this->declare_parameter<double>("max_false_stop_pct", 0.05);
+  }
 
+  void initialize_subscriptions()
+  {
     // We only start collecting after we have seen *both* /clock and /local_costmap
     // This avoids counting "startup zero cmd" as real data.
     cm_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
       shared_from_this(),
       "/local_costmap/costmap",
       [this](const nav2_msgs::msg::Costmap &){
-        if (!got_costmap_) {got_costmap_ = true; cm_sub_.reset();}
+        if (!got_costmap_) {got_costmap_ = true;}
       },
       rclcpp::QoS(1).reliable().durability_volatile());
 
@@ -87,7 +90,7 @@ public:
       shared_from_this(),
       "/clock",
       [this](const rosgraph_msgs::msg::Clock &){
-        if (!got_clock_) {got_clock_ = true; clock_sub_.reset();}
+        if (!got_clock_) {got_clock_ = true;}
       },
       rclcpp::QoS(1).best_effort().durability_volatile());
 
@@ -118,6 +121,11 @@ public:
   // Spin until we passed the obstacle window (8s) + margin
   void run_and_collect(rclcpp::executors::SingleThreadedExecutor & exec, double margin_s = 2.0)
   {
+    if (cm_sub_) {cm_sub_->on_activate();}
+    if (clock_sub_) {clock_sub_->on_activate();}
+    if (cmd_sub_) {cmd_sub_->on_activate();}
+    if (state_sub_) {state_sub_->on_activate();}
+
     // First, up to 5s WALL-time to see /clock
     auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
     while (rclcpp::ok() && !got_clock_) {
@@ -261,6 +269,7 @@ TEST(CollisionMonitorNodeBag, TrajectoryAndMetrics)
 {
   rclcpp::init(0, nullptr);
   auto node = std::make_shared<MetricsCatcher>();
+  node->initialize_subscriptions();
 
   rclcpp::executors::SingleThreadedExecutor exec;
   exec.add_node(node);

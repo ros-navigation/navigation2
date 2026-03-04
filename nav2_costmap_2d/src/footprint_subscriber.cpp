@@ -72,6 +72,16 @@ FootprintSubscriber::getFootprintInRobotFrame(
   return true;
 }
 
+void FootprintSubscriber::on_activate()
+{
+  footprint_sub_->on_activate();
+}
+
+void FootprintSubscriber::on_deactivate()
+{
+  footprint_sub_->on_deactivate();
+}
+
 void
 FootprintSubscriber::footprint_callback(
   const geometry_msgs::msg::PolygonStamped::ConstSharedPtr & msg)

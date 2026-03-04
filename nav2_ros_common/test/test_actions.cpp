@@ -72,6 +72,9 @@ public:
         do_premptions_ = false;
         },
         rclcpp::QoS(1));
+    deactivate_subs_->on_activate();
+    activate_subs_->on_activate();
+    omit_preempt_subs_->on_activate();
   }
 
   void on_term()

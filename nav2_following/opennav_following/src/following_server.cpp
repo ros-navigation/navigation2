@@ -94,6 +94,7 @@ FollowingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_, this, true);
   vel_publisher_->on_activate();
+  odom_sub_->on_activate();
   filtered_dynamic_pose_pub_->on_activate();
   following_action_server_->activate();
   param_handler_->activate();
@@ -110,6 +111,7 @@ FollowingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating %s", get_name());
 
   following_action_server_->deactivate();
+  odom_sub_->on_deactivate();
   vel_publisher_->on_deactivate();
   filtered_dynamic_pose_pub_->on_deactivate();
   param_handler_->deactivate();
@@ -223,6 +225,7 @@ void FollowingServer::followObject()
             detected_dynamic_pose_ = *pose;
           },
           nav2::qos::StandardTopicQoS(1));  // Only want the most recent pose
+        dynamic_pose_sub_->on_activate();
         param_handler_->getMutex().lock();
       }
     } else {

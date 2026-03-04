@@ -75,6 +75,7 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
     new nav2_waypoint_follower::InputAtWaypoint
   );
   iaw->initialize(node, std::string("IAW"));
+  iaw->on_activate();
   executor.add_node(node->shared_from_this()->get_node_base_interface());
 
   auto start_time = node->now();
@@ -138,6 +139,8 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
     new nav2_waypoint_follower::PhotoAtWaypoint
   );
   paw->initialize(node, std::string("PAW"));
+  // Caller (test): activate subscription so it receives messages (same as pub->on_activate()).
+  paw->on_activate();
   executor.add_node(node->shared_from_this()->get_node_base_interface());
 
   // no images, throws because can't write
