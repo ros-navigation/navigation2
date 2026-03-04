@@ -170,6 +170,9 @@ public:
   // Publish robot footprint
   void publishFootprint(const double radius, const rclcpp::Time & stamp);
 
+  // Start node and activate test subscriptions (so test receives output topics)
+  void startMonitor();
+
   // Main topic/data working routines
   void publishScan(const double dist, const rclcpp::Time & stamp);
   void publishPointCloud(const double dist, const rclcpp::Time & stamp);
@@ -494,6 +497,16 @@ void Tester::setGlobalHeightParams(const std::string & source_name, const double
   cm_->set_parameter(rclcpp::Parameter(source_name + ".min_height", min_height));
 }
 
+void Tester::startMonitor()
+{
+  cm_->start();
+  // Activate test subscriptions so they receive output topics
+  // (lifecycle-managed subs need activate)
+  cmd_vel_out_sub_->on_activate();
+  action_state_sub_->on_activate();
+  collision_points_marker_sub_->on_activate();
+}
+
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
@@ -813,7 +826,7 @@ TEST_F(Tester, testToggleService)
   cm_->set_parameter(rclcpp::Parameter("enabled", false));
 
   // Start collision monitor node
-  cm_->start();
+  startMonitor();
   ASSERT_FALSE(cm_->isEnabled());
 
   auto request = std::make_shared<nav2_msgs::srv::Toggle::Request>();
@@ -852,7 +865,7 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   setVectors({"Limit", "SlowDown", "Stop"}, {SCAN_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Share TF
   sendTransforms(curr_time);
@@ -939,7 +952,7 @@ TEST_F(Tester, testPolygonSource)
   setVectors({"Limit", "SlowDown", "Stop"}, {POLYGON_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Share TF
   sendTransforms(curr_time);
@@ -1026,7 +1039,7 @@ TEST_F(Tester, testProcessApproach)
   setVectors({"Approach"}, {SCAN_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Share TF
   sendTransforms(curr_time);
@@ -1095,7 +1108,7 @@ TEST_F(Tester, testProcessApproachRotation)
   setVectors({"Approach"}, {RANGE_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Publish robot footprint
   publishFootprint(1.0, curr_time);
@@ -1169,7 +1182,7 @@ TEST_F(Tester, testCrossOver)
   setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Share TF
   sendTransforms(curr_time);
@@ -1237,7 +1250,7 @@ TEST_F(Tester, testSourceTimeout)
   setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Share TF
   sendTransforms(curr_time);
@@ -1276,7 +1289,7 @@ TEST_F(Tester, testSourceTimeoutOverride)
   cm_->set_parameter(rclcpp::Parameter("source_timeout", 0.0));
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Share TF
   sendTransforms(curr_time);
@@ -1315,7 +1328,7 @@ TEST_F(Tester, testCeasePublishZeroVel)
   setVectors({"Stop", "Approach"}, {SCAN_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Share TF
   sendTransforms(curr_time);
@@ -1385,7 +1398,7 @@ TEST_F(Tester, testPolygonNotEnabled)
   setVectors({"Stop"}, {SCAN_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Check that robot stops when polygon is enabled
   rclcpp::Time curr_time = cm_->now();
@@ -1440,7 +1453,7 @@ TEST_F(Tester, testSourceNotEnabled)
   setVectors({"Stop"}, {SCAN_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Check that robot stops when source is enabled
   rclcpp::Time curr_time = cm_->now();
@@ -1562,7 +1575,7 @@ TEST_F(Tester, testCollisionPointsMarkers)
   setVectors({}, {SCAN_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Share TF
   sendTransforms(curr_time);
@@ -1597,7 +1610,7 @@ TEST_F(Tester, testVelocityPolygonStop)
 
   rclcpp::Time curr_time = cm_->now();
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
   // Check that robot stops when source is enabled
   sendTransforms(curr_time);
 
@@ -1669,7 +1682,7 @@ TEST_F(Tester, testVelocityPolygonStopGlobalHeight)
 
   rclcpp::Time curr_time = cm_->now();
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
   // Check that robot stops when source is enabled
   sendTransforms(curr_time);
 
@@ -1723,7 +1736,7 @@ TEST_F(Tester, testSourceAssociatedToPolygon)
   setVectors({"StopOnRangeSource", "SlowdownOnAllSources"}, {SCAN_NAME, RANGE_NAME});
 
   // Start Collision Monitor node
-  cm_->start();
+  startMonitor();
 
   // Share TF
   rclcpp::Time curr_time = cm_->now();

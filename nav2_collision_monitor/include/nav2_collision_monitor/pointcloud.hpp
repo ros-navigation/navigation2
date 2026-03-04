@@ -19,8 +19,14 @@
 #include <vector>
 #include <string>
 
+#include "rclcpp/version.h"
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "point_cloud_transport/point_cloud_transport.hpp"
+
+#if defined(RCLCPP_VERSION_MAJOR) && RCLCPP_VERSION_MAJOR >= 30
+#include "nav2_collision_monitor/lifecycle_point_cloud_subscription.hpp"
+#else
+#include "nav2_ros_common/subscription.hpp"
+#endif
 
 #include "nav2_collision_monitor/source.hpp"
 
@@ -64,6 +70,9 @@ public:
    * and creates pointcloud subscriber.
    */
   void configure();
+
+  void activate() override;
+  void deactivate() override;
 
   /**
    * @brief Adds latest data from pointcloud source to the data array.
@@ -110,10 +119,9 @@ protected:
 
   // ----- Variables -----
 
-  /// @brief PointCloud data subscriber
-  #if RCLCPP_VERSION_GTE(30, 0, 0)
-  std::shared_ptr<point_cloud_transport::PointCloudTransport> pct_;
-  point_cloud_transport::Subscriber data_sub_;
+  /// @brief PointCloud data subscriber (lifecycle-managed; 30+ uses point_cloud_transport wrapper)
+  #if defined(RCLCPP_VERSION_MAJOR) && RCLCPP_VERSION_MAJOR >= 30
+  LifecyclePointCloudSubscription::SharedPtr data_sub_;
   #else
   nav2::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
   #endif

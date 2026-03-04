@@ -132,6 +132,10 @@ public:
   bool waitMap(const std::chrono::nanoseconds & timeout);
   void verifyMap(bool is_circle, double poly_x_end = 1.0, double circle_cx = 3.0);
 
+  /** Start server and activate map subscription (subscription is not auto-activated when
+   *  lifecycle callbacks are invoked directly instead of via trigger_transition). */
+  void startVOServer();
+
   void comparePolygonObjects(
     nav2_msgs::msg::PolygonObject::SharedPtr p1,
     nav2_msgs::msg::PolygonObject::SharedPtr p2);
@@ -181,6 +185,12 @@ Tester::Tester()
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   executor_.add_node(vo_server_->get_node_base_interface());
+}
+
+void Tester::startVOServer()
+{
+  vo_server_->start();
+  // vo_map_sub_ uses transient QoS and is activated on init
 }
 
 Tester::~Tester()
@@ -522,7 +532,7 @@ TEST_F(Tester, testObtainParams)
   setShapesParams(
     "01010101-0101-0101-0101-010101010101",
     "01010101-0101-0101-0101-010101010102");
-  vo_server_->start();
+  startVOServer();
 
   verifyMap(true);
 
@@ -594,7 +604,7 @@ TEST_F(Tester, testIncorrectCircleParams)
 TEST_F(Tester, testAddShapes)
 {
   setVOServerParams();
-  vo_server_->start();
+  startVOServer();
 
   // Add polygon and circle on map
   auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
@@ -676,7 +686,7 @@ TEST_F(Tester, testAddShapes)
 TEST_F(Tester, testRemoveShapes)
 {
   setVOServerParams();
-  vo_server_->start();
+  startVOServer();
 
   // Add polygon and circle on map
   auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
@@ -762,7 +772,7 @@ TEST_F(Tester, testRemoveShapes)
 TEST_F(Tester, testAddIncorrectShapes)
 {
   setVOServerParams();
-  vo_server_->start();
+  startVOServer();
 
   // Add polygon and circle on map
   auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
@@ -885,7 +895,7 @@ TEST_F(Tester, testAddIncorrectShapes)
 TEST_F(Tester, testRemoveIncorrectShapes)
 {
   setVOServerParams();
-  vo_server_->start();
+  startVOServer();
 
   // Add polygon and circle on map
   auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
@@ -956,7 +966,7 @@ TEST_F(Tester, testOverlayMax)
     rclcpp::Parameter(
       "overlay_type",
       static_cast<int>(nav2_map_server::OverlayType::OVERLAY_MAX)));
-  vo_server_->start();
+  startVOServer();
 
   // Add polygon and circle on map
   auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
@@ -1002,7 +1012,7 @@ TEST_F(Tester, testOverlayMin)
     rclcpp::Parameter(
       "overlay_type",
       static_cast<int>(nav2_map_server::OverlayType::OVERLAY_MIN)));
-  vo_server_->start();
+  startVOServer();
 
   // Add polygon and circle on map
   auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
@@ -1048,7 +1058,7 @@ TEST_F(Tester, testOverlaySeq)
     rclcpp::Parameter(
       "overlay_type",
       static_cast<int>(nav2_map_server::OverlayType::OVERLAY_SEQ)));
-  vo_server_->start();
+  startVOServer();
 
   // Sequentially add polygon and then circle overlapped with it on map
   auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
@@ -1104,7 +1114,7 @@ TEST_F(Tester, testOverlayUnknown)
   setVOServerParams();
   vo_server_->set_parameter(
     rclcpp::Parameter("overlay_type", static_cast<int>(1000)));
-  vo_server_->start();
+  startVOServer();
 
   // Try to add polygon on map
   auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
@@ -1131,7 +1141,7 @@ TEST_F(Tester, testOverlayUnknown)
 TEST_F(Tester, testShapesMove)
 {
   setVOServerParams();
-  vo_server_->start();
+  startVOServer();
 
   // Wait for the initial map to be received to not get it in later updates
   const std::chrono::nanoseconds timeout =
@@ -1191,7 +1201,7 @@ TEST_F(Tester, testShapesMove)
 TEST_F(Tester, testSwitchDynamicStatic)
 {
   setVOServerParams();
-  vo_server_->start();
+  startVOServer();
 
   // Wait for the initial map to be received to not get it in later updates
   const std::chrono::nanoseconds timeout =
@@ -1465,7 +1475,7 @@ TEST_F(Tester, testEnforceGlobalFrameIdYamlShapesValid)
 TEST_F(Tester, switchProcessMap)
 {
   setVOServerParams();
-  vo_server_->start();
+  startVOServer();
 
   // Wait for the initial map to be received to not get it in later updates
   const std::chrono::nanoseconds timeout =
@@ -1517,25 +1527,27 @@ TEST_F(Tester, switchProcessMap)
 
 TEST_F(Tester, testIncorrectMapBoundaries) {
   setVOServerParams();
-  vo_server_->start();
+  startVOServer();
 
   // Set min_x > max_x
   EXPECT_THROW(vo_server_->updateMap(1.0, 0.1, 0.1, 1.0), std::runtime_error);
 
   // Set min_y > max_y
   EXPECT_THROW(vo_server_->updateMap(0.1, 1.0, 1.0, 0.1), std::runtime_error);
+
+  vo_server_->stop();
 }
 
 TEST_F(Tester, testIncorrectMapBoundariesWhenNoShapes) {
   setVOServerParams();
-  vo_server_->start();
+  startVOServer();
   double min_x, min_y, max_x, max_y;
   EXPECT_THROW(vo_server_->getMapBoundaries(min_x, min_y, max_x, max_y), std::runtime_error);
 }
 
 TEST_F(Tester, testShapeOutsideMap) {
   setVOServerParams();
-  vo_server_->start();
+  startVOServer();
 
   // Add polygon and circle on map
   auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();

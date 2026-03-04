@@ -108,6 +108,12 @@ StaticLayer::onInitialize()
 void
 StaticLayer::activate()
 {
+  if (map_sub_ && !map_subscribe_transient_local_) {
+    map_sub_->on_activate();
+  }
+  if (map_update_sub_) {
+    map_update_sub_->on_activate();
+  }
   auto node = node_.lock();
   // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -123,6 +129,12 @@ StaticLayer::activate()
 void
 StaticLayer::deactivate()
 {
+  if (map_sub_) {
+    map_sub_->on_deactivate();
+  }
+  if (map_update_sub_) {
+    map_update_sub_->on_deactivate();
+  }
   auto node = node_.lock();
   if (post_set_params_handler_ && node) {
     node->remove_post_set_parameters_callback(post_set_params_handler_.get());

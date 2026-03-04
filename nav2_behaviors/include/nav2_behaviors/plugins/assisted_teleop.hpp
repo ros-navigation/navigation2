@@ -66,6 +66,16 @@ public:
    */
   CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
 
+  /**
+   * @brief Activate behavior (and lifecycle-managed subscriptions e.g. preempt_teleop)
+   */
+  void activate() override;
+
+  /**
+   * @brief Deactivate behavior (and lifecycle-managed subscriptions)
+   */
+  void deactivate() override;
+
 protected:
   /**
    * @brief Configuration of behavior action

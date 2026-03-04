@@ -197,7 +197,9 @@ bool MapSaver::saveMapTopicToFile(
 
     auto map_sub = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_loc, mapCallback, map_qos, callback_group);
-
+    if (!map_subscribe_transient_local_) {
+      map_sub->on_activate();
+    }
     // Create SingleThreadedExecutor to spin map_sub in callback_group
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_callback_group(callback_group, get_node_base_interface());

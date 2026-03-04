@@ -23,6 +23,8 @@
 #include <stdexcept>
 
 #include "rclcpp/rclcpp.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/interface_factories.hpp"
 #include "tf2_ros/buffer.hpp"
@@ -106,12 +108,20 @@ class SpeedLimitSubscriber : public rclcpp::Node
 {
 public:
   explicit SpeedLimitSubscriber(const std::string & speed_limit_topic)
-  : Node("speed_limit_sub"), speed_limit_updated_(false)
+  : Node("speed_limit_sub"), speed_limit_topic_(speed_limit_topic), speed_limit_updated_(false)
+  {}
+
+  void initSubscription()
   {
     subscriber_ = nav2::interfaces::create_subscription<nav2_msgs::msg::SpeedLimit>(
-      shared_from_this(), speed_limit_topic,
+      shared_from_this(), speed_limit_topic_,
       std::bind(&SpeedLimitSubscriber::speedLimitCallback, this, std::placeholders::_1),
       rclcpp::QoS(10));
+  }
+
+  void activate()
+  {
+    subscriber_->on_activate();
   }
 
   void speedLimitCallback(
@@ -137,6 +147,7 @@ public:
   }
 
 private:
+  std::string speed_limit_topic_;
   nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr subscriber_;
   nav2_msgs::msg::SpeedLimit::ConstSharedPtr msg_;
   bool speed_limit_updated_;
@@ -370,8 +381,14 @@ bool TestNode::createSpeedFilter(const std::string & global_frame)
   speed_filter_->initializeFilter(INFO_TOPIC);
 
   speed_limit_subscriber_ = std::make_shared<SpeedLimitSubscriber>(SPEED_LIMIT_TOPIC);
+  speed_limit_subscriber_->initSubscription();
+  speed_limit_subscriber_->activate();
   speed_limit_subscriber_executor_.add_node(speed_limit_subscriber_);
   node_executor_.add_node(node_->get_node_base_interface());
+
+  // Activate lifecycle so the costmap_filter_info subscription can receive messages
+  node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+  node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
 
   // Wait until mask will be received by SpeedFilter
   const std::chrono::nanoseconds timeout = 500ms;
@@ -632,7 +649,23 @@ void TestNode::reset()
   mask_publisher_.reset();
   speed_limit_subscriber_.reset();
   speed_filter_.reset();
-  node_.reset();
+
+  // Shut down lifecycle node properly to avoid destructor warning
+  if (node_) {
+    const auto state = node_->get_current_state().id();
+    if (state == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CLEANUP);
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+    } else if (state == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE) {
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CLEANUP);
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+    } else if (state == lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED) {
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+    }
+    node_.reset();
+  }
+
   tf_listener_.reset();
   tf_broadcaster_.reset();
   tf_buffer_.reset();

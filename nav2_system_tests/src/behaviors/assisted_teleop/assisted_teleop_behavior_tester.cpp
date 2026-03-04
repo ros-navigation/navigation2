@@ -25,6 +25,7 @@
 #include "assisted_teleop_behavior_tester.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/interface_factories.hpp"
+#include "nav2_ros_common/qos_profiles.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
@@ -129,6 +130,9 @@ void AssistedTeleopBehaviorTester::activate()
     return;
   }
 
+  filtered_vel_sub_->on_activate();
+  footprint_sub_->on_activate();
+
   RCLCPP_INFO(this->node_->get_logger(), "Assisted Teleop action server is ready");
   is_active_ = true;
 }
@@ -138,6 +142,8 @@ void AssistedTeleopBehaviorTester::deactivate()
   if (!is_active_) {
     throw std::runtime_error("Trying to deactivate while already inactive");
   }
+  filtered_vel_sub_->on_deactivate();
+  footprint_sub_->on_deactivate();
   is_active_ = false;
 }
 

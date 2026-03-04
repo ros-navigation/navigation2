@@ -56,15 +56,14 @@ public:
 
     // Use lifecycle node's create_subscription when parent is a LifecycleNode so the
     // subscription is added to managed entities and deactivated with the node
-    auto node_base = std::shared_ptr<rclcpp::Node>(parent);
-    auto lc_node = std::dynamic_pointer_cast<nav2::LifecycleNode>(node_base);
+    auto lc_node = std::dynamic_pointer_cast<nav2::LifecycleNode>(parent);
     if (lc_node) {
-      costmap_sub_ = lc_node->create_subscription<nav2_msgs::msg::Costmap>(
+      costmap_sub_ = lc_node->template create_subscription<nav2_msgs::msg::Costmap>(
         topic_name_,
         std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
         nav2::qos::LatchedSubscriptionQoS(3), callback_group);
 
-      costmap_update_sub_ = lc_node->create_subscription<nav2_msgs::msg::CostmapUpdate>(
+      costmap_update_sub_ = lc_node->template create_subscription<nav2_msgs::msg::CostmapUpdate>(
         topic_name_ + "_updates",
         std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1),
         nav2::qos::LatchedSubscriptionQoS(), callback_group);

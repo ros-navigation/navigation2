@@ -217,21 +217,16 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 }
 
 nav2::CallbackReturn
-ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
+ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-
-  // Activate all managed entities (subscriptions, publishers created via
-  // create_subscription/create_publisher) before server-specific activation
-  auto ret = rclcpp_lifecycle::LifecycleNode::on_activate(state);
-  if (ret != nav2::CallbackReturn::SUCCESS) {
-    return ret;
-  }
 
   const auto costmap_ros_state = costmap_ros_->activate();
   if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     return nav2::CallbackReturn::FAILURE;
   }
+  odom_sub_->on_activate();
+  speed_limit_sub_->on_activate();
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->activate();
@@ -263,7 +258,7 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
 }
 
 nav2::CallbackReturn
-ControllerServer::on_deactivate(const rclcpp_lifecycle::State & state)
+ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -281,15 +276,13 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & state)
    * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
    */
   costmap_ros_->deactivate();
-
+  odom_sub_->on_deactivate();
+  speed_limit_sub_->on_deactivate();
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
   transformed_plan_pub_->on_deactivate();
   tracking_feedback_pub_->on_deactivate();
   param_handler_->deactivate();
-
-  // Deactivate all managed entities (subscriptions, publishers) last
-  rclcpp_lifecycle::LifecycleNode::on_deactivate(state);
 
   // destroy bond connection
   destroyBond();

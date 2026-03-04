@@ -15,13 +15,16 @@
 #ifndef NAV2_ROS_COMMON__SUBSCRIPTION_HPP_
 #define NAV2_ROS_COMMON__SUBSCRIPTION_HPP_
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp/any_subscription_callback.hpp"
+#include "rclcpp/get_message_type_support_handle.hpp"
 #include "rclcpp/message_memory_strategy.hpp"
+#include "rclcpp/subscription_factory.hpp"
+#include "rclcpp/topic_statistics/subscription_topic_statistics.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/managed_entity.hpp"
 
@@ -30,15 +33,85 @@
 namespace nav2
 {
 
+/// Subscription that gates message handling by an activation predicate.
+/// Used as the actual rclcpp subscription held by nav2::Subscription; allows
+/// overriding handle_message to check activation without wrapping the user callback.
+template<typename MessageT, typename Alloc = std::allocator<void>>
+class LifecycleSubscription : public rclcpp::Subscription<MessageT, Alloc>
+{
+public:
+  RCLCPP_SMART_PTR_DEFINITIONS(LifecycleSubscription)
+
+  using Base = rclcpp::Subscription<MessageT, Alloc>;
+
+  LifecycleSubscription(
+    rclcpp::node_interfaces::NodeBaseInterface * node_base,
+    const rosidl_message_type_support_t & type_support_handle,
+    const std::string & topic_name,
+    const rclcpp::QoS & qos,
+    rclcpp::AnySubscriptionCallback<MessageT, Alloc> callback,
+    const rclcpp::SubscriptionOptionsWithAllocator<Alloc> & options,
+    typename Base::MessageMemoryStrategyType::SharedPtr message_memory_strategy,
+    std::shared_ptr<rclcpp::topic_statistics::SubscriptionTopicStatistics>
+    subscription_topic_statistics = nullptr)
+  : Base(
+      node_base,
+      type_support_handle,
+      topic_name,
+      qos,
+      callback,
+      options,
+      message_memory_strategy,
+      subscription_topic_statistics)
+  {}
+
+  void set_activation_predicate(std::function<bool()> predicate)
+  {
+    is_activated_ = std::move(predicate);
+  }
+
+  void handle_message(
+    std::shared_ptr<void> & message,
+    const rclcpp::MessageInfo & message_info) override
+  {
+    if (!is_activated_()) {
+      return;
+    }
+    Base::handle_message(message, message_info);
+  }
+
+  void handle_serialized_message(
+    const std::shared_ptr<rclcpp::SerializedMessage> & serialized_message,
+    const rclcpp::MessageInfo & message_info) override
+  {
+    if (!is_activated_()) {
+      return;
+    }
+    Base::handle_serialized_message(serialized_message, message_info);
+  }
+
+  void handle_loaned_message(
+    void * loaned_message,
+    const rclcpp::MessageInfo & message_info) override
+  {
+    if (!is_activated_()) {
+      return;
+    }
+    Base::handle_loaned_message(loaned_message, message_info);
+  }
+
+private:
+  std::function<bool()> is_activated_{[]() {return false;}};
+};
+
 template<typename MessageT, typename Alloc = std::allocator<void>>
 class Subscription : public rclcpp_lifecycle::SimpleManagedEntity
 {
 public:
   RCLCPP_SMART_PTR_DEFINITIONS(Subscription)
 
-  using RclcppSub = rclcpp::Subscription<MessageT, Alloc>;
+  using LifecycleSub = LifecycleSubscription<MessageT, Alloc>;
   using Options = rclcpp::SubscriptionOptionsWithAllocator<Alloc>;
-  using AnyCb = rclcpp::AnySubscriptionCallback<MessageT, Alloc>;
 
   template<typename NodeT, typename CallbackT>
   Subscription(
@@ -47,9 +120,7 @@ public:
     CallbackT && user_callback,
     const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
     const Options & options = Options{})
-  : topic_name_(topic_name),
-    logger_(node->get_logger()),
-    any_cb_(*options.get_allocator())
+  : topic_name_(topic_name)
   {
     init(node, qos, std::forward<CallbackT>(user_callback), options);
   }
@@ -77,49 +148,47 @@ protected:
     CallbackT && user_callback,
     const Options & options)
   {
-    any_cb_.set(std::forward<CallbackT>(user_callback));
+    rclcpp::AnySubscriptionCallback<MessageT, Alloc> any_cb(*options.get_allocator());
+    any_cb.set(std::forward<CallbackT>(user_callback));
 
-    auto wrapped_cb =
-      [this](typename MessageT::ConstSharedPtr msg, const rclcpp::MessageInfo & info)
-      {
-        if (!this->is_activated()) {
-          RCLCPP_WARN_THROTTLE(
-            logger_,
-            *clock_,
-            1000,  // milliseconds -> 1Hz
-            "Trying to take messages on topic '%s', but the subscription is not activated. "
-            "Dropping until activation.",
-            topic_name_.c_str());
-          return;
-        }
-        // Use the appropriate dispatch method based on whether the message came from
-        // intra-process (composition) or inter-process (DDS/serialization)
-        if (info.get_rmw_message_info().from_intra_process) {
-          any_cb_.dispatch_intra_process(msg, info);
-        } else {
-          auto non_const_msg = std::make_shared<MessageT>(*msg);
-          any_cb_.dispatch(non_const_msg, info);
-        }
-      };
+    if (qos.durability() == rclcpp::DurabilityPolicy::TransientLocal) {
+      rclcpp_lifecycle::SimpleManagedEntity::on_activate();
+    }
 
-    auto params_if = node->get_node_parameters_interface();
     auto topics_if = node->get_node_topics_interface();
+    auto msg_mem_strat =
+      rclcpp::message_memory_strategy::MessageMemoryStrategy<MessageT, Alloc>::create_default();
 
-    sub_ = rclcpp::create_subscription<MessageT>(
-      params_if,
-      topics_if,
-      topic_name_,
-      qos,
-      std::move(wrapped_cb),
-      options,
-      rclcpp::message_memory_strategy::MessageMemoryStrategy<MessageT, Alloc>::create_default());
+    rclcpp::SubscriptionFactory factory{
+      [options, msg_mem_strat, any_cb](
+        rclcpp::node_interfaces::NodeBaseInterface * node_base_ptr,
+        const std::string & topic,
+        const rclcpp::QoS & actual_qos) -> rclcpp::SubscriptionBase::SharedPtr {
+        auto sub = LifecycleSub::make_shared(
+          node_base_ptr,
+          rclcpp::get_message_type_support_handle<MessageT>(),
+          topic,
+          actual_qos,
+          any_cb,
+          options,
+          msg_mem_strat,
+          nullptr);
+        sub->post_init_setup(node_base_ptr, actual_qos, options);
+        return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(sub);
+      }
+    };
+
+    auto sub_base = topics_if->create_subscription(topic_name_, factory, qos);
+    topics_if->add_subscription(sub_base, options.callback_group);
+
+    sub_ = std::dynamic_pointer_cast<LifecycleSub>(sub_base);
+    if (sub_) {
+      sub_->set_activation_predicate([this]() {return is_activated();});
+    }
   }
 
-  typename RclcppSub::SharedPtr sub_;
+  typename LifecycleSub::SharedPtr sub_;
   std::string topic_name_;
-  rclcpp::Logger logger_;
-  rclcpp::Clock::SharedPtr clock_;
-  AnyCb any_cb_;
 };
 
 }  // namespace nav2
