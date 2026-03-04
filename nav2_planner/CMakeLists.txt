@@ -51,6 +51,7 @@ set(dependencies
 add_library(${library_name} SHARED
   src/planner_server.cpp
   src/pose_classifier.cpp
+  src/path_splitter.cpp
 )
 
 ament_target_dependencies(${library_name}
