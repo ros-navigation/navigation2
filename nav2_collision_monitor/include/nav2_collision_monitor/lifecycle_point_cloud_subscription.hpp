@@ -42,9 +42,10 @@ public:
 
   /**
    * @brief Construct and create the PointCloudTransport.
-   * @param node Lifecycle node used to create the transport (must outlive this subscription).
+   * @param node Lifecycle node shared pointer (PointCloudTransport requires Node::SharedPtr on ROS 2 Jazzy).
    */
-  explicit LifecyclePointCloudSubscription(rclcpp_lifecycle::LifecycleNode & node);
+  explicit LifecyclePointCloudSubscription(
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node);
 
   ~LifecyclePointCloudSubscription();
 
@@ -68,6 +69,7 @@ public:
   void shutdown();
 
 private:
+  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_;
   std::shared_ptr<point_cloud_transport::PointCloudTransport> pct_;
   point_cloud_transport::Subscriber data_sub_;
 };
