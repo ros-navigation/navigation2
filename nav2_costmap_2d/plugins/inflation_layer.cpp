@@ -410,26 +410,22 @@ InflationLayer::updateParametersCallback(
             logger_,
             "Invalid num_threads value %d, must be -1 (auto) or > 0. Ignoring.",
             new_value);
-          result.successful = false;
-          result.reason = "num_threads must be -1 (auto) or > 0";
-          return result;
+        } else {
+          int available_cores = omp_get_max_threads();
+          if (new_value > available_cores) {
+            RCLCPP_WARN(
+              logger_,
+              "num_threads=%d exceeds available cores (%d). Ignoring.",
+              new_value, available_cores);
+          } else {
+            num_threads_ = new_value;
+            RCLCPP_INFO(
+              logger_,
+              "Updated num_threads to %d %s",
+              num_threads_,
+              num_threads_ == -1 ? "(auto)" : "");
+          }
         }
-        int available_cores = omp_get_max_threads();
-        if (new_value > available_cores) {
-          RCLCPP_WARN(
-            logger_,
-            "num_threads=%d exceeds available cores (%d). Ignoring.",
-            new_value, available_cores);
-          result.successful = false;
-          result.reason = "num_threads exceeds available cores";
-          return result;
-        }
-        num_threads_ = new_value;
-        RCLCPP_INFO(
-          logger_,
-          "Updated num_threads to %d %s",
-          num_threads_,
-          num_threads_ == -1 ? "(auto)" : "");
 #else
         RCLCPP_WARN(
           logger_,
