@@ -46,14 +46,9 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  stop_on_failure_ = declare_or_get_parameter("stop_on_failure", true);
-  loop_rate_ = declare_or_get_parameter("loop_rate", 20);
-  waypoint_task_executor_id_ = declare_or_get_parameter("waypoint_task_executor_plugin",
-    std::string("wait_at_waypoint"));
-  global_frame_id_ = declare_or_get_parameter("global_frame_id", std::string("map"));
-  nav2::declare_parameter_if_not_declared(
-    this, std::string("wait_at_waypoint.plugin"),
-    rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
+  param_handler_ = std::make_unique<ParameterHandler>(
+    node, get_logger());
+  params_ = param_handler_->getParams();
 
   callback_group_ = create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
@@ -81,15 +76,12 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
       500), false);
 
   try {
-    waypoint_task_executor_type_ = nav2::get_plugin_type_param(
-      this,
-      waypoint_task_executor_id_);
     waypoint_task_executor_ = waypoint_task_executor_loader_.createUniqueInstance(
-      waypoint_task_executor_type_);
+      params_->waypoint_task_executor_type);
     RCLCPP_INFO(
       get_logger(), "Created waypoint_task_executor : %s of type %s",
-      waypoint_task_executor_id_.c_str(), waypoint_task_executor_type_.c_str());
-    waypoint_task_executor_->initialize(node, waypoint_task_executor_id_);
+      params_->waypoint_task_executor_id.c_str(), params_->waypoint_task_executor_type.c_str());
+    waypoint_task_executor_->initialize(node, params_->waypoint_task_executor_id);
   } catch (const std::exception & e) {
     RCLCPP_FATAL(
       get_logger(),
@@ -108,11 +100,6 @@ WaypointFollower::on_activate(const rclcpp_lifecycle::State & /*state*/)
   xyz_action_server_->activate();
   gps_action_server_->activate();
 
-  auto node = shared_from_this();
-  // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&WaypointFollower::dynamicParametersCallback, this, _1));
-
   // create bond connection
   createBond();
 
@@ -126,8 +113,6 @@ WaypointFollower::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   xyz_action_server_->deactivate();
   gps_action_server_->deactivate();
-  remove_on_set_parameters_callback(dyn_params_handler_.get());
-  dyn_params_handler_.reset();
   // destroy bond connection
   destroyBond();
 
@@ -213,7 +198,7 @@ void WaypointFollower::followWaypointsHandler(
     return;
   }
 
-  rclcpp::WallRate r(loop_rate_);
+  rclcpp::WallRate r(params_->loop_rate);
 
   // get the goal index, by default, the first in the list of waypoints given.
   uint32_t goal_index = goal->goal_index;
@@ -284,7 +269,7 @@ void WaypointFollower::followWaypointsHandler(
       missedWaypoint.error_msg = current_goal_status_.error_msg;
       result->missed_waypoints.push_back(missedWaypoint);
 
-      if (stop_on_failure_) {
+      if (params_->stop_on_failure) {
         result->error_code =
           nav2_msgs::action::FollowWaypoints::Result::STOP_ON_MISSED_WAYPOINT;
         result->error_msg =
@@ -322,7 +307,7 @@ void WaypointFollower::followWaypointsHandler(
         result->missed_waypoints.push_back(missedWaypoint);
       }
       // if task execution was failed and stop_on_failure_ is on , terminate action
-      if (!is_task_executed && stop_on_failure_) {
+      if (!is_task_executed && params_->stop_on_failure) {
         result->error_code =
           nav2_msgs::action::FollowWaypoints::Result::TASK_EXECUTOR_FAILED;
         result->error_msg =
@@ -437,41 +422,13 @@ WaypointFollower::goalResponseCallback(
   }
 }
 
-rcl_interfaces::msg::SetParametersResult
-WaypointFollower::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
-{
-  // No locking required as action server is running on same single threaded executor
-  rcl_interfaces::msg::SetParametersResult result;
-
-  for (auto parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-    if (param_name.find('.') != std::string::npos) {
-      continue;
-    }
-
-    if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == "loop_rate") {
-        loop_rate_ = parameter.as_int();
-      }
-    } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == "stop_on_failure") {
-        stop_on_failure_ = parameter.as_bool();
-      }
-    }
-  }
-
-  result.successful = true;
-  return result;
-}
-
 std::vector<geometry_msgs::msg::PoseStamped>
 WaypointFollower::convertGPSPosesToMapPoses(
   const std::vector<geographic_msgs::msg::GeoPose> & gps_poses)
 {
   RCLCPP_INFO(
     this->get_logger(), "Converting GPS waypoints to %s Frame..",
-    global_frame_id_.c_str());
+    params_->global_frame_id.c_str());
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
   int waypoint_index = 0;
@@ -489,20 +446,20 @@ WaypointFollower::convertGPSPosesToMapPoses(
         "fromLL service of robot_localization could not convert %i th GPS waypoint to"
         "%s frame, going to skip this point!"
         "Make sure you have run navsat_transform_node of robot_localization",
-        waypoint_index, global_frame_id_.c_str());
-      if (stop_on_failure_) {
+        waypoint_index, params_->global_frame_id.c_str());
+      if (params_->stop_on_failure) {
         RCLCPP_ERROR(
           this->get_logger(),
           "Conversion of %i th GPS waypoint to"
           "%s frame failed and stop_on_failure is set to true"
           "Not going to execute any of waypoints, exiting with failure!",
-          waypoint_index, global_frame_id_.c_str());
+          waypoint_index, params_->global_frame_id.c_str());
         return std::vector<geometry_msgs::msg::PoseStamped>();
       }
       continue;
     } else {
       geometry_msgs::msg::PoseStamped curr_pose_map_frame;
-      curr_pose_map_frame.header.frame_id = global_frame_id_;
+      curr_pose_map_frame.header.frame_id = params_->global_frame_id;
       curr_pose_map_frame.header.stamp = this->now();
       curr_pose_map_frame.pose.position = response->map_point;
       curr_pose_map_frame.pose.orientation = curr_geopose.orientation;
@@ -513,7 +470,7 @@ WaypointFollower::convertGPSPosesToMapPoses(
   RCLCPP_INFO(
     this->get_logger(),
     "Converted all %i GPS waypoint to %s frame",
-    static_cast<int>(poses_in_map_frame_vector.size()), global_frame_id_.c_str());
+    static_cast<int>(poses_in_map_frame_vector.size()), params_->global_frame_id.c_str());
   return poses_in_map_frame_vector;
 }
 

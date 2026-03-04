@@ -114,7 +114,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   RCLCPP_INFO(logger_, "Control loop execution time: %ld [ms]", duration);
 #endif
 
-  if (publish_optimal_trajectory_ && opt_traj_pub_->get_subscription_count() > 0) {
+  if (publish_optimal_trajectory_ && opt_traj_pub_ && opt_traj_pub_->get_subscription_count() > 0) {
     std_msgs::msg::Header trajectory_header;
     trajectory_header.stamp = cmd.header.stamp;
     trajectory_header.frame_id = costmap_ros_->getGlobalFrameID();

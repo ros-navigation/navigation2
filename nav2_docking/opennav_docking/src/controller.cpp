@@ -21,6 +21,8 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "tf2/utils.hpp"
 
+using rcl_interfaces::msg::ParameterType;
+
 namespace opennav_docking
 {
 
@@ -65,8 +67,14 @@ Controller::Controller(
     v_angular_max_);
 
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&Controller::dynamicParametersCallback, this, std::placeholders::_1));
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &Controller::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &Controller::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 
   if (use_collision_detection_) {
     configureCollisionChecker(node, costmap_topic, footprint_topic, transform_tolerance_);
@@ -203,12 +211,35 @@ void Controller::configureCollisionChecker(
     *costmap_sub_, *footprint_sub_, node->get_name());
 }
 
-rcl_interfaces::msg::SetParametersResult
-Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult Controller::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find("controller.") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+Controller::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
-  rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
@@ -250,9 +281,6 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
       control_law_->setSpeedLimit(v_linear_min_, v_linear_max_, v_angular_max_);
     }
   }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace opennav_docking

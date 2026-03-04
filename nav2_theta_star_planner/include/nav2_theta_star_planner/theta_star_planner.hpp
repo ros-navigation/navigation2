@@ -33,6 +33,7 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
+#include "nav2_theta_star_planner/parameter_handler.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
 using rcl_interfaces::msg::ParameterType;
@@ -71,16 +72,14 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("ThetaStarPlanner")};
   std::string global_frame_, name_;
-  bool use_final_approach_orientation_;
 
   // parent node weak ptr
   nav2::LifecycleNode::WeakPtr parent_node_;
 
-  std::unique_ptr<theta_star::ThetaStar> planner_;
+  std::unique_ptr<ThetaStar> planner_;
 
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-
+  Parameters * params_;
+  std::unique_ptr<nav2_theta_star_planner::ParameterHandler> param_handler_;
 
   /**
    * @brief the function responsible for calling the algorithm and retrieving a path from it
@@ -98,13 +97,6 @@ protected:
   static nav_msgs::msg::Path linearInterpolation(
     const std::vector<coordsW> & raw_path,
     const double & dist_bw_points);
-
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param parameters list of changed parameters
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
 }   //  namespace nav2_theta_star_planner
 

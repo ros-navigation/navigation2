@@ -48,7 +48,7 @@ CollisionChecker::CollisionChecker(
 bool CollisionChecker::isCollisionImminent(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const double & linear_vel, const double & angular_vel,
-  const double & carrot_dist)
+  const double & carrot_dist, const double & dist_to_path_end)
 {
   // Note(stevemacenski): This may be a bit unusual, but the robot_pose is in
   // odom frame and the carrot_pose is in robot base frame. Just how the data comes to us
@@ -91,6 +91,7 @@ bool CollisionChecker::isCollisionImminent(
 
   // only forward simulate within time requested
   double max_allowed_time_to_collision_check = params_->max_allowed_time_to_collision_up_to_carrot;
+  double simulation_distance_limit = carrot_dist;
   if (params_->min_distance_to_obstacle > 0.0) {
     max_allowed_time_to_collision_check = std::max(
       params_->max_allowed_time_to_collision_up_to_carrot,
@@ -98,6 +99,18 @@ bool CollisionChecker::isCollisionImminent(
         std::abs(linear_vel),
         params_->min_approach_linear_velocity)
     );
+    if (params_->use_velocity_scaled_lookahead_dist) {
+      double base_simulation_dist;
+      if (params_->allow_obstacle_checking_beyond_goal) {
+        // consider the safe distance without considering the remaining path
+        base_simulation_dist = std::max(carrot_dist, params_->min_distance_to_obstacle);
+      } else {
+        const double effective_min_dist = std::min(params_->min_distance_to_obstacle,
+            dist_to_path_end);
+        base_simulation_dist = std::max(carrot_dist, effective_min_dist);
+      }
+      simulation_distance_limit = std::min(base_simulation_dist, params_->max_lookahead_dist);
+    }
   }
   int i = 1;
   while (i * projection_time < max_allowed_time_to_collision_check) {
@@ -112,7 +125,9 @@ bool CollisionChecker::isCollisionImminent(
     curr_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
 
     // check if past carrot pose, where no longer a thoughtfully valid command
-    if (hypot(curr_pose.position.x - robot_xy.x, curr_pose.position.y - robot_xy.y) > carrot_dist) {
+    if (hypot(curr_pose.position.x - robot_xy.x,
+        curr_pose.position.y - robot_xy.y) > simulation_distance_limit)
+    {
       break;
     }
 

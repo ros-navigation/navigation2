@@ -98,21 +98,39 @@ void VoxelLayer::onInitialize()
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);
   matchSize();
+}
 
+void VoxelLayer::activate()
+{
+  ObstacleLayer::activate();
+  auto node = node_.lock();
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
-      &VoxelLayer::dynamicParametersCallback,
+      &VoxelLayer::updateParametersCallback,
       this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &VoxelLayer::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void VoxelLayer::deactivate()
+{
+  ObstacleLayer::deactivate();
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
 VoxelLayer::~VoxelLayer()
 {
-  auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
-  }
-  dyn_params_handler_.reset();
 }
 
 void VoxelLayer::matchSize()
@@ -492,19 +510,43 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
   delete[] local_voxel_map;
 }
 
-/**
-  * @brief Callback executed when a parameter change is detected
-  * @param event ParameterEvent message
-  */
-rcl_interfaces::msg::SetParametersResult
-VoxelLayer::dynamicParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult VoxelLayer::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    if (param_name == name_ + "." + "publish_voxel_map") {
+      RCLCPP_WARN(
+        logger_, "publish voxel map is not a dynamic parameter "
+        "cannot be changed while running. Rejecting parameter update.");
+      result.successful = false;
+    } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0 && param_name == name_ + "." + "z_resolution") {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+VoxelLayer::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  rcl_interfaces::msg::SetParametersResult result;
   bool resize_map_needed = false;
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(name_ + ".") != 0) {
@@ -512,38 +554,53 @@ VoxelLayer::dynamicParametersCallback(
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "min_obstacle_height") {
+      if (param_name == name_ + "." + "min_obstacle_height" &&
+        min_obstacle_height_ != parameter.as_double())
+      {
         min_obstacle_height_ = parameter.as_double();
-      } else if (param_name == name_ + "." + "max_obstacle_height") {
+        current_ = false;
+      } else if (param_name == name_ + "." + "max_obstacle_height" &&  // NOLINT(readability/braces)
+        max_obstacle_height_ != parameter.as_double())
+      {
         max_obstacle_height_ = parameter.as_double();
-      } else if (param_name == name_ + "." + "origin_z") {
+        current_ = false;
+      } else if (param_name == name_ + "." + "origin_z" &&  // NOLINT(readability/braces)
+        origin_z_ != parameter.as_double())
+      {
         origin_z_ = parameter.as_double();
         resize_map_needed = true;
-      } else if (param_name == name_ + "." + "z_resolution") {
+        current_ = false;
+      } else if (param_name == name_ + "." + "z_resolution" &&  // NOLINT(readability/braces)
+        z_resolution_ != parameter.as_double())
+      {
         z_resolution_ = parameter.as_double();
         resize_map_needed = true;
+        current_ = false;
       }
+
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled") {
+      if (param_name == name_ + "." + "enabled" &&
+        enabled_ != parameter.as_bool())
+      {
         enabled_ = parameter.as_bool();
         current_ = false;
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
-      } else if (param_name == name_ + "." + "publish_voxel_map") {
-        RCLCPP_WARN(
-          logger_, "publish voxel map is not a dynamic parameter "
-          "cannot be changed while running. Rejecting parameter update.");
-        continue;
       }
 
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == name_ + "." + "z_voxels") {
+      if (param_name == name_ + "." + "z_voxels" &&
+        size_z_ != parameter.as_int())
+      {
         size_z_ = parameter.as_int();
         resize_map_needed = true;
+        current_ = false;
       } else if (param_name == name_ + "." + "unknown_threshold") {
         unknown_threshold_ = parameter.as_int() + (VOXEL_BITS - size_z_);
+        current_ = false;
       } else if (param_name == name_ + "." + "mark_threshold") {
         mark_threshold_ = parameter.as_int();
+        current_ = false;
       } else if (param_name == name_ + "." + "combination_method") {
         combination_method_ = combination_method_from_int(parameter.as_int());
       }
@@ -553,9 +610,6 @@ VoxelLayer::dynamicParametersCallback(
   if (resize_map_needed) {
     matchSize();
   }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_costmap_2d

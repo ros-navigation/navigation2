@@ -169,6 +169,9 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   always_reload_bt_ = node->declare_or_get_parameter(
     "always_reload_bt_xml", false);
 
+  log_idle_ = node->declare_or_get_parameter(
+    "bt_log_idle_transitions", true);
+
   // Get error code id names to grab off of the blackboard
   error_code_name_prefixes_ = node->get_parameter("error_code_name_prefixes").as_string_array();
 
@@ -273,19 +276,29 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
             continue;
           }
 
-          auto id = bt_->extractBehaviorTreeID(entry.path().string());
-          if (id.empty()) {
+          auto tree_info = bt_->parseTreeInfo(entry.path().string());
+          if (tree_info.behavior_tree_ids.empty()) {
             RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)", entry.path().c_str());
             continue;
           }
-          if (registered_ids.count(id)) {
+          // Check for conflicts with all IDs in the file
+          bool conflict_found = false;
+          for (const auto & id : tree_info.behavior_tree_ids) {
+            if (registered_ids.count(id)) {
+              conflict_found = true;
+              break;
+            }
+          }
+          if (conflict_found) {
             conflicting_files.push_back(entry.path().string());
             continue;
           }
 
           RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
           bt_->registerTreeFromFile(entry.path().string());
-          registered_ids.insert(id);
+          for (const auto & id : tree_info.behavior_tree_ids) {
+            registered_ids.insert(id);
+          }
         }
       }
     };
@@ -294,14 +307,20 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     if (!is_bt_id) {
       // file_or_id is a filename: register it first
       std::string main_file = file_or_id;
-      main_id = bt_->extractBehaviorTreeID(main_file);
-      if (main_id.empty()) {
+      auto tree_info = bt_->parseTreeInfo(main_file);
+      if (tree_info.main_id.empty()) {
         RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
+        setInternalError(
+          ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+          "Failed to extract ID from " + main_file);
         return false;
       }
+      main_id = tree_info.main_id;
       RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", main_file.c_str());
       bt_->registerTreeFromFile(main_file);
-      registered_ids.insert(main_id);
+      for (const auto & id : tree_info.behavior_tree_ids) {
+        registered_ids.insert(id);
+      }
 
       // When a filename is specified, it must be register first
       // and treat it as the "main" tree to execute.
@@ -366,7 +385,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   }
 
   // Optional logging and monitoring
-  topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
+  topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_, log_idle_);
   current_bt_file_or_id_ = file_or_id;
 
   if (enable_groot_monitoring_) {

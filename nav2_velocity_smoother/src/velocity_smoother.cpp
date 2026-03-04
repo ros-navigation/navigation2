@@ -68,6 +68,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
   // Get feature parameters
   odom_topic_ = node->declare_or_get_parameter("odom_topic", std::string("odom"));
   odom_duration_ = node->declare_or_get_parameter("odom_duration", 0.1);
+  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration_, odom_topic_);
   deadband_velocities_ = node->declare_or_get_parameter(
     "deadband_velocity", std::vector<double>{0.0, 0.0, 0.0});
   double velocity_timeout_dbl = node->declare_or_get_parameter("velocity_timeout", 1.0);
@@ -130,7 +131,6 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
     open_loop_ = true;
   } else if (feedback_type == "CLOSED_LOOP") {
     open_loop_ = false;
-    odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration_, odom_topic_);
   } else {
     RCLCPP_ERROR(
       get_logger(),
@@ -171,8 +171,16 @@ VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
     std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
     std::bind(&VelocitySmoother::smootherTimer, this));
 
-  dyn_params_handler_ = this->add_on_set_parameters_callback(
-    std::bind(&VelocitySmoother::dynamicParametersCallback, this, _1));
+  // Add callback for dynamic parameters
+  auto node = shared_from_this();
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &VelocitySmoother::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &VelocitySmoother::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 
   // create bond connection
   createBond();
@@ -189,8 +197,15 @@ VelocitySmoother::on_deactivate(const rclcpp_lifecycle::State &)
   }
   smoothed_cmd_pub_->on_deactivate();
 
-  remove_on_set_parameters_callback(dyn_params_handler_.get());
-  dyn_params_handler_.reset();
+  auto node = shared_from_this();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 
   // destroy bond connection
   destroyBond();
@@ -296,6 +311,7 @@ double VelocitySmoother::applyConstraints(
 
 void VelocitySmoother::smootherTimer()
 {
+  std::lock_guard<std::mutex> lock(mutex_);
   // Wait until the first command is received
   if (!received_first_command_) {
     return;
@@ -480,13 +496,86 @@ void VelocitySmoother::smootherTimer()
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
-rcl_interfaces::msg::SetParametersResult
-VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult VelocitySmoother::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find('.') != std::string::npos) {
+      continue;
+    }
 
-  for (auto parameter : parameters) {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() <= 0.0 && param_name == "smoothing_frequency") {
+        RCLCPP_WARN(
+          get_logger(), "The value of smoothing_frequency is incorrectly set to %f, "
+          "it should be >0. Ignoring parameter update.",
+          parameter.as_double());
+        result.successful = false;
+        break;
+      } else if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+          get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
+        break;
+      }
+    } else if (param_type == ParameterType::PARAMETER_DOUBLE_ARRAY) {
+      size_t size = is_6dof_ ? 6 : 3;
+      if (parameter.as_double_array().size() != size) {
+        RCLCPP_WARN(
+          get_logger(), "Invalid size of parameter %s. Must be size %ld",
+          param_name.c_str(), size);
+        result.successful = false;
+        break;
+      } else if (param_name == "max_velocity" || param_name == "max_accel") {
+        for (auto val : parameter.as_double_array()) {
+          if (val < 0.0) {
+            RCLCPP_WARN(
+              get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+              "it should be >=0. Ignoring parameter update.",
+              param_name.c_str(), val);
+            result.successful = false;
+            break;
+          }
+        }
+      } else if (param_name == "min_velocity" || param_name == "max_decel") {
+        for (auto val : parameter.as_double_array()) {
+          if (val > 0.0) {
+            RCLCPP_WARN(
+              get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+              "it should be <=0. Ignoring parameter update.",
+              param_name.c_str(), val);
+            result.successful = false;
+            break;
+          }
+        }
+      }
+    } else if (param_type == ParameterType::PARAMETER_STRING) {
+      if (param_name == "feedback") {
+        if (parameter.as_string() != "OPEN_LOOP" && parameter.as_string() != "CLOSED_LOOP") {
+          RCLCPP_WARN(
+            get_logger(),
+            "Invalid feedback_type, options are OPEN_LOOP and CLOSED_LOOP. "
+            "Ignoring parameter update.");
+          result.successful = false;
+          break;
+        }
+      }
+    }
+  }
+  return result;
+}
+
+void VelocitySmoother::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find('.') != std::string::npos) {
@@ -495,17 +584,7 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "smoothing_frequency") {
-        double smoothing_frequency = parameter.as_double();
-        if (smoothing_frequency <= 0.0) {
-          RCLCPP_WARN(
-            get_logger(),
-            "smoothing_frequency must be positive, received: %f. Ignoring update.",
-            smoothing_frequency);
-          result.successful = false;
-          result.reason = "smoothing_frequency must be greater than 0.0";
-          break;
-        }
-        smoothing_frequency_ = smoothing_frequency;
+        smoothing_frequency_ = parameter.as_double();
         if (timer_) {
           timer_->cancel();
           timer_.reset();
@@ -524,63 +603,14 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           shared_from_this(), odom_duration_, odom_topic_);
       }
     } else if (param_type == ParameterType::PARAMETER_DOUBLE_ARRAY) {
-      size_t size = is_6dof_ ? 6 : 3;
-      if (parameter.as_double_array().size() != size) {
-        RCLCPP_WARN(
-          get_logger(), "Invalid size of parameter %s. Must be size %ld",
-          param_name.c_str(), size);
-        result.successful = false;
-        break;
-      }
-
       if (param_name == "max_velocity") {
-        for (unsigned int i = 0; i != size; i++) {
-          if (parameter.as_double_array()[i] < 0.0) {
-            RCLCPP_WARN(
-              get_logger(),
-              "Negative values set of max_velocity! These should be positive!");
-            result.successful = false;
-          }
-        }
-        if (result.successful) {
-          max_velocities_ = parameter.as_double_array();
-        }
+        max_velocities_ = parameter.as_double_array();
       } else if (param_name == "min_velocity") {
-        for (unsigned int i = 0; i != size; i++) {
-          if (parameter.as_double_array()[i] > 0.0) {
-            RCLCPP_WARN(
-              get_logger(),
-              "Positive values set of min_velocity! These should be negative!");
-            result.successful = false;
-          }
-        }
-        if (result.successful) {
-          min_velocities_ = parameter.as_double_array();
-        }
+        min_velocities_ = parameter.as_double_array();
       } else if (param_name == "max_accel") {
-        for (unsigned int i = 0; i != size; i++) {
-          if (parameter.as_double_array()[i] < 0.0) {
-            RCLCPP_WARN(
-              get_logger(),
-              "Negative values set of acceleration! These should be positive to speed up!");
-            result.successful = false;
-          }
-        }
-        if (result.successful) {
-          max_accels_ = parameter.as_double_array();
-        }
+        max_accels_ = parameter.as_double_array();
       } else if (param_name == "max_decel") {
-        for (unsigned int i = 0; i != size; i++) {
-          if (parameter.as_double_array()[i] > 0.0) {
-            RCLCPP_WARN(
-              get_logger(),
-              "Positive values set of deceleration! These should be negative to slow down!");
-            result.successful = false;
-          }
-        }
-        if (result.successful) {
-          max_decels_ = parameter.as_double_array();
-        }
+        max_decels_ = parameter.as_double_array();
       } else if (param_name == "deadband_velocity") {
         deadband_velocities_ = parameter.as_double_array();
       }
@@ -594,22 +624,10 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           odom_smoother_ =
             std::make_unique<nav2_util::OdomSmoother>(
             shared_from_this(), odom_duration_, odom_topic_);
-        } else {
-          RCLCPP_WARN(
-            get_logger(), "Invalid feedback_type, options are OPEN_LOOP and CLOSED_LOOP.");
-          result.successful = false;
-          break;
         }
-      } else if (param_name == "odom_topic") {
-        odom_topic_ = parameter.as_string();
-        odom_smoother_ =
-          std::make_unique<nav2_util::OdomSmoother>(
-          shared_from_this(), odom_duration_, odom_topic_);
       }
     }
   }
-
-  return result;
 }
 
 }  // namespace nav2_velocity_smoother

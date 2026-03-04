@@ -718,7 +718,7 @@ TEST_F(TestNode, testDynParamsSet)
 {
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
-  costmap->declare_parameter("global_frame", rclcpp::ParameterValue(std::string("base_link")));
+  costmap->declare_parameter("global_frame", std::string("base_link"));
   costmap->on_configure(rclcpp_lifecycle::State());
 
   costmap->on_activate(rclcpp_lifecycle::State());
@@ -782,6 +782,18 @@ TEST_F(TestNode, testDynParamsSet)
     // Value should remain unchanged at -1
     EXPECT_EQ(costmap->get_parameter("inflation_layer.num_threads").as_int(), -1);
   }
+
+  // Setting invalid inflation radius should not update the parameter
+  auto invalid_result = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("inflation_layer.inflation_radius", -1.0)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    invalid_result);
+
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.inflation_radius").as_double(), 0.0);
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
