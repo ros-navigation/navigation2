@@ -64,8 +64,8 @@ def generate_launch_description() -> LaunchDescription:
     if (os.getenv('GROOT_MONITORING') == 'True'):
         param_substitutions.update({'enable_groot_monitoring': 'True'})
 
-    if os.getenv('INFLATION_LAYER'):
-        inflation_layer_plugin = os.getenv('INFLATION_LAYER')
+    inflation_layer_plugin = os.getenv('INFLATION_LAYER', '')
+    if inflation_layer_plugin:
         param_substitutions.update({
             'local_costmap.local_costmap.ros__parameters.inflation_layer.plugin':
                 inflation_layer_plugin
