@@ -47,7 +47,8 @@ LifecyclePointCloudSubscription::LifecyclePointCloudSubscription(
   rclcpp::Node * node_ptr = dynamic_cast<rclcpp::Node *>(node.get());
   if (!node_ptr) {
     throw std::invalid_argument(
-      "LifecyclePointCloudSubscription: node must be a rclcpp::Node (LifecycleNode inheriting Node)");
+      "LifecyclePointCloudSubscription: node must be a rclcpp::Node "
+      "(LifecycleNode inheriting Node)");
   }
   pct_ = std::make_shared<point_cloud_transport::PointCloudTransport>(
     std::shared_ptr<rclcpp::Node>(node, node_ptr));

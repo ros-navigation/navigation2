@@ -505,6 +505,7 @@ void Tester::createSources(const bool base_shift_correction)
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   pointcloud_->configure();
+  pointcloud_->activate();
 
   // Create Range object
   test_node_->declare_parameter(
@@ -909,6 +910,7 @@ TEST_F(Tester, testPointCloudMinRange)
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, true);
   pointcloud_->configure();
+  pointcloud_->activate();
 
   sendTransforms(curr_time);
 
