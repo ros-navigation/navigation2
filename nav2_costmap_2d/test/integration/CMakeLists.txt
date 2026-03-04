@@ -23,6 +23,14 @@ target_link_libraries(inflation_tests_exec
   layers
 )
 
+ament_add_gtest_executable(legacy_inflation_tests_exec
+  legacy_inflation_tests.cpp
+)
+target_link_libraries(legacy_inflation_tests_exec
+  nav2_costmap_2d_core
+  layers
+)
+
 nav2_add_gtest(obstacle_tests
   obstacle_tests.cpp
 )
