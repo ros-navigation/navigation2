@@ -56,6 +56,10 @@ void ConstraintClassifier::configure(
   class_type_ = static_cast<uint16_t>(
     node->get_parameter(name_ + ".class_type").as_int());
   inflation_resolution_ = node->get_parameter(name_ + ".inflation_resolution").as_double();
+  if (inflation_resolution_ <= 0.0) {
+    throw std::runtime_error(
+            "ConstraintClassifier: 'inflation_resolution' parameter must be positive.");
+  }
   max_constraint_clearance_ = node->get_parameter(name_ + ".max_constraint_clearance").as_double();
 
   collision_checker_.setCostmap(costmap_ros_->getCostmap());
