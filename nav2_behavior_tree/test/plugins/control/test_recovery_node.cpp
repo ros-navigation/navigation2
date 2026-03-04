@@ -19,6 +19,7 @@
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "utils/test_dummy_tree_node.hpp"
 #include "nav2_behavior_tree/plugins/control/recovery_node.hpp"
+#include "rclcpp/version.h"
 
 // Changes status to SUCCESS after a specified number of failures
 class RecoveryDummy : public nav2_behavior_tree::DummyNode
@@ -103,10 +104,20 @@ TEST_F(RecoveryNodeTestFixture, test_running)
 TEST_F(RecoveryNodeTestFixture, test_failure_on_idle_child)
 {
   first_child_->changeStatus(BT::NodeStatus::IDLE);
+  // NodeExecutionError is introduced in BT.CPP 4.9.0
+  #if RCLCPP_VERSION_GTE(30, 1, 5)
+  EXPECT_THROW(bt_node_->executeTick(), BT::NodeExecutionError);
+  #else
   EXPECT_THROW(bt_node_->executeTick(), BT::LogicError);
+  #endif
   first_child_->changeStatus(BT::NodeStatus::FAILURE);
   second_child_->changeStatus(BT::NodeStatus::IDLE);
+  // NodeExecutionError is introduced in BT.CPP 4.9.0
+  #if RCLCPP_VERSION_GTE(30, 1, 5)
+  EXPECT_THROW(bt_node_->executeTick(), BT::NodeExecutionError);
+  #else
   EXPECT_THROW(bt_node_->executeTick(), BT::LogicError);
+  #endif
 }
 
 TEST_F(RecoveryNodeTestFixture, test_success_one_retry)

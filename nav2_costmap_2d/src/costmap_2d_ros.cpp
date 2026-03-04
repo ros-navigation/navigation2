@@ -319,8 +319,12 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   start();
 
   // Add callback for dynamic parameters
-  dyn_params_handler = this->add_on_set_parameters_callback(
-    std::bind(&Costmap2DROS::dynamicParametersCallback, this, _1));
+  post_set_params_handler_ = this->add_post_set_parameters_callback(
+    std::bind(
+      &Costmap2DROS::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler = this->add_on_set_parameters_callback(
+    std::bind(&Costmap2DROS::validateParameterUpdatesCallback, this, _1));
 
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -330,8 +334,10 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  remove_on_set_parameters_callback(dyn_params_handler.get());
-  dyn_params_handler.reset();
+  remove_post_set_parameters_callback(post_set_params_handler_.get());
+  post_set_params_handler_.reset();
+  remove_on_set_parameters_callback(on_set_params_handler.get());
+  on_set_params_handler.reset();
 
   stop();
 
@@ -744,20 +750,78 @@ Costmap2DROS::transformPoseToGlobalFrame(
   }
 }
 
-rcl_interfaces::msg::SetParametersResult
-Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
-  auto result = rcl_interfaces::msg::SetParametersResult();
-  bool resize_map = false;
-  std::lock_guard<std::mutex> lock_reinit(_dynamic_parameter_mutex);
-
-  for (auto parameter : parameters) {
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find('.') != std::string::npos) {
       continue;
     }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() <= 0.0 &&
+        (param_name == "resolution" || param_name == "publish_frequency"))
+      {
+        RCLCPP_WARN(
+        get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      } else if (parameter.as_double() < 0.0 && // NOLINT
+        (param_name != "origin_x" && param_name != "origin_y"))
+      {
+        RCLCPP_WARN(
+        get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (parameter.as_int() <= 0.0) {
+        RCLCPP_WARN(
+        get_logger(), "The value of parameter '%s' is incorrectly set to %ld, "
+        "it should be >0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_int());
+        result.successful = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_STRING && param_name == "robot_base_frame") {
+      // First, make sure that the transform between the robot base frame
+      // and the global frame is available
+      std::string tf_error;
+      RCLCPP_INFO(get_logger(), "Checking transform");
+      if (!tf_buffer_->canTransform(
+          global_frame_, parameter.as_string(), tf2::TimePointZero,
+          tf2::durationFromSec(1.0), &tf_error))
+      {
+        RCLCPP_WARN(
+          get_logger(), "Timed out waiting for transform from %s to %s"
+          " to become available, tf error: %s",
+          parameter.as_string().c_str(), global_frame_.c_str(), tf_error.c_str());
+        RCLCPP_WARN(
+          get_logger(), "Rejecting robot_base_frame change to %s , leaving it to its original"
+          " value of %s", parameter.as_string().c_str(), robot_base_frame_.c_str());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
 
+void
+Costmap2DROS::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
+{
+  bool resize_map = false;
+  std::lock_guard<std::mutex> lock_reinit(_dynamic_parameter_mutex);
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find('.') != std::string::npos) {
+      continue;
+    }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "robot_radius") {
@@ -775,11 +839,7 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
         transform_tolerance_ = parameter.as_double();
       } else if (param_name == "publish_frequency") {
         map_publish_frequency_ = parameter.as_double();
-        if (map_publish_frequency_ > 0) {
-          publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
-        } else {
-          publish_cycle_ = rclcpp::Duration(-1s);
-        }
+        publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
       } else if (param_name == "resolution") {
         resize_map = true;
         resolution_ = parameter.as_double();
@@ -792,27 +852,11 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == "width") {
-        if (parameter.as_int() > 0) {
-          resize_map = true;
-          map_width_meters_ = parameter.as_int();
-        } else {
-          RCLCPP_ERROR(
-            get_logger(), "You try to set width of map to be negative or zero,"
-            " this isn't allowed, please give a positive value.");
-          result.successful = false;
-          return result;
-        }
+        resize_map = true;
+        map_width_meters_ = parameter.as_int();
       } else if (param_name == "height") {
-        if (parameter.as_int() > 0) {
-          resize_map = true;
-          map_height_meters_ = parameter.as_int();
-        } else {
-          RCLCPP_ERROR(
-            get_logger(), "You try to set height of map to be negative or zero,"
-            " this isn't allowed, please give a positive value.");
-          result.successful = false;
-          return result;
-        }
+        resize_map = true;
+        map_height_meters_ = parameter.as_int();
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == "footprint") {
@@ -822,24 +866,6 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
           setRobotFootprint(new_footprint);
         }
       } else if (param_name == "robot_base_frame") {
-        // First, make sure that the transform between the robot base frame
-        // and the global frame is available
-        std::string tf_error;
-        RCLCPP_INFO(get_logger(), "Checking transform");
-        if (!tf_buffer_->canTransform(
-            global_frame_, parameter.as_string(), tf2::TimePointZero,
-            tf2::durationFromSec(1.0), &tf_error))
-        {
-          RCLCPP_WARN(
-            get_logger(), "Timed out waiting for transform from %s to %s"
-            " to become available, tf error: %s",
-            parameter.as_string().c_str(), global_frame_.c_str(), tf_error.c_str());
-          RCLCPP_WARN(
-            get_logger(), "Rejecting robot_base_frame change to %s , leaving it to its original"
-            " value of %s", parameter.as_string().c_str(), robot_base_frame_.c_str());
-          result.successful = false;
-          return result;
-        }
         robot_base_frame_ = parameter.as_string();
       }
     }
@@ -851,9 +877,6 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
       (unsigned int)(map_height_meters_ / resolution_), resolution_, origin_x_, origin_y_);
     updateMap();
   }
-
-  result.successful = true;
-  return result;
 }
 
 void Costmap2DROS::getCostsCallback(

@@ -121,6 +121,12 @@ public:
     std::vector<std::tuple<float, float, float>> * expansions_log = nullptr);
 
   /**
+   * @brief Update the search info used by the algorithm
+   * @param search_info Search info to update
+   */
+  void setSearchInfo(const SearchInfo & search_info) {_search_info = search_info;}
+
+  /**
    * @brief Sets the collision checker to use
    * @param collision_checker Collision checker to use for checking state validity
    */
