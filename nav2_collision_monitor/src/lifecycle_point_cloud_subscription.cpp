@@ -15,13 +15,43 @@
 
 #include "nav2_collision_monitor/lifecycle_point_cloud_subscription.hpp"
 
+#include "rclcpp/node.hpp"
+#if defined(POINT_CLOUD_TRANSPORT_SUBSCRIBE_USE_QOS)
+#include "rclcpp/node_interfaces/node_base_interface.hpp"
+#include "rclcpp/node_interfaces/node_logging_interface.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/node_interfaces/node_topics_interface.hpp"
+#endif
+
 namespace nav2_collision_monitor
 {
 
 LifecyclePointCloudSubscription::LifecyclePointCloudSubscription(
-  rclcpp_lifecycle::LifecycleNode & node)
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+: node_(node)
 {
-  pct_ = std::make_shared<point_cloud_transport::PointCloudTransport>(node);
+#if defined(POINT_CLOUD_TRANSPORT_SUBSCRIBE_USE_QOS)
+  // Rolling: LifecycleNode does not inherit Node; use node interfaces
+  pct_ = std::make_shared<point_cloud_transport::PointCloudTransport>(
+    rclcpp::node_interfaces::NodeInterfaces<
+      rclcpp::node_interfaces::NodeBaseInterface,
+      rclcpp::node_interfaces::NodeParametersInterface,
+      rclcpp::node_interfaces::NodeTopicsInterface,
+      rclcpp::node_interfaces::NodeLoggingInterface>(
+      node->get_node_base_interface(),
+      node->get_node_parameters_interface(),
+      node->get_node_topics_interface(),
+      node->get_node_logging_interface()));
+#else
+  // Jazzy/Kilted: PointCloudTransport(rclcpp::Node::SharedPtr)
+  rclcpp::Node * node_ptr = dynamic_cast<rclcpp::Node *>(node.get());
+  if (!node_ptr) {
+    throw std::invalid_argument(
+      "LifecyclePointCloudSubscription: node must be a rclcpp::Node (LifecycleNode inheriting Node)");
+  }
+  pct_ = std::make_shared<point_cloud_transport::PointCloudTransport>(
+    std::shared_ptr<rclcpp::Node>(node, node_ptr));
+#endif
 }
 
 LifecyclePointCloudSubscription::~LifecyclePointCloudSubscription()
@@ -35,19 +65,22 @@ void LifecyclePointCloudSubscription::subscribe(
   Callback callback,
   const point_cloud_transport::TransportHints & transport_hints)
 {
-  auto gated = [this, cb = std::move(callback)](
+  std::function<void(sensor_msgs::msg::PointCloud2::ConstSharedPtr)> gated =
+    [this, cb = std::move(callback)](
     sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
       if (is_activated()) {
         cb(msg);
       }
     };
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-  data_sub_ = pct_->subscribe(topic, qos, gated, {}, &transport_hints);
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic pop
+#if defined(POINT_CLOUD_TRANSPORT_SUBSCRIBE_USE_QOS)
+  data_sub_ = pct_->subscribe(topic, qos, gated, std::shared_ptr<void>(), &transport_hints);
+#else
+  data_sub_ = pct_->subscribe(
+    topic,
+    qos.get_rmw_qos_profile(),
+    gated,
+    std::shared_ptr<void>(),
+    &transport_hints);
 #endif
 }
 

@@ -76,7 +76,7 @@ void PointCloud::configure()
 
   #if defined(RCLCPP_VERSION_MAJOR) && RCLCPP_VERSION_MAJOR >= 30
   const point_cloud_transport::TransportHints hint(transport_type_);
-  data_sub_ = LifecyclePointCloudSubscription::make_shared(*node);
+  data_sub_ = LifecyclePointCloudSubscription::make_shared(node);
   data_sub_->subscribe(
     source_topic, nav2::qos::SensorDataQoS(),
     std::bind(&PointCloud::dataCallback, this, std::placeholders::_1),
