@@ -1033,8 +1033,8 @@ TEST_F(Tester, testPolygonDebounceConsecutiveTriggerRelease)
   createPolygon("stop", true);
 
   auto results = test_node_->set_parameters({
-      rclcpp::Parameter(std::string(POLYGON_NAME) + ".trigger_consecutive_points", 3),
-      rclcpp::Parameter(std::string(POLYGON_NAME) + ".release_consecutive_points", 3)});
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".trigger_consecutive_points", 3),
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".release_consecutive_points", 3)});
   ASSERT_EQ(results.size(), 2u);
   EXPECT_TRUE(results[0].successful);
   EXPECT_TRUE(results[1].successful);
