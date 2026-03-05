@@ -1019,6 +1019,35 @@ TEST_F(Tester, testPolygonSourceAssociation)
   ASSERT_EQ(polygon_->getSourcesNames(), poly_sources);
 }
 
+TEST_F(Tester, testPolygonDebounceDefaultBehavior)
+{
+  createPolygon("stop", true);
+
+  EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
+  EXPECT_TRUE(polygon_->isTriggeredByPoints(MIN_POINTS));
+  EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
+}
+
+TEST_F(Tester, testPolygonDebounceConsecutiveTriggerRelease)
+{
+  createPolygon("stop", true);
+
+  auto results = test_node_->set_parameters({
+      rclcpp::Parameter(std::string(POLYGON_NAME) + ".trigger_consecutive_points", 3),
+      rclcpp::Parameter(std::string(POLYGON_NAME) + ".release_consecutive_points", 3)});
+  ASSERT_EQ(results.size(), 2u);
+  EXPECT_TRUE(results[0].successful);
+  EXPECT_TRUE(results[1].successful);
+
+  EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS));
+  EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS));
+  EXPECT_TRUE(polygon_->isTriggeredByPoints(MIN_POINTS));
+
+  EXPECT_TRUE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
+  EXPECT_TRUE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
+  EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
+}
+
 int main(int argc, char ** argv)
 {
   // Initialize the system
