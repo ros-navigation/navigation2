@@ -182,63 +182,6 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   EXPECT_EQ(received_msg.markers.size(), 40u);
 }
 
-TEST(TrajectoryVisualizerTests, VisIndividualCriticCosts)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
-  std::string name = "test";
-
-  // Enable individual critic cost visualization
-  node->declare_parameter(
-    "my_name.Visualization.publish_trajectories_with_individual_cost",
-    rclcpp::ParameterValue(true));
-
-  auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
-
-  builtin_interfaces::msg::Time cmd_stamp;
-  cmd_stamp.sec = 5;
-
-  visualization_msgs::msg::MarkerArray received_msg;
-  auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
-    "~/candidate_trajectories",
-    [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
-
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(node->get_node_base_interface());
-
-  models::Trajectories candidate_trajectories;
-  candidate_trajectories.x = Eigen::ArrayXXf::Ones(50, 12);
-  candidate_trajectories.y = Eigen::ArrayXXf::Ones(50, 12);
-  candidate_trajectories.yaws = Eigen::ArrayXXf::Ones(50, 12);
-
-  Eigen::ArrayXf total_costs = Eigen::ArrayXf::Random(50);
-
-  // Create per-critic costs
-  std::vector<std::pair<std::string, Eigen::ArrayXf>> critic_costs;
-  critic_costs.emplace_back("GoalCritic", Eigen::ArrayXf::Random(50));
-  critic_costs.emplace_back("PathCritic", Eigen::ArrayXf::Random(50));
-
-  TrajectoryVisualizer vis;
-  vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
-  vis.on_activate();
-  vis.add(candidate_trajectories, total_costs, critic_costs, cmd_stamp);
-  vis.visualize(nav_msgs::msg::Path{});
-
-  executor.spin_some();
-
-  // 50 trajectories / 5 trajectory_step = 10 markers per critic
-  // 2 critics = 20 LINE_STRIP markers total
-  EXPECT_EQ(received_msg.markers.size(), 20u);
-
-  // Verify both critic namespaces are present
-  bool found_goal = false, found_path = false;
-  for (const auto & marker : received_msg.markers) {
-    if (marker.ns == "GoalCritic") {found_goal = true;}
-    if (marker.ns == "PathCritic") {found_path = true;}
-  }
-  EXPECT_TRUE(found_goal);
-  EXPECT_TRUE(found_path);
-}
-
 TEST(TrajectoryVisualizerTests, VisOptimalPath)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");

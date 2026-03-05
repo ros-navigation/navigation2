@@ -327,7 +327,8 @@ The published `nav2_msgs::msg::CriticsStats` message contains the following fiel
 - **stamp**: Timestamp of when the statistics were computed
 - **critics**: Array of critic names that were evaluated (e.g., "ConstraintCritic", "GoalCritic", "ObstaclesCritic")
 - **changed**: Boolean array indicating whether each critic modified the trajectory costs. `true` means the critic added non-zero costs, `false` means it had no effect
-- **costs_sum**: Array of the total cost contribution from each critic. This represents the sum of all costs added by that specific critic across all trajectory candidates
+- **costs_std_dev**: Array of the standard deviation of costs from each critic across all trajectory candidates. Higher values indicate the critic is strongly discriminating between trajectories
+- **influence_ratio**: Fraction of total discriminating power per critic ($\sigma_k / \sum \sigma_j$). Values sum to 1.0. A critic at 0.6 means it accounts for 60% of trajectory selection influence
 
 This data is invaluable for understanding:
 - Which critics are actively influencing trajectory selection

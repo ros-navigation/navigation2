@@ -315,7 +315,7 @@ protected:
   CriticData critics_data_ = {
     state_, generated_trajectories_, path_, goal_,
     costs_, std::nullopt, settings_.model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, std::nullopt};  /// Caution, keep references
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 

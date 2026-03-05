@@ -116,7 +116,7 @@ TEST(CriticManagerTests, BasicCriticOperations)
   CriticData data =
   {state, generated_trajectories, path, goal, costs, std::nullopt, model_dt, false, nullptr,
     nullptr,
-    std::nullopt, std::nullopt};
+    std::nullopt, std::nullopt, std::nullopt};
 
   data.fail_flag = true;
   EXPECT_FALSE(critic_manager.getDummyCriticScored());
@@ -175,7 +175,7 @@ TEST(CriticManagerTests, PerCriticCostVisualization)
   CriticData data =
   {state, generated_trajectories, path, goal, costs, std::nullopt, model_dt, false, nullptr,
     nullptr,
-    std::nullopt, std::nullopt};
+    std::nullopt, std::nullopt, std::nullopt};
 
   critic_manager.evalTrajectoriesScores(data);
 
