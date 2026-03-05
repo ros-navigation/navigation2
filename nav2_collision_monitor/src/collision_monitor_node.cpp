@@ -63,6 +63,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
   // Obtaining ROS parameters
   if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic, state_topic)) {
     on_cleanup(state);
+    on_shutdown(state);
     return nav2::CallbackReturn::FAILURE;
   }
 
@@ -95,6 +96,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
     } catch (const std::runtime_error & e) {
       RCLCPP_ERROR(get_logger(), "%s", e.what());
       on_cleanup(state);
+      on_shutdown(state);
       return nav2::CallbackReturn::FAILURE;
     }
   }
