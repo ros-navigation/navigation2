@@ -98,6 +98,18 @@ public:
    * @return Minimum number of data readings within a zone to trigger the action
    */
   int getMinPoints() const;
+
+  /**
+   * @brief Temporal debounce for min_points trigger.
+   * @param points_inside Number of points currently inside the polygon.
+   * @return true if trigger should be considered active after debounce/hold logic.
+   */
+  bool isTriggeredByPoints(int points_inside);
+
+  /**
+   * @brief Reset temporal debounce state.
+   */
+  void resetTriggerState();
   /**
    * @brief Obtains speed slowdown ratio for current polygon.
    * Applicable for SLOWDOWN model.
@@ -280,6 +292,16 @@ protected:
   ActionType action_type_;
   /// @brief Minimum number of data readings within a zone to trigger the action
   int min_points_;
+  /// @brief Number of consecutive hits required to trigger action
+  int trigger_consecutive_points_{1};
+  /// @brief Number of consecutive misses required to release action
+  int release_consecutive_points_{1};
+  /// @brief Current consecutive hit counter
+  int trigger_hits_{0};
+  /// @brief Current consecutive miss counter
+  int release_hits_{0};
+  /// @brief Latched trigger state after temporal debounce
+  bool trigger_active_{false};
   /// @brief Robot slowdown (share of its actual speed)
   double slowdown_ratio_;
   /// @brief Robot linear limit
