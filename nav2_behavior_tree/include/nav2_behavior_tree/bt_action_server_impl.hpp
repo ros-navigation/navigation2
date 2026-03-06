@@ -123,6 +123,10 @@ bool BtActionServer<ActionT>::on_configure()
   wait_for_service_timeout_ = std::chrono::milliseconds(wait_for_service_timeout);
   node->get_parameter("always_reload_bt_xml", always_reload_bt_xml_);
 
+  if (node->has_parameter("enable_navigate_through_poses")) {
+    node->get_parameter("enable_navigate_through_poses", enable_navigate_through_poses_);
+  }
+
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
 
@@ -163,6 +167,7 @@ bool BtActionServer<ActionT>::on_cleanup()
 {
   client_node_.reset();
   action_server_.reset();
+  zmq_publisher_.reset();
   topic_logger_.reset();
   plugin_lib_names_.clear();
   current_bt_xml_filename_.clear();
@@ -213,6 +218,20 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   }
 
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
+
+  // Create ZMQ publisher only when NavigateThroughPoses is disabled to avoid ZMQ crashes
+  zmq_publisher_.reset();
+  if (!enable_navigate_through_poses_) {
+    int pub_port = 1666, srv_port = 1667;
+    auto node = node_.lock();
+    if (node) {
+      node->get_parameter("groot_zmq_publisher_port", pub_port);
+      node->get_parameter("groot_zmq_server_port", srv_port);
+    }
+    zmq_publisher_ = std::make_unique<BT::PublisherZMQ>(
+      tree_, 25, static_cast<unsigned>(pub_port), static_cast<unsigned>(srv_port));
+    RCLCPP_INFO(logger_, "ZMQ publisher created, port: %d, server port: %d", pub_port, srv_port);
+  }
 
   current_bt_xml_filename_ = filename;
   return true;
