@@ -218,7 +218,7 @@ _commands:
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
                       --mixin << parameters.mixins >> \
-                      --cmake-args -DUSE_ISOLATED_TESTS=ON -DENABLE_OPENMP=ON
+                      --cmake-args -DUSE_ISOLATED_TESTS=ON
               - ccache_stats:
                   workspace: << parameters.workspace >>
                   when: always
