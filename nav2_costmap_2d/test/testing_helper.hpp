@@ -28,6 +28,7 @@
 #include "nav2_costmap_2d/range_sensor_layer.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_costmap_2d/legacy_inflation_layer.hpp"
 #include "nav2_costmap_2d/plugin_container_layer.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
@@ -141,6 +142,18 @@ void addInflationLayer(
   rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
 {
   ilayer = std::make_shared<nav2_costmap_2d::InflationLayer>();
+  ilayer->initialize(&layers, "inflation", &tf, node, callback_group);
+  std::shared_ptr<nav2_costmap_2d::Layer> ipointer(ilayer);
+  layers.addPlugin(ipointer);
+}
+
+void addLegacyInflationLayer(
+  nav2_costmap_2d::LayeredCostmap & layers,
+  tf2_ros::Buffer & tf, nav2::LifecycleNode::SharedPtr node,
+  std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> & ilayer,
+  rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
+{
+  ilayer = std::make_shared<nav2_costmap_2d::LegacyInflationLayer>();
   ilayer->initialize(&layers, "inflation", &tf, node, callback_group);
   std::shared_ptr<nav2_costmap_2d::Layer> ipointer(ilayer);
   layers.addPlugin(ipointer);
