@@ -226,6 +226,10 @@ protected:
   // To publish BT logs
   std::unique_ptr<RosTopicLogger> topic_logger_;
 
+  // To publish BT state to Groot via ZMQ (only when NavigateThroughPoses is disabled)
+  std::unique_ptr<BT::PublisherZMQ> zmq_publisher_;
+  bool enable_navigate_through_poses_{true};
+
   // Duration for each iteration of BT execution
   std::chrono::milliseconds bt_loop_duration_;
 
