@@ -55,6 +55,7 @@ public:
     bt_node_ = std::make_shared<nav2_behavior_tree::SpeedController>("speed_controller", *config_);
     dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();
     bt_node_->setChild(dummy_node_.get());
+    odom_smoother_->on_activate();
   }
 
   void TearDown()

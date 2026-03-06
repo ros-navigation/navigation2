@@ -95,6 +95,16 @@ public:
    */
   rclcpp::Duration getSourceTimeout() const;
 
+  /**
+   * @brief Activates the source's subscription(s). Call from node on_activate.
+   */
+  virtual void activate() {}
+
+  /**
+   * @brief Deactivates the source's subscription(s). Call from node on_deactivate.
+   */
+  virtual void deactivate() {}
+
 protected:
   /**
    * @brief Source configuration routine.

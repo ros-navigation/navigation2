@@ -132,6 +132,32 @@ public:
     }
   }
 
+  /**
+   * @brief Activate the subscription (calls nav2::Subscription::on_activate).
+   * Call at the same lifecycle point as publisher on_activate() (e.g. in tests).
+   */
+  void on_activate()
+  {
+    if (twist_stamped_sub_) {
+      twist_stamped_sub_->on_activate();
+    } else if (twist_sub_) {
+      twist_sub_->on_activate();
+    }
+  }
+
+  /**
+   * @brief Deactivate the subscription (calls nav2::Subscription::on_deactivate).
+   * Call at the same lifecycle point as publisher on_deactivate().
+   */
+  void on_deactivate()
+  {
+    if (twist_stamped_sub_) {
+      twist_stamped_sub_->on_deactivate();
+    } else if (twist_sub_) {
+      twist_sub_->on_deactivate();
+    }
+  }
+
 protected:
   //! @brief The user-configured value for ROS parameter enable_stamped_cmd_vel
   bool is_stamped_{true};

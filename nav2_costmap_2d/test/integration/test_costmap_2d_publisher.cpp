@@ -95,6 +95,13 @@ public:
     executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
   }
 
+  void activate()
+  {
+    if (layer_sub_) {
+      layer_sub_->on_activate();
+    }
+  }
+
   ~LayerSubscriber()
   {
     executor_thread_.reset();
@@ -128,6 +135,7 @@ public:
       costmap_lifecycle_node_->shared_from_this());
     costmap_lifecycle_node_->on_configure(costmap_lifecycle_node_->get_current_state());
     costmap_lifecycle_node_->on_activate(costmap_lifecycle_node_->get_current_state());
+    layer_subscriber_->activate();
   }
 
   ~CostmapRosTestFixture() override

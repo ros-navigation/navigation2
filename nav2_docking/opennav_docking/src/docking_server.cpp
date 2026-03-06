@@ -83,6 +83,7 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   dock_db_->activate();
   navigator_->activate();
   vel_publisher_->on_activate();
+  odom_sub_->on_activate();
   docking_action_server_->activate();
   undocking_action_server_->activate();
   param_handler_->activate();

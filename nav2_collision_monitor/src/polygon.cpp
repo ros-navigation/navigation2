@@ -122,6 +122,12 @@ bool Polygon::configure()
 
 void Polygon::activate()
 {
+  if (polygon_sub_) {
+    polygon_sub_->on_activate();
+  }
+  if (footprint_sub_) {
+    footprint_sub_->on_activate();
+  }
   if (visualize_) {
     polygon_pub_->on_activate();
   }
@@ -129,6 +135,12 @@ void Polygon::activate()
 
 void Polygon::deactivate()
 {
+  if (polygon_sub_) {
+    polygon_sub_->on_deactivate();
+  }
+  if (footprint_sub_) {
+    footprint_sub_->on_deactivate();
+  }
   if (visualize_) {
     polygon_pub_->on_deactivate();
   }

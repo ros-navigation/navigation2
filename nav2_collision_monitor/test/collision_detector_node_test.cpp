@@ -139,6 +139,9 @@ public:
   // Setting TF chains
   void sendTransforms(const rclcpp::Time & stamp);
 
+  // Start node and activate test subscriptions (so test receives output topics)
+  void startDetector();
+
   // Publish robot footprint
   void publishFootprint(const double radius, const rclcpp::Time & stamp);
 
@@ -376,6 +379,13 @@ void Tester::setVectors(
 {
   cd_->declare_parameter("polygons", rclcpp::ParameterValue(polygons));
   cd_->declare_parameter("observation_sources", rclcpp::ParameterValue(sources));
+}
+
+void Tester::startDetector()
+{
+  cd_->start();
+  state_sub_->on_activate();
+  collision_points_marker_sub_->on_activate();
 }
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
@@ -652,7 +662,7 @@ TEST_F(Tester, testProcessActive)
   setVectors({"DetectionRegion"}, {SCAN_NAME});
 
   // Configure and activate Collision Detector node
-  cd_->start();
+  startDetector();
   // ... and check that state is published
   ASSERT_TRUE(waitState(300ms));
 
@@ -672,7 +682,7 @@ TEST_F(Tester, testPolygonDetection)
   setVectors({"DetectionRegion"}, {RANGE_NAME});
 
   // Start Collision Detector node
-  cd_->start();
+  startDetector();
 
   // Share TF
   sendTransforms(curr_time);
@@ -701,7 +711,7 @@ TEST_F(Tester, testCircleDetection)
   setVectors({"DetectionRegion"}, {RANGE_NAME});
 
   // Start Collision Detector node
-  cd_->start();
+  startDetector();
 
   // Share TF
   sendTransforms(curr_time);
@@ -730,7 +740,7 @@ TEST_F(Tester, testScanDetection)
   setVectors({"DetectionRegion"}, {SCAN_NAME});
 
   // Start Collision Detector node
-  cd_->start();
+  startDetector();
 
   // Share TF
   sendTransforms(curr_time);
@@ -759,7 +769,7 @@ TEST_F(Tester, testPointcloudDetection)
   setVectors({"DetectionRegion"}, {POINTCLOUD_NAME});
 
   // Start Collision Detector node
-  cd_->start();
+  startDetector();
 
   // Share TF
   sendTransforms(curr_time);
@@ -788,7 +798,7 @@ TEST_F(Tester, testPolygonSourceDetection)
   setVectors({"DetectionRegion"}, {POLYGON_NAME});
 
   // Start Collision Detector node
-  cd_->start();
+  startDetector();
 
   // Share TF
   sendTransforms(curr_time);
@@ -817,7 +827,7 @@ TEST_F(Tester, testCostmapDetection)
   setVectors({"DetectionRegion"}, {COSTMAP_NAME});
 
   // Start Collision Detector node
-  cd_->start();
+  startDetector();
 
   // Share TF
   sendTransforms(curr_time);
@@ -845,7 +855,7 @@ TEST_F(Tester, testCollisionPointsMarkers)
   setVectors({}, {SCAN_NAME});
 
   // Start Collision Monitor node
-  cd_->start();
+  startDetector();
 
   // Share TF
   sendTransforms(curr_time);

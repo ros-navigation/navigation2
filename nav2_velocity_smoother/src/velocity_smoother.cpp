@@ -165,13 +165,23 @@ nav2::CallbackReturn
 VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Activating");
+
+  // 1. Activate all input subscriptions first
+  cmd_sub_->on_activate();
+  if (odom_smoother_) {
+    odom_smoother_->on_activate();
+  }
+
+  // 2. Activate publishers
   smoothed_cmd_pub_->on_activate();
+
+  // 3. Start timer
   double timer_duration_ms = 1000.0 / smoothing_frequency_;
   timer_ = this->create_wall_timer(
     std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
     std::bind(&VelocitySmoother::smootherTimer, this));
 
-  // Add callback for dynamic parameters
+  // 4. Add callback for dynamic parameters
   auto node = shared_from_this();
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
@@ -182,7 +192,7 @@ VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
       &VelocitySmoother::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
 
-  // create bond connection
+  // 5. Create bond connection last
   createBond();
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -196,6 +206,10 @@ VelocitySmoother::on_deactivate(const rclcpp_lifecycle::State &)
     timer_.reset();
   }
   smoothed_cmd_pub_->on_deactivate();
+  cmd_sub_->on_deactivate();
+  if (odom_smoother_) {
+    odom_smoother_->on_deactivate();
+  }
 
   auto node = shared_from_this();
   if (post_set_params_handler_ && node) {

@@ -164,7 +164,7 @@ protected:
   std::atomic<bool> first_map_received_{false};
   amcl_hyp_t * initial_pose_hyp_;
   std::recursive_mutex mutex_;
-  nav2::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
+  nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
 #if NEW_UNIFORM_SAMPLING
   struct Point2D { int32_t x; int32_t y; };
   static std::vector<Point2D> free_space_indices;
@@ -204,7 +204,7 @@ protected:
    * @brief Initialize pub subs of AMCL
    */
   void initPubSub();
-  nav2::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
+  nav2::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     initial_pose_sub_;
   nav2::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     pose_pub_;

@@ -65,6 +65,9 @@ public:
    */
   void configure();
 
+  void activate() override;
+  void deactivate() override;
+
   /**
    * @brief Adds latest data from polygon source to the data array.
    * @param curr_time Current node time for data interpolation

@@ -133,6 +133,8 @@ nav2::CallbackReturn
 BtNavigator::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
+
+  odom_smoother_->on_activate();
   for (size_t i = 0; i != navigators_.size(); i++) {
     if (!navigators_[i]->on_activate()) {
       on_deactivate(state);
@@ -155,6 +157,8 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
       return nav2::CallbackReturn::FAILURE;
     }
   }
+
+  odom_smoother_->on_deactivate();
 
   // destroy bond connection
   destroyBond();

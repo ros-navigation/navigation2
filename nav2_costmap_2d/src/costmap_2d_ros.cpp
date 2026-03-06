@@ -265,11 +265,24 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  // First, make sure that the transform between the robot base frame
-  // and the global frame is available
+  // 1. Activate input subscriptions first
+  if (subscribe_to_stamped_footprint_) {
+    footprint_stamped_sub_->on_activate();
+  } else {
+    footprint_sub_->on_activate();
+  }
+  if (parameter_sub_) {
+    parameter_sub_->on_activate();
+  }
+
+  // 2. Activate publishers
+  footprint_pub_->on_activate();
+  costmap_publisher_->on_activate();
+  for (auto & layer_pub : layer_publishers_) {
+    layer_pub->on_activate();
+  }
 
   std::string tf_error;
-
   RCLCPP_INFO(get_logger(), "Checking transform");
   rclcpp::Rate r(2);
   const auto initial_transform_timeout = rclcpp::Duration::from_seconds(
@@ -284,7 +297,6 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
       " to become available, tf error: %s",
       robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
 
-    // Check timeout
     if (now() > initial_transform_timeout_point) {
       RCLCPP_ERROR(
         get_logger(),
@@ -295,27 +307,15 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
       return nav2::CallbackReturn::FAILURE;
     }
 
-    // The error string will accumulate and errors will typically be the same, so the last
-    // will do for the warning above. Reset the string here to avoid accumulation
     tf_error.clear();
     r.sleep();
   }
 
-  // Activate publishers
-  footprint_pub_->on_activate();
-  costmap_publisher_->on_activate();
-
-  for (auto & layer_pub : layer_publishers_) {
-    layer_pub->on_activate();
-  }
-
-  // Create a thread to handle updating the map
   stopped_ = true;  // to active plugins
   stop_updates_ = false;
   map_update_thread_shutdown_ = false;
   map_update_thread_ = std::make_unique<std::thread>(
     std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
-
   start();
 
   // Add callback for dynamic parameters
@@ -348,11 +348,18 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     map_update_thread_->join();
   }
 
-  footprint_pub_->on_deactivate();
   costmap_publisher_->on_deactivate();
-
   for (auto & layer_pub : layer_publishers_) {
     layer_pub->on_deactivate();
+  }
+  footprint_pub_->on_deactivate();
+  if (subscribe_to_stamped_footprint_) {
+    footprint_stamped_sub_->on_deactivate();
+  } else {
+    footprint_sub_->on_deactivate();
+  }
+  if (parameter_sub_) {
+    parameter_sub_->on_deactivate();
   }
 
   return nav2::CallbackReturn::SUCCESS;
@@ -375,6 +382,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_buffer_.reset();
 
   footprint_sub_.reset();
+  footprint_stamped_sub_.reset();
   footprint_pub_.reset();
 
   return nav2::CallbackReturn::SUCCESS;

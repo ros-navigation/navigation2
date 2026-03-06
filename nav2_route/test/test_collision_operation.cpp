@@ -163,6 +163,10 @@ TEST(TestCollisionMonitor, test_costmap_apis)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("costmap_topic", rclcpp::ParameterValue("dummy_topic"));
+  node->declare_parameter("name.costmap_topic",
+    rclcpp::ParameterValue("local_costmap/costmap_raw"));
+  node->configure();
+  node->activate();
   auto node_thread = std::make_unique<nav2::NodeThread>(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   CollisionMonitorWrapper monitor;

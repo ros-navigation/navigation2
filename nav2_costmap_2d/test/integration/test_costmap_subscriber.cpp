@@ -53,6 +53,11 @@ public:
     updateCostmapMsgCount = 0;
     updateCostmapRawMsgCount = 0;
 
+    dummyCostmapMsgSubscriber->on_activate();
+    dummyCostmapRawMsgSubscriber->on_activate();
+    dummyCostmapUpdateMsgSubscriber->on_activate();
+    dummyCostmapRawUpdateMsgSubscriber->on_activate();
+
     costmapSubscriber =
       std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, topicName + "_raw");
 

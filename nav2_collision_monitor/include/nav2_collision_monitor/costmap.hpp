@@ -80,6 +80,9 @@ public:
    */
   void configure();
 
+  void activate() override;
+  void deactivate() override;
+
   /**
    * @brief Produce current obstacle points from the latest costmap.
    * @param curr_time Current time used for staleness checks and TF queries.

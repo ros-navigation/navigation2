@@ -56,6 +56,17 @@ public:
     const std::string & plugin_name);
 
   /**
+   * @brief Activate the subscription. Call at same lifecycle point as publisher on_activate()
+   *        (e.g. from WaypointFollower::on_activate or in tests).
+   */
+  void on_activate() override;
+
+  /**
+   * @brief Deactivate the subscription.
+   */
+  void on_deactivate() override;
+
+  /**
    * @brief Processor
    * @param curr_pose current pose of the robot
    * @param curr_waypoint_index current waypoint, that robot just arrived

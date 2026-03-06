@@ -397,6 +397,28 @@ void KeepoutFilter::process(
   last_pose_lethal_ = is_pose_lethal_;
 }
 
+void KeepoutFilter::activateSubscriptions()
+{
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
+  if (filter_info_sub_) {
+    filter_info_sub_->on_activate();
+  }
+  if (mask_sub_) {
+    mask_sub_->on_activate();
+  }
+}
+
+void KeepoutFilter::deactivateSubscriptions()
+{
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
+  if (filter_info_sub_) {
+    filter_info_sub_->on_deactivate();
+  }
+  if (mask_sub_) {
+    mask_sub_->on_deactivate();
+  }
+}
+
 void KeepoutFilter::resetFilter()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());

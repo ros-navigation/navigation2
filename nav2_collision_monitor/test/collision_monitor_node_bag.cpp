@@ -29,6 +29,9 @@
 #include "nav2_msgs/msg/collision_monitor_state.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
+#include "nav2_ros_common/subscription.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
+
 
 using nav2_msgs::msg::CollisionMonitorState;
 
@@ -69,24 +72,32 @@ public:
     min_hold_pct_ = this->declare_parameter<double>("min_hold_pct", 0.90);
     max_time_to_resume_ = this->declare_parameter<double>("max_time_to_resume", 0.6);
     max_false_stop_pct_ = this->declare_parameter<double>("max_false_stop_pct", 0.05);
+  }
 
+  void initialize_subscriptions()
+  {
     // We only start collecting after we have seen *both* /clock and /local_costmap
     // This avoids counting "startup zero cmd" as real data.
-    cm_sub_ = this->create_subscription<nav2_msgs::msg::Costmap>(
-      "/local_costmap/costmap", rclcpp::QoS(1).reliable().durability_volatile(),
+    cm_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
+      shared_from_this(),
+      "/local_costmap/costmap",
       [this](const nav2_msgs::msg::Costmap &){
-        if (!got_costmap_) {got_costmap_ = true; cm_sub_.reset();}
-      });
+        if (!got_costmap_) {got_costmap_ = true;}
+      },
+      rclcpp::QoS(1).reliable().durability_volatile());
 
-    clock_sub_ = this->create_subscription<rosgraph_msgs::msg::Clock>(
-      "/clock", rclcpp::QoS(1).best_effort().durability_volatile(),
+    clock_sub_ = nav2::interfaces::create_subscription<rosgraph_msgs::msg::Clock>(
+      shared_from_this(),
+      "/clock",
       [this](const rosgraph_msgs::msg::Clock &){
-        if (!got_clock_) {got_clock_ = true; clock_sub_.reset();}
-      });
+        if (!got_clock_) {got_clock_ = true;}
+      },
+      rclcpp::QoS(1).best_effort().durability_volatile());
 
     // This is the *output* we evaluate. In the launch file you can remap it.
-    cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
-      "/cmd_vel", rclcpp::QoS(60),
+    cmd_sub_ = nav2::interfaces::create_subscription<geometry_msgs::msg::Twist>(
+      shared_from_this(),
+      "/cmd_vel",
       [this](const geometry_msgs::msg::Twist & msg){
         if (!got_clock_ || !got_costmap_) {
           // don't collect before system is “live”
@@ -94,19 +105,27 @@ public:
         }
         const double t = this->now().seconds();
         samples_.push_back(Sample{t, msg.linear.x, last_action_});
-      });
+      },
+      rclcpp::QoS(60));
 
     // Optional: subscribe to CM state to help debugging (not used in asserts)
-    state_sub_ = this->create_subscription<CollisionMonitorState>(
-      "/collision_state", rclcpp::QoS(10),
+    state_sub_ = nav2::interfaces::create_subscription<CollisionMonitorState>(
+      shared_from_this(),
+      "/collision_state",
       [this](const CollisionMonitorState & msg){
         last_action_ = msg.action_type;
-      });
+      },
+      rclcpp::QoS(10));
   }
 
   // Spin until we passed the obstacle window (8s) + margin
   void run_and_collect(rclcpp::executors::SingleThreadedExecutor & exec, double margin_s = 2.0)
   {
+    if (cm_sub_) {cm_sub_->on_activate();}
+    if (clock_sub_) {clock_sub_->on_activate();}
+    if (cmd_sub_) {cmd_sub_->on_activate();}
+    if (state_sub_) {state_sub_->on_activate();}
+
     // First, up to 5s WALL-time to see /clock
     auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
     while (rclcpp::ok() && !got_clock_) {
@@ -229,10 +248,10 @@ public:
 
 private:
   // Subscriptions
-  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr cm_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_sub_;
-  rclcpp::Subscription<CollisionMonitorState>::SharedPtr state_sub_;
-  rclcpp::Subscription<rosgraph_msgs::msg::Clock>::SharedPtr clock_sub_;
+  nav2::Subscription<nav2_msgs::msg::Costmap>::SharedPtr cm_sub_;
+  nav2::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_sub_;
+  nav2::Subscription<CollisionMonitorState>::SharedPtr state_sub_;
+  nav2::Subscription<rosgraph_msgs::msg::Clock>::SharedPtr clock_sub_;
 
   // Buffers/state
   std::vector<Sample> samples_;
@@ -250,6 +269,7 @@ TEST(CollisionMonitorNodeBag, TrajectoryAndMetrics)
 {
   rclcpp::init(0, nullptr);
   auto node = std::make_shared<MetricsCatcher>();
+  node->initialize_subscriptions();
 
   rclcpp::executors::SingleThreadedExecutor exec;
   exec.add_node(node);
