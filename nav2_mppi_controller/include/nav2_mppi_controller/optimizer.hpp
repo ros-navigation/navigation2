@@ -41,6 +41,10 @@
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 
+#ifdef __APPLE__
+  #include "nav2_mppi_controller/tools/apple_utils.hpp"
+#endif
+
 namespace mppi
 {
 
@@ -258,6 +262,24 @@ protected:
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
+
+// Typedef-style aliases for 1D and 2D signatures
+using Cumsum1DOp = xt::xtensor<float, 1> (*)(const xt::xtensor<float, 1>&);
+using Cumsum2DOp = xt::xtensor<float, 2> (*)(const xt::xtensor<float, 2>&, int);
+
+#ifdef __APPLE__
+  // macOS: Use manual implementations
+  static constexpr Cumsum1DOp cumsum_1d_op = utils::manual_cumsum_1d;
+  static constexpr Cumsum2DOp cumsum_2d_op = utils::manual_cumsum_2d;
+#else
+  // Linux/Others: Use standard xtensor
+  static constexpr Cumsum1DOp cumsum_1d_op = [](const xt::xtensor<float, 1>& x) {
+    return xt::cumsum(x, 0);
+  };
+  static constexpr Cumsum2DOp cumsum_2d_op = [](const xt::xtensor<float, 2>& x, int axis) {
+    return xt::cumsum(x, axis);
+  };
+#endif
 
 }  // namespace mppi
 

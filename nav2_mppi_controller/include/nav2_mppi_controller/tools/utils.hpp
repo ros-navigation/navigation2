@@ -454,7 +454,7 @@ inline void savitskyGolayFilter(
   const models::OptimizerSettings & settings)
 {
   // Savitzky-Golay Quadratic, 9-point Coefficients
-  xt::xarray<float> filter = {-21.0, 14.0, 39.0, 54.0, 59.0, 54.0, 39.0, 14.0, -21.0};
+  xt::xtensor<float,1> filter = {-21.0, 14.0, 39.0, 54.0, 59.0, 54.0, 39.0, 14.0, -21.0};
   filter /= 231.0;
 
   const unsigned int num_sequences = control_sequence.vx.shape(0) - 1;
@@ -464,7 +464,7 @@ inline void savitskyGolayFilter(
     return;
   }
 
-  auto applyFilter = [&](const xt::xarray<float> & data) -> float {
+  auto applyFilter = [&](const xt::xtensor<float, 1> & data) -> float {
       return xt::sum(data * filter, {0}, immediate)();
     };
 
