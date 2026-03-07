@@ -113,8 +113,9 @@ public:
     auto & vx = control_sequence.vx;
     auto & wz = control_sequence.wz;
 
-    auto view = xt::masked_view(wz, (xt::fabs(vx) / xt::fabs(wz)) < min_turning_r_);
-    view = xt::sign(wz) * xt::fabs(vx) / min_turning_r_;
+    auto condition = (xt::fabs(vx) / xt::fabs(wz)) < min_turning_r_;
+    auto constrained_wz = xt::eval(xt::sign(wz) * xt::fabs(vx) / min_turning_r_);
+    wz = xt::where(condition, constrained_wz, wz);
   }
 
   /**

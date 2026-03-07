@@ -41,6 +41,10 @@
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 
+#ifdef __APPLE__
+  #include "nav2_mppi_controller/tools/apple_utils.hpp"
+#endif
+
 namespace mppi
 {
 
