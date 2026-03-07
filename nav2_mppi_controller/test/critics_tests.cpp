@@ -852,3 +852,130 @@ TEST(CriticTests, VelocityDeadbandCritic)
   // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
   EXPECT_NEAR(costs(1), 19.845, 0.01);
 }
+
+TEST(CriticTests, PathFollowCriticDebugVisualization)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+
+  // Enable debug visualizations
+  node->declare_parameter("critic.debug_visualizations", rclcpp::ParameterValue(true));
+
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.reset(1000, 30);
+  models::Trajectories generated_trajectories;
+  generated_trajectories.reset(1000, 30);
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  path.reset(6);
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, std::nullopt, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+  TestGoalChecker goal_checker;
+  data.goal_checker = &goal_checker;
+
+  PathFollowCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  // Score with debug visualizations enabled - should not crash
+  state.pose.pose.position.x = 0.0;
+  path.x(5) = 0.15;
+  goal.position.x = 0.15;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0.0);
+}
+
+TEST(CriticTests, PathAngleCriticDebugVisualization)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+
+  node->declare_parameter("critic.debug_visualizations", rclcpp::ParameterValue(true));
+
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.reset(1000, 30);
+  models::Trajectories generated_trajectories;
+  generated_trajectories.reset(1000, 30);
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  path.reset(10);
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, std::nullopt, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+  TestGoalChecker goal_checker;
+  data.goal_checker = &goal_checker;
+
+  PathAngleCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  // Score with debug visualizations enabled - should not crash
+  state.pose.pose.position.x = 0.0;
+  path.x(9) = 0.15;
+  goal.position.x = 0.15;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
+  *data.furthest_reached_path_point = 9;
+  critic.score(data);
+}
+
+TEST(CriticTests, PathAlignCriticDebugVisualization)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+
+  node->declare_parameter("critic.debug_visualizations", rclcpp::ParameterValue(true));
+
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.reset(1000, 30);
+  models::Trajectories generated_trajectories;
+  generated_trajectories.reset(1000, 30);
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  path.reset(22);
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, std::nullopt, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+  TestGoalChecker goal_checker;
+  data.goal_checker = &goal_checker;
+
+  PathAlignCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  // Score with debug visualizations enabled and valid furthest point
+  state.pose.pose.position.x = 0.0;
+  *data.furthest_reached_path_point = 21;
+  for (int i = 0; i < 22; ++i) {
+    path.x(i) = static_cast<float>(i) * 0.1f;
+  }
+  goal.position.x = 2.1;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
+  generated_trajectories.x.setConstant(0.66f);
+  critic.score(data);
+}
