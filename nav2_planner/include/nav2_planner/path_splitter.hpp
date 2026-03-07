@@ -93,6 +93,8 @@ private:
     const nav_msgs::msg::Path & path,
     const std::vector<Segment> & segments);
 
+  friend class PathSplitterHelperTest;
+
   int hysteresis_window_{3};
   int min_segment_poses_{5};
   rclcpp::Logger logger_{rclcpp::get_logger("PathSplitter")};

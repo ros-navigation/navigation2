@@ -279,6 +279,12 @@ protected:
   // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
+  // Marker visualization constants
+  static constexpr const char * kSegmentMarkerNs = "classified_paths";
+  static constexpr const char * kRawPoseMarkerNs = "raw_classified_poses";
+  static constexpr double kSegmentLineWidth = 0.05;
+  static constexpr double kRawPoseSize = 0.06;
+
   // MarkerArray publishers for classified path visualization (enabled by publish_classified_paths)
   bool publish_classified_paths_{false};
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr

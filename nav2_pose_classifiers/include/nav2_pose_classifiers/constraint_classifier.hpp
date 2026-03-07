@@ -73,6 +73,8 @@ public:
   bool matches(const geometry_msgs::msg::PoseStamped & pose) override;
   uint16_t classType() override;
 
+  friend class ConstraintClassifierHelperTest;  // For testing private helpers using gtest
+
 private:
   /**
    * @brief Inflate footprint by delta metres using Clipper1 mitered offset.

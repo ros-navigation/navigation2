@@ -47,7 +47,7 @@ void ConstraintClassifier::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".inflation_resolution",
-    rclcpp::ParameterValue(0.20));  // metres per iteration (It Should Be ALways >=0 and <= max_wall_thickness in the environment)
+    rclcpp::ParameterValue(0.20));  // metres per iteration
 
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".max_constraint_clearance",
@@ -138,7 +138,7 @@ nav2_costmap_2d::Footprint ConstraintClassifier::orientFootprint(
 std::vector<size_t> ConstraintClassifier::buildOppositePairs(
   const nav2_costmap_2d::Footprint & fp) const
 {
-  const size_t n = fp.size(); // number of vertices in the footprint
+  const size_t n = fp.size();  // number of vertices in the footprint
   std::vector<size_t> opposite(n, n);  // n = "no opposite" (default value)
 
   // Centroid

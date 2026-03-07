@@ -678,18 +678,18 @@ PlannerServer::buildSegmentMarkers(
   visualization_msgs::msg::Marker del;
   del.action = visualization_msgs::msg::Marker::DELETEALL;
   del.header = header;
-  del.ns = "classified_segments";
+  del.ns = kSegmentMarkerNs;
   markers.markers.push_back(del);
 
   for (size_t s = 0; s < paths.paths.size(); ++s) {
     const auto & seg = paths.paths[s];
     visualization_msgs::msg::Marker m;
     m.header = header;
-    m.ns = "classified_segments";
+    m.ns = kSegmentMarkerNs;
     m.id = static_cast<int>(s);
     m.type = visualization_msgs::msg::Marker::LINE_STRIP;
     m.action = visualization_msgs::msg::Marker::ADD;
-    m.scale.x = 0.05;
+    m.scale.x = kSegmentLineWidth;
     m.color.a = 0.9;
     if (seg.class_type == nav2_msgs::msg::PathClasses::CONSTRAINT_SPACE) {
       m.color.b = 1.0;  // blue
@@ -717,19 +717,19 @@ PlannerServer::buildRawPoseMarkers(
   visualization_msgs::msg::Marker del;
   del.action = visualization_msgs::msg::Marker::DELETEALL;
   del.header = header;
-  del.ns = "raw_classified_poses";
+  del.ns = kRawPoseMarkerNs;
   markers.markers.push_back(del);
 
   for (size_t i = 0; i < poses.size(); ++i) {
     visualization_msgs::msg::Marker m;
     m.header = header;
-    m.ns = "raw_classified_poses";
+    m.ns = kRawPoseMarkerNs;
     m.id = static_cast<int>(i);
     m.type = visualization_msgs::msg::Marker::SPHERE;
     m.action = visualization_msgs::msg::Marker::ADD;
-    m.scale.x = 0.06;
-    m.scale.y = 0.06;
-    m.scale.z = 0.06;
+    m.scale.x = kRawPoseSize;
+    m.scale.y = kRawPoseSize;
+    m.scale.z = kRawPoseSize;
     m.color.a = 0.8;
     if (poses[i].class_type == nav2_msgs::msg::PathClasses::CONSTRAINT_SPACE) {
       m.color.b = 1.0;  // blue
