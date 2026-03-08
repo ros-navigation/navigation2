@@ -219,6 +219,9 @@ public:
           "nav2_bt_navigator") + "/behavior_trees"}
     );
 
+    allow_navigator_preemption_ = node->declare_or_get_parameter(
+      "allow_navigator_preemption", false);
+
     // Create the Behavior Tree Action Server for this navigator
     bt_action_server_ =
       std::make_unique<nav2_behavior_tree::BtActionServer<ActionT, nav2::LifecycleNode>>(
@@ -313,13 +316,21 @@ protected:
   bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
   {
     if (plugin_muxer_->isNavigating()) {
+      if (!allow_navigator_preemption_) {
+        RCLCPP_ERROR(
+          logger_,
+          "Requested navigation from %s while another navigator is processing,"
+          " rejecting request.", getName().c_str());
+        return false;
+      }
+
       RCLCPP_INFO(
         logger_,
         "Requested navigation from %s while another navigator is processing,"
         " stopping current navigator.", getName().c_str());
       plugin_muxer_->getCurrentNavigator()->stop_navigation();
 
-      const auto timeout = std::chrono::milliseconds(5000);
+      const auto timeout = std::chrono::milliseconds(500);
       const auto start = std::chrono::steady_clock::now();
       while (plugin_muxer_->isNavigating()) {
         if (std::chrono::steady_clock::now() - start > timeout) {
@@ -410,6 +421,7 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
   FeedbackUtils feedback_utils_;
   NavigatorMuxer * plugin_muxer_;
+  bool allow_navigator_preemption_;
 };
 
 }  // namespace nav2_core
