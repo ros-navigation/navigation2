@@ -176,6 +176,11 @@ public:
     action_server_->publish_feedback(feedback);
   }
 
+  void abortCurrent()
+  {
+    internal_cancel_requested_ = true;
+  }
+
   /**
    * @brief Getter function for the current BT tree
    * @return BT::Tree Current behavior tree
@@ -304,6 +309,8 @@ protected:
   // internal error tracking (IOW not behaviorTree blackboard errors)
   uint16_t internal_error_code_;
   std::string internal_error_msg_;
+
+  std::atomic_bool internal_cancel_requested_{false};
 };
 
 }  // namespace nav2_behavior_tree

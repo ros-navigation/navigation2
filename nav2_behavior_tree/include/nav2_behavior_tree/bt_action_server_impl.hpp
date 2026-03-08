@@ -418,7 +418,7 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
         RCLCPP_DEBUG(logger_, "Action server is inactive. Canceling.");
         return true;
       }
-      return action_server_->is_cancel_requested();
+      return action_server_->is_cancel_requested() || internal_cancel_requested_;
     };
 
   auto on_loop = [&]() {
@@ -463,6 +463,7 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
       break;
   }
 
+  internal_cancel_requested_ = false;
   cleanErrorCodes();
 }
 
