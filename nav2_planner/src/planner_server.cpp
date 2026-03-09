@@ -32,6 +32,8 @@
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 
+#include "tf2/utils.hpp"
+
 #include "nav2_planner/planner_server.hpp"
 
 using namespace std::chrono_literals;
@@ -662,8 +664,17 @@ void PlannerServer::exceptionWarning(
   ss << std::fixed << std::setprecision(2)
      << planner_id << "plugin failed to plan from ("
      << start.pose.position.x << ", " << start.pose.position.y
+     << ") [q: "
+     << start.pose.orientation.x << ", " << start.pose.orientation.y << ", "
+     << start.pose.orientation.z << ", " << start.pose.orientation.w
+     << "] (yaw: " << tf2::getYaw(start.pose.orientation)
      << ") to ("
      << goal.pose.position.x << ", " << goal.pose.position.y << ")"
+     << " [q: "
+     << goal.pose.orientation.x << ", " << goal.pose.orientation.y << ", "
+     << goal.pose.orientation.z << ", " << goal.pose.orientation.w
+     << "] (yaw: " << tf2::getYaw(goal.pose.orientation)
+     << ")"
      << ": \"" << ex.what() << "\"";
 
   error_msg = ss.str();
