@@ -33,6 +33,7 @@
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "tf2/time.hpp"
 
 
 namespace nav2_costmap_2d
@@ -140,6 +141,12 @@ public:
 
 protected:
   /**
+   * @brief Resets internal state by clearing path, tracking feedback, and goal.
+   * @note Caller must hold data_mutex_ before calling this method.
+   */
+  void resetState();
+
+  /**
    * @brief Callback for path updates.
    * @param msg Incoming path message.
    */
@@ -171,7 +178,7 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
-  nav2_msgs::msg::TrackingFeedback last_tracking_feedback_;
+  std::atomic<uint32_t> current_path_index_{0};
 
 private:
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
@@ -192,6 +199,7 @@ private:
   std::string tracking_feedback_topic_;
   unsigned char corridor_cost_;
   int wall_thickness_;
+  tf2::Duration transform_tolerance_;
 };
 
 }  // namespace nav2_costmap_2d
