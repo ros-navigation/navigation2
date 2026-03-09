@@ -293,15 +293,15 @@ protected:
   /// @brief Minimum number of data readings within a zone to trigger the action
   int min_points_;
   /// @brief Number of consecutive hits required to trigger action
-  int trigger_consecutive_points_{1};
+  int trigger_consecutive_points_;
   /// @brief Number of consecutive misses required to release action
-  int release_consecutive_points_{1};
+  int release_consecutive_points_;
   /// @brief Current consecutive hit counter
-  int trigger_hits_{0};
+  int trigger_hits_;
   /// @brief Current consecutive miss counter
-  int release_hits_{0};
+  int release_hits_;
   /// @brief Latched trigger state after temporal debounce
-  bool trigger_active_{false};
+  bool trigger_active_;
   /// @brief Robot slowdown (share of its actual speed)
   double slowdown_ratio_;
   /// @brief Robot linear limit

@@ -406,8 +406,17 @@ bool Polygon::getCommonParameters(
       polygon_name_ + ".trigger_consecutive_points", 1);
     release_consecutive_points_ = node->declare_or_get_parameter(
       polygon_name_ + ".release_consecutive_points", 1);
-    trigger_consecutive_points_ = std::max(1, trigger_consecutive_points_);
-    release_consecutive_points_ = std::max(1, release_consecutive_points_);
+
+    if (trigger_consecutive_points_ < 1) {
+      throw rclcpp::exceptions::InvalidParameterValueException(
+        "Parameter 'trigger_consecutive_points' must be >= 1");
+    }
+
+    if (release_consecutive_points_ < 1) {
+      throw rclcpp::exceptions::InvalidParameterValueException(
+        "Parameter 'release_consecutive_points' must be >= 1");
+    }
+
     resetTriggerState();
 
     try {
@@ -628,10 +637,20 @@ void Polygon::updateParametersCallback(
         min_points_ = std::max(1, static_cast<int>(parameter.as_int()));
         resetTriggerState();
       } else if (param_name == polygon_name_ + "." + "trigger_consecutive_points") {
-        trigger_consecutive_points_ = std::max(1, static_cast<int>(parameter.as_int()));
+        const auto value = static_cast<int>(parameter.as_int());
+        if (value < 1) {
+          throw rclcpp::exceptions::InvalidParameterValueException(
+            "Parameter 'trigger_consecutive_points' must be >= 1");
+        }
+        trigger_consecutive_points_ = value;
         resetTriggerState();
       } else if (param_name == polygon_name_ + "." + "release_consecutive_points") {
-        release_consecutive_points_ = std::max(1, static_cast<int>(parameter.as_int()));
+        const auto value = static_cast<int>(parameter.as_int());
+        if (value < 1) {
+          throw rclcpp::exceptions::InvalidParameterValueException(
+            "Parameter 'release_consecutive_points' must be >= 1");
+        }
+        release_consecutive_points_ = value;
         resetTriggerState();
       }
     }
