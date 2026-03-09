@@ -158,12 +158,18 @@ protected:
   void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
   /**
-   * @brief Callback for dynamic parameter updates.
-   * @param parameters Vector of parameters being updated.
-   * @return Result indicating success or failure of parameter update.
+   * @brief Callback to validate parameter updates before they are applied.
+   * @param parameters Vector of parameters being validated.
+   * @return Result indicating success or failure of parameter validation.
    */
   rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  validateParameterUpdatesCallback(const std::vector<rclcpp::Parameter> & parameters);
+
+  /**
+   * @brief Callback to update internal state after parameters have been successfully set.
+   * @param parameters Vector of parameters that were updated.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
   nav2_msgs::msg::TrackingFeedback last_tracking_feedback_;
 
@@ -174,7 +180,8 @@ private:
   std::mutex data_mutex_;
   nav_msgs::msg::Path last_path_;
   geometry_msgs::msg::PoseStamped last_goal_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
 
   size_t step_size_;
   int step_;

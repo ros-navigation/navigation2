@@ -43,7 +43,8 @@ public:
   using BoundedTrackingErrorLayer::goalCallback;
   using BoundedTrackingErrorLayer::getPathSegment;
   using BoundedTrackingErrorLayer::getWallPolygons;
-  using BoundedTrackingErrorLayer::dynamicParametersCallback;
+  using BoundedTrackingErrorLayer::validateParameterUpdatesCallback;
+  using BoundedTrackingErrorLayer::updateParametersCallback;
 };
 
 class BoundedTrackingErrorLayerTestFixture : public ::testing::Test
@@ -386,33 +387,39 @@ TEST_F(BoundedTrackingErrorLayerTestFixture, test_dynamic_parameter_updates)
   std::vector<rclcpp::Parameter> params;
 
   params.push_back(rclcpp::Parameter("test_layer.look_ahead", 2.5));
-  auto result = layer_->dynamicParametersCallback(params);
+  auto result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_TRUE(result.successful);
+  layer_->updateParametersCallback(params);
 
   params.clear();
   params.push_back(rclcpp::Parameter("test_layer.corridor_width", 3.0));
-  result = layer_->dynamicParametersCallback(params);
+  result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_TRUE(result.successful);
+  layer_->updateParametersCallback(params);
 
   params.clear();
   params.push_back(rclcpp::Parameter("test_layer.enabled", false));
-  result = layer_->dynamicParametersCallback(params);
+  result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_TRUE(result.successful);
+  layer_->updateParametersCallback(params);
 
   params.clear();
   params.push_back(rclcpp::Parameter("test_layer.step", 10));
-  result = layer_->dynamicParametersCallback(params);
+  result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_TRUE(result.successful);
+  layer_->updateParametersCallback(params);
 
   params.clear();
   params.push_back(rclcpp::Parameter("test_layer.corridor_cost", 200));
-  result = layer_->dynamicParametersCallback(params);
+  result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_TRUE(result.successful);
+  layer_->updateParametersCallback(params);
 
   params.clear();
   params.push_back(rclcpp::Parameter("test_layer.wall_thickness", 2));
-  result = layer_->dynamicParametersCallback(params);
+  result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_TRUE(result.successful);
+  layer_->updateParametersCallback(params);
 }
 
 TEST_F(BoundedTrackingErrorLayerTestFixture, test_dynamic_parameter_validation)
@@ -420,27 +427,27 @@ TEST_F(BoundedTrackingErrorLayerTestFixture, test_dynamic_parameter_validation)
   std::vector<rclcpp::Parameter> params;
 
   params.push_back(rclcpp::Parameter("test_layer.look_ahead", -1.0));
-  auto result = layer_->dynamicParametersCallback(params);
+  auto result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_FALSE(result.successful);
 
   params.clear();
   params.push_back(rclcpp::Parameter("test_layer.corridor_width", 0.0));
-  result = layer_->dynamicParametersCallback(params);
+  result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_FALSE(result.successful);
 
   params.clear();
   params.push_back(rclcpp::Parameter("test_layer.step", 0));
-  result = layer_->dynamicParametersCallback(params);
+  result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_FALSE(result.successful);
 
   params.clear();
   params.push_back(rclcpp::Parameter("test_layer.corridor_cost", 300));
-  result = layer_->dynamicParametersCallback(params);
+  result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_FALSE(result.successful);
 
   params.clear();
   params.push_back(rclcpp::Parameter("test_layer.wall_thickness", -1));
-  result = layer_->dynamicParametersCallback(params);
+  result = layer_->validateParameterUpdatesCallback(params);
   EXPECT_FALSE(result.successful);
 }
 
