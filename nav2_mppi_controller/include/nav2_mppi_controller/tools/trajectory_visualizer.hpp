@@ -109,7 +109,6 @@ public:
     * @param critic_costs Per-critic costs for each trajectory
     */
   void visualize(
-    const nav_msgs::msg::Path & plan,
     const Eigen::ArrayXXf & optimal_trajectory,
     const models::ControlSequence & control_sequence,
     float model_dt,
@@ -121,9 +120,8 @@ public:
 
   /**
     * @brief Visualize without optimizer (for testing)
-    * @param plan Transformed plan to visualize
     */
-  void visualize(const nav_msgs::msg::Path & plan);
+  void visualize();
 
   /**
     * @brief Reset object
@@ -134,7 +132,6 @@ protected:
   std::string frame_id_;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     trajectories_publisher_;
-  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_path_pub_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr optimal_path_pub_;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr optimal_footprints_pub_;
   nav2::Publisher<nav2_msgs::msg::Trajectory>::SharedPtr optimal_trajectory_msg_pub_;
@@ -151,7 +148,6 @@ protected:
   bool publish_trajectories_with_individual_cost_{false};
   bool publish_optimal_footprints_{false};
   bool publish_optimal_trajectory_msg_{false};
-  bool publish_transformed_path_{false};
   bool publish_optimal_path_{false};
   int footprint_downsample_factor_{3};
 

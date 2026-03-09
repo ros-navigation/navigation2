@@ -36,7 +36,6 @@ void TrajectoryVisualizer::on_configure(
       false);
   getParam(publish_optimal_footprints_, "publish_optimal_footprints", false);
   getParam(publish_optimal_trajectory_msg_, "publish_optimal_trajectory_msg", false);
-  getParam(publish_transformed_path_, "publish_transformed_path", false);
   getParam(publish_optimal_path_, "publish_optimal_path", false);
   getParam(footprint_downsample_factor_, "footprint_downsample_factor", 3);
   footprint_downsample_factor_ = std::max(footprint_downsample_factor_, 1);
@@ -44,10 +43,6 @@ void TrajectoryVisualizer::on_configure(
   if (publish_trajectories_with_total_cost_ || publish_trajectories_with_individual_cost_) {
     trajectories_publisher_ =
       node->create_publisher<visualization_msgs::msg::MarkerArray>("~/candidate_trajectories");
-  }
-  if (publish_transformed_path_) {
-    transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>(
-      "~/transformed_global_plan");
   }
   if (publish_optimal_path_) {
     optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("~/optimal_path");
@@ -67,7 +62,6 @@ void TrajectoryVisualizer::on_configure(
 void TrajectoryVisualizer::on_cleanup()
 {
   trajectories_publisher_.reset();
-  transformed_path_pub_.reset();
   optimal_path_pub_.reset();
   optimal_footprints_pub_.reset();
   optimal_trajectory_msg_pub_.reset();
@@ -77,9 +71,6 @@ void TrajectoryVisualizer::on_activate()
 {
   if (trajectories_publisher_) {
     trajectories_publisher_->on_activate();
-  }
-  if (transformed_path_pub_) {
-    transformed_path_pub_->on_activate();
   }
   if (optimal_path_pub_) {
     optimal_path_pub_->on_activate();
@@ -96,9 +87,6 @@ void TrajectoryVisualizer::on_deactivate()
 {
   if (trajectories_publisher_) {
     trajectories_publisher_->on_deactivate();
-  }
-  if (transformed_path_pub_) {
-    transformed_path_pub_->on_deactivate();
   }
   if (optimal_path_pub_) {
     optimal_path_pub_->on_deactivate();
@@ -200,7 +188,6 @@ void TrajectoryVisualizer::reset()
 }
 
 void TrajectoryVisualizer::visualize(
-  const nav_msgs::msg::Path & plan,
   const Eigen::ArrayXXf & optimal_trajectory,
   const models::ControlSequence & control_sequence,
   float model_dt,
@@ -269,15 +256,9 @@ void TrajectoryVisualizer::visualize(
   }
 
   reset();
-
-  // Publish transformed path
-  if (transformed_path_pub_ && transformed_path_pub_->get_subscription_count() > 0) {
-    auto plan_ptr = std::make_unique<nav_msgs::msg::Path>(plan);
-    transformed_path_pub_->publish(std::move(plan_ptr));
-  }
 }
 
-void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan)
+void TrajectoryVisualizer::visualize()
 {
   // Simplified version for testing that only publishes what's been added
   if (trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0) {
@@ -291,11 +272,6 @@ void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan)
   }
 
   reset();
-
-  if (transformed_path_pub_ && transformed_path_pub_->get_subscription_count() > 0) {
-    auto plan_ptr = std::make_unique<nav_msgs::msg::Path>(plan);
-    transformed_path_pub_->publish(std::move(plan_ptr));
-  }
 }
 
 }  // namespace mppi

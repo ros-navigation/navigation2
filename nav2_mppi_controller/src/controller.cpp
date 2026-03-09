@@ -101,7 +101,6 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   #endif
 
   trajectory_visualizer_.visualize(
-    transformed_global_plan,
     optimal_trajectory,
     optimizer_.getOptimalControlSequence(),
     optimizer_.getSettings().model_dt,
