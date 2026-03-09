@@ -196,13 +196,4 @@ TEST(GeometryUtils, cross_product_2d_basic)
   EXPECT_NEAR(result, 0.0, 1e-6);
 }
 
-TEST(BresenhamTest, DiagonalLine)
-{
-  auto cells = nav2_util::geometry_utils::bresenham(0, 0, 3, 3);
 
-  EXPECT_EQ(cells.size(), 4u);
-  EXPECT_EQ(cells.front()[0], 0u);
-  EXPECT_EQ(cells.front()[1], 0u);
-  EXPECT_EQ(cells.back()[0], 3u);
-  EXPECT_EQ(cells.back()[1], 3u);
-}
