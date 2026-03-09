@@ -371,6 +371,32 @@
       <output_port name="output_goals">The output pruned goals list</output_port>
     </Action>
 
+    <Action ID="CheckPoseOccupancy">
+      <input_port name="cost_threshold">Cost threshold for considering a pose occupied</input_port>
+      <input_port name="consider_unknown_as_obstacle">Whether to consider unknown cost as obstacle</input_port>
+      <input_port name="pose">Pose to check if occupied</input_port>
+      <input_port name="use_footprint">Whether to use footprint cost</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="service_name">Service name</input_port>
+    </Action>
+
+    <Action ID="CheckStopStatus">
+      <input_port name="duration_stopped">Duration (ms) the velocity must remain below the threshold</input_port>
+      <input_port name="velocity_threshold">Velocity threshold below which robot is considered stopped</input_port>
+    </Action>
+
+    <Action ID="ValidatePath">
+      <input_port name="path">Path to Check</input_port>
+      <input_port name="max_cost">Maximum cost of the path</input_port>
+      <input_port name="consider_unknown_as_obstacle">Whether to consider unknown cost as obstacle</input_port>
+      <input_port name="check_full_path">Whether to check all poses (true) or stop at first invalid pose (false)</input_port>
+      <input_port name="layer_name">Name of the costmap layer to check against (empty = full costmap)</input_port>
+      <input_port name="footprint">Custom footprint specification as bracketed array of arrays, e.g., [[x1,y1],[x2,y2],...] (empty = use robot footprint)</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="service_name">Service name</input_port>
+      <output_port name="collision_poses">Poses in the path that are in collision</output_port>
+    </Action>
+
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
       <input_port name="goal">Destination</input_port>
@@ -378,11 +404,6 @@
     </Condition>
 
     <Condition ID="IsStuck"/>
-
-    <Condition ID="IsStopped">
-      <input_port name="velocity_threshold">Velocity threshold below which robot is considered stopped</input_port>
-      <input_port name="duration_stopped">Duration (ms) the velocity must remain below the threshold</input_port>
-    </Condition>
 
     <Condition ID="TransformAvailable">
       <input_port name="child">Child frame for transform</input_port>
@@ -427,22 +448,6 @@
 
     <Condition ID="InitialPoseReceived">
       <input_port name="initial_pose_received">SUCCESS if initial_pose_received true</input_port>
-    </Condition>
-
-    <Condition ID="IsPathValid">
-      <input_port name="path"> Path to validate </input_port>
-      <input_port name="server_timeout"> Server timeout </input_port>
-      <input_port name="max_cost"> Maximum cost of the path </input_port>
-      <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
-    </Condition>
-
-    <Condition ID="IsPoseOccupied">
-      <input_port name="pose">Pose to check whether it is occupied</input_port>
-      <input_port name="service_name">Service name to call GetCosts</input_port>
-      <input_port name="cost_threshold">The cost threshold above which a pose is considered occupied</input_port>
-      <input_port name="use_footprint">Whether to use the footprint cost or the point cost</input_port>
-      <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
-      <input_port name="server_timeout"> Server timeout </input_port>
     </Condition>
 
     <Condition ID="WouldAControllerRecoveryHelp">
