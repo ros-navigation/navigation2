@@ -70,6 +70,8 @@ ParameterHandler::ParameterHandler(
   params_.closed_loop = node->declare_or_get_parameter(plugin_name_ + ".closed_loop", true);
   params_.use_path_orientations = node->declare_or_get_parameter(plugin_name_ +
     ".use_path_orientations", false);
+  params_.transform_tolerance = node->declare_or_get_parameter(plugin_name_ +
+    ".transform_tolerance", 0.1);
   double control_frequency = 20.0;
   node->get_parameter("controller_frequency", control_frequency);
   params_.control_duration = 1.0 / control_frequency;
@@ -128,6 +130,8 @@ ParameterHandler::updateParametersCallback(
         params_.max_angular_accel = parameter.as_double();
       } else if (param_name == plugin_name_ + ".simulate_ahead_time") {
         params_.simulate_ahead_time = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".transform_tolerance") {
+        params_.transform_tolerance = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".rotate_to_goal_heading") {
