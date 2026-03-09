@@ -195,5 +195,3 @@ TEST(GeometryUtils, cross_product_2d_basic)
   result = nav2_util::geometry_utils::cross_product_2d(point, start, end);
   EXPECT_NEAR(result, 0.0, 1e-6);
 }
-
-
