@@ -63,6 +63,10 @@ void BoundedTrackingErrorLayer::onInitialize()
   bool enabled_param = node->declare_or_get_parameter(name_ + "." + "enabled", true);
   enabled_.store(enabled_param);
 
+  double temp_tf_tol = 0.1;
+  node->get_parameter("transform_tolerance", temp_tf_tol);
+  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+
   if (wall_thickness_ <= 0) {
     throw std::runtime_error{"wall_thickness must be greater than zero"};
   }
@@ -140,9 +144,7 @@ void BoundedTrackingErrorLayer::deactivate()
 
   {
     std::lock_guard<std::mutex> lock(data_mutex_);
-    last_path_ = nav_msgs::msg::Path();
-    last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
-    last_goal_ = geometry_msgs::msg::PoseStamped();
+    resetState();
   }
 
   enabled_.store(false);
@@ -151,8 +153,15 @@ void BoundedTrackingErrorLayer::deactivate()
 void BoundedTrackingErrorLayer::reset()
 {
   std::lock_guard<std::mutex> lock(data_mutex_);
-  last_path_ = nav_msgs::msg::Path();
+  resetState();
   current_ = true;
+}
+
+void BoundedTrackingErrorLayer::resetState()
+{
+  last_path_ = nav_msgs::msg::Path();
+  current_path_index_.store(0);
+  last_goal_ = geometry_msgs::msg::PoseStamped();
 }
 
 void BoundedTrackingErrorLayer::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
@@ -182,9 +191,7 @@ void BoundedTrackingErrorLayer::goalCallback(const geometry_msgs::msg::PoseStamp
     RCLCPP_DEBUG(
       node->get_logger(),
       "New goal received, clearing corridor");
-
-    last_path_ = nav_msgs::msg::Path();
-    last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
+    resetState();
   }
 
   last_goal_ = *msg;
@@ -212,54 +219,14 @@ void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPt
     return;
   }
 
-  // Check for path discontinuity (replanning detection)
-  // Discontinuity indicates the planner has generated a significantly different path,
-  // requiring corridor to be rebuilt from scratch
-  bool path_discontinuity = false;
-  if (!last_path_.poses.empty() && msg->poses.size() >= 2) {
-    size_t old_size = last_path_.poses.size();
-    size_t new_size = msg->poses.size();
-
-    if (old_size != new_size) {
-      path_discontinuity = true;
-      RCLCPP_DEBUG(
-        node->get_logger(),
-        "Path size changed from %zu to %zu, clearing corridor", old_size, new_size);
-    } else if (old_size >= 2) {
-      double threshold = corridor_width_ * 0.5;
-
-      // Compare midpoint and endpoint positions between old and new paths
-      // to detect significant path changes even when size remains the same
-      size_t old_mid_idx = old_size / 2;
-      size_t new_mid_idx = new_size / 2;
-      double mid_dx = msg->poses[new_mid_idx].pose.position.x -
-        last_path_.poses[old_mid_idx].pose.position.x;
-      double mid_dy = msg->poses[new_mid_idx].pose.position.y -
-        last_path_.poses[old_mid_idx].pose.position.y;
-      double mid_dist = std::hypot(mid_dx, mid_dy);
-
-      double end_dx = msg->poses.back().pose.position.x -
-        last_path_.poses.back().pose.position.x;
-      double end_dy = msg->poses.back().pose.position.y -
-        last_path_.poses.back().pose.position.y;
-      double end_dist = std::hypot(end_dx, end_dy);
-
-      if (mid_dist > threshold || end_dist > threshold) {
-        path_discontinuity = true;
-        RCLCPP_DEBUG(
-          node->get_logger(),
-          "Path discontinuity detected (mid: %.2fm, end: %.2fm), clearing corridor",
-          mid_dist, end_dist);
-      }
-    }
-  }
-
-  if (path_discontinuity) {
-    last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
+  // Check if path was updated (same goal, different path)
+  nav_msgs::msg::Path new_path = *msg;
+  if (nav2_util::isPathUpdated(new_path, last_path_)) {
+    RCLCPP_DEBUG(node->get_logger(), "Path updated, resetting state");
+    resetState();
   }
 
   last_path_ = *msg;
-  last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
 }
 
 void BoundedTrackingErrorLayer::trackingCallback(
@@ -269,8 +236,6 @@ void BoundedTrackingErrorLayer::trackingCallback(
   if (!node) {
     return;
   }
-
-  std::lock_guard<std::mutex> lock(data_mutex_);
 
   auto now = node->now();
   auto msg_time = rclcpp::Time(msg->header.stamp);
@@ -285,7 +250,7 @@ void BoundedTrackingErrorLayer::trackingCallback(
     return;
   }
 
-  last_tracking_feedback_ = *msg;
+  current_path_index_.store(msg->current_path_index);
 }
 
 void BoundedTrackingErrorLayer::updateBounds(
@@ -299,6 +264,7 @@ void BoundedTrackingErrorLayer::updateBounds(
   *max_x = std::max(*max_x, robot_x + look_ahead_);
   *min_y = std::min(*min_y, robot_y - look_ahead_);
   *max_y = std::max(*max_y, robot_y + look_ahead_);
+
 }
 
 WallPolygons BoundedTrackingErrorLayer::getWallPolygons(
@@ -363,13 +329,12 @@ WallPolygons BoundedTrackingErrorLayer::getWallPolygons(
 nav_msgs::msg::Path BoundedTrackingErrorLayer::getPathSegment()
 {
   nav_msgs::msg::Path segment;
-  if (last_path_.poses.empty() ||
-    last_tracking_feedback_.current_path_index >= last_path_.poses.size())
-  {
+  size_t path_index = current_path_index_.load();
+  if (last_path_.poses.empty() || path_index >= last_path_.poses.size()) {
     return segment;
   }
 
-  size_t start_index = last_tracking_feedback_.current_path_index;
+  size_t start_index = path_index;
   size_t end_index = start_index;
   double dist_traversed = 0.0;
 
@@ -429,11 +394,10 @@ void BoundedTrackingErrorLayer::updateCosts(
   transformed_segment.header.frame_id = costmap_frame;
   transformed_segment.poses.reserve(segment.poses.size());
 
-  // Use longer timeout for first pose to wait for TF
   for (size_t i = 0; i < segment.poses.size(); ++i) {
     const auto & pose = segment.poses[i];
     geometry_msgs::msg::PoseStamped transformed_pose;
-    double timeout = (i == 0) ? 0.1 : 0.0;
+    double timeout = (i == 0) ? tf2::durationToSec(transform_tolerance_) : 0.0;
     if (nav2_util::transformPoseInTargetFrame(
         pose, transformed_pose, *tf_, costmap_frame, timeout))
     {
@@ -511,7 +475,8 @@ void BoundedTrackingErrorLayer::updateCosts(
 }
 
 
-rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
+rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validateParameterUpdatesCallback
+(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -637,7 +602,5 @@ BoundedTrackingErrorLayer::updateParametersCallback(
     }
   }
 }
-
-
 
 }  // namespace nav2_costmap_2d
