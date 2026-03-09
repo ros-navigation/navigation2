@@ -29,7 +29,7 @@
                     <GlobalUpdatedGoal/>
                   </Inverter>
                   <!-- Recompute route if route path is blocked (if not also using Route Tracking, who's collision monitor would do this for you) -->
-                  <IsPathValid path="{route_path}"/>
+                  <ValidatePath path="{route_path}"/>
                 </ReactiveSequence>
                 <Sequence>
                   <ComputeRoute goal="{goal}" path="{route_path}" route="{route}" use_poses="true" error_code_id="{compute_route_error_code}" error_msg="{compute_route_error_msg}"/>

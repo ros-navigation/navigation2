@@ -21,7 +21,7 @@
                 </Inverter>
                 <IsGoalNearby path="{path}" proximity_threshold="4.0" max_robot_pose_search_dist="1.5"/>
                 <TruncatePathLocal input_path="{path}" output_path="{remaining_path}" distance_forward="-1" distance_backward="0.0" />
-                <IsPathValid path="{remaining_path}"/>
+                <ValidatePath path="{remaining_path}"/>
               </ReactiveSequence>
               <ReactiveSequence>
                 <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.7" input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}"/>
