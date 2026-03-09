@@ -662,8 +662,15 @@ void PlannerServer::exceptionWarning(
   ss << std::fixed << std::setprecision(2)
      << planner_id << "plugin failed to plan from ("
      << start.pose.position.x << ", " << start.pose.position.y
-     << ") to ("
+     << ") [q: "
+     << start.pose.orientation.x << ", " << start.pose.orientation.y << ", "
+     << start.pose.orientation.z << ", " << start.pose.orientation.w
+     << "] to ("
      << goal.pose.position.x << ", " << goal.pose.position.y << ")"
+     << " [q: "
+     << goal.pose.orientation.x << ", " << goal.pose.orientation.y << ", "
+     << goal.pose.orientation.z << ", " << goal.pose.orientation.w
+     << "]"
      << ": \"" << ex.what() << "\"";
 
   error_msg = ss.str();
