@@ -23,10 +23,16 @@ namespace nav2_costmap_2d
 BoundedTrackingErrorLayer::~BoundedTrackingErrorLayer()
 {
   auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  if (!node) {
+    return;
   }
-  dyn_params_handler_.reset();
+
+  if (on_set_params_handler_) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  if (post_set_params_handler_) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
 }
 
 void BoundedTrackingErrorLayer::onInitialize()
@@ -93,10 +99,60 @@ void BoundedTrackingErrorLayer::onInitialize()
     nav2::qos::StandardTopicQoS()
   );
 
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
+
+}
+
+void BoundedTrackingErrorLayer::activate()
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
-      &BoundedTrackingErrorLayer::dynamicParametersCallback,
+      &BoundedTrackingErrorLayer::updateParametersCallback,
       this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &BoundedTrackingErrorLayer::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+
+  enabled_.store(true);
+  current_ = true;
+}
+
+void BoundedTrackingErrorLayer::deactivate()
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  if (on_set_params_handler_) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+    on_set_params_handler_.reset();
+  }
+  if (post_set_params_handler_) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+    post_set_params_handler_.reset();
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    last_path_ = nav_msgs::msg::Path();
+    last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
+    last_goal_ = geometry_msgs::msg::PoseStamped();
+  }
+
+  enabled_.store(false);
+}
+
+void BoundedTrackingErrorLayer::reset()
+{
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  last_path_ = nav_msgs::msg::Path();
+  current_ = true;
 }
 
 void BoundedTrackingErrorLayer::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
@@ -455,14 +511,13 @@ void BoundedTrackingErrorLayer::updateCosts(
 }
 
 
-rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
-  std::lock_guard<std::mutex> guard(data_mutex_);
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
 
@@ -474,50 +529,55 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParam
       if (param_name == name_ + "." + "look_ahead") {
         double new_value = parameter.as_double();
         if (new_value < 0.0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %f, "
+            "it should be >= 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
           result.successful = false;
           result.reason = "look_ahead must be positive";
-          return result;
         }
-        look_ahead_ = new_value;
       } else if (param_name == name_ + "." + "corridor_width") {
         double new_value = parameter.as_double();
         if (new_value <= 0.0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %f, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
           result.successful = false;
           result.reason = "corridor_width must be positive";
-          return result;
         }
-        corridor_width_ = new_value;
-      }
-    } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled") {
-        enabled_.store(parameter.as_bool());
       }
     } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "step") {
         int new_value = parameter.as_int();
         if (new_value <= 0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
           result.successful = false;
           result.reason = "step must be greater than zero";
-          return result;
         }
-        step_ = new_value;
-        step_size_ = static_cast<size_t>(step_);
       } else if (param_name == name_ + "." + "corridor_cost") {
         int new_value = parameter.as_int();
         if (new_value <= 0 || new_value > 254) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be between 1 and 254. Rejecting parameter update.",
+            param_name.c_str(), new_value);
           result.successful = false;
           result.reason = "corridor_cost must be between 1 and 254";
-          return result;
         }
-        corridor_cost_ = static_cast<unsigned char>(new_value);
       } else if (param_name == name_ + "." + "wall_thickness") {
         int new_value = parameter.as_int();
         if (new_value <= 0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
           result.successful = false;
           result.reason = "wall_thickness must be greater than zero";
-          return result;
         }
-        wall_thickness_ = new_value;
       }
     }
   }
@@ -525,35 +585,59 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParam
   return result;
 }
 
-void BoundedTrackingErrorLayer::activate()
+void
+BoundedTrackingErrorLayer::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
-  enabled_.store(true);
-  current_ = true;
-}
+  std::lock_guard<std::mutex> guard(data_mutex_);
 
-void BoundedTrackingErrorLayer::deactivate()
-{
-  auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + "." + "look_ahead" &&
+        look_ahead_ != parameter.as_double())
+      {
+        look_ahead_ = parameter.as_double();
+        current_ = false;
+      } else if (param_name == name_ + "." + "corridor_width" &&
+        corridor_width_ != parameter.as_double())
+      {
+        corridor_width_ = parameter.as_double();
+        current_ = false;
+      }
+    } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
+        enabled_.store(parameter.as_bool());
+        current_ = false;
+      }
+    } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER) {
+      if (param_name == name_ + "." + "step" &&
+        step_ != parameter.as_int())
+      {
+        step_ = parameter.as_int();
+        step_size_ = static_cast<size_t>(step_);
+        current_ = false;
+      } else if (param_name == name_ + "." + "corridor_cost" &&
+        corridor_cost_ != static_cast<unsigned char>(parameter.as_int()))
+      {
+        corridor_cost_ = static_cast<unsigned char>(parameter.as_int());
+        current_ = false;
+      } else if (param_name == name_ + "." + "wall_thickness" &&
+        wall_thickness_ != parameter.as_int())
+      {
+        wall_thickness_ = parameter.as_int();
+        current_ = false;
+      }
+    }
   }
-  dyn_params_handler_.reset();
-
-  {
-    std::lock_guard<std::mutex> lock(data_mutex_);
-    last_path_ = nav_msgs::msg::Path();
-    last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
-    last_goal_ = geometry_msgs::msg::PoseStamped();
-  }
-
-  enabled_.store(false);
 }
 
-void BoundedTrackingErrorLayer::reset()
-{
-  std::lock_guard<std::mutex> lock(data_mutex_);
-  last_path_ = nav_msgs::msg::Path();
-  current_ = true;
-}
+
 
 }  // namespace nav2_costmap_2d
