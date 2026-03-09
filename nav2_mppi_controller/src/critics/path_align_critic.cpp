@@ -61,7 +61,7 @@ void PathAlignCritic::score(CriticData & data)
 
   // Visualize target pose if enabled
   if (debug_visualizations_ && path_segments_count > 0 &&
-    furthest_point_pub_->get_subscription_count() > 0)
+    furthest_point_pub_ && furthest_point_pub_->get_subscription_count() > 0)
   {
     auto furthest_point = std::make_unique<geometry_msgs::msg::PoseStamped>();
     furthest_point->header.frame_id = costmap_ros_->getGlobalFrameID();

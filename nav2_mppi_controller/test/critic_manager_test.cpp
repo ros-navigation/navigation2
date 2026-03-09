@@ -43,8 +43,10 @@ public:
   virtual void loadCritics()
   {
     critics_.clear();
+    critic_names_.clear();
     auto instance = std::unique_ptr<critics::CriticFunction>(new DummyCritic);
     critics_.push_back(std::move(instance));
+    critic_names_.push_back("DummyCritic");
     critics_.back()->on_configure(
       parent_, name_, name_ + "." + "DummyCritic", costmap_ros_,
       parameters_handler_);

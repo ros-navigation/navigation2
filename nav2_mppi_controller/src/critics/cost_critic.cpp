@@ -158,11 +158,11 @@ void CostCritic::score(CriticData & data)
   repulsive_cost.setZero();
   bool all_trajectories_collide = true;
 
-  // Initialize collision mask
+  // Initialize collision mask (only if not already set by another critic)
   if (!data.trajectory_collisions) {
     data.trajectory_collisions = Eigen::Array<bool, Eigen::Dynamic, 1>(data.costs.rows());
+    data.trajectory_collisions->setConstant(false);
   }
-  data.trajectory_collisions->setConstant(false);
 
   int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
   int strided_traj_rows = data.trajectories.x.rows();

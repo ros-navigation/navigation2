@@ -86,7 +86,9 @@ void PathAngleCritic::score(CriticData & data)
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
 
   // Visualize target pose if enabled
-  if (debug_visualizations_ && furthest_point_pub_->get_subscription_count() > 0) {
+  if (debug_visualizations_ && furthest_point_pub_ &&
+    furthest_point_pub_->get_subscription_count() > 0)
+  {
     auto furthest_point = std::make_unique<geometry_msgs::msg::PoseStamped>();
     furthest_point->header.frame_id = costmap_ros_->getGlobalFrameID();
     furthest_point->header.stamp = clock_->now();

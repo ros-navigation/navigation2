@@ -179,7 +179,7 @@ void CriticManager::evalTrajectoriesScores(
   }
 
   // Publish statistics if enabled
-  if (critics_effect_pub_) {
+  if (critics_effect_pub_ && stats_msg) {
     auto node = parent_.lock();
     stats_msg->stamp = node->get_clock()->now();
     critics_effect_pub_->publish(std::move(stats_msg));

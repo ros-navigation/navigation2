@@ -109,7 +109,7 @@ public:
     * @param critic_costs Per-critic costs for each trajectory
     */
   void visualize(
-    nav_msgs::msg::Path plan,
+    const nav_msgs::msg::Path & plan,
     const Eigen::ArrayXXf & optimal_trajectory,
     const models::ControlSequence & control_sequence,
     float model_dt,
@@ -123,7 +123,7 @@ public:
     * @brief Visualize without optimizer (for testing)
     * @param plan Transformed plan to visualize
     */
-  void visualize(nav_msgs::msg::Path plan);
+  void visualize(const nav_msgs::msg::Path & plan);
 
   /**
     * @brief Reset object

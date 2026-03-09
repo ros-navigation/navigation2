@@ -39,6 +39,7 @@ void TrajectoryVisualizer::on_configure(
   getParam(publish_transformed_path_, "publish_transformed_path", false);
   getParam(publish_optimal_path_, "publish_optimal_path", false);
   getParam(footprint_downsample_factor_, "footprint_downsample_factor", 3);
+  footprint_downsample_factor_ = std::max(footprint_downsample_factor_, 1);
 
   if (publish_trajectories_with_total_cost_ || publish_trajectories_with_individual_cost_) {
     trajectories_publisher_ =
@@ -164,10 +165,14 @@ void TrajectoryVisualizer::add(
   const std::vector<std::pair<std::string, Eigen::ArrayXf>> & individual_critics_cost,
   const builtin_interfaces::msg::Time & cmd_stamp)
 {
+  // Early return if no subscribers
+  if (!trajectories_publisher_ || trajectories_publisher_->get_subscription_count() == 0) {
+    return;
+  }
+
   // Check if we should visualize per-critic costs
   bool visualize_per_critic = !individual_critics_cost.empty() &&
-    publish_trajectories_with_individual_cost_ &&
-    trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0;
+    publish_trajectories_with_individual_cost_;
 
   size_t n_rows = trajectories.x.rows();
   points_->markers.reserve(n_rows / trajectory_step_);
@@ -195,7 +200,7 @@ void TrajectoryVisualizer::reset()
 }
 
 void TrajectoryVisualizer::visualize(
-  nav_msgs::msg::Path plan,
+  const nav_msgs::msg::Path & plan,
   const Eigen::ArrayXXf & optimal_trajectory,
   const models::ControlSequence & control_sequence,
   float model_dt,
@@ -205,15 +210,17 @@ void TrajectoryVisualizer::visualize(
   const Eigen::ArrayXf & costs,
   const std::vector<std::pair<std::string, Eigen::ArrayXf>> & critic_costs)
 {
+  if (!costmap_ros) {
+    return;
+  }
+
   // Create header with frame from costmap
   std_msgs::msg::Header header;
   header.stamp = stamp;
   header.frame_id = costmap_ros->getGlobalFrameID();
 
   // Visualize trajectories with total costs
-  if (publish_trajectories_with_total_cost_ ||
-    (!publish_trajectories_with_individual_cost_ || critic_costs.empty()))
-  {
+  if (publish_trajectories_with_total_cost_) {
     add(candidate_trajectories, costs, {}, stamp);
   }
 
@@ -270,7 +277,7 @@ void TrajectoryVisualizer::visualize(
   }
 }
 
-void TrajectoryVisualizer::visualize(nav_msgs::msg::Path plan)
+void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan)
 {
   // Simplified version for testing that only publishes what's been added
   if (trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0) {
