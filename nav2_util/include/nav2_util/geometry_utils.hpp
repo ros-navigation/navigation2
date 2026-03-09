@@ -306,7 +306,6 @@ inline double cross_product_2d(
 }
 
 
-
 }  // namespace geometry_utils
 }  // namespace nav2_util
 
