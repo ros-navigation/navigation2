@@ -104,24 +104,6 @@ void CriticManager::evalTrajectoriesScores(
     data.individual_critics_cost->reserve(critics_.size());
   }
 
-  // Initialize per-critic costs tracking only if requested
-  if (visualize_per_critic_costs_) {
-    if (!data.individual_critics_cost) {
-      data.individual_critics_cost = std::vector<std::pair<std::string, Eigen::ArrayXf>>();
-    }
-    data.individual_critics_cost->clear();
-    data.individual_critics_cost->reserve(critics_.size());
-  }
-
-  // Initialize per-critic costs tracking only if requested
-  if (visualize_per_critic_costs_) {
-    if (!data.individual_critics_cost) {
-      data.individual_critics_cost = std::vector<std::pair<std::string, Eigen::ArrayXf>>();
-    }
-    data.individual_critics_cost->clear();
-    data.individual_critics_cost->reserve(critics_.size());
-  }
-
   for (size_t i = 0; i < critics_.size(); ++i) {
     if (data.fail_flag) {
       break;
