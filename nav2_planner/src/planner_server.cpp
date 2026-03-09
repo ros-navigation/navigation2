@@ -667,14 +667,14 @@ void PlannerServer::exceptionWarning(
      << ") [q: "
      << start.pose.orientation.x << ", " << start.pose.orientation.y << ", "
      << start.pose.orientation.z << ", " << start.pose.orientation.w
-     << ", yaw: " << tf2::getYaw(start.pose.orientation)
-     << "] to ("
+     << "] (yaw: " << tf2::getYaw(start.pose.orientation)
+     << ") to ("
      << goal.pose.position.x << ", " << goal.pose.position.y << ")"
      << " [q: "
      << goal.pose.orientation.x << ", " << goal.pose.orientation.y << ", "
      << goal.pose.orientation.z << ", " << goal.pose.orientation.w
-     << ", yaw: " << tf2::getYaw(goal.pose.orientation)
-     << "]"
+     << "] (yaw: " << tf2::getYaw(goal.pose.orientation)
+     << ")"
      << ": \"" << ex.what() << "\"";
 
   error_msg = ss.str();
