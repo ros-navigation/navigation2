@@ -232,6 +232,9 @@ ParameterHandler::updateParametersCallback(
       } else if (param_name == plugin_name_ + ".max_linear_vel") {
         params_.max_linear_vel = parameter.as_double();
         params_.base_max_linear_vel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".desired_linear_vel") {
+        params_.max_linear_vel = parameter.as_double();
+        params_.base_max_linear_vel = parameter.as_double();
       } else if (param_name == plugin_name_ + ".max_angular_accel") {
         params_.max_angular_accel = parameter.as_double();
       } else if (param_name == plugin_name_ + ".min_linear_vel") {
