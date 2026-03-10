@@ -138,7 +138,7 @@ void
 StaticLayer::reset()
 {
   has_updated_data_ = true;
-  current_ = false;
+  setCurrent(false);
 }
 
 void
@@ -248,7 +248,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   height_ = size_y_;
   has_updated_data_ = true;
 
-  current_ = true;
+  setCurrent(true);
 }
 
 void
@@ -298,7 +298,7 @@ StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & ne
   }
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   map_buffer_ = new_map;
-  current_ = false;
+  setCurrent(false);
 }
 
 void
@@ -476,7 +476,7 @@ StaticLayer::updateCosts(
     // restore the map region occupied by the polygon using cached data
     restoreMapRegionOccupiedByPolygon(map_region_to_restore);
   }
-  current_ = true;
+  setCurrent(true);
 }
 
 /**
@@ -545,7 +545,7 @@ StaticLayer::updateParametersCallback(
         width_ = size_x_;
         height_ = size_y_;
         has_updated_data_ = true;
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       } else if (param_name == name_ + "." + "restore_cleared_footprint") {
