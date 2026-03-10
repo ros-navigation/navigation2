@@ -1048,6 +1048,47 @@ TEST_F(Tester, testPolygonDebounceConsecutiveTriggerRelease)
   EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
 }
 
+TEST_F(Tester, testPolygonDebounceRejectsInvalidConfiguredTriggerParameter)
+{
+  setCommonParameters(POLYGON_NAME, "stop");
+  setPolygonParameters(SQUARE_POLYGON_STR, true);
+  test_node_->declare_parameter(std::string(POLYGON_NAME) + ".trigger_consecutive_points", 0);
+
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_->weak_from_this(), POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  EXPECT_FALSE(polygon_->configure());
+}
+
+TEST_F(Tester, testPolygonDebounceRejectsInvalidConfiguredReleaseParameter)
+{
+  const std::string polygon_name = "TestPolygonInvalidRelease";
+  setCommonParameters(polygon_name, "stop");
+  test_node_->declare_parameter(
+    polygon_name + ".points", rclcpp::ParameterValue(SQUARE_POLYGON_STR));
+  test_node_->declare_parameter(polygon_name + ".release_consecutive_points", 0);
+
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_->weak_from_this(), polygon_name,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  EXPECT_FALSE(polygon_->configure());
+}
+
+TEST_F(Tester, testPolygonDebounceRejectsInvalidDynamicParameters)
+{
+  createPolygon("stop", true);
+
+  EXPECT_THROW(
+    test_node_->set_parameters({
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".trigger_consecutive_points", 0)}),
+    rclcpp::exceptions::InvalidParameterValueException);
+
+  EXPECT_THROW(
+    test_node_->set_parameters({
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".release_consecutive_points", 0)}),
+    rclcpp::exceptions::InvalidParameterValueException);
+}
+
 int main(int argc, char ** argv)
 {
   // Initialize the system
