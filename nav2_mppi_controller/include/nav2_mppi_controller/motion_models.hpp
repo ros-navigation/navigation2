@@ -113,11 +113,11 @@ public:
     auto & wz = control_sequence.wz;
     auto abs_vx = xt::fabs(control_sequence.vx);
     auto abs_wz = xt::fabs(wz);
-    
-    for (size_t i = 0; i < wz.size(); ++i)
-    {
-      if ((abs_vx[i] / abs_wz[i]) < min_turning_r_)
+
+    for (size_t i = 0; i < wz.size(); ++i) {
+      if ((abs_vx[i] / abs_wz[i]) < min_turning_r_) {
         wz[i] = std::copysign(abs_vx[i] / min_turning_r_, wz[i]);
+      }
     }
   }
 
