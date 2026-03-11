@@ -41,6 +41,10 @@
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 
+#ifdef __APPLE__
+  #include "nav2_mppi_controller/tools/apple_utils.hpp"
+#endif
+
 namespace mppi
 {
 
@@ -258,6 +262,26 @@ protected:
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
+
+template<typename E>
+inline auto cumsum_1d(const E & expression)
+{
+  #ifdef __APPLE__
+  return utils::manual_cumsum_1d(expression);
+  #else
+  return xt::cumsum(expression, 0);
+  #endif
+}
+
+template<typename E>
+inline auto cumsum_2d(const E & expression, int axis)
+{
+ #ifdef __APPLE__
+  return utils::manual_cumsum_2d(expression, axis);
+ #else
+  return xt::cumsum(expression, axis);
+ #endif
+}
 
 }  // namespace mppi
 

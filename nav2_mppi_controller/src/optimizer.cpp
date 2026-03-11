@@ -280,7 +280,7 @@ void Optimizer::integrateStateVelocities(
   auto traj_y = xt::view(trajectory, xt::all(), 1);
   auto traj_yaws = xt::view(trajectory, xt::all(), 2);
 
-  xt::noalias(traj_yaws) = xt::cumsum(wz * settings_.model_dt, 0) + initial_yaw;
+  xt::noalias(traj_yaws) = cumsum_1d(wz * settings_.model_dt) + initial_yaw;
 
   auto && yaw_cos = xt::xtensor<float, 1>::from_shape(traj_yaws.shape());
   auto && yaw_sin = xt::xtensor<float, 1>::from_shape(traj_yaws.shape());
@@ -300,8 +300,8 @@ void Optimizer::integrateStateVelocities(
     dy = dy + vy * yaw_cos;
   }
 
-  xt::noalias(traj_x) = state_.pose.pose.position.x + xt::cumsum(dx * settings_.model_dt, 0);
-  xt::noalias(traj_y) = state_.pose.pose.position.y + xt::cumsum(dy * settings_.model_dt, 0);
+  xt::noalias(traj_x) = state_.pose.pose.position.x + cumsum_1d(dx * settings_.model_dt);
+  xt::noalias(traj_y) = state_.pose.pose.position.y + cumsum_1d(dy * settings_.model_dt);
 }
 
 void Optimizer::integrateStateVelocities(
@@ -311,7 +311,7 @@ void Optimizer::integrateStateVelocities(
   const float initial_yaw = tf2::getYaw(state.pose.pose.orientation);
 
   xt::noalias(trajectories.yaws) =
-    xt::cumsum(state.wz * settings_.model_dt, 1) + initial_yaw;
+    cumsum_2d(state.wz * settings_.model_dt, 1) + initial_yaw;
 
   const auto yaws_cutted = xt::view(trajectories.yaws, xt::all(), xt::range(0, -1));
 
@@ -331,9 +331,9 @@ void Optimizer::integrateStateVelocities(
   }
 
   xt::noalias(trajectories.x) = state.pose.pose.position.x +
-    xt::cumsum(dx * settings_.model_dt, 1);
+    cumsum_2d(dx * settings_.model_dt, 1);
   xt::noalias(trajectories.y) = state.pose.pose.position.y +
-    xt::cumsum(dy * settings_.model_dt, 1);
+    cumsum_2d(dy * settings_.model_dt, 1);
 }
 
 xt::xtensor<float, 2> Optimizer::getOptimizedTrajectory()

@@ -110,11 +110,15 @@ public:
    */
   void applyConstraints(models::ControlSequence & control_sequence) override
   {
-    auto & vx = control_sequence.vx;
     auto & wz = control_sequence.wz;
+    auto abs_vx = xt::fabs(control_sequence.vx);
+    auto abs_wz = xt::fabs(wz);
 
-    auto view = xt::masked_view(wz, (xt::fabs(vx) / xt::fabs(wz)) < min_turning_r_);
-    view = xt::sign(wz) * xt::fabs(vx) / min_turning_r_;
+    for (size_t i = 0; i < wz.size(); ++i) {
+      if ((abs_vx[i] / abs_wz[i]) < min_turning_r_) {
+        wz[i] = std::copysign(abs_vx[i] / min_turning_r_, wz[i]);
+      }
+    }
   }
 
   /**
