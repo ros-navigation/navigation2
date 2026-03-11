@@ -218,10 +218,6 @@ protected:
   std::shared_ptr<BoundedTrackingErrorLayerTestable> layer_;
 };
 
-// ============================================================================
-// INITIALIZATION TESTS
-// ============================================================================
-
 TEST_F(BoundedTrackingErrorLayerTest, Initialization) {
   EXPECT_FALSE(layer_->isClearable());
   EXPECT_TRUE(layer_->getEnabled());
@@ -247,10 +243,6 @@ TEST_F(BoundedTrackingErrorLayerTest, Reset) {
   EXPECT_TRUE(layer_->getLastPath().poses.empty());
 }
 
-// ============================================================================
-// PATH CALLBACK TESTS
-// ============================================================================
-
 TEST_F(BoundedTrackingErrorLayerTest, PathCallback) {
   auto path = createPath(false, 50);
   layer_->pathCallback(std::make_shared<nav_msgs::msg::Path>(path));
@@ -273,10 +265,6 @@ TEST_F(BoundedTrackingErrorLayerTest, PathUpdate) {
   layer_->pathCallback(std::make_shared<nav_msgs::msg::Path>(path2));
   EXPECT_EQ(layer_->current_path_index_.load(), 0u);
 }
-
-// ============================================================================
-// TRACKING CALLBACK TESTS
-// ============================================================================
 
 TEST_F(BoundedTrackingErrorLayerTest, TrackingCallback) {
   auto tracking = createTracking(42, 0.15);
@@ -307,10 +295,6 @@ TEST_F(BoundedTrackingErrorLayerTest, TrackingCallbackThreadSafe) {
   EXPECT_EQ(errors.load(), 0);
 }
 
-// ============================================================================
-// GOAL CALLBACK TESTS
-// ============================================================================
-
 TEST_F(BoundedTrackingErrorLayerTest, GoalCallback) {
   auto path = createPath(false, 50);
   layer_->pathCallback(std::make_shared<nav_msgs::msg::Path>(path));
@@ -320,10 +304,6 @@ TEST_F(BoundedTrackingErrorLayerTest, GoalCallback) {
   layer_->goalCallback(std::make_shared<geometry_msgs::msg::PoseStamped>(goal));
   EXPECT_EQ(layer_->current_path_index_.load(), 0u);
 }
-
-// ============================================================================
-// PATH SEGMENT TESTS
-// ============================================================================
 
 TEST_F(BoundedTrackingErrorLayerTest, PathSegment) {
   auto path = createPath(false, 100, 10.0);
@@ -348,10 +328,6 @@ TEST_F(BoundedTrackingErrorLayerTest, PathSegmentLookAhead) {
   EXPECT_LE(length, layer_->getLookAhead() + 0.5);
 }
 
-// ============================================================================
-// WALL POLYGON TESTS
-// ============================================================================
-
 TEST_F(BoundedTrackingErrorLayerTest, WallPolygons) {
   auto path = createPath(false, 50);
   WallPolygons walls;
@@ -372,10 +348,6 @@ TEST_F(BoundedTrackingErrorLayerTest, WallPolygonsCurved) {
     EXPECT_NEAR(perp_mag, 1.0, 0.01);
   }
 }
-
-// ============================================================================
-// UPDATE COSTS TESTS
-// ============================================================================
 
 TEST_F(BoundedTrackingErrorLayerTest, UpdateCostsNoData) {
   Costmap2D master_grid(TEST_SIZE_X, TEST_SIZE_Y, TEST_RESOLUTION, TEST_ORIGIN_X, TEST_ORIGIN_Y);
@@ -406,10 +378,6 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateCostsDisabled) {
   EXPECT_EQ(countObstacles(master_grid), 0);
   layer_->activate();
 }
-
-// ============================================================================
-// PARAMETER VALIDATION TESTS (CONSOLIDATED)
-// ============================================================================
 
 TEST_F(BoundedTrackingErrorLayerTest, ValidateParameters) {
   testParamValidation("look_ahead",
@@ -448,10 +416,6 @@ TEST_F(BoundedTrackingErrorLayerTest, ValidateCorridorCost) {
   EXPECT_FALSE(result.successful);
 }
 
-// ============================================================================
-// PARAMETER UPDATE TESTS
-// ============================================================================
-
 TEST_F(BoundedTrackingErrorLayerTest, UpdateParameters) {
   double orig = layer_->getLookAhead();
   layer_->updateParametersCallback({rclcpp::Parameter("test_layer.look_ahead", 4.0)});
@@ -478,10 +442,6 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateMultipleParameters) {
   EXPECT_DOUBLE_EQ(layer_->getCorridorWidth(), 2.5);
   EXPECT_EQ(layer_->getStep(), 7);
 }
-
-// ============================================================================
-// INTEGRATION TESTS
-// ============================================================================
 
 TEST_F(BoundedTrackingErrorLayerTest, IntegrationFullPipeline) {
   auto goal = createGoal(5.0, 0.0);
