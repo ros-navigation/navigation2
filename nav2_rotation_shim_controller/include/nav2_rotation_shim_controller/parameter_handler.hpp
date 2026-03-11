@@ -38,7 +38,6 @@ struct Parameters
   double max_angular_accel;
   double simulate_ahead_time;
   double control_duration;
-  double transform_tolerance;
   bool rotate_to_goal_heading;
   bool rotate_to_heading_once;
   bool closed_loop;
