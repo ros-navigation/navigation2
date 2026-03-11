@@ -16,10 +16,14 @@
 #define NAV2_COSTMAP_2D__BOUNDED_TRACKING_ERROR_LAYER_HPP_
 
 #include <atomic>
+#include <cstddef>
+#include <stdexcept>
 #include <vector>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <algorithm>
+#include <array>
 
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -34,20 +38,48 @@
 #include "tf2_ros/transform_listener.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2/time.hpp"
+#include "nav2_util/line_iterator.hpp"
 
 
 namespace nav2_costmap_2d
 {
 
 /**
- * @brief Structure holding separate wall polygon components for left and right walls.
+ * @brief Structure holding separate wall polygon components for left, right walls and
+ * direction to draw parallel lines.
+ * Optimized to use std::array for fixed-size 2D points instead of vector<vector>.
  */
 struct WallPolygons
 {
-  std::vector<std::vector<double>> left_outer;
-  std::vector<std::vector<double>> left_inner;
-  std::vector<std::vector<double>> right_outer;
-  std::vector<std::vector<double>> right_inner;
+  std::vector<std::array<double, 2>> left_outer;
+  std::vector<std::array<double, 2>> right_outer;
+  std::vector<std::array<double, 2>> perpendiculars;
+  std::vector<std::array<double, 2>> tangents;
+
+  /**
+   * @brief Clear all vectors and reserve capacity for reuse
+   * @param capacity Expected number of points
+   */
+  void clearAndReserve(size_t capacity)
+  {
+    left_outer.clear();
+    right_outer.clear();
+    perpendiculars.clear();
+    tangents.clear();
+    left_outer.reserve(capacity);
+    right_outer.reserve(capacity);
+    perpendiculars.reserve(capacity);
+    tangents.reserve(capacity);
+  }
+
+  /**
+   * @brief Check if wall polygons are empty or insufficient
+   * @return true if there are not enough points to form walls
+   */
+  bool isEmpty() const
+  {
+    return left_outer.size() < 2 || right_outer.size() < 2;
+  }
 };
 
 /**
@@ -62,6 +94,9 @@ struct WallPolygons
  */
 class BoundedTrackingErrorLayer : public nav2_costmap_2d::Layer
 {
+  // Friend declaration for test access
+  friend class BoundedTrackingErrorLayerTestable;
+
 public:
   /**
    * @brief Default constructor for BoundedTrackingErrorLayer.
@@ -128,16 +163,20 @@ public:
   /**
    * @brief Computes separate wall polygons for left and right corridor boundaries.
    * @param segment Path segment to generate wall polygons from.
-   * @return WallPolygons structure containing outer and inner edges for both walls.
+   * @param walls Output WallPolygons structure (reused buffer).
    */
-  WallPolygons getWallPolygons(const nav_msgs::msg::Path & segment);
+  void getWallPolygons(const nav_msgs::msg::Path & segment, WallPolygons & walls);
 
   /**
    * @brief Creates segment from current path. Length is decided by look_ahead parameter.
-   * @note Caller must hold data_mutex_ before calling this method.
-   * @return The path segment as a nav_msgs::msg::Path.
+   * @param path The full path to extract segment from.
+   * @param path_index Current position index on the path.
+   * @param segment Output path segment (reused buffer).
    */
-  nav_msgs::msg::Path getPathSegment();
+  void getPathSegment(
+    const nav_msgs::msg::Path & path,
+    size_t path_index,
+    nav_msgs::msg::Path & segment);
 
 protected:
   /**
@@ -181,6 +220,87 @@ protected:
   std::atomic<uint32_t> current_path_index_{0};
 
 private:
+  /**
+   * @brief Draws a wall segment on the costmap with thickness and diagonal gap filling.
+   * @param costmap Pointer to the costmap character array.
+   * @param size_x Width of the costmap in cells.
+   * @param size_y Height of the costmap in cells.
+   * @param master_grid Reference to master grid for coordinate conversion.
+   * @param wall_points Vector of wall points to draw.
+   * @param perpendiculars Vector of perpendicular directions at each point.
+   * @param tangents Vector of tangent directions at each point.
+   * @param perp_sign Sign for perpendicular offset direction (+1 or -1).
+   */
+  void drawWallSegment(
+    unsigned char * costmap,
+    unsigned int size_x,
+    unsigned int size_y,
+    const nav2_costmap_2d::Costmap2D & master_grid,
+    const std::vector<std::array<double, 2>> & wall_points,
+    const std::vector<std::array<double, 2>> & perpendiculars,
+    const std::vector<std::array<double, 2>> & tangents,
+    int perp_sign);
+
+  /**
+   * @brief Fills pixels perpendicular to a line for wall thickness.
+   *
+   * This helper function extends a wall by drawing additional pixels perpendicular to the
+   * current wall point. It iterates from 1 to wall_thickness_ and fills pixels in the
+   * perpendicular direction based on perp_sign. This creates a thick wall corridor on the
+   * costmap, making the boundaries more robust and easier to detect by the planner.
+   *
+   * The function uses the perpendicular direction vector (perp_x, perp_y) to compute
+   * offset pixels and fills them with the corridor_cost_ value. Boundary checks ensure
+   * that only valid costmap cells are modified.
+   *
+   * @param costmap Pointer to the costmap character array to modify.
+   * @param size_x Width of the costmap in cells.
+   * @param size_y Height of the costmap in cells.
+   * @param curr_x Current X pixel coordinate (center of thickness).
+   * @param curr_y Current Y pixel coordinate (center of thickness).
+   * @param perp_x Perpendicular direction X component (normalized).
+   * @param perp_y Perpendicular direction Y component (normalized).
+   * @param perp_sign Sign for perpendicular offset direction (+1 for inward, -1 for outward).
+   */
+  void fillThicknessPixels(
+    unsigned char * costmap,
+    unsigned int size_x,
+    unsigned int size_y,
+    unsigned int curr_x,
+    unsigned int curr_y,
+    double perp_x,
+    double perp_y,
+    int perp_sign);
+
+  /**
+   * @brief Fills diagonal gap pixels to prevent holes in diagonal lines.
+   *
+   * When drawing walls at diagonal angles (45 degrees or close to it), a simple line
+   * iterator can create gaps because pixel coordinates are discrete. This function
+   * fills those gaps by adding pixels adjacent to the current position in the tangent
+   * direction, ensuring continuous wall coverage.
+   *
+   * The function determines the gap fill direction based on the tangent vector and
+   * fills two adjacent pixels: one offset in X and one offset in Y. This creates a
+   * solid diagonal line without holes that the robot could pass through.
+   *
+   * @param costmap Pointer to the costmap character array to modify.
+   * @param size_x Width of the costmap in cells.
+   * @param size_y Height of the costmap in cells.
+   * @param curr_x Current X pixel coordinate where gap might occur.
+   * @param curr_y Current Y pixel coordinate where gap might occur.
+   * @param tang_x Tangent direction X component (normalized, indicates line direction).
+   * @param tang_y Tangent direction Y component (normalized, indicates line direction).
+   */
+  void fillDiagonalGaps(
+    unsigned char * costmap,
+    unsigned int size_x,
+    unsigned int size_y,
+    unsigned int curr_x,
+    unsigned int curr_y,
+    double tang_x,
+    double tang_y);
+
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
   nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
@@ -199,7 +319,14 @@ private:
   std::string tracking_feedback_topic_;
   unsigned char corridor_cost_;
   int wall_thickness_;
+  int path_segment_resolution_;
   tf2::Duration transform_tolerance_;
+
+  // Reusable buffers to avoid repeated allocations
+  nav_msgs::msg::Path segment_buffer_;
+  nav_msgs::msg::Path transformed_segment_buffer_;
+  WallPolygons walls_buffer_;
+
 };
 
 }  // namespace nav2_costmap_2d
