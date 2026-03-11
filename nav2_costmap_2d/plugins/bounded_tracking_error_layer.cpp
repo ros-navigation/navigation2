@@ -48,14 +48,17 @@ void BoundedTrackingErrorLayer::onInitialize()
   path_topic_ = node->declare_or_get_parameter(
     name_ + "." + "path_topic", std::string("plan"));
 
-  look_ahead_ = node->declare_or_get_parameter(name_ + "." + "look_ahead", 3.0);
+  look_ahead_ = node->declare_or_get_parameter(name_ + "." + "look_ahead", 2.5);
 
-  step_ = node->declare_or_get_parameter(name_ + "." + "step", 5);
+  step_ = node->declare_or_get_parameter(name_ + "." + "step", 10);
   step_size_ = static_cast<size_t>(step_);
 
   corridor_width_ = node->declare_or_get_parameter(name_ + "." + "corridor_width", 2.0);
 
   wall_thickness_ = node->declare_or_get_parameter(name_ + "." + "wall_thickness", 1);
+
+  path_segment_resolution_ = node->declare_or_get_parameter(
+    name_ + "." + "path_segment_resolution", 5);
 
   int corridor_cost_param = node->declare_or_get_parameter(name_ + "." + "corridor_cost", 190);
   corridor_cost_ = static_cast<unsigned char>(std::clamp(corridor_cost_param, 1, 254));
@@ -79,12 +82,14 @@ void BoundedTrackingErrorLayer::onInitialize()
   if (step_size_ == 0) {
     throw std::runtime_error{"step must be greater than zero"};
   }
+  if (path_segment_resolution_ < 1) {
+    throw std::runtime_error{"path_segment_resolution must be at least 1"};
+  }
 
   // Join topics with parent namespace for proper namespacing
   std::string path_topic = joinWithParentNamespace(path_topic_);
   std::string tracking_feedback_topic = joinWithParentNamespace(tracking_feedback_topic_);
 
-  // Create subscriptions in onInitialize like other layers
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
     path_topic,
     std::bind(&BoundedTrackingErrorLayer::pathCallback, this, std::placeholders::_1),
@@ -102,8 +107,6 @@ void BoundedTrackingErrorLayer::onInitialize()
     std::bind(&BoundedTrackingErrorLayer::goalCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS()
   );
-
-
 }
 
 void BoundedTrackingErrorLayer::activate()
@@ -178,9 +181,9 @@ void BoundedTrackingErrorLayer::goalCallback(const geometry_msgs::msg::PoseStamp
   if (last_goal_.header.frame_id.empty()) {
     is_new_goal = true;
   } else {
-    double dx = msg->pose.position.x - last_goal_.pose.position.x;
-    double dy = msg->pose.position.y - last_goal_.pose.position.y;
-    double distance = std::hypot(dx, dy);
+    const double dx = msg->pose.position.x - last_goal_.pose.position.x;
+    const double dy = msg->pose.position.y - last_goal_.pose.position.y;
+    const double distance = std::hypot(dx, dy);
 
     if (distance > 0.1) {
       is_new_goal = true;
@@ -205,9 +208,9 @@ void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPt
   }
 
   std::lock_guard<std::mutex> lock(data_mutex_);
-  auto now = node->now();
-  auto msg_time = rclcpp::Time(msg->header.stamp);
-  auto age = (now - msg_time).seconds();
+  const auto now = node->now();
+  const auto msg_time = rclcpp::Time(msg->header.stamp);
+  const auto age = (now - msg_time).seconds();
 
   if (age > 2.0) {
     RCLCPP_WARN_THROTTLE(
@@ -237,9 +240,9 @@ void BoundedTrackingErrorLayer::trackingCallback(
     return;
   }
 
-  auto now = node->now();
-  auto msg_time = rclcpp::Time(msg->header.stamp);
-  auto age = (now - msg_time).seconds();
+  const auto now = node->now();
+  const auto msg_time = rclcpp::Time(msg->header.stamp);
+  const auto age = (now - msg_time).seconds();
 
   if (age > 1.0) {
     RCLCPP_WARN_THROTTLE(
@@ -257,108 +260,219 @@ void BoundedTrackingErrorLayer::updateBounds(
   double robot_x, double robot_y, double /*robot_yaw*/,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
+
   if (!enabled_.load()) {
     return;
   }
+
   *min_x = std::min(*min_x, robot_x - look_ahead_);
   *max_x = std::max(*max_x, robot_x + look_ahead_);
   *min_y = std::min(*min_y, robot_y - look_ahead_);
   *max_y = std::max(*max_y, robot_y + look_ahead_);
-
 }
 
-WallPolygons BoundedTrackingErrorLayer::getWallPolygons(
-  const nav_msgs::msg::Path & segment)
+void BoundedTrackingErrorLayer::getWallPolygons(
+  const nav_msgs::msg::Path & segment,
+  WallPolygons & walls)
 {
-  WallPolygons walls;
-
   if (segment.poses.empty() || step_size_ == 0) {
-    return walls;
+    walls.clearAndReserve(0);
+    return;
   }
 
-  // Get the costmap resolution for calculating inner width
-  double resolution = layered_costmap_->getCostmap()->getResolution();
+  const double resolution = layered_costmap_->getCostmap()->getResolution();
+  const double wall_outer_offset = (corridor_width_ * 0.5) + (wall_thickness_ * resolution);
 
-  double outer_half_width = corridor_width_ * 0.5;
-  double inner_half_width = (corridor_width_ - (wall_thickness_ * resolution * 2.0)) * 0.5;
-
-  // Math: Let n_hat = (-dy/|d|, dx/|d|) be the unit normal to path segment d.
-  // Left Wall:  P_out = Pi + n_hat * (width/2), P_in = Pi + n_hat * (width/2 - thickness * res)
-  // Right Wall: P_out = Pi - n_hat * (width/2), P_in = Pi - n_hat * (width/2 - thickness * res)
-
-  size_t estimated_points = (segment.poses.size() / step_size_) + 1;
-  walls.left_outer.reserve(estimated_points);
-  walls.left_inner.reserve(estimated_points);
-  walls.right_outer.reserve(estimated_points);
-  walls.right_inner.reserve(estimated_points);
+  const size_t estimated_points = (segment.poses.size() / step_size_) + 1;
+  walls.clearAndReserve(estimated_points);
 
   for (size_t current_index = 0; current_index < segment.poses.size();
     current_index += step_size_)
   {
     const auto & current_pose = segment.poses[current_index];
-    double px = current_pose.pose.position.x;
-    double py = current_pose.pose.position.y;
+    const double px = current_pose.pose.position.x;
+    const double py = current_pose.pose.position.y;
 
     if (current_index + step_size_ >= segment.poses.size()) {
       break;
     }
 
     const auto & next_pose = segment.poses[current_index + step_size_];
-    double dx = next_pose.pose.position.x - px;
-    double dy = next_pose.pose.position.y - py;
+    const double dx = next_pose.pose.position.x - px;
+    const double dy = next_pose.pose.position.y - py;
 
-    // Calculate perpendicular direction for wall points
-    // Given direction vector (dx, dy), the perpendicular is (-dy, dx) normalized
-    double norm = std::hypot(dx, dy);
-    if (norm < 1e-6) {  // Avoid division by zero for very close points
+    const double norm = std::hypot(dx, dy);
+    if (norm < resolution) {
       continue;
     }
 
-    double perp_x = -dy / norm;
-    double perp_y = dx / norm;
+    const double inv_norm = 1.0 / norm;
+    const double perp_x = -dy * inv_norm;
+    const double perp_y = dx * inv_norm;
+    const double tang_x = dx * inv_norm;
+    const double tang_y = dy * inv_norm;
 
-    walls.left_outer.push_back({px + perp_x * outer_half_width, py + perp_y * outer_half_width});
-    walls.left_inner.push_back({px + perp_x * inner_half_width, py + perp_y * inner_half_width});
-    walls.right_outer.push_back({px - perp_x * outer_half_width, py - perp_y * outer_half_width});
-    walls.right_inner.push_back({px - perp_x * inner_half_width, py - perp_y * inner_half_width});
+    walls.left_outer.push_back(
+      {px + perp_x * wall_outer_offset, py + perp_y * wall_outer_offset});
+    walls.right_outer.push_back(
+      {px - perp_x * wall_outer_offset, py - perp_y * wall_outer_offset});
+    walls.perpendiculars.push_back({perp_x, perp_y});
+    walls.tangents.push_back({tang_x, tang_y});
   }
-
-  return walls;
 }
 
-nav_msgs::msg::Path BoundedTrackingErrorLayer::getPathSegment()
+void BoundedTrackingErrorLayer::getPathSegment(
+  const nav_msgs::msg::Path & path,
+  size_t path_index,
+  nav_msgs::msg::Path & segment)
 {
-  nav_msgs::msg::Path segment;
-  size_t path_index = current_path_index_.load();
-  if (last_path_.poses.empty() || path_index >= last_path_.poses.size()) {
-    return segment;
+  segment.poses.clear();
+
+  if (path.poses.empty() || path_index >= path.poses.size()) {
+    return;
   }
 
-  size_t start_index = path_index;
+  const size_t start_index = path_index;
   size_t end_index = start_index;
   double dist_traversed = 0.0;
+  const size_t jump = static_cast<size_t>(path_segment_resolution_);
 
-  for (size_t i = start_index; i < last_path_.poses.size() - 1; ++i) {
+  for (size_t i = start_index; i < path.poses.size() - 1; i += jump) {
+    const size_t next_i = std::min(i + jump, path.poses.size() - 1);
+
+    // Calculate straight-line distance between jumped poses
     dist_traversed += nav2_util::geometry_utils::euclidean_distance(
-      last_path_.poses[i], last_path_.poses[i + 1]);
-    end_index = i + 1;
+      path.poses[i], path.poses[next_i]);
+
+    end_index = next_i;
     if (dist_traversed >= look_ahead_) {
       break;
     }
   }
 
-  if (start_index < end_index && end_index <= last_path_.poses.size()) {
-    segment.header = last_path_.header;
+  if (start_index < end_index && end_index <= path.poses.size()) {
+    segment.header = path.header;
     segment.poses.assign(
-      last_path_.poses.begin() + start_index,
-      last_path_.poses.begin() + end_index
+      path.poses.begin() + start_index,
+      path.poses.begin() + end_index
     );
-  } else if (start_index == last_path_.poses.size() - 1) {
-    segment.header = last_path_.header;
-    segment.poses.push_back(last_path_.poses.back());
+  } else if (start_index == path.poses.size() - 1) {
+    segment.header = path.header;
+    segment.poses.push_back(path.poses[start_index]);
+  }
+}
+
+
+void BoundedTrackingErrorLayer::fillThicknessPixels(
+  unsigned char * costmap,
+  unsigned int size_x,
+  unsigned int size_y,
+  unsigned int curr_x,
+  unsigned int curr_y,
+  double perp_x,
+  double perp_y,
+  int perp_sign)
+{
+  // Pre-compute the perpendicular offset as integer pixel steps
+  for (int offset = 1; offset < wall_thickness_; ++offset) {
+    // Calculate pixel offset directly using perpendicular direction
+    // perp_sign determines whether we go inward (+) or outward (-)
+    const int ox = static_cast<int>(curr_x) -
+      static_cast<int>(std::round(perp_sign * perp_x * offset));
+    const int oy = static_cast<int>(curr_y) -
+      static_cast<int>(std::round(perp_sign * perp_y * offset));
+
+    if (ox >= 0 && ox < static_cast<int>(size_x) &&
+      oy >= 0 && oy < static_cast<int>(size_y))
+    {
+      costmap[oy * size_x + ox] = corridor_cost_;
+    }
+  }
+}
+
+void BoundedTrackingErrorLayer::fillDiagonalGaps(
+  unsigned char * costmap,
+  unsigned int size_x,
+  unsigned int size_y,
+  unsigned int curr_x,
+  unsigned int curr_y,
+  double tang_x,
+  double tang_y)
+{
+  // Determine gap fill direction based on tangent
+  const int gap_dx = (tang_x > 0) ? 1 : -1;
+  const int gap_dy = (tang_y > 0) ? 1 : -1;
+
+  // Fill two adjacent pixels to close diagonal gap
+  const int gap_x1 = static_cast<int>(curr_x) + gap_dx;
+  const int gap_y1 = static_cast<int>(curr_y);
+  const int gap_x2 = static_cast<int>(curr_x);
+  const int gap_y2 = static_cast<int>(curr_y) + gap_dy;
+
+  if (gap_x1 >= 0 && gap_x1 < static_cast<int>(size_x) &&
+    gap_y1 >= 0 && gap_y1 < static_cast<int>(size_y))
+  {
+    costmap[gap_y1 * size_x + gap_x1] = corridor_cost_;
+  }
+  if (gap_x2 >= 0 && gap_x2 < static_cast<int>(size_x) &&
+    gap_y2 >= 0 && gap_y2 < static_cast<int>(size_y))
+  {
+    costmap[gap_y2 * size_x + gap_x2] = corridor_cost_;
+  }
+}
+
+void BoundedTrackingErrorLayer::drawWallSegment(
+  unsigned char * costmap,
+  unsigned int size_x,
+  unsigned int size_y,
+  const nav2_costmap_2d::Costmap2D & master_grid,
+  const std::vector<std::array<double, 2>> & wall_points,
+  const std::vector<std::array<double, 2>> & perpendiculars,
+  const std::vector<std::array<double, 2>> & tangents,
+  int perp_sign)
+{
+  if (wall_points.size() < 2) {
+    return;
   }
 
-  return segment;
+  for (size_t i = 0; i < wall_points.size() - 1; ++i) {
+    unsigned int x0, y0, x1, y1;
+
+    if (!master_grid.worldToMap(wall_points[i][0], wall_points[i][1], x0, y0)) {
+      continue;
+    }
+    if (!master_grid.worldToMap(wall_points[i + 1][0], wall_points[i + 1][1], x1, y1)) {
+      continue;
+    }
+
+    const double tang_x = tangents[i][0];
+    const double tang_y = tangents[i][1];
+
+    const bool is_diagonal = (std::abs(tang_x) > 0.1 && std::abs(tang_y) > 0.1);
+
+    nav2_util::LineIterator line(x0, y0, x1, y1);
+
+    for (; line.isValid(); line.advance()) {
+      const unsigned int curr_x = line.getX();
+      const unsigned int curr_y = line.getY();
+
+      const unsigned int index = curr_y * size_x + curr_x;
+      costmap[index] = corridor_cost_;
+
+      fillThicknessPixels(
+        costmap, size_x, size_y,
+        curr_x, curr_y,
+        perpendiculars[i][0], perpendiculars[i][1],
+        perp_sign);
+
+      if (is_diagonal) {
+        fillDiagonalGaps(
+          costmap, size_x, size_y,
+          curr_x, curr_y,
+          tang_x, tang_y);
+      }
+    }
+  }
 }
 
 void BoundedTrackingErrorLayer::updateCosts(
@@ -369,111 +483,76 @@ void BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
-  auto node = node_.lock();
-
-  nav_msgs::msg::Path segment;
+  nav_msgs::msg::Path cached_path;
+  size_t cached_path_index;
   {
     std::lock_guard<std::mutex> data_lock(data_mutex_);
-    segment = getPathSegment();
+    cached_path = last_path_;
+    cached_path_index = current_path_index_.load();
   }
 
-  if (segment.poses.size() < 2) {
-    if (node) {
-      RCLCPP_DEBUG_THROTTLE(
-        node->get_logger(),
-        *node->get_clock(),
-        5000,
-        "Path segment too small (%zu poses), skipping wall generation",
-        segment.poses.size());
-    }
+  getPathSegment(cached_path, cached_path_index, segment_buffer_);
+
+  if (segment_buffer_.poses.size() < 10) {
+    RCLCPP_INFO_THROTTLE(
+      logger_,
+      *clock_,
+      5000,
+      "Path segment too small (%zu poses), skipping wall generation",
+      segment_buffer_.poses.size());
     return;
   }
 
-  std::string costmap_frame = layered_costmap_->getGlobalFrameID();
-  nav_msgs::msg::Path transformed_segment;
-  transformed_segment.header.frame_id = costmap_frame;
-  transformed_segment.poses.reserve(segment.poses.size());
+  const std::string costmap_frame = layered_costmap_->getGlobalFrameID();
 
-  for (size_t i = 0; i < segment.poses.size(); ++i) {
-    const auto & pose = segment.poses[i];
-    geometry_msgs::msg::PoseStamped transformed_pose;
-    double timeout = (i == 0) ? tf2::durationToSec(transform_tolerance_) : 0.0;
-    if (nav2_util::transformPoseInTargetFrame(
-        pose, transformed_pose, *tf_, costmap_frame, timeout))
-    {
-      transformed_segment.poses.push_back(transformed_pose);
-    } else {
-      if (node) {
-        RCLCPP_WARN_THROTTLE(
-          node->get_logger(),
-          *node->get_clock(),
-          5000,
-          "Failed to transform pose %zu to %s, skipping wall generation",
-          i,
-          costmap_frame.c_str());
-      }
-      return;
-    }
-  }
-
-  auto walls = getWallPolygons(transformed_segment);
-
-  if (walls.left_outer.empty() || walls.right_outer.empty()) {
-    if (node) {
-      RCLCPP_DEBUG_THROTTLE(
-        node->get_logger(),
-        *node->get_clock(),
-        5000,
-        "Not enough wall points to form polygons");
-    }
+  transformed_segment_buffer_.poses.clear();
+  if (!nav2_util::transformPathInTargetFrame(
+      segment_buffer_, transformed_segment_buffer_, *tf_, costmap_frame,
+      tf2::durationToSec(transform_tolerance_)))
+  {
+    RCLCPP_WARN_THROTTLE(
+      logger_,
+      *clock_,
+      5000,
+      "Failed to transform path to %s, skipping wall generation",
+      costmap_frame.c_str());
     return;
   }
 
-  // Build left wall polygon by connecting outer and inner edges
-  // Creates a closed polygon: outer edge forward, inner edge backward
-  std::vector<geometry_msgs::msg::Point> left_wall_polygon;
-  left_wall_polygon.reserve(walls.left_outer.size() + walls.left_inner.size());
+  getWallPolygons(transformed_segment_buffer_, walls_buffer_);
 
-  for (const auto & pt : walls.left_outer) {
-    geometry_msgs::msg::Point point;
-    point.x = pt[0];
-    point.y = pt[1];
-    point.z = 0.0;
-    left_wall_polygon.push_back(point);
+  if (walls_buffer_.isEmpty()) {
+    RCLCPP_INFO_THROTTLE(
+      logger_,
+      *clock_,
+      5000,
+      "Not enough wall points to form polygons");
+    return;
   }
 
-  for (auto it = walls.left_inner.rbegin(); it != walls.left_inner.rend(); ++it) {
-    geometry_msgs::msg::Point point;
-    point.x = (*it)[0];
-    point.y = (*it)[1];
-    point.z = 0.0;
-    left_wall_polygon.push_back(point);
-  }
+  // Cache grid properties to avoid repeated function calls
+  unsigned char * costmap = master_grid.getCharMap();
+  const unsigned int size_x = master_grid.getSizeInCellsX();
+  const unsigned int size_y = master_grid.getSizeInCellsY();
 
-  // Build right wall polygon similarly
-  std::vector<geometry_msgs::msg::Point> right_wall_polygon;
-  right_wall_polygon.reserve(walls.right_outer.size() + walls.right_inner.size());
+  // Draw left wall (perp_sign = -1: thickness goes inward, subtracting perpendicular)
+  drawWallSegment(
+    costmap, size_x, size_y,
+    master_grid,
+    walls_buffer_.left_outer,
+    walls_buffer_.perpendiculars,
+    walls_buffer_.tangents,
+    -1);
 
-  for (const auto & pt : walls.right_outer) {
-    geometry_msgs::msg::Point point;
-    point.x = pt[0];
-    point.y = pt[1];
-    point.z = 0.0;
-    right_wall_polygon.push_back(point);
-  }
-
-  for (auto it = walls.right_inner.rbegin(); it != walls.right_inner.rend(); ++it) {
-    geometry_msgs::msg::Point point;
-    point.x = (*it)[0];
-    point.y = (*it)[1];
-    point.z = 0.0;
-    right_wall_polygon.push_back(point);
-  }
-
-  master_grid.setConvexPolygonCost(left_wall_polygon, corridor_cost_);
-  master_grid.setConvexPolygonCost(right_wall_polygon, corridor_cost_);
+  // Draw right wall (perp_sign = +1: thickness goes inward, adding perpendicular)
+  drawWallSegment(
+    costmap, size_x, size_y,
+    master_grid,
+    walls_buffer_.right_outer,
+    walls_buffer_.perpendiculars,
+    walls_buffer_.tangents,
+    +1);
 }
-
 
 rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validateParameterUpdatesCallback
 (
@@ -492,7 +571,7 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validatePara
 
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "look_ahead") {
-        double new_value = parameter.as_double();
+        const double new_value = parameter.as_double();
         if (new_value < 0.0) {
           RCLCPP_WARN(
             logger_, "The value of parameter '%s' is incorrectly set to %f, "
@@ -502,7 +581,7 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validatePara
           result.reason = "look_ahead must be positive";
         }
       } else if (param_name == name_ + "." + "corridor_width") {
-        double new_value = parameter.as_double();
+        const double new_value = parameter.as_double();
         if (new_value <= 0.0) {
           RCLCPP_WARN(
             logger_, "The value of parameter '%s' is incorrectly set to %f, "
@@ -514,7 +593,7 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validatePara
       }
     } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "step") {
-        int new_value = parameter.as_int();
+        const int new_value = parameter.as_int();
         if (new_value <= 0) {
           RCLCPP_WARN(
             logger_, "The value of parameter '%s' is incorrectly set to %d, "
@@ -524,7 +603,7 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validatePara
           result.reason = "step must be greater than zero";
         }
       } else if (param_name == name_ + "." + "corridor_cost") {
-        int new_value = parameter.as_int();
+        const int new_value = parameter.as_int();
         if (new_value <= 0 || new_value > 254) {
           RCLCPP_WARN(
             logger_, "The value of parameter '%s' is incorrectly set to %d, "
@@ -534,7 +613,7 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validatePara
           result.reason = "corridor_cost must be between 1 and 254";
         }
       } else if (param_name == name_ + "." + "wall_thickness") {
-        int new_value = parameter.as_int();
+        const int new_value = parameter.as_int();
         if (new_value <= 0) {
           RCLCPP_WARN(
             logger_, "The value of parameter '%s' is incorrectly set to %d, "
@@ -543,6 +622,16 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validatePara
           result.successful = false;
           result.reason = "wall_thickness must be greater than zero";
         }
+      } else if (param_name == name_ + "." + "path_segment_resolution") {
+        const int new_value = parameter.as_int();
+        if (new_value < 1) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be >= 1. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "path_segment_resolution must be at least 1";
+        }
       }
     }
   }
@@ -550,8 +639,7 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validatePara
   return result;
 }
 
-void
-BoundedTrackingErrorLayer::updateParametersCallback(
+void BoundedTrackingErrorLayer::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::mutex> guard(data_mutex_);
@@ -597,6 +685,11 @@ BoundedTrackingErrorLayer::updateParametersCallback(
         wall_thickness_ != parameter.as_int())
       {
         wall_thickness_ = parameter.as_int();
+        current_ = false;
+      } else if (param_name == name_ + "." + "path_segment_resolution" &&
+        path_segment_resolution_ != parameter.as_int())
+      {
+        path_segment_resolution_ = parameter.as_int();
         current_ = false;
       }
     }
