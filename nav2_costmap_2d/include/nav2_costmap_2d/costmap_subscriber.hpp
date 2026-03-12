@@ -15,9 +15,9 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_SUBSCRIBER_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_SUBSCRIBER_HPP_
 
-#include <string>
-#include <memory>
 #include <atomic>
+#include <memory>
+#include <string>
 
 
 #include "rclcpp/rclcpp.hpp"
