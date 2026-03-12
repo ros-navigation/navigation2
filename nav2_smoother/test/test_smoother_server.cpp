@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <algorithm>
 #include <string>
 #include <memory>
 #include <chrono>
@@ -26,6 +27,7 @@
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
 using SmoothAction = nav2_msgs::action::SmoothPath;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<SmoothAction>;
@@ -144,13 +146,14 @@ public:
 
   void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
   {
-    costmap_msg_ = msg;
-    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
-      msg->metadata.size_x, msg->metadata.size_y,
-      msg->metadata.resolution, msg->metadata.origin.position.x,
-      msg->metadata.origin.position.y);
+    using CostmapAdapter =
+      rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>;
 
-    processCurrentCostmapMsg();
+    auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+    CostmapAdapter::convert_to_custom(
+      *msg, *stamped);
+
+    costmapCallback(*stamped);
   }
 };
 
