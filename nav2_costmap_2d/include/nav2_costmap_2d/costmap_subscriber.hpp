@@ -17,6 +17,8 @@
 
 #include <string>
 #include <memory>
+#include <atomic>
+
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -86,7 +88,7 @@ public:
   }
 
 protected:
-  bool isCostmapReceived() {return costmap_ != nullptr;}
+  bool isCostmapReceived() { std::lock_guard<std::mutex> guard(costmap_msg_mutex_); return costmap_ != nullptr; }
   void processCurrentCostmapMsg();
 
   bool haveCostmapParametersChanged();
