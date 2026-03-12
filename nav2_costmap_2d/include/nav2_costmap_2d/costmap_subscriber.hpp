@@ -15,8 +15,10 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_SUBSCRIBER_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_SUBSCRIBER_HPP_
 
-#include <string>
+#include <atomic>
 #include <memory>
+#include <string>
+
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -86,7 +88,10 @@ public:
   }
 
 protected:
-  bool isCostmapReceived() {return costmap_ != nullptr;}
+  bool isCostmapReceived()
+{
+  std::lock_guard<std::mutex> guard(costmap_msg_mutex_); return costmap_ != nullptr;
+}
   void processCurrentCostmapMsg();
 
   bool haveCostmapParametersChanged();
