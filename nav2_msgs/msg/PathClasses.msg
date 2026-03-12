@@ -1,0 +1,3 @@
+# Classes Enums
+uint16 FREE_SPACE=0
+uint16 CONSTRAINT_SPACE=1

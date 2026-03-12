@@ -32,6 +32,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "visualization_msgs/msg/marker.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -40,6 +41,8 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
+#include "nav2_planner/pose_classifier.hpp"
+#include "nav2_planner/path_splitter.hpp"
 
 namespace nav2_planner
 {
@@ -229,6 +232,20 @@ protected:
   void publishPlan(const nav_msgs::msg::Path & path);
 
   /**
+   * @brief Build MarkerArray of line-strip segments from classified path array.
+   */
+  visualization_msgs::msg::MarkerArray buildSegmentMarkers(
+    const nav2_msgs::msg::ClassifiedPathArray & paths,
+    const std_msgs::msg::Header & header);
+
+  /**
+   * @brief Build MarkerArray of per-pose spheres from raw classified poses.
+   */
+  visualization_msgs::msg::MarkerArray buildRawPoseMarkers(
+    const std::vector<nav2_msgs::msg::ClassifiedPose> & poses,
+    const std_msgs::msg::Header & header);
+
+  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
@@ -262,8 +279,27 @@ protected:
   // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
+  // Marker visualization constants
+  static constexpr const char * kSegmentMarkerNs = "classified_paths";
+  static constexpr const char * kRawPoseMarkerNs = "raw_classified_poses";
+  static constexpr double kSegmentLineWidth = 0.05;
+  static constexpr double kRawPoseSize = 0.06;
+
+  // MarkerArray publishers for classified path visualization (enabled by publish_classified_paths)
+  bool publish_classified_paths_{false};
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    classified_segments_marker_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    raw_classified_poses_marker_pub_;
+
   // Service to deterime if the path is valid
   rclcpp::Service<nav2_msgs::srv::IsPathValid>::SharedPtr is_path_valid_service_;
+
+  // Pose classifier — loads ClassifierBase plugins, dispatches classify() per pose
+  PoseClassifier pose_classifier_;
+
+  // Path splitter — classifies path poses and splits into ClassifiedPathArray segments
+  PathSplitter path_splitter_;
 };
 
 }  // namespace nav2_planner
