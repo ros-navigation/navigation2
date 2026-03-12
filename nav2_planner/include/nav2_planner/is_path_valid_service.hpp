@@ -245,8 +245,18 @@ private:
         costmap_to_check);
     }
 
+    // Determine the end index for validation based on lookahead distance
+    const auto & poses = request->path.poses;
+    unsigned int end_index = poses.size();
+    if (request->max_lookahead_distance > 0.0) {
+      auto end_it = nav2_util::geometry_utils::first_after_integrated_distance(
+        poses.begin() + closest_point_index, poses.end(),
+        request->max_lookahead_distance);
+      end_index = std::distance(poses.begin(), end_it);
+    }
+
     unsigned int cost = nav2_costmap_2d::FREE_SPACE;
-    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
+    for (unsigned int i = closest_point_index; i < end_index; ++i) {
       auto & position = request->path.poses[i].pose.position;
       if (use_radius) {
         if (costmap_to_check->worldToMap(position.x, position.y, mx, my)) {
