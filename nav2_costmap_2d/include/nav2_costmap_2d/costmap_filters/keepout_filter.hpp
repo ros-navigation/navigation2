@@ -42,6 +42,7 @@
 #include <memory>
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
+#include "nav2_util/execution_timer.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
@@ -129,6 +130,10 @@ private:
   unsigned int width_{0};
   unsigned int height_{0};
   bool has_updated_data_{false};
+
+  // Performance timing members
+  nav2_util::ExecutionTimer update_bounds_timer_;
+  nav2_util::ExecutionTimer update_costs_timer_;
 };
 
 }  // namespace nav2_costmap_2d

@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <vector>
+#include <utility>
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -303,6 +304,7 @@ inline double cross_product_2d(
 
   return (path_vec_x * robot_vec_y) - (path_vec_y * robot_vec_x);
 }
+
 
 }  // namespace geometry_utils
 }  // namespace nav2_util
