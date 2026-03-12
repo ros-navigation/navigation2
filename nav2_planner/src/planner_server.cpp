@@ -313,7 +313,8 @@ bool PlannerServer::transformPosesToGlobalFrame(
 }
 
 template<typename T>
-bool PlannerServer::validatePath(
+bool
+PlannerServer::validatePath(
   const geometry_msgs::msg::PoseStamped & goal,
   const nav_msgs::msg::Path & path,
   const std::string & planner_id)
@@ -394,8 +395,9 @@ void PlannerServer::computePlanThroughPoses()
 
       // Get plan from start -> goal
       nav_msgs::msg::Path curr_path;
+      nav_msgs::msg::Goals no_viapoints;
       try {
-        curr_path = getPlan(curr_start, curr_goal, goal->planner_id, cancel_checker);
+        curr_path = getPlan(curr_start, curr_goal, no_viapoints, goal->planner_id, cancel_checker);
       } catch (nav2_core::PlannerException & ex) {
         if (i == 0 || !params_->partial_plan_allowed) {
           throw;
@@ -546,7 +548,7 @@ PlannerServer::computePlan()
         return action_server_pose_->is_cancel_requested();
       };
 
-    result->path = getPlan(start, goal_pose, goal->planner_id, cancel_checker);
+    result->path = getPlan(start, goal_pose, goal->viapoints, goal->planner_id, cancel_checker);
 
     if (!validatePath<ActionThroughPoses>(goal_pose, result->path, goal->planner_id)) {
       throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
@@ -615,6 +617,7 @@ nav_msgs::msg::Path
 PlannerServer::getPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
+  const nav_msgs::msg::Goals & viapoints,
   const std::string & planner_id,
   std::function<bool()> cancel_checker)
 {
@@ -624,14 +627,15 @@ PlannerServer::getPlan(
     goal.pose.position.x, goal.pose.position.y);
 
   if (planners_.find(planner_id) != planners_.end()) {
-    return planners_[planner_id]->createPlan(start, goal, cancel_checker);
+    return planners_[planner_id]->createPlan(start, goal, viapoints, cancel_checker);
   } else {
     if (planners_.size() == 1 && planner_id.empty()) {
       RCLCPP_WARN_ONCE(
         get_logger(), "No planners specified in action call. "
         "Server will use only plugin %s in server."
         " This warning will appear once.", planner_ids_concat_.c_str());
-      return planners_[planners_.begin()->first]->createPlan(start, goal, cancel_checker);
+      return planners_[planners_.begin()->first]->createPlan(start, goal, viapoints,
+        cancel_checker);
     } else {
       RCLCPP_ERROR(
         get_logger(), "planner %s is not a valid planner. "
