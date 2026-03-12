@@ -74,7 +74,7 @@ public:
 
   ceres::CostFunction * AutoDiff()
   {
-    return new ceres::AutoDiffCostFunction<SmootherCostFunction, 4, 2, 2, 2>(this);
+    return new ceres::AutoDiffCostFunction<SmootherCostFunction, 6, 2, 2, 2>(this);
   }
 
   void setCostmapWeight(double costmap_weight)
@@ -103,16 +103,16 @@ public:
     Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi(pt);
     Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi_next(pt_next);
     Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi_prev(pt_prev);
-    Eigen::Map<Eigen::Matrix<T, 4, 1>> residual(pt_residual);
+    Eigen::Map<Eigen::Matrix<T, 6, 1>> residual(pt_residual);
     residual.setZero();
 
     // compute cost
-    addSmoothingResidual<T>(params_.smooth_weight, xi, xi_next, xi_prev, residual[0]);
-    addCurvatureResidual<T>(params_.curvature_weight, xi, xi_next, xi_prev, residual[1]);
+    addSmoothingResidual<T>(params_.smooth_weight, xi, xi_next, xi_prev, residual[0], residual[1]);
+    addCurvatureResidual<T>(params_.curvature_weight, xi, xi_next, xi_prev, residual[2]);
     addDistanceResidual<T>(
       params_.distance_weight, xi,
-      original_pos_.template cast<T>(), residual[2]);
-    addCostResidual<T>(costmap_weight_, xi, xi_next, xi_prev, residual[3]);
+      original_pos_.template cast<T>(), residual[3], residual[4]);
+    addCostResidual<T>(costmap_weight_, xi, xi_next, xi_prev, residual[5]);
 
     return true;
   }
@@ -132,12 +132,13 @@ protected:
     const Eigen::Matrix<T, 2, 1> & pt,
     const Eigen::Matrix<T, 2, 1> & pt_next,
     const Eigen::Matrix<T, 2, 1> & pt_prev,
-    T & r) const
+    T & r1, T & r2) const
   {
     Eigen::Matrix<T, 2, 1> d_next = pt_next - pt;
     Eigen::Matrix<T, 2, 1> d_prev = pt - pt_prev;
     Eigen::Matrix<T, 2, 1> d_diff = next_to_last_length_ratio_ * d_next - d_prev;
-    r += (T)weight * d_diff.dot(d_diff);    // objective function value
+    r1 += (T)std::sqrt(weight) * d_diff(0, 0);    // objective function value
+    r2 += (T)std::sqrt(weight) * d_diff(1, 0);
   }
 
   /**
@@ -170,7 +171,7 @@ protected:
       return;
     }
 
-    r += (T)weight * ki_minus_kmax * ki_minus_kmax;  // objective function value
+    r += (T)std::sqrt(weight) * ki_minus_kmax;  // objective function value
   }
 
   /**
@@ -185,9 +186,11 @@ protected:
     const double & weight,
     const Eigen::Matrix<T, 2, 1> & xi,
     const Eigen::Matrix<T, 2, 1> & xi_original,
-    T & r) const
+    T & r1, T & r2) const
   {
-    r += (T)weight * (xi - xi_original).squaredNorm();  // objective function value
+    Eigen::Matrix<T, 2, 1> diff = xi - xi_original;
+    r1 += (T)std::sqrt(weight) * diff(0, 0);
+    r2 += (T)std::sqrt(weight) * diff(1, 0);
   }
 
   /**
@@ -210,7 +213,7 @@ protected:
         (pt - costmap_origin_.template cast<T>()) / (T)costmap_resolution_;
       T value;
       costmap_interpolator_->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
-      r += (T)weight * value * value;  // objective function value
+      r += (T)std::sqrt(weight) * value;  // objective function value
     } else {
       Eigen::Matrix<T, 2, 1> dir = tangentDir(
         pt_prev, pt, pt_next,
@@ -233,7 +236,7 @@ protected:
         T value;
         costmap_interpolator_->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
 
-        r += (T)weight * (T)params_.cost_check_points[i + 2] * value * value;
+        r += (T)std::sqrt(weight) * (T)std::sqrt(params_.cost_check_points[i + 2]) * value;
       }
     }
   }
