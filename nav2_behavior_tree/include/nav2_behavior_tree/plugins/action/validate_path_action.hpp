@@ -89,6 +89,9 @@ public:
         BT::InputPort<bool>(
         "check_full_path", false,
         "Whether to check all poses (true) or stop at first invalid pose (false)"),
+        BT::InputPort<double>(
+        "max_lookahead_distance", -1.0,
+        "Maximum distance ahead of the robot to validate (-1 = full path)"),
         BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
         "collision_poses",
         "Poses in the path that are in collision")
@@ -101,6 +104,7 @@ private:
   std::string layer_name_;
   std::string footprint_;
   bool check_full_path_;
+  double max_lookahead_distance_;
   nav_msgs::msg::Path path_;
 };
 
