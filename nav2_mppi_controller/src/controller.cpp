@@ -47,7 +47,7 @@ void MPPIController::configure(
     costmap_ros_->getGlobalFrameID(), parameters_handler_.get());
 
   if (publish_optimal_trajectory_) {
-    opt_traj_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
+    opt_traj_pub_ = node->create_publisher<nav_msgs::msg::Trajectory>(
       "~/optimal_trajectory");
   }
 
