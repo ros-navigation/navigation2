@@ -82,7 +82,7 @@ InflationLayer::onInitialize()
       name_ + "." + "num_threads", -1);
   }
 
-  current_ = true;
+  setCurrent(true);
   need_reinflation_ = false;
   matchSize();
 }
@@ -322,7 +322,7 @@ InflationLayer::updateCosts(
     min_i, min_j, max_i, max_j,
     roi_min_i, roi_min_j, size_x);
 
-  current_ = true;
+  setCurrent(true);
 }
 
 
@@ -390,14 +390,14 @@ InflationLayer::updateParametersCallback(
         inflation_radius_ = parameter.as_double();
         need_reinflation_ = true;
         need_cache_recompute = true;
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "cost_scaling_factor" && // NOLINT
         getCostScalingFactor() != parameter.as_double())
       {
         cost_scaling_factor_ = parameter.as_double();
         need_reinflation_ = true;
         need_cache_recompute = true;
-        current_ = false;
+        setCurrent(false);
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "num_threads" && // NOLINT
@@ -438,19 +438,19 @@ InflationLayer::updateParametersCallback(
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
         need_reinflation_ = true;
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "inflate_unknown" && // NOLINT
         inflate_unknown_ != parameter.as_bool())
       {
         inflate_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "inflate_around_unknown" && // NOLINT
         inflate_around_unknown_ != parameter.as_bool())
       {
         inflate_around_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
-        current_ = false;
+        setCurrent(false);
       }
     }
   }

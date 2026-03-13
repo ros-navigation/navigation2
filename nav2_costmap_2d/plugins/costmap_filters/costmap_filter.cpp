@@ -104,7 +104,7 @@ void CostmapFilter::reset()
 {
   resetFilter();
   initializeFilter(filter_info_topic_);
-  current_ = false;
+  setCurrent(false);
 }
 
 void CostmapFilter::updateBounds(
@@ -130,7 +130,7 @@ void CostmapFilter::updateCosts(
   }
 
   process(master_grid, min_i, min_j, max_i, max_j, latest_pose_);
-  current_ = true;
+  setCurrent(true);
 }
 
 void CostmapFilter::enableCallback(

@@ -53,7 +53,7 @@ void PluginContainerLayer::onInitialize()
   default_value_ = nav2_costmap_2d::NO_INFORMATION;
 
   PluginContainerLayer::matchSize();
-  current_ = true;
+  setCurrent(true);
 }
 
 void PluginContainerLayer::addPlugin(std::shared_ptr<Layer> plugin, std::string layer_name)
@@ -111,7 +111,7 @@ void PluginContainerLayer::updateCosts(
       break;
   }
 
-  current_ = true;
+  setCurrent(true);
 }
 
 void PluginContainerLayer::activate()
@@ -160,7 +160,7 @@ void PluginContainerLayer::reset()
     (*plugin)->reset();
   }
   resetMaps();
-  current_ = false;
+  setCurrent(false);
 }
 
 void PluginContainerLayer::onFootprintChanged()
@@ -239,7 +239,7 @@ void PluginContainerLayer::updateParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
-        current_ = false;
+        setCurrent(false);
       }
     }
   }
