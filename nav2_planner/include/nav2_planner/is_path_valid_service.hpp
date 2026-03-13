@@ -37,7 +37,7 @@ namespace nav2_planner
  * @class nav2_planner::IsPathValidService
  * @brief Service to determine if a path is still valid given the current costmap state
  */
-class IsPathValidService
+class IsPathValidService : public nav2::ServiceServer<nav2_msgs::srv::IsPathValid>
 {
 public:
   /**
@@ -50,37 +50,17 @@ public:
     nav2::LifecycleNode::WeakPtr node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const rclcpp::Duration & costmap_update_timeout)
-  : node_(node), costmap_ros_(costmap_ros), logger_(rclcpp::get_logger("is_path_valid_service")),
-    costmap_update_timeout_(costmap_update_timeout)
-  {
-  }
-
-  /**
-   * @brief Initialize the service
-   */
-  void initialize()
-  {
-    auto node = node_.lock();
-    if (!node) {
-      throw std::runtime_error("Failed to lock node in initialize");
-    }
-
-    costmap_ = costmap_ros_->getCostmap();
-
-    service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
+  : nav2::ServiceServer<nav2_msgs::srv::IsPathValid>(
       "is_path_valid",
-      std::bind(
-        &IsPathValidService::callback, this,
-        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  }
-
-  /**
-   * @brief Reset the service
-   */
-  void reset()
+      node.lock(),
+      std::bind(&IsPathValidService::callback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+  ),
+    costmap_ros_(costmap_ros),
+    costmap_update_timeout_(costmap_update_timeout),
+    logger_(node.lock()->get_logger())
   {
-    service_.reset();
-    costmap_ = nullptr;
+    costmap_ = costmap_ros_->getCostmap();
   }
 
 private:
@@ -285,12 +265,10 @@ private:
     }
   }
 
-  nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
-  rclcpp::Logger logger_;
   rclcpp::Duration costmap_update_timeout_;
-  nav2::ServiceServer<nav2_msgs::srv::IsPathValid>::SharedPtr service_;
+  rclcpp::Logger logger_;
 };
 
 }  // namespace nav2_planner

@@ -28,6 +28,7 @@
 #include "nav2_ros_common/action_client.hpp"
 #include "rclcpp_action/client.hpp"
 
+
 namespace nav2
 {
 
@@ -279,8 +280,16 @@ typename nav2::ServiceServer<SrvT>::SharedPtr create_service(
         std::shared_ptr<Response>)>;
   CallbackFn cb = std::forward<CallbackT>(callback);
 
-  return std::make_shared<nav2::ServiceServer<SrvT>>(
+  auto srv = std::make_shared<nav2::ServiceServer<SrvT>>(
     service_name, node, cb, callback_group);
+
+  // Register the service as  managed entity
+  auto lifecycle_node = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
+  if (!lifecycle_node) {
+    srv->on_activate();
+  }
+
+  return srv;
 }
 
 /**

@@ -57,6 +57,16 @@ public:
   ~ClearCostmapService();
 
   /**
+   * @brief Activate the clear costmap services
+   */
+  void on_activate();
+
+  /**
+   * @brief Deactivate the clear costmap services
+   */
+  void on_deactivate();
+
+  /**
    * @brief Clears the region outside of a user-specified area reverting to the static map
    */
   void clearRegion(double reset_distance, bool invert);

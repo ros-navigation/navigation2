@@ -134,6 +134,8 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Activating main worker
   process_active_ = true;
 
+  toggle_cm_service_->on_activate();
+
   // Creating bond connection
   createBond();
 
@@ -144,6 +146,7 @@ nav2::CallbackReturn
 CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+  toggle_cm_service_->on_deactivate();
 
   // Deactivating main worker
   process_active_ = false;
