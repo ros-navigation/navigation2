@@ -206,13 +206,10 @@ void TrajectoryVisualizer::visualize(
   header.stamp = stamp;
   header.frame_id = costmap_ros->getGlobalFrameID();
 
-  // Visualize trajectories with total costs
-  if (publish_trajectories_with_total_cost_) {
-    add(candidate_trajectories, costs, {}, stamp);
-  }
-
-  // Visualize trajectories with individual critic costs
-  if (publish_trajectories_with_individual_cost_ && !critic_costs.empty()) {
+  // Visualize candidate trajectories (total and/or individual critic costs)
+  if (publish_trajectories_with_total_cost_ ||
+    (publish_trajectories_with_individual_cost_ && !critic_costs.empty()))
+  {
     add(candidate_trajectories, costs, critic_costs, stamp);
   }
 

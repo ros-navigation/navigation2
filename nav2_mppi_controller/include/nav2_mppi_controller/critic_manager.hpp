@@ -22,12 +22,12 @@
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
-#include "nav2_msgs/msg/critics_stats.hpp"
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
+#include "nav2_mppi_controller/tools/critics_visualizer.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 #include "nav2_mppi_controller/critic_data.hpp"
 #include "nav2_mppi_controller/critic_function.hpp"
@@ -97,9 +97,7 @@ protected:
   std::unique_ptr<pluginlib::ClassLoader<critics::CriticFunction>> loader_;
   Critics critics_;
 
-  nav2::Publisher<nav2_msgs::msg::CriticsStats>::SharedPtr critics_effect_pub_;
-  bool publish_critics_stats_;
-  bool visualize_per_critic_costs_;
+  mutable CriticsVisualizer critics_visualizer_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
