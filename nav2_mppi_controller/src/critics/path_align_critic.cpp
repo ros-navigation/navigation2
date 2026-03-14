@@ -30,6 +30,7 @@ void PathAlignCritic::initialize()
     threshold_to_consider_,
     "threshold_to_consider", 0.5f);
   getParam(use_path_orientations_, "use_path_orientations", false);
+  initDebugPosePublisher("furthest_reached_path_point");
 
   RCLCPP_INFO(
     logger_,
@@ -48,6 +49,13 @@ void PathAlignCritic::score(CriticData & data)
   // Up to furthest only, closest path point is always 0 from path handler
   const size_t path_segments_count = *data.furthest_reached_path_point;
   float path_segments_flt = static_cast<float>(path_segments_count);
+
+  if (path_segments_count > 0) {
+    publishDebugPose(
+      data.path.x(path_segments_count), data.path.y(path_segments_count),
+      data.path.yaws(path_segments_count));
+  }
+
   if (path_segments_count < offset_from_furthest_) {
     return;
   }

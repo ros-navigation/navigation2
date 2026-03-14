@@ -55,18 +55,25 @@ This process is then repeated a number of times and returns a converged solution
  | wz_max                     | double | Default 1.9. Max WZ (rad/s)                                                                              |
  | temperature                | double | Default: 0.3. Selectiveness of trajectories by their costs (The closer this value to 0, the "more" we take in consideration controls with less cost), 0 mean use control with best cost, huge value will lead to just taking mean of all trajectories without cost consideration                                                   |
  | gamma                      | double | Default: 0.015. A trade-off between smoothness (high) and low energy (low). This is a complex parameter that likely won't need to be changed from the default of `0.1` which works well for a broad range of cases. See Section 3D-2 in "Information Theoretic Model Predictive Control: Theory and Applications to Autonomous Driving" for detailed information.       |
- | visualize                  | bool   | Default: false. Publish visualization of trajectories, which can slow down the controller significantly. Use only for debugging.                                                                                                                                       |
  | retry_attempt_limit        | int    | Default 1. Number of attempts to find feasible trajectory on failure for soft-resets before reporting failure.                                                                                                                                                                                                       |
  | regenerate_noises          | bool   | Default false. Whether to regenerate noises each iteration or use single noise distribution computed on initialization and reset. Practically, this is found to work fine since the trajectories are being sampled stochastically from a normal distribution and reduces compute jittering at run-time due to thread wake-ups to resample normal distribution. |
- | publish_optimal_trajectory | bool   | Publishes the full optimal trajectory sequence each control iteration for downstream  control systems, collision checkers, etc to have context beyond the next timestep. |
- | publish_critics_stats      | bool   | Default false. Whether to publish statistics about each critic's performance. When enabled, publishes a `nav2_msgs::msg::CriticsStats` message containing critic names, whether they changed costs, and the sum of costs added by each critic. Useful for debugging and tuning critic behavior. |
  | open_loop        | bool    | Default false. Useful when using low accelerations and when wheel odometry's latency causes issues in initial state estimation. |
 
-#### Trajectory Visualizer
- | Parameter             | Type   | Definition                                                                                                  |
- | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
- | trajectory_step       | int    | Default: 5. The step between trajectories to visualize to downsample candidate trajectory pool.             |
- | time_step             | int    | Default: 3. The step between points on trajectories to visualize to downsample trajectory density.          |
+#### Visualization
+
+All visualization parameters live under the `<controller>.Visualization` namespace (e.g. `FollowPath.Visualization.publish_optimal_path`).
+
+ | Parameter                                  | Type   | Definition                                                                                                  |
+ | ------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | trajectory_step                            | int    | Default 5. The step between trajectories to visualize to downsample candidate trajectory pool.              |
+ | time_step                                  | int    | Default 3. The step between points on trajectories to visualize to downsample trajectory density.           |
+ | footprint_downsample_factor                | int    | Default 3. Downsample factor for footprint visualization along the optimal trajectory. Minimum 1.           |
+ | publish_optimal_path                       | bool   | Default false. Publish the optimal trajectory as a `nav_msgs/Path` message.                                 |
+ | publish_optimal_footprints                 | bool   | Default false. Publish the robot footprint along the optimal trajectory as a `MarkerArray`.                  |
+ | publish_optimal_trajectory_msg             | bool   | Default false. Publish the full optimal trajectory sequence as a `nav2_msgs/Trajectory` for downstream control systems, collision checkers, etc. to have context beyond the next timestep. |
+ | publish_trajectories_with_total_cost       | bool   | Default false. Publish candidate trajectories colored by total cost. Useful for debugging but adds compute overhead. |
+ | publish_trajectories_with_individual_cost  | bool   | Default false. Publish candidate trajectories colored by each critic's individual cost contribution.        |
+ | publish_critics_stats                      | bool   | Default false. Publish statistics about each critic's performance as a `nav2_msgs/CriticsStats` message containing critic names, discriminating power (std dev), and influence ratios. Useful for debugging and tuning. |
 
 #### Ackermann Motion Model
  | Parameter            | Type   | Definition                                                                                                  |
@@ -199,10 +206,16 @@ controller_server:
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"
-      visualize: false
-      TrajectoryVisualizer:
+      Visualization:
+        publish_critics_stats: false
+        publish_optimal_trajectory_msg: false
+        publish_trajectories_with_total_cost: false
+        publish_trajectories_with_individual_cost: false
+        publish_optimal_footprints: false
+        publish_optimal_path: false
         trajectory_step: 5
         time_step: 3
+        footprint_downsample_factor: 3
       AckermannConstraints:
         min_turning_r: 0.2
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
@@ -290,7 +303,7 @@ controller_server:
 
 The `model_dt` parameter generally should be set to the duration of your control frequency. So if your control frequency is 20hz, this should be `0.05`. However, you may also set it lower **but not larger**.
 
-Visualization of the trajectories using `visualize` uses compute resources to back out trajectories for visualization and therefore slows compute time. It is not suggested that this parameter is set to `true` during a deployed use, but is a useful debug instrument while tuning the system, but use sparingly. Visualizing 2000 batches @ 56 points at 30 hz is _a lot_.
+Visualization of trajectories (via `Visualization.publish_trajectories_with_total_cost` or `publish_trajectories_with_individual_cost`) uses compute resources to back out trajectories for visualization and therefore slows compute time. It is not suggested that these parameters are set to `true` during a deployed use, but they are useful debug instruments while tuning the system — use sparingly. Visualizing 2000 batches @ 56 points at 30 hz is _a lot_.
 
 The most common parameters you might want to start off changing are the velocity profiles (`vx_max`, `vx_min`, `wz_max`, and `vy_max` if holonomic) and the `motion_model` to correspond to your vehicle. Its wise to consider the `prune_distance` of the path plan in proportion to your maximum velocity and prediction horizon. The only deeper parameter that will likely need to be adjusted for your particular settings is the Obstacle critics' `repulsion_weight` since the tuning of this is proportional to your inflation layer's radius. Higher radii should correspond to reduced `repulsion_weight` due to the penalty formation (e.g. `inflation_radius - min_dist_to_obstacle`). If this penalty is too high, the robot will slow significantly when entering cost-space from non-cost space or jitter in narrow corridors. It is noteworthy, but likely not necessary to be changed, that the Obstacle critic may use the full footprint information if `consider_footprint = true`, though comes at an increased compute cost.
 
@@ -326,8 +339,9 @@ The published `nav2_msgs::msg::CriticsStats` message contains the following fiel
 
 - **stamp**: Timestamp of when the statistics were computed
 - **critics**: Array of critic names that were evaluated (e.g., "ConstraintCritic", "GoalCritic", "ObstaclesCritic")
-- **changed**: Boolean array indicating whether each critic modified the trajectory costs. `true` means the critic added non-zero costs, `false` means it had no effect
-- **costs_sum**: Array of the total cost contribution from each critic. This represents the sum of all costs added by that specific critic across all trajectory candidates
+- **changed**: Boolean array indicating whether each critic discriminates between trajectories. `true` means the critic's cost standard deviation across viable trajectories exceeds a threshold, `false` means that critic has negligible discriminating power
+- **costs_std_dev**: Array of the standard deviation of costs from each critic across all trajectory candidates. Higher values indicate the critic is strongly discriminating between trajectories
+- **influence_ratio**: Fraction of total discriminating power per critic ($\sigma_k / \sum \sigma_j$). Values sum to 1.0. A critic at 0.6 means it accounts for 60% of trajectory selection influence
 
 This data is invaluable for understanding:
 - Which critics are actively influencing trajectory selection

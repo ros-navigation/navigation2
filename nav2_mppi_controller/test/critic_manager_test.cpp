@@ -43,8 +43,10 @@ public:
   virtual void loadCritics()
   {
     critics_.clear();
+    critic_names_.clear();
     auto instance = std::unique_ptr<critics::CriticFunction>(new DummyCritic);
     critics_.push_back(std::move(instance));
+    critic_names_.push_back("DummyCritic");
     critics_.back()->on_configure(
       parent_, name_, name_ + "." + "DummyCritic", costmap_ros_,
       parameters_handler_);
@@ -114,8 +116,9 @@ TEST(CriticManagerTests, BasicCriticOperations)
   Eigen::ArrayXf costs;
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};
+  {state, generated_trajectories, path, goal, costs, std::nullopt, model_dt, false, nullptr,
+    nullptr,
+    std::nullopt, std::nullopt, std::nullopt};
 
   data.fail_flag = true;
   EXPECT_FALSE(critic_manager.getDummyCriticScored());
@@ -144,6 +147,44 @@ TEST(CriticManagerTests, CriticLoadingTest)
   CriticManagerWrapperEnum critic_manager;
   critic_manager.on_configure(node, "critic_manager", costmap_ros, &param_handler);
   EXPECT_EQ(critic_manager.getCriticNum(), 2u);
+}
+
+TEST(CriticManagerTests, PerCriticCostVisualization)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+
+  // Enable per-critic cost visualization
+  node->declare_parameter(
+    "critic_manager.Visualization.publish_trajectories_with_individual_cost",
+    rclcpp::ParameterValue(true));
+
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  CriticManagerWrapper critic_manager;
+  critic_manager.on_configure(node, "critic_manager", costmap_ros, &param_handler);
+
+  models::State state;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(10);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, std::nullopt, model_dt, false, nullptr,
+    nullptr,
+    std::nullopt, std::nullopt, std::nullopt};
+
+  critic_manager.evalTrajectoriesScores(data);
+
+  // individual_critics_cost should be populated with one entry (DummyCritic)
+  EXPECT_TRUE(data.individual_critics_cost.has_value());
+  EXPECT_EQ(data.individual_critics_cost->size(), 1u);
+  EXPECT_EQ(data.individual_critics_cost->at(0).first, "DummyCritic");
 }
 
 int main(int argc, char ** argv)

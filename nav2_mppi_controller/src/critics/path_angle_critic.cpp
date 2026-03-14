@@ -41,7 +41,6 @@ void PathAngleCritic::initialize()
   getParam(
     max_angle_to_furthest_,
     "max_angle_to_furthest", 0.785398f);
-
   int mode = 0;
   getParam(mode, "mode", mode);
   mode_ = static_cast<PathAngleMode>(mode);
@@ -52,6 +51,8 @@ void PathAngleCritic::initialize()
       "Path angle mode set to no directional preference, but controller's settings "
       "don't allow for reversing! Setting mode to forward preference.");
   }
+
+  initDebugPosePublisher("furthest_reached_path_point");
 
   RCLCPP_INFO(
     logger_,
@@ -74,6 +75,8 @@ void PathAngleCritic::score(CriticData & data)
   const float goal_y = data.path.y(offsetted_idx);
   const float goal_yaw = data.path.yaws(offsetted_idx);
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
+
+  publishDebugPose(goal_x, goal_y, goal_yaw);
 
   switch (mode_) {
     case PathAngleMode::FORWARD_PREFERENCE:

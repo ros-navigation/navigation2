@@ -41,8 +41,12 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_core/goal_checker.hpp"
 
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
+
 #include "nav2_mppi_controller/models/optimizer_settings.hpp"
 #include "nav2_mppi_controller/models/control_sequence.hpp"
+#include "nav2_mppi_controller/models/trajectories.hpp"
 #include "nav2_mppi_controller/models/path.hpp"
 #include "builtin_interfaces/msg/time.hpp"
 #include "nav2_mppi_controller/critic_data.hpp"
@@ -631,6 +635,177 @@ inline float clamp(
   const float lower_bound, const float upper_bound, const float input)
 {
   return std::min(upper_bound, std::max(input, lower_bound));
+}
+
+/**
+ * @brief Create trajectory markers with cost-based coloring
+ * @param trajectories Set of trajectories to visualize
+ * @param costs Cost array for each trajectory
+ * @param ns Namespace for the markers
+ * @param cmd_stamp Timestamp for the markers
+ * @param frame_id Reference frame
+ * @param trajectory_step Step size between trajectories
+ * @param time_step Step size between time points
+ * @param marker_id Marker ID counter (incremented in place)
+ * @param points MarkerArray to append markers to
+ */
+inline void createTrajectoryMarkers(
+  const models::Trajectories & trajectories,
+  const Eigen::ArrayXf & costs,
+  const std::string & ns,
+  const builtin_interfaces::msg::Time & cmd_stamp,
+  const std::string & frame_id,
+  size_t trajectory_step,
+  size_t time_step,
+  int & marker_id,
+  visualization_msgs::msg::MarkerArray & points)
+{
+  size_t n_rows = trajectories.x.rows();
+  size_t n_cols = trajectories.x.cols();
+
+  // Find min/max cost for normalization
+  float min_cost = costs.minCoeff();
+  float max_cost = costs.maxCoeff();
+
+  float cost_range = max_cost - min_cost;
+
+  // Avoid division by zero
+  if (cost_range < 1e-6f) {
+    cost_range = 1.0f;
+  }
+
+  Eigen::ArrayXf normalized_costs = ((costs - min_cost) / cost_range).cwiseMax(0.0f).cwiseMin(1.0f);
+
+  for (size_t i = 0; i < n_rows; i += trajectory_step) {
+    float red_component, green_component, blue_component;
+
+    // Check if cost is zero (no contribution from this critic)
+    bool zero_cost = std::abs(costs(i)) < 1e-6f;
+
+    if (zero_cost) {
+      // Gray color for zero cost (no contribution)
+      red_component = 0.5f;
+      green_component = 0.5f;
+      blue_component = 0.5f;
+    } else {
+      // Normal gradient for trajectories
+      float normalized_cost = normalized_costs(i);
+
+      // Color scheme: Green (low cost) -> Yellow -> Red (high cost)
+      blue_component = 0.0f;
+      if (normalized_cost < 0.5f) {
+        // Green to Yellow (0.0 - 0.5)
+        red_component = normalized_cost * 2.0f;
+        green_component = 1.0f;
+      } else {
+        // Yellow to Red (0.5 - 1.0)
+        red_component = 1.0f;
+        green_component = 2.0f * (1.0f - normalized_cost);
+      }
+    }
+
+    // Create line strip marker for this trajectory
+    visualization_msgs::msg::Marker marker;
+    marker.header.frame_id = frame_id;
+    marker.header.stamp = cmd_stamp;
+    marker.ns = ns;
+    marker.id = marker_id++;
+    marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.01;  // Line width
+    marker.color.r = red_component;
+    marker.color.g = green_component;
+    marker.color.b = blue_component;
+    marker.color.a = 1.0;
+
+    // Add all points in this trajectory to the line strip
+    for (size_t j = 0; j < n_cols; j += time_step) {
+      geometry_msgs::msg::Point point;
+      point.x = trajectories.x(i, j);
+      point.y = trajectories.y(i, j);
+      point.z = 0.0f;
+      marker.points.push_back(point);
+    }
+
+    points.markers.push_back(marker);
+  }
+}
+
+/**
+ * @brief Create footprint markers from trajectory
+ * @param trajectory Optimal trajectory
+ * @param header Message header
+ * @param costmap_ros Costmap ROS pointer for footprint and frame information
+ * @param footprint_downsample_factor Downsample factor for footprint visualization
+ * @return MarkerArray containing footprint polygons
+ */
+inline visualization_msgs::msg::MarkerArray createFootprintMarkers(
+  const Eigen::ArrayXXf & trajectory,
+  const std_msgs::msg::Header & header,
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
+  int footprint_downsample_factor)
+{
+  visualization_msgs::msg::MarkerArray marker_array;
+  if (trajectory.rows() == 0) {
+    return marker_array;
+  }
+
+  // Get robot footprint
+  std::vector<geometry_msgs::msg::Point> robot_footprint =
+    costmap_ros->getRobotFootprint();
+
+  // Skip if footprint is empty or very small
+  if (robot_footprint.size() < 3) {
+    return marker_array;
+  }
+
+  // Create header for markers
+  std_msgs::msg::Header costmap_header;
+  costmap_header.frame_id = costmap_ros->getGlobalFrameID();
+  costmap_header.stamp = header.stamp;
+
+  int marker_id = 0;
+  for (int i = 0; i < trajectory.rows(); i += footprint_downsample_factor) {
+    double x = trajectory(i, 0);
+    double y = trajectory(i, 1);
+    double theta = trajectory(i, 2);
+
+    // Create oriented footprint
+    geometry_msgs::msg::PolygonStamped oriented_footprint;
+    oriented_footprint.header = costmap_header;
+    nav2_costmap_2d::transformFootprint(x, y, theta, robot_footprint, oriented_footprint);
+    // Create marker for this footprint
+    visualization_msgs::msg::Marker marker;
+    marker.header = costmap_header;
+    marker.ns = "optimal_footprints";
+    marker.id = marker_id++;
+    marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.pose.orientation.w = 1.0;
+    // Set marker scale and color
+    marker.scale.x = 0.02;  // Line width
+    marker.color.r = 0.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+    marker.color.a = 0.8;
+    // Add footprint points to marker
+    for (const auto & point : oriented_footprint.polygon.points) {
+      geometry_msgs::msg::Point p;
+      p.x = point.x;
+      p.y = point.y;
+      p.z = 0.0;
+      marker.points.push_back(p);
+    }
+    // Close the polygon by adding the first point again
+    if (!marker.points.empty()) {
+      marker.points.push_back(marker.points[0]);
+    }
+
+    marker_array.markers.push_back(marker);
+  }
+
+  return marker_array;
 }
 
 }  // namespace mppi::utils

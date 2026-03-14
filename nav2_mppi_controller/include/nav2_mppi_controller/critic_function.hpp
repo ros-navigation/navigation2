@@ -15,11 +15,15 @@
 #ifndef NAV2_MPPI_CONTROLLER__CRITIC_FUNCTION_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITIC_FUNCTION_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
+#include <utility>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "nav2_ros_common/publisher.hpp"
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/critic_data.hpp"
@@ -70,7 +74,9 @@ public:
     ParametersHandler * param_handler)
   {
     parent_ = parent;
-    logger_ = parent_.lock()->get_logger();
+    auto node = parent_.lock();
+    logger_ = node->get_logger();
+    clock_ = node->get_clock();
     name_ = name;
     parent_name_ = parent_name;
     costmap_ros_ = costmap_ros;
@@ -103,6 +109,55 @@ public:
   }
 
 protected:
+  /**
+    * @brief Initialize a debug pose publisher for this critic
+    * @param topic Topic name suffix (e.g. "furthest_reached_path_point")
+    */
+  void initDebugPosePublisher(const std::string & topic)
+  {
+    auto getParam = parameters_handler_->getParamGetter(name_);
+    getParam(debug_visualizations_, "debug_visualizations", false);
+    if (debug_visualizations_) {
+      auto node = parent_.lock();
+      if (node) {
+        // Extract short critic name from full namespaced name
+        // e.g. "ctrl.PathAngleCritic" -> "PathAngleCritic"
+        std::string short_name = name_;
+        auto pos = short_name.rfind('.');
+        if (pos != std::string::npos) {
+          short_name = short_name.substr(pos + 1);
+        }
+        debug_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+          short_name + "/" + topic, 1);
+        debug_pose_pub_->on_activate();
+      }
+    }
+  }
+
+  /**
+    * @brief Publish a debug pose if visualization is enabled and there are subscribers
+    * @param x X position
+    * @param y Y position
+    * @param yaw Yaw orientation
+    */
+  void publishDebugPose(float x, float y, float yaw)
+  {
+    if (debug_visualizations_ && debug_pose_pub_ &&
+      debug_pose_pub_->get_subscription_count() > 0)
+    {
+      auto msg = std::make_unique<geometry_msgs::msg::PoseStamped>();
+      msg->header.frame_id = costmap_ros_->getGlobalFrameID();
+      msg->header.stamp = clock_->now();
+      msg->pose.position.x = x;
+      msg->pose.position.y = y;
+      msg->pose.position.z = 0.0;
+      tf2::Quaternion quat;
+      quat.setRPY(0.0, 0.0, yaw);
+      msg->pose.orientation = tf2::toMsg(quat);
+      debug_pose_pub_->publish(std::move(msg));
+    }
+  }
+
   bool enabled_;
   std::string name_, parent_name_;
   nav2::LifecycleNode::WeakPtr parent_;
@@ -111,6 +166,10 @@ protected:
 
   ParametersHandler * parameters_handler_;
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
+  rclcpp::Clock::SharedPtr clock_;
+
+  bool debug_visualizations_{false};
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr debug_pose_pub_;
 };
 
 }  // namespace mppi::critics

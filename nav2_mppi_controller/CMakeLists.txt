@@ -42,6 +42,7 @@ endif()
 add_library(mppi_controller SHARED
   src/controller.cpp
   src/critic_manager.cpp
+  src/critics_visualizer.cpp
   src/noise_generator.cpp
   src/optimizer.cpp
   src/parameters_handler.cpp

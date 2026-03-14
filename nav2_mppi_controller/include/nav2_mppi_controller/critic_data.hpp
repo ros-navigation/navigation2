@@ -18,6 +18,8 @@
 #include <Eigen/Dense>
 
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -44,6 +46,7 @@ struct CriticData
   const geometry_msgs::msg::Pose & goal;
 
   Eigen::ArrayXf & costs;
+  std::optional<std::vector<std::pair<std::string, Eigen::ArrayXf>>> individual_critics_cost;
   float & model_dt;
 
   bool fail_flag;
@@ -51,6 +54,7 @@ struct CriticData
   std::shared_ptr<MotionModel> motion_model;
   std::optional<std::vector<bool>> path_pts_valid;
   std::optional<size_t> furthest_reached_path_point;
+  std::optional<Eigen::Array<bool, Eigen::Dynamic, 1>> trajectory_collisions;
 };
 
 }  // namespace mppi

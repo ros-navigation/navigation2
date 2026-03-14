@@ -29,6 +29,7 @@ void PathFollowCritic::initialize()
   getParam(offset_from_furthest_, "offset_from_furthest", 6);
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 5.0f);
+  initDebugPosePublisher("furthest_reached_path_point");
 }
 
 void PathFollowCritic::score(CriticData & data)
@@ -60,6 +61,7 @@ void PathFollowCritic::score(CriticData & data)
 
   const auto path_x = data.path.x(offsetted_idx);
   const auto path_y = data.path.y(offsetted_idx);
+  publishDebugPose(path_x, path_y, data.path.yaws(offsetted_idx));
 
   const int && rightmost_idx = data.trajectories.x.cols() - 1;
   const auto last_x = data.trajectories.x.col(rightmost_idx);

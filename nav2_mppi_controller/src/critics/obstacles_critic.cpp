@@ -137,6 +137,12 @@ void ObstaclesCritic::score(CriticData & data)
   Eigen::ArrayXf raw_cost = Eigen::ArrayXf::Zero(data.costs.size());
   Eigen::ArrayXf repulsive_cost = Eigen::ArrayXf::Zero(data.costs.size());
 
+  // Initialize collision mask (only if not already set by another critic)
+  if (!data.trajectory_collisions) {
+    data.trajectory_collisions = Eigen::Array<bool, Eigen::Dynamic, 1>(data.costs.rows());
+    data.trajectory_collisions->setConstant(false);
+  }
+
   const unsigned int traj_len = data.trajectories.x.cols();
   const unsigned int batch_size = data.trajectories.x.rows();
   bool all_trajectories_collide = true;
@@ -155,6 +161,7 @@ void ObstaclesCritic::score(CriticData & data)
 
       if (inCollision(pose_cost.cost)) {
         trajectory_collide = true;
+        (*data.trajectory_collisions)(i) = true;
         break;
       }
 
