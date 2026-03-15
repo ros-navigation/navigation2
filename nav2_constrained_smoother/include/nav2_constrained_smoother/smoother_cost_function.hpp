@@ -60,12 +60,12 @@ public:
     const std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<unsigned char>>> &
     costmap_interpolator,
     const SmootherParams & params,
-    double costmap_weight)
+    double costmap_weight_sqrt)
   : original_pos_(original_pos),
     next_to_last_length_ratio_(next_to_last_length_ratio),
     reversing_(reversing),
     params_(params),
-    costmap_weight_(costmap_weight),
+    costmap_weight_sqrt_(costmap_weight_sqrt),
     costmap_origin_(costmap->getOriginX(), costmap->getOriginY()),
     costmap_resolution_(costmap->getResolution()),
     costmap_interpolator_(costmap_interpolator)
@@ -77,14 +77,14 @@ public:
     return new ceres::AutoDiffCostFunction<SmootherCostFunction, 6, 2, 2, 2>(this);
   }
 
-  void setCostmapWeight(double costmap_weight)
+  void setCostmapWeightSqrt(double costmap_weight_sqrt)
   {
-    costmap_weight_ = costmap_weight;
+    costmap_weight_sqrt_ = costmap_weight_sqrt;
   }
 
-  double getCostmapWeight()
+  double getCostmapWeightSqrt()
   {
-    return costmap_weight_;
+    return costmap_weight_sqrt_;
   }
 
   /**
@@ -107,12 +107,14 @@ public:
     residual.setZero();
 
     // compute cost
-    addSmoothingResidual<T>(params_.smooth_weight, xi, xi_next, xi_prev, residual[0], residual[1]);
-    addCurvatureResidual<T>(params_.curvature_weight, xi, xi_next, xi_prev, residual[2]);
+    addSmoothingResidual<T>(
+      params_.smooth_weight_sqrt, xi, xi_next, xi_prev, residual[0],
+      residual[1]);
+    addCurvatureResidual<T>(params_.curvature_weight_sqrt, xi, xi_next, xi_prev, residual[2]);
     addDistanceResidual<T>(
-      params_.distance_weight, xi,
+      params_.distance_weight_sqrt, xi,
       original_pos_.template cast<T>(), residual[3], residual[4]);
-    addCostResidual<T>(costmap_weight_, xi, xi_next, xi_prev, residual[5]);
+    addCostResidual<T>(costmap_weight_sqrt_, xi, xi_next, xi_prev, residual[5]);
 
     return true;
   }
@@ -120,7 +122,7 @@ public:
 protected:
   /**
    * @brief Cost function term for smooth paths
-   * @param weight Weight to apply to function
+   * @param weight_sqrt Sqrt of weight to apply to function
    * @param pt Point Xi for evaluation
    * @param pt_next Point Xi+1 for calculating Xi's cost
    * @param pt_prev Point Xi-1 for calculating Xi's cost
@@ -128,7 +130,7 @@ protected:
    */
   template<typename T>
   inline void addSmoothingResidual(
-    const double & weight,
+    const double & weight_sqrt,
     const Eigen::Matrix<T, 2, 1> & pt,
     const Eigen::Matrix<T, 2, 1> & pt_next,
     const Eigen::Matrix<T, 2, 1> & pt_prev,
@@ -137,13 +139,13 @@ protected:
     Eigen::Matrix<T, 2, 1> d_next = pt_next - pt;
     Eigen::Matrix<T, 2, 1> d_prev = pt - pt_prev;
     Eigen::Matrix<T, 2, 1> d_diff = next_to_last_length_ratio_ * d_next - d_prev;
-    r1 += (T)std::sqrt(weight) * d_diff(0, 0);    // objective function value
-    r2 += (T)std::sqrt(weight) * d_diff(1, 0);
+    r1 += (T)weight_sqrt * d_diff(0, 0);    // objective function value
+    r2 += (T)weight_sqrt * d_diff(1, 0);
   }
 
   /**
    * @brief Cost function term for maximum curved paths
-   * @param weight Weight to apply to function
+   * @param weight_sqrt Sqrt of weight to apply to function
    * @param pt Point Xi for evaluation
    * @param pt_next Point Xi+1 for calculating Xi's cost
    * @param pt_prev Point Xi-1 for calculating Xi's cost
@@ -152,7 +154,7 @@ protected:
    */
   template<typename T>
   inline void addCurvatureResidual(
-    const double & weight,
+    const double & weight_sqrt,
     const Eigen::Matrix<T, 2, 1> & pt,
     const Eigen::Matrix<T, 2, 1> & pt_next,
     const Eigen::Matrix<T, 2, 1> & pt_prev,
@@ -171,38 +173,38 @@ protected:
       return;
     }
 
-    r += (T)std::sqrt(weight) * ki_minus_kmax;  // objective function value
+    r += (T)weight_sqrt * ki_minus_kmax;  // objective function value
   }
 
   /**
    * @brief Cost function derivative term for steering away changes in pose
-   * @param weight Weight to apply to function
+   * @param weight_sqrt Sqrt of weight to apply to function
    * @param xi Point Xi for evaluation
    * @param xi_original original point Xi for evaluation
    * @param r Residual (cost) of term
    */
   template<typename T>
   inline void addDistanceResidual(
-    const double & weight,
+    const double & weight_sqrt,
     const Eigen::Matrix<T, 2, 1> & xi,
     const Eigen::Matrix<T, 2, 1> & xi_original,
     T & r1, T & r2) const
   {
     Eigen::Matrix<T, 2, 1> diff = xi - xi_original;
-    r1 += (T)std::sqrt(weight) * diff(0, 0);
-    r2 += (T)std::sqrt(weight) * diff(1, 0);
+    r1 += (T)weight_sqrt * diff(0, 0);
+    r2 += (T)weight_sqrt * diff(1, 0);
   }
 
   /**
    * @brief Cost function term for steering away from costs
-   * @param weight Weight to apply to function
+   * @param weight_sqrt Sqrt of weight to apply to function
    * @param value Point Xi's cost'
    * @param params computed values to reduce overhead
    * @param r Residual (cost) of term
    */
   template<typename T>
   inline void addCostResidual(
-    const double & weight,
+    const double & weight_sqrt,
     const Eigen::Matrix<T, 2, 1> & pt,
     const Eigen::Matrix<T, 2, 1> & pt_next,
     const Eigen::Matrix<T, 2, 1> & pt_prev,
@@ -213,7 +215,7 @@ protected:
         (pt - costmap_origin_.template cast<T>()) / (T)costmap_resolution_;
       T value;
       costmap_interpolator_->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
-      r += (T)std::sqrt(weight) * value;  // objective function value
+      r += (T)weight_sqrt * value;  // objective function value
     } else {
       Eigen::Matrix<T, 2, 1> dir = tangentDir(
         pt_prev, pt, pt_next,
@@ -236,7 +238,7 @@ protected:
         T value;
         costmap_interpolator_->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
 
-        r += (T)std::sqrt(weight) * (T)std::sqrt(params_.cost_check_points[i + 2]) * value;
+        r += (T)weight_sqrt * (T)params_.cost_check_points[i + 2] * value;
       }
     }
   }
@@ -245,7 +247,7 @@ protected:
   double next_to_last_length_ratio_;
   bool reversing_;
   SmootherParams params_;
-  double costmap_weight_;
+  double costmap_weight_sqrt_;
   Eigen::Vector2d costmap_origin_;
   double costmap_resolution_;
   std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<unsigned char>>> costmap_interpolator_;
