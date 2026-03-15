@@ -887,9 +887,10 @@ TEST(CriticTests, PathFollowCriticDebugVisualization)
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
 
   // Score with debug visualizations enabled - should not crash
+  // local_path_length must exceed threshold_to_consider (default 1.4) for critic to score
   state.pose.pose.position.x = 0.0;
-  path.x(5) = 0.15;
-  goal.position.x = 0.15;
+  path.x(5) = 2.0;
+  goal.position.x = 2.0;
   state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_GT(costs.sum(), 0.0);
