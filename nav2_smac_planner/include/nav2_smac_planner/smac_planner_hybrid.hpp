@@ -37,18 +37,24 @@
 namespace nav2_smac_planner
 {
 
-class SmacPlannerHybrid : public nav2_core::GlobalPlanner
+/**
+ * @class nav2_smac_planner::SmacPlannerHybridT
+ * @brief A templated hybrid-A* planner that allows custom node types
+ * @tparam NodeT The node type to use (default: NodeHybrid)
+ */
+template<typename NodeT = NodeHybrid>
+class SmacPlannerHybridT : public nav2_core::GlobalPlanner
 {
 public:
   /**
    * @brief constructor
    */
-  SmacPlannerHybrid();
+  SmacPlannerHybridT();
 
   /**
    * @brief destructor
    */
-  ~SmacPlannerHybrid();
+  ~SmacPlannerHybridT();
 
   /**
    * @brief Configuring plugin
@@ -109,7 +115,7 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
-  std::unique_ptr<AStarAlgorithm<NodeHybrid>> _a_star;
+  std::unique_ptr<AStarAlgorithm<NodeT>> _a_star;
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
   rclcpp::Clock::SharedPtr _clock;
@@ -154,6 +160,11 @@ protected:
   std::shared_ptr<rclcpp::ParameterCallbackHandle> _remote_resolution_handler;
 };
 
+// Backward-compatible type alias
+using SmacPlannerHybrid = SmacPlannerHybridT<NodeHybrid>;
+
 }  // namespace nav2_smac_planner
+
+#include "nav2_smac_planner/smac_planner_hybrid_impl.hpp"  // NOLINT
 
 #endif  // NAV2_SMAC_PLANNER__SMAC_PLANNER_HYBRID_HPP_

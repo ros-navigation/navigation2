@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <type_traits>
+
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
 #include "ompl/base/spaces/ReedsSheppStateSpace.h"
@@ -187,7 +189,7 @@ float DistanceHeuristic<NodeT>::getDistanceHeuristic(
     to[1] = goal_coords.y;
     from[0] = node_coords.x;
     from[1] = node_coords.y;
-    if constexpr (std::is_same_v<NodeT, NodeHybrid>) {
+    if constexpr (std::is_base_of_v<NodeHybrid, NodeT>) {
       to[2] = goal_coords.theta * motion_table.num_angle_quantization;
       from[2] = node_coords.theta * motion_table.num_angle_quantization;
     } else {

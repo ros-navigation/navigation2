@@ -36,18 +36,24 @@
 namespace nav2_smac_planner
 {
 
-class SmacPlannerLattice : public nav2_core::GlobalPlanner
+/**
+ * @class nav2_smac_planner::SmacPlannerLatticeT
+ * @brief A templated state lattice planner that allows custom node types
+ * @tparam NodeT The node type to use (default: NodeLattice)
+ */
+template<typename NodeT = NodeLattice>
+class SmacPlannerLatticeT : public nav2_core::GlobalPlanner
 {
 public:
   /**
    * @brief constructor
    */
-  SmacPlannerLattice();
+  SmacPlannerLatticeT();
 
   /**
    * @brief destructor
    */
-  ~SmacPlannerLattice();
+  ~SmacPlannerLatticeT();
 
   /**
    * @brief Configuring plugin
@@ -108,7 +114,7 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
-  std::unique_ptr<AStarAlgorithm<NodeLattice>> _a_star;
+  std::unique_ptr<AStarAlgorithm<NodeT>> _a_star;
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
   rclcpp::Clock::SharedPtr _clock;
@@ -144,6 +150,11 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _on_set_params_handler;
 };
 
+// Backward-compatible type alias
+using SmacPlannerLattice = SmacPlannerLatticeT<NodeLattice>;
+
 }  // namespace nav2_smac_planner
+
+#include "nav2_smac_planner/smac_planner_lattice_impl.hpp"  // NOLINT
 
 #endif  // NAV2_SMAC_PLANNER__SMAC_PLANNER_LATTICE_HPP_

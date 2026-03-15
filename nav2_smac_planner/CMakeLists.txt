@@ -34,12 +34,9 @@ set(library_name nav2_smac_planner)
 
 # Common library
 add_library(${library_name}_common SHARED
-  src/a_star.cpp
-  src/analytic_expansion.cpp
   src/collision_checker.cpp
   src/costmap_downsampler.cpp
   src/node_2d.cpp
-  src/node_basic.cpp
   src/node_hybrid.cpp
   src/node_lattice.cpp
   src/obstacle_heuristic.cpp

@@ -38,18 +38,24 @@
 namespace nav2_smac_planner
 {
 
-class SmacPlanner2D : public nav2_core::GlobalPlanner
+/**
+ * @class nav2_smac_planner::SmacPlanner2DT
+ * @brief A templated 2D planner that allows custom node types
+ * @tparam NodeT The node type to use (default: Node2D)
+ */
+template<typename NodeT = Node2D>
+class SmacPlanner2DT : public nav2_core::GlobalPlanner
 {
 public:
   /**
    * @brief constructor
    */
-  SmacPlanner2D();
+  SmacPlanner2DT();
 
   /**
    * @brief destructor
    */
-  ~SmacPlanner2D();
+  ~SmacPlanner2DT();
 
   /**
    * @brief Configuring plugin
@@ -110,7 +116,7 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
-  std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
+  std::unique_ptr<AStarAlgorithm<NodeT>> _a_star;
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
   nav2_costmap_2d::Costmap2D * _costmap;
@@ -139,6 +145,11 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _on_set_params_handler;
 };
 
+// Backward-compatible type alias
+using SmacPlanner2D = SmacPlanner2DT<Node2D>;
+
 }  // namespace nav2_smac_planner
+
+#include "nav2_smac_planner/smac_planner_2d_impl.hpp"  // NOLINT
 
 #endif  // NAV2_SMAC_PLANNER__SMAC_PLANNER_2D_HPP_

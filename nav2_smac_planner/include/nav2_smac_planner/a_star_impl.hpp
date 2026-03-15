@@ -13,22 +13,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <cmath>
-#include <stdexcept>
-#include <memory>
+#ifndef NAV2_SMAC_PLANNER__A_STAR_IMPL_HPP_
+#define NAV2_SMAC_PLANNER__A_STAR_IMPL_HPP_
+
 #include <algorithm>
-#include <limits>
-#include <type_traits>
 #include <chrono>
+#include <cmath>
+#include <limits>
+#include <memory>
+#include <stdexcept>
 #include <thread>
+#include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "nav2_smac_planner/a_star.hpp"
-using namespace std::chrono;  // NOLINT
 
 namespace nav2_smac_planner
 {
+using namespace std::chrono;  // NOLINT
 
 template<typename NodeT>
 AStarAlgorithm<NodeT>::AStarAlgorithm(
@@ -69,40 +73,27 @@ void AStarAlgorithm<NodeT>::initialize(
   _max_on_approach_iterations = max_on_approach_iterations;
   _terminal_checking_interval = terminal_checking_interval;
   _max_planning_time = max_planning_time;
-  if (!_is_initialized) {
+
+  if constexpr (std::is_base_of_v<Node2D, NodeT>) {
+    // Node2D-specific initialization: no distance heuristic precomputation
     _shared_ctx = std::make_shared<NodeContext>();
-    _shared_ctx->distance_heuristic->precomputeDistanceHeuristic(lookup_table_size, _motion_model,
-      dim_3_size,
-      _search_info, _shared_ctx->motion_table);
+    if (dim_3_size != 1) {
+      throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
+    }
+  } else {
+    // SE2 node initialization: precompute distance heuristic
+    if (!_is_initialized) {
+      _shared_ctx = std::make_shared<NodeContext>();
+      _shared_ctx->distance_heuristic->precomputeDistanceHeuristic(
+        lookup_table_size, _motion_model,
+        dim_3_size,
+        _search_info, _shared_ctx->motion_table);
+    }
   }
+
   _is_initialized = true;
   _dim3_size = dim_3_size;
   _expander = std::make_unique<AnalyticExpansion<NodeT>>(
-    _motion_model, _search_info, _traverse_unknown, _dim3_size);
-}
-
-template<>
-void AStarAlgorithm<Node2D>::initialize(
-  const bool & allow_unknown,
-  int & max_iterations,
-  const int & max_on_approach_iterations,
-  const int & terminal_checking_interval,
-  const double & max_planning_time,
-  const float & /*lookup_table_size*/,
-  const unsigned int & dim_3_size)
-{
-  _traverse_unknown = allow_unknown;
-  _max_iterations = max_iterations;
-  _max_on_approach_iterations = max_on_approach_iterations;
-  _terminal_checking_interval = terminal_checking_interval;
-  _max_planning_time = max_planning_time;
-  _shared_ctx = std::make_shared<NodeContext>();
-
-  if (dim_3_size != 1) {
-    throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
-  }
-  _dim3_size = dim_3_size;
-  _expander = std::make_unique<AnalyticExpansion<Node2D>>(
     _motion_model, _search_info, _traverse_unknown, _dim3_size);
 }
 
@@ -122,8 +113,9 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
   }
 
   // Always refresh the motion model so dynamic penalty parameters take effect immediately
-  NodeT::initMotionModel(_shared_ctx.get(), _motion_model, _x_size, _y_size, _dim3_size,
-      _search_info);
+  NodeT::initMotionModel(
+    _shared_ctx.get(), _motion_model, _x_size, _y_size, _dim3_size,
+    _search_info);
 
   // Always set context pointers to ensure newly allocated objects get their contexts restored
   _goal_manager.setContext(_shared_ctx.get());
@@ -143,46 +135,31 @@ typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
   return &(_graph.emplace(index, NodeT(index, _shared_ctx.get())).first->second);
 }
 
-template<>
-void AStarAlgorithm<Node2D>::setStart(
-  const float & mx,
-  const float & my,
-  const unsigned int & dim_3)
-{
-  if (dim_3 != 0) {
-    throw std::runtime_error("Node type Node2D cannot be given non-zero starting dim 3.");
-  }
-  _start = addToGraph(
-    Node2D::getIndex(
-      static_cast<unsigned int>(mx),
-      static_cast<unsigned int>(my),
-      getSizeX()));
-}
-
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::setStart(
   const float & mx,
   const float & my,
   const unsigned int & dim_3)
 {
-  _start = addToGraph(
-    getIndex(
-      static_cast<unsigned int>(mx),
-      static_cast<unsigned int>(my),
-      dim_3));
-  _start->setPose(Coordinates(mx, my, dim_3));
-}
-
-template<>
-void AStarAlgorithm<Node2D>::populateExpansionsLog(
-  const NodePtr & node,
-  std::vector<std::tuple<float, float, float>> * expansions_log)
-{
-  Node2D::Coordinates coords = node->getCoords(node->getIndex());
-  expansions_log->emplace_back(
-    _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
-    _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
-    0.0);
+  if constexpr (std::is_base_of_v<Node2D, NodeT>) {
+    // Node2D-specific: different getIndex signature, no pose setting
+    if (dim_3 != 0) {
+      throw std::runtime_error("Node type Node2D cannot be given non-zero starting dim 3.");
+    }
+    _start = addToGraph(
+      Node2D::getIndex(
+        static_cast<unsigned int>(mx),
+        static_cast<unsigned int>(my),
+        getSizeX()));
+  } else {
+    // SE2 node: use full index and set pose
+    _start = addToGraph(
+      getIndex(
+        static_cast<unsigned int>(mx),
+        static_cast<unsigned int>(my),
+        dim_3));
+    _start->setPose(Coordinates(mx, my, dim_3));
+  }
 }
 
 template<typename NodeT>
@@ -190,35 +167,21 @@ void AStarAlgorithm<NodeT>::populateExpansionsLog(
   const NodePtr & node,
   std::vector<std::tuple<float, float, float>> * expansions_log)
 {
-  typename NodeT::Coordinates coords = node->pose;
-  expansions_log->emplace_back(
-    _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
-    _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
-    _shared_ctx->motion_table.getAngleFromBin(coords.theta));
-}
-
-template<>
-void AStarAlgorithm<Node2D>::setGoal(
-  const float & mx,
-  const float & my,
-  const unsigned int & dim_3,
-  const GoalHeadingMode & /*goal_heading_mode*/,
-  const int & /*coarse_search_resolution*/)
-{
-  if (dim_3 != 0) {
-    throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
+  if constexpr (std::is_base_of_v<Node2D, NodeT>) {
+    // Node2D: no theta
+    Node2D::Coordinates coords = node->getCoords(node->getIndex());
+    expansions_log->emplace_back(
+      _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
+      _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
+      0.0);
+  } else {
+    // SE2 node: include theta
+    typename NodeT::Coordinates coords = node->pose;
+    expansions_log->emplace_back(
+      _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
+      _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
+      _shared_ctx->motion_table.getAngleFromBin(coords.theta));
   }
-  _goal_manager.clear();
-  auto goal = addToGraph(
-    Node2D::getIndex(
-      static_cast<unsigned int>(mx),
-      static_cast<unsigned int>(my),
-      getSizeX()));
-
-  goal->setPose(Node2D::Coordinates(mx, my));
-  _goal_manager.addGoal(goal);
-
-  _coarse_search_resolution = 1;
 }
 
 template<typename NodeT>
@@ -229,83 +192,105 @@ void AStarAlgorithm<NodeT>::setGoal(
   const GoalHeadingMode & goal_heading_mode,
   const int & coarse_search_resolution)
 {
-  // Default to minimal resolution unless overridden for ALL_DIRECTION
-  _coarse_search_resolution = 1;
+  if constexpr (std::is_base_of_v<Node2D, NodeT>) {
+    // Node2D-specific: simplified goal setting, no heading modes
+    if (dim_3 != 0) {
+      throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
+    }
+    _goal_manager.clear();
+    auto goal = addToGraph(
+      Node2D::getIndex(
+        static_cast<unsigned int>(mx),
+        static_cast<unsigned int>(my),
+        getSizeX()));
 
-  _goal_manager.clear();
-  Coordinates ref_goal_coord(mx, my, static_cast<float>(dim_3));
+    goal->setPose(Node2D::Coordinates(mx, my));
+    _goal_manager.addGoal(goal);
 
-  if (!_search_info.cache_obstacle_heuristic ||
-    _goal_manager.hasGoalChanged(ref_goal_coord))
-  {
-    if (!_start) {
-      throw std::runtime_error("Start must be set before goal.");
+    _coarse_search_resolution = 1;
+  } else {
+    // SE2 node: full goal handling with heading modes
+    // Default to minimal resolution unless overridden for ALL_DIRECTION
+    _coarse_search_resolution = 1;
+
+    _goal_manager.clear();
+    Coordinates ref_goal_coord(mx, my, static_cast<float>(dim_3));
+
+    if (!_search_info.cache_obstacle_heuristic ||
+      _goal_manager.hasGoalChanged(ref_goal_coord))
+    {
+      if (!_start) {
+        throw std::runtime_error("Start must be set before goal.");
+      }
+
+      _shared_ctx->obstacle_heuristic->resetObstacleHeuristic(
+        _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my,
+        _shared_ctx->motion_table.downsample_obstacle_heuristic);
     }
 
-    _shared_ctx->obstacle_heuristic->resetObstacleHeuristic(
-      _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my,
-        _shared_ctx->motion_table.downsample_obstacle_heuristic);
-  }
+    _goal_manager.setRefGoalCoordinates(ref_goal_coord);
 
-  _goal_manager.setRefGoalCoordinates(ref_goal_coord);
-
-  unsigned int num_bins = _shared_ctx->motion_table.num_angle_quantization;
-  // set goal based on heading mode
-  switch (goal_heading_mode) {
-    case GoalHeadingMode::DEFAULT: {
-        // add a single goal node with single heading
-        auto goal = addToGraph(
-          getIndex(
-            static_cast<unsigned int>(mx),
-            static_cast<unsigned int>(my),
-            dim_3));
-        goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
-        _goal_manager.addGoal(goal);
-        break;
-      }
-
-    case GoalHeadingMode::BIDIRECTIONAL: {
-        // Add two goals, one for each direction
-        // add goal in original direction
-        auto goal = addToGraph(
-          getIndex(
-            static_cast<unsigned int>(mx),
-            static_cast<unsigned int>(my),
-            dim_3));
-        goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
-        _goal_manager.addGoal(goal);
-
-        // Add goal node in opposite (180°) direction
-        unsigned int opposite_heading = (dim_3 + (num_bins / 2)) % num_bins;
-        auto opposite_goal = addToGraph(
-          getIndex(
-            static_cast<unsigned int>(mx),
-            static_cast<unsigned int>(my),
-            opposite_heading));
-        opposite_goal->setPose(
-          typename NodeT::Coordinates(mx, my, static_cast<float>(opposite_heading)));
-        _goal_manager.addGoal(opposite_goal);
-        break;
-      }
-
-    case GoalHeadingMode::ALL_DIRECTION: {
-        // Set the coarse search resolution only for all direction
-        _coarse_search_resolution = coarse_search_resolution;
-
-        // Add goal nodes for all headings
-        for (unsigned int i = 0; i < num_bins; ++i) {
+    unsigned int num_bins = _shared_ctx->motion_table.num_angle_quantization;
+    // set goal based on heading mode
+    switch (goal_heading_mode) {
+      case GoalHeadingMode::DEFAULT:
+        {
+          // add a single goal node with single heading
           auto goal = addToGraph(
             getIndex(
               static_cast<unsigned int>(mx),
               static_cast<unsigned int>(my),
-              i));
-          goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(i)));
+              dim_3));
+          goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
           _goal_manager.addGoal(goal);
+          break;
         }
-        break;
-      }
-    case GoalHeadingMode::UNKNOWN:
-      throw std::runtime_error("Goal heading is UNKNOWN.");
+
+      case GoalHeadingMode::BIDIRECTIONAL:
+        {
+          // Add two goals, one for each direction
+          // add goal in original direction
+          auto goal = addToGraph(
+            getIndex(
+              static_cast<unsigned int>(mx),
+              static_cast<unsigned int>(my),
+              dim_3));
+          goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
+          _goal_manager.addGoal(goal);
+
+          // Add goal node in opposite (180°) direction
+          unsigned int opposite_heading = (dim_3 + (num_bins / 2)) % num_bins;
+          auto opposite_goal = addToGraph(
+            getIndex(
+              static_cast<unsigned int>(mx),
+              static_cast<unsigned int>(my),
+              opposite_heading));
+          opposite_goal->setPose(
+            typename NodeT::Coordinates(mx, my, static_cast<float>(opposite_heading)));
+          _goal_manager.addGoal(opposite_goal);
+          break;
+        }
+
+      case GoalHeadingMode::ALL_DIRECTION:
+        {
+          // Set the coarse search resolution only for all direction
+          _coarse_search_resolution = coarse_search_resolution;
+
+          // Add goal nodes for all headings
+          for (unsigned int i = 0; i < num_bins; ++i) {
+            auto goal = addToGraph(
+              getIndex(
+                static_cast<unsigned int>(mx),
+                static_cast<unsigned int>(my),
+                i));
+            goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(i)));
+            _goal_manager.addGoal(goal);
+          }
+          break;
+        }
+      case GoalHeadingMode::UNKNOWN:
+        throw std::runtime_error("Goal heading is UNKNOWN.");
+    }
   }
 }
 
@@ -539,11 +524,12 @@ uint64_t AStarAlgorithm<NodeT>::getIndex(
   const unsigned int & x, const unsigned int & y,
   const unsigned int & dim_3)
 {
-  if constexpr (std::is_same_v<NodeT, Node2D>) {
+  if constexpr (std::is_base_of_v<Node2D, NodeT>) {
     return Node2D::getIndex(x, y, dim_3);
   } else {
-    return NodeT::getIndex(x, y, dim_3, _shared_ctx->motion_table.size_x,
-        _shared_ctx->motion_table.num_angle_quantization);
+    return NodeT::getIndex(
+      x, y, dim_3, _shared_ctx->motion_table.size_x,
+      _shared_ctx->motion_table.num_angle_quantization);
   }
 }
 
@@ -601,9 +587,6 @@ typename AStarAlgorithm<NodeT>::NodeContext * AStarAlgorithm<NodeT>::getContext(
   return _shared_ctx.get();
 }
 
-// Instantiate algorithm for the supported template types
-template class AStarAlgorithm<Node2D>;
-template class AStarAlgorithm<NodeHybrid>;
-template class AStarAlgorithm<NodeLattice>;
-
 }  // namespace nav2_smac_planner
+
+#endif  // NAV2_SMAC_PLANNER__A_STAR_IMPL_HPP_
