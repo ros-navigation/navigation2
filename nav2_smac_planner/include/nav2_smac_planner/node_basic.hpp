@@ -52,10 +52,7 @@ public:
    */
   void populateSearchNode(NodeT * & node)
   {
-    if constexpr (std::is_base_of_v<Node2D, NodeT> && !std::is_base_of_v<NodeHybrid, NodeT>) {
-      // Node2D or derived: only set graph_node_ptr
-      this->graph_node_ptr = node;
-    } else if constexpr (std::is_base_of_v<NodeLattice, NodeT>) {
+    if constexpr (std::is_base_of_v<NodeLattice, NodeT>) {
       // NodeLattice or derived: cache pose and primitive
       this->pose = node->pose;
       this->graph_node_ptr = node;
@@ -67,6 +64,9 @@ public:
       this->graph_node_ptr = node;
       this->motion_index = node->getMotionPrimitiveIndex();
       this->turn_dir = node->getTurnDirection();
+    } else if constexpr (std::is_base_of_v<Node2D, NodeT>) {
+      // Node2D or derived: only set graph_node_ptr
+      this->graph_node_ptr = node;
     } else {
       // Unknown node type - set basics
       this->graph_node_ptr = node;
@@ -81,9 +81,7 @@ public:
    */
   void processSearchNode()
   {
-    if constexpr (std::is_base_of_v<Node2D, NodeT> && !std::is_base_of_v<NodeHybrid, NodeT>) {
-      // Node2D or derived: no-op
-    } else if constexpr (std::is_base_of_v<NodeLattice, NodeT>) {
+    if constexpr (std::is_base_of_v<NodeLattice, NodeT>) {
       // NodeLattice or derived: update pose and motion primitive
       // We only want to override the node's pose/primitive if it has not yet been visited
       // to prevent the case that a node has been queued multiple times and
@@ -102,6 +100,8 @@ public:
         this->graph_node_ptr->pose = this->pose;
         this->graph_node_ptr->setMotionPrimitiveIndex(this->motion_index, this->turn_dir);
       }
+    } else if constexpr (std::is_base_of_v<Node2D, NodeT>) {
+      // Node2D or derived: no-op
     } else {
       // Unknown node type: no-op
     }
