@@ -14,6 +14,8 @@
 
 #include <chrono>
 #include <thread>
+#include <utility>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -119,15 +121,20 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   candidate_trajectories.y = Eigen::ArrayXXf::Ones(200, 12);
   candidate_trajectories.yaws = Eigen::ArrayXXf::Ones(200, 12);
 
+  Eigen::ArrayXf costs = Eigen::ArrayXf::LinSpaced(200, 0.0f, 1.0f);
+  std::vector<std::pair<std::string, Eigen::ArrayXf>> critic_costs;
+  builtin_interfaces::msg::Time stamp;
+  stamp.sec = 1;
+
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
-  vis.add(candidate_trajectories, "Candidate Trajectories");
+  vis.add(candidate_trajectories, costs, critic_costs, stamp);
   vis.visualize();
 
   executor.spin_some();
-  // 40 * 4, for 5 trajectory steps + 3 point steps
-  EXPECT_EQ(received_msg.markers.size(), 160u);
+  // 40 LINE_STRIP markers (200 trajectories / 5 trajectory_step)
+  EXPECT_EQ(received_msg.markers.size(), 40u);
 }
 
 TEST(TrajectoryVisualizerTests, VisOptimalPath)
