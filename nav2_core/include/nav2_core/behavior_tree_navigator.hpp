@@ -222,6 +222,9 @@ public:
     allow_navigator_preemption_ = node->declare_or_get_parameter(
       "allow_navigator_preemption", false);
 
+    navigator_preemption_timeout_ = std::chrono::milliseconds(
+      node->declare_or_get_parameter("navigator_preemption_timeout", 500));
+
     // Create the Behavior Tree Action Server for this navigator
     bt_action_server_ =
       std::make_unique<nav2_behavior_tree::BtActionServer<ActionT, nav2::LifecycleNode>>(
@@ -330,17 +333,17 @@ protected:
         " stopping current navigator.", getName().c_str());
       plugin_muxer_->getCurrentNavigator()->stop_navigation();
 
-      const auto timeout = std::chrono::milliseconds(500);
       const auto start = std::chrono::steady_clock::now();
+      rclcpp::Rate r(100);
       while (plugin_muxer_->isNavigating()) {
-        if (std::chrono::steady_clock::now() - start > timeout) {
+        if (std::chrono::steady_clock::now() - start > navigator_preemption_timeout_) {
           RCLCPP_ERROR(
             logger_,
             "Timed out waiting for current navigator to stop before accepting"
             " goal from %s. Rejecting request.", getName().c_str());
           return false;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        r.sleep();
       }
     }
 
@@ -421,7 +424,12 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
   FeedbackUtils feedback_utils_;
   NavigatorMuxer * plugin_muxer_;
+
+  // True if you want to allow navigator preemption
   bool allow_navigator_preemption_;
+
+  // Timeout value while waiting for preemption of a navigator by another one
+  std::chrono::milliseconds navigator_preemption_timeout_;
 };
 
 }  // namespace nav2_core
