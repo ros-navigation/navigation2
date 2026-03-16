@@ -146,7 +146,9 @@ void TrajectoryVisualizer::add(
   }
 
   const size_t n_rows = trajectories.x.rows();
-  if (n_rows == 0 || costs.size() == 0) {
+  if (n_rows == 0 || costs.size() == 0 ||
+    static_cast<size_t>(costs.size()) < n_rows)
+  {
     return;
   }
 

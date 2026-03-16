@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
 #include "nav2_mppi_controller/critic_manager.hpp"
 
 namespace mppi
@@ -79,10 +78,12 @@ void CriticManager::evalTrajectoriesScores(
   const bool need_per_critic = store_per_critic_costs_ || publish_critics_stats_;
 
   if (need_per_critic) {
-    // Zero-store-sum approach: zero costs before each critic, store its
-    // individual contribution, then sum all at the end.
+    // Zero-store-sum approach: save existing costs (e.g. gamma terms from prior
+    // iterations), zero before each critic, store its individual contribution,
+    // then restore the saved base and add all critic contributions.
     per_critic_costs_.clear();
     per_critic_costs_.reserve(critics_.size());
+    Eigen::ArrayXf saved_costs = data.costs;
     Eigen::ArrayXf total = Eigen::ArrayXf::Zero(data.costs.size());
 
     for (size_t i = 0; i < critics_.size(); ++i) {
@@ -94,7 +95,7 @@ void CriticManager::evalTrajectoriesScores(
       per_critic_costs_.emplace_back(critic_names_[i], data.costs);
       total += data.costs;
     }
-    data.costs = total;
+    data.costs = saved_costs + total;
   } else {
     // Original fast path: no per-critic tracking overhead
     for (size_t i = 0; i < critics_.size(); ++i) {
