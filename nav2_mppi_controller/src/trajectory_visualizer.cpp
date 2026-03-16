@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <memory>
+#include <algorithm>
+#include <cmath>
 #include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 
 namespace mppi
@@ -133,11 +135,105 @@ void TrajectoryVisualizer::add(
   }
 }
 
+void TrajectoryVisualizer::add(
+  const models::Trajectories & trajectories,
+  const Eigen::ArrayXf & costs,
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & critic_costs,
+  const builtin_interfaces::msg::Time & stamp)
+{
+  if (trajectories_publisher_->get_subscription_count() == 0) {
+    return;
+  }
+
+  const size_t n_rows = trajectories.x.rows();
+  if (n_rows == 0 || costs.size() == 0) {
+    return;
+  }
+
+  // Normalize total costs using Eigen vectorized ops
+  auto addCostLayer = [&](const Eigen::ArrayXf & layer_costs, const std::string & ns) {
+      float min_val = layer_costs.minCoeff();
+      float max_val = layer_costs.maxCoeff();
+      float range = max_val - min_val;
+      Eigen::ArrayXf normalized;
+      if (range > 0.0f) {
+        normalized = (layer_costs - min_val) / range;
+      } else {
+        normalized = Eigen::ArrayXf::Zero(layer_costs.size());
+      }
+
+      for (size_t i = 0; i < n_rows; i += trajectory_step_) {
+        addCostColoredTrajectory(i, trajectories, normalized(i), ns, stamp);
+      }
+    };
+
+  // Total cost layer
+  addCostLayer(costs, "Total Cost");
+
+  // Per-critic cost layers
+  for (const auto & [name, critic_cost] : critic_costs) {
+    addCostLayer(critic_cost, name);
+  }
+}
+
+void TrajectoryVisualizer::addCostColoredTrajectory(
+  size_t trajectory_idx,
+  const models::Trajectories & trajectories,
+  float normalized_cost,
+  const std::string & ns,
+  const builtin_interfaces::msg::Time & stamp)
+{
+  using visualization_msgs::msg::Marker;
+  const size_t n_cols = trajectories.x.cols();
+
+  Marker marker;
+  marker.header.frame_id = frame_id_;
+  marker.header.stamp = stamp;
+  marker.ns = ns;
+  marker.id = marker_id_++;
+  marker.type = Marker::LINE_STRIP;
+  marker.action = Marker::ADD;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.01;  // line width
+  marker.color = costToColor(normalized_cost);
+
+  marker.points.reserve(n_cols / time_step_ + 1);
+  for (size_t j = 0; j < n_cols; j += time_step_) {
+    geometry_msgs::msg::Point pt;
+    pt.x = trajectories.x(trajectory_idx, j);
+    pt.y = trajectories.y(trajectory_idx, j);
+    pt.z = 0.03;
+    marker.points.push_back(pt);
+  }
+
+  points_->markers.push_back(std::move(marker));
+}
+
+std_msgs::msg::ColorRGBA TrajectoryVisualizer::costToColor(float normalized)
+{
+  // Green (0) -> Yellow (0.5) -> Red (1.0)
+  normalized = std::clamp(normalized, 0.0f, 1.0f);
+  float r, g;
+  if (normalized < 0.5f) {
+    r = 2.0f * normalized;
+    g = 1.0f;
+  } else {
+    r = 1.0f;
+    g = 2.0f * (1.0f - normalized);
+  }
+  return utils::createColor(r, g, 0.0f, 0.8f);
+}
+
 void TrajectoryVisualizer::reset()
 {
   marker_id_ = 0;
   points_ = std::make_unique<visualization_msgs::msg::MarkerArray>();
   optimal_path_ = std::make_unique<nav_msgs::msg::Path>();
+}
+
+bool TrajectoryVisualizer::hasSubscribers() const
+{
+  return trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0;
 }
 
 void TrajectoryVisualizer::visualize()

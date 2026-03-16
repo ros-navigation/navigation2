@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
 #include "nav2_mppi_controller/critic_manager.hpp"
 
 namespace mppi
@@ -73,43 +74,53 @@ std::string CriticManager::getFullName(const std::string & name)
 }
 
 void CriticManager::evalTrajectoriesScores(
-  CriticData & data) const
+  CriticData & data)
 {
-  std::unique_ptr<nav2_msgs::msg::CriticsStats> stats_msg;
-  if (publish_critics_stats_) {
-    stats_msg = std::make_unique<nav2_msgs::msg::CriticsStats>();
-    stats_msg->critics.reserve(critics_.size());
-    stats_msg->changed.reserve(critics_.size());
-    stats_msg->costs_sum.reserve(critics_.size());
-  }
+  const bool need_per_critic = store_per_critic_costs_ || publish_critics_stats_;
 
-  for (size_t i = 0; i < critics_.size(); ++i) {
-    if (data.fail_flag) {
-      break;
+  if (need_per_critic) {
+    // Zero-store-sum approach: zero costs before each critic, store its
+    // individual contribution, then sum all at the end.
+    per_critic_costs_.clear();
+    per_critic_costs_.reserve(critics_.size());
+    Eigen::ArrayXf total = Eigen::ArrayXf::Zero(data.costs.size());
+
+    for (size_t i = 0; i < critics_.size(); ++i) {
+      if (data.fail_flag) {
+        break;
+      }
+      data.costs.setZero();
+      critics_[i]->score(data);
+      per_critic_costs_.emplace_back(critic_names_[i], data.costs);
+      total += data.costs;
     }
-
-    // Store costs before critic evaluation
-    Eigen::ArrayXf costs_before;
-    if (publish_critics_stats_) {
-      costs_before = data.costs;
-    }
-
-    critics_[i]->score(data);
-
-    // Calculate statistics if publishing is enabled
-    if (publish_critics_stats_) {
-      stats_msg->critics.push_back(critic_names_[i]);
-
-      // Calculate sum of costs added by this individual critic
-      Eigen::ArrayXf cost_diff = data.costs - costs_before;
-      float costs_sum = cost_diff.sum();
-      stats_msg->costs_sum.push_back(costs_sum);
-      stats_msg->changed.push_back(costs_sum != 0.0f);
+    data.costs = total;
+  } else {
+    // Original fast path: no per-critic tracking overhead
+    for (size_t i = 0; i < critics_.size(); ++i) {
+      if (data.fail_flag) {
+        break;
+      }
+      critics_[i]->score(data);
     }
   }
 
-  // Publish statistics if enabled
-  if (critics_effect_pub_) {
+  if (publish_critics_stats_ && critics_effect_pub_) {
+    auto stats_msg = std::make_unique<nav2_msgs::msg::CriticsStats>();
+    const size_t n = per_critic_costs_.size();
+    stats_msg->critics.reserve(n);
+    stats_msg->changed.reserve(n);
+    stats_msg->costs_sum.reserve(n);
+
+    for (size_t i = 0; i < n; ++i) {
+      const auto & [name, costs] = per_critic_costs_[i];
+      stats_msg->critics.push_back(name);
+
+      float sum = costs.sum();
+      stats_msg->costs_sum.push_back(sum);
+      stats_msg->changed.push_back(sum != 0.0f);
+    }
+
     auto node = parent_.lock();
     stats_msg->stamp = node->get_clock()->now();
     critics_effect_pub_->publish(std::move(stats_msg));

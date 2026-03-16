@@ -19,6 +19,8 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -84,9 +86,28 @@ public:
   void add(const models::Trajectories & trajectories, const std::string & marker_namespace);
 
   /**
+    * @brief Add candidate trajectories colored by cost gradient
+    * @param trajectories Candidate trajectories
+    * @param costs Total cost per trajectory
+    * @param critic_costs Per-critic cost breakdown (name, cost_array) pairs
+    * @param stamp Timestamp for markers
+    */
+  void add(
+    const models::Trajectories & trajectories,
+    const Eigen::ArrayXf & costs,
+    const std::vector<std::pair<std::string, Eigen::ArrayXf>> & critic_costs,
+    const builtin_interfaces::msg::Time & stamp);
+
+  /**
     * @brief Visualize the plan
     */
   void visualize();
+
+  /**
+    * @brief Check if any trajectory visualization subscribers exist
+    * @return True if someone is subscribed to candidate_trajectories
+    */
+  bool hasSubscribers() const;
 
   /**
     * @brief Reset object
@@ -94,6 +115,28 @@ public:
   void reset();
 
 protected:
+  /**
+    * @brief Create a LINE_STRIP marker for a single trajectory colored by normalized cost
+    * @param trajectory_idx Row index into the trajectories arrays
+    * @param trajectories Trajectory data
+    * @param normalized_cost Cost value in [0, 1] range
+    * @param ns Marker namespace
+    * @param stamp Timestamp
+    */
+  void addCostColoredTrajectory(
+    size_t trajectory_idx,
+    const models::Trajectories & trajectories,
+    float normalized_cost,
+    const std::string & ns,
+    const builtin_interfaces::msg::Time & stamp);
+
+  /**
+    * @brief Convert a normalized cost [0,1] to a green->yellow->red color
+    * @param normalized Value in [0, 1]
+    * @return ColorRGBA
+    */
+  static std_msgs::msg::ColorRGBA costToColor(float normalized);
+
   std::string frame_id_;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     trajectories_publisher_;

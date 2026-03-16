@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include <pluginlib/class_loader.hpp>
 
@@ -69,7 +70,28 @@ public:
     * @brief Score trajectories by the set of loaded critic functions
     * @param CriticData Struct of necessary information to pass to the critic functions
     */
-  void evalTrajectoriesScores(CriticData & data) const;
+  void evalTrajectoriesScores(CriticData & data);
+
+  /**
+    * @brief Enable per-critic cost storage for visualization
+    * @param enable Whether to store individual critic costs
+    */
+  void enablePerCriticCosts(bool enable) {store_per_critic_costs_ = enable;}
+
+  /**
+    * @brief Get stored per-critic costs from last evaluation
+    * @return Vector of (critic_name, cost_array) pairs
+    */
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & getPerCriticCosts() const
+  {
+    return per_critic_costs_;
+  }
+
+  /**
+    * @brief Get the critic names
+    * @return Vector of critic name strings
+    */
+  const std::vector<std::string> & getCriticNames() const {return critic_names_;}
 
 protected:
   /**
@@ -99,6 +121,8 @@ protected:
 
   nav2::Publisher<nav2_msgs::msg::CriticsStats>::SharedPtr critics_effect_pub_;
   bool publish_critics_stats_;
+  bool store_per_critic_costs_{false};
+  std::vector<std::pair<std::string, Eigen::ArrayXf>> per_critic_costs_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };

@@ -20,6 +20,8 @@
 #include <string>
 #include <memory>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -117,6 +119,27 @@ public:
    * @return Optimal control sequence
    */
   const models::ControlSequence & getOptimalControlSequence();
+
+  /**
+   * @brief Get the aggregated trajectory costs from last evaluation
+   * @return Array of costs per trajectory
+   */
+  const Eigen::ArrayXf & getCosts() const {return costs_;}
+
+  /**
+   * @brief Get per-critic cost breakdown from last evaluation
+   * @return Vector of (critic_name, cost_array) pairs
+   */
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & getPerCriticCosts() const
+  {
+    return critic_manager_.getPerCriticCosts();
+  }
+
+  /**
+   * @brief Enable per-critic cost storage for visualization
+   * @param enable Whether to store individual critic costs
+   */
+  void enablePerCriticCosts(bool enable) {critic_manager_.enablePerCriticCosts(enable);}
 
   /**
    * @brief Set the maximum speed based on the speed limits callback
