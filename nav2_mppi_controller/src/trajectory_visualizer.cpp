@@ -123,20 +123,21 @@ void TrajectoryVisualizer::add(
     return;
   }
 
-  // Normalize total costs using Eigen vectorized ops
+  // Normalize costs for visualization. Outliers (e.g. collision trajectories,
+  // detected via max-gap clustering) render in dark purple instead of the gradient.
   auto addCostLayer = [&](const Eigen::ArrayXf & layer_costs, const std::string & ns) {
       float min_val = layer_costs.minCoeff();
       float max_val = layer_costs.maxCoeff();
-      float range = max_val - min_val;
-      Eigen::ArrayXf normalized;
-      if (range > 0.0f) {
-        normalized = (layer_costs - min_val) / range;
-      } else {
-        normalized = Eigen::ArrayXf::Zero(layer_costs.size());
-      }
+
+      float upper_bound = max_val;
+      bool has_outliers = maxGapSplit(layer_costs, 0.5f, upper_bound);
+      float range = (has_outliers ? upper_bound : max_val) - min_val;
 
       for (size_t i = 0; i < n_rows; i += trajectory_step_) {
-        addCostColoredTrajectory(i, trajectories, normalized(i), ns, stamp);
+        float norm = (range > 0.0f) ?
+          (layer_costs(i) - min_val) / range : 0.0f;
+        bool is_outlier = has_outliers && layer_costs(i) > upper_bound;
+        addCostColoredTrajectory(i, trajectories, norm, is_outlier, ns, stamp);
       }
     };
 
@@ -153,6 +154,7 @@ void TrajectoryVisualizer::addCostColoredTrajectory(
   size_t trajectory_idx,
   const models::Trajectories & trajectories,
   float normalized_cost,
+  bool is_outlier,
   const std::string & ns,
   const builtin_interfaces::msg::Time & stamp)
 {
@@ -168,7 +170,9 @@ void TrajectoryVisualizer::addCostColoredTrajectory(
   marker.action = Marker::ADD;
   marker.pose.orientation.w = 1.0;
   marker.scale.x = 0.01;  // line width
-  marker.color = costToColor(normalized_cost);
+  marker.color = is_outlier ?
+    utils::createColor(0.5f, 0.0f, 0.5f, 0.6f) :  // dark purple for outliers
+    costToColor(normalized_cost);
 
   marker.points.reserve(n_cols / time_step_ + 1);
   for (size_t j = 0; j < n_cols; j += time_step_) {
@@ -195,6 +199,37 @@ std_msgs::msg::ColorRGBA TrajectoryVisualizer::costToColor(float normalized)
     g = 2.0f * (1.0f - normalized);
   }
   return utils::createColor(r, g, 0.0f, 0.8f);
+}
+
+bool TrajectoryVisualizer::maxGapSplit(
+  const Eigen::ArrayXf & values, float gap_ratio_threshold,
+  float & upper_bound)
+{
+  if (values.size() < 2) {
+    return false;
+  }
+  Eigen::ArrayXf sorted = values;
+  std::sort(sorted.data(), sorted.data() + sorted.size());
+  float total_range = sorted(sorted.size() - 1) - sorted(0);
+  if (total_range <= 0.0f) {
+    return false;
+  }
+
+  float largest_gap = 0.0f;
+  Eigen::Index gap_idx = 0;
+  for (Eigen::Index k = 1; k < sorted.size(); ++k) {
+    float gap = sorted(k) - sorted(k - 1);
+    if (gap > largest_gap) {
+      largest_gap = gap;
+      gap_idx = k;
+    }
+  }
+
+  if (largest_gap > gap_ratio_threshold * total_range) {
+    upper_bound = sorted(gap_idx - 1);
+    return true;
+  }
+  return false;
 }
 
 void TrajectoryVisualizer::reset()

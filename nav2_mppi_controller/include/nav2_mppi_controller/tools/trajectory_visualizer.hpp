@@ -108,6 +108,7 @@ protected:
     * @param trajectory_idx Row index into the trajectories arrays
     * @param trajectories Trajectory data
     * @param normalized_cost Cost value in [0, 1] range
+    * @param is_outlier Whether this trajectory is above the percentile threshold
     * @param ns Marker namespace
     * @param stamp Timestamp
     */
@@ -115,6 +116,7 @@ protected:
     size_t trajectory_idx,
     const models::Trajectories & trajectories,
     float normalized_cost,
+    bool is_outlier,
     const std::string & ns,
     const builtin_interfaces::msg::Time & stamp);
 
@@ -124,6 +126,19 @@ protected:
     * @return ColorRGBA
     */
   static std_msgs::msg::ColorRGBA costToColor(float normalized);
+
+  /**
+    * @brief Maximum gap clustering (k=2). Splits sorted 1D data into two groups
+    *   by finding the largest consecutive gap. Returns the upper bound of the
+    *   lower group and whether a significant split was found.
+    * @param values Input array (will be copied and sorted internally)
+    * @param gap_ratio_threshold Minimum gap-to-range ratio to consider significant
+    * @param[out] upper_bound Upper bound of the lower (non-outlier) group
+    * @return True if a significant gap was found
+    */
+  static bool maxGapSplit(
+    const Eigen::ArrayXf & values, float gap_ratio_threshold,
+    float & upper_bound);
 
   std::string frame_id_;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
