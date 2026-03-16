@@ -80,12 +80,6 @@ public:
     const builtin_interfaces::msg::Time & cmd_stamp);
 
   /**
-    * @brief Add candidate trajectories to visualize
-    * @param trajectories Candidate trajectories
-    */
-  void add(const models::Trajectories & trajectories, const std::string & marker_namespace);
-
-  /**
     * @brief Add candidate trajectories colored by cost gradient
     * @param trajectories Candidate trajectories
     * @param costs Total cost per trajectory
@@ -102,12 +96,6 @@ public:
     * @brief Visualize the plan
     */
   void visualize();
-
-  /**
-    * @brief Check if any trajectory visualization subscribers exist
-    * @return True if someone is subscribed to candidate_trajectories
-    */
-  bool hasSubscribers() const;
 
   /**
     * @brief Reset object

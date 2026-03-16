@@ -136,12 +136,6 @@ public:
   }
 
   /**
-   * @brief Enable per-critic cost storage for visualization
-   * @param enable Whether to store individual critic costs
-   */
-  void enablePerCriticCosts(bool enable) {critic_manager_.enablePerCriticCosts(enable);}
-
-  /**
    * @brief Set the maximum speed based on the speed limits callback
    * @param speed_limit Limit of the speed for use
    * @param percentage Whether the speed limit is absolute or relative

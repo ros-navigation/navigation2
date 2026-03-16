@@ -75,9 +75,7 @@ std::string CriticManager::getFullName(const std::string & name)
 void CriticManager::evalTrajectoriesScores(
   CriticData & data)
 {
-  const bool need_per_critic = store_per_critic_costs_ || publish_critics_stats_;
-
-  if (need_per_critic) {
+  if (publish_critics_stats_) {
     // Zero-store-sum approach: save existing costs (e.g. gamma terms from prior
     // iterations), zero before each critic, store its individual contribution,
     // then restore the saved base and add all critic contributions.

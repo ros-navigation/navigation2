@@ -102,9 +102,6 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
 
   // Enable per-critic cost storage only when visualization has active subscribers
-  optimizer_.enablePerCriticCosts(
-    visualize_ && trajectory_visualizer_.hasSubscribers());
-
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
 

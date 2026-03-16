@@ -107,35 +107,6 @@ void TrajectoryVisualizer::add(
 }
 
 void TrajectoryVisualizer::add(
-  const models::Trajectories & trajectories, const std::string & marker_namespace)
-{
-  if (trajectories_publisher_->get_subscription_count() == 0) {
-    return;
-  }
-
-  size_t n_rows = trajectories.x.rows();
-  size_t n_cols = trajectories.x.cols();
-  const float shape_1 = static_cast<float>(n_cols);
-  points_->markers.reserve(floor(n_rows / trajectory_step_) * floor(n_cols * time_step_));
-
-  for (size_t i = 0; i < n_rows; i += trajectory_step_) {
-    for (size_t j = 0; j < n_cols; j += time_step_) {
-      const float j_flt = static_cast<float>(j);
-      float blue_component = 1.0f - j_flt / shape_1;
-      float green_component = j_flt / shape_1;
-
-      auto pose = utils::createPose(trajectories.x(i, j), trajectories.y(i, j), 0.03);
-      auto scale = utils::createScale(0.03, 0.03, 0.03);
-      auto color = utils::createColor(0, green_component, blue_component, 1);
-      auto marker = utils::createMarker(
-        marker_id_++, pose, scale, color, frame_id_, marker_namespace);
-
-      points_->markers.push_back(marker);
-    }
-  }
-}
-
-void TrajectoryVisualizer::add(
   const models::Trajectories & trajectories,
   const Eigen::ArrayXf & costs,
   const std::vector<std::pair<std::string, Eigen::ArrayXf>> & critic_costs,
@@ -231,11 +202,6 @@ void TrajectoryVisualizer::reset()
   marker_id_ = 0;
   points_ = std::make_unique<visualization_msgs::msg::MarkerArray>();
   optimal_path_ = std::make_unique<nav_msgs::msg::Path>();
-}
-
-bool TrajectoryVisualizer::hasSubscribers() const
-{
-  return trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0;
 }
 
 void TrajectoryVisualizer::visualize()
