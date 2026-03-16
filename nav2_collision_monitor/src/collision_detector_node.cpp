@@ -360,10 +360,9 @@ void CollisionDetector::process()
     if (!polygon->getEnabled()) {
       continue;
     }
+    const int points_inside = polygon->getPointsInside(collision_points);
     state_msg->polygons.push_back(polygon->getName());
-    state_msg->detections.push_back(
-      polygon->getPointsInside(
-        collision_points) >= polygon->getMinPoints());
+    state_msg->detections.push_back(polygon->isTriggeredByPoints(points_inside));
   }
 
   state_pub_->publish(std::move(state_msg));

@@ -123,6 +123,8 @@ bool Polygon::configure()
 
 void Polygon::activate()
 {
+  resetTriggerState();
+
   if (visualize_) {
     polygon_pub_->on_activate();
   }
@@ -160,23 +162,21 @@ bool Polygon::isTriggeredByPoints(int points_inside)
 {
   const bool hit_now = points_inside >= min_points_;
 
-  if (trigger_consecutive_points_ <= 1 && release_consecutive_points_ <= 1) {
+  if (trigger_consecutive_points_ == 1 && release_consecutive_points_ == 1) {
     trigger_active_ = hit_now;
-    trigger_hits_ = hit_now ? 1 : 0;
-    release_hits_ = hit_now ? 0 : 1;
     return trigger_active_;
   }
 
   if (hit_now) {
-    trigger_hits_ = std::min(trigger_hits_ + 1, trigger_consecutive_points_);
+    trigger_hits_ += 1;
     release_hits_ = 0;
-    if (!trigger_active_ && trigger_hits_ >= trigger_consecutive_points_) {
+    if (trigger_hits_ >= trigger_consecutive_points_) {
       trigger_active_ = true;
     }
   } else {
-    release_hits_ = std::min(release_hits_ + 1, release_consecutive_points_);
+    release_hits_ += 1;
     trigger_hits_ = 0;
-    if (trigger_active_ && release_hits_ >= release_consecutive_points_) {
+    if (release_hits_ >= release_consecutive_points_) {
       trigger_active_ = false;
     }
   }
@@ -407,14 +407,12 @@ bool Polygon::getCommonParameters(
     release_consecutive_points_ = node->declare_or_get_parameter(
       polygon_name_ + ".release_consecutive_points", 1);
 
-    if (trigger_consecutive_points_ < 1) {
-      throw rclcpp::exceptions::InvalidParameterValueException(
-        "Parameter 'trigger_consecutive_points' must be >= 1");
-    }
-
-    if (release_consecutive_points_ < 1) {
-      throw rclcpp::exceptions::InvalidParameterValueException(
-        "Parameter 'release_consecutive_points' must be >= 1");
+    if (trigger_consecutive_points_ < 1 || release_consecutive_points_ < 1) {
+      RCLCPP_ERROR(
+        logger_,
+        "[%s]: trigger_consecutive_points and release_consecutive_points must be >= 1",
+        polygon_name_.c_str());
+      return false;
     }
 
     resetTriggerState();
@@ -602,6 +600,8 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   // Store incoming polygon for further (possible) poly_ vertices corrections
   // from PolygonStamped frame -> to base frame
   polygon_ = *msg;
+
+  resetTriggerState();
 }
 
 rcl_interfaces::msg::SetParametersResult Polygon::validateParameterUpdatesCallback(
@@ -626,9 +626,7 @@ void Polygon::updateParametersCallback(
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
       if (param_name == polygon_name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
-        if (!enabled_) {
-          resetTriggerState();
-        }
+        resetTriggerState();
       }
     }
 
