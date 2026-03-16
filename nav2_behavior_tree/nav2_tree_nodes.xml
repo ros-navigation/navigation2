@@ -115,6 +115,7 @@
       <output_port name="last_reached_index">Index of the last reached pose from the goals list. -1 if all goals were reached</output_port>
       <output_port name="error_code_id">"Compute path through poses error code"</output_port>
       <output_port name="error_msg">"Compute path through poses error message"</output_port>
+      <input_port name="allow_partial_paths">Allow partial paths</input_port>
     </Action>
 
     <Action ID="ComputeRoute">
