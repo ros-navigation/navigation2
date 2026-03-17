@@ -156,9 +156,11 @@ void TrajectoryVisualizer::add(
   // Total cost layer (with collision coloring)
   addCostLayer(costs, "Total Cost", true);
 
-  // Per-critic cost layers (pure cost gradient, no collision coloring)
+  // Per-critic cost layers (collision coloring for collision-detecting critics only)
   for (const auto & [name, critic_cost] : critic_costs) {
-    addCostLayer(critic_cost, name, false);
+    bool is_collision_critic =
+      (name == "CostCritic" || name == "ObstaclesCritic");
+    addCostLayer(critic_cost, name, is_collision_critic);
   }
 }
 
