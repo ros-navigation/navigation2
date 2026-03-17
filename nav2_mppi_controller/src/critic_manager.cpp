@@ -37,7 +37,7 @@ void CriticManager::getParams()
   auto node = parent_.lock();
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(critic_names_, "critics", std::vector<std::string>{}, ParameterType::Static);
-  getParam(publish_critics_stats_, "publish_critics_stats", false, ParameterType::Static);
+  getParam(visualize_, "visualize", false);
 }
 
 void CriticManager::loadCritics()
@@ -48,7 +48,7 @@ void CriticManager::loadCritics()
   }
 
   auto node = parent_.lock();
-  if (publish_critics_stats_) {
+  if (visualize_) {
     critics_effect_pub_ = node->create_publisher<nav2_msgs::msg::CriticsStats>(
       "~/critics_stats");
     critics_effect_pub_->on_activate();
@@ -75,7 +75,7 @@ std::string CriticManager::getFullName(const std::string & name)
 void CriticManager::evalTrajectoriesScores(
   CriticData & data)
 {
-  if (publish_critics_stats_) {
+  if (visualize_) {
     // Zero-store-sum approach: save existing costs (e.g. gamma terms from prior
     // iterations), zero before each critic, store its individual contribution,
     // then restore the saved base and add all critic contributions.
@@ -104,7 +104,7 @@ void CriticManager::evalTrajectoriesScores(
     }
   }
 
-  if (publish_critics_stats_ && critics_effect_pub_) {
+  if (visualize_ && critics_effect_pub_) {
     auto stats_msg = std::make_unique<nav2_msgs::msg::CriticsStats>();
     const size_t n = per_critic_costs_.size();
     stats_msg->critics.reserve(n);

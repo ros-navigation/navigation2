@@ -127,13 +127,14 @@ void TrajectoryVisualizer::add(
   const bool has_collisions = !collisions.empty();
 
   // Normalize costs excluding collision trajectories for better gradient resolution.
-  auto addCostLayer = [&](const Eigen::ArrayXf & layer_costs, const std::string & ns) {
+  auto addCostLayer =
+    [&](const Eigen::ArrayXf & layer_costs, const std::string & ns, bool show_collisions) {
       float min_val = layer_costs.maxCoeff();
       float max_val = layer_costs.minCoeff();
 
       // Compute range from non-collision trajectories only
       for (Eigen::Index k = 0; k < layer_costs.size(); ++k) {
-        if (has_collisions && collisions[k]) {continue;}
+        if (show_collisions && has_collisions && collisions[k]) {continue;}
         if (layer_costs(k) < min_val) {min_val = layer_costs(k);}
         if (layer_costs(k) > max_val) {max_val = layer_costs(k);}
       }
@@ -146,17 +147,18 @@ void TrajectoryVisualizer::add(
       for (size_t i = 0; i < n_rows; i += trajectory_step_) {
         float norm = (range > 0.0f) ?
           (layer_costs(i) - min_val) / range : 0.0f;
-        bool in_collision = has_collisions && i < collisions.size() && collisions[i];
+        bool in_collision =
+          show_collisions && has_collisions && i < collisions.size() && collisions[i];
         addCostColoredTrajectory(i, trajectories, norm, in_collision, ns, stamp);
       }
     };
 
-  // Total cost layer
-  addCostLayer(costs, "Total Cost");
+  // Total cost layer (with collision coloring)
+  addCostLayer(costs, "Total Cost", true);
 
-  // Per-critic cost layers
+  // Per-critic cost layers (pure cost gradient, no collision coloring)
   for (const auto & [name, critic_cost] : critic_costs) {
-    addCostLayer(critic_cost, name);
+    addCostLayer(critic_cost, name, false);
   }
 }
 

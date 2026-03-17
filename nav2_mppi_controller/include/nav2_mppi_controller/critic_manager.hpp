@@ -108,7 +108,7 @@ protected:
   Critics critics_;
 
   nav2::Publisher<nav2_msgs::msg::CriticsStats>::SharedPtr critics_effect_pub_;
-  bool publish_critics_stats_;
+  bool visualize_;
   std::vector<std::pair<std::string, Eigen::ArrayXf>> per_critic_costs_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
