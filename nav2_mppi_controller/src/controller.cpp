@@ -142,6 +142,7 @@ void MPPIController::visualize(
   trajectory_visualizer_.add(
     optimizer_.getGeneratedTrajectories(),
     optimizer_.getCosts(),
+    optimizer_.getCollisionFlags(),
     optimizer_.getPerCriticCosts(),
     cmd_stamp);
   trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);

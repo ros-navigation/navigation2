@@ -136,6 +136,15 @@ public:
   }
 
   /**
+   * @brief Get per-trajectory collision flags from last evaluation
+   * @return Vector of bools, true if trajectory is in collision
+   */
+  const std::vector<bool> & getCollisionFlags() const
+  {
+    return critics_data_.trajectories_in_collision;
+  }
+
+  /**
    * @brief Set the maximum speed based on the speed limits callback
    * @param speed_limit Limit of the speed for use
    * @param percentage Whether the speed limit is absolute or relative
@@ -308,7 +317,7 @@ protected:
   CriticData critics_data_ = {
     state_, generated_trajectories_, path_, goal_,
     costs_, settings_.model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 

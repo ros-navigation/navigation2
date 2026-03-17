@@ -158,6 +158,9 @@ void CostCritic::score(CriticData & data)
   repulsive_cost.setZero();
   bool all_trajectories_collide = true;
 
+  auto & collisions = data.trajectories_in_collision;
+  collisions.resize(data.costs.rows(), false);
+
   int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
   int strided_traj_rows = data.trajectories.x.rows();
   int outer_stride = strided_traj_rows * trajectory_point_step_;
@@ -200,6 +203,7 @@ void CostCritic::score(CriticData & data)
       if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
         traj_cost = collision_cost_;
         trajectory_collide = true;
+        collisions[i] = true;
         break;
       }
 

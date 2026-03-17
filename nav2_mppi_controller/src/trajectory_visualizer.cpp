@@ -109,6 +109,7 @@ void TrajectoryVisualizer::add(
 void TrajectoryVisualizer::add(
   const models::Trajectories & trajectories,
   const Eigen::ArrayXf & costs,
+  const std::vector<bool> & collisions,
   const std::vector<std::pair<std::string, Eigen::ArrayXf>> & critic_costs,
   const builtin_interfaces::msg::Time & stamp)
 {
@@ -123,20 +124,30 @@ void TrajectoryVisualizer::add(
     return;
   }
 
-  // Normalize total costs using Eigen vectorized ops
+  const bool has_collisions = !collisions.empty();
+
+  // Normalize costs excluding collision trajectories for better gradient resolution.
   auto addCostLayer = [&](const Eigen::ArrayXf & layer_costs, const std::string & ns) {
-      float min_val = layer_costs.minCoeff();
-      float max_val = layer_costs.maxCoeff();
-      float range = max_val - min_val;
-      Eigen::ArrayXf normalized;
-      if (range > 0.0f) {
-        normalized = (layer_costs - min_val) / range;
-      } else {
-        normalized = Eigen::ArrayXf::Zero(layer_costs.size());
+      float min_val = layer_costs.maxCoeff();
+      float max_val = layer_costs.minCoeff();
+
+      // Compute range from non-collision trajectories only
+      for (Eigen::Index k = 0; k < layer_costs.size(); ++k) {
+        if (has_collisions && collisions[k]) {continue;}
+        if (layer_costs(k) < min_val) {min_val = layer_costs(k);}
+        if (layer_costs(k) > max_val) {max_val = layer_costs(k);}
       }
+      if (max_val < min_val) {
+        min_val = layer_costs.minCoeff();
+        max_val = layer_costs.maxCoeff();
+      }
+      float range = max_val - min_val;
 
       for (size_t i = 0; i < n_rows; i += trajectory_step_) {
-        addCostColoredTrajectory(i, trajectories, normalized(i), ns, stamp);
+        float norm = (range > 0.0f) ?
+          (layer_costs(i) - min_val) / range : 0.0f;
+        bool in_collision = has_collisions && i < collisions.size() && collisions[i];
+        addCostColoredTrajectory(i, trajectories, norm, in_collision, ns, stamp);
       }
     };
 
@@ -153,6 +164,7 @@ void TrajectoryVisualizer::addCostColoredTrajectory(
   size_t trajectory_idx,
   const models::Trajectories & trajectories,
   float normalized_cost,
+  bool in_collision,
   const std::string & ns,
   const builtin_interfaces::msg::Time & stamp)
 {
@@ -168,7 +180,9 @@ void TrajectoryVisualizer::addCostColoredTrajectory(
   marker.action = Marker::ADD;
   marker.pose.orientation.w = 1.0;
   marker.scale.x = 0.01;  // line width
-  marker.color = costToColor(normalized_cost);
+  marker.color = in_collision ?
+    utils::createColor(1.0f, 0.0f, 1.0f, 0.6f) :  // magenta for collisions
+    costToColor(normalized_cost);
 
   marker.points.reserve(n_cols / time_step_ + 1);
   for (size_t j = 0; j < n_cols; j += time_step_) {

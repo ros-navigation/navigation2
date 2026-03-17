@@ -129,7 +129,7 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
-  vis.add(candidate_trajectories, costs, critic_costs, stamp);
+  vis.add(candidate_trajectories, costs, {}, critic_costs, stamp);
   vis.visualize();
 
   executor.spin_some();
