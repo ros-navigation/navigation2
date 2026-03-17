@@ -149,7 +149,7 @@ protected:
 
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 2500.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.minimum_turning_radius", 0.4));
-    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 5.5));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.5));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_dist", 0.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
@@ -525,7 +525,7 @@ TEST_F(SmootherTest, testingAnchoringToOriginalPath)
 
 TEST_F(SmootherTest, testingMaxCurvature)
 {
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 30.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.5));
   // set w_smooth to a small value so that the whole job is upon w_curve
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 0.3));
   // let's give the smoother more time since w_smooth is so small
@@ -620,7 +620,7 @@ TEST_F(SmootherTest, testingObstacleAvoidance)
   footprint.push_back(pointMsg(-0.4, -0.25));
   footprint.push_back(pointMsg(0.4, -0.25));
 
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 2000000.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 2500.0));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
   reloadParams();
 
@@ -729,8 +729,8 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   footprint.push_back(pointMsg(0.4, -0.2));
 
   // first smooth with homogeneous w_cost to compare
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 1500.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0001));
   // higher w_curve significantly decreases convergence speed here
   // path feasibility can be restored by subsequent resmoothing with higher w_curve
   // TODO(afrixs): tune ceres optimizer to "converge" faster,
@@ -761,9 +761,9 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
 
   // then update parameters so that robot is not so afraid of obstacles
   // during simple movement but pays extra attention during rotations near cusps
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0052));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.00005));
   node_lifecycle_->set_parameter(
-    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.027 / 0.0052));
+    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.001 / 0.00005));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", 2.5));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.fn_tol", 1e-15));
   reloadParams();
@@ -816,7 +816,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   footprint.push_back(pointMsg(0.15, -0.2));
 
   // reset parameters back to homogeneous and shift cost check point to the center of the footprint
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 1500.0));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 1.0));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
