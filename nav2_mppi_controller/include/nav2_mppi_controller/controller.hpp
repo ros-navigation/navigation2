@@ -125,6 +125,7 @@ protected:
   TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;
+  int visualize_cost_layer_;
   bool publish_optimal_trajectory_;
 };
 

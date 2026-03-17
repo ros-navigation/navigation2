@@ -110,7 +110,7 @@ void TrajectoryVisualizer::add(
   const models::Trajectories & trajectories,
   const Eigen::ArrayXf & costs,
   const std::vector<bool> & collisions,
-  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & critic_costs,
+  bool show_collisions,
   const builtin_interfaces::msg::Time & stamp)
 {
   if (trajectories_publisher_->get_subscription_count() == 0) {
@@ -124,43 +124,28 @@ void TrajectoryVisualizer::add(
     return;
   }
 
-  const bool has_collisions = !collisions.empty();
+  const bool has_collisions = show_collisions && !collisions.empty();
 
   // Normalize costs excluding collision trajectories for better gradient resolution.
-  auto addCostLayer =
-    [&](const Eigen::ArrayXf & layer_costs, const std::string & ns, bool show_collisions) {
-      float min_val = layer_costs.maxCoeff();
-      float max_val = layer_costs.minCoeff();
+  float min_val = costs.maxCoeff();
+  float max_val = costs.minCoeff();
+  for (Eigen::Index k = 0; k < costs.size(); ++k) {
+    if (has_collisions && collisions[k]) {continue;}
+    if (costs(k) < min_val) {min_val = costs(k);}
+    if (costs(k) > max_val) {max_val = costs(k);}
+  }
+  if (max_val < min_val) {
+    min_val = costs.minCoeff();
+    max_val = costs.maxCoeff();
+  }
+  float range = max_val - min_val;
 
-      // Compute range from non-collision trajectories only
-      for (Eigen::Index k = 0; k < layer_costs.size(); ++k) {
-        if (show_collisions && has_collisions && collisions[k]) {continue;}
-        if (layer_costs(k) < min_val) {min_val = layer_costs(k);}
-        if (layer_costs(k) > max_val) {max_val = layer_costs(k);}
-      }
-      if (max_val < min_val) {
-        min_val = layer_costs.minCoeff();
-        max_val = layer_costs.maxCoeff();
-      }
-      float range = max_val - min_val;
-
-      for (size_t i = 0; i < n_rows; i += trajectory_step_) {
-        float norm = (range > 0.0f) ?
-          (layer_costs(i) - min_val) / range : 0.0f;
-        bool in_collision =
-          show_collisions && has_collisions && i < collisions.size() && collisions[i];
-        addCostColoredTrajectory(i, trajectories, norm, in_collision, ns, stamp);
-      }
-    };
-
-  // Total cost layer (with collision coloring)
-  addCostLayer(costs, "Total Cost", true);
-
-  // Per-critic cost layers (collision coloring for collision-detecting critics only)
-  for (const auto & [name, critic_cost] : critic_costs) {
-    bool is_collision_critic =
-      (name == "CostCritic" || name == "ObstaclesCritic");
-    addCostLayer(critic_cost, name, is_collision_critic);
+  for (size_t i = 0; i < n_rows; i += trajectory_step_) {
+    float norm = (range > 0.0f) ?
+      (costs(i) - min_val) / range : 0.0f;
+    bool in_collision =
+      has_collisions && i < collisions.size() && collisions[i];
+    addCostColoredTrajectory(i, trajectories, norm, in_collision, stamp);
   }
 }
 
@@ -169,7 +154,6 @@ void TrajectoryVisualizer::addCostColoredTrajectory(
   const models::Trajectories & trajectories,
   float normalized_cost,
   bool in_collision,
-  const std::string & ns,
   const builtin_interfaces::msg::Time & stamp)
 {
   using visualization_msgs::msg::Marker;
@@ -178,7 +162,7 @@ void TrajectoryVisualizer::addCostColoredTrajectory(
   Marker marker;
   marker.header.frame_id = frame_id_;
   marker.header.stamp = stamp;
-  marker.ns = ns;
+  marker.ns = "Candidate Trajectories";
   marker.id = marker_id_++;
   marker.type = Marker::LINE_STRIP;
   marker.action = Marker::ADD;

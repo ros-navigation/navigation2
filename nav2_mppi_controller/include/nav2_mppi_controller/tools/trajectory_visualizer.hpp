@@ -82,16 +82,16 @@ public:
   /**
     * @brief Add candidate trajectories colored by cost gradient
     * @param trajectories Candidate trajectories
-    * @param costs Total cost per trajectory
+    * @param costs Cost per trajectory for the selected layer
     * @param collisions Per-trajectory collision flags
-    * @param critic_costs Per-critic cost breakdown (name, cost_array) pairs
+    * @param show_collisions Whether to render collision trajectories differently
     * @param stamp Timestamp for markers
     */
   void add(
     const models::Trajectories & trajectories,
     const Eigen::ArrayXf & costs,
     const std::vector<bool> & collisions,
-    const std::vector<std::pair<std::string, Eigen::ArrayXf>> & critic_costs,
+    bool show_collisions,
     const builtin_interfaces::msg::Time & stamp);
 
   /**
@@ -111,7 +111,6 @@ protected:
     * @param trajectories Trajectory data
     * @param normalized_cost Cost value in [0, 1] range
     * @param in_collision Whether this trajectory is in collision
-    * @param ns Marker namespace
     * @param stamp Timestamp
     */
   void addCostColoredTrajectory(
@@ -119,7 +118,6 @@ protected:
     const models::Trajectories & trajectories,
     float normalized_cost,
     bool in_collision,
-    const std::string & ns,
     const builtin_interfaces::msg::Time & stamp);
 
   /**
