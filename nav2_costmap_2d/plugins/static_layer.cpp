@@ -207,6 +207,20 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
       logger_,
       "StaticLayer: Resizing costmap to %d X %d at %f m/pix", size_x, size_y,
       new_map.info.resolution);
+
+    double fmod_x = std::fmod(new_map.info.origin.position.x, new_map.info.resolution);
+    double fmod_y = std::fmod(new_map.info.origin.position.y, new_map.info.resolution);
+
+    if (std::abs(fmod_x) > EPSILON || std::abs(fmod_y) > EPSILON) {
+      RCLCPP_WARN(
+        logger_,
+        "StaticLayer: Costmap origin coordinates are not perfectly aligned with the resolution. "
+        "This may cause misalignment aliasing between rolling and non-rolling costmaps.\n"
+        "Map origin: (%.f, %.f) | Resolution: %.f",
+        new_map.info.origin.position.x, new_map.info.origin.position.y,
+        new_map.info.resolution);
+    }
+
     layered_costmap_->resizeMap(
       size_x, size_y, new_map.info.resolution,
       new_map.info.origin.position.x,
