@@ -215,7 +215,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
       RCLCPP_WARN(
         logger_,
         "StaticLayer: Costmap origin coordinates are not perfectly aligned with the resolution. "
-        "This may cause misalignment with rolling costmaps.\n"
+        "This may cause misalignment aliasing between rolling and non-rolling costmaps.\n"
         "Map origin: (%.f, %.f) | Resolution: %.f | Offsets: (%.f, %.f)",
         new_map.info.origin.position.x, new_map.info.origin.position.y,
         new_map.info.resolution, fmod_x, fmod_y);
