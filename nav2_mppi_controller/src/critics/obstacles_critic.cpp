@@ -181,7 +181,7 @@ void ObstaclesCritic::score(CriticData & data)
 
     if (!trajectory_collide) {all_trajectories_collide = false;}
     raw_cost(i) = trajectory_collide ? collision_cost_ : traj_cost;
-    if (trajectory_collide) {if (track_collisions) {collisions[i] = true;}}
+    if (trajectory_collide && track_collisions) {collisions[i] = true;}
   }
 
   // Normalize repulsive cost by trajectory length & lowest score to not overweight importance
