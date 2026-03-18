@@ -37,7 +37,7 @@ void MPPIController::configure(
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);
-  getParam(visualize_cost_layer_, "visualize_cost_layer", 0);
+  getParam(critic_index_to_visualize_, "critic_index_to_visualize", 0);
 
   getParam(publish_optimal_trajectory_, "publish_optimal_trajectory", false);
 
@@ -140,7 +140,7 @@ void MPPIController::visualize(
   const Eigen::ArrayXXf & optimal_trajectory)
 {
   const auto & critic_costs = optimizer_.getCriticCosts();
-  const int layer = visualize_cost_layer_;
+  const int layer = critic_index_to_visualize_;
   const Eigen::ArrayXf & costs =
     (layer <= 0 || layer > static_cast<int>(critic_costs.size())) ?
     optimizer_.getCosts() :
