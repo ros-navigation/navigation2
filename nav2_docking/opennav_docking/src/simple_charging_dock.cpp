@@ -152,10 +152,12 @@ void SimpleChargingDock::configure(
       nav2::qos::StandardTopicQoS());
   }
 
-  dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("dock_pose");
+  dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "dock_pose", nav2::qos::LatchedPublisherQoS());
   filtered_dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
-    "filtered_dock_pose");
-  staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("staging_pose");
+    "filtered_dock_pose", nav2::qos::LatchedPublisherQoS());
+  staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "staging_pose", nav2::qos::LatchedPublisherQoS());
 }
 
 geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
