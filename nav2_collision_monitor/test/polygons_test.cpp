@@ -1019,6 +1019,94 @@ TEST_F(Tester, testPolygonSourceAssociation)
   ASSERT_EQ(polygon_->getSourcesNames(), poly_sources);
 }
 
+TEST_F(Tester, testPolygonDebounceDefaultBehavior)
+{
+  createPolygon("stop", true);
+
+  auto makePoints = [](int count) {
+      std::vector<nav2_collision_monitor::Point> points;
+      points.reserve(count);
+      for (int i = 0; i < count; ++i) {
+        points.push_back(nav2_collision_monitor::Point{0.0, 0.0});
+      }
+      return points;
+    };
+
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS)));
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
+}
+
+TEST_F(Tester, testPolygonDebounceConsecutiveTriggerRelease)
+{
+  createPolygon("stop", true);
+
+  auto results = test_node_->set_parameters({
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".trigger_consecutive_points", 3),
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".release_consecutive_points", 3)});
+  ASSERT_EQ(results.size(), 2u);
+  EXPECT_TRUE(results[0].successful);
+  EXPECT_TRUE(results[1].successful);
+
+  auto makePoints = [](int count) {
+      std::vector<nav2_collision_monitor::Point> points;
+      points.reserve(count);
+      for (int i = 0; i < count; ++i) {
+        points.push_back(nav2_collision_monitor::Point{0.0, 0.0});
+      }
+      return points;
+    };
+
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS)));
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS)));
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS)));
+
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
+}
+
+TEST_F(Tester, testPolygonDebounceRejectsInvalidConfiguredTriggerParameter)
+{
+  setCommonParameters(POLYGON_NAME, "stop");
+  setPolygonParameters(SQUARE_POLYGON_STR, true);
+  test_node_->declare_parameter(std::string(POLYGON_NAME) + ".trigger_consecutive_points", 0);
+
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_->weak_from_this(), POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  EXPECT_FALSE(polygon_->configure());
+}
+
+TEST_F(Tester, testPolygonDebounceRejectsInvalidConfiguredReleaseParameter)
+{
+  const std::string polygon_name = "TestPolygonInvalidRelease";
+  setCommonParameters(polygon_name, "stop");
+  test_node_->declare_parameter(
+    polygon_name + ".points", rclcpp::ParameterValue(SQUARE_POLYGON_STR));
+  test_node_->declare_parameter(polygon_name + ".release_consecutive_points", 0);
+
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_->weak_from_this(), polygon_name,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  EXPECT_FALSE(polygon_->configure());
+}
+
+TEST_F(Tester, testPolygonDebounceRejectsInvalidDynamicParameters)
+{
+  createPolygon("stop", true);
+
+  EXPECT_THROW(
+    test_node_->set_parameters({
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".trigger_consecutive_points", 0)}),
+    rclcpp::exceptions::InvalidParameterValueException);
+
+  EXPECT_THROW(
+    test_node_->set_parameters({
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".release_consecutive_points", 0)}),
+    rclcpp::exceptions::InvalidParameterValueException);
+}
+
 int main(int argc, char ** argv)
 {
   // Initialize the system
