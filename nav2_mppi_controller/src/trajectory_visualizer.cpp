@@ -15,6 +15,7 @@
 #include <memory>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 
 namespace mppi
@@ -124,8 +125,8 @@ void TrajectoryVisualizer::add(
   }
 
   // Normalize costs excluding collision trajectories for better gradient resolution.
-  float min_val = costs.maxCoeff();
-  float max_val = costs.minCoeff();
+  float min_val = std::numeric_limits<float>::max();
+  float max_val = std::numeric_limits<float>::lowest();
   for (Eigen::Index k = 0; k < costs.size(); ++k) {
     if (!collisions.empty() && static_cast<size_t>(k) < collisions.size() && collisions[k]) {
       continue;
