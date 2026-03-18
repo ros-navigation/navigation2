@@ -141,23 +141,16 @@ void MPPIController::visualize(
 {
   const auto & critic_costs = optimizer_.getCriticCosts();
   const int layer = visualize_cost_layer_;
+  const Eigen::ArrayXf & costs =
+    (layer <= 0 || layer > static_cast<int>(critic_costs.size())) ?
+    optimizer_.getCosts() :
+    critic_costs[layer - 1].second;
 
-  if (layer <= 0 || layer > static_cast<int>(critic_costs.size())) {
-    // Total cost (default)
-    trajectory_visualizer_.add(
-      optimizer_.getGeneratedTrajectories(),
-      optimizer_.getCosts(),
-      optimizer_.getCollisionFlags(),
-      cmd_stamp);
-  } else {
-    // Individual critic (1-indexed)
-    const auto & costs = critic_costs[layer - 1].second;
-    trajectory_visualizer_.add(
-      optimizer_.getGeneratedTrajectories(),
-      costs,
-      optimizer_.getCollisionFlags(),
-      cmd_stamp);
-  }
+  trajectory_visualizer_.add(
+    optimizer_.getGeneratedTrajectories(),
+    costs,
+    optimizer_.getCollisionFlags(),
+    cmd_stamp);
 
   trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
   trajectory_visualizer_.visualize();
