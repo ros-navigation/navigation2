@@ -75,53 +75,40 @@ std::string CriticManager::getFullName(const std::string & name)
 void CriticManager::evalTrajectoriesScores(
   CriticData & data)
 {
+  std::unique_ptr<nav2_msgs::msg::CriticsStats> stats_msg;
   if (visualize_) {
     data.trajectories_in_collision.assign(data.costs.size(), false);
-
-    // Zero-store-sum approach: save existing costs (e.g. gamma terms from prior
-    // iterations), zero before each critic, store its individual contribution,
-    // then restore the saved base and add all critic contributions.
     critic_costs_.clear();
     critic_costs_.reserve(critics_.size());
-    Eigen::ArrayXf saved_costs = data.costs;
-    Eigen::ArrayXf total = Eigen::ArrayXf::Zero(data.costs.size());
+    stats_msg = std::make_unique<nav2_msgs::msg::CriticsStats>();
+    stats_msg->critics.reserve(critics_.size());
+    stats_msg->changed.reserve(critics_.size());
+    stats_msg->costs_sum.reserve(critics_.size());
+  }
 
-    for (size_t i = 0; i < critics_.size(); ++i) {
-      if (data.fail_flag) {
-        break;
-      }
-      data.costs.setZero();
-      critics_[i]->score(data);
-      critic_costs_.emplace_back(critic_names_[i], data.costs);
-      total += data.costs;
+  for (size_t i = 0; i < critics_.size(); ++i) {
+    if (data.fail_flag) {
+      break;
     }
-    data.costs = saved_costs + total;
-  } else {
-    // Original fast path: no per-critic tracking overhead
-    for (size_t i = 0; i < critics_.size(); ++i) {
-      if (data.fail_flag) {
-        break;
-      }
-      critics_[i]->score(data);
+
+    Eigen::ArrayXf costs_before;
+    if (visualize_) {
+      costs_before = data.costs;
+    }
+
+    critics_[i]->score(data);
+
+    if (visualize_) {
+      Eigen::ArrayXf critic_cost = data.costs - costs_before;
+      float sum = critic_cost.sum();
+      stats_msg->critics.push_back(critic_names_[i]);
+      stats_msg->costs_sum.push_back(sum);
+      stats_msg->changed.push_back(sum != 0.0f);
+      critic_costs_.emplace_back(critic_names_[i], std::move(critic_cost));
     }
   }
 
   if (visualize_ && critics_effect_pub_) {
-    auto stats_msg = std::make_unique<nav2_msgs::msg::CriticsStats>();
-    const size_t n = critic_costs_.size();
-    stats_msg->critics.reserve(n);
-    stats_msg->changed.reserve(n);
-    stats_msg->costs_sum.reserve(n);
-
-    for (size_t i = 0; i < n; ++i) {
-      const auto & [name, costs] = critic_costs_[i];
-      stats_msg->critics.push_back(name);
-
-      float sum = costs.sum();
-      stats_msg->costs_sum.push_back(sum);
-      stats_msg->changed.push_back(sum != 0.0f);
-    }
-
     auto node = parent_.lock();
     stats_msg->stamp = node->get_clock()->now();
     critics_effect_pub_->publish(std::move(stats_msg));
