@@ -46,6 +46,8 @@ protected:
   float threshold_to_consider_{0.5f};
   float search_window_{0.15f};
   float lookahead_distance_{0.3f};
+  float max_allowed_distance_{0.2f};
+  float violation_penalty_scale_{2.0f};
 
   // Path caching
   size_t prev_path_size_{0};
