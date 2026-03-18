@@ -159,6 +159,7 @@ void CostCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
 
   auto & collisions = data.trajectories_in_collision;
+  const bool track_collisions = !collisions.empty();
 
   int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
   int strided_traj_rows = data.trajectories.x.rows();
@@ -202,7 +203,7 @@ void CostCritic::score(CriticData & data)
       if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
         traj_cost = collision_cost_;
         trajectory_collide = true;
-        collisions[i] = true;
+        if (track_collisions) {collisions[i] = true;}
         break;
       }
 
