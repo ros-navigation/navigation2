@@ -524,8 +524,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
     return false;
   }
 
-  const int points_inside = polygon->getPointsInside(sources_collision_points_map);
-  if (polygon->isTriggeredByPoints(points_inside)) {
+  if (polygon->isTriggered(sources_collision_points_map)) {
     if (polygon->getActionType() == STOP) {
       // Setting up zero velocity for STOP model
       robot_action.polygon_name = polygon->getName();

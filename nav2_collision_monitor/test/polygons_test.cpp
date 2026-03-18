@@ -1023,9 +1023,18 @@ TEST_F(Tester, testPolygonDebounceDefaultBehavior)
 {
   createPolygon("stop", true);
 
-  EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
-  EXPECT_TRUE(polygon_->isTriggeredByPoints(MIN_POINTS));
-  EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
+  auto makePoints = [](int count) {
+      std::vector<nav2_collision_monitor::Point> points;
+      points.reserve(count);
+      for (int i = 0; i < count; ++i) {
+        points.push_back(nav2_collision_monitor::Point{0.0, 0.0});
+      }
+      return points;
+    };
+
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS)));
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
 }
 
 TEST_F(Tester, testPolygonDebounceConsecutiveTriggerRelease)
@@ -1039,13 +1048,22 @@ TEST_F(Tester, testPolygonDebounceConsecutiveTriggerRelease)
   EXPECT_TRUE(results[0].successful);
   EXPECT_TRUE(results[1].successful);
 
-  EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS));
-  EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS));
-  EXPECT_TRUE(polygon_->isTriggeredByPoints(MIN_POINTS));
+  auto makePoints = [](int count) {
+      std::vector<nav2_collision_monitor::Point> points;
+      points.reserve(count);
+      for (int i = 0; i < count; ++i) {
+        points.push_back(nav2_collision_monitor::Point{0.0, 0.0});
+      }
+      return points;
+    };
 
-  EXPECT_TRUE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
-  EXPECT_TRUE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
-  EXPECT_FALSE(polygon_->isTriggeredByPoints(MIN_POINTS - 1));
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS)));
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS)));
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS)));
+
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
 }
 
 TEST_F(Tester, testPolygonDebounceRejectsInvalidConfiguredTriggerParameter)

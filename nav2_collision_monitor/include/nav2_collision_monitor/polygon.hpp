@@ -101,10 +101,19 @@ public:
 
   /**
    * @brief Temporal debounce for min_points trigger.
-   * @param points_inside Number of points currently inside the polygon.
+   * @param points Input array of points to be checked.
    * @return true if trigger should be considered active after debounce/hold logic.
    */
-  bool isTriggeredByPoints(int points_inside);
+  bool isTriggered(const std::vector<Point> & points);
+
+  /**
+   * @brief Temporal debounce for min_points trigger.
+   * @param sources_collision_points_map Map containing source name as key,
+   * and input array of source's points to be checked as value.
+   * @return true if trigger should be considered active after debounce/hold logic.
+   */
+  bool isTriggered(
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map);
 
   /**
    * @brief Reset temporal debounce state.
@@ -194,6 +203,9 @@ public:
    * @brief Publishes polygon message into a its own topic
    */
   void publish();
+
+private:
+  bool isTriggeredInternal(int points_inside);
 
 protected:
   /**

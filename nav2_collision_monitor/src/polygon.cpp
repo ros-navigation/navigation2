@@ -158,7 +158,20 @@ int Polygon::getMinPoints() const
   return min_points_;
 }
 
-bool Polygon::isTriggeredByPoints(int points_inside)
+bool Polygon::isTriggered(const std::vector<Point> & points)
+{
+  const int points_inside = getPointsInside(points);
+  return isTriggeredInternal(points_inside);
+}
+
+bool Polygon::isTriggered(
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map)
+{
+  const int points_inside = getPointsInside(sources_collision_points_map);
+  return isTriggeredInternal(points_inside);
+}
+
+bool Polygon::isTriggeredInternal(int points_inside)
 {
   const bool hit_now = points_inside >= min_points_;
 
