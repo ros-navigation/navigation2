@@ -159,7 +159,6 @@ void CostCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
 
   auto & collisions = data.trajectories_in_collision;
-  collisions.resize(data.costs.rows(), false);
 
   int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
   int strided_traj_rows = data.trajectories.x.rows();

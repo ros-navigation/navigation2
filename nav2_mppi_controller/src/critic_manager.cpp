@@ -75,6 +75,8 @@ std::string CriticManager::getFullName(const std::string & name)
 void CriticManager::evalTrajectoriesScores(
   CriticData & data)
 {
+  data.trajectories_in_collision.assign(data.costs.size(), false);
+
   if (visualize_) {
     // Zero-store-sum approach: save existing costs (e.g. gamma terms from prior
     // iterations), zero before each critic, store its individual contribution,

@@ -142,7 +142,6 @@ void ObstaclesCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
 
   auto & collisions = data.trajectories_in_collision;
-  collisions.resize(batch_size, false);
 
   for (unsigned int i = 0; i != batch_size; i++) {
     bool trajectory_collide = false;
