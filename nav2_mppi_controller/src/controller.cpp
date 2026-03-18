@@ -151,7 +151,7 @@ void MPPIController::visualize(
       cmd_stamp);
   } else {
     // Individual critic (1-indexed)
-    const auto & [name, costs] = critic_costs[layer - 1];
+    const auto & costs = critic_costs[layer - 1].second;
     trajectory_visualizer_.add(
       optimizer_.getGeneratedTrajectories(),
       costs,
