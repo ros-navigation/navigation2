@@ -30,11 +30,13 @@ void PathHugCritic::initialize()
   getParam(threshold_to_consider_, "threshold_to_consider", 0.5f);
   getParam(search_window_, "search_window", 0.15f);
   getParam(lookahead_distance_, "lookahead_distance", 0.3f);
+  getParam(max_allowed_distance_, "max_allowed_distance", 0.2f);
+  getParam(violation_penalty_scale_, "violation_penalty_scale", 2.0f);
 
   RCLCPP_INFO(
     logger_,
-    "PathHugCritic-V2 instantiated with %d power, %f weight, search_window: %f m, lookahead: %f m",
-    power_, weight_, search_window_, lookahead_distance_);
+    "PathHugCritic instantiated with %d power, %f weight, search_window: %f m, lookahead: %f m, max_allowed: %f m, penalty_scale: %f",
+    power_, weight_, search_window_, lookahead_distance_, max_allowed_distance_, violation_penalty_scale_);
 }
 
 void PathHugCritic::updateCumulativeDistances(const models::Path & path, size_t num_segments)
@@ -126,8 +128,14 @@ void PathHugCritic::score(CriticData & data)
         px, py, data.path, num_segments, path_hint, segments_searched);
 
       if (path_hint < static_cast<Eigen::Index>(num_segments) && path_pts_valid[path_hint]) {
-        cost_array(traj_idx) += dist_sq;
-        valid_sample_count(traj_idx)++;
+        const float dist = std::sqrt(dist_sq);
+        if (dist > max_allowed_distance_) {
+          const float excess_dist = dist - max_allowed_distance_;
+          // Exponential penalty: scale * exp(excess / allowed) to heavily punish violations
+          const float penalty = violation_penalty_scale_ * std::exp(excess_dist / max_allowed_distance_);
+          cost_array(traj_idx) += penalty;
+          valid_sample_count(traj_idx)++;
+        }
       }
 
       prev_x = px;
@@ -138,7 +146,8 @@ void PathHugCritic::score(CriticData & data)
 
   for (Eigen::Index i = 0; i < batch_size; ++i) {
     if (valid_sample_count(i) > 0) {
-      cost_array(i) = std::sqrt(cost_array(i) / static_cast<float>(valid_sample_count(i)));
+      // Sum of exponential penalties
+      cost_array(i) = cost_array(i);
     }
   }
 

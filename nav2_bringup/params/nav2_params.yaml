@@ -237,6 +237,8 @@ controller_server:
         threshold_to_consider: 0.5
         search_window: 0.15
         lookahead_distance: 0.3
+        max_allowed_distance: 0.05
+        violation_penalty_scale: 10.0
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
