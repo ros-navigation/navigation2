@@ -112,7 +112,7 @@ void PathAlignCritic::score(CriticData & data)
     dy = data.path.y(i) - pose.y;
     path_integrated_distances[i] = path_integrated_distances[i - 1] + sqrtf(dx * dx + dy * dy);
 
-    // find the first path point that is further along the path than the occupancy_check_min_distance_ and
+    // find the first path point that is further than  max(occupancy_check_min_distance_, furthest_reached_path_point)
     if (occupancy_check_distance_idx == path_segments_count &&
         path_integrated_distances[i] > occupancy_check_min_distance_ &&
         i >= *data.furthest_reached_path_point) {
