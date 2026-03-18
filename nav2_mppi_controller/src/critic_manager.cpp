@@ -99,12 +99,14 @@ void CriticManager::evalTrajectoriesScores(
     critics_[i]->score(data);
 
     if (visualize_) {
-      Eigen::ArrayXf critic_cost = data.costs - costs_before;
-      float sum = critic_cost.sum();
       stats_msg->critics.push_back(critic_names_[i]);
-      stats_msg->costs_sum.push_back(sum);
-      stats_msg->changed.push_back(sum != 0.0f);
-      critic_costs_.emplace_back(critic_names_[i], std::move(critic_cost));
+
+      // Calculate sum of costs added by this individual critic
+      Eigen::ArrayXf cost_diff = data.costs - costs_before;
+      float costs_sum = cost_diff.sum();
+      stats_msg->costs_sum.push_back(costs_sum);
+      stats_msg->changed.push_back(costs_sum != 0.0f);
+      critic_costs_.emplace_back(critic_names_[i], std::move(cost_diff));
     }
   }
 
