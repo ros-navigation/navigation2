@@ -148,17 +148,15 @@ void MPPIController::visualize(
       optimizer_.getGeneratedTrajectories(),
       optimizer_.getCosts(),
       optimizer_.getCollisionFlags(),
-      true, cmd_stamp);
+      cmd_stamp);
   } else {
     // Individual critic (1-indexed)
     const auto & [name, costs] = critic_costs[layer - 1];
-    bool is_collision_critic =
-      (name == "CostCritic" || name == "ObstaclesCritic");
     trajectory_visualizer_.add(
       optimizer_.getGeneratedTrajectories(),
       costs,
       optimizer_.getCollisionFlags(),
-      is_collision_critic, cmd_stamp);
+      cmd_stamp);
   }
 
   trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);

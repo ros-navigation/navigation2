@@ -84,14 +84,12 @@ public:
     * @param trajectories Candidate trajectories
     * @param costs Cost per trajectory for the selected layer
     * @param collisions Per-trajectory collision flags
-    * @param show_collisions Whether to render collision trajectories differently
     * @param stamp Timestamp for markers
     */
   void add(
     const models::Trajectories & trajectories,
     const Eigen::ArrayXf & costs,
     const std::vector<bool> & collisions,
-    bool show_collisions,
     const builtin_interfaces::msg::Time & stamp);
 
   /**

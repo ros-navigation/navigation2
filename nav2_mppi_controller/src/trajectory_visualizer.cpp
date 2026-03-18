@@ -110,7 +110,6 @@ void TrajectoryVisualizer::add(
   const models::Trajectories & trajectories,
   const Eigen::ArrayXf & costs,
   const std::vector<bool> & collisions,
-  bool show_collisions,
   const builtin_interfaces::msg::Time & stamp)
 {
   if (trajectories_publisher_->get_subscription_count() == 0) {
@@ -124,13 +123,11 @@ void TrajectoryVisualizer::add(
     return;
   }
 
-  const bool has_collisions = show_collisions && !collisions.empty();
-
   // Normalize costs excluding collision trajectories for better gradient resolution.
   float min_val = costs.maxCoeff();
   float max_val = costs.minCoeff();
   for (Eigen::Index k = 0; k < costs.size(); ++k) {
-    if (has_collisions && collisions[k]) {continue;}
+    if (!collisions.empty() && collisions[k]) {continue;}
     if (costs(k) < min_val) {min_val = costs(k);}
     if (costs(k) > max_val) {max_val = costs(k);}
   }
@@ -144,7 +141,7 @@ void TrajectoryVisualizer::add(
     float norm = (range > 0.0f) ?
       (costs(i) - min_val) / range : 0.0f;
     bool in_collision =
-      has_collisions && i < collisions.size() && collisions[i];
+      !collisions.empty() && i < collisions.size() && collisions[i];
     addCostColoredTrajectory(i, trajectories, norm, in_collision, stamp);
   }
 }
