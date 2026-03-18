@@ -79,8 +79,8 @@ void CriticManager::evalTrajectoriesScores(
     // Zero-store-sum approach: save existing costs (e.g. gamma terms from prior
     // iterations), zero before each critic, store its individual contribution,
     // then restore the saved base and add all critic contributions.
-    per_critic_costs_.clear();
-    per_critic_costs_.reserve(critics_.size());
+    critic_costs_.clear();
+    critic_costs_.reserve(critics_.size());
     Eigen::ArrayXf saved_costs = data.costs;
     Eigen::ArrayXf total = Eigen::ArrayXf::Zero(data.costs.size());
 
@@ -90,7 +90,7 @@ void CriticManager::evalTrajectoriesScores(
       }
       data.costs.setZero();
       critics_[i]->score(data);
-      per_critic_costs_.emplace_back(critic_names_[i], data.costs);
+      critic_costs_.emplace_back(critic_names_[i], data.costs);
       total += data.costs;
     }
     data.costs = saved_costs + total;
@@ -106,13 +106,13 @@ void CriticManager::evalTrajectoriesScores(
 
   if (visualize_ && critics_effect_pub_) {
     auto stats_msg = std::make_unique<nav2_msgs::msg::CriticsStats>();
-    const size_t n = per_critic_costs_.size();
+    const size_t n = critic_costs_.size();
     stats_msg->critics.reserve(n);
     stats_msg->changed.reserve(n);
     stats_msg->costs_sum.reserve(n);
 
     for (size_t i = 0; i < n; ++i) {
-      const auto & [name, costs] = per_critic_costs_[i];
+      const auto & [name, costs] = critic_costs_[i];
       stats_msg->critics.push_back(name);
 
       float sum = costs.sum();

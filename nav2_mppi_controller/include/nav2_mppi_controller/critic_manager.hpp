@@ -76,9 +76,9 @@ public:
     * @brief Get stored per-critic costs from last evaluation
     * @return Vector of (critic_name, cost_array) pairs
     */
-  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & getPerCriticCosts() const
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & getCriticCosts() const
   {
-    return per_critic_costs_;
+    return critic_costs_;
   }
 
 protected:
@@ -109,7 +109,7 @@ protected:
 
   nav2::Publisher<nav2_msgs::msg::CriticsStats>::SharedPtr critics_effect_pub_;
   bool visualize_;
-  std::vector<std::pair<std::string, Eigen::ArrayXf>> per_critic_costs_;
+  std::vector<std::pair<std::string, Eigen::ArrayXf>> critic_costs_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };

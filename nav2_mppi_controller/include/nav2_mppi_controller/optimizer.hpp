@@ -130,9 +130,9 @@ public:
    * @brief Get per-critic cost breakdown from last evaluation
    * @return Vector of (critic_name, cost_array) pairs
    */
-  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & getPerCriticCosts() const
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & getCriticCosts() const
   {
-    return critic_manager_.getPerCriticCosts();
+    return critic_manager_.getCriticCosts();
   }
 
   /**
