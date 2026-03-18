@@ -140,11 +140,11 @@ void MPPIController::visualize(
   const Eigen::ArrayXXf & optimal_trajectory)
 {
   const auto & critic_costs = optimizer_.getCriticCosts();
-  const int layer = critic_index_to_visualize_;
   const Eigen::ArrayXf & costs =
-    (layer <= 0 || layer > static_cast<int>(critic_costs.size())) ?
+    (critic_index_to_visualize_ <= 0 ||
+    critic_index_to_visualize_ > static_cast<int>(critic_costs.size())) ?
     optimizer_.getCosts() :
-    critic_costs[layer - 1].second;
+    critic_costs[critic_index_to_visualize_ - 1].second;
 
   trajectory_visualizer_.add(
     optimizer_.getGeneratedTrajectories(),
