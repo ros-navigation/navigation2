@@ -399,6 +399,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
 template<class ActionT, class NodeT>
 void BtActionServer<ActionT, NodeT>::executeCallback()
 {
+  internal_cancel_requested_ = false;
+  
   if (!on_goal_received_callback_(action_server_->get_current_goal())) {
     // Give server an opportunity to populate the result message
     // if the goal is not accepted
@@ -463,7 +465,6 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
       break;
   }
 
-  internal_cancel_requested_ = false;
   cleanErrorCodes();
 }
 
