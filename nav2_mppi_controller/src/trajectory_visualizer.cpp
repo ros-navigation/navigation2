@@ -131,8 +131,9 @@ void TrajectoryVisualizer::add(
     if (!collisions.empty() && static_cast<size_t>(k) < collisions.size() && collisions[k]) {
       continue;
     }
-    if (costs(k) < min_val) {min_val = costs(k);}
-    if (costs(k) > max_val) {max_val = costs(k);}
+    auto curr_cost = costs(k);
+    if (curr_cost < min_val) {min_val = curr_cost;}
+    if (curr_cost > max_val) {max_val = curr_cost;}
   }
   if (max_val < min_val) {
     min_val = costs.minCoeff();
