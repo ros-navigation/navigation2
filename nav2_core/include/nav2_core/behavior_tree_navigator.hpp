@@ -88,7 +88,7 @@ public:
    */
   virtual bool on_cleanup() = 0;
 
-  virtual void stop_navigation() = 0;
+  virtual void stopNavigator() = 0;
 };
 
 /**
@@ -331,7 +331,7 @@ protected:
         logger_,
         "Requested navigation from %s while another navigator is processing,"
         " stopping current navigator.", getName().c_str());
-      plugin_muxer_->getCurrentNavigator()->stop_navigation();
+      plugin_muxer_->getCurrentNavigator()->stopNavigator();
 
       const auto start = std::chrono::steady_clock::now();
       rclcpp::Rate r(100);
