@@ -91,6 +91,7 @@ void CriticManager::evalTrajectoriesScores(
       break;
     }
 
+    // Store costs before critic evaluation
     Eigen::ArrayXf costs_before;
     if (visualize_) {
       costs_before = data.costs;
@@ -98,6 +99,7 @@ void CriticManager::evalTrajectoriesScores(
 
     critics_[i]->score(data);
 
+    // Calculate statistics if visualization is enabled
     if (visualize_) {
       stats_msg->critics.push_back(critic_names_[i]);
 
@@ -110,6 +112,7 @@ void CriticManager::evalTrajectoriesScores(
     }
   }
 
+  // Publish statistics if enabled
   if (visualize_ && critics_effect_pub_) {
     auto node = parent_.lock();
     stats_msg->stamp = node->get_clock()->now();
