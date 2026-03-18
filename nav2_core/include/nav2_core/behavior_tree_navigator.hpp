@@ -307,7 +307,7 @@ public:
    */
   virtual std::string getName() = 0;
 
-  void stop_navigation() final
+  void stopNavigator() final
   {
     bt_action_server_->abortCurrent();
   }
