@@ -127,7 +127,9 @@ void TrajectoryVisualizer::add(
   float min_val = costs.maxCoeff();
   float max_val = costs.minCoeff();
   for (Eigen::Index k = 0; k < costs.size(); ++k) {
-    if (!collisions.empty() && collisions[k]) {continue;}
+    if (!collisions.empty() && static_cast<size_t>(k) < collisions.size() && collisions[k]) {
+      continue;
+    }
     if (costs(k) < min_val) {min_val = costs(k);}
     if (costs(k) > max_val) {max_val = costs(k);}
   }

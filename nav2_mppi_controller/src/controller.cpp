@@ -142,7 +142,7 @@ void MPPIController::visualize(
   const auto & critic_costs = optimizer_.getCriticCosts();
   const int layer = visualize_cost_layer_;
 
-  if (layer == 0 || layer > static_cast<int>(critic_costs.size())) {
+  if (layer <= 0 || layer > static_cast<int>(critic_costs.size())) {
     // Total cost (default)
     trajectory_visualizer_.add(
       optimizer_.getGeneratedTrajectories(),
