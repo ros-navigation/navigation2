@@ -26,6 +26,7 @@ void CriticManager::on_configure(
   name_ = name;
   auto node = parent_.lock();
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
   parameters_handler_ = param_handler;
 
   getParams();
@@ -114,8 +115,7 @@ void CriticManager::evalTrajectoriesScores(
 
   // Publish statistics if enabled
   if (visualize_ && critics_effect_pub_) {
-    auto node = parent_.lock();
-    stats_msg->stamp = node->get_clock()->now();
+    stats_msg->stamp = clock_->now();
     critics_effect_pub_->publish(std::move(stats_msg));
   }
 }

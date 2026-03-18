@@ -110,6 +110,7 @@ protected:
   nav2::Publisher<nav2_msgs::msg::CriticsStats>::SharedPtr critics_effect_pub_;
   bool visualize_;
   std::vector<std::pair<std::string, Eigen::ArrayXf>> critic_costs_;
+  rclcpp::Clock::SharedPtr clock_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
