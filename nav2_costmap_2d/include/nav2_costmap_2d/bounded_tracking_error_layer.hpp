@@ -45,16 +45,16 @@ namespace nav2_costmap_2d
 {
 
 /**
- * @brief Structure holding separate wall polygon components for left, right walls and
- * direction to draw parallel lines.
+ * @brief Structure holding separate wall polygon components for left, right walls
+ * with inner and outer boundaries for span buffer approach.
  * Optimized to use std::array for fixed-size 2D points instead of vector<vector>.
  */
 struct WallPolygons
 {
+  std::vector<std::array<double, 2>> left_inner;
   std::vector<std::array<double, 2>> left_outer;
+  std::vector<std::array<double, 2>> right_inner;
   std::vector<std::array<double, 2>> right_outer;
-  std::vector<std::array<double, 2>> perpendiculars;
-  std::vector<std::array<double, 2>> tangents;
 
   /**
    * @brief Clear all vectors and reserve capacity for reuse
@@ -62,14 +62,14 @@ struct WallPolygons
    */
   void clearAndReserve(size_t capacity)
   {
+    left_inner.clear();
     left_outer.clear();
+    right_inner.clear();
     right_outer.clear();
-    perpendiculars.clear();
-    tangents.clear();
+    left_inner.reserve(capacity);
     left_outer.reserve(capacity);
+    right_inner.reserve(capacity);
     right_outer.reserve(capacity);
-    perpendiculars.reserve(capacity);
-    tangents.reserve(capacity);
   }
 
   /**
@@ -78,7 +78,8 @@ struct WallPolygons
    */
   bool isEmpty() const
   {
-    return left_outer.size() < 2 || right_outer.size() < 2;
+    return left_inner.size() < 2 || left_outer.size() < 2 ||
+           right_inner.size() < 2 || right_outer.size() < 2;
   }
 };
 
@@ -221,91 +222,64 @@ protected:
 
 private:
   /**
-   * @brief Draws a wall segment on the costmap with thickness and diagonal gap filling.
-   * @param costmap Pointer to the costmap character array.
+   * @brief Fills a corridor quad (convex quadrilateral) using span buffer approach.
+   *
+   * This function rasterizes a quad defined by four vertices (inner[i], inner[i+1],
+   * outer[i+1], outer[i]) by tracing all four edges and building a span buffer that
+   * tracks [x_min, x_max] for each y-row. Then fills all pixels between the boundaries.
+   *
+   * @param costmap Pointer to the costmap character array to modify.
+   * @param size_x Width of the costmap in cells.
+   * @param size_y Height of the costmap in cells.
+   * @param inner_x0 Inner boundary point i, X coordinate.
+   * @param inner_y0 Inner boundary point i, Y coordinate.
+   * @param inner_x1 Inner boundary point i+1, X coordinate.
+   * @param inner_y1 Inner boundary point i+1, Y coordinate.
+   * @param outer_x0 Outer boundary point i, X coordinate.
+   * @param outer_y0 Outer boundary point i, Y coordinate.
+   * @param outer_x1 Outer boundary point i+1, X coordinate.
+   * @param outer_y1 Outer boundary point i+1, Y coordinate.
+   */
+  void fillCorridorQuad(
+    unsigned char * costmap,
+    unsigned int size_x,
+    unsigned int size_y,
+    unsigned int inner_x0,
+    unsigned int inner_y0,
+    unsigned int inner_x1,
+    unsigned int inner_y1,
+    unsigned int outer_x0,
+    unsigned int outer_y0,
+    unsigned int outer_x1,
+    unsigned int outer_y1);
+
+  /**
+   * @brief Draws corridor walls using span buffer approach for complete fill.
+   *
+   * Iterates through paired inner and outer boundary points, treating each segment
+   * pair as a convex quadrilateral and filling it completely using the span buffer
+   * technique. This eliminates gaps on diagonals and ensures constant thickness.
+   *
+   * @param costmap Pointer to the costmap character array to modify.
    * @param size_x Width of the costmap in cells.
    * @param size_y Height of the costmap in cells.
    * @param master_grid Reference to master grid for coordinate conversion.
-   * @param wall_points Vector of wall points to draw.
-   * @param perpendiculars Vector of perpendicular directions at each point.
-   * @param tangents Vector of tangent directions at each point.
-   * @param perp_sign Sign for perpendicular offset direction (+1 or -1).
+   * @param inner_points Vector of inner boundary points.
+   * @param outer_points Vector of outer boundary points.
    */
-  void drawWallSegment(
+  void drawCorridorWalls(
     unsigned char * costmap,
     unsigned int size_x,
     unsigned int size_y,
     const nav2_costmap_2d::Costmap2D & master_grid,
-    const std::vector<std::array<double, 2>> & wall_points,
-    const std::vector<std::array<double, 2>> & perpendiculars,
-    const std::vector<std::array<double, 2>> & tangents,
-    int perp_sign);
-
-  /**
-   * @brief Fills pixels perpendicular to a line for wall thickness.
-   *
-   * This helper function extends a wall by drawing additional pixels perpendicular to the
-   * current wall point. It iterates from 1 to wall_thickness_ and fills pixels in the
-   * perpendicular direction based on perp_sign. This creates a thick wall corridor on the
-   * costmap, making the boundaries more robust and easier to detect by the planner.
-   *
-   * The function uses the perpendicular direction vector (perp_x, perp_y) to compute
-   * offset pixels and fills them with the corridor_cost_ value. Boundary checks ensure
-   * that only valid costmap cells are modified.
-   *
-   * @param costmap Pointer to the costmap character array to modify.
-   * @param size_x Width of the costmap in cells.
-   * @param size_y Height of the costmap in cells.
-   * @param curr_x Current X pixel coordinate (center of thickness).
-   * @param curr_y Current Y pixel coordinate (center of thickness).
-   * @param perp_x Perpendicular direction X component (normalized).
-   * @param perp_y Perpendicular direction Y component (normalized).
-   * @param perp_sign Sign for perpendicular offset direction (+1 for inward, -1 for outward).
-   */
-  void fillThicknessPixels(
-    unsigned char * costmap,
-    unsigned int size_x,
-    unsigned int size_y,
-    unsigned int curr_x,
-    unsigned int curr_y,
-    double perp_x,
-    double perp_y,
-    int perp_sign);
-
-  /**
-   * @brief Fills diagonal gap pixels to prevent holes in diagonal lines.
-   *
-   * When drawing walls at diagonal angles (45 degrees or close to it), a simple line
-   * iterator can create gaps because pixel coordinates are discrete. This function
-   * fills those gaps by adding pixels adjacent to the current position in the tangent
-   * direction, ensuring continuous wall coverage.
-   *
-   * The function determines the gap fill direction based on the tangent vector and
-   * fills two adjacent pixels: one offset in X and one offset in Y. This creates a
-   * solid diagonal line without holes that the robot could pass through.
-   *
-   * @param costmap Pointer to the costmap character array to modify.
-   * @param size_x Width of the costmap in cells.
-   * @param size_y Height of the costmap in cells.
-   * @param curr_x Current X pixel coordinate where gap might occur.
-   * @param curr_y Current Y pixel coordinate where gap might occur.
-   * @param tang_x Tangent direction X component (normalized, indicates line direction).
-   * @param tang_y Tangent direction Y component (normalized, indicates line direction).
-   */
-  void fillDiagonalGaps(
-    unsigned char * costmap,
-    unsigned int size_x,
-    unsigned int size_y,
-    unsigned int curr_x,
-    unsigned int curr_y,
-    double tang_x,
-    double tang_y);
+    const std::vector<std::array<double, 2>> & inner_points,
+    const std::vector<std::array<double, 2>> & outer_points);
 
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
   nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
   std::mutex data_mutex_;
-  nav_msgs::msg::Path last_path_;
+  std::shared_ptr<nav_msgs::msg::Path> last_path_ptr_;
   geometry_msgs::msg::PoseStamped last_goal_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
@@ -314,18 +288,21 @@ private:
   int step_;
   double corridor_width_;
   double look_ahead_;
-  std::atomic<bool> enabled_;
+
   std::string path_topic_;
   std::string tracking_feedback_topic_;
   unsigned char corridor_cost_;
   int wall_thickness_;
   int path_segment_resolution_;
   tf2::Duration transform_tolerance_;
+  double resolution_;
 
   // Reusable buffers to avoid repeated allocations
   nav_msgs::msg::Path segment_buffer_;
   nav_msgs::msg::Path transformed_segment_buffer_;
   WallPolygons walls_buffer_;
+  std::vector<int> span_x_min_buffer_;
+  std::vector<int> span_x_max_buffer_;
 
 };
 
