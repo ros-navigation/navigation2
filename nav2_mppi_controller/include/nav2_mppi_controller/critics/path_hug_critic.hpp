@@ -15,6 +15,8 @@
 #ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_
 
+#include <vector>
+
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"

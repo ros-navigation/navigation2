@@ -35,8 +35,10 @@ void PathHugCritic::initialize()
 
   RCLCPP_INFO(
     logger_,
-    "PathHugCritic instantiated with %d power, %f weight, search_window: %f m, lookahead: %f m, max_allowed: %f m, penalty_scale: %f",
-    power_, weight_, search_window_, lookahead_distance_, max_allowed_distance_, violation_penalty_scale_);
+    "PathHugCritic instantiated with %d power, %f weight, search_window: %f m, "
+    "lookahead: %f m, max_allowed: %f m, penalty_scale: %f",
+    power_, weight_, search_window_, lookahead_distance_, max_allowed_distance_,
+    violation_penalty_scale_);
 }
 
 void PathHugCritic::updateCumulativeDistances(const models::Path & path, size_t num_segments)
@@ -132,7 +134,8 @@ void PathHugCritic::score(CriticData & data)
         if (dist > max_allowed_distance_) {
           const float excess_dist = dist - max_allowed_distance_;
           // Exponential penalty: scale * exp(excess / allowed) to heavily punish violations
-          const float penalty = violation_penalty_scale_ * std::exp(excess_dist / max_allowed_distance_);
+          const float penalty = violation_penalty_scale_ *
+            std::exp(excess_dist / max_allowed_distance_);
           cost_array(traj_idx) += penalty;
           valid_sample_count(traj_idx)++;
         }
@@ -171,27 +174,27 @@ float PathHugCritic::computeMinDistanceToPath(
   segments_searched = 0;
 
   auto distSqToSegment = [&](size_t seg_idx) -> float {
-    const float x0 = path.x(seg_idx);
-    const float y0 = path.y(seg_idx);
-    const float x1 = path.x(seg_idx + 1);
-    const float y1 = path.y(seg_idx + 1);
-    const float dx = x1 - x0;
-    const float dy = y1 - y0;
-    const float len_sq = dx * dx + dy * dy;
+      const float x0 = path.x(seg_idx);
+      const float y0 = path.y(seg_idx);
+      const float x1 = path.x(seg_idx + 1);
+      const float y1 = path.y(seg_idx + 1);
+      const float dx = x1 - x0;
+      const float dy = y1 - y0;
+      const float len_sq = dx * dx + dy * dy;
 
-    if (len_sq < 1e-6f) {
+      if (len_sq < 1e-6f) {
+        const float dpx = px - x0;
+        const float dpy = py - y0;
+        return dpx * dpx + dpy * dpy;
+      }
+
       const float dpx = px - x0;
       const float dpy = py - y0;
-      return dpx * dpx + dpy * dpy;
-    }
-
-    const float dpx = px - x0;
-    const float dpy = py - y0;
-    const float t = std::clamp((dpx * dx + dpy * dy) / len_sq, 0.0f, 1.0f);
-    const float dist_x = dpx - t * dx;
-    const float dist_y = dpy - t * dy;
-    return dist_x * dist_x + dist_y * dist_y;
-  };
+      const float t = std::clamp((dpx * dx + dpy * dy) / len_sq, 0.0f, 1.0f);
+      const float dist_x = dpx - t * dx;
+      const float dist_y = dpy - t * dy;
+      return dist_x * dist_x + dist_y * dist_y;
+    };
 
   float min_dist_sq = distSqToSegment(path_hint);
   Eigen::Index best_seg = path_hint;

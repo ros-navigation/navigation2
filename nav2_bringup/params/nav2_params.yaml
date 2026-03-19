@@ -175,7 +175,7 @@ controller_server:
           "PathFollowCritic",
           "PathAngleCritic",
           "PreferForwardCritic",
-          "PathHugCritic"
+         "PathHugCritic"
         ]
       ConstraintCritic:
         enabled: true
