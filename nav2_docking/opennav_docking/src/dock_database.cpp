@@ -70,10 +70,12 @@ void DockDatabase::activate()
   for (it = dock_plugins_.begin(); it != dock_plugins_.end(); ++it) {
     it->second->activate();
   }
+  reload_db_service_->on_activate();
 }
 
 void DockDatabase::deactivate()
 {
+  reload_db_service_->on_deactivate();
   DockPluginMap::iterator it;
   for (it = dock_plugins_.begin(); it != dock_plugins_.end(); ++it) {
     it->second->deactivate();
