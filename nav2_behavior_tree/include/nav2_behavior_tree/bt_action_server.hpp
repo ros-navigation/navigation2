@@ -176,9 +176,9 @@ public:
     action_server_->publish_feedback(feedback);
   }
 
-  void abortCurrent()
+  void preemptCurrentNavigator()
   {
-    internal_cancel_requested_ = true;
+    navigator_preemption_identified_ = true;
   }
 
   /**
@@ -310,7 +310,7 @@ protected:
   uint16_t internal_error_code_;
   std::string internal_error_msg_;
 
-  std::atomic_bool internal_cancel_requested_{false};
+  std::atomic_bool navigator_preemption_identified_{false};
 };
 
 }  // namespace nav2_behavior_tree

@@ -87,7 +87,7 @@ public:
    */
   virtual bool on_cleanup() = 0;
 
-  virtual void stopNavigator() = 0;
+  virtual void preempt() = 0;
 };
 
 /**
@@ -149,10 +149,10 @@ public:
     }
   }
 
-  nav2_core::NavigatorBase * getCurrentNavigator()
+  void preemptCurrentNavigator()
   {
     std::scoped_lock l(mutex_);
-    return current_navigator_;
+    current_navigator_->preempt();
   }
 
 protected:
@@ -306,9 +306,9 @@ public:
    */
   virtual std::string getName() = 0;
 
-  void stopNavigator() final
+  void preempt() final
   {
-    bt_action_server_->abortCurrent();
+    bt_action_server_->preemptCurrentNavigator();
   }
 
 protected:
@@ -330,7 +330,7 @@ protected:
         logger_,
         "Requested navigation from %s while another navigator is processing,"
         " stopping current navigator.", getName().c_str());
-      plugin_muxer_->getCurrentNavigator()->stopNavigator();
+      plugin_muxer_->preemptCurrentNavigator();
 
       const auto start = std::chrono::steady_clock::now();
       rclcpp::Rate r(100);

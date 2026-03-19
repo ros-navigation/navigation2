@@ -401,8 +401,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
 template<class ActionT, class NodeT>
 void BtActionServer<ActionT, NodeT>::executeCallback()
 {
-  internal_cancel_requested_ = false;
-  
+  navigator_preemption_identified_ = false;
+
   if (!on_goal_received_callback_(action_server_->get_current_goal())) {
     // Give server an opportunity to populate the result message
     // if the goal is not accepted
@@ -422,7 +422,7 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
         RCLCPP_DEBUG(logger_, "Action server is inactive. Canceling.");
         return true;
       }
-      return action_server_->is_cancel_requested() || internal_cancel_requested_;
+      return action_server_->is_cancel_requested() || navigator_preemption_identified_;
     };
 
   auto on_loop = [&]() {
