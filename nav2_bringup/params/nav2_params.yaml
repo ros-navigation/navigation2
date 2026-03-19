@@ -340,7 +340,7 @@ global_costmap:
        step: 10
        corridor_width: 2.0
        corridor_cost: 190
-       wall_thickness: 1
+       wall_thickness: 4
        path_segment_resolution: 5
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
