@@ -76,6 +76,7 @@ public:
   nav_msgs::msg::Path getPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal,
+    const nav_msgs::msg::Goals & viapoints,
     const std::string & planner_id,
     std::function<bool()> cancel_checker);
 
