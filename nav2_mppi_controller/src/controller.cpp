@@ -37,6 +37,7 @@ void MPPIController::configure(
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);
+  getParam(critic_index_to_visualize_, "critic_index_to_visualize", 0);
 
   getParam(publish_optimal_trajectory_, "publish_optimal_trajectory", false);
 
@@ -138,7 +139,19 @@ void MPPIController::visualize(
   const builtin_interfaces::msg::Time & cmd_stamp,
   const Eigen::ArrayXXf & optimal_trajectory)
 {
-  trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
+  const auto & critic_costs = optimizer_.getCriticCosts();
+  const Eigen::ArrayXf & costs =
+    (critic_index_to_visualize_ <= 0 ||
+    critic_index_to_visualize_ > static_cast<int>(critic_costs.size())) ?
+    optimizer_.getCosts() :
+    critic_costs[critic_index_to_visualize_ - 1].second;
+
+  trajectory_visualizer_.add(
+    optimizer_.getGeneratedTrajectories(),
+    costs,
+    optimizer_.getCollisionFlags(),
+    cmd_stamp);
+
   trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
   trajectory_visualizer_.visualize();
 }
