@@ -26,6 +26,7 @@ enum class MotionModel
   DUBIN = 2,
   REEDS_SHEPP = 3,
   STATE_LATTICE = 4,
+  OMNI = 5,
 };
 
 enum class GoalHeadingMode
