@@ -39,7 +39,8 @@ struct State
   Eigen::ArrayXXf cwz;
 
   geometry_msgs::msg::PoseStamped pose;
-  geometry_msgs::msg::Twist speed;  // current speed or last command published, depends on open_loop setting
+  // current speed or last command published, depends on open_loop setting
+  geometry_msgs::msg::Twist speed;
   geometry_msgs::msg::Twist robot_speed;  // current speed from odometry
   float local_path_length;
 
