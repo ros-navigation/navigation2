@@ -53,7 +53,7 @@ void DirectionChangeCritic::score(CriticData & data)
 
   if (power_ > 1u) {
     data.costs += ((vx_view * current_speed < 0.0f).select(
-      (vx_view - current_speed).abs(), 0.0f).rowwise().sum() * weight_).pow(power_);
+        (vx_view - current_speed).abs(), 0.0f).rowwise().sum() * weight_).pow(power_);
   } else {
     data.costs += (vx_view * current_speed < 0.0f).select(
       (vx_view - current_speed).abs(), 0.0f).rowwise().sum() * weight_;

@@ -117,8 +117,9 @@ void PathAlignCritic::score(CriticData & data)
     // find the first path point that is further than
     //  max(occupancy_check_min_distance_, furthest_reached_path_point)
     if (occupancy_check_distance_idx == path_segments_count &&
-        path_integrated_distances[i] > occupancy_check_min_distance_ &&
-        i >= *data.furthest_reached_path_point) {
+      path_integrated_distances[i] > occupancy_check_min_distance_ &&
+      i >= *data.furthest_reached_path_point)
+    {
       occupancy_check_distance_idx = i;
     }
   }
@@ -148,7 +149,8 @@ void PathAlignCritic::score(CriticData & data)
   for (size_t i = 0; i < occupancy_check_distance_idx; i++) {
     if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
     if (invalid_ctr / occupancy_check_distance_idx_flt > max_path_occupancy_ratio_ &&
-        invalid_ctr > 2.0f) {
+      invalid_ctr > 2.0f)
+    {
       return;
     }
   }
