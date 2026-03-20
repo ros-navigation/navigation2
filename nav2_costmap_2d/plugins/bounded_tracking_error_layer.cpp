@@ -68,9 +68,6 @@ void BoundedTrackingErrorLayer::onInitialize()
 
   wall_thickness_ = node->declare_or_get_parameter(name_ + "." + "wall_thickness", 1);
 
-  path_segment_resolution_ = node->declare_or_get_parameter(
-    name_ + "." + "path_segment_resolution", 5);
-
   int corridor_cost_param = node->declare_or_get_parameter(name_ + "." + "corridor_cost", 190);
   corridor_cost_ = static_cast<unsigned char>(std::clamp(corridor_cost_param, 1, 254));
 
@@ -93,9 +90,6 @@ void BoundedTrackingErrorLayer::onInitialize()
   }
   if (step_ <= 0) {
     throw std::runtime_error{"step must be greater than zero"};
-  }
-  if (path_segment_resolution_ < 1) {
-    throw std::runtime_error{"path_segment_resolution must be at least 1"};
   }
 
   // Join topics with parent namespace for proper namespacing
@@ -255,7 +249,6 @@ void BoundedTrackingErrorLayer::updateBounds(
   double robot_x, double robot_y, double /*robot_yaw*/,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
-
   if (!enabled_) {
     return;
   }
@@ -338,16 +331,12 @@ void BoundedTrackingErrorLayer::getPathSegment(
   const size_t start_index = path_index;
   size_t end_index = start_index;
   double dist_traversed = 0.0;
-  const size_t jump = static_cast<size_t>(path_segment_resolution_);
 
-  for (size_t i = start_index; i < path.poses.size() - 1; i += jump) {
-    const size_t next_i = std::min(i + jump, path.poses.size() - 1);
-
-    // Calculate straight line distance between jumped poses
+  for (size_t i = start_index; i < path.poses.size() - 1; i++) {
     dist_traversed += nav2_util::geometry_utils::euclidean_distance(
-      path.poses[i], path.poses[next_i]);
+      path.poses[i], path.poses[i + 1]);
 
-    end_index = next_i;
+    end_index = i + 1;
     if (dist_traversed >= look_ahead_) {
       break;
     }
@@ -364,7 +353,6 @@ void BoundedTrackingErrorLayer::getPathSegment(
     segment.poses.push_back(path.poses[start_index]);
   }
 }
-
 
 void BoundedTrackingErrorLayer::fillCorridorQuad(
   unsigned char * costmap,
@@ -394,6 +382,15 @@ void BoundedTrackingErrorLayer::fillCorridorQuad(
 
   // Span buffer: for each y, track [x_min, x_max]
   const int height = clamped_y_max - clamped_y_min + 1;
+
+  if (height <= 0 || height > static_cast<int>(size_y)) {
+    RCLCPP_WARN(
+      logger_,
+      "Invalid quad height: %d (size_y: %u). Skipping quad.",
+      height, size_y);
+    return;
+  }
+
   span_x_min_buffer_.assign(height, std::numeric_limits<int>::max());
   span_x_max_buffer_.assign(height, std::numeric_limits<int>::min());
 
@@ -466,14 +463,14 @@ void BoundedTrackingErrorLayer::updateCosts(
 
   getPathSegment(*cached_path_ptr, cached_path_index, segment_buffer_);
 
-  // Minimum 10 poses needed to produce at least 2 wall polygon points with default step_size_
-  if (segment_buffer_.poses.size() < 10) {
+  const size_t min_poses = (step_size_ * 2) + 1;
+  if (segment_buffer_.poses.size() < min_poses) {
     RCLCPP_INFO_THROTTLE(
       logger_,
       *clock_,
       5000,
-      "Path segment too small (%zu poses), skipping wall generation",
-      segment_buffer_.poses.size());
+      "Path segment too small (%zu poses), need at least %zu poses for step_size=%zu",
+      segment_buffer_.poses.size(), min_poses, step_size_);
     return;
   }
 
@@ -645,16 +642,6 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validatePara
           result.successful = false;
           result.reason = "wall_thickness must be greater than zero";
         }
-      } else if (param_name == name_ + "." + "path_segment_resolution") {
-        const int new_value = parameter.as_int();
-        if (new_value < 1) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be >= 1. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "path_segment_resolution must be at least 1";
-        }
       }
     }
   }
@@ -708,11 +695,6 @@ void BoundedTrackingErrorLayer::updateParametersCallback(
         wall_thickness_ != parameter.as_int())
       {
         wall_thickness_ = parameter.as_int();
-        current_ = false;
-      } else if (param_name == name_ + "." + "path_segment_resolution" &&
-        path_segment_resolution_ != parameter.as_int())
-      {
-        path_segment_resolution_ = parameter.as_int();
         current_ = false;
       }
     }
