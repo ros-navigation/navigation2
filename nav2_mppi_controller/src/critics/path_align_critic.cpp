@@ -56,8 +56,8 @@ void PathAlignCritic::score(CriticData & data)
   }
 
   // Only apply critic when trajectories reach far enough along the way path.
-  // This ensures that path alignment is only considered when actually tracking the path (e.g. not driving very slow
-  // or when first getting bearing w.r.t. the path)
+  // This ensures that path alignment is only considered when actually tracking the path
+  // (e.g. not driving very slow or when first getting bearing w.r.t. the path)
   utils::setPathFurthestPointIfNotSet(data);
 
   const auto now = clock_->now();
@@ -85,7 +85,9 @@ void PathAlignCritic::score(CriticData & data)
   Eigen::ArrayXf cost(data.costs.rows());
   cost.setZero();
 
-  // Find integrated arc-length distance along the path = total dist traveled along the path to each path point
+  // Find integrated arc-length distance along the path = total dist traveled along the path to each
+  // path point loop until end of path, to guarantee don't truncate long trajectories when furthest
+  // reached path is small (e.g. when all traj curve away from the path)
   const size_t path_segments_count = data.path.x.size() - 1;
   // initialize the occupancy check id to max, in case the entire path is within the distance
   size_t occupancy_check_distance_idx = path_segments_count;
@@ -102,7 +104,8 @@ void PathAlignCritic::score(CriticData & data)
     dy = data.path.y(i) - pose.y;
     path_integrated_distances[i] = path_integrated_distances[i - 1] + sqrtf(dx * dx + dy * dy);
 
-    // find the first path point that is further than  max(occupancy_check_min_distance_, furthest_reached_path_point)
+    // find the first path point that is further than
+    //  max(occupancy_check_min_distance_, furthest_reached_path_point)
     if (occupancy_check_distance_idx == path_segments_count &&
         path_integrated_distances[i] > occupancy_check_min_distance_ &&
         i >= *data.furthest_reached_path_point) {
@@ -126,14 +129,16 @@ void PathAlignCritic::score(CriticData & data)
     occupancy_check_dist_pub_->publish(std::move(occupancy_check_point));
   }
 
-  // Don't apply when dynamic obstacles are blocking significant proportions of the path up to occupancy_check_min_distance_
+  // Don't apply when dynamic obstacles are blocking significant proportions of the path
+  // up to occupancy_check_min_distance_
   const float occupancy_check_distance_idx_flt = static_cast<float>(occupancy_check_distance_idx);
   utils::setPathCostsIfNotSet(data, costmap_ros_);
   std::vector<bool> & path_pts_valid = *data.path_pts_valid;
   float invalid_ctr = 0.0f;
   for (size_t i = 0; i < occupancy_check_distance_idx; i++) {
     if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
-    if (invalid_ctr / occupancy_check_distance_idx_flt > max_path_occupancy_ratio_ && invalid_ctr > 2.0f) {
+    if (invalid_ctr / occupancy_check_distance_idx_flt > max_path_occupancy_ratio_ &&
+        invalid_ctr > 2.0f) {
       return;
     }
   }
