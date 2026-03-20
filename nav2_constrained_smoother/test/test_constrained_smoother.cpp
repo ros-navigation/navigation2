@@ -621,7 +621,7 @@ TEST_F(SmootherTest, testingObstacleAvoidance)
   footprint.push_back(pointMsg(0.4, -0.25));
 
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 2500.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0015));
   reloadParams();
 
   std::vector<Eigen::Vector3d> straight_near_obstacle =
@@ -729,15 +729,15 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   footprint.push_back(pointMsg(0.4, -0.2));
 
   // first smooth with homogeneous w_cost to compare
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 1500.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0001));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 18.75));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.000015));
   // higher w_curve significantly decreases convergence speed here
   // path feasibility can be restored by subsequent resmoothing with higher w_curve
   // TODO(afrixs): tune ceres optimizer to "converge" faster,
   //               see http://ceres-solver.org/nnls_solving.html
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 1.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.5));
   // let's have more iterations so that the improvement is more significant
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 500));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 60));
   reloadParams();
 
   std::vector<Eigen::Vector3d> smoothed_path;
@@ -760,10 +760,10 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
 
 
   // then update parameters so that robot is not so afraid of obstacles
-  // during simple movement but pays extra attention during rotations near cusps
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.00005));
+  // during sirple movement but pays extra attention during rotations near cusps
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0000052));
   node_lifecycle_->set_parameter(
-    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.001 / 0.00005));
+    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.0002 / 0.0000052));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", 2.5));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.fn_tol", 1e-15));
   reloadParams();
@@ -816,9 +816,9 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   footprint.push_back(pointMsg(0.15, -0.2));
 
   // reset parameters back to homogeneous and shift cost check point to the center of the footprint
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 1500.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 1.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 9.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.1));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.000015));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
   node_lifecycle_->set_parameter(
     rclcpp::Parameter(
@@ -879,14 +879,14 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   ////////////////////////////////////////
   // compare also with extra careful cusp
 
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0052));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0000052));
   node_lifecycle_->set_parameter(
-    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.027 / 0.0052));
+    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.0015 / 0.0000052));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", 2.5));
   // we need much more iterations here since it's a more complicated problem
   // TODO(afrixs): tune ceres optimizer to "converge" faster
   //               see http://ceres-solver.org/nnls_solving.html
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 1500));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 75));
   reloadParams();
 
   std::vector<Eigen::Vector3d> smoothed_path_scce;

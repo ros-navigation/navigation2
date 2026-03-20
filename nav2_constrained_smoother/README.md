@@ -23,7 +23,7 @@ smoother_server:
       w_curve: 0.5                  # weight to enforce minimum_turning_radius
       w_dist: 0.0                   # weight to bind path to original as optional replacement for cost weight
       w_smooth: 2.5e+3              # weight to maximize smoothness of path
-      w_cost: 0.0001                  # weight to steer robot away from collision and cost
+      w_cost: 0.000015                  # weight to steer robot away from collision and cost
 
       # Parameters used to improve obstacle avoidance near cusps (forward/reverse movement changes)
       # See the [docs page](https://docs.nav2.org/configuration/packages/configuring-constrained-smoother) for further clarification
