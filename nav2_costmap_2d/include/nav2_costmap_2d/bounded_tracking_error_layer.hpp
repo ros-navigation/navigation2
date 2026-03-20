@@ -293,7 +293,6 @@ private:
   std::string tracking_feedback_topic_;
   unsigned char corridor_cost_;
   int wall_thickness_;
-  int path_segment_resolution_;
   tf2::Duration transform_tolerance_;
   double resolution_;
 
