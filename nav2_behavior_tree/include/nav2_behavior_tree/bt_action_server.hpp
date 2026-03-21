@@ -178,7 +178,7 @@ public:
 
   void preemptCurrentNavigator()
   {
-    navigator_preemption_identified_ = true;
+    muxer_preemption_requested_ = true;
   }
 
   /**
@@ -310,7 +310,7 @@ protected:
   uint16_t internal_error_code_;
   std::string internal_error_msg_;
 
-  std::atomic_bool navigator_preemption_identified_{false};
+  std::atomic_bool muxer_preemption_requested_{false};
 };
 
 }  // namespace nav2_behavior_tree
