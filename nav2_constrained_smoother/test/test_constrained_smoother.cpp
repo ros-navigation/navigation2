@@ -147,7 +147,7 @@ protected:
       std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>());
     smoother_->activate();
 
-    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 2500.0));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 3000.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.minimum_turning_radius", 0.4));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.5));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_dist", 0.0));
