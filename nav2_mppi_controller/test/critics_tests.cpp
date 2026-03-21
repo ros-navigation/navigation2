@@ -168,6 +168,25 @@ TEST(CriticTests, ConstraintsCritic)
   // total-violation = 1.2 + 2.4
   EXPECT_NEAR(costs(999), 3.6, 0.01);
   costs.setZero();
+
+  // power > 1u
+  node->declare_parameter("mppi.critic.cost_power", 2);
+  node->set_parameter(rclcpp::Parameter("mppi.critic.cost_power", 2));
+  critic = ConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  // reset state
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.wz.setConstant(0.0f);
+
+  // vx violation check (no violation so zero cost)
+  state.vx.row(999).setConstant(0.20f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+  EXPECT_NEAR(costs(999), 0.0, 1e-6);
+  costs.setZero();
 }
 
 TEST(CriticTests, ObstacleCriticMisalignedParams) {
