@@ -89,8 +89,8 @@ TEST(CriticTests, ConstraintsCritic)
   ConstraintCritic critic;
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   EXPECT_EQ(critic.getName(), "critic");
-  EXPECT_TRUE(critic.getMaxVelConstraint() > 0.0);
-  EXPECT_TRUE(critic.getMinVelConstraint() < 0.0);
+  EXPECT_TRUE(critic.getMaxVelXConstraint() > 0.0);
+  EXPECT_TRUE(critic.getMinVelXConstraint() < 0.0);
 
   // Scoring testing
   critic.score(data);
