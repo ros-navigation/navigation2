@@ -89,8 +89,8 @@ TEST(CriticTests, ConstraintsCritic)
   ConstraintCritic critic;
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   EXPECT_EQ(critic.getName(), "critic");
-  EXPECT_TRUE(critic.getMaxVelConstraint() > 0.0);
-  EXPECT_TRUE(critic.getMinVelConstraint() < 0.0);
+  EXPECT_TRUE(critic.getMaxVelXConstraint() > 0.0);
+  EXPECT_TRUE(critic.getMinVelXConstraint() < 0.0);
 
   // Scoring testing
   critic.score(data);
@@ -168,6 +168,25 @@ TEST(CriticTests, ConstraintsCritic)
   // total-violation = 1.2 + 2.4
   EXPECT_NEAR(costs(999), 3.6, 0.01);
   costs.setZero();
+
+  // TODO(prajwalthakur): not able to set the power greater than 1u
+  // power > 1u
+  // node->declare_parameter("mppi.critic.cost_power", 2);
+  // critic = ConstraintCritic();
+  // critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  // EXPECT_NEAR(critic.getPower(), 2, 1e-6);
+  // // reset state
+  // state.vx.setConstant(0.0f);
+  // state.vy.setConstant(0.0f);
+  // state.wz.setConstant(0.0f);
+
+  // // vx violation check (no violation so zero cost)
+  // state.vx.row(999).setConstant(0.20f);
+  // state.vy.setConstant(0.0f);
+  // critic.score(data);
+  // EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+  // EXPECT_NEAR(costs(999), 0.0, 1e-6);
+  // costs.setZero();
 }
 
 TEST(CriticTests, ObstacleCriticMisalignedParams) {

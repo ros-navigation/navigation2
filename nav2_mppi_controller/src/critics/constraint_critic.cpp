@@ -28,17 +28,9 @@ void ConstraintCritic::initialize()
     logger_, "ConstraintCritic instantiated with %d power and %f weight.",
     power_, weight_);
 
-  float vx_max, vy_max, vx_min;
-  getParentParam(vx_max, "vx_max", 0.5f);
-  getParentParam(vy_max, "vy_max", 0.0f);
-  getParentParam(vx_min, "vx_min", -0.35f);
-
-  const float min_sgn = vx_min > 0.0f ? 1.0f : -1.0f;
-  vx_max_ = vx_max;
-  vx_min_ = vx_min;
-  vy_max_ = vy_max;
-  max_vel_ = sqrtf(vx_max * vx_max + vy_max * vy_max);
-  min_vel_ = min_sgn * sqrtf(vx_min * vx_min + vy_max * vy_max);
+  getParentParam(vx_max_, "vx_max", 0.5f);
+  getParentParam(vy_max_, "vy_max", 0.0f);
+  getParentParam(vx_min_, "vx_min", -0.35f);
 }
 
 void ConstraintCritic::score(CriticData & data)
@@ -51,10 +43,10 @@ void ConstraintCritic::score(CriticData & data)
   auto diff = dynamic_cast<DiffDriveMotionModel *>(data.motion_model.get());
   if (diff != nullptr) {
     if (power_ > 1u) {
-      data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
+      data.costs += (((((data.state.vx - vx_max_).max(0.0f) + (vx_min_ - data.state.vx).
         max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).pow(power_).eval();
     } else {
-      data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
+      data.costs += (((((data.state.vx - vx_max_).max(0.0f) + (vx_min_ - data.state.vx).
         max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).eval();
     }
     return;
@@ -66,15 +58,14 @@ void ConstraintCritic::score(CriticData & data)
   if (omni != nullptr) {
     auto & vx = data.state.vx;
     auto & vy = data.state.vy;
-    auto vx_violation = (vx - vx_max_).max(0.0f) + (vx_min_ - vx).max(0.0f);
-    auto vy_violation = (vy.abs() - vy_max_).max(0.0f);
-    auto violation = ((vx_violation + vy_violation) * data.model_dt).rowwise().sum().eval();
-    auto weighted_violation = violation * weight_;
 
     if(power_ > 1u) {
-      data.costs += weighted_violation.pow(power_);
+      data.costs += (((((vx - vx_max_).max(0.0f) + (vx_min_ - vx).max(0.0f) +
+        (vy.abs() - vy_max_).max(0.0f)) * data.model_dt).rowwise().sum().eval()) *
+        weight_).pow(power_).eval();
     } else {
-      data.costs += weighted_violation;
+      data.costs += (((((vx - vx_max_).max(0.0f) + (vx_min_ - vx).max(0.0f) +
+        (vy.abs() - vy_max_).max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).eval();
     }
     return;
   }
@@ -91,11 +82,11 @@ void ConstraintCritic::score(CriticData & data)
     auto out_of_turning_rad_motion = (min_turning_rad - (vx.abs() / wz_safe)).max(0.0f);
 
     if (power_ > 1u) {
-      data.costs += ((((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
+      data.costs += ((((vx - vx_max_).max(0.0f) + (vx_min_ - vx).max(0.0f) +
         out_of_turning_rad_motion) * data.model_dt).rowwise().sum().eval() *
         weight_).pow(power_).eval();
     } else {
-      data.costs += ((((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
+      data.costs += ((((vx - vx_max_).max(0.0f) + (vx_min_ - vx).max(0.0f) +
         out_of_turning_rad_motion) * data.model_dt).rowwise().sum().eval() * weight_).eval();
     }
     return;
