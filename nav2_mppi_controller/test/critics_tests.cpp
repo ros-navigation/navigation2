@@ -125,6 +125,49 @@ TEST(CriticTests, ConstraintsCritic)
   EXPECT_GT(costs.sum(), 0);
   // 4.0 weight * 0.1 model_dt * (0.2 - 0.4/2.5) * 30 timesteps = 0.48
   EXPECT_NEAR(costs(1), 0.48, 0.01);
+  costs.setZero();
+
+  // Now with Holonomic
+  node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.3));
+  critic = ConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_NEAR(critic.getMaxVelYConstraint(), 0.3, 1e-6);
+
+  data.motion_model = std::make_shared<OmniMotionModel>();
+
+  // reset state
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.wz.setConstant(0.0f);
+
+  // vx violation check
+  state.vx.row(999).setConstant(0.60f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 4.0 weight * 0.1 model_dt * 0.1 error introduced * 30 timesteps = 1.2
+  EXPECT_NEAR(costs(999), 1.2, 0.01);
+  costs.setZero();
+
+  // vy violation check
+  state.vx.setConstant(0.0f);
+  state.vy.row(999).setConstant(0.50f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 4.0 weight * 0.1 model_dt * 0.2 error introduced * 30 timesteps = 2.4
+  EXPECT_NEAR(costs(999), 2.4, 0.01);
+  costs.setZero();
+
+  // combined check
+  state.vx.row(999).setConstant(0.6f);
+  state.vy.row(999).setConstant(-0.5f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // vx-violation 4.0 weight * 0.1 model_dt * 0.1 error introduced * 30 timesteps = 1.2
+  // vy-violation 4.0 weight * 0.1 model_dt * 0.2 error introduced * 30 timesteps = 2.4
+  // total-violation = 1.2 + 2.4
+  EXPECT_NEAR(costs(999), 3.6, 0.01);
+  costs.setZero();
 }
 
 TEST(CriticTests, ObstacleCriticMisalignedParams) {

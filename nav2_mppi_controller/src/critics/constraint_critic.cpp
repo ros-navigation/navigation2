@@ -34,6 +34,9 @@ void ConstraintCritic::initialize()
   getParentParam(vx_min, "vx_min", -0.35f);
 
   const float min_sgn = vx_min > 0.0f ? 1.0f : -1.0f;
+  vx_max_ = vx_max;
+  vx_min_ = vx_min;
+  vy_max_ = vy_max;
   max_vel_ = sqrtf(vx_max * vx_max + vy_max * vy_max);
   min_vel_ = min_sgn * sqrtf(vx_min * vx_min + vy_max * vy_max);
 }
@@ -58,21 +61,20 @@ void ConstraintCritic::score(CriticData & data)
   }
 
   // Omnidirectional motion model
+  // Axis wise violation check
   auto omni = dynamic_cast<OmniMotionModel *>(data.motion_model.get());
   if (omni != nullptr) {
     auto & vx = data.state.vx;
-    unsigned int n_rows = data.state.vx.rows();
-    unsigned int n_cols = data.state.vx.cols();
-    Eigen::ArrayXXf sgn(n_rows, n_cols);
-    sgn = vx.unaryExpr([](const float x) {return copysignf(1.0f, x);});
+    auto & vy = data.state.vy;
+    auto vx_violation = (vx - vx_max_).max(0.0f) + (vx_min_ - vx).max(0.0f);
+    auto vy_violation = (vy.abs() - vy_max_).max(0.0f);
+    auto violation = ((vx_violation + vy_violation) * data.model_dt).rowwise().sum().eval();
+    auto weighted_violation = violation * weight_;
 
-    auto vel_total = sgn * (data.state.vx.square() + data.state.vy.square()).sqrt();
-    if (power_ > 1u) {
-      data.costs += ((((vel_total - max_vel_).max(0.0f) + (min_vel_ - vel_total).
-        max(0.0f)) * data.model_dt).rowwise().sum().eval() * weight_).pow(power_).eval();
+    if(power_ > 1u) {
+      data.costs += weighted_violation.pow(power_);
     } else {
-      data.costs += ((((vel_total - max_vel_).max(0.0f) + (min_vel_ - vel_total).
-        max(0.0f)) * data.model_dt).rowwise().sum().eval() * weight_).eval();
+      data.costs += weighted_violation;
     }
     return;
   }
