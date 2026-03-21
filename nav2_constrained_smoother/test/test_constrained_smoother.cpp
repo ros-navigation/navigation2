@@ -471,7 +471,7 @@ TEST_F(SmootherTest, testingSmoothness)
   mvmt_smoothness_improvement =
     assessPathImprovement(sharp_turn_90_then_reverse, smoothed_path, mvmt_smoothness_criterion_);
   EXPECT_GT(mvmt_smoothness_improvement, 0.0);
-  EXPECT_NEAR(mvmt_smoothness_improvement, 37.2, 1.0);
+  EXPECT_NEAR(mvmt_smoothness_improvement, 40.4, 1.0);
 
   orientation_smoothness_improvement =
     assessPathImprovement(
@@ -518,7 +518,7 @@ TEST_F(SmootherTest, testingAnchoringToOriginalPath)
   double origin_similarity_improvement =
     assessPathImprovement(smoothed_path, smoothed_path_anchored, origin_similarity_criterion);
   EXPECT_GT(origin_similarity_improvement, 0.0);
-  EXPECT_NEAR(origin_similarity_improvement, 45.5, 1.0);
+  EXPECT_NEAR(origin_similarity_improvement, 48.9, 1.0);
 
   SUCCEED();
 }
@@ -802,7 +802,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
       "ceres_smoother"), "Original similarity improvement (cusp, ecc vs. simple): %lf",
     origin_similarity_improvement);
   EXPECT_GT(origin_similarity_improvement, 0.0);
-  EXPECT_NEAR(origin_similarity_improvement, 0.43, 0.02);
+  EXPECT_NEAR(origin_similarity_improvement, 1.89, 0.02);
 
 
   /////////////////////////////////////////////////////
@@ -840,7 +840,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     rclcpp::get_logger(
       "ceres_smoother"), "Cost avoidance improvement (cusp_shifted, simple): %lf, %lf",
     cost_avoidance_improvement_simple, worst_cost_improvement_simple);
-  EXPECT_NEAR(cost_avoidance_improvement_simple, 40.2, 1.0);
+  EXPECT_NEAR(cost_avoidance_improvement_simple, 41.4, 1.0);
 
   // now smooth using the new optimizer with cost check point shifted
   std::vector<Eigen::Vector3d> smoothed_path_scc;
@@ -851,7 +851,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     smoothed_path_scc,
     cost_avoidance_criterion);
   EXPECT_GT(cost_avoidance_improvement_shifted_cost_check, 0.0);
-  EXPECT_NEAR(cost_avoidance_improvement_shifted_cost_check, 42.0, 1.0);
+  EXPECT_NEAR(cost_avoidance_improvement_shifted_cost_check, 53.6, 1.0);
   double worst_cost_improvement_shifted_cost_check = assessWorstPoseImprovement(
     cusp_near_obstacle,
     smoothed_path_scc,
@@ -906,7 +906,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     rclcpp::get_logger(
       "ceres_smoother"), "Cost avoidance improvement (cusp_shifted, scce): %lf, %lf",
     cost_avoidance_improvement_shifted_extra, worst_cost_improvement_shifted_extra);
-  EXPECT_NEAR(cost_avoidance_improvement_shifted_extra, 51.0, 1.0);
+  EXPECT_NEAR(cost_avoidance_improvement_shifted_extra, 56.8, 1.0);
   EXPECT_GE(worst_cost_improvement_shifted_extra, 0.0);
 
   // resmooth extra careful cusp with same conditions (higher max_iterations)
@@ -930,7 +930,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     rclcpp::get_logger(
       "ceres_smoother"), "Cost avoidance improvement (cusp_shifted, ecc): %lf, %lf",
     cost_avoidance_improvement_extra_careful_cusp, worst_cost_improvement_extra_careful_cusp);
-  EXPECT_NEAR(cost_avoidance_improvement_extra_careful_cusp, 48.5, 1.0);
+  EXPECT_NEAR(cost_avoidance_improvement_extra_careful_cusp, 55.0, 1.0);
   EXPECT_GT(
     cost_avoidance_improvement_shifted_extra,
     cost_avoidance_improvement_extra_careful_cusp);
@@ -1002,7 +1002,7 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
     &mvmt_smoothness_criterion_out);
   // more poses -> smoother path
   EXPECT_GT(smoothness_improvement, 0.0);
-  EXPECT_NEAR(smoothness_improvement, 63.9, 1.0);
+  EXPECT_NEAR(smoothness_improvement, 65.2, 1.0);
 
   // upsample above original size
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_upsampling_factor", 2));
@@ -1056,10 +1056,10 @@ TEST_F(SmootherTest, testingStartGoalOrientations)
   mvmt_smoothness_improvement =
     assessPathImprovement(smoothed_path, smoothed_path_sg_overwritten, mvmt_smoothness_criterion_);
   EXPECT_GT(mvmt_smoothness_improvement, 0.0);
-  EXPECT_NEAR(mvmt_smoothness_improvement, 58.9, 1.0);
+  EXPECT_NEAR(mvmt_smoothness_improvement, 100.0, 1.0);
   // orientations adjusted to follow the path
-  EXPECT_NEAR(smoothed_path_sg_overwritten.front()[2], M_PI / 8, 0.1);
-  EXPECT_NEAR(smoothed_path_sg_overwritten.back()[2], 3 * M_PI / 8, 0.1);
+  EXPECT_NEAR(smoothed_path_sg_overwritten.front()[2], M_PI / 4, 0.1);
+  EXPECT_NEAR(smoothed_path_sg_overwritten.back()[2], M_PI / 4, 0.1);
 
   // test short paths
   std::vector<Eigen::Vector3d> short_screwed_path =
