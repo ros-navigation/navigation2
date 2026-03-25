@@ -105,7 +105,7 @@ NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 void
 NavigateToPoseNavigator::goalCompleted(
   typename ActionT::Result::SharedPtr result,
-  const nav2_behavior_tree::BtStatus /*final_bt_status*/)
+  nav2_behavior_tree::BtStatus & /*final_bt_status*/)
 {
   if (result->error_code == 0) {
     if (bt_action_server_->populateInternalError(result)) {
