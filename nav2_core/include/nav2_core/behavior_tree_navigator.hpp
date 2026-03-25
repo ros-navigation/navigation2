@@ -318,7 +318,7 @@ protected:
    */
   void onCompletion(
     typename ActionT::Result::SharedPtr result,
-    const nav2_behavior_tree::BtStatus final_bt_status)
+    nav2_behavior_tree::BtStatus & final_bt_status)
   {
     plugin_muxer_->stopNavigating(getName());
     goalCompleted(result, final_bt_status);
@@ -348,7 +348,7 @@ protected:
    */
   virtual void goalCompleted(
     typename ActionT::Result::SharedPtr result,
-    const nav2_behavior_tree::BtStatus final_bt_status) = 0;
+    nav2_behavior_tree::BtStatus & final_bt_status) = 0;
 
   /**
    * @param Method to configure resources.
