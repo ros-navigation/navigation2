@@ -88,7 +88,7 @@ public:
   }
 
 protected:
-  bool isCostmapReceived()
+  bool isCostmapReceived()  
 {
   std::lock_guard<std::mutex> guard(costmap_msg_mutex_); return costmap_ != nullptr;
 }
