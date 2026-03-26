@@ -72,7 +72,7 @@ NavfnPlanner::configure(
   robot_footprint_ = costmap_ros->getRobotFootprint();
 
   double max_radius = 0.0;
-  for (const auto& point : robot_footprint_) {
+  for (const auto & point : robot_footprint_) {
     double dist = sqrt(point.x * point.x + point.y * point.y);
     max_radius = std::max(max_radius, dist);
   }
@@ -83,8 +83,8 @@ NavfnPlanner::configure(
   RCLCPP_INFO(logger_, "Robot footprint has %zu points:", robot_footprint_.size());
   for (size_t i = 0; i < robot_footprint_.size(); i++) {
     RCLCPP_INFO(
-      logger_, 
-      "  Point %zu: (%.3f, %.3f)", 
+      logger_,
+      "  Point %zu: (%.3f, %.3f)",
       i, robot_footprint_[i].x, robot_footprint_[i].y);
   }
 
@@ -248,18 +248,19 @@ NavfnPlanner::makePlan(
 
   int radius_cells = static_cast<int>(robot_radius_ / costmap_->getResolution());
   RCLCPP_INFO(
-    logger_, 
-    "Clearing robot footprint: radius = %.3f m = %d cells", 
+    logger_,
+    "Clearing robot footprint: radius = %.3f m = %d cells",
     robot_radius_, radius_cells);
 
   for (int dx = -radius_cells; dx <= radius_cells; dx++) {
     for (int dy = -radius_cells; dy <= radius_cells; dy++) {
-      if (dx*dx + dy*dy <= radius_cells*radius_cells) {
+      if (dx * dx + dy * dy <= radius_cells * radius_cells) {
         unsigned int clear_x = mx + dx;
         unsigned int clear_y = my + dy;
         // Check bounds before clearing
-        if (clear_x < costmap_->getSizeInCellsX() && 
-            clear_y < costmap_->getSizeInCellsY()) {
+        if (clear_x < costmap_->getSizeInCellsX() &&
+          clear_y < costmap_->getSizeInCellsY())
+        {
           clearRobotCell(clear_x, clear_y);
         }
       }
