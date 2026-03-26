@@ -150,12 +150,18 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // it in the same orientation that the last segment of the path
   double angle_to_target = atan2(motion_target.pose.position.y, motion_target.pose.position.x);
   if (params_->final_rotation && dist_to_goal < params_->motion_target_dist) {
-    geometry_msgs::msg::PoseStamped stl_pose =
-      transformed_plan.poses[transformed_plan.poses.size() - 2];
-    geometry_msgs::msg::PoseStamped goal_pose = transformed_plan.poses.back();
-    double dx = goal_pose.pose.position.x - stl_pose.pose.position.x;
-    double dy = goal_pose.pose.position.y - stl_pose.pose.position.y;
-    double yaw = std::atan2(dy, dx);
+    double yaw;
+    if (transformed_plan.poses.size() >= 2) {
+      geometry_msgs::msg::PoseStamped stl_pose =
+        transformed_plan.poses[transformed_plan.poses.size() - 2];
+      geometry_msgs::msg::PoseStamped goal_pose = transformed_plan.poses.back();
+      double dx = goal_pose.pose.position.x - stl_pose.pose.position.x;
+      double dy = goal_pose.pose.position.y - stl_pose.pose.position.y;
+      yaw = std::atan2(dy, dx);
+    } else {
+      // Fallback: use direction from robot to target when path has < 2 poses
+      yaw = angle_to_target;
+    }
     motion_target.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
   }
 
