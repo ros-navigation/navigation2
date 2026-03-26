@@ -279,7 +279,13 @@ void Smoother::updateApproximatePathOrientations(
     reversing_segment = true;
   }
 
-  // Find the angle relative the path position vectors
+  // For holonomic robots, preserve the lattice-planned headings.
+  // The smoother only adjusts positions — orientations were planned by the lattice.
+  if (is_holonomic_) {
+    return;
+  }
+
+  // For non-holonomic: heading must match direction of travel
   for (unsigned int i = 0; i != path.poses.size() - 1; i++) {
     dx = path.poses[i + 1].pose.position.x - path.poses[i].pose.position.x;
     dy = path.poses[i + 1].pose.position.y - path.poses[i].pose.position.y;

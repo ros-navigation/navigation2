@@ -26,6 +26,7 @@
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
 #include "ompl/base/spaces/ReedsSheppStateSpace.h"
+#include "ompl/base/spaces/SE2StateSpace.h"
 
 #include "nav2_smac_planner/node_lattice.hpp"
 
@@ -76,7 +77,10 @@ void LatticeMotionTable::initMotionModel(
   num_angle_quantization = lattice_metadata.number_of_headings;
 
   if (!state_space) {
-    if (!allow_reverse_expansion) {
+    if (lattice_metadata.motion_model == "omni") {
+      state_space = std::make_shared<ompl::base::SE2StateSpace>();
+      motion_model = MotionModel::OMNI;
+    } else if (!allow_reverse_expansion) {
       state_space = std::make_unique<ompl::base::DubinsStateSpace>(
         lattice_metadata.min_turning_radius);
     } else {
@@ -285,8 +289,14 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
   }
 
   // Pure rotation in place 1 angular bin in either direction
+  // For omni: quadratic scaling — rotation disproportionately expensive in high-cost areas
   if (transition_prim->trajectory_length < 1e-4) {
-    return motion_table.rotation_penalty * (1.0 + motion_table.cost_penalty * normalized_cost);
+    float rot_cost = motion_table.rotation_penalty *
+      (1.0 + motion_table.cost_penalty * normalized_cost);
+    if (motion_table.motion_model == MotionModel::OMNI) {
+      rot_cost *= (1.0 + normalized_cost);
+    }
+    return rot_cost;
   }
 
   float travel_cost = 0.0;
@@ -418,16 +428,21 @@ void NodeLattice::precomputeDistanceHeuristic(
   const unsigned int & dim_3_size,
   const SearchInfo & search_info)
 {
-  // Dubin or Reeds-Shepp shortest distances
-  if (!search_info.allow_reverse_expansion) {
+  // Load metadata first so we can check motion_model
+  motion_table.lattice_metadata =
+    LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
+
+  // Select state space based on motion model
+  if (motion_table.lattice_metadata.motion_model == "omni") {
+    motion_table.state_space = std::make_shared<ompl::base::SE2StateSpace>();
+    motion_table.motion_model = MotionModel::OMNI;
+  } else if (!search_info.allow_reverse_expansion) {
     motion_table.state_space = std::make_unique<ompl::base::DubinsStateSpace>(
       search_info.minimum_turning_radius);
   } else {
     motion_table.state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
       search_info.minimum_turning_radius);
   }
-  motion_table.lattice_metadata =
-    LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
 
   ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
   to[0] = 0.0;

@@ -108,6 +108,7 @@ struct LatticeMotionTable
   std::vector<TrigValues> trig_values;
   std::string current_lattice_filepath;
   LatticeMetadata lattice_metadata;
+  MotionModel motion_model{MotionModel::STATE_LATTICE};
 };
 
 /**
