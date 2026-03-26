@@ -74,9 +74,12 @@
       <input_port name="goal">Destination to plan to</input_port>
       <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
+      <input_port name="plan_in_static">Whether to plan in the static map</input_port>
+      <input_port name="classify_paths">Whether to classify the paths and provide the classified segments</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
+      <output_port name="path_segments">Classified Path Segments</output_port>
     </Action>
 
     <Action ID="ComputePathThroughPoses">
@@ -294,6 +297,16 @@
     </Decorator>
 
     <Decorator ID="GoalUpdatedController">
+    </Decorator>
+
+    <Decorator ID="PathManager">
+      <input_port name="path_array">Classified path segments to follow</input_port>
+      <input_port name="replanned_path_array">Reclassified sub-segments from a replan of the current segment</input_port>
+      <input_port name="path_class_to_controller_map">Vector of controller IDs indexed by class_type</input_port>
+      <output_port name="updated_path_array">Remaining path segments after popping completed ones</output_port>
+      <output_port name="current_path">Path of the current segment</output_port>
+      <output_port name="controller_id">Controller ID for the current segment</output_port>
+      <output_port name="local_goal">Last pose of the current segment path</output_port>
     </Decorator>
 
   </TreeNodesModel>
