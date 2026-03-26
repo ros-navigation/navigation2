@@ -189,56 +189,31 @@ bool ThetaStar::losCheck(
 
   int dx = abs(x1 - x0), sx = (x0 < x1) ? 1 : -1;
   int dy = abs(y1 - y0), sy = (y0 < y1) ? 1 : -1;
-  int cx = x0, cy = y0, f = (dx >= dy) ? -dx / 2 : -dy / 2;
+  int cx = x0, cy = y0, e = dx - dy;
 
-  if (!isSafe(cx, cy)) {
-    return false;
+  while (cx != x1 || cy != y1) {
+    if (!isSafe(cx, cy, sl_cost)) {
+      return false;
+    }
+    int e2 = 2 * e;
+    if (e2 > -dy && e2 < dx) {
+      if (!isSafe(cx + sx, cy) || !isSafe(cx, cy + sy)) {
+        return false;
+      }
+      cx += sx;
+      cy += sy;
+      e += dx - dy;
+    } else if (e2 > -dy) {
+      cx += sx;
+      e -= dy;
+    } else {
+      cy += sy;
+      e += dx;
+    }
   }
 
-  if (dx >= dy) {
-    for (int i = 0; i < dx; i++) {
-      f += dy;
-      if (f > 0) {
-        if (!isSafe(cx + sx, cy)) {
-          return false;
-        }
-        if (!isSafe(cx, cy + sy)) {
-          return false;
-        }
-
-        cx += sx;
-        cy += sy;
-        f -= dx;
-      } else {
-        cx += sx;
-      }
-
-      if (!isSafe(cx, cy, sl_cost)) {
-        return false;
-      }
-    }
-  } else {
-    for (int i = 0; i < dy; i++) {
-      f += dx;
-      if (f > 0) {
-        if (!isSafe(cx + sx, cy)) {
-          return false;
-        }
-        if (!isSafe(cx, cy + sy)) {
-          return false;
-        }
-
-        cx += sx;
-        cy += sy;
-        f -= dy;
-      } else {
-        cy += sy;
-      }
-
-      if (!isSafe(cx, cy, sl_cost)) {
-        return false;
-      }
-    }
+  if (!isSafe(cx, cy, sl_cost)) {
+    return false;
   }
 
   return true;
