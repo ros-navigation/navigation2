@@ -38,7 +38,7 @@ void PathAlignCritic::initialize()
     auto node = parent_.lock();
     if (node) {
       occupancy_check_dist_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
-        "PathAlignCritic/occupancy_check_end_point", 1);
+          "/critics/PathAlignCritic/occupancy_check_end_point", 1);
       occupancy_check_dist_pub_->on_activate();
     }
   }
