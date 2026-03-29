@@ -31,6 +31,8 @@ void TrajectoryVisualizer::on_configure(
   trajectories_publisher_ =
     node->create_publisher<visualization_msgs::msg::MarkerArray>("~/candidate_trajectories");
   optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("~/optimal_path");
+  furthest_point_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("~/furthest_reached_point");
+
   parameters_handler_ = parameters_handler;
 
   auto getParam = parameters_handler->getParamGetter(name + ".TrajectoryVisualizer");
@@ -45,18 +47,21 @@ void TrajectoryVisualizer::on_cleanup()
 {
   trajectories_publisher_.reset();
   optimal_path_pub_.reset();
+  furthest_point_pub_.reset();
 }
 
 void TrajectoryVisualizer::on_activate()
 {
   trajectories_publisher_->on_activate();
   optimal_path_pub_->on_activate();
+  furthest_point_pub_->on_activate();
 }
 
 void TrajectoryVisualizer::on_deactivate()
 {
   trajectories_publisher_->on_deactivate();
   optimal_path_pub_->on_deactivate();
+  furthest_point_pub_->on_deactivate();
 }
 
 void TrajectoryVisualizer::add(
@@ -183,6 +188,24 @@ void TrajectoryVisualizer::addCostColoredTrajectory(
   }
 
   points_->markers.push_back(std::move(marker));
+}
+
+void TrajectoryVisualizer::setFurthestReachedPoint(
+  const models::Path & path,
+  size_t furthest_idx,
+  const builtin_interfaces::msg::Time & stamp)
+{
+  if (furthest_point_pub_->get_subscription_count() == 0) {
+    return;
+  }
+
+  geometry_msgs::msg::PointStamped msg;
+  msg.header.frame_id = frame_id_;
+  msg.header.stamp = stamp;
+  msg.point.x = path.x(furthest_idx);
+  msg.point.y = path.y(furthest_idx);
+  msg.point.z = 0.1;  // slightly above ground for visibility
+  furthest_point_pub_->publish(msg);
 }
 
 std_msgs::msg::ColorRGBA TrajectoryVisualizer::costToColor(float normalized)

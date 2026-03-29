@@ -153,6 +153,13 @@ void MPPIController::visualize(
     cmd_stamp);
 
   trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
+
+  const auto & furthest = optimizer_.getFurthestReachedPathPoint();
+  if (furthest.has_value()) {
+    trajectory_visualizer_.setFurthestReachedPoint(
+      optimizer_.getPath(), furthest.value(), cmd_stamp);
+  }
+
   trajectory_visualizer_.visualize();
 }
 

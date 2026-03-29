@@ -127,6 +127,24 @@ public:
   const Eigen::ArrayXf & getCosts() const {return costs_;}
 
   /**
+   * @brief Get the furthest reached path point index from the last evaluation
+   * @return Optional index of furthest reached path point, if path was provided and evaluated.
+   */
+  const std::optional<size_t> & getFurthestReachedPathPoint() const
+  {
+    return critics_data_.furthest_reached_path_point;
+  }
+
+  /**
+   * @brief Get the path data from the last evaluation
+   * @return Path data if path was provided and evaluated.
+   */
+  const models::Path & getPath() const
+  {
+    return path_;
+  }
+  
+  /**
    * @brief Get per-critic cost breakdown from last evaluation
    * @return Vector of (critic_name, cost_array) pairs
    */

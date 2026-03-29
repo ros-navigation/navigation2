@@ -22,12 +22,14 @@
 #include <utility>
 #include <vector>
 
+#include "geometry_msgs/msg/point_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
+#include "nav2_mppi_controller/models/path.hpp"
 #include "nav2_mppi_controller/models/trajectories.hpp"
 
 namespace mppi
@@ -93,6 +95,17 @@ public:
     const builtin_interfaces::msg::Time & stamp);
 
   /**
+    * @brief Publish the furthest reached path point as a PointStamped
+    * @param path Path data containing x, y coordinates
+    * @param furthest_idx Index into the path of the furthest reached point
+    * @param stamp Timestamp for the message
+    */
+  void setFurthestReachedPoint(
+    const models::Path & path,
+    size_t furthest_idx,
+    const builtin_interfaces::msg::Time & stamp);
+
+  /**
     * @brief Visualize the plan
     */
   void visualize();
@@ -129,6 +142,7 @@ protected:
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     trajectories_publisher_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr optimal_path_pub_;
+  nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr furthest_point_pub_;
 
   std::unique_ptr<nav_msgs::msg::Path> optimal_path_;
   std::unique_ptr<visualization_msgs::msg::MarkerArray> points_;
