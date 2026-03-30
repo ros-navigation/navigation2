@@ -39,6 +39,7 @@
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
 #include "nav2_controller/plugins/position_goal_checker.hpp"
+#include "nav2_controller/plugins/progress_goal_checker.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -46,6 +47,7 @@
 using nav2_controller::SimpleGoalChecker;
 using nav2_controller::StoppedGoalChecker;
 using nav2_controller::PositionGoalChecker;
+using nav2_controller::ProgressGoalChecker;
 
 void checkMacro(
   nav2_core::GoalChecker & gc,
@@ -166,6 +168,16 @@ TEST(VelocityIterator, position_goal_checker_reset)
   nav2_core::GoalChecker * pgc = new PositionGoalChecker;
   pgc->reset();
   delete pgc;
+  EXPECT_TRUE(true);
+}
+
+TEST(VelocityIterator, progress_goal_checker_reset)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_goal_checker");
+
+  nav2_core::GoalChecker * prgc = new ProgressGoalChecker;
+  prgc->reset();
+  delete prgc;
   EXPECT_TRUE(true);
 }
 
@@ -454,6 +466,390 @@ TEST(StoppedGoalChecker, is_reached)
   EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
   EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
   EXPECT_TRUE(pgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+}
+
+TEST(ProgressGoalChecker, tight_tolerance_immediate_acceptance)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc", costmap);
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+
+  // Robot at origin, goal at origin
+  gc.reset();
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  // Robot within tight tolerance (default 0.10m)
+  gc.reset();
+  current_pose.position.x = 0.05;
+  current_pose.position.y = 0.05;
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+}
+
+TEST(ProgressGoalChecker, outside_max_tolerance_rejected)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc2", costmap);
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+  current_pose.position.x = 0.50;
+
+  gc.reset();
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+}
+
+TEST(ProgressGoalChecker, max_tolerance_with_convergence)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc3", costmap);
+  gc.reset();
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+
+  current_pose.position.x = 0.20;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.18;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.16;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.14;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+}
+
+TEST(ProgressGoalChecker, stagnation_triggers_acceptance)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  x->declare_parameter("pgc4.required_stagnation_cycles", 3);
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc4", costmap);
+  gc.reset();
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+
+  current_pose.position.x = 0.15;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.12;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  // 3 consecutive non-improving checks (required_stagnation_cycles set to 3)
+  current_pose.position.x = 0.13;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.14;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.13;
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+}
+
+TEST(ProgressGoalChecker, oscillation_triggers_acceptance)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  x->declare_parameter("pgc5.required_stagnation_cycles", 3);
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc5", costmap);
+  gc.reset();
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+
+  current_pose.position.x = 0.20;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.15;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.13;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.16;  // worse → count=1
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.12;  // new best → count=0
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.14;  // worse → count=1
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.15;  // worse → count=2
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.14;  // worse → count=3 → accept!
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+}
+
+TEST(ProgressGoalChecker, yaw_check_after_xy)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc6", costmap);
+  gc.reset();
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+
+  // XY exact match but yaw way off
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(1.0);
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  // XY matches, yaw within tolerance
+  gc.reset();
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.20);
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+}
+
+TEST(ProgressGoalChecker, stateful_behavior)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc7", costmap);
+  gc.reset();
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+
+  current_pose.position.x = 0.05;
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  // Drift away — but XY is latched (stateful)
+  current_pose.position.x = 0.50;
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  // After reset, position matters again
+  gc.reset();
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+}
+
+TEST(ProgressGoalChecker, path_length_tolerance)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc8", costmap);
+  gc.reset();
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+
+  nav_msgs::msg::Path long_plan;
+  geometry_msgs::msg::PoseStamped p1, p2;
+  p1.pose.position.x = 0.0;
+  p2.pose.position.x = 5.0;
+  long_plan.poses.push_back(p1);
+  long_plan.poses.push_back(p2);
+
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, long_plan));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+}
+
+TEST(ProgressGoalChecker, get_tolerances)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc9", costmap);
+
+  geometry_msgs::msg::Pose pose_tol;
+  geometry_msgs::msg::Twist vel_tol;
+
+  EXPECT_TRUE(gc.getTolerances(pose_tol, vel_tol));
+  EXPECT_DOUBLE_EQ(pose_tol.position.x, 0.25);
+  EXPECT_DOUBLE_EQ(pose_tol.position.y, 0.25);
+  EXPECT_EQ(vel_tol.linear.x, std::numeric_limits<double>::lowest());
+}
+
+TEST(ProgressGoalChecker, dynamic_parameters)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc10", costmap);
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    x->get_node_base_interface(), x->get_node_topics_interface(),
+    x->get_node_graph_interface(),
+    x->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("pgc10.xy_goal_tolerance", 0.05),
+      rclcpp::Parameter("pgc10.max_xy_goal_tolerance", 0.50),
+      rclcpp::Parameter("pgc10.yaw_goal_tolerance", 0.10),
+      rclcpp::Parameter("pgc10.path_length_tolerance", 2.0),
+      rclcpp::Parameter("pgc10.stateful", false),
+      rclcpp::Parameter("pgc10.symmetric_yaw_tolerance", true),
+      rclcpp::Parameter("pgc10.required_stagnation_cycles", 5)});
+
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(), results);
+
+  EXPECT_EQ(x->get_parameter("pgc10.xy_goal_tolerance").as_double(), 0.05);
+  EXPECT_EQ(x->get_parameter("pgc10.max_xy_goal_tolerance").as_double(), 0.50);
+  EXPECT_EQ(x->get_parameter("pgc10.yaw_goal_tolerance").as_double(), 0.10);
+  EXPECT_EQ(x->get_parameter("pgc10.path_length_tolerance").as_double(), 2.0);
+  EXPECT_EQ(x->get_parameter("pgc10.stateful").as_bool(), false);
+  EXPECT_EQ(x->get_parameter("pgc10.symmetric_yaw_tolerance").as_bool(), true);
+  EXPECT_EQ(x->get_parameter("pgc10.required_stagnation_cycles").as_int(), 5);
+
+  geometry_msgs::msg::Pose pose_tol;
+  geometry_msgs::msg::Twist vel_tol;
+  EXPECT_TRUE(gc.getTolerances(pose_tol, vel_tol));
+  EXPECT_DOUBLE_EQ(pose_tol.position.x, 0.50);
+  EXPECT_DOUBLE_EQ(pose_tol.position.y, 0.50);
+
+  // Invalid values rejected
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("pgc10.xy_goal_tolerance", -1.0)});
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(), results);
+  EXPECT_EQ(x->get_parameter("pgc10.xy_goal_tolerance").as_double(), 0.05);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("pgc10.required_stagnation_cycles", 0)});
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(), results);
+  EXPECT_EQ(x->get_parameter("pgc10.required_stagnation_cycles").as_int(), 5);
+}
+
+TEST(ProgressGoalChecker, symmetric_yaw_tolerance)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc11", costmap);
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    x->get_node_base_interface(), x->get_node_topics_interface(),
+    x->get_node_graph_interface(),
+    x->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("pgc11.symmetric_yaw_tolerance", true)});
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(), results);
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+
+  gc.reset();
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI + 0.1);
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  gc.reset();
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI / 2.0);
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+}
+
+TEST(ProgressGoalChecker, leaving_zone_resets_tracking)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  x->declare_parameter("pgc12.required_stagnation_cycles", 3);
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc12", costmap);
+  gc.reset();
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+
+  current_pose.position.x = 0.20;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.15;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.16;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  // Leave the zone
+  current_pose.position.x = 0.50;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  // Re-enter — counter reset
+  current_pose.position.x = 0.20;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.21;  // worse → 1
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.22;  // worse → 2
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.21;  // worse → 3 → accept
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+}
+
+TEST(ProgressGoalChecker, convergence_to_tight_from_max_zone)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  geometry_msgs::msg::Twist zero_vel;
+  nav_msgs::msg::Path empty_plan;
+
+  ProgressGoalChecker gc;
+  gc.initialize(x, "pgc13", costmap);
+  gc.reset();
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+
+  current_pose.position.x = 0.20;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.15;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
+
+  current_pose.position.x = 0.05;
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, zero_vel, empty_plan));
 }
 
 int main(int argc, char ** argv)

@@ -1,0 +1,298 @@
+// Copyright (c) 2026, David Grbac
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <memory>
+#include <string>
+#include <limits>
+#include <vector>
+#include <cmath>
+
+#include "nav2_controller/plugins/progress_goal_checker.hpp"
+#include "pluginlib/class_list_macros.hpp"
+#include "angles/angles.h"
+#include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "tf2/utils.hpp"
+
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
+
+namespace nav2_controller
+{
+
+ProgressGoalChecker::ProgressGoalChecker()
+: xy_goal_tolerance_(0.10),
+  xy_goal_tolerance_sq_(0.01),
+  max_xy_goal_tolerance_(0.25),
+  max_xy_goal_tolerance_sq_(0.0625),
+  yaw_goal_tolerance_(0.25),
+  path_length_tolerance_(1.0),
+  stateful_(true),
+  symmetric_yaw_tolerance_(false),
+  required_stagnation_cycles_(15),
+  check_xy_(true),
+  in_tolerance_zone_(false),
+  best_distance_sq_(std::numeric_limits<double>::max()),
+  no_improvement_count_(0)
+{
+}
+
+ProgressGoalChecker::~ProgressGoalChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
+void ProgressGoalChecker::initialize(
+  const nav2::LifecycleNode::WeakPtr & parent,
+  const std::string & plugin_name,
+  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>/*costmap_ros*/)
+{
+  plugin_name_ = plugin_name;
+  node_ = parent;
+  auto node = node_.lock();
+  logger_ = node->get_logger();
+
+  xy_goal_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".xy_goal_tolerance", 0.10);
+  max_xy_goal_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".max_xy_goal_tolerance", 0.25);
+  yaw_goal_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".yaw_goal_tolerance", 0.25);
+  path_length_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".path_length_tolerance", 1.0);
+  stateful_ = node->declare_or_get_parameter(plugin_name + ".stateful", true);
+  symmetric_yaw_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".symmetric_yaw_tolerance", false);
+  required_stagnation_cycles_ = node->declare_or_get_parameter(
+    plugin_name + ".required_stagnation_cycles", 15);
+
+  xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+  max_xy_goal_tolerance_sq_ = max_xy_goal_tolerance_ * max_xy_goal_tolerance_;
+
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &ProgressGoalChecker::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &ProgressGoalChecker::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void ProgressGoalChecker::reset()
+{
+  check_xy_ = true;
+  in_tolerance_zone_ = false;
+  best_distance_sq_ = std::numeric_limits<double>::max();
+  no_improvement_count_ = 0;
+}
+
+bool ProgressGoalChecker::isGoalReached(
+  const geometry_msgs::msg::Pose & query_pose,
+  const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist &,
+  const nav_msgs::msg::Path & transformed_global_plan)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  // Skip check if local plan is still long (robot is far from goal region)
+  if (nav2_util::geometry_utils::calculate_path_length(transformed_global_plan) >
+    path_length_tolerance_)
+  {
+    return false;
+  }
+
+  if (check_xy_) {
+    const double dx = query_pose.position.x - goal_pose.position.x;
+    const double dy = query_pose.position.y - goal_pose.position.y;
+    const double dist_sq = dx * dx + dy * dy;
+
+    // Tier 1: Tight (desired) tolerance — immediate acceptance
+    if (dist_sq <= xy_goal_tolerance_sq_) {
+      if (stateful_) {
+        check_xy_ = false;
+      }
+      RCLCPP_INFO(
+        logger_,
+        "ProgressGoalChecker: accepting goal at tight tolerance "
+        "(current: %.3f m, tol: %.3f m)",
+        std::sqrt(dist_sq), xy_goal_tolerance_);
+      // Fall through to yaw check
+    } else if (dist_sq <= max_xy_goal_tolerance_sq_) {
+      // Tier 2: Within the loose tolerance zone — track convergence
+      if (!in_tolerance_zone_) {
+        // Just entered the zone: initialize tracking
+        in_tolerance_zone_ = true;
+        best_distance_sq_ = dist_sq;
+        no_improvement_count_ = 0;
+        return false;
+      }
+
+      if (dist_sq < best_distance_sq_) {
+        // Robot is still converging: update best, reset counter
+        best_distance_sq_ = dist_sq;
+        no_improvement_count_ = 0;
+        return false;
+      }
+
+      // Robot is NOT getting closer (dist_sq >= best_distance_sq_)
+      no_improvement_count_++;
+      if (no_improvement_count_ < required_stagnation_cycles_) {
+        return false;
+      }
+
+      // Stagnated for enough cycles: accept at looser tolerance
+      RCLCPP_INFO(
+        logger_,
+        "ProgressGoalChecker: accepting goal at looser (max) tolerance "
+        "(current: %.3f m, tight tol: %.3f m, loose tol: %.3f m)",
+        std::sqrt(dist_sq), xy_goal_tolerance_, max_xy_goal_tolerance_);
+
+      if (stateful_) {
+        check_xy_ = false;
+      }
+      // Fall through to yaw check
+    } else {
+      // Outside both tolerances: reset tracking state
+      in_tolerance_zone_ = false;
+      best_distance_sq_ = std::numeric_limits<double>::max();
+      no_improvement_count_ = 0;
+      return false;
+    }
+  }
+
+  // XY is satisfied — check yaw
+  const double query_yaw = tf2::getYaw(query_pose.orientation);
+  const double goal_yaw = tf2::getYaw(goal_pose.orientation);
+
+  if (symmetric_yaw_tolerance_) {
+    const double dyaw_forward = angles::shortest_angular_distance(query_yaw, goal_yaw);
+    const double dyaw_backward = angles::shortest_angular_distance(
+      query_yaw, angles::normalize_angle(goal_yaw + M_PI));
+    return std::fabs(dyaw_forward) <= yaw_goal_tolerance_ ||
+           std::fabs(dyaw_backward) <= yaw_goal_tolerance_;
+  }
+
+  const double dyaw = angles::shortest_angular_distance(query_yaw, goal_yaw);
+  return std::fabs(dyaw) <= yaw_goal_tolerance_;
+}
+
+bool ProgressGoalChecker::getTolerances(
+  geometry_msgs::msg::Pose & pose_tolerance,
+  geometry_msgs::msg::Twist & vel_tolerance)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  const double invalid_field = std::numeric_limits<double>::lowest();
+
+  // Report max tolerance as the worst-case bound
+  pose_tolerance.position.x = max_xy_goal_tolerance_;
+  pose_tolerance.position.y = max_xy_goal_tolerance_;
+  pose_tolerance.position.z = invalid_field;
+  pose_tolerance.orientation =
+    nav2_util::geometry_utils::orientationAroundZAxis(yaw_goal_tolerance_);
+
+  vel_tolerance.linear.x = invalid_field;
+  vel_tolerance.linear.y = invalid_field;
+  vel_tolerance.linear.z = invalid_field;
+
+  vel_tolerance.angular.x = invalid_field;
+  vel_tolerance.angular.y = invalid_field;
+  vel_tolerance.angular.z = invalid_field;
+
+  return true;
+}
+
+rcl_interfaces::msg::SetParametersResult
+ProgressGoalChecker::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == plugin_name_ + ".required_stagnation_cycles" &&
+        parameter.as_int() < 1)
+      {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >= 1. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+ProgressGoalChecker::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".xy_goal_tolerance") {
+        xy_goal_tolerance_ = parameter.as_double();
+        xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+      } else if (param_name == plugin_name_ + ".max_xy_goal_tolerance") {
+        max_xy_goal_tolerance_ = parameter.as_double();
+        max_xy_goal_tolerance_sq_ = max_xy_goal_tolerance_ * max_xy_goal_tolerance_;
+      } else if (param_name == plugin_name_ + ".yaw_goal_tolerance") {
+        yaw_goal_tolerance_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".path_length_tolerance") {
+        path_length_tolerance_ = parameter.as_double();
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == plugin_name_ + ".stateful") {
+        stateful_ = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".symmetric_yaw_tolerance") {
+        symmetric_yaw_tolerance_ = parameter.as_bool();
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == plugin_name_ + ".required_stagnation_cycles") {
+        required_stagnation_cycles_ = static_cast<int>(parameter.as_int());
+      }
+    }
+  }
+}
+
+}  // namespace nav2_controller
+
+PLUGINLIB_EXPORT_CLASS(nav2_controller::ProgressGoalChecker, nav2_core::GoalChecker)

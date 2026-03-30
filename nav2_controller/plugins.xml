@@ -24,6 +24,11 @@
         <description>Goal checker that only checks XY position and ignores orientation</description>
     </class>
   </library>
+  <library path="progress_goal_checker">
+    <class type="nav2_controller::ProgressGoalChecker" base_class_type="nav2_core::GoalChecker">
+        <description>Goal checker with two tolerance tiers: accepts tight tolerance immediately, or loose tolerance when the robot stops making progress toward the goal</description>
+    </class>
+  </library>
   <library path="axis_goal_checker">
     <class type="nav2_controller::AxisGoalChecker" base_class_type="nav2_core::GoalChecker">
         <description>Goal checker that checks progress along the axis defined by the last 2 poses of the path</description>
