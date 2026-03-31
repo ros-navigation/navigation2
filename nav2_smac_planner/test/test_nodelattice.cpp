@@ -545,7 +545,6 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
 
 TEST(NodeLatticeTest, test_omni_selects_se2_state_space)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
@@ -559,43 +558,18 @@ TEST(NodeLatticeTest, test_omni_selects_se2_state_space)
   info.reverse_penalty = 1;
   info.cost_penalty = 1;
   info.retrospective_penalty = 0.0;
-  info.analytic_expansion_ratio = 1;
   info.lattice_filepath = filePath;
-  info.cache_obstacle_heuristic = true;
-  info.allow_reverse_expansion = true;
+  info.allow_reverse_expansion = false;
 
-  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeLattice> a_star(
-    nav2_smac_planner::MotionModel::STATE_LATTICE, info);
-  int max_iterations = 10000;
-  int terminal_checking_interval = 5000;
-  double max_planning_time = 120.0;
-  unsigned int angle_quantization = 16;
-
-  a_star.initialize(
-    false, max_iterations,
-    std::numeric_limits<int>::max(), terminal_checking_interval,
-    max_planning_time, 401, angle_quantization);
-
-  nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
-  costmap_ros->on_configure(rclcpp_lifecycle::State());
-  auto costmap = costmap_ros->getCostmap();
-  *costmap = costmapA;
-
-  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(
-    costmap_ros, 72, node);
-  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
-  a_star.setCollisionChecker(checker.get());
-  auto ctx = a_star.getContext();
+  nav2_smac_planner::LatticeMotionTable motion_table;
+  unsigned int size_x = 100;
+  motion_table.initMotionModel(size_x, info);
 
   // Verify omni motion model selects SE2StateSpace
-  EXPECT_EQ(
-    ctx->motion_table.motion_model,
-    nav2_smac_planner::MotionModel::OMNI);
+  EXPECT_EQ(motion_table.motion_model, nav2_smac_planner::MotionModel::OMNI);
   EXPECT_NE(
     dynamic_cast<ompl::base::SE2StateSpace *>(
-      ctx->motion_table.state_space.get()),
+      motion_table.state_space.get()),
     nullptr);
 }
 
