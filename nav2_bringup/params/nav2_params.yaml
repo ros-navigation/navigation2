@@ -150,6 +150,7 @@ controller_server:
       iteration_count: 1
       temperature: 0.3
       gamma: 0.015
+      use_arc_length_path_progress: false
       motion_model: "DiffDrive"
       visualize: true
       publish_optimal_trajectory: true
