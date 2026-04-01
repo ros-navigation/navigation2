@@ -18,9 +18,8 @@ from typing import Optional, Union
 
 from geometry_msgs.msg import (Pose, PoseWithCovarianceStamped, Quaternion, TransformStamped,
                                Twist, TwistStamped, Vector3)
-from nav2_loopback_sim.utils import (addYawToQuat, getMapOccupancy, matrixToTransform,
+from nav2_loopback_sim.utils import (addYawToQuat, matrixToTransform,
                                      transformStampedToMatrix, worldToMap)
-from nav2_simple_commander.line_iterator import LineIterator
 from nav_msgs.msg import OccupancyGrid, Odometry
 from nav_msgs.srv import GetMap
 import numpy as np
@@ -371,34 +370,136 @@ class LoopbackSimulator(Node):
                 self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
             return
 
+        width = self.map.info.width
+        height = self.map.info.height
+        resolution = self.map.info.resolution
+        map_data = self.map.data
+        range_max = self.scan_msg.range_max
+        angle_min = self.scan_msg.angle_min
+        angle_increment = self.scan_msg.angle_increment
+        ranges = self.scan_msg.ranges
+        use_inf = self.use_inf
+        origin_x = self.map.info.origin.position.x
+        origin_y = self.map.info.origin.position.y
+
         for i in range(num_samples):
-            curr_angle = theta + self.scan_msg.angle_min + i * self.scan_msg.angle_increment
-            x1 = x0 + self.scan_msg.range_max * math.cos(curr_angle)
-            y1 = y0 + self.scan_msg.range_max * math.sin(curr_angle)
+            curr_angle = theta + angle_min + i * angle_increment
+            x1 = x0 + range_max * math.cos(curr_angle)
+            y1 = y0 + range_max * math.sin(curr_angle)
 
-            mx1, my1 = worldToMap(x1, y1, self.map)
+            mx1 = int(math.floor((x1 - origin_x) / resolution))
+            my1 = int(math.floor((y1 - origin_y) / resolution))
 
-            line_iterator = LineIterator(mx0, my0, mx1, my1, 0.5)
+            # Inline LineIterator with step_size=0.5 for performance
+            lx = float(mx0)
+            ly = float(my0)
+            step_size = 0.5
+            if mx1 != mx0 and my1 != my0:
+                m = (my1 - my0) / (mx1 - mx0)
+                b = my1 - m * mx1
+                if mx1 > mx0:
+                    while lx <= mx1:
+                        mx, my = int(lx), int(ly)
+                        if not 0 < mx < width or not 0 < my < height:
+                            break
+                        if map_data[my * width + mx] >= 60:
+                            ranges[i] = math.sqrt((mx - mx0) ** 2 + (my - my0) ** 2) * resolution
+                            break
+                        lx = lx + step_size
+                        if lx > mx1:
+                            lx = mx1
+                        ly = m * lx + b
+                    else:
+                        if ranges[i] == 0.0 and use_inf:
+                            ranges[i] = float('inf')
+                        continue
+                else:
+                    while lx >= mx1:
+                        mx, my = int(lx), int(ly)
+                        if not 0 < mx < width or not 0 < my < height:
+                            break
+                        if map_data[my * width + mx] >= 60:
+                            ranges[i] = math.sqrt((mx - mx0) ** 2 + (my - my0) ** 2) * resolution
+                            break
+                        lx = lx - step_size
+                        if lx < mx1:
+                            lx = mx1
+                        ly = m * lx + b
+                    else:
+                        if ranges[i] == 0.0 and use_inf:
+                            ranges[i] = float('inf')
+                        continue
+            elif mx1 == mx0:
+                # Vertical line
+                if my1 > my0:
+                    while ly <= my1:
+                        mx, my = int(lx), int(ly)
+                        if not 0 < mx < width or not 0 < my < height:
+                            break
+                        if map_data[my * width + mx] >= 60:
+                            ranges[i] = math.sqrt((mx - mx0) ** 2 + (my - my0) ** 2) * resolution
+                            break
+                        ly = ly + step_size
+                        if ly > my1:
+                            ly = my1
+                    else:
+                        if ranges[i] == 0.0 and use_inf:
+                            ranges[i] = float('inf')
+                        continue
+                elif my1 < my0:
+                    while ly >= my1:
+                        mx, my = int(lx), int(ly)
+                        if not 0 < mx < width or not 0 < my < height:
+                            break
+                        if map_data[my * width + mx] >= 60:
+                            ranges[i] = math.sqrt((mx - mx0) ** 2 + (my - my0) ** 2) * resolution
+                            break
+                        ly = ly - step_size
+                        if ly < my1:
+                            ly = my1
+                    else:
+                        if ranges[i] == 0.0 and use_inf:
+                            ranges[i] = float('inf')
+                        continue
+            else:
+                # Horizontal line (my1 == my0)
+                m = (my1 - my0) / (mx1 - mx0)
+                b = my1 - m * mx1
+                if mx1 > mx0:
+                    while lx <= mx1:
+                        mx, my = int(lx), int(ly)
+                        if not 0 < mx < width or not 0 < my < height:
+                            break
+                        if map_data[my * width + mx] >= 60:
+                            ranges[i] = math.sqrt((mx - mx0) ** 2 + (my - my0) ** 2) * resolution
+                            break
+                        lx = lx + step_size
+                        if lx > mx1:
+                            lx = mx1
+                        ly = m * lx + b
+                    else:
+                        if ranges[i] == 0.0 and use_inf:
+                            ranges[i] = float('inf')
+                        continue
+                else:
+                    while lx >= mx1:
+                        mx, my = int(lx), int(ly)
+                        if not 0 < mx < width or not 0 < my < height:
+                            break
+                        if map_data[my * width + mx] >= 60:
+                            ranges[i] = math.sqrt((mx - mx0) ** 2 + (my - my0) ** 2) * resolution
+                            break
+                        lx = lx - step_size
+                        if lx < mx1:
+                            lx = mx1
+                        ly = m * lx + b
+                    else:
+                        if ranges[i] == 0.0 and use_inf:
+                            ranges[i] = float('inf')
+                        continue
 
-            while line_iterator.isValid():
-                mx, my = int(line_iterator.getX()), int(line_iterator.getY())
-
-                if not 0 < mx < self.map.info.width or not 0 < my < self.map.info.height:
-                    # if outside map then check next ray
-                    break
-
-                point_cost = getMapOccupancy(mx, my, self.map)
-
-                if point_cost >= 60:
-                    self.scan_msg.ranges[i] = math.sqrt(
-                        (int(line_iterator.getX()) - mx0) ** 2 +
-                        (int(line_iterator.getY()) - my0) ** 2
-                    ) * self.map.info.resolution
-                    break
-
-                line_iterator.advance()
-            if self.scan_msg.ranges[i] == 0.0 and self.use_inf:
-                self.scan_msg.ranges[i] = float('inf')
+            if ranges[i] == 0.0 and use_inf:
+                ranges[i] = float('inf')
 
 
 def main() -> None:
