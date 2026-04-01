@@ -18,8 +18,8 @@ from typing import Optional, Union
 
 from geometry_msgs.msg import (Pose, PoseWithCovarianceStamped, Quaternion, TransformStamped,
                                Twist, TwistStamped, Vector3)
-from nav2_loopback_sim.utils import (addYawToQuat, matrixToTransform,
-                                     transformStampedToMatrix, worldToMap)
+from nav2_loopback_sim.utils import (addYawToQuat, matrixToTransform, transformStampedToMatrix,
+                                     worldToMap)
 from nav_msgs.msg import OccupancyGrid, Odometry
 from nav_msgs.srv import GetMap
 import numpy as np
