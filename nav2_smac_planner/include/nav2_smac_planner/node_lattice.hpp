@@ -162,7 +162,7 @@ public:
    * @param NodeLattice right hand side node reference
    * @return If cell indices are equal
    */
-  bool operator==(const NodeLattice & rhs)
+  bool operator==(const NodeLattice & rhs) const
   {
     return this->_index == rhs._index;
   }
