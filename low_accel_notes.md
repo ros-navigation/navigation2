@@ -276,13 +276,18 @@ Viola!
 
 ![image](./low_accel_graphics/intra_iteration_open_loop_equal_model_control_freq_t=0.png)
 
----
+Finally, lets just sanity check that if we use all of these other acceleration fixes, do we actually **need** to unclamp the raw controls? Does that impact things? 
 
-TODO
+![image](./low_accel_graphics/all_changes_clamped_controls_again.png)
 
-Which changes should we take away from this (unclamping needed)?
+... uh, yeah. We really do need that!
 
-Now, how do we improve smoothness with this method? (IS start)
+
+#### Investigation 3: Characterizing Oscillation / Wobble Behavior
+
+Next step: How do we improve smoothness with the new unclamped controls? But first, we need to characterize the noise / wobble so that we can evaluate the effectiveness of any changes we make to address it.
+
+
 
 ## Topic 2: Asymmetric Acceleration Limits
 
