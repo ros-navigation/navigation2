@@ -232,7 +232,7 @@ This is interesting because we see much more smoothness in the acceleration term
 
 We see however that the acceleration constraints are being consistently violated. Perhaps this is because the model_dt and control period are not the same. The controller_period running at 20 hz (0.05s) but the model_dt used in the optimizer being 0.1s. The acceleration limits are applied within the trajectory optimization. That means the acceleration constraints applied within the optimizer are simulated twice long as when they're grabbed by the controller to execute (virtually doubling the acceleration limits of cmd_vel out). When we make them the same we see the following:
 
-![image](./low_accel_graphics/after_linear_accel_closed_loop_low_accel_model_dt_equal_control_frequency.png)
+![image](./low_accel_graphics/after_linear_accel_closed_loop_low_accel_model_dt_equal_control_freq.png)
 
 Moreover when we set it to use open-loop so there is no odometry contribution, we see virtually the same thing with no meaningful differentiation:
 
