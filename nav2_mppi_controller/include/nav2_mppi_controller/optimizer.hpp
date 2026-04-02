@@ -327,6 +327,7 @@ protected:
 
   // Temporary: acceleration debug publisher
   rclcpp::Publisher<geometry_msgs::msg::AccelStamped>::SharedPtr accel_pub_;
+  double smoothed_ax_{0.0}, smoothed_az_{0.0};
 };
 
 }  // namespace mppi

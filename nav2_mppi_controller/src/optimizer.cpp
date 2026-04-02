@@ -187,6 +187,8 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
     last_command_vel_ = geometry_msgs::msg::Twist();
   }
   last_command_time_ = rclcpp::Time(0, 0, RCL_CLOCK_UNINITIALIZED);
+  smoothed_ax_ = 0.0;
+  smoothed_az_ = 0.0;
 
   if (reset_dynamic_speed_limits) {
     settings_.constraints = settings_.base_constraints;
@@ -261,10 +263,13 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
       geometry_msgs::msg::AccelStamped accel_msg;
       accel_msg.header.stamp = plan.header.stamp;
       accel_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
-      accel_msg.accel.linear.x =
-        (control.twist.linear.x - last_command_vel_.linear.x) / dt;
-      accel_msg.accel.angular.z =
-        (control.twist.angular.z - last_command_vel_.angular.z) / dt;
+      constexpr double alpha = 0.3;
+      smoothed_ax_ = alpha * (control.twist.linear.x - last_command_vel_.linear.x) / dt +
+        (1.0 - alpha) * smoothed_ax_;
+      smoothed_az_ = alpha * (control.twist.angular.z - last_command_vel_.angular.z) / dt +
+        (1.0 - alpha) * smoothed_az_;
+      accel_msg.accel.linear.x = smoothed_ax_;
+      accel_msg.accel.angular.z = smoothed_az_;
       accel_pub_->publish(accel_msg);
     }
   }
