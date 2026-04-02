@@ -158,21 +158,21 @@ az_max: 1.2
 
 Before unclamping the controls:
 
-![image](./dexory_graphics/before.png)
+![image](./low_accel_graphics/before.png)
 
 After unclamping the controls:
 
-![image](./dexory_graphics/after.png)
+![image](./low_accel_graphics/after.png)
 
 The scale of each box is 0.2m/s. As you can see the after has a wider initial correction towards the path and correction from the original as well as additional noise while tracking the straightline path. However they both converge nicely -- it appears though that the after converges slightly faster due to the sharpness of the response.
 
 Note that the before and after for using the full acceleration seems very related, just with a bit more noise at steady state:
 
-![image](./dexory_graphics/before_full_accel.png) ![image](./dexory_graphics/after_full_accel.png)
+![image](./low_accel_graphics/before_full_accel.png) ![image](./low_accel_graphics/after_full_accel.png)
 
 Using `open_loop: true` with low-acceleration limits we again see the higher maximum velocities (possibly more noise between the two?) but consistent convergence times to the path. The noise compared to the original after unclamped controls certainly is improved so I can see why the original authors thought that Open Loop would be a viable short-term solution. 
 
-![image](./dexory_graphics/before_open_loop.png) ![image](./dexory_graphics/after_open_loop.png)
+![image](./low_accel_graphics/before_open_loop.png) ![image](./low_accel_graphics/after_open_loop.png)
 
 So far so good; just more noise in tracking which we expected.
 
@@ -226,17 +226,17 @@ accel_msg.accel.angular.z =
 
 For the respective before unclamping the control velocities and after:
 
-![image](./dexory_graphics/before_linear_accel_closed_loop_low_accel.png) ![image](./dexory_graphics/after_linear_accel_closed_loop_low_accel.png)
+![image](./low_accel_graphics/before_linear_accel_closed_loop_low_accel.png) ![image](./low_accel_graphics/after_linear_accel_closed_loop_low_accel.png)
 
 This is interesting because we see much more smoothness in the acceleration term with unclamped controls, but its limits are not respected at the start during the acceleration phase. The clamped controls shows that we stay within the bounds but have an immense amount of chattering. I don't fully understand this as fact, but intuitively the additional velocity noise in the unclamped controls is due to the higher noise in the controls used in the softmax (more noise before averaging -> more noise after averaging). The jitter in the in the acceleration is removed since the softmax is scoring trajectory points based on clamped values, so it can't see 'how bad its violated' (scoring bad trajectories worse -> less used in final output).
 
 We see however that the acceleration constraints are being consistently violated. Perhaps this is because the model_dt and control period are not the same. The controller_period running at 20 hz (0.05s) but the model_dt used in the optimizer being 0.1s. The acceleration limits are applied within the trajectory optimization. That means the acceleration constraints applied within the optimizer are simulated twice long as when they're grabbed by the controller to execute (virtually doubling the acceleration limits of cmd_vel out). When we make them the same we see the following:
 
-![image](./dexory_graphics/after_linear_accel_closed_loop_low_accel_model_dt_equal_control_frequency.png)
+![image](./low_accel_graphics/after_linear_accel_closed_loop_low_accel_model_dt_equal_control_frequency.png)
 
 Moreover when we set it to use open-loop so there is no odometry contribution, we see virtually the same thing with no meaningful differentiation:
 
-![image](./dexory_graphics/after_linear_accel_open_loop_low_accel_model_dt_equal_control_frequency.png)
+![image](./low_accel_graphics/after_linear_accel_open_loop_low_accel_model_dt_equal_control_frequency.png)
 
 We're still regularly violating the acceleration constraints externally without clamped controls.
 
