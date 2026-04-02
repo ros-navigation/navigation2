@@ -156,15 +156,15 @@ ay_min: -3.0
 az_max: 1.2
 ```
 
-Before unclamping the controls:
+Before unclamping the controls (angular velocity):
 
 ![image](./low_accel_graphics/before.png)
 
-After unclamping the controls:
+After unclamping the controls (angular velocity):
 
 ![image](./low_accel_graphics/after.png)
 
-The scale of each box is 0.2m/s. As you can see the after has a wider initial correction towards the path and correction from the original as well as additional noise while tracking the straightline path. However they both converge nicely -- it appears though that the after converges slightly faster due to the sharpness of the response.
+The scale of each box is 0.2rad/s. As you can see the after has a wider initial correction towards the path and correction from the original as well as additional noise while tracking the straightline path. However they both converge nicely -- it appears though that the after converges slightly faster due to the sharpness of the response.
 
 Note that the before and after for using the full acceleration seems very related, just with a bit more noise at steady state:
 
@@ -228,9 +228,9 @@ For the respective before unclamping the control velocities and after:
 
 ![image](./low_accel_graphics/before_linear_accel_closed_loop_low_accel.png) ![image](./low_accel_graphics/after_linear_accel_closed_loop_low_accel.png)
 
-This is interesting because we see much more smoothness in the acceleration term with unclamped controls, but its limits are not respected at the start during the acceleration phase. The clamped controls shows that we stay within the bounds but have an immense amount of chattering. I don't fully understand this as fact, but intuitively the additional velocity noise in the unclamped controls is due to the higher noise in the controls used in the softmax (more noise before averaging -> more noise after averaging). The jitter in the in the acceleration is removed since the softmax is scoring trajectory points based on clamped values, so it can't see 'how bad its violated' (scoring bad trajectories worse -> less used in final output).
+This is interesting because we see much more smoothness in the acceleration term with unclamped controls, but its limits are not respected at the start during the acceleration phase. The clamped controls shows that we stay within the bounds (roughly, not always) but have an immense amount of chattering. I don't fully understand this as fact, but intuitively the additional velocity noise in the unclamped controls is due to the higher noise in the controls used in the softmax (more noise before averaging -> more noise after averaging). The jitter in the in the acceleration is removed since the softmax is scoring trajectory points based on clamped values, so it can't see 'how bad its violated' (scoring bad trajectories worse -> less used in final output).
 
-We see however that the acceleration constraints are being consistently violated. Perhaps this is because the model_dt and control period are not the same. The controller_period running at 20 hz (0.05s) but the model_dt used in the optimizer being 0.1s. The acceleration limits are applied within the trajectory optimization. That means the acceleration constraints applied within the optimizer are simulated twice long as when they're grabbed by the controller to execute (virtually doubling the acceleration limits of cmd_vel out). When we make them the same we see the following:
+We see however that the acceleration constraints are being more consistently violated after unclamping the controls. Perhaps this is because the model_dt and control period are not the same. The controller_period running at 20 hz (0.05s) but the model_dt used in the optimizer being 0.1s. The acceleration limits are applied within the trajectory optimization. That means the acceleration constraints applied within the optimizer are simulated twice long as when they're grabbed by the controller to execute (virtually doubling the acceleration limits of cmd_vel out). When we make them the same we see the following:
 
 ![image](./low_accel_graphics/after_linear_accel_closed_loop_low_accel_model_dt_equal_control_freq.png)
 
@@ -240,32 +240,49 @@ Moreover when we set it to use open-loop so there is no odometry contribution, w
 
 We're still regularly violating the acceleration constraints externally without clamped controls.
 
+Its clear at this moment as to why that is now that everything else should be the same (`model_dt = control_freq`, `open_loop` should have perfect matching, etc). The issue is that between iterations, the dynamic feasibility is not being respected. Intra-trajectory dynamic limits are correctly set, but when we have a `speed` as the initial state, that is never being checked against the validity of the first optimal control sample. The optimal control sequence is having the speed set as current `vx(0) = speed.x` to initialize, but that is not being done in the controls which are used to compute / override the optimal trajectory at the end of the process. Now that the `cvx` are unbounded by the acceleration limits, its even more free to do anything it wishes, though even when it was bounded it was still able to cause these issues. 
+
+So lets do two things:
+1. Add acceleration constraints in `applyControlSequenceConstraints()`  relative to the starting speed to ensure that the trajectory is feasible to execute from the current state as well as within the optimal trajectory. These are the hard 'we know we're going to be feasible' guardrails. In addition:
+2. Add the initial acceleration contraint to the first samples in the optimal control sequence before noising it for generating controls (i.e. `cvx.col(0)`) with respect to the current speed. This will make sure that the first timestep is in the reachable regime when the initial speed and the last control sequence deviate, regardless of what it was before, before performing rollouts and scoring. Rather than simply setting it to the initial speed, we clamp the control sequence by the acceleration limits so we don't modify it unless we absolutely have to. This all could technically be skipped using the guardrails, but it would be good to have the shape of the trajectory's controls to match what's drivable in case of large deviations - rather than waiting for the end to clamp them in `applyControlSequenceConstraints` and deforming the shape without a chance to score with that in mind.
+
+That should ensure we have feasibility between iterations, and indeed that is what we now see we follow the constraints (note check out the right side of the plot, the left side is state from some previous setting up moves):
+
+Closed Loop with `model_dt` equal to control frequency:
+
+![image](./low_accel_graphics/inter_iteration_feasibility_closed_loop_model_dt_equal_control_frequency.png)
+
+Open Loop with `model_dt` equal to control frequency:
+
+![image](./low_accel_graphics/inter_iteration_feasibility_open_loop_model_dt_equal_control_frequency.png)
+
+Closed Loop with `model_dt` *not* equal to control frequency:
+
+![image](./low_accel_graphics/inter_iteration_feasibility_closed_loop_model_dt_not_equal_control_frequency.png)
+
+Open Loop with `model_dt` *not* equal to control frequency:
+
+![image](./low_accel_graphics/inter_iteration_feasibility_open_loop_model_dt_not_equal_control_frequency.png)
+
+For closed loop configurations, the acceleration constraints are respected and we ramp up to the velocity with feedback so it take a bit longer. For open loop configurations, we still interestingly violate the constraint. This seems due to the fact that we do the t=0 acceleration constraint using `model_dt` rather than the actual `control_frequency` and since we don't have real odometry to ground us into reality, it uses the acceleration corresponding to `accel * model_dt / control_frequency` (in the case of this: x2) when they are not the same. Using the `control_period` instead during the acceleration constraint added in (1) and (2) above, we fix this case. 
+
+![image](./low_accel_graphics/intra_iteration_open_loop_not_equal_model_control_freq_t=0.png)
+
+However when they are equal, it is still not addressed. This took me several hours to figure this one out. Essentially the shifting logic 'skips' the first control sample `vx(0)` and applies `vx(1)`. Its pretty obvious we then allow ourselves to use an additional timestep which lets us double the acceleration limits, precisely. Now how to fix this cleanly up-front and not in post-processing took some pencil and paper work that we'll skip to the solution for:
+
+In  (1) and (2) above where we apply the acceleration constraints based on the speed, we need to hard-set the t=0 index to be the speed, such that `t=1` is required to be within dynamic limits of that current speed by 1 timestep duration -- only for the case of `model_dt = control_frequency`. Otherwise, we should let it float as any value as long as it is within the acceleration limit window.
+
+Viola!
+
+![image](./low_accel_graphics/intra_iteration_open_loop_equal_model_control_freq_t=0.png)
+
 ---
 
-(a)
+TODO
 
-Add acceleration constraint on vx(0) in applyControlSequenceConstraints relative to state_.speed, before the existing velocity clamp. This is the only place that closes the inter-iteration gap, and since it operates on the final output (not on cvx), it doesn't interfere with optimization freedom. Same for wz(0) and vy(0).
+Which changes should we take away from this (unclamping needed)?
 
-(b) 
-
-Adjust the values of cvx.col(0) to be feasible before rollouts (motion model? updateInitialStateVelocities?)
-
-use model_dt (not controller period) for cvx(0) samplign constraint. the constraint on vx(0) should conceptually use controller_period since it's the real-world gap between iterations — but since model_dt == controller_period is now enforced, this is moot.
-
----
-
-TODO STEVE
-* test more with open loop + matching -- why any violation?
-* Test more with closed loop + matching -- why the vilations we see?
-* Propose solution to this to handle and support dynamic feasibility even in this case (or throw exceptions requiring some more consistency)
-  * Do acceleration constraints between iterations too? 
-  * Or from the odom / open loop state.speed from last as seed or something?
-  * Recenter the cvx (not just vx) in updateInitialStateVelocities around the starting speed.
-
-But there's a subtlety: the internal acceleration constraints at line 359 use model_dt, not controller_period_. 
-So if you want to compare this published acceleration against the constraint limits (ax_max, ax_min, az_max), the units are consistent (both m/s²), but the constraints were enforced within the sequence at model_dt spacing, while this measures the jump between iterations at controller_period_ spacing.
-
-Go back around to the original issue: does unclamping, closed/open loop, and model_dt vs control period matter? Which changes should we take away from this?
+Now, how do we improve smoothness with this method? (IS start)
 
 ## Topic 2: Asymmetric Acceleration Limits
 
