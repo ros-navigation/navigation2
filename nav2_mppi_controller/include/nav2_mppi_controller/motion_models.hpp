@@ -81,6 +81,37 @@ public:
 
     unsigned int n_cols = state.vx.cols();
 
+    // Clamp initial controls to feasible acceleration range from current speed
+    auto lower_bound_vx0 = (state.vx.col(0) >
+      0).select(
+      state.vx.col(0) + min_delta_vx,
+      state.vx.col(0) - max_delta_vx);
+    auto upper_bound_vx0 = (state.vx.col(0) >
+      0).select(
+      state.vx.col(0) + max_delta_vx,
+      state.vx.col(0) - min_delta_vx);
+    state.cvx.col(0) = state.cvx.col(0)
+      .cwiseMax(lower_bound_vx0)
+      .cwiseMin(upper_bound_vx0);
+
+    state.cwz.col(0) = state.cwz.col(0)
+      .cwiseMax(state.wz.col(0) - max_delta_wz)
+      .cwiseMin(state.wz.col(0) + max_delta_wz);
+
+    if (is_holo) {
+      auto lower_bound_vy0 = (state.vy.col(0) >
+        0).select(
+        state.vy.col(0) + min_delta_vy,
+        state.vy.col(0) - max_delta_vy);
+      auto upper_bound_vy0 = (state.vy.col(0) >
+        0).select(
+        state.vy.col(0) + max_delta_vy,
+        state.vy.col(0) - min_delta_vy);
+      state.cvy.col(0) = state.cvy.col(0)
+        .cwiseMax(lower_bound_vy0)
+        .cwiseMin(upper_bound_vy0);
+    }
+
     for (unsigned int i = 1; i < n_cols; i++) {
       auto lower_bound_vx = (state.vx.col(i - 1) >
         0).select(
@@ -91,15 +122,25 @@ public:
         state.vx.col(i - 1) + max_delta_vx,
         state.vx.col(i - 1) - min_delta_vx);
 
-      state.cvx.col(i - 1) = state.cvx.col(i - 1)
+      // REPLACE
+      // state.cvx.col(i - 1) = state.cvx.col(i - 1)
+      //   .cwiseMax(lower_bound_vx)
+      //   .cwiseMin(upper_bound_vx);
+      // state.vx.col(i) = state.cvx.col(i - 1);
+      //TODO Questionable; leave controls alone, update velocities
+      state.vx.col(i) = state.cvx.col(i - 1)
         .cwiseMax(lower_bound_vx)
         .cwiseMin(upper_bound_vx);
-      state.vx.col(i) = state.cvx.col(i - 1);
 
-      state.cwz.col(i - 1) = state.cwz.col(i - 1)
+      // REPLACE
+      // state.cwz.col(i - 1) = state.cwz.col(i - 1) 
+      //   .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
+      //   .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
+      // state.wz.col(i) = state.cwz.col(i - 1);
+      //TODO Questionable; leave controls alone, update velocities
+      state.wz.col(i) = state.cwz.col(i - 1)
         .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
         .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
-      state.wz.col(i) = state.cwz.col(i - 1);
 
       if (is_holo) {
         auto lower_bound_vy = (state.vy.col(i - 1) >
@@ -110,10 +151,15 @@ public:
           0).select(
           state.vy.col(i - 1) + max_delta_vy,
           state.vy.col(i - 1) - min_delta_vy);
-        state.cvy.col(i - 1) = state.cvy.col(i - 1)
+        // REPLACE
+        // state.cvy.col(i - 1) = state.cvy.col(i - 1) 
+        //   .cwiseMax(lower_bound_vy)
+        //   .cwiseMin(upper_bound_vy);
+        // state.vy.col(i) = state.cvy.col(i - 1);
+        //TODO Questionable; leave controls alone, update velocities
+        state.vy.col(i) = state.cvy.col(i - 1)
           .cwiseMax(lower_bound_vy)
           .cwiseMin(upper_bound_vy);
-        state.vy.col(i) = state.cvy.col(i - 1);
       }
     }
   }

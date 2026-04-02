@@ -65,6 +65,9 @@ void Optimizer::initialize(
     costmap_ros_, parameters_handler_, tf_buffer, settings_);
   RCLCPP_INFO(logger_, "Loaded trajectory validator plugin: %s", validator_plugin_type.c_str());
 
+  accel_pub_ = node->create_publisher<geometry_msgs::msg::AccelStamped>(
+    name_ + "/cmd_acceleration", 10);
+
   reset();
 }
 
@@ -183,6 +186,7 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
   if (settings_.open_loop) {
     last_command_vel_ = geometry_msgs::msg::Twist();
   }
+  last_command_time_ = rclcpp::Time(0, 0, RCL_CLOCK_UNINITIALIZED);
 
   if (reset_dynamic_speed_limits) {
     settings_.constraints = settings_.base_constraints;
@@ -250,7 +254,23 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
 
   auto control = getControlFromSequenceAsTwist(plan.header.stamp);
 
+  // Publish acceleration between last command and current first control
+  if (accel_pub_ && last_command_time_.nanoseconds() != 0) {
+    double dt = (rclcpp::Time(plan.header.stamp) - last_command_time_).seconds();
+    if (dt > 0.0) {
+      geometry_msgs::msg::AccelStamped accel_msg;
+      accel_msg.header.stamp = plan.header.stamp;
+      accel_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
+      accel_msg.accel.linear.x =
+        (control.twist.linear.x - last_command_vel_.linear.x) / dt;
+      accel_msg.accel.angular.z =
+        (control.twist.angular.z - last_command_vel_.angular.z) / dt;
+      accel_pub_->publish(accel_msg);
+    }
+  }
+
   last_command_vel_ = control.twist;
+  last_command_time_ = plan.header.stamp;
 
   if (settings_.shift_control_sequence) {
     shiftControlSequence();
@@ -334,17 +354,43 @@ void Optimizer::applyControlSequenceConstraints()
 {
   auto & s = settings_;
 
+  // Apply the first time to set the optimal control sequence within kinematic bounds
+  motion_model_->applyConstraints(control_sequence_);
+
   float max_delta_vx = s.model_dt * s.constraints.ax_max;
   float min_delta_vx = s.model_dt * s.constraints.ax_min;
   float max_delta_vy = s.model_dt * s.constraints.ay_max;
   float min_delta_vy = s.model_dt * s.constraints.ay_min;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
+
+  // Acceleration-constrain vx(0) relative to current speed (inter-iteration feasibility)
+  float speed_vx = static_cast<float>(state_.speed.linear.x);
+  if (speed_vx >= 0) {
+    control_sequence_.vx(0) = utils::clamp(
+      speed_vx + min_delta_vx, speed_vx + max_delta_vx, control_sequence_.vx(0));
+  } else {
+    control_sequence_.vx(0) = utils::clamp(
+      speed_vx - max_delta_vx, speed_vx - min_delta_vx, control_sequence_.vx(0));
+  }
+
+  float speed_wz = static_cast<float>(state_.speed.angular.z);
+  control_sequence_.wz(0) = utils::clamp(
+    speed_wz - max_delta_wz, speed_wz + max_delta_wz, control_sequence_.wz(0));
+
   float vx_last = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, control_sequence_.vx(0));
   float wz_last = utils::clamp(-s.constraints.wz, s.constraints.wz, control_sequence_.wz(0));
   control_sequence_.vx(0) = vx_last;
   control_sequence_.wz(0) = wz_last;
   float vy_last = 0;
   if (isHolonomic()) {
+    float speed_vy = static_cast<float>(state_.speed.linear.y);
+    if (speed_vy >= 0) {
+      control_sequence_.vy(0) = utils::clamp(
+        speed_vy + min_delta_vy, speed_vy + max_delta_vy, control_sequence_.vy(0));
+    } else {
+      control_sequence_.vy(0) = utils::clamp(
+        speed_vy - max_delta_vy, speed_vy - min_delta_vy, control_sequence_.vy(0));
+    }
     vy_last = utils::clamp(-s.constraints.vy, s.constraints.vy, control_sequence_.vy(0));
     control_sequence_.vy(0) = vy_last;
   }
@@ -352,7 +398,7 @@ void Optimizer::applyControlSequenceConstraints()
   for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
-    if (vx_last > 0) {
+    if (vx_last >= 0) {
       vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
     } else {
       vx_curr = utils::clamp(vx_last - max_delta_vx, vx_last - min_delta_vx, vx_curr);
@@ -367,7 +413,7 @@ void Optimizer::applyControlSequenceConstraints()
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-      if (vy_last > 0) {
+      if (vy_last >= 0) {
         vy_curr = utils::clamp(vy_last + min_delta_vy, vy_last + max_delta_vy, vy_curr);
       } else {
         vy_curr = utils::clamp(vy_last - max_delta_vy, vy_last - min_delta_vy, vy_curr);
@@ -376,6 +422,7 @@ void Optimizer::applyControlSequenceConstraints()
     }
   }
 
+  // Apply the second time to ensure accel constraints don't violate specialty limits
   motion_model_->applyConstraints(control_sequence_);
 }
 
@@ -524,7 +571,7 @@ void Optimizer::updateControlSequence()
   auto & s = settings_;
 
   auto vx_T = control_sequence_.vx.transpose();
-  auto bounded_noises_vx = state_.cvx.rowwise() - vx_T;
+  auto bounded_noises_vx = state_.cvx.rowwise() - vx_T; //TODO control clamping impacts; consider removing IS udpate?
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
 

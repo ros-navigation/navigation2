@@ -31,6 +31,7 @@
 #include "tf2_ros/buffer.hpp"
 #include "pluginlib/class_loader.hpp"
 
+#include "geometry_msgs/msg/accel_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -322,6 +323,10 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 
   geometry_msgs::msg::Twist last_command_vel_;
+  rclcpp::Time last_command_time_;
+
+  // Temporary: acceleration debug publisher
+  rclcpp::Publisher<geometry_msgs::msg::AccelStamped>::SharedPtr accel_pub_;
 };
 
 }  // namespace mppi
