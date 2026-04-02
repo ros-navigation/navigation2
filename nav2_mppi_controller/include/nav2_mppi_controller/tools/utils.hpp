@@ -633,6 +633,25 @@ inline float clamp(
   return std::min(upper_bound, std::max(input, lower_bound));
 }
 
+/**
+ * @brief Clamp velocity by acceleration limits, whereas max is used for
+ * accelerating in speed (forward or reverse) and min is used for deceleration
+ * @param last_vel Previous velocity
+ * @param curr_vel Current velocity to clamp
+ * @param min_delta Minimum velocity change (deceleration, typically negative)
+ * @param max_delta Maximum velocity change (acceleration, typically positive)
+ * @return Clamped velocity
+ */
+inline float clampVelocityByAccel(
+  const float last_vel, const float curr_vel,
+  const float min_delta, const float max_delta)
+{
+  if (last_vel >= 0) {
+    return clamp(last_vel + min_delta, last_vel + max_delta, curr_vel);
+  }
+  return clamp(last_vel - max_delta, last_vel - min_delta, curr_vel);
+}
+
 }  // namespace mppi::utils
 
 #endif  // NAV2_MPPI_CONTROLLER__TOOLS__UTILS_HPP_

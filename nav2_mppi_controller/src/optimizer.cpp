@@ -150,12 +150,12 @@ void Optimizer::getParams()
 
   double controller_frequency;
   getParentParam(controller_frequency, "controller_frequency", 0.0, ParameterType::Static);
-  setOffset(controller_frequency);
+  s.controller_period = static_cast<float>(1.0 / controller_frequency);
+  setOffset(s.controller_period);
 }
 
-void Optimizer::setOffset(double controller_frequency)
+void Optimizer::setOffset(double controller_period)
 {
-  const double controller_period = 1.0 / controller_frequency;
   constexpr double eps = 1e-6;
 
   if ((controller_period + eps) < settings_.model_dt) {
@@ -347,8 +347,50 @@ void Optimizer::shiftControlSequence()
   }
 }
 
+void Optimizer::applyControlSequenceInterIterationConstraints()
+{
+  // Enforce t=0 to be dynamically feasible from the current speed for inter-iteration feasibility
+  // Re-centers the distribution at t=0, but still applied in a information theoretic sound way
+
+  // In open-loop, use controller_period for t=0 to realistically model the physics intra-iteration
+  // In closed-loop, use model_dt for t=0 since the robot will have execution latency of 1 timestep
+  auto & s = settings_;
+  float first_dt = s.open_loop ? s.controller_period : s.model_dt;
+  float max_delta_vx = first_dt * s.constraints.ax_max;
+  float min_delta_vx = first_dt * s.constraints.ax_min;
+  float max_delta_vy = first_dt * s.constraints.ay_max;
+  float min_delta_vy = first_dt * s.constraints.ay_min;
+  float max_delta_wz = first_dt * s.constraints.az_max;
+
+  float speed_vx = static_cast<float>(state_.speed.linear.x);
+  float speed_wz = static_cast<float>(state_.speed.angular.z);
+  if (s.shift_control_sequence && s.open_loop) {
+    // When shifting, vx(0) is not sent and represents 'now'
+    // so that vx(1), the sent command, needs to be only one step away.
+    // Only appliable to open-loop as closed-loop control will take
+    // an update period to accelerate to the requested target velocity
+    control_sequence_.vx(0) = speed_vx;
+    control_sequence_.wz(0) = speed_wz;
+    if (isHolonomic()) {
+      control_sequence_.vy(0) = static_cast<float>(state_.speed.linear.y);
+    }
+  } else {
+    // When not shifting, vx(0) is the sent command, clamp to the feasible envelope
+    control_sequence_.vx(0) = utils::clampVelocityByAccel(
+      speed_vx, control_sequence_.vx(0), min_delta_vx, max_delta_vx);
+    control_sequence_.wz(0) = utils::clampVelocityByAccel(
+      speed_wz, control_sequence_.wz(0), -max_delta_wz, max_delta_wz);
+    if (isHolonomic()) {
+      float speed_vy = static_cast<float>(state_.speed.linear.y);
+      control_sequence_.vy(0) = utils::clampVelocityByAccel(
+        speed_vy, control_sequence_.vy(0), min_delta_vy, max_delta_vy);
+    }
+  }
+}
+
 void Optimizer::generateNoisedTrajectories()
 {
+  applyControlSequenceInterIterationConstraints();
   noise_generator_.setNoisedControls(state_, control_sequence_);
   noise_generator_.generateNextNoises();
   updateStateVelocities(state_);
@@ -362,40 +404,55 @@ void Optimizer::applyControlSequenceConstraints()
   // Apply constraints to set the optimal control sequence within bounds
   motion_model_->applyConstraints(control_sequence_);
 
-  float max_delta_vx = s.model_dt * s.constraints.ax_max;
-  float min_delta_vx = s.model_dt * s.constraints.ax_min;
-  float max_delta_vy = s.model_dt * s.constraints.ay_max;
-  float min_delta_vy = s.model_dt * s.constraints.ay_min;
-  float max_delta_wz = s.model_dt * s.constraints.az_max;
+  // In open-loop, use controller_period for t=0 to realistically model the physics intra-iteration
+  // In closed-loop, use model_dt for t=0 since the robot will have execution latency of 1 timestep
+  float first_dt = s.open_loop ? s.controller_period : s.model_dt;
+  float max_delta_vx = first_dt * s.constraints.ax_max;
+  float min_delta_vx = first_dt * s.constraints.ax_min;
+  float max_delta_vy = first_dt * s.constraints.ay_max;
+  float min_delta_vy = first_dt * s.constraints.ay_min;
+  float max_delta_wz = first_dt * s.constraints.az_max;
 
   // Initialize as the current speed to create inter-iteration dynamic feasibility
   float vx_last = static_cast<float>(state_.speed.linear.x);
   float wz_last = static_cast<float>(state_.speed.angular.z);
   float vy_last = isHolonomic() ? static_cast<float>(state_.speed.linear.y) : 0.0f;
 
+  // When shifting, vx(0) is "now" and not sent. Pin it so vx(1), the sent command,
+  // is exactly one constraint step from current speed when shift_control_sequence
+  // Only appliable to open-loop which assumes instantaneous application of efforts
+  if (s.shift_control_sequence && s.open_loop) {
+    control_sequence_.vx(0) = vx_last;
+    control_sequence_.wz(0) = wz_last;
+    if (isHolonomic()) {
+      control_sequence_.vy(0) = vy_last;
+    }
+  }
+
   for (unsigned int i = 0; i != control_sequence_.vx.size(); i++) {
+    // After first timestep, switch to MPC model_dt for intra-iteration feasibility
+    if (i == 1) {
+      max_delta_vx = s.model_dt * s.constraints.ax_max;
+      min_delta_vx = s.model_dt * s.constraints.ax_min;
+      max_delta_vy = s.model_dt * s.constraints.ay_max;
+      min_delta_vy = s.model_dt * s.constraints.ay_min;
+      max_delta_wz = s.model_dt * s.constraints.az_max;
+    }
+
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
-    if (vx_last >= 0) {
-      vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
-    } else {
-      vx_curr = utils::clamp(vx_last - max_delta_vx, vx_last - min_delta_vx, vx_curr);
-    }
+    vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
     vx_last = vx_curr;
 
     float & wz_curr = control_sequence_.wz(i);
     wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
-    wz_curr = utils::clamp(wz_last - max_delta_wz, wz_last + max_delta_wz, wz_curr);
+    wz_curr = utils::clampVelocityByAccel(wz_last, wz_curr, -max_delta_wz, max_delta_wz);
     wz_last = wz_curr;
 
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-      if (vy_last >= 0) {
-        vy_curr = utils::clamp(vy_last + min_delta_vy, vy_last + max_delta_vy, vy_curr);
-      } else {
-        vy_curr = utils::clamp(vy_last - max_delta_vy, vy_last - min_delta_vy, vy_curr);
-      }
+      vy_curr = utils::clampVelocityByAccel(vy_last, vy_curr, min_delta_vy, max_delta_vy);
       vy_last = vy_curr;
     }
   }

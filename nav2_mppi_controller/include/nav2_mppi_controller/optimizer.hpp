@@ -216,6 +216,12 @@ protected:
   void generateNoisedTrajectories();
 
   /**
+   * @brief Apply inter-iteration dynamic feasibility constraints on the
+   * first control sequence element before noise generation
+   */
+  void applyControlSequenceInterIterationConstraints();
+
+  /**
    * @brief Apply hard vehicle constraints on control sequence
    */
   void applyControlSequenceConstraints();
@@ -278,10 +284,10 @@ protected:
   bool isHolonomic() const;
 
   /**
-   * @brief Using control frequencies and time step size, determine if trajectory
+   * @brief Using control period and time step size, determine if trajectory
    * offset should be used to populate initial state of the next cycle
    */
-  void setOffset(double controller_frequency);
+  void setOffset(double controller_period);
 
   /**
    * @brief Perform fallback behavior to try to recover from a set of trajectories in collision

@@ -80,38 +80,6 @@ public:
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
     unsigned int n_cols = state.vx.cols();
 
-    // Clamp initial controls to feasible acceleration range from current speed
-    // to allow for intra-iteration dynamic feasibility: state.vX(0) = speed
-    auto lower_bound_vx0 = (state.vx.col(0) >
-      0).select(
-      state.vx.col(0) + min_delta_vx,
-      state.vx.col(0) - max_delta_vx);
-    auto upper_bound_vx0 = (state.vx.col(0) >
-      0).select(
-      state.vx.col(0) + max_delta_vx,
-      state.vx.col(0) - min_delta_vx);
-    state.cvx.col(0) = state.cvx.col(0)
-      .cwiseMax(lower_bound_vx0)
-      .cwiseMin(upper_bound_vx0);
-
-    state.cwz.col(0) = state.cwz.col(0)
-      .cwiseMax(state.wz.col(0) - max_delta_wz)
-      .cwiseMin(state.wz.col(0) + max_delta_wz);
-
-    if (is_holo) {
-      auto lower_bound_vy0 = (state.vy.col(0) >
-        0).select(
-        state.vy.col(0) + min_delta_vy,
-        state.vy.col(0) - max_delta_vy);
-      auto upper_bound_vy0 = (state.vy.col(0) >
-        0).select(
-        state.vy.col(0) + max_delta_vy,
-        state.vy.col(0) - min_delta_vy);
-      state.cvy.col(0) = state.cvy.col(0)
-        .cwiseMax(lower_bound_vy0)
-        .cwiseMin(upper_bound_vy0);
-    }
-
     // Set dynamic limits to the platform velocities from the raw controls sampling
     for (unsigned int i = 1; i < n_cols; i++) {
       auto lower_bound_vx = (state.vx.col(i - 1) >
