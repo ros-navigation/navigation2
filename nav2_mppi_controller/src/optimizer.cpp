@@ -359,7 +359,7 @@ void Optimizer::applyControlSequenceConstraints()
 {
   auto & s = settings_;
 
-  // Apply the first time to set the optimal control sequence within kinematic bounds
+  // Apply constraints to set the optimal control sequence within bounds
   motion_model_->applyConstraints(control_sequence_);
 
   float max_delta_vx = s.model_dt * s.constraints.ax_max;
@@ -368,39 +368,12 @@ void Optimizer::applyControlSequenceConstraints()
   float min_delta_vy = s.model_dt * s.constraints.ay_min;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
 
-  // Acceleration-constrain vx(0) relative to current speed (inter-iteration feasibility)
-  float speed_vx = static_cast<float>(state_.speed.linear.x);
-  if (speed_vx >= 0) {
-    control_sequence_.vx(0) = utils::clamp(
-      speed_vx + min_delta_vx, speed_vx + max_delta_vx, control_sequence_.vx(0));
-  } else {
-    control_sequence_.vx(0) = utils::clamp(
-      speed_vx - max_delta_vx, speed_vx - min_delta_vx, control_sequence_.vx(0));
-  }
+  // Initialize as the current speed to create inter-iteration dynamic feasibility
+  float vx_last = static_cast<float>(state_.speed.linear.x);
+  float wz_last = static_cast<float>(state_.speed.angular.z);
+  float vy_last = isHolonomic() ? static_cast<float>(state_.speed.linear.y) : 0.0f;
 
-  float speed_wz = static_cast<float>(state_.speed.angular.z);
-  control_sequence_.wz(0) = utils::clamp(
-    speed_wz - max_delta_wz, speed_wz + max_delta_wz, control_sequence_.wz(0));
-
-  float vx_last = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, control_sequence_.vx(0));
-  float wz_last = utils::clamp(-s.constraints.wz, s.constraints.wz, control_sequence_.wz(0));
-  control_sequence_.vx(0) = vx_last;
-  control_sequence_.wz(0) = wz_last;
-  float vy_last = 0;
-  if (isHolonomic()) {
-    float speed_vy = static_cast<float>(state_.speed.linear.y);
-    if (speed_vy >= 0) {
-      control_sequence_.vy(0) = utils::clamp(
-        speed_vy + min_delta_vy, speed_vy + max_delta_vy, control_sequence_.vy(0));
-    } else {
-      control_sequence_.vy(0) = utils::clamp(
-        speed_vy - max_delta_vy, speed_vy - min_delta_vy, control_sequence_.vy(0));
-    }
-    vy_last = utils::clamp(-s.constraints.vy, s.constraints.vy, control_sequence_.vy(0));
-    control_sequence_.vy(0) = vy_last;
-  }
-
-  for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
+  for (unsigned int i = 0; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
     if (vx_last >= 0) {
@@ -427,7 +400,7 @@ void Optimizer::applyControlSequenceConstraints()
     }
   }
 
-  // Apply the second time to ensure accel constraints don't violate specialty limits
+  // Apply again to ensure accel constraints don't violate specialty limits
   motion_model_->applyConstraints(control_sequence_);
 }
 
