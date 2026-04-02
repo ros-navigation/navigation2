@@ -189,6 +189,7 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
     initializeGoalPose(bt_action_server_->acceptPendingGoal());
+    bt_action_server_->haltTree();
   } else {
     RCLCPP_WARN(
       logger_,

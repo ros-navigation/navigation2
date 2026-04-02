@@ -37,6 +37,20 @@ BT::NodeStatus IsPathValidCondition::tick()
   nav_msgs::msg::Path path;
   getInput("path", path);
 
+  // Logic to Skip Replanning for Specified Path Classes
+  std::vector<std::string> skip_replan_controllers;
+  std::string controller_id;
+  if (config().blackboard->get<std::string>("controller_id", controller_id) &&
+    config().blackboard->get<std::vector<std::string>>(
+      "skip_replan_controllers",
+      skip_replan_controllers))
+  {
+    for (const auto & cls : skip_replan_controllers) {
+      if (controller_id == cls) {
+        return BT::NodeStatus::SUCCESS;
+      }
+    }
+  }
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
 
   request->path = path;

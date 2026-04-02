@@ -18,6 +18,7 @@
 #include <string>
 
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
+#include "nav2_msgs/msg/classified_path_array.hpp"
 #include "nav_msgs/msg/path.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
@@ -81,6 +82,12 @@ public:
         BT::InputPort<std::string>(
           "planner_id", "",
           "Mapped name to the planner plugin type to use"),
+        BT::OutputPort<nav2_msgs::msg::ClassifiedPathArray>(
+          "path_segments", "Classified Path Segments"),
+        BT::InputPort<bool>("plan_in_static", false, "Whether to plan in the static map"),
+        BT::InputPort<bool>(
+          "classify_paths", false,
+          "Whether to classify the paths and provide the classified segments")
       });
   }
 };

@@ -35,11 +35,14 @@ void ComputePathToPoseAction::on_tick()
   if (getInput("start", goal_.start)) {
     goal_.use_start = true;
   }
+  getInput("plan_in_static", goal_.plan_in_static);
+  getInput("classify_paths", goal_.classify_paths);
 }
 
 BT::NodeStatus ComputePathToPoseAction::on_success()
 {
   setOutput("path", result_.result->path);
+  setOutput("path_segments", result_.result->paths);
   return BT::NodeStatus::SUCCESS;
 }
 

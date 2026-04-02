@@ -186,9 +186,12 @@ void SmacPlannerLattice::configure(
     _metadata.number_of_headings);
 
   // Initialize path smoother
+  SmootherParams params;
+  params.get(node, name);
+  if (_metadata.motion_model == "omni") {
+    params.holonomic_ = true;
+  }
   if (smooth_path) {
-    SmootherParams params;
-    params.get(node, name);
     _smoother = std::make_unique<Smoother>(params);
     _smoother->initialize(_metadata.min_turning_radius);
   }
@@ -473,6 +476,9 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       auto node = _node.lock();
       SmootherParams params;
       params.get(node, _name);
+      if (_metadata.motion_model == "omni") {
+        params.holonomic_ = true;
+      }
       _smoother = std::make_unique<Smoother>(params);
       _smoother->initialize(_metadata.min_turning_radius);
     }

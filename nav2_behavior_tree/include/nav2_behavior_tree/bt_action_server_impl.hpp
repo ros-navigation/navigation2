@@ -141,6 +141,22 @@ bool BtActionServer<ActionT>::on_configure()
     "wait_for_service_timeout",
     wait_for_service_timeout_);
 
+  // Path Classes to Controller Map for PathManager bt node
+  if (node->has_parameter("path_class_to_controller_map")) {
+    std::vector<std::string> path_class_to_controller_map;
+    node->get_parameter("path_class_to_controller_map", path_class_to_controller_map);
+    blackboard_->set<std::vector<std::string>>(
+      "path_class_to_controller_map", path_class_to_controller_map);
+  }
+
+  // Path Classes to Skip The IsPathValid Logic
+  if (node->has_parameter("skip_replan_controllers")) {
+    std::vector<std::string> skip_replan_controllers;
+    node->get_parameter("skip_replan_controllers", skip_replan_controllers);
+    blackboard_->set<std::vector<std::string>>(
+      "skip_replan_controllers", skip_replan_controllers);
+  }
+
   return true;
 }
 
@@ -189,21 +205,10 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     return true;
   }
 
-  // Read the input BT XML from the specified file into a string
-  std::ifstream xml_file(filename);
-
-  if (!xml_file.good()) {
-    RCLCPP_ERROR(logger_, "Couldn't open input XML file: %s", filename.c_str());
-    return false;
-  }
-
-  auto xml_string = std::string(
-    std::istreambuf_iterator<char>(xml_file),
-    std::istreambuf_iterator<char>());
-
-  // Create the Behavior Tree from the XML input
+  // Create the Behavior Tree from the XML file (using createTreeFromFile
+  // so that relative <include> paths are resolved from the file's directory)
   try {
-    tree_ = bt_->createTreeFromText(xml_string, blackboard_);
+    tree_ = bt_->createTreeFromFile(filename, blackboard_);
     for (auto & blackboard : tree_.blackboard_stack) {
       blackboard->set<rclcpp::Node::SharedPtr>("node", client_node_);
       blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);

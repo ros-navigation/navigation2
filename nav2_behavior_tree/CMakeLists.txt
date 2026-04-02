@@ -17,6 +17,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 nav2_package()
 
@@ -41,6 +42,7 @@ set(dependencies
   std_msgs
   std_srvs
   nav2_util
+  visualization_msgs
 )
 
 add_library(${library_name} SHARED
@@ -200,6 +202,9 @@ list(APPEND plugin_libs nav2_progress_checker_selector_bt_node)
 
 add_library(nav2_goal_updated_controller_bt_node SHARED plugins/decorator/goal_updated_controller.cpp)
 list(APPEND plugin_libs nav2_goal_updated_controller_bt_node)
+
+add_library(nav2_path_manager_bt_node SHARED plugins/decorator/path_manager.cpp)
+list(APPEND plugin_libs nav2_path_manager_bt_node)
 
 add_library(nav2_compute_and_track_route_bt_node SHARED plugins/action/compute_and_track_route_action.cpp)
 list(APPEND plugin_libs nav2_compute_and_track_route_bt_node)
