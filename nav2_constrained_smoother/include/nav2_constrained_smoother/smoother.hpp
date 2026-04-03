@@ -197,12 +197,12 @@ private:
         for (int i_cusp = potential_cusp_funcs.size() - 1; i_cusp >= 0; i_cusp--) {
           auto & f = potential_cusp_funcs[i_cusp];
           double new_weight =
-            params.cusp_costmap_weight * (1.0 - len_to_cusp / cusp_half_length) +
-            params.costmap_weight * len_to_cusp / cusp_half_length;
-          if (std::abs(new_weight - params.cusp_costmap_weight) <
-            std::abs(f.second->getCostmapWeight() - params.cusp_costmap_weight))
+            params.cusp_costmap_weight_sqrt * (1.0 - len_to_cusp / cusp_half_length) +
+            params.costmap_weight_sqrt * len_to_cusp / cusp_half_length;
+          if (std::abs(new_weight - params.cusp_costmap_weight_sqrt) <
+            std::abs(f.second->getCostmapWeightSqrt() - params.cusp_costmap_weight_sqrt))
           {
-            f.second->setCostmapWeight(new_weight);
+            f.second->setCostmapWeightSqrt(new_weight);
           }
           len_to_cusp += f.first;
         }
@@ -214,11 +214,11 @@ private:
       // add cost function
       optimized[i] = true;
       if (prelast_i != -1) {
-        double costmap_weight = params.costmap_weight;
+        double costmap_weight_sqrt = params.costmap_weight_sqrt;
         if (len_since_cusp <= cusp_half_length) {
-          costmap_weight =
-            params.cusp_costmap_weight * (1.0 - len_since_cusp / cusp_half_length) +
-            params.costmap_weight * len_since_cusp / cusp_half_length;
+          costmap_weight_sqrt =
+            params.cusp_costmap_weight_sqrt * (1.0 - len_since_cusp / cusp_half_length) +
+            params.costmap_weight_sqrt * len_since_cusp / cusp_half_length;
         }
         SmootherCostFunction * cost_function = new SmootherCostFunction(
           path[last_i].template block<2, 1>(
@@ -229,7 +229,7 @@ private:
           costmap,
           costmap_interpolator,
           params,
-          costmap_weight
+          costmap_weight_sqrt
         );
         problem.AddResidualBlock(
           cost_function->AutoDiff(), loss_function,
