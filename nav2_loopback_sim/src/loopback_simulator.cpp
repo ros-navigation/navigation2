@@ -1,0 +1,599 @@
+// Copyright (c) 2024 Tony Najjar
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "nav2_loopback_sim/loopback_simulator.hpp"
+
+#include <cmath>
+#include <limits>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <chrono>
+
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+
+using namespace std::chrono_literals;
+using std::placeholders::_1;
+
+namespace nav2_loopback_sim
+{
+
+LoopbackSimulator::LoopbackSimulator(const rclcpp::NodeOptions & options)
+: nav2::LifecycleNode("loopback_simulator", options),
+  curr_cmd_vel_time_(this->now())
+{
+}
+
+nav2::CallbackReturn
+LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(get_logger(), "Configuring");
+
+  // Declare and get parameters
+  update_dur_ = declare_or_get_parameter("update_duration", 0.01);
+  base_frame_id_ = declare_or_get_parameter("base_frame_id", std::string("base_footprint"));
+  map_frame_id_ = declare_or_get_parameter("map_frame_id", std::string("map"));
+  odom_frame_id_ = declare_or_get_parameter("odom_frame_id", std::string("odom"));
+  scan_frame_id_ = declare_or_get_parameter("scan_frame_id", std::string("base_scan"));
+  odom_publish_dur_ = declare_or_get_parameter("odom_publish_dur", update_dur_);
+  scan_publish_dur_ = declare_or_get_parameter("scan_publish_dur", 0.1);
+  publish_map_odom_tf_ = declare_or_get_parameter("publish_map_odom_tf", true);
+  scan_range_min_ = declare_or_get_parameter("scan_range_min", 0.05);
+  scan_range_max_ = declare_or_get_parameter("scan_range_max", 30.0);
+  scan_angle_min_ = declare_or_get_parameter("scan_angle_min", -M_PI);
+  scan_angle_max_ = declare_or_get_parameter("scan_angle_max", M_PI);
+  scan_angle_increment_ = declare_or_get_parameter("scan_angle_increment", 0.0261);
+  use_inf_ = declare_or_get_parameter("scan_use_inf", true);
+  publish_scan_ = declare_or_get_parameter("publish_scan", true);
+
+  // Setup transforms
+  t_map_to_odom_.header.frame_id = map_frame_id_;
+  t_map_to_odom_.child_frame_id = odom_frame_id_;
+  t_odom_to_base_link_.header.frame_id = odom_frame_id_;
+  t_odom_to_base_link_.child_frame_id = base_frame_id_;
+
+  tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
+  // Subscriptions
+  initial_pose_sub_ =
+    create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "initialpose",
+    std::bind(&LoopbackSimulator::initialPoseCallback, this, _1));
+
+  cmd_vel_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
+    shared_from_this(), "cmd_vel",
+    std::bind(&LoopbackSimulator::cmdVelCallback, this, _1),
+    std::bind(&LoopbackSimulator::cmdVelStampedCallback, this, _1));
+
+  // Publishers
+  odom_pub_ = create_publisher<nav_msgs::msg::Odometry>("odom");
+
+  if (publish_scan_) {
+    scan_pub_ = create_publisher<sensor_msgs::msg::LaserScan>(
+      "scan", nav2::qos::SensorDataQoS());
+  }
+
+  if (publish_scan_) {
+    map_client_ = rclcpp_lifecycle::LifecycleNode::create_client<nav_msgs::srv::GetMap>(
+      "/map_server/map");
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    getMap();
+  }
+
+  return nav2::CallbackReturn::SUCCESS;
+}
+
+nav2::CallbackReturn
+LoopbackSimulator::on_activate(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(get_logger(), "Activating");
+
+  odom_pub_->on_activate();
+  if (scan_pub_) {
+    scan_pub_->on_activate();
+  }
+
+  setup_timer_ = rclcpp::create_timer(
+    this, get_clock(), 100ms,
+    std::bind(&LoopbackSimulator::setupTimerCallback, this));
+
+  createBond();
+
+  RCLCPP_INFO(get_logger(), "Loopback simulator activated");
+  return nav2::CallbackReturn::SUCCESS;
+}
+
+nav2::CallbackReturn
+LoopbackSimulator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(get_logger(), "Deactivating");
+
+  if (setup_timer_) {
+    setup_timer_->cancel();
+    setup_timer_.reset();
+  }
+  if (timer_) {
+    timer_->cancel();
+    timer_.reset();
+  }
+  if (odom_timer_) {
+    odom_timer_->cancel();
+    odom_timer_.reset();
+  }
+  if (scan_timer_) {
+    scan_timer_->cancel();
+    scan_timer_.reset();
+  }
+
+  odom_pub_->on_deactivate();
+  if (scan_pub_) {
+    scan_pub_->on_deactivate();
+  }
+
+  has_initial_pose_ = false;
+  curr_cmd_vel_.reset();
+
+  destroyBond();
+
+  return nav2::CallbackReturn::SUCCESS;
+}
+
+nav2::CallbackReturn
+LoopbackSimulator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(get_logger(), "Cleaning up");
+
+  initial_pose_sub_.reset();
+  cmd_vel_sub_.reset();
+  odom_pub_.reset();
+  scan_pub_.reset();
+  map_client_.reset();
+  tf_listener_.reset();
+  tf_buffer_.reset();
+  tf_broadcaster_.reset();
+
+  return nav2::CallbackReturn::SUCCESS;
+}
+
+nav2::CallbackReturn
+LoopbackSimulator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(get_logger(), "Shutting down");
+  return nav2::CallbackReturn::SUCCESS;
+}
+
+void LoopbackSimulator::getMap()
+{
+  auto request = std::make_shared<nav_msgs::srv::GetMap::Request>();
+  if (map_client_->wait_for_service(5s)) {
+    auto future = map_client_->async_send_request(request);
+    if (rclcpp::spin_until_future_complete(
+        this->get_node_base_interface(), future, 5s) ==
+      rclcpp::FutureReturnCode::SUCCESS)
+    {
+      map_ = future.get()->map;
+      has_map_ = true;
+      RCLCPP_INFO(get_logger(), "Laser scan will be populated using map data");
+    } else {
+      RCLCPP_WARN(
+        get_logger(),
+        "Failed to get map, Laser scan will be populated using max range");
+    }
+  } else {
+    RCLCPP_WARN(
+      get_logger(),
+      "Failed to get map, Laser scan will be populated using max range");
+  }
+}
+
+void LoopbackSimulator::getBaseToLaserTf()
+{
+  try {
+    auto transform = tf_buffer_->lookupTransform(
+      base_frame_id_, scan_frame_id_, tf2::TimePointZero);
+    tf2::fromMsg(transform.transform, tf_base_to_laser_);
+    has_base_to_laser_ = true;
+  } catch (const tf2::TransformException & ex) {
+    RCLCPP_ERROR(get_logger(), "Transform lookup failed: %s", ex.what());
+  }
+}
+
+void LoopbackSimulator::setupTimerCallback()
+{
+  // Publish initial identity transforms to warm up the system
+  if (publish_map_odom_tf_) {
+    t_map_to_odom_.header.stamp = this->now();
+    tf_broadcaster_->sendTransform(t_map_to_odom_);
+  }
+  t_odom_to_base_link_.header.stamp = this->now();
+  tf_broadcaster_->sendTransform(t_odom_to_base_link_);
+  if (publish_scan_ && !has_base_to_laser_) {
+    getBaseToLaserTf();
+  }
+}
+
+void LoopbackSimulator::cmdVelCallback(
+  const geometry_msgs::msg::Twist::ConstSharedPtr & msg)
+{
+  RCLCPP_DEBUG(get_logger(), "Received cmd_vel");
+  if (!has_initial_pose_) {
+    return;
+  }
+  curr_cmd_vel_ = *msg;
+  curr_cmd_vel_time_ = this->now();
+}
+
+void LoopbackSimulator::cmdVelStampedCallback(
+  const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg)
+{
+  RCLCPP_DEBUG(get_logger(), "Received cmd_vel");
+  if (!has_initial_pose_) {
+    return;
+  }
+  curr_cmd_vel_ = msg->twist;
+  curr_cmd_vel_time_ = rclcpp::Time(msg->header.stamp);
+}
+
+void LoopbackSimulator::initialPoseCallback(
+  const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg)
+{
+  RCLCPP_INFO(get_logger(), "Received initial pose!");
+
+  if (!has_initial_pose_) {
+    has_initial_pose_ = true;
+    initial_pose_ = msg->pose.pose;
+
+    // Initialize map->odom from input pose, odom->base_link starts as identity
+    t_map_to_odom_.transform.translation.x = initial_pose_.position.x;
+    t_map_to_odom_.transform.translation.y = initial_pose_.position.y;
+    t_map_to_odom_.transform.translation.z = 0.0;
+    t_map_to_odom_.transform.rotation = initial_pose_.orientation;
+    t_odom_to_base_link_.transform.translation = geometry_msgs::msg::Vector3();
+    t_odom_to_base_link_.transform.rotation = geometry_msgs::msg::Quaternion();
+    publishTransforms(t_map_to_odom_, t_odom_to_base_link_);
+
+    // Cancel setup timer and start update/scan timers
+    if (setup_timer_) {
+      setup_timer_->cancel();
+      setup_timer_.reset();
+    }
+    timer_ = rclcpp::create_timer(
+      this, get_clock(),
+      std::chrono::duration<double>(update_dur_),
+      std::bind(&LoopbackSimulator::timerCallback, this));
+    odom_timer_ = rclcpp::create_timer(
+      this, get_clock(),
+      std::chrono::duration<double>(odom_publish_dur_),
+      std::bind(&LoopbackSimulator::odomTimerCallback, this));
+    if (publish_scan_) {
+      scan_timer_ = rclcpp::create_timer(
+        this, get_clock(),
+        std::chrono::duration<double>(scan_publish_dur_),
+        std::bind(&LoopbackSimulator::publishLaserScan, this));
+    }
+    return;
+  }
+
+  initial_pose_ = msg->pose.pose;
+
+  // Adjust map->odom based on new initial pose, keeping odom->base_link the same
+  tf2::Transform tf_map_to_base;
+  tf_map_to_base.setOrigin(
+    tf2::Vector3(initial_pose_.position.x, initial_pose_.position.y, 0.0));
+  tf_map_to_base.setRotation(
+    tf2::Quaternion(
+      initial_pose_.orientation.x, initial_pose_.orientation.y,
+      initial_pose_.orientation.z, initial_pose_.orientation.w));
+
+  tf2::Transform tf_odom_to_base;
+  tf2::fromMsg(t_odom_to_base_link_.transform, tf_odom_to_base);
+
+  tf2::Transform tf_map_to_odom = tf_map_to_base * tf_odom_to_base.inverse();
+  t_map_to_odom_.transform = tf2::toMsg(tf_map_to_odom);
+}
+
+void LoopbackSimulator::timerCallback()
+{
+  // If no data, just republish existing transforms without change
+  auto one_sec = rclcpp::Duration::from_seconds(1.0);
+  if (!curr_cmd_vel_.has_value() || (this->now() - curr_cmd_vel_time_) > one_sec) {
+    publishTransforms(t_map_to_odom_, t_odom_to_base_link_);
+    curr_cmd_vel_.reset();
+    return;
+  }
+
+  // Update odom->base_link from cmd_vel
+  double dx = curr_cmd_vel_->linear.x * update_dur_;
+  double dy = curr_cmd_vel_->linear.y * update_dur_;
+  double dth = curr_cmd_vel_->angular.z * update_dur_;
+
+  tf2::Quaternion q(
+    t_odom_to_base_link_.transform.rotation.x,
+    t_odom_to_base_link_.transform.rotation.y,
+    t_odom_to_base_link_.transform.rotation.z,
+    t_odom_to_base_link_.transform.rotation.w);
+  double roll, pitch, yaw;
+  tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+
+  t_odom_to_base_link_.transform.translation.x += dx * std::cos(yaw) - dy * std::sin(yaw);
+  t_odom_to_base_link_.transform.translation.y += dx * std::sin(yaw) + dy * std::cos(yaw);
+  t_odom_to_base_link_.transform.rotation =
+    addYawToQuat(t_odom_to_base_link_.transform.rotation, dth);
+
+  publishTransforms(t_map_to_odom_, t_odom_to_base_link_);
+}
+
+void LoopbackSimulator::odomTimerCallback()
+{
+  publishOdometry(t_odom_to_base_link_);
+}
+
+void LoopbackSimulator::publishLaserScan()
+{
+  sensor_msgs::msg::LaserScan scan_msg;
+  scan_msg.header.stamp = this->now();
+  scan_msg.header.frame_id = scan_frame_id_;
+  scan_msg.angle_min = static_cast<float>(scan_angle_min_);
+  scan_msg.angle_max = static_cast<float>(scan_angle_max_);
+  scan_msg.angle_increment = static_cast<float>(scan_angle_increment_);
+  scan_msg.time_increment = 0.0f;
+  scan_msg.scan_time = 0.1f;
+  scan_msg.range_min = static_cast<float>(scan_range_min_);
+  scan_msg.range_max = static_cast<float>(scan_range_max_);
+
+  int num_samples = static_cast<int>(
+    (scan_angle_max_ - scan_angle_min_) / scan_angle_increment_);
+  scan_msg.ranges.assign(num_samples, 0.0f);
+  getLaserScan(num_samples, scan_msg);
+  scan_pub_->publish(scan_msg);
+}
+
+void LoopbackSimulator::publishTransforms(
+  geometry_msgs::msg::TransformStamped & map_to_odom,
+  geometry_msgs::msg::TransformStamped & odom_to_base_link)
+{
+  auto now = this->now();
+  map_to_odom.header.stamp = now + rclcpp::Duration::from_seconds(update_dur_);
+  odom_to_base_link.header.stamp = now;
+  if (publish_map_odom_tf_) {
+    tf_broadcaster_->sendTransform(map_to_odom);
+  }
+  tf_broadcaster_->sendTransform(odom_to_base_link);
+}
+
+void LoopbackSimulator::publishOdometry(
+  const geometry_msgs::msg::TransformStamped & odom_to_base_link)
+{
+  nav_msgs::msg::Odometry odom;
+  odom.header.stamp = this->now();
+  odom.header.frame_id = odom_frame_id_;
+  odom.child_frame_id = base_frame_id_;
+  odom.pose.pose.position.x = odom_to_base_link.transform.translation.x;
+  odom.pose.pose.position.y = odom_to_base_link.transform.translation.y;
+  odom.pose.pose.orientation = odom_to_base_link.transform.rotation;
+  if (curr_cmd_vel_.has_value()) {
+    odom.twist.twist = curr_cmd_vel_.value();
+  }
+  odom_pub_->publish(odom);
+}
+
+geometry_msgs::msg::Quaternion LoopbackSimulator::addYawToQuat(
+  const geometry_msgs::msg::Quaternion & quaternion, double yaw_to_add)
+{
+  tf2::Quaternion q(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+  tf2::Quaternion q_yaw;
+  q_yaw.setRPY(0.0, 0.0, yaw_to_add);
+  q = q * q_yaw;
+  q.normalize();
+  geometry_msgs::msg::Quaternion result;
+  result.x = q.x();
+  result.y = q.y();
+  result.z = q.z();
+  result.w = q.w();
+  return result;
+}
+
+std::tuple<double, double, double> LoopbackSimulator::getLaserPose()
+{
+  tf2::Transform tf_map_to_odom;
+  tf2::fromMsg(t_map_to_odom_.transform, tf_map_to_odom);
+
+  tf2::Transform tf_odom_to_base;
+  tf2::fromMsg(t_odom_to_base_link_.transform, tf_odom_to_base);
+
+  tf2::Transform tf_map_to_laser = tf_map_to_odom * tf_odom_to_base * tf_base_to_laser_;
+
+  double x = tf_map_to_laser.getOrigin().x();
+  double y = tf_map_to_laser.getOrigin().y();
+  double roll, pitch, yaw;
+  tf2::Matrix3x3(tf_map_to_laser.getRotation()).getRPY(roll, pitch, yaw);
+
+  return {x, y, yaw};
+}
+
+void LoopbackSimulator::getLaserScan(
+  int num_samples, sensor_msgs::msg::LaserScan & scan_msg)
+{
+  if (!has_map_ || !has_initial_pose_ || !has_base_to_laser_) {
+    if (use_inf_) {
+      scan_msg.ranges.assign(num_samples, std::numeric_limits<float>::infinity());
+    } else {
+      scan_msg.ranges.assign(num_samples, scan_msg.range_max - 0.1f);
+    }
+    return;
+  }
+
+  auto [x0, y0, theta] = getLaserPose();
+
+  double resolution = map_.info.resolution;
+  double origin_x = map_.info.origin.position.x;
+  double origin_y = map_.info.origin.position.y;
+  int width = static_cast<int>(map_.info.width);
+  int height = static_cast<int>(map_.info.height);
+
+  int mx0 = static_cast<int>(std::floor((x0 - origin_x) / resolution));
+  int my0 = static_cast<int>(std::floor((y0 - origin_y) / resolution));
+
+  if (mx0 <= 0 || mx0 >= width || my0 <= 0 || my0 >= height) {
+    if (use_inf_) {
+      scan_msg.ranges.assign(num_samples, std::numeric_limits<float>::infinity());
+    } else {
+      scan_msg.ranges.assign(num_samples, scan_msg.range_max - 0.1f);
+    }
+    return;
+  }
+
+  const auto & map_data = map_.data;
+  double range_max = scan_msg.range_max;
+  double angle_min = scan_msg.angle_min;
+  double angle_increment = scan_msg.angle_increment;
+  auto & ranges = scan_msg.ranges;
+  constexpr double step_size = 0.5;
+
+  for (int i = 0; i < num_samples; ++i) {
+    double curr_angle = theta + angle_min + i * angle_increment;
+    double x1 = x0 + range_max * std::cos(curr_angle);
+    double y1 = y0 + range_max * std::sin(curr_angle);
+
+    int mx1 = static_cast<int>(std::floor((x1 - origin_x) / resolution));
+    int my1 = static_cast<int>(std::floor((y1 - origin_y) / resolution));
+
+    double lx = static_cast<double>(mx0);
+    double ly = static_cast<double>(my0);
+
+    if (mx1 != mx0 && my1 != my0) {
+      double m = static_cast<double>(my1 - my0) / static_cast<double>(mx1 - mx0);
+      double b = static_cast<double>(my1) - m * static_cast<double>(mx1);
+      if (mx1 > mx0) {
+        while (lx <= mx1) {
+          int mx = static_cast<int>(lx);
+          int my = static_cast<int>(ly);
+          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
+            break;
+          }
+          if (map_data[my * width + mx] >= 60) {
+            ranges[i] = static_cast<float>(
+              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
+              resolution);
+            break;
+          }
+          lx += step_size;
+          if (lx > mx1) {lx = static_cast<double>(mx1);}
+          ly = m * lx + b;
+        }
+      } else {
+        while (lx >= mx1) {
+          int mx = static_cast<int>(lx);
+          int my = static_cast<int>(ly);
+          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
+            break;
+          }
+          if (map_data[my * width + mx] >= 60) {
+            ranges[i] = static_cast<float>(
+              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
+              resolution);
+            break;
+          }
+          lx -= step_size;
+          if (lx < mx1) {lx = static_cast<double>(mx1);}
+          ly = m * lx + b;
+        }
+      }
+    } else if (mx1 == mx0) {
+      // Vertical line
+      if (my1 > my0) {
+        while (ly <= my1) {
+          int mx = static_cast<int>(lx);
+          int my = static_cast<int>(ly);
+          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
+            break;
+          }
+          if (map_data[my * width + mx] >= 60) {
+            ranges[i] = static_cast<float>(
+              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
+              resolution);
+            break;
+          }
+          ly += step_size;
+          if (ly > my1) {ly = static_cast<double>(my1);}
+        }
+      } else if (my1 < my0) {
+        while (ly >= my1) {
+          int mx = static_cast<int>(lx);
+          int my = static_cast<int>(ly);
+          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
+            break;
+          }
+          if (map_data[my * width + mx] >= 60) {
+            ranges[i] = static_cast<float>(
+              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
+              resolution);
+            break;
+          }
+          ly -= step_size;
+          if (ly < my1) {ly = static_cast<double>(my1);}
+        }
+      }
+    } else {
+      // Horizontal line (my1 == my0)
+      double m = static_cast<double>(my1 - my0) / static_cast<double>(mx1 - mx0);
+      double b = static_cast<double>(my1) - m * static_cast<double>(mx1);
+      if (mx1 > mx0) {
+        while (lx <= mx1) {
+          int mx = static_cast<int>(lx);
+          int my = static_cast<int>(ly);
+          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
+            break;
+          }
+          if (map_data[my * width + mx] >= 60) {
+            ranges[i] = static_cast<float>(
+              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
+              resolution);
+            break;
+          }
+          lx += step_size;
+          if (lx > mx1) {lx = static_cast<double>(mx1);}
+          ly = m * lx + b;
+        }
+      } else {
+        while (lx >= mx1) {
+          int mx = static_cast<int>(lx);
+          int my = static_cast<int>(ly);
+          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
+            break;
+          }
+          if (map_data[my * width + mx] >= 60) {
+            ranges[i] = static_cast<float>(
+              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
+              resolution);
+            break;
+          }
+          lx -= step_size;
+          if (lx < mx1) {lx = static_cast<double>(mx1);}
+          ly = m * lx + b;
+        }
+      }
+    }
+
+    if (ranges[i] == 0.0f && use_inf_) {
+      ranges[i] = std::numeric_limits<float>::infinity();
+    }
+  }
+}
+
+}  // namespace nav2_loopback_sim
+
+#include "rclcpp_components/register_node_macro.hpp"
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_loopback_sim::LoopbackSimulator)
