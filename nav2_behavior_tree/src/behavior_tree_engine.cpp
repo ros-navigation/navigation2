@@ -57,11 +57,9 @@ BehaviorTreeEngine::run(
     [ros_clock](std::chrono::system_clock::duration timeout, BT::WakeUpSignal & wake_up)
     {
       auto deadline = ros_clock->now() +
-        rclcpp::Duration(std::chrono::duration_cast<std::chrono::nanoseconds>(timeout));
-      while(ros_clock->now() < deadline)
-      {
-        if(wake_up.waitFor(std::chrono::milliseconds(1)))
-        {
+      rclcpp::Duration(std::chrono::duration_cast<std::chrono::nanoseconds>(timeout));
+      while(ros_clock->now() < deadline) {
+        if(wake_up.waitFor(std::chrono::milliseconds(1))) {
           return true;
         }
       }
