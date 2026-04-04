@@ -21,11 +21,11 @@ namespace nav2_graceful_controller
 {
 
 SmoothControlLaw::SmoothControlLaw(
-  double k_phi, double k_delta, double beta, double lambda, 
+  double k_phi, double k_delta, double beta, double lambda,
   double slowdown_radius, double deceleration_max,
   double v_linear_min, double v_linear_max, double v_angular_max)
-: k_phi_(k_phi), k_delta_(k_delta), beta_(beta), lambda_(lambda), 
-  slowdown_radius_(slowdown_radius), deceleration_max_(deceleration_max), 
+: k_phi_(k_phi), k_delta_(k_delta), beta_(beta), lambda_(lambda),
+  slowdown_radius_(slowdown_radius), deceleration_max_(deceleration_max),
   v_linear_min_(v_linear_min), v_linear_max_(v_linear_max), v_angular_max_(v_angular_max)
 {
 }
@@ -106,7 +106,8 @@ geometry_msgs::msg::Pose SmoothControlLaw::calculateNextPose(
   const double & target_distance,
   const bool & backward)
 {
-  geometry_msgs::msg::Twist vel = calculateRegularVelocity(target, current, target_distance, backward);
+  geometry_msgs::msg::Twist vel = calculateRegularVelocity(target, current, target_distance,
+      backward);
   geometry_msgs::msg::Pose next;
   double yaw = tf2::getYaw(current.orientation);
   next.position.x = current.position.x + vel.linear.x * dt * cos(yaw);

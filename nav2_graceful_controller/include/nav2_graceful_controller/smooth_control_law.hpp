@@ -46,7 +46,7 @@ public:
    * @param v_angular_max Maximum angular velocity.
    */
   SmoothControlLaw(
-    double k_phi, double k_delta, double beta, double lambda, 
+    double k_phi, double k_delta, double beta, double lambda,
     double slowdown_radius, double deceleration_max,
     double v_linear_min, double v_linear_max, double v_angular_max);
 

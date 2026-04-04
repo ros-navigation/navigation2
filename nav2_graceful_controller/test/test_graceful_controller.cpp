@@ -29,7 +29,7 @@ class SCLFixture : public nav2_graceful_controller::SmoothControlLaw
 public:
   SCLFixture(
     double k_phi, double k_delta, double beta, double lambda,
-    double slowdown_radius, double deceleration_max, 
+    double slowdown_radius, double deceleration_max,
     double v_linear_min, double v_linear_max, double v_angular_max)
   : nav2_graceful_controller::SmoothControlLaw(k_phi, k_delta, beta, lambda,
       slowdown_radius, deceleration_max, v_linear_min, v_linear_max, v_angular_max) {}

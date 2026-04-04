@@ -66,8 +66,8 @@ Controller::Controller(
   // Keeping the maximum deceleration as large value, until this parameter is exposed
   // for docking (currently only works for Graceful Controller).
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
-    k_phi_, k_delta_, beta_, lambda_, 
-    slowdown_radius_, std::numeric_limits<double>::max(), 
+    k_phi_, k_delta_, beta_, lambda_,
+    slowdown_radius_, std::numeric_limits<double>::max(),
     v_linear_min_, v_linear_max_, v_angular_max_);
 
   // Add callback for dynamic parameters
