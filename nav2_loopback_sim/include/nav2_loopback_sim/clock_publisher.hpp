@@ -37,6 +37,7 @@ public:
 
 private:
   void timerCallback();
+  void resetTimer();
   rcl_interfaces::msg::SetParametersResult onParameterChange(
     const std::vector<rclcpp::Parameter> & parameters);
 
@@ -44,7 +45,8 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_handler_;
 
-  double publish_period_;
+  static constexpr double kResolution = 0.01;      // 10ms sim-time step
+  static constexpr double kMinWallPeriod = 0.001;   // 1ms / 1000 Hz max
   double speed_factor_;
   rclcpp::Time sim_time_;
   std::chrono::steady_clock::time_point last_wall_time_;

@@ -26,22 +26,18 @@ ClockPublisher::ClockPublisher(const rclcpp::NodeOptions & options)
   sim_time_(0, 0, RCL_ROS_TIME),
   last_wall_time_(std::chrono::steady_clock::now())
 {
-  declare_parameter("publish_period", 0.01);
   declare_parameter("speed_factor", 1.0);
-  publish_period_ = get_parameter("publish_period").as_double();
   speed_factor_ = get_parameter("speed_factor").as_double();
 
   clock_pub_ = create_publisher<rosgraph_msgs::msg::Clock>("/clock", 10);
-  timer_ = create_wall_timer(
-    std::chrono::duration<double>(publish_period_),
-    std::bind(&ClockPublisher::timerCallback, this));
+  resetTimer();
 
   param_handler_ = add_on_set_parameters_callback(
     std::bind(&ClockPublisher::onParameterChange, this, std::placeholders::_1));
 
   RCLCPP_INFO(
-    get_logger(), "Sim clock publisher started (period: %.3fs, speed: %.2fx)",
-    publish_period_, speed_factor_);
+    get_logger(), "Sim clock publisher started (resolution: %.3fs, speed: %.2fx)",
+    kResolution, speed_factor_);
 }
 
 rcl_interfaces::msg::SetParametersResult ClockPublisher::onParameterChange(
@@ -50,20 +46,7 @@ rcl_interfaces::msg::SetParametersResult ClockPublisher::onParameterChange(
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
   for (const auto & param : parameters) {
-    if (param.get_name() == "publish_period") {
-      double period = param.as_double();
-      if (period <= 0.0) {
-        result.successful = false;
-        result.reason = "publish_period must be positive";
-        return result;
-      }
-      publish_period_ = period;
-      timer_->cancel();
-      timer_ = create_wall_timer(
-        std::chrono::duration<double>(publish_period_),
-        std::bind(&ClockPublisher::timerCallback, this));
-      RCLCPP_INFO(get_logger(), "Clock publish period changed to %.3fs", publish_period_);
-    } else if (param.get_name() == "speed_factor") {
+    if (param.get_name() == "speed_factor") {
       double factor = param.as_double();
       if (factor <= 0.0) {
         result.successful = false;
@@ -71,10 +54,27 @@ rcl_interfaces::msg::SetParametersResult ClockPublisher::onParameterChange(
         return result;
       }
       speed_factor_ = factor;
+      resetTimer();
       RCLCPP_INFO(get_logger(), "Clock speed factor changed to %.2fx", speed_factor_);
     }
   }
   return result;
+}
+
+void ClockPublisher::resetTimer()
+{
+  timer_.reset();
+  double wall_period = std::max(kResolution / speed_factor_, kMinWallPeriod);
+  timer_ = create_wall_timer(
+    std::chrono::duration<double>(wall_period),
+    std::bind(&ClockPublisher::timerCallback, this));
+  if (kResolution / speed_factor_ < kMinWallPeriod) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Wall period clamped to %.1fms (requested %.3fms from resolution=%.3f, speed=%.1f)",
+      kMinWallPeriod * 1000.0, (kResolution / speed_factor_) * 1000.0,
+      kResolution, speed_factor_);
+  }
 }
 
 void ClockPublisher::timerCallback()
