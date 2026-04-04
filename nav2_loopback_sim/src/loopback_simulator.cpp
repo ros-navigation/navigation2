@@ -89,7 +89,6 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
       "/map_server/map");
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-    getMap();
   }
 
   return nav2::CallbackReturn::SUCCESS;
@@ -176,26 +175,17 @@ LoopbackSimulator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 
 void LoopbackSimulator::getMap()
 {
+  if (!map_client_->service_is_ready()) {
+    return;
+  }
   auto request = std::make_shared<nav_msgs::srv::GetMap::Request>();
-  if (map_client_->wait_for_service(5s)) {
-    auto future = map_client_->async_send_request(request);
-    if (rclcpp::spin_until_future_complete(
-        this->get_node_base_interface(), future, 5s) ==
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
+  map_client_->async_send_request(
+    request,
+    [this](rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future) {
       map_ = future.get()->map;
       has_map_ = true;
       RCLCPP_INFO(get_logger(), "Laser scan will be populated using map data");
-    } else {
-      RCLCPP_WARN(
-        get_logger(),
-        "Failed to get map, Laser scan will be populated using max range");
-    }
-  } else {
-    RCLCPP_WARN(
-      get_logger(),
-      "Failed to get map, Laser scan will be populated using max range");
-  }
+    });
 }
 
 void LoopbackSimulator::getBaseToLaserTf()
@@ -219,6 +209,9 @@ void LoopbackSimulator::setupTimerCallback()
   }
   t_odom_to_base_link_.header.stamp = this->now();
   tf_broadcaster_->sendTransform(t_odom_to_base_link_);
+  if (publish_scan_ && !has_map_) {
+    getMap();
+  }
   if (publish_scan_ && !has_base_to_laser_) {
     getBaseToLaserTf();
   }
@@ -421,12 +414,11 @@ std::tuple<double, double, double> LoopbackSimulator::getLaserPose()
 void LoopbackSimulator::getLaserScan(
   int num_samples, sensor_msgs::msg::LaserScan & scan_msg)
 {
+  float no_hit_range = use_inf_ ? std::numeric_limits<float>::infinity()
+    : scan_msg.range_max - 0.1f;
+
   if (!has_map_ || !has_initial_pose_ || !has_base_to_laser_) {
-    if (use_inf_) {
-      scan_msg.ranges.assign(num_samples, std::numeric_limits<float>::infinity());
-    } else {
-      scan_msg.ranges.assign(num_samples, scan_msg.range_max - 0.1f);
-    }
+    scan_msg.ranges.assign(num_samples, no_hit_range);
     return;
   }
 
@@ -442,11 +434,7 @@ void LoopbackSimulator::getLaserScan(
   int my0 = static_cast<int>(std::floor((y0 - origin_y) / resolution));
 
   if (mx0 <= 0 || mx0 >= width || my0 <= 0 || my0 >= height) {
-    if (use_inf_) {
-      scan_msg.ranges.assign(num_samples, std::numeric_limits<float>::infinity());
-    } else {
-      scan_msg.ranges.assign(num_samples, scan_msg.range_max - 0.1f);
-    }
+    scan_msg.ranges.assign(num_samples, no_hit_range);
     return;
   }
 
@@ -454,136 +442,24 @@ void LoopbackSimulator::getLaserScan(
   double range_max = scan_msg.range_max;
   double angle_min = scan_msg.angle_min;
   double angle_increment = scan_msg.angle_increment;
-  auto & ranges = scan_msg.ranges;
-  constexpr double step_size = 0.5;
+  double step = resolution * 0.5;
 
   for (int i = 0; i < num_samples; ++i) {
-    double curr_angle = theta + angle_min + i * angle_increment;
-    double x1 = x0 + range_max * std::cos(curr_angle);
-    double y1 = y0 + range_max * std::sin(curr_angle);
+    double angle = theta + angle_min + i * angle_increment;
+    double cos_a = std::cos(angle);
+    double sin_a = std::sin(angle);
+    scan_msg.ranges[i] = no_hit_range;
 
-    int mx1 = static_cast<int>(std::floor((x1 - origin_x) / resolution));
-    int my1 = static_cast<int>(std::floor((y1 - origin_y) / resolution));
-
-    double lx = static_cast<double>(mx0);
-    double ly = static_cast<double>(my0);
-
-    if (mx1 != mx0 && my1 != my0) {
-      double m = static_cast<double>(my1 - my0) / static_cast<double>(mx1 - mx0);
-      double b = static_cast<double>(my1) - m * static_cast<double>(mx1);
-      if (mx1 > mx0) {
-        while (lx <= mx1) {
-          int mx = static_cast<int>(lx);
-          int my = static_cast<int>(ly);
-          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
-            break;
-          }
-          if (map_data[my * width + mx] >= 60) {
-            ranges[i] = static_cast<float>(
-              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
-              resolution);
-            break;
-          }
-          lx += step_size;
-          if (lx > mx1) {lx = static_cast<double>(mx1);}
-          ly = m * lx + b;
-        }
-      } else {
-        while (lx >= mx1) {
-          int mx = static_cast<int>(lx);
-          int my = static_cast<int>(ly);
-          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
-            break;
-          }
-          if (map_data[my * width + mx] >= 60) {
-            ranges[i] = static_cast<float>(
-              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
-              resolution);
-            break;
-          }
-          lx -= step_size;
-          if (lx < mx1) {lx = static_cast<double>(mx1);}
-          ly = m * lx + b;
-        }
+    for (double d = 0.0; d <= range_max; d += step) {
+      int mx = static_cast<int>(std::floor((x0 + d * cos_a - origin_x) / resolution));
+      int my = static_cast<int>(std::floor((y0 + d * sin_a - origin_y) / resolution));
+      if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
+        break;
       }
-    } else if (mx1 == mx0) {
-      // Vertical line
-      if (my1 > my0) {
-        while (ly <= my1) {
-          int mx = static_cast<int>(lx);
-          int my = static_cast<int>(ly);
-          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
-            break;
-          }
-          if (map_data[my * width + mx] >= 60) {
-            ranges[i] = static_cast<float>(
-              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
-              resolution);
-            break;
-          }
-          ly += step_size;
-          if (ly > my1) {ly = static_cast<double>(my1);}
-        }
-      } else if (my1 < my0) {
-        while (ly >= my1) {
-          int mx = static_cast<int>(lx);
-          int my = static_cast<int>(ly);
-          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
-            break;
-          }
-          if (map_data[my * width + mx] >= 60) {
-            ranges[i] = static_cast<float>(
-              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
-              resolution);
-            break;
-          }
-          ly -= step_size;
-          if (ly < my1) {ly = static_cast<double>(my1);}
-        }
+      if (map_data[my * width + mx] >= 60) {
+        scan_msg.ranges[i] = static_cast<float>(d);
+        break;
       }
-    } else {
-      // Horizontal line (my1 == my0)
-      double m = static_cast<double>(my1 - my0) / static_cast<double>(mx1 - mx0);
-      double b = static_cast<double>(my1) - m * static_cast<double>(mx1);
-      if (mx1 > mx0) {
-        while (lx <= mx1) {
-          int mx = static_cast<int>(lx);
-          int my = static_cast<int>(ly);
-          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
-            break;
-          }
-          if (map_data[my * width + mx] >= 60) {
-            ranges[i] = static_cast<float>(
-              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
-              resolution);
-            break;
-          }
-          lx += step_size;
-          if (lx > mx1) {lx = static_cast<double>(mx1);}
-          ly = m * lx + b;
-        }
-      } else {
-        while (lx >= mx1) {
-          int mx = static_cast<int>(lx);
-          int my = static_cast<int>(ly);
-          if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
-            break;
-          }
-          if (map_data[my * width + mx] >= 60) {
-            ranges[i] = static_cast<float>(
-              std::hypot(static_cast<double>(mx - mx0), static_cast<double>(my - my0)) *
-              resolution);
-            break;
-          }
-          lx -= step_size;
-          if (lx < mx1) {lx = static_cast<double>(mx1);}
-          ly = m * lx + b;
-        }
-      }
-    }
-
-    if (ranges[i] == 0.0f && use_inf_) {
-      ranges[i] = std::numeric_limits<float>::infinity();
     }
   }
 }

@@ -20,9 +20,7 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto options = rclcpp::NodeOptions();
-  options.parameter_overrides({rclcpp::Parameter("autostart_node", true)});
-  auto node = std::make_shared<nav2_loopback_sim::LoopbackSimulator>(options);
+  auto node = std::make_shared<nav2_loopback_sim::LoopbackSimulator>(rclcpp::NodeOptions());
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
   return 0;
