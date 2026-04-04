@@ -349,7 +349,7 @@ void LoopbackSimulator::publishLaserScan()
   scan_msg.angle_max = static_cast<float>(scan_angle_max_);
   scan_msg.angle_increment = static_cast<float>(scan_angle_increment_);
   scan_msg.time_increment = 0.0f;
-  scan_msg.scan_time = 0.1f;
+  scan_msg.scan_time = static_cast<float>(scan_publish_dur_);
   scan_msg.range_min = static_cast<float>(scan_range_min_);
   scan_msg.range_max = static_cast<float>(scan_range_max_);
 

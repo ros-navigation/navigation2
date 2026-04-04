@@ -15,6 +15,7 @@
 #ifndef NAV2_LOOPBACK_SIM__CLOCK_PUBLISHER_HPP_
 #define NAV2_LOOPBACK_SIM__CLOCK_PUBLISHER_HPP_
 
+#include <chrono>
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
