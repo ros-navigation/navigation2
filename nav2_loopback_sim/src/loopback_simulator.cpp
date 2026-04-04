@@ -416,8 +416,8 @@ std::tuple<double, double, double> LoopbackSimulator::getLaserPose()
 void LoopbackSimulator::getLaserScan(
   int num_samples, sensor_msgs::msg::LaserScan & scan_msg)
 {
-  float no_hit_range = use_inf_ ? std::numeric_limits<float>::infinity()
-    : scan_msg.range_max - 0.1f;
+  float no_hit_range = use_inf_ ? std::numeric_limits<float>::infinity() :
+    scan_msg.range_max - 0.1f;
 
   if (!has_map_ || !has_initial_pose_ || !has_base_to_laser_) {
     scan_msg.ranges.assign(num_samples, no_hit_range);
