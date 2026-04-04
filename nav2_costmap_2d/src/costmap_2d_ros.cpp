@@ -532,7 +532,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
 
   RCLCPP_DEBUG(get_logger(), "Entering loop");
 
-  rclcpp::WallRate r(frequency);    // 200ms by default
+  rclcpp::Rate r(frequency, this->get_clock());
 
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
     nav2_util::ExecutionTimer timer;
