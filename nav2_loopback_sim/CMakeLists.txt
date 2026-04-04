@@ -8,6 +8,7 @@ find_package(nav2_common REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -37,6 +38,7 @@ target_link_libraries(${library_name} PUBLIC
   ${nav_msgs_TARGETS}
   nav2_ros_common::nav2_ros_common
   nav2_util::nav2_util_core
+  ${rcl_interfaces_TARGETS}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${rosgraph_msgs_TARGETS}
@@ -93,6 +95,7 @@ ament_export_libraries(${library_name})
 ament_export_dependencies(
   geometry_msgs
   nav2_ros_common
+  rcl_interfaces
   nav2_util
   nav_msgs
   rclcpp

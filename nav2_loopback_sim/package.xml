@@ -15,6 +15,7 @@
   <depend>nav2_ros_common</depend>
   <depend>nav2_util</depend>
   <depend>nav_msgs</depend>
+  <depend>rcl_interfaces</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>rclcpp_lifecycle</depend>

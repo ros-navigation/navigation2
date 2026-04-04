@@ -15,6 +15,8 @@
 #ifndef NAV2_LOOPBACK_SIM__CLOCK_PUBLISHER_HPP_
 #define NAV2_LOOPBACK_SIM__CLOCK_PUBLISHER_HPP_
 
+#include <vector>
+
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"

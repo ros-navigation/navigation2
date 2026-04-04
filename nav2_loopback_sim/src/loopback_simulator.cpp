@@ -397,12 +397,7 @@ geometry_msgs::msg::Quaternion LoopbackSimulator::addYawToQuat(
   q_yaw.setRPY(0.0, 0.0, yaw_to_add);
   q = q * q_yaw;
   q.normalize();
-  geometry_msgs::msg::Quaternion result;
-  result.x = q.x();
-  result.y = q.y();
-  result.z = q.z();
-  result.w = q.w();
-  return result;
+  return tf2::toMsg(q);
 }
 
 std::tuple<double, double, double> LoopbackSimulator::getLaserPose()
