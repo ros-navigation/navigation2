@@ -19,6 +19,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <random>
 #include <string>
 #include <tuple>
 
@@ -104,6 +105,7 @@ private:
   double scan_angle_max_;
   double scan_angle_increment_;
   bool use_inf_;
+  double scan_noise_std_;
   bool publish_scan_;
 
   // State
@@ -115,6 +117,7 @@ private:
   nav_msgs::msg::OccupancyGrid map_;
   bool has_base_to_laser_{false};
   tf2::Transform tf_base_to_laser_;
+  std::mt19937 rng_{std::random_device{}()};
 
   // Transforms
   geometry_msgs::msg::TransformStamped t_map_to_odom_;

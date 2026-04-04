@@ -17,6 +17,7 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <random>
 #include <string>
 #include <tuple>
 #include <chrono>
@@ -55,6 +56,7 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   scan_angle_max_ = declare_or_get_parameter("scan_angle_max", M_PI);
   scan_angle_increment_ = declare_or_get_parameter("scan_angle_increment", 0.0261);
   use_inf_ = declare_or_get_parameter("scan_use_inf", true);
+  scan_noise_std_ = declare_or_get_parameter("scan_noise_std", 0.01);
   publish_scan_ = declare_or_get_parameter("publish_scan", true);
 
   // Setup transforms
@@ -459,6 +461,17 @@ void LoopbackSimulator::getLaserScan(
       if (map_data[my * width + mx] >= 60) {
         scan_msg.ranges[i] = static_cast<float>(d);
         break;
+      }
+    }
+  }
+
+  // Add Gaussian noise to valid range measurements
+  if (scan_noise_std_ > 0.0) {
+    std::normal_distribution<float> noise(0.0f, static_cast<float>(scan_noise_std_));
+    for (int i = 0; i < num_samples; ++i) {
+      float & r = scan_msg.ranges[i];
+      if (std::isfinite(r) && r > 0.0f) {
+        r = std::max(0.0f, r + noise(rng_));
       }
     }
   }
