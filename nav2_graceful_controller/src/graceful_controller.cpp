@@ -381,6 +381,7 @@ bool GracefulController::simulateTrajectory(
   }
 
   double distance = std::numeric_limits<double>::max();
+  double path_distance = target_distance;
   double resolution = costmap_ros_->getCostmap()->getResolution();
   double dt = (params_->v_linear_max > 0.0) ? resolution / params_->v_linear_max : 0.0;
 
@@ -410,12 +411,19 @@ bool GracefulController::simulateTrajectory(
       // If this is first iteration, this is our current target velocity
       if (trajectory.poses.empty()) {
         cmd_vel.twist = control_law_->calculateRegularVelocity(
-          motion_target.pose, next_pose.pose, target_distance, backward);
+          motion_target.pose, next_pose.pose, path_distance, backward);
       }
+
+      // Save previous pose before update
+      const auto prev_pose = next_pose;
 
       // Apply velocities to calculate next pose
       next_pose.pose = control_law_->calculateNextPose(
-        dt, motion_target.pose, next_pose.pose, target_distance, backward);
+        dt, motion_target.pose, next_pose.pose, path_distance, backward);
+
+      // Adjust remaining path distance based on how far we moved
+      path_distance -= nav2_util::geometry_utils::euclidean_distance(
+        next_pose.pose.position, prev_pose.pose.position);
     }
 
     // Add the pose to the trajectory for visualization

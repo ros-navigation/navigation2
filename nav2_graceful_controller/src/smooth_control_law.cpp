@@ -73,7 +73,7 @@ geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
   double v = v_linear_max_ / (1.0 + beta_ * std::pow(fabs(curvature), lambda_));
 
   // Slowdown when the robot is near the target to remove singularity
-  v = std::min(v_linear_max_ * (ego_coords.r / slowdown_radius_), v);
+  v = std::min(v_linear_max_ * (target_distance / slowdown_radius_), v);
 
   // Constraint robot velocity within deceleration limits
   v = std::min(sqrt(2 * target_distance * deceleration_max_), v);
