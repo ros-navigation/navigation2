@@ -47,7 +47,7 @@ public:
   void onPreempt(NavigateToPose::Goal::ConstSharedPtr) override {}
   void goalCompleted(
     NavigateToPose::Result::SharedPtr,
-    const nav2_behavior_tree::BtStatus) override {}
+    nav2_behavior_tree::BtStatus &) override {}
 
   bool goal_accepted_ = true;
 };
