@@ -337,22 +337,22 @@ void LoopbackSimulator::odomTimerCallback()
 
 void LoopbackSimulator::publishLaserScan()
 {
-  sensor_msgs::msg::LaserScan scan_msg;
-  scan_msg.header.stamp = this->now();
-  scan_msg.header.frame_id = scan_frame_id_;
-  scan_msg.angle_min = static_cast<float>(scan_angle_min_);
-  scan_msg.angle_max = static_cast<float>(scan_angle_max_);
-  scan_msg.angle_increment = static_cast<float>(scan_angle_increment_);
-  scan_msg.time_increment = 0.0f;
-  scan_msg.scan_time = static_cast<float>(scan_publish_dur_);
-  scan_msg.range_min = static_cast<float>(scan_range_min_);
-  scan_msg.range_max = static_cast<float>(scan_range_max_);
+  auto scan_msg = std::make_unique<sensor_msgs::msg::LaserScan>();
+  scan_msg->header.stamp = this->now();
+  scan_msg->header.frame_id = scan_frame_id_;
+  scan_msg->angle_min = static_cast<float>(scan_angle_min_);
+  scan_msg->angle_max = static_cast<float>(scan_angle_max_);
+  scan_msg->angle_increment = static_cast<float>(scan_angle_increment_);
+  scan_msg->time_increment = 0.0f;
+  scan_msg->scan_time = static_cast<float>(scan_publish_dur_);
+  scan_msg->range_min = static_cast<float>(scan_range_min_);
+  scan_msg->range_max = static_cast<float>(scan_range_max_);
 
   int num_samples = static_cast<int>(
     (scan_angle_max_ - scan_angle_min_) / scan_angle_increment_);
-  scan_msg.ranges.assign(num_samples, 0.0f);
-  getLaserScan(num_samples, scan_msg);
-  scan_pub_->publish(scan_msg);
+  scan_msg->ranges.assign(num_samples, 0.0f);
+  getLaserScan(num_samples, *scan_msg);
+  scan_pub_->publish(std::move(scan_msg));
 }
 
 void LoopbackSimulator::publishTransforms(
@@ -371,17 +371,17 @@ void LoopbackSimulator::publishTransforms(
 void LoopbackSimulator::publishOdometry(
   const geometry_msgs::msg::TransformStamped & odom_to_base_link)
 {
-  nav_msgs::msg::Odometry odom;
-  odom.header.stamp = this->now();
-  odom.header.frame_id = odom_frame_id_;
-  odom.child_frame_id = base_frame_id_;
-  odom.pose.pose.position.x = odom_to_base_link.transform.translation.x;
-  odom.pose.pose.position.y = odom_to_base_link.transform.translation.y;
-  odom.pose.pose.orientation = odom_to_base_link.transform.rotation;
+  auto odom = std::make_unique<nav_msgs::msg::Odometry>();
+  odom->header.stamp = this->now();
+  odom->header.frame_id = odom_frame_id_;
+  odom->child_frame_id = base_frame_id_;
+  odom->pose.pose.position.x = odom_to_base_link.transform.translation.x;
+  odom->pose.pose.position.y = odom_to_base_link.transform.translation.y;
+  odom->pose.pose.orientation = odom_to_base_link.transform.rotation;
   if (curr_cmd_vel_.has_value()) {
-    odom.twist.twist = curr_cmd_vel_.value();
+    odom->twist.twist = curr_cmd_vel_.value();
   }
-  odom_pub_->publish(odom);
+  odom_pub_->publish(std::move(odom));
 }
 
 geometry_msgs::msg::Quaternion LoopbackSimulator::addYawToQuat(
