@@ -181,7 +181,8 @@ void BoundedTrackingErrorLayer::updateCosts(
       logger_,
       *clock_,
       5000,
-      "Path is %.2f seconds old, skipping corridor update", age);
+      "Path is %.2f seconds old, clearing corridor state", age);
+    resetState();
     return;
   }
 
@@ -282,7 +283,7 @@ void BoundedTrackingErrorLayer::getPathSegment(
     segment.header = path.header;
     segment.poses.assign(
       path.poses.begin() + path_index,
-      path.poses.begin() + end_index
+      path.poses.begin() + end_index + 1
     );
   } else if (path_index == path.poses.size() - 1) {
     segment.header = path.header;
@@ -350,7 +351,7 @@ void BoundedTrackingErrorLayer::getWallPolygons(
 }
 
 void BoundedTrackingErrorLayer::drawCorridorWalls(
-  const nav2_costmap_2d::Costmap2D & master_grid,
+  nav2_costmap_2d::Costmap2D & master_grid,
   const std::vector<std::array<double, 2>> & inner_points,
   const std::vector<std::array<double, 2>> & outer_points)
 {
@@ -385,7 +386,7 @@ void BoundedTrackingErrorLayer::drawCorridorWalls(
 }
 
 void BoundedTrackingErrorLayer::fillCorridorQuad(
-  const nav2_costmap_2d::Costmap2D & master_grid,
+  nav2_costmap_2d::Costmap2D & master_grid,
   CellPoint inner0,
   CellPoint inner1,
   CellPoint outer0,
