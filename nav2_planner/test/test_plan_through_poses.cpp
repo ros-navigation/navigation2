@@ -19,7 +19,6 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/timer.hpp"
 #include "nav2_planner/planner_server.hpp"
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -134,8 +133,8 @@ Tester::Tester()
   map_publisher_ = tester_node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
     "/map", nav2::qos::LatchedPublisherQoS());
 
-  broadcast_timer_ = nav2::create_timer(
-    tester_node_, 200ms, std::bind(&Tester::broadcastRobotPose, this));
+  broadcast_timer_ =
+    tester_node_->create_wall_timer(200ms, std::bind(&Tester::broadcastRobotPose, this));
 }
 
 Tester::~Tester()
