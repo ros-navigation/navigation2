@@ -715,8 +715,8 @@ TEST(ProgressGoalChecker, dynamic_parameters)
     x->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("pgc10.xy_goal_tolerance", 0.05),
-      rclcpp::Parameter("pgc10.max_xy_goal_tolerance", 0.50),
+    {rclcpp::Parameter("pgc10.fine_xy_goal_tolerance", 0.05),
+      rclcpp::Parameter("pgc10.coarse_xy_goal_tolerance", 0.50),
       rclcpp::Parameter("pgc10.yaw_goal_tolerance", 0.10),
       rclcpp::Parameter("pgc10.path_length_tolerance", 2.0),
       rclcpp::Parameter("pgc10.stateful", false),
@@ -726,8 +726,8 @@ TEST(ProgressGoalChecker, dynamic_parameters)
   rclcpp::spin_until_future_complete(
     x->get_node_base_interface(), results);
 
-  EXPECT_EQ(x->get_parameter("pgc10.xy_goal_tolerance").as_double(), 0.05);
-  EXPECT_EQ(x->get_parameter("pgc10.max_xy_goal_tolerance").as_double(), 0.50);
+  EXPECT_EQ(x->get_parameter("pgc10.fine_xy_goal_tolerance").as_double(), 0.05);
+  EXPECT_EQ(x->get_parameter("pgc10.coarse_xy_goal_tolerance").as_double(), 0.50);
   EXPECT_EQ(x->get_parameter("pgc10.yaw_goal_tolerance").as_double(), 0.10);
   EXPECT_EQ(x->get_parameter("pgc10.path_length_tolerance").as_double(), 2.0);
   EXPECT_EQ(x->get_parameter("pgc10.stateful").as_bool(), false);
@@ -742,10 +742,10 @@ TEST(ProgressGoalChecker, dynamic_parameters)
 
   // Invalid values rejected
   results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("pgc10.xy_goal_tolerance", -1.0)});
+    {rclcpp::Parameter("pgc10.fine_xy_goal_tolerance", -1.0)});
   rclcpp::spin_until_future_complete(
     x->get_node_base_interface(), results);
-  EXPECT_EQ(x->get_parameter("pgc10.xy_goal_tolerance").as_double(), 0.05);
+  EXPECT_EQ(x->get_parameter("pgc10.fine_xy_goal_tolerance").as_double(), 0.05);
 
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("pgc10.required_stagnation_cycles", 0)});

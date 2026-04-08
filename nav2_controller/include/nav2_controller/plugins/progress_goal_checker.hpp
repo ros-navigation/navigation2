@@ -31,9 +31,9 @@ namespace nav2_controller
 /**
  * @class ProgressGoalChecker
  * @brief Goal Checker plugin with two tolerance tiers: a tight desired tolerance
- * and a looser maximum tolerance. The robot is considered to have reached the goal if:
+ * and a looser coarse tolerance. The robot is considered to have reached the goal if:
  *   (1) it reaches within the desired (tight) tolerance, OR
- *   (2) it is within the maximum (loose) tolerance AND is no longer making progress
+ *   (2) it is within the coarse tolerance AND is no longer making progress
  *       toward the goal (distance is no longer decreasing).
  */
 class ProgressGoalChecker : public nav2_core::GoalChecker
@@ -92,12 +92,12 @@ protected:
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_{rclcpp::get_logger("progress_goal_checker")};
 
-  // Tight (desired) tolerance
-  double xy_goal_tolerance_;
-  double xy_goal_tolerance_sq_;
-  // Loose (fallback) tolerance
-  double max_xy_goal_tolerance_;
-  double max_xy_goal_tolerance_sq_;
+  // Fine (desired) tolerance
+  double fine_xy_goal_tolerance_;
+  double fine_xy_goal_tolerance_sq_;
+  // Coarse (fallback) tolerance
+  double coarse_xy_goal_tolerance_;
+  double coarse_xy_goal_tolerance_sq_;
 
   double yaw_goal_tolerance_;
   double path_length_tolerance_;

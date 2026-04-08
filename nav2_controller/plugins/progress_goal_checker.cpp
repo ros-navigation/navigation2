@@ -32,10 +32,10 @@ namespace nav2_controller
 {
 
 ProgressGoalChecker::ProgressGoalChecker()
-: xy_goal_tolerance_(0.10),
-  xy_goal_tolerance_sq_(0.01),
-  max_xy_goal_tolerance_(0.25),
-  max_xy_goal_tolerance_sq_(0.0625),
+: fine_xy_goal_tolerance_(0.10),
+  fine_xy_goal_tolerance_sq_(0.01),
+  coarse_xy_goal_tolerance_(0.25),
+  coarse_xy_goal_tolerance_sq_(0.0625),
   yaw_goal_tolerance_(0.25),
   path_length_tolerance_(1.0),
   stateful_(true),
@@ -71,10 +71,10 @@ void ProgressGoalChecker::initialize(
   auto node = node_.lock();
   logger_ = node->get_logger();
 
-  xy_goal_tolerance_ = node->declare_or_get_parameter(
-    plugin_name + ".xy_goal_tolerance", 0.10);
-  max_xy_goal_tolerance_ = node->declare_or_get_parameter(
-    plugin_name + ".max_xy_goal_tolerance", 0.25);
+  fine_xy_goal_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".fine_xy_goal_tolerance", 0.10);
+  coarse_xy_goal_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".coarse_xy_goal_tolerance", 0.25);
   yaw_goal_tolerance_ = node->declare_or_get_parameter(
     plugin_name + ".yaw_goal_tolerance", 0.25);
   path_length_tolerance_ = node->declare_or_get_parameter(
@@ -85,8 +85,8 @@ void ProgressGoalChecker::initialize(
   required_stagnation_cycles_ = node->declare_or_get_parameter(
     plugin_name + ".required_stagnation_cycles", 15);
 
-  xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
-  max_xy_goal_tolerance_sq_ = max_xy_goal_tolerance_ * max_xy_goal_tolerance_;
+  fine_xy_goal_tolerance_sq_ = fine_xy_goal_tolerance_ * fine_xy_goal_tolerance_;
+  coarse_xy_goal_tolerance_sq_ = coarse_xy_goal_tolerance_ * coarse_xy_goal_tolerance_;
 
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
@@ -127,28 +127,30 @@ bool ProgressGoalChecker::isGoalReached(
     const double dist_sq = dx * dx + dy * dy;
 
     // Tier 1: Tight (desired) tolerance — immediate acceptance
-    if (dist_sq <= xy_goal_tolerance_sq_) {
+    if (dist_sq <= fine_xy_goal_tolerance_sq_) {
       if (stateful_) {
         check_xy_ = false;
       }
       RCLCPP_INFO(
         logger_,
-        "ProgressGoalChecker: accepting goal at tight tolerance "
+        "ProgressGoalChecker: accepting goal at fine tolerance "
         "(current: %.3f m, tol: %.3f m)",
-        std::sqrt(dist_sq), xy_goal_tolerance_);
+        std::sqrt(dist_sq), fine_xy_goal_tolerance_);
       // Fall through to yaw check
-    } else if (dist_sq <= max_xy_goal_tolerance_sq_) {
-      // Tier 2: Within the loose tolerance zone — track convergence
+
+    // Tier 2: Within the coarse tolerance zone — track convergence
+    } else if (dist_sq <= coarse_xy_goal_tolerance_sq_) {
+
+      // Just entered the zone: initialize tracking
       if (!in_tolerance_zone_) {
-        // Just entered the zone: initialize tracking
         in_tolerance_zone_ = true;
         best_distance_sq_ = dist_sq;
         no_improvement_count_ = 0;
         return false;
       }
 
+      // Robot is still converging: update best, reset counter
       if (dist_sq < best_distance_sq_) {
-        // Robot is still converging: update best, reset counter
         best_distance_sq_ = dist_sq;
         no_improvement_count_ = 0;
         return false;
@@ -160,12 +162,12 @@ bool ProgressGoalChecker::isGoalReached(
         return false;
       }
 
-      // Stagnated for enough cycles: accept at looser tolerance
+      // Stagnated for enough cycles: accept at coarse tolerance
       RCLCPP_INFO(
         logger_,
-        "ProgressGoalChecker: accepting goal at looser (max) tolerance "
-        "(current: %.3f m, tight tol: %.3f m, loose tol: %.3f m)",
-        std::sqrt(dist_sq), xy_goal_tolerance_, max_xy_goal_tolerance_);
+        "ProgressGoalChecker: accepting goal at coarse tolerance "
+        "(current: %.3f m, fine tol: %.3f m, coarse tol: %.3f m)",
+        std::sqrt(dist_sq), fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
 
       if (stateful_) {
         check_xy_ = false;
@@ -204,8 +206,8 @@ bool ProgressGoalChecker::getTolerances(
   const double invalid_field = std::numeric_limits<double>::lowest();
 
   // Report max tolerance as the worst-case bound
-  pose_tolerance.position.x = max_xy_goal_tolerance_;
-  pose_tolerance.position.y = max_xy_goal_tolerance_;
+  pose_tolerance.position.x = coarse_xy_goal_tolerance_;
+  pose_tolerance.position.y = coarse_xy_goal_tolerance_;
   pose_tolerance.position.z = invalid_field;
   pose_tolerance.orientation =
     nav2_util::geometry_utils::orientationAroundZAxis(yaw_goal_tolerance_);
@@ -268,12 +270,12 @@ ProgressGoalChecker::updateParametersCallback(
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == plugin_name_ + ".xy_goal_tolerance") {
-        xy_goal_tolerance_ = parameter.as_double();
-        xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
-      } else if (param_name == plugin_name_ + ".max_xy_goal_tolerance") {
-        max_xy_goal_tolerance_ = parameter.as_double();
-        max_xy_goal_tolerance_sq_ = max_xy_goal_tolerance_ * max_xy_goal_tolerance_;
+      if (param_name == plugin_name_ + ".fine_xy_goal_tolerance") {
+        fine_xy_goal_tolerance_ = parameter.as_double();
+        fine_xy_goal_tolerance_sq_ = fine_xy_goal_tolerance_ * fine_xy_goal_tolerance_;
+      } else if (param_name == plugin_name_ + ".coarse_xy_goal_tolerance") {
+        coarse_xy_goal_tolerance_ = parameter.as_double();
+        coarse_xy_goal_tolerance_sq_ = coarse_xy_goal_tolerance_ * coarse_xy_goal_tolerance_;
       } else if (param_name == plugin_name_ + ".yaw_goal_tolerance") {
         yaw_goal_tolerance_ = parameter.as_double();
       } else if (param_name == plugin_name_ + ".path_length_tolerance") {
