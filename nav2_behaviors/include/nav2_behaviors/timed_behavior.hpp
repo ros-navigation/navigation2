@@ -33,6 +33,7 @@
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_core/behavior.hpp"
+#include "nav2_ros_common/rate.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.hpp"
@@ -226,7 +227,7 @@ protected:
     }
 
     auto start_time = clock_->now();
-    rclcpp::Rate loop_rate(cycle_frequency_, clock_);
+    nav2::Rate loop_rate(cycle_frequency_, node_.lock());
 
     while (rclcpp::ok()) {
       elapsed_time_ = clock_->now() - start_time;

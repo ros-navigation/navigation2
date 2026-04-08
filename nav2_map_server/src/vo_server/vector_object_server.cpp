@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "rclcpp/create_timer.hpp"
+#include "nav2_ros_common/timer.hpp"
 
 #include "tf2_ros/create_timer_ros.hpp"
 
@@ -367,8 +368,8 @@ void VectorObjectServer::switchMapUpdate()
   for (auto shape : shapes_) {
     if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
       if (!map_timer_) {
-        map_timer_ = this->create_timer(
-          std::chrono::duration<double>(1.0 / update_frequency_),
+        map_timer_ = nav2::create_timer(
+          this, std::chrono::duration<double>(1.0 / update_frequency_),
           std::bind(&VectorObjectServer::processMap, this));
       }
       RCLCPP_INFO(get_logger(), "Publishing map dynamically at %f Hz rate", update_frequency_);
