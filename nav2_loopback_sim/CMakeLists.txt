@@ -16,6 +16,7 @@ find_package(rosgraph_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 nav2_package()
@@ -80,6 +81,27 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_find_gtest()
+
+  nav2_add_gtest(test_clock_publisher test/test_clock_publisher.cpp)
+  target_link_libraries(test_clock_publisher
+    ${library_name}
+    rclcpp::rclcpp
+    ${rosgraph_msgs_TARGETS}
+  )
+
+  nav2_add_gtest(test_loopback_simulator test/test_loopback_simulator.cpp)
+  target_link_libraries(test_loopback_simulator
+    ${library_name}
+    rclcpp::rclcpp
+    rclcpp_lifecycle::rclcpp_lifecycle
+    ${geometry_msgs_TARGETS}
+    ${nav_msgs_TARGETS}
+    tf2::tf2
+    ${tf2_msgs_TARGETS}
+  )
 endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
