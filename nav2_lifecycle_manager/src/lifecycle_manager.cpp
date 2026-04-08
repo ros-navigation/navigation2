@@ -22,6 +22,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include "nav2_ros_common/timer.hpp"
+
 using namespace std::chrono_literals;
 using namespace std::placeholders;
 
@@ -73,26 +75,26 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
     std::string("Shutting down ");
 
-  init_timer_ = this->create_wall_timer(
-    0s,
+  init_timer_ = nav2::create_timer(
+    this, 0s,
     [this]() -> void {
       init_timer_->cancel();
       createLifecyclePublishers();
       createLifecycleServiceClients();
       createLifecycleServiceServers();
       if (autostart_) {
-        init_timer_ = this->create_wall_timer(
-          0s,
+        init_timer_ = nav2::create_timer(
+          this, 0s,
           [this]() -> void {
             init_timer_->cancel();
             startup();
           },
-          callback_group_);
+          callback_group_, true);
       }
       auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
       executor->add_callback_group(callback_group_, get_node_base_interface());
       service_thread_ = std::make_unique<nav2::NodeThread>(executor);
-    });
+    }, nullptr, true);
   diagnostics_updater_.setHardwareID("Nav2");
   diagnostics_updater_.add("Nav2 Health", this, &LifecycleManager::CreateDiagnostic);
 }
@@ -481,10 +483,10 @@ LifecycleManager::createBondTimer()
   }
 
   message("Creating bond timer...");
-  bond_timer_ = this->create_wall_timer(
-    200ms,
+  bond_timer_ = nav2::create_timer(
+    this, 200ms,
     std::bind(&LifecycleManager::checkBondConnections, this),
-    callback_group_);
+    callback_group_, true);
 }
 
 void
@@ -556,10 +558,10 @@ LifecycleManager::checkBondConnections()
       // Initialize the bond respawn timer to check if server comes back online
       // after a failure, within a maximum timeout period.
       if (attempt_respawn_reconnection_) {
-        bond_respawn_timer_ = this->create_wall_timer(
-          1s,
+        bond_respawn_timer_ = nav2::create_timer(
+          this, 1s,
           std::bind(&LifecycleManager::checkBondRespawnConnection, this),
-          callback_group_);
+          callback_group_, true);
       }
       return;
     }

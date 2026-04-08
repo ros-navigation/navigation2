@@ -31,6 +31,7 @@
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
 #include "nav2_ros_common/interface_factories.hpp"
+#include "nav2_ros_common/timer.hpp"
 
 namespace nav2
 {
@@ -312,8 +313,8 @@ public:
   void autostart()
   {
     using lifecycle_msgs::msg::State;
-    autostart_timer_ = this->create_wall_timer(
-      0s,
+    autostart_timer_ = nav2::create_timer(
+      this, 0s,
       [this]() -> void {
         autostart_timer_->cancel();
         RCLCPP_INFO(get_logger(), "Auto-starting node: %s", this->get_name());
@@ -326,7 +327,7 @@ public:
           RCLCPP_ERROR(
             get_logger(), "Auto-starting node %s failed to activate!", this->get_name());
         }
-      });
+      }, nullptr, true);
   }
 
   /**
