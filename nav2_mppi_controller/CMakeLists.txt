@@ -71,6 +71,25 @@ target_link_libraries(mppi_controller PUBLIC
   ${visualization_msgs_TARGETS}
 )
 
+target_link_libraries(mppi_controller PRIVATE
+  pluginlib::pluginlib
+)
+
+add_library(mppi_motion_models SHARED)
+target_sources(mppi_motion_models PRIVATE
+  # header-only implementations; a .cpp is needed to trigger the pluginlib macro
+  src/motion_models.cpp
+)
+target_compile_options(mppi_motion_models PUBLIC -O3)
+target_include_directories(mppi_motion_models
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(mppi_motion_models PUBLIC
+  mppi_controller
+  pluginlib::pluginlib
+)
+
 add_library(mppi_critics SHARED
   src/critics/constraint_critic.cpp
   src/critics/cost_critic.cpp
@@ -143,7 +162,7 @@ target_link_libraries(mppi_trajectory_validators PRIVATE
   pluginlib::pluginlib
 )
 
-install(TARGETS mppi_controller mppi_critics mppi_trajectory_validators
+install(TARGETS mppi_controller mppi_motion_models mppi_critics mppi_trajectory_validators
   EXPORT nav2_mppi_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -190,5 +209,6 @@ ament_export_targets(nav2_mppi_controller)
 pluginlib_export_plugin_description_file(nav2_core mppic.xml)
 pluginlib_export_plugin_description_file(nav2_mppi_controller critics.xml)
 pluginlib_export_plugin_description_file(nav2_mppi_controller trajectory_validators.xml)
+pluginlib_export_plugin_description_file(nav2_mppi_controller motion_models.xml)
 
 ament_package()

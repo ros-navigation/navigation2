@@ -36,35 +36,40 @@ public:
   void testSetDiffModel()
   {
     EXPECT_EQ(motion_model_.get(), nullptr);
-    EXPECT_NO_THROW(setMotionModel("DiffDrive"));
+    EXPECT_NO_THROW(setMotionModel("diff_drive"));
     EXPECT_NE(motion_model_.get(), nullptr);
-    EXPECT_TRUE(dynamic_cast<DiffDriveMotionModel *>(motion_model_.get()));
+    EXPECT_FALSE(motion_model_->isHolonomic());
     EXPECT_FALSE(isHolonomic());
   }
 
   void testSetOmniModel()
   {
     EXPECT_EQ(motion_model_.get(), nullptr);
-    EXPECT_NO_THROW(setMotionModel("Omni"));
+    EXPECT_NO_THROW(setMotionModel("omni"));
     EXPECT_NE(motion_model_.get(), nullptr);
-    EXPECT_TRUE(dynamic_cast<OmniMotionModel *>(motion_model_.get()));
+    EXPECT_TRUE(motion_model_->isHolonomic());
     EXPECT_TRUE(isHolonomic());
   }
 
   void testSetAckModel()
   {
     EXPECT_EQ(motion_model_.get(), nullptr);
-    EXPECT_NO_THROW(setMotionModel("Ackermann"));
+    EXPECT_NO_THROW(setMotionModel("ackermann"));
     EXPECT_NE(motion_model_.get(), nullptr);
-    EXPECT_TRUE(dynamic_cast<AckermannMotionModel *>(motion_model_.get()));
+    EXPECT_TRUE(motion_model_->hasConstrainedTurningRadius());
     EXPECT_FALSE(isHolonomic());
   }
 
   void testSetRandModel()
   {
     EXPECT_EQ(motion_model_.get(), nullptr);
+    // Pre-declare an invalid plugin type so the loader throws
+    auto node = parent_.lock();
+    node->declare_parameter(
+      name_ + ".invalid_model.plugin",
+      rclcpp::ParameterValue("mppi::NoSuchMotionModel"));
     try {
-      setMotionModel("Random");
+      setMotionModel("invalid_model");
       FAIL();
     } catch (...) {
       SUCCEED();
@@ -239,6 +244,8 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(3.0));
   node->declare_parameter("mppic.ay_min", rclcpp::ParameterValue(3.0));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -278,6 +285,13 @@ TEST(OptimizerTests, TestOptimizerMotionModels)
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   OptimizerTester optimizer_tester;
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  // Declare plugin types for the motion model tests
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
+  node->declare_parameter(
+    "mppic.ackermann.plugin", rclcpp::ParameterValue("mppi::AckermannMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";

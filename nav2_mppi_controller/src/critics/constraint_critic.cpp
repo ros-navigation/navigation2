@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/constraint_critic.hpp"
+#include "nav2_mppi_controller/motion_models.hpp"
 
 namespace mppi::critics
 {
@@ -44,22 +45,10 @@ void ConstraintCritic::score(CriticData & data)
     return;
   }
 
-  // Differential motion model
-  auto diff = dynamic_cast<DiffDriveMotionModel *>(data.motion_model.get());
-  if (diff != nullptr) {
-    if (power_ > 1u) {
-      data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
-        max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).pow(power_).eval();
-    } else {
-      data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
-        max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).eval();
-    }
-    return;
-  }
 
-  // Omnidirectional motion model
-  auto omni = dynamic_cast<OmniMotionModel *>(data.motion_model.get());
-  if (omni != nullptr) {
+
+  // Holonomic (omnidirectional) motion model: use total speed magnitude
+  if (data.motion_model->isHolonomic()) {
     auto & vx = data.state.vx;
     unsigned int n_rows = data.state.vx.rows();
     unsigned int n_cols = data.state.vx.cols();
@@ -77,15 +66,15 @@ void ConstraintCritic::score(CriticData & data)
     return;
   }
 
-  // Ackermann motion model
-  auto acker = dynamic_cast<AckermannMotionModel *>(data.motion_model.get());
-  if (acker != nullptr) {
+
+    // Ackermann motion model: penalise both velocity bounds and turning radius violations
+  if (data.motion_model->hasConstrainedTurningRadius()) {
     auto & vx = data.state.vx;
     auto & wz = data.state.wz;
-    const float min_turning_rad = acker->getMinTurningRadius();
+    const float min_turning_rad = data.motion_model->getMinTurningRadius();
 
     const float epsilon = 1e-6f;
-    auto wz_safe = wz.abs().max(epsilon);  // Replace small wz values to avoid division by 0
+    auto wz_safe = wz.abs().max(epsilon);  // avoid division by zero
     auto out_of_turning_rad_motion = (min_turning_rad - (vx.abs() / wz_safe)).max(0.0f);
 
     if (power_ > 1u) {
@@ -97,6 +86,15 @@ void ConstraintCritic::score(CriticData & data)
         out_of_turning_rad_motion) * data.model_dt).rowwise().sum().eval() * weight_).eval();
     }
     return;
+  }
+  
+  // Non-holonomic model without turning radius constraint (e.g. differential drive)
+  if (power_ > 1u) {
+    data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
+      max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).pow(power_).eval();
+  } else {
+    data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
+      max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).eval();
   }
 }
 

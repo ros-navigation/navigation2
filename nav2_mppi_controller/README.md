@@ -40,7 +40,7 @@ This process is then repeated a number of times and returns a converged solution
 ### Controller
  | Parameter                  | Type   | Definition                                                                                                                                                                                                                                                                                                           |
  | ---------------------      | ------ | -------------------------------------------------------------------------------------------------------- |
- | motion_model               | string | Default: DiffDrive. Type of model [DiffDrive, Omni, Ackermann].                                          |
+ | motion_model               | string | Default: omni. Name of the motion model plugin instance to use (e.g. `omni`, `diff_drive`, `ackermann`). A sub-namespace with the same name must declare the `plugin` type. |
  | critics                    | string | Default: None. Critics (plugins) names                                                                   |
  | iteration_count            | int    | Default 1. Iteration count in MPPI algorithm. Recommend to keep as 1 and prefer more batches.            |
  | batch_size                 | int    | Default 1000. Count of randomly sampled candidate trajectories                                            |
@@ -68,10 +68,25 @@ This process is then repeated a number of times and returns a converged solution
  | trajectory_step       | int    | Default: 5. The step between trajectories to visualize to downsample candidate trajectory pool.             |
  | time_step             | int    | Default: 3. The step between points on trajectories to visualize to downsample trajectory density.          |
 
+#### Motion Model Plugins
+
+Motion models are now loaded as `pluginlib` plugins. Set `motion_model` to a short instance name (e.g. `ackermann`) and declare the plugin type under a matching namespace.
+
+Three built-in motion models are provided in the `mppi_motion_models` library:
+
+| Plugin type                    | Description                                  |
+| ------------------------------ | -------------------------------------------- |
+| `mppi::AckermannMotionModel`   | Ackermann steering — enforces min turning radius |
+| `mppi::DiffDriveMotionModel`   | Differential drive — non-holonomic, no extra constraints |
+| `mppi::OmniMotionModel`        | Omnidirectional — holonomic (vx + vy + wz)  |
+
+If no `plugin` is declared under the chosen instance namespace the controller defaults to `mppi::OmniMotionModel`.
+
 #### Ackermann Motion Model
  | Parameter            | Type   | Definition                                                                                                  |
  | -------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
- | min_turning_r        | double | minimum turning radius for ackermann motion model                                                           |
+ | plugin               | string | Required: `"mppi::AckermannMotionModel"`                                                                    |
+ | min_turning_r        | double | Default 0.2. Minimum turning radius in metres                                                               |
 
 #### Constraint Critic
  | Parameter             | Type   | Definition                                                                                                  |
@@ -198,13 +213,18 @@ controller_server:
       iteration_count: 1
       temperature: 0.3
       gamma: 0.015
-      motion_model: "DiffDrive"
+      motion_model: "diff_drive"
       visualize: false
       TrajectoryVisualizer:
         trajectory_step: 5
         time_step: 3
-      AckermannConstraints:
-        min_turning_r: 0.2
+      diff_drive:
+        plugin: "mppi::DiffDriveMotionModel"
+      # To use Ackermann steering instead:
+      # motion_model: "ackermann"
+      # ackermann:
+      #   plugin: "mppi::AckermannMotionModel"
+      #   min_turning_r: 0.2
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
         enabled: true
