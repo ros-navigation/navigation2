@@ -36,7 +36,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
+
 #include "tf2/time.hpp"
 #include "nav2_util/line_iterator.hpp"
 
@@ -72,15 +72,7 @@ struct WallPolygons
     right_outer.reserve(capacity);
   }
 
-  /**
-   * @brief Check if wall polygons are empty or insufficient
-   * @return true if there are not enough points to form walls
-   */
-  bool isEmpty() const
-  {
-    return left_inner.size() < 2 || left_outer.size() < 2 ||
-           right_inner.size() < 2 || right_outer.size() < 2;
-  }
+
 };
 
 /**
@@ -95,8 +87,7 @@ struct WallPolygons
  */
 class BoundedTrackingErrorLayer : public nav2_costmap_2d::Layer
 {
-  // Friend declaration for test access
-  friend class BoundedTrackingErrorLayerTestable;
+
 
 public:
   /**
@@ -107,7 +98,7 @@ public:
   /**
    * @brief Destructor for BoundedTrackingErrorLayer.
    */
-  ~BoundedTrackingErrorLayer();
+  ~BoundedTrackingErrorLayer() = default;
 
   /**
    * @brief Initializes the layer, setting up subscriptions and parameters.
@@ -190,19 +181,13 @@ protected:
    * @brief Callback for path updates.
    * @param msg Incoming path message.
    */
-  void pathCallback(const nav_msgs::msg::Path::SharedPtr msg);
+  void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
 
   /**
    * @brief Callback for tracking feedback updates.
    * @param msg Incoming tracking feedback message.
    */
-  void trackingCallback(const nav2_msgs::msg::TrackingFeedback::SharedPtr msg);
-
-  /**
-   * @brief Callback for goal pose updates.
-   * @param msg Incoming goal pose message.
-   */
-  void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+  void trackingCallback(const nav2_msgs::msg::TrackingFeedback::ConstSharedPtr msg);
 
   /**
    * @brief Callback to validate parameter updates before they are applied.
@@ -277,10 +262,8 @@ private:
 
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
-  nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
   std::mutex data_mutex_;
-  std::shared_ptr<nav_msgs::msg::Path> last_path_ptr_;
-  geometry_msgs::msg::PoseStamped last_goal_;
+  nav_msgs::msg::Path::ConstSharedPtr last_path_ptr_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
 
