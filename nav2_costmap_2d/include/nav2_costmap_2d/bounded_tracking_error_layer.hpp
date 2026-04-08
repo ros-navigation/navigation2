@@ -29,7 +29,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_msgs/msg/tracking_feedback.hpp"
+
 #include "nav2_util/path_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -188,11 +188,7 @@ protected:
    */
   void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
 
-  /**
-   * @brief Callback for tracking feedback updates.
-   * @param msg Incoming tracking feedback message.
-   */
-  void trackingCallback(const nav2_msgs::msg::TrackingFeedback::ConstSharedPtr msg);
+
 
   /**
    * @brief Callback to validate parameter updates before they are applied.
@@ -266,7 +262,6 @@ private:
     const std::vector<std::array<double, 2>> & outer_points);
 
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
-  nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
   std::mutex data_mutex_;
   nav_msgs::msg::Path::ConstSharedPtr last_path_ptr_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
@@ -277,7 +272,6 @@ private:
   double look_ahead_;
 
   std::string path_topic_;
-  std::string tracking_feedback_topic_;
   unsigned char corridor_cost_;
   int wall_thickness_;
   tf2::Duration transform_tolerance_;

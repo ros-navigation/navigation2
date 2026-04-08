@@ -38,9 +38,6 @@ void BoundedTrackingErrorLayer::onInitialize()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  tracking_feedback_topic_ = node->declare_or_get_parameter(
-    name_ + "." + "tracking_feedback_topic", std::string("tracking_feedback"));
-
   path_topic_ = node->declare_or_get_parameter(
     name_ + "." + "path_topic", std::string("plan"));
 
@@ -78,17 +75,10 @@ void BoundedTrackingErrorLayer::onInitialize()
 
   // Join topics with parent namespace for proper namespacing
   std::string path_topic = joinWithParentNamespace(path_topic_);
-  std::string tracking_feedback_topic = joinWithParentNamespace(tracking_feedback_topic_);
 
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
     path_topic,
     std::bind(&BoundedTrackingErrorLayer::pathCallback, this, std::placeholders::_1),
-    nav2::qos::StandardTopicQoS()
-  );
-
-  tracking_feedback_sub_ = node->create_subscription<nav2_msgs::msg::TrackingFeedback>(
-    tracking_feedback_topic,
-    std::bind(&BoundedTrackingErrorLayer::trackingCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS()
   );
 }
@@ -172,25 +162,7 @@ void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSha
   last_path_ptr_ = msg;
 }
 
-void BoundedTrackingErrorLayer::trackingCallback(
-  const nav2_msgs::msg::TrackingFeedback::ConstSharedPtr msg)
-{
-  const auto now = clock_->now();
-  const auto msg_time = rclcpp::Time(msg->header.stamp);
-  const auto age = (now - msg_time).seconds();
 
-  // Ignore tracking feedback older than 2 seconds to avoid stale path index updates
-  if (age > 2.0) {
-    RCLCPP_WARN_THROTTLE(
-      logger_,
-      *clock_,
-      5000,
-      "Tracking feedback is %.2f seconds old", age);
-    return;
-  }
-
-  current_path_index_.store(msg->current_path_index);
-}
 
 void BoundedTrackingErrorLayer::updateBounds(
   double robot_x, double robot_y, double /*robot_yaw*/,
@@ -200,8 +172,7 @@ void BoundedTrackingErrorLayer::updateBounds(
     return;
   }
 
-  const double res = layered_costmap_->getCostmap()->getResolution();
-  const double margin = look_ahead_ + corridor_width_ * 0.5 + wall_thickness_ * res;
+  const double margin = look_ahead_ + corridor_width_ * 0.5 + wall_thickness_ * resolution_;
 
   *min_x = std::min(*min_x, robot_x - margin);
   *max_x = std::max(*max_x, robot_x + margin);
@@ -400,7 +371,6 @@ void BoundedTrackingErrorLayer::updateCosts(
   }
 
   nav_msgs::msg::Path::ConstSharedPtr cached_path_ptr;
-  const size_t cached_path_index = current_path_index_.load();
   {
     std::lock_guard<std::mutex> data_lock(data_mutex_);
     cached_path_ptr = last_path_ptr_;
@@ -410,7 +380,29 @@ void BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
-  getPathSegment(*cached_path_ptr, cached_path_index, segment_buffer_);
+  geometry_msgs::msg::PoseStamped robot_pose;
+  if (!nav2_util::getCurrentPose(
+      robot_pose, *tf_, costmap_frame_, "base_link",
+      tf2::durationToSec(transform_tolerance_)))
+  {
+    RCLCPP_WARN_THROTTLE(
+      logger_,
+      *clock_,
+      5000,
+      "Failed to get robot pose in %s, skipping corridor update",
+      costmap_frame_.c_str());
+    return;
+  }
+
+  const size_t cached_path_index = current_path_index_.load();
+  const auto search_result = nav2_util::distance_from_path(
+    *cached_path_ptr,
+    robot_pose.pose,
+    cached_path_index,
+    look_ahead_);
+  current_path_index_.store(search_result.closest_segment_index);
+
+  getPathSegment(*cached_path_ptr, search_result.closest_segment_index, segment_buffer_);
 
   const size_t min_poses = (step_size_ * 2) + 1;
   if (segment_buffer_.poses.size() < min_poses) {
