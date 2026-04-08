@@ -1,6 +1,6 @@
 # Nav2 Loopback Simulation
 
-The Nav2 loopback simulator is a stand-alone simulator to create a "loopback" for non-physical simulation to replace robot hardware, physics simulators (Gazebo, Bullet, Isaac Sim, etc). It computes the robot's odometry based on the command velocity's output request to create a perfect 'frictionless plane'-style simulation for unit testing, system testing, R&D on higher level systems, and testing behaviors without concerning yourself with localization accuracy or system dynamics.
+The Nav2 loopback simulator is a standalone simulator to create a "loopback" for non-physical simulation to replace robot hardware, physics simulators (Gazebo, Bullet, Isaac Sim, etc). It computes the robot's odometry based on the command velocity's output request to create a perfect 'frictionless plane'-style simulation for unit testing, system testing, R&D on higher level systems, and testing behaviors without concerning yourself with localization accuracy or system dynamics.
 
 This was created by Steve Macenski of [Open Navigation LLC](https://opennav.org) and donated to Nav2 by the support of our project sponsors. If you rely on Nav2, please consider supporting the project!
 
