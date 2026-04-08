@@ -76,7 +76,6 @@ protected:
   rclcpp::Duration timeout_;
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_waypoint_follower")};
   rclcpp::Clock::SharedPtr clock_;
-  nav2::LifecycleNode::WeakPtr node_;
   std::mutex mutex_;
   nav2::Subscription<std_msgs::msg::Empty>::SharedPtr subscription_;
 };

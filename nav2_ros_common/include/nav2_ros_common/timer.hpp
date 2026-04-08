@@ -37,8 +37,6 @@ namespace nav2
  * @param period The timer period
  * @param callback The callback to invoke
  * @param group Optional callback group
- * @param force_wall_time If true, always create a wall timer even when use_sim_time is true.
- *   Use this for operations that should run at real-world rates (e.g. disk I/O, bond checks).
  * @return The created timer
  */
 template<
@@ -50,10 +48,9 @@ rclcpp::TimerBase::SharedPtr create_timer(
   NodeT node,
   std::chrono::duration<DurationRepT, DurationT> period,
   CallbackT && callback,
-  rclcpp::CallbackGroup::SharedPtr group = nullptr,
-  bool force_wall_time = false)
+  rclcpp::CallbackGroup::SharedPtr group = nullptr)
 {
-  if (!force_wall_time && node->get_parameter("use_sim_time").as_bool()) {
+  if (node->get_parameter("use_sim_time").as_bool()) {
     return node->create_timer(period, std::forward<CallbackT>(callback), group);
   }
   return node->create_wall_timer(period, std::forward<CallbackT>(callback), group);
