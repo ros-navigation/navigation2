@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <chrono>
 
 #include "nav2_util/odometry_utils.hpp"
 #include "tf2_ros/buffer.hpp"
@@ -30,6 +31,7 @@
 
 namespace nav2_core
 {
+class NavigatorMuxer;
 
 /**
  * @struct FeedbackUtils
@@ -41,70 +43,6 @@ struct FeedbackUtils
   std::string global_frame;
   double transform_tolerance;
   std::shared_ptr<tf2_ros::Buffer> tf;
-};
-
-/**
- * @class NavigatorMuxer
- * @brief A class to control the state of the BT navigator by allowing only a single
- * plugin to be processed at a time.
- */
-class NavigatorMuxer
-{
-public:
-  /**
-   * @brief A Navigator Muxer constructor
-   */
-  NavigatorMuxer()
-  : current_navigator_(std::string("")) {}
-
-  /**
-   * @brief Get the navigator muxer state
-   * @return bool If a navigator is in progress
-   */
-  bool isNavigating()
-  {
-    std::scoped_lock l(mutex_);
-    return !current_navigator_.empty();
-  }
-
-  /**
-   * @brief Start navigating with a given navigator
-   * @param string Name of the navigator to start
-   */
-  void startNavigating(const std::string & navigator_name)
-  {
-    std::scoped_lock l(mutex_);
-    if (!current_navigator_.empty()) {
-      RCLCPP_ERROR(
-        rclcpp::get_logger("NavigatorMutex"),
-        "Major error! Navigation requested while another navigation"
-        " task is in progress! This likely occurred from an incorrect"
-        "implementation of a navigator plugin.");
-    }
-    current_navigator_ = navigator_name;
-  }
-
-  /**
-   * @brief Stop navigating with a given navigator
-   * @param string Name of the navigator ending task
-   */
-  void stopNavigating(const std::string & navigator_name)
-  {
-    std::scoped_lock l(mutex_);
-    if (current_navigator_ != navigator_name) {
-      RCLCPP_ERROR(
-        rclcpp::get_logger("NavigatorMutex"),
-        "Major error! Navigation stopped while another navigation"
-        " task is in progress! This likely occurred from an incorrect"
-        "implementation of a navigator plugin.");
-    } else {
-      current_navigator_ = std::string("");
-    }
-  }
-
-protected:
-  std::string current_navigator_;
-  std::mutex mutex_;
 };
 
 /**
@@ -148,6 +86,78 @@ public:
    * @return bool If successful
    */
   virtual bool on_cleanup() = 0;
+
+  virtual void preempt() = 0;
+};
+
+/**
+ * @class NavigatorMuxer
+ * @brief A class to control the state of the BT navigator by allowing only a single
+ * plugin to be processed at a time.
+ */
+class NavigatorMuxer
+{
+public:
+  /**
+   * @brief A Navigator Muxer constructor
+   */
+  NavigatorMuxer()
+  : current_navigator_(nullptr) {}
+
+  /**
+   * @brief Get the navigator muxer state
+   * @return bool If a navigator is in progress
+   */
+  bool isNavigating()
+  {
+    std::scoped_lock l(mutex_);
+    return current_navigator_ != nullptr;
+  }
+
+  /**
+   * @brief Start navigating with a given navigator
+   * @param string Name of the navigator to start
+   */
+  void startNavigating(nav2_core::NavigatorBase * navigator)
+  {
+    std::scoped_lock l(mutex_);
+    if (current_navigator_ != nullptr) {
+      RCLCPP_ERROR(
+        rclcpp::get_logger("NavigatorMutex"),
+        "Major error! Navigation requested while another navigation"
+        " task is in progress! This likely occurred from an incorrect"
+        "implementation of a navigator plugin.");
+    }
+    current_navigator_ = navigator;
+  }
+
+  /**
+   * @brief Stop navigating with a given navigator
+   * @param string Name of the navigator ending task
+   */
+  void stopNavigating(nav2_core::NavigatorBase * navigator)
+  {
+    std::scoped_lock l(mutex_);
+    if (current_navigator_ != navigator) {
+      RCLCPP_ERROR(
+        rclcpp::get_logger("NavigatorMutex"),
+        "Major error! Navigation stopped while another navigation"
+        " task is in progress! This likely occurred from an incorrect"
+        "implementation of a navigator plugin.");
+    } else {
+      current_navigator_ = nullptr;
+    }
+  }
+
+  void preemptCurrentNavigator()
+  {
+    std::scoped_lock l(mutex_);
+    current_navigator_->preempt();
+  }
+
+protected:
+  nav2_core::NavigatorBase * current_navigator_{nullptr};
+  std::mutex mutex_;
 };
 
 /**
@@ -207,6 +217,12 @@ public:
       std::vector<std::string>{nav2::get_package_share_directory(
           "nav2_bt_navigator") + "/behavior_trees"}
     );
+
+    allow_navigator_preemption_ = node->declare_or_get_parameter(
+      "allow_navigator_preemption", false);
+
+    navigator_preemption_timeout_ = std::chrono::milliseconds(
+      node->declare_or_get_parameter("navigator_preemption_timeout", 500));
 
     // Create the Behavior Tree Action Server for this navigator
     bt_action_server_ =
@@ -290,6 +306,11 @@ public:
    */
   virtual std::string getName() = 0;
 
+  void preempt() final
+  {
+    bt_action_server_->preemptCurrentNavigator();
+  }
+
 protected:
   /**
    * @brief An intermediate goal reception function to mux navigators.
@@ -297,17 +318,38 @@ protected:
   bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
   {
     if (plugin_muxer_->isNavigating()) {
-      RCLCPP_ERROR(
+      if (!allow_navigator_preemption_) {
+        RCLCPP_ERROR(
+          logger_,
+          "Requested navigation from %s while another navigator is processing,"
+          " rejecting request.", getName().c_str());
+        return false;
+      }
+
+      RCLCPP_INFO(
         logger_,
         "Requested navigation from %s while another navigator is processing,"
-        " rejecting request.", getName().c_str());
-      return false;
+        " stopping current navigator.", getName().c_str());
+      plugin_muxer_->preemptCurrentNavigator();
+
+      const auto start = std::chrono::steady_clock::now();
+      rclcpp::Rate r(100);
+      while (plugin_muxer_->isNavigating()) {
+        if (std::chrono::steady_clock::now() - start > navigator_preemption_timeout_) {
+          RCLCPP_ERROR(
+            logger_,
+            "Timed out waiting for current navigator to stop before accepting"
+            " goal from %s. Rejecting request.", getName().c_str());
+          return false;
+        }
+        r.sleep();
+      }
     }
 
     bool goal_accepted = goalReceived(goal);
 
     if (goal_accepted) {
-      plugin_muxer_->startNavigating(getName());
+      plugin_muxer_->startNavigating(this);
     }
 
     return goal_accepted;
@@ -320,7 +362,7 @@ protected:
     typename ActionT::Result::SharedPtr result,
     nav2_behavior_tree::BtStatus & final_bt_status)
   {
-    plugin_muxer_->stopNavigating(getName());
+    plugin_muxer_->stopNavigating(this);
     goalCompleted(result, final_bt_status);
   }
 
@@ -381,6 +423,12 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
   FeedbackUtils feedback_utils_;
   NavigatorMuxer * plugin_muxer_;
+
+  // True if you want to allow navigator preemption
+  bool allow_navigator_preemption_;
+
+  // Timeout value while waiting for preemption of a navigator by another one
+  std::chrono::milliseconds navigator_preemption_timeout_;
 };
 
 }  // namespace nav2_core
