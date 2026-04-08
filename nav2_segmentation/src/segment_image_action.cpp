@@ -18,8 +18,16 @@ SegmentImageAction::SegmentImageAction(
 void SegmentImageAction::on_tick()
 {
   getInput("image_topic", goal_.image_topic);
-  getInput("prompt", goal_.prompt);
-  getInput("use_latest_image", goal_.use_latest_image);
+  getInput("text_prompt", goal_.text_prompt);
+  getInput("point_x", goal_.point_x);
+  getInput("point_y", goal_.point_y);
+  getInput("point_label", goal_.point_label);
+  getInput("box_min_x", goal_.box_min_x);
+  getInput("box_min_y", goal_.box_min_y);
+  getInput("box_max_x", goal_.box_max_x);
+  getInput("box_max_y", goal_.box_max_y);
+  getInput("use_point_prompt", goal_.use_point_prompt);
+  getInput("use_box_prompt", goal_.use_box_prompt);
 }
 
 BT::NodeStatus SegmentImageAction::on_success()

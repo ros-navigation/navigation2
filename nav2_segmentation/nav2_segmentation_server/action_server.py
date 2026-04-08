@@ -33,7 +33,15 @@ class Nav2SegmentationServer(Node):
 
     def goal_callback(self, goal_request: SegmentImage.Goal) -> GoalResponse:
         self.get_logger().info(
-            f'Received goal image_topic={goal_request.image_topic} prompt={goal_request.prompt}'
+            'Received goal '
+            f'image_topic={goal_request.image_topic} '
+            f'text_prompt={goal_request.text_prompt} '
+            f'use_point_prompt={goal_request.use_point_prompt} '
+            f'point=({goal_request.point_x}, {goal_request.point_y}) '
+            f'point_label={goal_request.point_label} '
+            f'use_box_prompt={goal_request.use_box_prompt} '
+            f'box=({goal_request.box_min_x}, {goal_request.box_min_y}, '
+            f'{goal_request.box_max_x}, {goal_request.box_max_y})'
         )
         return GoalResponse.ACCEPT
 
@@ -62,7 +70,7 @@ class Nav2SegmentationServer(Node):
         result = SegmentImage.Result()
         result.success = True
         result.mask_topic = self._default_mask_topic
-        result.message = 'Dummy segmentation response. SAM3 ONNX integration not implemented yet.'
+        result.message = 'Dummy segmentation response for discussion-only PR.'
         goal_handle.succeed()
         return result
 

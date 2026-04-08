@@ -25,8 +25,16 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<std::string>("image_topic", "/camera/image", "Input image topic"),
-        BT::InputPort<std::string>("prompt", "", "Segmentation prompt"),
-        BT::InputPort<bool>("use_latest_image", true, "Use latest image"),
+        BT::InputPort<std::string>("text_prompt", "", "Text prompt"),
+        BT::InputPort<float>("point_x", 0.0F, "Point prompt x coordinate"),
+        BT::InputPort<float>("point_y", 0.0F, "Point prompt y coordinate"),
+        BT::InputPort<int>("point_label", 1, "Point label (1 foreground, 0 background)"),
+        BT::InputPort<float>("box_min_x", 0.0F, "Box minimum x"),
+        BT::InputPort<float>("box_min_y", 0.0F, "Box minimum y"),
+        BT::InputPort<float>("box_max_x", 0.0F, "Box maximum x"),
+        BT::InputPort<float>("box_max_y", 0.0F, "Box maximum y"),
+        BT::InputPort<bool>("use_point_prompt", false, "Use point prompt"),
+        BT::InputPort<bool>("use_box_prompt", false, "Use box prompt"),
         BT::OutputPort<bool>("success", "Segmentation action success"),
         BT::OutputPort<std::string>("mask_topic", "Output mask topic"),
         BT::OutputPort<std::string>("message", "Segmentation status message")

@@ -1,6 +1,6 @@
 # nav2_segmentation
 
-`nav2_segmentation` is a minimal dummy package for connecting a Nav2 behavior tree node to a Python ROS 2 action server. It is intended as the starting point for future SAM3 integration in ONNX format.
+`nav2_segmentation` is a bare-minimum discussion skeleton for connecting a Nav2 behavior tree node to a Python ROS 2 action server.
 
 ## What It Contains
 
@@ -19,6 +19,10 @@ The behavior tree communicates with the package through the `SegmentImage` ROS 2
 ros2 run nav2_segmentation nav2_segmentation
 ```
 
+Optional parameter:
+
+- `default_mask_topic`: result mask topic used by dummy response.
+
 ## bt_navigator Plugin Configuration
 
 Add the shared library name to `plugin_lib_names`:
@@ -30,4 +34,6 @@ plugin_lib_names:
 
 ## Notes
 
-This is dummy code only. There is no real segmentation or ONNX inference yet. The intended future backend is SAM3 in ONNX format, likely through ONNX Runtime.
+This is dummy code only. There is no real SAM3 segmentation yet.
+
+Yes, SAM3 deployment through ONNX generally means exporting/converting the model to ONNX first, then running it via ONNX Runtime (or another ONNX backend).

@@ -3,8 +3,16 @@
     <Sequence name="segment_image_sequence">
       <SegmentImage
         image_topic="/camera/image"
-        prompt="target"
-        use_latest_image="true"
+        text_prompt="target"
+        use_point_prompt="true"
+        point_x="320.0"
+        point_y="240.0"
+        point_label="1"
+        use_box_prompt="true"
+        box_min_x="200.0"
+        box_min_y="120.0"
+        box_max_x="440.0"
+        box_max_y="360.0"
         mask_topic="{mask_topic}"
         success="{segment_success}"
         message="{segment_message}"/>
