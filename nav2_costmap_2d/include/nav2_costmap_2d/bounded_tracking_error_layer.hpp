@@ -203,6 +203,22 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
+  /**
+   * @brief Draws corridor walls using span buffer approach for complete fill.
+   *
+   * Iterates through paired inner and outer boundary points, treating each segment
+   * pair as a convex quadrilateral and filling it completely using the span buffer
+   * technique. This eliminates gaps on diagonals and ensures constant thickness.
+   *
+   * @param master_grid Reference to master grid for coordinate conversion.
+   * @param inner_points Vector of inner boundary points.
+   * @param outer_points Vector of outer boundary points.
+   */
+  void drawCorridorWalls(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    const std::vector<std::array<double, 2>> & inner_points,
+    const std::vector<std::array<double, 2>> & outer_points);
+
   std::atomic<uint32_t> current_path_index_{0};
 
 private:
@@ -229,51 +245,35 @@ private:
    * @param outer1 Outer boundary point i+1.
    */
   void fillCorridorQuad(
-    const nav2_costmap_2d::Costmap2D & master_grid,
+    nav2_costmap_2d::Costmap2D & master_grid,
     CellPoint inner0,
     CellPoint inner1,
     CellPoint outer0,
     CellPoint outer1);
 
-  /**
-   * @brief Draws corridor walls using span buffer approach for complete fill.
-   *
-   * Iterates through paired inner and outer boundary points, treating each segment
-   * pair as a convex quadrilateral and filling it completely using the span buffer
-   * technique. This eliminates gaps on diagonals and ensures constant thickness.
-   *
-   * @param master_grid Reference to master grid for coordinate conversion.
-   * @param inner_points Vector of inner boundary points.
-   * @param outer_points Vector of outer boundary points.
-   */
-  void drawCorridorWalls(
-    const nav2_costmap_2d::Costmap2D & master_grid,
-    const std::vector<std::array<double, 2>> & inner_points,
-    const std::vector<std::array<double, 2>> & outer_points);
-
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
-  std::mutex data_mutex_;
-  nav_msgs::msg::Path::ConstSharedPtr last_path_ptr_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
 
-  size_t step_size_;
-  double corridor_width_;
-  double look_ahead_;
+  std::mutex data_mutex_;
+  nav_msgs::msg::Path::ConstSharedPtr last_path_ptr_;
 
-  std::string path_topic_;
-  unsigned char corridor_cost_;
-  int wall_thickness_;
-  tf2::Duration transform_tolerance_;
-  double resolution_{0.0};
-  std::string costmap_frame_;
-
-  // Reusable buffers to avoid repeated allocations
   nav_msgs::msg::Path segment_buffer_;
   nav_msgs::msg::Path transformed_segment_buffer_;
   WallPolygons walls_buffer_;
   std::vector<int> span_x_min_buffer_;
   std::vector<int> span_x_max_buffer_;
+
+protected:
+  std::string path_topic_;
+  size_t step_size_;
+  double look_ahead_;
+  double corridor_width_;
+  int wall_thickness_;
+  unsigned char corridor_cost_;
+  tf2::Duration transform_tolerance_;
+  double resolution_{0.0};
+  std::string costmap_frame_;
 
 };
 
