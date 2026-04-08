@@ -62,9 +62,8 @@ Controller::Controller(
   dock_collision_threshold_ = node->declare_or_get_parameter(
     "controller.dock_collision_threshold", 0.3);
 
-  // Initialize Smooth Control Law
-  // Keeping the maximum deceleration as large value, until this parameter is exposed
-  // for docking (currently only works for Graceful Controller).
+  // Initialize Smooth Control Law Keeping the maximum
+  // deceleration as large value, until this parameter is exposed
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
     k_phi_, k_delta_, beta_, lambda_,
     slowdown_radius_, std::numeric_limits<double>::max(),
