@@ -140,7 +140,6 @@ bool ProgressGoalChecker::isGoalReached(
 
     // Tier 2: Within the coarse tolerance zone — track convergence
     } else if (dist_sq <= coarse_xy_goal_tolerance_sq_) {
-
       // Just entered the zone: initialize tracking
       if (!in_tolerance_zone_) {
         in_tolerance_zone_ = true;
