@@ -103,7 +103,7 @@ public:
   /**
    * @brief Initializes the layer, setting up subscriptions and parameters.
    */
-  virtual void onInitialize();
+  void onInitialize() override;
 
   /**
    * @brief Determines edges of region layer can change.
@@ -115,9 +115,9 @@ public:
    * @param max_x Pointer to maximum X bound to update.
    * @param max_y Pointer to maximum Y bound to update.
    */
-  virtual void updateBounds(
+  void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
-    double * min_y, double * max_x, double * max_y);
+    double * min_y, double * max_x, double * max_y) override;
 
   /**
    * @brief Creates obstacles to bound the robot.
@@ -127,30 +127,35 @@ public:
    * @param max_i Maximum X index of the region to update.
    * @param max_j Maximum Y index of the region to update.
    */
-  virtual void updateCosts(
+  void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
-    int min_i, int min_j, int max_i, int max_j);
+    int min_i, int min_j, int max_i, int max_j) override;
 
   /**
    * @brief Resets the layer state.
    */
-  virtual void reset();
+  void reset() override;
 
   /**
    * @brief Indicates whether the layer can be cleared.
    * @return Always returns false for this layer.
    */
-  virtual bool isClearable() {return false;}
+  bool isClearable() override {return false;}
 
   /**
    * @brief Activates the layer, enabling subscriptions and updates.
    */
-  virtual void activate();
+  void activate() override;
 
   /**
    * @brief Deactivates the layer, disabling subscriptions and updates.
    */
-  virtual void deactivate();
+  void deactivate() override;
+
+  /**
+   * @brief Match the size of the master costmap, caching resolution and frame.
+   */
+  void matchSize() override;
 
   /**
    * @brief Computes separate wall polygons for left and right corridor boundaries.
@@ -268,7 +273,6 @@ private:
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
 
   size_t step_size_;
-  int step_;
   double corridor_width_;
   double look_ahead_;
 
@@ -277,7 +281,8 @@ private:
   unsigned char corridor_cost_;
   int wall_thickness_;
   tf2::Duration transform_tolerance_;
-  double resolution_;
+  double resolution_{0.0};
+  std::string costmap_frame_;
 
   // Reusable buffers to avoid repeated allocations
   nav_msgs::msg::Path segment_buffer_;

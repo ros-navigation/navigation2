@@ -46,8 +46,11 @@ void BoundedTrackingErrorLayer::onInitialize()
 
   look_ahead_ = node->declare_or_get_parameter(name_ + "." + "look_ahead", 2.5);
 
-  step_ = node->declare_or_get_parameter(name_ + "." + "step", 10);
-  step_size_ = static_cast<size_t>(step_);
+  const int step_param = node->declare_or_get_parameter(name_ + "." + "step", 10);
+  if (step_param <= 0) {
+    throw std::runtime_error{"step must be greater than zero"};
+  }
+  step_size_ = static_cast<size_t>(step_param);
 
   corridor_width_ = node->declare_or_get_parameter(name_ + "." + "corridor_width", 2.0);
 
@@ -71,9 +74,7 @@ void BoundedTrackingErrorLayer::onInitialize()
   if (corridor_width_ <= 0.0) {
     throw std::runtime_error{"corridor_width must be positive"};
   }
-  if (step_ <= 0) {
-    throw std::runtime_error{"step must be greater than zero"};
-  }
+
 
   // Join topics with parent namespace for proper namespacing
   std::string path_topic = joinWithParentNamespace(path_topic_);
@@ -90,6 +91,13 @@ void BoundedTrackingErrorLayer::onInitialize()
     std::bind(&BoundedTrackingErrorLayer::trackingCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS()
   );
+}
+
+void BoundedTrackingErrorLayer::matchSize()
+{
+  nav2_costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
+  resolution_ = costmap->getResolution();
+  costmap_frame_ = layered_costmap_->getGlobalFrameID();
 }
 
 void BoundedTrackingErrorLayer::activate()
@@ -387,15 +395,15 @@ void BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
-  // Update cached resolution
-  resolution_ = layered_costmap_->getCostmap()->getResolution();
+  if (resolution_ <= 0.0) {
+    return;
+  }
 
   nav_msgs::msg::Path::ConstSharedPtr cached_path_ptr;
-  size_t cached_path_index;
+  const size_t cached_path_index = current_path_index_.load();
   {
     std::lock_guard<std::mutex> data_lock(data_mutex_);
     cached_path_ptr = last_path_ptr_;
-    cached_path_index = current_path_index_.load();
   }
 
   if (!cached_path_ptr) {
@@ -415,13 +423,11 @@ void BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
-  const std::string costmap_frame = layered_costmap_->getGlobalFrameID();
-
-  if (segment_buffer_.header.frame_id == costmap_frame) {
+  if (segment_buffer_.header.frame_id == costmap_frame_) {
     transformed_segment_buffer_ = segment_buffer_;
   } else {
     if (!nav2_util::transformPathInTargetFrame(
-        segment_buffer_, transformed_segment_buffer_, *tf_, costmap_frame,
+        segment_buffer_, transformed_segment_buffer_, *tf_, costmap_frame_,
         tf2::durationToSec(transform_tolerance_)))
     {
       RCLCPP_WARN_THROTTLE(
@@ -429,7 +435,7 @@ void BoundedTrackingErrorLayer::updateCosts(
         *clock_,
         5000,
         "Failed to transform path to %s, skipping wall generation",
-        costmap_frame.c_str());
+        costmap_frame_.c_str());
       return;
     }
   }
@@ -613,12 +619,12 @@ void BoundedTrackingErrorLayer::updateParametersCallback(
         current_ = false;
       }
     } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER) {
-      if (param_name == name_ + "." + "step" &&
-        step_ != parameter.as_int())
-      {
-        step_ = parameter.as_int();
-        step_size_ = static_cast<size_t>(step_);
-        current_ = false;
+      if (param_name == name_ + "." + "step") {
+        const int new_step = parameter.as_int();
+        if (static_cast<size_t>(new_step) != step_size_) {
+          step_size_ = static_cast<size_t>(new_step);
+          current_ = false;
+        }
       } else if (param_name == name_ + "." + "corridor_cost" &&
         corridor_cost_ != static_cast<unsigned char>(parameter.as_int()))
       {
