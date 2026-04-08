@@ -17,25 +17,19 @@
 
 #include <atomic>
 #include <cstddef>
-#include <stdexcept>
 #include <vector>
-#include <memory>
 #include <mutex>
 #include <string>
-#include <algorithm>
 #include <array>
 
 #include "nav2_costmap_2d/layered_costmap.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 #include "nav2_util/path_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
 
 #include "tf2/time.hpp"
 #include "nav2_util/line_iterator.hpp"
@@ -45,20 +39,26 @@ namespace nav2_costmap_2d
 {
 
 /**
- * @brief Structure holding separate wall polygon components for left, right walls
- * with inner and outer boundaries for span buffer approach.
- * Optimized to use std::array for fixed-size 2D points instead of vector<vector>.
+ * @brief Separate wall polygon components for left and right corridor boundaries.
+ *
+ * Each wall is represented by an inner and outer polyline of 2D world-coordinate
+ * points. Consecutive point pairs form convex quads that are rasterized into the
+ * costmap by the span-buffer fill algorithm.
  */
 struct WallPolygons
 {
+
   std::vector<std::array<double, 2>> left_inner;
+
   std::vector<std::array<double, 2>> left_outer;
+
   std::vector<std::array<double, 2>> right_inner;
+
   std::vector<std::array<double, 2>> right_outer;
 
   /**
-   * @brief Clear all vectors and reserve capacity for reuse
-   * @param capacity Expected number of points
+   * @brief Clear all boundary vectors and reserve capacity for reuse.
+   * @param capacity Expected number of points per boundary.
    */
   void clearAndReserve(size_t capacity)
   {
@@ -71,32 +71,29 @@ struct WallPolygons
     right_inner.reserve(capacity);
     right_outer.reserve(capacity);
   }
-
-
 };
 
 /**
  * @class nav2_costmap_2d::BoundedTrackingErrorLayer
- * @brief A costmap layer that creates a dynamic corridor (tracking bounds) around the planned path
- *        using tracking feedback, to restrict navigation to a safe region.
+ * @brief A costmap layer that imposes a penalty corridor around the planned path.
  *
- * This layer gets current path, tracking_feedback and dynamically updates the costmap
- * to create a corridor of configurable width around the path. The corridor adapts as the robot moves,
- * using look-ahead and step parameters to determine the segment of the path to use. The layer can be
- * enabled or disabled at runtime.
+ * On every costmap update cycle this layer finds the closest point on the current
+ * path, extracts a look-ahead segment, and rasterizes high-cost walls along both
+ * sides of that segment. The walls penalise the local trajectory controller when
+ * the robot deviates beyond the configured corridor width without blocking the
+ * global planner. All parameters are dynamically reconfigurable at runtime.
  */
 class BoundedTrackingErrorLayer : public nav2_costmap_2d::Layer
 {
 
-
 public:
   /**
-   * @brief Default constructor for BoundedTrackingErrorLayer.
+   * @brief Default constructor
    */
   BoundedTrackingErrorLayer() = default;
 
   /**
-   * @brief Destructor for BoundedTrackingErrorLayer.
+   * @brief Default destructor
    */
   ~BoundedTrackingErrorLayer() = default;
 
@@ -154,8 +151,25 @@ public:
 
   /**
    * @brief Match the size of the master costmap, caching resolution and frame.
+   *
+   * This layer does not own an internal costmap so there is nothing to resize.
+   * Resolution and global frame ID are cached here so updateCosts and
+   * getWallPolygons avoid repeated pointer dereferences on every update cycle.
    */
   void matchSize() override;
+
+protected:
+  /**
+   * @brief Resets internal state by clearing the cached path and path index.
+   */
+  void resetState();
+
+  /**
+   * @brief Stores the incoming path. All staleness and index checks are
+   *        deferred to updateCosts() to keep the callback minimal.
+   * @param msg Incoming path message.
+   */
+  void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
 
   /**
    * @brief Computes separate wall polygons for left and right corridor boundaries.
@@ -165,8 +179,8 @@ public:
   void getWallPolygons(const nav_msgs::msg::Path & segment, WallPolygons & walls);
 
   /**
-   * @brief Creates segment from current path. Length is decided by look_ahead parameter.
-   * @param path The full path to extract segment from.
+   * @brief Extracts a path segment of length look_ahead_ starting at path_index.
+   * @param path The full path to extract the segment from.
    * @param path_index Current position index on the path.
    * @param segment Output path segment (reused buffer).
    */
@@ -174,21 +188,6 @@ public:
     const nav_msgs::msg::Path & path,
     size_t path_index,
     nav_msgs::msg::Path & segment);
-
-protected:
-  /**
-   * @brief Resets internal state by clearing path, tracking feedback, and goal.
-   * @note Caller must hold data_mutex_ before calling this method.
-   */
-  void resetState();
-
-  /**
-   * @brief Callback for path updates.
-   * @param msg Incoming path message.
-   */
-  void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
-
-
 
   /**
    * @brief Callback to validate parameter updates before they are applied.
@@ -208,36 +207,33 @@ protected:
 
 private:
   /**
+   * @brief A 2D cell coordinate in the costmap grid.
+   */
+  struct CellPoint
+  {
+    unsigned int x;
+    unsigned int y;
+  };
+
+  /**
    * @brief Fills a corridor quad (convex quadrilateral) using span buffer approach.
    *
    * This function rasterizes a quad defined by four vertices (inner[i], inner[i+1],
    * outer[i+1], outer[i]) by tracing all four edges and building a span buffer that
    * tracks [x_min, x_max] for each y-row. Then fills all pixels between the boundaries.
    *
-   * @param costmap Pointer to the costmap character array to modify.
-   * @param size_x Width of the costmap in cells.
-   * @param size_y Height of the costmap in cells.
-   * @param inner_x0 Inner boundary point i, X coordinate.
-   * @param inner_y0 Inner boundary point i, Y coordinate.
-   * @param inner_x1 Inner boundary point i+1, X coordinate.
-   * @param inner_y1 Inner boundary point i+1, Y coordinate.
-   * @param outer_x0 Outer boundary point i, X coordinate.
-   * @param outer_y0 Outer boundary point i, Y coordinate.
-   * @param outer_x1 Outer boundary point i+1, X coordinate.
-   * @param outer_y1 Outer boundary point i+1, Y coordinate.
+   * @param master_grid Reference to master grid for size and costmap array access.
+   * @param inner0 Inner boundary point i.
+   * @param inner1 Inner boundary point i+1.
+   * @param outer0 Outer boundary point i.
+   * @param outer1 Outer boundary point i+1.
    */
   void fillCorridorQuad(
-    unsigned char * costmap,
-    unsigned int size_x,
-    unsigned int size_y,
-    unsigned int inner_x0,
-    unsigned int inner_y0,
-    unsigned int inner_x1,
-    unsigned int inner_y1,
-    unsigned int outer_x0,
-    unsigned int outer_y0,
-    unsigned int outer_x1,
-    unsigned int outer_y1);
+    const nav2_costmap_2d::Costmap2D & master_grid,
+    CellPoint inner0,
+    CellPoint inner1,
+    CellPoint outer0,
+    CellPoint outer1);
 
   /**
    * @brief Draws corridor walls using span buffer approach for complete fill.
@@ -246,17 +242,11 @@ private:
    * pair as a convex quadrilateral and filling it completely using the span buffer
    * technique. This eliminates gaps on diagonals and ensures constant thickness.
    *
-   * @param costmap Pointer to the costmap character array to modify.
-   * @param size_x Width of the costmap in cells.
-   * @param size_y Height of the costmap in cells.
    * @param master_grid Reference to master grid for coordinate conversion.
    * @param inner_points Vector of inner boundary points.
    * @param outer_points Vector of outer boundary points.
    */
   void drawCorridorWalls(
-    unsigned char * costmap,
-    unsigned int size_x,
-    unsigned int size_y,
     const nav2_costmap_2d::Costmap2D & master_grid,
     const std::vector<std::array<double, 2>> & inner_points,
     const std::vector<std::array<double, 2>> & outer_points);
