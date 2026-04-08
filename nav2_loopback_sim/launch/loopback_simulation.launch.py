@@ -36,14 +36,6 @@ def generate_launch_description() -> LaunchDescription:
         default_value='base_scan',
     )
 
-    clock_publisher_cmd = Node(
-        package='nav2_loopback_sim',
-        executable='clock_publisher',
-        name='sim_clock_publisher',
-        output='screen',
-        parameters=[{'use_sim_time': False}],
-    )
-
     loopback_sim_cmd = Node(
         package='nav2_loopback_sim',
         executable='loopback_simulator',
@@ -55,6 +47,5 @@ def generate_launch_description() -> LaunchDescription:
     ld = LaunchDescription()
     ld.add_action(declare_scan_frame_id_cmd)
     ld.add_action(declare_params_file_cmd)
-    ld.add_action(clock_publisher_cmd)
     ld.add_action(loopback_sim_cmd)
     return ld

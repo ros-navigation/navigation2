@@ -58,7 +58,6 @@ add_executable(${executable_name}
 target_link_libraries(${executable_name} PRIVATE ${library_name} rclcpp::rclcpp)
 
 rclcpp_components_register_nodes(${library_name} "nav2_loopback_sim::LoopbackSimulator")
-rclcpp_components_register_nodes(${library_name} "nav2_loopback_sim::ClockPublisher")
 
 install(
   TARGETS ${library_name}
@@ -67,14 +66,7 @@ install(
   RUNTIME DESTINATION bin
 )
 
-# Clock publisher executable
-set(clock_publisher_executable clock_publisher)
-add_executable(${clock_publisher_executable}
-  src/clock_publisher_main.cpp
-)
-target_link_libraries(${clock_publisher_executable} PRIVATE ${library_name} rclcpp::rclcpp)
-
-install(TARGETS ${executable_name} ${clock_publisher_executable}
+install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

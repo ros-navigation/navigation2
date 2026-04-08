@@ -16,10 +16,8 @@
 #define NAV2_LOOPBACK_SIM__CLOCK_PUBLISHER_HPP_
 
 #include <chrono>
-#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
 
 namespace nav2_loopback_sim
@@ -27,23 +25,50 @@ namespace nav2_loopback_sim
 
 /**
  * @brief Publishes simulated clock to /clock using wall time.
- * Must NOT use use_sim_time, since it is the clock source.
- * Supports speed_factor to run sim time faster or slower than real time.
+ * Uses wall timers so that it works correctly even when owned by a
+ * node with use_sim_time=true.  Supports speed_factor to run sim
+ * time faster or slower than real time.
+ *
+ * Takes individual node interfaces rather than a concrete node type
+ * so that it is decoupled from rclcpp::Node vs LifecycleNode, matching
+ * the pattern used by rclcpp free functions (create_wall_timer, etc.).
  */
-class ClockPublisher : public rclcpp::Node
+class ClockPublisher
 {
 public:
-  explicit ClockPublisher(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  /**
+   * @brief Construct a ClockPublisher that uses the given node's interfaces.
+   * @param node_base        Node base interface (for timer context)
+   * @param node_timers      Node timers interface (to create wall timer)
+   * @param node_topics      Node topics interface (to create publisher)
+   * @param node_logging     Node logging interface (for RCLCPP_INFO / WARN)
+   * @param speed_factor     Sim-time speed relative to wall time
+   */
+  ClockPublisher(
+    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
+    rclcpp::node_interfaces::NodeTimersInterface::SharedPtr node_timers,
+    rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
+    rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
+    double speed_factor = 1.0);
+
+  /// Start publishing /clock
+  void start();
+  /// Stop publishing /clock
+  void stop();
+
+  void setSpeedFactor(double speed_factor);
+  double getSpeedFactor() const {return speed_factor_;}
 
 private:
   void timerCallback();
   void resetTimer();
-  rcl_interfaces::msg::SetParametersResult onParameterChange(
-    const std::vector<rclcpp::Parameter> & parameters);
+
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_;
+  rclcpp::node_interfaces::NodeTimersInterface::SharedPtr node_timers_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_;
 
   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_handler_;
 
   static constexpr double kResolution = 0.01;      // 10ms sim-time step
   static constexpr double kMinWallPeriod = 0.001;   // 1ms / 1000 Hz max

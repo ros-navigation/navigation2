@@ -22,9 +22,12 @@
 #include <random>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/twist_subscriber.hpp"
+#include "nav2_loopback_sim/clock_publisher.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
@@ -76,6 +79,8 @@ private:
   void timerCallback();
   void odomTimerCallback();
   void publishLaserScan();
+  rcl_interfaces::msg::SetParametersResult onParameterChange(
+    const std::vector<rclcpp::Parameter> & parameters);
 
   // Helpers
   void getBaseToLaserTf();
@@ -107,6 +112,8 @@ private:
   bool use_inf_;
   double scan_noise_std_;
   bool publish_scan_;
+  bool publish_clock_;
+  double speed_factor_;
 
   // State
   std::optional<geometry_msgs::msg::Twist> curr_cmd_vel_;
@@ -141,6 +148,9 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::TimerBase::SharedPtr odom_timer_;
   rclcpp::TimerBase::SharedPtr scan_timer_;
+
+  std::unique_ptr<ClockPublisher> clock_publisher_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_handler_;
 };
 
 }  // namespace nav2_loopback_sim

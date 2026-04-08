@@ -58,6 +58,8 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   use_inf_ = declare_or_get_parameter("scan_use_inf", true);
   scan_noise_std_ = declare_or_get_parameter("scan_noise_std", 0.01);
   publish_scan_ = declare_or_get_parameter("publish_scan", true);
+  publish_clock_ = declare_or_get_parameter("publish_clock", true);
+  speed_factor_ = declare_or_get_parameter("speed_factor", 1.0);
 
   // Setup transforms
   t_map_to_odom_.header.frame_id = map_frame_id_;
@@ -93,6 +95,18 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   }
 
+  if (publish_clock_) {
+    clock_publisher_ = std::make_unique<ClockPublisher>(
+      get_node_base_interface(),
+      get_node_timers_interface(),
+      get_node_topics_interface(),
+      get_node_logging_interface(),
+      speed_factor_);
+  }
+
+  param_handler_ = add_on_set_parameters_callback(
+    std::bind(&LoopbackSimulator::onParameterChange, this, std::placeholders::_1));
+
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -109,6 +123,10 @@ LoopbackSimulator::on_activate(const rclcpp_lifecycle::State & /*state*/)
   setup_timer_ = rclcpp::create_timer(
     this, get_clock(), 100ms,
     std::bind(&LoopbackSimulator::setupTimerCallback, this));
+
+  if (clock_publisher_) {
+    clock_publisher_->start();
+  }
 
   createBond();
 
@@ -138,6 +156,10 @@ LoopbackSimulator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     scan_timer_.reset();
   }
 
+  if (clock_publisher_) {
+    clock_publisher_->stop();
+  }
+
   odom_pub_->on_deactivate();
   if (scan_pub_) {
     scan_pub_->on_deactivate();
@@ -164,6 +186,8 @@ LoopbackSimulator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_.reset();
   tf_buffer_.reset();
   tf_broadcaster_.reset();
+  clock_publisher_.reset();
+  param_handler_.reset();
 
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -475,6 +499,28 @@ void LoopbackSimulator::getLaserScan(
       }
     }
   }
+}
+
+rcl_interfaces::msg::SetParametersResult LoopbackSimulator::onParameterChange(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & param : parameters) {
+    if (param.get_name() == "speed_factor") {
+      double factor = param.as_double();
+      if (factor <= 0.0) {
+        result.successful = false;
+        result.reason = "speed_factor must be positive";
+        return result;
+      }
+      speed_factor_ = factor;
+      if (clock_publisher_) {
+        clock_publisher_->setSpeedFactor(factor);
+      }
+    }
+  }
+  return result;
 }
 
 }  // namespace nav2_loopback_sim
