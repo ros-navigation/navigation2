@@ -287,6 +287,18 @@ Finally, lets just sanity check that if we use all of these other acceleration f
 
 Now, how do we improve smoothness with the new unclamped controls? But first, we need to characterize the noise / wobble so that we can evaluate the effectiveness of any changes we make to address it.
 
+Plotting the angular velocity before and after the changes, we can get a sense of the noise at steady state after the robot converges onto the path. We update the script above to drive for 12m instead of 8m to increase the data we inspect.
+
+Before:
+
+After: 
+
+![image](./low_accel_graphics/steady_state_noise_after.png)
+
+General noise in +/- 0.02 rad/s, with a spike up to +/-0.04 rad/s.
+
+
+
 Do the same experiments for 12 m instead of 8. Look at the time to converge before and after, and the noise in the angular / linear velocity at steady state. Come up wit hthe metric of noise during execution, noise during path acquiring, time to settle, etc.
 
 Use that to benchmark
