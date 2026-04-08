@@ -1,0 +1,13 @@
+<root BTCPP_format="4">
+  <BehaviorTree ID="SegmentImageTree">
+    <Sequence name="segment_image_sequence">
+      <SegmentImage
+        image_topic="/camera/image"
+        prompt="target"
+        use_latest_image="true"
+        mask_topic="{mask_topic}"
+        success="{segment_success}"
+        message="{segment_message}"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

@@ -1,0 +1,9 @@
+string image_topic
+string prompt
+bool use_latest_image
+---
+bool success
+string mask_topic
+string message
+---
+string current_state
