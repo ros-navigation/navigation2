@@ -31,21 +31,6 @@ PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::BoundedTrackingErrorLayer, nav2_costmap_
 namespace nav2_costmap_2d
 {
 
-BoundedTrackingErrorLayer::~BoundedTrackingErrorLayer()
-{
-  auto node = node_.lock();
-  if (!node) {
-    return;
-  }
-
-  if (on_set_params_handler_) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  if (post_set_params_handler_) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-}
-
 void BoundedTrackingErrorLayer::onInitialize()
 {
   auto node = node_.lock();
@@ -80,10 +65,8 @@ void BoundedTrackingErrorLayer::onInitialize()
   if (wall_thickness_ <= 0) {
     throw std::runtime_error{"wall_thickness must be greater than zero"};
   }
-  // Values above 3.0m were tested and cause corridor rendering artifacts
-  // due to costmap resolution limits and path curvature approximation
-  if (look_ahead_ <= 0.0 || look_ahead_ > 3.0) {
-    throw std::runtime_error{"look_ahead must be positive and <= 3.0 meters"};
+  if (look_ahead_ <= 0.0) {
+    throw std::runtime_error{"look_ahead must be positive"};
   }
   if (corridor_width_ <= 0.0) {
     throw std::runtime_error{"corridor_width must be positive"};
@@ -107,21 +90,11 @@ void BoundedTrackingErrorLayer::onInitialize()
     std::bind(&BoundedTrackingErrorLayer::trackingCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS()
   );
-
-  goal_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
-    "goal_pose",
-    std::bind(&BoundedTrackingErrorLayer::goalCallback, this, std::placeholders::_1),
-    nav2::qos::StandardTopicQoS()
-  );
 }
 
 void BoundedTrackingErrorLayer::activate()
 {
   auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &BoundedTrackingErrorLayer::updateParametersCallback,
@@ -137,23 +110,14 @@ void BoundedTrackingErrorLayer::activate()
 void BoundedTrackingErrorLayer::deactivate()
 {
   auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  if (on_set_params_handler_) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-    on_set_params_handler_.reset();
-  }
-  if (post_set_params_handler_) {
+  if (post_set_params_handler_ && node) {
     node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-    post_set_params_handler_.reset();
   }
-
-  {
-    std::lock_guard<std::mutex> lock(data_mutex_);
-    resetState();
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
   }
+  on_set_params_handler_.reset();
 }
 
 void BoundedTrackingErrorLayer::reset()
@@ -166,39 +130,10 @@ void BoundedTrackingErrorLayer::reset()
 void BoundedTrackingErrorLayer::resetState()
 {
   last_path_ptr_.reset();
-  last_goal_ = geometry_msgs::msg::PoseStamped();
   current_path_index_.store(0);
 }
 
-void BoundedTrackingErrorLayer::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
-{
-  std::lock_guard<std::mutex> lock(data_mutex_);
-
-  bool is_new_goal = false;
-  if (last_goal_.header.frame_id.empty()) {
-    is_new_goal = true;
-  } else {
-    const double dx = msg->pose.position.x - last_goal_.pose.position.x;
-    const double dy = msg->pose.position.y - last_goal_.pose.position.y;
-    const double distance = std::hypot(dx, dy);
-
-    // 0.1m threshold to distinguish minor pose jitter from an actual new goal
-    if (distance > 0.1) {
-      is_new_goal = true;
-    }
-  }
-
-  if (is_new_goal) {
-    RCLCPP_DEBUG(
-      logger_,
-      "New goal received, clearing corridor");
-    resetState();
-  }
-
-  last_goal_ = *msg;
-}
-
-void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
+void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(data_mutex_);
   const auto now = clock_->now();
@@ -217,22 +152,26 @@ void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPt
   }
 
   // Check if path was updated
-  if (last_path_ptr_ && nav2_util::isPathUpdated(*msg, *last_path_ptr_)) {
-    RCLCPP_DEBUG(logger_, "Path updated, resetting state");
-    resetState();
+  if (last_path_ptr_) {
+    nav_msgs::msg::Path new_path = *msg;
+    nav_msgs::msg::Path old_path = *last_path_ptr_;
+    if (nav2_util::isPathUpdated(new_path, old_path)) {
+      RCLCPP_DEBUG(logger_, "Path updated, resetting state");
+      resetState();
+    }
   }
 
   last_path_ptr_ = msg;
 }
 
 void BoundedTrackingErrorLayer::trackingCallback(
-  const nav2_msgs::msg::TrackingFeedback::SharedPtr msg)
+  const nav2_msgs::msg::TrackingFeedback::ConstSharedPtr msg)
 {
   const auto now = clock_->now();
   const auto msg_time = rclcpp::Time(msg->header.stamp);
   const auto age = (now - msg_time).seconds();
 
-  // Ignore tracking feedback older than 2 second to avoid stale path index updates
+  // Ignore tracking feedback older than 2 seconds to avoid stale path index updates
   if (age > 2.0) {
     RCLCPP_WARN_THROTTLE(
       logger_,
@@ -354,6 +293,9 @@ void BoundedTrackingErrorLayer::getPathSegment(
   }
 }
 
+// Fills a convex quadrilateral using scanline span-buffer rasterization.
+// Each edge is rasterized with Bresenham's line algorithm to build per-row [x_min, x_max]
+// spans, which are then filled horizontally.
 void BoundedTrackingErrorLayer::fillCorridorQuad(
   unsigned char * costmap,
   unsigned int size_x,
@@ -434,7 +376,6 @@ void BoundedTrackingErrorLayer::fillCorridorQuad(
   }
 }
 
-
 void BoundedTrackingErrorLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
@@ -449,7 +390,7 @@ void BoundedTrackingErrorLayer::updateCosts(
   // Update cached resolution
   resolution_ = layered_costmap_->getCostmap()->getResolution();
 
-  std::shared_ptr<nav_msgs::msg::Path> cached_path_ptr;
+  nav_msgs::msg::Path::ConstSharedPtr cached_path_ptr;
   size_t cached_path_index;
   {
     std::lock_guard<std::mutex> data_lock(data_mutex_);
@@ -495,14 +436,7 @@ void BoundedTrackingErrorLayer::updateCosts(
 
   getWallPolygons(transformed_segment_buffer_, walls_buffer_);
 
-  if (walls_buffer_.isEmpty()) {
-    RCLCPP_INFO_THROTTLE(
-      logger_,
-      *clock_,
-      5000,
-      "Not enough wall points to form polygons");
-    return;
-  }
+
 
   // Cache grid properties to avoid repeated function calls
   unsigned char * costmap = master_grid.getCharMap();
@@ -573,8 +507,8 @@ void BoundedTrackingErrorLayer::drawCorridorWalls(
   }
 }
 
-rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validateParameterUpdatesCallback
-(
+rcl_interfaces::msg::SetParametersResult
+BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -591,14 +525,13 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::validatePara
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "look_ahead") {
         const double new_value = parameter.as_double();
-        // Values above 3.0m cause corridor rendering artifacts
-        if (new_value <= 0.0 || new_value > 3.0) {
+        if (new_value <= 0.0) {
           RCLCPP_WARN(
             logger_, "The value of parameter '%s' is incorrectly set to %f, "
-            "it should be > 0 and <= 3.0. Rejecting parameter update.",
+            "it should be > 0. Rejecting parameter update.",
             param_name.c_str(), new_value);
           result.successful = false;
-          result.reason = "look_ahead must be positive and <= 3.0 meters";
+          result.reason = "look_ahead must be positive";
         }
       } else if (param_name == name_ + "." + "corridor_width") {
         const double new_value = parameter.as_double();
