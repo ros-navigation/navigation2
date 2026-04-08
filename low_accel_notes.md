@@ -285,9 +285,11 @@ Finally, lets just sanity check that if we use all of these other acceleration f
 
 #### Investigation 3: Characterizing Oscillation / Wobble Behavior
 
-Next step: How do we improve smoothness with the new unclamped controls? But first, we need to characterize the noise / wobble so that we can evaluate the effectiveness of any changes we make to address it.
+Now, how do we improve smoothness with the new unclamped controls? But first, we need to characterize the noise / wobble so that we can evaluate the effectiveness of any changes we make to address it.
 
+Do the same experiments for 12 m instead of 8. Look at the time to converge before and after, and the noise in the angular / linear velocity at steady state. Come up wit hthe metric of noise during execution, noise during path acquiring, time to settle, etc.
 
+Use that to benchmark
 
 ## Topic 2: Asymmetric Acceleration Limits
 
