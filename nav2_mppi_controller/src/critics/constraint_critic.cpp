@@ -45,8 +45,6 @@ void ConstraintCritic::score(CriticData & data)
     return;
   }
 
-
-
   // Holonomic (omnidirectional) motion model: use total speed magnitude
   if (data.motion_model->isHolonomic()) {
     auto & vx = data.state.vx;
@@ -87,7 +85,7 @@ void ConstraintCritic::score(CriticData & data)
     }
     return;
   }
-  
+
   // Non-holonomic model without turning radius constraint (e.g. differential drive)
   if (power_ > 1u) {
     data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).

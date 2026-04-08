@@ -137,8 +137,7 @@ void Optimizer::getParams()
       "Sign of the parameter ay_min is incorrect, consider setting it negative.");
   }
 
-  //TODO name here no more needed right?
-  getParam(motion_model_name, "motion_model", std::string("DiffDrive"));
+  getParam(motion_model_name, "motion_model", std::string("diff_drive"));
 
   s.constraints = s.base_constraints;
 
@@ -585,7 +584,7 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
   //   FollowPath.ackermann.plugin: "mppi::AckermannMotionModel"
   const std::string plugin_ns = name_ + "." + motion_model_name;
   const std::string plugin_param = plugin_ns + ".plugin";
-  //TODO what here? is this needed?
+
   // Default to DiffDriveMotionModel when no plugin is declared.
   nav2::declare_parameter_if_not_declared(
     node, plugin_param,

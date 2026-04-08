@@ -231,7 +231,6 @@ public:
    */
   bool hasConstrainedTurningRadius() const override {return true;}
 
-  
   /**
    * @brief Apply the minimum turning radius constraint to the control sequence.
    *
