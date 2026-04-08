@@ -20,7 +20,7 @@
 #include <stdexcept>
 
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_util/execution_timer.hpp"
+
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::BoundedTrackingErrorLayer, nav2_costmap_2d::Layer)
 
@@ -154,9 +154,6 @@ void BoundedTrackingErrorLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
 {
-  nav2_util::ExecutionTimer timer;
-  timer.start();
-
   if (!enabled_) {
     return;
   }
@@ -247,12 +244,6 @@ void BoundedTrackingErrorLayer::updateCosts(
 
   drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
   drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
-
-  timer.end();
-  RCLCPP_INFO(
-    logger_,
-    "BoundedTrackingErrorLayer::updateCosts execution time: %.6f seconds",
-    timer.elapsed_time_in_seconds());
 }
 
 void BoundedTrackingErrorLayer::getPathSegment(
