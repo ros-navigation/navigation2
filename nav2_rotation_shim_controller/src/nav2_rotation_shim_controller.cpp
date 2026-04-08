@@ -136,7 +136,8 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
     try {
       geometry_msgs::msg::Pose pose_tolerance;
       geometry_msgs::msg::Twist vel_tolerance;
-      goal_checker->getTolerances(pose_tolerance, vel_tolerance);
+      double path_length_tolerance;
+      goal_checker->getTolerances(pose_tolerance, vel_tolerance, path_length_tolerance);
       position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
 
       if (position_goal_checker_->isGoalReached(pose.pose, global_goal.pose, velocity,

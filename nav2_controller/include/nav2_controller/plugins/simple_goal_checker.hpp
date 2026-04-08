@@ -100,11 +100,13 @@ public:
    * @brief Get the position and velocity tolerances
    * @param pose_tolerance Output parameter for pose tolerance
    * @param vel_tolerance Output parameter for velocity tolerance
+   * @param path_length_tolerance Output parameter for path length tolerance
    * @return true if tolerances are available, false otherwise
    */
   bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & vel_tolerance) override;
+    geometry_msgs::msg::Twist & vel_tolerance,
+    double & path_length_tolerance) override;
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;
