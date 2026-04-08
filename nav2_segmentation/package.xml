@@ -3,12 +3,11 @@
 <package format="3">
   <name>nav2_segmentation</name>
   <version>0.0.1</version>
-  <description>Dummy Nav2 segmentation package for BT action integration and future SAM3 ONNX hosting.</description>
+  <description>Bare-minimum Nav2 segmentation discussion skeleton with BT action integration.</description>
   <maintainer email="user@example.com">User</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <buildtool_depend>ament_cmake_python</buildtool_depend>
 
   <build_depend>nav2_common</build_depend>
 
@@ -18,7 +17,6 @@
   <depend>nav2_ros_common</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
-  <depend>rclpy</depend>
   <depend>rosidl_default_generators</depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
 
