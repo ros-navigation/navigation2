@@ -86,6 +86,9 @@ private:
   std::string battery_topic_;
   bool is_battery_charging_;
   std::chrono::milliseconds bt_loop_duration_;
+
+  bool is_global_;
+  std::string current_run_id_;
 };
 
 }  // namespace nav2_behavior_tree

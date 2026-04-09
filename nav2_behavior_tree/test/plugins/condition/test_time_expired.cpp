@@ -64,6 +64,29 @@ TEST_F(TimeExpiredConditionTestFixture, test_behavior)
   }
 }
 
+TEST_F(TimeExpiredConditionTestFixture, test_runid_global_mode)
+{
+  // Enable global mode
+  node_->declare_or_get_parameter("is_global", false);
+  node_->set_parameter(rclcpp::Parameter("is_global", true));
+  config_->blackboard->set<std::string>("run_id", "runid_1");
+
+  // First tick: initializes start_ and returns FAILURE
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Wait less than 1 second — not expired yet
+  rclcpp::sleep_for(500ms);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // New RunID: start_ must NOT reset — timer continues from where it was
+  config_->blackboard->set<std::string>("run_id", "runid_2");
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Wait another 600ms (total ~1.1s from start_) — should now expire
+  rclcpp::sleep_for(600ms);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

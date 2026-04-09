@@ -27,7 +27,9 @@ IsBatteryLowCondition::IsBatteryLowCondition(
   battery_topic_("/battery_status"),
   min_battery_(0.0),
   is_voltage_(false),
-  is_battery_low_(false)
+  is_battery_low_(false),
+  is_global_(false),
+  current_run_id_("")
 {
   initialize();
   bt_loop_duration_ =
@@ -40,6 +42,8 @@ void IsBatteryLowCondition::initialize()
   getInput("is_voltage", is_voltage_);
 
   createROSInterfaces();
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  is_global_ = node_->declare_or_get_parameter("is_global", false);
 }
 
 void IsBatteryLowCondition::createROSInterfaces()
@@ -68,6 +72,23 @@ BT::NodeStatus IsBatteryLowCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
+  }
+
+  // Global mode: reinitialize (return FAILURE) when RunID changes
+  if (is_global_) {
+    std::string new_run_id;
+    try {
+      new_run_id = config().blackboard->template get<std::string>("run_id");
+    } catch (const std::exception & e) {
+      throw std::runtime_error(
+        "is_global=true requires 'run_id' to be set on the blackboard for condition: " +
+        std::string(name()));
+    }
+
+    if (new_run_id != current_run_id_) {
+      current_run_id_ = new_run_id;
+      is_battery_low_ = false;
+    }
   }
 
   callback_group_executor_.spin_all(bt_loop_duration_);

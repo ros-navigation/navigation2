@@ -125,6 +125,47 @@ TEST_F(IsBatteryChargingConditionTestFixture, test_behavior_power_supply_status)
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 }
 
+TEST_F(IsBatteryChargingConditionTestFixture, test_runid_global_mode)
+{
+  node_->declare_or_get_parameter("is_global", false);
+  node_->set_parameter(rclcpp::Parameter("is_global", true));
+
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <IsBatteryCharging battery_topic="/battery_status"/>
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::string>("run_id", "runid_1");
+  auto tree = factory_->createTreeFromText(xml_txt, config_->blackboard);
+
+  // Battery is charging
+  sensor_msgs::msg::BatteryState battery_msg;
+  battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_CHARGING;
+  battery_pub_->publish(battery_msg);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  executor_->spin_some();
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
+
+  // New RunID: stale flag cleared, fresh message still charging -> SUCCESS
+  config_->blackboard->set<std::string>("run_id", "runid_2");
+  battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_CHARGING;
+  battery_pub_->publish(battery_msg);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  executor_->spin_some();
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
+
+  // New RunID: battery no longer charging, stale charging flag cleared -> FAILURE
+  config_->blackboard->set<std::string>("run_id", "runid_3");
+  battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_DISCHARGING;
+  battery_pub_->publish(battery_msg);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  executor_->spin_some();
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

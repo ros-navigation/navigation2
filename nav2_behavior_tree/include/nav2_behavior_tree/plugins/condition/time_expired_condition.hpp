@@ -69,6 +69,9 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Time start_;
   double period_;
+
+  bool is_global_;
+  std::string current_run_id_;
 };
 
 }  // namespace nav2_behavior_tree

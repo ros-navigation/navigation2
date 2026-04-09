@@ -77,7 +77,9 @@ public:
     if (getInput("server_name", remapped_action_name)) {
       action_name_ = remapped_action_name;
     }
-    is_global_ = config().blackboard->template get<bool>("global_mode");
+    if (!config().blackboard->template get<bool>("is_global", is_global_)) {
+      is_global_ = false;
+    }
 
     createActionClient(action_name_);
 
@@ -212,7 +214,7 @@ public:
         new_run_id = config().blackboard->get<std::string>("run_id");
       } catch (const std::exception & e) {
         throw std::runtime_error(
-          "global_mode=true requires 'run_id' to be set on the blackboard for action: " +
+          "is_global=true requires 'run_id' to be set on the blackboard for action: " +
           action_name_ + ". Error: " + e.what());
       }
 

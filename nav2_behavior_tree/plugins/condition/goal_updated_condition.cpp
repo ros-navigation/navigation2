@@ -22,15 +22,46 @@ namespace nav2_behavior_tree
 GoalUpdatedCondition::GoalUpdatedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf)
-{}
+: BT::ConditionNode(condition_name, conf),
+  is_global_(false),
+  current_run_id_("")
+{
+}
+
+void GoalUpdatedCondition::initialize()
+{
+  auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  is_global_ = node->declare_or_get_parameter("is_global", false);
+}
 
 BT::NodeStatus GoalUpdatedCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
-    BT::getInputOrBlackboard("goals", goals_);
-    BT::getInputOrBlackboard("goal", goal_);
-    return BT::NodeStatus::FAILURE;
+    initialize();
+  }
+
+  if (is_global_) {
+    std::string new_run_id;
+    try {
+      new_run_id = config().blackboard->template get<std::string>("run_id");
+    } catch (const std::exception & e) {
+      throw std::runtime_error(
+        "is_global=true requires 'run_id' to be set on the blackboard for condition: " +
+        std::string(name()));
+    }
+
+    if (new_run_id != current_run_id_) {
+      current_run_id_ = new_run_id;
+      // Update snapshot so we can compare against the new run's goal, then fall through
+      BT::getInputOrBlackboard("goals", goals_);
+      BT::getInputOrBlackboard("goal", goal_);
+    }
+  } else {
+    if (!BT::isStatusActive(status())) {
+      BT::getInputOrBlackboard("goals", goals_);
+      BT::getInputOrBlackboard("goal", goal_);
+      return BT::NodeStatus::FAILURE;
+    }
   }
 
   nav_msgs::msg::Goals current_goals;
