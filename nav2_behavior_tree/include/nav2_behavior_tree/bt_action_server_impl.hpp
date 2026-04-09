@@ -170,6 +170,10 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   wait_for_service_timeout_ = std::chrono::milliseconds(
     node->declare_or_get_parameter("wait_for_service_timeout", 1000));
 
+  // Get parameter for global node reinitialization behavior
+  is_global_ = 
+  node->declare_or_get_parameter("global_mode", true);
+
   always_reload_bt_ = node->declare_or_get_parameter(
     "always_reload_bt_xml", false);
 
@@ -186,6 +190,7 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   blackboard_ = BT::Blackboard::create();
 
   // Put items on the blackboard
+  blackboard_->template set<bool>("global_mode", is_global_);  // NOLINT
   blackboard_->template set<nav2::LifecycleNode::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>("cancel_timeout", default_cancel_timeout_);  // NOLINT
@@ -193,8 +198,6 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   blackboard_->template set<std::chrono::milliseconds>(
     "wait_for_service_timeout",
     wait_for_service_timeout_);
-  run_id_ = boost::uuids::to_string(uuid_generator_());
-  blackboard_->set<std::string>("run_id", run_id_);  // NOLINT
   return true;
 }
 
@@ -381,6 +384,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       blackboard->template set<std::chrono::milliseconds>(
         "wait_for_service_timeout",
         wait_for_service_timeout_);
+      blackboard->template set<bool>("global_mode", is_global_);
     }
   } catch (const std::exception & e) {
     setInternalError(
@@ -416,8 +420,8 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
     return;
   }
 
-  run_id_ = boost::uuids::to_string(uuid_generator_());
-  blackboard_->set<std::string>("run_id", run_id_);
+  std::string run_id = boost::uuids::to_string(uuid_generator_());
+  blackboard_->template set<std::string>("run_id", run_id);
   auto is_canceling = [&]() {
       if (action_server_ == nullptr) {
         RCLCPP_DEBUG(logger_, "Action server unavailable. Canceling.");

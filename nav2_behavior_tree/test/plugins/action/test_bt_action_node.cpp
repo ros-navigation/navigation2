@@ -495,26 +495,29 @@ TEST_F(BTActionNodeTestFixture, test_server_cancel)
 
 TEST_F(BTActionNodeTestFixture, test_run_id_initialization_and_persistence)
 {
-  // create tree with is_global="true" to enable RunID checking
+  // create tree - NO global_mode parameter in XML anymore
   std::string xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <Fibonacci order="100" is_global="true" />
+            <Fibonacci order="100" />
         </BehaviorTree>
       </root>)";
 
   config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
   config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
-
-  // Set initial RunID
-  config_->blackboard->set<uint64_t>("run_id", 1);
+  
+  // Enable global reinitialization via blackboard
+  config_->blackboard->set<bool>("global_mode", true);
+  
+  // Set initial RunID as string (UUID format)
+  config_->blackboard->set<std::string>("run_id", "550e8400-e29b-41d4-a716-446655440000");
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   action_server_->setHandleGoalSleepDuration(2ms);
-  action_server_->setServerLoopRate(50ms);  // Slower server rate
+  action_server_->setServerLoopRate(50ms);
 
-  // First tick should initialize with run_id = 1
+  // First tick should initialize with run_id
   auto result = tree_->tickOnce();
   EXPECT_EQ(result, BT::NodeStatus::RUNNING);
 
@@ -532,27 +535,34 @@ TEST_F(BTActionNodeTestFixture, test_run_id_changes_trigger_reinitialization)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <Fibonacci order="50" is_global="true" />
+            <Fibonacci order="50" />
         </BehaviorTree>
       </root>)";
 
   config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
   config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+  config_->blackboard->set<bool>("global_mode", true);
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   action_server_->setHandleGoalSleepDuration(2ms);
   action_server_->setServerLoopRate(50ms);
 
-  // Test with multiple run_id changes
-  for (uint64_t run_id = 1; run_id <= 3; ++run_id) {
-    config_->blackboard->set<uint64_t>("run_id", run_id);
+  // Test with multiple run_id changes (using different UUID strings)
+  std::vector<std::string> run_ids = {
+    "550e8400-e29b-41d4-a716-446655440001",
+    "550e8400-e29b-41d4-a716-446655440002",
+    "550e8400-e29b-41d4-a716-446655440003"
+  };
+
+  for (size_t i = 0; i < run_ids.size(); ++i) {
+    config_->blackboard->set<std::string>("run_id", run_ids[i]);
 
     // Halt tree to reset state
     tree_->haltTree();
 
     // First tick with new run_id should start new execution
     auto result = tree_->tickOnce();
-    EXPECT_EQ(result, BT::NodeStatus::RUNNING) << "Failed on run_id: " << run_id;
+    EXPECT_EQ(result, BT::NodeStatus::RUNNING) << "Failed on run_id: " << run_ids[i];
   }
 
   // Final cleanup
@@ -561,7 +571,7 @@ TEST_F(BTActionNodeTestFixture, test_run_id_changes_trigger_reinitialization)
 
 TEST_F(BTActionNodeTestFixture, test_run_id_non_global_mode_unaffected)
 {
-  // Test without is_global flag (should use old behavior)
+  // Test with global_mode=false (default behavior)
   std::string xml_txt =
     R"(
       <root BTCPP_format="4">
@@ -572,6 +582,7 @@ TEST_F(BTActionNodeTestFixture, test_run_id_non_global_mode_unaffected)
 
   config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
   config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+  config_->blackboard->set<bool>("global_mode", false);
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   action_server_->setHandleGoalSleepDuration(2ms);
@@ -580,32 +591,32 @@ TEST_F(BTActionNodeTestFixture, test_run_id_non_global_mode_unaffected)
   // Should work normally without RunID checking
   auto result = tree_->tickOnce();
   EXPECT_EQ(result, BT::NodeStatus::RUNNING);
+  
+  tree_->haltTree();
 }
 
-TEST_F(BTActionNodeTestFixture, test_run_id_missing_from_blackboard)
+TEST_F(BTActionNodeTestFixture, test_run_id_missing_throws_exception)
 {
-  // Test behavior when run_id is not set - should work like old behavior
+  // Test behavior when run_id is not set but global_mode is true
   std::string xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <Fibonacci order="5" is_global="true" />
+            <Fibonacci order="5" />
         </BehaviorTree>
       </root>)";
 
   config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
   config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+  config_->blackboard->set<bool>("global_mode", true);
 
-  // Don't set run_id - test graceful handling
+  // Don't set run_id - should throw exception
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   action_server_->setHandleGoalSleepDuration(2ms);
   action_server_->setServerLoopRate(10ns);
 
-  // Should work like old behavior when RunID is missing
-  auto result = tree_->tickOnce();
-  EXPECT_EQ(result, BT::NodeStatus::RUNNING);
-
-  tree_->haltTree();
+  // Should throw runtime_error because run_id is missing
+  EXPECT_THROW(tree_->tickOnce(), std::runtime_error);
 }
 
 TEST_F(BTActionNodeTestFixture, test_run_id_change_during_execution)
@@ -615,24 +626,25 @@ TEST_F(BTActionNodeTestFixture, test_run_id_change_during_execution)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <Fibonacci order="100" is_global="true" />
+            <Fibonacci order="100" />
         </BehaviorTree>
       </root>)";
 
   config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
   config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
-  config_->blackboard->set<uint64_t>("run_id", 1);
+  config_->blackboard->set<bool>("global_mode", true);
+  config_->blackboard->set<std::string>("run_id", "550e8400-e29b-41d4-a716-446655440001");
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   action_server_->setHandleGoalSleepDuration(2ms);
   action_server_->setServerLoopRate(10ns);
 
-  // Start execution with run_id = 1
+  // Start execution with first run_id
   auto result = tree_->tickOnce();
   EXPECT_EQ(result, BT::NodeStatus::RUNNING);
 
   // Change RunID while running (simulates new navigation goal)
-  config_->blackboard->set<uint64_t>("run_id", 2);
+  config_->blackboard->set<std::string>("run_id", "550e8400-e29b-41d4-a716-446655440002");
 
   // Next tick should detect change and reinitialize
   result = tree_->tickOnce();
@@ -641,21 +653,22 @@ TEST_F(BTActionNodeTestFixture, test_run_id_change_during_execution)
   tree_->haltTree();
 }
 
-TEST_F(BTActionNodeTestFixture, test_run_id_zero_edge_case)
+TEST_F(BTActionNodeTestFixture, test_run_id_empty_string_edge_case)
 {
   std::string xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <Fibonacci order="5" is_global="true" />
+            <Fibonacci order="5" />
         </BehaviorTree>
       </root>)";
 
   config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
   config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+  config_->blackboard->set<bool>("global_mode", true);
 
-  // Test with RunID = 0 (edge case)
-  config_->blackboard->set<uint64_t>("run_id", 0);
+  // Test with empty string RunID (edge case - should work)
+  config_->blackboard->set<std::string>("run_id", "");
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   action_server_->setHandleGoalSleepDuration(2ms);
@@ -665,19 +678,4 @@ TEST_F(BTActionNodeTestFixture, test_run_id_zero_edge_case)
   EXPECT_EQ(result, BT::NodeStatus::RUNNING);
 
   tree_->haltTree();
-}
-
-int main(int argc, char ** argv)
-{
-  ::testing::InitGoogleTest(&argc, argv);
-
-  // initialize ROS
-  rclcpp::init(argc, argv);
-
-  int all_successful = RUN_ALL_TESTS();
-
-  // shutdown ROS
-  rclcpp::shutdown();
-
-  return all_successful;
 }

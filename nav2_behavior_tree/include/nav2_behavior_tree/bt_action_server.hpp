@@ -295,6 +295,9 @@ protected:
   // Whether to log BT transitions to IDLE state
   bool log_idle_ = true;
 
+  // Whether to use global reinitialization for asynch nodes
+  bool is_global_ = false;
+
   // Parameters for Groot2 monitoring
   bool enable_groot_monitoring_ = false;
   int groot_server_port_ = 1667;
@@ -311,7 +314,6 @@ protected:
 
   // To keep track of the execution number
   boost::uuids::random_generator uuid_generator_;
-  std::string run_id_;
 };
 
 }  // namespace nav2_behavior_tree
