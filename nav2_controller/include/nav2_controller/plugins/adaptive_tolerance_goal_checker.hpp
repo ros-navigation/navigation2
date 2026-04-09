@@ -115,7 +115,7 @@ protected:
   // Stateful tracking
   bool check_xy_;
   bool in_tolerance_zone_;
-  int no_improvement_count_;
+  int stagnation_count_;
 
   // Dynamic parameters
   std::mutex mutex_;

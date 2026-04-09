@@ -45,7 +45,7 @@ AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
   required_stagnation_cycles_(15),
   check_xy_(true),
   in_tolerance_zone_(false),
-  no_improvement_count_(0)
+  stagnation_count_(0)
 {
 }
 
@@ -107,7 +107,7 @@ void AdaptiveToleranceGoalChecker::reset()
 {
   check_xy_ = true;
   in_tolerance_zone_ = false;
-  no_improvement_count_ = 0;
+  stagnation_count_ = 0;
 }
 
 bool AdaptiveToleranceGoalChecker::isGoalReached(
@@ -147,7 +147,7 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
       // Just entered the zone: initialize tracking
       if (!in_tolerance_zone_) {
         in_tolerance_zone_ = true;
-        no_improvement_count_ = 0;
+        stagnation_count_ = 0;
         return false;
       }
 
@@ -157,12 +157,12 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
         std::fabs(velocity.angular.z) <= rot_stopped_velocity_;
 
       if (robot_stopped) {
-        no_improvement_count_++;
+        stagnation_count_++;
       } else {
-        no_improvement_count_ = 0;
+        stagnation_count_ = 0;
       }
 
-      if (no_improvement_count_ < required_stagnation_cycles_) {
+      if (stagnation_count_ < required_stagnation_cycles_) {
         return false;
       }
 
@@ -180,7 +180,7 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
     } else {
       // Outside both tolerances: reset tracking state
       in_tolerance_zone_ = false;
-      no_improvement_count_ = 0;
+      stagnation_count_ = 0;
       return false;
     }
   }
