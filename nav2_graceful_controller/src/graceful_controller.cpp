@@ -49,7 +49,8 @@ void GracefulController::configure(
 
   // Handles the control law to generate the velocity commands
   control_law_ = std::make_unique<SmoothControlLaw>(
-    params_->k_phi, params_->k_delta, params_->beta, params_->lambda, params_->slowdown_radius,
+    params_->k_phi, params_->k_delta, params_->beta, params_->lambda,
+    params_->slowdown_radius, params_->deceleration_max,
     params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
   // Initialize footprint collision checker
@@ -149,6 +150,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   control_law_->setCurvatureConstants(
     params_->k_phi, params_->k_delta, params_->beta, params_->lambda);
   control_law_->setSlowdownRadius(params_->slowdown_radius);
+  control_law_->setMaxDeceleration(params_->deceleration_max);
   control_law_->setSpeedLimit(params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
   // Add proper orientations to plan, if needed
   validateOrientations(transformed_plan.poses);
@@ -307,7 +309,9 @@ bool GracefulController::validateTargetPose(
   double sim_linear_velocity = params_->v_linear_max;
   do {
     control_law_->setSpeedLimit(params_->v_linear_min, sim_linear_velocity, params_->v_angular_max);
-    if (simulateTrajectory(target_pose, costmap_transform, trajectory, cmd_vel, reversing)) {
+    if (simulateTrajectory(target_pose, costmap_transform, dist_to_target,
+                           trajectory, cmd_vel, reversing))
+    {
       // Successfully simulated to target_pose
       return true;
     }
@@ -356,6 +360,7 @@ bool GracefulController::validateTargetPoseOnApproach(
 bool GracefulController::simulateTrajectory(
   const geometry_msgs::msg::PoseStamped & motion_target,
   const geometry_msgs::msg::TransformStamped & costmap_transform,
+  const double & target_distance,
   nav_msgs::msg::Path & trajectory,
   geometry_msgs::msg::TwistStamped & cmd_vel,
   bool backward)
@@ -377,6 +382,7 @@ bool GracefulController::simulateTrajectory(
   }
 
   double distance = std::numeric_limits<double>::max();
+  double path_distance = target_distance;
   double resolution = costmap_ros_->getCostmap()->getResolution();
   double dt = (params_->v_linear_max > 0.0) ? resolution / params_->v_linear_max : 0.0;
 
@@ -406,12 +412,19 @@ bool GracefulController::simulateTrajectory(
       // If this is first iteration, this is our current target velocity
       if (trajectory.poses.empty()) {
         cmd_vel.twist = control_law_->calculateRegularVelocity(
-          motion_target.pose, next_pose.pose, backward);
+          motion_target.pose, next_pose.pose, path_distance, backward);
       }
+
+      // Save previous pose before update
+      const auto prev_pose = next_pose;
 
       // Apply velocities to calculate next pose
       next_pose.pose = control_law_->calculateNextPose(
-        dt, motion_target.pose, next_pose.pose, backward);
+        dt, motion_target.pose, next_pose.pose, path_distance, backward);
+
+      // Adjust remaining path distance based on how far we moved
+      path_distance -= nav2_util::geometry_utils::euclidean_distance(
+        next_pose.pose.position, prev_pose.pose.position);
     }
 
     // Add the pose to the trajectory for visualization
@@ -598,20 +611,27 @@ bool GracefulController::findBestApproachTrajectory(
       if (params_->allow_backward && target_pose.pose.position.x < 0.0) {
         reversing = true;
       }
+
+      // Distance to target for iteration loop
+      double remaining_dist = dist_to_target;
+
       // Calculate ETA
       double eta = 0.0;
       for (size_t j = 1; j < candidate_path.poses.size(); ++j) {
         auto current_pose = candidate_path.poses[j - 1];
         auto next_pose = candidate_path.poses[j];
         auto cmd = control_law_->calculateRegularVelocity(candidate_pose.pose, current_pose.pose,
-          reversing);
+          remaining_dist, reversing);
         double speed = std::abs(cmd.linear.x);
+
         // Avoid division by zero
         speed = std::max(speed, 1e-3);
         double step_dist = nav2_util::geometry_utils::euclidean_distance(
           current_pose.pose, next_pose.pose);
         double step_time = step_dist / speed;
         eta += step_time;
+
+        remaining_dist = std::max(0.0, remaining_dist - step_dist);
       }
 
       // Selection logic: Pick the fastest among the safe ones
