@@ -606,7 +606,7 @@ void Optimizer::updateControlSequence()
   auto & s = settings_;
 
   auto vx_T = control_sequence_.vx.transpose();
-  auto bounded_noises_vx = state_.cvx.rowwise() - vx_T; //TODO control clamping impacts; consider removing IS udpate?
+  auto bounded_noises_vx = state_.cvx.rowwise() - vx_T;
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
 
