@@ -182,7 +182,7 @@ void VoxelLayer::updateBounds(
   current = getClearingObservations(clearing_observations) && current;
 
   // update the global current status
-  current_ = current;
+  setCurrent(current);
 
   // raytrace freespace
   for (const auto & clearing_observation : clearing_observations) {
@@ -558,24 +558,24 @@ VoxelLayer::updateParametersCallback(
         min_obstacle_height_ != parameter.as_double())
       {
         min_obstacle_height_ = parameter.as_double();
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "max_obstacle_height" &&  // NOLINT(readability/braces)
         max_obstacle_height_ != parameter.as_double())
       {
         max_obstacle_height_ = parameter.as_double();
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "origin_z" &&  // NOLINT(readability/braces)
         origin_z_ != parameter.as_double())
       {
         origin_z_ = parameter.as_double();
         resize_map_needed = true;
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "z_resolution" &&  // NOLINT(readability/braces)
         z_resolution_ != parameter.as_double())
       {
         z_resolution_ = parameter.as_double();
         resize_map_needed = true;
-        current_ = false;
+        setCurrent(false);
       }
 
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
@@ -583,7 +583,7 @@ VoxelLayer::updateParametersCallback(
         enabled_ != parameter.as_bool())
       {
         enabled_ = parameter.as_bool();
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       }
@@ -594,13 +594,13 @@ VoxelLayer::updateParametersCallback(
       {
         size_z_ = parameter.as_int();
         resize_map_needed = true;
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "unknown_threshold") {
         unknown_threshold_ = parameter.as_int() + (VOXEL_BITS - size_z_);
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "mark_threshold") {
         mark_threshold_ = parameter.as_int();
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "combination_method") {
         combination_method_ = combination_method_from_int(parameter.as_int());
       }

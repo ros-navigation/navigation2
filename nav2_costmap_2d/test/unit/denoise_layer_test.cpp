@@ -64,19 +64,14 @@ public:
 
   bool reset()
   {
-    denoise_.current_ = true;
+    denoise_.setCurrent(true);
     denoise_.reset();
-    return denoise_.current_;
+    return denoise_.isCurrent();
   }
 
   static void initialize(nav2_costmap_2d::DenoiseLayer & d)
   {
     d.onInitialize();
-  }
-
-  static bool & touchCurrent(nav2_costmap_2d::DenoiseLayer & d)
-  {
-    return d.current_;
   }
 
   static void configure(

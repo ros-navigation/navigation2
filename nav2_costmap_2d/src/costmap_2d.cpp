@@ -557,12 +557,12 @@ unsigned int Costmap2D::getSizeInCellsY() const
 
 double Costmap2D::getSizeInMetersX() const
 {
-  return (size_x_ - 1 + 0.5) * resolution_;
+  return size_x_ * resolution_;
 }
 
 double Costmap2D::getSizeInMetersY() const
 {
-  return (size_y_ - 1 + 0.5) * resolution_;
+  return size_y_ * resolution_;
 }
 
 double Costmap2D::getOriginX() const

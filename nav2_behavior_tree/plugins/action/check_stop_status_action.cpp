@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Angsa Robotics
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,17 +13,20 @@
 // limitations under the License.
 
 #include <string>
-#include <chrono>
+#include <memory>
+#include <limits>
 
-#include "nav2_behavior_tree/plugins/condition/is_stopped_condition.hpp"
+#include "nav2_util/geometry_utils.hpp"
+
+#include "nav2_behavior_tree/plugins/action/check_stop_status_action.hpp"
 
 namespace nav2_behavior_tree
 {
 
-IsStoppedCondition::IsStoppedCondition(
-  const std::string & condition_name,
+CheckStopStatus::CheckStopStatus(
+  const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf),
+: BT::ActionNodeBase(name, conf),
   velocity_threshold_(0.01),
   duration_stopped_(1000ms),
   stopped_stamp_(rclcpp::Time(0, 0, RCL_ROS_TIME))
@@ -33,12 +36,7 @@ IsStoppedCondition::IsStoppedCondition(
     "odom_smoother");
 }
 
-IsStoppedCondition::~IsStoppedCondition()
-{
-  RCLCPP_DEBUG(node_->get_logger(), "Shutting down IsStoppedCondition BT node");
-}
-
-BT::NodeStatus IsStoppedCondition::tick()
+inline BT::NodeStatus CheckStopStatus::tick()
 {
   getInput("velocity_threshold", velocity_threshold_);
   getInput("duration_stopped", duration_stopped_);
@@ -76,5 +74,6 @@ BT::NodeStatus IsStoppedCondition::tick()
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::IsStoppedCondition>("IsStopped");
+  factory.registerNodeType<nav2_behavior_tree::CheckStopStatus>(
+    "CheckStopStatus");
 }

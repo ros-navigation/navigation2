@@ -117,7 +117,7 @@ void ObstacleLayer::onInitialize()
   }
 
   ObstacleLayer::matchSize();
-  current_ = true;
+  setCurrent(true);
   was_reset_ = false;
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
@@ -366,17 +366,17 @@ ObstacleLayer::updateParametersCallback(
         min_obstacle_height_ != parameter.as_double())
       {
         min_obstacle_height_ = parameter.as_double();
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "max_obstacle_height" &&  // NOLINT(readability/braces)
         max_obstacle_height_ != parameter.as_double())
       {
         max_obstacle_height_ = parameter.as_double();
-        current_ = false;
+        setCurrent(false);
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       }
@@ -500,7 +500,7 @@ ObstacleLayer::updateBounds(
   current = current && getClearingObservations(clearing_observations);
 
   // update the global current status
-  current_ = current;
+  setCurrent(current);
 
   // raytrace freespace
   for (const auto & clearing_observation : clearing_observations) {
@@ -604,9 +604,9 @@ ObstacleLayer::updateCosts(
   }
 
   // if not current due to reset, set current now after clearing
-  if (!current_ && was_reset_) {
+  if (!isCurrent() && was_reset_) {
     was_reset_ = false;
-    current_ = true;
+    setCurrent(true);
   }
 
   if (footprint_clearing_enabled_) {
@@ -851,7 +851,7 @@ ObstacleLayer::reset()
 {
   resetMaps();
   resetBuffersLastUpdated();
-  current_ = false;
+  setCurrent(false);
   was_reset_ = true;
 }
 

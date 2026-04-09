@@ -20,6 +20,8 @@
 #include <string>
 #include <memory>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -117,6 +119,30 @@ public:
    * @return Optimal control sequence
    */
   const models::ControlSequence & getOptimalControlSequence();
+
+  /**
+   * @brief Get the aggregated trajectory costs from last evaluation
+   * @return Array of costs per trajectory
+   */
+  const Eigen::ArrayXf & getCosts() const {return costs_;}
+
+  /**
+   * @brief Get per-critic cost breakdown from last evaluation
+   * @return Vector of (critic_name, cost_array) pairs
+   */
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & getCriticCosts() const
+  {
+    return critic_manager_.getCriticCosts();
+  }
+
+  /**
+   * @brief Get per-trajectory collision flags from last evaluation
+   * @return Vector of bools, true if trajectory is in collision
+   */
+  const std::vector<bool> & getCollisionFlags() const
+  {
+    return critics_data_.trajectories_in_collision;
+  }
 
   /**
    * @brief Set the maximum speed based on the speed limits callback
@@ -291,7 +317,7 @@ protected:
   CriticData critics_data_ = {
     state_, generated_trajectories_, path_, goal_,
     costs_, settings_.model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 

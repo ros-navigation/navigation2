@@ -101,7 +101,7 @@ unsigned int removePosesAfterFirstConstraint(
   float rotation_threshold);
 
 /**
- * @brief Checks if the global path is updated
+ * @brief Checks if the global path is updated but the goal is the same
  * @param new_path new path to the goal
  * @param old_path current path to the goal
  * @return whether the path is updated for the current goal
@@ -110,6 +110,15 @@ bool isPathUpdated(
   nav_msgs::msg::Path & new_path,
   nav_msgs::msg::Path & old_path);
 
+/**
+ * @brief Checks if the goal pose is updated by comparing the last pose of the new and old paths
+ * @param new_path new path to the goal
+ * @param old_path current path to the goal
+ * @return whether the goal pose is updated
+ */
+bool isGoalUpdated(
+  nav_msgs::msg::Path & new_path,
+  nav_msgs::msg::Path & old_path);
 }  // namespace nav2_util
 
 #endif  // NAV2_UTIL__PATH_UTILS_HPP_

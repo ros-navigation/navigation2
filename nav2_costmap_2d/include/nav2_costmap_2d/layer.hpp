@@ -37,6 +37,7 @@
 #ifndef NAV2_COSTMAP_2D__LAYER_HPP_
 #define NAV2_COSTMAP_2D__LAYER_HPP_
 
+#include <atomic>
 #include <string>
 #include <vector>
 #include <unordered_set>
@@ -193,7 +194,7 @@ protected:
    */
   virtual void onInitialize() {}
 
-  bool current_;
+  std::atomic_bool current_;
   // Currently this var is managed by subclasses.
   // TODO(bpwilcox): make this managed by this class and/or container class.
   bool enabled_;

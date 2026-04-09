@@ -361,9 +361,7 @@ void CollisionDetector::process()
       continue;
     }
     state_msg->polygons.push_back(polygon->getName());
-    state_msg->detections.push_back(
-      polygon->getPointsInside(
-        collision_points) >= polygon->getMinPoints());
+    state_msg->detections.push_back(polygon->isTriggered(collision_points));
   }
 
   state_pub_->publish(std::move(state_msg));

@@ -47,7 +47,7 @@ public:
   typedef std::function<void ()> OnLoopCallback;
   typedef std::function<void (typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
   typedef std::function<void (typename ActionT::Result::SharedPtr,
-      nav2_behavior_tree::BtStatus)> OnCompletionCallback;
+      nav2_behavior_tree::BtStatus &)> OnCompletionCallback;
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
@@ -178,6 +178,11 @@ public:
   void publishFeedback(typename std::shared_ptr<typename ActionT::Feedback> feedback)
   {
     action_server_->publish_feedback(feedback);
+  }
+
+  void preemptCurrentNavigator()
+  {
+    muxer_preemption_requested_ = true;
   }
 
   /**
@@ -314,6 +319,7 @@ protected:
 
   // To keep track of the execution number
   boost::uuids::random_generator uuid_generator_;
+  std::atomic_bool muxer_preemption_requested_{false};
 };
 
 }  // namespace nav2_behavior_tree
