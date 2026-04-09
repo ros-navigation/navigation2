@@ -440,10 +440,17 @@ inline void savitskyGolayFilter(
   std::array<mppi::models::Control, 4> & control_history,
   const models::OptimizerSettings & settings)
 {
-  // Savitzky-Golay Quadratic, 9-point Coefficients
-  Eigen::Array<float, 9, 1> filter = {-21.0f, 14.0f, 39.0f, 54.0f, 59.0f, 54.0f, 39.0f, 14.0f,
-    -21.0f};
-  filter /= 231.0f;
+  // Savitzky-Golay filter coefficients, 9-point window
+  Eigen::Array<float, 9, 1> filter;
+  if (settings.sgf_order == 1) {
+    // Degree-1 (linear): uniform moving average — more aggressive smoothing
+    filter = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+    filter /= 9.0f;
+  } else {
+    // Degree-2 (quadratic): standard 9-point SG coefficients
+    filter = {-21.0f, 14.0f, 39.0f, 54.0f, 59.0f, 54.0f, 39.0f, 14.0f, -21.0f};
+    filter /= 231.0f;
+  }
 
   // Too short to smooth meaningfully
   const unsigned int num_sequences = control_sequence.vx.size() - 1;

@@ -40,6 +40,7 @@ struct OptimizerSettings
   bool shift_control_sequence{false};
   size_t retry_attempt_limit{0};
   bool open_loop{false};
+  unsigned int sgf_order{2u};
 };
 
 }  // namespace mppi::models
