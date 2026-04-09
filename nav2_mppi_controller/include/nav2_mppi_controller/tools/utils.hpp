@@ -440,10 +440,17 @@ inline void savitskyGolayFilter(
   std::array<mppi::models::Control, 4> & control_history,
   const models::OptimizerSettings & settings)
 {
-  // Savitzky-Golay Quadratic, 9-point Coefficients
-  Eigen::Array<float, 9, 1> filter = {-21.0f, 14.0f, 39.0f, 54.0f, 59.0f, 54.0f, 39.0f, 14.0f,
-    -21.0f};
-  filter /= 231.0f;
+  // Savitzky-Golay filter coefficients, 9-point window
+  Eigen::Array<float, 9, 1> filter;
+  if (settings.sgf_order == 1) {
+    // Degree-1 (linear): uniform moving average — more aggressive smoothing
+    filter = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+    filter /= 9.0f;
+  } else {
+    // Degree-2 (quadratic): standard 9-point SG coefficients
+    filter = {-21.0f, 14.0f, 39.0f, 54.0f, 59.0f, 54.0f, 39.0f, 14.0f, -21.0f};
+    filter /= 231.0f;
+  }
 
   // Too short to smooth meaningfully
   const unsigned int num_sequences = control_sequence.vx.size() - 1;
@@ -631,6 +638,25 @@ inline float clamp(
   const float lower_bound, const float upper_bound, const float input)
 {
   return std::min(upper_bound, std::max(input, lower_bound));
+}
+
+/**
+ * @brief Clamp velocity by acceleration limits, whereas max is used for
+ * accelerating in speed (forward or reverse) and min is used for deceleration
+ * @param last_vel Previous velocity
+ * @param curr_vel Current velocity to clamp
+ * @param min_delta Minimum velocity change (deceleration, typically negative)
+ * @param max_delta Maximum velocity change (acceleration, typically positive)
+ * @return Clamped velocity
+ */
+inline float clampVelocityByAccel(
+  const float last_vel, const float curr_vel,
+  const float min_delta, const float max_delta)
+{
+  if (last_vel >= 0) {
+    return clamp(last_vel + min_delta, last_vel + max_delta, curr_vel);
+  }
+  return clamp(last_vel - max_delta, last_vel - min_delta, curr_vel);
 }
 
 }  // namespace mppi::utils

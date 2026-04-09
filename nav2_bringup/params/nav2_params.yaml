@@ -132,21 +132,22 @@ controller_server:
       reject_unit_path: false
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
-      time_steps: 56
-      model_dt: 0.05
+      time_steps: 50 # 56
+      model_dt: 0.1 # 0.05
       batch_size: 2000
-      ax_max: 3.0
-      ax_min: -3.0
+      open_loop: false #TODO TRY true
+      ax_max: 0.25
+      ax_min: -0.5
       ay_max: 3.0
       ay_min: -3.0
-      az_max: 3.5
-      vx_std: 0.2
+      az_max: 1.2
+      vx_std: 0.1 # STEVE 0.2
       vy_std: 0.2
-      wz_std: 0.4
+      wz_std: 0.1 # STEVE 0.2 # 0.4
       vx_max: 0.5
-      vx_min: -0.35
+      vx_min: -0.5 # -0.35
       vy_max: 0.5
-      wz_max: 1.9
+      wz_max: 0.8 # 1.9
       iteration_count: 1
       temperature: 0.3
       gamma: 0.015
@@ -173,7 +174,6 @@ controller_server:
           "PathAlignCritic",
           "PathFollowCritic",
           "PathAngleCritic",
-          "PreferForwardCritic",
         ]
       ConstraintCritic:
         enabled: true
@@ -183,54 +183,75 @@ controller_server:
         enabled: true
         cost_power: 1
         cost_weight: 5.0
-        threshold_to_consider: 1.4
+        threshold_to_consider: 2.0 # 1.4
       GoalAngleCritic:
         enabled: true
         cost_power: 1
         cost_weight: 3.0
-        threshold_to_consider: 0.5
-      PreferForwardCritic:
-        enabled: true
-        cost_power: 1
-        cost_weight: 5.0
-        threshold_to_consider: 0.5
+        threshold_to_consider: 0.4 # 0.5
       CostCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 3.81
+        cost_weight: 6.0 # 3.81
         near_collision_cost: 253
-        critical_cost: 300.0
-        consider_footprint: false
-        collision_cost: 1000000.0
-        near_goal_distance: 1.0
+        critical_cost: 30000.0 # 300.0
+        consider_footprint: true # false
+        collision_cost: 100000.0 # 1000000.0
+        near_goal_distance: 0.5 # 1.0
         trajectory_point_step: 2
       PathAlignCritic:
         enabled: true
         cost_power: 1
         cost_weight: 14.0
         max_path_occupancy_ratio: 0.05
-        trajectory_point_step: 4
-        threshold_to_consider: 0.5
+        trajectory_point_step: 3 # 4
+        threshold_to_consider: 0.4 # 0.5
         offset_from_furthest: 20
         use_path_orientations: false
       PathFollowCritic:
         enabled: true
         cost_power: 1
         cost_weight: 5.0
-        offset_from_furthest: 5
-        threshold_to_consider: 1.4
+        offset_from_furthest: 0 # 5 TODO ACCEL
+        threshold_to_consider: 0.4 # 1.4
       PathAngleCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 2.0
+        cost_weight: 10.0 # 2.0
         offset_from_furthest: 4
-        threshold_to_consider: 0.5
-        max_angle_to_furthest: 1.0
-        mode: 0
-      # TwirlingCritic:
-      #   enabled: true
-      #   twirling_cost_power: 1
-      #   twirling_cost_weight: 10.0
+        threshold_to_consider: 0.4 # 0.5
+        max_angle_to_furthest: 0.4 # 1.0
+        mode: 2 # 0
+
+velocity_smoother:
+  ros__parameters:
+    deadband_velocity:
+    - 0.0
+    - 0.0
+    - 0.0
+    feedback: OPEN_LOOP
+    max_accel: # [2.5, 0.0, 3.2]
+    - 0.25
+    - 0.0
+    - 1.2
+    max_decel: # [-2.5, 0.0, -3.2]
+    - -0.5
+    - 0.0
+    - -1.2
+    max_velocity: #  [0.5, 0.0, 2.0]
+    - 0.5
+    - 0.0
+    - 0.8
+    min_velocity: # [-0.5, 0.0, -2.0]
+    - -0.5
+    - 0.0
+    - -0.8
+    odom_duration: 0.1
+    odom_topic: odom
+    scale_velocities: false
+    smoothing_frequency: 20.0
+    use_realtime_priority: false
+    velocity_timeout: 0.5
 
 local_costmap:
   local_costmap:
@@ -240,10 +261,11 @@ local_costmap:
       global_frame: odom
       robot_base_frame: base_link
       rolling_window: true
-      width: 3
-      height: 3
+      width: 10
+      height: 10
       resolution: 0.05
-      robot_radius: 0.22
+      footprint: "[ [0.725, 0.525], [0.725, -0.525], [-0.725, -0.525], [-0.725, 0.525] ]"
+      footprint_padding: 0.12
       plugins: ["voxel_layer", "inflation_layer"]
       filters: ["keepout_filter"]
       keepout_filter:
@@ -255,7 +277,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.70
+        inflation_radius: 2.0
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: true
@@ -295,7 +317,8 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_link
-      robot_radius: 0.22
+      footprint: "[ [0.725, 0.525], [0.725, -0.525], [-0.725, -0.525], [-0.725, 0.525] ]"
+      footprint_padding: 0.12
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
@@ -337,7 +360,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.7
+        inflation_radius: 1.2
       always_send_full_costmap: true
       introspection_mode: "disabled"
 
@@ -483,20 +506,6 @@ route_server:
       plugin: "nav2_route::DistanceScorer"
     CostmapScorer:
       plugin: "nav2_route::CostmapScorer"
-
-velocity_smoother:
-  ros__parameters:
-    smoothing_frequency: 20.0
-    scale_velocities: false
-    feedback: "OPEN_LOOP"
-    max_velocity: [0.5, 0.0, 2.0]
-    min_velocity: [-0.5, 0.0, -2.0]
-    max_accel: [2.5, 0.0, 3.2]
-    max_decel: [-2.5, 0.0, -3.2]
-    odom_topic: "odom"
-    odom_duration: 0.1
-    deadband_velocity: [0.0, 0.0, 0.0]
-    velocity_timeout: 1.0
 
 collision_monitor:
   ros__parameters:
