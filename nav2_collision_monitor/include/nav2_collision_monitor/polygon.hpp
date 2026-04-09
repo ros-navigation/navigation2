@@ -98,6 +98,27 @@ public:
    * @return Minimum number of data readings within a zone to trigger the action
    */
   int getMinPoints() const;
+
+  /**
+   * @brief Temporal debounce for min_points trigger.
+   * @param points Input array of points to be checked.
+   * @return true if trigger should be considered active after debounce/hold logic.
+   */
+  bool isTriggered(const std::vector<Point> & points);
+
+  /**
+   * @brief Temporal debounce for min_points trigger.
+   * @param sources_collision_points_map Map containing source name as key,
+   * and input array of source's points to be checked as value.
+   * @return true if trigger should be considered active after debounce/hold logic.
+   */
+  bool isTriggered(
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map);
+
+  /**
+   * @brief Reset temporal debounce state.
+   */
+  void resetTriggerState();
   /**
    * @brief Obtains speed slowdown ratio for current polygon.
    * Applicable for SLOWDOWN model.
@@ -182,6 +203,9 @@ public:
    * @brief Publishes polygon message into a its own topic
    */
   void publish();
+
+private:
+  bool isTriggeredInternal(int points_inside);
 
 protected:
   /**
@@ -280,6 +304,16 @@ protected:
   ActionType action_type_;
   /// @brief Minimum number of data readings within a zone to trigger the action
   int min_points_;
+  /// @brief Number of consecutive hits required to trigger action
+  int trigger_consecutive_points_;
+  /// @brief Number of consecutive misses required to release action
+  int release_consecutive_points_;
+  /// @brief Current consecutive hit counter
+  int trigger_hits_;
+  /// @brief Current consecutive miss counter
+  int release_hits_;
+  /// @brief Latched trigger state after temporal debounce
+  bool trigger_active_;
   /// @brief Robot slowdown (share of its actual speed)
   double slowdown_ratio_;
   /// @brief Robot linear limit

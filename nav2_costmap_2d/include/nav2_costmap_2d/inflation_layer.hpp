@@ -111,7 +111,7 @@ public:
   void reset() override
   {
     matchSize();
-    current_ = false;
+    setCurrent(false);
     need_reinflation_ = true;
   }
 

@@ -117,7 +117,7 @@ TEST(PathHandlerTests, TestBounds)
 
   // Test initialization and getting costmap basic metadata
   handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
-  EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.475);
+  EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.5);
 
   // Set tf between map odom and base_link
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
@@ -168,7 +168,7 @@ TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
 
   // Test initialization and getting costmap basic metadata
   handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
-  EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.475);
+  EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.5);
 
   // Set tf between map odom and base_link
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =

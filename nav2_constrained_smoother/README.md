@@ -20,10 +20,10 @@ smoother_server:
       keep_start_orientation: true  # whether to prevent the start orientation from being smoothed
       keep_goal_orientation: true   # whether to prevent the gpal orientation from being smoothed
       minimum_turning_radius: 0.40  # minimum turning radius the robot can perform. Can be set to 0.0 (or w_curve can be set to 0.0 with the same effect) for diff-drive/holonomic robots
-      w_curve: 30.0                 # weight to enforce minimum_turning_radius
+      w_curve: 0.5                  # weight to enforce minimum_turning_radius
       w_dist: 0.0                   # weight to bind path to original as optional replacement for cost weight
-      w_smooth: 2000000.0           # weight to maximize smoothness of path
-      w_cost: 0.015                 # weight to steer robot away from collision and cost
+      w_smooth: 3.0e+3              # weight to maximize smoothness of path
+      w_cost: 0.000045                  # weight to steer robot away from collision and cost
 
       # Parameters used to improve obstacle avoidance near cusps (forward/reverse movement changes)
       # See the [docs page](https://docs.nav2.org/configuration/packages/configuring-constrained-smoother) for further clarification
@@ -38,7 +38,7 @@ smoother_server:
       optimizer:
         max_iterations: 70            # max iterations of smoother
         debug_optimizer: false        # print debug info
-        gradient_tol: 5e3
+        gradient_tol: 50.0
         fn_tol: 1.0e-15
         param_tol: 1.0e-20
 ```
