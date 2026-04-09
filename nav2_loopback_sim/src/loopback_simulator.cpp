@@ -208,7 +208,18 @@ void LoopbackSimulator::getMap()
   map_client_->async_send_request(
     request,
     [this](rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future) {
-      map_ = future.get()->map;
+      auto response = future.get();
+      if (response->map.info.width == 0 || response->map.info.height == 0 ||
+      response->map.info.resolution <= 0.0)
+      {
+        RCLCPP_WARN(
+          get_logger(),
+          "Map server returned empty/invalid map (%dx%d, res=%.3f), will retry",
+          response->map.info.width, response->map.info.height,
+          response->map.info.resolution);
+        return;
+      }
+      map_ = response->map;
       has_map_ = true;
       RCLCPP_INFO(get_logger(), "Laser scan will be populated using map data");
     });
@@ -375,6 +386,12 @@ void LoopbackSimulator::publishLaserScan()
   int num_samples = static_cast<int>(
     (scan_angle_max_ - scan_angle_min_) / scan_angle_increment_);
   scan_msg->ranges.assign(num_samples, 0.0f);
+  if (!has_map_) {
+    getMap();
+  }
+  if (!has_base_to_laser_) {
+    getBaseToLaserTf();
+  }
   getLaserScan(num_samples, *scan_msg);
   scan_pub_->publish(std::move(scan_msg));
 }
