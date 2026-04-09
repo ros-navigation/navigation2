@@ -280,7 +280,7 @@ protected:
   tf2::Duration transform_tolerance_;
   double resolution_{0.0};
   std::string costmap_frame_;
-
+  std::string robot_base_frame_;
 };
 
 }  // namespace nav2_costmap_2d
