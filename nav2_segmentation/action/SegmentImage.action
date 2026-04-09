@@ -1,0 +1,17 @@
+string image_topic
+string text_prompt
+float32 point_x
+float32 point_y
+int32 point_label
+float32 box_min_x
+float32 box_min_y
+float32 box_max_x
+float32 box_max_y
+bool use_point_prompt
+bool use_box_prompt
+---
+bool success
+string mask_topic
+string message
+---
+string current_state
