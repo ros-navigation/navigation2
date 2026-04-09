@@ -3,6 +3,7 @@ project(nav2_behavior_tree CXX)
 
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
+find_package(Boost REQUIRED)
 find_package(action_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -33,6 +34,7 @@ target_include_directories(${library_name}
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${library_name} PUBLIC
   ${action_msgs_TARGETS}
+  Boost::boost
   behaviortree_cpp::behaviortree_cpp
   ${geometry_msgs_TARGETS}
   ${nav_msgs_TARGETS}
@@ -350,6 +352,7 @@ ament_export_libraries(${library_name})
 
 ament_export_dependencies(
   action_msgs
+  Boost
   behaviortree_cpp
   geometry_msgs
   nav2_common
