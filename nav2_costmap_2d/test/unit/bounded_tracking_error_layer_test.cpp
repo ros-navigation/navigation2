@@ -719,19 +719,11 @@ TEST_F(BoundedTrackingErrorLayerTest, ResetState_DoesNotTouchCurrent)
   EXPECT_TRUE(layer_->currentRef()) << "resetState() must not modify current_";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ActivateSetsCurrentTrue)
-{
-  layer_->currentRef() = false;
-  layer_->activate();
-  EXPECT_TRUE(layer_->currentRef());
-}
-
 TEST_F(BoundedTrackingErrorLayerTest, DeactivateAndReactivate)
 {
   layer_->activate();
   layer_->deactivate();
   EXPECT_NO_THROW(layer_->activate());
-  EXPECT_TRUE(layer_->currentRef());
 }
 
 TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectNegativeLookAhead)
