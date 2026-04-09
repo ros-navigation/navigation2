@@ -15,24 +15,23 @@
 #ifndef NAV2_COSTMAP_2D__BOUNDED_TRACKING_ERROR_LAYER_HPP_
 #define NAV2_COSTMAP_2D__BOUNDED_TRACKING_ERROR_LAYER_HPP_
 
+#include <array>
 #include <atomic>
 #include <cstddef>
-#include <vector>
 #include <mutex>
 #include <string>
-#include <array>
+#include <vector>
 
-#include "nav2_costmap_2d/layered_costmap.hpp"
-#include "nav2_costmap_2d/layer.hpp"
 #include "nav_msgs/msg/path.hpp"
-
-#include "nav2_util/path_utils.hpp"
-#include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
+#include "tf2/time.hpp"
 #include "tf2_ros/buffer.hpp"
 
-#include "tf2/time.hpp"
+#include "nav2_costmap_2d/layer.hpp"
+#include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/line_iterator.hpp"
+#include "nav2_util/path_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 
 namespace nav2_costmap_2d
@@ -165,6 +164,11 @@ protected:
   void resetState();
 
   /**
+   * @brief Reads and validates all ROS parameters, populating member variables.
+   */
+  void getParameters();
+
+  /**
    * @brief Stores the incoming path. All staleness and index checks are
    *        deferred to updateCosts() to keep the callback minimal.
    * @param msg Incoming path message.
@@ -219,8 +223,6 @@ protected:
     const std::vector<std::array<double, 2>> & inner_points,
     const std::vector<std::array<double, 2>> & outer_points);
 
-  std::atomic<uint32_t> current_path_index_{0};
-
 private:
   /**
    * @brief A 2D cell coordinate in the costmap grid.
@@ -243,6 +245,8 @@ private:
    * @param inner1 Inner boundary point i+1.
    * @param outer0 Outer boundary point i.
    * @param outer1 Outer boundary point i+1.
+   *
+   * See https://en.wikipedia.org/wiki/Scanline_rendering
    */
   void fillCorridorQuad(
     nav2_costmap_2d::Costmap2D & master_grid,
@@ -265,6 +269,8 @@ private:
   std::vector<int> span_x_max_buffer_;
 
 protected:
+  std::atomic<uint32_t> current_path_index_{0};
+
   std::string path_topic_;
   size_t step_size_;
   double look_ahead_;

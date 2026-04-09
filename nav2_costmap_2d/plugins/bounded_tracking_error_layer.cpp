@@ -21,13 +21,88 @@
 
 #include "pluginlib/class_list_macros.hpp"
 
-
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::BoundedTrackingErrorLayer, nav2_costmap_2d::Layer)
+
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
 
-void BoundedTrackingErrorLayer::onInitialize()
+void
+BoundedTrackingErrorLayer::onInitialize()
+{
+  getParameters();
+
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
+    joinWithParentNamespace(path_topic_),
+    std::bind(&BoundedTrackingErrorLayer::pathCallback, this, std::placeholders::_1),
+    nav2::qos::StandardTopicQoS()
+  );
+
+  current_ = true;
+}
+
+void
+BoundedTrackingErrorLayer::activate()
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &BoundedTrackingErrorLayer::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &BoundedTrackingErrorLayer::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void
+BoundedTrackingErrorLayer::deactivate()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+  path_sub_.reset();
+}
+
+void
+BoundedTrackingErrorLayer::reset()
+{
+  resetState();
+  current_ = false;
+}
+
+void
+BoundedTrackingErrorLayer::resetState()
+{
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  last_path_ptr_.reset();
+  current_path_index_.store(0);
+}
+
+void
+BoundedTrackingErrorLayer::matchSize()
+{
+  resolution_ = layered_costmap_->getCostmap()->getResolution();
+  costmap_frame_ = layered_costmap_->getGlobalFrameID();
+}
+
+void
+BoundedTrackingErrorLayer::getParameters()
 {
   auto node = node_.lock();
   if (!node) {
@@ -71,70 +146,15 @@ void BoundedTrackingErrorLayer::onInitialize()
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 }
 
-void BoundedTrackingErrorLayer::matchSize()
-{
-  resolution_ = layered_costmap_->getCostmap()->getResolution();
-  costmap_frame_ = layered_costmap_->getGlobalFrameID();
-}
-
-void BoundedTrackingErrorLayer::activate()
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-  post_set_params_handler_ = node->add_post_set_parameters_callback(
-    std::bind(
-      &BoundedTrackingErrorLayer::updateParametersCallback,
-      this, std::placeholders::_1));
-  on_set_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &BoundedTrackingErrorLayer::validateParameterUpdatesCallback,
-      this, std::placeholders::_1));
-
-  path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
-    joinWithParentNamespace(path_topic_),
-    std::bind(&BoundedTrackingErrorLayer::pathCallback, this, std::placeholders::_1),
-    nav2::qos::StandardTopicQoS()
-  );
-
-  current_ = true;
-}
-
-void BoundedTrackingErrorLayer::deactivate()
-{
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
-  path_sub_.reset();
-}
-
-void BoundedTrackingErrorLayer::reset()
-{
-  resetState();
-  current_ = false;
-}
-
-void BoundedTrackingErrorLayer::resetState()
-{
-  std::lock_guard<std::mutex> lock(data_mutex_);
-  last_path_ptr_.reset();
-  current_path_index_.store(0);
-}
-
-void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
+void
+BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(data_mutex_);
   last_path_ptr_ = msg;
 }
 
-void BoundedTrackingErrorLayer::updateBounds(
+void
+BoundedTrackingErrorLayer::updateBounds(
   double robot_x, double robot_y, double /*robot_yaw*/,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
@@ -150,7 +170,8 @@ void BoundedTrackingErrorLayer::updateBounds(
   *max_y = std::max(*max_y, robot_y + margin);
 }
 
-void BoundedTrackingErrorLayer::updateCosts(
+void
+BoundedTrackingErrorLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
 {
@@ -246,7 +267,8 @@ void BoundedTrackingErrorLayer::updateCosts(
   drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
 }
 
-void BoundedTrackingErrorLayer::getPathSegment(
+void
+BoundedTrackingErrorLayer::getPathSegment(
   const nav_msgs::msg::Path & path,
   const size_t path_index,
   nav_msgs::msg::Path & segment)
@@ -282,7 +304,8 @@ void BoundedTrackingErrorLayer::getPathSegment(
   }
 }
 
-void BoundedTrackingErrorLayer::getWallPolygons(
+void
+BoundedTrackingErrorLayer::getWallPolygons(
   const nav_msgs::msg::Path & segment,
   WallPolygons & walls)
 {
@@ -341,7 +364,8 @@ void BoundedTrackingErrorLayer::getWallPolygons(
   }
 }
 
-void BoundedTrackingErrorLayer::drawCorridorWalls(
+void
+BoundedTrackingErrorLayer::drawCorridorWalls(
   nav2_costmap_2d::Costmap2D & master_grid,
   const std::vector<std::array<double, 2>> & inner_points,
   const std::vector<std::array<double, 2>> & outer_points)
@@ -376,7 +400,8 @@ void BoundedTrackingErrorLayer::drawCorridorWalls(
   }
 }
 
-void BoundedTrackingErrorLayer::fillCorridorQuad(
+void
+BoundedTrackingErrorLayer::fillCorridorQuad(
   nav2_costmap_2d::Costmap2D & master_grid,
   CellPoint inner0,
   CellPoint inner1,
@@ -463,7 +488,7 @@ BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
       continue;
     }
 
-    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "look_ahead") {
         const double new_value = parameter.as_double();
         if (new_value <= 0.0) {
@@ -485,7 +510,7 @@ BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
           result.reason = "corridor_width must be positive";
         }
       }
-    } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER) {
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "step") {
         const int new_value = parameter.as_int();
         if (new_value <= 0) {
@@ -523,7 +548,8 @@ BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
   return result;
 }
 
-void BoundedTrackingErrorLayer::updateParametersCallback(
+void
+BoundedTrackingErrorLayer::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::mutex> guard(data_mutex_);
@@ -536,7 +562,7 @@ void BoundedTrackingErrorLayer::updateParametersCallback(
       continue;
     }
 
-    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "look_ahead" &&
         look_ahead_ != parameter.as_double())
       {
@@ -548,12 +574,12 @@ void BoundedTrackingErrorLayer::updateParametersCallback(
         corridor_width_ = parameter.as_double();
         current_ = false;
       }
-    } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
         current_ = false;
       }
-    } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER) {
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "step") {
         const int new_step = parameter.as_int();
         if (static_cast<size_t>(new_step) != step_size_) {
