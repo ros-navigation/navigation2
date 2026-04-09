@@ -291,21 +291,84 @@ Plotting the angular velocity before and after the changes, we can get a sense o
 
 Before:
 
+![image](./low_accel_graphics/steady_state_noise_before.png)
+![image](./low_accel_graphics/steady_state_noise_before2.png)
+
+
 After: 
 
 ![image](./low_accel_graphics/steady_state_noise_after.png)
 
-General noise in +/- 0.02 rad/s, with a spike up to +/-0.04 rad/s.
+General noise in +/- 0.02 rad/s, with a spike up to +/-0.04 rad/s in both cases. Qualitatively from multiple runs, it looks like the best-case noise of the before case is around 0.01 rad/s but was unable to see any better than 0.02 rad/s in the after case, so there does seem to be some noise increase worth addressing.
+
+We do not see the 'wobble' effect, but that may well be due to model lag in that users system which we do not see here. Other work adding model_lag to the system may be required to see that behavior, but we can still work on improving the noise regardless.
+
+#### Investigation 4-6: Improving Oscillation / Wobble Behavior
+
+Lets start with something easy: There's notes in various publications that the importance sampling (gamma) is not terribly important and may contribute in this way. Lets remove it and see if it helps with the noise.
+
+```cpp
+  // auto vx_T = control_sequence_.vx.transpose();
+  // auto bounded_noises_vx = state_.cvx.rowwise() - vx_T;
+  // const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
+  // costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
+
+  // auto wz_T = control_sequence_.wz.transpose();
+  // auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
+  // const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
+  // costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
+
+  // auto vy_T = control_sequence_.vy.transpose();
+  // auto bounded_noises_vy = state_.cvy.rowwise() - vy_T;
+  // const float gamma_vy = s.gamma / (s.sampling_std.vy * s.sampling_std.vy);
+  // costs_ += (gamma_vy * (bounded_noises_vy.rowwise() * vy_T).rowwise().sum()).eval();
+  }
+```
+
+Definitely worse, noise > 0.035 rad/s. Moving on from that idea...
+
+Another low-hanging fruit is to apply the SGF a second time after the control constraints are enforced to have a double smoothing effect. In testing this, it did successfully reduce the noise a bit, but we still see spikes on the order of 0.3 rad/s and general noise around 0.2 rad/s. While the general noise is more tightly bounded, its not the clear difference maker we're looking for and is kind of hacky.
+
+Relatedly, perhaps we should smooth using the SGF with a more aggressive smoothing policy. We can drop the filter to be 1st order so that it essentially is a weighted mean average which should very effectively remove noise at the cost of detail. This does actually a pretty decent job and a good option to consider.
+
+![image](./low_accel_graphics/SGF_order1.png)
+
+What about tuning? We have a few values that are related to averaging and noise: `temperature`, `gamma`, and the sampling standard deviations. 
+
+Increasing Temperature does successfully reduce magnitude the noise, but may be slower to react to dynamic obstacles or changes. Additionally, the noise spikes are quite significant and change sign frequently in large swings.
+
+![image](./low_accel_graphics/temperature_0.4.png)
+
+We could say that this "works" but I don't think this is what anyone would want. This basically relies on the optimization problem averaging using a larger number of samples to reduce noise.
+
+Manipulating Gamma did not seem to have a great impact on this so I'll clip the analysis here and move on.
+
+Lets do some back of the envelope math. We're currently using a STD of 0.2 for linear and angular velocities. That would put is within 1 sigma of 0.2 m/s and 0.2 rad/s for each timestep. If the timestep is 0.1, then with the acceleration of 0.25 m/s2, we're only actually able to differ by a measly 0.025 m/s, significantly lower than our noised values. For 0.2 STD to make sense, we would need to be able to accelerate proportionate to ~ 0.2 m/s (or rad/s) in a single timestep, which amounts to 2 m/s^2, which is totally sane for a normal AMR without low acceleration limits. Hence why we have such a value set for Nav2 by default.
+
+If we reduce the STD to 0.1, we see a pretty big reduction in that noise and still explore far more that we can realistically achieve with the acceleration limits in place.
+
+![image](./low_accel_graphics/reduced_std_0.1.png)
 
 
+![image](./low_accel_graphics/reduced_std_0.1_steady_state.png)
 
-Do the same experiments for 12 m instead of 8. Look at the time to converge before and after, and the noise in the angular / linear velocity at steady state. Come up wit hthe metric of noise during execution, noise during path acquiring, time to settle, etc.
+Now that's more like it. The complete chart looks very simila to the original _before_ graphics and the noise distributions are well below the _before_ graphics just above. Our spikes are in the +/- ~0.015 rad/s range now with normal noise well under +/- 0.01 rad/s. This is also less noisy and more consistent than the SGF order 1 chart, so I would say this is a better option than that. However I think it still wise to take the learnings from this experience and offer the SGF option for reducing the order if they like.
 
-Use that to benchmark
+Reducing the STD seems to me to be a complete and legitimate solution to the noise increase problem due to using low acceleration with unclamped controls with the other related fixes.
+
+
+#### Investigation 4-6: Part 2: Optimizing Smoothness Further
+
+We've found a good solution that reduces the jitter in the angular velocity regime above. In previous sections the work we did on acceleration constraints unclamping the controls also resulted in significantly smoother acceleration profiles in the linear velocity. Overall, we've done an excellent job improving the behavior of MPPI not just for low-acceleration cases, but in general.
+
+However, if we wanted to go even further, there are a few other options we could explore:
+
+* Low-frequency / colored noise sampling: Sample noise in the frequency domain using colored noise.
+* Acceleration-space sampling: Sample noise in the acceleration space and integrate it to get the velocity perturbations.
+
+TODO expose SGF order for 1/2 as a parameter for those to use to smooth as another option other than STD.
+
 
 ## Topic 2: Asymmetric Acceleration Limits
 
-Check the signs of the motion model / clamping as working; it could be trivial as that
-Else, characterize and dig in.
-
-
+This actually should be completely resolved by the current work in Topic 1 and needs no further investigation! See the charts above to show that the asymmetric acceleration limits are now being respected and used.
