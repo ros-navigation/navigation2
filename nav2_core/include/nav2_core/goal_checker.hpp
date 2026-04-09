@@ -98,11 +98,13 @@ public:
    * that each independent field could be assuming the other has no error (e.x. X and Y).
    * @param pose_tolerance The tolerance used for checking in Pose fields
    * @param vel_tolerance The tolerance used for checking velocity fields
+   * @param path_length_tolerance The tolerance used for checking the path length
    * @return True if the tolerances are valid to use
    */
   virtual bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & vel_tolerance) = 0;
+    geometry_msgs::msg::Twist & vel_tolerance,
+    double & path_length_tolerance) = 0;
 };
 
 }  // namespace nav2_core

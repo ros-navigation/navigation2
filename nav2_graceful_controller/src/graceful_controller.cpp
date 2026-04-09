@@ -129,7 +129,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // Update for the current goal checker's state
   geometry_msgs::msg::Pose pose_tolerance;
   geometry_msgs::msg::Twist velocity_tolerance;
-  if (!goal_checker->getTolerances(pose_tolerance, velocity_tolerance)) {
+  if (!goal_checker->getTolerances(pose_tolerance, velocity_tolerance, path_length_tolerance_)) {
     RCLCPP_WARN(logger_, "Unable to retrieve goal checker's tolerances!");
   } else {
     goal_dist_tolerance_ = pose_tolerance.position.x;

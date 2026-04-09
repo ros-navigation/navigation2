@@ -60,9 +60,11 @@ public:
     return shouldRotateToPath(carrot_pose, angle_to_path, x_vel_sign);
   }
 
-  bool shouldRotateToGoalHeadingWrapper(const geometry_msgs::msg::PoseStamped & carrot_pose)
+  bool shouldRotateToGoalHeadingWrapper(
+    const geometry_msgs::msg::PoseStamped & carrot_pose,
+    const double & remaining_path_length)
   {
-    return shouldRotateToGoalHeading(carrot_pose);
+    return shouldRotateToGoalHeading(carrot_pose, remaining_path_length);
   }
 
   void rotateToHeadingWrapper(
@@ -204,17 +206,18 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   EXPECT_EQ(ctrl->shouldRotateToPathWrapper(carrot, angle_to_path_rtn), true);
 
   // shouldRotateToGoalHeading
+  double remaining_path_length = 0.0;
   carrot.pose.position.x = 0.0;
   carrot.pose.position.y = 0.0;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length), true);
 
   carrot.pose.position.x = 0.0;
   carrot.pose.position.y = 0.24;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length), true);
 
   carrot.pose.position.x = 0.0;
   carrot.pose.position.y = 0.26;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), false);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length), false);
 
   // rotateToHeading
   double lin_v = 10.0;
@@ -260,15 +263,15 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   // Start just outside tolerance
   carrot.pose.position.x = 0.0;
   carrot.pose.position.y = 0.26;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), false);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length), false);
 
   // Enter tolerance (should set internal flag)
   carrot.pose.position.y = 0.24;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length), true);
 
   // Move outside tolerance again - still expect true (due to persistent state)
   carrot.pose.position.y = 0.26;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length), true);
 }
 
 TEST(RegulatedPurePursuitTest, applyConstraints)
