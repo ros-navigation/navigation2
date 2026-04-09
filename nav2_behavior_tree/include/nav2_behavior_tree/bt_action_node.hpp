@@ -77,6 +77,10 @@ public:
     if (getInput("server_name", remapped_action_name)) {
       action_name_ = remapped_action_name;
     }
+    if (!config().blackboard->template get<bool>("is_global", is_global_)) {
+      is_global_ = false;
+    }
+
     createActionClient(action_name_);
 
     // Give the derive class a chance to do any initialization
@@ -121,7 +125,7 @@ public:
   {
     BT::PortsList basic = {
       BT::InputPort<std::string>("server_name", "Action server name"),
-      BT::InputPort<std::chrono::milliseconds>("server_timeout")
+      BT::InputPort<std::chrono::milliseconds>("server_timeout"),
     };
     basic.insert(addition.begin(), addition.end());
 
@@ -202,8 +206,28 @@ public:
    */
   BT::NodeStatus tick() override
   {
+    bool needs_initialization = false;
     // first step to be done only at the beginning of the Action
-    if (!BT::isStatusActive(status())) {
+    if (is_global_) {
+      std::string new_run_id;
+      try {
+        new_run_id = config().blackboard->get<std::string>("run_id");
+      } catch (const std::exception & e) {
+        throw std::runtime_error(
+          "is_global=true requires 'run_id' to be set on the blackboard for action: " +
+          action_name_ + ". Error: " + e.what());
+      }
+
+      if (new_run_id != current_run_id_) {
+        needs_initialization = true;
+        current_run_id_ = new_run_id;
+      }
+    } else {
+      if (!BT::isStatusActive(status())) {
+        needs_initialization = true;
+      }
+    }
+    if (needs_initialization) {
       // reset the flag to send the goal or not, allowing the user the option to set it in on_tick
       should_send_goal_ = true;
 
@@ -502,6 +526,12 @@ protected:
 
   // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent.
   bool should_send_goal_;
+
+  // Whether to use global reinitialization for asynch nodes
+  bool is_global_;
+
+  // The run_id currently being tracked
+  std::string current_run_id_;
 };
 
 }  // namespace nav2_behavior_tree

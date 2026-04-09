@@ -54,6 +54,11 @@ public:
   BT::NodeStatus tick() override;
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -74,6 +79,8 @@ public:
 private:
   geometry_msgs::msg::PoseStamped goal_;
   nav_msgs::msg::Goals goals_;
+  bool is_global_;
+  std::string current_run_id_;
 };
 
 }  // namespace nav2_behavior_tree

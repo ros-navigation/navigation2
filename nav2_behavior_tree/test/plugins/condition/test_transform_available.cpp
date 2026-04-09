@@ -49,6 +49,9 @@ public:
       "bt_loop_duration",
       std::chrono::milliseconds(10));
     config_->blackboard->set("initial_pose_received", false);
+
+    factory_->registerNodeType<nav2_behavior_tree::TransformAvailableCondition>(
+      "TransformAvailable");
   }
 
   static void TearDownTestCase()
@@ -71,8 +74,6 @@ public:
         </BehaviorTree>
       </root>)";
 
-    factory_->registerNodeType<nav2_behavior_tree::TransformAvailableCondition>(
-      "TransformAvailable");
     tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   }
 
@@ -102,6 +103,28 @@ TEST_F(TransformAvailableConditionTestFixture, test_behavior)
   EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::FAILURE);
   transform_handler_->activate();
   transform_handler_->waitForTransform();
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::SUCCESS);
+}
+
+TEST_F(TransformAvailableConditionTestFixture, test_runid_global_mode)
+{
+  // Note: transform_handler_ is already active from test_behavior,
+  // so the transform is available from the start.
+  node_->declare_or_get_parameter("is_global", false);
+  node_->set_parameter(rclcpp::Parameter("is_global", true));
+  config_->blackboard->set<std::string>("run_id", "runid_1");
+
+  // Transform is available (handler active from test_behavior) -> SUCCESS and latch set
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::SUCCESS);
+
+  // Same RunID: latch still set -> SUCCESS without re-checking
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::SUCCESS);
+
+  // New RunID: latch cleared, falls through to real check -> transform still available -> SUCCESS
+  config_->blackboard->set<std::string>("run_id", "runid_2");
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::SUCCESS);
+
+  // Same RunID again: latch re-set from previous tick -> SUCCESS
   EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::SUCCESS);
 }
 
