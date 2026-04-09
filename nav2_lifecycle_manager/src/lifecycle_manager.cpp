@@ -224,6 +224,9 @@ LifecycleManager::createLifecycleServiceServers()
     get_name() + std::string("/is_active"),
     std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
     callback_group_);
+
+  manager_srv_->on_activate();
+  is_active_srv_->on_activate();
 }
 
 void
@@ -239,6 +242,18 @@ LifecycleManager::createLifecyclePublishers()
   is_active_pub_->on_activate();
   // Publish the initial state once at startup
   publishIsActiveState();
+}
+
+void
+LifecycleManager::destroyLifecycleServiceServers()
+{
+  message("Destroying lifecycle service servers");
+
+  manager_srv_->on_deactivate();
+  is_active_srv_->on_deactivate();
+
+  manager_srv_.reset();
+  is_active_srv_.reset();
 }
 
 void
@@ -413,6 +428,7 @@ LifecycleManager::shutdown()
   message("Shutting down managed nodes...");
   shutdownAllNodes();
   destroyLifecycleServiceClients();
+  destroyLifecycleServiceServers();
   destroyLifecyclePublishers();
   message("Managed nodes have been shut down");
   return true;

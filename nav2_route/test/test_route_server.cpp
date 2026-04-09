@@ -112,7 +112,9 @@ public:
 
   void shutdown()
   {
-    on_deactivate(rclcpp_lifecycle::State());
+    if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED) {
+      on_deactivate(rclcpp_lifecycle::State());
+    }
     on_cleanup(rclcpp_lifecycle::State());
   }
 
