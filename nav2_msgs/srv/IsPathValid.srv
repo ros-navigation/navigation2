@@ -5,7 +5,7 @@ uint8 max_cost 254
 bool consider_unknown_as_obstacle false
 string layer_name ""
 string footprint ""
-bool check_full_path false
+bool stop_at_first_collision true
 float64 max_lookahead_distance -1.0
 ---
 bool success
