@@ -170,10 +170,10 @@ controller_server:
           "CostCritic",
           "GoalCritic",
           "GoalAngleCritic",
-          "PathAlignCritic",
           "PathFollowCritic",
           "PathAngleCritic",
           "PreferForwardCritic",
+          "PathHugCritic"
         ]
       ConstraintCritic:
         enabled: true
@@ -209,7 +209,6 @@ controller_server:
         cost_power: 1
         cost_weight: 14.0
         max_path_occupancy_ratio: 0.05
-        trajectory_point_step: 4
         threshold_to_consider: 0.5
         offset_from_furthest: 20
         use_path_orientations: false
@@ -227,6 +226,18 @@ controller_server:
         threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
         mode: 0
+      PathHugCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 1.0
+        trajectory_point_step: 1
+        threshold_to_consider: 0.25
+        search_window: 0.2
+        lookahead_distance: 0.3
+        max_allowed_distance: 0.07
+        collision_cost: 100000.0
+        use_soft_repulsion: true
+        grace_distance: 0.01
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
