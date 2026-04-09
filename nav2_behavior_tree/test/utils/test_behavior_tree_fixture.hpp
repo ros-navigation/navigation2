@@ -63,6 +63,7 @@ public:
       "bt_loop_duration",
       std::chrono::milliseconds(10));
     config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set<bool>("is_global", false);
 
     transform_handler_->activate();
     transform_handler_->waitForTransform();

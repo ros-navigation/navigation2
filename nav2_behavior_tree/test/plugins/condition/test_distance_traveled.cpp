@@ -79,6 +79,57 @@ TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
   }
 }
 
+TEST_F(DistanceTraveledConditionTestFixture, test_runid_global_mode)
+{
+  // Reset robot to origin so we don't inherit stale position from test_behavior
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 0.0;
+  pose.pose.position.y = 0.0;
+  pose.pose.orientation.w = 1.0;
+  transform_handler_->updateRobotPose(pose.pose);
+  geometry_msgs::msg::PoseStamped current_pose;
+  double current_x = 1.0;
+  while (current_x > 0.05) {
+    if (nav2_util::getCurrentPose(current_pose, *transform_handler_->getBuffer())) {
+      current_x = current_pose.pose.position.x;
+    }
+  }
+
+  // Enable global mode
+  node_->declare_or_get_parameter("is_global", false);
+  node_->set_parameter(rclcpp::Parameter("is_global", true));
+  config_->blackboard->set<std::string>("run_id", "runid_1");
+
+  // First tick: initialize start_pose_ at position 0
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Move robot to 0.6 — not enough distance yet
+  pose.pose.position.x = 0.6;
+  transform_handler_->updateRobotPose(pose.pose);
+  current_x = 0;
+  while (current_x < 0.5) {
+    if (nav2_util::getCurrentPose(current_pose, *transform_handler_->getBuffer())) {
+      current_x = current_pose.pose.position.x;
+    }
+  }
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // New RunID: start_pose_ must NOT reset — distance still accumulates from 0
+  config_->blackboard->set<std::string>("run_id", "runid_2");
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Move to 1.1 — now > 1.0 from start (position 0), should succeed
+  pose.pose.position.x = 1.1;
+  transform_handler_->updateRobotPose(pose.pose);
+  current_x = 0;
+  while (current_x < 1.0) {
+    if (nav2_util::getCurrentPose(current_pose, *transform_handler_->getBuffer())) {
+      current_x = current_pose.pose.position.x;
+    }
+  }
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

@@ -60,6 +60,46 @@ TEST_F(GoalUpdatedConditionTestFixture, test_behavior)
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 }
 
+TEST_F(GoalUpdatedConditionTestFixture, test_runid_global_mode)
+{
+  // Enable global mode and set initial run_id
+  auto node = config_->blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  node->declare_or_get_parameter("is_global", false);
+  node->set_parameter(rclcpp::Parameter("is_global", true));
+  config_->blackboard->set<std::string>("run_id", "runid_1");
+
+  geometry_msgs::msg::PoseStamped goal;
+  goal.pose.position.x = 0.0;
+  config_->blackboard->set("goal", goal);
+
+  // First tick: snapshot captured, goal unchanged -> FAILURE
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Same run, goal changes -> SUCCESS
+  goal.pose.position.x = 1.0;
+  config_->blackboard->set("goal", goal);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // Same run, goal unchanged -> FAILURE
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // New RunID with same goal: snapshot updated to current goal,fall through ->no change->FAILURE
+  config_->blackboard->set<std::string>("run_id", "runid_2");
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // New RunID without changing goal: snapshot updated to current goal (1.0), no change -> FAILURE
+  config_->blackboard->set<std::string>("run_id", "runid_3");
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Now change the goal on the same run: detected as update -> SUCCESS
+  goal.pose.position.x = 2.0;
+  config_->blackboard->set("goal", goal);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // Same run, goal unchanged -> FAILURE
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

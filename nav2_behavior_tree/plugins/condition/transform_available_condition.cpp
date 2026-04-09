@@ -31,7 +31,9 @@ TransformAvailableCondition::TransformAvailableCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  was_found_(false)
+  was_found_(false),
+  is_global_(false),
+  current_run_id_("")
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
@@ -46,6 +48,7 @@ void TransformAvailableCondition::initialize()
 {
   getInput("child", child_frame_);
   getInput("parent", parent_frame_);
+  is_global_ = node_->declare_or_get_parameter("is_global", false);
 
   if (child_frame_.empty() || parent_frame_.empty()) {
     RCLCPP_FATAL(
@@ -61,6 +64,27 @@ BT::NodeStatus TransformAvailableCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
+  }
+
+  // Global mode: reinitialize (reset was_found_, return FAILURE) when RunID changes
+  if (is_global_) {
+    std::string new_run_id;
+    try {
+      new_run_id = config().blackboard->template get<std::string>("run_id");
+    } catch (const std::exception & e) {
+      throw std::runtime_error(
+        "is_global=true requires 'run_id' to be set on the blackboard for condition: " +
+        std::string(name()));
+    }
+
+    if (new_run_id != current_run_id_) {
+      current_run_id_ = new_run_id;
+      was_found_ = false;  // Clear latch so transform is re-checked for new run
+    }
+  } else {
+    if (!BT::isStatusActive(status())) {
+      was_found_ = false;
+    }
   }
 
   if (was_found_) {
