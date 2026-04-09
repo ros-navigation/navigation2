@@ -24,41 +24,68 @@
 namespace mppi::critics
 {
 
+/**
+ * @class mppi::critics::PathHugCritic
+ * @brief Critic objective function for enforcing a hard corridor boundary
+ * around the planned path. Intended as a stricter alternative to PathAlignCritic.
+ * When use_soft_repulsion is false, trajectories inside the corridor pay zero cost
+ * and any trajectory that exits is assigned collision_cost. When use_soft_repulsion
+ * is true, a linear penalty ramp is applied between grace_distance and
+ * max_allowed_distance with a hard veto at the boundary. If all trajectories
+ * violate the boundary, graded fallback costs are applied to preserve optimizer
+ * gradient for recovery.
+ */
 class PathHugCritic : public CriticFunction
 {
 public:
+  /**
+   * @brief Initialize critic
+   */
   void initialize() override;
+
+  /**
+   * @brief Evaluate cost related to corridor boundary enforcement
+   *
+   * @param data in/out critic data containing trajectories and path
+   */
   void score(CriticData & data) override;
 
 protected:
+  /**
+   * @brief Precompute cumulative arc-length distances along path segments
+   *
+   * @param path The current local path
+   * @param num_segments Number of path segments to process
+   */
   void updateCumulativeDistances(const models::Path & path, size_t num_segments);
 
-  float computeMinDistanceToPath(
+  /**
+   * @brief Compute squared distance from a point to the nearest path segment
+   *
+   * @param px X coordinate of the query point
+   * @param py Y coordinate of the query point
+   * @param path The current local path
+   * @param num_segments Number of path segments
+   * @param path_hint [in/out] Hint segment index, updated to closest found
+   * @return Squared Euclidean distance to the nearest path segment
+   */
+  float computeMinDistToPathSq(
     float px, float py,
     const models::Path & path,
     size_t num_segments,
-    Eigen::Index & path_hint,
-    int & segments_searched);
+    Eigen::Index & path_hint);
 
+  // cost_weight and cost_power only active in soft repulsion mode
   unsigned int power_{1};
   float weight_{10.0f};
-  float max_path_occupancy_ratio_{0.07f};
-  size_t offset_from_furthest_{20};
   int trajectory_point_step_{4};
   float threshold_to_consider_{0.5f};
   float search_window_{0.15f};
   float lookahead_distance_{0.3f};
   float max_allowed_distance_{0.2f};
-  float violation_penalty_scale_{2.0f};
-
-  // Path caching
-  size_t prev_path_size_{0};
-  float prev_path_start_x_{0.0f};
-  float prev_path_start_y_{0.0f};
-  float prev_path_end_x_{0.0f};
-  float prev_path_end_y_{0.0f};
-
-  Eigen::Index cached_robot_hint_{0};
+  float collision_cost_{100000.0f};
+  bool use_soft_repulsion_{false};
+  float grace_distance_{0.1f};
   std::vector<float> cumulative_distances_;
 };
 
