@@ -40,10 +40,11 @@ ProgressGoalChecker::ProgressGoalChecker()
   path_length_tolerance_(1.0),
   stateful_(true),
   symmetric_yaw_tolerance_(false),
+  trans_stopped_velocity_(0.10),
+  rot_stopped_velocity_(0.10),
   required_stagnation_cycles_(15),
   check_xy_(true),
   in_tolerance_zone_(false),
-  best_distance_sq_(std::numeric_limits<double>::max()),
   no_improvement_count_(0)
 {
 }
@@ -82,6 +83,10 @@ void ProgressGoalChecker::initialize(
   stateful_ = node->declare_or_get_parameter(plugin_name + ".stateful", true);
   symmetric_yaw_tolerance_ = node->declare_or_get_parameter(
     plugin_name + ".symmetric_yaw_tolerance", false);
+  trans_stopped_velocity_ = node->declare_or_get_parameter(
+    plugin_name + ".trans_stopped_velocity", 0.10);
+  rot_stopped_velocity_ = node->declare_or_get_parameter(
+    plugin_name + ".rot_stopped_velocity", 0.10);
   required_stagnation_cycles_ = node->declare_or_get_parameter(
     plugin_name + ".required_stagnation_cycles", 15);
 
@@ -102,14 +107,13 @@ void ProgressGoalChecker::reset()
 {
   check_xy_ = true;
   in_tolerance_zone_ = false;
-  best_distance_sq_ = std::numeric_limits<double>::max();
   no_improvement_count_ = 0;
 }
 
 bool ProgressGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose,
   const geometry_msgs::msg::Pose & goal_pose,
-  const geometry_msgs::msg::Twist &,
+  const geometry_msgs::msg::Twist & velocity,
   const nav_msgs::msg::Path & transformed_global_plan)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
@@ -138,25 +142,26 @@ bool ProgressGoalChecker::isGoalReached(
         std::sqrt(dist_sq), fine_xy_goal_tolerance_);
       // Fall through to yaw check
 
-    // Tier 2: Within the coarse tolerance zone — track convergence
+    // Tier 2: Within the coarse tolerance zone — check velocity stagnation
     } else if (dist_sq <= coarse_xy_goal_tolerance_sq_) {
       // Just entered the zone: initialize tracking
       if (!in_tolerance_zone_) {
         in_tolerance_zone_ = true;
-        best_distance_sq_ = dist_sq;
         no_improvement_count_ = 0;
         return false;
       }
 
-      // Robot is still converging: update best, reset counter
-      if (dist_sq < best_distance_sq_) {
-        best_distance_sq_ = dist_sq;
+      // Check if the robot is effectively stopped
+      const bool robot_stopped =
+        std::hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_ &&
+        std::fabs(velocity.angular.z) <= rot_stopped_velocity_;
+
+      if (robot_stopped) {
+        no_improvement_count_++;
+      } else {
         no_improvement_count_ = 0;
-        return false;
       }
 
-      // Robot is NOT getting closer (dist_sq >= best_distance_sq_)
-      no_improvement_count_++;
       if (no_improvement_count_ < required_stagnation_cycles_) {
         return false;
       }
@@ -175,7 +180,6 @@ bool ProgressGoalChecker::isGoalReached(
     } else {
       // Outside both tolerances: reset tracking state
       in_tolerance_zone_ = false;
-      best_distance_sq_ = std::numeric_limits<double>::max();
       no_improvement_count_ = 0;
       return false;
     }
@@ -211,13 +215,13 @@ bool ProgressGoalChecker::getTolerances(
   pose_tolerance.orientation =
     nav2_util::geometry_utils::orientationAroundZAxis(yaw_goal_tolerance_);
 
-  vel_tolerance.linear.x = invalid_field;
-  vel_tolerance.linear.y = invalid_field;
+  vel_tolerance.linear.x = trans_stopped_velocity_;
+  vel_tolerance.linear.y = trans_stopped_velocity_;
   vel_tolerance.linear.z = invalid_field;
 
   vel_tolerance.angular.x = invalid_field;
   vel_tolerance.angular.y = invalid_field;
-  vel_tolerance.angular.z = invalid_field;
+  vel_tolerance.angular.z = rot_stopped_velocity_;
 
   return true;
 }
@@ -279,6 +283,10 @@ ProgressGoalChecker::updateParametersCallback(
         yaw_goal_tolerance_ = parameter.as_double();
       } else if (param_name == plugin_name_ + ".path_length_tolerance") {
         path_length_tolerance_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".trans_stopped_velocity") {
+        trans_stopped_velocity_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".rot_stopped_velocity") {
+        rot_stopped_velocity_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".stateful") {

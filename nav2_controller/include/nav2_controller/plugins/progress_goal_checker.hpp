@@ -33,8 +33,9 @@ namespace nav2_controller
  * @brief Goal Checker plugin with two tolerance tiers: a tight desired tolerance
  * and a looser coarse tolerance. The robot is considered to have reached the goal if:
  *   (1) it reaches within the desired (tight) tolerance, OR
- *   (2) it is within the coarse tolerance AND is no longer making progress
- *       toward the goal (distance is no longer decreasing).
+ *   (2) it is within the coarse tolerance AND the robot's velocity is below
+ *       a stopped threshold for a configurable number of consecutive cycles,
+ *       indicating it is no longer making useful progress toward the goal.
  */
 class ProgressGoalChecker : public nav2_core::GoalChecker
 {
@@ -104,13 +105,16 @@ protected:
   bool stateful_;
   bool symmetric_yaw_tolerance_;
 
-  // Number of consecutive non-improving checks before accepting at max tolerance
+  // Velocity thresholds for detecting a stopped/stalled robot
+  double trans_stopped_velocity_;
+  double rot_stopped_velocity_;
+
+  // Number of consecutive stopped cycles before accepting at coarse tolerance
   int required_stagnation_cycles_;
 
   // Stateful tracking
   bool check_xy_;
   bool in_tolerance_zone_;
-  double best_distance_sq_;
   int no_improvement_count_;
 
   // Dynamic parameters
