@@ -90,21 +90,10 @@ public:
         0).select(
         state.vx.col(i - 1) + max_delta_vx,
         state.vx.col(i - 1) - min_delta_vx);
-
-      // REPLACE TODO
-      // state.cvx.col(i - 1) = state.cvx.col(i - 1)
-      //   .cwiseMax(lower_bound_vx)
-      //   .cwiseMin(upper_bound_vx);
-      // state.vx.col(i) = state.cvx.col(i - 1);
       state.vx.col(i) = state.cvx.col(i - 1)
         .cwiseMax(lower_bound_vx)
         .cwiseMin(upper_bound_vx);
 
-      // REPLACE TODO
-      // state.cwz.col(i - 1) = state.cwz.col(i - 1) 
-      //   .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
-      //   .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
-      // state.wz.col(i) = state.cwz.col(i - 1);
       state.wz.col(i) = state.cwz.col(i - 1)
         .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
         .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
@@ -118,11 +107,6 @@ public:
           0).select(
           state.vy.col(i - 1) + max_delta_vy,
           state.vy.col(i - 1) - min_delta_vy);
-        // REPLACE TODO
-        // state.cvy.col(i - 1) = state.cvy.col(i - 1) 
-        //   .cwiseMax(lower_bound_vy)
-        //   .cwiseMin(upper_bound_vy);
-        // state.vy.col(i) = state.cvy.col(i - 1);
         state.vy.col(i) = state.cvy.col(i - 1)
           .cwiseMax(lower_bound_vy)
           .cwiseMin(upper_bound_vy);

@@ -361,13 +361,7 @@ Reducing the STD seems to me to be a complete and legitimate solution to the noi
 
 We've found a good solution that reduces the jitter in the angular velocity regime above. In previous sections the work we did on acceleration constraints unclamping the controls also resulted in significantly smoother acceleration profiles in the linear velocity. Overall, we've done an excellent job improving the behavior of MPPI not just for low-acceleration cases, but in general.
 
-However, if we wanted to go even further, there are a few other options we could explore:
-
-* Low-frequency / colored noise sampling: Sample noise in the frequency domain using colored noise.
-* Acceleration-space sampling: Sample noise in the acceleration space and integrate it to get the velocity perturbations.
-
-TODO expose SGF order for 1/2 as a parameter for those to use to smooth as another option other than STD.
-
+However, if we wanted to go even further, there is a good option we should explore: Low-frequency / colored noise sampling, sampling noise in the frequency domain using colored noise.
 
 ## Topic 2: Asymmetric Acceleration Limits
 
