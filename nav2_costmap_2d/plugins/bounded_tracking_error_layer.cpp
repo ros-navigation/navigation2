@@ -144,6 +144,9 @@ BoundedTrackingErrorLayer::getParameters()
   double temp_tf_tol = 0.1;
   node->get_parameter("transform_tolerance", temp_tf_tol);
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+
+  robot_base_frame_ = node->declare_or_get_parameter(
+    "robot_base_frame", std::string("base_link"));
 }
 
 void
@@ -193,6 +196,8 @@ BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
+  const double tf_tol = tf2::durationToSec(transform_tolerance_);
+
   const auto age = (clock_->now() - rclcpp::Time(cached_path_ptr->header.stamp)).seconds();
   if (age > 2.0) {
     RCLCPP_WARN_THROTTLE(
@@ -206,8 +211,7 @@ BoundedTrackingErrorLayer::updateCosts(
 
   geometry_msgs::msg::PoseStamped robot_pose;
   if (!nav2_util::getCurrentPose(
-      robot_pose, *tf_, costmap_frame_, "base_link",
-      tf2::durationToSec(transform_tolerance_)))
+      robot_pose, *tf_, costmap_frame_, robot_base_frame_, tf_tol))
   {
     RCLCPP_WARN_THROTTLE(
       logger_,
@@ -248,8 +252,7 @@ BoundedTrackingErrorLayer::updateCosts(
     transformed_segment_buffer_ = segment_buffer_;
   } else {
     if (!nav2_util::transformPathInTargetFrame(
-        segment_buffer_, transformed_segment_buffer_, *tf_, costmap_frame_,
-        tf2::durationToSec(transform_tolerance_)))
+        segment_buffer_, transformed_segment_buffer_, *tf_, costmap_frame_, tf_tol))
     {
       RCLCPP_WARN_THROTTLE(
         logger_,
@@ -435,8 +438,8 @@ BoundedTrackingErrorLayer::fillCorridorQuad(
   span_x_max_buffer_.assign(height, std::numeric_limits<int>::min());
 
   // Trace each edge with Bresenham, recording the x extent per row into the span buffers.
-  auto trace_edge = [&](unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1) {
-      nav2_util::LineIterator line(x0, y0, x1, y1);
+  auto trace_edge = [&](CellPoint p0, CellPoint p1) {
+      nav2_util::LineIterator line(p0.x, p0.y, p1.x, p1.y);
       for (; line.isValid(); line.advance()) {
         const int x = static_cast<int>(line.getX());
         const int y = static_cast<int>(line.getY());
@@ -449,10 +452,10 @@ BoundedTrackingErrorLayer::fillCorridorQuad(
       }
     };
 
-  trace_edge(inner0.x, inner0.y, inner1.x, inner1.y);  // Inner edge
-  trace_edge(inner1.x, inner1.y, outer1.x, outer1.y);  // Right edge
-  trace_edge(outer1.x, outer1.y, outer0.x, outer0.y);  // Outer edge
-  trace_edge(outer0.x, outer0.y, inner0.x, inner0.y);  // Left edge
+  trace_edge(inner0, inner1);  // Inner edge
+  trace_edge(inner1, outer1);  // Right edge
+  trace_edge(outer1, outer0);  // Outer edge
+  trace_edge(outer0, inner0);  // Left edge
 
   for (int buffer_idx = 0; buffer_idx < height; ++buffer_idx) {
     const int y = clamped_y_min + buffer_idx;
