@@ -39,7 +39,7 @@
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
 #include "nav2_controller/plugins/position_goal_checker.hpp"
-#include "nav2_controller/plugins/progress_goal_checker.hpp"
+#include "nav2_controller/plugins/adaptive_tolerance_goal_checker.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -47,7 +47,7 @@
 using nav2_controller::SimpleGoalChecker;
 using nav2_controller::StoppedGoalChecker;
 using nav2_controller::PositionGoalChecker;
-using nav2_controller::ProgressGoalChecker;
+using nav2_controller::AdaptiveToleranceGoalChecker;
 
 void checkMacro(
   nav2_core::GoalChecker & gc,
@@ -171,11 +171,11 @@ TEST(VelocityIterator, position_goal_checker_reset)
   EXPECT_TRUE(true);
 }
 
-TEST(VelocityIterator, progress_goal_checker_reset)
+TEST(VelocityIterator, adaptive_tolerance_goal_checker_reset)
 {
-  auto x = std::make_shared<TestLifecycleNode>("progress_goal_checker");
+  auto x = std::make_shared<TestLifecycleNode>("adaptive_tolerance_goal_checker");
 
-  nav2_core::GoalChecker * prgc = new ProgressGoalChecker;
+  nav2_core::GoalChecker * prgc = new AdaptiveToleranceGoalChecker;
   prgc->reset();
   delete prgc;
   EXPECT_TRUE(true);
@@ -468,9 +468,9 @@ TEST(StoppedGoalChecker, is_reached)
   EXPECT_TRUE(pgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
 }
 
-TEST(ProgressGoalChecker, goal_reached)
+TEST(AdaptiveToleranceGoalChecker, goal_reached)
 {
-  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto x = std::make_shared<TestLifecycleNode>("adaptive_tol_gc");
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
   geometry_msgs::msg::Twist vel;
@@ -501,7 +501,7 @@ TEST(ProgressGoalChecker, goal_reached)
   x->declare_parameter("pgc.trans_stopped_velocity", trans_stopped_vel);
   x->declare_parameter("pgc.rot_stopped_velocity", rot_stopped_vel);
   x->declare_parameter("pgc.required_stagnation_cycles", 3);
-  ProgressGoalChecker gc;
+  AdaptiveToleranceGoalChecker gc;
   gc.initialize(x, "pgc", costmap);
 
   // Fine tolerance: immediate accept regardless of velocity
@@ -717,9 +717,9 @@ TEST(ProgressGoalChecker, goal_reached)
   EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
 }
 
-TEST(ProgressGoalChecker, get_tol_and_dynamic_params)
+TEST(AdaptiveToleranceGoalChecker, get_tol_and_dynamic_params)
 {
-  auto x = std::make_shared<TestLifecycleNode>("progress_gc");
+  auto x = std::make_shared<TestLifecycleNode>("adaptive_tol_gc");
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
   const double fine_xy_tol = 0.10;
@@ -737,7 +737,7 @@ TEST(ProgressGoalChecker, get_tol_and_dynamic_params)
   x->declare_parameter("pgc.trans_stopped_velocity", trans_stopped_vel);
   x->declare_parameter("pgc.rot_stopped_velocity", rot_stopped_vel);
   x->declare_parameter("pgc.required_stagnation_cycles", 15);
-  ProgressGoalChecker gc;
+  AdaptiveToleranceGoalChecker gc;
   gc.initialize(x, "pgc", costmap);
 
   geometry_msgs::msg::Pose pose_tol;

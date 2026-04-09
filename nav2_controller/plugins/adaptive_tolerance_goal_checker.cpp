@@ -18,7 +18,7 @@
 #include <vector>
 #include <cmath>
 
-#include "nav2_controller/plugins/progress_goal_checker.hpp"
+#include "nav2_controller/plugins/adaptive_tolerance_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 #include "nav2_ros_common/node_utils.hpp"
@@ -31,7 +31,7 @@ using std::placeholders::_1;
 namespace nav2_controller
 {
 
-ProgressGoalChecker::ProgressGoalChecker()
+AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
 : fine_xy_goal_tolerance_(0.10),
   fine_xy_goal_tolerance_sq_(0.01),
   coarse_xy_goal_tolerance_(0.25),
@@ -49,7 +49,7 @@ ProgressGoalChecker::ProgressGoalChecker()
 {
 }
 
-ProgressGoalChecker::~ProgressGoalChecker()
+AdaptiveToleranceGoalChecker::~AdaptiveToleranceGoalChecker()
 {
   auto node = node_.lock();
   if (post_set_params_handler_ && node) {
@@ -62,7 +62,7 @@ ProgressGoalChecker::~ProgressGoalChecker()
   on_set_params_handler_.reset();
 }
 
-void ProgressGoalChecker::initialize(
+void AdaptiveToleranceGoalChecker::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>/*costmap_ros*/)
@@ -95,22 +95,22 @@ void ProgressGoalChecker::initialize(
 
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
-      &ProgressGoalChecker::updateParametersCallback,
+      &AdaptiveToleranceGoalChecker::updateParametersCallback,
       this, std::placeholders::_1));
   on_set_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
-      &ProgressGoalChecker::validateParameterUpdatesCallback,
+      &AdaptiveToleranceGoalChecker::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
 }
 
-void ProgressGoalChecker::reset()
+void AdaptiveToleranceGoalChecker::reset()
 {
   check_xy_ = true;
   in_tolerance_zone_ = false;
   no_improvement_count_ = 0;
 }
 
-bool ProgressGoalChecker::isGoalReached(
+bool AdaptiveToleranceGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose,
   const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist & velocity,
@@ -137,7 +137,7 @@ bool ProgressGoalChecker::isGoalReached(
       }
       RCLCPP_INFO(
         logger_,
-        "ProgressGoalChecker: accepting goal at fine tolerance "
+        "AdaptiveToleranceGoalChecker: accepting goal at fine tolerance "
         "(current: %.3f m, tol: %.3f m)",
         std::sqrt(dist_sq), fine_xy_goal_tolerance_);
       // Fall through to yaw check
@@ -169,7 +169,7 @@ bool ProgressGoalChecker::isGoalReached(
       // Stagnated for enough cycles: accept at coarse tolerance
       RCLCPP_INFO(
         logger_,
-        "ProgressGoalChecker: accepting goal at coarse tolerance "
+        "AdaptiveToleranceGoalChecker: accepting goal at coarse tolerance "
         "(current: %.3f m, fine tol: %.3f m, coarse tol: %.3f m)",
         std::sqrt(dist_sq), fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
 
@@ -201,7 +201,7 @@ bool ProgressGoalChecker::isGoalReached(
   return std::fabs(dyaw) <= yaw_goal_tolerance_;
 }
 
-bool ProgressGoalChecker::getTolerances(
+bool AdaptiveToleranceGoalChecker::getTolerances(
   geometry_msgs::msg::Pose & pose_tolerance,
   geometry_msgs::msg::Twist & vel_tolerance)
 {
@@ -227,7 +227,7 @@ bool ProgressGoalChecker::getTolerances(
 }
 
 rcl_interfaces::msg::SetParametersResult
-ProgressGoalChecker::validateParameterUpdatesCallback(
+AdaptiveToleranceGoalChecker::validateParameterUpdatesCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -262,7 +262,7 @@ ProgressGoalChecker::validateParameterUpdatesCallback(
 }
 
 void
-ProgressGoalChecker::updateParametersCallback(
+AdaptiveToleranceGoalChecker::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
@@ -304,4 +304,4 @@ ProgressGoalChecker::updateParametersCallback(
 
 }  // namespace nav2_controller
 
-PLUGINLIB_EXPORT_CLASS(nav2_controller::ProgressGoalChecker, nav2_core::GoalChecker)
+PLUGINLIB_EXPORT_CLASS(nav2_controller::AdaptiveToleranceGoalChecker, nav2_core::GoalChecker)

@@ -190,13 +190,13 @@ target_link_libraries(axis_goal_checker PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(progress_goal_checker SHARED plugins/progress_goal_checker.cpp)
-target_include_directories(progress_goal_checker
+add_library(adaptive_tolerance_goal_checker SHARED plugins/adaptive_tolerance_goal_checker.cpp)
+target_include_directories(adaptive_tolerance_goal_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(progress_goal_checker PUBLIC
+target_link_libraries(adaptive_tolerance_goal_checker PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
@@ -205,7 +205,7 @@ target_link_libraries(progress_goal_checker PUBLIC
   rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
 )
-target_link_libraries(progress_goal_checker PRIVATE
+target_link_libraries(adaptive_tolerance_goal_checker PRIVATE
   angles::angles
   nav2_util::nav2_util_core
   pluginlib::pluginlib
@@ -254,7 +254,7 @@ install(TARGETS
   pose_progress_checker
   simple_goal_checker
   stopped_goal_checker
-  progress_goal_checker
+  adaptive_tolerance_goal_checker
   axis_goal_checker
   feasible_path_handler
   ${library_name}
@@ -277,7 +277,7 @@ ament_export_libraries(simple_progress_checker
   pose_progress_checker
   simple_goal_checker
   stopped_goal_checker
-  progress_goal_checker
+  adaptive_tolerance_goal_checker
   position_goal_checker
   axis_goal_checker
   feasible_path_handler

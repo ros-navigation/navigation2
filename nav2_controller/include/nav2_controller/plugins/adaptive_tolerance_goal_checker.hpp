@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER__PLUGINS__PROGRESS_GOAL_CHECKER_HPP_
-#define NAV2_CONTROLLER__PLUGINS__PROGRESS_GOAL_CHECKER_HPP_
+#ifndef NAV2_CONTROLLER__PLUGINS__ADAPTIVE_TOLERANCE_GOAL_CHECKER_HPP_
+#define NAV2_CONTROLLER__PLUGINS__ADAPTIVE_TOLERANCE_GOAL_CHECKER_HPP_
 
 #include <memory>
 #include <string>
@@ -29,7 +29,7 @@ namespace nav2_controller
 {
 
 /**
- * @class ProgressGoalChecker
+ * @class AdaptiveToleranceGoalChecker
  * @brief Goal Checker plugin with two tolerance tiers: a tight desired tolerance
  * and a looser coarse tolerance. The robot is considered to have reached the goal if:
  *   (1) it reaches within the desired (tight) tolerance, OR
@@ -37,17 +37,17 @@ namespace nav2_controller
  *       a stopped threshold for a configurable number of consecutive cycles,
  *       indicating it is no longer making useful progress toward the goal.
  */
-class ProgressGoalChecker : public nav2_core::GoalChecker
+class AdaptiveToleranceGoalChecker : public nav2_core::GoalChecker
 {
 public:
   /**
    * @brief Construct a new Progress Goal Checker object
    */
-  ProgressGoalChecker();
+  AdaptiveToleranceGoalChecker();
   /**
    * @brief Destroy the Progress Goal Checker object
    */
-  ~ProgressGoalChecker();
+  ~AdaptiveToleranceGoalChecker();
 
   /**
    * @brief Initialize the goal checker
@@ -91,7 +91,7 @@ public:
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;
-  rclcpp::Logger logger_{rclcpp::get_logger("progress_goal_checker")};
+  rclcpp::Logger logger_{rclcpp::get_logger("adaptive_tolerance_goal_checker")};
 
   // Fine (desired) tolerance
   double fine_xy_goal_tolerance_;
@@ -145,4 +145,4 @@ protected:
 
 }  // namespace nav2_controller
 
-#endif  // NAV2_CONTROLLER__PLUGINS__PROGRESS_GOAL_CHECKER_HPP_
+#endif  // NAV2_CONTROLLER__PLUGINS__ADAPTIVE_TOLERANCE_GOAL_CHECKER_HPP_
