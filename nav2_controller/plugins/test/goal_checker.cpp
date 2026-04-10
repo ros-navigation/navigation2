@@ -571,16 +571,14 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   current.position.x = coarse_xy_tol * 2;
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
 
-  // Coarse zone + moving: never accepts
+  // Coarse zone + moving at fixed position: stagnates (distance not improving)
   gc.reset();
   const double tol_diff = abs(coarse_xy_tol - fine_xy_tol);
   current.position.x = coarse_xy_tol - tol_diff / 2;
-  for (int i = 0; i < 10; i++) {
-    EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));
-  }
-  for (int i = 0; i < 10; i++) {
-    EXPECT_FALSE(gc.isGoalReached(current, goal, omni_vel, empty_plan));
-  }
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // enter
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // count 1
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // count 2
+  EXPECT_TRUE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));   // count 3 → accept
 
   // Coarse zone + stopped: accepts after stagnation cycles
   gc.reset();
@@ -590,12 +588,24 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 2
   EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));   // count 3 → accept
 
-  // Moving velocity resets stall counter
+  // Improving distance while moving resets stall counter
   gc.reset();
+  current.position.x = coarse_xy_tol - tol_diff / 2;
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // enter
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // count 1
+  current.position.x = coarse_xy_tol - tol_diff / 2 - tol_diff / 4;         // closer
+  // improving + moving → reset
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // count 1
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // count 2
+  EXPECT_TRUE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));   // count 3 → accept
+
+  // Improving distance while stopped does NOT reset counter
+  gc.reset();
+  current.position.x = coarse_xy_tol - tol_diff / 2;
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // enter
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 1
-  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // moving → reset
-  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 1
+  current.position.x = coarse_xy_tol - tol_diff / 2 - tol_diff / 4;   // closer but stopped
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 2
   EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));   // count 3 → accept
 
@@ -612,7 +622,7 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 2
   EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));   // count 3 → accept
 
-  // Translational velocity threshold boundary: exactly at threshold → counted as stopped
+  // Velocity threshold: stopped at fixed position → stagnates
   gc.reset();
   current.position.x = coarse_xy_tol - tol_diff / 2;
   vel.linear.x = trans_stopped_vel;
@@ -620,47 +630,34 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // count 1
   EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // count 2
   EXPECT_TRUE(gc.isGoalReached(current, goal, vel, empty_plan));   // count 3 → accept
-
-  // Translational velocity threshold boundary: just above → counted as moving, never accepts
-  gc.reset();
-  vel.linear.x = trans_stopped_vel + std::numeric_limits<double>::epsilon();
-  for (int i = 0; i < 10; i++) {
-    EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));
-  }
   vel.linear.x = 0.0;
 
-  // Rotational velocity boundary: exactly at threshold → counted as stopped
+  // Velocity threshold: moving at fixed position → still stagnates (distance not improving)
   gc.reset();
-  vel.angular.z = rot_stopped_vel;
+  vel.linear.x = trans_stopped_vel + std::numeric_limits<double>::epsilon();
   EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // enter
   EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // count 1
   EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // count 2
   EXPECT_TRUE(gc.isGoalReached(current, goal, vel, empty_plan));   // count 3 → accept
+  vel.linear.x = 0.0;
 
-  // Rotational velocity boundary: just above → counted as moving, never accepts
+  // Rotational velocity: moving at fixed position → still stagnates
   gc.reset();
   vel.angular.z = rot_stopped_vel + std::numeric_limits<double>::epsilon();
-  for (int i = 0; i < 10; i++) {
-    EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));
-  }
-  vel.angular.z = 0.0;
-
-  // Omni velocity boundary: hypot(x,y) = trans_stopped_vel → counted as stopped
-  gc.reset();
-  vel.linear.x = trans_stopped_vel / std::sqrt(2);
-  vel.linear.y = trans_stopped_vel / std::sqrt(2);
   EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // enter
   EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // count 1
   EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // count 2
   EXPECT_TRUE(gc.isGoalReached(current, goal, vel, empty_plan));   // count 3 → accept
+  vel.angular.z = 0.0;
 
-  // Omni velocity boundary: just above → counted as moving, never accepts
+  // Omni velocity: moving at fixed position → still stagnates
   gc.reset();
   vel.linear.x = trans_stopped_vel / std::sqrt(2) + std::numeric_limits<double>::epsilon();
   vel.linear.y = trans_stopped_vel / std::sqrt(2) + std::numeric_limits<double>::epsilon();
-  for (int i = 0; i < 10; i++) {
-    EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));
-  }
+  EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // enter
+  EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // count 1
+  EXPECT_FALSE(gc.isGoalReached(current, goal, vel, empty_plan));  // count 2
+  EXPECT_TRUE(gc.isGoalReached(current, goal, vel, empty_plan));   // count 3 → accept
   vel.linear.x = 0.0;
   vel.linear.y = 0.0;
 

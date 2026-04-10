@@ -116,6 +116,7 @@ protected:
   bool check_xy_;
   bool in_tolerance_zone_;
   int stagnation_count_;
+  double best_distance_sq_;
   bool accepted_at_fine_;
 
   // Dynamic parameters

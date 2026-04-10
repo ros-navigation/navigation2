@@ -46,6 +46,7 @@ AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
   check_xy_(true),
   in_tolerance_zone_(false),
   stagnation_count_(0),
+  best_distance_sq_(std::numeric_limits<double>::max()),
   accepted_at_fine_(false)
 {
 }
@@ -109,6 +110,7 @@ void AdaptiveToleranceGoalChecker::reset()
   check_xy_ = true;
   in_tolerance_zone_ = false;
   stagnation_count_ = 0;
+  best_distance_sq_ = std::numeric_limits<double>::max();
   accepted_at_fine_ = false;
 }
 
@@ -146,18 +148,24 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
       if (!in_tolerance_zone_) {
         in_tolerance_zone_ = true;
         stagnation_count_ = 0;
+        best_distance_sq_ = dist_sq;
         return false;
       }
 
-      // Check if the robot is effectively stopped
+      // Check if the robot is stopped or not making progress toward goal
       const bool robot_stopped =
         std::hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_ &&
         std::fabs(velocity.angular.z) <= rot_stopped_velocity_;
+      const bool distance_improved = dist_sq < best_distance_sq_;
 
-      if (robot_stopped) {
-        stagnation_count_++;
-      } else {
+      if (distance_improved) {
+        best_distance_sq_ = dist_sq;
+      }
+
+      if (!robot_stopped && distance_improved) {
         stagnation_count_ = 0;
+      } else {
+        stagnation_count_++;
       }
 
       if (stagnation_count_ < required_stagnation_cycles_) {
@@ -186,7 +194,7 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
     const double dyaw_backward = angles::shortest_angular_distance(
       query_yaw, angles::normalize_angle(goal_yaw + M_PI));
     yaw_reached = std::fabs(dyaw_forward) <= yaw_goal_tolerance_ ||
-                  std::fabs(dyaw_backward) <= yaw_goal_tolerance_;
+      std::fabs(dyaw_backward) <= yaw_goal_tolerance_;
   } else {
     const double dyaw = angles::shortest_angular_distance(query_yaw, goal_yaw);
     yaw_reached = std::fabs(dyaw) <= yaw_goal_tolerance_;
@@ -196,15 +204,14 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
     if (accepted_at_fine_) {
       RCLCPP_INFO(
         logger_,
-        "AdaptiveToleranceGoalChecker: goal reached at fine tolerance "
-        "(current: %.3f m, fine tol: %.3f m)",
-        std::sqrt(dist_sq), fine_xy_goal_tolerance_);
+        "AdaptiveToleranceGoalChecker: goal reached at fine tolerance (tol: %.3f m)",
+        fine_xy_goal_tolerance_);
     } else {
       RCLCPP_INFO(
         logger_,
         "AdaptiveToleranceGoalChecker: goal reached at coarse tolerance "
-        "(current: %.3f m, fine tol: %.3f m, coarse tol: %.3f m)",
-        std::sqrt(dist_sq), fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+        "(fine tol: %.3f m, coarse tol: %.3f m)",
+        fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
     }
   }
 
