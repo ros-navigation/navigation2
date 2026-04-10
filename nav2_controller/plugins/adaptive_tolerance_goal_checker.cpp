@@ -45,7 +45,8 @@ AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
   required_stagnation_cycles_(15),
   check_xy_(true),
   in_tolerance_zone_(false),
-  stagnation_count_(0)
+  stagnation_count_(0),
+  accepted_at_fine_(false)
 {
 }
 
@@ -108,6 +109,7 @@ void AdaptiveToleranceGoalChecker::reset()
   check_xy_ = true;
   in_tolerance_zone_ = false;
   stagnation_count_ = 0;
+  accepted_at_fine_ = false;
 }
 
 bool AdaptiveToleranceGoalChecker::isGoalReached(
@@ -132,14 +134,10 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
 
     // Tier 1: Tight (desired) tolerance — immediate acceptance
     if (dist_sq <= fine_xy_goal_tolerance_sq_) {
+      accepted_at_fine_ = true;
       if (stateful_) {
         check_xy_ = false;
       }
-      RCLCPP_INFO(
-        logger_,
-        "AdaptiveToleranceGoalChecker: accepting goal at fine tolerance "
-        "(current: %.3f m, tol: %.3f m)",
-        std::sqrt(dist_sq), fine_xy_goal_tolerance_);
       // Fall through to yaw check
 
     // Tier 2: Within the coarse tolerance zone — check velocity stagnation
@@ -166,17 +164,10 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
         return false;
       }
 
-      // Stagnated for enough cycles: accept at coarse tolerance
-      RCLCPP_INFO(
-        logger_,
-        "AdaptiveToleranceGoalChecker: accepting goal at coarse tolerance "
-        "(current: %.3f m, fine tol: %.3f m, coarse tol: %.3f m)",
-        std::sqrt(dist_sq), fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
-
+      // Stagnated for enough cycles: fall through to yaw check
       if (stateful_) {
         check_xy_ = false;
       }
-      // Fall through to yaw check
     } else {
       // Outside both tolerances: reset tracking state
       in_tolerance_zone_ = false;
@@ -188,17 +179,36 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
   // XY is satisfied — check yaw
   const double query_yaw = tf2::getYaw(query_pose.orientation);
   const double goal_yaw = tf2::getYaw(goal_pose.orientation);
+  bool yaw_reached = false;
 
   if (symmetric_yaw_tolerance_) {
     const double dyaw_forward = angles::shortest_angular_distance(query_yaw, goal_yaw);
     const double dyaw_backward = angles::shortest_angular_distance(
       query_yaw, angles::normalize_angle(goal_yaw + M_PI));
-    return std::fabs(dyaw_forward) <= yaw_goal_tolerance_ ||
-           std::fabs(dyaw_backward) <= yaw_goal_tolerance_;
+    yaw_reached = std::fabs(dyaw_forward) <= yaw_goal_tolerance_ ||
+                  std::fabs(dyaw_backward) <= yaw_goal_tolerance_;
+  } else {
+    const double dyaw = angles::shortest_angular_distance(query_yaw, goal_yaw);
+    yaw_reached = std::fabs(dyaw) <= yaw_goal_tolerance_;
   }
 
-  const double dyaw = angles::shortest_angular_distance(query_yaw, goal_yaw);
-  return std::fabs(dyaw) <= yaw_goal_tolerance_;
+  if (yaw_reached) {
+    if (accepted_at_fine_) {
+      RCLCPP_INFO(
+        logger_,
+        "AdaptiveToleranceGoalChecker: goal reached at fine tolerance "
+        "(current: %.3f m, fine tol: %.3f m)",
+        std::sqrt(dist_sq), fine_xy_goal_tolerance_);
+    } else {
+      RCLCPP_INFO(
+        logger_,
+        "AdaptiveToleranceGoalChecker: goal reached at coarse tolerance "
+        "(current: %.3f m, fine tol: %.3f m, coarse tol: %.3f m)",
+        std::sqrt(dist_sq), fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+    }
+  }
+
+  return yaw_reached;
 }
 
 bool AdaptiveToleranceGoalChecker::getTolerances(
