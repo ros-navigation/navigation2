@@ -1,3 +1,4 @@
+// Copyright (c) 2024, Open Navigation LLC
 // Copyright (c) 2026, Dexory (Tony Najjar)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -89,8 +90,7 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   if (publish_scan_) {
-    map_client_ = rclcpp_lifecycle::LifecycleNode::create_client<nav_msgs::srv::GetMap>(
-      "/map_server/map");
+    map_client_ = create_client<nav_msgs::srv::GetMap>("/map_server/map");
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   }
@@ -104,8 +104,10 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
       speed_factor_);
   }
 
-  param_handler_ = add_on_set_parameters_callback(
-    std::bind(&LoopbackSimulator::onParameterChange, this, std::placeholders::_1));
+  param_validator_ = add_on_set_parameters_callback(
+    std::bind(&LoopbackSimulator::validateParameters, this, std::placeholders::_1));
+  param_updater_ = add_post_set_parameters_callback(
+    std::bind(&LoopbackSimulator::applyParameters, this, std::placeholders::_1));
 
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -187,7 +189,8 @@ LoopbackSimulator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_buffer_.reset();
   tf_broadcaster_.reset();
   clock_publisher_.reset();
-  param_handler_.reset();
+  param_validator_.reset();
+  param_updater_.reset();
 
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -201,13 +204,13 @@ LoopbackSimulator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 
 void LoopbackSimulator::getMap()
 {
-  if (!map_client_->service_is_ready()) {
+  if (!map_client_->wait_for_service(0s)) {
     return;
   }
   auto request = std::make_shared<nav_msgs::srv::GetMap::Request>();
-  map_client_->async_send_request(
+  map_client_->async_call(
     request,
-    [this](rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future) {
+    [this](typename rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future) {
       auto response = future.get();
       if (response->map.info.width == 0 || response->map.info.height == 0 ||
       response->map.info.resolution <= 0.0)
@@ -518,7 +521,7 @@ void LoopbackSimulator::getLaserScan(
   }
 }
 
-rcl_interfaces::msg::SetParametersResult LoopbackSimulator::onParameterChange(
+rcl_interfaces::msg::SetParametersResult LoopbackSimulator::validateParameters(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -531,13 +534,22 @@ rcl_interfaces::msg::SetParametersResult LoopbackSimulator::onParameterChange(
         result.reason = "speed_factor must be positive";
         return result;
       }
-      speed_factor_ = factor;
-      if (clock_publisher_) {
-        clock_publisher_->setSpeedFactor(factor);
-      }
     }
   }
   return result;
+}
+
+void LoopbackSimulator::applyParameters(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  for (const auto & param : parameters) {
+    if (param.get_name() == "speed_factor") {
+      speed_factor_ = param.as_double();
+      if (clock_publisher_) {
+        clock_publisher_->setSpeedFactor(speed_factor_);
+      }
+    }
+  }
 }
 
 }  // namespace nav2_loopback_sim

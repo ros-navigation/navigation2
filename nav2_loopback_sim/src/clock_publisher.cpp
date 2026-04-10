@@ -1,3 +1,4 @@
+// Copyright (c) 2024, Open Navigation LLC
 // Copyright (c) 2026, Dexory (Tony Najjar)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -101,9 +102,9 @@ void ClockPublisher::timerCallback()
 
   sim_time_ += rclcpp::Duration::from_seconds(wall_dt * speed_factor_);
 
-  rosgraph_msgs::msg::Clock msg;
-  msg.clock = sim_time_;
-  clock_pub_->publish(msg);
+  auto msg = std::make_unique<rosgraph_msgs::msg::Clock>();
+  msg->clock = sim_time_;
+  clock_pub_->publish(std::move(msg));
 }
 
 }  // namespace nav2_loopback_sim

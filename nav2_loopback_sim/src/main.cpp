@@ -1,3 +1,4 @@
+// Copyright (c) 2024, Open Navigation LLC
 // Copyright (c) 2026, Dexory (Tony Najjar)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

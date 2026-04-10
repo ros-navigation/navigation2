@@ -1,3 +1,4 @@
+// Copyright (c) 2024, Open Navigation LLC
 // Copyright (c) 2026, Dexory (Tony Najjar)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +26,7 @@
 #include <vector>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/service_client.hpp"
 #include "nav2_util/twist_subscriber.hpp"
 #include "nav2_loopback_sim/clock_publisher.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
@@ -59,39 +61,62 @@ namespace nav2_loopback_sim
 class LoopbackSimulator : public nav2::LifecycleNode
 {
 public:
+  /**
+   * @brief Construct a LoopbackSimulator node.
+   * @param options Node options
+   */
   explicit LoopbackSimulator(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~LoopbackSimulator() = default;
 
 protected:
+  /// @brief Configure the node: declare parameters, create pubs/subs/timers
   nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /// @brief Activate the node: start publishing
   nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /// @brief Deactivate the node: stop timers, reset cmd_vel
   nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /// @brief Cleanup the node: release all resources
   nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  /// @brief Shutdown the node
   nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
-private:
-  // Callbacks
+  /// @brief Callback for incoming cmd_vel (unstamped Twist)
   void cmdVelCallback(const geometry_msgs::msg::Twist::ConstSharedPtr & msg);
+  /// @brief Callback for incoming cmd_vel (stamped TwistStamped)
   void cmdVelStampedCallback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg);
+  /// @brief Callback for incoming initial pose
   void initialPoseCallback(
     const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg);
+  /// @brief Periodic setup callback: publishes identity TFs and fetches map
   void setupTimerCallback();
+  /// @brief Main update callback: integrates cmd_vel and publishes TF
   void timerCallback();
+  /// @brief Periodic odometry publishing callback
   void odomTimerCallback();
+  /// @brief Publish a simulated laser scan from the map
   void publishLaserScan();
-  rcl_interfaces::msg::SetParametersResult onParameterChange(
+  /// @brief Validate dynamic parameter changes (pre-set callback)
+  rcl_interfaces::msg::SetParametersResult validateParameters(
     const std::vector<rclcpp::Parameter> & parameters);
+  /// @brief Apply validated dynamic parameter changes (post-set callback)
+  void applyParameters(const std::vector<rclcpp::Parameter> & parameters);
 
-  // Helpers
+  /// @brief Look up the static transform from base to laser frame
   void getBaseToLaserTf();
+  /// @brief Request the map from the map server
   void getMap();
+  /// @brief Publish map->odom and odom->base_link transforms
   void publishTransforms(
     geometry_msgs::msg::TransformStamped & map_to_odom,
     geometry_msgs::msg::TransformStamped & odom_to_base_link);
+  /// @brief Publish nav_msgs::Odometry from the current odom->base transform
   void publishOdometry(const geometry_msgs::msg::TransformStamped & odom_to_base_link);
+  /// @brief Compute the laser pose in the map frame
   std::tuple<double, double, double> getLaserPose();
+  /// @brief Raycast the map to fill a LaserScan message
   void getLaserScan(int num_samples, sensor_msgs::msg::LaserScan & scan_msg);
 
+  /// @brief Add a yaw rotation to a quaternion
   static geometry_msgs::msg::Quaternion addYawToQuat(
     const geometry_msgs::msg::Quaternion & quaternion, double yaw_to_add);
 
@@ -125,8 +150,6 @@ private:
   bool has_base_to_laser_{false};
   tf2::Transform tf_base_to_laser_;
   std::mt19937 rng_{std::random_device{}()};
-
-  // Transforms
   geometry_msgs::msg::TransformStamped t_map_to_odom_;
   geometry_msgs::msg::TransformStamped t_odom_to_base_link_;
 
@@ -142,7 +165,7 @@ private:
   nav2::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
   nav2::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
 
-  rclcpp::Client<nav_msgs::srv::GetMap>::SharedPtr map_client_;
+  nav2::ServiceClient<nav_msgs::srv::GetMap>::SharedPtr map_client_;
 
   rclcpp::TimerBase::SharedPtr setup_timer_;
   rclcpp::TimerBase::SharedPtr timer_;
@@ -150,7 +173,8 @@ private:
   rclcpp::TimerBase::SharedPtr scan_timer_;
 
   std::unique_ptr<ClockPublisher> clock_publisher_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_handler_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_validator_;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr param_updater_;
 };
 
 }  // namespace nav2_loopback_sim
