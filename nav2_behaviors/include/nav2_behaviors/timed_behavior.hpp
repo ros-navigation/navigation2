@@ -32,6 +32,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
+#include "nav2_ros_common/rate.hpp"
 #include "nav2_core/behavior.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -226,7 +227,7 @@ protected:
     }
 
     auto start_time = clock_->now();
-    rclcpp::WallRate loop_rate(cycle_frequency_);
+    nav2::Rate loop_rate(node_.lock(), cycle_frequency_);
 
     while (rclcpp::ok()) {
       elapsed_time_ = clock_->now() - start_time;
