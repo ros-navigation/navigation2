@@ -20,6 +20,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
 #include "nav2_loopback_sim/clock_publisher.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 using namespace std::chrono_literals;
 
@@ -36,9 +37,9 @@ class ClockPublisherTest : public ::testing::Test
 protected:
   void SetUp() override
   {
-    node_ = std::make_shared<rclcpp::Node>("clock_test_node");
+    node_ = std::make_shared<nav2::LifecycleNode>("clock_test_node");
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-    executor_->add_node(node_);
+    executor_->add_node(node_->get_node_base_interface());
   }
 
   void TearDown() override
@@ -60,14 +61,11 @@ protected:
     double speed_factor = 1.0)
   {
     return std::make_unique<nav2_loopback_sim::ClockPublisher>(
-      node_->get_node_base_interface(),
-      node_->get_node_timers_interface(),
-      node_->get_node_topics_interface(),
-      node_->get_node_logging_interface(),
+      node_->weak_from_this(),
       speed_factor);
   }
 
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
 };
 
@@ -78,10 +76,11 @@ TEST_F(ClockPublisherTest, PublishesClockMessages)
 
   int msg_count = 0;
   auto sub = node_->create_subscription<rosgraph_msgs::msg::Clock>(
-    "/clock", 10,
+    "/clock",
     [&](const rosgraph_msgs::msg::Clock::SharedPtr) {
       msg_count++;
-    });
+    },
+    rclcpp::QoS(10));
 
   clock_pub->start();
   spinFor(500ms);
@@ -96,10 +95,11 @@ TEST_F(ClockPublisherTest, ClockAdvancesMonotonically)
 
   std::vector<int64_t> timestamps;
   auto sub = node_->create_subscription<rosgraph_msgs::msg::Clock>(
-    "/clock", 10,
+    "/clock",
     [&](const rosgraph_msgs::msg::Clock::SharedPtr msg) {
       timestamps.push_back(rclcpp::Time(msg->clock).nanoseconds());
-    });
+    },
+    rclcpp::QoS(10));
 
   clock_pub->start();
   spinFor(500ms);
@@ -117,10 +117,11 @@ TEST_F(ClockPublisherTest, StopStopsPublishing)
 
   int msg_count = 0;
   auto sub = node_->create_subscription<rosgraph_msgs::msg::Clock>(
-    "/clock", 10,
+    "/clock",
     [&](const rosgraph_msgs::msg::Clock::SharedPtr) {
       msg_count++;
-    });
+    },
+    rclcpp::QoS(10));
 
   clock_pub->start();
   spinFor(200ms);
@@ -149,10 +150,11 @@ TEST_F(ClockPublisherTest, SetSpeedFactorRejectsNonPositive)
   // Verify clock still works after rejected values
   int msg_count = 0;
   auto sub = node_->create_subscription<rosgraph_msgs::msg::Clock>(
-    "/clock", 10,
+    "/clock",
     [&](const rosgraph_msgs::msg::Clock::SharedPtr) {
       msg_count++;
-    });
+    },
+    rclcpp::QoS(10));
   spinFor(200ms);
   EXPECT_GT(msg_count, 0);
 }
@@ -166,11 +168,12 @@ TEST_F(ClockPublisherTest, SpeedFactorAffectsRate)
   int64_t last_ns = 0;
   int count = 0;
   auto sub = node_->create_subscription<rosgraph_msgs::msg::Clock>(
-    "/clock", 10,
+    "/clock",
     [&](const rosgraph_msgs::msg::Clock::SharedPtr msg) {
       last_ns = rclcpp::Time(msg->clock).nanoseconds();
       count++;
-    });
+    },
+    rclcpp::QoS(10));
 
   auto wall_start = std::chrono::steady_clock::now();
   clock_pub->start();

@@ -89,6 +89,8 @@ if(BUILD_TESTING)
   target_link_libraries(test_clock_publisher
     ${library_name}
     rclcpp::rclcpp
+    rclcpp_lifecycle::rclcpp_lifecycle
+    nav2_ros_common::nav2_ros_common
     ${rosgraph_msgs_TARGETS}
   )
 

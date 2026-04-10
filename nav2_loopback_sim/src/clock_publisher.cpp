@@ -16,25 +16,28 @@
 #include "nav2_loopback_sim/clock_publisher.hpp"
 
 #include <chrono>
+#include <memory>
+#include <stdexcept>
 
 namespace nav2_loopback_sim
 {
 
 ClockPublisher::ClockPublisher(
-  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
-  rclcpp::node_interfaces::NodeTimersInterface::SharedPtr node_timers,
-  rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
-  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
+  nav2::LifecycleNode::WeakPtr node,
   double speed_factor)
-: node_base_(node_base),
-  node_timers_(node_timers),
-  node_logging_(node_logging),
+: node_(node),
+  logger_(rclcpp::get_logger("nav2_loopback_sim")),
   speed_factor_(speed_factor),
   sim_time_(0, 0, RCL_ROS_TIME),
   last_wall_time_(std::chrono::steady_clock::now())
 {
+  auto shared_node = node_.lock();
+  if (!shared_node) {
+    throw std::runtime_error("Node expired during ClockPublisher construction");
+  }
+  logger_ = shared_node->get_logger();
   clock_pub_ = rclcpp::create_publisher<rosgraph_msgs::msg::Clock>(
-    node_topics, "/clock", 10);
+    shared_node->get_node_topics_interface(), "/clock", 10);
 }
 
 void ClockPublisher::start()
@@ -42,7 +45,7 @@ void ClockPublisher::start()
   last_wall_time_ = std::chrono::steady_clock::now();
   resetTimer();
   RCLCPP_INFO(
-    node_logging_->get_logger(),
+    logger_,
     "Sim clock publisher started (resolution: %.3fs, speed: %.2fx)",
     kResolution, speed_factor_);
 }
@@ -59,7 +62,7 @@ void ClockPublisher::setSpeedFactor(double speed_factor)
 {
   if (speed_factor <= 0.0) {
     RCLCPP_WARN(
-      node_logging_->get_logger(),
+      logger_,
       "Ignoring non-positive speed_factor %.2f", speed_factor);
     return;
   }
@@ -68,7 +71,7 @@ void ClockPublisher::setSpeedFactor(double speed_factor)
     resetTimer();
   }
   RCLCPP_INFO(
-    node_logging_->get_logger(),
+    logger_,
     "Clock speed factor changed to %.2fx", speed_factor_);
 }
 
@@ -78,16 +81,20 @@ void ClockPublisher::resetTimer()
     timer_->cancel();
     timer_.reset();
   }
+  auto shared_node = node_.lock();
+  if (!shared_node) {
+    return;
+  }
   double wall_period = std::max(kResolution / speed_factor_, kMinWallPeriod);
   timer_ = rclcpp::create_wall_timer(
     std::chrono::duration<double>(wall_period),
     std::bind(&ClockPublisher::timerCallback, this),
     nullptr,
-    node_base_.get(),
-    node_timers_.get());
+    shared_node->get_node_base_interface().get(),
+    shared_node->get_node_timers_interface().get());
   if (kResolution / speed_factor_ < kMinWallPeriod) {
     RCLCPP_WARN(
-      node_logging_->get_logger(),
+      logger_,
       "Wall period clamped to %.1fms (requested %.3fms from resolution=%.3f, speed=%.1f)",
       kMinWallPeriod * 1000.0, (kResolution / speed_factor_) * 1000.0,
       kResolution, speed_factor_);

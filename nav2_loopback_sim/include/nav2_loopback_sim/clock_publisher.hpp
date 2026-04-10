@@ -17,7 +17,9 @@
 #define NAV2_LOOPBACK_SIM__CLOCK_PUBLISHER_HPP_
 
 #include <chrono>
+#include <memory>
 
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
 
@@ -29,43 +31,35 @@ namespace nav2_loopback_sim
  * Uses wall timers so that it works correctly even when owned by a
  * node with use_sim_time=true.  Supports speed_factor to run sim
  * time faster or slower than real time.
- *
- * Takes individual node interfaces rather than a concrete node type
- * so that it is decoupled from rclcpp::Node vs LifecycleNode, matching
- * the pattern used by rclcpp free functions (create_wall_timer, etc.).
  */
 class ClockPublisher
 {
 public:
   /**
-   * @brief Construct a ClockPublisher that uses the given node's interfaces.
-   * @param node_base        Node base interface (for timer context)
-   * @param node_timers      Node timers interface (to create wall timer)
-   * @param node_topics      Node topics interface (to create publisher)
-   * @param node_logging     Node logging interface (for RCLCPP_INFO / WARN)
+   * @brief Construct a ClockPublisher.
+   * @param node             Weak pointer to the owning lifecycle node
    * @param speed_factor     Sim-time speed relative to wall time
    */
   ClockPublisher(
-    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
-    rclcpp::node_interfaces::NodeTimersInterface::SharedPtr node_timers,
-    rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
-    rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
+    nav2::LifecycleNode::WeakPtr node,
     double speed_factor = 1.0);
 
-  /// Start publishing /clock
+  /// @brief Start publishing /clock
   void start();
-  /// Stop publishing /clock
+  /// @brief Stop publishing /clock
   void stop();
-
+  /// @brief Update the simulation speed factor
+  /// @param speed_factor New speed multiplier (must be positive)
   void setSpeedFactor(double speed_factor);
 
 protected:
+  /// @brief Wall-timer callback that advances sim time and publishes /clock
   void timerCallback();
+  /// @brief (Re)create the wall timer based on current speed_factor
   void resetTimer();
 
-  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_;
-  rclcpp::node_interfaces::NodeTimersInterface::SharedPtr node_timers_;
-  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_;
+  nav2::LifecycleNode::WeakPtr node_;
+  rclcpp::Logger logger_;
 
   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_pub_;
   rclcpp::TimerBase::SharedPtr timer_;

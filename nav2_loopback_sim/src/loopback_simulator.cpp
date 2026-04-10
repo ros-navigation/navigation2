@@ -97,10 +97,7 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   if (publish_clock_) {
     clock_publisher_ = std::make_unique<ClockPublisher>(
-      get_node_base_interface(),
-      get_node_timers_interface(),
-      get_node_topics_interface(),
-      get_node_logging_interface(),
+      weak_from_this(),
       speed_factor_);
   }
 
