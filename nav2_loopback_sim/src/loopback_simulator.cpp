@@ -288,7 +288,6 @@ void LoopbackSimulator::initialPoseCallback(
     // Initialize map->odom from input pose, odom->base_link starts as identity
     t_map_to_odom_.transform.translation.x = initial_pose_.position.x;
     t_map_to_odom_.transform.translation.y = initial_pose_.position.y;
-    t_map_to_odom_.transform.translation.z = 0.0;
     t_map_to_odom_.transform.rotation = initial_pose_.orientation;
     t_odom_to_base_link_.transform.translation = geometry_msgs::msg::Vector3();
     t_odom_to_base_link_.transform.rotation = geometry_msgs::msg::Quaternion();

@@ -41,7 +41,9 @@ def generate_launch_description() -> LaunchDescription:
         executable='loopback_simulator',
         name='loopback_simulator',
         output='screen',
-        parameters=[params_file, {'scan_frame_id': scan_frame_id, 'use_sim_time': True}],
+        parameters=[params_file, {'scan_frame_id': scan_frame_id,
+                                  'use_sim_time': True,
+                                  'autostart_node': True}],
     )
 
     ld = LaunchDescription()
