@@ -42,17 +42,23 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  // Transform buffer and listener initialization
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    this->get_node_base_interface(),
-    this->get_node_timers_interface());
-  tf_buffer_->setCreateTimerInterface(timer_interface);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
   // Obtaining ROS parameters
   if (!obtainParams()) {
     return nav2::CallbackReturn::FAILURE;
+  }
+
+  if (fixed_frame_id_.empty()) {
+    // Transform buffer and listener initialization
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+      this->get_node_base_interface(),
+      this->get_node_timers_interface());
+    tf_buffer_->setCreateTimerInterface(timer_interface);
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  } else {
+    RCLCPP_INFO(
+      get_logger(), "Parameter fixed_frame_id is set to '%s'. TF listener is disabled.",
+      fixed_frame_id_.c_str());
   }
 
   map_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -144,6 +150,7 @@ bool VectorObjectServer::obtainParams()
   // Main ROS-parameters
   map_topic_ = nav2::declare_or_get_parameter(node, "map_topic", std::string{"vo_map"});
   global_frame_id_ = nav2::declare_or_get_parameter(node, "global_frame_id", std::string{"map"});
+  fixed_frame_id_ = nav2::declare_or_get_parameter(node, "fixed_frame_id", std::string{""});
   resolution_ = nav2::declare_or_get_parameter(node, "resolution", 0.05);
   default_value_ = nav2::declare_or_get_parameter(
     node, "default_value",
@@ -205,6 +212,13 @@ bool VectorObjectServer::transformVectorObjects()
 {
   for (auto shape : shapes_) {
     if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
+      if (!tf_buffer_) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Can not transform vector object from %s to %s frame because TF is not available",
+          shape->getFrameID().c_str(), global_frame_id_.c_str());
+        return false;
+      }
       // Shape to be updated dynamically
       if (!shape->toFrame(global_frame_id_, tf_buffer_, transform_tolerance_)) {
         RCLCPP_ERROR(
@@ -366,6 +380,13 @@ void VectorObjectServer::switchMapUpdate()
 {
   for (auto shape : shapes_) {
     if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
+      if (!tf_buffer_) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Can not publish map dynamically for shape frame %s without TF support",
+          shape->getFrameID().c_str());
+        break;
+      }
       if (!map_timer_) {
         map_timer_ = this->create_timer(
           std::chrono::duration<double>(1.0 / update_frequency_),
@@ -392,6 +413,30 @@ void VectorObjectServer::addShapesCallback(
   // Initialize result with true. If one of the required vector object was not added properly,
   // set it to false.
   response->success = true;
+
+  if (!fixed_frame_id_.empty()) {
+    for (const auto & req_poly : request->polygons) {
+      if (req_poly.header.frame_id != fixed_frame_id_) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Polygon frame id '%s' does not match fixed_frame_id '%s'. Rejecting request.",
+          req_poly.header.frame_id.c_str(), fixed_frame_id_.c_str());
+        response->success = false;
+        return;
+      }
+    }
+
+    for (const auto & req_crcl : request->circles) {
+      if (req_crcl.header.frame_id != fixed_frame_id_) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Circle frame id '%s' does not match fixed_frame_id '%s'. Rejecting request.",
+          req_crcl.header.frame_id.c_str(), fixed_frame_id_.c_str());
+        response->success = false;
+        return;
+      }
+    }
+  }
 
   auto node = shared_from_this();
 

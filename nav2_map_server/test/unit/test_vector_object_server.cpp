@@ -205,6 +205,11 @@ void Tester::setVOServerParams()
     rclcpp::Parameter("global_frame_id", "map"));
 
   vo_server_->declare_parameter(
+    "fixed_frame_id", rclcpp::ParameterValue(""));
+  vo_server_->set_parameter(
+    rclcpp::Parameter("fixed_frame_id", ""));
+
+  vo_server_->declare_parameter(
     "resolution", rclcpp::ParameterValue(0.1));
   vo_server_->set_parameter(
     rclcpp::Parameter("resolution", 0.1));
@@ -1225,6 +1230,37 @@ TEST_F(Tester, testSwitchDynamicStatic)
   ASSERT_TRUE(add_shapes_result->success);
 
   verifyMap(true);
+
+  vo_server_->stop();
+}
+
+TEST_F(Tester, testFixedFrameRejectsDifferentFrame)
+{
+  setVOServerParams();
+  vo_server_->set_parameter(
+    rclcpp::Parameter("fixed_frame_id", GLOBAL_FRAME_ID));
+  vo_server_->start();
+
+  auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
+  auto po_msg = makePolygonObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+  auto co_msg = makeCircleObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2});
+  co_msg->header.frame_id = SHAPE_FRAME_ID;
+  add_shapes_msg->polygons.push_back(*po_msg);
+  add_shapes_msg->circles.push_back(*co_msg);
+
+  auto add_shapes_result =
+    sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
+  ASSERT_NE(add_shapes_result, nullptr);
+  ASSERT_FALSE(add_shapes_result->success);
+
+  auto get_shapes_msg = std::make_shared<nav2_msgs::srv::GetShapes::Request>();
+  auto get_shapes_result =
+    sendRequest<nav2_msgs::srv::GetShapes>(get_shapes_client_, get_shapes_msg, 2s);
+  ASSERT_NE(get_shapes_result, nullptr);
+  ASSERT_TRUE(get_shapes_result->polygons.empty());
+  ASSERT_TRUE(get_shapes_result->circles.empty());
 
   vo_server_->stop();
 }

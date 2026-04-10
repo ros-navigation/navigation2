@@ -202,6 +202,8 @@ protected:
 
   /// @brief Frame of output map
   std::string global_frame_id_;
+  /// @brief Fixed frame required for incoming shape requests (optional)
+  std::string fixed_frame_id_;
   /// @brief Transform tolerance
   double transform_tolerance_;
 
