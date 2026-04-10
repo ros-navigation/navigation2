@@ -227,7 +227,7 @@ protected:
     }
 
     auto start_time = clock_->now();
-    nav2::WallRate loop_rate(node_.lock(), cycle_frequency_);
+    nav2::Rate loop_rate(node_.lock(), cycle_frequency_);
 
     while (rclcpp::ok()) {
       elapsed_time_ = clock_->now() - start_time;
