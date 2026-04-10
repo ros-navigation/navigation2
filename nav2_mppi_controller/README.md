@@ -80,7 +80,7 @@ Three built-in motion models are provided in the `mppi_motion_models` library:
 | `mppi::DiffDriveMotionModel`   | Differential drive — non-holonomic, no extra constraints |
 | `mppi::OmniMotionModel`        | Omnidirectional — holonomic (vx + vy + wz)  |
 
-If no `plugin` is declared under the chosen instance namespace the controller defaults to `mppi::OmniMotionModel`.
+If no `plugin` is declared under the chosen instance namespace the controller defaults to `mppi::DiffDriveMotionModel`.
 
 #### Ackermann Motion Model
  | Parameter            | Type   | Definition                                                                                                  |
