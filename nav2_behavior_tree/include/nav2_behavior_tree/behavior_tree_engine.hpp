@@ -141,11 +141,8 @@ protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 
-  // Clock for throttled logging
-  rclcpp::Clock::SharedPtr clock_;
-
-  // Clock for rate-limiting (steady or sim time)
-  rclcpp::Clock::SharedPtr rate_clock_;
+  // Node handle used to obtain clocks at run time
+  nav2::LifecycleNode::WeakPtr node_;
 
   // Groot2 monitor
   std::unique_ptr<BT::Groot2Publisher> groot_monitor_;
