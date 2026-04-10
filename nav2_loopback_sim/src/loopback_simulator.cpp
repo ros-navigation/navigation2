@@ -243,11 +243,6 @@ void LoopbackSimulator::getBaseToLaserTf()
 
 void LoopbackSimulator::setupTimerCallback()
 {
-  // Publish initial identity transforms to warm up the system
-  if (publish_map_odom_tf_) {
-    t_map_to_odom_.header.stamp = this->now();
-    tf_broadcaster_->sendTransform(t_map_to_odom_);
-  }
   t_odom_to_base_link_.header.stamp = this->now();
   tf_broadcaster_->sendTransform(t_odom_to_base_link_);
   if (publish_scan_ && !has_map_) {
