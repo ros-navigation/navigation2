@@ -201,7 +201,8 @@ public:
    * @param global_pose Will be set to the pose of the robot in the global frame of the costmap
    * @return True if the pose was set successfully, false otherwise
    */
-  bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
+  bool getRobotPose(
+    geometry_msgs::msg::PoseStamped & global_pose, bool use_latest_time = false);
 
   /**
    * @brief Transform the input_pose in the global frame of the costmap
