@@ -52,8 +52,7 @@ void ConstraintCritic::score(CriticData & data)
     return;
   }
 
-  // Omnidirectional motion model
-  // Axis wise violation check
+// Omnidirectional motion model - Axis wise violation check
   auto omni = dynamic_cast<OmniMotionModel *>(data.motion_model.get());
   if (omni != nullptr) {
     auto & vx = data.state.vx;
