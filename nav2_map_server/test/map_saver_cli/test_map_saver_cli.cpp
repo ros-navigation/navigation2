@@ -19,7 +19,7 @@
 #include <utility>
 
 #include "nav2_ros_common/qos_profiles.hpp"
-#include "nav2_ros_common/wall_rate.hpp"
+#include "nav2_ros_common/rate.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 

@@ -14,7 +14,7 @@
 
 #include "nav2_route/route_tracker.hpp"
 
-#include "nav2_ros_common/wall_rate.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2_route
 {

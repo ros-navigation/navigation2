@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#include "nav2_ros_common/wall_rate.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2_waypoint_follower
 {

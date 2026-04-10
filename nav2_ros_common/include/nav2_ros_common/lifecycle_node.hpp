@@ -31,7 +31,7 @@
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
 #include "nav2_ros_common/interface_factories.hpp"
-#include "nav2_ros_common/wall_rate.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2
 {

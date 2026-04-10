@@ -26,7 +26,7 @@
 #include "behaviortree_cpp/utils/shared_library.h"
 #include "nav2_behavior_tree/json_utils.hpp"
 #include "nav2_behavior_tree/utils/loop_rate.hpp"
-#include "nav2_ros_common/wall_rate.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2_behavior_tree
 {
