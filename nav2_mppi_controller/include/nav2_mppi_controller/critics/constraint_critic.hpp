@@ -40,15 +40,17 @@ public:
    * @param costs [out] add reference cost values to this tensor
    */
   void score(CriticData & data) override;
-
-  float getMaxVelConstraint() {return max_vel_;}
-  float getMinVelConstraint() {return min_vel_;}
+  float getMaxVelXConstraint() {return vx_max_;}
+  float getMinVelXConstraint() {return vx_min_;}
+  float getMaxVelYConstraint() {return vy_max_;}
+  unsigned int getPower() {return power_;}
 
 protected:
   unsigned int power_{0};
   float weight_{0};
-  float min_vel_;
-  float max_vel_;
+  float vx_max_{0};
+  float vx_min_{0};
+  float vy_max_{0};
 };
 
 }  // namespace mppi::critics
