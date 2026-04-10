@@ -44,18 +44,28 @@ public:
     nav2::LifecycleNode::WeakPtr node,
     double speed_factor = 1.0);
 
-  /// @brief Start publishing /clock
+  /**
+   * @brief Start publishing /clock
+   */
   void start();
-  /// @brief Stop publishing /clock
+  /**
+   * @brief Stop publishing /clock
+   */
   void stop();
-  /// @brief Update the simulation speed factor
-  /// @param speed_factor New speed multiplier (must be positive)
+  /**
+   * @brief Update the simulation speed factor
+   * @param speed_factor New speed multiplier (must be positive)
+   */
   void setSpeedFactor(double speed_factor);
 
 protected:
-  /// @brief Wall-timer callback that advances sim time and publishes /clock
+  /**
+   * @brief Wall-timer callback that advances sim time and publishes /clock
+   */
   void timerCallback();
-  /// @brief (Re)create the wall timer based on current speed_factor
+  /**
+   * @brief (Re)create the wall timer based on current speed_factor
+   */
   void resetTimer();
 
   nav2::LifecycleNode::WeakPtr node_;

@@ -102,9 +102,13 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   param_validator_ = add_on_set_parameters_callback(
-    std::bind(&LoopbackSimulator::validateParameters, this, std::placeholders::_1));
+    std::bind(
+      &LoopbackSimulator::validateParameterUpdatesCallback, this,
+      std::placeholders::_1));
   param_updater_ = add_post_set_parameters_callback(
-    std::bind(&LoopbackSimulator::applyParameters, this, std::placeholders::_1));
+    std::bind(
+      &LoopbackSimulator::updateParametersCallback, this,
+      std::placeholders::_1));
 
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -517,7 +521,8 @@ void LoopbackSimulator::getLaserScan(
   }
 }
 
-rcl_interfaces::msg::SetParametersResult LoopbackSimulator::validateParameters(
+rcl_interfaces::msg::SetParametersResult
+LoopbackSimulator::validateParameterUpdatesCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -535,7 +540,7 @@ rcl_interfaces::msg::SetParametersResult LoopbackSimulator::validateParameters(
   return result;
 }
 
-void LoopbackSimulator::applyParameters(
+void LoopbackSimulator::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   for (const auto & param : parameters) {

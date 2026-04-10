@@ -69,54 +69,104 @@ public:
   ~LoopbackSimulator() = default;
 
 protected:
-  /// @brief Configure the node: declare parameters, create pubs/subs/timers
+  /**
+   * @brief Configure the node: declare parameters, create pubs/subs/timers
+   */
   nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  /// @brief Activate the node: start publishing
+  /**
+   * @brief Activate the node: start publishing
+   */
   nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  /// @brief Deactivate the node: stop timers, reset cmd_vel
+  /**
+   * @brief Deactivate the node: stop timers, reset cmd_vel
+   */
   nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  /// @brief Cleanup the node: release all resources
+  /**
+   * @brief Cleanup the node: release all resources
+   */
   nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-  /// @brief Shutdown the node
+  /**
+   * @brief Shutdown the node
+   */
   nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
-  /// @brief Callback for incoming cmd_vel (unstamped Twist)
+  /**
+   * @brief Callback for incoming cmd_vel (unstamped Twist)
+   */
   void cmdVelCallback(const geometry_msgs::msg::Twist::ConstSharedPtr & msg);
-  /// @brief Callback for incoming cmd_vel (stamped TwistStamped)
+  /**
+   * @brief Callback for incoming cmd_vel (stamped TwistStamped)
+   */
   void cmdVelStampedCallback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg);
-  /// @brief Callback for incoming initial pose
+  /**
+   * @brief Callback for incoming initial pose
+   */
   void initialPoseCallback(
     const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg);
-  /// @brief Periodic setup callback: publishes identity TFs and fetches map
+  /**
+   * @brief Periodic setup callback: publishes identity TFs and fetches map
+   */
   void setupTimerCallback();
-  /// @brief Main update callback: integrates cmd_vel and publishes TF
+  /**
+   * @brief Main update callback: integrates cmd_vel and publishes TF
+   */
   void timerCallback();
-  /// @brief Periodic odometry publishing callback
+  /**
+   * @brief Periodic odometry publishing callback
+   */
   void odomTimerCallback();
-  /// @brief Publish a simulated laser scan from the map
+  /**
+   * @brief Publish a simulated laser scan from the map
+   */
   void publishLaserScan();
-  /// @brief Validate dynamic parameter changes (pre-set callback)
-  rcl_interfaces::msg::SetParametersResult validateParameters(
+  /**
+   * @brief Validate dynamic parameter changes (pre-set callback)
+   * @param parameters The parameters being set
+   * @return Result indicating whether the parameter change is accepted
+   */
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
     const std::vector<rclcpp::Parameter> & parameters);
-  /// @brief Apply validated dynamic parameter changes (post-set callback)
-  void applyParameters(const std::vector<rclcpp::Parameter> & parameters);
+  /**
+   * @brief Apply validated dynamic parameter changes (post-set callback)
+   * @param parameters The parameters that were set
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
-  /// @brief Look up the static transform from base to laser frame
+  /**
+   * @brief Look up the static transform from base to laser frame
+   */
   void getBaseToLaserTf();
-  /// @brief Request the map from the map server
+  /**
+   * @brief Request the map from the map server
+   */
   void getMap();
-  /// @brief Publish map->odom and odom->base_link transforms
+  /**
+   * @brief Publish map->odom and odom->base_link transforms
+   */
   void publishTransforms(
     geometry_msgs::msg::TransformStamped & map_to_odom,
     geometry_msgs::msg::TransformStamped & odom_to_base_link);
-  /// @brief Publish nav_msgs::Odometry from the current odom->base transform
+  /**
+   * @brief Publish nav_msgs::Odometry from the current odom->base transform
+   */
   void publishOdometry(const geometry_msgs::msg::TransformStamped & odom_to_base_link);
-  /// @brief Compute the laser pose in the map frame
+  /**
+   * @brief Compute the laser pose in the map frame
+   */
   std::tuple<double, double, double> getLaserPose();
-  /// @brief Raycast the map to fill a LaserScan message
+  /**
+   * @brief Raycast the map to fill a LaserScan message
+   * @param num_samples Number of ray samples
+   * @param scan_msg Output scan message to populate
+   */
   void getLaserScan(int num_samples, sensor_msgs::msg::LaserScan & scan_msg);
 
-  /// @brief Add a yaw rotation to a quaternion
+  /**
+   * @brief Add a yaw rotation to a quaternion
+   * @param quaternion Input quaternion
+   * @param yaw_to_add Yaw angle to add in radians
+   * @return Resulting quaternion
+   */
   static geometry_msgs::msg::Quaternion addYawToQuat(
     const geometry_msgs::msg::Quaternion & quaternion, double yaw_to_add);
 
