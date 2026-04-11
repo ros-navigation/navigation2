@@ -145,8 +145,7 @@ BoundedTrackingErrorLayer::getParameters()
   node->get_parameter("transform_tolerance", temp_tf_tol);
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
-  robot_base_frame_ = node->declare_or_get_parameter(
-    "robot_base_frame", std::string("base_link"));
+  node->get_parameter("robot_base_frame", robot_base_frame_);
 }
 
 void
@@ -196,8 +195,6 @@ BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
-  const double tf_tol = tf2::durationToSec(transform_tolerance_);
-
   const auto age = (clock_->now() - rclcpp::Time(cached_path_ptr->header.stamp)).seconds();
   if (age > 2.0) {
     RCLCPP_WARN_THROTTLE(
@@ -210,6 +207,9 @@ BoundedTrackingErrorLayer::updateCosts(
   }
 
   geometry_msgs::msg::PoseStamped robot_pose;
+
+  const double tf_tol = tf2::durationToSec(transform_tolerance_);
+
   if (!nav2_util::getCurrentPose(
       robot_pose, *tf_, costmap_frame_, robot_base_frame_, tf_tol))
   {
