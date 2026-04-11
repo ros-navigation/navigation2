@@ -228,7 +228,8 @@ public:
    * @brief Whether the motion model is holonomic, using Y axis
    * @return Bool If holonomic
    */
-  bool isHolonomic() const override {
+  bool isHolonomic() const override
+  {
     return false;
   }
 };

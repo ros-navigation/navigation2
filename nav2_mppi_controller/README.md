@@ -40,7 +40,7 @@ This process is then repeated a number of times and returns a converged solution
 ### Controller
  | Parameter                  | Type   | Definition                                                                                                                                                                                                                                                                                                           |
  | ---------------------      | ------ | -------------------------------------------------------------------------------------------------------- |
- | motion_model               | string | Default: diff_drive. Name of the motion model plugin instance to use (e.g. `omni`, `diff_drive`, `ackermann`). A sub-namespace with the same name must declare the `plugin` type. |
+ | motion_model               | string | Default: diff_drive. Name of the motion model plugin instance to use. A sub-namespace with the same name must declare the `plugin` type. |
  | critics                    | string | Default: None. Critics (plugins) names                                                                   |
  | iteration_count            | int    | Default 1. Iteration count in MPPI algorithm. Recommend to keep as 1 and prefer more batches.            |
  | batch_size                 | int    | Default 1000. Count of randomly sampled candidate trajectories                                            |
@@ -70,15 +70,15 @@ This process is then repeated a number of times and returns a converged solution
 
 #### Motion Model Plugins
 
-Motion models are now loaded as `pluginlib` plugins. Set `motion_model` to a short instance name (e.g. `ackermann`) and declare the plugin type under a matching namespace.
+Motion models are loaded as plugins. Set `motion_model` and declare the plugin type under a matching namespace.
 
-Three built-in motion models are provided in the `mppi_motion_models` library:
+Three built-in motion models are provided:
 
 | Plugin type                    | Description                                  |
 | ------------------------------ | -------------------------------------------- |
-| `mppi::AckermannMotionModel`   | Ackermann steering — enforces min turning radius |
-| `mppi::DiffDriveMotionModel`   | Differential drive — non-holonomic, no extra constraints |
-| `mppi::OmniMotionModel`        | Omnidirectional — holonomic (vx + vy + wz)  |
+| `mppi::AckermannMotionModel`   | Ackermann steering|
+| `mppi::DiffDriveMotionModel`   | Differential drive|
+| `mppi::OmniMotionModel`        | Omnidirectional|
 
 If no `plugin` is declared under the chosen instance namespace the controller defaults to `mppi::DiffDriveMotionModel`.
 

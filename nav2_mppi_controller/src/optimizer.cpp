@@ -580,9 +580,7 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
 {
   auto node = parent_.lock();
 
-  // Build the parameter key for this model's plugin type.
-  // e.g. if motion_model_name == "ackermann" the user sets:
-  //   FollowPath.ackermann.plugin: "mppi::AckermannMotionModel"
+  // Build the parameter key for this model's plugin type
   const std::string plugin_ns = name_ + "." + motion_model_name;
   const std::string plugin_param = plugin_ns + ".plugin";
 

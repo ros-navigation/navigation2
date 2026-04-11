@@ -45,7 +45,7 @@ void ConstraintCritic::score(CriticData & data)
     return;
   }
   bool omni = data.motion_model->isHolonomic();
-  bool acker= data.motion_model->hasConstrainedTurningRadius();
+  bool acker = data.motion_model->hasConstrainedTurningRadius();
   bool diff = !omni && !acker;
 
   // Differential motion model
