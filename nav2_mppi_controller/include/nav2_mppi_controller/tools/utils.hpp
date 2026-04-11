@@ -328,63 +328,50 @@ inline size_t findPathFurthestReachedPointEuclidean(const CriticData & data)
 inline size_t findPathFurthestReachedPointArcLength(const CriticData & data)
 {
   const int traj_cols = data.trajectories.x.cols();
-  const auto traj_x_end = data.trajectories.x.col(traj_cols - 1);
-  const auto traj_y_end = data.trajectories.y.col(traj_cols - 1);
-
-  const size_t n_rows = static_cast<size_t>(traj_x_end.rows());
-  const size_t n_cols = data.path.x.size();
-  int max_id_by_trajectories = 0;
+  const int n_rows = static_cast<int>(data.trajectories.x.rows());
+  const int n_cols = static_cast<int>(data.path.x.size());
 
   // Pre-compute cumulative arc-lengths along the reference path.
   std::vector<float> path_arc(n_cols, 0.0f);
-  for (size_t i = 1; i < n_cols; ++i) {
+  for (int i = 1; i < n_cols; ++i) {
     const float dx = data.path.x(i) - data.path.x(i - 1);
     const float dy = data.path.y(i) - data.path.y(i - 1);
     path_arc[i] = path_arc[i - 1] + sqrtf(dx * dx + dy * dy);
   }
 
   // Vectorized arc-length computation for all trajectories at once.
-  const auto dx_traj =
-    data.trajectories.x.rightCols(traj_cols - 1) - data.trajectories.x.leftCols(traj_cols - 1);
-  const auto dy_traj =
-    data.trajectories.y.rightCols(traj_cols - 1) - data.trajectories.y.leftCols(traj_cols - 1);
   const Eigen::ArrayXf traj_arcs =
-    (dx_traj.square() + dy_traj.square()).sqrt().rowwise().sum();
+    ((data.trajectories.x.rightCols(traj_cols - 1) -
+    data.trajectories.x.leftCols(traj_cols - 1)).square() +
+    (data.trajectories.y.rightCols(traj_cols - 1) -
+    data.trajectories.y.leftCols(traj_cols - 1)).square())
+    .sqrt().rowwise().sum();
 
-  for (size_t i = 0; i < n_rows; ++i) {
+  const auto & traj_x_end = data.trajectories.x.col(traj_cols - 1);
+  const auto & traj_y_end = data.trajectories.y.col(traj_cols - 1);
+
+  int max_idx = 0;
+  for (int i = 0; i < n_rows; ++i) {
     // Euclidean match: closest path point to this trajectory's endpoint.
-    int eucl_idx = 0;
-    float min_dist_sq = std::numeric_limits<float>::max();
-    for (size_t j = 0; j < n_cols; ++j) {
-      const float dx = data.path.x(j) - traj_x_end(i);
-      const float dy = data.path.y(j) - traj_y_end(i);
-      const float cur_dist_sq = dx * dx + dy * dy;
-      if (cur_dist_sq < min_dist_sq) {
-        min_dist_sq = cur_dist_sq;
-        eucl_idx = static_cast<int>(j);
-      }
-    }
+    Eigen::Index eucl_idx;
+    ((data.path.x - traj_x_end(i)).square() +
+    (data.path.y - traj_y_end(i)).square()).minCoeff(&eucl_idx);
 
     // Arc-length match: first path point whose cumulative distance >= trajectory arc-length.
-    // Uses lower_bound on the monotonically increasing path_arc vector.
-    const float arc = traj_arcs(static_cast<int>(i));
-    auto it = std::lower_bound(path_arc.begin(), path_arc.end(), arc);
-    int integ_idx = static_cast<int>(std::distance(path_arc.begin(), it));
-    if (integ_idx >= static_cast<int>(n_cols)) {
-      integ_idx = static_cast<int>(n_cols) - 1;
-    }
+    int integ_idx = static_cast<int>(
+      std::lower_bound(path_arc.begin(), path_arc.end(), traj_arcs(i)) - path_arc.begin());
+    integ_idx = std::min(integ_idx, n_cols - 1);
 
-    // Prevent overestimation: take the earlier of the two indices.
-    const int selected_idx = std::min(eucl_idx, integ_idx);
-    max_id_by_trajectories = std::max(max_id_by_trajectories, selected_idx);
+    // Bound Euclidean match with the arc-length match.
+    max_idx = std::max(max_idx, std::min(static_cast<int>(eucl_idx), integ_idx));
 
     // Early exit if we've already reached the end of the path.
-    if (max_id_by_trajectories == static_cast<int>(n_cols) - 1) {
+    if (max_idx == n_cols - 1) {
       break;
     }
   }
 
-  return static_cast<size_t>(max_id_by_trajectories);
+  return static_cast<size_t>(max_idx);
 }
 
 /**
