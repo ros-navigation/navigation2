@@ -21,7 +21,6 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav_msgs/msg/goals.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 

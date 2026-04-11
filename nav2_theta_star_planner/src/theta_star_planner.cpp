@@ -71,8 +71,9 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   const std::vector<geometry_msgs::msg::PoseStamped> & viapoints,
   std::function<bool()> cancel_checker)
 {
-  if (!viapoints.size()) {
-    RCLCPP_DEBUG(logger_, "Planning triggered with no viapoints");
+  if (!viapoints.empty()) {
+    RCLCPP_WARN(logger_, "Received %zu viapoints, but this planner ignores them",
+      viapoints.size());
   }
 
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
