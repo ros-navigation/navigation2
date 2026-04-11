@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/constraint_critic.hpp"
+#include "nav2_mppi_controller/motion_models.hpp"
 
 namespace mppi::critics
 {
@@ -43,10 +44,12 @@ void ConstraintCritic::score(CriticData & data)
   if (!enabled_) {
     return;
   }
+  bool omni = data.motion_model->isHolonomic();
+  bool acker = data.motion_model->hasConstrainedTurningRadius();
+  bool diff = !omni && !acker;
 
   // Differential motion model
-  auto diff = dynamic_cast<DiffDriveMotionModel *>(data.motion_model.get());
-  if (diff != nullptr) {
+  if (diff) {
     if (power_ > 1u) {
       data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
         max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).pow(power_).eval();
@@ -54,12 +57,9 @@ void ConstraintCritic::score(CriticData & data)
       data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
         max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).eval();
     }
-    return;
   }
-
   // Omnidirectional motion model
-  auto omni = dynamic_cast<OmniMotionModel *>(data.motion_model.get());
-  if (omni != nullptr) {
+  if (omni) {
     auto & vx = data.state.vx;
     unsigned int n_rows = data.state.vx.rows();
     unsigned int n_cols = data.state.vx.cols();
@@ -78,11 +78,10 @@ void ConstraintCritic::score(CriticData & data)
   }
 
   // Ackermann motion model
-  auto acker = dynamic_cast<AckermannMotionModel *>(data.motion_model.get());
-  if (acker != nullptr) {
+  if (acker) {
     auto & vx = data.state.vx;
     auto & wz = data.state.wz;
-    const float min_turning_rad = acker->getMinTurningRadius();
+    const float min_turning_rad = data.motion_model->getMinTurningRadius();
 
     const float epsilon = 1e-6f;
     auto wz_safe = wz.abs().max(epsilon);  // Replace small wz values to avoid division by 0
