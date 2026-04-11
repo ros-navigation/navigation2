@@ -17,6 +17,7 @@
 #define NAV2_MPPI_CONTROLLER__MOTION_MODELS_HPP_
 
 #include <Eigen/Dense>
+
 #include <cstdint>
 #include <string>
 #include <algorithm>
@@ -24,6 +25,7 @@
 #include "nav2_mppi_controller/models/control_sequence.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
+
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 
 namespace mppi
@@ -31,70 +33,45 @@ namespace mppi
 
 /**
  * @class mppi::MotionModel
- * @brief Abstract pluginlib base class for vehicle motion models used in MPPI optimization.
- *
- * Motion models define how a robot's velocity state evolves over time and enforce
- * kinematic constraints (e.g. minimum turning radius for Ackermann drives).
- *
- * To implement a custom motion model, inherit from this class, implement all pure
- * virtual methods, and register it with pluginlib using PLUGINLIB_EXPORT_CLASS.
+ * @brief Abstract pluginlib class for modeling a vehicle
  */
 class MotionModel
 {
 public:
   /**
-   * @brief Constructor for mppi::MotionModel
-   */
+    * @brief Constructor for mppi::MotionModel
+    */
   MotionModel() = default;
 
   /**
-   * @brief Destructor for mppi::MotionModel
-   */
+    * @brief Destructor for mppi::MotionModel
+    */
   virtual ~MotionModel() = default;
 
   /**
    * @brief Initialize motion model on bringup.
-   *
-   * Called once after plugin instantiation. The @p plugin_name is the namespace
-   * under which this model's parameters live in the ROS parameter server
-   * (e.g. "FollowPath.ackermann").  Derived classes should call this base
-   * implementation and then read their own parameters via @p param_handler.
-   *
    * @param param_handler Pointer to the shared parameters handler
    * @param plugin_name   Namespaced name of this plugin instance
    */
   virtual void initialize(
-    ParametersHandler * param_handler,
-    const std::string & plugin_name)
-  {
-    (void)param_handler;
-    (void)plugin_name;
-  }
+    ParametersHandler * /*param_handler*/,
+    const std::string & /*plugin_name*/)
+  {}
 
   /**
-   * @brief Set the current kinematic constraints and model time step.
-   *
-   * Called every time the optimizer resets (including on speed-limit changes).
-   *
-   * @param control_constraints Active kinematic/dynamic limits
-   * @param model_dt            Duration of one prediction time step (seconds)
-   */
-  void setConstraints(
-    const models::ControlConstraints & control_constraints,
-    float model_dt)
+    * @brief Initialize motion model on bringup and set required variables
+    * @param control_constraints Constraints on control
+    * @param model_dt duration of a time step
+    */
+  void setConstraints(const models::ControlConstraints & control_constraints, float model_dt)
   {
     control_constraints_ = control_constraints;
     model_dt_ = model_dt;
   }
 
   /**
-   * @brief Propagate noised control velocities forward through the state.
-   *
-   * The default implementation handles acceleration clamping for vx, wz, and
-   * (for holonomic models) vy.  Override to provide custom dynamics.
-   *
-   * @param state State containing sampled control velocities (cvx/cvy/cwz) to
-   *              propagate into vehicle velocities (vx/vy/wz)
+   * @brief With input velocities, find the vehicle's output velocities
+   * @param state Contains control velocities to use to populate vehicle velocities
    */
   virtual void predict(models::State & state)
   {
@@ -145,69 +122,49 @@ public:
   }
 
   /**
-   * @brief Whether the motion model uses the lateral (Y) velocity axis.
-   * @return true if holonomic (e.g. omnidirectional), false otherwise
+   * @brief Whether the motion model is holonomic, using Y axis
+   * @return Bool If holonomic
    */
   virtual bool isHolonomic() const = 0;
 
   /**
    * @brief Whether this model imposes a minimum turning radius constraint.
-   *
-   * Override and return @c true in models that restrict the ratio |vx|/|wz|
-   * (e.g. Ackermann steering).  Used by ConstraintCritic to apply the
-   * appropriate cost term without requiring a dynamic_cast.
-   *
    * @return true if the model has a minimum turning radius constraint
    */
   virtual bool hasConstrainedTurningRadius() const {return false;}
 
   /**
    * @brief Get the minimum turning radius for models that constrain it.
-   *
-   * Only meaningful when hasConstrainedTurningRadius() returns @c true.
-   *
-   * @return Minimum turning radius in metres (default 0)
+   * @return Minimum turning radius in metres
    */
   virtual float getMinTurningRadius() const {return 0.0f;}
 
   /**
-   * @brief Apply hard kinematic constraints to the optimal control sequence.
-   *
-   * Called once per optimisation cycle on the winning control sequence.
-   * The default implementation is a no-op.
-   *
-   * @param control_sequence Control sequence to clamp / modify in place
+   * @brief Apply hard vehicle constraints to a control sequence
+   * @param control_sequence Control sequence to apply constraints to
    */
   virtual void applyConstraints(models::ControlSequence & /*control_sequence*/) {}
 
 protected:
-  float model_dt_{0.0f};
-  models::ControlConstraints control_constraints_{
-    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+  float model_dt_{0.0};
+  models::ControlConstraints control_constraints_{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 0.0f};
 };
 
 /**
  * @class mppi::AckermannMotionModel
- * @brief Ackermann steering motion model plugin.
- *
- * Reads the following parameter from its plugin namespace:
- *   - @c min_turning_r  (float, default 0.2 m) — minimum turning radius
- *
- * Example YAML configuration:
- * @code{yaml}
- *   motion_model: "ackermann"
- *   ackermann:
- *     plugin: "mppi::AckermannMotionModel"
- *     min_turning_r: 0.5
- * @endcode
+ * @brief Ackermann motion model
  */
 class AckermannMotionModel : public MotionModel
 {
 public:
+  /**
+    * @brief Constructor for mppi::AckermannMotionModel
+    */
   AckermannMotionModel() = default;
 
   /**
-   * @brief Initialize the Ackermann model, reading min_turning_r from parameters.
+   * @brief Initialize motion model.
    * @param param_handler Pointer to the shared parameters handler
    * @param plugin_name   Namespaced name of this plugin instance
    */
@@ -220,10 +177,13 @@ public:
   }
 
   /**
-   * @brief Whether the motion model is holonomic.
-   * @return false — Ackermann is non-holonomic
+   * @brief Whether the motion model is holonomic, using Y axis
+   * @return Bool If holonomic
    */
-  bool isHolonomic() const override {return false;}
+  bool isHolonomic() const override
+  {
+    return false;
+  }
 
   /**
    * @brief Whether this model imposes a minimum turning radius constraint.
@@ -232,10 +192,7 @@ public:
   bool hasConstrainedTurningRadius() const override {return true;}
 
   /**
-   * @brief Apply the minimum turning radius constraint to the control sequence.
-   *
-   * Clamps |wz| so that |vx| / |wz| >= min_turning_r_ for every time step.
-   *
+   * @brief Apply hard vehicle constraints to a control sequence
    * @param control_sequence Control sequence to apply constraints to
    */
   void applyConstraints(models::ControlSequence & control_sequence) override
@@ -246,8 +203,8 @@ public:
       .min(wz_constrained);
   }
   /**
-   * @brief Get the minimum turning radius.
-   * @return Minimum turning radius in metres
+   * @brief Get minimum turning radius of ackermann drive
+   * @return Minimum turning radius
    */
   float getMinTurningRadius() const override {return min_turning_r_;}
 
@@ -257,53 +214,45 @@ private:
 
 /**
  * @class mppi::DiffDriveMotionModel
- * @brief Differential drive motion model plugin.
- *
- * Non-holonomic model with no additional kinematic constraints beyond the
- * standard velocity and acceleration limits.
- *
- * Example YAML configuration:
- * @code{yaml}
- *   motion_model: "diff_drive"
- *   diff_drive:
- *     plugin: "mppi::DiffDriveMotionModel"
- * @endcode
+ * @brief Differential drive motion model
  */
 class DiffDriveMotionModel : public MotionModel
 {
 public:
+  /**
+    * @brief Constructor for mppi::DiffDriveMotionModel
+    */
   DiffDriveMotionModel() = default;
 
   /**
-   * @brief Whether the motion model is holonomic.
-   * @return false — differential drive is non-holonomic
+   * @brief Whether the motion model is holonomic, using Y axis
+   * @return Bool If holonomic
    */
-  bool isHolonomic() const override {return false;}
+  bool isHolonomic() const override {
+    return false;
+  }
 };
 
 /**
  * @class mppi::OmniMotionModel
- * @brief Omnidirectional (holonomic) motion model plugin.
- *
- * Supports independent control of vx, vy, and wz.
- *
- * Example YAML configuration:
- * @code{yaml}
- *   motion_model: "omni"
- *   omni:
- *     plugin: "mppi::OmniMotionModel"
- * @endcode
+ * @brief Omnidirectional motion model
  */
 class OmniMotionModel : public MotionModel
 {
 public:
+  /**
+    * @brief Constructor for mppi::OmniMotionModel
+    */
   OmniMotionModel() = default;
 
   /**
-   * @brief Whether the motion model is holonomic.
-   * @return true — omnidirectional drive is holonomic
+   * @brief Whether the motion model is holonomic, using Y axis
+   * @return Bool If holonomic
    */
-  bool isHolonomic() const override {return true;}
+  bool isHolonomic() const override
+  {
+    return true;
+  }
 };
 
 }  // namespace mppi

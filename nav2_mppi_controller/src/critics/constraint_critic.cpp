@@ -44,9 +44,22 @@ void ConstraintCritic::score(CriticData & data)
   if (!enabled_) {
     return;
   }
+  bool omni = data.motion_model->isHolonomic();
+  bool acker= data.motion_model->hasConstrainedTurningRadius();
+  bool diff = !omni && !acker;
 
-  // Holonomic (omnidirectional) motion model: use total speed magnitude
-  if (data.motion_model->isHolonomic()) {
+  // Differential motion model
+  if (diff) {
+    if (power_ > 1u) {
+      data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
+        max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).pow(power_).eval();
+    } else {
+      data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
+        max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).eval();
+    }
+  }
+  // Omnidirectional motion model
+  if (omni) {
     auto & vx = data.state.vx;
     unsigned int n_rows = data.state.vx.rows();
     unsigned int n_cols = data.state.vx.cols();
@@ -64,15 +77,14 @@ void ConstraintCritic::score(CriticData & data)
     return;
   }
 
-
-    // Ackermann motion model: penalise both velocity bounds and turning radius violations
-  if (data.motion_model->hasConstrainedTurningRadius()) {
+  // Ackermann motion model
+  if (acker) {
     auto & vx = data.state.vx;
     auto & wz = data.state.wz;
     const float min_turning_rad = data.motion_model->getMinTurningRadius();
 
     const float epsilon = 1e-6f;
-    auto wz_safe = wz.abs().max(epsilon);  // avoid division by zero
+    auto wz_safe = wz.abs().max(epsilon);  // Replace small wz values to avoid division by 0
     auto out_of_turning_rad_motion = (min_turning_rad - (vx.abs() / wz_safe)).max(0.0f);
 
     if (power_ > 1u) {
@@ -84,15 +96,6 @@ void ConstraintCritic::score(CriticData & data)
         out_of_turning_rad_motion) * data.model_dt).rowwise().sum().eval() * weight_).eval();
     }
     return;
-  }
-
-  // Non-holonomic model without turning radius constraint (e.g. differential drive)
-  if (power_ > 1u) {
-    data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
-      max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).pow(power_).eval();
-  } else {
-    data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
-      max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).eval();
   }
 }
 

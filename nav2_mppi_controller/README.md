@@ -40,7 +40,7 @@ This process is then repeated a number of times and returns a converged solution
 ### Controller
  | Parameter                  | Type   | Definition                                                                                                                                                                                                                                                                                                           |
  | ---------------------      | ------ | -------------------------------------------------------------------------------------------------------- |
- | motion_model               | string | Default: omni. Name of the motion model plugin instance to use (e.g. `omni`, `diff_drive`, `ackermann`). A sub-namespace with the same name must declare the `plugin` type. |
+ | motion_model               | string | Default: diff_drive. Name of the motion model plugin instance to use (e.g. `omni`, `diff_drive`, `ackermann`). A sub-namespace with the same name must declare the `plugin` type. |
  | critics                    | string | Default: None. Critics (plugins) names                                                                   |
  | iteration_count            | int    | Default 1. Iteration count in MPPI algorithm. Recommend to keep as 1 and prefer more batches.            |
  | batch_size                 | int    | Default 1000. Count of randomly sampled candidate trajectories                                            |

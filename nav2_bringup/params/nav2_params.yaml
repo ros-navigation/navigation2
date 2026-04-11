@@ -164,11 +164,6 @@ controller_server:
         consider_footprint: false  # Whether to consider the full robot's footprint (or circle) in trajectory validation collision checks
       diff_drive:
         plugin: "mppi::DiffDriveMotionModel"
-      # Uncomment and configure below to use Ackermann steering:
-      # motion_model: "ackermann"
-      # ackermann:
-      #   plugin: "mppi::AckermannMotionModel"
-      #   min_turning_r: 0.2
       critics:
         [
           "ConstraintCritic",

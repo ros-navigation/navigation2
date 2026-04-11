@@ -14,7 +14,6 @@
 #include "nav2_mppi_controller/motion_models.hpp"
 
 #include <pluginlib/class_list_macros.hpp>
-
 PLUGINLIB_EXPORT_CLASS(mppi::AckermannMotionModel, mppi::MotionModel)
 PLUGINLIB_EXPORT_CLASS(mppi::DiffDriveMotionModel, mppi::MotionModel)
 PLUGINLIB_EXPORT_CLASS(mppi::OmniMotionModel, mppi::MotionModel)

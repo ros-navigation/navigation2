@@ -77,7 +77,6 @@ target_link_libraries(mppi_controller PRIVATE
 
 add_library(mppi_motion_models SHARED)
 target_sources(mppi_motion_models PRIVATE
-  # header-only implementations; a .cpp is needed to trigger the pluginlib macro
   src/motion_models.cpp
 )
 target_compile_options(mppi_motion_models PUBLIC -O3)
