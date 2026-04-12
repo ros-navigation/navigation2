@@ -573,10 +573,10 @@ jobs:
 _parameters:
   core_build_parameters: &core_build_parameters
     packages_skip_regex: ""
-    packages_select: "nav2_common nav2_voxel_grid nav_2d_msgs dwb_msgs nav2_msgs nav2_ros_common nav2_simple_commander nav2_util nav2_amcl nav2_behavior_tree nav2_lifecycle_manager nav2_map_server nav_2d_utils nav2_velocity_smoother nav2_costmap_2d costmap_queue nav2_core"
+    packages_select: "nav2_common nav2_voxel_grid nav_2d_msgs dwb_msgs nav2_msgs nav2_ros_common nav2_simple_commander nav2_util nav2_amcl nav2_lifecycle_manager nav2_map_server nav_2d_utils nav2_velocity_smoother nav2_costmap_2d costmap_queue nav2_core"
   algorithm_build_parameters: &algorithm_build_parameters
     packages_skip_regex: ""
-    packages_select: "nav2_collision_monitor dwb_core dwb_critics dwb_plugins nav2_dwb_controller nav2_controller nav2_bt_navigator nav2_constrained_smoother nav2_navfn_planner nav2_planner nav2_regulated_pure_pursuit_controller nav2_theta_star_planner nav2_graceful_controller"
+    packages_select: "nav2_behavior_tree nav2_collision_monitor dwb_core dwb_critics dwb_plugins nav2_dwb_controller nav2_controller nav2_bt_navigator nav2_constrained_smoother nav2_navfn_planner nav2_planner nav2_regulated_pure_pursuit_controller nav2_theta_star_planner nav2_graceful_controller"
   system_build_parameters: &system_build_parameters
     packages_skip_regex: "'(nav2_common|nav2_voxel_grid|nav_2d_msgs|dwb_msgs|nav2_msgs|nav2_ros_common|nav2_simple_commander|nav2_util|nav2_amcl|nav2_behavior_tree|nav2_lifecycle_manager|nav2_map_server|nav_2d_utils|nav2_velocity_smoother|nav2_costmap_2d|costmap_queue|nav2_core|nav2_collision_monitor|dwb_core|dwb_critics|dwb_plugins|nav2_dwb_controller|nav2_controller|nav2_bt_navigator|nav2_constrained_smoother|nav2_navfn_planner|nav2_planner|nav2_regulated_pure_pursuit_controller|nav2_theta_star_planner|nav2_graceful_controller)'"
     packages_select: ""
