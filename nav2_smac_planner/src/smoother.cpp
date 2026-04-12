@@ -207,7 +207,7 @@ bool Smoother::smoothImpl(
   // oriented footprint and revert to the original path if a collision is found.
   if (!footprint.empty() && costmap) {
     nav2_costmap_2d::FootprintCollisionChecker<const nav2_costmap_2d::Costmap2D *>
-      checker(costmap);
+    checker(costmap);
     for (const auto & pose_stamped : new_path.poses) {
       const double yaw = tf2::getYaw(pose_stamped.pose.orientation);
       const double cost = checker.footprintCostAtPose(
