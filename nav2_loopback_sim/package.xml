@@ -7,23 +7,30 @@
   <maintainer email="steve@opennav.org">steve macenski</maintainer>
   <license>Apache-2.0</license>
 
-  <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>nav2_simple_commander</exec_depend>
-  <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>python3-transforms3d</exec_depend>
-  <exec_depend>rclpy</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
-  <exec_depend>tf_transformations</exec_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>nav2_common</build_depend>
 
-  <test_depend>ament_copyright</test_depend>
-  <test_depend>ament_flake8</test_depend>
-  <test_depend>ament_mypy</test_depend>
-  <test_depend>ament_pep257</test_depend>
-  <test_depend>ament_xmllint</test_depend>
-  <test_depend>python3-pytest</test_depend>
+  <depend>backward_ros</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav2_ros_common</depend>
+  <depend>nav2_util</depend>
+  <depend>nav_msgs</depend>
+  <depend>rcl_interfaces</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>rosgraph_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_cmake_ros</test_depend>
 
   <export>
-    <build_type>ament_python</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
