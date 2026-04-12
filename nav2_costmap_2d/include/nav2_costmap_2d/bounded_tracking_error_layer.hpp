@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <mutex>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "nav_msgs/msg/path.hpp"
@@ -46,7 +47,6 @@ namespace nav2_costmap_2d
  */
 struct WallPolygons
 {
-
   std::vector<std::array<double, 2>> left_inner;
 
   std::vector<std::array<double, 2>> left_outer;
@@ -80,7 +80,9 @@ struct WallPolygons
  * path, extracts a look-ahead segment, and rasterizes high-cost walls along both
  * sides of that segment. The walls penalise the local trajectory controller when
  * the robot deviates beyond the configured corridor width without blocking the
- * global planner. All parameters are dynamically reconfigurable at runtime.
+ * global planner. Optionally, all free-space cells outside the corridor within
+ * the update bounds can be elevated to corridor cost. All parameters are
+ * dynamically reconfigurable at runtime.
  */
 class BoundedTrackingErrorLayer : public nav2_costmap_2d::Layer
 {
@@ -159,6 +161,15 @@ public:
 
 protected:
   /**
+   * @brief A 2D cell coordinate in the costmap grid.
+   */
+  struct CellPoint
+  {
+    unsigned int x;
+    unsigned int y;
+  };
+
+  /**
    * @brief Resets internal state by clearing the cached path and path index.
    */
   void resetState();
@@ -169,8 +180,9 @@ protected:
   void getParameters();
 
   /**
-   * @brief Stores the incoming path. All staleness and index checks are
-   *        deferred to updateCosts() to keep the callback minimal.
+   * @brief Stores the incoming path and resets the path index on new path arrival.
+   *        All staleness and validity checks are deferred to updateCosts()
+   *        to keep the callback minimal.
    * @param msg Incoming path message.
    */
   void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
@@ -223,16 +235,52 @@ protected:
     const std::vector<std::array<double, 2>> & inner_points,
     const std::vector<std::array<double, 2>> & outer_points);
 
-private:
   /**
-   * @brief A 2D cell coordinate in the costmap grid.
+   * @brief Collects flat cell indices of all cells inside the corridor interior
+   *        into corridor_index_set_.
+   *
+   * Uses the span buffer approach on left-inner to right-inner quads. The resulting
+   * set is used by fillOutsideCorridor to skip corridor cells during outside fill.
+   *
+   * @param master_grid Reference to the master costmap.
+   * @param walls WallPolygons containing left_inner and right_inner boundary points.
    */
-  struct CellPoint
-  {
-    unsigned int x;
-    unsigned int y;
-  };
+  void saveCorridorInterior(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    const WallPolygons & walls);
 
+  /**
+   * @brief Elevates free-space cells outside the corridor to corridor_cost_.
+   *
+   * Iterates all cells in the update bounds. Cells whose flat index is present
+   * in corridor_index_set_ are skipped. All other cells are elevated to
+   * corridor_cost_ using std::max to preserve any higher existing cost.
+   *
+   * @param master_grid Reference to the master costmap.
+   * @param min_i Minimum X cell index of the update bounds.
+   * @param min_j Minimum Y cell index of the update bounds.
+   * @param max_i Maximum X cell index of the update bounds.
+   * @param max_j Maximum Y cell index of the update bounds.
+   */
+  void fillOutsideCorridor(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    int min_i, int min_j, int max_i, int max_j);
+
+  /**
+   * @brief Traces a single edge between two cell points into the span buffers.
+   *
+   * Uses Bresenham line iteration to record the x extent per row into
+   * span_x_min_buffer_ and span_x_max_buffer_. Must be called after the
+   * span buffers have been assigned for the current quad.
+   *
+   * @param p0 Start cell point of the edge.
+   * @param p1 End cell point of the edge.
+   * @param clamped_y_min Minimum valid y index for the current quad.
+   * @param height Number of rows in the current quad's span buffers.
+   */
+  void traceEdge(CellPoint p0, CellPoint p1, int clamped_y_min, int height);
+
+private:
   /**
    * @brief Fills a corridor quad (convex quadrilateral) using span buffer approach.
    *
@@ -267,6 +315,7 @@ private:
   WallPolygons walls_buffer_;
   std::vector<int> span_x_min_buffer_;
   std::vector<int> span_x_max_buffer_;
+  std::unordered_set<unsigned int> corridor_index_set_;
 
 protected:
   std::atomic<uint32_t> current_path_index_{0};
@@ -277,6 +326,7 @@ protected:
   double corridor_width_;
   int wall_thickness_;
   unsigned char corridor_cost_;
+  bool fill_outside_corridor_{false};
   tf2::Duration transform_tolerance_;
   double resolution_{0.0};
   std::string costmap_frame_;
