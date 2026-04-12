@@ -492,6 +492,7 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   const double path_length_tol = 1.0;
   const double trans_stopped_vel = 0.10;
   const double rot_stopped_vel = 0.10;
+  const int required_stagnation_cycles = 3;
   x->declare_parameter("pgc.fine_xy_goal_tolerance", fine_xy_tol);
   x->declare_parameter("pgc.coarse_xy_goal_tolerance", coarse_xy_tol);
   x->declare_parameter("pgc.yaw_goal_tolerance", yaw_tol);
@@ -500,7 +501,7 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   x->declare_parameter("pgc.symmetric_yaw_tolerance", false);
   x->declare_parameter("pgc.trans_stopped_velocity", trans_stopped_vel);
   x->declare_parameter("pgc.rot_stopped_velocity", rot_stopped_vel);
-  x->declare_parameter("pgc.required_stagnation_cycles", 3);
+  x->declare_parameter("pgc.required_stagnation_cycles", required_stagnation_cycles);
   AdaptiveToleranceGoalChecker gc;
   gc.initialize(x, "pgc", costmap);
 
@@ -600,14 +601,39 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // count 2
   EXPECT_TRUE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));   // count 3 → accept
 
-  // Improving distance while stopped does NOT reset counter
+  // Stopped + improving: stopped_stagnation_count_ still triggers independently
   gc.reset();
   current.position.x = coarse_xy_tol - tol_diff / 2;
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // enter
-  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 1
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // stopped 1
   current.position.x = coarse_xy_tol - tol_diff / 2 - tol_diff / 4;   // closer but stopped
-  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 2
-  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));   // count 3 → accept
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // stopped 2
+  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));   // stopped 3 → accept
+
+  // Movement with improvement resets both counters
+  gc.reset();
+  current.position.x = coarse_xy_tol - tol_diff / 2;
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));        // enter
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));        // stopped 1, noprog 1
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));        // stopped 2, noprog 2
+  current.position.x -= tol_diff / 8;                                        // closer
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // both reset
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));        // stopped 1, noprog 1
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));        // stopped 2, noprog 2
+  current.position.x -= tol_diff / 8;                                        // closer
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // both reset
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));        // stopped 1, noprog 1
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));        // stopped 2, noprog 2
+  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));         // both 3 → accept
+
+  // Continuously improving while moving: never triggers
+  gc.reset();
+  current.position.x = coarse_xy_tol - tol_diff / 10;
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // enter
+  for (int i = 1; i <= required_stagnation_cycles * 2; ++i) {
+    current.position.x -= tol_diff / 100;  // keep getting closer
+    EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));
+  }
 
   // Leaving zone resets counter
   gc.reset();

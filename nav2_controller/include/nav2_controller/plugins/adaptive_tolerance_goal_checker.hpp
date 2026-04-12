@@ -115,7 +115,8 @@ protected:
   // Stateful tracking
   bool check_xy_;
   bool in_tolerance_zone_;
-  int stagnation_count_;
+  int stopped_stagnation_count_;
+  int distance_stagnation_count_;
   double best_distance_sq_;
 
   // Dynamic parameters

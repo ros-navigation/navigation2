@@ -45,7 +45,8 @@ AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
   required_stagnation_cycles_(15),
   check_xy_(true),
   in_tolerance_zone_(false),
-  stagnation_count_(0),
+  stopped_stagnation_count_(0),
+  distance_stagnation_count_(0),
   best_distance_sq_(std::numeric_limits<double>::max())
 {
 }
@@ -108,7 +109,8 @@ void AdaptiveToleranceGoalChecker::reset()
 {
   check_xy_ = true;
   in_tolerance_zone_ = false;
-  stagnation_count_ = 0;
+  stopped_stagnation_count_ = 0;
+  distance_stagnation_count_ = 0;
   best_distance_sq_ = std::numeric_limits<double>::max();
 }
 
@@ -147,7 +149,8 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
       // Just entered the zone: initialize tracking
       if (!in_tolerance_zone_) {
         in_tolerance_zone_ = true;
-        stagnation_count_ = 0;
+        stopped_stagnation_count_ = 0;
+        distance_stagnation_count_ = 0;
         best_distance_sq_ = dist_sq;
         return false;
       }
@@ -162,13 +165,21 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
         best_distance_sq_ = dist_sq;
       }
 
-      if (!robot_stopped && distance_improved) {
-        stagnation_count_ = 0;
+      if (robot_stopped) {
+        stopped_stagnation_count_++;
       } else {
-        stagnation_count_++;
+        stopped_stagnation_count_ = 0;
       }
 
-      if (stagnation_count_ < required_stagnation_cycles_) {
+      if (distance_improved) {
+        distance_stagnation_count_ = 0;
+      } else {
+        distance_stagnation_count_++;
+      }
+
+      if (stopped_stagnation_count_ < required_stagnation_cycles_ &&
+        distance_stagnation_count_ < required_stagnation_cycles_)
+      {
         return false;
       }
 
@@ -179,7 +190,8 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
     } else {
       // Outside both tolerances: reset tracking state
       in_tolerance_zone_ = false;
-      stagnation_count_ = 0;
+      stopped_stagnation_count_ = 0;
+      distance_stagnation_count_ = 0;
       return false;
     }
   }
