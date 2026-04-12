@@ -1,6 +1,10 @@
 name: Lint
 on:
   pull_request:
+  push:
+    branches:
+      - issue-6079_Experiment_with_semgrep #for the duration of the experiment
+  workflow_dispatch: # for the duration of the experiment, to allow manual triggering of the workflow
 
 jobs:
   ament_lint_general:
