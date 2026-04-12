@@ -36,16 +36,6 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
 }
 
 void CostmapSubscriber::costmapCallback(
-  const nav2_msgs::msg::Costmap::ConstSharedPtr & msg)
-{
-  using Adapter = rclcpp::TypeAdapter<
-    nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>;
-  auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
-  Adapter::convert_to_custom(*msg, *stamped);
-  costmapCallback(stamped);
-}
-
-void CostmapSubscriber::costmapCallback(
   const std::shared_ptr<const nav2_costmap_2d::Costmap2DStamped> & msg)
 {
   std::lock_guard<std::mutex> lock(costmap_msg_mutex_);

@@ -52,9 +52,9 @@ public:
   : CostmapSubscriber(node, topic_name)
   {}
 
-  void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
+  void setCostmap(std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> stamped)
   {
-    costmapCallback(msg);
+    costmapCallback(stamped);
   }
 };
 
@@ -230,8 +230,12 @@ protected:
   void publishCostmap()
   {
     layers_->updateMap(x_, y_, yaw_);
-    costmap_sub_->setCostmap(
-      std::make_shared<nav2_msgs::msg::Costmap>(toCostmapMsg(layers_->getCostmap())));
+    auto costmap_copy = std::make_shared<nav2_costmap_2d::Costmap2D>(*layers_->getCostmap());
+    auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+    stamped->header.frame_id = global_frame_;
+    stamped->header.stamp = stamp_;
+    stamped->costmap = costmap_copy;
+    costmap_sub_->setCostmap(stamped);
   }
 
   void publishPose(double x, double y, double /*theta*/, const rclcpp::Time & stamp)
@@ -244,36 +248,6 @@ protected:
     tf_stamped.transform.translation.y = y;
     tf_stamped.transform.rotation.w = 1.0;
     tf_broadcaster_->sendTransform(tf_stamped);
-  }
-
-  nav2_msgs::msg::Costmap
-  toCostmapMsg(nav2_costmap_2d::Costmap2D * costmap)
-  {
-    double resolution = costmap->getResolution();
-
-    double wx, wy;
-    costmap->mapToWorld(0, 0, wx, wy);
-
-    unsigned char * data = costmap->getCharMap();
-
-    nav2_msgs::msg::Costmap costmap_msg;
-    costmap_msg.header.frame_id = global_frame_;
-    costmap_msg.header.stamp = stamp_;
-    costmap_msg.metadata.layer = "master";
-    costmap_msg.metadata.resolution = resolution;
-    costmap_msg.metadata.size_x = costmap->getSizeInCellsX();
-    costmap_msg.metadata.size_y = costmap->getSizeInCellsY();
-    costmap_msg.metadata.origin.position.x = wx - resolution / 2;
-    costmap_msg.metadata.origin.position.y = wy - resolution / 2;
-    costmap_msg.metadata.origin.position.z = 0.0;
-    costmap_msg.metadata.origin.orientation.w = 1.0;
-    costmap_msg.data.resize(costmap_msg.metadata.size_x * costmap_msg.metadata.size_y);
-
-    for (unsigned int i = 0; i < costmap_msg.data.size(); i++) {
-      costmap_msg.data[i] = data[i];
-    }
-
-    return costmap_msg;
   }
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
