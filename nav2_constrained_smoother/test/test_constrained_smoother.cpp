@@ -44,14 +44,8 @@ public:
     const std::string & topic_name)
   : CostmapSubscriber(node, topic_name)
   {
-    auto costmap = std::make_shared<nav2_msgs::msg::Costmap>();
-    costmap->metadata.size_x = 100;
-    costmap->metadata.size_y = 100;
-    costmap->metadata.resolution = 0.1;
-    costmap->metadata.origin.position.x = -5.0;
-    costmap->metadata.origin.position.y = -5.0;
-
-    costmap->data.resize(costmap->metadata.size_x * costmap->metadata.size_y, 0);
+    auto costmap_2d = std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, -5.0, -5.0);
+    unsigned char * map = costmap_2d->getCharMap();
 
     // create an obstacle in rect (1.0, -1.0) -> (3.0, -2.0)
     // with inflation of radius 2.0
@@ -61,7 +55,7 @@ public:
       for (int j = 40; j < 100; ++j) {
         int dist_x = std::max(0, std::max(60 - j, j - 80));
         int dist_y = std::max(0, std::max(30 - i, i - 40));
-        double dist = sqrt(dist_x * dist_x + dist_y * dist_y) * costmap->metadata.resolution;
+        double dist = sqrt(dist_x * dist_x + dist_y * dist_y) * costmap_2d->getResolution();
         unsigned char cost;
         if (dist == 0) {
           cost = nav2_costmap_2d::LETHAL_OBSTACLE;
@@ -74,16 +68,18 @@ public:
           cost =
             static_cast<unsigned char>((nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
         }
-        costmap->data[i * costmap->metadata.size_x + j] = cost;
+        map[i * 100 + j] = cost;
       }
     }
 
-    setCostmap(costmap);
+    auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+    stamped->costmap = costmap_2d;
+    setCostmap(stamped);
   }
 
-  void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
+  void setCostmap(std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> stamped)
   {
-    costmapCallback(msg);
+    costmapCallback(stamped);
   }
 };
 
