@@ -55,5 +55,4 @@ jobs:
       - uses: returntocorp/semgrep-action@v1
         with:
           config: .semgrep.yml
-          args: --oneline
-
+          args: scan --no-code --quiet
