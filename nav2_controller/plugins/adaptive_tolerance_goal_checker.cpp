@@ -46,8 +46,7 @@ AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
   check_xy_(true),
   in_tolerance_zone_(false),
   stagnation_count_(0),
-  best_distance_sq_(std::numeric_limits<double>::max()),
-  accepted_at_fine_(false)
+  best_distance_sq_(std::numeric_limits<double>::max())
 {
 }
 
@@ -111,7 +110,6 @@ void AdaptiveToleranceGoalChecker::reset()
   in_tolerance_zone_ = false;
   stagnation_count_ = 0;
   best_distance_sq_ = std::numeric_limits<double>::max();
-  accepted_at_fine_ = false;
 }
 
 bool AdaptiveToleranceGoalChecker::isGoalReached(
@@ -129,6 +127,8 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
     return false;
   }
 
+  bool accepted_at_fine = false;
+
   if (check_xy_) {
     const double dx = query_pose.position.x - goal_pose.position.x;
     const double dy = query_pose.position.y - goal_pose.position.y;
@@ -136,7 +136,7 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
 
     // Tier 1: Tight (desired) tolerance — immediate acceptance
     if (dist_sq <= fine_xy_goal_tolerance_sq_) {
-      accepted_at_fine_ = true;
+      accepted_at_fine = true;
       if (stateful_) {
         check_xy_ = false;
       }
@@ -201,7 +201,7 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
   }
 
   if (yaw_reached) {
-    if (accepted_at_fine_) {
+    if (accepted_at_fine) {
       RCLCPP_INFO(
         logger_,
         "AdaptiveToleranceGoalChecker: goal reached at fine tolerance (tol: %.3f m)",
