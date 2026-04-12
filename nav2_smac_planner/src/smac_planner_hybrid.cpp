@@ -539,7 +539,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Smooth plan
   if (_smoother && num_iterations > 1) {
-    _smoother->smooth(plan, costmap, time_remaining);
+    _smoother->smooth(plan, costmap, time_remaining, _costmap_ros->getRobotFootprint());
   }
 
 #ifdef BENCHMARK_TESTING
