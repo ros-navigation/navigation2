@@ -139,6 +139,9 @@ BoundedTrackingErrorLayer::getParameters()
   }
   corridor_cost_ = static_cast<unsigned char>(corridor_cost_param);
 
+  fill_outside_corridor_ = node->declare_or_get_parameter(
+    name_ + "." + "fill_outside_corridor", false);
+
   enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
 
   double temp_tf_tol = 0.1;
@@ -152,6 +155,9 @@ void
 BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(data_mutex_);
+  if (!last_path_ptr_ || msg->header.stamp != last_path_ptr_->header.stamp) {
+    current_path_index_.store(0);
+  }
   last_path_ptr_ = msg;
 }
 
@@ -175,7 +181,7 @@ BoundedTrackingErrorLayer::updateBounds(
 void
 BoundedTrackingErrorLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
-  int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
+  int min_i, int min_j, int max_i, int max_j)
 {
   if (!enabled_) {
     return;
@@ -185,18 +191,18 @@ BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
-  nav_msgs::msg::Path::ConstSharedPtr cached_path_ptr;
+  nav_msgs::msg::Path::ConstSharedPtr path_ptr;
   {
     std::lock_guard<std::mutex> data_lock(data_mutex_);
-    cached_path_ptr = last_path_ptr_;
+    path_ptr = last_path_ptr_;
   }
 
-  if (!cached_path_ptr || cached_path_ptr->poses.empty()) {
+  if (!path_ptr || path_ptr->poses.empty()) {
     return;
   }
 
-  const auto age = (clock_->now() - rclcpp::Time(cached_path_ptr->header.stamp)).seconds();
-  if (age > 2.0) {
+  const auto age = (clock_->now() - rclcpp::Time(path_ptr->header.stamp)).seconds();
+  if (age > 5.0) {
     RCLCPP_WARN_THROTTLE(
       logger_,
       *clock_,
@@ -222,37 +228,45 @@ BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
-  size_t cached_path_index = current_path_index_.load();
-  if (cached_path_index >= cached_path_ptr->poses.size()) {
-    cached_path_index = 0;
+  size_t path_index = current_path_index_.load();
+  if (path_index >= path_ptr->poses.size()) {
+    path_index = 0;
     current_path_index_.store(0);
   }
 
   const auto search_result = nav2_util::distance_from_path(
-    *cached_path_ptr,
+    *path_ptr,
     robot_pose.pose,
-    cached_path_index,
+    path_index,
     look_ahead_);
   current_path_index_.store(search_result.closest_segment_index);
 
-  getPathSegment(*cached_path_ptr, search_result.closest_segment_index, segment_buffer_);
+  // For wall-only mode use look-ahead segment; for fill mode use full path.
+  const nav_msgs::msg::Path & active_path = fill_outside_corridor_ ?
+    *path_ptr :
+    (getPathSegment(*path_ptr, search_result.closest_segment_index, segment_buffer_),
+    segment_buffer_);
 
-  const size_t min_poses = (step_size_ * 2) + 1;
-  if (segment_buffer_.poses.size() < min_poses) {
-    RCLCPP_INFO_THROTTLE(
-      logger_,
-      *clock_,
-      5000,
-      "Path segment too small (%zu poses), need at least %zu poses for step_size=%zu",
-      segment_buffer_.poses.size(), min_poses, step_size_);
-    return;
+  if (!fill_outside_corridor_) {
+    const size_t min_poses = (step_size_ * 2) + 1;
+    if (segment_buffer_.poses.size() < min_poses) {
+      RCLCPP_DEBUG_THROTTLE(
+        logger_,
+        *clock_,
+        5000,
+        "Path segment too small (%zu poses), need at least %zu poses for step_size=%zu",
+        segment_buffer_.poses.size(), min_poses, step_size_);
+      return;
+    }
   }
 
-  if (segment_buffer_.header.frame_id == costmap_frame_) {
-    transformed_segment_buffer_ = segment_buffer_;
+  const nav_msgs::msg::Path * transformed_ptr = nullptr;
+
+  if (active_path.header.frame_id == costmap_frame_) {
+    transformed_ptr = &active_path;
   } else {
     if (!nav2_util::transformPathInTargetFrame(
-        segment_buffer_, transformed_segment_buffer_, *tf_, costmap_frame_, tf_tol))
+        active_path, transformed_segment_buffer_, *tf_, costmap_frame_, tf_tol))
     {
       RCLCPP_WARN_THROTTLE(
         logger_,
@@ -262,9 +276,15 @@ BoundedTrackingErrorLayer::updateCosts(
         costmap_frame_.c_str());
       return;
     }
+    transformed_ptr = &transformed_segment_buffer_;
   }
 
-  getWallPolygons(transformed_segment_buffer_, walls_buffer_);
+  getWallPolygons(*transformed_ptr, walls_buffer_);
+
+  if (fill_outside_corridor_) {
+    saveCorridorInterior(master_grid, walls_buffer_);
+    fillOutsideCorridor(master_grid, min_i, min_j, max_i, max_j);
+  }
 
   drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
   drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
@@ -374,6 +394,7 @@ BoundedTrackingErrorLayer::drawCorridorWalls(
   const std::vector<std::array<double, 2>> & outer_points)
 {
   if (inner_points.size() < 2 || outer_points.size() < 2) {
+    RCLCPP_DEBUG(logger_, "Skipping corridor wall draw: insufficient boundary points");
     return;
   }
 
@@ -400,6 +421,23 @@ BoundedTrackingErrorLayer::drawCorridorWalls(
     }
 
     fillCorridorQuad(master_grid, inner0, inner1, outer0, outer1);
+  }
+}
+
+void
+BoundedTrackingErrorLayer::traceEdge(
+  CellPoint p0, CellPoint p1, int clamped_y_min, int height)
+{
+  nav2_util::LineIterator line(p0.x, p0.y, p1.x, p1.y);
+  for (; line.isValid(); line.advance()) {
+    const int x = static_cast<int>(line.getX());
+    const int y = static_cast<int>(line.getY());
+    const int buffer_idx = y - clamped_y_min;
+
+    if (buffer_idx >= 0 && buffer_idx < height) {
+      span_x_min_buffer_[buffer_idx] = std::min(span_x_min_buffer_[buffer_idx], x);
+      span_x_max_buffer_[buffer_idx] = std::max(span_x_max_buffer_[buffer_idx], x);
+    }
   }
 }
 
@@ -437,25 +475,10 @@ BoundedTrackingErrorLayer::fillCorridorQuad(
   span_x_min_buffer_.assign(height, std::numeric_limits<int>::max());
   span_x_max_buffer_.assign(height, std::numeric_limits<int>::min());
 
-  // Trace each edge with Bresenham, recording the x extent per row into the span buffers.
-  auto trace_edge = [&](CellPoint p0, CellPoint p1) {
-      nav2_util::LineIterator line(p0.x, p0.y, p1.x, p1.y);
-      for (; line.isValid(); line.advance()) {
-        const int x = static_cast<int>(line.getX());
-        const int y = static_cast<int>(line.getY());
-        const int buffer_idx = y - clamped_y_min;
-
-        if (buffer_idx >= 0 && buffer_idx < height) {
-          span_x_min_buffer_[buffer_idx] = std::min(span_x_min_buffer_[buffer_idx], x);
-          span_x_max_buffer_[buffer_idx] = std::max(span_x_max_buffer_[buffer_idx], x);
-        }
-      }
-    };
-
-  trace_edge(inner0, inner1);  // Inner edge
-  trace_edge(inner1, outer1);  // Right edge
-  trace_edge(outer1, outer0);  // Outer edge
-  trace_edge(outer0, inner0);  // Left edge
+  traceEdge(inner0, inner1, clamped_y_min, height);  // Inner edge
+  traceEdge(inner1, outer1, clamped_y_min, height);  // Right edge
+  traceEdge(outer1, outer0, clamped_y_min, height);  // Outer edge
+  traceEdge(outer0, inner0, clamped_y_min, height);  // Left edge
 
   for (int buffer_idx = 0; buffer_idx < height; ++buffer_idx) {
     const int y = clamped_y_min + buffer_idx;
@@ -472,6 +495,94 @@ BoundedTrackingErrorLayer::fillCorridorQuad(
     // Preserve any higher cost already written by an earlier plugin this cycle.
     for (int x = x_start; x <= x_end; ++x) {
       costmap[y * size_x + x] = std::max(costmap[y * size_x + x], corridor_cost_);
+    }
+  }
+}
+
+void
+BoundedTrackingErrorLayer::saveCorridorInterior(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  const WallPolygons & walls)
+{
+  corridor_index_set_.clear();
+
+  if (walls.left_inner.size() < 2 || walls.right_inner.size() < 2) {
+    return;
+  }
+
+  const unsigned int size_x = master_grid.getSizeInCellsX();
+  const unsigned int size_y = master_grid.getSizeInCellsY();
+
+  const size_t num_segments = std::min(walls.left_inner.size(), walls.right_inner.size()) - 1;
+
+  for (size_t i = 0; i < num_segments; ++i) {
+    CellPoint left0, left1, right0, right1;
+
+    if (!master_grid.worldToMap(
+        walls.left_inner[i][0], walls.left_inner[i][1], left0.x, left0.y)) {continue;}
+    if (!master_grid.worldToMap(
+        walls.left_inner[i + 1][0], walls.left_inner[i + 1][1], left1.x, left1.y)) {continue;}
+    if (!master_grid.worldToMap(
+        walls.right_inner[i][0], walls.right_inner[i][1], right0.x, right0.y)) {continue;}
+    if (!master_grid.worldToMap(
+        walls.right_inner[i + 1][0], walls.right_inner[i + 1][1], right1.x, right1.y)) {continue;}
+
+    const int y_min = std::min({left0.y, left1.y, right0.y, right1.y});
+    const int y_max = std::max({left0.y, left1.y, right0.y, right1.y});
+    const int clamped_y_min = std::max(y_min, 0);
+    const int clamped_y_max = std::min(y_max, static_cast<int>(size_y) - 1);
+
+    if (clamped_y_min > clamped_y_max) {continue;}
+
+    const int height = clamped_y_max - clamped_y_min + 1;
+    span_x_min_buffer_.assign(height, std::numeric_limits<int>::max());
+    span_x_max_buffer_.assign(height, std::numeric_limits<int>::min());
+
+    traceEdge(left0, left1, clamped_y_min, height);    // Left inner edge
+    traceEdge(left1, right1, clamped_y_min, height);   // Far cap
+    traceEdge(right1, right0, clamped_y_min, height);  // Right inner edge
+    traceEdge(right0, left0, clamped_y_min, height);   // Near cap
+
+    for (int buffer_idx = 0; buffer_idx < height; ++buffer_idx) {
+      const int y = clamped_y_min + buffer_idx;
+      const int x_min = span_x_min_buffer_[buffer_idx];
+      const int x_max = span_x_max_buffer_[buffer_idx];
+
+      if (x_min > x_max) {continue;}
+
+      const int x_start = std::max(x_min, 0);
+      const int x_end = std::min(x_max, static_cast<int>(size_x) - 1);
+
+      for (int x = x_start; x <= x_end; ++x) {
+        corridor_index_set_.insert(static_cast<unsigned int>(y) * size_x +
+          static_cast<unsigned int>(x));
+      }
+    }
+  }
+}
+
+void
+BoundedTrackingErrorLayer::fillOutsideCorridor(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  int min_i, int min_j, int max_i, int max_j)
+{
+  unsigned char * costmap = master_grid.getCharMap();
+  const unsigned int size_x = master_grid.getSizeInCellsX();
+  const unsigned int size_y = master_grid.getSizeInCellsY();
+
+  const int x_start = std::max(min_i, 0);
+  const int x_end = std::min(max_i, static_cast<int>(size_x) - 1);
+  const int y_start = std::max(min_j, 0);
+  const int y_end = std::min(max_j, static_cast<int>(size_y) - 1);
+
+  for (int y = y_start; y <= y_end; ++y) {
+    for (int x = x_start; x <= x_end; ++x) {
+      const unsigned int flat_idx = static_cast<unsigned int>(y) * size_x +
+        static_cast<unsigned int>(x);
+      if (corridor_index_set_.count(flat_idx)) {
+        continue;
+      }
+      costmap[flat_idx] = std::max(costmap[flat_idx], corridor_cost_);
     }
   }
 }
@@ -580,6 +691,11 @@ BoundedTrackingErrorLayer::updateParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
+        current_ = false;
+      } else if (param_name == name_ + "." + "fill_outside_corridor" &&
+        fill_outside_corridor_ != parameter.as_bool())
+      {
+        fill_outside_corridor_ = parameter.as_bool();
         current_ = false;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
