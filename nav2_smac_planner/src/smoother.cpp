@@ -52,7 +52,8 @@ void Smoother::initialize(const double & min_turning_radius)
 bool Smoother::smooth(
   nav_msgs::msg::Path & path,
   const nav2_costmap_2d::Costmap2D * costmap,
-  const double & max_time)
+  const double & max_time,
+  const nav2_costmap_2d::Footprint & footprint)
 {
   // by-pass path orientations approximation when skipping smac smoother
   if (max_its_ == 0) {
@@ -86,7 +87,7 @@ bool Smoother::smooth(
       const geometry_msgs::msg::Pose start_pose = curr_path_segment.poses.front().pose;
       const geometry_msgs::msg::Pose goal_pose = curr_path_segment.poses.back().pose;
       bool local_success =
-        smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining);
+        smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining, footprint);
       success = success && local_success;
 
       // Enforce boundary conditions
@@ -110,7 +111,8 @@ bool Smoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment,
   const nav2_costmap_2d::Costmap2D * costmap,
-  const double & max_time)
+  const double & max_time,
+  const nav2_costmap_2d::Footprint & footprint)
 {
   steady_clock::time_point a = steady_clock::now();
   rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);
@@ -192,10 +194,38 @@ bool Smoother::smoothImpl(
   // but really puts the path quality over the top.
   if (do_refinement_ && refinement_ctr_ < refinement_num_) {
     refinement_ctr_++;
-    smoothImpl(new_path, reversing_segment, costmap, max_time);
+    smoothImpl(new_path, reversing_segment, costmap, max_time, footprint);
   }
 
   nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
+
+  // Oriented footprint collision check for non-circular robots (fix for #5330).
+  // The per-iteration cost check above uses center-point cost only, which is
+  // sufficient for circular robots (costmap inflation captures the radius) but
+  // misses orientation-dependent footprint extensions for non-circular robots.
+  // After orientations are assigned we validate each smoothed pose with the full
+  // oriented footprint and revert to the original path if a collision is found.
+  if (!footprint.empty() && costmap) {
+    nav2_costmap_2d::FootprintCollisionChecker<const nav2_costmap_2d::Costmap2D *>
+    checker(costmap);
+    for (const auto & pose_stamped : new_path.poses) {
+      const double yaw = tf2::getYaw(pose_stamped.pose.orientation);
+      const double cost = checker.footprintCostAtPose(
+        pose_stamped.pose.position.x, pose_stamped.pose.position.y,
+        yaw, footprint);
+      if (static_cast<float>(cost) > MAX_NON_OBSTACLE_COST &&
+        static_cast<float>(cost) != UNKNOWN_COST)
+      {
+        RCLCPP_WARN(
+          rclcpp::get_logger("SmacPlannerSmoother"),
+          "Smoothed path produces an oriented footprint collision for a non-circular robot. "
+          "Returning original path.");
+        nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
+        return false;
+      }
+    }
+  }
+
   path = new_path;
   return true;
 }
