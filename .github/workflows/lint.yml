@@ -42,3 +42,12 @@ jobs:
             ament_flake8,
             ament_pep257,
             ament_mypy
+
+  semgrep:
+    name: semgrep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: returntocorp/semgrep-action@v1
+        with:
+          config: .semgrep.yml
