@@ -105,7 +105,7 @@ public:
     geometry_msgs::msg::Pose & pose_tolerance,
     geometry_msgs::msg::Twist & vel_tolerance,
     double & path_length_tolerance) = 0;
-  
+
   /**
    * @brief Check if the goal checker is stateful
    * @return True if the goal checker is stateful
