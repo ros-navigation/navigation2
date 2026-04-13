@@ -19,6 +19,8 @@ uint16 START_OCCUPIED=205
 uint16 GOAL_OCCUPIED=206
 uint16 TIMEOUT=207
 uint16 NO_VALID_PATH=208
+uint16 INSUFFICIENT_VIAPOINTS=209
+uint16 INVALID_VIAPOINTS=210
 
 nav_msgs/Path path
 builtin_interfaces/Duration planning_time
