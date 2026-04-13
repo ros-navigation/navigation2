@@ -19,6 +19,7 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav_msgs/msg/goals.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "planner_tester.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -47,6 +48,7 @@ void testSmallPathValidityAndOrientation(std::string plugin, double length)
 
   geometry_msgs::msg::PoseStamped start;
   geometry_msgs::msg::PoseStamped goal;
+  std::vector<geometry_msgs::msg::PoseStamped> no_viapoints;
 
   start.pose.position.x = 0.5;
   start.pose.position.y = 0.5;
@@ -62,7 +64,7 @@ void testSmallPathValidityAndOrientation(std::string plugin, double length)
 
   // Test without use_final_approach_orientation
   // expecting end path pose orientation to be equal to goal orientation
-  auto path = obj->getPlan(start, goal, "GridBased", dummy_cancel_checker);
+  auto path = obj->getPlan(start, goal, no_viapoints, "GridBased", dummy_cancel_checker);
   EXPECT_GT((int)path.poses.size(), 0);
   EXPECT_NEAR(tf2::getYaw(path.poses.back().pose.orientation), -M_PI, 0.01);
   obj->onCleanup(state);
@@ -84,6 +86,7 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
 
   geometry_msgs::msg::PoseStamped start;
   geometry_msgs::msg::PoseStamped goal;
+  std::vector<geometry_msgs::msg::PoseStamped> no_viapoints;
 
   start.pose.position.x = 0.5;
   start.pose.position.y = 0.5;
@@ -97,7 +100,7 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
 
   auto dummy_cancel_checker = []() {return false;};
 
-  auto path = obj->getPlan(start, goal, "GridBased", dummy_cancel_checker);
+  auto path = obj->getPlan(start, goal, no_viapoints, "GridBased", dummy_cancel_checker);
   EXPECT_GT((int)path.poses.size(), 0);
 
   int path_size = path.poses.size();
@@ -128,6 +131,7 @@ void testCancel(std::string plugin)
 
   geometry_msgs::msg::PoseStamped start;
   geometry_msgs::msg::PoseStamped goal;
+  std::vector<geometry_msgs::msg::PoseStamped> no_viapoints;
 
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
@@ -142,7 +146,7 @@ void testCancel(std::string plugin)
   auto always_cancelled = []() {return true;};
 
   EXPECT_THROW(
-    obj->getPlan(start, goal, "GridBased", always_cancelled),
+    obj->getPlan(start, goal, no_viapoints, "GridBased", always_cancelled),
     nav2_core::PlannerCancelled);
   obj->onCleanup(state);
   obj.reset();
@@ -159,16 +163,17 @@ TEST(testPluginMap, Failures)
 
   geometry_msgs::msg::PoseStamped start;
   geometry_msgs::msg::PoseStamped goal;
+  std::vector<geometry_msgs::msg::PoseStamped> no_viapoints;
   std::string plugin_fake = "fake";
   std::string plugin_none = "";
 
   auto dummy_cancel_checker = []() {return false;};
 
-  auto path = obj->getPlan(start, goal, plugin_none, dummy_cancel_checker);
+  auto path = obj->getPlan(start, goal, no_viapoints, plugin_none, dummy_cancel_checker);
   EXPECT_EQ(path.header.frame_id, std::string("map"));
 
   try {
-    path = obj->getPlan(start, goal, plugin_fake, dummy_cancel_checker);
+    path = obj->getPlan(start, goal, no_viapoints, plugin_fake, dummy_cancel_checker);
     FAIL() << "Failed to throw invalid planner id exception";
   } catch (const nav2_core::InvalidPlanner & ex) {
     EXPECT_EQ(ex.what(), std::string("Planner id fake is invalid"));

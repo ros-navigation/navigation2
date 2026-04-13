@@ -68,8 +68,13 @@ void ThetaStarPlanner::deactivate()
 nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
+  const std::vector<geometry_msgs::msg::PoseStamped> & viapoints,
   std::function<bool()> cancel_checker)
 {
+  if (!viapoints.size()) {
+    RCLCPP_DEBUG(logger_, "Planning triggered with no viapoints");
+  }
+
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
   nav_msgs::msg::Path global_path;
   auto start_time = std::chrono::steady_clock::now();
