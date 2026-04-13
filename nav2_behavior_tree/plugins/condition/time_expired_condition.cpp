@@ -37,7 +37,7 @@ void TimeExpiredCondition::initialize()
 {
   getInput("seconds", period_);
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  is_global_ = node_->declare_or_get_parameter("is_global", false);
+  getInput("is_global", is_global_);
 }
 
 BT::NodeStatus TimeExpiredCondition::tick()

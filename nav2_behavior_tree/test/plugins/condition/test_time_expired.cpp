@@ -49,6 +49,27 @@ protected:
 std::shared_ptr<nav2_behavior_tree::TimeExpiredCondition>
 TimeExpiredConditionTestFixture::bt_node_ = nullptr;
 
+class TimeExpiredConditionGlobalTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+{
+public:
+  void SetUp()
+  {
+    config_->input_ports["seconds"] = 1.0;
+    config_->input_ports["is_global"] = "true";
+    bt_node_ = std::make_shared<nav2_behavior_tree::TimeExpiredCondition>(
+      "time_expired", *config_);
+  }
+  void TearDown()
+  {
+    bt_node_.reset();
+  }
+
+protected:
+  static std::shared_ptr<nav2_behavior_tree::TimeExpiredCondition> bt_node_;
+};
+std::shared_ptr<nav2_behavior_tree::TimeExpiredCondition>
+TimeExpiredConditionGlobalTestFixture::bt_node_ = nullptr;
+
 TEST_F(TimeExpiredConditionTestFixture, test_behavior)
 {
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
@@ -64,11 +85,8 @@ TEST_F(TimeExpiredConditionTestFixture, test_behavior)
   }
 }
 
-TEST_F(TimeExpiredConditionTestFixture, test_runid_global_mode)
+TEST_F(TimeExpiredConditionGlobalTestFixture, test_runid_global_mode)
 {
-  // Enable global mode
-  node_->declare_or_get_parameter("is_global", false);
-  node_->set_parameter(rclcpp::Parameter("is_global", true));
   config_->blackboard->set<std::string>("run_id", "runid_1");
 
   // First tick: initializes start_ and returns FAILURE

@@ -47,7 +47,7 @@ void DistanceTraveledCondition::initialize()
     node_, "global_frame", this);
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "robot_base_frame", this);
-  is_global_ = node_->declare_or_get_parameter("is_global", false);
+  getInput("is_global", is_global_);
 }
 
 BT::NodeStatus DistanceTraveledCondition::tick()

@@ -46,6 +46,28 @@ protected:
 std::shared_ptr<nav2_behavior_tree::GoalUpdatedCondition>
 GoalUpdatedConditionTestFixture::bt_node_ = nullptr;
 
+class GoalUpdatedConditionGlobalTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+{
+public:
+  void SetUp()
+  {
+    config_->input_ports["goals"] = "";
+    config_->input_ports["goal"] = "";
+    config_->input_ports["is_global"] = "true";
+    bt_node_ = std::make_shared<nav2_behavior_tree::GoalUpdatedCondition>(
+      "goal_updated", *config_);
+  }
+  void TearDown()
+  {
+    bt_node_.reset();
+  }
+
+protected:
+  static std::shared_ptr<nav2_behavior_tree::GoalUpdatedCondition> bt_node_;
+};
+std::shared_ptr<nav2_behavior_tree::GoalUpdatedCondition>
+GoalUpdatedConditionGlobalTestFixture::bt_node_ = nullptr;
+
 TEST_F(GoalUpdatedConditionTestFixture, test_behavior)
 {
   geometry_msgs::msg::PoseStamped goal;
@@ -60,12 +82,8 @@ TEST_F(GoalUpdatedConditionTestFixture, test_behavior)
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 }
 
-TEST_F(GoalUpdatedConditionTestFixture, test_runid_global_mode)
+TEST_F(GoalUpdatedConditionGlobalTestFixture, test_runid_global_mode)
 {
-  // Enable global mode and set initial run_id
-  auto node = config_->blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  node->declare_or_get_parameter("is_global", false);
-  node->set_parameter(rclcpp::Parameter("is_global", true));
   config_->blackboard->set<std::string>("run_id", "runid_1");
 
   geometry_msgs::msg::PoseStamped goal;
@@ -83,11 +101,11 @@ TEST_F(GoalUpdatedConditionTestFixture, test_runid_global_mode)
   // Same run, goal unchanged -> FAILURE
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
-  // New RunID with same goal: snapshot updated to current goal,fall through ->no change->FAILURE
+  // New RunID with same goal: old snapshot kept, no change -> FAILURE
   config_->blackboard->set<std::string>("run_id", "runid_2");
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
-  // New RunID without changing goal: snapshot updated to current goal (1.0), no change -> FAILURE
+  // New RunID without changing goal: old snapshot kept, no change -> FAILURE
   config_->blackboard->set<std::string>("run_id", "runid_3");
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 

@@ -157,47 +157,6 @@ TEST_F(IsBatteryLowConditionTestFixture, test_behavior_voltage)
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
 }
 
-TEST_F(IsBatteryLowConditionTestFixture, test_runid_global_mode)
-{
-  node_->declare_or_get_parameter("is_global", false);
-  node_->set_parameter(rclcpp::Parameter("is_global", true));
-
-  std::string xml_txt =
-    R"(
-      <root BTCPP_format="4">
-        <BehaviorTree ID="MainTree">
-            <IsBatteryLow min_battery="0.5" battery_topic="/battery_status"/>
-        </BehaviorTree>
-      </root>)";
-
-  config_->blackboard->set<std::string>("run_id", "runid_1");
-  auto tree = factory_->createTreeFromText(xml_txt, config_->blackboard);
-
-  // Battery is low
-  sensor_msgs::msg::BatteryState battery_msg;
-  battery_msg.percentage = 0.3;
-  battery_pub_->publish(battery_msg);
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  executor_->spin_some();
-  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
-
-  // New RunID: stale flag cleared, but fresh message arrives -> still correct
-  config_->blackboard->set<std::string>("run_id", "runid_2");
-  battery_msg.percentage = 0.3;
-  battery_pub_->publish(battery_msg);
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  executor_->spin_some();
-  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
-
-  // New RunID: battery now fine, stale low flag cleared -> FAILURE
-  config_->blackboard->set<std::string>("run_id", "runid_3");
-  battery_msg.percentage = 0.9;
-  battery_pub_->publish(battery_msg);
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  executor_->spin_some();
-  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
-}
-
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

@@ -30,8 +30,7 @@ GoalUpdatedCondition::GoalUpdatedCondition(
 
 void GoalUpdatedCondition::initialize()
 {
-  auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  is_global_ = node->declare_or_get_parameter("is_global", false);
+  getInput("is_global", is_global_);
 }
 
 BT::NodeStatus GoalUpdatedCondition::tick()
@@ -51,10 +50,15 @@ BT::NodeStatus GoalUpdatedCondition::tick()
     }
 
     if (new_run_id != current_run_id_) {
+      if (current_run_id_.empty()) {
+        // First tick ever: snapshot and return FAILURE
+        current_run_id_ = new_run_id;
+        BT::getInputOrBlackboard("goals", goals_);
+        BT::getInputOrBlackboard("goal", goal_);
+        return BT::NodeStatus::FAILURE;
+      }
+      // RunID changed: keep old snapshot for comparison
       current_run_id_ = new_run_id;
-      // Update snapshot so we can compare against the new run's goal, then fall through
-      BT::getInputOrBlackboard("goals", goals_);
-      BT::getInputOrBlackboard("goal", goal_);
     }
   } else {
     if (!BT::isStatusActive(status())) {
@@ -68,7 +72,6 @@ BT::NodeStatus GoalUpdatedCondition::tick()
   geometry_msgs::msg::PoseStamped current_goal;
   BT::getInputOrBlackboard("goals", current_goals);
   BT::getInputOrBlackboard("goal", current_goal);
-
   if (goal_ != current_goal || goals_ != current_goals) {
     goal_ = current_goal;
     goals_ = current_goals;
