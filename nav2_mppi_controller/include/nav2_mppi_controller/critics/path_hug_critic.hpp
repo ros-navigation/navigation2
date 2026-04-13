@@ -11,19 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_
-
 #include <vector>
-
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
-
 namespace mppi::critics
 {
-
 /**
  * @class mppi::critics::PathHugCritic
  * @brief Critic objective function for enforcing a hard corridor boundary
@@ -42,14 +37,12 @@ public:
    * @brief Initialize critic
    */
   void initialize() override;
-
   /**
    * @brief Evaluate cost related to corridor boundary enforcement
    *
    * @param data in/out critic data containing trajectories and path
    */
   void score(CriticData & data) override;
-
 protected:
   /**
    * @brief Precompute cumulative arc-length distances along path segments
@@ -58,7 +51,6 @@ protected:
    * @param num_segments Number of path segments to process
    */
   void updateCumulativeDistances(const models::Path & path, size_t num_segments);
-
   /**
    * @brief Compute squared distance from a point to the nearest path segment
    *
@@ -74,7 +66,6 @@ protected:
     const models::Path & path,
     size_t num_segments,
     Eigen::Index & path_hint);
-
   // cost_weight and cost_power only active in soft repulsion mode
   unsigned int power_{1};
   float weight_{10.0f};
@@ -88,7 +79,5 @@ protected:
   float grace_distance_{0.1f};
   std::vector<float> cumulative_distances_;
 };
-
 }  // namespace mppi::critics
-
 #endif  // NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_

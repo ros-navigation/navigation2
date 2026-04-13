@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/path_hug_critic.hpp"
+#include "nav2_util/execution_timer.hpp"
 
 namespace mppi::critics
 {
@@ -134,7 +135,15 @@ float PathHugCritic::computeMinDistToPathSq(
 
 void PathHugCritic::score(CriticData & data)
 {
+  nav2_util::ExecutionTimer timer;
+  timer.start();
+
   if (!enabled_ || data.state.local_path_length < threshold_to_consider_) {
+    timer.end();
+    RCLCPP_INFO(
+      logger_,
+      "PathHugCritic::score() exited early, elapsed: %.6f s",
+      timer.elapsed_time_in_seconds());
     return;
   }
 
@@ -142,6 +151,11 @@ void PathHugCritic::score(CriticData & data)
   const size_t path_segments_count = *data.furthest_reached_path_point;
 
   if (path_segments_count < 2) {
+    timer.end();
+    RCLCPP_INFO(
+      logger_,
+      "PathHugCritic::score() exited early (path_segments_count < 2), elapsed: %.6f s",
+      timer.elapsed_time_in_seconds());
     return;
   }
 
@@ -174,6 +188,7 @@ void PathHugCritic::score(CriticData & data)
     float repulsion_cost{0.0f};
     float excess_cost{0.0f};
     int num_samples{0};
+    int excess_samples{0};
   };
 
   std::vector<TrajResult> results(batch_size);
@@ -187,7 +202,7 @@ void PathHugCritic::score(CriticData & data)
     float prev_x = traj_x(traj_idx, 0);
     float prev_y = traj_y(traj_idx, 0);
 
-    // Skip col=0 robot's current position cannot be changed by the optimizer
+    // Skip col=0 — robot's current position cannot be changed by the optimizer
     for (Eigen::Index col = effective_stride; col < traj_length; col += effective_stride) {
       const float px = traj_x(traj_idx, col);
       const float py = traj_y(traj_idx, col);
@@ -211,9 +226,14 @@ void PathHugCritic::score(CriticData & data)
       r.num_samples++;
 
       if (dist_sq > max_dist_sq) {
+        // Mark violation and accumulate excess — do not break, continue to collect
+        // all excess points so the fallback gradient reflects the full trajectory cost
         r.violates = true;
-        r.excess_cost = std::sqrt(dist_sq) - max_allowed_distance_;
-        break;
+        r.excess_cost += std::sqrt(dist_sq) - max_allowed_distance_;
+        r.excess_samples++;
+        prev_x = px;
+        prev_y = py;
+        continue;
       }
 
       if (use_soft_repulsion_ && dist_sq > grace_dist_sq) {
@@ -252,12 +272,14 @@ void PathHugCritic::score(CriticData & data)
 
     if (r.violates) {
       if (all_violate && use_soft_repulsion_) {
-        // All trajectories outside corridor — use graded excess so optimizer can recover
+        // All trajectories outside corridor — use averaged excess so optimizer can recover
+        const float avg_excess = r.excess_samples > 0 ?
+          r.excess_cost / static_cast<float>(r.excess_samples) : r.excess_cost;
         if (power_ > 1u) {
           data.costs(traj_idx) +=
-            std::pow(r.excess_cost * weight_, static_cast<float>(power_));
+            std::pow(avg_excess * weight_, static_cast<float>(power_));
         } else {
-          data.costs(traj_idx) += r.excess_cost * weight_;
+          data.costs(traj_idx) += avg_excess * weight_;
         }
       } else if (!all_violate) {
         data.costs(traj_idx) = collision_cost_;
@@ -271,6 +293,12 @@ void PathHugCritic::score(CriticData & data)
       }
     }
   }
+
+  timer.end();
+  RCLCPP_INFO(
+    logger_,
+    "PathHugCritic::score() elapsed: %.6f s",
+    timer.elapsed_time_in_seconds());
 }
 
 }  // namespace mppi::critics
