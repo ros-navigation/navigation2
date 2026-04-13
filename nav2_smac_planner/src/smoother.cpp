@@ -23,6 +23,7 @@
 
 #include "tf2/utils.hpp"
 
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_smac_planner/smoother.hpp"
 #include "nav2_util/smoother_utils.hpp"
 
@@ -219,7 +220,7 @@ bool Smoother::smoothImpl(
         new_path.poses[idx].pose.position.x,
         new_path.poses[idx].pose.position.y,
         yaw, footprint);
-      if (static_cast<float>(cost) > MAX_NON_OBSTACLE_COST &&
+      if (static_cast<float>(cost) >= static_cast<float>(nav2_costmap_2d::LETHAL_OBSTACLE) &&
         static_cast<float>(cost) != UNKNOWN_COST)
       {
         RCLCPP_WARN(
