@@ -60,6 +60,11 @@ public:
   {
     return _goal_heading_mode;
   }
+
+  bool hasSmootherInitialized()
+  {
+    return _smoother != nullptr;
+  }
 };
 
 // SMAC smoke tests for plugin-level issues rather than algorithms
@@ -381,6 +386,49 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   parameters.push_back(rclcpp::Parameter("test.downsampling_factor", -1));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(nodeSE2->get_parameter("test.downsampling_factor").as_int(), 2);
+}
+
+TEST(SmacTest, test_smac_se2_smoother_coverage)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides(
+    {rclcpp::Parameter("test.smooth_path", true)});
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacSE2SmootherCovTest", options);
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  node->configure();
+  node->activate();
+
+  auto planner = std::make_unique<HybridWrap>();
+  EXPECT_NO_THROW(planner->configure(node, "test", nullptr, costmap_ros));
+  planner->activate();
+  EXPECT_TRUE(planner->hasSmootherInitialized());
+
+  auto dummy_cancel_checker = []() { return false; };
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = 0.0;
+  start.pose.position.y = 0.0;
+  start.pose.orientation.w = 1.0;
+  goal.pose.position.x = 1.0;
+  goal.pose.position.y = 1.0;
+  goal.pose.orientation.w = 1.0;
+
+  nav_msgs::msg::Path plan;
+  EXPECT_NO_THROW(plan = planner->createPlan(start, goal, dummy_cancel_checker));
+  EXPECT_FALSE(plan.poses.empty());
+
+  planner->deactivate();
+  planner->cleanup();
+  planner.reset();
+  costmap_ros->on_cleanup(rclcpp_lifecycle::State());
+  costmap_ros.reset();
+  node->deactivate();
+  node->cleanup();
+  node.reset();
 }
 
 int main(int argc, char ** argv)
