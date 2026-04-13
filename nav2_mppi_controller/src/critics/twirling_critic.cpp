@@ -42,7 +42,7 @@ void TwirlingCritic::score(CriticData & data)
     double path_length_tolerance;
     data.goal_checker->getTolerances(pose_tolerance, velocity_tolerance, path_length_tolerance);
 
-    if (data.state.local_path_length < path_length_tolerance) {
+    if (data.state.local_path_length < pose_tolerance.position.x) {
       return;
     }
   }

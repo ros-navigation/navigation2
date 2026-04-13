@@ -108,6 +108,12 @@ public:
     geometry_msgs::msg::Twist & vel_tolerance,
     double & path_length_tolerance) override;
 
+  /**
+   * @brief Check if the goal checker is stateful
+   * @return True if the goal checker is stateful
+   */
+  bool isStateful() const override {return stateful_;}
+
 protected:
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_{rclcpp::get_logger("simple_goal_checker")};

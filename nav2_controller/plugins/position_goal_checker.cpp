@@ -142,10 +142,20 @@ bool PositionGoalChecker::getTolerances(
   return true;
 }
 
-void nav2_controller::PositionGoalChecker::setXYGoalTolerance(double tolerance)
+void nav2_controller::PositionGoalChecker::setTolerances(
+  double xy_goal_tolerance,
+  double path_length_tolerance)
 {
-  xy_goal_tolerance_ = tolerance;
-  xy_goal_tolerance_sq_ = tolerance * tolerance;
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  xy_goal_tolerance_ = xy_goal_tolerance;
+  xy_goal_tolerance_sq_ = xy_goal_tolerance * xy_goal_tolerance;
+  path_length_tolerance_ = path_length_tolerance;
+}
+
+void nav2_controller::PositionGoalChecker::setStateful(bool stateful)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  stateful_ = stateful;
 }
 
 rcl_interfaces::msg::SetParametersResult

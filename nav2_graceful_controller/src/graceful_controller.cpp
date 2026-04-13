@@ -129,7 +129,8 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // Update for the current goal checker's state
   geometry_msgs::msg::Pose pose_tolerance;
   geometry_msgs::msg::Twist velocity_tolerance;
-  if (!goal_checker->getTolerances(pose_tolerance, velocity_tolerance, path_length_tolerance_)) {
+  double path_length_tolerance;
+  if (!goal_checker->getTolerances(pose_tolerance, velocity_tolerance, path_length_tolerance)) {
     RCLCPP_WARN(logger_, "Unable to retrieve goal checker's tolerances!");
   } else {
     goal_dist_tolerance_ = pose_tolerance.position.x;
@@ -170,8 +171,17 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // Compute distance to goal as the path's integrated distance to account for path curvatures
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
 
+  bool should_rotate_to_goal = false;
+  if (goal_checker->isStateful()) {
+    if (dist_to_goal < goal_dist_tolerance_ || goal_reached_) {
+      should_rotate_to_goal = true;
+    }
+  } else {
+    should_rotate_to_goal = dist_to_goal < goal_dist_tolerance_;
+  }
+
   // If we've reached the XY goal tolerance, just rotate
-  if (dist_to_goal < goal_dist_tolerance_ || goal_reached_) {
+  if (should_rotate_to_goal) {
     goal_reached_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     // Check for collisions between our current pose and goal pose

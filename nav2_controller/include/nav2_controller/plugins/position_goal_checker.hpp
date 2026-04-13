@@ -85,10 +85,23 @@ public:
     double & path_length_tolerance) override;
 
   /**
-   * @brief Set the XY goal tolerance
-   * @param tolerance New tolerance value
+   * @brief Check if the goal checker is stateful
+   * @return True if the goal checker is stateful
    */
-  void setXYGoalTolerance(double tolerance);
+  bool isStateful() const override {return stateful_;}
+
+  /**
+   * @brief Set the XY goal tolerance and path length tolerance
+   * @param xy_goal_tolerance New XY goal tolerance value
+   * @param path_length_tolerance New path length tolerance value
+   */
+  void setTolerances(double xy_goal_tolerance, double path_length_tolerance);
+
+  /**
+   * @brief Set whether the goal checker is stateful
+   * @param stateful True to make the goal checker stateful, false to make it stateless
+   */
+  void setStateful(bool stateful);
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;
