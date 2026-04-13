@@ -31,7 +31,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS when goal is
  * updated on the blackboard and FAILURE otherwise
- * @note It will re-initialize when halted.
+ * @note It will re-initialize when halted, or on RunID change if is_global is true.
  */
 class GoalUpdatedCondition : public BT::ConditionNode
 {
@@ -69,6 +69,7 @@ public:
     BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
 
     return {
+      BT::InputPort<bool>("is_global", false, "Use RunID for initialization instead of IDLE check"),
       BT::InputPort<nav_msgs::msg::Goals>(
         "goals", "Vector of navigation goals"),
       BT::InputPort<geometry_msgs::msg::PoseStamped>(

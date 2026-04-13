@@ -46,6 +46,32 @@ protected:
 std::shared_ptr<nav2_behavior_tree::DistanceTraveledCondition>
 DistanceTraveledConditionTestFixture::bt_node_ = nullptr;
 
+class DistanceTraveledConditionGlobalTestFixture
+  : public nav2_behavior_tree::BehaviorTreeTestFixture
+{
+public:
+  void SetUp()
+  {
+    config_->input_ports["global_frame"] = "map";
+    config_->input_ports["robot_base_frame"] = "base_link";
+    config_->input_ports["distance"] = 1.0;
+    config_->input_ports["is_global"] = "true";
+    bt_node_ = std::make_shared<nav2_behavior_tree::DistanceTraveledCondition>(
+      "distance_traveled", *config_);
+  }
+
+  void TearDown()
+  {
+    bt_node_.reset();
+  }
+
+protected:
+  static std::shared_ptr<nav2_behavior_tree::DistanceTraveledCondition> bt_node_;
+};
+
+std::shared_ptr<nav2_behavior_tree::DistanceTraveledCondition>
+DistanceTraveledConditionGlobalTestFixture::bt_node_ = nullptr;
+
 TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
 {
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
@@ -79,7 +105,7 @@ TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
   }
 }
 
-TEST_F(DistanceTraveledConditionTestFixture, test_runid_global_mode)
+TEST_F(DistanceTraveledConditionGlobalTestFixture, test_runid_global_mode)
 {
   // Reset robot to origin so we don't inherit stale position from test_behavior
   geometry_msgs::msg::PoseStamped pose;
@@ -95,9 +121,6 @@ TEST_F(DistanceTraveledConditionTestFixture, test_runid_global_mode)
     }
   }
 
-  // Enable global mode
-  node_->declare_or_get_parameter("is_global", false);
-  node_->set_parameter(rclcpp::Parameter("is_global", true));
   config_->blackboard->set<std::string>("run_id", "runid_1");
 
   // First tick: initialize start_pose_ at position 0

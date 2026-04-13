@@ -81,9 +81,6 @@ private:
 
   std::string child_frame_;
   std::string parent_frame_;
-
-  bool is_global_;
-  std::string current_run_id_;
 };
 
 }  // namespace nav2_behavior_tree

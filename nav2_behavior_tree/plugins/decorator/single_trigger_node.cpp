@@ -24,14 +24,33 @@ SingleTrigger::SingleTrigger(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf),
-  first_time_(true)
+  first_time_(true),
+  is_global_(false),
+  current_run_id_("")
 {
+  getInput("is_global", is_global_);
 }
 
 BT::NodeStatus SingleTrigger::tick()
 {
   if (!BT::isStatusActive(status())) {
     first_time_ = true;
+  }
+
+  // Global mode: re-arm on RunID change instead of relying on IDLE check
+  if (is_global_) {
+    std::string new_run_id;
+    try {
+      new_run_id = config().blackboard->template get<std::string>("run_id");
+    } catch (const std::exception & e) {
+      throw std::runtime_error(
+        "is_global=true requires 'run_id' to be set on the blackboard for decorator: " +
+        std::string(name()));
+    }
+    if (new_run_id != current_run_id_) {
+      current_run_id_ = new_run_id;
+      first_time_ = true;
+    }
   }
 
   setStatus(BT::NodeStatus::RUNNING);

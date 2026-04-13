@@ -27,7 +27,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS every time a specified
  * time period passes and FAILURE otherwise
- * @note It will re-initialize when halted.
+ * @note It will re-initialize when halted, or on RunID change if is_global is true.
  */
 class TimeExpiredCondition : public BT::ConditionNode
 {
@@ -61,6 +61,7 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
+      BT::InputPort<bool>("is_global", false, "Use RunID for initialization instead of IDLE check"),
       BT::InputPort<double>("seconds", 1.0, "Seconds")
     };
   }
