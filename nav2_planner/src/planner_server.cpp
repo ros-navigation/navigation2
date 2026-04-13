@@ -496,6 +496,14 @@ void PlannerServer::computePlanThroughPoses()
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex, result->error_msg);
     result->error_code = ActionThroughPosesResult::NO_VIAPOINTS_GIVEN;
     action_server_poses_->terminate_current(result);
+  } catch (nav2_core::InsufficientViapoints & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex, result->error_msg);
+    result->error_code = ActionThroughPosesResult::INSUFFICIENT_VIAPOINTS;
+    action_server_poses_->terminate_current(result);
+  } catch (nav2_core::InvalidViapoints & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex, result->error_msg);
+    result->error_code = ActionThroughPosesResult::INVALID_VIAPOINTS;
+    action_server_poses_->terminate_current(result);
   } catch (nav2_core::PlannerCancelled &) {
     result->error_msg = "Goal was canceled. Canceling planning action.";
     RCLCPP_INFO(get_logger(), "%s", result->error_msg.c_str());
@@ -600,6 +608,14 @@ PlannerServer::computePlan()
   } catch (nav2_core::PlannerTFError & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex, result->error_msg);
     result->error_code = ActionToPoseResult::TF_ERROR;
+    action_server_pose_->terminate_current(result);
+  } catch (nav2_core::InsufficientViapoints & ex) {
+    exceptionWarning(start, goal->goal, goal->planner_id, ex, result->error_msg);
+    result->error_code = ActionToPoseResult::INSUFFICIENT_VIAPOINTS;
+    action_server_pose_->terminate_current(result);
+  } catch (nav2_core::InvalidViapoints & ex) {
+    exceptionWarning(start, goal->goal, goal->planner_id, ex, result->error_msg);
+    result->error_code = ActionToPoseResult::INVALID_VIAPOINTS;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerCancelled &) {
     result->error_msg = "Goal was canceled. Canceling planning action.";
