@@ -313,8 +313,7 @@ bool PlannerServer::transformPosesToGlobalFrame(
 }
 
 template<typename T>
-bool
-PlannerServer::validatePath(
+bool PlannerServer::validatePath(
   const geometry_msgs::msg::PoseStamped & goal,
   const nav_msgs::msg::Path & path,
   const std::string & planner_id)
