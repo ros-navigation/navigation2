@@ -1,0 +1,18 @@
+<library path="cubic_spline_planner">
+  <class type="nav2_geometric_planners::CubicSplinePlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>Cubic spline global planner using timestamp-parameterized viapoints</description>
+  </class>
+</library>
+<library path="clothoid_planner">
+  <class type="nav2_geometric_planners::ClothoidPlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>Clothoid-based global planner through pose viapoints</description>
+  </class>
+</library>
+<library path="bezier_planner">
+  <class type="nav2_geometric_planners::BezierPlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>Bezier curve global planner using viapoints as control points</description>
+  </class>
+</library>
