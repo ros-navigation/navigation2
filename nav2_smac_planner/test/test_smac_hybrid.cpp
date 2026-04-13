@@ -401,7 +401,7 @@ TEST(SmacTest, test_smac_se2_smoother_coverage)
   planner->activate();
   EXPECT_TRUE(planner->hasSmootherInitialized());
 
-  auto dummy_cancel_checker = []() { return false; };
+  auto dummy_cancel_checker = []() {return false;};
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
