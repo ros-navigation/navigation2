@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
+#include "nav2_util/execution_timer.hpp"
 
 namespace mppi::critics
 {
@@ -39,7 +40,15 @@ void PathAlignCritic::initialize()
 
 void PathAlignCritic::score(CriticData & data)
 {
+  nav2_util::ExecutionTimer timer;
+  timer.start();
+
   if (!enabled_ || data.state.local_path_length < threshold_to_consider_) {
+    timer.end();
+    RCLCPP_INFO(
+      logger_,
+      "PathAlignCritic::score() exited early, elapsed: %.6f s",
+      timer.elapsed_time_in_seconds());
     return;
   }
 
@@ -156,6 +165,12 @@ void PathAlignCritic::score(CriticData & data)
   } else {
     data.costs += (cost * weight_).eval();
   }
+
+  timer.end();
+  RCLCPP_INFO(
+    logger_,
+    "PathAlignCritic::score() elapsed: %.6f s",
+    timer.elapsed_time_in_seconds());
 }
 
 }  // namespace mppi::critics
