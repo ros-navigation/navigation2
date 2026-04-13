@@ -510,7 +510,7 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Release"
-      OVERLAY_MIXINS: "release ccache coverage-gcc lld"
+      OVERLAY_MIXINS: "release ccache lld"
 
 _jobs:
   job_build: &job_build
