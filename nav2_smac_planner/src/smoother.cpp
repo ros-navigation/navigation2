@@ -204,16 +204,20 @@ bool Smoother::smoothImpl(
   // sufficient for circular robots (costmap inflation captures the radius) but
   // misses orientation-dependent footprint extensions for non-circular robots.
   // After orientations are assigned we validate each smoothed pose with the full
-  // oriented footprint and revert to the original path if a collision is found.
+  // oriented footprint. When a collision is detected the loop stops at that pose
+  // so the maximum collision-free smoothed prefix is used. The caller's path
+  // retains the original planner poses from the collision point onward (via the
+  // partial std::copy in Smoother::smooth).
   if (!footprint.empty() && costmap) {
     // FootprintCollisionChecker is only instantiated for Costmap2D* (non-const).
     // const_cast is safe here: footprintCostAtPose only reads the costmap.
     nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
     checker(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
-    for (const auto & pose_stamped : new_path.poses) {
-      const double yaw = tf2::getYaw(pose_stamped.pose.orientation);
+    for (size_t idx = 0; idx < new_path.poses.size(); ++idx) {
+      const double yaw = tf2::getYaw(new_path.poses[idx].pose.orientation);
       const double cost = checker.footprintCostAtPose(
-        pose_stamped.pose.position.x, pose_stamped.pose.position.y,
+        new_path.poses[idx].pose.position.x,
+        new_path.poses[idx].pose.position.y,
         yaw, footprint);
       if (static_cast<float>(cost) > MAX_NON_OBSTACLE_COST &&
         static_cast<float>(cost) != UNKNOWN_COST)
@@ -221,8 +225,9 @@ bool Smoother::smoothImpl(
         RCLCPP_WARN(
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Smoothed path produces an oriented footprint collision for a non-circular robot. "
-          "Returning original path.");
-        nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
+          "Stopping smoothed path at collision-free boundary.");
+        new_path.poses.resize(idx);
+        path = new_path;
         return false;
       }
     }

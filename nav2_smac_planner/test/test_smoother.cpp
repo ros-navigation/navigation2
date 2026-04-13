@@ -238,8 +238,10 @@ TEST(SmootherTest, test_footprint_collision_detection)
   plan_copy = plan;
   EXPECT_TRUE(smoother->smooth(plan_copy, costmap, maxtime, narrow_footprint));
 
-  // With a wide footprint (1.2m wide): oriented footprint check must detect collision.
-  // The path travels along y=5.0 but the footprint extends ±0.6m in y — hitting the walls.
+  // With a wide footprint (1.2m wide): oriented footprint check detects collision at
+  // the very first pose (footprint extends ±0.6m in y, touching the lethal walls at
+  // y=4.4 and y=5.6). The smoothed path is truncated at idx=0 (empty prefix) and
+  // false is returned; the caller's path segment is left with the original planner poses.
   nav2_costmap_2d::Footprint wide_footprint;
   pt.x = 0.4; pt.y = 0.6; wide_footprint.push_back(pt);
   pt.x = 0.4; pt.y = -0.6; wide_footprint.push_back(pt);
