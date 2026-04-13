@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Nav2 Contributors
+// Copyright (c) 2026 Sanchit Badamikar
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,6 @@
 
 #include <cmath>
 #include <string>
-
-#include "tf2/utils.hpp"
-#include "tf2/LinearMath/Quaternion.h"
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -41,7 +38,10 @@ namespace utils
  */
 inline double extractYaw(const geometry_msgs::msg::Quaternion & q)
 {
-  return tf2::getYaw(q);
+  // yaw from quaternion: atan2(2*(w*z + x*y), 1 - 2*(y^2 + z^2))
+  return std::atan2(
+    2.0 * (q.w * q.z + q.x * q.y),
+    1.0 - 2.0 * (q.y * q.y + q.z * q.z));
 }
 
 /**
@@ -61,12 +61,10 @@ inline geometry_msgs::msg::PoseStamped makePose(
   pose.pose.position.x = x;
   pose.pose.position.y = y;
 
-  tf2::Quaternion q;
-  q.setRPY(0.0, 0.0, yaw);
-  pose.pose.orientation.x = q.x();
-  pose.pose.orientation.y = q.y();
-  pose.pose.orientation.z = q.z();
-  pose.pose.orientation.w = q.w();
+  pose.pose.orientation.x = 0.0;
+  pose.pose.orientation.y = 0.0;
+  pose.pose.orientation.z = std::sin(yaw * 0.5);
+  pose.pose.orientation.w = std::cos(yaw * 0.5);
 
   return pose;
 }
