@@ -300,8 +300,13 @@ void SmacPlannerLattice::cleanup()
 nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
+  const std::vector<geometry_msgs::msg::PoseStamped> & viapoints,
   std::function<bool()> cancel_checker)
 {
+  if (!viapoints.size()) {
+    RCLCPP_DEBUG(_logger, "Planning triggered with no viapoints");
+  }
+
   std::lock_guard<std::mutex> lock_reinit(_mutex);
   steady_clock::time_point a = steady_clock::now();
 
