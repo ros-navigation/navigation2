@@ -23,15 +23,13 @@
 
 #include <math.h>
 
+#include "nav2_amcl/pf/eig3.hpp"
+
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
-#ifdef _MSC_VER
 #define n 3
-#else
-static int n = 3;
-#endif
 
 // Symmetric Householder reduction to tridiagonal form.
 
