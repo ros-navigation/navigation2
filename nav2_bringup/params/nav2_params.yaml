@@ -332,17 +332,15 @@ global_costmap:
           obstacle_max_range: 2.5
           obstacle_min_range: 0.0
       bounded_tracking_error_layer:
-       plugin: "nav2_costmap_2d::BoundedTrackingErrorLayer"
-       enabled: true
-       tracking_feedback_topic: "tracking_feedback"
-       path_topic: "plan"
-       look_ahead: 2.5
-       step: 10
-       corridor_width: 2.0
-       corridor_cost: 190
-       wall_thickness: 4
-       path_segment_resolution: 5
-       fill_outside_corridor: true
+        plugin: "nav2_costmap_2d::BoundedTrackingErrorLayer"
+        enabled: true
+        path_topic: "plan"
+        look_ahead: 2.5
+        step: 10
+        corridor_width: 2.0
+        corridor_cost: 190
+        wall_thickness: 6
+        fill_outside_corridor: true
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
