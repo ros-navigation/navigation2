@@ -47,7 +47,7 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     return nav2::CallbackReturn::FAILURE;
   }
 
-  if (fixed_frame_id_.empty()) {
+  if (!enforce_global_frame_id_) {
     // Transform buffer and listener initialization
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -57,8 +57,10 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   } else {
     RCLCPP_INFO(
-      get_logger(), "Parameter fixed_frame_id is set to '%s'. TF listener is disabled.",
-      fixed_frame_id_.c_str());
+      get_logger(),
+      "Parameter enforce_global_frame_id is true. TF listener is disabled. "
+      "All incoming shapes must have frame_id empty or equal to global_frame_id '%s'.",
+      global_frame_id_.c_str());
   }
 
   map_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -150,7 +152,7 @@ bool VectorObjectServer::obtainParams()
   // Main ROS-parameters
   map_topic_ = nav2::declare_or_get_parameter(node, "map_topic", std::string{"vo_map"});
   global_frame_id_ = nav2::declare_or_get_parameter(node, "global_frame_id", std::string{"map"});
-  fixed_frame_id_ = nav2::declare_or_get_parameter(node, "fixed_frame_id", std::string{""});
+  enforce_global_frame_id_ = nav2::declare_or_get_parameter(node, "enforce_global_frame_id", false);
   resolution_ = nav2::declare_or_get_parameter(node, "resolution", 0.05);
   default_value_ = nav2::declare_or_get_parameter(
     node, "default_value",
@@ -194,6 +196,23 @@ bool VectorObjectServer::obtainParams()
     }
   }
 
+  // if any shapes has non-global frame id, no shapes will be added and return false.
+  if (enforce_global_frame_id_) {
+    for (const auto & shape : shapes_) {
+      const std::string & frame_id = shape->getFrameID();
+      if (!frame_id.empty() && frame_id != global_frame_id_) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Shape '%s' has frame_id '%s' which differs from global_frame_id '%s'. "
+          "All shapes must have frame_id empty or equal to global_frame_id "
+          "when enforce_global_frame_id is true.",
+          shape->getUUID().c_str(), frame_id.c_str(), global_frame_id_.c_str());
+        shapes_.clear();
+        return false;
+      }
+    }
+  }
+
   return true;
 }
 
@@ -212,14 +231,6 @@ bool VectorObjectServer::transformVectorObjects()
 {
   for (auto shape : shapes_) {
     if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
-      // AI-generated contribution marker:
-      if (!tf_buffer_) {
-        RCLCPP_ERROR(
-          get_logger(),
-          "Can not transform vector object from %s to %s frame because TF is not available",
-          shape->getFrameID().c_str(), global_frame_id_.c_str());
-        return false;
-      }
       // Shape to be updated dynamically
       if (!shape->toFrame(global_frame_id_, tf_buffer_, transform_tolerance_)) {
         RCLCPP_ERROR(
@@ -381,14 +392,6 @@ void VectorObjectServer::switchMapUpdate()
 {
   for (auto shape : shapes_) {
     if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
-      // AI-generated contribution marker:
-      if (!tf_buffer_) {
-        RCLCPP_ERROR(
-          get_logger(),
-          "Can not publish map dynamically for shape frame %s without TF support",
-          shape->getFrameID().c_str());
-        break;
-      }
       if (!map_timer_) {
         map_timer_ = this->create_timer(
           std::chrono::duration<double>(1.0 / update_frequency_),
@@ -416,25 +419,26 @@ void VectorObjectServer::addShapesCallback(
   // set it to false.
   response->success = true;
 
-  // AI-generated contribution marker:
-  if (!fixed_frame_id_.empty()) {
+  if (enforce_global_frame_id_) {
     for (const auto & req_poly : request->polygons) {
-      if (req_poly.header.frame_id != fixed_frame_id_) {
+      if (!req_poly.header.frame_id.empty() && req_poly.header.frame_id != global_frame_id_) {
         RCLCPP_ERROR(
           get_logger(),
-          "Polygon frame id '%s' does not match fixed_frame_id '%s'. Rejecting request.",
-          req_poly.header.frame_id.c_str(), fixed_frame_id_.c_str());
+          "Polygon frame_id '%s' must be empty or equal to global_frame_id '%s' "
+          "when enforce_global_frame_id is true. Rejecting request.",
+          req_poly.header.frame_id.c_str(), global_frame_id_.c_str());
         response->success = false;
         return;
       }
     }
 
     for (const auto & req_crcl : request->circles) {
-      if (req_crcl.header.frame_id != fixed_frame_id_) {
+      if (!req_crcl.header.frame_id.empty() && req_crcl.header.frame_id != global_frame_id_) {
         RCLCPP_ERROR(
           get_logger(),
-          "Circle frame id '%s' does not match fixed_frame_id '%s'. Rejecting request.",
-          req_crcl.header.frame_id.c_str(), fixed_frame_id_.c_str());
+          "Circle frame_id '%s' must be empty or equal to global_frame_id '%s' "
+          "when enforce_global_frame_id is true. Rejecting request.",
+          req_crcl.header.frame_id.c_str(), global_frame_id_.c_str());
         response->success = false;
         return;
       }
