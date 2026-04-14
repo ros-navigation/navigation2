@@ -23,6 +23,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "tf2/time.hpp"
 #include "tf2_ros/buffer.hpp"
@@ -88,211 +89,80 @@ class BoundedTrackingErrorLayer : public nav2_costmap_2d::Layer
 {
 
 public:
-  /**
-   * @brief Default constructor
-   */
   BoundedTrackingErrorLayer() = default;
-
-  /**
-   * @brief Default destructor
-   */
   ~BoundedTrackingErrorLayer() = default;
 
-  /**
-   * @brief Initializes the layer, setting up subscriptions and parameters.
-   */
   void onInitialize() override;
 
-  /**
-   * @brief Determines edges of region layer can change.
-   * @param robot_x X position of the robot in world coordinates.
-   * @param robot_y Y position of the robot in world coordinates.
-   * @param robot_yaw Orientation of the robot in radians.
-   * @param min_x Pointer to minimum X bound to update.
-   * @param min_y Pointer to minimum Y bound to update.
-   * @param max_x Pointer to maximum X bound to update.
-   * @param max_y Pointer to maximum Y bound to update.
-   */
   void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
     double * min_y, double * max_x, double * max_y) override;
 
-  /**
-   * @brief Creates obstacles to bound the robot.
-   * @param master_grid Reference to the master costmap to update.
-   * @param min_i Minimum X index of the region to update.
-   * @param min_j Minimum Y index of the region to update.
-   * @param max_i Maximum X index of the region to update.
-   * @param max_j Maximum Y index of the region to update.
-   */
   void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j) override;
 
-  /**
-   * @brief Resets the layer state.
-   */
   void reset() override;
 
-  /**
-   * @brief Indicates whether the layer can be cleared.
-   * @return Always returns false for this layer.
-   */
   bool isClearable() override {return false;}
 
-  /**
-   * @brief Activates the layer, enabling subscriptions and updates.
-   */
   void activate() override;
 
-  /**
-   * @brief Deactivates the layer, disabling subscriptions and updates.
-   */
   void deactivate() override;
 
-  /**
-   * @brief Match the size of the master costmap, caching resolution and frame.
-   *
-   * This layer does not own an internal costmap so there is nothing to resize.
-   * Resolution and global frame ID are cached here so updateCosts and
-   * getWallPolygons avoid repeated pointer dereferences on every update cycle.
-   */
   void matchSize() override;
 
 protected:
-  /**
-   * @brief A 2D cell coordinate in the costmap grid.
-   */
   struct CellPoint
   {
     unsigned int x;
     unsigned int y;
   };
 
-  /**
-   * @brief Resets internal state by clearing the cached path and path index.
-   */
   void resetState();
-
-  /**
-   * @brief Reads and validates all ROS parameters, populating member variables.
-   */
   void getParameters();
-
-  /**
-   * @brief Stores the incoming path and resets the path index on new path arrival.
-   *        All staleness and validity checks are deferred to updateCosts()
-   *        to keep the callback minimal.
-   * @param msg Incoming path message.
-   */
   void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
-
-  /**
-   * @brief Computes separate wall polygons for left and right corridor boundaries.
-   * @param segment Path segment to generate wall polygons from.
-   * @param walls Output WallPolygons structure (reused buffer).
-   */
   void getWallPolygons(const nav_msgs::msg::Path & segment, WallPolygons & walls);
-
-  /**
-   * @brief Extracts a path segment of length look_ahead_ starting at path_index.
-   * @param path The full path to extract the segment from.
-   * @param path_index Current position index on the path.
-   * @param segment Output path segment (reused buffer).
-   */
   void getPathSegment(
     const nav_msgs::msg::Path & path,
     size_t path_index,
     nav_msgs::msg::Path & segment);
 
-  /**
-   * @brief Callback to validate parameter updates before they are applied.
-   * @param parameters Vector of parameters being validated.
-   * @return Result indicating success or failure of parameter validation.
-   */
   rcl_interfaces::msg::SetParametersResult
   validateParameterUpdatesCallback(const std::vector<rclcpp::Parameter> & parameters);
 
-  /**
-   * @brief Callback to update internal state after parameters have been successfully set.
-   * @param parameters Vector of parameters that were updated.
-   */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
-  /**
-   * @brief Draws corridor walls using span buffer approach for complete fill.
-   *
-   * Iterates through paired inner and outer boundary points, treating each segment
-   * pair as a convex quadrilateral and filling it completely using the span buffer
-   * technique. This eliminates gaps on diagonals and ensures constant thickness.
-   *
-   * @param master_grid Reference to master grid for coordinate conversion.
-   * @param inner_points Vector of inner boundary points.
-   * @param outer_points Vector of outer boundary points.
-   */
   void drawCorridorWalls(
     nav2_costmap_2d::Costmap2D & master_grid,
     const std::vector<std::array<double, 2>> & inner_points,
     const std::vector<std::array<double, 2>> & outer_points);
 
-  /**
-   * @brief Collects flat cell indices of all cells inside the corridor interior
-   *        into corridor_index_set_.
-   *
-   * Uses the span buffer approach on left-inner to right-inner quads. The resulting
-   * set is used by fillOutsideCorridor to skip corridor cells during outside fill.
-   *
-   * @param master_grid Reference to the master costmap.
-   * @param walls WallPolygons containing left_inner and right_inner boundary points.
-   */
   void saveCorridorInterior(
     nav2_costmap_2d::Costmap2D & master_grid,
-    const WallPolygons & walls);
+    const WallPolygons & walls,
+    bool accumulate = false);
 
-  /**
-   * @brief Elevates free-space cells outside the corridor to corridor_cost_.
-   *
-   * Iterates all cells in the update bounds. Cells whose flat index is present
-   * in corridor_index_set_ are skipped. All other cells are elevated to
-   * corridor_cost_ using std::max to preserve any higher existing cost.
-   *
-   * @param master_grid Reference to the master costmap.
-   * @param min_i Minimum X cell index of the update bounds.
-   * @param min_j Minimum Y cell index of the update bounds.
-   * @param max_i Maximum X cell index of the update bounds.
-   * @param max_j Maximum Y cell index of the update bounds.
-   */
+  void markCircleAsInterior(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    int cx, int cy, int r_sq);
+
   void fillOutsideCorridor(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j);
 
-  /**
-   * @brief Traces a single edge between two cell points into the span buffers.
-   *
-   * Uses Bresenham line iteration to record the x extent per row into
-   * span_x_min_buffer_ and span_x_max_buffer_. Must be called after the
-   * span buffers have been assigned for the current quad.
-   *
-   * @param p0 Start cell point of the edge.
-   * @param p1 End cell point of the edge.
-   * @param clamped_y_min Minimum valid y index for the current quad.
-   * @param height Number of rows in the current quad's span buffers.
-   */
   void traceEdge(CellPoint p0, CellPoint p1, int clamped_y_min, int height);
+
+  void getFillArea(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    int & fill_min_i, int & fill_min_j, int & fill_max_i, int & fill_max_j);
+
+
 
 private:
   /**
    * @brief Fills a corridor quad (convex quadrilateral) using span buffer approach.
-   *
-   * This function rasterizes a quad defined by four vertices (inner[i], inner[i+1],
-   * outer[i+1], outer[i]) by tracing all four edges and building a span buffer that
-   * tracks [x_min, x_max] for each y-row. Then fills all pixels between the boundaries.
-   *
-   * @param master_grid Reference to master grid for size and costmap array access.
-   * @param inner0 Inner boundary point i.
-   * @param inner1 Inner boundary point i+1.
-   * @param outer0 Outer boundary point i.
-   * @param outer1 Outer boundary point i+1.
    *
    * See https://en.wikipedia.org/wiki/Scanline_rendering
    */
