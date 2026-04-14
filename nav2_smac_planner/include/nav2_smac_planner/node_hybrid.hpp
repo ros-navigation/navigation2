@@ -116,6 +116,7 @@ struct HybridMotionTable
   float travel_distance_reward;
   bool downsample_obstacle_heuristic;
   bool use_quadratic_cost_penalty;
+  bool allow_primitive_interpolation;
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;
   std::vector<std::vector<double>> delta_ys;
@@ -166,7 +167,7 @@ public:
    * @param NodeHybrid right hand side node reference
    * @return If cell indices are equal
    */
-  bool operator==(const NodeHybrid & rhs)
+  bool operator==(const NodeHybrid & rhs) const
   {
     return this->_index == rhs._index;
   }

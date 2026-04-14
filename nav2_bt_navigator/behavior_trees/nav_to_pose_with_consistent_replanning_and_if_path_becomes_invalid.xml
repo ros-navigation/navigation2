@@ -13,15 +13,17 @@
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Fallback>
               <ReactiveSequence>
-                <Inverter>
-                  <PathExpiringTimer seconds="10" path="{path}"/>
-                </Inverter>
+                <TruncatePathLocal input_path="{path}" output_path="{remaining_path}" distance_forward="-1" distance_backward="0.0" />
+                <ValidatePath path="{remaining_path}"/>
                 <Inverter>
                   <GlobalUpdatedGoal/>
                 </Inverter>
-                <IsGoalNearby path="{path}" proximity_threshold="4.0" max_robot_pose_search_dist="1.5"/>
-                <TruncatePathLocal input_path="{path}" output_path="{remaining_path}" distance_forward="-1" distance_backward="0.0" />
-                <IsPathValid path="{remaining_path}"/>
+                <Fallback>
+                  <IsGoalNearby path="{path}" proximity_threshold="4.0" max_robot_pose_search_dist="1.5"/>
+                  <Inverter>
+                    <PathExpiringTimer seconds="10" path="{path}"/>
+                  </Inverter>
+                </Fallback>
               </ReactiveSequence>
               <ComputePathToPose goal="{goal}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
             </Fallback>

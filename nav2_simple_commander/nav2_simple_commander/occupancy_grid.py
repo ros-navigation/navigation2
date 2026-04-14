@@ -68,11 +68,11 @@ class PyOccupancyGrid:
 
     def getSizeInMetersX(self) -> float:
         """Get x axis map size in meters."""
-        return (self.size_x - 1 + 0.5) * self.resolution
+        return self.size_x * self.resolution
 
     def getSizeInMetersY(self) -> float:
         """Get y axis map size in meters."""
-        return (self.size_y - 1 + 0.5) * self.resolution
+        return self.size_y * self.resolution
 
     def getOriginX(self) -> float:
         """Get the origin x axis of the map [m]."""

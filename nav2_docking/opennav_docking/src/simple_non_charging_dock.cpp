@@ -116,7 +116,7 @@ void SimpleNonChargingDock::configure(
   }
 
   // Setup filter
-  external_detection_rotation_.setEuler(pitch, roll, yaw);
+  external_detection_rotation_.setRPY(roll, pitch, yaw);
   filter_ = std::make_unique<PoseFilter>(filter_coef, external_detection_timeout_);
 
   if (!detector_service_name_.empty()) {
@@ -135,10 +135,12 @@ void SimpleNonChargingDock::configure(
       nav2::qos::StandardTopicQoS());
   }
 
-  dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("dock_pose");
+  dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "dock_pose", nav2::qos::LatchedPublisherQoS());
   filtered_dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
-    "filtered_dock_pose");
-  staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("staging_pose");
+    "filtered_dock_pose", nav2::qos::LatchedPublisherQoS());
+  staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "staging_pose", nav2::qos::LatchedPublisherQoS());
 }
 
 geometry_msgs::msg::PoseStamped SimpleNonChargingDock::getStagingPose(
@@ -161,7 +163,7 @@ geometry_msgs::msg::PoseStamped SimpleNonChargingDock::getStagingPose(
   staging_pose.pose.position.x += cos(yaw) * staging_x_offset_;
   staging_pose.pose.position.y += sin(yaw) * staging_x_offset_;
   tf2::Quaternion orientation;
-  orientation.setEuler(0.0, 0.0, yaw + staging_yaw_offset_);
+  orientation.setRPY(0.0, 0.0, yaw + staging_yaw_offset_);
   staging_pose.pose.orientation = tf2::toMsg(orientation);
 
   // Publish staging pose for debugging purposes
@@ -225,7 +227,7 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
   tf2::doTransform(just_orientation, just_orientation, transform);
 
   tf2::Quaternion orientation;
-  orientation.setEuler(0.0, 0.0, tf2::getYaw(just_orientation.pose.orientation));
+  orientation.setRPY(0.0, 0.0, tf2::getYaw(just_orientation.pose.orientation));
   dock_pose_.pose.orientation = tf2::toMsg(orientation);
 
   // Construct dock_pose_ by applying translation/rotation

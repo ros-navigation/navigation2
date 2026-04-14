@@ -17,7 +17,7 @@
                 <Inverter>
                   <GlobalUpdatedGoal/>
                 </Inverter>
-                <IsPathValid path="{path}"/>
+                <ValidatePath path="{path}"/>
               </ReactiveSequence>
               <ComputePathToPose goal="{goal}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
             </Fallback>

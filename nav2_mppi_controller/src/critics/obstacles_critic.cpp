@@ -15,7 +15,7 @@
 
 #include <cmath>
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
-#include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_costmap_2d/inflation_layer_interface.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 
 namespace mppi::critics
@@ -78,7 +78,7 @@ float ObstaclesCritic::findCircumscribedCost(
   }
 
   // check if the costmap has an inflation layer
-  const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(
+  const auto inflation_layer = nav2_costmap_2d::InflationLayerInterface::getInflationLayer(
     costmap,
     inflation_layer_name_);
   if (inflation_layer != nullptr) {
@@ -141,6 +141,9 @@ void ObstaclesCritic::score(CriticData & data)
   const unsigned int batch_size = data.trajectories.x.rows();
   bool all_trajectories_collide = true;
 
+  auto & collisions = data.trajectories_in_collision;
+  const bool track_collisions = !collisions.empty();
+
   for (unsigned int i = 0; i != batch_size; i++) {
     bool trajectory_collide = false;
     float traj_cost = 0.0f;
@@ -178,6 +181,7 @@ void ObstaclesCritic::score(CriticData & data)
 
     if (!trajectory_collide) {all_trajectories_collide = false;}
     raw_cost(i) = trajectory_collide ? collision_cost_ : traj_cost;
+    if (trajectory_collide && track_collisions) {collisions[i] = true;}
   }
 
   // Normalize repulsive cost by trajectory length & lowest score to not overweight importance

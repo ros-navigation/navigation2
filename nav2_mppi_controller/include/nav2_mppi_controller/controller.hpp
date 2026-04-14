@@ -125,6 +125,7 @@ protected:
   TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;
+  int critic_index_to_visualize_;
   bool publish_optimal_trajectory_;
 };
 

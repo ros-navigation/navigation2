@@ -161,7 +161,8 @@ public:
   std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> isPathValid(
     nav_msgs::msg::Path & path, unsigned int max_cost,
     bool consider_unknown_as_obstacle, const std::string & layer_name = "",
-    const std::string & footprint = "", bool check_full_path = false);
+    const std::string & footprint = "", bool stop_at_first_collision = true,
+    double max_lookahead_distance = -1.0);
 
 private:
   void setCostmap();
