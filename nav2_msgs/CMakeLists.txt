@@ -40,8 +40,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RouteEdge.msg"
   "msg/EdgeCost.msg"
   "msg/TrackingFeedback.msg"
-  "msg/Trajectory.msg"
-  "msg/TrajectoryPoint.msg"
   "srv/GetCosts.srv"
   "msg/PolygonObject.msg"
   "msg/CircleObject.msg"
