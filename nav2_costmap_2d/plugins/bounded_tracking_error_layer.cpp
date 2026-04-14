@@ -181,7 +181,8 @@ BoundedTrackingErrorLayer::updateBounds(
 void
 BoundedTrackingErrorLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
-  int min_i, int min_j, int max_i, int max_j)
+  [[maybe_unused]] int min_i, [[maybe_unused]] int min_j,
+  [[maybe_unused]] int max_i, [[maybe_unused]] int max_j)
 {
   if (!enabled_) {
     return;
@@ -241,37 +242,27 @@ BoundedTrackingErrorLayer::updateCosts(
     look_ahead_);
   current_path_index_.store(search_result.closest_segment_index);
 
-  // For wall-only mode use look-ahead segment; for fill mode use full path.
-  const nav_msgs::msg::Path & active_path = fill_outside_corridor_ ?
-    *path_ptr :
-    (getPathSegment(*path_ptr, search_result.closest_segment_index, segment_buffer_),
-    segment_buffer_);
+  getPathSegment(*path_ptr, search_result.closest_segment_index, segment_buffer_);
 
-  if (!fill_outside_corridor_) {
-    const size_t min_poses = (step_size_ * 2) + 1;
-    if (segment_buffer_.poses.size() < min_poses) {
-      RCLCPP_DEBUG_THROTTLE(
-        logger_,
-        *clock_,
-        5000,
-        "Path segment too small (%zu poses), need at least %zu poses for step_size=%zu",
-        segment_buffer_.poses.size(), min_poses, step_size_);
-      return;
-    }
+  const size_t min_poses = (step_size_ * 2) + 1;
+  if (segment_buffer_.poses.size() < min_poses) {
+    RCLCPP_DEBUG_THROTTLE(
+      logger_, *clock_, 5000,
+      "Path segment too small (%zu poses), need at least %zu poses for step_size=%zu",
+      segment_buffer_.poses.size(), min_poses, step_size_);
+    return;
   }
 
   const nav_msgs::msg::Path * transformed_ptr = nullptr;
 
-  if (active_path.header.frame_id == costmap_frame_) {
-    transformed_ptr = &active_path;
+  if (segment_buffer_.header.frame_id == costmap_frame_) {
+    transformed_ptr = &segment_buffer_;
   } else {
     if (!nav2_util::transformPathInTargetFrame(
-        active_path, transformed_segment_buffer_, *tf_, costmap_frame_, tf_tol))
+        segment_buffer_, transformed_segment_buffer_, *tf_, costmap_frame_, tf_tol))
     {
       RCLCPP_WARN_THROTTLE(
-        logger_,
-        *clock_,
-        5000,
+        logger_, *clock_, 5000,
         "Failed to transform path to %s, skipping wall generation",
         costmap_frame_.c_str());
       return;
@@ -282,13 +273,104 @@ BoundedTrackingErrorLayer::updateCosts(
   getWallPolygons(*transformed_ptr, walls_buffer_);
 
   if (fill_outside_corridor_) {
-    saveCorridorInterior(master_grid, walls_buffer_);
-    fillOutsideCorridor(master_grid, min_i, min_j, max_i, max_j);
+    int fill_min_i, fill_min_j, fill_max_i, fill_max_j;
+    getFillArea(master_grid, robot_pose, fill_min_i, fill_min_j, fill_max_i, fill_max_j);
+
+    // Filter the global path into disconnected sub-segments that fall inside
+    // the fill bbox. After marking each sub-segment interior, stamp a circle
+    // at its first and last pose to close the terminal gap at bbox crossings.
+    const double r_cells = (corridor_width_ * 0.5) / resolution_;
+    const int r_cells_sq = static_cast<int>(r_cells * r_cells);
+    corridor_index_set_.clear();
+
+    nav_msgs::msg::Path sub_segment;
+    sub_segment.header = path_ptr->header;
+
+    auto flush_segment = [&]() {
+      if (sub_segment.poses.size() < 2) {
+        sub_segment.poses.clear();
+        return;
+      }
+      WallPolygons fill_walls;
+      getWallPolygons(sub_segment, fill_walls);
+      saveCorridorInterior(master_grid, fill_walls, /*accumulate=*/true);
+
+      // Stamp end-cap circles on the first and last pose of this sub-segment.
+      unsigned int cx, cy;
+      if (master_grid.worldToMap(
+          sub_segment.poses.front().pose.position.x,
+          sub_segment.poses.front().pose.position.y, cx, cy))
+      {
+        markCircleAsInterior(master_grid, static_cast<int>(cx), static_cast<int>(cy), r_cells_sq);
+      }
+      if (master_grid.worldToMap(
+          sub_segment.poses.back().pose.position.x,
+          sub_segment.poses.back().pose.position.y, cx, cy))
+      {
+        markCircleAsInterior(master_grid, static_cast<int>(cx), static_cast<int>(cy), r_cells_sq);
+      }
+      sub_segment.poses.clear();
+    };
+
+    for (const auto & pose : path_ptr->poses) {
+      unsigned int mx, my;
+      const bool in_area = master_grid.worldToMap(
+        pose.pose.position.x, pose.pose.position.y, mx, my) &&
+        static_cast<int>(mx) >= fill_min_i &&
+        static_cast<int>(mx) <= fill_max_i &&
+        static_cast<int>(my) >= fill_min_j &&
+        static_cast<int>(my) <= fill_max_j;
+
+      if (in_area) {
+        sub_segment.poses.push_back(pose);
+      } else {
+        flush_segment();
+      }
+    }
+    flush_segment();  // Handle segment that runs to the end of the path.
+
+    // Stamp robot circle so the robot is never penalised.
+    unsigned int robot_cx = 0, robot_cy = 0;
+    if (master_grid.worldToMap(
+        robot_pose.pose.position.x, robot_pose.pose.position.y, robot_cx, robot_cy))
+    {
+      markCircleAsInterior(
+        master_grid, static_cast<int>(robot_cx), static_cast<int>(robot_cy), r_cells_sq);
+    }
+
+    fillOutsideCorridor(master_grid, fill_min_i, fill_min_j, fill_max_i, fill_max_j);
+  } else {
+    drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
+    drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
   }
 
-  drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
-  drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
+
 }
+
+void
+BoundedTrackingErrorLayer::getFillArea(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  const geometry_msgs::msg::PoseStamped & robot_pose,
+  int & fill_min_i, int & fill_min_j, int & fill_max_i, int & fill_max_j)
+{
+  const double radius = look_ahead_ + corridor_width_ * 0.5 + wall_thickness_ * resolution_;
+  const double rx = robot_pose.pose.position.x;
+  const double ry = robot_pose.pose.position.y;
+
+  int cell_min_x, cell_min_y, cell_max_x, cell_max_y;
+  master_grid.worldToMapEnforceBounds(rx - radius, ry - radius, cell_min_x, cell_min_y);
+  master_grid.worldToMapEnforceBounds(rx + radius, ry + radius, cell_max_x, cell_max_y);
+
+  const unsigned int size_x = master_grid.getSizeInCellsX();
+  const unsigned int size_y = master_grid.getSizeInCellsY();
+
+  fill_min_i = std::max(cell_min_x, 0);
+  fill_min_j = std::max(cell_min_y, 0);
+  fill_max_i = std::min(cell_max_x, static_cast<int>(size_x) - 1);
+  fill_max_j = std::min(cell_max_y, static_cast<int>(size_y) - 1);
+}
+
+
 
 void
 BoundedTrackingErrorLayer::getPathSegment(
@@ -502,9 +584,12 @@ BoundedTrackingErrorLayer::fillCorridorQuad(
 void
 BoundedTrackingErrorLayer::saveCorridorInterior(
   nav2_costmap_2d::Costmap2D & master_grid,
-  const WallPolygons & walls)
+  const WallPolygons & walls,
+  bool accumulate)
 {
-  corridor_index_set_.clear();
+  if (!accumulate) {
+    corridor_index_set_.clear();
+  }
 
   if (walls.left_inner.size() < 2 || walls.right_inner.size() < 2) {
     return;
@@ -525,7 +610,8 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
     if (!master_grid.worldToMap(
         walls.right_inner[i][0], walls.right_inner[i][1], right0.x, right0.y)) {continue;}
     if (!master_grid.worldToMap(
-        walls.right_inner[i + 1][0], walls.right_inner[i + 1][1], right1.x, right1.y)) {continue;}
+        walls.right_inner[i + 1][0], walls.right_inner[i + 1][1],
+        right1.x, right1.y)) {continue;}
 
     const int y_min = std::min({left0.y, left1.y, right0.y, right1.y});
     const int y_max = std::max({left0.y, left1.y, right0.y, right1.y});
@@ -556,6 +642,32 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
       for (int x = x_start; x <= x_end; ++x) {
         corridor_index_set_.insert(static_cast<unsigned int>(y) * size_x +
           static_cast<unsigned int>(x));
+      }
+    }
+  }
+}
+
+void
+BoundedTrackingErrorLayer::markCircleAsInterior(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  int cx, int cy, int r_sq)
+{
+  const unsigned int size_x = master_grid.getSizeInCellsX();
+  const unsigned int size_y = master_grid.getSizeInCellsY();
+  const int r = static_cast<int>(std::ceil(std::sqrt(static_cast<double>(r_sq))));
+
+  const int x_start = std::max(cx - r, 0);
+  const int x_end = std::min(cx + r, static_cast<int>(size_x) - 1);
+  const int y_start = std::max(cy - r, 0);
+  const int y_end = std::min(cy + r, static_cast<int>(size_y) - 1);
+
+  for (int y = y_start; y <= y_end; ++y) {
+    const int dy = y - cy;
+    for (int x = x_start; x <= x_end; ++x) {
+      const int dx = x - cx;
+      if (dx * dx + dy * dy <= r_sq) {
+        corridor_index_set_.insert(
+          static_cast<unsigned int>(y) * size_x + static_cast<unsigned int>(x));
       }
     }
   }
