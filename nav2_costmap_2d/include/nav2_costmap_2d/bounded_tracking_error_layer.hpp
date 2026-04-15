@@ -53,7 +53,6 @@ namespace nav2_costmap_2d
  */
 class BoundedTrackingErrorLayer : public nav2_costmap_2d::Layer
 {
-
 public:
   /**
    * @brief Constructor for BoundedTrackingErrorLayer.
@@ -69,6 +68,32 @@ public:
    * @brief Initializes the layer, declares parameters and creates the path subscription.
    */
   void onInitialize() override;
+
+  /**
+   * @brief Activates the layer and registers parameter update callbacks.
+   */
+  void activate() override;
+
+  /**
+   * @brief Deactivates the layer and removes parameter update callbacks.
+   */
+  void deactivate() override;
+
+  /**
+   * @brief Resets the layer, clearing path state and marking as not current.
+   */
+  void reset() override;
+
+  /**
+   * @brief Returns whether this layer can be cleared by the costmap clearing service.
+   * @return Always false; corridor costs are driven by the path, not persisted.
+   */
+  bool isClearable() override {return false;}
+
+  /**
+   * @brief Updates resolution and frame ID from the layered costmap on resize.
+   */
+  void matchSize() override;
 
   /**
    * @brief Expands the update bounds to cover the corridor region around the robot.
@@ -95,32 +120,6 @@ public:
   void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j) override;
-
-  /**
-   * @brief Resets the layer, clearing path state and marking as not current.
-   */
-  void reset() override;
-
-  /**
-   * @brief Returns whether this layer can be cleared by the costmap clearing service.
-   * @return Always false; corridor costs are driven by the path, not persisted.
-   */
-  bool isClearable() override {return false;}
-
-  /**
-   * @brief Activates the layer and registers parameter update callbacks.
-   */
-  void activate() override;
-
-  /**
-   * @brief Deactivates the layer and removes parameter update callbacks.
-   */
-  void deactivate() override;
-
-  /**
-   * @brief Updates resolution and frame ID from the layered costmap on resize.
-   */
-  void matchSize() override;
 
 protected:
   /** @brief Wall polygon components for left and right corridor boundaries. */
@@ -156,27 +155,20 @@ protected:
   };
 
   /**
-   * @brief Reset path state and index tracker.
-   */
-  void resetState();
-
-  /**
    * @brief Declare and load all layer parameters from the node.
    */
   void getParameters();
+
+  /**
+   * @brief Reset path state and index tracker.
+   */
+  void resetState();
 
   /**
    * @brief Subscription callback that stores the latest global plan.
    * @param msg Incoming path message.
    */
   void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
-
-  /**
-   * @brief Compute wall polygon boundary points from a path segment.
-   * @param segment Path segment in costmap frame.
-   * @param walls Output wall polygons.
-   */
-  void getWallPolygons(const nav_msgs::msg::Path & segment, WallPolygons & walls);
 
   /**
    * @brief Extract a look-ahead sub-path starting from a given index.
@@ -190,18 +182,11 @@ protected:
     nav_msgs::msg::Path & segment);
 
   /**
-   * @brief Validate parameter updates before they are applied.
-   * @param parameters Incoming parameter update list.
-   * @return Result indicating success or failure with reason.
+   * @brief Compute wall polygon boundary points from a path segment.
+   * @param segment Path segment in costmap frame.
+   * @param walls Output wall polygons.
    */
-  rcl_interfaces::msg::SetParametersResult
-  validateParameterUpdatesCallback(const std::vector<rclcpp::Parameter> & parameters);
-
-  /**
-   * @brief Apply validated parameter updates to layer state.
-   * @param parameters Validated parameter update list.
-   */
-  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
+  void getWallPolygons(const nav_msgs::msg::Path & segment, WallPolygons & walls);
 
   /**
    * @brief Rasterize corridor wall cells between inner and outer boundary polylines.
@@ -213,6 +198,32 @@ protected:
     nav2_costmap_2d::Costmap2D & master_grid,
     const std::vector<std::array<double, 2>> & inner_points,
     const std::vector<std::array<double, 2>> & outer_points);
+
+  /**
+   * @brief Trace an edge between two cell points into the span buffers.
+   * @param p0 Start cell point.
+   * @param p1 End cell point.
+   * @param clamped_y_min Minimum Y index of the span buffer.
+   * @param height Height of the span buffer.
+   */
+  void traceEdge(CellPoint p0, CellPoint p1, int clamped_y_min, int height);
+
+  /**
+   * @brief Fill a convex quadrilateral corridor quad using a span buffer approach.
+   *
+   * See https://en.wikipedia.org/wiki/Scanline_rendering
+   * @param master_grid Costmap to write into.
+   * @param inner0 First inner boundary cell.
+   * @param inner1 Second inner boundary cell.
+   * @param outer0 First outer boundary cell.
+   * @param outer1 Second outer boundary cell.
+   */
+  void fillCorridorQuad(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    CellPoint inner0,
+    CellPoint inner1,
+    CellPoint outer0,
+    CellPoint outer1);
 
   /**
    * @brief Record all cell indices inside the corridor interior into the index set.
@@ -249,15 +260,6 @@ protected:
     int min_i, int min_j, int max_i, int max_j);
 
   /**
-   * @brief Trace an edge between two cell points into the span buffers.
-   * @param p0 Start cell point.
-   * @param p1 End cell point.
-   * @param clamped_y_min Minimum Y index of the span buffer.
-   * @param height Height of the span buffer.
-   */
-  void traceEdge(CellPoint p0, CellPoint p1, int clamped_y_min, int height);
-
-  /**
    * @brief Compute the bounding cell rectangle for the fill operation.
    * @param master_grid Costmap used for coordinate conversion.
    * @param robot_pose Current robot pose in costmap frame.
@@ -272,21 +274,18 @@ protected:
     int & fill_min_i, int & fill_min_j, int & fill_max_i, int & fill_max_j);
 
   /**
-   * @brief Fill a convex quadrilateral corridor quad using a span buffer approach.
-   *
-   * See https://en.wikipedia.org/wiki/Scanline_rendering
-   * @param master_grid Costmap to write into.
-   * @param inner0 First inner boundary cell.
-   * @param inner1 Second inner boundary cell.
-   * @param outer0 First outer boundary cell.
-   * @param outer1 Second outer boundary cell.
+   * @brief Validate parameter updates before they are applied.
+   * @param parameters Incoming parameter update list.
+   * @return Result indicating success or failure with reason.
    */
-  void fillCorridorQuad(
-    nav2_costmap_2d::Costmap2D & master_grid,
-    CellPoint inner0,
-    CellPoint inner1,
-    CellPoint outer0,
-    CellPoint outer1);
+  rcl_interfaces::msg::SetParametersResult
+  validateParameterUpdatesCallback(const std::vector<rclcpp::Parameter> & parameters);
+
+  /**
+   * @brief Apply validated parameter updates to layer state.
+   * @param parameters Validated parameter update list.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
   std::atomic<uint32_t> current_path_index_{0};
 
@@ -304,7 +303,6 @@ protected:
 
   std::unordered_set<unsigned int> corridor_index_set_;
 
-private:
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
