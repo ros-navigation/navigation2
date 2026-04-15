@@ -64,6 +64,8 @@ class TestableBoundedTrackingErrorLayer
   : public nav2_costmap_2d::BoundedTrackingErrorLayer
 {
 public:
+  using WallPolygons = BoundedTrackingErrorLayer::WallPolygons;
+
   void testGetPathSegment(
     const nav_msgs::msg::Path & path, size_t idx,
     nav_msgs::msg::Path & segment)
@@ -73,7 +75,7 @@ public:
 
   void testGetWallPolygons(
     const nav_msgs::msg::Path & segment,
-    nav2_costmap_2d::WallPolygons & walls)
+    WallPolygons & walls)
   {
     getWallPolygons(segment, walls);
   }
@@ -115,6 +117,35 @@ public:
   void setCorridorCost(unsigned char v) {corridor_cost_ = v;}
   void setResolution(double v) {resolution_ = v;}
   void setCostmapFrame(const std::string & f) {costmap_frame_ = f;}
+  void setFillOutsideCorridor(bool v) {fill_outside_corridor_ = v;}
+  void setRobotBaseFrame(const std::string & f) {robot_base_frame_ = f;}
+
+  void testSaveCorridorInterior(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    const WallPolygons & walls,
+    bool accumulate = false)
+  {
+    saveCorridorInterior(master_grid, walls, accumulate);
+  }
+
+  void testMarkCircleAsInterior(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    int cx, int cy, int r_sq)
+  {
+    markCircleAsInterior(master_grid, cx, cy, r_sq);
+  }
+
+  void testFillOutsideCorridor(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    int min_i, int min_j, int max_i, int max_j)
+  {
+    fillOutsideCorridor(master_grid, min_i, min_j, max_i, max_j);
+  }
+
+  bool isInterior(unsigned int flat_idx) const
+  {
+    return corridor_index_set_.count(flat_idx) > 0;
+  }
 
   size_t getStepSize() const {return step_size_;}
   double getLookAhead() const {return look_ahead_;}
@@ -138,17 +169,18 @@ static geometry_msgs::msg::PoseStamped makePose(
   return ps;
 }
 
+// dir_x / dir_y form a direction vector (need not be unit length — normalised internally).
 static nav_msgs::msg::Path makeStraightPath(
   double x0, double y0,
-  double dx, double dy,
+  double dir_x, double dir_y,
   size_t num_poses, double spacing,
   const std::string & frame = "map")
 {
   nav_msgs::msg::Path path;
   path.header.frame_id = frame;
-  double len = std::hypot(dx, dy);
-  double ux = dx / len;
-  double uy = dy / len;
+  double len = std::hypot(dir_x, dir_y);
+  double ux = dir_x / len;
+  double uy = dir_y / len;
   for (size_t i = 0; i < num_poses; ++i) {
     path.poses.push_back(
       makePose(x0 + ux * spacing * i, y0 + uy * spacing * i, frame));
@@ -156,12 +188,14 @@ static nav_msgs::msg::Path makeStraightPath(
   return path;
 }
 
+// num_poses must be >= 2 (start and end point at minimum).
 static nav_msgs::msg::Path makeCircularPath(
   double cx, double cy, double radius,
   double start_angle, double end_angle,
   size_t num_poses,
   const std::string & frame = "map")
 {
+  assert(num_poses >= 2 && "makeCircularPath requires at least 2 poses");
   nav_msgs::msg::Path path;
   path.header.frame_id = frame;
   for (size_t i = 0; i < num_poses; ++i) {
@@ -181,6 +215,7 @@ static nav_msgs::msg::Path makeRandomPath(
   nav_msgs::msg::Path path;
   path.header.frame_id = frame;
   uint32_t seed = 0xdeadbeef;
+  // Numerical Recipes 32-bit LCG: multiplier=1664525, increment=1013904223
   auto lcg = [&]() -> double {
       seed = seed * 1664525u + 1013904223u;
       return (static_cast<double>(seed & 0xFFFF) / 65535.0) * 2.0 - 1.0;
@@ -188,6 +223,7 @@ static nav_msgs::msg::Path makeRandomPath(
   double x = x0, y = y0;
   for (size_t i = 0; i < num_poses; ++i) {
     path.poses.push_back(makePose(x, y, frame));
+    // x advances by step ± 0.04, so the path is not strictly monotone in x.
     x += step + lcg() * 0.04;
     y += lcg() * 0.04;
   }
@@ -235,9 +271,9 @@ protected:
   std::shared_ptr<TestableBoundedTrackingErrorLayer> layer_;
 };
 
-TEST(WallPolygonsTest, ClearAndReserve)
+TEST(WallPolygonsTest, testClearAndReserve)
 {
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   walls.left_inner.push_back({1.0, 2.0});
   walls.left_outer.push_back({3.0, 4.0});
   walls.right_inner.push_back({5.0, 6.0});
@@ -254,7 +290,7 @@ TEST(WallPolygonsTest, ClearAndReserve)
   EXPECT_GE(walls.right_outer.capacity(), 10u);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, DefaultParameterValues)
+TEST_F(BoundedTrackingErrorLayerTest, testDefaultParameterValues)
 {
   EXPECT_EQ(layer_->getStepSize(), 10u);
   EXPECT_DOUBLE_EQ(layer_->getLookAhead(), 2.5);
@@ -264,12 +300,12 @@ TEST_F(BoundedTrackingErrorLayerTest, DefaultParameterValues)
   EXPECT_TRUE(layer_->enabledRef());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, IsClearable)
+TEST_F(BoundedTrackingErrorLayerTest, testIsClearable)
 {
   EXPECT_FALSE(layer_->isClearable());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_EmptyPath)
+TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentEmptyPath)
 {
   nav_msgs::msg::Path empty_path;
   nav_msgs::msg::Path segment;
@@ -277,7 +313,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_EmptyPath)
   EXPECT_TRUE(segment.poses.empty());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_IndexBeyondPath)
+TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentIndexBeyondPath)
 {
   auto path = makeStraightPath(0, 0, 1, 0, 5, 0.1);
   nav_msgs::msg::Path segment;
@@ -285,7 +321,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_IndexBeyondPath)
   EXPECT_TRUE(segment.poses.empty());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_SinglePoseAtEnd)
+TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentSinglePoseAtEnd)
 {
   auto path = makeStraightPath(0, 0, 1, 0, 5, 0.1);
   nav_msgs::msg::Path segment;
@@ -294,29 +330,19 @@ TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_SinglePoseAtEnd)
   EXPECT_DOUBLE_EQ(segment.poses[0].pose.position.x, path.poses[4].pose.position.x);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_LookAheadExceedsPath)
+TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentLookAheadExceedsPath)
 {
-  // 5 poses, total 0.4 m, look_ahead=2.5 m => all 5 poses returned (look_ahead exceeds path)
-  auto path = makeStraightPath(0, 0, 1, 0, 5, 0.1);
+  // 25 poses at 0.1 m spacing = 2.4 m total, just under look_ahead=2.5 m.
+  // All 25 poses must be returned because the path ends before look_ahead is reached.
+  const size_t num_poses = 25;
+  const double spacing = 0.1;
+  auto path = makeStraightPath(0, 0, 1, 0, num_poses, spacing);
   nav_msgs::msg::Path segment;
   layer_->testGetPathSegment(path, 0, segment);
-  EXPECT_EQ(segment.poses.size(), 5u);
+  EXPECT_EQ(segment.poses.size(), num_poses);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_TwoPosePath)
-{
-  nav_msgs::msg::Path path;
-  path.header.frame_id = "map";
-  path.poses.push_back(makePose(0.0, 0.0));
-  path.poses.push_back(makePose(1.0, 0.0));
-  nav_msgs::msg::Path segment;
-  layer_->testGetPathSegment(path, 0, segment);
-  EXPECT_EQ(segment.poses.size(), 2u);
-  EXPECT_DOUBLE_EQ(segment.poses[0].pose.position.x, 0.0);
-  EXPECT_DOUBLE_EQ(segment.poses[1].pose.position.x, 1.0);
-}
-
-TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_IncludesBoundaryPose)
+TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentIncludesBoundaryPose)
 {
   // With look_ahead=0.3 and spacing=0.1 the loop crosses the threshold at step 3
   // (dist = 0.3 >= 0.3), setting end_index=3. assign([0,4)) gives poses at
@@ -331,7 +357,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_IncludesBoundaryPose)
   EXPECT_NEAR(segment.poses.back().pose.position.x, 0.3, 1e-6);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_RandomPath_RespectLookAhead)
+TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentRandomPathRespectLookAhead)
 {
   auto path = makeRandomPath(1.0, 1.0, 60);
   nav_msgs::msg::Path segment;
@@ -345,10 +371,13 @@ TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_RandomPath_RespectLookAhead
     double dy = segment.poses[i + 1].pose.position.y - segment.poses[i].pose.position.y;
     dist += std::hypot(dx, dy);
   }
-  EXPECT_LE(dist, layer_->getLookAhead() + 0.5);
+  // Max step in makeRandomPath is base_step + 0.04 = 0.15 + 0.04 = 0.19 m.
+  // The segment may overshoot by at most one step beyond look_ahead.
+  const double max_step = 0.15 + 0.04;
+  EXPECT_LE(dist, layer_->getLookAhead() + max_step);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_RandomPath_StartFromMiddle)
+TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentRandomPathStartFromMiddle)
 {
   auto path = makeRandomPath(0.5, 0.5, 80);
   nav_msgs::msg::Path segment;
@@ -361,28 +390,28 @@ TEST_F(BoundedTrackingErrorLayerTest, GetPathSegment_RandomPath_StartFromMiddle)
     segment.poses.front().pose.position.y, path.poses[start].pose.position.y);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_EmptySegment)
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsEmptySegment)
 {
   nav_msgs::msg::Path empty;
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->setResolution(0.05);
   layer_->testGetWallPolygons(empty, walls);
   EXPECT_TRUE(walls.left_inner.empty());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_SinglePoseSegment)
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsSinglePoseSegment)
 {
   layer_->setStepSize(1);
   layer_->setResolution(0.05);
   nav_msgs::msg::Path segment;
   segment.header.frame_id = "map";
   segment.poses.push_back(makePose(1.0, 1.0));
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
   EXPECT_TRUE(walls.left_inner.empty());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_DegenerateSegmentSkipped)
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsDegenerateSegmentSkipped)
 {
   layer_->setStepSize(1);
   layer_->setCorridorWidth(2.0);
@@ -392,12 +421,12 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_DegenerateSegmentSkipped)
   segment.header.frame_id = "map";
   segment.poses.push_back(makePose(1.0, 1.0));
   segment.poses.push_back(makePose(1.0, 1.0));
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
   EXPECT_TRUE(walls.left_inner.empty());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_StraightHorizontal)
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsStraightHorizontal)
 {
   layer_->setStepSize(1);
   layer_->setCorridorWidth(2.0);
@@ -405,7 +434,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_StraightHorizontal)
   layer_->setResolution(0.05);
 
   auto segment = makeStraightPath(0, 0, 1, 0, 11, 0.1);
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
 
   EXPECT_EQ(walls.left_inner.size(), walls.right_inner.size());
@@ -422,31 +451,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_StraightHorizontal)
   }
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_StraightVertical)
-{
-  layer_->setStepSize(1);
-  layer_->setCorridorWidth(2.0);
-  layer_->setWallThickness(1);
-  layer_->setResolution(0.05);
-
-  auto segment = makeStraightPath(0, 0, 0, 1, 11, 0.1);
-  nav2_costmap_2d::WallPolygons walls;
-  layer_->testGetWallPolygons(segment, walls);
-
-  EXPECT_GT(walls.left_inner.size(), 0u);
-
-  const double inner_offset = 1.0;
-  const double outer_offset = 1.0 + 0.05;
-
-  for (size_t i = 0; i < walls.left_inner.size(); ++i) {
-    EXPECT_NEAR(walls.left_inner[i][0], -inner_offset, 1e-6);
-    EXPECT_NEAR(walls.left_outer[i][0], -outer_offset, 1e-6);
-    EXPECT_NEAR(walls.right_inner[i][0], inner_offset, 1e-6);
-    EXPECT_NEAR(walls.right_outer[i][0], outer_offset, 1e-6);
-  }
-}
-
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_DiagonalPath)
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsDiagonalPath)
 {
   layer_->setStepSize(1);
   layer_->setCorridorWidth(2.0);
@@ -454,7 +459,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_DiagonalPath)
   layer_->setResolution(0.05);
 
   auto segment = makeStraightPath(0, 0, 1, 1, 11, 0.1);
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
 
   EXPECT_GT(walls.left_inner.size(), 0u);
@@ -467,21 +472,26 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_DiagonalPath)
   EXPECT_NEAR(walls.right_inner[0][1], -inv_sqrt2 * inner_offset, 1e-6);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_StepSizeSkipsPoses)
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsStepSizeSkipsPoses)
 {
   layer_->setStepSize(5);
   layer_->setCorridorWidth(2.0);
   layer_->setWallThickness(1);
   layer_->setResolution(0.05);
 
-  // 21 poses, step=5: samples at 0,5,10,15 only (index 20 == current at last step)
-  auto segment = makeStraightPath(0, 0, 1, 0, 21, 0.1);
-  nav2_costmap_2d::WallPolygons walls;
+  // With num_poses=21 and step=5, current_index advances as 0,5,10,15 and
+  // next_index=20 on the last iteration — producing 4 wall points total.
+  // Expected count is derived directly from the setup variables.
+  const size_t num_poses = 21;
+  const size_t step_size = 5;
+  const size_t expected_points = (num_poses - 1) / step_size;
+  auto segment = makeStraightPath(0, 0, 1, 0, num_poses, 0.1);
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
-  EXPECT_EQ(walls.left_inner.size(), 4u);
+  EXPECT_EQ(walls.left_inner.size(), expected_points);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_ThicknessAddedToOutside)
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsThicknessAddedToOutside)
 {
   layer_->setStepSize(1);
   layer_->setCorridorWidth(2.0);
@@ -489,61 +499,23 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_ThicknessAddedToOutside)
   layer_->setResolution(0.05);
 
   auto segment = makeStraightPath(0.0, 0.0, 1, 0, 11, 0.1);
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
 
   ASSERT_GT(walls.left_inner.size(), 0u);
 
   const double inner_offset = 1.0;
   const double outer_offset = 1.0 + 3 * 0.05;
-  const double thickness_gap = outer_offset - inner_offset;
 
   for (size_t i = 0; i < walls.left_inner.size(); ++i) {
     EXPECT_NEAR(walls.left_inner[i][1], inner_offset, 1e-6);
     EXPECT_NEAR(walls.right_inner[i][1], -inner_offset, 1e-6);
     EXPECT_NEAR(walls.left_outer[i][1], outer_offset, 1e-6);
     EXPECT_NEAR(walls.right_outer[i][1], -outer_offset, 1e-6);
-    EXPECT_NEAR(walls.left_outer[i][1] - walls.left_inner[i][1], thickness_gap, 1e-6);
-    EXPECT_NEAR(walls.right_inner[i][1] - walls.right_outer[i][1], thickness_gap, 1e-6);
   }
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_CollinearInnerOuter_CurvedPath)
-{
-  // For every sampled point, path->inner and path->outer must be parallel (same ray).
-  layer_->setStepSize(1);
-  layer_->setCorridorWidth(0.6);
-  layer_->setWallThickness(3);
-  layer_->setResolution(0.05);
-
-  auto segment = makeCircularPath(0.0, 0.0, 2.0, 0.0, M_PI, 31);
-  nav2_costmap_2d::WallPolygons walls;
-  layer_->testGetWallPolygons(segment, walls);
-
-  ASSERT_GT(walls.left_inner.size(), 0u);
-
-  for (size_t i = 0; i < walls.left_inner.size(); ++i) {
-    size_t pose_idx = i * layer_->getStepSize();
-    double px = segment.poses[pose_idx].pose.position.x;
-    double py = segment.poses[pose_idx].pose.position.y;
-
-    double li_x = walls.left_inner[i][0] - px;
-    double li_y = walls.left_inner[i][1] - py;
-    double lo_x = walls.left_outer[i][0] - px;
-    double lo_y = walls.left_outer[i][1] - py;
-    EXPECT_NEAR(li_x * lo_y - li_y * lo_x, 0.0, 1e-9) << "left not collinear at " << i;
-    EXPECT_GT(li_x * lo_x + li_y * lo_y, 0.0) << "left outer wrong direction at " << i;
-
-    double ri_x = walls.right_inner[i][0] - px;
-    double ri_y = walls.right_inner[i][1] - py;
-    double ro_x = walls.right_outer[i][0] - px;
-    double ro_y = walls.right_outer[i][1] - py;
-    EXPECT_NEAR(ri_x * ro_y - ri_y * ro_x, 0.0, 1e-9) << "right not collinear at " << i;
-    EXPECT_GT(ri_x * ro_x + ri_y * ro_y, 0.0) << "right outer wrong direction at " << i;
-  }
-}
-
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_CurvedPath_OffsetMagnitudes)
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsCurvedPathOffsetMagnitudes)
 {
   layer_->setStepSize(1);
   layer_->setCorridorWidth(0.6);
@@ -551,7 +523,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_CurvedPath_OffsetMagnitude
   layer_->setResolution(0.05);
 
   auto segment = makeCircularPath(0.0, 0.0, 2.0, 0.0, M_PI / 2.0, 21);
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
 
   ASSERT_GT(walls.left_inner.size(), 0u);
@@ -576,8 +548,13 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_CurvedPath_OffsetMagnitude
     EXPECT_NEAR(ri_dist, inner_offset, 1e-5) << "right inner offset at " << i;
     EXPECT_NEAR(ro_dist, outer_offset, 1e-5) << "right outer offset at " << i;
 
-    EXPECT_GT(lo_dist, li_dist - 1e-9) << "left outer must be further than inner";
-    EXPECT_GT(ro_dist, ri_dist - 1e-9) << "right outer must be further than inner";
+    const double expected_gap = layer_->getWallThickness() * layer_->getResolution();
+    EXPECT_NEAR(
+      lo_dist - li_dist, expected_gap,
+      1e-5) << "left outer-inner gap must equal wall_thickness * resolution at " << i;
+    EXPECT_NEAR(
+      ro_dist - ri_dist, expected_gap,
+      1e-5) << "right outer-inner gap must equal wall_thickness * resolution at " << i;
 
     double lx = walls.left_inner[i][0] - px;
     double ly = walls.left_inner[i][1] - py;
@@ -587,7 +564,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_CurvedPath_OffsetMagnitude
   }
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_RandomPath_SymmetricOffsets)
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsRandomPathSymmetricOffsets)
 {
   layer_->setStepSize(2);
   layer_->setCorridorWidth(0.8);
@@ -595,7 +572,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_RandomPath_SymmetricOffset
   layer_->setResolution(0.05);
 
   auto segment = makeRandomPath(0.5, 0.5, 40, 0.15);
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
 
   ASSERT_GT(walls.left_inner.size(), 0u);
@@ -619,12 +596,136 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_RandomPath_SymmetricOffset
     EXPECT_NEAR(lo_dist, outer_offset, 1e-5);
     EXPECT_NEAR(ri_dist, inner_offset, 1e-5);
     EXPECT_NEAR(ro_dist, outer_offset, 1e-5);
-    EXPECT_GT(lo_dist, li_dist - 1e-9);
-    EXPECT_GT(ro_dist, ri_dist - 1e-9);
+    const double expected_gap = layer_->getWallThickness() * layer_->getResolution();
+    EXPECT_NEAR(lo_dist - li_dist, expected_gap, 1e-5);
+    EXPECT_NEAR(ro_dist - ri_dist, expected_gap, 1e-5);
   }
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_RandomPath_WallsInCostmapBounds)
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsNegativeXDirection)
+{
+  // Path travels right-to-left (dx=-1, dy=0). The perpendicular "left" of travel
+  // is now (0,-1), so left_inner must be at -inner_offset in Y and right_inner
+  // at +inner_offset — opposite of the positive-X case.
+  layer_->setStepSize(1);
+  layer_->setCorridorWidth(2.0);
+  layer_->setWallThickness(1);
+  layer_->setResolution(0.05);
+
+  auto segment = makeStraightPath(1.0, 0.0, -1, 0, 11, 0.1);
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
+  layer_->testGetWallPolygons(segment, walls);
+
+  ASSERT_GT(walls.left_inner.size(), 0u);
+
+  const double inner_offset = 1.0;
+  for (size_t i = 0; i < walls.left_inner.size(); ++i) {
+    EXPECT_NEAR(walls.left_inner[i][1], -inner_offset, 1e-6)
+      << "left wall must be on negative-Y side when travelling in -X at " << i;
+    EXPECT_NEAR(walls.right_inner[i][1], inner_offset, 1e-6)
+      << "right wall must be on positive-Y side when travelling in -X at " << i;
+  }
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsNegativeYDirection)
+{
+  // Path travels bottom-to-top (dx=0, dy=-1). The perpendicular "left" of travel
+  // is now (+1, 0), so left_inner must be at +inner_offset in X and right_inner
+  // at -inner_offset — opposite of the positive-Y case.
+  layer_->setStepSize(1);
+  layer_->setCorridorWidth(2.0);
+  layer_->setWallThickness(1);
+  layer_->setResolution(0.05);
+
+  auto segment = makeStraightPath(0.0, 1.0, 0, -1, 11, 0.1);
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
+  layer_->testGetWallPolygons(segment, walls);
+
+  ASSERT_GT(walls.left_inner.size(), 0u);
+
+  const double inner_offset = 1.0;
+  for (size_t i = 0; i < walls.left_inner.size(); ++i) {
+    EXPECT_NEAR(walls.left_inner[i][0], inner_offset, 1e-6)
+      << "left wall must be on positive-X side when travelling in -Y at " << i;
+    EXPECT_NEAR(walls.right_inner[i][0], -inner_offset, 1e-6)
+      << "right wall must be on negative-X side when travelling in -Y at " << i;
+  }
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsSharpTurn)
+{
+  // Path makes a near-180 degree turn: goes right then sharply back left.
+  // Verifies no crash and that wall offsets remain correct at every sampled point.
+  layer_->setStepSize(1);
+  layer_->setCorridorWidth(0.6);
+  layer_->setWallThickness(1);
+  layer_->setResolution(0.05);
+
+  nav_msgs::msg::Path segment;
+  segment.header.frame_id = "map";
+  // Rightward leg
+  for (int i = 0; i <= 5; ++i) {
+    segment.poses.push_back(makePose(i * 0.1, 0.0));
+  }
+  // Sharp turn — step sideways then go back left
+  segment.poses.push_back(makePose(0.5, 0.05));
+  for (int i = 5; i >= 0; --i) {
+    segment.poses.push_back(makePose(i * 0.1, 0.1));
+  }
+
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
+  ASSERT_NO_THROW(layer_->testGetWallPolygons(segment, walls));
+  ASSERT_GT(walls.left_inner.size(), 0u);
+
+  const double inner_offset = 0.3;
+  for (size_t i = 0; i < walls.left_inner.size(); ++i) {
+    size_t pose_idx = i * layer_->getStepSize();
+    double px = segment.poses[pose_idx].pose.position.x;
+    double py = segment.poses[pose_idx].pose.position.y;
+    double li_dist = std::hypot(walls.left_inner[i][0] - px, walls.left_inner[i][1] - py);
+    double ri_dist = std::hypot(walls.right_inner[i][0] - px, walls.right_inner[i][1] - py);
+    EXPECT_NEAR(li_dist, inner_offset, 1e-5) << "left inner offset at " << i;
+    EXPECT_NEAR(ri_dist, inner_offset, 1e-5) << "right inner offset at " << i;
+    double lo_dist = std::hypot(walls.left_outer[i][0] - px, walls.left_outer[i][1] - py);
+    double ro_dist = std::hypot(walls.right_outer[i][0] - px, walls.right_outer[i][1] - py);
+    const double expected_gap = layer_->getWallThickness() * layer_->getResolution();
+    EXPECT_NEAR(lo_dist - li_dist, expected_gap, 1e-5) << "left gap at " << i;
+    EXPECT_NEAR(ro_dist - ri_dist, expected_gap, 1e-5) << "right gap at " << i;
+  }
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentNonUniformSpacing)
+{
+  // Build a path with alternating large (0.3 m) and small (0.02 m) steps.
+  // The accumulated distance must not overshoot look_ahead by more than
+  // the largest single step in the path.
+  const double large_step = 0.3;
+  const double small_step = 0.02;
+  const double max_single_step = large_step;
+
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "map";
+  double x = 0.0;
+  for (int i = 0; i < 30; ++i) {
+    path.poses.push_back(makePose(x, 0.0));
+    x += (i % 2 == 0) ? large_step : small_step;
+  }
+
+  nav_msgs::msg::Path segment;
+  layer_->testGetPathSegment(path, 0, segment);
+
+  ASSERT_GT(segment.poses.size(), 0u);
+
+  double dist = 0.0;
+  for (size_t i = 0; i + 1 < segment.poses.size(); ++i) {
+    double dx = segment.poses[i + 1].pose.position.x - segment.poses[i].pose.position.x;
+    double dy = segment.poses[i + 1].pose.position.y - segment.poses[i].pose.position.y;
+    dist += std::hypot(dx, dy);
+  }
+  EXPECT_LE(dist, layer_->getLookAhead() + max_single_step);
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsRandomPathWallsInCostmapBounds)
 {
   layer_->matchSize();
   layer_->setStepSize(2);
@@ -633,7 +734,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_RandomPath_WallsInCostmapB
   layer_->setResolution(0.05);
 
   auto segment = makeRandomPath(1.0, 1.0, 30, 0.1);
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
 
   ASSERT_GT(walls.left_inner.size(), 0u);
@@ -652,7 +753,7 @@ TEST_F(BoundedTrackingErrorLayerTest, GetWallPolygons_RandomPath_WallsInCostmapB
   }
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateBounds_ExpandsBounds)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateBoundsExpandsBounds)
 {
   layer_->matchSize();
   layer_->enabledRef() = true;
@@ -671,7 +772,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateBounds_ExpandsBounds)
   EXPECT_DOUBLE_EQ(max_y, ry + margin);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateBounds_DisabledDoesNotExpand)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateBoundsDisabledDoesNotExpand)
 {
   layer_->enabledRef() = false;
 
@@ -684,14 +785,55 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateBounds_DisabledDoesNotExpand)
   EXPECT_DOUBLE_EQ(max_y, 1.0);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, MatchSizeCachesResolutionAndFrame)
+TEST_F(BoundedTrackingErrorLayerTest, testMatchSizeCachesResolutionAndFrame)
 {
   layer_->matchSize();
   EXPECT_DOUBLE_EQ(layer_->getResolution(), 0.05);
   EXPECT_EQ(layer_->getCostmapFrame(), "map");
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ResetClearsState)
+TEST_F(BoundedTrackingErrorLayerTest, testPathCallbackNewStampResetsPathIndex)
+{
+  // Store a non-zero path index, then deliver a path with a different stamp.
+  // The callback must reset current_path_index_ to 0 because it's a new path.
+  layer_->pathIndexRef().store(42);
+
+  auto msg = std::make_shared<nav_msgs::msg::Path>();
+  msg->header.frame_id = "map";
+  msg->header.stamp = node_->now();
+  msg->poses.push_back(makePose(0.0, 0.0));
+  layer_->testPathCallback(msg);
+
+  EXPECT_EQ(layer_->pathIndexRef().load(), 0u)
+    << "New stamp must reset path index to 0";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testPathCallbackSameStampPreservesPathIndex)
+{
+  // Deliver a first path to initialise last_path_ptr_, then advance the index.
+  // A second callback with the identical stamp must NOT reset the index —
+  // it is a duplicate delivery of the same plan, not a new one.
+  auto stamp = node_->now();
+
+  auto msg1 = std::make_shared<nav_msgs::msg::Path>();
+  msg1->header.frame_id = "map";
+  msg1->header.stamp = stamp;
+  msg1->poses.push_back(makePose(0.0, 0.0));
+  layer_->testPathCallback(msg1);
+
+  layer_->pathIndexRef().store(15);
+
+  auto msg2 = std::make_shared<nav_msgs::msg::Path>();
+  msg2->header.frame_id = "map";
+  msg2->header.stamp = stamp;  // identical stamp
+  msg2->poses.push_back(makePose(0.0, 0.0));
+  layer_->testPathCallback(msg2);
+
+  EXPECT_EQ(layer_->pathIndexRef().load(), 15u)
+    << "Same stamp must preserve existing path index";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testResetClearsState)
 {
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
@@ -705,7 +847,7 @@ TEST_F(BoundedTrackingErrorLayerTest, ResetClearsState)
   EXPECT_FALSE(layer_->currentRef());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ResetState_DoesNotTouchCurrent)
+TEST_F(BoundedTrackingErrorLayerTest, testResetStateDoesNotTouchCurrent)
 {
   // resetState() clears path data and path index but must NOT touch current_.
   // reset() is the only caller that should modify current_.
@@ -719,36 +861,42 @@ TEST_F(BoundedTrackingErrorLayerTest, ResetState_DoesNotTouchCurrent)
   EXPECT_TRUE(layer_->currentRef()) << "resetState() must not modify current_";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, DeactivateAndReactivate)
+TEST_F(BoundedTrackingErrorLayerTest, testDeactivateAndReactivate)
 {
   layer_->activate();
   layer_->deactivate();
   EXPECT_NO_THROW(layer_->activate());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectNegativeLookAhead)
+TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsRejectNegativeLookAhead)
 {
   layer_->activate();
-  std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("bte_layer.look_ahead", -1.0),
-  };
-  auto result = layer_->testValidateParams(params);
-  EXPECT_FALSE(result.successful);
-  EXPECT_EQ(result.reason, "look_ahead must be positive");
+  auto result_negative = layer_->testValidateParams(
+    {rclcpp::Parameter("bte_layer.look_ahead", -1.0)});
+  EXPECT_FALSE(result_negative.successful);
+  EXPECT_EQ(result_negative.reason, "look_ahead must be positive");
+
+  auto result_zero = layer_->testValidateParams(
+    {rclcpp::Parameter("bte_layer.look_ahead", 0.0)});
+  EXPECT_FALSE(result_zero.successful);
+  EXPECT_EQ(result_zero.reason, "look_ahead must be positive");
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectNegativeCorridorWidth)
+TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsRejectNegativeCorridorWidth)
 {
   layer_->activate();
-  std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("bte_layer.corridor_width", -0.5),
-  };
-  auto result = layer_->testValidateParams(params);
-  EXPECT_FALSE(result.successful);
-  EXPECT_EQ(result.reason, "corridor_width must be positive");
+  auto result_negative = layer_->testValidateParams(
+    {rclcpp::Parameter("bte_layer.corridor_width", -0.5)});
+  EXPECT_FALSE(result_negative.successful);
+  EXPECT_EQ(result_negative.reason, "corridor_width must be positive");
+
+  auto result_zero = layer_->testValidateParams(
+    {rclcpp::Parameter("bte_layer.corridor_width", 0.0)});
+  EXPECT_FALSE(result_zero.successful);
+  EXPECT_EQ(result_zero.reason, "corridor_width must be positive");
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectZeroStep)
+TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsRejectZeroStep)
 {
   layer_->activate();
   std::vector<rclcpp::Parameter> params = {
@@ -759,7 +907,7 @@ TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectZeroStep)
   EXPECT_EQ(result.reason, "step must be greater than zero");
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectCorridorCostZero)
+TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsRejectCorridorCostZero)
 {
   layer_->activate();
   std::vector<rclcpp::Parameter> params = {
@@ -770,7 +918,7 @@ TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectCorridorCostZero)
   EXPECT_EQ(result.reason, "corridor_cost must be between 1 and 254");
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectCorridorCostAbove254)
+TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsRejectCorridorCostAbove254)
 {
   layer_->activate();
   std::vector<rclcpp::Parameter> params = {
@@ -778,9 +926,10 @@ TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectCorridorCostAbove254)
   };
   auto result = layer_->testValidateParams(params);
   EXPECT_FALSE(result.successful);
+  EXPECT_EQ(result.reason, "corridor_cost must be between 1 and 254");
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_CorridorCostBoundariesAccepted)
+TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsCorridorCostBoundariesAccepted)
 {
   layer_->activate();
   auto result1 = layer_->testValidateParams(
@@ -791,7 +940,7 @@ TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_CorridorCostBoundariesAccep
   EXPECT_TRUE(result254.successful);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectZeroWallThickness)
+TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsRejectZeroWallThickness)
 {
   layer_->activate();
   std::vector<rclcpp::Parameter> params = {
@@ -802,7 +951,7 @@ TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_RejectZeroWallThickness)
   EXPECT_EQ(result.reason, "wall_thickness must be greater than zero");
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_IgnoreUnrelatedParameter)
+TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsIgnoreUnrelatedParameter)
 {
   layer_->activate();
   std::vector<rclcpp::Parameter> params = {
@@ -812,7 +961,7 @@ TEST_F(BoundedTrackingErrorLayerTest, ValidateParams_IgnoreUnrelatedParameter)
   EXPECT_TRUE(result.successful);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_LookAhead)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsLookAhead)
 {
   layer_->activate();
   layer_->currentRef() = true;
@@ -821,7 +970,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_LookAhead)
   EXPECT_FALSE(layer_->currentRef());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_CorridorWidth)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsCorridorWidth)
 {
   layer_->activate();
   layer_->currentRef() = true;
@@ -830,7 +979,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_CorridorWidth)
   EXPECT_FALSE(layer_->currentRef());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_Enabled)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsEnabled)
 {
   layer_->activate();
   layer_->currentRef() = true;
@@ -840,7 +989,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_Enabled)
   EXPECT_FALSE(layer_->currentRef());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_Step)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsStep)
 {
   layer_->activate();
   layer_->currentRef() = true;
@@ -849,7 +998,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_Step)
   EXPECT_FALSE(layer_->currentRef());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_CorridorCost)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsCorridorCost)
 {
   layer_->activate();
   layer_->currentRef() = true;
@@ -858,7 +1007,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_CorridorCost)
   EXPECT_FALSE(layer_->currentRef());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_WallThickness)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsWallThickness)
 {
   layer_->activate();
   layer_->currentRef() = true;
@@ -867,7 +1016,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_WallThickness)
   EXPECT_FALSE(layer_->currentRef());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_SameValueNoCurrentReset)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsSameValueNoCurrentReset)
 {
   layer_->activate();
   layer_->currentRef() = true;
@@ -875,7 +1024,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_SameValueNoCurrentReset)
   EXPECT_TRUE(layer_->currentRef());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_IgnoreUnrelated)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsIgnoreUnrelated)
 {
   layer_->activate();
   layer_->currentRef() = true;
@@ -884,7 +1033,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateParams_IgnoreUnrelated)
   EXPECT_DOUBLE_EQ(layer_->getLookAhead(), 2.5);
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_HorizontalPath_CellsMarked)
+TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsHorizontalPathCellsMarked)
 {
   layer_->matchSize();
   layer_->setStepSize(1);
@@ -899,7 +1048,7 @@ TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_HorizontalPath_CellsMark
     nav2_costmap_2d::FREE_SPACE);
 
   auto segment = makeStraightPath(1.0, 2.5, 1, 0, 21, 0.1);
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
   layer_->testDrawCorridorWalls(*costmap, walls.left_inner, walls.left_outer);
   layer_->testDrawCorridorWalls(*costmap, walls.right_inner, walls.right_outer);
@@ -916,7 +1065,7 @@ TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_HorizontalPath_CellsMark
     << "Centre of corridor must remain free";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_VerticalPath_CellsMarked)
+TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsVerticalPathCellsMarked)
 {
   // Path moves in Y — wall quads are nearly horizontal, meaning all four quad
   // vertices share very few Y rows. This exercises the span-buffer edge case
@@ -935,7 +1084,7 @@ TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_VerticalPath_CellsMarked
 
   // Path along Y axis at x=2.5; left wall at x=2.25, right wall at x=2.75
   auto segment = makeStraightPath(2.5, 1.0, 0, 1, 21, 0.1);
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
   layer_->testDrawCorridorWalls(*costmap, walls.left_inner, walls.left_outer);
   layer_->testDrawCorridorWalls(*costmap, walls.right_inner, walls.right_outer);
@@ -952,43 +1101,7 @@ TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_VerticalPath_CellsMarked
     << "Centre of vertical corridor must remain free";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_CurvedPath_CellsMarked)
-{
-  layer_->matchSize();
-  layer_->setStepSize(1);
-  layer_->setCorridorWidth(0.4);
-  layer_->setWallThickness(2);
-  layer_->setCorridorCost(190);
-  layer_->setResolution(0.05);
-
-  auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
-
-  auto segment = makeCircularPath(2.5, 2.5, 1.0, 0.0, M_PI / 2.0, 21);
-  nav2_costmap_2d::WallPolygons walls;
-  layer_->testGetWallPolygons(segment, walls);
-  layer_->testDrawCorridorWalls(*costmap, walls.left_inner, walls.left_outer);
-  layer_->testDrawCorridorWalls(*costmap, walls.right_inner, walls.right_outer);
-
-  bool found_marked = false;
-  for (unsigned int y = 0; y < costmap->getSizeInCellsY() && !found_marked; ++y) {
-    for (unsigned int x = 0; x < costmap->getSizeInCellsX(); ++x) {
-      if (costmap->getCost(x, y) == 190) {found_marked = true; break;}
-    }
-  }
-  EXPECT_TRUE(found_marked) << "Curved corridor walls should mark cells";
-
-  unsigned int mx, my;
-  double mid_x = 2.5 + 1.0 * std::cos(M_PI / 4.0);
-  double mid_y = 2.5 + 1.0 * std::sin(M_PI / 4.0);
-  ASSERT_TRUE(costmap->worldToMap(mid_x, mid_y, mx, my));
-  EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE)
-    << "Path centreline must remain free";
-}
-
-TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_PreservesHigherCost)
+TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsPreservesHigherCost)
 {
   layer_->matchSize();
   layer_->setStepSize(1);
@@ -1007,7 +1120,7 @@ TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_PreservesHigherCost)
   costmap->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
 
   auto segment = makeStraightPath(1.0, 2.5, 1, 0, 21, 0.1);
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
   layer_->testDrawCorridorWalls(*costmap, walls.left_inner, walls.left_outer);
   layer_->testDrawCorridorWalls(*costmap, walls.right_inner, walls.right_outer);
@@ -1016,7 +1129,7 @@ TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_PreservesHigherCost)
     << "LETHAL_OBSTACLE must not be overwritten by corridor_cost";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_OverwritesLowerCost)
+TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsOverwritesLowerCost)
 {
   layer_->matchSize();
   layer_->setStepSize(1);
@@ -1035,14 +1148,14 @@ TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_OverwritesLowerCost)
   costmap->setCost(mx, my, 50);
 
   auto segment = makeStraightPath(1.0, 2.5, 1, 0, 21, 0.1);
-  nav2_costmap_2d::WallPolygons walls;
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
   layer_->testDrawCorridorWalls(*costmap, walls.left_inner, walls.left_outer);
 
   EXPECT_EQ(costmap->getCost(mx, my), 190) << "Lower cost must be overwritten";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_TooFewPoints_NoOp)
+TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsTooFewPointsNoOp)
 {
   layer_->matchSize();
   layer_->setCorridorCost(190);
@@ -1067,7 +1180,7 @@ TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_TooFewPoints_NoOp)
   EXPECT_FALSE(found_marked) << "Single-point walls should not mark any cells";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_OutOfBoundsQuadSkipped)
+TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsOutOfBoundsQuadSkipped)
 {
   layer_->matchSize();
   layer_->setCorridorCost(190);
@@ -1092,30 +1205,7 @@ TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_OutOfBoundsQuadSkipped)
   EXPECT_FALSE(found_marked) << "Out-of-bounds quads should not mark any cells";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_QuadGrazingTopEdge_CellsMarked)
-{
-  layer_->matchSize();
-  layer_->setCorridorCost(190);
-  layer_->setResolution(0.05);
-
-  auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
-
-  // Inner at y=4.70, outer at y=4.90 — both within the 5 m costmap bounds
-  std::vector<std::array<double, 2>> inner = {{1.0, 4.70}, {2.0, 4.70}};
-  std::vector<std::array<double, 2>> outer = {{1.0, 4.90}, {2.0, 4.90}};
-  layer_->testDrawCorridorWalls(*costmap, inner, outer);
-
-  unsigned int mx_inner, my_inner, mx_outer, my_outer;
-  ASSERT_TRUE(costmap->worldToMap(1.5, 4.75, mx_inner, my_inner));
-  ASSERT_TRUE(costmap->worldToMap(1.5, 4.85, mx_outer, my_outer));
-  EXPECT_EQ(costmap->getCost(mx_inner, my_inner), 190) << "Inner boundary row must be marked";
-  EXPECT_EQ(costmap->getCost(mx_outer, my_outer), 190) << "Outer boundary row must be marked";
-}
-
-TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_QuadGrazingBottomEdge_CellsMarked)
+TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsQuadGrazingBottomEdgeCellsMarked)
 {
   layer_->matchSize();
   layer_->setCorridorCost(200);
@@ -1137,7 +1227,7 @@ TEST_F(BoundedTrackingErrorLayerTest, DrawCorridorWalls_QuadGrazingBottomEdge_Ce
   EXPECT_EQ(costmap->getCost(mx, my), 200) << "Cell near bottom edge must be marked";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateCosts_Disabled_NoCostmapChanges)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsDisabledNoCostmapChanges)
 {
   layer_->matchSize();
   layer_->enabledRef() = false;
@@ -1163,7 +1253,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateCosts_Disabled_NoCostmapChanges)
     << "Disabled layer must not modify costmap";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateCosts_ZeroResolution_NoCostmapChanges)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsZeroResolutionNoCostmapChanges)
 {
   layer_->enabledRef() = true;
 
@@ -1186,7 +1276,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateCosts_ZeroResolution_NoCostmapChange
     << "Zero-resolution layer must not modify costmap";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateCosts_NoPath_NoCostmapChanges)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsNoPathNoCostmapChanges)
 {
   layer_->matchSize();
   layer_->enabledRef() = true;
@@ -1204,7 +1294,7 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateCosts_NoPath_NoCostmapChanges)
     << "No-path layer must not modify costmap";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, UpdateCosts_StalePath_NoCostmapChanges)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsStalePathNoCostmapChanges)
 {
   layer_->matchSize();
   layer_->enabledRef() = true;
@@ -1216,7 +1306,9 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateCosts_StalePath_NoCostmapChanges)
 
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
-  msg->header.stamp = node_->now() - rclcpp::Duration::from_seconds(10.0);
+  // Use 5.1 s — just over the 5.0 s staleness threshold — to test the boundary
+  // precisely rather than being trivially far from it.
+  msg->header.stamp = node_->now() - rclcpp::Duration::from_seconds(5.1);
   for (int i = 0; i < 30; ++i) {
     msg->poses.push_back(makePose(i * 0.1, 0.0));
                                                                              }
@@ -1240,6 +1332,281 @@ TEST_F(BoundedTrackingErrorLayerTest, UpdateCosts_StalePath_NoCostmapChanges)
   ASSERT_TRUE(costmap->worldToMap(1.5, 0.0, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE)
     << "After stale reset, second updateCosts must also be a no-op";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testSaveCorridorInteriorMarksInteriorCells)
+{
+  layer_->matchSize();
+  layer_->setStepSize(1);
+  layer_->setCorridorWidth(0.6);
+  layer_->setWallThickness(1);
+  layer_->setResolution(0.05);
+
+  auto * costmap = layers_->getCostmap();
+  auto segment = makeStraightPath(1.0, 2.5, 1, 0, 11, 0.1);
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
+  layer_->testGetWallPolygons(segment, walls);
+
+  layer_->testSaveCorridorInterior(*costmap, walls, /*accumulate=*/false);
+
+  // Centre of corridor must be in the index set
+  unsigned int cx, cy;
+  ASSERT_TRUE(costmap->worldToMap(1.5, 2.5, cx, cy));
+  const unsigned int flat = cy * costmap->getSizeInCellsX() + cx;
+  EXPECT_TRUE(layer_->isInterior(flat))
+    << "Centre cell must be recorded as interior";
+
+  // A cell clearly outside the corridor must not be in the set
+  unsigned int ox, oy;
+  ASSERT_TRUE(costmap->worldToMap(1.5, 4.0, ox, oy));
+  const unsigned int flat_out = oy * costmap->getSizeInCellsX() + ox;
+  EXPECT_FALSE(layer_->isInterior(flat_out))
+    << "Cell far outside corridor must not be interior";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testSaveCorridorInteriorAccumulateAddsToExisting)
+{
+  layer_->matchSize();
+  layer_->setStepSize(1);
+  layer_->setCorridorWidth(0.6);
+  layer_->setWallThickness(1);
+  layer_->setResolution(0.05);
+
+  auto * costmap = layers_->getCostmap();
+
+  // First segment: horizontal at y=2.5
+  auto seg1 = makeStraightPath(1.0, 2.5, 1, 0, 11, 0.1);
+  TestableBoundedTrackingErrorLayer::WallPolygons walls1;
+  layer_->testGetWallPolygons(seg1, walls1);
+  layer_->testSaveCorridorInterior(*costmap, walls1, /*accumulate=*/false);
+  // Probe a centre cell of the first segment to confirm it was recorded
+  unsigned int cx1, cy1;
+  ASSERT_TRUE(costmap->worldToMap(1.5, 2.5, cx1, cy1));
+  const unsigned int flat1 = cy1 * costmap->getSizeInCellsX() + cx1;
+  ASSERT_TRUE(layer_->isInterior(flat1));
+
+  // Second segment: horizontal at y=3.5 — disjoint from first
+  auto seg2 = makeStraightPath(1.0, 3.5, 1, 0, 11, 0.1);
+  TestableBoundedTrackingErrorLayer::WallPolygons walls2;
+  layer_->testGetWallPolygons(seg2, walls2);
+  layer_->testSaveCorridorInterior(*costmap, walls2, /*accumulate=*/true);
+
+  // Centre of second segment must now also be interior
+  unsigned int cx2, cy2;
+  ASSERT_TRUE(costmap->worldToMap(1.5, 3.5, cx2, cy2));
+  const unsigned int flat2 = cy2 * costmap->getSizeInCellsX() + cx2;
+  EXPECT_TRUE(layer_->isInterior(flat2))
+    << "Accumulate=true must add new interior cells to the existing set";
+
+  // Centre of first segment must still be interior
+  EXPECT_TRUE(layer_->isInterior(flat1))
+    << "Accumulate=true must preserve previously recorded interior cells";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testMarkCircleAsInteriorCellsWithinRadiusAdded)
+{
+  layer_->matchSize();
+
+  auto * costmap = layers_->getCostmap();
+
+  // Mark a circle of radius 3 cells at costmap centre cell (50, 50)
+  const int cx = 50, cy = 50;
+  const int r = 3;
+  layer_->testMarkCircleAsInterior(*costmap, cx, cy, r * r);
+
+  // All cells within radius must be in the set
+  for (int dy = -r; dy <= r; ++dy) {
+    for (int dx = -r; dx <= r; ++dx) {
+      if (dx * dx + dy * dy <= r * r) {
+        unsigned int flat = static_cast<unsigned int>(cy + dy) *
+          costmap->getSizeInCellsX() + static_cast<unsigned int>(cx + dx);
+        EXPECT_TRUE(layer_->isInterior(flat))
+          << "Cell (" << cx + dx << "," << cy + dy << ") must be interior";
+      }
+    }
+  }
+
+  // A cell just outside radius must not be in the set
+  unsigned int flat_out = static_cast<unsigned int>(cy + r + 1) *
+    costmap->getSizeInCellsX() + static_cast<unsigned int>(cx);
+  EXPECT_FALSE(layer_->isInterior(flat_out))
+    << "Cell just outside radius must not be interior";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testFillOutsideCorridorMarksNonInteriorCells)
+{
+  layer_->matchSize();
+  layer_->setCorridorCost(190);
+
+  auto * costmap = layers_->getCostmap();
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+
+  // Mark a small region as interior — only cell (50,50)
+  layer_->testMarkCircleAsInterior(*costmap, 50, 50, 0);
+
+  // Fill a small bbox around that cell
+  layer_->testFillOutsideCorridor(*costmap, 48, 48, 52, 52);
+
+  // The interior cell must remain free
+  EXPECT_EQ(costmap->getCost(50, 50), nav2_costmap_2d::FREE_SPACE)
+    << "Interior cell must not be marked";
+
+  // A cell in the bbox but not interior must be marked
+  EXPECT_EQ(costmap->getCost(48, 48), 190)
+    << "Non-interior cell in bbox must be marked with corridor_cost";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testFillOutsideCorridorPreservesHigherCost)
+{
+  layer_->matchSize();
+  layer_->setCorridorCost(190);
+
+  auto * costmap = layers_->getCostmap();
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+
+  // Pre-mark a cell with LETHAL_OBSTACLE
+  costmap->setCost(48, 48, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // No interior cells — everything in bbox is outside
+  layer_->testFillOutsideCorridor(*costmap, 47, 47, 52, 52);
+
+  EXPECT_EQ(costmap->getCost(48, 48), nav2_costmap_2d::LETHAL_OBSTACLE)
+    << "LETHAL_OBSTACLE must not be overwritten by fillOutsideCorridor";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsStaleIndexRecoveredSilently)
+{
+  layer_->matchSize();
+  layer_->enabledRef() = true;
+  layer_->setRobotBaseFrame("base_link");
+
+  auto * costmap = layers_->getCostmap();
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+
+  // Give a path with 10 poses then store an index beyond its size
+  auto msg = std::make_shared<nav_msgs::msg::Path>();
+  msg->header.frame_id = "map";
+  msg->header.stamp = node_->now();
+  for (int i = 0; i < 10; ++i) {
+    msg->poses.push_back(makePose(i * 0.1, 0.0));
+  }
+  layer_->testPathCallback(msg);
+  layer_->pathIndexRef().store(999);
+
+  // updateCosts must not crash and must silently reset the index to 0
+  ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
+  EXPECT_EQ(layer_->pathIndexRef().load(), 0u)
+    << "Out-of-range path index must be silently reset to 0";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsSegmentTooSmallNoCostmapChanges)
+{
+  layer_->matchSize();
+  layer_->enabledRef() = true;
+  layer_->setRobotBaseFrame("base_link");
+  // step_size=5 => min_poses = (5*2)+1 = 11. A 5-pose path is too small.
+  layer_->setStepSize(5);
+  layer_->setResolution(0.05);
+
+  auto * costmap = layers_->getCostmap();
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+
+  auto msg = std::make_shared<nav_msgs::msg::Path>();
+  msg->header.frame_id = "map";
+  msg->header.stamp = node_->now();
+  for (int i = 0; i < 5; ++i) {
+    msg->poses.push_back(makePose(i * 0.1, 0.0));
+  }
+  layer_->testPathCallback(msg);
+
+  layer_->updateCosts(*costmap, 0, 0, 100, 100);
+
+  // Costmap must be untouched — segment was too small to form a wall
+  bool found_marked = false;
+  for (unsigned int y = 0; y < costmap->getSizeInCellsY() && !found_marked; ++y) {
+    for (unsigned int x = 0; x < costmap->getSizeInCellsX(); ++x) {
+      if (costmap->getCost(x, y) != nav2_costmap_2d::FREE_SPACE) {
+        found_marked = true; break;
+      }
+    }
+  }
+  EXPECT_FALSE(found_marked) << "Too-small segment must not mark any cells";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFreshPathMarksWalls)
+{
+  // Path at 4.9 s old — just under the 5.0 s staleness threshold.
+  // updateCosts must proceed and mark corridor walls.
+  layer_->matchSize();
+  layer_->enabledRef() = true;
+  layer_->setRobotBaseFrame("base_link");
+  layer_->setStepSize(1);
+  layer_->setCorridorWidth(0.5);
+  layer_->setWallThickness(2);
+  layer_->setCorridorCost(190);
+
+  auto * costmap = layers_->getCostmap();
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+
+  auto msg = std::make_shared<nav_msgs::msg::Path>();
+  msg->header.frame_id = "map";
+  msg->header.stamp = node_->now() - rclcpp::Duration::from_seconds(4.9);
+  for (int i = 0; i < 30; ++i) {
+    msg->poses.push_back(makePose(i * 0.1, 2.5));
+  }
+  layer_->testPathCallback(msg);
+
+  layer_->updateCosts(*costmap, 0, 0, 100, 100);
+
+  // Left wall should be marked at y = 2.5 + corridor_width/2 = 2.75
+  unsigned int mx, my;
+  ASSERT_TRUE(costmap->worldToMap(1.5, 2.80, mx, my));
+  EXPECT_EQ(costmap->getCost(mx, my), 190)
+    << "Path just under staleness threshold must draw corridor walls";
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillOutsideCorridorRobotCellAlwaysInterior)
+{
+  layer_->matchSize();
+  layer_->enabledRef() = true;
+  layer_->setRobotBaseFrame("base_link");
+  layer_->setFillOutsideCorridor(true);
+  layer_->setStepSize(1);
+  layer_->setCorridorWidth(0.5);
+  layer_->setWallThickness(1);
+  layer_->setCorridorCost(190);
+
+  auto * costmap = layers_->getCostmap();
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+
+  // Path runs far from robot (robot is at origin via TF fixture)
+  auto msg = std::make_shared<nav_msgs::msg::Path>();
+  msg->header.frame_id = "map";
+  msg->header.stamp = node_->now();
+  for (int i = 0; i < 40; ++i) {
+    msg->poses.push_back(makePose(i * 0.1, 3.0));
+  }
+  layer_->testPathCallback(msg);
+
+  layer_->updateCosts(*costmap, 0, 0, 100, 100);
+
+  // Robot cell (at origin) must never be marked even though it's off the path
+  unsigned int rx, ry;
+  ASSERT_TRUE(costmap->worldToMap(0.0, 0.0, rx, ry));
+  EXPECT_EQ(costmap->getCost(rx, ry), nav2_costmap_2d::FREE_SPACE)
+    << "Robot cell must always remain free regardless of corridor position";
 }
 
 int main(int argc, char ** argv)

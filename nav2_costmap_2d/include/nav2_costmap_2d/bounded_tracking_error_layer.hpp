@@ -123,13 +123,6 @@ public:
   void matchSize() override;
 
 protected:
-  /** @brief A 2D costmap cell coordinate. */
-  struct CellPoint
-  {
-    int x;
-    int y;
-  };
-
   /** @brief Wall polygon components for left and right corridor boundaries. */
   struct WallPolygons
   {
@@ -153,6 +146,13 @@ protected:
       right_inner.reserve(capacity);
       right_outer.reserve(capacity);
     }
+  };
+
+  /** @brief A 2D costmap cell coordinate. */
+  struct CellPoint
+  {
+    int x;
+    int y;
   };
 
   /**
@@ -302,6 +302,8 @@ protected:
   std::string costmap_frame_;
   std::string robot_base_frame_;
 
+  std::unordered_set<unsigned int> corridor_index_set_;
+
 private:
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
@@ -315,7 +317,6 @@ private:
   WallPolygons walls_buffer_;
   std::vector<int> span_x_min_buffer_;
   std::vector<int> span_x_max_buffer_;
-  std::unordered_set<unsigned int> corridor_index_set_;
 };
 
 }  // namespace nav2_costmap_2d
