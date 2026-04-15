@@ -49,7 +49,7 @@ void Optimizer::initialize(
   getParams();
 
   critic_manager_.on_configure(parent_, name_, costmap_ros_, parameters_handler_);
-  noise_generator_.initialize(node, name_, parameters_handler_);
+  noise_generator_.initialize(settings_, isHolonomic(), name_, parameters_handler_);
 
   // This may throw an exception if not valid and fail initialization
   nav2::declare_parameter_if_not_declared(
@@ -530,7 +530,7 @@ void Optimizer::updateControlSequence()
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
 
-  const float & wz_std_adaptive = noise_generator_.getWzStdAdaptive();
+  const float wz_std_adaptive = noise_generator_.getWzStdAdaptive();
   if (wz_std_adaptive > 0.0f) {
     auto wz_T = control_sequence_.wz.transpose();
     auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
