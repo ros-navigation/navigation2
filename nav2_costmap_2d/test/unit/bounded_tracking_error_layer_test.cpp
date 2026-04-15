@@ -154,6 +154,7 @@ public:
   unsigned char getCorridorCost() const {return corridor_cost_;}
   double getResolution() const {return resolution_;}
   const std::string & getCostmapFrame() const {return costmap_frame_;}
+  bool getFillOutsideCorridor() const {return fill_outside_corridor_;}
 };
 
 static geometry_msgs::msg::PoseStamped makePose(
@@ -1521,6 +1522,152 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillOutsideCorridorRobotCel
   ASSERT_TRUE(costmap->worldToMap(0.0, 0.0, rx, ry));
   EXPECT_EQ(costmap->getCost(rx, ry), nav2_costmap_2d::FREE_SPACE)
     << "Robot cell must always remain free regardless of corridor position";
+}
+
+// 1. resolution_ <= 0 causes updateCosts to return immediately without touching costmap
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsZeroResolutionEarlyReturn)
+{
+  // Do NOT call matchSize() — resolution_ stays at 0.0
+  layer_->enabledRef() = true;
+  layer_->setRobotBaseFrame("base_link");
+  layer_->setResolution(0.0);
+
+  auto * costmap = layers_->getCostmap();
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+
+  auto msg = std::make_shared<nav_msgs::msg::Path>();
+  msg->header.frame_id = "map";
+  msg->header.stamp = node_->now();
+  for (int i = 0; i < 30; ++i) {
+    msg->poses.push_back(makePose(i * 0.1, 2.5));
+  }
+  layer_->testPathCallback(msg);
+
+  ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
+
+  // Nothing should be marked — early return before any work is done
+  bool found_marked = false;
+  for (unsigned int y = 0; y < costmap->getSizeInCellsY() && !found_marked; ++y) {
+    for (unsigned int x = 0; x < costmap->getSizeInCellsX(); ++x) {
+      if (costmap->getCost(x, y) != nav2_costmap_2d::FREE_SPACE) {
+        found_marked = true;
+        break;
+      }
+    }
+  }
+  EXPECT_FALSE(found_marked) << "Zero resolution must prevent any costmap writes";
+}
+
+// 2. fill_outside_corridor=true with path through the fill bbox — flush_segment fires
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillBranchFlushSegmentFires)
+{
+  layer_->matchSize();
+  layer_->enabledRef() = true;
+  layer_->setRobotBaseFrame("base_link");
+  layer_->setFillOutsideCorridor(true);
+  layer_->setStepSize(1);
+  layer_->setCorridorWidth(0.5);
+  layer_->setWallThickness(1);
+  layer_->setCorridorCost(190);
+  layer_->setLookAhead(2.5);
+
+  auto * costmap = layers_->getCostmap();
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+
+  // Path runs through the middle of the costmap (y=2.5) so both corridor sides
+  // (y=2.5±0.25) are well within map bounds. Robot is at origin via TF fixture.
+  auto msg = std::make_shared<nav_msgs::msg::Path>();
+  msg->header.frame_id = "map";
+  msg->header.stamp = node_->now();
+  for (int i = 0; i < 60; ++i) {
+    msg->poses.push_back(makePose(i * 0.05, 2.5));
+  }
+  layer_->testPathCallback(msg);
+
+  ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
+
+  // Cells well off the path (far in y from path) inside the fill bbox must be penalised
+  unsigned int mx, my;
+  ASSERT_TRUE(costmap->worldToMap(0.5, 0.5, mx, my));
+  EXPECT_EQ(costmap->getCost(mx, my), 190)
+    << "Cells outside corridor but inside fill bbox must be elevated to corridor_cost";
+
+  // A cell clearly between the inner walls (y=2.5, within inner_offset=0.25m of spine)
+  // must NOT be penalised — it is saved as interior by saveCorridorInterior
+  ASSERT_TRUE(costmap->worldToMap(0.5, 2.5, mx, my));
+  EXPECT_NE(costmap->getCost(mx, my), 190)
+    << "Cell inside corridor interior must not be penalised by fill";
+}
+
+// 3. getWallPolygons skips degenerate step but still emits points for valid steps
+TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsMixedDegenerateAndValidSteps)
+{
+  layer_->matchSize();
+  layer_->setStepSize(1);
+  layer_->setCorridorWidth(0.5);
+  layer_->setWallThickness(1);
+  // resolution = 0.05 from matchSize; identical poses produce norm=0 < resolution → skipped
+  nav_msgs::msg::Path segment;
+  segment.header.frame_id = "map";
+  // Step 0→1: identical poses → norm = 0, must be skipped
+  segment.poses.push_back(makePose(1.0, 1.0));
+  segment.poses.push_back(makePose(1.0, 1.0));
+  // Step 1→2 (current=1, next clamped to 2): valid, norm > resolution, must be emitted
+  segment.poses.push_back(makePose(1.5, 1.0));
+
+  TestableBoundedTrackingErrorLayer::WallPolygons walls;
+  layer_->testGetWallPolygons(segment, walls);
+
+  // The degenerate first step is skipped; the valid step must still produce a point
+  EXPECT_GE(walls.left_inner.size(), 1u)
+    << "Valid steps must produce wall points even when earlier steps are degenerate";
+  EXPECT_EQ(walls.left_inner.size(), walls.right_inner.size());
+  EXPECT_EQ(walls.left_outer.size(), walls.right_outer.size());
+}
+
+// 4a. updateParametersCallback covers fill_outside_corridor bool param
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsFillOutsideCorridor)
+{
+  layer_->activate();
+  layer_->setFillOutsideCorridor(false);
+  layer_->currentRef() = true;
+  layer_->testUpdateParams({rclcpp::Parameter("bte_layer.fill_outside_corridor", true)});
+  EXPECT_TRUE(layer_->getFillOutsideCorridor())
+    << "fill_outside_corridor must be updated to true";
+  EXPECT_FALSE(layer_->currentRef())
+    << "current_ must be reset when fill_outside_corridor changes";
+}
+
+// 4b. Same-value integer params must not reset current_
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsSameValueIntegersNoCurrentReset)
+{
+  layer_->activate();
+
+  // corridor_cost same value
+  layer_->currentRef() = true;
+  layer_->testUpdateParams(
+    {rclcpp::Parameter("bte_layer.corridor_cost",
+    static_cast<int>(layer_->getCorridorCost()))});
+  EXPECT_TRUE(layer_->currentRef())
+    << "Same corridor_cost must not reset current_";
+
+  // wall_thickness same value
+  layer_->currentRef() = true;
+  layer_->testUpdateParams(
+    {rclcpp::Parameter("bte_layer.wall_thickness", layer_->getWallThickness())});
+  EXPECT_TRUE(layer_->currentRef())
+    << "Same wall_thickness must not reset current_";
+
+  // step same value
+  layer_->currentRef() = true;
+  layer_->testUpdateParams(
+    {rclcpp::Parameter("bte_layer.step", static_cast<int>(layer_->getStepSize()))});
+  EXPECT_TRUE(layer_->currentRef())
+    << "Same step must not reset current_";
 }
 
 int main(int argc, char ** argv)

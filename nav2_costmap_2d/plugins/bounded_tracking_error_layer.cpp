@@ -278,11 +278,22 @@ BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
-  getWallPolygons(segment_buffer_, walls_buffer_);
-
   if (fill_outside_corridor_) {
-    int fill_min_i, fill_min_j, fill_max_i, fill_max_j;
-    getFillArea(master_grid, robot_pose, fill_min_i, fill_min_j, fill_max_i, fill_max_j);
+    const double fill_radius = look_ahead_ + corridor_width_ * 0.5 + wall_thickness_ * resolution_;
+    const double rx = robot_pose.pose.position.x;
+    const double ry = robot_pose.pose.position.y;
+
+    int cell_min_x, cell_min_y, cell_max_x, cell_max_y;
+    master_grid.worldToMapEnforceBounds(rx - fill_radius, ry - fill_radius, cell_min_x, cell_min_y);
+    master_grid.worldToMapEnforceBounds(rx + fill_radius, ry + fill_radius, cell_max_x, cell_max_y);
+
+    const unsigned int fill_size_x = master_grid.getSizeInCellsX();
+    const unsigned int fill_size_y = master_grid.getSizeInCellsY();
+
+    int fill_min_i = std::max(cell_min_x, 0);
+    int fill_min_j = std::max(cell_min_y, 0);
+    int fill_max_i = std::min(cell_max_x, static_cast<int>(fill_size_x) - 1);
+    int fill_max_j = std::min(cell_max_y, static_cast<int>(fill_size_y) - 1);
 
     // Squared radius avoids a sqrt per cell in markCircleAsInterior.
     const double r_cells = (corridor_width_ * 0.5) / resolution_;
@@ -347,32 +358,10 @@ BoundedTrackingErrorLayer::updateCosts(
 
     fillOutsideCorridor(master_grid, fill_min_i, fill_min_j, fill_max_i, fill_max_j);
   } else {
+    getWallPolygons(segment_buffer_, walls_buffer_);
     drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
     drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
   }
-}
-
-void
-BoundedTrackingErrorLayer::getFillArea(
-  nav2_costmap_2d::Costmap2D & master_grid,
-  const geometry_msgs::msg::PoseStamped & robot_pose,
-  int & fill_min_i, int & fill_min_j, int & fill_max_i, int & fill_max_j)
-{
-  const double radius = look_ahead_ + corridor_width_ * 0.5 + wall_thickness_ * resolution_;
-  const double rx = robot_pose.pose.position.x;
-  const double ry = robot_pose.pose.position.y;
-
-  int cell_min_x, cell_min_y, cell_max_x, cell_max_y;
-  master_grid.worldToMapEnforceBounds(rx - radius, ry - radius, cell_min_x, cell_min_y);
-  master_grid.worldToMapEnforceBounds(rx + radius, ry + radius, cell_max_x, cell_max_y);
-
-  const unsigned int size_x = master_grid.getSizeInCellsX();
-  const unsigned int size_y = master_grid.getSizeInCellsY();
-
-  fill_min_i = std::max(cell_min_x, 0);
-  fill_min_j = std::max(cell_min_y, 0);
-  fill_max_i = std::min(cell_max_x, static_cast<int>(size_x) - 1);
-  fill_max_j = std::min(cell_max_y, static_cast<int>(size_y) - 1);
 }
 
 void

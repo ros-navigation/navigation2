@@ -335,12 +335,12 @@ global_costmap:
         plugin: "nav2_costmap_2d::BoundedTrackingErrorLayer"
         enabled: true
         path_topic: "/plan"
-        look_ahead: 1.2
+        look_ahead: 10.0
         step: 5
         corridor_width: 2.0
         corridor_cost: 190
-        wall_thickness: 2
-        fill_outside_corridor: false
+        wall_thickness: 4
+        fill_outside_corridor: true
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
