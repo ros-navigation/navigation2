@@ -431,16 +431,21 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   // always_reload_bt_ can tell whether any XML actually changed.
   if (always_reload_bt_) {
     bt_xml_mtimes_.clear();
-    // Track the main file when it is specified as a path (not an ID)
-    if (!is_bt_id) {
-      bt_xml_mtimes_[file_or_id] = fs::last_write_time(file_or_id);
-    }
-    for (const auto & directory : search_directories_) {
-      for (const auto & entry : fs::directory_iterator(directory)) {
-        if (entry.path().extension() == ".xml") {
-          bt_xml_mtimes_[entry.path().string()] = fs::last_write_time(entry.path());
+    try {
+      if (!is_bt_id && fs::exists(file_or_id)) {
+        bt_xml_mtimes_[file_or_id] = fs::last_write_time(file_or_id);
+      }
+      for (const auto & directory : search_directories_) {
+        if (fs::exists(directory) && fs::is_directory(directory)) {
+          for (const auto & entry : fs::directory_iterator(directory)) {
+            if (entry.path().extension() == ".xml") {
+              bt_xml_mtimes_[entry.path().string()] = fs::last_write_time(entry.path());
+            }
+          }
         }
       }
+    } catch (const std::filesystem::filesystem_error & e) {
+      RCLCPP_WARN(logger_, "Failed to snapshot BT XML mtimes: %s", e.what());
     }
   }
 
