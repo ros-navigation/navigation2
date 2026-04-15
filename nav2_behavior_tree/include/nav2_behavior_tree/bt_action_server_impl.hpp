@@ -253,6 +253,41 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     return true;
   }
 
+  // When always_reload_bt_ is true and the same BT is requested, only perform
+  // the expensive full reload if at least one XML file on disk actually changed.
+  // Recreating the behaviour-tree (and its ROS action-client / pub-sub
+  // resources) on every goal otherwise causes unbounded memory growth in both
+  // the BT factory's internal XML parser and the ROS / DDS middleware layer.
+  if (always_reload_bt_ && current_bt_file_or_id_ == file_or_id) {
+    bool any_changed = false;
+    try {
+      for (const auto & [path, old_mtime] : bt_xml_mtimes_) {
+        if (fs::last_write_time(path) != old_mtime) {
+          any_changed = true;
+          break;
+        }
+      }
+    } catch (const std::filesystem::filesystem_error &) {
+      any_changed = true;  // file vanished or became inaccessible; force reload
+    }
+    if (!any_changed) {
+      RCLCPP_DEBUG(logger_, "BT XML files unchanged on disk, skipping reload");
+      return true;
+    }
+    RCLCPP_INFO(logger_, "BT XML file(s) modified on disk, reloading tree");
+  }
+
+  // When reloading an already-loaded BT, clean up all resources before
+  // re-registering.  The BT factory's internal XML parser appends a new
+  // XMLDocument on each registerBehaviorTreeFromFile() call; clearing the
+  // parser state here keeps that list bounded and prevents a secondary leak.
+  if (!current_bt_file_or_id_.empty()) {
+    topic_logger_.reset();
+    bt_->haltAllActions(tree_);
+    tree_ = BT::Tree{};
+    bt_->clearRegisteredBehaviorTrees();
+  }
+
   // Reset any existing Groot2 monitoring
   bt_->resetGrootMonitor();
 
@@ -391,6 +426,23 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     RCLCPP_DEBUG(
       logger_, "Enabling Groot2 monitoring for %s: %d",
       action_name_.c_str(), groot_server_port_);
+  }
+
+  // Snapshot file modification times so that the next call with
+  // always_reload_bt_ can tell whether any XML actually changed.
+  if (always_reload_bt_) {
+    bt_xml_mtimes_.clear();
+    // Track the main file when it is specified as a path (not an ID)
+    if (!is_bt_id) {
+      bt_xml_mtimes_[file_or_id] = fs::last_write_time(file_or_id);
+    }
+    for (const auto & directory : search_directories_) {
+      for (const auto & entry : fs::directory_iterator(directory)) {
+        if (entry.path().extension() == ".xml") {
+          bt_xml_mtimes_[entry.path().string()] = fs::last_write_time(entry.path());
+        }
+      }
+    }
   }
 
   return true;
