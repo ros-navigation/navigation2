@@ -28,8 +28,6 @@
 
 using namespace mppi;  // NOLINT
 
-static constexpr double EPSILON = std::numeric_limits<float>::epsilon();
-
 TEST(NoiseGeneratorTest, NoiseGeneratorLifecycle)
 {
   // Tests shuts down internal thread cleanly
@@ -73,7 +71,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   }
 
   mppi::models::State state;
-  state.reset(settings.batch_size, settings.time_steps, settings.sampling_std.wz);
+  state.reset(settings.batch_size, settings.time_steps);
 
   // Request an update with no noise yet generated, should result in identical outputs
   generator.initialize(settings, false, "test_name", &handler);
@@ -102,7 +100,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
 
   // Request an update with noise requested
-  generator.generateNextNoises(state);
+  generator.generateNextNoises();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
 
@@ -117,7 +115,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
 
   // Test holonomic setting
   generator.reset(settings, true);  // Now holonomically
-  generator.generateNextNoises(state);
+  generator.generateNextNoises();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
   EXPECT_NE(state.cvx(0), 0);
@@ -162,7 +160,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
   }
 
   mppi::models::State state;
-  state.reset(settings.batch_size, settings.time_steps, settings.sampling_std.wz);
+  state.reset(settings.batch_size, settings.time_steps);
 
   // Request an update with no noise yet generated, should result in identical outputs
   generator.initialize(settings, false, "test_name", &handler);
@@ -191,7 +189,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
   EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
 
   // this doesn't work if regenerate_noises is false
-  generator.generateNextNoises(state);
+  generator.generateNextNoises();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
 
