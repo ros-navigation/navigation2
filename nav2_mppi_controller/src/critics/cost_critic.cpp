@@ -210,12 +210,12 @@ void CostCritic::score(CriticData & data)
 
 #ifdef _OPENMP
   #pragma omp parallel for \
-    default(none) \
-    shared(repulsive_cost, costmap, near_goal, footprint, \
-      strided_traj_rows, strided_traj_cols, traj_x, traj_y, traj_yaw) \
-    reduction(&&:all_trajectories_collide) \
-    schedule(dynamic) \
-    num_threads(getOptimalThreadCount())
+  default(none) \
+  shared(repulsive_cost, costmap, near_goal, footprint, \
+  strided_traj_rows, strided_traj_cols, traj_x, traj_y, traj_yaw) \
+  reduction(&&:all_trajectories_collide) \
+  schedule(dynamic) \
+  num_threads(getOptimalThreadCount())
 #endif
   for (int i = 0; i < strided_traj_rows; ++i) {
     bool trajectory_collide = false;
@@ -224,7 +224,7 @@ void CostCritic::score(CriticData & data)
 
     // iterate over the trajectory backwards, as collisions are more likely towards the end of
     // the trajectory
-    for (int j = strided_traj_cols - 1; j >=0; j--) {
+    for (int j = strided_traj_cols - 1; j >= 0; j--) {
       float Tx = traj_x(i, j);
       float Ty = traj_y(i, j);
       unsigned int x_i = 0u, y_i = 0u;

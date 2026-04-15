@@ -60,12 +60,14 @@ protected:
     * @param theta theta of pose
     * @return bool if in collision
     */
-  inline bool inCollision(float cost, float x, float y, float theta,
+  inline bool inCollision(
+    float cost, float x, float y, float theta,
     const nav2_costmap_2d::Footprint & footprint)
   {
     // if the center cost guarantees a collision, return before doing an expensive footprint check
     if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-      cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+      cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+    {
       return true;
     }
 
