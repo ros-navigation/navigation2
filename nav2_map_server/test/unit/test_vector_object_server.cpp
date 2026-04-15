@@ -98,7 +98,6 @@ public:
     VectorObjectServer::putVectorObjectsOnMap();
   }
 
-  // AI-generated contribution marker:
   bool hasTfListener() const
   {
     return static_cast<bool>(tf_listener_);

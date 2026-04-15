@@ -41,7 +41,6 @@ nav2::CallbackReturn
 VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
-  // AI-generated contribution marker:
   // Obtaining ROS parameters
   if (!obtainParams()) {
     return nav2::CallbackReturn::FAILURE;

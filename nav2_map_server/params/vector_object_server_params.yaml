@@ -2,7 +2,6 @@ vector_object_server:
   ros__parameters:
     map_topic: "vo_map"
     global_frame_id: "map"
-    fixed_frame_id: ""
     resolution: 0.05
     default_value: -1
     overlay_type: 0
