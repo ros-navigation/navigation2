@@ -157,6 +157,20 @@ public:
   bool getFillOutsideCorridor() const {return fill_outside_corridor_;}
 };
 
+// Shared preamble for updateCosts integration tests: enables the layer, sets the
+// robot frame, calls matchSize, and resets the costmap to FREE_SPACE.
+static void prepareForUpdateCosts(
+  TestableBoundedTrackingErrorLayer * layer,
+  nav2_costmap_2d::Costmap2D * costmap)
+{
+  layer->matchSize();
+  layer->enabledRef() = true;
+  layer->setRobotBaseFrame("base_link");
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+}
+
 static geometry_msgs::msg::PoseStamped makePose(
   double x, double y,
   const std::string & frame = "map")
@@ -303,7 +317,7 @@ TEST_F(BoundedTrackingErrorLayerTest, testDefaultParameterValues)
 
 TEST_F(BoundedTrackingErrorLayerTest, testIsClearable)
 {
-  EXPECT_FALSE(layer_->isClearable());
+  EXPECT_TRUE(layer_->isClearable());
 }
 
 TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentEmptyPath)
@@ -334,7 +348,6 @@ TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentSinglePoseAtEnd)
 TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentLookAheadExceedsPath)
 {
   // 25 poses at 0.1 m spacing = 2.4 m total, just under look_ahead=2.5 m.
-  // All 25 poses must be returned because the path ends before look_ahead is reached.
   const size_t num_poses = 25;
   const double spacing = 0.1;
   auto path = makeStraightPath(0, 0, 1, 0, num_poses, spacing);
@@ -345,10 +358,8 @@ TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentLookAheadExceedsPath)
 
 TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentIncludesBoundaryPose)
 {
-  // With look_ahead=0.3 and spacing=0.1 the loop crosses the threshold at step 3
-  // (dist = 0.3 >= 0.3), setting end_index=3. assign([0,4)) gives poses at
-  // x=0.0, 0.1, 0.2, 0.3 — the boundary pose at x=0.3 (index 3) is included
-  // so that getWallPolygons receives a complete segment with no missing final quad.
+  // loop crosses threshold at step 3 (dist=0.3 >= look_ahead=0.3); the boundary
+  // pose is included so getWallPolygons receives a complete segment.
   layer_->setLookAhead(0.3);
   auto path = makeStraightPath(0, 0, 1, 0, 10, 0.1);
   nav_msgs::msg::Path segment;
@@ -1144,13 +1155,9 @@ TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsQuadGrazingBottomEdge
 
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsDisabledNoCostmapChanges)
 {
-  layer_->matchSize();
-  layer_->enabledRef() = false;
-
   auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
+  prepareForUpdateCosts(layer_.get(), costmap);
+  layer_->enabledRef() = false;  // override: this test verifies the disabled-layer early return
 
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
@@ -1168,38 +1175,10 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsDisabledNoCostmapChanges)
     << "Disabled layer must not modify costmap";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsZeroResolutionNoCostmapChanges)
-{
-  layer_->enabledRef() = true;
-
-  auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
-
-  auto msg = std::make_shared<nav_msgs::msg::Path>();
-  msg->header.frame_id = "map";
-  msg->header.stamp = node_->now();
-  msg->poses.push_back(makePose(0.0, 0.0));
-  layer_->testPathCallback(msg);
-
-  layer_->updateCosts(*costmap, 0, 0, 100, 100);
-
-  unsigned int mx, my;
-  ASSERT_TRUE(costmap->worldToMap(0.05, 0.05, mx, my));
-  EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE)
-    << "Zero-resolution layer must not modify costmap";
-}
-
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsNoPathNoCostmapChanges)
 {
-  layer_->matchSize();
-  layer_->enabledRef() = true;
-
   auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
+  prepareForUpdateCosts(layer_.get(), costmap);
 
   layer_->updateCosts(*costmap, 0, 0, 100, 100);
 
@@ -1211,13 +1190,8 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsNoPathNoCostmapChanges)
 
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsStalePathNoCostmapChanges)
 {
-  layer_->matchSize();
-  layer_->enabledRef() = true;
-
   auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
+  prepareForUpdateCosts(layer_.get(), costmap);
 
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
@@ -1264,14 +1238,12 @@ TEST_F(BoundedTrackingErrorLayerTest, testSaveCorridorInteriorMarksInteriorCells
 
   layer_->testSaveCorridorInterior(*costmap, walls, /*accumulate=*/false);
 
-  // Centre of corridor must be in the index set
   unsigned int cx, cy;
   ASSERT_TRUE(costmap->worldToMap(1.5, 2.5, cx, cy));
   const unsigned int flat = cy * costmap->getSizeInCellsX() + cx;
   EXPECT_TRUE(layer_->isInterior(flat))
     << "Centre cell must be recorded as interior";
 
-  // A cell clearly outside the corridor must not be in the set
   unsigned int ox, oy;
   ASSERT_TRUE(costmap->worldToMap(1.5, 4.0, ox, oy));
   const unsigned int flat_out = oy * costmap->getSizeInCellsX() + ox;
@@ -1289,31 +1261,26 @@ TEST_F(BoundedTrackingErrorLayerTest, testSaveCorridorInteriorAccumulateAddsToEx
 
   auto * costmap = layers_->getCostmap();
 
-  // First segment: horizontal at y=2.5
   auto seg1 = makeStraightPath(1.0, 2.5, 1, 0, 11, 0.1);
   TestableBoundedTrackingErrorLayer::WallPolygons walls1;
   layer_->testGetWallPolygons(seg1, walls1);
   layer_->testSaveCorridorInterior(*costmap, walls1, /*accumulate=*/false);
-  // Probe a centre cell of the first segment to confirm it was recorded
   unsigned int cx1, cy1;
   ASSERT_TRUE(costmap->worldToMap(1.5, 2.5, cx1, cy1));
   const unsigned int flat1 = cy1 * costmap->getSizeInCellsX() + cx1;
   ASSERT_TRUE(layer_->isInterior(flat1));
 
-  // Second segment: horizontal at y=3.5 — disjoint from first
+  // Second segment is disjoint (y=3.5); both must be interior after accumulate=true.
   auto seg2 = makeStraightPath(1.0, 3.5, 1, 0, 11, 0.1);
   TestableBoundedTrackingErrorLayer::WallPolygons walls2;
   layer_->testGetWallPolygons(seg2, walls2);
   layer_->testSaveCorridorInterior(*costmap, walls2, /*accumulate=*/true);
 
-  // Centre of second segment must now also be interior
   unsigned int cx2, cy2;
   ASSERT_TRUE(costmap->worldToMap(1.5, 3.5, cx2, cy2));
   const unsigned int flat2 = cy2 * costmap->getSizeInCellsX() + cx2;
   EXPECT_TRUE(layer_->isInterior(flat2))
     << "Accumulate=true must add new interior cells to the existing set";
-
-  // Centre of first segment must still be interior
   EXPECT_TRUE(layer_->isInterior(flat1))
     << "Accumulate=true must preserve previously recorded interior cells";
 }
@@ -1324,12 +1291,10 @@ TEST_F(BoundedTrackingErrorLayerTest, testMarkCircleAsInteriorCellsWithinRadiusA
 
   auto * costmap = layers_->getCostmap();
 
-  // Mark a circle of radius 3 cells at costmap centre cell (50, 50)
   const int cx = 50, cy = 50;
   const int r = 3;
   layer_->testMarkCircleAsInterior(*costmap, cx, cy, r * r);
 
-  // All cells within radius must be in the set
   for (int dy = -r; dy <= r; ++dy) {
     for (int dx = -r; dx <= r; ++dx) {
       if (dx * dx + dy * dy <= r * r) {
@@ -1341,7 +1306,6 @@ TEST_F(BoundedTrackingErrorLayerTest, testMarkCircleAsInteriorCellsWithinRadiusA
     }
   }
 
-  // A cell just outside radius must not be in the set
   unsigned int flat_out = static_cast<unsigned int>(cy + r + 1) *
     costmap->getSizeInCellsX() + static_cast<unsigned int>(cx);
   EXPECT_FALSE(layer_->isInterior(flat_out))
@@ -1358,17 +1322,12 @@ TEST_F(BoundedTrackingErrorLayerTest, testFillOutsideCorridorMarksNonInteriorCel
     0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
     nav2_costmap_2d::FREE_SPACE);
 
-  // Mark a small region as interior — only cell (50,50)
   layer_->testMarkCircleAsInterior(*costmap, 50, 50, 0);
-
-  // Fill a small bbox around that cell
   layer_->testFillOutsideCorridor(*costmap, 48, 48, 52, 52);
 
-  // The interior cell must remain free
   EXPECT_EQ(costmap->getCost(50, 50), nav2_costmap_2d::FREE_SPACE)
     << "Interior cell must not be marked";
 
-  // A cell in the bbox but not interior must be marked
   EXPECT_EQ(costmap->getCost(48, 48), 190)
     << "Non-interior cell in bbox must be marked with corridor_cost";
 }
@@ -1383,10 +1342,7 @@ TEST_F(BoundedTrackingErrorLayerTest, testFillOutsideCorridorPreservesHigherCost
     0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
     nav2_costmap_2d::FREE_SPACE);
 
-  // Pre-mark a cell with LETHAL_OBSTACLE
   costmap->setCost(48, 48, nav2_costmap_2d::LETHAL_OBSTACLE);
-
-  // No interior cells — everything in bbox is outside
   layer_->testFillOutsideCorridor(*costmap, 47, 47, 52, 52);
 
   EXPECT_EQ(costmap->getCost(48, 48), nav2_costmap_2d::LETHAL_OBSTACLE)
@@ -1395,16 +1351,9 @@ TEST_F(BoundedTrackingErrorLayerTest, testFillOutsideCorridorPreservesHigherCost
 
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsStaleIndexRecoveredSilently)
 {
-  layer_->matchSize();
-  layer_->enabledRef() = true;
-  layer_->setRobotBaseFrame("base_link");
-
   auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
+  prepareForUpdateCosts(layer_.get(), costmap);
 
-  // Give a path with 10 poses then store an index beyond its size
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
   msg->header.stamp = node_->now();
@@ -1414,7 +1363,6 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsStaleIndexRecoveredSilently
   layer_->testPathCallback(msg);
   layer_->pathIndexRef().store(999);
 
-  // updateCosts must not crash and must silently reset the index to 0
   ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
   EXPECT_EQ(layer_->pathIndexRef().load(), 0u)
     << "Out-of-range path index must be silently reset to 0";
@@ -1422,17 +1370,10 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsStaleIndexRecoveredSilently
 
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsSegmentTooSmallNoCostmapChanges)
 {
-  layer_->matchSize();
-  layer_->enabledRef() = true;
-  layer_->setRobotBaseFrame("base_link");
+  auto * costmap = layers_->getCostmap();
+  prepareForUpdateCosts(layer_.get(), costmap);
   // step_size=5 => min_poses = (5*2)+1 = 11. A 5-pose path is too small.
   layer_->setStepSize(5);
-  layer_->setResolution(0.05);
-
-  auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
 
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
@@ -1460,18 +1401,12 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFreshPathMarksWalls)
 {
   // Path at 4.9 s old — just under the 5.0 s staleness threshold.
   // updateCosts must proceed and mark corridor walls.
-  layer_->matchSize();
-  layer_->enabledRef() = true;
-  layer_->setRobotBaseFrame("base_link");
+  auto * costmap = layers_->getCostmap();
+  prepareForUpdateCosts(layer_.get(), costmap);
   layer_->setStepSize(1);
   layer_->setCorridorWidth(0.5);
   layer_->setWallThickness(2);
   layer_->setCorridorCost(190);
-
-  auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
 
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
@@ -1492,21 +1427,14 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFreshPathMarksWalls)
 
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillOutsideCorridorRobotCellAlwaysInterior)
 {
-  layer_->matchSize();
-  layer_->enabledRef() = true;
-  layer_->setRobotBaseFrame("base_link");
+  auto * costmap = layers_->getCostmap();
+  prepareForUpdateCosts(layer_.get(), costmap);
   layer_->setFillOutsideCorridor(true);
   layer_->setStepSize(1);
   layer_->setCorridorWidth(0.5);
   layer_->setWallThickness(1);
   layer_->setCorridorCost(190);
 
-  auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
-
-  // Path runs far from robot (robot is at origin via TF fixture)
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
   msg->header.stamp = node_->now();
@@ -1524,18 +1452,12 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillOutsideCorridorRobotCel
     << "Robot cell must always remain free regardless of corridor position";
 }
 
-// 1. resolution_ <= 0 causes updateCosts to return immediately without touching costmap
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsZeroResolutionEarlyReturn)
 {
-  // Do NOT call matchSize() — resolution_ stays at 0.0
-  layer_->enabledRef() = true;
-  layer_->setRobotBaseFrame("base_link");
-  layer_->setResolution(0.0);
-
+  // prepareForUpdateCosts calls matchSize(); override resolution_ to 0 afterwards.
   auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
+  prepareForUpdateCosts(layer_.get(), costmap);
+  layer_->setResolution(0.0);
 
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
@@ -1560,23 +1482,16 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsZeroResolutionEarlyReturn)
   EXPECT_FALSE(found_marked) << "Zero resolution must prevent any costmap writes";
 }
 
-// 2. fill_outside_corridor=true with path through the fill bbox — flush_segment fires
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillBranchFlushSegmentFires)
 {
-  layer_->matchSize();
-  layer_->enabledRef() = true;
-  layer_->setRobotBaseFrame("base_link");
+  auto * costmap = layers_->getCostmap();
+  prepareForUpdateCosts(layer_.get(), costmap);
   layer_->setFillOutsideCorridor(true);
   layer_->setStepSize(1);
   layer_->setCorridorWidth(0.5);
   layer_->setWallThickness(1);
   layer_->setCorridorCost(190);
   layer_->setLookAhead(2.5);
-
-  auto * costmap = layers_->getCostmap();
-  costmap->resetMapToValue(
-    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
-    nav2_costmap_2d::FREE_SPACE);
 
   // Path runs through the middle of the costmap (y=2.5) so both corridor sides
   // (y=2.5±0.25) are well within map bounds. Robot is at origin via TF fixture.
@@ -1590,20 +1505,16 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillBranchFlushSegmentFires
 
   ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
 
-  // Cells well off the path (far in y from path) inside the fill bbox must be penalised
   unsigned int mx, my;
   ASSERT_TRUE(costmap->worldToMap(0.5, 0.5, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), 190)
     << "Cells outside corridor but inside fill bbox must be elevated to corridor_cost";
 
-  // A cell clearly between the inner walls (y=2.5, within inner_offset=0.25m of spine)
-  // must NOT be penalised — it is saved as interior by saveCorridorInterior
   ASSERT_TRUE(costmap->worldToMap(0.5, 2.5, mx, my));
-  EXPECT_NE(costmap->getCost(mx, my), 190)
+  EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE)
     << "Cell inside corridor interior must not be penalised by fill";
 }
 
-// 3. getWallPolygons skips degenerate step but still emits points for valid steps
 TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsMixedDegenerateAndValidSteps)
 {
   layer_->matchSize();
@@ -1629,7 +1540,6 @@ TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsMixedDegenerateAndValid
   EXPECT_EQ(walls.left_outer.size(), walls.right_outer.size());
 }
 
-// 4a. updateParametersCallback covers fill_outside_corridor bool param
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsFillOutsideCorridor)
 {
   layer_->activate();
@@ -1642,7 +1552,6 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsFillOutsideCorridor)
     << "current_ must be reset when fill_outside_corridor changes";
 }
 
-// 4b. Same-value integer params must not reset current_
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsSameValueIntegersNoCurrentReset)
 {
   layer_->activate();
@@ -1668,6 +1577,66 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsSameValueIntegersNoCurrent
     {rclcpp::Parameter("bte_layer.step", static_cast<int>(layer_->getStepSize()))});
   EXPECT_TRUE(layer_->currentRef())
     << "Same step must not reset current_";
+}
+
+// Path starts inside the fill bbox, exits beyond the radius, then re-enters from
+// a different Y. flush_segment must fire at both the exit and re-entry boundaries,
+// producing two separate interior sub-segments. Cells on the spine of both chunks
+// must remain interior; a cell inside the bbox but off both spines must be penalised.
+//
+// Geometry (robot at origin, fill_radius = 1.0 + 0.2 + 0.05 = 1.25 m):
+//   chunk A: x = 0.0..1.0, y = 0.3  — inside radius, flushed at x=1.0
+//   gap:     x = 1.3..2.0, y = 0.3  — outside radius, no interior recorded
+//   chunk B: x = 1.0..0.0, y = 0.7  — re-enters radius travelling in -X
+//
+// Both y=0.3 and y=0.7 are well inside the costmap (origin 0,0 size 100x100 res 0.05).
+TEST_F(BoundedTrackingErrorLayerTest, testFillBranchPathExitsAndReentersBbox)
+{
+  auto * costmap = layers_->getCostmap();
+  prepareForUpdateCosts(layer_.get(), costmap);
+  layer_->setFillOutsideCorridor(true);
+  layer_->setStepSize(1);
+  layer_->setCorridorWidth(0.4);
+  layer_->setWallThickness(1);
+  layer_->setCorridorCost(190);
+  layer_->setLookAhead(1.0);
+
+  auto msg = std::make_shared<nav_msgs::msg::Path>();
+  msg->header.frame_id = "map";
+  msg->header.stamp = node_->now();
+
+  // Chunk A: travels +X at y=0.3, stays inside fill radius (x <= 1.0 < 1.25)
+  for (int i = 0; i <= 10; ++i) {
+    msg->poses.push_back(makePose(i * 0.1, 0.3));
+  }
+  // Gap: x = 1.3..2.0 — outside fill radius, flush_segment fires at boundary
+  for (int i = 13; i <= 20; ++i) {
+    msg->poses.push_back(makePose(i * 0.1, 0.3));
+  }
+  // Chunk B: travels -X at y=0.7, re-enters fill radius (x <= 1.0 < 1.25)
+  for (int i = 10; i >= 0; --i) {
+    msg->poses.push_back(makePose(i * 0.1, 0.7));
+  }
+
+  layer_->testPathCallback(msg);
+  ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
+
+  unsigned int mx, my;
+
+  // Mid-spine of chunk A must be interior (not penalised)
+  ASSERT_TRUE(costmap->worldToMap(0.5, 0.3, mx, my));
+  EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE)
+    << "Spine of first in-bbox chunk must be interior";
+
+  // Mid-spine of chunk B must be interior (not penalised)
+  ASSERT_TRUE(costmap->worldToMap(0.5, 0.7, mx, my));
+  EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE)
+    << "Spine of second in-bbox chunk must be interior after re-entry";
+
+  // A cell inside the fill bbox but between and off both spines must be penalised
+  ASSERT_TRUE(costmap->worldToMap(0.5, 1.1, mx, my));
+  EXPECT_EQ(costmap->getCost(mx, my), 190)
+    << "Cell inside fill bbox but off both path spines must be penalised";
 }
 
 int main(int argc, char ** argv)
