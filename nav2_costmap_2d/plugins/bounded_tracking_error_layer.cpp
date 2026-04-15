@@ -14,10 +14,12 @@
 
 #include "nav2_costmap_2d/bounded_tracking_error_layer.hpp"
 
-#include <string>
-#include <vector>
+#include <algorithm>
+#include <limits>
 #include <mutex>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 #include "pluginlib/class_list_macros.hpp"
 
@@ -41,8 +43,7 @@ BoundedTrackingErrorLayer::onInitialize()
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
     joinWithParentNamespace(path_topic_),
     std::bind(&BoundedTrackingErrorLayer::pathCallback, this, std::placeholders::_1),
-    nav2::qos::StandardTopicQoS()
-  );
+    nav2::qos::StandardTopicQoS());
 
   // Local costmap can not get resolution from matchSize
   if (layered_costmap_) {
@@ -101,13 +102,6 @@ BoundedTrackingErrorLayer::resetState()
 }
 
 void
-BoundedTrackingErrorLayer::matchSize()
-{
-  resolution_ = layered_costmap_->getCostmap()->getResolution();
-  costmap_frame_ = layered_costmap_->getGlobalFrameID();
-}
-
-void
 BoundedTrackingErrorLayer::getParameters()
 {
   auto node = node_.lock();
@@ -155,6 +149,13 @@ BoundedTrackingErrorLayer::getParameters()
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
   node->get_parameter("robot_base_frame", robot_base_frame_);
+}
+
+void
+BoundedTrackingErrorLayer::matchSize()
+{
+  resolution_ = layered_costmap_->getCostmap()->getResolution();
+  costmap_frame_ = layered_costmap_->getGlobalFrameID();
 }
 
 void
@@ -403,8 +404,7 @@ BoundedTrackingErrorLayer::getPathSegment(
     segment.header = path.header;
     segment.poses.assign(
       path.poses.begin() + path_index,
-      path.poses.begin() + end_index + 1
-    );
+      path.poses.begin() + end_index + 1);
   } else if (path_index == path.poses.size() - 1) {
     segment.header = path.header;
     segment.poses.push_back(path.poses[path_index]);
@@ -630,7 +630,9 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
     const int clamped_y_min = std::max(y_min, 0);
     const int clamped_y_max = std::min(y_max, static_cast<int>(size_y) - 1);
 
-    if (clamped_y_min > clamped_y_max) {continue;}
+    if (clamped_y_min > clamped_y_max) {
+      continue;
+    }
 
     const int height = clamped_y_max - clamped_y_min + 1;
     span_x_min_buffer_.assign(height, std::numeric_limits<int>::max());
@@ -646,7 +648,9 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
       const int x_min = span_x_min_buffer_[buffer_idx];
       const int x_max = span_x_max_buffer_[buffer_idx];
 
-      if (x_min > x_max) {continue;}
+      if (x_min > x_max) {
+        continue;
+      }
 
       const int x_start = std::max(x_min, 0);
       const int x_end = std::min(x_max, static_cast<int>(size_x) - 1);
@@ -801,42 +805,39 @@ BoundedTrackingErrorLayer::updateParametersCallback(
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "look_ahead" &&
-        look_ahead_ != parameter.as_double())
-      {
+      const bool is_look_ahead = param_name == name_ + "." + "look_ahead";
+      const bool is_corridor_width = param_name == name_ + "." + "corridor_width";
+      if (is_look_ahead && look_ahead_ != parameter.as_double()) {
         look_ahead_ = parameter.as_double();
         current_ = false;
-      } else if (param_name == name_ + "." + "corridor_width" &&
-        corridor_width_ != parameter.as_double())
-      {
+      } else if (is_corridor_width && corridor_width_ != parameter.as_double()) {
         corridor_width_ = parameter.as_double();
         current_ = false;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
+      const bool is_enabled = param_name == name_ + "." + "enabled";
+      const bool is_fill = param_name == name_ + "." + "fill_outside_corridor";
+      if (is_enabled && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
         current_ = false;
-      } else if (param_name == name_ + "." + "fill_outside_corridor" &&
-        fill_outside_corridor_ != parameter.as_bool())
-      {
+      } else if (is_fill && fill_outside_corridor_ != parameter.as_bool()) {
         fill_outside_corridor_ = parameter.as_bool();
         current_ = false;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == name_ + "." + "step") {
+      const bool is_step = param_name == name_ + "." + "step";
+      const bool is_cost = param_name == name_ + "." + "corridor_cost";
+      const bool is_thickness = param_name == name_ + "." + "wall_thickness";
+      if (is_step) {
         const int new_step = parameter.as_int();
         if (static_cast<size_t>(new_step) != step_size_) {
           step_size_ = static_cast<size_t>(new_step);
           current_ = false;
         }
-      } else if (param_name == name_ + "." + "corridor_cost" &&
-        corridor_cost_ != static_cast<unsigned char>(parameter.as_int()))
-      {
+      } else if (is_cost && corridor_cost_ != static_cast<unsigned char>(parameter.as_int())) {
         corridor_cost_ = static_cast<unsigned char>(parameter.as_int());
         current_ = false;
-      } else if (param_name == name_ + "." + "wall_thickness" &&
-        wall_thickness_ != parameter.as_int())
-      {
+      } else if (is_thickness && wall_thickness_ != parameter.as_int()) {
         wall_thickness_ = parameter.as_int();
         current_ = false;
       }
