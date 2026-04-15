@@ -420,28 +420,28 @@ void VectorObjectServer::addShapesCallback(
   response->success = true;
 
   if (enforce_global_frame_id_) {
-    for (const auto & req_poly : request->polygons) {
-      if (!req_poly.header.frame_id.empty() && req_poly.header.frame_id != global_frame_id_) {
-        RCLCPP_ERROR(
-          get_logger(),
-          "Polygon frame_id '%s' must be empty or equal to global_frame_id '%s' "
-          "when enforce_global_frame_id is true. Rejecting request.",
-          req_poly.header.frame_id.c_str(), global_frame_id_.c_str());
-        response->success = false;
-        return;
-      }
-    }
+    // Lambda for checking frame_id consistency
+    auto check_frame_id = [this, &response](
+      const auto & shapes, const std::string & shape_type_name)
+      {
+        for (const auto & shape : shapes) {
+          if (!shape.header.frame_id.empty() && shape.header.frame_id != global_frame_id_) {
+            RCLCPP_ERROR(
+            get_logger(),
+            "%s frame_id '%s' must be empty or equal to global_frame_id '%s' "
+            "when enforce_global_frame_id is true. Rejecting request.",
+            shape_type_name.c_str(), shape.header.frame_id.c_str(), global_frame_id_.c_str());
+            response->success = false;
+            return false;
+          }
+        }
+        return true;
+      };
 
-    for (const auto & req_crcl : request->circles) {
-      if (!req_crcl.header.frame_id.empty() && req_crcl.header.frame_id != global_frame_id_) {
-        RCLCPP_ERROR(
-          get_logger(),
-          "Circle frame_id '%s' must be empty or equal to global_frame_id '%s' "
-          "when enforce_global_frame_id is true. Rejecting request.",
-          req_crcl.header.frame_id.c_str(), global_frame_id_.c_str());
-        response->success = false;
-        return;
-      }
+    if (!check_frame_id(request->polygons, "Polygon") ||
+      !check_frame_id(request->circles, "Circle"))
+    {
+      return;
     }
   }
 
