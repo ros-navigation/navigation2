@@ -260,20 +260,6 @@ protected:
     int min_i, int min_j, int max_i, int max_j);
 
   /**
-   * @brief Compute the bounding cell rectangle for the fill operation.
-   * @param master_grid Costmap used for coordinate conversion.
-   * @param robot_pose Current robot pose in costmap frame.
-   * @param fill_min_i Output minimum X cell index.
-   * @param fill_min_j Output minimum Y cell index.
-   * @param fill_max_i Output maximum X cell index.
-   * @param fill_max_j Output maximum Y cell index.
-   */
-  void getFillArea(
-    nav2_costmap_2d::Costmap2D & master_grid,
-    const geometry_msgs::msg::PoseStamped & robot_pose,
-    int & fill_min_i, int & fill_min_j, int & fill_max_i, int & fill_max_j);
-
-  /**
    * @brief Validate parameter updates before they are applied.
    * @param parameters Incoming parameter update list.
    * @return Result indicating success or failure with reason.
