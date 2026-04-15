@@ -580,17 +580,13 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
 {
   auto node = parent_.lock();
 
-  // Build the parameter key for this model's plugin type
   const std::string plugin_ns = name_ + "." + motion_model_name;
-  const std::string plugin_param = plugin_ns + ".plugin";
-
   // Default to DiffDriveMotionModel when no plugin is declared.
   nav2::declare_parameter_if_not_declared(
-    node, plugin_param,
+    node, plugin_ns + ".plugin",
     rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
 
-  std::string plugin_type;
-  node->get_parameter(plugin_param, plugin_type);
+  std::string plugin_type = nav2::get_plugin_type_param(node, plugin_ns);
 
   motion_model_loader_ =
     std::make_unique<pluginlib::ClassLoader<MotionModel>>(

@@ -56,7 +56,7 @@ public:
     EXPECT_EQ(motion_model_.get(), nullptr);
     EXPECT_NO_THROW(setMotionModel("ackermann"));
     EXPECT_NE(motion_model_.get(), nullptr);
-    EXPECT_TRUE(motion_model_->hasConstrainedTurningRadius());
+    EXPECT_TRUE(dynamic_cast<AckermannMotionModel *>(motion_model_.get()));
     EXPECT_FALSE(isHolonomic());
   }
 

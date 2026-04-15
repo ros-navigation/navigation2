@@ -128,18 +128,6 @@ public:
   virtual bool isHolonomic() const = 0;
 
   /**
-   * @brief Whether this model imposes a minimum turning radius constraint.
-   * @return true if the model has a minimum turning radius constraint
-   */
-  virtual bool hasConstrainedTurningRadius() const {return false;}
-
-  /**
-   * @brief Get the minimum turning radius for models that constrain it.
-   * @return Minimum turning radius in metres
-   */
-  virtual float getMinTurningRadius() const {return 0.0f;}
-
-  /**
    * @brief Apply hard vehicle constraints to a control sequence
    * @param control_sequence Control sequence to apply constraints to
    */
@@ -186,12 +174,6 @@ public:
   }
 
   /**
-   * @brief Whether this model imposes a minimum turning radius constraint.
-   * @return true
-   */
-  bool hasConstrainedTurningRadius() const override {return true;}
-
-  /**
    * @brief Apply hard vehicle constraints to a control sequence
    * @param control_sequence Control sequence to apply constraints to
    */
@@ -206,7 +188,7 @@ public:
    * @brief Get minimum turning radius of ackermann drive
    * @return Minimum turning radius
    */
-  float getMinTurningRadius() const override {return min_turning_r_;}
+  float getMinTurningRadius() const {return min_turning_r_;}
 
 private:
   float min_turning_r_{0.0f};
