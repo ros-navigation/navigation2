@@ -298,7 +298,7 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "bounded_tracking_error_layer", "inflation_layer"]
+      plugins: ["static_layer", "obstacle_layer","bounded_tracking_error_layer", "inflation_layer"]
       filters: ["keepout_filter", "speed_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
@@ -334,13 +334,13 @@ global_costmap:
       bounded_tracking_error_layer:
         plugin: "nav2_costmap_2d::BoundedTrackingErrorLayer"
         enabled: true
-        path_topic: "plan"
-        look_ahead: 2.5
-        step: 10
+        path_topic: "/plan"
+        look_ahead: 1.2
+        step: 5
         corridor_width: 2.0
         corridor_cost: 190
-        wall_thickness: 6
-        fill_outside_corridor: true
+        wall_thickness: 2
+        fill_outside_corridor: false
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
