@@ -421,7 +421,7 @@ void VectorObjectServer::addShapesCallback(
 
   if (enforce_global_frame_id_) {
     // Lambda for checking frame_id consistency
-    auto check_frame_id = [this, &response](
+    auto check_frame_id = [this](
       const auto & shapes, const std::string & shape_type_name)
       {
         for (const auto & shape : shapes) {
@@ -431,7 +431,6 @@ void VectorObjectServer::addShapesCallback(
             "%s frame_id '%s' must be empty or equal to global_frame_id '%s' "
             "when enforce_global_frame_id is true. Rejecting request.",
             shape_type_name.c_str(), shape.header.frame_id.c_str(), global_frame_id_.c_str());
-            response->success = false;
             return false;
           }
         }
@@ -441,6 +440,7 @@ void VectorObjectServer::addShapesCallback(
     if (!check_frame_id(request->polygons, "Polygon") ||
       !check_frame_id(request->circles, "Circle"))
     {
+      response->success = false;
       return;
     }
   }
