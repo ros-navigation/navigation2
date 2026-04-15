@@ -292,31 +292,31 @@ BoundedTrackingErrorLayer::updateCosts(
     sub_segment.header = full_transformed_ptr->header;
 
     auto flush_segment = [&]() {
-      if (sub_segment.poses.size() < 2) {
-        sub_segment.poses.clear();
-        return;
-      }
-      WallPolygons fill_walls;
-      getWallPolygons(sub_segment, fill_walls);
-      saveCorridorInterior(master_grid, fill_walls, /*accumulate=*/true);
+        if (sub_segment.poses.size() < 2) {
+          sub_segment.poses.clear();
+          return;
+        }
+        WallPolygons fill_walls;
+        getWallPolygons(sub_segment, fill_walls);
+        saveCorridorInterior(master_grid, fill_walls, /*accumulate=*/true);
 
       // End-cap circles close the open corridor mouth where the sub-segment
       // crosses the fill bbox boundary.
-      unsigned int cx, cy;
-      if (master_grid.worldToMap(
+        unsigned int cx, cy;
+        if (master_grid.worldToMap(
           sub_segment.poses.front().pose.position.x,
           sub_segment.poses.front().pose.position.y, cx, cy))
-      {
-        markCircleAsInterior(master_grid, static_cast<int>(cx), static_cast<int>(cy), r_cells_sq);
-      }
-      if (master_grid.worldToMap(
+        {
+          markCircleAsInterior(master_grid, static_cast<int>(cx), static_cast<int>(cy), r_cells_sq);
+        }
+        if (master_grid.worldToMap(
           sub_segment.poses.back().pose.position.x,
           sub_segment.poses.back().pose.position.y, cx, cy))
-      {
-        markCircleAsInterior(master_grid, static_cast<int>(cx), static_cast<int>(cy), r_cells_sq);
-      }
-      sub_segment.poses.clear();
-    };
+        {
+          markCircleAsInterior(master_grid, static_cast<int>(cx), static_cast<int>(cy), r_cells_sq);
+        }
+        sub_segment.poses.clear();
+      };
 
     for (const auto & pose : full_transformed_ptr->poses) {
       unsigned int mx, my;
@@ -486,23 +486,28 @@ BoundedTrackingErrorLayer::drawCorridorWalls(
 
   for (size_t i = 0; i < num_segments; ++i) {
     CellPoint inner0, inner1, outer0, outer1;
+    unsigned int ux, uy;
 
-    if (!master_grid.worldToMap(inner_points[i][0], inner_points[i][1], inner0.x, inner0.y)) {
+    if (!master_grid.worldToMap(inner_points[i][0], inner_points[i][1], ux, uy)) {
       continue;
     }
+    inner0 = {static_cast<int>(ux), static_cast<int>(uy)};
     if (!master_grid.worldToMap(
-        inner_points[i + 1][0], inner_points[i + 1][1], inner1.x, inner1.y))
+        inner_points[i + 1][0], inner_points[i + 1][1], ux, uy))
     {
       continue;
     }
-    if (!master_grid.worldToMap(outer_points[i][0], outer_points[i][1], outer0.x, outer0.y)) {
+    inner1 = {static_cast<int>(ux), static_cast<int>(uy)};
+    if (!master_grid.worldToMap(outer_points[i][0], outer_points[i][1], ux, uy)) {
       continue;
     }
+    outer0 = {static_cast<int>(ux), static_cast<int>(uy)};
     if (!master_grid.worldToMap(
-        outer_points[i + 1][0], outer_points[i + 1][1], outer1.x, outer1.y))
+        outer_points[i + 1][0], outer_points[i + 1][1], ux, uy))
     {
       continue;
     }
+    outer1 = {static_cast<int>(ux), static_cast<int>(uy)};
 
     fillCorridorQuad(master_grid, inner0, inner1, outer0, outer1);
   }
@@ -604,16 +609,21 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
 
   for (size_t i = 0; i < num_segments; ++i) {
     CellPoint left0, left1, right0, right1;
+    unsigned int ux, uy;
 
     if (!master_grid.worldToMap(
-        walls.left_inner[i][0], walls.left_inner[i][1], left0.x, left0.y)) {continue;}
+        walls.left_inner[i][0], walls.left_inner[i][1], ux, uy)) {continue;}
+    left0 = {static_cast<int>(ux), static_cast<int>(uy)};
     if (!master_grid.worldToMap(
-        walls.left_inner[i + 1][0], walls.left_inner[i + 1][1], left1.x, left1.y)) {continue;}
+        walls.left_inner[i + 1][0], walls.left_inner[i + 1][1], ux, uy)) {continue;}
+    left1 = {static_cast<int>(ux), static_cast<int>(uy)};
     if (!master_grid.worldToMap(
-        walls.right_inner[i][0], walls.right_inner[i][1], right0.x, right0.y)) {continue;}
+        walls.right_inner[i][0], walls.right_inner[i][1], ux, uy)) {continue;}
+    right0 = {static_cast<int>(ux), static_cast<int>(uy)};
     if (!master_grid.worldToMap(
         walls.right_inner[i + 1][0], walls.right_inner[i + 1][1],
-        right1.x, right1.y)) {continue;}
+        ux, uy)) {continue;}
+    right1 = {static_cast<int>(ux), static_cast<int>(uy)};
 
     const int y_min = std::min({left0.y, left1.y, right0.y, right1.y});
     const int y_max = std::max({left0.y, left1.y, right0.y, right1.y});
