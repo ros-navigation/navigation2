@@ -86,9 +86,10 @@ public:
 
   /**
    * @brief Returns whether this layer can be cleared by the costmap clearing service.
-   * @return Always false; corridor costs are driven by the path, not persisted.
+   * @return Always true; clearing is safe since costs are recomputed every cycle,
+   *         and allows recovery behaviors to give the robot room to maneuver out.
    */
-  bool isClearable() override {return false;}
+  bool isClearable() override {return true;}
 
   /**
    * @brief Updates resolution and frame ID from the layered costmap on resize.
@@ -153,17 +154,6 @@ protected:
   void getParameters();
 
   /**
-   * @brief Reset path state and index tracker.
-   */
-  void resetState();
-
-  /**
-   * @brief Subscription callback that stores the latest global plan.
-   * @param msg Incoming path message.
-   */
-  void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
-
-  /**
    * @brief Extract a look-ahead sub-path starting from a given index.
    * @param path Full path in costmap frame.
    * @param path_index Index of the closest pose on the path.
@@ -176,10 +166,26 @@ protected:
 
   /**
    * @brief Compute wall polygon boundary points from a path segment.
+   *
+   * step_size_ is the pose-index stride used to estimate the local path direction
+   * at each polygon vertex. A stride of 1 gives noisy normals on dense paths;
+   * a larger value averages over more poses for smoother corridor boundaries.
    * @param segment Path segment in costmap frame.
    * @param walls Output wall polygons.
    */
   void getWallPolygons(const nav_msgs::msg::Path & segment, WallPolygons & walls);
+
+  /**
+   * @brief Apply the fill-outside-corridor mode: trace interior quads, add end-cap
+   *        circles, guarantee the robot cell is interior, then flood-fill outside.
+   * @param master_grid Costmap to write into.
+   * @param robot_pose Current robot pose in costmap frame.
+   * @param full_path Full transformed path in costmap frame.
+   */
+  void applyFillOutsideCorridor(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const nav_msgs::msg::Path & full_path);
 
   /**
    * @brief Rasterize corridor wall cells between inner and outer boundary polylines.
@@ -205,6 +211,11 @@ protected:
 
   /**
    * @brief Mark all cells within a circle radius as corridor interior.
+   *
+   * Used to cap the open ends of bbox-clipped corridor sub-segments and to
+   * guarantee the robot's own cell is always interior. Circles are used because
+   * they fill diagonal gaps uniformly in all directions that a rectangular cap
+   * would miss.
    * @param master_grid Costmap used for coordinate conversion.
    * @param cx Circle center X in cell coordinates.
    * @param cy Circle center Y in cell coordinates.
@@ -240,8 +251,6 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
-  std::atomic<uint32_t> current_path_index_{0};
-
   size_t step_size_;
   double look_ahead_;
   double corridor_width_;
@@ -252,7 +261,19 @@ protected:
   std::string costmap_frame_;
   std::string robot_base_frame_;
 
+  std::atomic<uint32_t> current_path_index_{0};
   std::unordered_set<unsigned int> corridor_index_set_;
+
+  /**
+   * @brief Subscription callback that stores the latest global plan.
+   * @param msg Incoming path message.
+   */
+  void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
+
+  /**
+   * @brief Reset path state and index tracker.
+   */
+  void resetState();
 
 private:
   /** @brief A 2D costmap cell coordinate. */
@@ -263,13 +284,30 @@ private:
   };
 
   /**
-   * @brief Trace an edge between two cell points into the span buffers.
-   * @param p0 Start cell point.
-   * @param p1 End cell point.
+   * @brief Convert world coordinates to a CellPoint, clamping to map bounds if outside.
+   * @param master_grid Costmap used for coordinate conversion.
+   * @param wx World X coordinate.
+   * @param wy World Y coordinate.
+   * @param out Output cell coordinate.
+   * @return True if the point is within map bounds, false if it was clamped.
+   */
+  bool worldToCell(
+    const nav2_costmap_2d::Costmap2D & master_grid,
+    double wx, double wy,
+    CellPoint & out) const;
+
+  /**
+   * @brief Trace all 4 edges of a quad into the span buffers (p0→p1→p2→p3→p0).
+   * @param p0 First vertex.
+   * @param p1 Second vertex.
+   * @param p2 Third vertex.
+   * @param p3 Fourth vertex.
    * @param clamped_y_min Minimum Y index of the span buffer.
    * @param height Height of the span buffer.
    */
-  void traceEdge(CellPoint p0, CellPoint p1, int clamped_y_min, int height);
+  void traceQuad(
+    CellPoint p0, CellPoint p1, CellPoint p2, CellPoint p3,
+    int clamped_y_min, int height);
 
   /**
    * @brief Fill a convex quadrilateral corridor quad using a span buffer approach.
