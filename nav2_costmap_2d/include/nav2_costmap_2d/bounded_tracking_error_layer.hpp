@@ -147,13 +147,6 @@ protected:
     }
   };
 
-  /** @brief A 2D costmap cell coordinate. */
-  struct CellPoint
-  {
-    int x;
-    int y;
-  };
-
   /**
    * @brief Declare and load all layer parameters from the node.
    */
@@ -198,32 +191,6 @@ protected:
     nav2_costmap_2d::Costmap2D & master_grid,
     const std::vector<std::array<double, 2>> & inner_points,
     const std::vector<std::array<double, 2>> & outer_points);
-
-  /**
-   * @brief Trace an edge between two cell points into the span buffers.
-   * @param p0 Start cell point.
-   * @param p1 End cell point.
-   * @param clamped_y_min Minimum Y index of the span buffer.
-   * @param height Height of the span buffer.
-   */
-  void traceEdge(CellPoint p0, CellPoint p1, int clamped_y_min, int height);
-
-  /**
-   * @brief Fill a convex quadrilateral corridor quad using a span buffer approach.
-   *
-   * See https://en.wikipedia.org/wiki/Scanline_rendering
-   * @param master_grid Costmap to write into.
-   * @param inner0 First inner boundary cell.
-   * @param inner1 Second inner boundary cell.
-   * @param outer0 First outer boundary cell.
-   * @param outer1 Second outer boundary cell.
-   */
-  void fillCorridorQuad(
-    nav2_costmap_2d::Costmap2D & master_grid,
-    CellPoint inner0,
-    CellPoint inner1,
-    CellPoint outer0,
-    CellPoint outer1);
 
   /**
    * @brief Record all cell indices inside the corridor interior into the index set.
@@ -275,19 +242,54 @@ protected:
 
   std::atomic<uint32_t> current_path_index_{0};
 
-  std::string path_topic_;
   size_t step_size_;
   double look_ahead_;
   double corridor_width_;
   int wall_thickness_;
   unsigned char corridor_cost_;
   bool fill_outside_corridor_{false};
-  tf2::Duration transform_tolerance_;
   double resolution_{0.0};
   std::string costmap_frame_;
   std::string robot_base_frame_;
 
   std::unordered_set<unsigned int> corridor_index_set_;
+
+private:
+  /** @brief A 2D costmap cell coordinate. */
+  struct CellPoint
+  {
+    int x;
+    int y;
+  };
+
+  /**
+   * @brief Trace an edge between two cell points into the span buffers.
+   * @param p0 Start cell point.
+   * @param p1 End cell point.
+   * @param clamped_y_min Minimum Y index of the span buffer.
+   * @param height Height of the span buffer.
+   */
+  void traceEdge(CellPoint p0, CellPoint p1, int clamped_y_min, int height);
+
+  /**
+   * @brief Fill a convex quadrilateral corridor quad using a span buffer approach.
+   *
+   * See https://en.wikipedia.org/wiki/Scanline_rendering
+   * @param master_grid Costmap to write into.
+   * @param inner0 First inner boundary cell.
+   * @param inner1 Second inner boundary cell.
+   * @param outer0 First outer boundary cell.
+   * @param outer1 Second outer boundary cell.
+   */
+  void fillCorridorQuad(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    CellPoint inner0,
+    CellPoint inner1,
+    CellPoint outer0,
+    CellPoint outer1);
+
+  std::string path_topic_;
+  tf2::Duration transform_tolerance_;
 
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
