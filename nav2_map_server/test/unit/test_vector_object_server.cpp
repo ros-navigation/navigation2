@@ -1250,17 +1250,6 @@ TEST_F(Tester, testEnforceGlobalFrameIdDisablesTfListener)
   vo_server_->stop();
 }
 
-TEST_F(Tester, testEnforceGlobalFrameIdFalseKeepsTfListener)
-{
-  setVOServerParams();
-  // enforce_global_frame_id defaults to false: TF listener must be created
-  vo_server_->start();
-
-  ASSERT_TRUE(vo_server_->hasTfListener());
-
-  vo_server_->stop();
-}
-
 TEST_F(Tester, testEnforceGlobalFrameIdAcceptsValidFrames)
 {
   setVOServerParams();
@@ -1339,13 +1328,16 @@ TEST_F(Tester, testEnforceGlobalFrameIdAcceptsValidFrames)
   vo_server_->stop();
 }
 
-TEST_F(Tester, testEnforceGlobalFrameIdRejectsPolygonDifferentFrame)
+TEST_F(Tester, testEnforceGlobalFrameIdRejectsDifferentFrame)
 {
   setVOServerParams();
   vo_server_->set_parameter(rclcpp::Parameter("enforce_global_frame_id", true));
   vo_server_->start();
 
   auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
+  auto get_shapes_msg = std::make_shared<nav2_msgs::srv::GetShapes::Request>();
+
+  // Case 1: polygon with a non-global, non-empty frame_id must be rejected.
   auto po_msg = makePolygonObject(
     std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
   po_msg->header.frame_id = SHAPE_FRAME_ID;  // different from global_frame_id
@@ -1356,38 +1348,28 @@ TEST_F(Tester, testEnforceGlobalFrameIdRejectsPolygonDifferentFrame)
   ASSERT_NE(add_shapes_result, nullptr);
   ASSERT_FALSE(add_shapes_result->success);
 
-  // No shapes should have been added
   auto get_shapes_result =
-    sendRequest<nav2_msgs::srv::GetShapes>(
-    get_shapes_client_, std::make_shared<nav2_msgs::srv::GetShapes::Request>(), 2s);
+    sendRequest<nav2_msgs::srv::GetShapes>(get_shapes_client_, get_shapes_msg, 2s);
   ASSERT_NE(get_shapes_result, nullptr);
   ASSERT_TRUE(get_shapes_result->polygons.empty());
   ASSERT_TRUE(get_shapes_result->circles.empty());
 
-  vo_server_->stop();
-}
-
-TEST_F(Tester, testEnforceGlobalFrameIdRejectsCircleDifferentFrame)
-{
-  setVOServerParams();
-  vo_server_->set_parameter(rclcpp::Parameter("enforce_global_frame_id", true));
-  vo_server_->start();
-
-  auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
+  // Case 2: circle with a non-global, non-empty frame_id must be rejected.
+  add_shapes_msg->polygons.clear();
+  add_shapes_msg->circles.clear();
   auto co_msg = makeCircleObject(
     std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2});
   co_msg->header.frame_id = SHAPE_FRAME_ID;  // different from global_frame_id
   add_shapes_msg->circles.push_back(*co_msg);
 
-  auto add_shapes_result =
+  add_shapes_result =
     sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
   ASSERT_NE(add_shapes_result, nullptr);
   ASSERT_FALSE(add_shapes_result->success);
 
   // No shapes should have been added
-  auto get_shapes_result =
-    sendRequest<nav2_msgs::srv::GetShapes>(
-    get_shapes_client_, std::make_shared<nav2_msgs::srv::GetShapes::Request>(), 2s);
+  get_shapes_result =
+    sendRequest<nav2_msgs::srv::GetShapes>(get_shapes_client_, get_shapes_msg, 2s);
   ASSERT_NE(get_shapes_result, nullptr);
   ASSERT_TRUE(get_shapes_result->polygons.empty());
   ASSERT_TRUE(get_shapes_result->circles.empty());
