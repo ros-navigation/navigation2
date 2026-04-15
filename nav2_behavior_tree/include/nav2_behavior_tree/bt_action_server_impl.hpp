@@ -253,11 +253,10 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     return true;
   }
 
-  // When always_reload_bt_ is true and the same BT is requested, only perform
-  // the expensive full reload if at least one XML file on disk actually changed.
-  // Recreating the behaviour-tree (and its ROS action-client / pub-sub
-  // resources) on every goal otherwise causes unbounded memory growth in both
-  // the BT factory's internal XML parser and the ROS / DDS middleware layer.
+  // When always_reload_bt_ is true and the same BT is requested, only perform the full reload if at
+  // least one XML file on disk actually changed. Recreating the behaviour-tree (and its ROS
+  // interfaces) on every goal otherwise causes unbounded memory growth in both the BT factory's
+  // internal XML parser and the ROS / DDS middleware layer.
   if (always_reload_bt_ && current_bt_file_or_id_ == file_or_id) {
     bool any_changed = false;
     try {
@@ -277,10 +276,10 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     RCLCPP_INFO(logger_, "BT XML file(s) modified on disk, reloading tree");
   }
 
-  // When reloading an already-loaded BT, clean up all resources before
-  // re-registering.  The BT factory's internal XML parser appends a new
-  // XMLDocument on each registerBehaviorTreeFromFile() call; clearing the
-  // parser state here keeps that list bounded and prevents a secondary leak.
+  // When reloading an already-loaded BT, clean up all resources before re-registering.
+  // The BT factory's internal XML parser appends a new XMLDocument on each
+  // registerBehaviorTreeFromFile() call, clearing the parser state here keeps that list bounded
+  // and prevents a secondary leak.
   if (!current_bt_file_or_id_.empty()) {
     topic_logger_.reset();
     bt_->haltAllActions(tree_);
