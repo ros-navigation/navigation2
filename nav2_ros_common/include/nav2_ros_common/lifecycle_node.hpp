@@ -89,6 +89,15 @@ public:
   : nav2::LifecycleNode(node_name, "", options)
   {}
 
+  /**
+   * @brief Whether the node is using simulation time
+   * @return true if use_sim_time parameter is set to true
+   */
+  bool use_sim_time() const
+  {
+    return this->get_parameter("use_sim_time").as_bool();
+  }
+
   virtual ~LifecycleNode()
   {
     RCLCPP_INFO(get_logger(), "Destroying");
