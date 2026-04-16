@@ -167,6 +167,10 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // create bond connection
   createBond();
 
+  global_loc_srv_->on_activate();
+  initial_guess_srv_->on_activate();
+  nomotion_update_srv_->on_activate();
+
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -174,6 +178,10 @@ nav2::CallbackReturn
 AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+
+  global_loc_srv_->on_deactivate();
+  initial_guess_srv_->on_deactivate();
+  nomotion_update_srv_->on_deactivate();
 
   active_ = false;
 

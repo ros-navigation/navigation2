@@ -210,9 +210,7 @@ class TestDockingServer(unittest.TestCase):
 
     def nav_execute_callback(
         self,
-        goal_handle: ServerGoalHandle[NavigateToPose.Goal,
-                                      NavigateToPose.Result, NavigateToPose.Feedback,
-                                      NavigateToPose]
+        goal_handle: ServerGoalHandle
     ) -> NavigateToPose.Result:
         goal = goal_handle.request
         self.x = goal.pose.pose.position.x - 0.05

@@ -47,6 +47,16 @@ void ReroutingService::serviceCb(
   response->success = true;
 }
 
+void ReroutingService::on_activate()
+{
+  service_->on_activate();
+}
+
+void ReroutingService::on_deactivate()
+{
+  service_->on_deactivate();
+}
+
 OperationResult ReroutingService::perform(
   NodePtr /*node*/,
   EdgePtr /*edge_entered*/,
