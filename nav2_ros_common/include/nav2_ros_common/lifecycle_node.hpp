@@ -306,7 +306,7 @@ public:
    * (monotonic) clock to avoid system clock jumps.
    */
   template<typename DurationRepT, typename DurationT, typename CallbackT>
-  typename rclcpp::WallTimer<CallbackT>::SharedPtr
+  typename rclcpp::GenericTimer<CallbackT>::SharedPtr
   create_wall_timer(
     std::chrono::duration<DurationRepT, DurationT> period,
     CallbackT callback,
