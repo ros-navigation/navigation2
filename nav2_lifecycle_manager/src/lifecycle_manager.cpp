@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_ros_common/wall_rate.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;

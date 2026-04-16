@@ -60,14 +60,14 @@ public:
       // Either way do not sleep and return false
       return false;
     }
-    // Sleep using the wake-up signal directly so we can poll the target clock.
-    // tree_->sleep() always waits in wall-clock time, which diverges from sim
-    // time.  Instead we do short wall-clock waits and re-check our clock.
     auto wake_up = tree_->wakeUpSignal();
     static constexpr auto poll_interval = std::chrono::milliseconds(10);
     while (clock_->now() < next_interval) {
-      if (wake_up->waitFor(poll_interval)) {
-        return true;  // Preempted by emitWakeUpSignal()
+      // Sleep using the wake-up signal directly so we can poll the target clock.
+      // tree_->sleep() always waits in wall-clock time, which diverges from sim
+      // time.  Instead we do short wall-clock waits and re-check our clock.
+      if (wake_up->waitFor(poll_interval)) {  // Preempted by emitWakeUpSignal()
+        return true;
       }
     }
     return true;
