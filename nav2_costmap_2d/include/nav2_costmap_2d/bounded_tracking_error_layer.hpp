@@ -202,7 +202,7 @@ protected:
    * @brief Record all cell indices inside the corridor interior into the index set.
    *
    * Always accumulates into the existing set. Callers are responsible for
-   * resetting the relevant region of corridor_index_set_ before the first
+   * resetting the relevant region of corridor_interior_mask_ before the first
    * call in each update cycle.
    * @param master_grid Costmap used for coordinate conversion.
    * @param walls Wall polygons defining the corridor interior.
@@ -270,8 +270,9 @@ protected:
   std::string robot_base_frame_;
 
   std::atomic<uint32_t> current_path_index_{0};
-  std::vector<uint8_t> corridor_index_set_;
+  std::vector<uint8_t> corridor_interior_mask_;
 
+  // Previous fill bounding box in cell indices; -1 = no fill performed yet.
   int prev_fill_min_i_{-1};
   int prev_fill_min_j_{-1};
   int prev_fill_max_i_{-1};
