@@ -141,8 +141,8 @@ protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 
-  // Node handle used to obtain clocks at run time
-  nav2::LifecycleNode::WeakPtr node_;
+  // Clock
+  rclcpp::Clock::SharedPtr clock_;
 
   // Groot2 monitor
   std::unique_ptr<BT::Groot2Publisher> groot_monitor_;
