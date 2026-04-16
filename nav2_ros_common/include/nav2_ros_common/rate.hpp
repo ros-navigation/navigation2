@@ -40,12 +40,14 @@ public:
    * @brief Constructor
    * @param rate Frequency in Hz
    * @param node The node (used to query use_sim_time and get the clock)
+   * @param force_wall_time If true, always use RCL_STEADY_TIME even when use_sim_time is true.
+   *   Use this for operations that should run at real-world rates (e.g. disk I/O, bond checks).
    */
   template<typename NodeT>
-  explicit Rate(const double rate, NodeT node)
+  explicit Rate(const double rate, NodeT node, bool force_wall_time = false)
   : rclcpp::Rate(
       rate,
-      node->get_parameter("use_sim_time").as_bool() ?
+      (!force_wall_time && node->get_parameter("use_sim_time").as_bool()) ?
       node->get_clock() :
       std::make_shared<rclcpp::Clock>(RCL_STEADY_TIME))
   {}

@@ -23,6 +23,7 @@
 #include "lifecycle_msgs/srv/get_state.hpp"
 #include "nav2_ros_common/service_client.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 
 namespace nav2_util
@@ -45,7 +46,7 @@ public:
       true /*creates and spins an internal executor*/)
   {
     // Block until server is up
-    rclcpp::Rate r(20);
+    nav2::Rate r(20, parent_node);
     while (!get_state_.wait_for_service(2s)) {
       RCLCPP_INFO(
         parent_node->get_logger(),
