@@ -14,8 +14,6 @@
 
 #include "nav2_route/route_tracker.hpp"
 
-#include "nav2_ros_common/rate.hpp"
-
 namespace nav2_route
 {
 
@@ -27,7 +25,6 @@ void RouteTracker::configure(
   const std::string & route_frame,
   const std::string & base_frame)
 {
-  node_ = node;
   clock_ = node->get_clock();
   logger_ = node->get_logger();
   route_frame_ = route_frame;
@@ -166,12 +163,7 @@ TrackerResult RouteTracker::trackRoute(
     publishFeedback(true, route.start_node->nodeid, 0, 0, {});
   }
 
-  auto node = node_.lock();
-  if (!node) {
-    throw nav2_core::RouteException("Route tracker node expired");
-  }
-
-  nav2::Rate r(node, tracker_update_rate_);
+  rclcpp::Rate r(tracker_update_rate_, clock_);
   while (rclcpp::ok()) {
     bool status_change = false, completed = false;
 

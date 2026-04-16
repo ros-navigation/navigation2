@@ -19,7 +19,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_thread.hpp"
-#include "nav2_ros_common/rate.hpp"
 #include "nav2_lifecycle_manager/lifecycle_manager.hpp"
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 
@@ -129,7 +128,7 @@ public:
 TEST(LifecycleBondTest, POSITIVE)
 {
   // let the lifecycle server come up
-  nav2::WallRate(1).sleep();
+  rclcpp::WallRate(1).sleep();
 
   auto node = std::make_shared<rclcpp::Node>("lifecycle_manager_test_service_client");
   nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test", node);
@@ -141,14 +140,14 @@ TEST(LifecycleBondTest, POSITIVE)
   EXPECT_TRUE(client.startup());
 
   // check if bond is connected after being activated
-  nav2::WallRate(5).sleep();
+  rclcpp::WallRate(5).sleep();
   EXPECT_TRUE(bond_tester->isBondConnected());
   EXPECT_EQ(bond_tester->getState(), "activated");
 
   bond_tester->breakBond();
 
   // bond should be disconnected now and lifecycle manager should know and react to reset
-  nav2::WallRate(5).sleep();
+  rclcpp::WallRate(5).sleep();
   EXPECT_EQ(
     nav2_lifecycle_manager::SystemStatus::INACTIVE,
     client.is_active(std::chrono::nanoseconds(1000000000)));
