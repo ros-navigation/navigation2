@@ -127,9 +127,9 @@ public:
     saveCorridorInterior(master_grid, walls);
   }
 
-  void resetCorridorIndexSet()
+  void resetCorridorInteriorMask()
   {
-    std::fill(corridor_index_set_.begin(), corridor_index_set_.end(), false);
+    std::fill(corridor_interior_mask_.begin(), corridor_interior_mask_.end(), false);
   }
 
   void testMarkCircleAsInterior(
@@ -148,7 +148,7 @@ public:
 
   bool isInterior(unsigned int flat_idx) const
   {
-    return flat_idx < corridor_index_set_.size() && corridor_index_set_[flat_idx];
+    return flat_idx < corridor_interior_mask_.size() && corridor_interior_mask_[flat_idx];
   }
 
   size_t getStepSize() const {return step_size_;}
@@ -161,6 +161,8 @@ public:
   bool getFillOutsideCorridor() const {return fill_outside_corridor_;}
 };
 
+static constexpr const char * kRobotBaseFrame = "base_link";
+
 // Shared preamble for updateCosts integration tests: enables the layer, sets the
 // robot frame, calls matchSize, and resets the costmap to FREE_SPACE.
 static void prepareForUpdateCosts(
@@ -169,7 +171,7 @@ static void prepareForUpdateCosts(
 {
   layer->matchSize();
   layer->enabledRef() = true;
-  layer->setRobotBaseFrame("base_link");
+  layer->setRobotBaseFrame(kRobotBaseFrame);
   costmap->resetMapToValue(
     0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
     nav2_costmap_2d::FREE_SPACE);
@@ -226,6 +228,8 @@ static nav_msgs::msg::Path makeCircularPath(
   return path;
 }
 
+// Fixed-seed 32-bit LCG (a=1664525, c=1013904223, Numerical Recipes) — platform-independent
+// sequence without touching global RNG state.
 static nav_msgs::msg::Path makeRandomPath(
   double x0, double y0, size_t num_poses,
   double step = 0.15,
@@ -267,7 +271,7 @@ protected:
     geometry_msgs::msg::TransformStamped t;
     t.header.stamp = node_->now();
     t.header.frame_id = "map";
-    t.child_frame_id = "base_link";
+    t.child_frame_id = kRobotBaseFrame;
     t.transform.rotation.w = 1.0;
     tf_broadcaster_->sendTransform(t);
 
@@ -984,13 +988,20 @@ TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsHorizontalPathCellsMa
   layer_->testDrawCorridorWalls(*costmap, walls.right_inner, walls.right_outer);
 
   unsigned int mx, my;
-  ASSERT_TRUE(costmap->worldToMap(2.0, 2.80, mx, my));
+  // Derived from test parameters: corridor_width=0.5, wall_thickness=2, resolution=0.05.
+  const double path_x = 2.0;     // sample x along the path
+  const double path_y = 2.5;
+  const double inner_off = 0.5 * 0.5;                  // corridor_width / 2 = 0.25
+  const double outer_off = inner_off + 2 * 0.05;       // + wall_thickness * resolution = 0.35
+  const double wall_mid = (inner_off + outer_off) * 0.5;   // midpoint of wall band = 0.30
+
+  ASSERT_TRUE(costmap->worldToMap(path_x, path_y + wall_mid, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), 190) << "Left wall cell must be marked";
 
-  ASSERT_TRUE(costmap->worldToMap(2.0, 2.20, mx, my));
+  ASSERT_TRUE(costmap->worldToMap(path_x, path_y - wall_mid, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), 190) << "Right wall cell must be marked";
 
-  ASSERT_TRUE(costmap->worldToMap(2.0, 2.5, mx, my));
+  ASSERT_TRUE(costmap->worldToMap(path_x, path_y, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE)
     << "Centre of corridor must remain free";
 }
@@ -1020,13 +1031,20 @@ TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsVerticalPathCellsMark
   layer_->testDrawCorridorWalls(*costmap, walls.right_inner, walls.right_outer);
 
   unsigned int mx, my;
-  ASSERT_TRUE(costmap->worldToMap(2.25, 1.5, mx, my));
+  // Derived from test parameters: corridor_width=0.5, wall_thickness=2, resolution=0.05.
+  const double path_x = 2.5;
+  const double sample_y = 1.5;
+  const double inner_off = 0.5 * 0.5;
+  const double outer_off = inner_off + 2 * 0.05;
+  const double wall_mid = (inner_off + outer_off) * 0.5;
+
+  ASSERT_TRUE(costmap->worldToMap(path_x - wall_mid, sample_y, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), 190) << "Left wall of vertical path must be marked";
 
-  ASSERT_TRUE(costmap->worldToMap(2.75, 1.5, mx, my));
+  ASSERT_TRUE(costmap->worldToMap(path_x + wall_mid, sample_y, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), 190) << "Right wall of vertical path must be marked";
 
-  ASSERT_TRUE(costmap->worldToMap(2.5, 1.5, mx, my));
+  ASSERT_TRUE(costmap->worldToMap(path_x, sample_y, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE)
     << "Centre of vertical corridor must remain free";
 }
@@ -1240,7 +1258,7 @@ TEST_F(BoundedTrackingErrorLayerTest, testSaveCorridorInteriorMarksInteriorCells
   TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
 
-  layer_->resetCorridorIndexSet();
+  layer_->resetCorridorInteriorMask();
   layer_->testSaveCorridorInterior(*costmap, walls);
 
   unsigned int cx, cy;
@@ -1269,7 +1287,7 @@ TEST_F(BoundedTrackingErrorLayerTest, testSaveCorridorInteriorAccumulateAddsToEx
   auto seg1 = makeStraightPath(1.0, 2.5, 1, 0, 11, 0.1);
   TestableBoundedTrackingErrorLayer::WallPolygons walls1;
   layer_->testGetWallPolygons(seg1, walls1);
-  layer_->resetCorridorIndexSet();
+  layer_->resetCorridorInteriorMask();
   layer_->testSaveCorridorInterior(*costmap, walls1);
   unsigned int cx1, cy1;
   ASSERT_TRUE(costmap->worldToMap(1.5, 2.5, cx1, cy1));
@@ -1328,14 +1346,36 @@ TEST_F(BoundedTrackingErrorLayerTest, testFillOutsideCorridorMarksNonInteriorCel
     0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
     nav2_costmap_2d::FREE_SPACE);
 
+  // Trivial case: r_sq=0 marks only the centre cell interior.
   layer_->testMarkCircleAsInterior(*costmap, 50, 50, 0);
   layer_->testFillOutsideCorridor(*costmap, 48, 48, 52, 52);
 
   EXPECT_EQ(costmap->getCost(50, 50), nav2_costmap_2d::FREE_SPACE)
     << "Interior cell must not be marked";
-
   EXPECT_EQ(costmap->getCost(48, 48), 190)
     << "Non-interior cell in bbox must be marked with corridor_cost";
+
+  // Non-trivial case: r_sq=4 (radius 2) — all cells within radius stay free,
+  // first cell outside the circle is filled.
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+  layer_->resetCorridorInteriorMask();
+  const int cx = 50, cy = 50, r_sq = 4;
+  layer_->testMarkCircleAsInterior(*costmap, cx, cy, r_sq);
+  layer_->testFillOutsideCorridor(*costmap, cx - 3, cy - 3, cx + 3, cy + 3);
+
+  for (int dy = -2; dy <= 2; ++dy) {
+    for (int dx = -2; dx <= 2; ++dx) {
+      if (dx * dx + dy * dy <= r_sq) {
+        EXPECT_EQ(costmap->getCost(cx + dx, cy + dy), nav2_costmap_2d::FREE_SPACE)
+          << "Cell inside radius (" << cx + dx << "," << cy + dy << ") must stay free";
+      }
+    }
+  }
+  // Cell at distance 3 (dx=3,dy=0) is outside r_sq=4, must be filled.
+  EXPECT_EQ(costmap->getCost(cx + 3, cy), 190)
+    << "Cell outside radius must be filled with corridor_cost";
 }
 
 TEST_F(BoundedTrackingErrorLayerTest, testFillOutsideCorridorPreservesHigherCost)
