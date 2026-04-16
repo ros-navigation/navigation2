@@ -53,12 +53,6 @@ protected:
   bool use_path_orientations_{false};
   unsigned int power_{0};
   float weight_{0};
-
-  bool visualize_furthest_point_{false};
-  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr furthest_point_pub_;
-
-  bool visualize_occupancy_check_distance_{false};
-  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr occupancy_check_dist_pub_;
 };
 
 }  // namespace mppi::critics
