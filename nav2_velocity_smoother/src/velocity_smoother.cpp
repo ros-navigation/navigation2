@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "nav2_velocity_smoother/velocity_smoother.hpp"
+#include "nav2_ros_common/wall_rate.hpp"
 
 using namespace std::chrono_literals;
 using std::placeholders::_1;

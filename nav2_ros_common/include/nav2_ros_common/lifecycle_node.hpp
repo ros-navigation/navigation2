@@ -31,6 +31,7 @@
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
 #include "nav2_ros_common/interface_factories.hpp"
+#include "nav2_ros_common/wall_rate.hpp"
 
 namespace nav2
 {
@@ -295,6 +296,29 @@ public:
       get_logger(),
       "Lifecycle node %s does not have error state implemented", get_name());
     return nav2::CallbackReturn::SUCCESS;
+  }
+
+  /**
+   * @brief Create a wall timer that respects use_sim_time.
+   *
+   * Shadows the base class create_wall_timer. When use_sim_time is true,
+   * uses the node's ROS clock (simulation time). When false, uses a steady
+   * (monotonic) clock to avoid system clock jumps.
+   */
+  template<typename DurationRepT, typename DurationT, typename CallbackT>
+  typename rclcpp::WallTimer<CallbackT>::SharedPtr
+  create_wall_timer(
+    std::chrono::duration<DurationRepT, DurationT> period,
+    CallbackT callback,
+    rclcpp::CallbackGroup::SharedPtr group = nullptr)
+  {
+    return rclcpp::create_timer(
+      nav2::selectClock(this),
+      period,
+      std::move(callback),
+      group,
+      this->get_node_base_interface().get(),
+      this->get_node_timers_interface().get());
   }
 
   /**
