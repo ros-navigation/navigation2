@@ -268,7 +268,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
 
   // BT loop execution rate
   nav2_behavior_tree::LoopRate loopRate(
-    10ms, tree_.get(), std::make_shared<rclcpp::Clock>(RCL_STEADY_TIME));
+    10ms, tree_.get(), node_->get_clock());
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
@@ -358,7 +358,8 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // BT loop execution rate
-  rclcpp::WallRate loopRate(10ms);
+  nav2_behavior_tree::LoopRate loopRate(
+    10ms, tree_.get(), node_->get_clock());
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
@@ -435,7 +436,8 @@ TEST_F(BTActionNodeTestFixture, test_server_cancel)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // BT loop execution rate
-  rclcpp::WallRate loopRate(100ms);
+  nav2_behavior_tree::LoopRate loopRate(
+    100ms, tree_.get(), node_->get_clock());
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING && ticks < 5) {
