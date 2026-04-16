@@ -392,7 +392,7 @@ void VectorObjectServer::switchMapUpdate()
   for (auto shape : shapes_) {
     if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
       if (!map_timer_) {
-        map_timer_ = this->create_timer(
+        map_timer_ = this->create_wall_timer(
           std::chrono::duration<double>(1.0 / update_frequency_),
           std::bind(&VectorObjectServer::processMap, this));
       }
