@@ -226,7 +226,7 @@ protected:
     }
 
     auto start_time = clock_->now();
-    rclcpp::WallRate loop_rate(cycle_frequency_);
+    rclcpp::Rate loop_rate(cycle_frequency_, clock_);
 
     while (rclcpp::ok()) {
       elapsed_time_ = clock_->now() - start_time;

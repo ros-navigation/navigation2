@@ -198,7 +198,7 @@ void WaypointFollower::followWaypointsHandler(
     return;
   }
 
-  rclcpp::WallRate r(params_->loop_rate);
+  rclcpp::Rate r(params_->loop_rate, this->get_clock());
 
   // get the goal index, by default, the first in the list of waypoints given.
   uint32_t goal_index = goal->goal_index;

@@ -49,6 +49,24 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
+  // Set sleep override to use ROS clock (sim-time-aware) with
+  // short wall-time polls to stay interruptible via wake-up signals
+  auto ros_clock = clock_;
+  tree->setSleepOverride(
+    [ros_clock](std::chrono::system_clock::duration timeout, BT::WakeUpSignal & wake_up)
+    {
+      auto deadline = ros_clock->now() +
+        rclcpp::Duration(std::chrono::duration_cast<std::chrono::nanoseconds>(timeout));
+      while(ros_clock->now() < deadline)
+      {
+        if(wake_up.waitFor(std::chrono::milliseconds(1)))
+        {
+          return true;
+        }
+      }
+      return false;
+    });
+
   nav2_behavior_tree::LoopRate loopRate(loopTimeout, tree);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 

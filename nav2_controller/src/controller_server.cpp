@@ -494,7 +494,7 @@ void ControllerServer::computeControl()
     }
 
     last_valid_cmd_time_ = now();
-    rclcpp::WallRate loop_rate(params_->controller_frequency);
+    rclcpp::Rate loop_rate(params_->controller_frequency, this->get_clock());
     while (rclcpp::ok()) {
       auto start_time = this->now();
 

@@ -82,7 +82,7 @@ bool InputAtWaypoint::processAtWaypoint(
   input_received_ = false;
 
   rclcpp::Time start = clock_->now();
-  rclcpp::Rate r(50);
+  rclcpp::Rate r(50, clock_);
   bool input_received = false;
   while (clock_->now() - start < timeout_) {
     {
