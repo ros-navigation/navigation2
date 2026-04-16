@@ -1,0 +1,40 @@
+rules:
+  - id: use-nav2-service-client
+    pattern: rclcpp::Client<$T>
+    message: "Use nav2::ServiceClient<$T> instead of rclcpp::Client<$T>"
+    severity: WARNING
+    languages: [cpp]
+    paths:
+      include:
+        - src/**
+        - include/**
+
+  - id: use-nav2-subscription
+    pattern: rclcpp::Subscription<$T>
+    message: "Use nav2::Subscription<$T> instead of rclcpp::Subscription<$T>"
+    severity: WARNING
+    languages: [cpp]
+    paths:
+      include:
+        - src/**
+        - include/**
+
+  - id: use-nav2-publisher
+    pattern: rclcpp::Publisher<$T>
+    message: "Use nav2::Publisher<$T> instead of rclcpp::Publisher<$T>"
+    severity: WARNING
+    languages: [cpp]
+    paths:
+      include:
+        - src/**
+        - include/**
+
+  - id: use-nav2-action-client
+    pattern: rclcpp_action::Client<$T>
+    message: "Use nav2::ActionClient<$T> instead of rclcpp_action::Client<$T>"
+    severity: WARNING
+    languages: [cpp]
+    paths:
+      include:
+        - src/**
+        - include/**
