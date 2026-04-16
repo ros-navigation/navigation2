@@ -35,7 +35,6 @@ public:
     last_interval_(clock_->now()), tree_(tree)
   {}
 
-  // Similar to rclcpp::WallRate::sleep() but using tree_->sleep()
   bool sleep()
   {
     // Time coming into sleep
