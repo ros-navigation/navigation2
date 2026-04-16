@@ -14,6 +14,8 @@
 
 #include "nav2_costmap_2d/bounded_tracking_error_layer.hpp"
 
+
+
 #include <algorithm>
 #include <limits>
 #include <mutex>
@@ -150,7 +152,11 @@ BoundedTrackingErrorLayer::matchSize()
   costmap_frame_ = layered_costmap_->getGlobalFrameID();
   const auto * costmap = layered_costmap_->getCostmap();
   corridor_index_set_.assign(
-    costmap->getSizeInCellsX() * costmap->getSizeInCellsY(), false);
+    costmap->getSizeInCellsX() * costmap->getSizeInCellsY(), 0);
+  prev_fill_min_i_ = -1;
+  prev_fill_min_j_ = -1;
+  prev_fill_max_i_ = -1;
+  prev_fill_max_j_ = -1;
 }
 
 void
@@ -279,7 +285,6 @@ BoundedTrackingErrorLayer::updateCosts(
     {
       return;
     }
-    std::fill(corridor_index_set_.begin(), corridor_index_set_.end(), false);
     applyFillOutsideCorridor(master_grid, robot_pose, *full_transformed_ptr);
   } else {
     getWallPolygons(segment_buffer_, walls_buffer_);
@@ -310,6 +315,27 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   int fill_max_i = std::min(cell_max_x, static_cast<int>(fill_size_x) - 1);
   int fill_max_j = std::min(cell_max_y, static_cast<int>(fill_size_y) - 1);
 
+  // Reset the union of the current and previous cycle's bbox to clear any
+  // stale interior markings left behind when the robot moves forward and the
+  // new bbox no longer overlaps the trailing edge of the old one.
+  const int reset_min_i = (prev_fill_min_i_ < 0) ? fill_min_i : std::min(fill_min_i, prev_fill_min_i_);
+  const int reset_min_j = (prev_fill_min_j_ < 0) ? fill_min_j : std::min(fill_min_j, prev_fill_min_j_);
+  const int reset_max_i = (prev_fill_max_i_ < 0) ? fill_max_i : std::max(fill_max_i, prev_fill_max_i_);
+  const int reset_max_j = (prev_fill_max_j_ < 0) ? fill_max_j : std::max(fill_max_j, prev_fill_max_j_);
+
+  const unsigned int reset_size_x = master_grid.getSizeInCellsX();
+  for (int y = reset_min_j; y <= reset_max_j; ++y) {
+    std::fill(
+      corridor_index_set_.begin() + y * reset_size_x + reset_min_i,
+      corridor_index_set_.begin() + y * reset_size_x + reset_max_i + 1,
+      0);
+  }
+
+  prev_fill_min_i_ = fill_min_i;
+  prev_fill_min_j_ = fill_min_j;
+  prev_fill_max_i_ = fill_max_i;
+  prev_fill_max_j_ = fill_max_j;
+
   // Squared radius avoids a sqrt per cell in markCircleAsInterior.
   const double r_cells = (corridor_width_ * 0.5) / resolution_;
   const int r_cells_sq = static_cast<int>(std::llround(r_cells * r_cells));
@@ -324,7 +350,7 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
       }
       WallPolygons fill_walls;
       getWallPolygons(sub_segment, fill_walls);
-      saveCorridorInterior(master_grid, fill_walls, /*accumulate=*/true);
+      saveCorridorInterior(master_grid, fill_walls);
 
       // End-cap circles close the open corridor mouth where sub-segments are
       // clipped at the fill bbox boundary; without them the open quad edge
@@ -611,12 +637,8 @@ BoundedTrackingErrorLayer::fillCorridorQuad(
 void
 BoundedTrackingErrorLayer::saveCorridorInterior(
   nav2_costmap_2d::Costmap2D & master_grid,
-  const WallPolygons & walls,
-  bool accumulate)
+  const WallPolygons & walls)
 {
-  if (!accumulate) {
-    std::fill(corridor_index_set_.begin(), corridor_index_set_.end(), false);
-  }
 
   if (walls.left_inner.size() < 2 || walls.right_inner.size() < 2) {
     return;
@@ -674,7 +696,7 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
       for (int x = x_start; x <= x_end; ++x) {
         const unsigned int flat_idx =
           static_cast<unsigned int>(y) * size_x + static_cast<unsigned int>(x);
-        corridor_index_set_[flat_idx] = true;
+        corridor_index_set_[flat_idx] = 1;
       }
     }
   }
@@ -701,7 +723,7 @@ BoundedTrackingErrorLayer::markCircleAsInterior(
       if (dx * dx + dy * dy <= r_sq) {
         const unsigned int flat_idx =
           static_cast<unsigned int>(y) * size_x + static_cast<unsigned int>(x);
-        corridor_index_set_[flat_idx] = true;
+        corridor_index_set_[flat_idx] = 1;
       }
     }
   }
@@ -739,6 +761,10 @@ BoundedTrackingErrorLayer::resetState()
   std::lock_guard<std::mutex> lock(data_mutex_);
   last_path_ptr_.reset();
   current_path_index_.store(0);
+  prev_fill_min_i_ = -1;
+  prev_fill_min_j_ = -1;
+  prev_fill_max_i_ = -1;
+  prev_fill_max_j_ = -1;
 }
 
 rcl_interfaces::msg::SetParametersResult

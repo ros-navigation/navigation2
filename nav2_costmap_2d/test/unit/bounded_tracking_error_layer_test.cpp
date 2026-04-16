@@ -122,10 +122,14 @@ public:
 
   void testSaveCorridorInterior(
     nav2_costmap_2d::Costmap2D & master_grid,
-    const WallPolygons & walls,
-    bool accumulate = false)
+    const WallPolygons & walls)
   {
-    saveCorridorInterior(master_grid, walls, accumulate);
+    saveCorridorInterior(master_grid, walls);
+  }
+
+  void resetCorridorIndexSet()
+  {
+    std::fill(corridor_index_set_.begin(), corridor_index_set_.end(), false);
   }
 
   void testMarkCircleAsInterior(
@@ -1236,7 +1240,8 @@ TEST_F(BoundedTrackingErrorLayerTest, testSaveCorridorInteriorMarksInteriorCells
   TestableBoundedTrackingErrorLayer::WallPolygons walls;
   layer_->testGetWallPolygons(segment, walls);
 
-  layer_->testSaveCorridorInterior(*costmap, walls, /*accumulate=*/false);
+  layer_->resetCorridorIndexSet();
+  layer_->testSaveCorridorInterior(*costmap, walls);
 
   unsigned int cx, cy;
   ASSERT_TRUE(costmap->worldToMap(1.5, 2.5, cx, cy));
@@ -1264,7 +1269,8 @@ TEST_F(BoundedTrackingErrorLayerTest, testSaveCorridorInteriorAccumulateAddsToEx
   auto seg1 = makeStraightPath(1.0, 2.5, 1, 0, 11, 0.1);
   TestableBoundedTrackingErrorLayer::WallPolygons walls1;
   layer_->testGetWallPolygons(seg1, walls1);
-  layer_->testSaveCorridorInterior(*costmap, walls1, /*accumulate=*/false);
+  layer_->resetCorridorIndexSet();
+  layer_->testSaveCorridorInterior(*costmap, walls1);
   unsigned int cx1, cy1;
   ASSERT_TRUE(costmap->worldToMap(1.5, 2.5, cx1, cy1));
   const unsigned int flat1 = cy1 * costmap->getSizeInCellsX() + cx1;
@@ -1274,7 +1280,7 @@ TEST_F(BoundedTrackingErrorLayerTest, testSaveCorridorInteriorAccumulateAddsToEx
   auto seg2 = makeStraightPath(1.0, 3.5, 1, 0, 11, 0.1);
   TestableBoundedTrackingErrorLayer::WallPolygons walls2;
   layer_->testGetWallPolygons(seg2, walls2);
-  layer_->testSaveCorridorInterior(*costmap, walls2, /*accumulate=*/true);
+  layer_->testSaveCorridorInterior(*costmap, walls2);
 
   unsigned int cx2, cy2;
   ASSERT_TRUE(costmap->worldToMap(1.5, 3.5, cx2, cy2));
