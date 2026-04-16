@@ -32,8 +32,6 @@
 #include <utility>
 #include <vector>
 
-#include "nav2_ros_common/wall_rate.hpp"
-
 #include "nav2_amcl/angleutils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_amcl/pf/pf.hpp"
