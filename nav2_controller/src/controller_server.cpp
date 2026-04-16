@@ -494,7 +494,11 @@ void ControllerServer::computeControl()
     }
 
     last_valid_cmd_time_ = now();
-    rclcpp::Rate loop_rate(params_->controller_frequency, this->get_clock());
+    // Use steady clock on real hardware (immune to NTP jumps), ROS time in simulation
+    auto loop_clock = get_parameter("use_sim_time").as_bool() ?
+      this->get_clock() :
+      std::make_shared<rclcpp::Clock>(RCL_STEADY_TIME);
+    rclcpp::Rate loop_rate(params_->controller_frequency, loop_clock);
     while (rclcpp::ok()) {
       auto start_time = this->now();
 
