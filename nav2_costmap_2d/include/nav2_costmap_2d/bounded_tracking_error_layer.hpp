@@ -148,9 +148,10 @@ protected:
   };
 
   /**
-   * @brief Declare and load all layer parameters from the node.
+   * @brief Subscription callback that stores the latest global plan.
+   * @param msg Incoming path message.
    */
-  void getParameters();
+  void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
 
   /**
    * @brief Extract a look-ahead sub-path starting from a given index.
@@ -237,6 +238,11 @@ protected:
     int min_i, int min_j, int max_i, int max_j);
 
   /**
+   * @brief Reset path state and index tracker.
+   */
+  void resetState();
+
+  /**
    * @brief Validate parameter updates before they are applied.
    * @param parameters Incoming parameter update list.
    * @return Result indicating success or failure with reason.
@@ -256,12 +262,15 @@ protected:
   int wall_thickness_;
   unsigned char corridor_cost_;
   bool fill_outside_corridor_{false};
+
   double resolution_{0.0};
   std::string costmap_frame_;
   std::string robot_base_frame_;
 
-private:
+  std::atomic<uint32_t> current_path_index_{0};
+  std::vector<bool> corridor_index_set_;
 
+private:
   /** @brief A 2D costmap cell coordinate. */
   struct CellPoint
   {
@@ -270,15 +279,9 @@ private:
   };
 
   /**
-   * @brief Subscription callback that stores the latest global plan.
-   * @param msg Incoming path message.
+   * @brief Declare and load all layer parameters from the node.
    */
-  void pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
-
-  /**
-   * @brief Reset path state and index tracker.
-   */
-  void resetState();
+  void getParameters();
 
   /**
    * @brief Convert world coordinates to a CellPoint, clamping to map bounds if outside.
@@ -326,7 +329,6 @@ private:
   std::string path_topic_;
   tf2::Duration transform_tolerance_;
 
-  std::atomic<uint32_t> current_path_index_{0};
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
@@ -339,7 +341,6 @@ private:
   WallPolygons walls_buffer_;
   std::vector<int> span_x_min_buffer_;
   std::vector<int> span_x_max_buffer_;
-  std::vector<bool> corridor_index_set_;
 };
 
 }  // namespace nav2_costmap_2d

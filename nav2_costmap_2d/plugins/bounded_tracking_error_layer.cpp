@@ -542,23 +542,23 @@ BoundedTrackingErrorLayer::traceQuad(
   CellPoint p0, CellPoint p1, CellPoint p2, CellPoint p3,
   int clamped_y_min, int height)
 {
-  for (const auto & edge : {
-      std::pair<CellPoint, CellPoint>{p0, p1},
-      std::pair<CellPoint, CellPoint>{p1, p2},
-      std::pair<CellPoint, CellPoint>{p2, p3},
-      std::pair<CellPoint, CellPoint>{p3, p0}})
-  {
-    nav2_util::LineIterator line(edge.first.x, edge.first.y, edge.second.x, edge.second.y);
-    for (; line.isValid(); line.advance()) {
-      const int x = static_cast<int>(line.getX());
-      const int y = static_cast<int>(line.getY());
-      const int buffer_idx = y - clamped_y_min;
-      if (buffer_idx >= 0 && buffer_idx < height) {
-        span_x_min_buffer_[buffer_idx] = std::min(span_x_min_buffer_[buffer_idx], x);
-        span_x_max_buffer_[buffer_idx] = std::max(span_x_max_buffer_[buffer_idx], x);
+  auto trace = [&](CellPoint a, CellPoint b) {
+      nav2_util::LineIterator line(a.x, a.y, b.x, b.y);
+      for (; line.isValid(); line.advance()) {
+        const int x = line.getX();
+        const int y = line.getY();
+        const int buffer_idx = y - clamped_y_min;
+        if (buffer_idx >= 0 && buffer_idx < height) {
+          span_x_min_buffer_[buffer_idx] = std::min(span_x_min_buffer_[buffer_idx], x);
+          span_x_max_buffer_[buffer_idx] = std::max(span_x_max_buffer_[buffer_idx], x);
+        }
       }
-    }
-  }
+    };
+
+  trace(p0, p1);
+  trace(p1, p2);
+  trace(p2, p3);
+  trace(p3, p0);
 }
 
 void
