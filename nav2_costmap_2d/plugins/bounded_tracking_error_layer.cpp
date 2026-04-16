@@ -148,6 +148,9 @@ BoundedTrackingErrorLayer::matchSize()
 {
   resolution_ = layered_costmap_->getCostmap()->getResolution();
   costmap_frame_ = layered_costmap_->getGlobalFrameID();
+  const auto * costmap = layered_costmap_->getCostmap();
+  corridor_index_set_.assign(
+    costmap->getSizeInCellsX() * costmap->getSizeInCellsY(), false);
 }
 
 void
@@ -272,7 +275,12 @@ BoundedTrackingErrorLayer::updateCosts(
   }
 
   if (fill_outside_corridor_) {
-    corridor_index_set_.clear();
+    if (corridor_index_set_.size() !=
+      master_grid.getSizeInCellsX() * master_grid.getSizeInCellsY())
+    {
+      return;
+    }
+    std::fill(corridor_index_set_.begin(), corridor_index_set_.end(), false);
     applyFillOutsideCorridor(master_grid, robot_pose, *full_transformed_ptr);
   } else {
     getWallPolygons(segment_buffer_, walls_buffer_);
@@ -608,7 +616,7 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
   bool accumulate)
 {
   if (!accumulate) {
-    corridor_index_set_.clear();
+    std::fill(corridor_index_set_.begin(), corridor_index_set_.end(), false);
   }
 
   if (walls.left_inner.size() < 2 || walls.right_inner.size() < 2) {
@@ -665,8 +673,9 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
       const int x_end = std::min(x_max, static_cast<int>(size_x) - 1);
 
       for (int x = x_start; x <= x_end; ++x) {
-        corridor_index_set_.insert(static_cast<unsigned int>(y) * size_x +
-          static_cast<unsigned int>(x));
+        const unsigned int flat_idx =
+          static_cast<unsigned int>(y) * size_x + static_cast<unsigned int>(x);
+        corridor_index_set_[flat_idx] = true;
       }
     }
   }
@@ -691,8 +700,9 @@ BoundedTrackingErrorLayer::markCircleAsInterior(
     for (int x = x_start; x <= x_end; ++x) {
       const int dx = x - cx;
       if (dx * dx + dy * dy <= r_sq) {
-        corridor_index_set_.insert(
-          static_cast<unsigned int>(y) * size_x + static_cast<unsigned int>(x));
+        const unsigned int flat_idx =
+          static_cast<unsigned int>(y) * size_x + static_cast<unsigned int>(x);
+        corridor_index_set_[flat_idx] = true;
       }
     }
   }
@@ -716,7 +726,7 @@ BoundedTrackingErrorLayer::fillOutsideCorridor(
     for (int x = x_start; x <= x_end; ++x) {
       const unsigned int flat_idx = static_cast<unsigned int>(y) * size_x +
         static_cast<unsigned int>(x);
-      if (corridor_index_set_.count(flat_idx)) {
+      if (corridor_index_set_[flat_idx]) {
         continue;
       }
       costmap[flat_idx] = std::max(costmap[flat_idx], corridor_cost_);

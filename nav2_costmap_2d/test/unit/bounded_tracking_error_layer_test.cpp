@@ -144,7 +144,7 @@ public:
 
   bool isInterior(unsigned int flat_idx) const
   {
-    return corridor_index_set_.count(flat_idx) > 0;
+    return flat_idx < corridor_index_set_.size() && corridor_index_set_[flat_idx];
   }
 
   size_t getStepSize() const {return step_size_;}
