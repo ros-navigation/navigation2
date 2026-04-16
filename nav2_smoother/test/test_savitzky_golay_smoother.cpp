@@ -38,18 +38,15 @@ TEST(SmootherTest, test_sg_smoother_basics)
   nav2::LifecycleNode::SharedPtr node =
     std::make_shared<nav2::LifecycleNode>("SmacSGSmootherTest");
 
-  std::shared_ptr<nav2_msgs::msg::Costmap> costmap_msg =
-    std::make_shared<nav2_msgs::msg::Costmap>();
-  costmap_msg->header.stamp = node->now();
-  costmap_msg->header.frame_id = "map";
-  costmap_msg->data.resize(100 * 100);
-  costmap_msg->metadata.resolution = 0.05;
-  costmap_msg->metadata.size_x = 100;
-  costmap_msg->metadata.size_y = 100;
+  auto costmap_2d = std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.05, 0.0, 0.0);
+  auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+  stamped->header.stamp = node->now();
+  stamped->header.frame_id = "map";
+  stamped->costmap = costmap_2d;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
   dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
-  dummy_costmap->costmapCallback(costmap_msg);
+  dummy_costmap->costmapCallback(stamped);
 
   // Make smoother
   std::shared_ptr<tf2_ros::Buffer> dummy_tf;
@@ -111,18 +108,15 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   nav2::LifecycleNode::SharedPtr node =
     std::make_shared<nav2::LifecycleNode>("SmacSGSmootherTest");
 
-  std::shared_ptr<nav2_msgs::msg::Costmap> costmap_msg =
-    std::make_shared<nav2_msgs::msg::Costmap>();
-  costmap_msg->header.stamp = node->now();
-  costmap_msg->header.frame_id = "map";
-  costmap_msg->data.resize(100 * 100);
-  costmap_msg->metadata.resolution = 0.05;
-  costmap_msg->metadata.size_x = 100;
-  costmap_msg->metadata.size_y = 100;
+  auto costmap_2d = std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.05, 0.0, 0.0);
+  auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+  stamped->header.stamp = node->now();
+  stamped->header.frame_id = "map";
+  stamped->costmap = costmap_2d;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
   dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
-  dummy_costmap->costmapCallback(costmap_msg);
+  dummy_costmap->costmapCallback(stamped);
 
   // Make smoother
   std::shared_ptr<tf2_ros::Buffer> dummy_tf;
@@ -211,18 +205,15 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   nav2::LifecycleNode::SharedPtr node =
     std::make_shared<nav2::LifecycleNode>("SmacSGSmootherTest");
 
-  std::shared_ptr<nav2_msgs::msg::Costmap> costmap_msg =
-    std::make_shared<nav2_msgs::msg::Costmap>();
-  costmap_msg->header.stamp = node->now();
-  costmap_msg->header.frame_id = "map";
-  costmap_msg->data.resize(100 * 100);
-  costmap_msg->metadata.resolution = 0.05;
-  costmap_msg->metadata.size_x = 100;
-  costmap_msg->metadata.size_y = 100;
+  auto costmap_2d = std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.05, 0.0, 0.0);
+  auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+  stamped->header.stamp = node->now();
+  stamped->header.frame_id = "map";
+  stamped->costmap = costmap_2d;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
   dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
-  dummy_costmap->costmapCallback(costmap_msg);
+  dummy_costmap->costmapCallback(stamped);
 
   // Make smoother
   std::shared_ptr<tf2_ros::Buffer> dummy_tf;
