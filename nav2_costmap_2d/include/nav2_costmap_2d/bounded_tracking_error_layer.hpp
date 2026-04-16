@@ -200,14 +200,16 @@ protected:
 
   /**
    * @brief Record all cell indices inside the corridor interior into the index set.
+   *
+   * Always accumulates into the existing set. Callers are responsible for
+   * resetting the relevant region of corridor_index_set_ before the first
+   * call in each update cycle.
    * @param master_grid Costmap used for coordinate conversion.
    * @param walls Wall polygons defining the corridor interior.
-   * @param accumulate If true, add to existing set; if false, clear first.
    */
   void saveCorridorInterior(
     nav2_costmap_2d::Costmap2D & master_grid,
-    const WallPolygons & walls,
-    bool accumulate = false);
+    const WallPolygons & walls);
 
   /**
    * @brief Mark all cells within a circle radius as corridor interior.
@@ -268,7 +270,12 @@ protected:
   std::string robot_base_frame_;
 
   std::atomic<uint32_t> current_path_index_{0};
-  std::vector<bool> corridor_index_set_;
+  std::vector<uint8_t> corridor_index_set_;
+
+  int prev_fill_min_i_{-1};
+  int prev_fill_min_j_{-1};
+  int prev_fill_max_i_{-1};
+  int prev_fill_max_j_{-1};
 
 private:
   /** @brief A 2D costmap cell coordinate. */
