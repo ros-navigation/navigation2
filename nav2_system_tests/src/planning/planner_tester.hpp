@@ -212,7 +212,6 @@ private:
   // Occupancy grid publisher for visualization
   nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
   rclcpp::TimerBase::SharedPtr map_timer_;
-  rclcpp::WallRate map_publish_rate_;
   void mapCallback();
 
   // Executes a test run with the provided end points.
