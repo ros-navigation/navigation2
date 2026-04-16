@@ -60,10 +60,12 @@ public:
     * @param control_constraints Constraints on control
     * @param model_dt duration of a time step
     */
-  void initialize(const models::ControlConstraints & control_constraints, float model_dt)
+  void initialize(const models::ControlConstraints & control_constraints, float model_dt,
+    float model_delay)
   {
     control_constraints_ = control_constraints;
     model_dt_ = model_dt;
+    model_delay_ = model_delay;
   }
 
   /**
@@ -116,6 +118,25 @@ public:
         state.vy.col(i) = state.cvy.col(i - 1);
       }
     }
+
+    // Apply model delay
+    if(model_delay_ == 0.0) {return;}
+    unsigned int offset = std::floor((model_delay_ / model_dt_) + 0.5);
+    auto state_copy = state;
+    for (unsigned int i = 0; i != state.vx.shape(0); i++) {
+      for (unsigned int j = 1; j != state.vx.shape(1); j++) {
+        // Keep the first value before delay (because we cannot do better)
+        if (j < offset) {
+          state.vx(i, j) = state_copy.vx(i, 0);
+          state.wz(i, j) = state_copy.wz(i, 0);
+          if (is_holo) {state.vy(i, j) = state_copy.vy(i, 0);}
+        } else { // move the command to express delay
+          state.vx(i, j) = state_copy.vx(i, j - offset);
+          state.wz(i, j) = state_copy.wz(i, j - offset);
+          if (is_holo) {state.vy(i, j) = state_copy.vy(i, j - offset);}
+        }
+      }
+    }
   }
 
   /**
@@ -132,6 +153,7 @@ public:
 
 protected:
   float model_dt_{0.0};
+  float model_delay_{0.0};
   models::ControlConstraints control_constraints_{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 0.0f};
 };
