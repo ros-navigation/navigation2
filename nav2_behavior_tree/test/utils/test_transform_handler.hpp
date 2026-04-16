@@ -26,7 +26,6 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_thread.hpp"
-#include "nav2_ros_common/timer.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
@@ -141,8 +140,8 @@ private:
     updateRobotPose(robot_pose);
 
     // Publish the transform periodically
-    transform_timer_ = nav2::create_timer(
-      node_, 100ms, std::bind(&TransformHandler::publishRobotTransform, this));
+    transform_timer_ = node_->create_wall_timer(
+      100ms, std::bind(&TransformHandler::publishRobotTransform, this));
   }
 
   nav2::LifecycleNode::SharedPtr node_;
