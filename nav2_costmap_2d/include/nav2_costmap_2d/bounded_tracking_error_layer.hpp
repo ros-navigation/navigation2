@@ -20,7 +20,6 @@
 #include <cstddef>
 #include <mutex>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -261,8 +260,14 @@ protected:
   std::string costmap_frame_;
   std::string robot_base_frame_;
 
-  std::atomic<uint32_t> current_path_index_{0};
-  std::unordered_set<unsigned int> corridor_index_set_;
+private:
+
+  /** @brief A 2D costmap cell coordinate. */
+  struct CellPoint
+  {
+    int x;
+    int y;
+  };
 
   /**
    * @brief Subscription callback that stores the latest global plan.
@@ -274,14 +279,6 @@ protected:
    * @brief Reset path state and index tracker.
    */
   void resetState();
-
-private:
-  /** @brief A 2D costmap cell coordinate. */
-  struct CellPoint
-  {
-    int x;
-    int y;
-  };
 
   /**
    * @brief Convert world coordinates to a CellPoint, clamping to map bounds if outside.
@@ -329,6 +326,7 @@ private:
   std::string path_topic_;
   tf2::Duration transform_tolerance_;
 
+  std::atomic<uint32_t> current_path_index_{0};
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
@@ -341,6 +339,7 @@ private:
   WallPolygons walls_buffer_;
   std::vector<int> span_x_min_buffer_;
   std::vector<int> span_x_max_buffer_;
+  std::vector<bool> corridor_index_set_;
 };
 
 }  // namespace nav2_costmap_2d
