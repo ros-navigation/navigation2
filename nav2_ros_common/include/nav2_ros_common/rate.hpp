@@ -37,7 +37,7 @@ namespace nav2
  * @return The appropriate clock
  */
 template<typename NodeT>
-rclcpp::Clock::SharedPtr selectClock(NodeT node)
+rclcpp::Clock::SharedPtr selectSteadyOrSimClock(NodeT node)
 {
   bool use_sim_time = false;
   auto params = node->get_node_parameters_interface();
@@ -67,7 +67,7 @@ public:
    */
   template<typename NodeT>
   explicit Rate(NodeT node, double rate)
-  : rclcpp::Rate(rate, selectClock(node))
+  : rclcpp::Rate(rate, selectSteadyOrSimClock(node))
   {}
 };
 

@@ -350,7 +350,7 @@ rclcpp::TimerBase::SharedPtr create_timer(
 {
   return rclcpp::create_timer(
     node,
-    selectClock(node),
+    selectSteadyOrSimClock(node),
     rclcpp::Duration(period),
     std::move(callback),
     group);
