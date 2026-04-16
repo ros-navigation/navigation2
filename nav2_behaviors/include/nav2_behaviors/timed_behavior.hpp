@@ -227,7 +227,19 @@ protected:
     }
 
     auto start_time = clock_->now();
-    nav2::Rate loop_rate(node_.lock(), cycle_frequency_);
+    auto node = node_.lock();
+    if (!node) {
+      RCLCPP_ERROR(
+        logger_,
+        "Failed to run %s because the parent node is no longer available.",
+        behavior_name_.c_str());
+      result->error_msg = behavior_name_ + " failed: parent node expired";
+      result->total_elapsed_time = clock_->now() - start_time;
+      onActionCompletion(result);
+      action_server_->terminate_current(result);
+      return;
+    }
+    nav2::Rate loop_rate(node, cycle_frequency_);
 
     while (rclcpp::ok()) {
       elapsed_time_ = clock_->now() - start_time;
