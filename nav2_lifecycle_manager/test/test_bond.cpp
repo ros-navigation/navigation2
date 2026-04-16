@@ -19,7 +19,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_thread.hpp"
-#include "nav2_ros_common/wall_rate.hpp"
+#include "nav2_ros_common/rate.hpp"
 #include "nav2_lifecycle_manager/lifecycle_manager.hpp"
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 

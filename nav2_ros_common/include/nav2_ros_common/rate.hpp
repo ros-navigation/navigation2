@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROS_COMMON__WALL_RATE_HPP_
-#define NAV2_ROS_COMMON__WALL_RATE_HPP_
+#ifndef NAV2_ROS_COMMON__RATE_HPP_
+#define NAV2_ROS_COMMON__RATE_HPP_
 
 #include <chrono>
 #include <functional>
@@ -86,4 +86,4 @@ public:
 
 }  // namespace nav2
 
-#endif  // NAV2_ROS_COMMON__WALL_RATE_HPP_
+#endif  // NAV2_ROS_COMMON__RATE_HPP_
