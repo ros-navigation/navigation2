@@ -23,9 +23,9 @@
 #include "nav2_amcl/amcl_node.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
 #include <ctime>
-#include <cstdint>
 #include <iomanip>
 #include <memory>
 #include <string>
@@ -148,7 +148,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Create pose save timer if save_pose_rate > 0
   if (save_pose_rate_ > 0.0) {
-    save_pose_timer_ = create_wall_timer(
+    save_pose_timer_ = this->create_timer(
       std::chrono::duration<double>(1.0 / save_pose_rate_),
       std::bind(&AmclNode::savePoseTimerCallback, this));
   }

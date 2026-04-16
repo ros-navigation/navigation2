@@ -38,7 +38,6 @@ BehaviorTreeEngine::BehaviorTreeEngine(
     factory_.registerFromPlugin(loader.getOSName(p));
   }
 
-  // clock for throttled debug log
   clock_ = node->get_clock();
 }
 
@@ -49,7 +48,7 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  nav2_behavior_tree::LoopRate loopRate(loopTimeout, tree);
+  nav2_behavior_tree::LoopRate loopRate(loopTimeout, tree, clock_);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes

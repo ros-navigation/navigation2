@@ -35,7 +35,10 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
 : is_active_(false),
   initial_pose_received_(false)
 {
-  node_ = rclcpp::Node::make_shared("assisted_teleop_behavior_test");
+  node_ = rclcpp::Node::make_shared(
+    "assisted_teleop_behavior_test",
+    rclcpp::NodeOptions().parameter_overrides(
+      {rclcpp::Parameter("use_sim_time", true)}));
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -163,7 +166,7 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
   // Wait for the server to be done with the goal
   auto result_future = client_ptr_->async_get_result(goal_handle);
 
-  rclcpp::Rate r(1);
+  rclcpp::Rate r(1, node_->get_clock());
 
   counter_ = 0;
   auto start_time = std::chrono::system_clock::now();
