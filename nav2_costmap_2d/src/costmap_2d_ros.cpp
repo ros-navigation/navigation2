@@ -532,7 +532,11 @@ Costmap2DROS::mapUpdateLoop(double frequency)
 
   RCLCPP_DEBUG(get_logger(), "Entering loop");
 
-  rclcpp::Rate r(frequency, this->get_clock());    // 200ms by default
+  // Use steady clock on real hardware (immune to NTP jumps), ROS time in simulation
+  auto loop_clock = get_parameter("use_sim_time").as_bool() ?
+    this->get_clock() :
+    std::make_shared<rclcpp::Clock>(RCL_STEADY_TIME);
+  rclcpp::Rate r(frequency, loop_clock);
 
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
     nav2_util::ExecutionTimer timer;
