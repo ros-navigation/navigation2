@@ -27,12 +27,16 @@ namespace nav2_behavior_tree
 class LoopRate
 {
 public:
-  LoopRate(const rclcpp::Duration & period, BT::Tree * tree)
-  : clock_(std::make_shared<rclcpp::Clock>(RCL_STEADY_TIME)), period_(period),
+  LoopRate(
+    const rclcpp::Duration & period, BT::Tree * tree,
+    rclcpp::Clock::SharedPtr clock)
+  : clock_(clock), period_(period),
     last_interval_(clock_->now()), tree_(tree)
   {}
 
-  // Similar to rclcpp::WallRate::sleep() but using tree_->sleep()
+  // Rate-limits the BT tick loop using the provided clock (sim-time-aware).
+  // Sleeps via short wall-time polls on the tree's WakeUpSignal so that
+  // preemption (emitWakeUpSignal) is still handled promptly.
   bool sleep()
   {
     // Time coming into sleep
@@ -57,11 +61,13 @@ public:
       // Either way do not sleep and return false
       return false;
     }
-    // Calculate the time to sleep
-    auto time_to_sleep = next_interval - now;
-    std::chrono::nanoseconds time_to_sleep_ns(time_to_sleep.nanoseconds());
-    // Sleep (can get interrupted by emitWakeUpSignal())
-    tree_->sleep(std::chrono::duration_cast<std::chrono::microseconds>(time_to_sleep_ns));
+    // Poll with short wall-time waits, checking clock deadline and wake-up signal
+    auto wake_up = tree_->wakeUpSignal();
+    while (clock_->now() < next_interval) {
+      if (wake_up && wake_up->waitFor(std::chrono::milliseconds(1))) {
+        return true;
+      }
+    }
     return true;
   }
 
