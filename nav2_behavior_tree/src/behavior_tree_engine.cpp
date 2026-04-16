@@ -25,6 +25,7 @@
 #include "behaviortree_cpp/utils/shared_library.h"
 #include "nav2_behavior_tree/json_utils.hpp"
 #include "nav2_behavior_tree/utils/loop_rate.hpp"
+#include "nav2_ros_common/wall_rate.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -40,6 +41,8 @@ BehaviorTreeEngine::BehaviorTreeEngine(
 
   // clock for throttled debug log
   clock_ = node->get_clock();
+  // clock for rate-limiting (steady or sim time)
+  rate_clock_ = nav2::selectClock(node);
 }
 
 BtStatus
@@ -49,7 +52,7 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  nav2_behavior_tree::LoopRate loopRate(loopTimeout, tree);
+  nav2_behavior_tree::LoopRate loopRate(loopTimeout, tree, rate_clock_);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes

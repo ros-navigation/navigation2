@@ -23,14 +23,16 @@
 #include "nav2_amcl/amcl_node.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
 #include <ctime>
-#include <cstdint>
 #include <iomanip>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "nav2_ros_common/wall_rate.hpp"
 
 #include "nav2_amcl/angleutils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -148,7 +150,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Create pose save timer if save_pose_rate > 0
   if (save_pose_rate_ > 0.0) {
-    save_pose_timer_ = create_wall_timer(
+    save_pose_timer_ = this->create_wall_timer(
       std::chrono::duration<double>(1.0 / save_pose_rate_),
       std::bind(&AmclNode::savePoseTimerCallback, this));
   }
