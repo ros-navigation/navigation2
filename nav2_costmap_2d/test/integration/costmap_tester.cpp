@@ -41,6 +41,7 @@
 #include "tf2_ros/transform_listener.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_ros_common/timer.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -168,7 +169,7 @@ int main(int argc, char ** argv)
   tf_ = new tf2_ros::Buffer(node->get_clock());
   tfl_ = new tf2_ros::TransformListener(*tf_);
   map_tester = new nav2_costmap_2d::CostmapTester(*tf_);
-  rclcpp::TimerBase::SharedPtr timer = node->create_wall_timer(30000ms, testCallback);
+  rclcpp::TimerBase::SharedPtr timer = nav2::create_timer(node, 30000ms, testCallback);
   rclcpp::spin(costmap_ros_);
   rclcpp::shutdown();
 
