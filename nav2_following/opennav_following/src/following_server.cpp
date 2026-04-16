@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include "angles/angles.h"
+#include "nav2_ros_common/wall_rate.hpp"
 #include "opennav_docking_core/docking_exceptions.hpp"
 #include "opennav_following/following_server.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -180,7 +181,7 @@ void FollowingServer::followObject()
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
   action_start_time_ = this->now();
-  rclcpp::Rate loop_rate(params_->controller_frequency);
+  nav2::WallRate loop_rate(this, params_->controller_frequency);
 
   auto goal = following_action_server_->get_current_goal();
   auto result = std::make_shared<FollowObject::Result>();
@@ -525,7 +526,7 @@ bool FollowingServer::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
   if (detected.header.stamp == rclcpp::Time(0)) {
     auto start = this->now();
     auto timeout = rclcpp::Duration::from_seconds(params_->detection_timeout);
-    rclcpp::Rate wait_rate(params_->controller_frequency);
+    nav2::WallRate wait_rate(this, params_->controller_frequency);
     while (this->now() - start < timeout) {
       // Check if a new detection arrived
       if (detected_dynamic_pose_.header.stamp != rclcpp::Time(0)) {
