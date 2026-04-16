@@ -171,7 +171,7 @@ TrackerResult RouteTracker::trackRoute(
     throw nav2_core::RouteException("Route tracker node expired");
   }
 
-  nav2::WallRate r(node, tracker_update_rate_);
+  nav2::Rate r(node, tracker_update_rate_);
   while (rclcpp::ok()) {
     bool status_change = false, completed = false;
 

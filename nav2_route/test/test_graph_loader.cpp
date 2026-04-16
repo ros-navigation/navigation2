@@ -19,6 +19,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/wall_rate.hpp"
 #include "nav2_route/graph_loader.hpp"
 #include "tf2_ros/static_transform_broadcaster.hpp"
 
@@ -107,7 +108,7 @@ TEST(GraphLoader, test_transformation_api)
   transform.transform.rotation.w = 1.0;
   transform.transform.translation.x = 1.0;
   tf_broadcaster->sendTransform(transform);
-  rclcpp::Rate(1).sleep();
+  nav2::WallRate(1).sleep();
   tf_broadcaster->sendTransform(transform);
   executor.spin_all(std::chrono::milliseconds(50));
 

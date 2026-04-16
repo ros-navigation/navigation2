@@ -51,30 +51,36 @@ rclcpp::Clock::SharedPtr selectClock(NodeT node)
 }
 
 /**
- * @brief A drop-in replacement for rclcpp::WallRate that respects use_sim_time.
+ * @brief A sim-time-aware rate for Nav2 loops.
  *
  * When use_sim_time is true, the rate is governed by the node's ROS clock
  * (simulation time). When use_sim_time is false, a steady (monotonic) clock
  * is used to avoid issues with system clock jumps (e.g. NTP corrections).
- *
- * Usage:
- *   nav2::WallRate loop_rate(node, 20.0);  // 20 Hz
- *   while (rclcpp::ok()) {
- *     // ... work ...
- *     loop_rate.sleep();
- *   }
  */
-class WallRate : public rclcpp::Rate
+class Rate : public rclcpp::Rate
 {
 public:
   /**
-   * @brief Construct a WallRate from a node and frequency.
+   * @brief Construct a Rate from a node and frequency.
    * @param node Any ROS node pointer or shared_ptr (used to check use_sim_time and obtain clock)
    * @param rate Desired frequency in Hz
    */
   template<typename NodeT>
-  explicit WallRate(NodeT node, double rate)
+  explicit Rate(NodeT node, double rate)
   : rclcpp::Rate(rate, selectClock(node))
+  {}
+};
+
+/**
+ * @brief A steady-clock Nav2 wall rate.
+ *
+ * This rate always uses RCL_STEADY_TIME and is never sim-time-aware.
+ */
+class WallRate : public rclcpp::WallRate
+{
+public:
+  explicit WallRate(double rate)
+  : rclcpp::WallRate(rate)
   {}
 };
 

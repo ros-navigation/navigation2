@@ -74,7 +74,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
     std::string("Shutting down ");
 
-  init_timer_ = nav2::create_wall_timer(
+  init_timer_ = nav2::create_timer(
     this,
     0s,
     [this]() -> void {
@@ -83,7 +83,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
       createLifecycleServiceClients();
       createLifecycleServiceServers();
       if (autostart_) {
-        init_timer_ = nav2::create_wall_timer(
+        init_timer_ = nav2::create_timer(
           this,
           0s,
           [this]() -> void {
@@ -484,7 +484,7 @@ LifecycleManager::createBondTimer()
   }
 
   message("Creating bond timer...");
-  bond_timer_ = nav2::create_wall_timer(
+  bond_timer_ = nav2::create_timer(
     this,
     200ms,
     std::bind(&LifecycleManager::checkBondConnections, this),
@@ -560,7 +560,7 @@ LifecycleManager::checkBondConnections()
       // Initialize the bond respawn timer to check if server comes back online
       // after a failure, within a maximum timeout period.
       if (attempt_respawn_reconnection_) {
-        bond_respawn_timer_ = nav2::create_wall_timer(
+        bond_respawn_timer_ = nav2::create_timer(
           this,
           1s,
           std::bind(&LifecycleManager::checkBondRespawnConnection, this),
