@@ -28,6 +28,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2_core
 {
@@ -206,6 +207,7 @@ public:
     auto node = parent_node.lock();
     logger_ = node->get_logger();
     clock_ = node->get_clock();
+    node_ = parent_node;
     feedback_utils_ = feedback_utils;
     plugin_muxer_ = plugin_muxer;
 
@@ -333,7 +335,7 @@ protected:
       plugin_muxer_->preemptCurrentNavigator();
 
       const auto start = std::chrono::steady_clock::now();
-      rclcpp::Rate r(100);
+      nav2::Rate r(100, node_.lock());
       while (plugin_muxer_->isNavigating()) {
         if (std::chrono::steady_clock::now() - start > navigator_preemption_timeout_) {
           RCLCPP_ERROR(
@@ -421,6 +423,7 @@ protected:
   bt_action_server_;
   rclcpp::Logger logger_{rclcpp::get_logger("Navigator")};
   rclcpp::Clock::SharedPtr clock_;
+  nav2::LifecycleNode::WeakPtr node_;
   FeedbackUtils feedback_utils_;
   NavigatorMuxer * plugin_muxer_;
 
