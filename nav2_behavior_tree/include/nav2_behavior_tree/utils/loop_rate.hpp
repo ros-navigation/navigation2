@@ -68,7 +68,7 @@ public:
       // Sim time diverges from wall time — poll the target clock in short
       // intervals while remaining interruptible by emitWakeUpSignal().
       while (clock_->now() < next_interval) {
-        if (wake_up->waitFor(std::chrono::milliseconds(2))) {
+        if (wake_up->waitFor(std::chrono::microseconds(500))) {
           return true;  // preempted
         }
       }
