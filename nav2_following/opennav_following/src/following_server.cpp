@@ -339,7 +339,7 @@ void FollowingServer::followObject()
 bool FollowingServer::approachObject(
   geometry_msgs::msg::PoseStamped & object_pose, const std::string & target_frame)
 {
-  rclcpp::Rate loop_rate(params_->controller_frequency);
+  rclcpp::Rate loop_rate(params_->controller_frequency, this->get_clock());
   while (rclcpp::ok()) {
     // Update the iteration start time, used for get robot position, transformation and control
     iteration_start_time_ = this->now();
@@ -426,7 +426,7 @@ bool FollowingServer::rotateToObject(
   std::vector<double> angles = {initial_yaw + params_->search_angle,
     initial_yaw - params_->search_angle};
 
-  rclcpp::Rate loop_rate(params_->controller_frequency);
+  rclcpp::Rate loop_rate(params_->controller_frequency, this->get_clock());
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->rotate_to_object_timeout);
 
