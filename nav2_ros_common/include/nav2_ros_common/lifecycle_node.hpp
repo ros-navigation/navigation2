@@ -309,7 +309,7 @@ public:
     rclcpp::CallbackGroup::SharedPtr group = nullptr)
   {
     return rclcpp::create_timer(
-      nav2::selectClock(this),
+      nav2::selectSteadyOrSimClock(this),
       period,
       std::move(callback),
       group,

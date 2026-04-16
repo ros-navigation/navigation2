@@ -57,7 +57,7 @@ BehaviorTreeEngine::run(
     return BtStatus::FAILED;
   }
 
-  auto rate_clock = nav2::selectClock(node);
+  auto rate_clock = nav2::selectSteadyOrSimClock(node);
   nav2_behavior_tree::LoopRate loopRate(loopTimeout, tree, rate_clock);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
