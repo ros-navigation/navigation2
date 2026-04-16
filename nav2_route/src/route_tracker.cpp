@@ -163,7 +163,7 @@ TrackerResult RouteTracker::trackRoute(
     publishFeedback(true, route.start_node->nodeid, 0, 0, {});
   }
 
-  rclcpp::Rate r(tracker_update_rate_, clock_);
+  rclcpp::Rate r(tracker_update_rate_);
   while (rclcpp::ok()) {
     bool status_change = false, completed = false;
 
