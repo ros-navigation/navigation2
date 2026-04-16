@@ -215,7 +215,6 @@ BoundedTrackingErrorLayer::updateCosts(
       logger_,
       "Path is %.2f seconds old, clearing corridor state — waiting for new plan", age);
     resetState();
-    current_ = false;
     return;
   }
 
