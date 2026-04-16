@@ -22,6 +22,7 @@
 #include "tf2_ros/create_timer_ros.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/timer.hpp"
 
 using namespace std::chrono_literals;
 
@@ -82,8 +83,8 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Creating timer
-  timer_ = this->create_timer(
-    std::chrono::duration<double>{1.0 / frequency_},
+  timer_ = nav2::create_timer(
+    this, std::chrono::duration<double>{1.0 / frequency_},
     std::bind(&CollisionDetector::process, this));
 
   // Creating bond connection

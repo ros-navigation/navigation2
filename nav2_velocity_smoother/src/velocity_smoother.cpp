@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "nav2_velocity_smoother/velocity_smoother.hpp"
+#include "nav2_ros_common/timer.hpp"
 
 using namespace std::chrono_literals;
 using std::placeholders::_1;
@@ -167,8 +168,8 @@ VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Activating");
   smoothed_cmd_pub_->on_activate();
   double timer_duration_ms = 1000.0 / smoothing_frequency_;
-  timer_ = this->create_timer(
-    std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
+  timer_ = nav2::create_timer(
+    this, std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
     std::bind(&VelocitySmoother::smootherTimer, this));
 
   // Add callback for dynamic parameters
@@ -591,8 +592,8 @@ void VelocitySmoother::updateParametersCallback(const std::vector<rclcpp::Parame
         }
 
         double timer_duration_ms = 1000.0 / smoothing_frequency_;
-        timer_ = this->create_timer(
-          std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
+        timer_ = nav2::create_timer(
+          this, std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
           std::bind(&VelocitySmoother::smootherTimer, this));
       } else if (param_name == "velocity_timeout") {
         velocity_timeout_ = rclcpp::Duration::from_seconds(parameter.as_double());
