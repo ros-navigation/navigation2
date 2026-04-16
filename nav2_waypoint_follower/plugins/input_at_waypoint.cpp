@@ -19,7 +19,7 @@
 #include "pluginlib/class_list_macros.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/wall_rate.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2_waypoint_follower
 {

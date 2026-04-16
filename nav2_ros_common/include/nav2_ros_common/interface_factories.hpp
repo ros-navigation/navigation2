@@ -27,7 +27,7 @@
 #include "nav2_ros_common/subscription.hpp"
 #include "nav2_ros_common/action_client.hpp"
 #include "rclcpp_action/client.hpp"
-#include "nav2_ros_common/wall_rate.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2
 {
