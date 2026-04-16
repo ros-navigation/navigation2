@@ -303,7 +303,7 @@ public:
    *
    * Shadows the base class create_wall_timer. When use_sim_time is true,
    * uses the node's ROS clock (simulation time). When false, uses a steady
-   * (monotonic) clock to avoid system clock jumps.
+   * (monotonic) clock to avoid system clock jumps from NTP corrections.
    */
   template<typename DurationRepT, typename DurationT, typename CallbackT>
   typename rclcpp::GenericTimer<CallbackT>::SharedPtr

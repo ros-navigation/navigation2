@@ -36,8 +36,8 @@ namespace nav2
  * @param node Any ROS node pointer or shared_ptr
  * @return The appropriate clock
  */
-template<typename NodePtrT>
-rclcpp::Clock::SharedPtr selectClock(NodePtrT node)
+template<typename NodeT>
+rclcpp::Clock::SharedPtr selectClock(NodeT node)
 {
   bool use_sim_time = false;
   auto params = node->get_node_parameters_interface();
@@ -72,35 +72,11 @@ public:
    * @param node Any ROS node pointer or shared_ptr (used to check use_sim_time and obtain clock)
    * @param rate Desired frequency in Hz
    */
-  template<typename NodePtrT>
-  explicit WallRate(NodePtrT node, double rate)
+  template<typename NodeT>
+  explicit WallRate(NodeT node, double rate)
   : rclcpp::Rate(rate, selectClock(node))
   {}
 };
-
-/**
- * @brief A drop-in replacement for create_wall_timer that respects use_sim_time.
- *
- * When use_sim_time is true, the timer uses the node's ROS clock (simulation time).
- * When use_sim_time is false, a steady (monotonic) clock is used.
- *
- * Usage:
- *   auto timer = nav2::create_wall_timer(this, 50ms, callback);
- */
-template<typename NodePtrT, typename DurationRepT, typename DurationT, typename CallbackT>
-rclcpp::TimerBase::SharedPtr create_wall_timer(
-  NodePtrT node,
-  std::chrono::duration<DurationRepT, DurationT> period,
-  CallbackT callback,
-  rclcpp::CallbackGroup::SharedPtr group = nullptr)
-{
-  return rclcpp::create_timer(
-    node,
-    selectClock(node),
-    rclcpp::Duration(period),
-    std::move(callback),
-    group);
-}
 
 }  // namespace nav2
 
