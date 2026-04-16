@@ -272,7 +272,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   std::string tf_error;
 
   RCLCPP_INFO(get_logger(), "Checking transform");
-  nav2::Rate r(2, this);
+  rclcpp::Rate r(2);
   const auto initial_transform_timeout = rclcpp::Duration::from_seconds(
     initial_transform_timeout_);
   const auto initial_transform_timeout_point = now() + initial_transform_timeout;
@@ -618,7 +618,7 @@ Costmap2DROS::updateMap()
 void
 Costmap2DROS::waitUntilCurrent(const rclcpp::Duration & timeout)
 {
-  nav2::Rate r(100, this);
+  rclcpp::Rate r(100);
   auto waiting_start = now();
   while (!isCurrent()) {
     if (now() - waiting_start > timeout) {
@@ -655,7 +655,7 @@ Costmap2DROS::start()
   stop_updates_ = false;
 
   // block until the costmap is re-initialized.. meaning one update cycle has run
-  nav2::Rate r(20.0, this);
+  rclcpp::Rate r(20.0);
   while (rclcpp::ok() && !initialized_) {
     RCLCPP_DEBUG(get_logger(), "Sleeping, waiting for initialized_");
     r.sleep();
@@ -701,7 +701,7 @@ Costmap2DROS::resume()
   stop_updates_ = false;
 
   // block until the costmap is re-initialized.. meaning one update cycle has run
-  nav2::Rate r(100.0, this);
+  rclcpp::Rate r(100.0);
   while (!initialized_) {
     r.sleep();
   }
