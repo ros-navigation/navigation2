@@ -125,7 +125,7 @@ void SimpleChargingDock::configure(
   }
 
   // Setup filter
-  external_detection_rotation_.setEuler(pitch, roll, yaw);
+  external_detection_rotation_.setRPY(roll, pitch, yaw);
   filter_ = std::make_unique<PoseFilter>(filter_coef, external_detection_timeout_);
 
   if (!detector_service_name_.empty()) {
@@ -180,7 +180,7 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   staging_pose.pose.position.x += cos(yaw) * staging_x_offset_;
   staging_pose.pose.position.y += sin(yaw) * staging_x_offset_;
   tf2::Quaternion orientation;
-  orientation.setEuler(0.0, 0.0, yaw + staging_yaw_offset_);
+  orientation.setRPY(0.0, 0.0, yaw + staging_yaw_offset_);
   staging_pose.pose.orientation = tf2::toMsg(orientation);
 
   // Publish staging pose for debugging purposes
@@ -254,7 +254,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
   tf2::doTransform(just_orientation, just_orientation, transform);
 
   tf2::Quaternion orientation;
-  orientation.setEuler(0.0, 0.0, tf2::getYaw(just_orientation.pose.orientation));
+  orientation.setRPY(0.0, 0.0, tf2::getYaw(just_orientation.pose.orientation));
   dock_pose_.pose.orientation = tf2::toMsg(orientation);
 
   // Construct dock_pose_ by applying translation/rotation
