@@ -21,6 +21,10 @@
 #include <string>
 #include <vector>
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
 #include "nav2_behavior_tree/ros_topic_logger.hpp"
@@ -296,6 +300,9 @@ protected:
   // Whether to log BT transitions to IDLE state
   bool log_idle_ = true;
 
+  // Whether to use global reinitialization for asynch nodes
+  bool is_global_ = false;
+
   // Parameters for Groot2 monitoring
   bool enable_groot_monitoring_ = false;
   int groot_server_port_ = 1667;
@@ -310,6 +317,8 @@ protected:
   uint16_t internal_error_code_;
   std::string internal_error_msg_;
 
+  // To keep track of the execution number
+  boost::uuids::random_generator uuid_generator_;
   std::atomic_bool muxer_preemption_requested_{false};
 };
 

@@ -49,6 +49,27 @@ protected:
 std::shared_ptr<nav2_behavior_tree::TimeExpiredCondition>
 TimeExpiredConditionTestFixture::bt_node_ = nullptr;
 
+class TimeExpiredConditionGlobalTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+{
+public:
+  void SetUp()
+  {
+    config_->input_ports["seconds"] = 1.0;
+    config_->input_ports["is_global"] = "true";
+    bt_node_ = std::make_shared<nav2_behavior_tree::TimeExpiredCondition>(
+      "time_expired", *config_);
+  }
+  void TearDown()
+  {
+    bt_node_.reset();
+  }
+
+protected:
+  static std::shared_ptr<nav2_behavior_tree::TimeExpiredCondition> bt_node_;
+};
+std::shared_ptr<nav2_behavior_tree::TimeExpiredCondition>
+TimeExpiredConditionGlobalTestFixture::bt_node_ = nullptr;
+
 TEST_F(TimeExpiredConditionTestFixture, test_behavior)
 {
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
@@ -62,6 +83,26 @@ TEST_F(TimeExpiredConditionTestFixture, test_behavior)
       EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
     }
   }
+}
+
+TEST_F(TimeExpiredConditionGlobalTestFixture, test_runid_global_mode)
+{
+  config_->blackboard->set<std::string>("run_id", "runid_1");
+
+  // First tick: initializes start_ and returns FAILURE
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Wait less than 1 second — not expired yet
+  rclcpp::sleep_for(500ms);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // New RunID: start_ must NOT reset — timer continues from where it was
+  config_->blackboard->set<std::string>("run_id", "runid_2");
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Wait another 600ms (total ~1.1s from start_) — should now expire
+  rclcpp::sleep_for(600ms);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)
