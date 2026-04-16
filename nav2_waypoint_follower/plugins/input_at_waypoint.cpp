@@ -90,7 +90,7 @@ bool InputAtWaypoint::processAtWaypoint(
   }
 
   rclcpp::Time start = clock_->now();
-  nav2::WallRate r(node, 50);
+  nav2::Rate r(node, 50);
   bool input_received = false;
   while (clock_->now() - start < timeout_) {
     {
