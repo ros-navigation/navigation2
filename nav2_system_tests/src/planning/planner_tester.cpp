@@ -25,7 +25,6 @@
 
 #include "planner_tester.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav2_ros_common/timer.hpp"
 #include "nav2_map_server/map_mode.hpp"
 #include "nav2_map_server/map_io.hpp"
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
@@ -123,8 +122,8 @@ void PlannerTester::startRobotTransform()
   updateRobotPosition(robot_position);
 
   // Publish the transform periodically
-  transform_timer_ = nav2::create_timer(
-    this, 100ms, std::bind(&PlannerTester::publishRobotTransform, this));
+  transform_timer_ = create_wall_timer(
+    100ms, std::bind(&PlannerTester::publishRobotTransform, this));
 }
 
 void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & position)
@@ -200,8 +199,7 @@ void PlannerTester::loadDefaultMap()
   map_->info.map_load_time = this->now();
 
   // TODO(orduno): #443 replace with a latched topic
-  map_timer_ = nav2::create_timer(
-    this, 1s, [this]() -> void {map_pub_->publish(*map_);});
+  map_timer_ = create_wall_timer(1s, [this]() -> void {map_pub_->publish(*map_);});
 
   map_set_ = true;
   costmap_set_ = false;
