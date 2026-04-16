@@ -119,6 +119,8 @@ void Optimizer::getParams()
   getParam(s.sampling_std.vx, "vx_std", 0.2f);
   getParam(s.sampling_std.vy, "vy_std", 0.2f);
   getParam(s.sampling_std.wz, "wz_std", 0.4f);
+  getParam(s.advanced_constraints.wz_std_decay_to, "advanced.wz_std_decay_to", 0.0f);
+  getParam(s.advanced_constraints.wz_std_decay_strength, "advanced.wz_std_decay_strength", -1.0f);
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
   getParam(s.open_loop, "open_loop", false);
 
@@ -528,10 +530,11 @@ void Optimizer::updateControlSequence()
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
 
-  if (s.sampling_std.wz > 0.0f) {
+  const float wz_std_adaptive = noise_generator_.getWzStdAdaptive();
+  if (wz_std_adaptive > 0.0f) {
     auto wz_T = control_sequence_.wz.transpose();
     auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
-    const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
+    const float gamma_wz = s.gamma / (wz_std_adaptive * wz_std_adaptive);
     costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
   }
 
