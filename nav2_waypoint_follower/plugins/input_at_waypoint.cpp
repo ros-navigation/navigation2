@@ -19,7 +19,6 @@
 #include "pluginlib/class_list_macros.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/rate.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -49,7 +48,6 @@ void InputAtWaypoint::initialize(
 
   logger_ = node->get_logger();
   clock_ = node->get_clock();
-  node_ = parent;
 
   double timeout;
   std::string input_topic;
@@ -84,7 +82,7 @@ bool InputAtWaypoint::processAtWaypoint(
   input_received_ = false;
 
   rclcpp::Time start = clock_->now();
-  nav2::Rate r(50, node_.lock());
+  rclcpp::Rate r(50, clock_);
   bool input_received = false;
   while (clock_->now() - start < timeout_) {
     {

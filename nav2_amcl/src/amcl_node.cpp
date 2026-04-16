@@ -50,7 +50,6 @@
 
 #include "nav2_amcl/portable_utils.hpp"
 #include "nav2_ros_common/validate_messages.hpp"
-#include "nav2_ros_common/timer.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 using namespace std::chrono_literals;
@@ -149,9 +148,9 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Create pose save timer if save_pose_rate > 0
   if (save_pose_rate_ > 0.0) {
-    save_pose_timer_ = nav2::create_timer(
-      this, std::chrono::duration<double>(1.0 / save_pose_rate_),
-      std::bind(&AmclNode::savePoseTimerCallback, this), nullptr, true);
+    save_pose_timer_ = create_wall_timer(
+      std::chrono::duration<double>(1.0 / save_pose_rate_),
+      std::bind(&AmclNode::savePoseTimerCallback, this));
   }
 
   auto node = shared_from_this();
