@@ -389,7 +389,8 @@
       <input_port name="path">Path to Check</input_port>
       <input_port name="max_cost">Maximum cost of the path</input_port>
       <input_port name="consider_unknown_as_obstacle">Whether to consider unknown cost as obstacle</input_port>
-      <input_port name="check_full_path">Whether to check all poses (true) or stop at first invalid pose (false)</input_port>
+      <input_port name="stop_at_first_collision">Whether to stop validation at first collision (true) or check all poses (false)</input_port>
+      <input_port name="max_lookahead_distance">Maximum distance ahead of the robot to validate (-1 = full path)</input_port>
       <input_port name="layer_name">Name of the costmap layer to check against (empty = full costmap)</input_port>
       <input_port name="footprint">Custom footprint specification as bracketed array of arrays, e.g., [[x1,y1],[x2,y2],...] (empty = use robot footprint)</input_port>
       <input_port name="server_timeout">Server timeout</input_port>

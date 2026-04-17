@@ -514,11 +514,17 @@ TEST(UtilsTests, toTrajectoryMsgTest)
   EXPECT_EQ(trajectory_msg->points[4].velocity.linear.y, 0.0);
   EXPECT_EQ(trajectory_msg->points[4].velocity.angular.z, 1.0);
 
-  EXPECT_EQ(trajectory_msg->points[0].time_from_start, rclcpp::Duration(0, 0));
-  EXPECT_EQ(trajectory_msg->points[1].time_from_start, rclcpp::Duration(1, 0));
-  EXPECT_EQ(trajectory_msg->points[2].time_from_start, rclcpp::Duration(2, 0));
-  EXPECT_EQ(trajectory_msg->points[3].time_from_start, rclcpp::Duration(3, 0));
-  EXPECT_EQ(trajectory_msg->points[4].time_from_start, rclcpp::Duration(4, 0));
+  rclcpp::Time base_time(header.stamp);
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[0].header.stamp) - base_time,
+    rclcpp::Duration(0, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[1].header.stamp) - base_time,
+    rclcpp::Duration(1, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[2].header.stamp) - base_time,
+    rclcpp::Duration(2, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[3].header.stamp) - base_time,
+    rclcpp::Duration(3, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[4].header.stamp) - base_time,
+    rclcpp::Duration(4, 0));
 }
 
 TEST(UtilsTests, getLastPathPoseTest)

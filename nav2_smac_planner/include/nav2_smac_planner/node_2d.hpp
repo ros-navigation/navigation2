@@ -63,7 +63,7 @@ public:
    * @param Node2D right hand side node reference
    * @return If cell indices are equal
    */
-  bool operator==(const Node2D & rhs)
+  bool operator==(const Node2D & rhs) const
   {
     return this->_index == rhs._index;
   }

@@ -15,6 +15,7 @@
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
 #include "ompl/base/spaces/ReedsSheppStateSpace.h"
+#include "ompl/base/spaces/SE2StateSpace.h"
 #include "nav2_smac_planner/distance_heuristic.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/node_lattice.hpp"
@@ -83,8 +84,15 @@ void DistanceHeuristic<NodeLattice>::precomputeDistanceHeuristic(
   const SearchInfo & search_info,
   MotionTableT & motion_table)
 {
-  // Dubin or Reeds-Shepp shortest distances
-  if (!search_info.allow_reverse_expansion) {
+  motion_table.lattice_metadata =
+    LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
+
+  // Select state space based on motion model from lattice file
+  if (motion_table.lattice_metadata.motion_model == "omni") {
+    // Holonomic robots: Euclidean distance heuristic
+    motion_table.state_space = std::make_shared<ompl::base::SE2StateSpace>();
+    motion_table.motion_model = MotionModel::OMNI;
+  } else if (!search_info.allow_reverse_expansion) {
     motion_table.state_space = std::make_shared<ompl::base::DubinsStateSpace>(
       search_info.minimum_turning_radius);
     motion_table.motion_model = MotionModel::DUBIN;
@@ -93,8 +101,6 @@ void DistanceHeuristic<NodeLattice>::precomputeDistanceHeuristic(
       search_info.minimum_turning_radius);
     motion_table.motion_model = MotionModel::REEDS_SHEPP;
   }
-  motion_table.lattice_metadata =
-    LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
 
   ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
   to[0] = 0.0;

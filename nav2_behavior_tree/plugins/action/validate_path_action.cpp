@@ -35,7 +35,8 @@ void ValidatePath::on_tick()
   getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
   getInput<std::string>("layer_name", layer_name_);
   getInput<std::string>("footprint", footprint_);
-  getInput<bool>("check_full_path", check_full_path_);
+  getInput<bool>("stop_at_first_collision", stop_at_first_collision_);
+  getInput<double>("max_lookahead_distance", max_lookahead_distance_);
   getInput("path", path_);
 
   request_ = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
@@ -44,7 +45,8 @@ void ValidatePath::on_tick()
   request_->consider_unknown_as_obstacle = consider_unknown_as_obstacle_;
   request_->layer_name = layer_name_;
   request_->footprint = footprint_;
-  request_->check_full_path = check_full_path_;
+  request_->stop_at_first_collision = stop_at_first_collision_;
+  request_->max_lookahead_distance = max_lookahead_distance_;
 }
 
 BT::NodeStatus ValidatePath::on_completion(

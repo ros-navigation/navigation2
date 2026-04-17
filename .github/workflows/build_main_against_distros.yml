@@ -23,7 +23,7 @@ jobs:
       run: |
         mkdir -p /tmp/docker_context/ws/src
         cp -r . /tmp/docker_context/ws/src
-        echo 'FROM ghcr.io/ros-navigation/nav2_docker:${{ matrix.ros_distro }}-nightly
+        echo 'FROM ghcr.io/ros-navigation/nav2_docker:${{ matrix.ros_distro }}-nightly-standard
 
         RUN apt-get update && apt-get install -y \
           python3-pip \
@@ -36,6 +36,8 @@ jobs:
         WORKDIR /root/ws
 
         COPY ws /root/ws
+
+        RUN vcs import src < src/tools/underlay.repos
 
         RUN apt-get update && rosdep update && \
           rosdep install --from-paths src --ignore-src -r -y \
