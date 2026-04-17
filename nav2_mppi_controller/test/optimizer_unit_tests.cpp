@@ -38,7 +38,7 @@ public:
     EXPECT_EQ(motion_model_.get(), nullptr);
     EXPECT_NO_THROW(setMotionModel("diff_drive"));
     EXPECT_NE(motion_model_.get(), nullptr);
-    EXPECT_FALSE(motion_model_->isHolonomic());
+    EXPECT_TRUE(dynamic_cast<DiffDriveMotionModel *>(motion_model_.get()));
     EXPECT_FALSE(isHolonomic());
   }
 
@@ -47,7 +47,7 @@ public:
     EXPECT_EQ(motion_model_.get(), nullptr);
     EXPECT_NO_THROW(setMotionModel("omni"));
     EXPECT_NE(motion_model_.get(), nullptr);
-    EXPECT_TRUE(motion_model_->isHolonomic());
+    EXPECT_TRUE(dynamic_cast<OmniMotionModel *>(motion_model_.get()));
     EXPECT_TRUE(isHolonomic());
   }
 

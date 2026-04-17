@@ -76,11 +76,9 @@ Three built-in motion models are provided:
 
 | Plugin type                    | Description                                  |
 | ------------------------------ | -------------------------------------------- |
-| `mppi::AckermannMotionModel`   | Ackermann steering|
-| `mppi::DiffDriveMotionModel`   | Differential drive|
-| `mppi::OmniMotionModel`        | Omnidirectional|
-
-If no `plugin` is declared under the chosen instance namespace the controller defaults to `mppi::DiffDriveMotionModel`.
+| `mppi::AckermannMotionModel`   | Ackermann steering                           |
+| `mppi::DiffDriveMotionModel`   | Differential drive                           |
+| `mppi::OmniMotionModel`        | Omnidirectional                              |
 
 #### Ackermann Motion Model
  | Parameter            | Type   | Definition                                                                                                  |
