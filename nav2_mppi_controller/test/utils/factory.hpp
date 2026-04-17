@@ -83,6 +83,8 @@ void setUpControllerParams(
   double dummy_freq = 50.0;
   params_.emplace_back(rclcpp::Parameter(node_name + ".visualize", visualize));
   params_.emplace_back(rclcpp::Parameter("controller_frequency", dummy_freq));
+  params_.emplace_back(
+    rclcpp::Parameter(node_name + ".diff_drive.plugin", "mppi::DiffDriveMotionModel"));
 }
 
 rclcpp::NodeOptions getOptimizerOptions(

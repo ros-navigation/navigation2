@@ -137,7 +137,6 @@ void Optimizer::getParams()
       "Sign of the parameter ay_min is incorrect, consider setting it negative.");
   }
 
-
   getParam(motion_model_name, "motion_model", std::string("diff_drive"));
 
   s.constraints = s.base_constraints;
@@ -581,12 +580,14 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
   auto node = parent_.lock();
 
   const std::string plugin_ns = name_ + "." + motion_model_name;
-  // Default to DiffDriveMotionModel when no plugin is declared.
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_ns + ".plugin",
-    rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
-
-  std::string plugin_type = nav2::get_plugin_type_param(node, plugin_ns);
+  std::string plugin_type;
+  try {
+    plugin_type = nav2::get_plugin_type_param(node, plugin_ns);
+  } catch (const std::exception & ex) {
+    throw std::runtime_error(
+      "Failed to get plugin type for mppi controller " + plugin_ns + ". Exception: " +
+      ex.what());
+  }
 
   motion_model_loader_ =
     std::make_unique<pluginlib::ClassLoader<MotionModel>>(

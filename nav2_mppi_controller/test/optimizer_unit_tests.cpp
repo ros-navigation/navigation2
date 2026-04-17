@@ -244,6 +244,9 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(3.0));
   node->declare_parameter("mppic.ay_min", rclcpp::ParameterValue(3.0));
+
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   node->declare_parameter(
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -326,6 +329,8 @@ TEST(OptimizerTests, setOffsetTests)
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -351,6 +356,8 @@ TEST(OptimizerTests, resetTests)
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -373,6 +380,8 @@ TEST(OptimizerTests, FallbackTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -399,6 +408,8 @@ TEST(OptimizerTests, PrepareTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -429,6 +440,8 @@ TEST(OptimizerTests, shiftControlSequenceTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   node->declare_parameter(
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -476,6 +489,8 @@ TEST(OptimizerTests, SpeedLimitTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -518,6 +533,8 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-1.0));
   node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.75));
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   node->declare_parameter(
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -584,6 +601,8 @@ TEST(OptimizerTests, updateStateVelocitiesTests)
   node->declare_parameter("mppic.ay_min", rclcpp::ParameterValue(-3.0));
   node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(3.5));
   node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
@@ -612,6 +631,8 @@ TEST(OptimizerTests, getControlFromSequenceAsTwistTests)
   node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-1.0));
   node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.60));
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   node->declare_parameter(
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -651,6 +672,8 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.model_dt", rclcpp::ParameterValue(0.1));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   node->declare_parameter(
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -721,6 +744,8 @@ TEST(OptimizerTests, TestGetters)
 
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string test = "test";
@@ -744,6 +769,8 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(0.5));
   node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(0.5));
   node->declare_parameter("mppic.open_loop", rclcpp::ParameterValue(true));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   node->declare_parameter(
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -811,6 +838,8 @@ TEST(OptimizerTests, SpeedLimitDynamicParameterGuard)
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.vx_max", rclcpp::ParameterValue(0.5));
   node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-0.35));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   // Use "mppic" to match the optimizer's name_ so ParametersHandler correctly routes callbacks
