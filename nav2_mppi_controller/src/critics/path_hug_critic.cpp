@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/path_hug_critic.hpp"
-#include "nav2_util/execution_timer.hpp"
+
 
 namespace mppi::critics
 {
@@ -71,28 +71,34 @@ float PathHugCritic::computeMinDistToPathSq(
   size_t num_segments,
   Eigen::Index & path_hint)
 {
-  auto distSqToSegment = [&](size_t seg_idx) -> float {  // squared distance from (px,py) to segment
-      const float x0 = path.x(seg_idx);
-      const float y0 = path.y(seg_idx);
-      const float x1 = path.x(seg_idx + 1);
-      const float y1 = path.y(seg_idx + 1);
-      const float dx = x1 - x0;
-      const float dy = y1 - y0;
-      const float len_sq = dx * dx + dy * dy;
+  if (num_segments == 0) {
+    return std::numeric_limits<float>::max();
+  }
 
-      if (len_sq < 1e-6f) {
-        const float dpx = px - x0;
-        const float dpy = py - y0;
-        return dpx * dpx + dpy * dpy;
-      }
+  path_hint = std::clamp(path_hint, Eigen::Index(0), static_cast<Eigen::Index>(num_segments - 1));
 
+  auto distSqToSegment = [&](size_t seg_idx) -> float {
+    const float x0 = path.x(seg_idx);
+    const float y0 = path.y(seg_idx);
+    const float x1 = path.x(seg_idx + 1);
+    const float y1 = path.y(seg_idx + 1);
+    const float dx = x1 - x0;
+    const float dy = y1 - y0;
+    const float len_sq = dx * dx + dy * dy;
+
+    if (len_sq < 1e-6f) {
       const float dpx = px - x0;
       const float dpy = py - y0;
-      const float t = std::clamp((dpx * dx + dpy * dy) / len_sq, 0.0f, 1.0f);
-      const float dist_x = dpx - t * dx;
-      const float dist_y = dpy - t * dy;
-      return dist_x * dist_x + dist_y * dist_y;
-    };
+      return dpx * dpx + dpy * dpy;
+    }
+
+    const float dpx = px - x0;
+    const float dpy = py - y0;
+    const float t = std::clamp((dpx * dx + dpy * dy) / len_sq, 0.0f, 1.0f);
+    const float dist_x = dpx - t * dx;
+    const float dist_y = dpy - t * dy;
+    return dist_x * dist_x + dist_y * dist_y;
+  };
 
   float min_dist_sq = distSqToSegment(path_hint);
   Eigen::Index best_seg = path_hint;
@@ -103,20 +109,26 @@ float PathHugCritic::computeMinDistToPathSq(
 
   // Exponential search backward from hint
   size_t start = static_cast<size_t>(path_hint);
-  for (int step = 1; start > 0; step *= 2) {
-    const size_t test = start > static_cast<size_t>(step) ? start - step : 0;
+  for (size_t step = 1; start > 0; step *= 2) {
+    const size_t test = start > step ? start - step : 0;
     if (cumulative_distances_[test] < min_dist_threshold) {break;}
     start = test;
     if (start == 0) {break;}
   }
+  if (static_cast<size_t>(path_hint) > 0) {
+    start = std::min(start, static_cast<size_t>(path_hint) - 1);
+  }
 
   // Exponential search forward from hint
   size_t end = static_cast<size_t>(path_hint);
-  for (int step = 1; end < num_segments; step *= 2) {
+  for (size_t step = 1; end < num_segments; step *= 2) {
     const size_t test = std::min(end + step, num_segments - 1);
     if (cumulative_distances_[test] > max_dist_threshold) {break;}
     end = test;
     if (end == num_segments - 1) {break;}
+  }
+  if (static_cast<size_t>(path_hint) < num_segments - 1) {
+    end = std::max(end, static_cast<size_t>(path_hint) + 1);
   }
 
   // Linear scan within window
@@ -135,15 +147,7 @@ float PathHugCritic::computeMinDistToPathSq(
 
 void PathHugCritic::score(CriticData & data)
 {
-  nav2_util::ExecutionTimer timer;
-  timer.start();
-
   if (!enabled_ || data.state.local_path_length < threshold_to_consider_) {
-    timer.end();
-    RCLCPP_INFO(
-      logger_,
-      "PathHugCritic::score() exited early, elapsed: %.6f s",
-      timer.elapsed_time_in_seconds());
     return;
   }
 
@@ -151,11 +155,6 @@ void PathHugCritic::score(CriticData & data)
   const size_t path_segments_count = *data.furthest_reached_path_point;
 
   if (path_segments_count < 2) {
-    timer.end();
-    RCLCPP_INFO(
-      logger_,
-      "PathHugCritic::score() exited early (path_segments_count < 2), elapsed: %.6f s",
-      timer.elapsed_time_in_seconds());
     return;
   }
 
@@ -172,6 +171,8 @@ void PathHugCritic::score(CriticData & data)
 
   const float robot_x = data.state.pose.pose.position.x;
   const float robot_y = data.state.pose.pose.position.y;
+
+  // Discard return value — call only to initialize robot_hint to the closest segment index
   Eigen::Index robot_hint = 0;
   computeMinDistToPathSq(robot_x, robot_y, data.path, num_segments, robot_hint);
 
@@ -202,22 +203,20 @@ void PathHugCritic::score(CriticData & data)
     float prev_x = traj_x(traj_idx, 0);
     float prev_y = traj_y(traj_idx, 0);
 
-    // Skip col=0 — robot's current position cannot be changed by the optimizer
     for (Eigen::Index col = effective_stride; col < traj_length; col += effective_stride) {
       const float px = traj_x(traj_idx, col);
       const float py = traj_y(traj_idx, col);
 
-      const float abs_dx = std::abs(px - prev_x);
-      const float abs_dy = std::abs(py - prev_y);
-      accumulated_distance +=
-        std::max(abs_dx, abs_dy) * 0.96f + std::min(abs_dx, abs_dy) * 0.398f;
+      accumulated_distance += std::hypot(px - prev_x, py - prev_y);
 
       if (accumulated_distance > lookahead_distance_) {break;}
 
       const float dist_sq = computeMinDistToPathSq(
         px, py, data.path, num_segments, path_hint);
 
-      if (!path_pts_valid[path_hint]) {
+      const size_t safe_hint = std::min(
+        static_cast<size_t>(path_hint), path_pts_valid.size() - 1);
+      if (!path_pts_valid[safe_hint]) {
         prev_x = px;
         prev_y = py;
         continue;
@@ -226,8 +225,7 @@ void PathHugCritic::score(CriticData & data)
       r.num_samples++;
 
       if (dist_sq > max_dist_sq) {
-        // Mark violation and accumulate excess — do not break, continue to collect
-        // all excess points so the fallback gradient reflects the full trajectory cost
+        // Do not break — accumulate all excess points for accurate fallback gradient.
         r.violates = true;
         r.excess_cost += std::sqrt(dist_sq) - max_allowed_distance_;
         r.excess_samples++;
@@ -250,7 +248,6 @@ void PathHugCritic::score(CriticData & data)
     }
   }
 
-  // Count violations
   Eigen::Index violating_trajectory_count = 0;
   for (Eigen::Index i = 0; i < batch_size; ++i) {
     if (results[i].violates) {violating_trajectory_count++;}
@@ -260,7 +257,7 @@ void PathHugCritic::score(CriticData & data)
 
   if (all_violate) {
     RCLCPP_WARN_THROTTLE(
-      logger_, *rclcpp::Clock::make_shared(), 5000,
+      logger_, *parent_.lock()->get_clock(), 5000,
       "PathHugCritic: ALL %ld trajectories violate the corridor boundary "
       "(max_allowed_distance: %.3f m). Applying graded fallback costs.",
       static_cast<long>(batch_size), max_allowed_distance_);
@@ -271,8 +268,8 @@ void PathHugCritic::score(CriticData & data)
     const TrajResult & r = results[traj_idx];
 
     if (r.violates) {
-      if (all_violate && use_soft_repulsion_) {
-        // All trajectories outside corridor — use averaged excess so optimizer can recover
+      if (all_violate) {
+        // Every trajectory is outside the corridor — apply graded fallback
         const float avg_excess = r.excess_samples > 0 ?
           r.excess_cost / static_cast<float>(r.excess_samples) : r.excess_cost;
         if (power_ > 1u) {
@@ -281,8 +278,9 @@ void PathHugCritic::score(CriticData & data)
         } else {
           data.costs(traj_idx) += avg_excess * weight_;
         }
-      } else if (!all_violate) {
-        data.costs(traj_idx) = collision_cost_;
+      } else {
+        // Only some trajectories violate — hard veto to push the optimizer toward valid ones.
+        data.costs(traj_idx) += collision_cost_;
       }
     } else if (use_soft_repulsion_ && r.repulsion_cost > 0.0f) {
       if (power_ > 1u) {
@@ -293,12 +291,6 @@ void PathHugCritic::score(CriticData & data)
       }
     }
   }
-
-  timer.end();
-  RCLCPP_INFO(
-    logger_,
-    "PathHugCritic::score() elapsed: %.6f s",
-    timer.elapsed_time_in_seconds());
 }
 
 }  // namespace mppi::critics

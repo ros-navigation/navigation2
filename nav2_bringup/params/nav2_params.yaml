@@ -193,7 +193,7 @@ controller_server:
       PreferForwardCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 5.0
+        cost_weight: 7.0
         threshold_to_consider: 0.5
       CostCritic:
         enabled: true
@@ -230,15 +230,15 @@ controller_server:
       PathHugCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 3.0
+        cost_weight: 2.0
         trajectory_point_step: 2
         threshold_to_consider: 0.5
-        search_window: 0.2
-        lookahead_distance: 0.1
-        max_allowed_distance: 0.075
+        search_window: 0.1
+        lookahead_distance: 0.35
+        max_allowed_distance: 0.05
         collision_cost: 100000.0
         use_soft_repulsion: true
-        grace_distance: 0.045
+        grace_distance: 0.01
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
