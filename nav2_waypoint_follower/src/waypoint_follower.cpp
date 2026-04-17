@@ -29,7 +29,7 @@ using std::placeholders::_1;
 
 WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("waypoint_follower", "", options),
-  waypoint_task_executor_loader_("nav2_waypoint_follower",
+  waypoint_task_executor_loader_("nav2_core",
     "nav2_core::WaypointTaskExecutor")
 {
   RCLCPP_INFO(get_logger(), "Creating");
