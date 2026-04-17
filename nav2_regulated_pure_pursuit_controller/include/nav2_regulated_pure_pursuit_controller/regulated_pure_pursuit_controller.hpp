@@ -145,9 +145,13 @@ protected:
   /**
    * @brief Whether robot should rotate to final goal orientation
    * @param carrot_pose current lookahead point
+   * @param remaining_path_length the remaining path length to the goal
+   * @param stateful whether the controller should consider whether it has already reached the xy tolerance when determining whether to rotate to the goal heading
    * @return Whether should rotate to goal heading
    */
-  bool shouldRotateToGoalHeading(const geometry_msgs::msg::PoseStamped & carrot_pose);
+  bool shouldRotateToGoalHeading(
+    const geometry_msgs::msg::PoseStamped & carrot_pose,
+    const double & remaining_path_length, bool stateful);
 
   /**
    * @brief Create a smooth and kinematically smoothed rotation command
@@ -181,7 +185,7 @@ protected:
   rclcpp::Logger logger_ {rclcpp::get_logger("RegulatedPurePursuitController")};
 
   Parameters * params_;
-  double goal_dist_tol_;
+  double goal_dist_tol_, path_length_tol_;
   double control_duration_;
   bool cancelling_ = false;
   bool finished_cancelling_ = false;

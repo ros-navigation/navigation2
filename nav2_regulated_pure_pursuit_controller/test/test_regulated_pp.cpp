@@ -60,9 +60,11 @@ public:
     return shouldRotateToPath(carrot_pose, angle_to_path, x_vel_sign);
   }
 
-  bool shouldRotateToGoalHeadingWrapper(const geometry_msgs::msg::PoseStamped & carrot_pose)
+  bool shouldRotateToGoalHeadingWrapper(
+    const geometry_msgs::msg::PoseStamped & carrot_pose,
+    const double & remaining_path_length, bool stateful)
   {
-    return shouldRotateToGoalHeading(carrot_pose);
+    return shouldRotateToGoalHeading(carrot_pose, remaining_path_length, stateful);
   }
 
   void rotateToHeadingWrapper(
@@ -180,8 +182,7 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   // --------------------------
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
-  nav2::declare_parameter_if_not_declared(
-    node, "PathFollower.stateful", rclcpp::ParameterValue(false));
+  bool stateful = false;
 
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
@@ -204,17 +205,18 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   EXPECT_EQ(ctrl->shouldRotateToPathWrapper(carrot, angle_to_path_rtn), true);
 
   // shouldRotateToGoalHeading
+  double remaining_path_length = 0.0;
   carrot.pose.position.x = 0.0;
   carrot.pose.position.y = 0.0;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), true);
 
   carrot.pose.position.x = 0.0;
   carrot.pose.position.y = 0.24;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), true);
 
   carrot.pose.position.x = 0.0;
   carrot.pose.position.y = 0.26;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), false);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), false);
 
   // rotateToHeading
   double lin_v = 10.0;
@@ -252,23 +254,22 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   // -----------------------
   // Stateful Configuration
   // -----------------------
-  node->set_parameter(
-    rclcpp::Parameter("PathFollower.stateful", true));
+  stateful = true;
 
   ctrl->configure(node, name, tf, costmap);
 
   // Start just outside tolerance
   carrot.pose.position.x = 0.0;
   carrot.pose.position.y = 0.26;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), false);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), false);
 
   // Enter tolerance (should set internal flag)
   carrot.pose.position.y = 0.24;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), true);
 
   // Move outside tolerance again - still expect true (due to persistent state)
   carrot.pose.position.y = 0.26;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), true);
 }
 
 TEST(RegulatedPurePursuitTest, applyConstraints)
@@ -417,7 +418,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.inflation_cost_scaling_factor", 1.0),
       rclcpp::Parameter("test.allow_reversing", false),
       rclcpp::Parameter("test.use_rotate_to_heading", false),
-      rclcpp::Parameter("test.stateful", false),
       rclcpp::Parameter("test.use_dynamic_window", true),
       rclcpp::Parameter("test.allow_obstacle_checking_beyond_goal", false)});
 
@@ -457,7 +457,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       "test.use_cost_regulated_linear_velocity_scaling").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
-  EXPECT_EQ(node->get_parameter("test.stateful").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_dynamic_window").as_bool(), true);
   EXPECT_EQ(node->get_parameter("test.allow_obstacle_checking_beyond_goal").as_bool(), false);
 

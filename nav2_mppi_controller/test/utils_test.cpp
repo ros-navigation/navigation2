@@ -46,12 +46,16 @@ public:
 
   virtual bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & /*vel_tolerance*/)
+    geometry_msgs::msg::Twist & /*vel_tolerance*/,
+    double & path_length_tolerance)
   {
     pose_tolerance.position.x = 0.25;
     pose_tolerance.position.y = 0.25;
+    path_length_tolerance = 0.5;
     return true;
   }
+
+  virtual bool latchesGoalProgress() const {return false;}
 };
 
 TEST(UtilsTests, MarkerPopulationUtils)
