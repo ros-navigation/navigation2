@@ -78,10 +78,9 @@ TEST(CriticTests, ConstraintsCritic)
   geometry_msgs::msg::Pose goal;
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
-  bool use_arc_length_path_progress = false;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}, use_arc_length_path_progress};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Initialization testing
@@ -227,10 +226,9 @@ TEST(CriticTests, GoalAngleCritic)
   path.reset(10);
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
-  bool use_arc_length_path_progress = false;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}, use_arc_length_path_progress};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Initialization testing
@@ -290,10 +288,9 @@ TEST(CriticTests, GoalAngleCriticSymmetric)
   path.reset(10);
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
-  bool use_arc_length_path_progress = false;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}, use_arc_length_path_progress};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Make sure initializes correctly
@@ -352,10 +349,9 @@ TEST(CriticTests, GoalCritic)
   path.reset(10);
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
-  bool use_arc_length_path_progress = false;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}, use_arc_length_path_progress};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Initialization testing
@@ -409,10 +405,9 @@ TEST(CriticTests, PathAngleCritic)
   path.reset(10);
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
-  bool use_arc_length_path_progress = false;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}, use_arc_length_path_progress};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
 
@@ -531,10 +526,9 @@ TEST(CriticTests, PreferForwardCritic)
   path.reset(10);
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
-  bool use_arc_length_path_progress = false;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}, use_arc_length_path_progress};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
 
@@ -591,10 +585,9 @@ TEST(CriticTests, TwirlingCritic)
   path.reset(10);
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
-  bool use_arc_length_path_progress = false;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}, use_arc_length_path_progress};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
   data.goal_checker = &goal_checker;
@@ -659,10 +652,9 @@ TEST(CriticTests, PathFollowCritic)
   path.reset(6);
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
-  bool use_arc_length_path_progress = false;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}, use_arc_length_path_progress};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
   data.goal_checker = &goal_checker;
@@ -714,10 +706,9 @@ TEST(CriticTests, PathAlignCritic)
   path.reset(10);
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
-  bool use_arc_length_path_progress = false;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}, use_arc_length_path_progress};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
   data.goal_checker = &goal_checker;
@@ -832,10 +823,9 @@ TEST(CriticTests, VelocityDeadbandCritic)
   geometry_msgs::msg::Pose goal;
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
-  bool use_arc_length_path_progress = false;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}, use_arc_length_path_progress};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<OmniMotionModel>();
 
   // Initialization testing

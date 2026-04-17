@@ -283,50 +283,15 @@ auto shortest_angular_distance(
 }
 
 /**
- * @brief Euclidean furthest-point method. Selects the path point nearest
- * to each trajectory endpoint by Euclidean distance.
+ * @brief Evaluate furthest point idx of data.path which is
+ * nearest to some trajectory in data.trajectories.
+ * Bounds the Euclidean nearest-point match with the trajectory's arc-length
+ * to prevent jumping to a distant path segment brought spatially close by
+ * path curvature (e.g. a U-turn).
  * @param data Data to use
  * @return Idx of furthest path point reached by a set of trajectories
  */
-inline size_t findPathFurthestReachedPointEuclidean(const CriticData & data)
-{
-  int traj_cols = data.trajectories.x.cols();
-  const auto traj_x = data.trajectories.x.col(traj_cols - 1);
-  const auto traj_y = data.trajectories.y.col(traj_cols - 1);
-
-  int max_id_by_trajectories = 0, min_id_by_path = 0;
-  float min_distance_by_path = std::numeric_limits<float>::max();
-  size_t n_rows = traj_x.rows();
-  size_t n_cols = data.path.x.size();
-  for (size_t i = 0; i != n_rows; i++) {
-    min_id_by_path = 0;
-    min_distance_by_path = std::numeric_limits<float>::max();
-    for (size_t j = 0; j != n_cols; j++) {
-      const float dx = data.path.x(j) - traj_x(i);
-      const float dy = data.path.y(j) - traj_y(i);
-      const float cur_dist = dx * dx + dy * dy;
-      if (cur_dist < min_distance_by_path) {
-        min_distance_by_path = cur_dist;
-        min_id_by_path = j;
-      }
-    }
-    max_id_by_trajectories = std::max(max_id_by_trajectories, min_id_by_path);
-    // Early exit if we've already reached the end of the path
-    if (max_id_by_trajectories == static_cast<int>(n_cols) - 1) {
-      break;
-    }
-  }
-  return max_id_by_trajectories;
-}
-
-/**
- * @brief Arc-length furthest-point method. Bounds the Euclidean nearest-point
- * match with the trajectory's arc-length to prevent jumping to a distant path
- * segment brought spatially close by path curvature (e.g. a U-turn).
- * @param data Data to use
- * @return Idx of furthest path point reached by a set of trajectories
- */
-inline size_t findPathFurthestReachedPointArcLength(const CriticData & data)
+inline size_t findPathFurthestReachedPoint(const CriticData & data)
 {
   const int traj_cols = data.trajectories.x.cols();
   const int n_rows = static_cast<int>(data.trajectories.x.rows());
@@ -373,20 +338,6 @@ inline size_t findPathFurthestReachedPointArcLength(const CriticData & data)
   }
 
   return static_cast<size_t>(max_idx);
-}
-
-/**
- * @brief Evaluate furthest point idx of data.path which is
- * nearest to some trajectory in data.trajectories,
- * using Euclidean distance or arc-length method.
- * @param data Data to use
- * @return Idx of furthest path point reached by a set of trajectories
- */
-inline size_t findPathFurthestReachedPoint(const CriticData & data)
-{
-  return data.use_arc_length_path_progress ?
-         findPathFurthestReachedPointArcLength(data) :
-         findPathFurthestReachedPointEuclidean(data);
 }
 
 /**

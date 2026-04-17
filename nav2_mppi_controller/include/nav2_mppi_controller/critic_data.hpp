@@ -52,7 +52,6 @@ struct CriticData
   std::optional<std::vector<bool>> path_pts_valid;
   std::optional<size_t> furthest_reached_path_point;
   std::vector<bool> trajectories_in_collision;
-  const bool & use_arc_length_path_progress;
 };
 
 }  // namespace mppi
