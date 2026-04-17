@@ -40,10 +40,6 @@ public:
    * @param costs [out] add reference cost values to this tensor
    */
   void score(CriticData & data) override;
-  float getMaxVelXConstraint() {return vx_max_;}
-  float getMinVelXConstraint() {return vx_min_;}
-  float getMaxVelYConstraint() {return vy_max_;}
-  unsigned int getPower() {return power_;}
 
 protected:
   unsigned int power_{0};
