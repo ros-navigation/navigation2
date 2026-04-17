@@ -100,10 +100,10 @@ public:
     double & path_length_tolerance) override;
 
   /**
-   * @brief Check if the goal checker is stateful
-   * @return True if the goal checker is stateful
+   * @brief Check if the goal checker latches goal progress across control cycles
+   * @return True if the goal checker uses per-goal progress latching
    */
-  bool isStateful() const override {return SimpleGoalChecker::isStateful();}
+  bool latchesGoalProgress() const override {return SimpleGoalChecker::latchesGoalProgress();}
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;

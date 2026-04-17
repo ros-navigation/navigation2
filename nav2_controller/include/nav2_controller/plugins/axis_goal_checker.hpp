@@ -90,6 +90,12 @@ public:
     geometry_msgs::msg::Twist & vel_tolerance,
     double & path_length_tolerance) override;
 
+  /**
+   * @brief Check if the goal checker latches goal progress across control cycles
+   * @return True if the goal checker uses per-goal progress latching
+   */
+  bool latchesGoalProgress() const override {return false;}
+
 protected:
   double along_path_tolerance_;
   double cross_track_tolerance_;

@@ -107,10 +107,17 @@ public:
     double & path_length_tolerance) = 0;
 
   /**
-   * @brief Check if the goal checker is stateful
-   * @return True if the goal checker is stateful
+   * @brief Check if the goal checker latches goal progress across control cycles
+   * When this returns true, the goal checker is allowed to keep internal progress from one
+   * cycle to the next while pursuing the same goal. In practice, this is commonly used to
+   * implement "latching" semantics: once the robot has first satisfied the translational
+   * part of the goal, it is allowed to continue satisfying the goal even if it drifts
+   * outside the translational tolerance.
+   * When this returns false, isGoalReached() should behave like a pure function of its
+   * inputs (no remembered/latched progress).
+   * @return True if the goal checker uses internal, per-goal progress latching.
    */
-  virtual bool isStateful() const{return false;}
+  virtual bool latchesGoalProgress() const = 0;
 };
 
 }  // namespace nav2_core

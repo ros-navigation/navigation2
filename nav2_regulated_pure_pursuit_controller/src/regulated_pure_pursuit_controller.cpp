@@ -227,7 +227,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   //        - equal to "normal" carrot_pose when curvature_lookahead_pose = false
   //        - otherwise equal to curvature_lookahead_pose (which can be interpolated after goal)
   double angle_to_heading;
-  if (shouldRotateToGoalHeading(carrot_pose, remaining_path_length, goal_checker->isStateful())) {
+  if (shouldRotateToGoalHeading(
+    carrot_pose, remaining_path_length, goal_checker->latchesGoalProgress()))
+  {
     is_rotating_to_heading_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);

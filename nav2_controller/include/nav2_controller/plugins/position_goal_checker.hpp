@@ -85,10 +85,10 @@ public:
     double & path_length_tolerance) override;
 
   /**
-   * @brief Check if the goal checker is stateful
-   * @return True if the goal checker is stateful
+   * @brief Check if the goal checker latches goal progress across control cycles
+   * @return True if the goal checker uses per-goal progress latching
    */
-  bool isStateful() const override {return stateful_;}
+  bool latchesGoalProgress() const override {return stateful_;}
 
   /**
    * @brief Set the XY goal tolerance and path length tolerance
@@ -99,9 +99,9 @@ public:
 
   /**
    * @brief Set whether the goal checker is stateful
-   * @param stateful True to make the goal checker stateful, false to make it stateless
+   * @param latches_goal_progress True to enable stateful (latched) behavior, false for stateless
    */
-  void setStateful(bool stateful);
+  void setLatchesGoalProgress(bool latches_goal_progress);
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;

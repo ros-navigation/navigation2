@@ -152,10 +152,10 @@ void nav2_controller::PositionGoalChecker::setTolerances(
   path_length_tolerance_ = path_length_tolerance;
 }
 
-void nav2_controller::PositionGoalChecker::setStateful(bool stateful)
+void nav2_controller::PositionGoalChecker::setLatchesGoalProgress(bool latches_goal_progress)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
-  stateful_ = stateful;
+  stateful_ = latches_goal_progress;
 }
 
 rcl_interfaces::msg::SetParametersResult

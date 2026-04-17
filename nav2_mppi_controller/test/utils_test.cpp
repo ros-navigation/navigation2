@@ -54,6 +54,8 @@ public:
     path_length_tolerance = 0.5;
     return true;
   }
+
+  virtual bool latchesGoalProgress() const {return false;}
 };
 
 TEST(UtilsTests, MarkerPopulationUtils)

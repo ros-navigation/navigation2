@@ -138,7 +138,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
       double path_length_tolerance;
       goal_checker->getTolerances(pose_tolerance, vel_tolerance, path_length_tolerance);
       position_goal_checker_->setTolerances(pose_tolerance.position.x, path_length_tolerance);
-      position_goal_checker_->setStateful(goal_checker->isStateful());
+      position_goal_checker_->setLatchesGoalProgress(goal_checker->latchesGoalProgress());
 
       if (position_goal_checker_->isGoalReached(pose.pose, global_goal.pose, velocity,
           transformed_global_plan))

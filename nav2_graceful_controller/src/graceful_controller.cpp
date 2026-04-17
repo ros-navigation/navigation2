@@ -172,7 +172,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
 
   bool should_rotate_to_goal = false;
-  if (goal_checker->isStateful()) {
+  if (goal_checker->latchesGoalProgress()) {
     if (dist_to_goal < goal_dist_tolerance_ || goal_reached_) {
       should_rotate_to_goal = true;
     }
