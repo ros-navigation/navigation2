@@ -11,12 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_
+
 #include <vector>
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
+
 namespace mppi::critics
 {
 /**
@@ -43,6 +46,7 @@ public:
    * @param data in/out critic data containing trajectories and path
    */
   void score(CriticData & data) override;
+
 protected:
   /**
    * @brief Precompute cumulative arc-length distances along path segments
@@ -53,6 +57,8 @@ protected:
   void updateCumulativeDistances(const models::Path & path, size_t num_segments);
   /**
    * @brief Compute squared distance from a point to the nearest path segment
+   * within the arc-length search window around path_hint. Intended for
+   * progress tracking, not global nearest-segment search.
    *
    * @param px X coordinate of the query point
    * @param py Y coordinate of the query point
@@ -76,8 +82,9 @@ protected:
   float max_allowed_distance_{0.2f};
   float collision_cost_{100000.0f};
   bool use_soft_repulsion_{false};
-  float grace_distance_{0.1f};
+  float grace_distance_{0.3f};
   std::vector<float> cumulative_distances_;
 };
 }  // namespace mppi::critics
+
 #endif  // NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_
