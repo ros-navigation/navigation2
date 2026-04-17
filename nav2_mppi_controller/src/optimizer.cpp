@@ -121,7 +121,6 @@ void Optimizer::getParams()
   getParam(s.sampling_std.wz, "wz_std", 0.4f);
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
   getParam(s.open_loop, "open_loop", false);
-  getParam(s.use_arc_length_path_progress, "use_arc_length_path_progress", false);
 
   s.base_constraints.ax_max = fabs(s.base_constraints.ax_max);
   if (s.base_constraints.ax_min > 0.0) {
