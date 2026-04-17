@@ -66,6 +66,14 @@ void setUpOptimizerParams(
   params_.emplace_back(rclcpp::Parameter(node_name + ".motion_model", s.motion_model));
   params_.emplace_back(rclcpp::Parameter(node_name + ".critics", critics));
   params_.emplace_back(rclcpp::Parameter("controller_frequency", dummy_freq));
+  // Inject plugin type for the chosen motion model so tests don't need an installed plugin
+  params_.emplace_back(
+    rclcpp::Parameter(node_name + "." + s.motion_model + ".plugin",
+    "mppi::" +[&]()->std::string {
+    if (s.motion_model == "ackermann") {return "AckermannMotionModel";}
+    if (s.motion_model == "diff_drive") {return "DiffDriveMotionModel";}
+    return "OmniMotionModel";
+    }()));
 }
 
 void setUpControllerParams(
@@ -75,6 +83,8 @@ void setUpControllerParams(
   double dummy_freq = 50.0;
   params_.emplace_back(rclcpp::Parameter(node_name + ".visualize", visualize));
   params_.emplace_back(rclcpp::Parameter("controller_frequency", dummy_freq));
+  params_.emplace_back(
+    rclcpp::Parameter(node_name + ".diff_drive.plugin", "mppi::DiffDriveMotionModel"));
 }
 
 rclcpp::NodeOptions getOptimizerOptions(
