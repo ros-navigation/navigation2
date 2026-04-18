@@ -198,7 +198,8 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   EXPECT_EQ(data2.furthest_reached_path_point, 0);
 
   // Test the actual computation of the path point reached
-  generated_trajectories.x = Eigen::ArrayXXf::Ones(100, 2);
+  generated_trajectories.x = Eigen::ArrayXXf::Zero(100, 2);
+  generated_trajectories.x.col(1).setOnes();
   generated_trajectories.y = Eigen::ArrayXXf::Zero(100, 2);
   generated_trajectories.yaws = Eigen::ArrayXXf::Zero(100, 2);
 
@@ -214,6 +215,47 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt, {}};  /// Caution, keep references
   EXPECT_EQ(findPathFurthestReachedPoint(data3), 5);
+}
+
+// Verify that the returned index of findPathFurthestReachedPoint() doesn't
+// exceed what is physically reachable (longest trajectory's arc-length)
+TEST(UtilsTests, FurthestReachedPointUturn)
+{
+  models::State state;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs;
+  float model_dt = 0.1;
+
+  // U-turn path: (0, 0) to (8, 0), turn (8, 1), and go back to (0, 1)
+  const float path_x[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+  const float path_y[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  nav_msgs::msg::Path plan;
+  plan.poses.resize(18);
+  for (unsigned int i = 0; i != 18; i++) {
+    plan.poses[i].pose.position.x = path_x[i];
+    plan.poses[i].pose.position.y = path_y[i];
+  }
+  path = toTensor(plan);
+
+  // 10 identical trajectories from (0,0) to (5,1), arc-length ~5.1m
+  generated_trajectories.x = Eigen::ArrayXXf::Zero(10, 4);
+  generated_trajectories.x.col(1).setConstant(5.0f / 3.0f);
+  generated_trajectories.x.col(2).setConstant(10.0f / 3.0f);
+  generated_trajectories.x.col(3).setConstant(5.0f);
+  generated_trajectories.y = Eigen::ArrayXXf::Zero(10, 4);
+  generated_trajectories.y.col(1).setConstant(1.0f / 3.0f);
+  generated_trajectories.y.col(2).setConstant(2.0f / 3.0f);
+  generated_trajectories.y.col(3).setConstant(1.0f);
+  generated_trajectories.yaws = Eigen::ArrayXXf::Zero(10, 4);
+
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
+
+  size_t result = findPathFurthestReachedPoint(data);
+  EXPECT_LE(result, 6u);
 }
 
 TEST(UtilsTests, findPathCosts)
