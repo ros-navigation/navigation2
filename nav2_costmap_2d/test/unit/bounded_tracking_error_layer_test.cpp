@@ -117,7 +117,7 @@ public:
   void setCorridorCost(unsigned char v) {corridor_cost_ = v;}
   void setResolution(double v) {resolution_ = v;}
   void setCostmapFrame(const std::string & f) {costmap_frame_ = f;}
-  void setFillOutsideCorridor(bool v) {fill_outside_corridor_ = v;}
+  void setCostWriteMode(int v) {cost_write_mode_ = v;}
   void setRobotBaseFrame(const std::string & f) {robot_base_frame_ = f;}
 
   void testSaveCorridorInterior(
@@ -156,9 +156,9 @@ public:
   double getCorridorWidth() const {return corridor_width_;}
   int getWallThickness() const {return wall_thickness_;}
   unsigned char getCorridorCost() const {return corridor_cost_;}
+  int getCostWriteMode() const {return cost_write_mode_;}
   double getResolution() const {return resolution_;}
   const std::string & getCostmapFrame() const {return costmap_frame_;}
-  bool getFillOutsideCorridor() const {return fill_outside_corridor_;}
 };
 
 static constexpr const char * kRobotBaseFrame = "base_link";
@@ -895,6 +895,30 @@ TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsIgnoreUnrelatedParameter
   EXPECT_TRUE(result.successful);
 }
 
+TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsRejectInvalidCostWriteMode)
+{
+  layer_->activate();
+  auto result = layer_->testValidateParams(
+    {rclcpp::Parameter("bte_layer.cost_write_mode", 3)});
+  EXPECT_FALSE(result.successful);
+  EXPECT_EQ(result.reason,
+    "cost_write_mode must be 0 (corridor), 1 (fill max), or 2 (fill overwrite)");
+
+  auto result_neg = layer_->testValidateParams(
+    {rclcpp::Parameter("bte_layer.cost_write_mode", -1)});
+  EXPECT_FALSE(result_neg.successful);
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsCostWriteModeValidValuesAccepted)
+{
+  layer_->activate();
+  for (int v : {0, 1, 2}) {
+    auto result = layer_->testValidateParams(
+      {rclcpp::Parameter("bte_layer.cost_write_mode", v)});
+    EXPECT_TRUE(result.successful) << "Mode " << v << " must be accepted";
+  }
+}
+
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsLookAhead)
 {
   layer_->activate();
@@ -1475,7 +1499,7 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillOutsideCorridorRobotCel
 {
   auto * costmap = layers_->getCostmap();
   prepareForUpdateCosts(layer_.get(), costmap);
-  layer_->setFillOutsideCorridor(true);
+  layer_->setCostWriteMode(1);
   layer_->setStepSize(1);
   layer_->setCorridorWidth(0.5);
   layer_->setWallThickness(1);
@@ -1532,7 +1556,7 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillBranchFlushSegmentFires
 {
   auto * costmap = layers_->getCostmap();
   prepareForUpdateCosts(layer_.get(), costmap);
-  layer_->setFillOutsideCorridor(true);
+  layer_->setCostWriteMode(1);
   layer_->setStepSize(1);
   layer_->setCorridorWidth(0.5);
   layer_->setWallThickness(1);
@@ -1586,16 +1610,22 @@ TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsMixedDegenerateAndValid
   EXPECT_EQ(walls.left_outer.size(), walls.right_outer.size());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsFillOutsideCorridor)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsCostWriteMode)
 {
   layer_->activate();
-  layer_->setFillOutsideCorridor(false);
   layer_->currentRef() = true;
-  layer_->testUpdateParams({rclcpp::Parameter("bte_layer.fill_outside_corridor", true)});
-  EXPECT_TRUE(layer_->getFillOutsideCorridor())
-    << "fill_outside_corridor must be updated to true";
-  EXPECT_FALSE(layer_->currentRef())
-    << "current_ must be reset when fill_outside_corridor changes";
+  layer_->testUpdateParams({rclcpp::Parameter("bte_layer.cost_write_mode", 1)});
+  EXPECT_EQ(layer_->getCostWriteMode(), 1);
+  EXPECT_FALSE(layer_->currentRef());
+}
+
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsCostWriteModeSameValueNoReset)
+{
+  layer_->activate();
+  layer_->currentRef() = true;
+  layer_->testUpdateParams({rclcpp::Parameter("bte_layer.cost_write_mode", 0)});
+  EXPECT_TRUE(layer_->currentRef())
+    << "Same cost_write_mode must not reset current_";
 }
 
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsSameValueIntegersNoCurrentReset)
@@ -1625,6 +1655,24 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsSameValueIntegersNoCurrent
     << "Same step must not reset current_";
 }
 
+TEST_F(BoundedTrackingErrorLayerTest, testCostWriteModeOverwriteAllIgnoresHigherCostOutsideCorridor)
+{
+  layer_->matchSize();
+  layer_->setCorridorCost(190);
+  layer_->setCostWriteMode(2);
+
+  auto * costmap = layers_->getCostmap();
+  costmap->resetMapToValue(
+    0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(),
+    nav2_costmap_2d::FREE_SPACE);
+
+  costmap->setCost(48, 48, nav2_costmap_2d::LETHAL_OBSTACLE);
+  layer_->testFillOutsideCorridor(*costmap, 47, 47, 52, 52);
+
+  EXPECT_EQ(costmap->getCost(48, 48), 190)
+    << "Mode 2 must overwrite LETHAL_OBSTACLE outside corridor";
+}
+
 // Path starts inside the fill bbox, exits beyond the radius, then re-enters from
 // a different Y. flush_segment must fire at both the exit and re-entry boundaries,
 // producing two separate interior sub-segments. Cells on the spine of both chunks
@@ -1640,7 +1688,7 @@ TEST_F(BoundedTrackingErrorLayerTest, testFillBranchPathExitsAndReentersBbox)
 {
   auto * costmap = layers_->getCostmap();
   prepareForUpdateCosts(layer_.get(), costmap);
-  layer_->setFillOutsideCorridor(true);
+  layer_->setCostWriteMode(1);
   layer_->setStepSize(1);
   layer_->setCorridorWidth(0.4);
   layer_->setWallThickness(1);
