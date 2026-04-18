@@ -211,9 +211,10 @@ BoundedTrackingErrorLayer::updateCosts(
     if (path_ptr && !path_ptr->poses.empty()) {
       const auto age = (clock_->now() - rclcpp::Time(path_ptr->header.stamp)).seconds();
       if (age > 5.0) {
-        RCLCPP_WARN(
-          logger_,
+        RCLCPP_WARN_THROTTLE(
+          logger_, *clock_, 5000,
           "Path is %.2f seconds old, clearing corridor state — waiting for new plan", age);
+        last_path_ptr_.reset();
         current_path_index_.store(0);
         prev_fill_min_i_ = -1;
         prev_fill_min_j_ = -1;
@@ -319,67 +320,116 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   int fill_max_i = std::min(cell_max_x, static_cast<int>(fill_size_x) - 1);
   int fill_max_j = std::min(cell_max_y, static_cast<int>(fill_size_y) - 1);
 
-  // Reset the union of the current and previous cycle's bbox to clear any
-  // stale interior markings left behind when the robot moves forward and the
-  // new bbox no longer overlaps the trailing edge of the old one.
-  const int reset_min_i = (prev_fill_min_i_ < 0) ? fill_min_i : std::min(fill_min_i,
-      prev_fill_min_i_);
-  const int reset_min_j = (prev_fill_min_j_ < 0) ? fill_min_j : std::min(fill_min_j,
-      prev_fill_min_j_);
-  const int reset_max_i = (prev_fill_max_i_ < 0) ? fill_max_i : std::max(fill_max_i,
-      prev_fill_max_i_);
-  const int reset_max_j = (prev_fill_max_j_ < 0) ? fill_max_j : std::max(fill_max_j,
-      prev_fill_max_j_);
+  const int reset_min_i = (prev_fill_min_i_ < 0) ? fill_min_i : std::min(fill_min_i, prev_fill_min_i_);
+  const int reset_min_j = (prev_fill_min_j_ < 0) ? fill_min_j : std::min(fill_min_j, prev_fill_min_j_);
+  const int reset_max_i = (prev_fill_max_i_ < 0) ? fill_max_i : std::max(fill_max_i, prev_fill_max_i_);
+  const int reset_max_j = (prev_fill_max_j_ < 0) ? fill_max_j : std::max(fill_max_j, prev_fill_max_j_);
 
-  const unsigned int reset_size_x = master_grid.getSizeInCellsX();
-  for (int y = reset_min_j; y <= reset_max_j; ++y) {
-    std::fill(
-      corridor_interior_mask_.begin() + y * reset_size_x + reset_min_i,
-      corridor_interior_mask_.begin() + y * reset_size_x + reset_max_i + 1,
-      0);
-  }
+  resetCorridorMask(
+    master_grid.getSizeInCellsX(),
+    reset_min_i, reset_min_j,
+    reset_max_i, reset_max_j);
 
   prev_fill_min_i_ = fill_min_i;
   prev_fill_min_j_ = fill_min_j;
   prev_fill_max_i_ = fill_max_i;
   prev_fill_max_j_ = fill_max_j;
 
-  // Squared radius avoids a sqrt per cell in markCircleAsInterior.
   const double r_cells = (corridor_width_ * 0.5) / resolution_;
   const int r_cells_sq = static_cast<int>(std::llround(r_cells * r_cells));
 
+  const size_t extra_poses = static_cast<size_t>(
+    std::ceil(corridor_width_ / resolution_)) + step_size_;
+
+  buildCorridorMask(
+    master_grid, full_path,
+    fill_min_i, fill_min_j,
+    fill_max_i, fill_max_j,
+    extra_poses);
+
+  unsigned int robot_cx, robot_cy;
+  if (master_grid.worldToMap(
+      robot_pose.pose.position.x, robot_pose.pose.position.y, robot_cx, robot_cy))
+  {
+    markCircleAsInterior(master_grid, static_cast<int>(robot_cx), static_cast<int>(robot_cy),
+      r_cells_sq);
+  }
+
+  fillOutsideCorridor(master_grid, fill_min_i, fill_min_j, fill_max_i, fill_max_j);
+}
+
+void
+BoundedTrackingErrorLayer::resetCorridorMask(
+  unsigned int size_x,
+  int reset_min_i, int reset_min_j,
+  int reset_max_i, int reset_max_j)
+{
+  for (int y = reset_min_j; y <= reset_max_j; ++y) {
+    std::fill(
+      corridor_interior_mask_.begin() + y * size_x + reset_min_i,
+      corridor_interior_mask_.begin() + y * size_x + reset_max_i + 1,
+      0);
+  }
+}
+
+void
+BoundedTrackingErrorLayer::flushSubSegment(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  nav_msgs::msg::Path & sub_segment,
+  int fill_min_i, int fill_min_j,
+  int fill_max_i, int fill_max_j,
+  size_t extra_poses)
+{
+  if (sub_segment.poses.size() < 2) {
+    sub_segment.poses.clear();
+    return;
+  }
+
+  nav_msgs::msg::Path bbox_segment;
+  bbox_segment.header = sub_segment.header;
+
+  auto flush_bbox_segment = [&]() {
+    if (bbox_segment.poses.size() >= 2) {
+      WallPolygons fill_walls;
+      getWallPolygons(bbox_segment, fill_walls);
+      saveCorridorInterior(master_grid, fill_walls);
+    }
+    bbox_segment.poses.clear();
+  };
+
+  for (const auto & p : sub_segment.poses) {
+    unsigned int mx, my;
+    const bool in_margin = master_grid.worldToMap(
+      p.pose.position.x, p.pose.position.y, mx, my) &&
+      static_cast<int>(mx) >= fill_min_i - static_cast<int>(extra_poses) &&
+      static_cast<int>(mx) <= fill_max_i + static_cast<int>(extra_poses) &&
+      static_cast<int>(my) >= fill_min_j - static_cast<int>(extra_poses) &&
+      static_cast<int>(my) <= fill_max_j + static_cast<int>(extra_poses);
+
+    if (in_margin) {
+      bbox_segment.poses.push_back(p);
+    } else {
+      flush_bbox_segment();
+    }
+  }
+  flush_bbox_segment();
+
+  sub_segment.poses.clear();
+}
+
+void
+BoundedTrackingErrorLayer::buildCorridorMask(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  const nav_msgs::msg::Path & full_path,
+  int fill_min_i, int fill_min_j,
+  int fill_max_i, int fill_max_j,
+  size_t extra_poses)
+{
   nav_msgs::msg::Path sub_segment;
   sub_segment.header = full_path.header;
 
-  auto flush_segment = [&]() {
-      if (sub_segment.poses.size() < 2) {
-        sub_segment.poses.clear();
-        return;
-      }
-      WallPolygons fill_walls;
-      getWallPolygons(sub_segment, fill_walls);
-      saveCorridorInterior(master_grid, fill_walls);
-
-      // End-cap circles close the open corridor mouth where sub-segments are
-      // clipped at the fill bbox boundary; without them the open quad edge
-      // leaves a barrier of penalised cells at the corridor terminal.
-      unsigned int cx, cy;
-      if (master_grid.worldToMap(
-        sub_segment.poses.front().pose.position.x,
-        sub_segment.poses.front().pose.position.y, cx, cy))
-      {
-        markCircleAsInterior(master_grid, static_cast<int>(cx), static_cast<int>(cy), r_cells_sq);
-      }
-      if (master_grid.worldToMap(
-        sub_segment.poses.back().pose.position.x,
-        sub_segment.poses.back().pose.position.y, cx, cy))
-      {
-        markCircleAsInterior(master_grid, static_cast<int>(cx), static_cast<int>(cy), r_cells_sq);
-      }
-      sub_segment.poses.clear();
-    };
-
-  for (const auto & pose : full_path.poses) {
+  for (size_t i = 0; i < full_path.poses.size(); ++i) {
+    const auto & pose = full_path.poses[i];
     unsigned int mx, my;
     const bool in_area = master_grid.worldToMap(
       pose.pose.position.x, pose.pose.position.y, mx, my) &&
@@ -391,22 +441,21 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
     if (in_area) {
       sub_segment.poses.push_back(pose);
     } else {
-      flush_segment();
+      for (size_t j = i; j < std::min(i + extra_poses, full_path.poses.size()); ++j) {
+        sub_segment.poses.push_back(full_path.poses[j]);
+      }
+      flushSubSegment(
+        master_grid, sub_segment,
+        fill_min_i, fill_min_j,
+        fill_max_i, fill_max_j,
+        extra_poses);
     }
   }
-  flush_segment();  // drain any in-bounds tail that reached the end of the path without exiting
-
-  // Guarantee the robot's own cell is interior — it may be momentarily outside
-  // the corridor polygon during recovery or repositioning.
-  unsigned int robot_cx, robot_cy;
-  if (master_grid.worldToMap(
-      robot_pose.pose.position.x, robot_pose.pose.position.y, robot_cx, robot_cy))
-  {
-    markCircleAsInterior(master_grid, static_cast<int>(robot_cx), static_cast<int>(robot_cy),
-      r_cells_sq);
-  }
-
-  fillOutsideCorridor(master_grid, fill_min_i, fill_min_j, fill_max_i, fill_max_j);
+  flushSubSegment(
+    master_grid, sub_segment,
+    fill_min_i, fill_min_j,
+    fill_max_i, fill_max_j,
+    extra_poses);
 }
 
 void
@@ -678,7 +727,6 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
       continue;
     }
 
-    // Clamp to costmap bounds — interior fill can straddle the edge even if vertices are in bounds.
     const int y_min = std::min({left0.y, left1.y, right0.y, right1.y});
     const int y_max = std::max({left0.y, left1.y, right0.y, right1.y});
     const int clamped_y_min = std::max(y_min, 0);
@@ -691,7 +739,6 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
     const int height = clamped_y_max - clamped_y_min + 1;
     span_x_min_buffer_.assign(height, std::numeric_limits<int>::max());
     span_x_max_buffer_.assign(height, std::numeric_limits<int>::min());
-
     traceQuad(left0, left1, right1, right0, clamped_y_min, height);
 
     for (int buffer_idx = 0; buffer_idx < height; ++buffer_idx) {

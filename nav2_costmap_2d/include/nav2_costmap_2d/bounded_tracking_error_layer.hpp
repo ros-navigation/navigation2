@@ -334,6 +334,55 @@ private:
     CellPoint outer0,
     CellPoint outer1);
 
+  /**
+   * @brief Reset the corridor interior mask over the union of current and previous fill bounding boxes.
+   * @param size_x Costmap width in cells.
+   * @param reset_min_i Union bbox minimum X cell index.
+   * @param reset_min_j Union bbox minimum Y cell index.
+   * @param reset_max_i Union bbox maximum X cell index.
+   * @param reset_max_j Union bbox maximum Y cell index.
+   */
+  void resetCorridorMask(
+    unsigned int size_x,
+    int reset_min_i, int reset_min_j,
+    int reset_max_i, int reset_max_j);
+
+  /**
+   * @brief Process a sub-segment of the path, filtering to the fill bbox margin
+   *        and saving the corridor interior mask for each contiguous chunk.
+   * @param master_grid Costmap used for coordinate conversion.
+   * @param sub_segment Path sub-segment to process.
+   * @param fill_min_i Fill bbox minimum X cell index.
+   * @param fill_min_j Fill bbox minimum Y cell index.
+   * @param fill_max_i Fill bbox maximum X cell index.
+   * @param fill_max_j Fill bbox maximum Y cell index.
+   * @param extra_poses Extra poses beyond bbox boundary for geometric coverage.
+   */
+  void flushSubSegment(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    nav_msgs::msg::Path & sub_segment,
+    int fill_min_i, int fill_min_j,
+    int fill_max_i, int fill_max_j,
+    size_t extra_poses);
+
+  /**
+   * @brief Iterate the full path, split into bbox-clipped sub-segments, and
+   *        build the corridor interior mask for each.
+   * @param master_grid Costmap used for coordinate conversion.
+   * @param full_path Full transformed path in costmap frame.
+   * @param fill_min_i Fill bbox minimum X cell index.
+   * @param fill_min_j Fill bbox minimum Y cell index.
+   * @param fill_max_i Fill bbox maximum X cell index.
+   * @param fill_max_j Fill bbox maximum Y cell index.
+   * @param extra_poses Extra poses beyond bbox boundary for geometric coverage.
+   */
+  void buildCorridorMask(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    const nav_msgs::msg::Path & full_path,
+    int fill_min_i, int fill_min_j,
+    int fill_max_i, int fill_max_j,
+    size_t extra_poses);
+
   std::string path_topic_;
   tf2::Duration transform_tolerance_;
 
