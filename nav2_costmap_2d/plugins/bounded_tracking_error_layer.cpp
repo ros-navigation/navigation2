@@ -52,6 +52,10 @@ BoundedTrackingErrorLayer::onInitialize()
   }
 
   current_ = true;
+  RCLCPP_INFO(
+    logger_,
+    "BoundedTrackingErrorLayer initialized in %s mode",
+    cost_write_mode_ == 0 ? "corridor" : cost_write_mode_ == 1 ? "fill (safe)" : "fill (overwrite)");
 }
 
 void
@@ -105,6 +109,16 @@ BoundedTrackingErrorLayer::matchSize()
   prev_fill_min_j_ = -1;
   prev_fill_max_i_ = -1;
   prev_fill_max_j_ = -1;
+}
+
+void
+BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
+{
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  if (!last_path_ptr_ || msg->header.stamp != last_path_ptr_->header.stamp) {
+    current_path_index_.store(0);
+  }
+  last_path_ptr_ = msg;
 }
 
 void
@@ -228,6 +242,9 @@ BoundedTrackingErrorLayer::updateCosts(
     if (corridor_interior_mask_.size() !=
       master_grid.getSizeInCellsX() * master_grid.getSizeInCellsY())
     {
+      RCLCPP_WARN_THROTTLE(
+        logger_, *clock_, 5000,
+        "Corridor interior mask size mismatch, skipping fill update — call matchSize()");
       return;
     }
     applyFillOutsideCorridor(master_grid, robot_pose, *full_transformed_ptr);
@@ -236,157 +253,6 @@ BoundedTrackingErrorLayer::updateCosts(
     drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
     drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
   }
-}
-
-rcl_interfaces::msg::SetParametersResult
-BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
-  const std::vector<rclcpp::Parameter> & parameters)
-{
-  rcl_interfaces::msg::SetParametersResult result;
-  result.successful = true;
-
-  for (const auto & parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-
-    if (param_name.find(name_ + ".") != 0) {
-      continue;
-    }
-
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "look_ahead") {
-        const double new_value = parameter.as_double();
-        if (new_value <= 0.0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %f, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "look_ahead must be positive";
-        }
-      } else if (param_name == name_ + "." + "corridor_width") {
-        const double new_value = parameter.as_double();
-        if (new_value <= 0.0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %f, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "corridor_width must be positive";
-        }
-      }
-    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == name_ + "." + "step") {
-        const int new_value = parameter.as_int();
-        if (new_value <= 0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "step must be greater than zero";
-        }
-      } else if (param_name == name_ + "." + "corridor_cost") {
-        const int new_value = parameter.as_int();
-        if (new_value <= 0 || new_value > 254) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be between 1 and 254. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "corridor_cost must be between 1 and 254";
-        }
-      } else if (param_name == name_ + "." + "wall_thickness") {
-        const int new_value = parameter.as_int();
-        if (new_value <= 0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "wall_thickness must be greater than zero";
-        }
-      } else if (param_name == name_ + "." + "cost_write_mode") {
-        const int new_value = parameter.as_int();
-        if (new_value < 0 || new_value > 2) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be 0, 1, or 2. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason =
-            "cost_write_mode must be 0 (corridor), 1 (fill max), or 2 (fill overwrite)";
-        }
-      }
-    }
-  }
-
-  return result;
-}
-
-void
-BoundedTrackingErrorLayer::updateParametersCallback(
-  const std::vector<rclcpp::Parameter> & parameters)
-{
-  std::lock_guard<std::mutex> guard(data_mutex_);
-
-  for (const auto & parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-
-    if (param_name.find(name_ + ".") != 0) {
-      continue;
-    }
-
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      const bool is_look_ahead = param_name == name_ + "." + "look_ahead";
-      const bool is_corridor_width = param_name == name_ + "." + "corridor_width";
-      if (is_look_ahead && look_ahead_ != parameter.as_double()) {
-        look_ahead_ = parameter.as_double();
-        current_ = false;
-      } else if (is_corridor_width && corridor_width_ != parameter.as_double()) {
-        corridor_width_ = parameter.as_double();
-        current_ = false;
-      }
-    } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      const bool is_enabled = param_name == name_ + "." + "enabled";
-      if (is_enabled && enabled_ != parameter.as_bool()) {
-        enabled_ = parameter.as_bool();
-        current_ = false;
-      }
-    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      const bool is_step = param_name == name_ + "." + "step";
-      const bool is_cost = param_name == name_ + "." + "corridor_cost";
-      const bool is_thickness = param_name == name_ + "." + "wall_thickness";
-      const bool is_write_mode = param_name == name_ + "." + "cost_write_mode";
-      if (is_step) {
-        const int new_step = parameter.as_int();
-        if (static_cast<size_t>(new_step) != step_size_) {
-          step_size_ = static_cast<size_t>(new_step);
-          current_ = false;
-        }
-      } else if (is_cost && corridor_cost_ != static_cast<unsigned char>(parameter.as_int())) {
-        corridor_cost_ = static_cast<unsigned char>(parameter.as_int());
-        current_ = false;
-      } else if (is_thickness && wall_thickness_ != parameter.as_int()) {
-        wall_thickness_ = parameter.as_int();
-        current_ = false;
-      } else if (is_write_mode && cost_write_mode_ != parameter.as_int()) {
-        cost_write_mode_ = parameter.as_int();
-        current_ = false;
-      }
-    }
-  }
-}
-
-void
-BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
-{
-  std::lock_guard<std::mutex> lock(data_mutex_);
-  if (!last_path_ptr_ || msg->header.stamp != last_path_ptr_->header.stamp) {
-    current_path_index_.store(0);
-  }
-  last_path_ptr_ = msg;
 }
 
 void
@@ -539,6 +405,8 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   const double r_cells = (corridor_width_ * 0.5) / resolution_;
   const int r_cells_sq = static_cast<int>(std::llround(r_cells * r_cells));
 
+  // extra_poses extends wall polygon generation beyond the bbox boundary to cover
+  // geometric gaps at sub-segment exit points on diagonal paths.
   const size_t extra_poses = static_cast<size_t>(
     std::ceil(corridor_width_ / resolution_)) + step_size_;
 
@@ -548,6 +416,7 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
     fill_max_i, fill_max_j,
     extra_poses);
 
+  // Guarantee the robot's own cell is always interior regardless of path position
   unsigned int robot_cx, robot_cy;
   if (master_grid.worldToMap(
       robot_pose.pose.position.x, robot_pose.pose.position.y, robot_cx, robot_cy))
@@ -555,6 +424,12 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
     markCircleAsInterior(master_grid, static_cast<int>(robot_cx), static_cast<int>(robot_cy),
       r_cells_sq);
   }
+
+  RCLCPP_DEBUG_THROTTLE(
+    logger_, *clock_, 2000,
+    "Fill bbox: [%d,%d] to [%d,%d], extra_poses=%zu",
+    fill_min_i, fill_min_j, fill_max_i, fill_max_j,
+    extra_poses);
 
   fillOutsideCorridor(master_grid, fill_min_i, fill_min_j, fill_max_i, fill_max_j);
 }
@@ -582,7 +457,6 @@ BoundedTrackingErrorLayer::drawCorridorWalls(
       master_grid, inner_points[i][0], inner_points[i][1], inner0);
     const bool inner1_valid = worldToCell(
       master_grid, inner_points[i + 1][0], inner_points[i + 1][1], inner1);
-    // Skip quads where both inner vertices are off-map; outer vertices are always clamped.
     if (!inner0_valid && !inner1_valid) {
       continue;
     }
@@ -599,7 +473,6 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
   nav2_costmap_2d::Costmap2D & master_grid,
   const WallPolygons & walls)
 {
-
   if (walls.left_inner.size() < 2 || walls.right_inner.size() < 2) {
     RCLCPP_DEBUG(
       logger_,
@@ -979,6 +852,147 @@ BoundedTrackingErrorLayer::flushSubSegment(
   flush_bbox_segment();
 
   sub_segment.poses.clear();
+}
+
+rcl_interfaces::msg::SetParametersResult
+BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + "." + "look_ahead") {
+        const double new_value = parameter.as_double();
+        if (new_value <= 0.0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %f, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "look_ahead must be positive";
+        }
+      } else if (param_name == name_ + "." + "corridor_width") {
+        const double new_value = parameter.as_double();
+        if (new_value <= 0.0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %f, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "corridor_width must be positive";
+        }
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == name_ + "." + "step") {
+        const int new_value = parameter.as_int();
+        if (new_value <= 0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "step must be greater than zero";
+        }
+      } else if (param_name == name_ + "." + "corridor_cost") {
+        const int new_value = parameter.as_int();
+        if (new_value <= 0 || new_value > 254) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be between 1 and 254. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "corridor_cost must be between 1 and 254";
+        }
+      } else if (param_name == name_ + "." + "wall_thickness") {
+        const int new_value = parameter.as_int();
+        if (new_value <= 0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "wall_thickness must be greater than zero";
+        }
+      } else if (param_name == name_ + "." + "cost_write_mode") {
+        const int new_value = parameter.as_int();
+        if (new_value < 0 || new_value > 2) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be 0, 1, or 2. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason =
+            "cost_write_mode must be 0 (corridor), 1 (fill max), or 2 (fill overwrite)";
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+void
+BoundedTrackingErrorLayer::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> guard(data_mutex_);
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      const bool is_look_ahead = param_name == name_ + "." + "look_ahead";
+      const bool is_corridor_width = param_name == name_ + "." + "corridor_width";
+      if (is_look_ahead && look_ahead_ != parameter.as_double()) {
+        look_ahead_ = parameter.as_double();
+        current_ = false;
+      } else if (is_corridor_width && corridor_width_ != parameter.as_double()) {
+        corridor_width_ = parameter.as_double();
+        current_ = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      const bool is_enabled = param_name == name_ + "." + "enabled";
+      if (is_enabled && enabled_ != parameter.as_bool()) {
+        enabled_ = parameter.as_bool();
+        current_ = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      const bool is_step = param_name == name_ + "." + "step";
+      const bool is_cost = param_name == name_ + "." + "corridor_cost";
+      const bool is_thickness = param_name == name_ + "." + "wall_thickness";
+      const bool is_write_mode = param_name == name_ + "." + "cost_write_mode";
+      if (is_step) {
+        const int new_step = parameter.as_int();
+        if (static_cast<size_t>(new_step) != step_size_) {
+          step_size_ = static_cast<size_t>(new_step);
+          current_ = false;
+        }
+      } else if (is_cost && corridor_cost_ != static_cast<unsigned char>(parameter.as_int())) {
+        corridor_cost_ = static_cast<unsigned char>(parameter.as_int());
+        current_ = false;
+      } else if (is_thickness && wall_thickness_ != parameter.as_int()) {
+        wall_thickness_ = parameter.as_int();
+        current_ = false;
+      } else if (is_write_mode && cost_write_mode_ != parameter.as_int()) {
+        cost_write_mode_ = parameter.as_int();
+        current_ = false;
+      }
+    }
+  }
 }
 
 }  // namespace nav2_costmap_2d
