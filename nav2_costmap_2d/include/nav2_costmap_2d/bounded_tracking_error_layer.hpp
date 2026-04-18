@@ -121,6 +121,20 @@ public:
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j) override;
 
+  /**
+   * @brief Validate parameter updates before they are applied.
+   * @param parameters Incoming parameter update list.
+   * @return Result indicating success or failure with reason.
+   */
+  rcl_interfaces::msg::SetParametersResult
+  validateParameterUpdatesCallback(const std::vector<rclcpp::Parameter> & parameters);
+
+  /**
+   * @brief Apply validated parameter updates to layer state.
+   * @param parameters Validated parameter update list.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
+
 protected:
   /** @brief Wall polygon components for left and right corridor boundaries. */
   struct WallPolygons
@@ -244,26 +258,12 @@ protected:
    */
   void resetState();
 
-  /**
-   * @brief Validate parameter updates before they are applied.
-   * @param parameters Incoming parameter update list.
-   * @return Result indicating success or failure with reason.
-   */
-  rcl_interfaces::msg::SetParametersResult
-  validateParameterUpdatesCallback(const std::vector<rclcpp::Parameter> & parameters);
-
-  /**
-   * @brief Apply validated parameter updates to layer state.
-   * @param parameters Validated parameter update list.
-   */
-  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
-
   size_t step_size_;
   double look_ahead_;
   double corridor_width_;
   int wall_thickness_;
   unsigned char corridor_cost_;
-  bool fill_outside_corridor_{false};
+  int cost_write_mode_{0};
 
   double resolution_{0.0};
   std::string costmap_frame_;
@@ -348,24 +348,6 @@ private:
     int reset_max_i, int reset_max_j);
 
   /**
-   * @brief Process a sub-segment of the path, filtering to the fill bbox margin
-   *        and saving the corridor interior mask for each contiguous chunk.
-   * @param master_grid Costmap used for coordinate conversion.
-   * @param sub_segment Path sub-segment to process.
-   * @param fill_min_i Fill bbox minimum X cell index.
-   * @param fill_min_j Fill bbox minimum Y cell index.
-   * @param fill_max_i Fill bbox maximum X cell index.
-   * @param fill_max_j Fill bbox maximum Y cell index.
-   * @param extra_poses Extra poses beyond bbox boundary for geometric coverage.
-   */
-  void flushSubSegment(
-    nav2_costmap_2d::Costmap2D & master_grid,
-    nav_msgs::msg::Path & sub_segment,
-    int fill_min_i, int fill_min_j,
-    int fill_max_i, int fill_max_j,
-    size_t extra_poses);
-
-  /**
    * @brief Iterate the full path, split into bbox-clipped sub-segments, and
    *        build the corridor interior mask for each.
    * @param master_grid Costmap used for coordinate conversion.
@@ -379,6 +361,24 @@ private:
   void buildCorridorMask(
     nav2_costmap_2d::Costmap2D & master_grid,
     const nav_msgs::msg::Path & full_path,
+    int fill_min_i, int fill_min_j,
+    int fill_max_i, int fill_max_j,
+    size_t extra_poses);
+
+  /**
+   * @brief Process a sub-segment of the path, filtering to the fill bbox margin
+   *        and saving the corridor interior mask for each contiguous chunk.
+   * @param master_grid Costmap used for coordinate conversion.
+   * @param sub_segment Path sub-segment to process.
+   * @param fill_min_i Fill bbox minimum X cell index.
+   * @param fill_min_j Fill bbox minimum Y cell index.
+   * @param fill_max_i Fill bbox maximum X cell index.
+   * @param fill_max_j Fill bbox maximum Y cell index.
+   * @param extra_poses Extra poses beyond bbox boundary for geometric coverage.
+   */
+  void flushSubSegment(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    nav_msgs::msg::Path & sub_segment,
     int fill_min_i, int fill_min_j,
     int fill_max_i, int fill_max_j,
     size_t extra_poses);

@@ -94,56 +94,6 @@ BoundedTrackingErrorLayer::reset()
 }
 
 void
-BoundedTrackingErrorLayer::getParameters()
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  path_topic_ = node->declare_or_get_parameter(
-    name_ + "." + "path_topic", std::string("plan"));
-
-  const int step_param = node->declare_or_get_parameter(name_ + "." + "step", 10);
-  if (step_param <= 0) {
-    throw std::runtime_error{"step must be greater than zero"};
-  }
-  step_size_ = static_cast<size_t>(step_param);
-
-  look_ahead_ = node->declare_or_get_parameter(name_ + "." + "look_ahead", 2.5);
-  if (look_ahead_ <= 0.0) {
-    throw std::runtime_error{"look_ahead must be positive"};
-  }
-
-  corridor_width_ = node->declare_or_get_parameter(name_ + "." + "corridor_width", 2.0);
-  if (corridor_width_ <= 0.0) {
-    throw std::runtime_error{"corridor_width must be positive"};
-  }
-
-  wall_thickness_ = node->declare_or_get_parameter(name_ + "." + "wall_thickness", 1);
-  if (wall_thickness_ <= 0) {
-    throw std::runtime_error{"wall_thickness must be greater than zero"};
-  }
-
-  int corridor_cost_param = node->declare_or_get_parameter(name_ + "." + "corridor_cost", 190);
-  if (corridor_cost_param <= 0 || corridor_cost_param > 254) {
-    throw std::runtime_error{"corridor_cost must be between 1 and 254"};
-  }
-  corridor_cost_ = static_cast<unsigned char>(corridor_cost_param);
-
-  fill_outside_corridor_ = node->declare_or_get_parameter(
-    name_ + "." + "fill_outside_corridor", false);
-
-  enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
-
-  double temp_tf_tol = 0.1;
-  node->get_parameter("transform_tolerance", temp_tf_tol);
-  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
-
-  node->get_parameter("robot_base_frame", robot_base_frame_);
-}
-
-void
 BoundedTrackingErrorLayer::matchSize()
 {
   resolution_ = layered_costmap_->getCostmap()->getResolution();
@@ -155,16 +105,6 @@ BoundedTrackingErrorLayer::matchSize()
   prev_fill_min_j_ = -1;
   prev_fill_max_i_ = -1;
   prev_fill_max_j_ = -1;
-}
-
-void
-BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
-{
-  std::lock_guard<std::mutex> lock(data_mutex_);
-  if (!last_path_ptr_ || msg->header.stamp != last_path_ptr_->header.stamp) {
-    current_path_index_.store(0);
-  }
-  last_path_ptr_ = msg;
 }
 
 void
@@ -284,7 +224,7 @@ BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
-  if (fill_outside_corridor_) {
+  if (cost_write_mode_ >= 1) {
     if (corridor_interior_mask_.size() !=
       master_grid.getSizeInCellsX() * master_grid.getSizeInCellsY())
     {
@@ -298,164 +238,155 @@ BoundedTrackingErrorLayer::updateCosts(
   }
 }
 
-void
-BoundedTrackingErrorLayer::applyFillOutsideCorridor(
-  nav2_costmap_2d::Costmap2D & master_grid,
-  const geometry_msgs::msg::PoseStamped & robot_pose,
-  const nav_msgs::msg::Path & full_path)
+rcl_interfaces::msg::SetParametersResult
+BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
-  const double fill_radius = look_ahead_ + corridor_width_ * 0.5 + wall_thickness_ * resolution_;
-  const double rx = robot_pose.pose.position.x;
-  const double ry = robot_pose.pose.position.y;
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
 
-  int cell_min_x, cell_min_y, cell_max_x, cell_max_y;
-  master_grid.worldToMapEnforceBounds(rx - fill_radius, ry - fill_radius, cell_min_x, cell_min_y);
-  master_grid.worldToMapEnforceBounds(rx + fill_radius, ry + fill_radius, cell_max_x, cell_max_y);
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
 
-  const unsigned int fill_size_x = master_grid.getSizeInCellsX();
-  const unsigned int fill_size_y = master_grid.getSizeInCellsY();
-
-  int fill_min_i = std::max(cell_min_x, 0);
-  int fill_min_j = std::max(cell_min_y, 0);
-  int fill_max_i = std::min(cell_max_x, static_cast<int>(fill_size_x) - 1);
-  int fill_max_j = std::min(cell_max_y, static_cast<int>(fill_size_y) - 1);
-
-  const int reset_min_i = (prev_fill_min_i_ < 0) ? fill_min_i : std::min(fill_min_i, prev_fill_min_i_);
-  const int reset_min_j = (prev_fill_min_j_ < 0) ? fill_min_j : std::min(fill_min_j, prev_fill_min_j_);
-  const int reset_max_i = (prev_fill_max_i_ < 0) ? fill_max_i : std::max(fill_max_i, prev_fill_max_i_);
-  const int reset_max_j = (prev_fill_max_j_ < 0) ? fill_max_j : std::max(fill_max_j, prev_fill_max_j_);
-
-  resetCorridorMask(
-    master_grid.getSizeInCellsX(),
-    reset_min_i, reset_min_j,
-    reset_max_i, reset_max_j);
-
-  prev_fill_min_i_ = fill_min_i;
-  prev_fill_min_j_ = fill_min_j;
-  prev_fill_max_i_ = fill_max_i;
-  prev_fill_max_j_ = fill_max_j;
-
-  const double r_cells = (corridor_width_ * 0.5) / resolution_;
-  const int r_cells_sq = static_cast<int>(std::llround(r_cells * r_cells));
-
-  const size_t extra_poses = static_cast<size_t>(
-    std::ceil(corridor_width_ / resolution_)) + step_size_;
-
-  buildCorridorMask(
-    master_grid, full_path,
-    fill_min_i, fill_min_j,
-    fill_max_i, fill_max_j,
-    extra_poses);
-
-  unsigned int robot_cx, robot_cy;
-  if (master_grid.worldToMap(
-      robot_pose.pose.position.x, robot_pose.pose.position.y, robot_cx, robot_cy))
-  {
-    markCircleAsInterior(master_grid, static_cast<int>(robot_cx), static_cast<int>(robot_cy),
-      r_cells_sq);
-  }
-
-  fillOutsideCorridor(master_grid, fill_min_i, fill_min_j, fill_max_i, fill_max_j);
-}
-
-void
-BoundedTrackingErrorLayer::resetCorridorMask(
-  unsigned int size_x,
-  int reset_min_i, int reset_min_j,
-  int reset_max_i, int reset_max_j)
-{
-  for (int y = reset_min_j; y <= reset_max_j; ++y) {
-    std::fill(
-      corridor_interior_mask_.begin() + y * size_x + reset_min_i,
-      corridor_interior_mask_.begin() + y * size_x + reset_max_i + 1,
-      0);
-  }
-}
-
-void
-BoundedTrackingErrorLayer::flushSubSegment(
-  nav2_costmap_2d::Costmap2D & master_grid,
-  nav_msgs::msg::Path & sub_segment,
-  int fill_min_i, int fill_min_j,
-  int fill_max_i, int fill_max_j,
-  size_t extra_poses)
-{
-  if (sub_segment.poses.size() < 2) {
-    sub_segment.poses.clear();
-    return;
-  }
-
-  nav_msgs::msg::Path bbox_segment;
-  bbox_segment.header = sub_segment.header;
-
-  auto flush_bbox_segment = [&]() {
-    if (bbox_segment.poses.size() >= 2) {
-      WallPolygons fill_walls;
-      getWallPolygons(bbox_segment, fill_walls);
-      saveCorridorInterior(master_grid, fill_walls);
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
     }
-    bbox_segment.poses.clear();
-  };
 
-  for (const auto & p : sub_segment.poses) {
-    unsigned int mx, my;
-    const bool in_margin = master_grid.worldToMap(
-      p.pose.position.x, p.pose.position.y, mx, my) &&
-      static_cast<int>(mx) >= fill_min_i - static_cast<int>(extra_poses) &&
-      static_cast<int>(mx) <= fill_max_i + static_cast<int>(extra_poses) &&
-      static_cast<int>(my) >= fill_min_j - static_cast<int>(extra_poses) &&
-      static_cast<int>(my) <= fill_max_j + static_cast<int>(extra_poses);
-
-    if (in_margin) {
-      bbox_segment.poses.push_back(p);
-    } else {
-      flush_bbox_segment();
-    }
-  }
-  flush_bbox_segment();
-
-  sub_segment.poses.clear();
-}
-
-void
-BoundedTrackingErrorLayer::buildCorridorMask(
-  nav2_costmap_2d::Costmap2D & master_grid,
-  const nav_msgs::msg::Path & full_path,
-  int fill_min_i, int fill_min_j,
-  int fill_max_i, int fill_max_j,
-  size_t extra_poses)
-{
-  nav_msgs::msg::Path sub_segment;
-  sub_segment.header = full_path.header;
-
-  for (size_t i = 0; i < full_path.poses.size(); ++i) {
-    const auto & pose = full_path.poses[i];
-    unsigned int mx, my;
-    const bool in_area = master_grid.worldToMap(
-      pose.pose.position.x, pose.pose.position.y, mx, my) &&
-      static_cast<int>(mx) >= fill_min_i &&
-      static_cast<int>(mx) <= fill_max_i &&
-      static_cast<int>(my) >= fill_min_j &&
-      static_cast<int>(my) <= fill_max_j;
-
-    if (in_area) {
-      sub_segment.poses.push_back(pose);
-    } else {
-      for (size_t j = i; j < std::min(i + extra_poses, full_path.poses.size()); ++j) {
-        sub_segment.poses.push_back(full_path.poses[j]);
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + "." + "look_ahead") {
+        const double new_value = parameter.as_double();
+        if (new_value <= 0.0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %f, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "look_ahead must be positive";
+        }
+      } else if (param_name == name_ + "." + "corridor_width") {
+        const double new_value = parameter.as_double();
+        if (new_value <= 0.0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %f, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "corridor_width must be positive";
+        }
       }
-      flushSubSegment(
-        master_grid, sub_segment,
-        fill_min_i, fill_min_j,
-        fill_max_i, fill_max_j,
-        extra_poses);
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == name_ + "." + "step") {
+        const int new_value = parameter.as_int();
+        if (new_value <= 0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "step must be greater than zero";
+        }
+      } else if (param_name == name_ + "." + "corridor_cost") {
+        const int new_value = parameter.as_int();
+        if (new_value <= 0 || new_value > 254) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be between 1 and 254. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "corridor_cost must be between 1 and 254";
+        }
+      } else if (param_name == name_ + "." + "wall_thickness") {
+        const int new_value = parameter.as_int();
+        if (new_value <= 0) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be > 0. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason = "wall_thickness must be greater than zero";
+        }
+      } else if (param_name == name_ + "." + "cost_write_mode") {
+        const int new_value = parameter.as_int();
+        if (new_value < 0 || new_value > 2) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is incorrectly set to %d, "
+            "it should be 0, 1, or 2. Rejecting parameter update.",
+            param_name.c_str(), new_value);
+          result.successful = false;
+          result.reason =
+            "cost_write_mode must be 0 (corridor), 1 (fill max), or 2 (fill overwrite)";
+        }
+      }
     }
   }
-  flushSubSegment(
-    master_grid, sub_segment,
-    fill_min_i, fill_min_j,
-    fill_max_i, fill_max_j,
-    extra_poses);
+
+  return result;
+}
+
+void
+BoundedTrackingErrorLayer::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> guard(data_mutex_);
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      const bool is_look_ahead = param_name == name_ + "." + "look_ahead";
+      const bool is_corridor_width = param_name == name_ + "." + "corridor_width";
+      if (is_look_ahead && look_ahead_ != parameter.as_double()) {
+        look_ahead_ = parameter.as_double();
+        current_ = false;
+      } else if (is_corridor_width && corridor_width_ != parameter.as_double()) {
+        corridor_width_ = parameter.as_double();
+        current_ = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      const bool is_enabled = param_name == name_ + "." + "enabled";
+      if (is_enabled && enabled_ != parameter.as_bool()) {
+        enabled_ = parameter.as_bool();
+        current_ = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      const bool is_step = param_name == name_ + "." + "step";
+      const bool is_cost = param_name == name_ + "." + "corridor_cost";
+      const bool is_thickness = param_name == name_ + "." + "wall_thickness";
+      const bool is_write_mode = param_name == name_ + "." + "cost_write_mode";
+      if (is_step) {
+        const int new_step = parameter.as_int();
+        if (static_cast<size_t>(new_step) != step_size_) {
+          step_size_ = static_cast<size_t>(new_step);
+          current_ = false;
+        }
+      } else if (is_cost && corridor_cost_ != static_cast<unsigned char>(parameter.as_int())) {
+        corridor_cost_ = static_cast<unsigned char>(parameter.as_int());
+        current_ = false;
+      } else if (is_thickness && wall_thickness_ != parameter.as_int()) {
+        wall_thickness_ = parameter.as_int();
+        current_ = false;
+      } else if (is_write_mode && cost_write_mode_ != parameter.as_int()) {
+        cost_write_mode_ = parameter.as_int();
+        current_ = false;
+      }
+    }
+  }
+}
+
+void
+BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
+{
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  if (!last_path_ptr_ || msg->header.stamp != last_path_ptr_->header.stamp) {
+    current_path_index_.store(0);
+  }
+  last_path_ptr_ = msg;
 }
 
 void
@@ -564,25 +495,68 @@ BoundedTrackingErrorLayer::getWallPolygons(
   }
 }
 
-bool
-BoundedTrackingErrorLayer::worldToCell(
-  const nav2_costmap_2d::Costmap2D & master_grid,
-  double wx, double wy,
-  CellPoint & out) const
+void
+BoundedTrackingErrorLayer::applyFillOutsideCorridor(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  const geometry_msgs::msg::PoseStamped & robot_pose,
+  const nav_msgs::msg::Path & full_path)
 {
-  unsigned int ux, uy;
-  if (master_grid.worldToMap(wx, wy, ux, uy)) {
-    out = {static_cast<int>(ux), static_cast<int>(uy)};
-    return true;
+  const double fill_radius = look_ahead_ + corridor_width_ * 0.5 + wall_thickness_ * resolution_;
+  const double rx = robot_pose.pose.position.x;
+  const double ry = robot_pose.pose.position.y;
+
+  int cell_min_x, cell_min_y, cell_max_x, cell_max_y;
+  master_grid.worldToMapEnforceBounds(rx - fill_radius, ry - fill_radius, cell_min_x, cell_min_y);
+  master_grid.worldToMapEnforceBounds(rx + fill_radius, ry + fill_radius, cell_max_x, cell_max_y);
+
+  const unsigned int fill_size_x = master_grid.getSizeInCellsX();
+  const unsigned int fill_size_y = master_grid.getSizeInCellsY();
+
+  int fill_min_i = std::max(cell_min_x, 0);
+  int fill_min_j = std::max(cell_min_y, 0);
+  int fill_max_i = std::min(cell_max_x, static_cast<int>(fill_size_x) - 1);
+  int fill_max_j = std::min(cell_max_y, static_cast<int>(fill_size_y) - 1);
+
+  const int reset_min_i = (prev_fill_min_i_ < 0) ? fill_min_i : std::min(fill_min_i,
+      prev_fill_min_i_);
+  const int reset_min_j = (prev_fill_min_j_ < 0) ? fill_min_j : std::min(fill_min_j,
+      prev_fill_min_j_);
+  const int reset_max_i = (prev_fill_max_i_ < 0) ? fill_max_i : std::max(fill_max_i,
+      prev_fill_max_i_);
+  const int reset_max_j = (prev_fill_max_j_ < 0) ? fill_max_j : std::max(fill_max_j,
+      prev_fill_max_j_);
+
+  resetCorridorMask(
+    master_grid.getSizeInCellsX(),
+    reset_min_i, reset_min_j,
+    reset_max_i, reset_max_j);
+
+  prev_fill_min_i_ = fill_min_i;
+  prev_fill_min_j_ = fill_min_j;
+  prev_fill_max_i_ = fill_max_i;
+  prev_fill_max_j_ = fill_max_j;
+
+  const double r_cells = (corridor_width_ * 0.5) / resolution_;
+  const int r_cells_sq = static_cast<int>(std::llround(r_cells * r_cells));
+
+  const size_t extra_poses = static_cast<size_t>(
+    std::ceil(corridor_width_ / resolution_)) + step_size_;
+
+  buildCorridorMask(
+    master_grid, full_path,
+    fill_min_i, fill_min_j,
+    fill_max_i, fill_max_j,
+    extra_poses);
+
+  unsigned int robot_cx, robot_cy;
+  if (master_grid.worldToMap(
+      robot_pose.pose.position.x, robot_pose.pose.position.y, robot_cx, robot_cy))
+  {
+    markCircleAsInterior(master_grid, static_cast<int>(robot_cx), static_cast<int>(robot_cy),
+      r_cells_sq);
   }
-  // Clamp to costmap boundary so quads straddling the edge are still drawn.
-  int cx, cy;
-  master_grid.worldToMapNoBounds(wx, wy, cx, cy);
-  out = {
-    std::clamp(cx, 0, static_cast<int>(master_grid.getSizeInCellsX()) - 1),
-    std::clamp(cy, 0, static_cast<int>(master_grid.getSizeInCellsY()) - 1)
-  };
-  return false;
+
+  fillOutsideCorridor(master_grid, fill_min_i, fill_min_j, fill_max_i, fill_max_j);
 }
 
 void
@@ -617,78 +591,6 @@ BoundedTrackingErrorLayer::drawCorridorWalls(
     worldToCell(master_grid, outer_points[i + 1][0], outer_points[i + 1][1], outer1);
 
     fillCorridorQuad(master_grid, inner0, inner1, outer0, outer1);
-  }
-}
-
-void
-BoundedTrackingErrorLayer::traceQuad(
-  CellPoint p0, CellPoint p1, CellPoint p2, CellPoint p3,
-  int clamped_y_min, int height)
-{
-  auto trace = [&](CellPoint a, CellPoint b) {
-      nav2_util::LineIterator line(a.x, a.y, b.x, b.y);
-      for (; line.isValid(); line.advance()) {
-        const int x = line.getX();
-        const int y = line.getY();
-        const int buffer_idx = y - clamped_y_min;
-        if (buffer_idx >= 0 && buffer_idx < height) {
-          span_x_min_buffer_[buffer_idx] = std::min(span_x_min_buffer_[buffer_idx], x);
-          span_x_max_buffer_[buffer_idx] = std::max(span_x_max_buffer_[buffer_idx], x);
-        }
-      }
-    };
-
-  trace(p0, p1);
-  trace(p1, p2);
-  trace(p2, p3);
-  trace(p3, p0);
-}
-
-void
-BoundedTrackingErrorLayer::fillCorridorQuad(
-  nav2_costmap_2d::Costmap2D & master_grid,
-  CellPoint inner0,
-  CellPoint inner1,
-  CellPoint outer0,
-  CellPoint outer1)
-{
-  unsigned char * costmap = master_grid.getCharMap();
-  const unsigned int size_x = master_grid.getSizeInCellsX();
-  const unsigned int size_y = master_grid.getSizeInCellsY();
-
-  const int y_min = std::min({inner0.y, inner1.y, outer0.y, outer1.y});
-  const int y_max = std::max({inner0.y, inner1.y, outer0.y, outer1.y});
-
-  const int clamped_y_min = std::max(y_min, 0);
-  const int clamped_y_max = std::min(y_max, static_cast<int>(size_y) - 1);
-
-  if (clamped_y_min > clamped_y_max) {
-    return;
-  }
-
-  const int height = clamped_y_max - clamped_y_min + 1;
-
-  span_x_min_buffer_.assign(height, std::numeric_limits<int>::max());
-  span_x_max_buffer_.assign(height, std::numeric_limits<int>::min());
-
-  traceQuad(inner0, inner1, outer1, outer0, clamped_y_min, height);
-
-  for (int buffer_idx = 0; buffer_idx < height; ++buffer_idx) {
-    const int y = clamped_y_min + buffer_idx;
-    const int x_min = span_x_min_buffer_[buffer_idx];
-    const int x_max = span_x_max_buffer_[buffer_idx];
-
-    if (x_min > x_max) {
-      continue;
-    }
-
-    // Clamp to costmap bounds before writing.
-    const int x_start = std::max(x_min, 0);
-    const int x_end = std::min(x_max, static_cast<int>(size_x) - 1);
-
-    for (int x = x_start; x <= x_end; ++x) {
-      costmap[y * size_x + x] = std::max(costmap[y * size_x + x], corridor_cost_);
-    }
   }
 }
 
@@ -810,7 +712,11 @@ BoundedTrackingErrorLayer::fillOutsideCorridor(
       if (corridor_interior_mask_[flat_idx]) {
         continue;
       }
-      costmap[flat_idx] = std::max(costmap[flat_idx], corridor_cost_);
+      if (cost_write_mode_ == 2) {
+        costmap[flat_idx] = corridor_cost_;
+      } else {
+        costmap[flat_idx] = std::max(costmap[flat_idx], corridor_cost_);
+      }
     }
   }
 }
@@ -827,134 +733,252 @@ BoundedTrackingErrorLayer::resetState()
   prev_fill_max_j_ = -1;
 }
 
-rcl_interfaces::msg::SetParametersResult
-BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
-  const std::vector<rclcpp::Parameter> & parameters)
+void
+BoundedTrackingErrorLayer::getParameters()
 {
-  rcl_interfaces::msg::SetParametersResult result;
-  result.successful = true;
-
-  for (const auto & parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-
-    if (param_name.find(name_ + ".") != 0) {
-      continue;
-    }
-
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "look_ahead") {
-        const double new_value = parameter.as_double();
-        if (new_value <= 0.0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %f, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "look_ahead must be positive";
-        }
-      } else if (param_name == name_ + "." + "corridor_width") {
-        const double new_value = parameter.as_double();
-        if (new_value <= 0.0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %f, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "corridor_width must be positive";
-        }
-      }
-    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == name_ + "." + "step") {
-        const int new_value = parameter.as_int();
-        if (new_value <= 0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "step must be greater than zero";
-        }
-      } else if (param_name == name_ + "." + "corridor_cost") {
-        const int new_value = parameter.as_int();
-        if (new_value <= 0 || new_value > 254) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be between 1 and 254. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "corridor_cost must be between 1 and 254";
-        }
-      } else if (param_name == name_ + "." + "wall_thickness") {
-        const int new_value = parameter.as_int();
-        if (new_value <= 0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "wall_thickness must be greater than zero";
-        }
-      }
-    }
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
   }
 
-  return result;
+  path_topic_ = node->declare_or_get_parameter(
+    name_ + "." + "path_topic", std::string("plan"));
+
+  const int step_param = node->declare_or_get_parameter(name_ + "." + "step", 10);
+  if (step_param <= 0) {
+    throw std::runtime_error{"step must be greater than zero"};
+  }
+  step_size_ = static_cast<size_t>(step_param);
+
+  look_ahead_ = node->declare_or_get_parameter(name_ + "." + "look_ahead", 2.5);
+  if (look_ahead_ <= 0.0) {
+    throw std::runtime_error{"look_ahead must be positive"};
+  }
+
+  corridor_width_ = node->declare_or_get_parameter(name_ + "." + "corridor_width", 2.0);
+  if (corridor_width_ <= 0.0) {
+    throw std::runtime_error{"corridor_width must be positive"};
+  }
+
+  wall_thickness_ = node->declare_or_get_parameter(name_ + "." + "wall_thickness", 1);
+  if (wall_thickness_ <= 0) {
+    throw std::runtime_error{"wall_thickness must be greater than zero"};
+  }
+
+  int corridor_cost_param = node->declare_or_get_parameter(name_ + "." + "corridor_cost", 190);
+  if (corridor_cost_param <= 0 || corridor_cost_param > 254) {
+    throw std::runtime_error{"corridor_cost must be between 1 and 254"};
+  }
+  corridor_cost_ = static_cast<unsigned char>(corridor_cost_param);
+
+  int cost_write_mode_param = node->declare_or_get_parameter(
+      name_ + "." + "cost_write_mode", 0);
+  if (cost_write_mode_param < 0 || cost_write_mode_param > 2) {
+    throw std::runtime_error{
+            "cost_write_mode must be 0 (max), 1 (overwrite walls), or 2 (overwrite all)"};
+  }
+  cost_write_mode_ = cost_write_mode_param;
+
+  enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+
+  double temp_tf_tol = 0.1;
+  node->get_parameter("transform_tolerance", temp_tf_tol);
+  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+
+  node->get_parameter("robot_base_frame", robot_base_frame_);
+}
+
+bool
+BoundedTrackingErrorLayer::worldToCell(
+  const nav2_costmap_2d::Costmap2D & master_grid,
+  double wx, double wy,
+  CellPoint & out) const
+{
+  unsigned int ux, uy;
+  if (master_grid.worldToMap(wx, wy, ux, uy)) {
+    out = {static_cast<int>(ux), static_cast<int>(uy)};
+    return true;
+  }
+  // Clamp to costmap boundary so quads straddling the edge are still drawn.
+  int cx, cy;
+  master_grid.worldToMapNoBounds(wx, wy, cx, cy);
+  out = {
+    std::clamp(cx, 0, static_cast<int>(master_grid.getSizeInCellsX()) - 1),
+    std::clamp(cy, 0, static_cast<int>(master_grid.getSizeInCellsY()) - 1)
+  };
+  return false;
 }
 
 void
-BoundedTrackingErrorLayer::updateParametersCallback(
-  const std::vector<rclcpp::Parameter> & parameters)
+BoundedTrackingErrorLayer::traceQuad(
+  CellPoint p0, CellPoint p1, CellPoint p2, CellPoint p3,
+  int clamped_y_min, int height)
 {
-  std::lock_guard<std::mutex> guard(data_mutex_);
+  auto trace = [&](CellPoint a, CellPoint b) {
+      nav2_util::LineIterator line(a.x, a.y, b.x, b.y);
+      for (; line.isValid(); line.advance()) {
+        const int x = line.getX();
+        const int y = line.getY();
+        const int buffer_idx = y - clamped_y_min;
+        if (buffer_idx >= 0 && buffer_idx < height) {
+          span_x_min_buffer_[buffer_idx] = std::min(span_x_min_buffer_[buffer_idx], x);
+          span_x_max_buffer_[buffer_idx] = std::max(span_x_max_buffer_[buffer_idx], x);
+        }
+      }
+    };
 
-  for (const auto & parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
+  trace(p0, p1);
+  trace(p1, p2);
+  trace(p2, p3);
+  trace(p3, p0);
+}
 
-    if (param_name.find(name_ + ".") != 0) {
+void
+BoundedTrackingErrorLayer::fillCorridorQuad(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  CellPoint inner0,
+  CellPoint inner1,
+  CellPoint outer0,
+  CellPoint outer1)
+{
+  unsigned char * costmap = master_grid.getCharMap();
+  const unsigned int size_x = master_grid.getSizeInCellsX();
+  const unsigned int size_y = master_grid.getSizeInCellsY();
+
+  const int y_min = std::min({inner0.y, inner1.y, outer0.y, outer1.y});
+  const int y_max = std::max({inner0.y, inner1.y, outer0.y, outer1.y});
+
+  const int clamped_y_min = std::max(y_min, 0);
+  const int clamped_y_max = std::min(y_max, static_cast<int>(size_y) - 1);
+
+  if (clamped_y_min > clamped_y_max) {
+    return;
+  }
+
+  const int height = clamped_y_max - clamped_y_min + 1;
+
+  span_x_min_buffer_.assign(height, std::numeric_limits<int>::max());
+  span_x_max_buffer_.assign(height, std::numeric_limits<int>::min());
+
+  traceQuad(inner0, inner1, outer1, outer0, clamped_y_min, height);
+
+  for (int buffer_idx = 0; buffer_idx < height; ++buffer_idx) {
+    const int y = clamped_y_min + buffer_idx;
+    const int x_min = span_x_min_buffer_[buffer_idx];
+    const int x_max = span_x_max_buffer_[buffer_idx];
+
+    if (x_min > x_max) {
       continue;
     }
 
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      const bool is_look_ahead = param_name == name_ + "." + "look_ahead";
-      const bool is_corridor_width = param_name == name_ + "." + "corridor_width";
-      if (is_look_ahead && look_ahead_ != parameter.as_double()) {
-        look_ahead_ = parameter.as_double();
-        current_ = false;
-      } else if (is_corridor_width && corridor_width_ != parameter.as_double()) {
-        corridor_width_ = parameter.as_double();
-        current_ = false;
-      }
-    } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      const bool is_enabled = param_name == name_ + "." + "enabled";
-      const bool is_fill = param_name == name_ + "." + "fill_outside_corridor";
-      if (is_enabled && enabled_ != parameter.as_bool()) {
-        enabled_ = parameter.as_bool();
-        current_ = false;
-      } else if (is_fill && fill_outside_corridor_ != parameter.as_bool()) {
-        fill_outside_corridor_ = parameter.as_bool();
-        current_ = false;
-      }
-    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      const bool is_step = param_name == name_ + "." + "step";
-      const bool is_cost = param_name == name_ + "." + "corridor_cost";
-      const bool is_thickness = param_name == name_ + "." + "wall_thickness";
-      if (is_step) {
-        const int new_step = parameter.as_int();
-        if (static_cast<size_t>(new_step) != step_size_) {
-          step_size_ = static_cast<size_t>(new_step);
-          current_ = false;
-        }
-      } else if (is_cost && corridor_cost_ != static_cast<unsigned char>(parameter.as_int())) {
-        corridor_cost_ = static_cast<unsigned char>(parameter.as_int());
-        current_ = false;
-      } else if (is_thickness && wall_thickness_ != parameter.as_int()) {
-        wall_thickness_ = parameter.as_int();
-        current_ = false;
-      }
+    // Clamp to costmap bounds before writing.
+    const int x_start = std::max(x_min, 0);
+    const int x_end = std::min(x_max, static_cast<int>(size_x) - 1);
+
+    for (int x = x_start; x <= x_end; ++x) {
+      costmap[y * size_x + x] = std::max(costmap[y * size_x + x], corridor_cost_);
     }
   }
+}
+
+void
+BoundedTrackingErrorLayer::resetCorridorMask(
+  unsigned int size_x,
+  int reset_min_i, int reset_min_j,
+  int reset_max_i, int reset_max_j)
+{
+  for (int y = reset_min_j; y <= reset_max_j; ++y) {
+    std::fill(
+      corridor_interior_mask_.begin() + y * size_x + reset_min_i,
+      corridor_interior_mask_.begin() + y * size_x + reset_max_i + 1,
+      0);
+  }
+}
+
+void
+BoundedTrackingErrorLayer::buildCorridorMask(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  const nav_msgs::msg::Path & full_path,
+  int fill_min_i, int fill_min_j,
+  int fill_max_i, int fill_max_j,
+  size_t extra_poses)
+{
+  nav_msgs::msg::Path sub_segment;
+  sub_segment.header = full_path.header;
+
+  for (size_t i = 0; i < full_path.poses.size(); ++i) {
+    const auto & pose = full_path.poses[i];
+    unsigned int mx, my;
+    const bool in_area = master_grid.worldToMap(
+      pose.pose.position.x, pose.pose.position.y, mx, my) &&
+      static_cast<int>(mx) >= fill_min_i &&
+      static_cast<int>(mx) <= fill_max_i &&
+      static_cast<int>(my) >= fill_min_j &&
+      static_cast<int>(my) <= fill_max_j;
+
+    if (in_area) {
+      sub_segment.poses.push_back(pose);
+    } else {
+      for (size_t j = i; j < std::min(i + extra_poses, full_path.poses.size()); ++j) {
+        sub_segment.poses.push_back(full_path.poses[j]);
+      }
+      flushSubSegment(
+        master_grid, sub_segment,
+        fill_min_i, fill_min_j,
+        fill_max_i, fill_max_j,
+        extra_poses);
+    }
+  }
+  flushSubSegment(
+    master_grid, sub_segment,
+    fill_min_i, fill_min_j,
+    fill_max_i, fill_max_j,
+    extra_poses);
+}
+
+void
+BoundedTrackingErrorLayer::flushSubSegment(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  nav_msgs::msg::Path & sub_segment,
+  int fill_min_i, int fill_min_j,
+  int fill_max_i, int fill_max_j,
+  size_t extra_poses)
+{
+  if (sub_segment.poses.size() < 2) {
+    sub_segment.poses.clear();
+    return;
+  }
+
+  nav_msgs::msg::Path bbox_segment;
+  bbox_segment.header = sub_segment.header;
+
+  auto flush_bbox_segment = [&]() {
+      if (bbox_segment.poses.size() >= 2) {
+        WallPolygons fill_walls;
+        getWallPolygons(bbox_segment, fill_walls);
+        saveCorridorInterior(master_grid, fill_walls);
+      }
+      bbox_segment.poses.clear();
+    };
+
+  for (const auto & p : sub_segment.poses) {
+    unsigned int mx, my;
+    const bool in_margin = master_grid.worldToMap(
+      p.pose.position.x, p.pose.position.y, mx, my) &&
+      static_cast<int>(mx) >= fill_min_i - static_cast<int>(extra_poses) &&
+      static_cast<int>(mx) <= fill_max_i + static_cast<int>(extra_poses) &&
+      static_cast<int>(my) >= fill_min_j - static_cast<int>(extra_poses) &&
+      static_cast<int>(my) <= fill_max_j + static_cast<int>(extra_poses);
+
+    if (in_margin) {
+      bbox_segment.poses.push_back(p);
+    } else {
+      flush_bbox_segment();
+    }
+  }
+  flush_bbox_segment();
+
+  sub_segment.poses.clear();
 }
 
 }  // namespace nav2_costmap_2d
