@@ -62,9 +62,12 @@ Controller::Controller(
   dock_collision_threshold_ = node->declare_or_get_parameter(
     "controller.dock_collision_threshold", 0.3);
 
+  // Initialize Smooth Control Law Keeping the maximum
+  // deceleration as large value, until this parameter is exposed
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
-    k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, v_linear_min_, v_linear_max_,
-    v_angular_max_);
+    k_phi_, k_delta_, beta_, lambda_,
+    slowdown_radius_, std::numeric_limits<double>::max(),
+    v_linear_min_, v_linear_max_, v_angular_max_);
 
   // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -98,7 +101,10 @@ bool Controller::computeVelocityCommand(
   bool backward)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
-  cmd = control_law_->calculateRegularVelocity(pose, backward);
+  geometry_msgs::msg::Pose target_pose = geometry_msgs::msg::Pose();
+  double target_distance = nav2_util::geometry_utils::euclidean_distance(pose, target_pose);
+  cmd = control_law_->calculateRegularVelocity(
+    pose, target_pose, target_distance, backward);
   return isTrajectoryCollisionFree(pose, is_docking, backward);
 }
 
@@ -154,13 +160,13 @@ bool Controller::isTrajectoryCollisionFree(
   }
 
   // Generate path
-  double distance = std::numeric_limits<double>::max();
+  double distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
   unsigned int max_iter = static_cast<unsigned int>(ceil(projection_time_ / simulation_time_step_));
 
   do{
     // Apply velocities to calculate next pose
     next_pose.pose = control_law_->calculateNextPose(
-      simulation_time_step_, target_pose, next_pose.pose, backward);
+      simulation_time_step_, target_pose, next_pose.pose, distance, backward);
 
     // Add the pose to the trajectory for visualization
     trajectory->poses.push_back(next_pose);
