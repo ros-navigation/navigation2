@@ -107,7 +107,7 @@ public:
   }
 
   bool & enabledRef() {return enabled_;}
-  bool & currentRef() {return current_;}
+  std::atomic_bool & currentRef() {return current_;}
   std::atomic<uint32_t> & pathIndexRef() {return current_path_index_;}
 
   void setStepSize(size_t s) {step_size_ = s;}

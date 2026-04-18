@@ -336,7 +336,7 @@ global_costmap:
         enabled: true
         path_topic: "/plan"
         look_ahead: 2.0
-        step: 20
+        step: 40
         corridor_width: 2.0
         corridor_cost: 190
         wall_thickness: 4
