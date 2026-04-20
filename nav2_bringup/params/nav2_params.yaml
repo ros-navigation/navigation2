@@ -340,7 +340,7 @@ global_costmap:
         corridor_width: 2.0
         corridor_cost: 190
         wall_thickness: 4
-        fill_outside_corridor: true
+        cost_write_mode: 2
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true

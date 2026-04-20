@@ -226,12 +226,9 @@ protected:
     const WallPolygons & walls);
 
   /**
-   * @brief Mark all cells within a circle radius as corridor interior.
+   * @brief Mark all cells within a circle radius as corridor interior. That robot needs
+   * for turning around
    *
-   * Used to cap the open ends of bbox-clipped corridor sub-segments and to
-   * guarantee the robot's own cell is always interior. Circles are used because
-   * they fill diagonal gaps uniformly in all directions that a rectangular cap
-   * would miss.
    * @param master_grid Costmap used for coordinate conversion.
    * @param cx Circle center X in cell coordinates.
    * @param cy Circle center Y in cell coordinates.
@@ -363,7 +360,7 @@ private:
     const nav_msgs::msg::Path & full_path,
     int fill_min_i, int fill_min_j,
     int fill_max_i, int fill_max_j,
-    size_t extra_poses);
+    size_t extra_poses, int r_cells_sq);
 
   /**
    * @brief Process a sub-segment of the path, filtering to the fill bbox margin

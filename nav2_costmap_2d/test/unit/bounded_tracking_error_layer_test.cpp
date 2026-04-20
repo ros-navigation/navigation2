@@ -1495,31 +1495,45 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFreshPathMarksWalls)
     << "Path just under staleness threshold must draw corridor walls";
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillOutsideCorridorRobotCellAlwaysInterior)
+TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillOutsideCorridorFirstPathPointIsInterior)
 {
+  // markCircleAsInterior must fire at the first in-area path point, not the robot pose.
+  // Place the path well away from the robot (robot is at origin, path starts at x=1.0, y=0.0)
+  // so the robot cell is clearly outside the corridor. The first path point and its
+  // surrounding cells (within corridor_width/2 radius) must be marked as interior.
   auto * costmap = layers_->getCostmap();
   prepareForUpdateCosts(layer_.get(), costmap);
   layer_->setCostWriteMode(1);
   layer_->setStepSize(1);
-  layer_->setCorridorWidth(0.5);
+  layer_->setCorridorWidth(1.0);
   layer_->setWallThickness(1);
   layer_->setCorridorCost(190);
 
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
   msg->header.stamp = node_->now();
+  // Path runs along y=0 starting at x=1.0, well within the fill bbox around the robot.
   for (int i = 0; i < 40; ++i) {
-    msg->poses.push_back(makePose(i * 0.1, 3.0));
+    msg->poses.push_back(makePose(1.0 + i * 0.1, 0.0));
   }
   layer_->testPathCallback(msg);
 
   layer_->updateCosts(*costmap, 0, 0, 100, 100);
 
-  // Robot cell (at origin) must never be marked even though it's off the path
+  // The first path point (1.0, 0.0) must be interior — markCircleAsInterior fires there.
+  unsigned int fx, fy;
+  ASSERT_TRUE(costmap->worldToMap(1.0, 0.0, fx, fy));
+  const unsigned int flat_fx = fy * costmap->getSizeInCellsX() + fx;
+  EXPECT_TRUE(layer_->isInterior(flat_fx))
+    << "First in-area path point must be marked as interior by markCircleAsInterior";
+
+  // The robot cell (origin) is off-path and must NOT have been given a free circle —
+  // the old robot-pose circle logic is gone.
   unsigned int rx, ry;
   ASSERT_TRUE(costmap->worldToMap(0.0, 0.0, rx, ry));
-  EXPECT_EQ(costmap->getCost(rx, ry), nav2_costmap_2d::FREE_SPACE)
-    << "Robot cell must always remain free regardless of corridor position";
+  const unsigned int flat_rx = ry * costmap->getSizeInCellsX() + rx;
+  EXPECT_FALSE(layer_->isInterior(flat_rx))
+    << "Robot cell must not be marked interior — circle is at path point, not robot pose";
 }
 
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsZeroResolutionEarlyReturn)
