@@ -86,7 +86,7 @@ public:
     }
     try {
       auto dummy_cancel_checker = []() {return false;};
-      std::vector<geometry_msgs::msg::PoseStamped> viapoints{};
+      std::vector<geometry_msgs::msg::PoseStamped> viapoints{start};
       path = planners_["GridBased"]->createPlan(start, goal, viapoints, dummy_cancel_checker);
       // The situation when createPlan() did not throw any exception
       // does not guarantee that plan was created correctly.

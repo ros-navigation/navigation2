@@ -122,13 +122,17 @@ TEST(SmacTest, test_smac_lattice)
     };
 
   std::vector<geometry_msgs::msg::PoseStamped> no_viapoints{};
-  geometry_msgs::msg::PoseStamped start, goal;
+  geometry_msgs::msg::PoseStamped start, goal, viapoint;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
   start.pose.orientation.w = 1.0;
   goal.pose.position.x = 1.0;
   goal.pose.position.y = 1.0;
   goal.pose.orientation.w = 1.0;
+  viapoint.pose.position.x = 0.5;
+  viapoint.pose.position.y = 0.5;
+  viapoint.pose.orientation.w = 1.0;
+  std::vector<geometry_msgs::msg::PoseStamped> viapoints{viapoint};
   auto planner = std::make_unique<LatticeWrap>();
   try {
     // invalid goal heading mode
@@ -166,7 +170,7 @@ TEST(SmacTest, test_smac_lattice)
   planner->activate();
 
   try {
-    planner->createPlan(start, goal, no_viapoints, dummy_cancel_checker);
+    planner->createPlan(start, goal, viapoints, dummy_cancel_checker);
   } catch (...) {
   }
 
