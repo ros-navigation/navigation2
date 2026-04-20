@@ -74,8 +74,8 @@ public:
         "Maximum forward integrated distance along the path "
         "(starting from the last detected pose) to bound the search for the closest pose "
         "to the robot. When set to negative value (default), whole path is searched every time"),
-      BT::InputPort<std::string>("global_frame", "map", "Global frame"),
-      BT::InputPort<std::string>("robot_base_frame", "base_link", "Robot base frame"),
+      BT::InputPort<std::string>("global_frame", "Global frame"),
+      BT::InputPort<std::string>("robot_base_frame", "Robot base frame"),
     };
   }
 
