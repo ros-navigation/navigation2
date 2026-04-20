@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -67,15 +68,17 @@ public:
   virtual void deactivate() = 0;
 
   /**
-   * @brief Method create the plan from a starting and ending goal.
+   * @brief Method to create the plan from a starting pose, a goal pose, and intermediate viapoints.
    * @param start The starting pose of the robot
    * @param goal  The goal pose of the robot
+   * @param viapoints The intermediate viapoints for the robot
    * @param cancel_checker Function to check if the action has been canceled
    * @return      The sequence of poses to get from start to goal, if any
    */
   virtual nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal,
+    const std::vector<geometry_msgs::msg::PoseStamped> & viapoints,
     std::function<bool()> cancel_checker) = 0;
 };
 

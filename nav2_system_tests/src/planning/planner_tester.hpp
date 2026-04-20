@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 #include <algorithm>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -85,7 +86,8 @@ public:
     }
     try {
       auto dummy_cancel_checker = []() {return false;};
-      path = planners_["GridBased"]->createPlan(start, goal, dummy_cancel_checker);
+      std::vector<geometry_msgs::msg::PoseStamped> viapoints{start};
+      path = planners_["GridBased"]->createPlan(start, goal, viapoints, dummy_cancel_checker);
       // The situation when createPlan() did not throw any exception
       // does not guarantee that plan was created correctly.
       // So it should be checked additionally that path is correct.

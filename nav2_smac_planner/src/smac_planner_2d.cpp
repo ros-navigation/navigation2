@@ -194,8 +194,14 @@ void SmacPlanner2D::cleanup()
 nav_msgs::msg::Path SmacPlanner2D::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
+  const std::vector<geometry_msgs::msg::PoseStamped> & viapoints,
   std::function<bool()> cancel_checker)
 {
+  if (!viapoints.empty()) {
+    RCLCPP_WARN(_logger, "Received %zu viapoints, but this planner ignores them",
+      viapoints.size());
+  }
+
   std::lock_guard<std::mutex> lock_reinit(_mutex);
   steady_clock::time_point a = steady_clock::now();
 
