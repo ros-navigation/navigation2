@@ -47,7 +47,10 @@ AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
   in_tolerance_zone_(false),
   stopped_stagnation_count_(0),
   distance_stagnation_count_(0),
-  best_distance_sq_(std::numeric_limits<double>::max())
+  best_distance_sq_(std::numeric_limits<double>::max()),
+  approach_dx_(0.0),
+  approach_dy_(0.0),
+  xy_acceptance_reason_("")
 {
 }
 
@@ -112,6 +115,9 @@ void AdaptiveToleranceGoalChecker::reset()
   stopped_stagnation_count_ = 0;
   distance_stagnation_count_ = 0;
   best_distance_sq_ = std::numeric_limits<double>::max();
+  approach_dx_ = 0.0;
+  approach_dy_ = 0.0;
+  xy_acceptance_reason_ = "";
 }
 
 bool AdaptiveToleranceGoalChecker::isGoalReached(
@@ -129,8 +135,6 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
     return false;
   }
 
-  bool accepted_at_fine = false;
-
   if (check_xy_) {
     const double dx = query_pose.position.x - goal_pose.position.x;
     const double dy = query_pose.position.y - goal_pose.position.y;
@@ -138,7 +142,7 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
 
     // Tier 1: Tight (desired) tolerance — immediate acceptance
     if (dist_sq <= fine_xy_goal_tolerance_sq_) {
-      accepted_at_fine = true;
+      xy_acceptance_reason_ = "fine tolerance";
       if (stateful_) {
         check_xy_ = false;
       }
@@ -152,13 +156,21 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
         stopped_stagnation_count_ = 0;
         distance_stagnation_count_ = 0;
         best_distance_sq_ = dist_sq;
+        approach_dx_ = -dx;
+        approach_dy_ = -dy;
         return false;
       }
+
+      // Finish line: robot crossed from approaching (dot<0) to passed (dot>=0)
+      const double finish_dot = dx * approach_dx_ + dy * approach_dy_;
+      const bool crossed_finish_line = finish_dot >= 0.0;
 
       // Check if the robot is stopped or not making progress toward goal
       const bool robot_stopped =
         std::hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_ &&
         std::fabs(velocity.angular.z) <= rot_stopped_velocity_;
+
+      // Check if best distance has been improved
       const bool distance_improved = dist_sq < best_distance_sq_;
 
       if (distance_improved) {
@@ -177,13 +189,22 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
         distance_stagnation_count_++;
       }
 
-      if (stopped_stagnation_count_ < required_stagnation_cycles_ &&
+      if (!crossed_finish_line &&
+        stopped_stagnation_count_ < required_stagnation_cycles_ &&
         distance_stagnation_count_ < required_stagnation_cycles_)
       {
         return false;
       }
 
-      // Stagnated for enough cycles: fall through to yaw check
+      // Accepted at coarse: record which trigger fired
+      if (crossed_finish_line) {
+        xy_acceptance_reason_ = "coarse tolerance / finish line";
+      } else if (stopped_stagnation_count_ >= required_stagnation_cycles_) {
+        xy_acceptance_reason_ = "coarse tolerance / stopped stagnation";
+      } else {
+        xy_acceptance_reason_ = "coarse tolerance / distance stagnation";
+      }
+
       if (stateful_) {
         check_xy_ = false;
       }
@@ -213,18 +234,11 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
   }
 
   if (yaw_reached) {
-    if (accepted_at_fine) {
-      RCLCPP_INFO(
-        logger_,
-        "AdaptiveToleranceGoalChecker: goal reached at fine tolerance (tol: %.3f m)",
-        fine_xy_goal_tolerance_);
-    } else {
-      RCLCPP_INFO(
-        logger_,
-        "AdaptiveToleranceGoalChecker: goal reached at coarse tolerance "
-        "(fine tol: %.3f m, coarse tol: %.3f m)",
-        fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
-    }
+    RCLCPP_INFO(
+      logger_,
+      "AdaptiveToleranceGoalChecker: goal reached via %s "
+      "(fine: %.3f m, coarse: %.3f m)",
+      xy_acceptance_reason_, fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
   }
 
   return yaw_reached;

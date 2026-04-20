@@ -738,6 +738,37 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   long_plan.poses = {p1, p2};
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, long_plan));
   EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
+
+  // Finish line crossing: enter from -X, cross to +X → accept
+  gc.reset();
+  current.position.x = -(coarse_xy_tol - tol_diff / 4);  // enter from -X side
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // enter, dot<0
+  current.position.x = coarse_xy_tol - tol_diff / 4;      // cross to +X side
+  EXPECT_TRUE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));   // dot>=0 → accept
+
+  // Finish line crossing: enter from +X, cross to -X → accept (symmetric)
+  gc.reset();
+  current.position.x = coarse_xy_tol - tol_diff / 4;  // enter from +X side
+  EXPECT_FALSE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));  // enter, dot<0
+  current.position.x = -(coarse_xy_tol - tol_diff / 4);   // cross to -X side
+  EXPECT_TRUE(gc.isGoalReached(current, goal, diff_trans_vel, empty_plan));   // dot>=0 → accept
+
+  // Staying on same side of entry without crossing → falls to stagnation
+  gc.reset();
+  current.position.x = -(coarse_xy_tol - tol_diff / 4);  // enter from -X
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // enter, dot<0
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 1, same pos
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 2
+  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));   // count 3 → stagnation
+
+  // Approaching but not crossing → stagnation
+  gc.reset();
+  current.position.x = -(coarse_xy_tol - tol_diff / 4);
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // enter
+  current.position.x = -(fine_xy_tol + tol_diff / 4);  // closer but still in coarse zone
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 1
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 2
+  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));   // count 3 → stagnation
 }
 
 TEST(AdaptiveToleranceGoalChecker, get_tol_and_dynamic_params)
