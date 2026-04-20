@@ -15,17 +15,18 @@
 #ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_GOAL_NEARBY_CONDITION_HPP_
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_GOAL_NEARBY_CONDITION_HPP_
 
-#include <string>
 #include <limits>
 #include <memory>
+#include <string>
 #include <vector>
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/path.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "rclcpp/rclcpp.hpp"
+
 #include "behaviortree_cpp/condition_node.h"
-#include "nav2_ros_common/lifecycle_node.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/buffer.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -46,9 +47,7 @@ public:
    * @param condition_name Name for the XML tag for this node
    * @param conf BT node configuration
    */
-  IsGoalNearbyCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf);
+  IsGoalNearbyCondition(const std::string & condition_name, const BT::NodeConfiguration & conf);
 
   IsGoalNearbyCondition() = delete;
 
