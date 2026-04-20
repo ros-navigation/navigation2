@@ -40,10 +40,8 @@ public:
     };
     nav2::declare_parameter_if_not_declared(
       node_, "robot_base_frame", rclcpp::ParameterValue("base_link"));
-    node_->set_parameter(rclcpp::Parameter("robot_base_frame", "base_link"));
 
     nav2::declare_parameter_if_not_declared(node_, "global_frame", rclcpp::ParameterValue("map"));
-    node_->set_parameter(rclcpp::Parameter("global_frame", "map"));
 
     try {
       factory_->registerBuilder<nav2_behavior_tree::IsGoalNearbyCondition>("IsGoalNearby", builder);
