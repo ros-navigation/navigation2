@@ -578,7 +578,6 @@ geometry_msgs::msg::TwistStamped Optimizer::getControlFromSequenceAsTwist(
 void Optimizer::setMotionModel(const std::string & motion_model_name)
 {
   auto node = parent_.lock();
-
   const std::string plugin_ns = name_ + "." + motion_model_name;
   std::string plugin_type;
   try {
