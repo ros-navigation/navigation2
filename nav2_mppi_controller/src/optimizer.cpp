@@ -580,25 +580,18 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
   auto node = parent_.lock();
   const std::string plugin_ns = name_ + "." + motion_model_name;
   std::string plugin_type;
-  try {
-    plugin_type = nav2::get_plugin_type_param(node, plugin_ns);
-  } catch (const std::exception & ex) {
-    throw std::runtime_error(
-      "Failed to get plugin type for mppi controller " + plugin_ns + ". Exception: " +
-      ex.what());
-  }
-
   motion_model_loader_ =
     std::make_unique<pluginlib::ClassLoader<MotionModel>>(
     "nav2_mppi_controller", "mppi::MotionModel");
 
   try {
+    plugin_type = nav2::get_plugin_type_param(node, plugin_ns);
     motion_model_ = motion_model_loader_->createSharedInstance(plugin_type);
     motion_model_->initialize(parameters_handler_, plugin_ns);
     motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
   } catch (const pluginlib::PluginlibException & ex) {
     throw nav2_core::ControllerException(
-            std::string("Failed to load motion model plugin '") + plugin_type +
+            std::string("Failed to load motion model plugin '") + motion_model_name +
             "': " + ex.what());
   }
 
