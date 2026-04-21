@@ -59,6 +59,10 @@ This process is then repeated a number of times and returns a converged solution
  | critic_index_to_visualize  | int    | Default: 0. Selects which critic to visualize when `visualize` is true. `0` shows the total cost across all critics, `1..N` selects an individual critic by index.                                                                                                        |
  | retry_attempt_limit        | int    | Default 1. Number of attempts to find feasible trajectory on failure for soft-resets before reporting failure.                                                                                                                                                                                                       |
  | regenerate_noises          | bool   | Default false. Whether to regenerate noises each iteration or use single noise distribution computed on initialization and reset. Practically, this is found to work fine since the trajectories are being sampled stochastically from a normal distribution and reduces compute jittering at run-time due to thread wake-ups to resample normal distribution. |
+ <!-- AI-generated contribution marker: LP-MPPI parameter documentation additions below (`use_low_pass_filter`, `filter_cutoff_frequency`, `filter_order`) were added with AI assistance. -->
+ | use_low_pass_filter        | bool   | Default false. If true, apply a Butterworth low-pass filter to sampled control perturbations before adding them to the nominal control sequence (LP-MPPI-style sampling). |
+ | filter_cutoff_frequency    | double | Default 2.0. Cutoff frequency (Hz) of the perturbation low-pass filter. Must be in (0, Nyquist), where Nyquist = 1 / (2 * model_dt). Values above Nyquist are clamped with a warning. |
+ | filter_order               | int    | Default 2. Order of the Butterworth low-pass filter for perturbation sampling. Higher order increases attenuation above cutoff. |
  | publish_optimal_trajectory | bool   | Publishes the full optimal trajectory sequence each control iteration for downstream  control systems, collision checkers, etc to have context beyond the next timestep. |
  | open_loop        | bool    | Default false. Useful when using low accelerations and when wheel odometry's latency causes issues in initial state estimation. |
 
@@ -200,6 +204,9 @@ controller_server:
       gamma: 0.015
       motion_model: "DiffDrive"
       visualize: false
+      use_low_pass_filter: false
+      filter_cutoff_frequency: 2.0
+      filter_order: 2
       TrajectoryVisualizer:
         trajectory_step: 5
         time_step: 3

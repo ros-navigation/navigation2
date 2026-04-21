@@ -23,8 +23,10 @@
 #include <mutex>
 #include <condition_variable>
 #include <random>
+#include <vector>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/models/optimizer_settings.hpp"
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/models/control_sequence.hpp"
@@ -81,6 +83,25 @@ public:
   void reset(mppi::models::OptimizerSettings & settings, bool is_holonomic);
 
 protected:
+  // AI-generated contribution marker:
+  // LP-MPPI low-pass perturbation sampling interfaces below were added with AI assistance.
+  /**
+   * @brief Configure optional low-pass filtering of sampled perturbations
+   */
+  void configureLowPassFilter();
+
+  /**
+   * @brief Design digital Butterworth low-pass filter coefficients
+   * @return True on successful design, false if configuration is invalid
+   */
+  bool designButterworthLowPass();
+
+  /**
+   * @brief Apply configured low-pass filter over time axis for each sampled trajectory row
+   * @param signal Matrix in shape [batch_size, time_steps]
+   */
+  void applyLowPassFilter(Eigen::ArrayXXf & signal) const;
+
   /**
    * @brief Thread to execute noise generation process
    */
@@ -111,6 +132,18 @@ protected:
   std::condition_variable noise_cond_;
   std::mutex noise_lock_;
   bool active_{false}, ready_{false}, regenerate_noises_{false};
+
+  // AI-generated contribution marker:
+  // LP-MPPI low-pass perturbation sampling state below was added with AI assistance.
+  // Optional LP-MPPI sampling filter configuration.
+  bool use_low_pass_filter_{false};
+  double filter_cutoff_frequency_{0.0};
+  int filter_order_{2};
+  std::vector<double> lpf_a_;
+  std::vector<double> lpf_b_;
+  bool lpf_configured_{false};
+
+  rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
 
 }  // namespace mppi
