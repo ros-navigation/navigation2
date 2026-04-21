@@ -120,11 +120,18 @@ NavfnPlanner::cleanup()
 nav_msgs::msg::Path NavfnPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
+  const std::vector<geometry_msgs::msg::PoseStamped> & viapoints,
   std::function<bool()> cancel_checker)
 {
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
 #endif
+
+  if (!viapoints.empty()) {
+    RCLCPP_WARN(logger_, "Received %zu viapoints, but this planner ignores them",
+      viapoints.size());
+  }
+
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
   unsigned int mx_start, my_start, mx_goal, my_goal;
   if (!costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start)) {

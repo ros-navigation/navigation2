@@ -192,8 +192,8 @@ void AStarAlgorithm<NodeT>::populateExpansionsLog(
 {
   typename NodeT::Coordinates coords = node->pose;
   expansions_log->emplace_back(
-    _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
-    _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
+    _costmap->getOriginX() + (coords.x * _costmap->getResolution()),
+    _costmap->getOriginY() + (coords.y * _costmap->getResolution()),
     _shared_ctx->motion_table.getAngleFromBin(coords.theta));
 }
 

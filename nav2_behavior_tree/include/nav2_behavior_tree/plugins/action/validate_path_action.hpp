@@ -87,8 +87,11 @@ public:
         "Custom footprint specification as bracketed array of arrays, e.g., "
         "[[x1,y1],[x2,y2],...] (empty = use robot footprint)"),
         BT::InputPort<bool>(
-        "check_full_path", false,
-        "Whether to check all poses (true) or stop at first invalid pose (false)"),
+        "stop_at_first_collision", true,
+        "Whether to stop validation at first collision (true) or check all poses (false)"),
+        BT::InputPort<double>(
+        "max_lookahead_distance", -1.0,
+        "Maximum distance ahead of the robot to validate (-1 = full path)"),
         BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
         "collision_poses",
         "Poses in the path that are in collision")
@@ -100,7 +103,8 @@ private:
   bool consider_unknown_as_obstacle_;
   std::string layer_name_;
   std::string footprint_;
-  bool check_full_path_;
+  bool stop_at_first_collision_;
+  double max_lookahead_distance_;
   nav_msgs::msg::Path path_;
 };
 
