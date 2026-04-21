@@ -36,8 +36,8 @@ public:
   void SetUp() override
   {
     BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & config) {
-      return std::make_unique<nav2_behavior_tree::IsGoalNearbyCondition>(name, config);
-    };
+        return std::make_unique<nav2_behavior_tree::IsGoalNearbyCondition>(name, config);
+      };
     nav2::declare_parameter_if_not_declared(
       node_, "robot_base_frame", rclcpp::ParameterValue("base_link"));
 
@@ -50,7 +50,7 @@ public:
     tf_buffer_ = config_->blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   }
 
-  void TearDown() override { tree_.reset(); }
+  void TearDown() override {tree_.reset();}
 
 protected:
   void setRobotPoseInMap(double x, double y, std::string frame_id = "base_link")
@@ -305,7 +305,8 @@ TEST_F(IsGoalNearbyConditionTestFixture, parameter_from_ros_node)
         </BehaviorTree>
       </root>)";
 
-  // Change robot_base_frame parameter to non-standard frame and verify that it is correctly used for transforms in the node
+  // Change robot_base_frame parameter to non-standard frame and verify that it is correctly used
+  // for transforms in the node
   std::string non_standard_frame = "sensor_frame";
   node_->set_parameter(rclcpp::Parameter("robot_base_frame", non_standard_frame));
 
