@@ -166,7 +166,7 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
   // Wait for the server to be done with the goal
   auto result_future = client_ptr_->async_get_result(goal_handle);
 
-  rclcpp::Rate r(1, node_->get_clock());
+  rclcpp::Rate r(1);
 
   counter_ = 0;
   auto start_time = std::chrono::system_clock::now();
