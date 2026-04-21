@@ -167,14 +167,9 @@ VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Activating");
   smoothed_cmd_pub_->on_activate();
   double timer_duration_ms = 1000.0 / smoothing_frequency_;
-  auto period = std::chrono::milliseconds(static_cast<int>(timer_duration_ms));
-  auto callback = std::bind(&VelocitySmoother::smootherTimer, this);
-  // Use steady clock on real hardware (immune to NTP jumps), ROS time in simulation
-  if (get_parameter("use_sim_time").as_bool()) {
-    timer_ = this->create_timer(period, callback);
-  } else {
-    timer_ = this->create_wall_timer(period, callback);
-  }
+  timer_ = this->create_timer(
+    std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
+    std::bind(&VelocitySmoother::smootherTimer, this));
 
   // Add callback for dynamic parameters
   auto node = shared_from_this();
@@ -596,14 +591,9 @@ void VelocitySmoother::updateParametersCallback(const std::vector<rclcpp::Parame
         }
 
         double timer_duration_ms = 1000.0 / smoothing_frequency_;
-        auto period = std::chrono::milliseconds(static_cast<int>(timer_duration_ms));
-        auto callback = std::bind(&VelocitySmoother::smootherTimer, this);
-        // Use steady clock on real hardware (immune to NTP jumps), ROS time in simulation
-        if (get_parameter("use_sim_time").as_bool()) {
-          timer_ = this->create_timer(period, callback);
-        } else {
-          timer_ = this->create_wall_timer(period, callback);
-        }
+        timer_ = this->create_timer(
+          std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
+          std::bind(&VelocitySmoother::smootherTimer, this));
       } else if (param_name == "velocity_timeout") {
         velocity_timeout_ = rclcpp::Duration::from_seconds(parameter.as_double());
       } else if (param_name == "odom_duration") {
