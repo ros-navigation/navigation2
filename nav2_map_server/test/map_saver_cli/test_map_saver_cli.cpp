@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "nav2_ros_common/qos_profiles.hpp"
+#include "nav2_ros_common/rate.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
@@ -57,7 +58,7 @@ TEST(MapSaverCLI, CLITest)
 
   publisher->publish(std::move(msg));
 
-  rclcpp::WallRate(1).sleep();
+  nav2::WallRate(1).sleep();
 
   // succeed on real map
   RCLCPP_INFO(node->get_logger(), "Calling saver...");
@@ -70,7 +71,7 @@ TEST(MapSaverCLI, CLITest)
   auto return_code = system(command.c_str());
   EXPECT_EQ(return_code, 0);
 
-  rclcpp::WallRate(0.25).sleep();
+  nav2::WallRate(0.25).sleep();
 
   RCLCPP_INFO(node->get_logger(), "Checking on file...");
 
@@ -97,7 +98,7 @@ TEST(MapSaverCLI, CLITest)
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 256);
 
-  rclcpp::WallRate(0.25).sleep();
+  nav2::WallRate(0.25).sleep();
 
   RCLCPP_INFO(node->get_logger(), "Checking on file...");
 
@@ -110,7 +111,7 @@ TEST(MapSaverCLI, CLITest)
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 0);
 
-  rclcpp::WallRate(0.5).sleep();
+  nav2::WallRate(0.5).sleep();
 
   RCLCPP_INFO(node->get_logger(), "Testing invalid mode...");
   command =
@@ -119,7 +120,7 @@ TEST(MapSaverCLI, CLITest)
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 0);
 
-  rclcpp::WallRate(0.5).sleep();
+  nav2::WallRate(0.5).sleep();
 
   RCLCPP_INFO(node->get_logger(), "Testing missing argument...");
   command =
@@ -128,7 +129,7 @@ TEST(MapSaverCLI, CLITest)
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 65280);
 
-  rclcpp::WallRate(0.5).sleep();
+  nav2::WallRate(0.5).sleep();
 
   RCLCPP_INFO(node->get_logger(), "Testing wrong argument...");
   command =
@@ -137,7 +138,7 @@ TEST(MapSaverCLI, CLITest)
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 65280);
 
-  rclcpp::WallRate(0.5).sleep();
+  nav2::WallRate(0.5).sleep();
 
   command =
     std::string(
