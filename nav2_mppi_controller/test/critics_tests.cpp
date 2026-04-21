@@ -123,10 +123,12 @@ TEST(CriticTests, ConstraintsCritic)
   // Now with ackermann, all in constraint so no costs to score
   state.vx.setConstant(0.40f);
   state.wz.setConstant(1.5f);
+  auto ackermann_model = std::make_shared<AckermannMotionModel>();
+  ackermann_model->initialize(&param_handler, std::string(node->get_name()) + ".ackermann");
+  data.motion_model = ackermann_model;
   node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
   critic = ConstraintCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
-  data.motion_model = std::make_shared<AckermannMotionModel>(&param_handler, node->get_name());
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0, 1e-6);
 

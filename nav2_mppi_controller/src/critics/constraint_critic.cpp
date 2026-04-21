@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/constraint_critic.hpp"
+#include "nav2_mppi_controller/motion_models.hpp"
 
 namespace mppi::critics
 {
