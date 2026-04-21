@@ -60,6 +60,19 @@ public:
     EXPECT_FALSE(isHolonomic());
   }
 
+  void testSetModelMissingPlugin()
+  {
+    EXPECT_EQ(motion_model_.get(), nullptr);
+    // Do not declare plugin type so the loader throws
+    try {
+      setMotionModel("no_plugin_model");
+      FAIL();
+    } catch (...) {
+      SUCCEED();
+    }
+    EXPECT_EQ(motion_model_.get(), nullptr);
+  }
+
   void testSetRandModel()
   {
     EXPECT_EQ(motion_model_.get(), nullptr);
@@ -315,6 +328,10 @@ TEST(OptimizerTests, TestOptimizerMotionModels)
   // // Ackermann should be non-holonomic
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetAckModel();
+
+  // // Missing motion model plugin type, it should fail
+  optimizer_tester.resetMotionModel();
+  optimizer_tester.testSetModelMissingPlugin();
 
   // // Rand should fail
   optimizer_tester.resetMotionModel();

@@ -594,14 +594,14 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
 
   try {
     motion_model_ = motion_model_loader_->createSharedInstance(plugin_type);
+    motion_model_->initialize(parameters_handler_, plugin_ns);
+    motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
   } catch (const pluginlib::PluginlibException & ex) {
     throw nav2_core::ControllerException(
             std::string("Failed to load motion model plugin '") + plugin_type +
             "': " + ex.what());
   }
 
-  motion_model_->initialize(parameters_handler_, plugin_ns);
-  motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
   RCLCPP_INFO(logger_, "Loaded motion model plugin: %s", plugin_type.c_str());
 }
 
