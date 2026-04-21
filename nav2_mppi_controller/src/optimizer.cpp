@@ -322,7 +322,6 @@ void Optimizer::prepare(
   const geometry_msgs::msg::Pose & goal,
   nav2_core::GoalChecker * goal_checker)
 {
-  state_.pose = robot_pose;
   if (settings_.open_loop) {
     state_.speed = last_command_vel_;
   } else {
@@ -347,6 +346,8 @@ void Optimizer::prepare(
         robot_speed.linear.y + dt * c.ay_max);
     }
   }
+
+  state_.pose = robot_pose;
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
   costs_.setZero(settings_.batch_size);
