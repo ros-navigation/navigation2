@@ -30,6 +30,12 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * Usage in XML:
+ * @code
+ * <GetNextFewGoals num_goals="3" input_goals="{goal_poses}" output_goals="{planning_goals}"/>
+ * @endcode
+ */
 class GetNextFewGoals : public BT::ActionNodeBase
 {
 public:

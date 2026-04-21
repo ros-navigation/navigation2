@@ -36,6 +36,12 @@ namespace nav2_behavior_tree
  * the FollowPath. The selected_controller output port is passed to controller_id
  * input port of the FollowPath
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath"
+ *                     topic_name="controller_selector"/>
+ * @endcode
  */
 class ControllerSelector : public BT::SyncActionNode
 {

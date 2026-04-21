@@ -24,6 +24,12 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * Usage in XML:
+ * @code
+ * <WouldAPlannerRecoveryHelp error_code="{compute_path_to_pose_error_code}"/>
+ * @endcode
+ */
 class WouldAPlannerRecoveryHelp : public AreErrorCodesPresent
 {
   using Action = nav2_msgs::action::ComputePathToPose;

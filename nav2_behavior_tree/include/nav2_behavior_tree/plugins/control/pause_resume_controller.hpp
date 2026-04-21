@@ -53,23 +53,12 @@ const std::map<state_t, uint16_t> child_indices = {
   {ON_RESUME, 3}
 };
 
-/* @brief Controlled through service calls to pause and resume the execution of the tree
+/** @brief Controlled through service calls to pause and resume the execution of the tree
  * It has one mandatory child for the RESUMED, and three optional for the PAUSED state,
  * the ON_PAUSE event and the ON_RESUME event.
  * It has two input ports:
  * - pause_service_name: name of the service to pause
  * - resume_service_name: name of the service to resume
- *
- * Usage:
- * <PauseResumeController pause_service_name="/pause" resume_service_name="/resume">
- *     <!-- RESUMED branch -->
- *
- *     <!-- PAUSED branch (optional) -->
- *
- *     <!-- ON_PAUSE branch (optional) -->
- *
- *     <!-- ON_RESUME branch (optional) -->
- * </PauseResumeController>
  *
  * The controller starts in RESUMED state, and ticks it until it returns success.
  * When the pause service is called, ON_PAUSE is ticked until completion,
@@ -80,9 +69,40 @@ const std::map<state_t, uint16_t> child_indices = {
  * The controller only returns success when the RESUMED child returns success.
  * The controller returns failure if any child returns failure.
  * In any other case, it returns running.
+ *
+ * Usage in XML:
+ * @code
+ * <PauseResumeController pause_service_name="/pause" resume_service_name="/resume">
+ *     <!-- RESUMED branch (mandatory) -->
+ *
+ *     <!-- PAUSED branch (optional) -->
+ *
+ *     <!-- ON_PAUSE branch (optional) -->
+ *
+ *     <!-- ON_RESUME branch (optional) -->
+ * </PauseResumeController>
+ *
+ * <!--
+ * When the ON_PAUSE and ON_RESUME branches fail, the controller will return failure,
+ * halt, and the state will be reset to RESUMED. It might be desirable to retry
+ * the transition a few times before failing for real, which functionality is not built
+ * in the controller node, but is easily achievable by adding a retry node in the BT:
+ * -->
+ * <PauseResumeController pause_service_name="/pause" resume_service_name="/resume">
+ *      <!-- RESUMED branch -->
+ *
+ *      <!-- PAUSED branch -->
+ *
+ *      <RetryUntilSuccessful num_attempts="3">
+ *          <!-- ON_PAUSE branch -->
+ *      </RetryUntilSuccessful>
+ *
+ *      <RetryUntilSuccessful num_attempts="3">
+ *          <!-- ON_RESUME branch -->
+ *      </RetryUntilSuccessful>
+ * </PauseResumeController>
+ * @endcode
  */
-
-
 class PauseResumeController : public BT::ControlNode
 {
 public:

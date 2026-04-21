@@ -28,6 +28,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::FollowObject
+ *
+ * Usage in XML:
+ * @code
+ * <CancelFollowObject server_name="follow_object" server_timeout="10"/>
+ * @endcode
  */
 class FollowObjectCancel
   : public nav2_behavior_tree::BtCancelActionNode<nav2_msgs::action::FollowObject>

@@ -25,6 +25,11 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtServiceNode class that wraps nav2_msgs::srv::Toggle
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <ToggleCollisionMonitor enable="false" service_name="collision_monitor/toggle"/>
+ * @endcode
  */
 class ToggleCollisionMonitorService : public BtServiceNode<nav2_msgs::srv::Toggle>
 {
