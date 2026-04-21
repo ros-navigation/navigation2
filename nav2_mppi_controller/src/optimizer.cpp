@@ -188,9 +188,7 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
   control_history_[2] = {0.0f, 0.0f, 0.0f};
   control_history_[3] = {0.0f, 0.0f, 0.0f};
 
-  if (settings_.open_loop) {
-    last_command_vel_ = geometry_msgs::msg::Twist();
-  }
+  last_command_vel_ = geometry_msgs::msg::Twist();
   last_command_time_ = rclcpp::Time(0, 0, RCL_CLOCK_UNINITIALIZED);
   smoothed_ax_ = 0.0;
   smoothed_az_ = 0.0;
@@ -325,7 +323,30 @@ void Optimizer::prepare(
   nav2_core::GoalChecker * goal_checker)
 {
   state_.pose = robot_pose;
-  state_.speed = settings_.open_loop ? last_command_vel_ : robot_speed;
+  if (settings_.open_loop) {
+    state_.speed = last_command_vel_;
+  } else {
+    // Predict state one controller_period forward toward the last command to compensate
+    // for the latency between measurement and when this command will take effect.
+    // Clamp to physically achievable range so prediction never exceeds dynamics.
+    const auto & c = settings_.constraints;
+    const double dt = settings_.controller_period;
+    state_.speed = robot_speed;
+    state_.speed.linear.x = std::clamp(
+      last_command_vel_.linear.x,
+      robot_speed.linear.x + dt * c.ax_min,
+      robot_speed.linear.x + dt * c.ax_max);
+    state_.speed.angular.z = std::clamp(
+      last_command_vel_.angular.z,
+      robot_speed.angular.z - dt * c.az_max,
+      robot_speed.angular.z + dt * c.az_max);
+    if (isHolonomic()) {
+      state_.speed.linear.y = std::clamp(
+        last_command_vel_.linear.y,
+        robot_speed.linear.y + dt * c.ay_min,
+        robot_speed.linear.y + dt * c.ay_max);
+    }
+  }
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
   costs_.setZero(settings_.batch_size);

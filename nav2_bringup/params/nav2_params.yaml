@@ -141,9 +141,9 @@ controller_server:
       ay_max: 3.0
       ay_min: -3.0
       az_max: 1.2
-      vx_std: 0.1 # STEVE 0.2
+      vx_std: 0.2 # STEVE 0.2
       vy_std: 0.2
-      wz_std: 0.1 # STEVE 0.2 # 0.4
+      wz_std: 0.2 # STEVE 0.2 # 0.4
       vx_max: 0.5
       vx_min: -0.5 # -0.35
       vy_max: 0.5
