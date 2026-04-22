@@ -258,7 +258,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   // interfaces) on every goal otherwise causes unbounded memory growth in both the BT factory's
   // internal XML parser and the ROS / DDS middleware layer.
   if (always_reload_bt_ && current_bt_file_or_id_ == file_or_id) {
-    bool any_changed = bt_xml_mtimes_.empty(); // no snapshot: force reload
+    bool any_changed = bt_xml_mtimes_.empty();  // no snapshot: force reload
     try {
       for (const auto & [path, old_mtime] : bt_xml_mtimes_) {
         if (fs::last_write_time(path) != old_mtime) {
@@ -267,7 +267,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
         }
       }
     } catch (const std::filesystem::filesystem_error &) {
-      any_changed = true; // file vanished or became inaccessible: force reload
+      any_changed = true;  // file vanished or became inaccessible: force reload
     }
     if (!any_changed) {
       RCLCPP_DEBUG(logger_, "BT XML files unchanged on disk, skipping reload");
