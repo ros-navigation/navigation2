@@ -35,6 +35,12 @@ namespace nav2_behavior_tree
  * the FollowPath. The selected_path_handler output port is passed to path_handler_id
  * input port of the FollowPath
  * @note This is an Asynchronous node. It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <PathHandlerSelector selected_path_handler="{selected_path_handler}"
+ *                      default_path_handler="PathHandler" topic_name="path_handler_selector"/>
+ * @endcode
  */
 class PathHandlerSelector : public BT::SyncActionNode
 {

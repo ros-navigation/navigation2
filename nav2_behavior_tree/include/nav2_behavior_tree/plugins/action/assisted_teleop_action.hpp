@@ -28,6 +28,12 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::AssistedTeleop
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <AssistedTeleop is_recovery="false" server_name="assisted_teleop_server" server_timeout="10"
+ *                 error_code_id="{assisted_teleop_error_code}" error_msg="{assisted_teleop_error_msg}"/>
+ * @endcode
  */
 class AssistedTeleopAction : public BtActionNode<nav2_msgs::action::AssistedTeleop>
 {

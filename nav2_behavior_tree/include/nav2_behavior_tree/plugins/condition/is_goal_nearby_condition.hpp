@@ -38,6 +38,11 @@ namespace nav2_behavior_tree
  *
  * Use max_robot_pose_search_dist to limit search distance when path updates regularly
  * to reduce computational cost. Disable (set negative) for full path search.
+ *
+ * Usage in XML:
+ * @code
+ * <IsGoalNearby path="{path}" proximity_threshold="1.0" />
+ * @endcode
  */
 class IsGoalNearbyCondition : public BT::ConditionNode
 {

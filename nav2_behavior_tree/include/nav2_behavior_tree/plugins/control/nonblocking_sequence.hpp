@@ -55,7 +55,12 @@ namespace nav2_behavior_tree
  * If any children at any time had returned FAILURE. NonblockingSequence would have returned FAILURE
  * and halted all children, ending the sequence.
  *
- * Usage in XML: <NonblockingSequence>
+ * Usage in XML:
+ * @code
+ * <NonblockingSequence>
+ *     <!--Add tree components here-->
+ * </NonblockingSequence>
+ * @endcode
  */
 class NonblockingSequence : public BT::ControlNode
 {

@@ -27,6 +27,13 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::DriveOnHeading
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <DriveOnHeading dist_to_travel="0.2" speed="0.05"
+ *                 server_name="backup_server" server_timeout="10" disable_collision_checks="false"
+ *                 error_code_id="{drive_on_heading_error_code}" error_msg="{drive_on_heading_error_msg}"/>
+ * @endcode
  */
 class DriveOnHeadingAction : public BtActionNode<nav2_msgs::action::DriveOnHeading>
 {

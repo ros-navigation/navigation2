@@ -23,6 +23,12 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * Usage in XML:
+ * @code
+ * <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
+ * @endcode
+ */
 class WouldAControllerRecoveryHelp : public AreErrorCodesPresent
 {
   using Action = nav2_msgs::action::FollowPath;

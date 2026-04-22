@@ -33,6 +33,11 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that returns SUCCESS when a specified goal
  * is reached and FAILURE otherwise
  * @note  It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <GoalReached goal="{goal}" robot_base_frame="base_link"/>
+ * @endcode
  */
 class GoalReachedCondition : public BT::ConditionNode
 {

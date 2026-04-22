@@ -28,6 +28,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::DriveOnHeading
+ *
+ * Usage in XML:
+ * @code
+ * <CancelDriveOnHeading server_name="drive_on_heading" server_timeout="10"/>
+ * @endcode
  */
 class DriveOnHeadingCancel : public BtCancelActionNode<nav2_msgs::action::DriveOnHeading>
 {

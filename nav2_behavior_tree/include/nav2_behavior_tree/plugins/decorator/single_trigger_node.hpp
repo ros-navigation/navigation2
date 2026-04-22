@@ -27,6 +27,13 @@ namespace nav2_behavior_tree
  * @brief A BT::DecoratorNode that triggers its child only once and returns FAILURE
  * for every succeeding tick (reset when halted)
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <SingleTrigger>
+ *     <!--Add tree components here-->
+ * </SingleTrigger>
+ * @endcode
  */
 class SingleTrigger : public BT::DecoratorNode
 {

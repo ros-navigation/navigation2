@@ -34,6 +34,38 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtServiceNode class that validates a path by calling the IsPathValid service on the path provided in the input port
+ *
+ * Usage in XML:
+ * @code
+ * <ValidatePath
+ *   server_timeout="10"
+ *   path="{path}"
+ *   max_cost="100"
+ *   consider_unknown_as_obstacle="false"
+ *   layer_name=""
+ *   footprint=""
+ *   stop_at_first_collision="true"
+ *   collision_poses="{collision_poses}" />
+ *
+ * <!-- With max_lookahead_distance: -->
+ * <ValidatePath
+ *   path="{path}"
+ *   max_lookahead_distance="5.0"
+ *   collision_poses="{collision_poses}" />
+ *
+ * <!-- With custom footprint: -->
+ * <ValidatePath
+ *   path="{path}"
+ *   footprint="[[0.5,0.5],[0.5,-0.5],[-0.5,-0.5],[-0.5,0.5]]"
+ *   collision_poses="{collision_poses}" />
+ *
+ * <!-- Checking a specific costmap layer: -->
+ * <ValidatePath
+ *   path="{path}"
+ *   layer_name="obstacle_layer"
+ *   stop_at_first_collision="false"
+ *   collision_poses="{collision_poses}" />
+ * @endcode
  */
 class ValidatePath : public BtServiceNode<nav2_msgs::srv::IsPathValid>
 {

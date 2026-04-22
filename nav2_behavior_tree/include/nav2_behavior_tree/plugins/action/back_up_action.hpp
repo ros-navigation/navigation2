@@ -27,6 +27,13 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::BackUp
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <BackUp backup_dist="-0.2" backup_speed="0.05" server_name="backup_server"
+ *         server_timeout="10" disable_collision_checks="false"
+ *         error_code_id="{backup_error_code}" error_msg="{backup_error_msg}"/>
+ * @endcode
  */
 class BackUpAction : public BtActionNode<nav2_msgs::action::BackUp>
 {

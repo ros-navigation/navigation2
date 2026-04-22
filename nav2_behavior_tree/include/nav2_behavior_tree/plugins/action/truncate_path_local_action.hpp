@@ -34,6 +34,12 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A BT::ActionNodeBase to shorten path to some distance around robot
+ *
+ * Usage in XML:
+ * @code
+ * <TruncatePathLocal input_path="{path}" output_path="{path_local}"
+ *                    distance_forward="3.5" distance_backward="2.0" robot_frame="base_link"/>
+ * @endcode
  */
 class TruncatePathLocal : public BT::ActionNodeBase
 {
