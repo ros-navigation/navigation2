@@ -44,25 +44,17 @@ void PathAlignCritic::score(CriticData & data)
     return;
   }
 
-  // Only apply critic when trajectories reach far enough along the way path.
-  // This ensures that path alignment is only considered when actually tracking the path
-  // (e.g. not driving very slow or when first getting bearing w.r.t. the path)
+  // Don't apply when first getting bearing w.r.t. the path
   utils::setPathFurthestPointIfNotSet(data);
   const size_t furthest_reached_path_point = *data.furthest_reached_path_point;
-
   if (furthest_reached_path_point < offset_from_furthest_) {
     return;
   }
 
-  const size_t batch_size = data.trajectories.x.rows();
-  Eigen::ArrayXf cost(data.costs.rows());
-  cost.setZero();
-
   // Find integrated distance in the path and find the first path IDX further than
   //  max(min_distance_occupancy_check_, furthest_reached_path_point)
   const size_t path_segments_count = data.path.x.size() - 1;
-  // initialize the occupancy check id to max, in case the entire path is within the distance
-  size_t occupancy_check_distance_idx = path_segments_count;
+  size_t occupancy_check_distance_idx = 0;
   std::vector<float> path_integrated_distances(path_segments_count, 0.0f);
   std::vector<utils::Pose2D> path(path_segments_count);
   float dx = 0.0f, dy = 0.0f;
@@ -125,6 +117,10 @@ void PathAlignCritic::score(CriticData & data)
     data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
     Eigen::Stride<-1, -1>(outer_stride, 1));
   const auto traj_sampled_size = T_x.cols();
+
+  const size_t batch_size = data.trajectories.x.rows();
+  Eigen::ArrayXf cost(data.costs.rows());
+  cost.setZero();
 
   for (size_t t = 0; t < batch_size; ++t) {
     summed_path_dist = 0.0f;
