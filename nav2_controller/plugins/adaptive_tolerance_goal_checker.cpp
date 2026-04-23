@@ -161,34 +161,28 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
         return false;
       }
 
-      // Finish line: robot crossed from approaching (dot<0) to passed (dot>=0) the
-      // virtual line orthogonal to the approach pose and the goal pose, representing 
-      // that the robot has passed the goal longitudinally while approaching.
-      const bool crossed_finish_line = dx * approach_dx_ + dy * approach_dy_ >= 0.0;
-
-      // Check if the robot is stopped or not making progress toward goal
-      const bool robot_stopped =
-        std::hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_ &&
-        std::fabs(velocity.angular.z) <= rot_stopped_velocity_;
-
       // Check if best distance has been improved
-      const bool distance_improved = dist_sq < best_distance_sq_;
-
-      if (distance_improved) {
+      if (dist_sq < best_distance_sq_) {
         best_distance_sq_ = dist_sq;
+        distance_stagnation_count_ = 0;
+      } else {
+        distance_stagnation_count_++;
       }
 
-      if (robot_stopped) {
+      // Check if the robot is stopped or not making progress toward goal
+      if (
+        std::hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_ &&
+        std::fabs(velocity.angular.z) <= rot_stopped_velocity_)
+      {
         stopped_stagnation_count_++;
       } else {
         stopped_stagnation_count_ = 0;
       }
 
-      if (distance_improved) {
-        distance_stagnation_count_ = 0;
-      } else {
-        distance_stagnation_count_++;
-      }
+      // Finish line: robot crossed from approaching (dot<0) to passed (dot>=0) the
+      // virtual line orthogonal to the approach pose and the goal pose, representing
+      // that the robot has passed the goal longitudinally while approaching.
+      const bool crossed_finish_line = dx * approach_dx_ + dy * approach_dy_ >= 0.0;
 
       if (!crossed_finish_line &&
         stopped_stagnation_count_ < required_stagnation_cycles_ &&
