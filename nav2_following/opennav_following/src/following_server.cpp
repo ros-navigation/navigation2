@@ -523,19 +523,19 @@ bool FollowingServer::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
   geometry_msgs::msg::PoseStamped detected = detected_dynamic_pose_;
 
   // If we haven't received any detection yet, wait up to detection_timeout_ for one to arrive.
-  if (detected.header.stamp == rclcpp::Time(0)) {
+  if (rclcpp::Time(detected.header.stamp) == rclcpp::Time(0)) {
     auto start = this->now();
     auto timeout = rclcpp::Duration::from_seconds(params_->detection_timeout);
     nav2::Rate wait_rate(this, params_->controller_frequency);
     while (this->now() - start < timeout) {
       // Check if a new detection arrived
-      if (detected_dynamic_pose_.header.stamp != rclcpp::Time(0)) {
+      if (rclcpp::Time(detected_dynamic_pose_.header.stamp) != rclcpp::Time(0)) {
         detected = detected_dynamic_pose_;
         break;
       }
       wait_rate.sleep();
     }
-    if (detected.header.stamp == rclcpp::Time(0)) {
+    if (rclcpp::Time(detected.header.stamp) == rclcpp::Time(0)) {
       RCLCPP_WARN(this->get_logger(), "No detection received within timeout period");
       return false;
     }
