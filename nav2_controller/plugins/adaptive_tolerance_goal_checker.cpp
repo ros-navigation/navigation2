@@ -162,8 +162,7 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
       }
 
       // Finish line: robot crossed from approaching (dot<0) to passed (dot>=0)
-      const double finish_dot = dx * approach_dx_ + dy * approach_dy_;
-      const bool crossed_finish_line = finish_dot >= 0.0;
+      const bool crossed_finish_line = dx * approach_dx_ + dy * approach_dy_ >= 0.0;
 
       // Check if the robot is stopped or not making progress toward goal
       const bool robot_stopped =
