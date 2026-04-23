@@ -107,13 +107,18 @@ public:
   bool isTriggered(const std::vector<Point> & points);
 
   /**
-   * @brief Temporal debounce for min_points trigger.
+   * @brief Temporal debounce for min_points trigger. Optionally collects the in-polygon
+   * points in a single pass so callers can avoid a second scan via getPointsInside().
    * @param sources_collision_points_map Map containing source name as key,
    * and input array of source's points to be checked as value.
+   * @param out_triggering_points Optional output map from source name to the subset of
+   * points found inside the polygon. Populated regardless of debounce state; callers
+   * can consume it when the return value is true.
    * @return true if trigger should be considered active after debounce/hold logic.
    */
   bool isTriggered(
-    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map);
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+    std::unordered_map<std::string, std::vector<Point>> * out_triggering_points = nullptr);
 
   /**
    * @brief Reset temporal debounce state.
@@ -176,28 +181,49 @@ public:
   virtual int getPointsInside(const std::vector<Point> & points) const;
 
   /**
-   * @brief Gets number of points inside given polygon
+   * @brief Gets number of points inside given polygon, optionally collecting them as triggering points.
    * @param sources_collision_points_map Map containing source name as key,
    * and input array of source's points to be checked as value
+   * @param out_triggering_points Optional output map from source name to the subset of points inside
    * @return Number of points inside polygon,
    * for sources in map that are associated with current polygon.
    * If there are no points, returns zero value.
    */
   virtual int getPointsInside(
-    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map) const;
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+    std::unordered_map<std::string, std::vector<Point>> * out_triggering_points = nullptr) const;
 
   /**
-   * @brief Obtains estimated (simulated) time before a collision.
-   * Applicable for APPROACH model.
+   * @brief Gets number of points inside given polygon for APPROACH-model using the
+   * transformed_points, but also records the index-matched entry from original_points into
+   * out_triggering_points so visualization shows where the obstacle is.
+   * @param transformed_points Per-source points used for the in-polygon test.
+   * @param original_points Per-source points whose entries get recorded;
+   * index-parallel to transformed_points for each source name.
+   * @param out_triggering_points Output map; entries are pushed during the count, so
+   * callers should consume it only when the return value meets min_points_.
+   * @return Number of points inside polygon for sources associated with current polygon.
+   */
+  virtual int getPointsInsideApproach(
+    const std::unordered_map<std::string, std::vector<Point>> & transformed_points,
+    const std::unordered_map<std::string, std::vector<Point>> & original_points,
+    std::unordered_map<std::string, std::vector<Point>> & out_triggering_points) const;
+
+  /**
+   * @brief Obtains estimated (simulated) time before a collision and captures the triggering
+   * points at the collision step. Applicable for APPROACH model.
    * @param sources_collision_points_map Map containing source name as key,
    * and input array of source's 2D obstacle points as value
    * @param velocity Simulated robot velocity
+   * @param out_triggering_points Output map for source name and the points responsible 
+   * for the triggering points
    * @return Estimated time before a collision. If there is no collision,
    * return value will be negative.
    */
   double getCollisionTime(
     const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
-    const Velocity & velocity) const;
+    const Velocity & velocity,
+    std::unordered_map<std::string, std::vector<Point>> & out_triggering_points) const;
 
   /**
    * @brief Publishes polygon message into a its own topic
