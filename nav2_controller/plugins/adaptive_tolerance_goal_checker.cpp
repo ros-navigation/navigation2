@@ -161,7 +161,9 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
         return false;
       }
 
-      // Finish line: robot crossed from approaching (dot<0) to passed (dot>=0)
+      // Finish line: robot crossed from approaching (dot<0) to passed (dot>=0) the
+      // virtual line orthogonal to the approach pose and the goal pose, representing 
+      // that the robot has passed the goal longitudinally while approaching.
       const bool crossed_finish_line = dx * approach_dx_ + dy * approach_dy_ >= 0.0;
 
       // Check if the robot is stopped or not making progress toward goal
