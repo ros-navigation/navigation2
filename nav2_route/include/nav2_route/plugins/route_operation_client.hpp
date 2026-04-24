@@ -168,7 +168,7 @@ protected:
             "Route operation service (" + getName() + ") failed to lock node.");
         }
         auto client =
-          node->create_client<SrvT>(srv_name, true);
+          node->template create_client<SrvT>(srv_name, true);
         response = callService(client, req);
       }
     } catch (const std::exception & e) {

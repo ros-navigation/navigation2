@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_mppi_controller)
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # Enable C++20 for Apple Clang; avoids using unsupported -fconcepts flag
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)  # Use -std=c++20, not -std=gnu++20
+endif()
+
 add_definitions(-DXTENSOR_ENABLE_XSIMD)
 add_definitions(-DXTENSOR_USE_XSIMD)
 
@@ -65,7 +72,11 @@ if(COMPILER_SUPPORTS_FMA)
 endif()
 
 # If building one the same hardware to be deployed on, try `-march=native`!
-add_compile_options(-O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-O3 -Ofast -ffp-contract=fast)
+endif()
 
 add_library(mppi_controller SHARED
   src/controller.cpp
