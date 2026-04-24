@@ -296,15 +296,15 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
   const int n_cols = static_cast<int>(data.path.x.size());
 
   // Cumulative arc-lengths along the reference path
-  std::vector<float> path_arc(n_cols, 0.0f);
+  std::vector<float> path_integrated_dists(n_cols, 0.0f);
   for (int i = 1; i < n_cols; ++i) {
     const float dx = data.path.x(i) - data.path.x(i - 1);
     const float dy = data.path.y(i) - data.path.y(i - 1);
-    path_arc[i] = path_arc[i - 1] + sqrtf(dx * dx + dy * dy);
+    path_integrated_dists[i] = path_integrated_dists[i - 1] + sqrtf(dx * dx + dy * dy);
   }
 
   // Arc-length of all candidate trajectories
-  const Eigen::ArrayXf traj_arcs =
+  const Eigen::ArrayXf traj_integrated_dists =
     ((data.trajectories.x.rightCols(traj_cols - 1) -
     data.trajectories.x.leftCols(traj_cols - 1)).square() +
     (data.trajectories.y.rightCols(traj_cols - 1) -
@@ -317,7 +317,9 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
   int max_idx = 0;
   for (int i = 0; i < n_rows; ++i) {
     int max_reachable_idx = static_cast<int>(
-      std::lower_bound(path_arc.begin(), path_arc.end(), traj_arcs(i)) - path_arc.begin());
+      std::lower_bound(
+        path_integrated_dists.begin(), path_integrated_dists.end(),
+        traj_integrated_dists(i)) - path_integrated_dists.begin());
     max_reachable_idx = std::min(max_reachable_idx, n_cols - 1);
 
     // Bounded Euclidean search: closest path point within [0..max_reachable_idx]
