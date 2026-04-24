@@ -349,11 +349,12 @@ rclcpp::TimerBase::SharedPtr create_timer(
   rclcpp::CallbackGroup::SharedPtr group = nullptr)
 {
   return rclcpp::create_timer(
-    node,
     selectSteadyOrSimClock(node),
-    rclcpp::Duration(period),
+    period,
     std::move(callback),
-    group);
+    group,
+    rclcpp::node_interfaces::get_node_base_interface(node).get(),
+    rclcpp::node_interfaces::get_node_timers_interface(node).get());
 }
 
 }  // namespace nav2
