@@ -42,116 +42,66 @@ namespace nav2_graceful_controller
 class GracefulController : public nav2_core::Controller
 {
 public:
-  /**
-   * @brief Constructor for nav2_graceful_controller::GracefulController
-   */
   GracefulController() = default;
-
-  /**
-   * @brief Destructor for nav2_graceful_controller::GracefulController
-   */
   ~GracefulController() override = default;
 
-  /**
-   * @brief Configure controller state machine
-   * @param parent WeakPtr to node
-   * @param name Name of plugin
-   * @param tf TF buffer
-   * @param costmap_ros Costmap2DROS object of environment
-   */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
-  /**
-   * @brief Cleanup controller state machine.
-   */
   void cleanup() override;
-
-  /**
-   * @brief Activate controller state machine.
-   */
   void activate() override;
-
-  /**
-   * @brief Deactivate controller state machine.
-   */
   void deactivate() override;
 
-  /**
-   * @brief Compute the best command given the current pose and velocity.
-   * @param pose      Current robot pose
-   * @param velocity  Current robot velocity
-   * @param goal_checker Ptr to the goal checker for this task in case useful in computing commands
-   * @return          Best command
-   */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * goal_checker) override;
 
-  /**
-   * @brief nav2_core setPlan - Sets the global plan.
-   * @param path The global plan
-   */
   void setPlan(const nav_msgs::msg::Path & path) override;
 
-  /**
-   * @brief Limits the maximum linear speed of the robot.
-   * @param speed_limit expressed in absolute value (in m/s)
-   * or in percentage from maximum robot speed
-   * @param percentage setting speed limit in percentage if true
-   * or in absolute values in false case
-   */
   void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
 protected:
   /**
-   * @brief Get motion target point.
-   * @param motion_target_dist Optimal motion target distance
-   * @param path Current global path
-   * @return Motion target point
+   * @brief Legacy helper kept for test back-compat. Not used in the new control flow.
    */
   geometry_msgs::msg::PoseStamped getMotionTarget(
     const double & motion_target_dist,
     const nav_msgs::msg::Path & path);
 
   /**
-   * @brief Simulate trajectory calculating in every step the new velocity command based on
-   * a new curvature value and checking for collisions.
-   *
-   * @param robot_pose Robot pose
-   * @param motion_target Motion target point
-   * @param costmap_transform Transform between global and local costmap
-   * @param trajectory Simulated trajectory
-   * @param backward Flag to indicate if the robot is moving backward
-   * @return true if the trajectory is collision free, false otherwise
+   * @brief Simulate trajectory from origin in base frame toward motion_target, applying
+   * an in-sim initial rotation (if enabled) then the smooth control law. cmd_vel is set
+   * from the first simulation step. Returns false on collision.
    */
   bool simulateTrajectory(
-    const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::PoseStamped & motion_target,
     const geometry_msgs::msg::TransformStamped & costmap_transform,
     nav_msgs::msg::Path & trajectory,
-    const bool & backward);
+    geometry_msgs::msg::TwistStamped & cmd_vel,
+    bool backward);
 
   /**
-   * @brief Rotate the robot to face the motion target with maximum angular velocity.
-   *
-   * @param angle_to_target Angle to the motion target
-   * @return geometry_msgs::msg::Twist Velocity command
+   * @brief Rotate-in-place velocity command with v_angular_min_in_place floor.
    */
-  geometry_msgs::msg::Twist rotateToTarget(
-    const double & angle_to_target);
+  geometry_msgs::msg::Twist rotateToTarget(const double & angle_to_target);
 
-  /**
-   * @brief Checks if the robot is in collision
-   * @param x The x coordinate of the robot in global frame
-   * @param y The y coordinate of the robot in global frame
-   * @param theta The orientation of the robot in global frame
-   * @return Whether in collision
-   */
   bool inCollision(const double & x, const double & y, const double & theta);
+
+  /**
+   * @brief Precompute integrated path length from robot origin to each pose.
+   */
+  void computeDistanceAlongPath(
+    const std::vector<geometry_msgs::msg::PoseStamped> & poses,
+    std::vector<double> & distances);
+
+  /**
+   * @brief If the planner emitted constant-yaw waypoints, retangent each pose so delta has meaning.
+   */
+  void validateOrientations(
+    std::vector<geometry_msgs::msg::PoseStamped> & path);
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::string plugin_name_;
@@ -162,7 +112,8 @@ protected:
 
   Parameters * params_;
   double goal_dist_tolerance_;
-  bool goal_reached_;
+  bool goal_reached_{false};
+  bool do_initial_rotation_{false};
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_plan_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> local_plan_pub_;

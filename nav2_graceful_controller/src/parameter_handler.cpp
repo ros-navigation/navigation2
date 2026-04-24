@@ -52,15 +52,23 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".v_angular_max", rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".v_angular_min_in_place", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".slowdown_radius", rclcpp::ParameterValue(1.5));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".initial_rotation", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".initial_rotation_min_angle", rclcpp::ParameterValue(0.75));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".initial_rotation_tolerance", rclcpp::ParameterValue(0.1));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".prefer_final_rotation", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".final_rotation", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".rotation_scaling_factor", rclcpp::ParameterValue(0.5));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".in_place_collision_resolution", rclcpp::ParameterValue(0.1));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_backward", rclcpp::ParameterValue(false));
 
@@ -84,13 +92,28 @@ ParameterHandler::ParameterHandler(
   params_.v_linear_max_initial = params_.v_linear_max;
   node->get_parameter(plugin_name_ + ".v_angular_max", params_.v_angular_max);
   params_.v_angular_max_initial = params_.v_angular_max;
+  node->get_parameter(plugin_name_ + ".v_angular_min_in_place", params_.v_angular_min_in_place);
   node->get_parameter(plugin_name_ + ".slowdown_radius", params_.slowdown_radius);
   node->get_parameter(plugin_name_ + ".initial_rotation", params_.initial_rotation);
   node->get_parameter(
     plugin_name_ + ".initial_rotation_min_angle", params_.initial_rotation_min_angle);
+  node->get_parameter(
+    plugin_name_ + ".initial_rotation_tolerance", params_.initial_rotation_tolerance);
+  node->get_parameter(plugin_name_ + ".prefer_final_rotation", params_.prefer_final_rotation);
   node->get_parameter(plugin_name_ + ".final_rotation", params_.final_rotation);
   node->get_parameter(plugin_name_ + ".rotation_scaling_factor", params_.rotation_scaling_factor);
+  node->get_parameter(
+    plugin_name_ + ".in_place_collision_resolution", params_.in_place_collision_resolution);
   node->get_parameter(plugin_name_ + ".allow_backward", params_.allow_backward);
+
+  // Declare min/max lookahead AFTER motion_target_dist so we can default max to it
+  // (if user yaml only has motion_target_dist, max_lookahead inherits from it).
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".min_lookahead", rclcpp::ParameterValue(0.25));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_lookahead", rclcpp::ParameterValue(params_.motion_target_dist));
+  node->get_parameter(plugin_name_ + ".min_lookahead", params_.min_lookahead);
+  node->get_parameter(plugin_name_ + ".max_lookahead", params_.max_lookahead);
 
   if (params_.initial_rotation && params_.allow_backward) {
     RCLCPP_WARN(
@@ -118,6 +141,10 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         params_.transform_tolerance = parameter.as_double();
       } else if (name == plugin_name_ + ".motion_target_dist") {
         params_.motion_target_dist = parameter.as_double();
+      } else if (name == plugin_name_ + ".min_lookahead") {
+        params_.min_lookahead = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_lookahead") {
+        params_.max_lookahead = parameter.as_double();
       } else if (name == plugin_name_ + ".k_phi") {
         params_.k_phi = parameter.as_double();
       } else if (name == plugin_name_ + ".k_delta") {
@@ -134,12 +161,18 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       } else if (name == plugin_name_ + ".v_angular_max") {
         params_.v_angular_max = parameter.as_double();
         params_.v_angular_max_initial = params_.v_angular_max;
+      } else if (name == plugin_name_ + ".v_angular_min_in_place") {
+        params_.v_angular_min_in_place = parameter.as_double();
       } else if (name == plugin_name_ + ".slowdown_radius") {
         params_.slowdown_radius = parameter.as_double();
       } else if (name == plugin_name_ + ".initial_rotation_min_angle") {
         params_.initial_rotation_min_angle = parameter.as_double();
+      } else if (name == plugin_name_ + ".initial_rotation_tolerance") {
+        params_.initial_rotation_tolerance = parameter.as_double();
       } else if (name == plugin_name_ + ".rotation_scaling_factor") {
         params_.rotation_scaling_factor = parameter.as_double();
+      } else if (name == plugin_name_ + ".in_place_collision_resolution") {
+        params_.in_place_collision_resolution = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".initial_rotation") {
@@ -150,6 +183,8 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           continue;
         }
         params_.initial_rotation = parameter.as_bool();
+      } else if (name == plugin_name_ + ".prefer_final_rotation") {
+        params_.prefer_final_rotation = parameter.as_bool();
       } else if (name == plugin_name_ + ".final_rotation") {
         params_.final_rotation = parameter.as_bool();
       } else if (name == plugin_name_ + ".allow_backward") {

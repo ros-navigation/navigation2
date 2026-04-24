@@ -33,7 +33,9 @@ namespace nav2_graceful_controller
 struct Parameters
 {
   double transform_tolerance;
-  double motion_target_dist;
+  double motion_target_dist;       // legacy; kept for yaml/test compat
+  double min_lookahead;            // jazzy: lower bound on r -> caps 1/r curvature (singularity guard)
+  double max_lookahead;            // jazzy: upper bound on motion-target distance
   double max_robot_pose_search_dist;
   double k_phi;
   double k_delta;
@@ -44,11 +46,15 @@ struct Parameters
   double v_linear_max_initial;
   double v_angular_max;
   double v_angular_max_initial;
+  double v_angular_min_in_place;   // jazzy: static-friction floor for rotate-in-place
   double slowdown_radius;
   bool initial_rotation;
-  double initial_rotation_min_angle;
-  bool final_rotation;
+  double initial_rotation_min_angle;   // legacy threshold (kept for back-compat)
+  double initial_rotation_tolerance;   // jazzy: convergence tol for in-sim initial rotation
+  bool prefer_final_rotation;      // jazzy: near goal, ignore target heading -> point at target
+  bool final_rotation;             // legacy; kept for yaml/test compat
   double rotation_scaling_factor;
+  double in_place_collision_resolution;   // jazzy: angle step for goal-rotation collision check
   bool allow_backward;
 };
 
