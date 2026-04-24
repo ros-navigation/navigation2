@@ -353,8 +353,8 @@ rclcpp::TimerBase::SharedPtr create_timer(
     period,
     std::move(callback),
     group,
-    rclcpp::node_interfaces::get_node_base_interface(node).get(),
-    rclcpp::node_interfaces::get_node_timers_interface(node).get());
+    node->get_node_base_interface().get(),
+    node->get_node_timers_interface().get());
 }
 
 }  // namespace nav2
