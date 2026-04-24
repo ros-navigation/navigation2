@@ -66,7 +66,7 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
   auto publish_message =
     [&]() -> void
     {
-      nav2::WallRate(5).sleep();
+      rclcpp::WallRate(5).sleep();
       auto msg = std::make_unique<std_msgs::msg::Empty>();
       pub->publish(std::move(msg));
       executor.spin_some();
@@ -114,7 +114,7 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
   auto publish_message =
     [&]() -> void
     {
-      nav2::WallRate(5).sleep();
+      rclcpp::WallRate(5).sleep();
       auto msg = std::make_unique<sensor_msgs::msg::Image>();
       // fill image msg data.
       msg->encoding = "rgb8";

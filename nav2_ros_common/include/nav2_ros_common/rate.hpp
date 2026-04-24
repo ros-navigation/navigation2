@@ -71,19 +71,6 @@ public:
   {}
 };
 
-/**
- * @brief A steady-clock Nav2 wall rate.
- *
- * This rate always uses RCL_STEADY_TIME and is never sim-time-aware.
- */
-class WallRate : public rclcpp::WallRate
-{
-public:
-  explicit WallRate(double rate)
-  : rclcpp::WallRate(rate)
-  {}
-};
-
 }  // namespace nav2
 
 #endif  // NAV2_ROS_COMMON__RATE_HPP_

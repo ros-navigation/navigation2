@@ -356,29 +356,6 @@ rclcpp::TimerBase::SharedPtr create_timer(
     group);
 }
 
-/**
- * @brief A steady-clock wall timer creator for Nav2.
- *
- * This timer always uses RCL_STEADY_TIME and is never sim-time-aware.
- *
- * Usage:
- *   auto timer = nav2::create_wall_timer(this, 50ms, callback);
- */
-template<typename NodeT, typename DurationRepT, typename DurationT, typename CallbackT>
-rclcpp::TimerBase::SharedPtr create_wall_timer(
-  NodeT node,
-  std::chrono::duration<DurationRepT, DurationT> period,
-  CallbackT callback,
-  rclcpp::CallbackGroup::SharedPtr group = nullptr)
-{
-  return rclcpp::create_timer(
-    node,
-    std::make_shared<rclcpp::Clock>(RCL_STEADY_TIME),
-    rclcpp::Duration(period),
-    std::move(callback),
-    group);
-}
-
 }  // namespace nav2
 
 #endif  // NAV2_ROS_COMMON__INTERFACE_FACTORIES_HPP_

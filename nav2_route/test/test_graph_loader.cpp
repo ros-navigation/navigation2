@@ -108,7 +108,7 @@ TEST(GraphLoader, test_transformation_api)
   transform.transform.rotation.w = 1.0;
   transform.transform.translation.x = 1.0;
   tf_broadcaster->sendTransform(transform);
-  nav2::WallRate(1).sleep();
+  rclcpp::WallRate(1).sleep();
   tf_broadcaster->sendTransform(transform);
   executor.spin_all(std::chrono::milliseconds(50));
 
