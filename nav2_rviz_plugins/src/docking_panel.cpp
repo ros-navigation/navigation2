@@ -297,6 +297,12 @@ void DockingPanel::startThread()
   initial_thread_->start();
 }
 
+void DockingPanel::onStartup()
+{
+  // No lifecycle manager clients to call for docking panel.
+  // Plugin loading is handled via the InitialDockThread dockingActive signal.
+}
+
 DockingPanel::~DockingPanel()
 {
 }

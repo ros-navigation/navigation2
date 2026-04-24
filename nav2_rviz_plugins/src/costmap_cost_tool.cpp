@@ -53,6 +53,13 @@ void CostmapCostTool::onInitialize()
 void CostmapCostTool::activate() {}
 void CostmapCostTool::deactivate() {}
 
+void CostmapCostTool::updateAutoDeactivate()
+{
+  // Called when the "Single click" property changes.
+  // The value is read directly from auto_deactivate_property_ in processMouseEvent,
+  // so no additional action is needed here.
+}
+
 int CostmapCostTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
 {
   int flags = 0;

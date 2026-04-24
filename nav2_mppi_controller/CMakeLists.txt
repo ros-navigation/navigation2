@@ -107,9 +107,10 @@ add_library(mppi_critics SHARED
 set(libraries mppi_controller mppi_critics)
 
 foreach(lib IN LISTS libraries)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_NAME MATCHES "Darwin")
     # Clang: use C++20 and optimization, omit -fconcepts
     target_compile_features(${lib} PUBLIC cxx_std_20)
+    target_compile_options(mppi_critics PUBLIC -O3)
   else()
     target_compile_options(${lib} PUBLIC -fconcepts)
   endif()
