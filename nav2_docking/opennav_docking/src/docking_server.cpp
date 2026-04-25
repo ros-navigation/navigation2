@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "angles/angles.h"
+#include "nav2_ros_common/rate.hpp"
 #include "opennav_docking/docking_server.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
@@ -175,7 +176,7 @@ void DockingServer::dockRobot()
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
   action_start_time_ = this->now();
-  rclcpp::Rate loop_rate(params_->controller_frequency);
+  nav2::Rate loop_rate(this, params_->controller_frequency);
 
   auto goal = docking_action_server_->get_current_goal();
   auto result = std::make_shared<DockRobot::Result>();
@@ -393,7 +394,7 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
     throw opennav_docking_core::FailedToDetectDock("Failed to start the detection process.");
   }
 
-  rclcpp::Rate loop_rate(params_->controller_frequency);
+  nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->initial_perception_timeout);
   while (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
@@ -419,7 +420,7 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
   target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
     tf2::getYaw(target_pose.pose.orientation) + M_PI);
 
-  rclcpp::Rate loop_rate(params_->controller_frequency);
+  nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->rotate_to_dock_timeout);
 
@@ -452,7 +453,7 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
 bool DockingServer::approachDock(
   Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose, bool backward)
 {
-  rclcpp::Rate loop_rate(params_->controller_frequency);
+  nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->dock_approach_timeout);
 
@@ -522,7 +523,7 @@ bool DockingServer::waitForCharge(Dock * dock)
     return true;
   }
 
-  rclcpp::Rate loop_rate(params_->controller_frequency);
+  nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->wait_charge_timeout);
   while (rclcpp::ok()) {
@@ -550,7 +551,7 @@ bool DockingServer::waitForCharge(Dock * dock)
 bool DockingServer::resetApproach(
   const geometry_msgs::msg::PoseStamped & staging_pose, bool backward)
 {
-  rclcpp::Rate loop_rate(params_->controller_frequency);
+  nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->dock_approach_timeout);
   while (rclcpp::ok()) {
@@ -621,7 +622,7 @@ void DockingServer::undockRobot()
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
   action_start_time_ = this->now();
-  rclcpp::Rate loop_rate(params_->controller_frequency);
+  nav2::Rate loop_rate(this, params_->controller_frequency);
 
   auto goal = undocking_action_server_->get_current_goal();
   auto result = std::make_shared<UndockRobot::Result>();
