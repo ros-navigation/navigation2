@@ -87,6 +87,9 @@ VectorObjectServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   map_pub_->on_activate();
+  add_shapes_service_->on_activate();
+  get_shapes_service_->on_activate();
+  remove_shapes_service_->on_activate();
 
   // Trigger map to be published
   process_map_ = true;
@@ -102,6 +105,9 @@ nav2::CallbackReturn
 VectorObjectServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+  add_shapes_service_->on_deactivate();
+  get_shapes_service_->on_deactivate();
+  remove_shapes_service_->on_deactivate();
 
   if (map_timer_) {
     map_timer_->cancel();

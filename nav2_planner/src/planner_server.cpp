@@ -35,6 +35,7 @@
 #include "tf2/utils.hpp"
 
 #include "nav2_planner/planner_server.hpp"
+#include "nav2_ros_common/service_server.hpp"
 
 using namespace std::chrono_literals;
 using rcl_interfaces::msg::ParameterType;
@@ -162,7 +163,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     it->second->activate();
   }
 
-  is_path_valid_service_->initialize();
+  is_path_valid_service_->on_activate();
 
   // create bond connection
   createBond();
@@ -175,6 +176,7 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
+  is_path_valid_service_->on_deactivate();
   action_server_pose_->deactivate();
   action_server_poses_->deactivate();
   plan_publisher_->on_deactivate();
@@ -194,8 +196,6 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     it->second->deactivate();
   }
 
-  is_path_valid_service_->reset();
-
   // destroy bond connection
   destroyBond();
 
@@ -207,6 +207,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  is_path_valid_service_.reset();
   action_server_pose_.reset();
   action_server_poses_.reset();
   plan_publisher_.reset();
@@ -220,7 +221,6 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
 
   planners_.clear();
-  is_path_valid_service_.reset();
   costmap_thread_.reset();
   costmap_ = nullptr;
   return nav2::CallbackReturn::SUCCESS;
