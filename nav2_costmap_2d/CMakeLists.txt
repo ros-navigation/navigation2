@@ -119,6 +119,7 @@ add_library(filters SHARED
   plugins/costmap_filters/keepout_filter.cpp
   plugins/costmap_filters/speed_filter.cpp
   plugins/costmap_filters/binary_filter.cpp
+  plugins/costmap_filters/zone_parameter_filter.cpp
 )
 target_include_directories(filters
   PUBLIC

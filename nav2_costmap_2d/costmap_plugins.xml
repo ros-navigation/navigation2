@@ -36,5 +36,8 @@
     <class type="nav2_costmap_2d::BinaryFilter"    base_class_type="nav2_costmap_2d::Layer">
       <description>Binary flip filter.</description>
     </class>
+    <class type="nav2_costmap_2d::ZoneParameterFilter" base_class_type="nav2_costmap_2d::Layer">
+      <description>Applies a configured set of ROS parameters based on the mask value at the robot's pose. Generalises SpeedFilter to N parameters per state. See nav2 issue #6080.</description>
+    </class>
   </library>
 </class_libraries>
