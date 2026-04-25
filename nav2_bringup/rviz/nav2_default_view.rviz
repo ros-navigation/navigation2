@@ -7,10 +7,9 @@ Panels:
         - /Global Options1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /MarkerArray2/Status1
         - /MarkerArray2/Topic1
       Splitter Ratio: 0.5833333134651184
-    Tree Height: 287
+    Tree Height: 224
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -87,29 +86,69 @@ Visualization Manager:
           Value: true
         base_link:
           Value: true
-        base_scan:
+        bump_front_center:
           Value: true
-        camera_depth_frame:
+        bump_front_left:
           Value: true
-        camera_depth_optical_frame:
+        bump_front_right:
           Value: true
-        camera_link:
+        bump_left:
           Value: true
-        camera_rgb_frame:
+        bump_right:
           Value: true
-        camera_rgb_optical_frame:
+        bumper:
           Value: true
-        caster_back_left_link:
+        front_caster_link:
           Value: true
-        caster_back_right_link:
+        front_left_bottom_weight_block:
+          Value: true
+        front_left_top_weight_block:
+          Value: true
+        front_left_tower_standoff:
+          Value: true
+        front_right_bottom_weight_block:
+          Value: true
+        front_right_top_weight_block:
+          Value: true
+        front_right_tower_standoff:
           Value: true
         imu_link:
           Value: true
+        left_wheel:
+          Value: true
+        map:
+          Value: true
+        oakd_camera_bracket:
+          Value: true
+        oakd_imu_frame:
+          Value: true
+        oakd_left_camera_frame:
+          Value: true
+        oakd_left_camera_optical_frame:
+          Value: true
+        oakd_link:
+          Value: true
+        oakd_rgb_camera_frame:
+          Value: true
+        oakd_rgb_camera_optical_frame:
+          Value: true
+        oakd_right_camera_frame:
+          Value: true
+        oakd_right_camera_optical_frame:
+          Value: true
         odom:
           Value: true
-        wheel_left_link:
+        rear_left_tower_standoff:
           Value: true
-        wheel_right_link:
+        rear_right_tower_standoff:
+          Value: true
+        right_wheel:
+          Value: true
+        rplidar_link:
+          Value: true
+        shell_link:
+          Value: true
+        tower_sensor_plate:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -117,7 +156,65 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        map:
+          odom:
+            base_link:
+              base_footprint:
+                {}
+              bump_front_center:
+                {}
+              bump_front_left:
+                {}
+              bump_front_right:
+                {}
+              bump_left:
+                {}
+              bump_right:
+                {}
+              bumper:
+                {}
+              front_caster_link:
+                {}
+              front_left_bottom_weight_block:
+                {}
+              front_left_top_weight_block:
+                {}
+              front_right_bottom_weight_block:
+                {}
+              front_right_top_weight_block:
+                {}
+              imu_link:
+                {}
+              left_wheel:
+                {}
+              right_wheel:
+                {}
+              shell_link:
+                front_left_tower_standoff:
+                  {}
+                front_right_tower_standoff:
+                  {}
+                oakd_camera_bracket:
+                  oakd_link:
+                    oakd_imu_frame:
+                      {}
+                    oakd_left_camera_frame:
+                      oakd_left_camera_optical_frame:
+                        {}
+                    oakd_rgb_camera_frame:
+                      oakd_rgb_camera_optical_frame:
+                        {}
+                    oakd_right_camera_frame:
+                      oakd_right_camera_optical_frame:
+                        {}
+                rear_left_tower_standoff:
+                  {}
+                rear_right_tower_standoff:
+                  {}
+                rplidar_link:
+                  {}
+                tower_sensor_plate:
+                  {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -181,6 +278,7 @@ Visualization Manager:
       Topic:
         Depth: 5
         Durability Policy: Volatile
+        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: mobile_base/sensors/bumper_pointcloud
@@ -352,6 +450,7 @@ Visualization Manager:
           Topic:
             Depth: 5
             Durability Policy: Volatile
+            Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: global_costmap/voxel_marked_cloud
@@ -429,8 +528,7 @@ Visualization Manager:
         - Class: rviz_default_plugins/MarkerArray
           Enabled: false
           Name: Trajectories
-          Namespaces:
-            {}
+          Namespaces: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -478,6 +576,7 @@ Visualization Manager:
           Topic:
             Depth: 5
             Durability Policy: Volatile
+            Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: local_costmap/voxel_marked_cloud
@@ -529,6 +628,7 @@ Visualization Manager:
           Topic:
             Depth: 5
             Durability Policy: Volatile
+            Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: intel_realsense_r200_depth/points
@@ -540,8 +640,7 @@ Visualization Manager:
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: MarkerArray
-      Namespaces:
-        {}
+      Namespaces: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -553,8 +652,11 @@ Visualization Manager:
       Enabled: true
       Name: MarkerArray
       Namespaces:
-        route_graph: true
-        route_graph_ids: true
+        Value: true
+        route_graph_edge_ids: true
+        route_graph_edges: true
+        route_graph_node_ids: true
+        route_graph_nodes: true
       Topic:
         Depth: 5
         Durability Policy: Transient Local
@@ -599,7 +701,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -0.0008007669821381569
+      Angle: 0.004199232906103134
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -609,33 +711,33 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 54
+      Scale: 64.853271484375
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: -5.409999847412109
-      Y: 0
+      X: 15.4618558883667
+      Y: 7.891519069671631
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: false
+    collapsed: true
   Docking:
-    collapsed: false
-  Height: 893
-  Hide Left Dock: false
-  Hide Right Dock: false
+    collapsed: true
+  Height: 1371
+  Hide Left Dock: true
+  Hide Right Dock: true
   Navigation 2:
-    collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000015600000327fc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000100044006900730070006c006100790073010000003b0000015a000000c700fffffffb00000018004e0061007600690067006100740069006f006e00200032010000019b000001c7000001c700fffffffb0000001e005200650061006c00730065006e0073006500430061006d00650072006100000002c6000000c10000002800ffffff000000010000014700000327fc0200000005fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b00000143000000a000fffffffb0000000e0044006f0063006b0069006e006701000001840000011e0000011e00fffffffb0000001000530065006c006500630074006f007201000002a8000000ba000000ba00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000003a10000032700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+    collapsed: true
+  QMainWindow State: 000000ff00000000fd000000040000000000000174000004fffc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000100044006900730070006c006100790073000000003e0000011e000000ca00fffffffb00000018004e0061007600690067006100740069006f006e002000320000000162000003db000002b500fffffffb0000001e005200650061006c00730065006e0073006500430061006d00650072006100000002c6000000c10000001600ffffff0000000100000147000004fffc0200000005fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003e000001e7000000a600fffffffb0000000e0044006f0063006b0069006e0067000000022b000001ea0000015700fffffffb0000001000530065006c006500630074006f0072000000041b00000122000000cc00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000009be000004ff00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   RealsenseCamera:
     collapsed: false
   Selection:
     collapsed: false
   Selector:
-    collapsed: false
+    collapsed: true
   Tool Properties:
     collapsed: false
   Views:
-    collapsed: false
-  Width: 1610
-  X: 1091
-  Y: 222
+    collapsed: true
+  Width: 2494
+  X: 1986
+  Y: 32
