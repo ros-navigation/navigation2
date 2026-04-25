@@ -113,7 +113,8 @@ bool PositionGoalChecker::isGoalReached(
 
 bool PositionGoalChecker::getTolerances(
   geometry_msgs::msg::Pose & pose_tolerance,
-  geometry_msgs::msg::Twist & vel_tolerance)
+  geometry_msgs::msg::Twist & vel_tolerance,
+  double & path_length_tolerance)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
   double invalid_field = std::numeric_limits<double>::lowest();
@@ -136,13 +137,25 @@ bool PositionGoalChecker::getTolerances(
   vel_tolerance.angular.y = invalid_field;
   vel_tolerance.angular.z = invalid_field;
 
+  path_length_tolerance = path_length_tolerance_;
+
   return true;
 }
 
-void nav2_controller::PositionGoalChecker::setXYGoalTolerance(double tolerance)
+void nav2_controller::PositionGoalChecker::setTolerances(
+  double xy_goal_tolerance,
+  double path_length_tolerance)
 {
-  xy_goal_tolerance_ = tolerance;
-  xy_goal_tolerance_sq_ = tolerance * tolerance;
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  xy_goal_tolerance_ = xy_goal_tolerance;
+  xy_goal_tolerance_sq_ = xy_goal_tolerance * xy_goal_tolerance;
+  path_length_tolerance_ = path_length_tolerance;
+}
+
+void nav2_controller::PositionGoalChecker::setLatchesGoalProgress(bool latches_goal_progress)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  stateful_ = latches_goal_progress;
 }
 
 rcl_interfaces::msg::SetParametersResult

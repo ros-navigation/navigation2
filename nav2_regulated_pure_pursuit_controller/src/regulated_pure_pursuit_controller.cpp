@@ -173,7 +173,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Update for the current goal checker's state
   geometry_msgs::msg::Pose pose_tolerance;
   geometry_msgs::msg::Twist vel_tolerance;
-  if (!goal_checker->getTolerances(pose_tolerance, vel_tolerance)) {
+  if (!goal_checker->getTolerances(pose_tolerance, vel_tolerance, path_length_tol_)) {
     RCLCPP_WARN(logger_, "Unable to retrieve goal checker's tolerances!");
   } else {
     goal_dist_tol_ = pose_tolerance.position.x;
@@ -188,6 +188,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     throw nav2_core::ControllerTFError(
       "Unable to transform plan pose into local frame");
   }
+  double remaining_path_length = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
@@ -226,7 +227,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   //        - equal to "normal" carrot_pose when curvature_lookahead_pose = false
   //        - otherwise equal to curvature_lookahead_pose (which can be interpolated after goal)
   double angle_to_heading;
-  if (shouldRotateToGoalHeading(carrot_pose)) {
+  if (shouldRotateToGoalHeading(
+    carrot_pose, remaining_path_length, goal_checker->latchesGoalProgress()))
+  {
     is_rotating_to_heading_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
@@ -286,12 +289,10 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Collision checking on this velocity heading
-  const double dist_to_path_end =
-    nav2_util::geometry_utils::calculate_path_length(transformed_plan);
   const double & carrot_dist = hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
   if (params_->use_collision_detection &&
     collision_checker_->isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist,
-      dist_to_path_end))
+    remaining_path_length))
   {
     throw nav2_core::NoValidControl("RegulatedPurePursuitController detected collision ahead!");
   }
@@ -338,17 +339,23 @@ bool RegulatedPurePursuitController::shouldRotateToPath(
 }
 
 bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
-  const geometry_msgs::msg::PoseStamped & carrot_pose)
+  const geometry_msgs::msg::PoseStamped & carrot_pose, const double & remaining_path_length,
+  bool stateful)
 {
   // Whether we should rotate robot to goal heading
   if (!params_->use_rotate_to_heading) {
     return false;
   }
 
+  // If we're far from the goal by path length, no need to rotate to goal heading
+  if (remaining_path_length > path_length_tol_) {
+    return false;
+  }
+
   double dist_to_goal = std::hypot(
     carrot_pose.pose.position.x, carrot_pose.pose.position.y);
 
-  if (params_->stateful) {
+  if (stateful) {
     if (!has_reached_xy_tolerance_ && dist_to_goal < goal_dist_tol_) {
       has_reached_xy_tolerance_ = true;
     }

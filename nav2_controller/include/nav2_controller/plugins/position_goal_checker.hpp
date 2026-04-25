@@ -76,17 +76,32 @@ public:
    * @brief Get the position and velocity tolerances
    * @param pose_tolerance Output parameter for pose tolerance
    * @param vel_tolerance Output parameter for velocity tolerance
+   * @param path_length_tolerance Output parameter for path length tolerance
    * @return true if tolerances are available, false otherwise
    */
   bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & vel_tolerance) override;
+    geometry_msgs::msg::Twist & vel_tolerance,
+    double & path_length_tolerance) override;
 
   /**
-   * @brief Set the XY goal tolerance
-   * @param tolerance New tolerance value
+   * @brief Check if the goal checker latches goal progress across control cycles
+   * @return True if the goal checker uses per-goal progress latching
    */
-  void setXYGoalTolerance(double tolerance);
+  bool latchesGoalProgress() const override {return stateful_;}
+
+  /**
+   * @brief Set the XY goal tolerance and path length tolerance
+   * @param xy_goal_tolerance New XY goal tolerance value
+   * @param path_length_tolerance New path length tolerance value
+   */
+  void setTolerances(double xy_goal_tolerance, double path_length_tolerance);
+
+  /**
+   * @brief Set whether the goal checker is stateful
+   * @param latches_goal_progress True to enable stateful (latched) behavior, false for stateless
+   */
+  void setLatchesGoalProgress(bool latches_goal_progress);
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;

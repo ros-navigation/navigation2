@@ -98,11 +98,26 @@ public:
    * that each independent field could be assuming the other has no error (e.x. X and Y).
    * @param pose_tolerance The tolerance used for checking in Pose fields
    * @param vel_tolerance The tolerance used for checking velocity fields
+   * @param path_length_tolerance The tolerance used for checking the path length
    * @return True if the tolerances are valid to use
    */
   virtual bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & vel_tolerance) = 0;
+    geometry_msgs::msg::Twist & vel_tolerance,
+    double & path_length_tolerance) = 0;
+
+  /**
+   * @brief Check if the goal checker latches goal progress across control cycles
+   * When this returns true, the goal checker is allowed to keep internal progress from one
+   * cycle to the next while pursuing the same goal. In practice, this is commonly used to
+   * implement "latching" semantics: once the robot has first satisfied the translational
+   * part of the goal, it is allowed to continue satisfying the goal even if it drifts
+   * outside the translational tolerance.
+   * When this returns false, isGoalReached() should behave like a pure function of its
+   * inputs (no remembered/latched progress).
+   * @return True if the goal checker uses internal, per-goal progress latching.
+   */
+  virtual bool latchesGoalProgress() const = 0;
 };
 
 }  // namespace nav2_core
