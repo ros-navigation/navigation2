@@ -261,6 +261,55 @@ void ZoneParameterFilter::loadStateConfig()
       "ZoneParameterFilter: state_%u → %zu parameter override(s).",
       state_id, state_param_map_[state_id].size());
   }
+
+  // Load YAML-declared nominal defaults for state-0 reset. Format:
+  //   <plugin>.nominal_defaults.<target_node>.<param_path>: <value>
+  //
+  // Declarative-explicit (rather than auto-captured) because get_parameters
+  // and set_parameters use separate underlying services::Client instances,
+  // so FIFO ordering of "capture-then-override" cannot be guaranteed at the
+  // server. A late get response would capture the overridden value, not the
+  // nominal. YAML nominals avoid the race entirely and match Steve Macenski's
+  // config-driven preference on #6080.
+  const std::string nominal_prefix = name_ + ".nominal_defaults.";
+  for (const auto & [override_name, override_value] : overrides) {
+    if (override_name.rfind(nominal_prefix, 0) != 0) {
+      continue;
+    }
+    std::string suffix = override_name.substr(nominal_prefix.size());
+    auto dot_pos = suffix.find('.');
+    if (dot_pos == std::string::npos) {
+      RCLCPP_WARN(
+        logger_,
+        "ZoneParameterFilter: nominal_defaults entry '%s' has no dot — expected "
+        "<target_node>.<param_path>; skipping.",
+        override_name.c_str());
+      continue;
+    }
+    const std::string target_node = suffix.substr(0, dot_pos);
+    const std::string target_param = suffix.substr(dot_pos + 1);
+    const std::string stored_name = target_node + kNodeParamSep + target_param;
+    nominal_defaults_[stored_name] = rclcpp::Parameter(target_param, override_value);
+  }
+  RCLCPP_INFO(
+    logger_,
+    "ZoneParameterFilter: %zu nominal default(s) loaded for state-0 reset.",
+    nominal_defaults_.size());
+
+  // Quality-of-life: warn for any state-N override that has no nominal
+  // counterpart. Such params will NOT be restored by state-0 reset; a v1
+  // user almost certainly wants symmetric coverage.
+  for (const auto & [state_id, params] : state_param_map_) {
+    for (const auto & p : params) {
+      if (nominal_defaults_.find(p.get_name()) == nominal_defaults_.end()) {
+        RCLCPP_WARN(
+          logger_,
+          "ZoneParameterFilter: state_%u sets '%s' but no matching nominal_defaults "
+          "entry exists; state-0 reset will NOT restore this parameter.",
+          state_id, p.get_name().c_str());
+      }
+    }
+  }
 }
 
 void ZoneParameterFilter::process(
@@ -372,18 +421,13 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
     const std::string target_node = stored_name.substr(0, sep_pos);
     const std::string target_param = stored_name.substr(sep_pos + 1);
 
-    // Lazily capture the nominal default for this target before overriding,
-    // so resetToNominal() can restore it on transition to state 0.
-    if (nominal_defaults_.find(stored_name) == nominal_defaults_.end()) {
-      // We do NOT block to fetch the nominal default — the cost of an
-      // extra round-trip on first override is acceptable, but blocking in
-      // process() is forbidden. Mark for capture; the first applyState
-      // call records the override target value as the "before" baseline
-      // by convention. (A future iteration may add a one-shot async fetch.)
-      nominal_defaults_[stored_name] =
-        rclcpp::Parameter(target_param, rclcpp::ParameterValue());
-    }
-
+    // Nominal defaults are loaded declaratively from YAML at config time
+    // (see loadStateConfig — `<plugin>.nominal_defaults.<node>.<param>`).
+    // No auto-capture here: an async get_parameters round-trip racing
+    // against this set_parameters call cannot guarantee ordering at the
+    // server, and blocking in process() is forbidden by #3796 review item 2.
+    // If the user did not declare a nominal for this param, state-0 reset
+    // will skip it (warned at config-load time).
     per_node_params[target_node].emplace_back(target_param, stored.get_parameter_value());
   }
 

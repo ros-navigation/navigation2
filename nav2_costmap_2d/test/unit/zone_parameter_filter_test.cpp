@@ -431,33 +431,28 @@ TEST_F(TestZpf, State1AppliesParameterToTargetNode)
 }
 
 // =========================================================================
-// Test 7 — state 0 reset path: applying state 1 then state 0 must restore
-// nominal defaults captured lazily before the first override fired.
+// Test 7 — state 0 reset path: applying state 1 then state 0 restores
+// the YAML-declared nominal_defaults value for the affected parameter.
 //
-// DISABLED in this slice — surfaces a real v0.1 limitation in
-// `zone_parameter_filter.cpp:383` where nominal_defaults_ stores an empty
-// `ParameterValue` instead of the target's pre-override value. The
-// resetToNominal() call therefore pushes an empty (NOT_SET) value to the
-// parameter service, which silently no-ops, leaving the override in place.
-//
-// Proper fix (slice 2c): in initializeFilter(), after loadStateConfig(),
-// synchronously fetch each configured target.param's current value via
-// AsyncParametersClient::get_parameters + spin_until_future_complete with
-// a short (~200ms) timeout. Service-not-ready at init falls back to lazy
-// capture-on-first-applyState. This is permitted blocking because
-// initializeFilter runs at configure time, not in the hot path.
-//
-// Steve Macenski's #6080 design pointer (2026-04-13) explicitly called
-// out state 0 reset semantics; this test stays as DISABLED_ documentation
-// of the design intent until the fix lands.
+// Slice 2c fix: nominal defaults are now declared explicitly in YAML via
+//   <plugin>.nominal_defaults.<target_node>.<param_path>: <value>
+// rather than auto-captured. The auto-capture approach was abandoned
+// because get_parameters and set_parameters use separate underlying
+// services::Client instances — a "capture-then-override" sequence cannot
+// guarantee FIFO ordering at the server, so a late get response would
+// capture the overridden value, not the nominal. YAML declaration is
+// race-free, deterministic, and matches Steve Macenski's "config-driven"
+// preference on #6080.
 // =========================================================================
-TEST_F(TestZpf, DISABLED_State0ResetsToNominalDefaults)
+TEST_F(TestZpf, State0ResetsToNominalDefaults)
 {
   ASSERT_TRUE(createFilter(
       {1},
       {
         rclcpp::Parameter(
           std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
+        rclcpp::Parameter(
+          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
       },
       1)) << "Filter did not become active";
 
