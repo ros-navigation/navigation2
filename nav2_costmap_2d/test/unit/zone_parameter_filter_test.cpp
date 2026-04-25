@@ -409,8 +409,8 @@ TEST_F(TestZpf, State1AppliesParameterToTargetNode)
 {
   ASSERT_TRUE(createFilter(
       {1},
-      {
-        rclcpp::Parameter(
+  {
+    rclcpp::Parameter(
           std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
       },
       1)) << "Filter did not become active within 2s";
@@ -448,10 +448,10 @@ TEST_F(TestZpf, State0ResetsToNominalDefaults)
 {
   ASSERT_TRUE(createFilter(
       {1},
-      {
-        rclcpp::Parameter(
+  {
+    rclcpp::Parameter(
           std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
-        rclcpp::Parameter(
+    rclcpp::Parameter(
           std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
       },
       1)) << "Filter did not become active";
@@ -479,8 +479,8 @@ TEST_F(TestZpf, UnknownStateWarnLogsAndKeepsPrevious)
   // state_ids=[1] only; mask filled with 2 (unknown).
   ASSERT_TRUE(createFilter(
       {1},
-      {
-        rclcpp::Parameter(
+  {
+    rclcpp::Parameter(
           std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
       },
       2)) << "Filter did not become active";
@@ -511,8 +511,8 @@ TEST_F(TestZpf, StateEventPublishedOnTransition)
 {
   ASSERT_TRUE(createFilter(
       {1},
-      {
-        rclcpp::Parameter(
+  {
+    rclcpp::Parameter(
           std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
       },
       1,
@@ -543,8 +543,8 @@ TEST_F(TestZpf, ServiceNotReadyInHotPathDoesNotBlock)
 {
   ASSERT_TRUE(createFilter(
       {1},
-      {
-        rclcpp::Parameter(
+  {
+    rclcpp::Parameter(
           std::string(kFilterName) + ".state_1.nonexistent_node.foo", 0.5),
       },
       1)) << "Filter did not become active";
