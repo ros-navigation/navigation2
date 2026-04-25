@@ -17,7 +17,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "std_msgs/msg/header.hpp"
@@ -33,7 +32,6 @@ namespace nav2_costmap_2d
 struct Costmap2DStamped
 {
   std_msgs::msg::Header header;
-  nav2_msgs::msg::CostmapMetaData metadata;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap;
 };
 
@@ -52,7 +50,6 @@ struct TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>
   static void convert_to_ros_message(const custom_type & src, ros_message_type & dst)
   {
     dst.header = src.header;
-    dst.metadata = src.metadata;
 
     if (!src.costmap) {
       dst.data.clear();
@@ -63,6 +60,14 @@ struct TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>
     const size_t size_y = static_cast<size_t>(src.costmap->getSizeInCellsY());
     const size_t n = size_x * size_y;
 
+    dst.metadata.size_x = static_cast<unsigned int>(size_x);
+    dst.metadata.size_y = static_cast<unsigned int>(size_y);
+    dst.metadata.resolution = src.costmap->getResolution();
+    dst.metadata.origin.position.x = src.costmap->getOriginX();
+    dst.metadata.origin.position.y = src.costmap->getOriginY();
+    dst.metadata.origin.position.z = 0.0;
+    dst.metadata.origin.orientation.w = 1.0;
+
     dst.data.resize(n);
     const unsigned char * p = src.costmap->getCharMap();
     std::copy(p, p + n, dst.data.begin());
@@ -71,7 +76,6 @@ struct TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>
   static void convert_to_custom(const ros_message_type & src, custom_type & dst)
   {
     dst.header = src.header;
-    dst.metadata = src.metadata;
 
     const unsigned int size_x = src.metadata.size_x;
     const unsigned int size_y = src.metadata.size_y;

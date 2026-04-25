@@ -162,25 +162,11 @@ void Costmap2DPublisher::prepareGrid()
 void Costmap2DPublisher::prepareCostmap()
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-  double resolution = costmap_->getResolution();
 
   costmap_raw_ = std::make_unique<nav2_costmap_2d::Costmap2DStamped>();
 
   costmap_raw_->header.frame_id = global_frame_;
   costmap_raw_->header.stamp = clock_->now();
-
-  costmap_raw_->metadata.layer = "master";
-  costmap_raw_->metadata.resolution = resolution;
-
-  costmap_raw_->metadata.size_x = costmap_->getSizeInCellsX();
-  costmap_raw_->metadata.size_y = costmap_->getSizeInCellsY();
-
-  double wx, wy;
-  costmap_->mapToWorld(0, 0, wx, wy);
-  costmap_raw_->metadata.origin.position.x = wx - resolution / 2;
-  costmap_raw_->metadata.origin.position.y = wy - resolution / 2;
-  costmap_raw_->metadata.origin.position.z = 0.0;
-  costmap_raw_->metadata.origin.orientation.w = 1.0;
 
   costmap_raw_->costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(*costmap_);
 }
