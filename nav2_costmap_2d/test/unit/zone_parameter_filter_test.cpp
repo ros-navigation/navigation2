@@ -275,11 +275,13 @@ protected:
     const std::vector<int64_t> & state_ids,
     const std::vector<rclcpp::Parameter> & state_overrides,
     int8_t mask_fill_value,
-    const std::string & state_event_topic = "")
+    const std::string & state_event_topic = "",
+    const std::vector<std::string> & target_nodes = {"zpf_target_node"})
   {
     rclcpp::NodeOptions opts;
     std::vector<rclcpp::Parameter> all_overrides = {
       rclcpp::Parameter(std::string(kFilterName) + ".state_ids", state_ids),
+      rclcpp::Parameter(std::string(kFilterName) + ".target_nodes", target_nodes),
       rclcpp::Parameter(
         std::string(kFilterName) + ".filter_info_topic",
         std::string(kInfoTopic)),
@@ -547,7 +549,9 @@ TEST_F(TestZpf, ServiceNotReadyInHotPathDoesNotBlock)
     rclcpp::Parameter(
           std::string(kFilterName) + ".state_1.nonexistent_node.foo", 0.5),
       },
-      1)) << "Filter did not become active";
+      1,
+      "",
+      {"nonexistent_node"})) << "Filter did not become active";
 
   auto t0 = std::chrono::steady_clock::now();
   EXPECT_NO_THROW(runProcess());
@@ -564,6 +568,123 @@ TEST_F(TestZpf, ServiceNotReadyInHotPathDoesNotBlock)
 
   // Real target_node was not referenced; its declared default must be untouched.
   EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0);
+}
+
+// =========================================================================
+// Test 11 — resetFilter() must deactivate the filter and clear subscriptions.
+// Mirrors binary_filter_test.cpp::testResetFilter pattern.
+// =========================================================================
+TEST_F(TestZpf, ResetFilterDeactivates)
+{
+  ASSERT_TRUE(createFilter(
+      {1},
+  {
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
+      },
+      1)) << "Filter did not become active";
+
+  ASSERT_TRUE(filter_->isActive()) << "precondition: active before reset";
+
+  filter_->resetFilter();
+
+  EXPECT_FALSE(filter_->isActive())
+    << "resetFilter() must clear filter_info_received_ and filter_mask_";
+}
+
+// =========================================================================
+// Test 12 — OCC_GRID_UNKNOWN (-1) cell at robot pose: leave state unchanged.
+// Per process() contract: negative mask values are unknown; do not transition.
+// =========================================================================
+TEST_F(TestZpf, UnknownMaskCellLeavesStateUnchanged)
+{
+  // Mask filled entirely with OCC_GRID_UNKNOWN (-1).
+  ASSERT_TRUE(createFilter(
+      {1},
+  {
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
+      },
+      static_cast<int8_t>(-1))) << "Filter did not become active";
+
+  ASSERT_DOUBLE_EQ(target_node_->getSpeed(), 1.0) << "precondition: default 1.0";
+
+  runProcess();
+
+  // Spin briefly to confirm no async set fires from the unknown branch.
+  auto start = node_->now();
+  while (node_->now() - start < rclcpp::Duration(250ms)) {
+    pub_executor_.spin_some();
+    node_executor_.spin_some();
+    target_executor_.spin_some();
+    state_event_executor_.spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0)
+    << "speed must NOT change when mask cell at robot pose is OCC_GRID_UNKNOWN";
+}
+
+// =========================================================================
+// Test 13 — robot pose outside mask bounds: filter resets to state 0.
+// Per process() contract: worldToMap() failure on a previously-initialized
+// filter triggers an explicit applyState(0) reset.
+// =========================================================================
+TEST_F(TestZpf, RobotOutsideMaskResetsToState0)
+{
+  // Drive into state 1 first (with a nominal so reset has somewhere to go).
+  ASSERT_TRUE(createFilter(
+      {1},
+  {
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.4),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
+      },
+      1)) << "Filter did not become active";
+
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.4;}))
+    << "speed never became 0.4 in state 1";
+
+  // Pose far outside the 4x4 mask (origin (0,0), resolution 1.0 → bounds [0,4]).
+  runProcess(/*pose_x=*/100.0, /*pose_y=*/100.0);
+
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 1.0;}))
+    << "speed never restored to nominal after out-of-mask pose";
+
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0);
+}
+
+// =========================================================================
+// Test 14 — F-4 regression: longest-prefix-match for overlapping target
+// names. With target_nodes = ["zpf", "zpf_target_node"] and an override
+// state_1.zpf_target_node.speed, the parser must route to "zpf_target_node"
+// (longer match), NOT to "zpf" (shorter prefix that would falsely succeed
+// under a naive starts-with check). Only the longest-prefix path actually
+// reaches the live target node and mutates its parameter.
+// =========================================================================
+TEST_F(TestZpf, LongestPrefixMatchForOverlappingTargetNodes)
+{
+  ASSERT_TRUE(createFilter(
+      {1},
+  {
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.7),
+      },
+      1,
+      "",
+      {"zpf", "zpf_target_node"})) << "Filter did not become active";
+
+  runProcess();
+
+  // If longest-prefix wins, target=zpf_target_node, param=speed → 0.7 lands.
+  // If naive shortest-prefix were chosen, target would be the bogus "zpf"
+  // (no live node) and zpf_target_node.speed would stay at the default 1.0.
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.7;}))
+    << "speed never became 0.7 — longest-prefix-match likely broken";
+
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 0.7);
 }
 
 // =========================================================================

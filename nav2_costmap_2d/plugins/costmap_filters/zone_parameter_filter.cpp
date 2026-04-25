@@ -14,8 +14,10 @@
 
 #include "nav2_costmap_2d/costmap_filters/zone_parameter_filter.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,6 +34,26 @@ namespace
 // rclcpp::Parameter's .get_name(). Chosen because ROS 2 parameter names
 // allow dots and slashes but not colons, so this is collision-free.
 constexpr char kNodeParamSep = ':';
+
+// Match `suffix` against an explicit list of target-node names, using
+// longest-prefix-first (so that a nested-namespace target like
+// "local_costmap.inflation_layer" is matched before its prefix
+// "local_costmap"). `sorted_nodes` MUST be pre-sorted by length descending.
+// Returns (target_node, param_path) on hit, or std::nullopt on miss.
+std::optional<std::pair<std::string, std::string>>
+matchTargetNode(
+  const std::string & suffix, const std::vector<std::string> & sorted_nodes)
+{
+  for (const auto & node : sorted_nodes) {
+    if (suffix.size() > node.size() + 1 &&
+      suffix.compare(0, node.size(), node) == 0 &&
+      suffix[node.size()] == '.')
+    {
+      return std::make_pair(node, suffix.substr(node.size() + 1));
+    }
+  }
+  return std::nullopt;
+}
 }  // namespace
 
 ZoneParameterFilter::ZoneParameterFilter()
@@ -206,6 +228,35 @@ void ZoneParameterFilter::loadStateConfig()
     return;
   }
 
+  // target_nodes: explicit list of nodes the filter will mutate. Required
+  // because ROS 2 parameter names admit dots — without an explicit list the
+  // parser cannot unambiguously locate the node-name boundary in a flattened
+  // override key like `<plugin>.state_1.<target>.<param.with.dots>`.
+  // Schema is also self-documenting and catches typos at config-load.
+  std::vector<std::string> target_nodes_input =
+    node->declare_or_get_parameter<std::vector<std::string>>(
+    name_ + ".target_nodes", std::vector<std::string>{});
+
+  if (target_nodes_input.empty()) {
+    RCLCPP_WARN(
+      logger_,
+      "ZoneParameterFilter: target_nodes is empty; cannot parse state overrides. "
+      "Set `target_nodes: [node_a, node_b]` in YAML.");
+    return;
+  }
+
+  // Sort by length descending so longest-prefix-first matching works for
+  // nested-namespace targets (e.g., \"local_costmap.inflation_layer\" wins
+  // over the bare prefix \"local_costmap\").
+  std::vector<std::string> sorted_target_nodes = target_nodes_input;
+  std::sort(
+    sorted_target_nodes.begin(), sorted_target_nodes.end(),
+    [](const std::string & a, const std::string & b) {return a.size() > b.size();});
+
+  RCLCPP_INFO(
+    logger_,
+    "ZoneParameterFilter: %zu target_nodes registered.", sorted_target_nodes.size());
+
   // For each state_id, expect a sub-namespace `state_<N>.<target_node>.<param_path>: value`
   // in the YAML overrides. We discover them by iterating overrides with the matching prefix.
   auto overrides = node->get_node_parameters_interface()->get_parameter_overrides();
@@ -228,23 +279,21 @@ void ZoneParameterFilter::loadStateConfig()
       }
       // override_name is like "<plugin_name>.state_<N>.<target_node>.<param_path>"
       // Strip the prefix to get "<target_node>.<param_path>".
-      std::string suffix = override_name.substr(state_prefix.size());
-      // Split on the first dot — left of dot = target_node, right = param_path.
-      auto dot_pos = suffix.find('.');
-      if (dot_pos == std::string::npos) {
+      const std::string suffix = override_name.substr(state_prefix.size());
+      // Match against the explicit target_nodes list (longest-prefix wins).
+      const auto match = matchTargetNode(suffix, sorted_target_nodes);
+      if (!match) {
         RCLCPP_WARN(
           logger_,
-          "ZoneParameterFilter: state_%u entry %s has no dot — expected "
-          "<target_node>.<param_path>; skipping.",
+          "ZoneParameterFilter: state_%u entry '%s' did not match any registered "
+          "target_node. Add the node to `target_nodes` in YAML.",
           state_id, override_name.c_str());
         continue;
       }
-      std::string target_node = suffix.substr(0, dot_pos);
-      std::string target_param = suffix.substr(dot_pos + 1);
       // Stored Parameter name is "<target_node>:<target_param>"; the colon
       // separator routes applyState() to the right per-node async client.
       params_for_state.emplace_back(
-        target_node + kNodeParamSep + target_param, override_value);
+        match->first + kNodeParamSep + match->second, override_value);
     }
 
     if (params_for_state.empty()) {
@@ -276,20 +325,18 @@ void ZoneParameterFilter::loadStateConfig()
     if (override_name.rfind(nominal_prefix, 0) != 0) {
       continue;
     }
-    std::string suffix = override_name.substr(nominal_prefix.size());
-    auto dot_pos = suffix.find('.');
-    if (dot_pos == std::string::npos) {
+    const std::string suffix = override_name.substr(nominal_prefix.size());
+    const auto match = matchTargetNode(suffix, sorted_target_nodes);
+    if (!match) {
       RCLCPP_WARN(
         logger_,
-        "ZoneParameterFilter: nominal_defaults entry '%s' has no dot — expected "
-        "<target_node>.<param_path>; skipping.",
+        "ZoneParameterFilter: nominal_defaults entry '%s' did not match any "
+        "registered target_node. Add the node to `target_nodes` in YAML.",
         override_name.c_str());
       continue;
     }
-    const std::string target_node = suffix.substr(0, dot_pos);
-    const std::string target_param = suffix.substr(dot_pos + 1);
-    const std::string stored_name = target_node + kNodeParamSep + target_param;
-    nominal_defaults_[stored_name] = rclcpp::Parameter(target_param, override_value);
+    const std::string stored_name = match->first + kNodeParamSep + match->second;
+    nominal_defaults_[stored_name] = rclcpp::Parameter(match->second, override_value);
   }
   RCLCPP_INFO(
     logger_,
