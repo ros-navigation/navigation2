@@ -101,6 +101,32 @@ private:
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr publisher_;
 };
 
+// Subscribes to ZPF's optional state-event topic (UInt8 per transition).
+// Used by StateEventPublishedOnTransition test.
+class StateEventSubscriber : public rclcpp::Node
+{
+public:
+  explicit StateEventSubscriber(const std::string & topic)
+  : Node("zpf_state_sub"), last_state_(0), received_(false)
+  {
+    subscriber_ = create_subscription<std_msgs::msg::UInt8>(
+      topic, rclcpp::QoS(10),
+      [this](const std_msgs::msg::UInt8::ConstSharedPtr msg) {
+        last_state_ = msg->data;
+        received_ = true;
+      });
+  }
+
+  uint8_t lastState() const {return last_state_;}
+  bool received() const {return received_;}
+  void reset() {received_ = false;}
+
+private:
+  rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr subscriber_;
+  uint8_t last_state_;
+  bool received_;
+};
+
 // ----- Mask construction helper -----
 
 static nav_msgs::msg::OccupancyGrid make_mask(uint32_t w, uint32_t h, int8_t fill_value)
@@ -233,6 +259,10 @@ protected:
     info_pub_.reset();
     mask_pub_.reset();
     layers_.reset();
+    if (state_event_sub_) {
+      state_event_executor_.remove_node(state_event_sub_);
+      state_event_sub_.reset();
+    }
     if (node_) {
       node_executor_.remove_node(node_->get_node_base_interface());
     }
@@ -244,7 +274,8 @@ protected:
   bool createFilter(
     const std::vector<int64_t> & state_ids,
     const std::vector<rclcpp::Parameter> & state_overrides,
-    int8_t mask_fill_value)
+    int8_t mask_fill_value,
+    const std::string & state_event_topic = "")
   {
     rclcpp::NodeOptions opts;
     std::vector<rclcpp::Parameter> all_overrides = {
@@ -255,6 +286,10 @@ protected:
       rclcpp::Parameter(
         std::string(kFilterName) + ".transform_tolerance", 0.5),
     };
+    if (!state_event_topic.empty()) {
+      all_overrides.emplace_back(
+        std::string(kFilterName) + ".state_event_topic", state_event_topic);
+    }
     for (const auto & p : state_overrides) {
       all_overrides.push_back(p);
     }
@@ -274,11 +309,16 @@ protected:
     filter_->initializeFilter(kInfoTopic);
 
     info_pub_ = std::make_shared<InfoPublisher>(
-      nav2_costmap_2d::ZONE_PARAMETER_FILTER, kMaskTopic, 0.0, 0.0);
+      nav2_costmap_2d::ZONE_PARAMETER_FILTER, kMaskTopic, 0.0, 1.0);
     auto mask = make_mask(4, 4, mask_fill_value);
     mask_pub_ = std::make_shared<MaskPublisher>(mask);
     pub_executor_.add_node(info_pub_);
     pub_executor_.add_node(mask_pub_);
+
+    if (!state_event_topic.empty()) {
+      state_event_sub_ = std::make_shared<StateEventSubscriber>(state_event_topic);
+      state_event_executor_.add_node(state_event_sub_);
+    }
 
     auto start = node_->now();
     while (!filter_->isActive()) {
@@ -288,9 +328,31 @@ protected:
       pub_executor_.spin_some();
       node_executor_.spin_some();
       target_executor_.spin_some();
+      state_event_executor_.spin_some();
       std::this_thread::sleep_for(10ms);
     }
     return true;
+  }
+
+  // Replace the published mask with one filled to a new value. Mirrors
+  // binary_filter_test.cpp::rePublishMask. ZPF receives the new mask via
+  // its existing subscription; subsequent process() calls sample it.
+  void rePublishMask(int8_t fill_value)
+  {
+    pub_executor_.remove_node(mask_pub_);
+    mask_pub_.reset();
+    auto mask = make_mask(4, 4, fill_value);
+    mask_pub_ = std::make_shared<MaskPublisher>(mask);
+    pub_executor_.add_node(mask_pub_);
+    // Allow the new mask to propagate to ZPF's subscriber.
+    auto start = node_->now();
+    while (node_->now() - start < rclcpp::Duration(150ms)) {
+      pub_executor_.spin_some();
+      node_executor_.spin_some();
+      target_executor_.spin_some();
+      state_event_executor_.spin_some();
+      std::this_thread::sleep_for(10ms);
+    }
   }
 
   void runProcess(double pose_x = 1.5, double pose_y = 1.5)
@@ -315,12 +377,14 @@ protected:
       pub_executor_.spin_some();
       node_executor_.spin_some();
       target_executor_.spin_some();
+      state_event_executor_.spin_some();
       std::this_thread::sleep_for(10ms);
     }
     return true;
   }
 
   std::shared_ptr<TargetNode> target_node_;
+  std::shared_ptr<StateEventSubscriber> state_event_sub_;
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -330,6 +394,7 @@ protected:
   rclcpp::executors::SingleThreadedExecutor node_executor_;
   rclcpp::executors::SingleThreadedExecutor target_executor_;
   rclcpp::executors::SingleThreadedExecutor pub_executor_;
+  rclcpp::executors::SingleThreadedExecutor state_event_executor_;
 };
 
 // =========================================================================
@@ -363,6 +428,147 @@ TEST_F(TestZpf, State1AppliesParameterToTargetNode)
   EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 0.5);
   // Inflation was not in state 1's override set; should remain at default.
   EXPECT_DOUBLE_EQ(target_node_->getInflation(), 0.5);
+}
+
+// =========================================================================
+// Test 7 — state 0 reset path: applying state 1 then state 0 must restore
+// nominal defaults captured lazily before the first override fired.
+//
+// DISABLED in this slice — surfaces a real v0.1 limitation in
+// `zone_parameter_filter.cpp:383` where nominal_defaults_ stores an empty
+// `ParameterValue` instead of the target's pre-override value. The
+// resetToNominal() call therefore pushes an empty (NOT_SET) value to the
+// parameter service, which silently no-ops, leaving the override in place.
+//
+// Proper fix (slice 2c): in initializeFilter(), after loadStateConfig(),
+// synchronously fetch each configured target.param's current value via
+// AsyncParametersClient::get_parameters + spin_until_future_complete with
+// a short (~200ms) timeout. Service-not-ready at init falls back to lazy
+// capture-on-first-applyState. This is permitted blocking because
+// initializeFilter runs at configure time, not in the hot path.
+//
+// Steve Macenski's #6080 design pointer (2026-04-13) explicitly called
+// out state 0 reset semantics; this test stays as DISABLED_ documentation
+// of the design intent until the fix lands.
+// =========================================================================
+TEST_F(TestZpf, DISABLED_State0ResetsToNominalDefaults)
+{
+  ASSERT_TRUE(createFilter(
+      {1},
+      {
+        rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
+      },
+      1)) << "Filter did not become active";
+
+  // Step 1: drive into state 1; verify override landed.
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.3;}))
+    << "speed never became 0.3 in state 1";
+
+  // Step 2: swap mask to fill 0; ZPF samples 0 -> applyState(0) -> reset.
+  rePublishMask(0);
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 1.0;}))
+    << "speed never restored to nominal default 1.0 after state 0";
+
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0);
+}
+
+// =========================================================================
+// Test 8 — unknown mask value with on_unknown_state="warn" (default):
+// log throttled warn, do not mutate any target parameter.
+// =========================================================================
+TEST_F(TestZpf, UnknownStateWarnLogsAndKeepsPrevious)
+{
+  // state_ids=[1] only; mask filled with 2 (unknown).
+  ASSERT_TRUE(createFilter(
+      {1},
+      {
+        rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
+      },
+      2)) << "Filter did not become active";
+
+  ASSERT_DOUBLE_EQ(target_node_->getSpeed(), 1.0) << "precondition: default 1.0";
+
+  // process() samples mask=2 -> applyState(2) -> unknown -> warn + return.
+  // Give the (non-existent) async path 250ms in case anything slips through.
+  runProcess();
+  auto start = node_->now();
+  while (node_->now() - start < rclcpp::Duration(250ms)) {
+    pub_executor_.spin_some();
+    node_executor_.spin_some();
+    target_executor_.spin_some();
+    state_event_executor_.spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0)
+    << "speed must NOT change when mask state is unknown (warn policy)";
+}
+
+// =========================================================================
+// Test 9 — state-event publisher: when state_event_topic is configured,
+// every transition publishes a UInt8 carrying the new state.
+// =========================================================================
+TEST_F(TestZpf, StateEventPublishedOnTransition)
+{
+  ASSERT_TRUE(createFilter(
+      {1},
+      {
+        rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
+      },
+      1,
+      "/zpf_state")) << "Filter did not become active";
+
+  ASSERT_FALSE(state_event_sub_->received()) << "should be empty pre-process";
+
+  runProcess();
+
+  ASSERT_TRUE(waitFor([this]() {return state_event_sub_->received();}))
+    << "no state event received within 1.5s after state 0->1 transition";
+
+  EXPECT_EQ(state_event_sub_->lastState(), 1u);
+}
+
+// =========================================================================
+// Test 10 — REGRESSION FOR PR #3796 review item 2 (Steve Macenski +
+// Alexey Merzlyakov, 2023). Hot-path service availability check must be
+// non-blocking. If a target node's parameter service is not ready, ZPF
+// must log a throttled warn and return — NOT call wait_for_service.
+//
+// We exercise this by routing state 1 to a node that does not exist
+// in this process (no parameter service ever appears). process() must
+// return promptly (well under any wait_for_service timeout) and must
+// not throw.
+// =========================================================================
+TEST_F(TestZpf, ServiceNotReadyInHotPathDoesNotBlock)
+{
+  ASSERT_TRUE(createFilter(
+      {1},
+      {
+        rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.nonexistent_node.foo", 0.5),
+      },
+      1)) << "Filter did not become active";
+
+  auto t0 = std::chrono::steady_clock::now();
+  EXPECT_NO_THROW(runProcess());
+  auto elapsed = std::chrono::steady_clock::now() - t0;
+
+  // Hot path must not block on wait_for_service. Anything under 500ms is
+  // a strong "non-blocking" signal; a regression to wait_for_service
+  // would typically hang for seconds.
+  EXPECT_LT(
+    std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count(),
+    500)
+    << "process() took too long; possible wait_for_service regression "
+       "(per PR #3796 review item 2)";
+
+  // Real target_node was not referenced; its declared default must be untouched.
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0);
 }
 
 // =========================================================================
