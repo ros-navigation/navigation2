@@ -43,7 +43,7 @@ Controller::Controller(
   v_linear_max_ = node->declare_or_get_parameter("controller.v_linear_max", 0.25);
   v_angular_max_ = node->declare_or_get_parameter("controller.v_angular_max", 0.75);
   slowdown_radius_ = node->declare_or_get_parameter("controller.slowdown_radius", 0.25);
-  deceleration_max_ = node->declare_or_get_parameter("controller.deceleration_max", 0.5);
+  deceleration_max_ = node->declare_or_get_parameter("controller.deceleration_max", 2.5);
   rotate_to_heading_angular_vel_ = node->declare_or_get_parameter(
     "controller.rotate_to_heading_angular_vel", 1.0);
   rotate_to_heading_max_angular_accel_ = node->declare_or_get_parameter(

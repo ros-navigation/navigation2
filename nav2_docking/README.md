@@ -226,6 +226,7 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | controller.v_linear_max | Maximum linear velocity (m/s) | double | 0.25    |
 | controller.v_angular_max | Maximum angular velocity (rad/s) produced by the control law | double | 0.75    |
 | controller.slowdown_radius | Radius (m) around the goal pose in which the robot will start to slow down | double | 0.25     |
+| controller.deceleration_max | Maximum deceleration (m/s²) used to compute a velocity limit based on distance to the goal: `v = sqrt(2 * dist * deceleration_max)` | double | 2.5     |
 | controller.rotate_to_heading_angular_vel | Angular velocity (rad/s) to rotate to the goal heading when rotate_to_dock is enabled | double | 1.0    |
 | controller.rotate_to_heading_max_angular_accel | Maximum angular acceleration (rad/s^2) to rotate to the goal heading when rotate_to_dock is enabled | double | 3.2    |
 | controller.use_collision_detection | Whether to use collision detection to avoid obstacles | bool | true     |
