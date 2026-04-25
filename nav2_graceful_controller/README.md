@@ -24,6 +24,7 @@ The smooth control law is a pose-following kinematic control law that generates 
 | `v_linear_max` | Maximum linear velocity. Units: meters/sec. |
 | `v_angular_max` | Maximum angular velocity produced by the control law. Units: radians/sec. |
 | `slowdown_radius` | Radius around the goal pose in which the robot will start to slow down. Units: meters. |
+| `deceleration_max` | Maximum deceleration (m/s²) used to compute a velocity limit based on distance to the goal: `v = sqrt(2 * dist * deceleration_max)`. Units: m/s². |
 | `initial_rotation` | Enable a rotation in place to the goal before starting the path. The control law may generate large sweeping arcs to the goal pose, depending on the initial robot orientation and k_phi, k_delta. |
 | `initial_rotation_min_angle` | The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if `initial_rotation` is enabled. |
 | `final_rotation` | Similar to `initial_rotation`, the control law can generate large arcs when the goal orientation is not aligned with the path. If this is enabled, the final pose will be ignored and the robot will follow the orientation of he path and will make a final rotation in place to the goal orientation. |
