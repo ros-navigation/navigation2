@@ -398,6 +398,49 @@ TEST(SmacTest, test_smac_lattice_omni_reconfigure)
   nodeLattice.reset();
 }
 
+TEST(SmacTest, test_smac_lattice_smoother_coverage)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides(
+    {rclcpp::Parameter("test.smooth_path", true)});
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacLatticeSmootherCovTest", options);
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  node->configure();
+  node->activate();
+
+  auto planner = std::make_unique<LatticeWrap>();
+  EXPECT_NO_THROW(planner->configure(node, "test", nullptr, costmap_ros));
+  planner->activate();
+  EXPECT_TRUE(planner->hasSmootherInitialized());
+
+  auto dummy_cancel_checker = []() {return false;};
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = 0.0;
+  start.pose.position.y = 0.0;
+  start.pose.orientation.w = 1.0;
+  goal.pose.position.x = 1.0;
+  goal.pose.position.y = 1.0;
+  goal.pose.orientation.w = 1.0;
+
+  nav_msgs::msg::Path plan;
+  EXPECT_NO_THROW(plan = planner->createPlan(start, goal, dummy_cancel_checker));
+  EXPECT_FALSE(plan.poses.empty());
+
+  planner->deactivate();
+  planner->cleanup();
+  planner.reset();
+  costmap_ros->on_cleanup(rclcpp_lifecycle::State());
+  costmap_ros.reset();
+  node->deactivate();
+  node->cleanup();
+  node.reset();
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

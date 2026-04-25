@@ -180,6 +180,80 @@ TEST(SmootherTest, test_full_smoother)
   delete costmap;
 }
 
+// Regression test for #5330: SMAC smoother must detect oriented footprint collisions
+// for non-circular robots. A wide rectangular robot travelling diagonally through a
+// narrow corridor may have a clear center-cost path but a colliding oriented footprint.
+TEST(SmootherTest, test_footprint_collision_detection)
+{
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacSmootherFootprintTest");
+  nav2_smac_planner::SmootherParams params;
+  params.get(node, "test");
+  double maxtime = 1.0;
+
+  auto smoother = std::make_unique<SmootherWrapper>(params);
+  smoother->initialize(0.4);
+
+  // 100x100 costmap, 0.1m/cell → 10m x 10m
+  nav2_costmap_2d::Costmap2D * costmap =
+    new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
+
+  // Obstacle walls at y=40..44 and y=56..60 (cells), leaving a 1-cell wide gap at y=45..55.
+  // A circular robot (radius ≤ 0.5m) passes through the gap safely via center-cost check.
+  // A wide rectangular robot (width 1.2m) cannot fit without footprint collision.
+  for (unsigned int i = 0; i < 100; ++i) {
+    for (unsigned int j = 40; j <= 44; ++j) {
+      costmap->setCost(i, j, 254);  // lethal obstacle — lower wall
+    }
+    for (unsigned int j = 56; j <= 60; ++j) {
+      costmap->setCost(i, j, 254);  // lethal obstacle — upper wall
+    }
+  }
+
+  // Path: straight line from (0.5, 5.0) to (9.5, 5.0) — centre of the gap (y=5.0m = cell 50).
+  // Center-cost check passes because cell 50 is obstacle-free.
+  nav_msgs::msg::Path plan;
+  plan.header.frame_id = "map";
+  for (int i = 5; i <= 90; i += 5) {
+    geometry_msgs::msg::PoseStamped p;
+    p.header = plan.header;
+    p.pose.position.x = static_cast<double>(i) * 0.1;
+    p.pose.position.y = 5.0;
+    p.pose.orientation.w = 1.0;
+    plan.poses.push_back(p);
+  }
+
+  // Without footprint: smoothing succeeds (center-cost only).
+  auto plan_copy = plan;
+  EXPECT_TRUE(smoother->smooth(plan_copy, costmap, maxtime));
+
+  // With a narrow footprint (0.4m wide): also succeeds — fits in the gap.
+  nav2_costmap_2d::Footprint narrow_footprint;
+  geometry_msgs::msg::Point pt;
+  pt.x = 0.4; pt.y = 0.2; narrow_footprint.push_back(pt);
+  pt.x = 0.4; pt.y = -0.2; narrow_footprint.push_back(pt);
+  pt.x = -0.4; pt.y = -0.2; narrow_footprint.push_back(pt);
+  pt.x = -0.4; pt.y = 0.2; narrow_footprint.push_back(pt);
+
+  plan_copy = plan;
+  EXPECT_TRUE(smoother->smooth(plan_copy, costmap, maxtime, narrow_footprint));
+
+  // With a wide footprint (1.2m wide): oriented footprint check detects collision at
+  // the very first pose (footprint extends ±0.6m in y, touching the lethal walls at
+  // y=4.4 and y=5.6). The smoothed path is truncated at idx=0 (empty prefix) and
+  // false is returned; the caller's path segment is left with the original planner poses.
+  nav2_costmap_2d::Footprint wide_footprint;
+  pt.x = 0.4; pt.y = 0.6; wide_footprint.push_back(pt);
+  pt.x = 0.4; pt.y = -0.6; wide_footprint.push_back(pt);
+  pt.x = -0.4; pt.y = -0.6; wide_footprint.push_back(pt);
+  pt.x = -0.4; pt.y = 0.6; wide_footprint.push_back(pt);
+
+  plan_copy = plan;
+  EXPECT_FALSE(smoother->smooth(plan_copy, costmap, maxtime, wide_footprint));
+
+  delete costmap;
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
