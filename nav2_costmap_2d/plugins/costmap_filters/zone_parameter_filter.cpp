@@ -242,7 +242,7 @@ void ZoneParameterFilter::loadStateConfig()
       std::string target_node = suffix.substr(0, dot_pos);
       std::string target_param = suffix.substr(dot_pos + 1);
       // Stored Parameter name is "<target_node>:<target_param>"; the colon
-      // separator lets applyState() route to the right per-node async client.
+      // separator routes applyState() to the right per-node async client.
       params_for_state.emplace_back(
         target_node + kNodeParamSep + target_param, override_value);
     }
