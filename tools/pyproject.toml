@@ -14,11 +14,18 @@ force_single_line = false
 line_length = 99
 
 [tool.mypy]
+namespace_packages = true
 explicit_package_bases = true
 strict = true
+python_version = "3.10"
+disable_error_code = ["import-untyped"]
+warn_unused_ignores = false
+disallow_subclassing_any = false
 
 [[tool.mypy.overrides]]
 module = [
+    "launch_ros.*",
+    "rclpy.*",
     "matplotlib.*",
     "rtree.*",
     "launch.*",
