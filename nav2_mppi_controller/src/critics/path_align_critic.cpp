@@ -23,6 +23,7 @@ void PathAlignCritic::initialize()
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 10.0f);
+  getParam(min_distance_occupancy_check_, "min_distance_occupancy_check", 2.0f);
   getParam(max_path_occupancy_ratio_, "max_path_occupancy_ratio", 0.07f);
   getParam(offset_from_furthest_, "offset_from_furthest", 20);
   getParam(trajectory_point_step_, "trajectory_point_step", 4);
@@ -43,31 +44,25 @@ void PathAlignCritic::score(CriticData & data)
     return;
   }
 
-  // Don't apply when first getting bearing w.r.t. the path
+  // Only apply critic when trajectories reach far enough along the way path.
+  // This ensures that path alignment is only considered when actually tracking the path
+  // (e.g. not driving very slow or when first getting bearing w.r.t. the path)
   utils::setPathFurthestPointIfNotSet(data);
-  // Up to furthest only, closest path point is always 0 from path handler
-  const size_t path_segments_count = *data.furthest_reached_path_point;
-  float path_segments_flt = static_cast<float>(path_segments_count);
-  if (path_segments_count < offset_from_furthest_) {
-    return;
-  }
+  const size_t furthest_reached_path_point = *data.furthest_reached_path_point;
 
-  // Don't apply when dynamic obstacles are blocking significant proportions of the local path
-  utils::setPathCostsIfNotSet(data, costmap_ros_);
-  std::vector<bool> & path_pts_valid = *data.path_pts_valid;
-  float invalid_ctr = 0.0f;
-  for (size_t i = 0; i < path_segments_count; i++) {
-    if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
-    if (invalid_ctr / path_segments_flt > max_path_occupancy_ratio_ && invalid_ctr > 2.0f) {
-      return;
-    }
+  if (furthest_reached_path_point < offset_from_furthest_) {
+    return;
   }
 
   const size_t batch_size = data.trajectories.x.rows();
   Eigen::ArrayXf cost(data.costs.rows());
   cost.setZero();
 
-  // Find integrated distance in the path
+  // Find integrated distance in the path and find the first path IDX further than
+  //  max(min_distance_occupancy_check_, furthest_reached_path_point)
+  const size_t path_segments_count = data.path.x.size() - 1;
+  // initialize the occupancy check id to max, in case the entire path is within the distance
+  size_t occupancy_check_distance_idx = path_segments_count;
   std::vector<float> path_integrated_distances(path_segments_count, 0.0f);
   std::vector<utils::Pose2D> path(path_segments_count);
   float dx = 0.0f, dy = 0.0f;
@@ -80,6 +75,26 @@ void PathAlignCritic::score(CriticData & data)
     dx = data.path.x(i) - pose.x;
     dy = data.path.y(i) - pose.y;
     path_integrated_distances[i] = path_integrated_distances[i - 1] + sqrtf(dx * dx + dy * dy);
+
+    if (path_integrated_distances[i] <= min_distance_occupancy_check_ ||
+      i < furthest_reached_path_point)
+    {
+      occupancy_check_distance_idx = (i + 1 < path_segments_count) ? i + 1 : i;
+    }
+  }
+
+  // Don't apply when dynamic obstacles are blocking significant proportions of the local path
+  const float occupancy_check_distance_idx_flt = static_cast<float>(occupancy_check_distance_idx);
+  utils::setPathCostsIfNotSet(data, costmap_ros_);
+  std::vector<bool> & path_pts_valid = *data.path_pts_valid;
+  float invalid_ctr = 0.0f;
+  for (size_t i = 0; i < occupancy_check_distance_idx; i++) {
+    if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
+    if (invalid_ctr / occupancy_check_distance_idx_flt > max_path_occupancy_ratio_ &&
+      invalid_ctr > 2.0f)
+    {
+      return;
+    }
   }
 
   // Finish populating the path vector
@@ -118,6 +133,10 @@ void PathAlignCritic::score(CriticData & data)
     path_pt = 0u;
     float Tx_m1 = T_x(t, 0);
     float Ty_m1 = T_y(t, 0);
+    // At each (strided) traj point, find the path point whose integrated distance along
+    // the path is closest to the trajectory point's integrated distance along the trajectory.
+    // if that path point is not in collision, compute the Euclidean distance between the matching
+    // path pt & traj pt the total cost is the average of those distances across the trajectory
     for (int p = 1; p < traj_sampled_size; p++) {
       const float Tx = T_x(t, p);
       const float Ty = T_y(t, p);
