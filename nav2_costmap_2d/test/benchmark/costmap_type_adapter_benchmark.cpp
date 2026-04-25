@@ -38,9 +38,6 @@ static nav2_costmap_2d::Costmap2DStamped make_stamped(
 {
   nav2_costmap_2d::Costmap2DStamped s;
   s.header.frame_id = "map";
-  s.metadata.resolution = 0.05f;
-  s.metadata.size_x = size_x;
-  s.metadata.size_y = size_y;
   s.costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(
     size_x, size_y, 0.05, 0.0, 0.0);
   auto * data = s.costmap->getCharMap();
