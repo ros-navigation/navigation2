@@ -58,7 +58,8 @@ void ZoneParameterFilter::initializeFilter(
     node->declare_or_get_parameter<std::string>(name_ + "." + "state_event_topic", std::string(""));
 
   std::string unknown_state_str =
-    node->declare_or_get_parameter<std::string>(name_ + "." + "on_unknown_state", std::string("warn"));
+    node->declare_or_get_parameter<std::string>(name_ + "." + "on_unknown_state",
+      std::string("warn"));
   if (unknown_state_str == "throw") {
     unknown_state_policy_ = UnknownStatePolicy::kThrow;
   } else {
@@ -135,7 +136,8 @@ void ZoneParameterFilter::filterInfoCallback(
 
   if (msg->type != ZONE_PARAMETER_FILTER) {
     RCLCPP_ERROR(
-      logger_, "ZoneParameterFilter: CostmapFilterInfo type is %i, expected %i (ZONE_PARAMETER_FILTER)",
+      logger_,
+        "ZoneParameterFilter: CostmapFilterInfo type is %i, expected %i (ZONE_PARAMETER_FILTER)",
       msg->type, ZONE_PARAMETER_FILTER);
     return;
   }
@@ -448,8 +450,9 @@ void ZoneParameterFilter::issueAsyncSetParameters(
     return;
   }
 
-  auto future = client_it->second->set_parameters(params);
-  pending_futures_.push_back(future.share());
+  // AsyncParametersClient::set_parameters returns std::shared_future directly;
+  // no .share() needed (it's already shared).
+  pending_futures_.push_back(client_it->second->set_parameters(params));
 }
 
 void ZoneParameterFilter::drainPendingFutures()

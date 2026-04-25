@@ -69,7 +69,10 @@ public:
     publisher_->publish(std::move(msg));
   }
 
-  ~InfoPublisher() override { publisher_.reset(); }
+  ~InfoPublisher() override
+  {
+    publisher_.reset();
+  }
 
 private:
   rclcpp::Publisher<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr publisher_;
@@ -86,7 +89,10 @@ public:
     publisher_->publish(mask);
   }
 
-  ~MaskPublisher() override { publisher_.reset(); }
+  ~MaskPublisher() override
+  {
+    publisher_.reset();
+  }
 
 private:
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr publisher_;
