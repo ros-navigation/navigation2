@@ -27,6 +27,7 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
@@ -34,10 +35,12 @@
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "std_msgs/msg/u_int8.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_costmap_2d/costmap_filters/zone_parameter_filter.hpp"
 
@@ -186,6 +189,180 @@ TEST(ZoneParameterFilterScaffold, MaskHelperConstructsExpectedShape)
   EXPECT_EQ(mask.data[0], 1);
   EXPECT_EQ(mask.data[15], 1);
   EXPECT_EQ(mask.header.frame_id, "map");
+}
+
+// =========================================================================
+// Lifecycle fixture (Slice 2a) — first real test against a live filter.
+//
+// Mirrors binary_filter_test.cpp's TestNode pattern, adapted for ZPF's
+// parameter-mutation semantics:
+//   * a separate TargetNode hosts the parameters ZPF will mutate
+//   * per-state YAML overrides feed the state map via parameter_overrides
+//     (ZPF reads via get_parameter_overrides() in loadStateConfig)
+//   * ZPF becomes active once info + mask are received
+//   * process() at a state-1 mask cell triggers an async param-set on
+//     TargetNode; we spin both executors and assert the value lands
+// =========================================================================
+
+class TargetNode : public rclcpp::Node
+{
+public:
+  TargetNode()
+  : rclcpp::Node("zpf_target_node")
+  {
+    declare_parameter("speed", 1.0);
+    declare_parameter("inflation", 0.5);
+  }
+
+  double getSpeed() {return get_parameter("speed").as_double();}
+  double getInflation() {return get_parameter("inflation").as_double();}
+};
+
+class TestZpf : public ::testing::Test
+{
+protected:
+  void SetUp() override
+  {
+    target_node_ = std::make_shared<TargetNode>();
+    target_executor_.add_node(target_node_);
+  }
+
+  void TearDown() override
+  {
+    filter_.reset();
+    info_pub_.reset();
+    mask_pub_.reset();
+    layers_.reset();
+    if (node_) {
+      node_executor_.remove_node(node_->get_node_base_interface());
+    }
+    node_.reset();
+    target_executor_.remove_node(target_node_);
+    target_node_.reset();
+  }
+
+  bool createFilter(
+    const std::vector<int64_t> & state_ids,
+    const std::vector<rclcpp::Parameter> & state_overrides,
+    int8_t mask_fill_value)
+  {
+    rclcpp::NodeOptions opts;
+    std::vector<rclcpp::Parameter> all_overrides = {
+      rclcpp::Parameter(std::string(kFilterName) + ".state_ids", state_ids),
+      rclcpp::Parameter(
+        std::string(kFilterName) + ".filter_info_topic",
+        std::string(kInfoTopic)),
+      rclcpp::Parameter(
+        std::string(kFilterName) + ".transform_tolerance", 0.5),
+    };
+    for (const auto & p : state_overrides) {
+      all_overrides.push_back(p);
+    }
+    opts.parameter_overrides(all_overrides);
+
+    node_ = std::make_shared<nav2::LifecycleNode>("zpf_test_host", opts);
+    node_executor_.add_node(node_->get_node_base_interface());
+
+    layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>(
+      "map", false, false);
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_buffer_->setUsingDedicatedThread(true);
+
+    filter_ = std::make_shared<nav2_costmap_2d::ZoneParameterFilter>();
+    filter_->initialize(
+      layers_.get(), kFilterName, tf_buffer_.get(), node_, nullptr);
+    filter_->initializeFilter(kInfoTopic);
+
+    info_pub_ = std::make_shared<InfoPublisher>(
+      nav2_costmap_2d::ZONE_PARAMETER_FILTER, kMaskTopic, 0.0, 0.0);
+    auto mask = make_mask(4, 4, mask_fill_value);
+    mask_pub_ = std::make_shared<MaskPublisher>(mask);
+    pub_executor_.add_node(info_pub_);
+    pub_executor_.add_node(mask_pub_);
+
+    auto start = node_->now();
+    while (!filter_->isActive()) {
+      if (node_->now() - start > rclcpp::Duration(2s)) {
+        return false;
+      }
+      pub_executor_.spin_some();
+      node_executor_.spin_some();
+      target_executor_.spin_some();
+      std::this_thread::sleep_for(10ms);
+    }
+    return true;
+  }
+
+  void runProcess(double pose_x = 1.5, double pose_y = 1.5)
+  {
+    nav2_costmap_2d::Costmap2D costmap(4, 4, 1.0, 0.0, 0.0, 0);
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = pose_x;
+    pose.position.y = pose_y;
+    pose.position.z = 0.0;
+    pose.orientation.w = 1.0;
+    filter_->process(costmap, 0, 0, 4, 4, pose);
+  }
+
+  template<typename Pred>
+  bool waitFor(Pred pred, std::chrono::milliseconds timeout = 1500ms)
+  {
+    auto start = node_->now();
+    while (!pred()) {
+      if (node_->now() - start > rclcpp::Duration(timeout)) {
+        return false;
+      }
+      pub_executor_.spin_some();
+      node_executor_.spin_some();
+      target_executor_.spin_some();
+      std::this_thread::sleep_for(10ms);
+    }
+    return true;
+  }
+
+  std::shared_ptr<TargetNode> target_node_;
+  nav2::LifecycleNode::SharedPtr node_;
+  std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<nav2_costmap_2d::ZoneParameterFilter> filter_;
+  std::shared_ptr<InfoPublisher> info_pub_;
+  std::shared_ptr<MaskPublisher> mask_pub_;
+  rclcpp::executors::SingleThreadedExecutor node_executor_;
+  rclcpp::executors::SingleThreadedExecutor target_executor_;
+  rclcpp::executors::SingleThreadedExecutor pub_executor_;
+};
+
+// =========================================================================
+// Test 6 — first real lifecycle case: state 1 → param lands on target node.
+//
+// This is the minimal end-to-end happy path. State 1 is configured to set
+// `speed=0.5` on `zpf_target_node`. Mask is filled with value 1, so any
+// pose inside the mask samples state 1. After process(), the async
+// parameter-set should propagate to the target node within timeout.
+// =========================================================================
+TEST_F(TestZpf, State1AppliesParameterToTargetNode)
+{
+  ASSERT_TRUE(createFilter(
+      {1},
+      {
+        rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
+      },
+      1)) << "Filter did not become active within 2s";
+
+  // Sanity: target node starts at its declared default.
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0);
+
+  // First process() sees state transition 0 → 1 and fires async set_parameters.
+  runProcess();
+
+  // Wait for the parameter to actually land on the target node.
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.5;}))
+    << "Target node 'speed' did not become 0.5 within 1.5s";
+
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 0.5);
+  // Inflation was not in state 1's override set; should remain at default.
+  EXPECT_DOUBLE_EQ(target_node_->getInflation(), 0.5);
 }
 
 // =========================================================================
