@@ -1,0 +1,6 @@
+<library path="geometric_planner">
+  <class type="nav2_geometric_planners::GeometricPlanner"
+         base_class_type="nav2_core::GlobalPlanner">
+    <description>Geometric curve planner. Configure solver: bezier | cubic_spline | clothoid</description>
+  </class>
+</library>
