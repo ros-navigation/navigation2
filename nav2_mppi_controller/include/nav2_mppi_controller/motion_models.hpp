@@ -81,9 +81,9 @@ public:
     float max_delta_vy = model_dt_ * control_constraints_.ay_max;
     float min_delta_vy = model_dt_ * control_constraints_.ay_min;
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
-
     unsigned int n_cols = state.vx.cols();
 
+    // Set dynamic limits to the platform velocities from the raw controls sampling
     for (unsigned int i = 1; i < n_cols; i++) {
       auto lower_bound_vx = (state.vx.col(i - 1) >
         0).select(
@@ -93,16 +93,13 @@ public:
         0).select(
         state.vx.col(i - 1) + max_delta_vx,
         state.vx.col(i - 1) - min_delta_vx);
-
-      state.cvx.col(i - 1) = state.cvx.col(i - 1)
+      state.vx.col(i) = state.cvx.col(i - 1)
         .cwiseMax(lower_bound_vx)
         .cwiseMin(upper_bound_vx);
-      state.vx.col(i) = state.cvx.col(i - 1);
 
-      state.cwz.col(i - 1) = state.cwz.col(i - 1)
+      state.wz.col(i) = state.cwz.col(i - 1)
         .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
         .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
-      state.wz.col(i) = state.cwz.col(i - 1);
 
       if (is_holo) {
         auto lower_bound_vy = (state.vy.col(i - 1) >
@@ -113,10 +110,9 @@ public:
           0).select(
           state.vy.col(i - 1) + max_delta_vy,
           state.vy.col(i - 1) - min_delta_vy);
-        state.cvy.col(i - 1) = state.cvy.col(i - 1)
+        state.vy.col(i) = state.cvy.col(i - 1)
           .cwiseMax(lower_bound_vy)
           .cwiseMin(upper_bound_vy);
-        state.vy.col(i) = state.cvy.col(i - 1);
       }
     }
   }
