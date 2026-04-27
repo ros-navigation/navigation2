@@ -27,20 +27,35 @@ target_include_directories(${library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-ament_target_dependencies(${library_name}
-  geometry_msgs
-  nav2_core
-  nav2_costmap_2d
-  nav2_util
-  nav_msgs
-  rclcpp
-  rclcpp_lifecycle
-  rcl_interfaces
-  tf2_ros
-)
-target_link_libraries(${library_name}
-  pluginlib::pluginlib
-)
+
+# Use CMake targets when available (Jazzy+), fall back to ament variables (Humble)
+if(TARGET nav2_core::nav2_core)
+  target_link_libraries(${library_name}
+    ${geometry_msgs_TARGETS}
+    nav2_core::nav2_core
+    nav2_costmap_2d::nav2_costmap_2d_core
+    nav2_util::nav2_util_core
+    ${nav_msgs_TARGETS}
+    rclcpp::rclcpp
+    rclcpp_lifecycle::rclcpp_lifecycle
+    ${rcl_interfaces_TARGETS}
+    tf2_ros::tf2_ros
+    pluginlib::pluginlib
+  )
+else()
+  target_link_libraries(${library_name}
+    ${geometry_msgs_TARGETS}
+    ${nav2_core_LIBRARIES}
+    ${nav2_costmap_2d_LIBRARIES}
+    ${nav2_util_LIBRARIES}
+    ${nav_msgs_TARGETS}
+    rclcpp::rclcpp
+    rclcpp_lifecycle::rclcpp_lifecycle
+    ${rcl_interfaces_TARGETS}
+    tf2_ros::tf2_ros
+    pluginlib::pluginlib
+  )
+endif()
 
 pluginlib_export_plugin_description_file(nav2_core dstar_lite_planner.xml)
 
@@ -68,17 +83,27 @@ if(BUILD_TESTING)
   ament_find_gtest()
 
   nav2_add_gtest(test_dstar_lite test/test_dstar_lite.cpp)
-  ament_target_dependencies(test_dstar_lite
-    nav2_core
-    nav2_costmap_2d
-    nav2_util
-    geometry_msgs
-    rclcpp
-    rclcpp_lifecycle
-  )
-  target_link_libraries(test_dstar_lite
-    ${library_name}
-  )
+  if(TARGET nav2_core::nav2_core)
+    target_link_libraries(test_dstar_lite
+      ${library_name}
+      ${geometry_msgs_TARGETS}
+      nav2_core::nav2_core
+      nav2_costmap_2d::nav2_costmap_2d_core
+      nav2_util::nav2_util_core
+      rclcpp::rclcpp
+      rclcpp_lifecycle::rclcpp_lifecycle
+    )
+  else()
+    target_link_libraries(test_dstar_lite
+      ${library_name}
+      ${geometry_msgs_TARGETS}
+      ${nav2_core_LIBRARIES}
+      ${nav2_costmap_2d_LIBRARIES}
+      ${nav2_util_LIBRARIES}
+      rclcpp::rclcpp
+      rclcpp_lifecycle::rclcpp_lifecycle
+    )
+  endif()
 
   add_subdirectory(benchmark)
 endif()
