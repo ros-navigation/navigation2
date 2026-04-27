@@ -152,7 +152,7 @@ nav_msgs::msg::Path DStarLitePlanner::createPlan(
     planner_->dst_.x, planner_->dst_.y);
 
 #if !__has_include("nav2_ros_common/lifecycle_node.hpp")
-  auto cancel_checker = []() { return false; };
+  auto cancel_checker = []() {return false;};
 #endif
   getPlan(global_path, cancel_checker);
 

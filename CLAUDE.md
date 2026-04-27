@@ -133,3 +133,8 @@ Custom BT nodes are registered via the `BT_BUILTIN_PLUGINS` macro in `nav2_behav
 
 - DCO required: every commit must include `Signed-off-by: ...` line
 - Follow existing commit message style: lowercase, imperative mood, package prefix (e.g., `[smac] fix heuristic lookup`)
+- **All commits must be authored as Yuchen Fan, not Claude Code:**
+  ```bash
+  git -c user.name="Yuchen Fan" -c user.email="2994114386@qq.com" commit -s -m "..."
+  ```
+  Never use `Co-Authored-By: Claude` in commit messages.
