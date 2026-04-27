@@ -26,7 +26,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_core/global_planner.hpp"
+#if __has_include("nav2_core/planner_exceptions.hpp")
+#include "nav2_core/planner_exceptions.hpp"
+#else
 #include "nav2_core/exceptions.hpp"
+#endif
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"

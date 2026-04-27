@@ -18,7 +18,11 @@
 #include <cmath>
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
+#if __has_include("nav2_core/planner_exceptions.hpp")
+#include "nav2_core/planner_exceptions.hpp"
+#else
 #include "nav2_core/exceptions.hpp"
+#endif
 #include "nav2_dstar_lite_planner/dstar_lite.hpp"
 
 namespace nav2_dstar_lite_planner
