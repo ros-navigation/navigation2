@@ -26,15 +26,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#if __has_include("nav2_ros_common/lifecycle_node.hpp")
 #include "nav2_ros_common/lifecycle_node.hpp"
-#endif
 #include "nav2_core/global_planner.hpp"
-#if __has_include("nav2_core/planner_exceptions.hpp")
 #include "nav2_core/planner_exceptions.hpp"
-#else
-#include "nav2_core/exceptions.hpp"
-#endif
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -48,8 +42,6 @@ namespace nav2_dstar_lite_planner
 class DStarLitePlanner : public nav2_core::GlobalPlanner
 {
 public:
-#if __has_include("nav2_ros_common/lifecycle_node.hpp")
-  // Rolling / Jazzy
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
@@ -60,17 +52,6 @@ public:
     const geometry_msgs::msg::PoseStamped & goal,
     const std::vector<geometry_msgs::msg::PoseStamped> & viapoints,
     std::function<bool()> cancel_checker) override;
-#else
-  // Humble
-  void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
-
-  nav_msgs::msg::Path createPlan(
-    const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) override;
-#endif
 
   void cleanup() override;
 

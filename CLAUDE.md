@@ -8,17 +8,18 @@ Nav2 is the official ROS 2 navigation framework, built on a **plugin-based archi
 
 ## Build Commands
 
+**Target ROS distro: Rolling.** This package targets Rolling (not Humble) — same as Nav2 mainline.
+
 ```bash
-# Build with colcon (from workspace root)
-colcon build --symlink-install
+# Docker build + test (recommended — matches CI environment)
+docker build -t nav2-dstar:rolling -f nav2_dstar_lite_planner/Dockerfile .
+docker run --rm nav2-dstar:rolling
 
-# Build a single package
-colcon build --packages-select nav2_costmap_2d
+# Build only (inside Docker or on Rolling host)
+source /opt/ros/rolling/setup.bash
+colcon build --packages-select nav2_dstar_lite_planner --symlink-install
 
-# Build with specific ROS distro sourcing
-source /opt/ros/rolling/setup.bash && colcon build --symlink-install
-
-# Enable code coverage
+# Build with code coverage
 colcon build --cmake-args -DCOVERAGE_ENABLED=ON
 ```
 

@@ -25,17 +25,10 @@
 namespace nav2_dstar_lite_planner
 {
 
-#if __has_include("nav2_ros_common/lifecycle_node.hpp")
 void DStarLitePlanner::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
-#else
-void DStarLitePlanner::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-  std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
-#endif
 {
   parent_node_ = parent;
   auto node = parent_node_.lock();
@@ -81,17 +74,11 @@ void DStarLitePlanner::deactivate()
   param_handler_->deactivate();
 }
 
-#if __has_include("nav2_ros_common/lifecycle_node.hpp")
 nav_msgs::msg::Path DStarLitePlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
   const std::vector<geometry_msgs::msg::PoseStamped> & /*viapoints*/,
   std::function<bool()> cancel_checker)
-#else
-nav_msgs::msg::Path DStarLitePlanner::createPlan(
-  const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & goal)
-#endif
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
 
@@ -151,9 +138,6 @@ nav_msgs::msg::Path DStarLitePlanner::createPlan(
     planner_->src_.x, planner_->src_.y,
     planner_->dst_.x, planner_->dst_.y);
 
-#if !__has_include("nav2_ros_common/lifecycle_node.hpp")
-  auto cancel_checker = []() {return false;};
-#endif
   getPlan(global_path, cancel_checker);
 
   size_t plan_size = global_path.poses.size();
