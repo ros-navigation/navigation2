@@ -2,7 +2,8 @@
 # mypy: ignore-errors
 # Copyright (c) 2024 Nav2 Contributors
 
-"""Generate benchmark comparison report from Google Benchmark JSON output.
+"""
+Generate benchmark comparison report from Google Benchmark JSON output.
 
 Usage:
     python3 generate_report.py --cpp-json <file.json> [--python-pickle <dir>]
