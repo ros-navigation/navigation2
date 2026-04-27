@@ -150,10 +150,12 @@ controller_server:
       iteration_count: 1
       temperature: 0.3
       gamma: 0.015
-      motion_model: "DiffDrive"
       visualize: true
       publish_optimal_trajectory: true
       regenerate_noises: true
+      motion_model: "diff_drive"
+      diff_drive:
+        plugin: "mppi::DiffDriveMotionModel"
       TrajectoryVisualizer:
         trajectory_step: 5
         time_step: 3
@@ -162,8 +164,6 @@ controller_server:
         plugin: "mppi::DefaultOptimalTrajectoryValidator"
         collision_lookahead_time: 2.0  # Time to look ahead to check for collisions
         consider_footprint: false  # Whether to consider the full robot's footprint (or circle) in trajectory validation collision checks
-      AckermannConstraints:
-        min_turning_r: 0.2
       critics:
         [
           "ConstraintCritic",

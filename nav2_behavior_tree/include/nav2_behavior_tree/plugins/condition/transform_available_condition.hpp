@@ -30,6 +30,11 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that returns SUCCESS if there is a valid transform
  * between two specified frames and FAILURE otherwise
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <TransformAvailable parent="odom" child="base_link"/>
+ * @endcode
  */
 class TransformAvailableCondition : public BT::ConditionNode
 {

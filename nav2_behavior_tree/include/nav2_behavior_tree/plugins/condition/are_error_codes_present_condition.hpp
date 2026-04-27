@@ -26,6 +26,16 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * Usage in XML:
+ * @code
+ * <!-- Error codes to check are defined in another port. -->
+ * <AreErrorCodesPresent error_code="{error_code}" error_codes_to_check="{error_codes_to_check}"/>
+ *
+ * <!-- Error codes to check are defined to be 101, 107 and 119. -->
+ * <AreErrorCodesPresent error_code="{error_code}" error_codes_to_check="101;107;119"/>
+ * @endcode
+ */
 class AreErrorCodesPresent : public BT::ConditionNode
 {
 public:

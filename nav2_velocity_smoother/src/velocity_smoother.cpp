@@ -167,7 +167,7 @@ VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Activating");
   smoothed_cmd_pub_->on_activate();
   double timer_duration_ms = 1000.0 / smoothing_frequency_;
-  timer_ = this->create_wall_timer(
+  timer_ = this->create_timer(
     std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
     std::bind(&VelocitySmoother::smootherTimer, this));
 
@@ -591,7 +591,7 @@ void VelocitySmoother::updateParametersCallback(const std::vector<rclcpp::Parame
         }
 
         double timer_duration_ms = 1000.0 / smoothing_frequency_;
-        timer_ = this->create_wall_timer(
+        timer_ = this->create_timer(
           std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
           std::bind(&VelocitySmoother::smootherTimer, this));
       } else if (param_name == "velocity_timeout") {

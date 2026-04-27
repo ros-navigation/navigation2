@@ -19,6 +19,7 @@
 #include "pluginlib/class_list_macros.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -46,6 +47,7 @@ void InputAtWaypoint::initialize(
     throw std::runtime_error{"Failed to lock node in input at waypoint plugin!"};
   }
 
+  node_ = parent;
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
@@ -81,8 +83,14 @@ bool InputAtWaypoint::processAtWaypoint(
 
   input_received_ = false;
 
+  auto node = node_.lock();
+  if (!node) {
+    RCLCPP_ERROR(logger_, "Failed to lock node in input at waypoint plugin.");
+    return false;
+  }
+
   rclcpp::Time start = clock_->now();
-  rclcpp::Rate r(50);
+  nav2::Rate r(node, 50);
   bool input_received = false;
   while (clock_->now() - start < timeout_) {
     {
