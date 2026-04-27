@@ -98,6 +98,15 @@ void AdaptiveToleranceGoalChecker::initialize(
   fine_xy_goal_tolerance_sq_ = fine_xy_goal_tolerance_ * fine_xy_goal_tolerance_;
   coarse_xy_goal_tolerance_sq_ = coarse_xy_goal_tolerance_ * coarse_xy_goal_tolerance_;
 
+  if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
+    RCLCPP_WARN(
+      logger_, "Fine XY goal tolerance (%.3f) is greater or equal to coarse XY goal "
+      "tolerance (%.3f). This may lead to unintended behavior (when fine >= coarse the "
+      "checker will act as a simple goal checker). Consider setting "
+      "fine_xy_goal_tolerance < coarse_xy_goal_tolerance.",
+      fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+  }
+
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &AdaptiveToleranceGoalChecker::updateParametersCallback,
@@ -314,9 +323,25 @@ AdaptiveToleranceGoalChecker::updateParametersCallback(
       if (param_name == plugin_name_ + ".fine_xy_goal_tolerance") {
         fine_xy_goal_tolerance_ = parameter.as_double();
         fine_xy_goal_tolerance_sq_ = fine_xy_goal_tolerance_ * fine_xy_goal_tolerance_;
+        if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
+          RCLCPP_WARN(
+            logger_, "Fine XY goal tolerance (%.3f) is greater or equal to coarse XY goal "
+            "tolerance (%.3f). This may lead to unintended behavior (when fine >= coarse the "
+            "checker will act as a simple goal checker). Consider setting "
+            "fine_xy_goal_tolerance < coarse_xy_goal_tolerance.",
+            fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+        }
       } else if (param_name == plugin_name_ + ".coarse_xy_goal_tolerance") {
         coarse_xy_goal_tolerance_ = parameter.as_double();
         coarse_xy_goal_tolerance_sq_ = coarse_xy_goal_tolerance_ * coarse_xy_goal_tolerance_;
+        if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
+          RCLCPP_WARN(
+            logger_, "Fine XY goal tolerance (%.3f) is greater or equal to coarse XY goal "
+            "tolerance (%.3f). This may lead to unintended behavior (when fine >= coarse the "
+            "checker will act as a simple goal checker). Consider setting "
+            "fine_xy_goal_tolerance < coarse_xy_goal_tolerance.",
+            fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+        }
       } else if (param_name == plugin_name_ + ".yaw_goal_tolerance") {
         yaw_goal_tolerance_ = parameter.as_double();
       } else if (param_name == plugin_name_ + ".path_length_tolerance") {
