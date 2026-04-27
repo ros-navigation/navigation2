@@ -44,8 +44,9 @@ public:
   using nav2_dstar_lite_planner::DStarLite::last_path_cost_;
   using nav2_dstar_lite_planner::DStarLite::replan_count_;
 
-  void setupMap(int size_x, int size_y, double resolution,
-                double origin_x, double origin_y)
+  void setupMap(
+    int size_x, int size_y, double resolution,
+    double origin_x, double origin_y)
   {
     costmap_ = new nav2_costmap_2d::Costmap2D(
       size_x, size_y, resolution, origin_x, origin_y, 0);
@@ -69,14 +70,14 @@ public:
   bool runFullPlan(std::vector<nav2_dstar_lite_planner::WorldCoord> & path)
   {
     forceFullReplan();
-    auto no_cancel = []() { return false; };
+    auto no_cancel = []() {return false;};
     return generatePath(path, no_cancel);
   }
 
   /// Run incremental replan after modifying costmap cells
   bool runIncrementalPlan(std::vector<nav2_dstar_lite_planner::WorldCoord> & path)
   {
-    auto no_cancel = []() { return false; };
+    auto no_cancel = []() {return false;};
     auto changed = getChangedCells();
     for (const auto & cell : changed) {
       updateVertex(cell);
@@ -95,13 +96,13 @@ public:
       return false;
     }
     double cost = extractPath(path);
-    if (path.empty()) { return false; }
+    if (path.empty()) {return false;}
     last_path_cost_ = cost;
     snapshotCostmap();
     return true;
   }
 
-  ~BenchmarkDStarLite() { delete costmap_; }
+  ~BenchmarkDStarLite() {delete costmap_;}
 };
 
 // Global parameters
@@ -117,24 +118,25 @@ static void BM_OpenSpace_FirstPlan(benchmark::State & state)
   auto planner = std::make_unique<BenchmarkDStarLite>(&g_params);
   planner->setupMap(state.range(0), state.range(0), 1.0, 0.0, 0.0);
   int map_size = state.range(0);
-  planner->setupStartGoal(1.0, 1.0,
+  planner->setupStartGoal(
+    1.0, 1.0,
     static_cast<double>(map_size) - 2.0,
     static_cast<double>(map_size) - 2.0);
 
   std::vector<nav2_dstar_lite_planner::WorldCoord> path;
   for (auto _ : state) {
     bool ok = planner->runFullPlan(path);
-    if (!ok) { state.SkipWithError("No path found"); break; }
+    if (!ok) {state.SkipWithError("No path found"); break;}
   }
   state.counters["nodes_opened"] = planner->nodes_opened;
   state.counters["path_length"] = static_cast<double>(path.size());
   rclcpp::shutdown();
 }
 BENCHMARK(BM_OpenSpace_FirstPlan)
-  ->Args({100})
-  ->Args({200})
-  ->Args({400})
-  ->Unit(benchmark::kMillisecond);
+->Args({100})
+->Args({200})
+->Args({400})
+->Unit(benchmark::kMillisecond);
 
 // ========== Scenario 2: Static Obstacles (20% random) ==========
 
@@ -162,24 +164,25 @@ static void BM_StaticObstacles_FirstPlan(benchmark::State & state)
   // Ensure start/goal are clear
   planner->costmap_->setCost(1, 1, 0);
   planner->costmap_->setCost(map_size - 2, map_size - 2, 0);
-  planner->setupStartGoal(1.0, 1.0,
+  planner->setupStartGoal(
+    1.0, 1.0,
     static_cast<double>(map_size) - 2.0,
     static_cast<double>(map_size) - 2.0);
 
   std::vector<nav2_dstar_lite_planner::WorldCoord> path;
   for (auto _ : state) {
     bool ok = planner->runFullPlan(path);
-    if (!ok) { state.SkipWithError("No path found"); break; }
+    if (!ok) {state.SkipWithError("No path found"); break;}
   }
   state.counters["nodes_opened"] = planner->nodes_opened;
   state.counters["obstacle_pct"] = obstacle_pct;
   rclcpp::shutdown();
 }
 BENCHMARK(BM_StaticObstacles_FirstPlan)
-  ->Args({200, 10})
-  ->Args({200, 20})
-  ->Args({200, 30})
-  ->Unit(benchmark::kMillisecond);
+->Args({200, 10})
+->Args({200, 20})
+->Args({200, 30})
+->Unit(benchmark::kMillisecond);
 
 // ========== Scenario 3: Incremental Replan (D* Lite's key advantage) ==========
 
@@ -191,7 +194,8 @@ static void BM_IncrementalReplan(benchmark::State & state)
 
   auto planner = std::make_unique<BenchmarkDStarLite>(&g_params);
   planner->setupMap(map_size, map_size, 1.0, 0.0, 0.0);
-  planner->setupStartGoal(1.0, 1.0,
+  planner->setupStartGoal(
+    1.0, 1.0,
     static_cast<double>(map_size) - 2.0,
     static_cast<double>(map_size) - 2.0);
 
@@ -227,10 +231,10 @@ static void BM_IncrementalReplan(benchmark::State & state)
   rclcpp::shutdown();
 }
 BENCHMARK(BM_IncrementalReplan)
-  ->Args({200, 10})
-  ->Args({200, 50})
-  ->Args({200, 100})
-  ->Unit(benchmark::kMillisecond);
+->Args({200, 10})
+->Args({200, 50})
+->Args({200, 100})
+->Unit(benchmark::kMillisecond);
 
 // ========== Scenario 4: Full Replan for Comparison ==========
 
@@ -242,7 +246,8 @@ static void BM_FullReplan_AfterChange(benchmark::State & state)
 
   auto planner = std::make_unique<BenchmarkDStarLite>(&g_params);
   planner->setupMap(map_size, map_size, 1.0, 0.0, 0.0);
-  planner->setupStartGoal(1.0, 1.0,
+  planner->setupStartGoal(
+    1.0, 1.0,
     static_cast<double>(map_size) - 2.0,
     static_cast<double>(map_size) - 2.0);
 
@@ -272,7 +277,7 @@ static void BM_FullReplan_AfterChange(benchmark::State & state)
   rclcpp::shutdown();
 }
 BENCHMARK(BM_FullReplan_AfterChange)
-  ->Args({200, 10})
-  ->Args({200, 50})
-  ->Args({200, 100})
-  ->Unit(benchmark::kMillisecond);
+->Args({200, 10})
+->Args({200, 50})
+->Args({200, 100})
+->Unit(benchmark::kMillisecond);

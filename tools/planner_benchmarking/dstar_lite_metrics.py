@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Copyright 2024 Nav2 Contributors
+# Copyright (c) 2024 Nav2 Contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,11 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Benchmark DStarLite planner via Nav2 Python API.
-
-Measures planning time for first-plan and incremental replan scenarios,
-comparing against other planners.
-"""
+# mypy: ignore-errors
+"""Benchmark DStarLite planner via Nav2 Python API."""
 
 import glob
 import math
@@ -31,15 +28,14 @@ from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator
 import numpy as np
 import rclpy
-from transforms3d.euler import euler2quat
+from transforms3d.euler import euler2quat  # type: ignore
 
 
-def get_planner_results(
-        navigator: BasicNavigator, initial_pose: PoseStamped,
-        goal_pose: PoseStamped, planners: list) -> list:
+def get_planner_results(navigator, initial_pose, goal_pose, planners):
     results = []
     for planner in planners:
-        path = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
+        path = navigator._getPathImpl(
+            initial_pose, goal_pose, planner, use_start=True)
         if path is not None and path.error_code == 0:
             results.append(path)
         else:
@@ -109,7 +105,6 @@ def get_path_length(path):
 
 
 def get_planning_time(result):
-    """Extract planning time in seconds from a ComputePathToPose result."""
     return result.planning_time.nanosec / 1e09 + result.planning_time.sec
 
 
@@ -117,7 +112,8 @@ def main():
     rclpy.init()
 
     navigator = BasicNavigator()
-    map_path = os.getcwd() + '/' + glob.glob('**/100by100_20.yaml', recursive=True)[0]
+    map_path = os.getcwd() + '/' + glob.glob(
+        '**/100by100_20.yaml', recursive=True)[0]
     navigator.changeMap(map_path)
     time.sleep(2)
 
@@ -130,7 +126,7 @@ def main():
     side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
     results = []
-    first_times = []   # first plan times per planner
+    first_times = []
     seed(33)
     random_pairs = 50
     res = costmap_msg.metadata.resolution
@@ -138,8 +134,10 @@ def main():
     i = 0
     while len(results) != random_pairs:
         print(f'Cycle: {i + 1} / {random_pairs}')
-        start = get_random_start(costmap, max_cost, side_buffer, time_stamp, res)
-        goal = get_random_goal(costmap, start, max_cost, side_buffer, time_stamp, res)
+        start = get_random_start(
+            costmap, max_cost, side_buffer, time_stamp, res)
+        goal = get_random_goal(
+            costmap, start, max_cost, side_buffer, time_stamp, res)
         result = get_planner_results(navigator, start, goal, planners)
 
         if len(result) == len(planners):

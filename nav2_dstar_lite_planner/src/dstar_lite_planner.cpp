@@ -49,7 +49,8 @@ void DStarLitePlanner::configure(
 
 void DStarLitePlanner::cleanup()
 {
-  RCLCPP_INFO(logger_, "CleaningUp plugin %s of type nav2_dstar_lite_planner",
+  RCLCPP_INFO(
+    logger_, "CleaningUp plugin %s of type nav2_dstar_lite_planner",
     name_.c_str());
   planner_.reset();
   param_handler_.reset();
@@ -59,14 +60,16 @@ void DStarLitePlanner::cleanup()
 
 void DStarLitePlanner::activate()
 {
-  RCLCPP_INFO(logger_, "Activating plugin %s of type nav2_dstar_lite_planner",
+  RCLCPP_INFO(
+    logger_, "Activating plugin %s of type nav2_dstar_lite_planner",
     name_.c_str());
   param_handler_->activate();
 }
 
 void DStarLitePlanner::deactivate()
 {
-  RCLCPP_INFO(logger_, "Deactivating plugin %s of type nav2_dstar_lite_planner",
+  RCLCPP_INFO(
+    logger_, "Deactivating plugin %s of type nav2_dstar_lite_planner",
     name_.c_str());
   param_handler_->deactivate();
 }
@@ -88,24 +91,24 @@ nav_msgs::msg::Path DStarLitePlanner::createPlan(
       start.pose.position.x, start.pose.position.y, mx_start, my_start))
   {
     throw nav2_core::PlannerException(
-      "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
-      std::to_string(start.pose.position.y) + ") was outside bounds");
+            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
+            std::to_string(start.pose.position.y) + ") was outside bounds");
   }
 
   if (!planner_->costmap_->worldToMap(
       goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal))
   {
     throw nav2_core::PlannerException(
-      "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
-      std::to_string(goal.pose.position.y) + ") was outside bounds");
+            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
+            std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
 
   if (planner_->costmap_->getCost(mx_goal, my_goal) ==
     nav2_costmap_2d::LETHAL_OBSTACLE)
   {
     throw nav2_core::PlannerException(
-      "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
-      std::to_string(goal.pose.position.y) + ") was in lethal cost");
+            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
+            std::to_string(goal.pose.position.y) + ") was in lethal cost");
   }
 
   if (mx_start == mx_goal && my_start == my_goal) {
@@ -128,11 +131,12 @@ nav_msgs::msg::Path DStarLitePlanner::createPlan(
   planner_->clearStart();
   planner_->setStartAndGoal(start, goal);
 
-  RCLCPP_DEBUG(logger_, "D* Lite: src=(%d, %d) dst=(%d, %d)",
+  RCLCPP_DEBUG(
+    logger_, "D* Lite: src=(%d, %d) dst=(%d, %d)",
     planner_->src_.x, planner_->src_.y,
     planner_->dst_.x, planner_->dst_.y);
 
-  auto cancel_checker = []() { return false; };
+  auto cancel_checker = []() {return false;};
   getPlan(global_path, cancel_checker);
 
   size_t plan_size = global_path.poses.size();
@@ -158,7 +162,8 @@ nav_msgs::msg::Path DStarLitePlanner::createPlan(
   auto stop_time = std::chrono::steady_clock::now();
   auto dur = std::chrono::duration_cast<std::chrono::microseconds>(
     stop_time - start_time);
-  RCLCPP_DEBUG(logger_, "D* Lite planning time: %i us, nodes: %i",
+  RCLCPP_DEBUG(
+    logger_, "D* Lite planning time: %i us, nodes: %i",
     static_cast<int>(dur.count()), planner_->nodes_opened);
 
   return global_path;
@@ -173,7 +178,7 @@ void DStarLitePlanner::getPlan(
   if (planner_->isUnsafeToPlan()) {
     global_path.poses.clear();
     throw nav2_core::PlannerException(
-      "Either the start or goal pose is an obstacle!");
+            "Either the start or goal pose is an obstacle!");
   }
 
   bool found_path = planner_->generatePath(raw_path, cancel_checker);
@@ -181,7 +186,7 @@ void DStarLitePlanner::getPlan(
   if (!found_path || raw_path.empty()) {
     global_path.poses.clear();
     throw nav2_core::PlannerException(
-      "Could not generate path between the given poses");
+            "Could not generate path between the given poses");
   }
 
   nav_msgs::msg::Path new_path = linearInterpolation(
@@ -195,7 +200,8 @@ void DStarLitePlanner::getPlan(
     prev_path_cost_ = planner_->lastPathCost();
   } else {
     global_path = prev_path_;
-    RCLCPP_DEBUG(logger_, "D* Lite hysteresis: keeping previous path "
+    RCLCPP_DEBUG(
+      logger_, "D* Lite hysteresis: keeping previous path "
       "(new cost=%.3f, prev cost=%.3f, factor=%.3f)",
       planner_->lastPathCost(), prev_path_cost_,
       params_->hysteresis_factor);

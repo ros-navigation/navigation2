@@ -29,17 +29,23 @@ ParameterHandler::ParameterHandler(
   std::string & plugin_name, const rclcpp::Logger & logger)
 : logger_(logger), plugin_name_(plugin_name), node_(node)
 {
-  node_->declare_parameter(plugin_name_ + ".allow_unknown",
+  node_->declare_parameter(
+    plugin_name_ + ".allow_unknown",
     rclcpp::ParameterValue(true));
-  node_->declare_parameter(plugin_name_ + ".max_iterations",
+  node_->declare_parameter(
+    plugin_name_ + ".max_iterations",
     rclcpp::ParameterValue(100000));
-  node_->declare_parameter(plugin_name_ + ".replan_interval",
+  node_->declare_parameter(
+    plugin_name_ + ".replan_interval",
     rclcpp::ParameterValue(10));
-  node_->declare_parameter(plugin_name_ + ".hysteresis_factor",
+  node_->declare_parameter(
+    plugin_name_ + ".hysteresis_factor",
     rclcpp::ParameterValue(1.05));
-  node_->declare_parameter(plugin_name_ + ".terminal_checking_interval",
+  node_->declare_parameter(
+    plugin_name_ + ".terminal_checking_interval",
     rclcpp::ParameterValue(5000));
-  node_->declare_parameter(plugin_name_ + ".use_final_approach_orientation",
+  node_->declare_parameter(
+    plugin_name_ + ".use_final_approach_orientation",
     rclcpp::ParameterValue(false));
 
   params_.allow_unknown = node_->get_parameter(plugin_name_ + ".allow_unknown").as_bool();
@@ -90,7 +96,8 @@ ParameterHandler::dynamicParametersCallback(
       if (param_name == plugin_name_ + ".hysteresis_factor" &&
         parameter.as_double() < 1.0)
       {
-        RCLCPP_WARN(logger_,
+        RCLCPP_WARN(
+          logger_,
           "hysteresis_factor must be >= 1.0, ignoring update");
         result.successful = false;
         continue;
@@ -99,7 +106,8 @@ ParameterHandler::dynamicParametersCallback(
       if (param_name == plugin_name_ + ".max_iterations" &&
         parameter.as_int() < 1 && parameter.as_int() != -1)
       {
-        RCLCPP_WARN(logger_,
+        RCLCPP_WARN(
+          logger_,
           "max_iterations must be > 0 or -1 (unlimited), ignoring update");
         result.successful = false;
         continue;
@@ -107,7 +115,8 @@ ParameterHandler::dynamicParametersCallback(
       if (param_name == plugin_name_ + ".replan_interval" &&
         parameter.as_int() < 1)
       {
-        RCLCPP_WARN(logger_,
+        RCLCPP_WARN(
+          logger_,
           "replan_interval must be >= 1, ignoring update");
         result.successful = false;
         continue;

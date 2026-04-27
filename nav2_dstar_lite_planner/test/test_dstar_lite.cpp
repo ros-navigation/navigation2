@@ -38,7 +38,7 @@ public:
 
   bool runAlgo(
     std::vector<nav2_dstar_lite_planner::WorldCoord> & path,
-    std::function<bool()> cancel_checker = []() {return false;})
+    std::function<bool()> cancel_checker = [] () {return false;})
   {
     if (!isUnsafeToPlan()) {
       return generatePath(path, cancel_checker);

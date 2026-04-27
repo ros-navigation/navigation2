@@ -116,7 +116,7 @@ void DStarLite::computeShortestPath(std::function<bool()> cancel_checker)
 
   int iter = 0;
   while (!queue_.empty() &&
-         (queue_.top().key < start_key || start_state.rhs != start_state.g))
+    (queue_.top().key < start_key || start_state.rhs != start_state.g))
   {
     nodes_opened++;
     iter++;
@@ -369,7 +369,7 @@ std::vector<CellIndex> DStarLite::getChangedCells()
       unsigned int uy = static_cast<unsigned int>(y);
       unsigned char current = costmap_->getCost(ux, uy);
       std::size_t idx = static_cast<std::size_t>(y) * static_cast<std::size_t>(size_x_) +
-                        static_cast<std::size_t>(x);
+        static_cast<std::size_t>(x);
       if (idx >= prev_costmap_.size() || prev_costmap_[idx] != current) {
         changed.push_back({x, y});
       }
@@ -382,13 +382,13 @@ std::vector<CellIndex> DStarLite::getChangedCells()
 void DStarLite::snapshotCostmap()
 {
   std::size_t cells = static_cast<std::size_t>(size_x_) *
-                      static_cast<std::size_t>(size_y_);
+    static_cast<std::size_t>(size_y_);
   prev_costmap_.resize(cells);
   for (int y = 0; y < size_y_; y++) {
     for (int x = 0; x < size_x_; x++) {
       std::size_t idx = static_cast<std::size_t>(y) *
-                        static_cast<std::size_t>(size_x_) +
-                        static_cast<std::size_t>(x);
+        static_cast<std::size_t>(size_x_) +
+        static_cast<std::size_t>(x);
       prev_costmap_[idx] = costmap_->getCost(
         static_cast<unsigned int>(x),
         static_cast<unsigned int>(y));

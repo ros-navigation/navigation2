@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <string>
+#include <limits>
 #include <chrono>
 #include <algorithm>
 #include <memory>
