@@ -91,10 +91,18 @@ public:
     double & path_length_tolerance) override;
 
   /**
-   * @brief Check if the goal checker latches goal progress across control cycles
-   * @return True if the goal checker uses per-goal progress latching
+   * @brief Check if XY goal position has been reached (without considering yaw)
+   * @param query_pose The pose to check
+   * @param goal_pose The pose to check against
+   * @param velocity The robot's current velocity
+   * @param transformed_global_plan The global plan after being processed by the path handler
+   * @return True if XY goal is reached (position within tolerance, yaw ignored)
    */
-  bool latchesGoalProgress() const override {return false;}
+  bool isGoalXYReached(
+    const geometry_msgs::msg::Pose & query_pose,
+    const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity,
+    const nav_msgs::msg::Path & transformed_global_plan) override;
 
 protected:
   double along_path_tolerance_;

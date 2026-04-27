@@ -65,7 +65,6 @@ void RegulatedPurePursuitController::configure(
   collision_checker_ = std::make_unique<CollisionChecker>(node, costmap_ros_, params_);
 
   double control_frequency = 20.0;
-  goal_dist_tol_ = 0.25;  // reasonable default before first update
 
   node->get_parameter("controller_frequency", control_frequency);
   control_duration_ = 1.0 / control_frequency;
@@ -170,15 +169,6 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
-  // Update for the current goal checker's state
-  geometry_msgs::msg::Pose pose_tolerance;
-  geometry_msgs::msg::Twist vel_tolerance;
-  if (!goal_checker->getTolerances(pose_tolerance, vel_tolerance, path_length_tol_)) {
-    RCLCPP_WARN(logger_, "Unable to retrieve goal checker's tolerances!");
-  } else {
-    goal_dist_tol_ = pose_tolerance.position.x;
-  }
-
   // Transform the plan from costmap's global frame to robot base frame
   nav_msgs::msg::Path transformed_plan;
   if (!nav2_util::transformPathInTargetFrame(
@@ -227,8 +217,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   //        - equal to "normal" carrot_pose when curvature_lookahead_pose = false
   //        - otherwise equal to curvature_lookahead_pose (which can be interpolated after goal)
   double angle_to_heading;
-  if (shouldRotateToGoalHeading(
-    carrot_pose, remaining_path_length, goal_checker->latchesGoalProgress()))
+  if (goal_checker->isGoalXYReached(pose.pose, transformed_plan.poses.back().pose, speed,
+      transformed_plan))
   {
     is_rotating_to_heading_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
@@ -338,33 +328,6 @@ bool RegulatedPurePursuitController::shouldRotateToPath(
          fabs(angle_to_path) > params_->rotate_to_heading_min_angle;
 }
 
-bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
-  const geometry_msgs::msg::PoseStamped & carrot_pose, const double & remaining_path_length,
-  bool stateful)
-{
-  // Whether we should rotate robot to goal heading
-  if (!params_->use_rotate_to_heading) {
-    return false;
-  }
-
-  // If we're far from the goal by path length, no need to rotate to goal heading
-  if (remaining_path_length > path_length_tol_) {
-    return false;
-  }
-
-  double dist_to_goal = std::hypot(
-    carrot_pose.pose.position.x, carrot_pose.pose.position.y);
-
-  if (stateful) {
-    if (!has_reached_xy_tolerance_ && dist_to_goal < goal_dist_tol_) {
-      has_reached_xy_tolerance_ = true;
-    }
-    return has_reached_xy_tolerance_;
-  }
-
-  return dist_to_goal < goal_dist_tol_;
-}
-
 void RegulatedPurePursuitController::rotateToHeading(
   double & linear_vel, double & angular_vel,
   const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed)
@@ -420,7 +383,6 @@ void RegulatedPurePursuitController::applyConstraints(
 void RegulatedPurePursuitController::newPathReceived(
   const nav_msgs::msg::Path & /*raw_global_path*/)
 {
-  has_reached_xy_tolerance_ = false;
 }
 
 void RegulatedPurePursuitController::setSpeedLimit(
@@ -447,7 +409,6 @@ void RegulatedPurePursuitController::reset()
 {
   cancelling_ = false;
   finished_cancelling_ = false;
-  has_reached_xy_tolerance_ = false;
   last_command_velocity_ = geometry_msgs::msg::Twist();
 }
 }  // namespace nav2_regulated_pure_pursuit_controller

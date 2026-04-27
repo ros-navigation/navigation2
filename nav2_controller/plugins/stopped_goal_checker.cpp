@@ -111,6 +111,14 @@ bool StoppedGoalChecker::isGoalReached(
          hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_;
 }
 
+bool StoppedGoalChecker::isGoalXYReached(
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & transformed_global_plan)
+{
+  return SimpleGoalChecker::isGoalXYReached(query_pose, goal_pose, velocity,
+         transformed_global_plan);
+}
+
 bool StoppedGoalChecker::getTolerances(
   geometry_msgs::msg::Pose & pose_tolerance,
   geometry_msgs::msg::Twist & vel_tolerance,

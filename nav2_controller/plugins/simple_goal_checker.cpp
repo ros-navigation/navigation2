@@ -111,6 +111,34 @@ void SimpleGoalChecker::reset()
 
 bool SimpleGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & transformed_global_plan)
+{
+  if (!isGoalXYReached(query_pose, goal_pose, velocity, transformed_global_plan)) {
+    return false;
+  }
+
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  double query_yaw = tf2::getYaw(query_pose.orientation);
+  double goal_yaw = tf2::getYaw(goal_pose.orientation);
+  if (symmetric_yaw_tolerance_) {
+    // For symmetric robots: accept either goal orientation or goal + 180°
+    double dyaw_forward = angles::shortest_angular_distance(query_yaw, goal_yaw);
+    double dyaw_backward = angles::shortest_angular_distance(
+      query_yaw, angles::normalize_angle(goal_yaw + M_PI));
+
+    bool forward_match = fabs(dyaw_forward) <= yaw_goal_tolerance_;
+    bool backward_match = fabs(dyaw_backward) <= yaw_goal_tolerance_;
+
+    return forward_match || backward_match;
+  } else {
+    double dyaw = angles::shortest_angular_distance(query_yaw, goal_yaw);
+    return fabs(dyaw) <= yaw_goal_tolerance_;
+  }
+}
+
+bool SimpleGoalChecker::isGoalXYReached(
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist &, const nav_msgs::msg::Path & transformed_global_plan)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
@@ -133,22 +161,7 @@ bool SimpleGoalChecker::isGoalReached(
     }
   }
 
-  double query_yaw = tf2::getYaw(query_pose.orientation);
-  double goal_yaw = tf2::getYaw(goal_pose.orientation);
-  if (symmetric_yaw_tolerance_) {
-    // For symmetric robots: accept either goal orientation or goal + 180°
-    double dyaw_forward = angles::shortest_angular_distance(query_yaw, goal_yaw);
-    double dyaw_backward = angles::shortest_angular_distance(
-      query_yaw, angles::normalize_angle(goal_yaw + M_PI));
-
-    bool forward_match = fabs(dyaw_forward) <= yaw_goal_tolerance_;
-    bool backward_match = fabs(dyaw_backward) <= yaw_goal_tolerance_;
-
-    return forward_match || backward_match;
-  } else {
-    double dyaw = angles::shortest_angular_distance(query_yaw, goal_yaw);
-    return fabs(dyaw) <= yaw_goal_tolerance_;
-  }
+  return true;
 }
 
 bool SimpleGoalChecker::getTolerances(

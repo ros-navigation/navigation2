@@ -60,13 +60,6 @@ public:
     return shouldRotateToPath(carrot_pose, angle_to_path, x_vel_sign);
   }
 
-  bool shouldRotateToGoalHeadingWrapper(
-    const geometry_msgs::msg::PoseStamped & carrot_pose,
-    const double & remaining_path_length, bool stateful)
-  {
-    return shouldRotateToGoalHeading(carrot_pose, remaining_path_length, stateful);
-  }
-
   void rotateToHeadingWrapper(
     double & linear_vel, double & angular_vel,
     const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed)
@@ -177,12 +170,8 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
 
 TEST(RegulatedPurePursuitTest, rotateTests)
 {
-  // --------------------------
-  // Non-Stateful Configuration
-  // --------------------------
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
-  bool stateful = false;
 
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
@@ -203,20 +192,6 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   carrot.pose.position.x = 0.5;
   carrot.pose.position.y = 1.0;
   EXPECT_EQ(ctrl->shouldRotateToPathWrapper(carrot, angle_to_path_rtn), true);
-
-  // shouldRotateToGoalHeading
-  double remaining_path_length = 0.0;
-  carrot.pose.position.x = 0.0;
-  carrot.pose.position.y = 0.0;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), true);
-
-  carrot.pose.position.x = 0.0;
-  carrot.pose.position.y = 0.24;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), true);
-
-  carrot.pose.position.x = 0.0;
-  carrot.pose.position.y = 0.26;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), false);
 
   // rotateToHeading
   double lin_v = 10.0;
@@ -250,26 +225,6 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   curr_speed.angular.z = 1.0;
   ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
   EXPECT_NEAR(ang_v, 0.84, 0.01);
-
-  // -----------------------
-  // Stateful Configuration
-  // -----------------------
-  stateful = true;
-
-  ctrl->configure(node, name, tf, costmap);
-
-  // Start just outside tolerance
-  carrot.pose.position.x = 0.0;
-  carrot.pose.position.y = 0.26;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), false);
-
-  // Enter tolerance (should set internal flag)
-  carrot.pose.position.y = 0.24;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), true);
-
-  // Move outside tolerance again - still expect true (due to persistent state)
-  carrot.pose.position.y = 0.26;
-  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot, remaining_path_length, stateful), true);
 }
 
 TEST(RegulatedPurePursuitTest, applyConstraints)

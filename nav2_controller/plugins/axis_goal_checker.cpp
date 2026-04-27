@@ -84,6 +84,14 @@ void AxisGoalChecker::reset()
 
 bool AxisGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist & velocity,
+  const nav_msgs::msg::Path & transformed_global_plan)
+{
+  return isGoalXYReached(query_pose, goal_pose, velocity, transformed_global_plan);
+}
+
+bool AxisGoalChecker::isGoalXYReached(
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist &,
   const nav_msgs::msg::Path & transformed_global_plan)
 {

@@ -83,6 +83,13 @@ void PositionGoalChecker::reset()
 
 bool PositionGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & transformed_global_plan)
+{
+  return isGoalXYReached(query_pose, goal_pose, velocity, transformed_global_plan);
+}
+
+bool PositionGoalChecker::isGoalXYReached(
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist &, const nav_msgs::msg::Path & transformed_global_plan)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
@@ -140,22 +147,6 @@ bool PositionGoalChecker::getTolerances(
   path_length_tolerance = path_length_tolerance_;
 
   return true;
-}
-
-void nav2_controller::PositionGoalChecker::setTolerances(
-  double xy_goal_tolerance,
-  double path_length_tolerance)
-{
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
-  xy_goal_tolerance_ = xy_goal_tolerance;
-  xy_goal_tolerance_sq_ = xy_goal_tolerance * xy_goal_tolerance;
-  path_length_tolerance_ = path_length_tolerance;
-}
-
-void nav2_controller::PositionGoalChecker::setLatchesGoalProgress(bool latches_goal_progress)
-{
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
-  stateful_ = latches_goal_progress;
 }
 
 rcl_interfaces::msg::SetParametersResult

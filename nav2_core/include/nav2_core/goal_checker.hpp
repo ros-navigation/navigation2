@@ -107,17 +107,20 @@ public:
     double & path_length_tolerance) = 0;
 
   /**
-   * @brief Check if the goal checker latches goal progress across control cycles
-   * When this returns true, the goal checker is allowed to keep internal progress from one
-   * cycle to the next while pursuing the same goal. In practice, this is commonly used to
-   * implement "latching" semantics: once the robot has first satisfied the translational
-   * part of the goal, it is allowed to continue satisfying the goal even if it drifts
-   * outside the translational tolerance.
-   * When this returns false, isGoalReached() should behave like a pure function of its
-   * inputs (no remembered/latched progress).
-   * @return True if the goal checker uses internal, per-goal progress latching.
+   * @brief Check if XY goal position has been reached (without considering yaw)
+   * This is useful for controllers that want to rotate to goal heading while
+   * keeping zero linear velocity but preserving angular velocity capability.
+   * @param query_pose The pose to check
+   * @param goal_pose The pose to check against
+   * @param velocity The robot's current velocity
+   * @param transformed_global_plan The global plan after being processed by the path handler
+   * @return True if XY goal is reached (position within tolerance, yaw ignored)
    */
-  virtual bool latchesGoalProgress() const = 0;
+  virtual bool isGoalXYReached(
+    const geometry_msgs::msg::Pose & query_pose,
+    const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity,
+    const nav_msgs::msg::Path & transformed_global_plan) = 0;
 };
 
 }  // namespace nav2_core
