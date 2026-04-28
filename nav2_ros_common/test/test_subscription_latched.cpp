@@ -55,7 +55,7 @@ TEST(SubscriptionLatched, LatchedMessageReceivedAfterActivation)
     topic_name,
     callback,
     nav2::qos::LatchedSubscriptionQoS());
-  // Transient subscription is activated on init.
+  subscription->on_activate();
 
   auto publisher = node->create_publisher<std_msgs::msg::Int32>(
     topic_name,
