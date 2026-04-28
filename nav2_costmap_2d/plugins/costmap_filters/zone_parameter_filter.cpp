@@ -72,7 +72,8 @@ void ZoneParameterFilter::initializeFilter(
   }
 
   state_event_topic_ =
-    node->declare_or_get_parameter<std::string>(name_ + "." + "state_event_topic", std::string(""));
+    node->declare_or_get_parameter<std::string>(
+    name_ + "." + "state_event_topic", std::string("zone_filter_state"));
 
   std::string param_set_failure_str =
     node->declare_or_get_parameter<std::string>(
@@ -101,12 +102,9 @@ void ZoneParameterFilter::initializeFilter(
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
-  // Optional state-event publisher.
-  if (!state_event_topic_.empty()) {
-    state_event_pub_ =
-      node->create_publisher<std_msgs::msg::UInt8>(joinWithParentNamespace(state_event_topic_));
-    state_event_pub_->on_activate();
-  }
+  state_event_pub_ =
+    node->create_publisher<std_msgs::msg::UInt8>(joinWithParentNamespace(state_event_topic_));
+  state_event_pub_->on_activate();
 
   // Load the per-state parameter map from YAML overrides.
   loadStateConfig();
