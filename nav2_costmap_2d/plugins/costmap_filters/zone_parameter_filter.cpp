@@ -77,15 +77,15 @@ void ZoneParameterFilter::initializeFilter(
 
   std::string param_set_failure_str =
     node->declare_or_get_parameter<std::string>(
-    name_ + "." + "on_param_set_failure", std::string("warn"));
-  if (param_set_failure_str == "throw") {
-    param_set_failure_policy_ = ParamSetFailurePolicy::kThrow;
-  } else {
+    name_ + "." + "on_param_set_failure", std::string("throw"));
+  if (param_set_failure_str == "warn") {
     param_set_failure_policy_ = ParamSetFailurePolicy::kWarn;
-    if (param_set_failure_str != "warn") {
+  } else {
+    param_set_failure_policy_ = ParamSetFailurePolicy::kThrow;
+    if (param_set_failure_str != "throw") {
       RCLCPP_WARN(
         logger_,
-        "ZoneParameterFilter: on_param_set_failure=%s not recognised; defaulting to 'warn'.",
+        "ZoneParameterFilter: on_param_set_failure=%s not recognised; defaulting to 'throw'.",
         param_set_failure_str.c_str());
     }
   }
