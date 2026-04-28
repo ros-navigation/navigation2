@@ -108,7 +108,7 @@ StaticLayer::onInitialize()
 void
 StaticLayer::activate()
 {
-  if (map_sub_ && !map_subscribe_transient_local_) {
+  if (map_sub_) {
     map_sub_->on_activate();
   }
   if (map_update_sub_) {
