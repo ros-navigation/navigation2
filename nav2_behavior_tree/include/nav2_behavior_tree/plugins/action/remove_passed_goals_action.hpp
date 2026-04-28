@@ -35,6 +35,13 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ActionNodeBase that removes goals that the robot passed near to
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <RemovePassedGoals radius="0.6" input_goals="{goals}" output_goals="{goals}"
+ *                    input_waypoint_statuses="{waypoint_statuses}"
+ *                    output_waypoint_statuses="{waypoint_statuses}"/>
+ * @endcode
  */
 class RemovePassedGoals : public BT::ActionNodeBase
 {

@@ -43,6 +43,7 @@ Controller::Controller(
   v_linear_max_ = node->declare_or_get_parameter("controller.v_linear_max", 0.25);
   v_angular_max_ = node->declare_or_get_parameter("controller.v_angular_max", 0.75);
   slowdown_radius_ = node->declare_or_get_parameter("controller.slowdown_radius", 0.25);
+  deceleration_max_ = node->declare_or_get_parameter("controller.deceleration_max", 2.5);
   rotate_to_heading_angular_vel_ = node->declare_or_get_parameter(
     "controller.rotate_to_heading_angular_vel", 1.0);
   rotate_to_heading_max_angular_accel_ = node->declare_or_get_parameter(
@@ -63,8 +64,8 @@ Controller::Controller(
     "controller.dock_collision_threshold", 0.3);
 
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
-    k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, v_linear_min_, v_linear_max_,
-    v_angular_max_);
+    k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, deceleration_max_,
+    v_linear_min_, v_linear_max_, v_angular_max_);
 
   // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -263,6 +264,8 @@ Controller::updateParametersCallback(const std::vector<rclcpp::Parameter> & para
         v_angular_max_ = parameter.as_double();
       } else if (param_name == "controller.slowdown_radius") {
         slowdown_radius_ = parameter.as_double();
+      } else if (param_name == "controller.deceleration_max") {
+        deceleration_max_ = parameter.as_double();
       } else if (param_name == "controller.rotate_to_heading_angular_vel") {
         rotate_to_heading_angular_vel_ = parameter.as_double();
       } else if (param_name == "controller.rotate_to_heading_max_angular_accel") {
@@ -278,6 +281,7 @@ Controller::updateParametersCallback(const std::vector<rclcpp::Parameter> & para
       // Update the smooth control law with the new params
       control_law_->setCurvatureConstants(k_phi_, k_delta_, beta_, lambda_);
       control_law_->setSlowdownRadius(slowdown_radius_);
+      control_law_->setMaxDeceleration(deceleration_max_);
       control_law_->setSpeedLimit(v_linear_min_, v_linear_max_, v_angular_max_);
     }
   }

@@ -154,7 +154,7 @@ TEST_F(ComputeAndTrackRouteActionTestFixture, test_tick_poses)
   builtin_interfaces::msg::Duration time1;
   EXPECT_TRUE(
     config_->blackboard->get<builtin_interfaces::msg::Duration>("execution_duration", time1));
-  EXPECT_EQ(time1, rclcpp::Duration::from_seconds(0.1));
+  EXPECT_EQ(rclcpp::Duration(time1), rclcpp::Duration::from_seconds(0.1));
 
   // halt node so another goal can be sent
   tree_->haltTree();
@@ -202,7 +202,7 @@ TEST_F(ComputeAndTrackRouteActionTestFixture, test_tick_ids)
   builtin_interfaces::msg::Duration time1;
   EXPECT_TRUE(
     config_->blackboard->get<builtin_interfaces::msg::Duration>("execution_duration", time1));
-  EXPECT_EQ(time1, rclcpp::Duration::from_seconds(0.1));
+  EXPECT_EQ(rclcpp::Duration(time1), rclcpp::Duration::from_seconds(0.1));
 
   // halt node so another goal can be sent
   tree_->haltTree();

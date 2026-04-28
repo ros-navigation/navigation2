@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 #include <algorithm>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -85,7 +86,8 @@ public:
     }
     try {
       auto dummy_cancel_checker = []() {return false;};
-      path = planners_["GridBased"]->createPlan(start, goal, dummy_cancel_checker);
+      std::vector<geometry_msgs::msg::PoseStamped> viapoints{start};
+      path = planners_["GridBased"]->createPlan(start, goal, viapoints, dummy_cancel_checker);
       // The situation when createPlan() did not throw any exception
       // does not guarantee that plan was created correctly.
       // So it should be checked additionally that path is correct.
@@ -161,7 +163,8 @@ public:
   std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> isPathValid(
     nav_msgs::msg::Path & path, unsigned int max_cost,
     bool consider_unknown_as_obstacle, const std::string & layer_name = "",
-    const std::string & footprint = "", bool check_full_path = false);
+    const std::string & footprint = "", bool stop_at_first_collision = true,
+    double max_lookahead_distance = -1.0);
 
 private:
   void setCostmap();
@@ -209,7 +212,6 @@ private:
   // Occupancy grid publisher for visualization
   nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
   rclcpp::TimerBase::SharedPtr map_timer_;
-  rclcpp::WallRate map_publish_rate_;
   void mapCallback();
 
   // Executes a test run with the provided end points.

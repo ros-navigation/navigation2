@@ -83,7 +83,7 @@ class LineIterator:
             self.b_ = y1 - (self.m_ * x1)
         elif x1 == x0 and y1 != y0:
             self.valid_ = True
-        elif y1 == y1 and x1 != x0:
+        elif y1 == y0 and x1 != x0:
             self.valid_ = True
             self.m_ = (y1 - y0) / (x1 - x0)
             self.b_ = y1 - (self.m_ * x1)

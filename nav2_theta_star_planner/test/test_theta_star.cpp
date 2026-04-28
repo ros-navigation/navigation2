@@ -155,11 +155,12 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
-  geometry_msgs::msg::PoseStamped start, goal;
+  geometry_msgs::msg::PoseStamped start, goal, viapoint;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
   start.pose.orientation.w = 1.0;
   goal = start;
+  viapoint = start;
   auto planner_2d = std::make_unique<nav2_theta_star_planner::ThetaStarPlanner>();
   planner_2d->configure(life_node, "test", nullptr, costmap_ros);
   planner_2d->activate();
@@ -168,7 +169,9 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
       return false;
     };
 
-  nav_msgs::msg::Path path = planner_2d->createPlan(start, goal, dummy_cancel_checker);
+  std::vector<geometry_msgs::msg::PoseStamped> viapoints{viapoint};
+  nav_msgs::msg::Path path = planner_2d->createPlan(
+    start, goal, viapoints, dummy_cancel_checker);
   EXPECT_GT(static_cast<int>(path.poses.size()), 0);
 
   // test if the goal is unsafe
@@ -180,7 +183,8 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
   goal.pose.position.x = 1.0;
   goal.pose.position.y = 1.0;
 
-  EXPECT_THROW(planner_2d->createPlan(start, goal, dummy_cancel_checker), nav2_core::GoalOccupied);
+  EXPECT_THROW(planner_2d->createPlan(start, goal, viapoints, dummy_cancel_checker),
+    nav2_core::GoalOccupied);
 
   planner_2d->deactivate();
   planner_2d->cleanup();

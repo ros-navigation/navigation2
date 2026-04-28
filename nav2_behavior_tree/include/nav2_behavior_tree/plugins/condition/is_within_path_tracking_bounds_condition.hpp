@@ -28,6 +28,12 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A BT::ConditionNode that returns SUCCESS when the current path tracking error is within specified bounds and FAILURE otherwise
+ *
+ * Usage in XML:
+ * @code
+ * <IsWithinPathTrackingBounds max_error_left="0.5" max_error_right="0.5"
+ *                             max_error_heading="3.14" tracking_feedback="{tracking_feedback}"/>
+ * @endcode
  */
 class IsWithinPathTrackingBoundsCondition : public BT::ConditionNode
 {

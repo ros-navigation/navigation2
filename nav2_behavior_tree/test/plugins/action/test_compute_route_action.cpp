@@ -163,7 +163,7 @@ TEST_F(ComputeRouteActionTestFixture, test_IDs)
 
   builtin_interfaces::msg::Duration time1;
   EXPECT_TRUE(config_->blackboard->get<builtin_interfaces::msg::Duration>("planning_time", time1));
-  EXPECT_EQ(time1, rclcpp::Duration::from_seconds(0.1));
+  EXPECT_EQ(rclcpp::Duration(time1), rclcpp::Duration::from_seconds(0.1));
 
   // halt node so another goal can be sent
   tree_->haltTree();
@@ -221,7 +221,7 @@ TEST_F(ComputeRouteActionTestFixture, test_poses)
 
   builtin_interfaces::msg::Duration time1;
   EXPECT_TRUE(config_->blackboard->get<builtin_interfaces::msg::Duration>("planning_time", time1));
-  EXPECT_EQ(time1, rclcpp::Duration::from_seconds(0.1));
+  EXPECT_EQ(rclcpp::Duration(time1), rclcpp::Duration::from_seconds(0.1));
 
   // halt node so another goal can be sent
   tree_->haltTree();

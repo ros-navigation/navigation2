@@ -130,6 +130,13 @@ void SmacPlannerLattice::configure(
     _metadata.min_turning_radius / (_costmap->getResolution());
   _motion_model = MotionModel::STATE_LATTICE;
 
+  if (_metadata.motion_model == "omni" && _search_info.allow_reverse_expansion) {
+    RCLCPP_WARN(
+      _logger,
+      "allow_reverse_expansion is not applicable for omnidirectional robots. Disabling.");
+    _search_info.allow_reverse_expansion = false;
+  }
+
   if (_max_on_approach_iterations <= 0) {
     RCLCPP_INFO(
       _logger, "On approach iteration selected as <= 0, "
@@ -201,6 +208,9 @@ void SmacPlannerLattice::configure(
   // Initialize path smoother
   SmootherParams params;
   params.get(node, name);
+  if (_metadata.motion_model == "omni") {
+    params.holonomic_ = true;
+  }
   if (smooth_path) {
     _smoother = std::make_unique<Smoother>(params);
     _smoother->initialize(_metadata.min_turning_radius);
@@ -290,8 +300,14 @@ void SmacPlannerLattice::cleanup()
 nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
+  const std::vector<geometry_msgs::msg::PoseStamped> & viapoints,
   std::function<bool()> cancel_checker)
 {
+  if (!viapoints.empty()) {
+    RCLCPP_WARN(_logger, "Received %zu viapoints, but this planner ignores them",
+      viapoints.size());
+  }
+
   std::lock_guard<std::mutex> lock_reinit(_mutex);
   steady_clock::time_point a = steady_clock::now();
 
@@ -725,12 +741,21 @@ SmacPlannerLattice::updateParametersCallback(const std::vector<rclcpp::Parameter
       auto node = _node.lock();
       SmootherParams params;
       params.get(node, _name);
+      if (_metadata.motion_model == "omni") {
+        params.holonomic_ = true;
+      }
       _smoother = std::make_unique<Smoother>(params);
       _smoother->initialize(_metadata.min_turning_radius);
     }
 
     // Re-Initialize A* template
     if (reinit_a_star) {
+      if (_metadata.motion_model == "omni" && _search_info.allow_reverse_expansion) {
+        RCLCPP_WARN(
+          _logger,
+          "allow_reverse_expansion is not applicable for omnidirectional robots. Disabling.");
+        _search_info.allow_reverse_expansion = false;
+      }
       if (reinit_lookup_table) {
         _a_star = std::make_unique<AStarAlgorithm<NodeLattice>>(_motion_model, _search_info);
       } else {

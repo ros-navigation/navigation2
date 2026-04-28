@@ -29,6 +29,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief nav2_behavior_tree::BtActionNode class that wraps nav2_msgs/FollowObject
+ *
+ * Usage in XML:
+ * @code
+ * <FollowObject name="FollowPerson" pose_topic="/person_pose" max_duration="0.0"/>
+ * @endcode
  */
 class FollowObjectAction
   : public nav2_behavior_tree::BtActionNode<nav2_msgs::action::FollowObject>

@@ -29,6 +29,13 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::NavigateToPose
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <NavigateToPose goal="{goal}" server_name="NavigateToPose" server_timeout="10"
+ *                 error_code_id="{navigate_to_pose_error_code}" error_msg="{navigate_to_pose_error_msg}"
+ *                 behavior_tree="NavigateThroughPosesWReplanningAndRecovery"/>
+ * @endcode
  */
 class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPose>
 {

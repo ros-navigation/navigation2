@@ -28,6 +28,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::BackUp
+ *
+ * Usage in XML:
+ * @code
+ * <CancelAssistedTeleop server_name="assisted_teleop" server_timeout="10"/>
+ * @endcode
  */
 class AssistedTeleopCancel : public BtCancelActionNode<nav2_msgs::action::AssistedTeleop>
 {

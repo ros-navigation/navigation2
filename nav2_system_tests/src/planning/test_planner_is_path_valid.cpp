@@ -257,7 +257,7 @@ TEST(testIsPathValid, testFootprintCollisionChecking)
   }
 }
 
-TEST(testIsPathValid, testCheckFullPath)
+TEST(testIsPathValid, testStopAtFirstCollision)
 {
   auto planner_tester = std::make_shared<PlannerTester>();
   planner_tester->activate();
@@ -277,21 +277,79 @@ TEST(testIsPathValid, testCheckFullPath)
     }
   }
 
-  // Test with check_full_path = false (default, stops at first invalid pose)
+  // Test with stop_at_first_collision = true (default, stops at first invalid pose)
   auto response = planner_tester->isPathValid(
-    path, max_cost, consider_unknown_as_obstacle, "", "", false);
+    path, max_cost, consider_unknown_as_obstacle, "", "", true);
   ASSERT_NE(response, nullptr);
   EXPECT_TRUE(response->success);
   EXPECT_FALSE(response->is_valid);
   EXPECT_EQ(response->invalid_pose_indices.size(), 1u);
 
-  // Test with check_full_path = true (checks all poses)
+  // Test with stop_at_first_collision = false (checks all poses)
   response = planner_tester->isPathValid(
-    path, max_cost, consider_unknown_as_obstacle, "", "", true);
+    path, max_cost, consider_unknown_as_obstacle, "", "", false);
   ASSERT_NE(response, nullptr);
   EXPECT_TRUE(response->success);
   EXPECT_FALSE(response->is_valid);
   EXPECT_GT(response->invalid_pose_indices.size(), 1u);
+}
+
+TEST(testIsPathValid, testMaxLookaheadDistance)
+{
+  auto planner_tester = std::make_shared<PlannerTester>();
+  planner_tester->activate();
+  planner_tester->loadSimpleCostmap(TestCostmap::top_left_obstacle);
+
+  nav_msgs::msg::Path path;
+  unsigned int max_cost = 253;
+  bool consider_unknown_as_obstacle = false;
+
+  // Create a long straight path along y-axis at x=1.0 (clear of top-left obstacle)
+  for (float i = 0; i < 10; i += 0.5) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = 1.0;
+    pose.pose.position.y = i;
+    path.poses.push_back(pose);
+  }
+
+  // Full path should be valid (no obstacle at x=1.0)
+  auto response = planner_tester->isPathValid(
+    path, max_cost, consider_unknown_as_obstacle, "", "", true, -1.0);
+  ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
+  EXPECT_TRUE(response->is_valid);
+
+  // With a short lookahead distance, should also be valid (subset of valid path)
+  response = planner_tester->isPathValid(
+    path, max_cost, consider_unknown_as_obstacle, "", "", true, 2.0);
+  ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
+  EXPECT_TRUE(response->is_valid);
+
+  // Now create a path that goes through the obstacle area
+  nav_msgs::msg::Path obstacle_path;
+  for (float i = 0; i < 10; i += 1.0) {
+    for (float j = 0; j < 10; j += 1.0) {
+      geometry_msgs::msg::PoseStamped pose;
+      pose.pose.position.x = i;
+      pose.pose.position.y = j;
+      obstacle_path.poses.push_back(pose);
+    }
+  }
+
+  // Full path validation should find obstacles
+  response = planner_tester->isPathValid(
+    obstacle_path, max_cost, consider_unknown_as_obstacle, "", "", true, -1.0);
+  ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
+  EXPECT_FALSE(response->is_valid);
+
+  // With a very short lookahead, may not reach the obstacle
+  response = planner_tester->isPathValid(
+    obstacle_path, max_cost, consider_unknown_as_obstacle, "", "", true, 0.5);
+  ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
+  // With short lookahead, the path segment validated may not reach obstacles
 }
 
 int main(int argc, char ** argv)

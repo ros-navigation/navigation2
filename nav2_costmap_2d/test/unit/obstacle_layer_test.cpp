@@ -204,24 +204,22 @@ TEST_F(ObstacleLayerTest, testDiagonalDistanceWithinRange)
 }
 
 /**
- * Test that point beyond obstacle max range but in same cell as max range is
- * marked as obstacle.
+ * World distance beyond obstacle_max_range must not mark, even if the hit
+ * shares the same map cell as a point at the range boundary (resolution 0.1 m).
  */
-TEST_F(ObstacleLayerTest, testPointBeyondRangeButInSameCellAsMaxRange) {
-  // Observation at (0.79, 0.0)
-  // obstacle_max_range = 0.72m
-  // obstacle range = 0.79m, > 0.72m but at same cell distance as max range so
-  // should be marked as obstacle, since it could be cleared by raytracing with
-  // the same max range.
+TEST_F(ObstacleLayerTest, testPointBeyondObstacleMaxRangeNotMarkedWhenSameMapCell)
+{
+  constexpr double k_obstacle_max_range = 0.72;
+  // (0.79, 0) and (0.72, 0) both map to mx == 7; world distance 0.79 m > 0.72 m.
   addObservation(obstacle_layer_, 0.79, 0.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
-                 true, true, 100.0, 0.0, 0.72, 0.0);
+    true, true, 100.0, 0.0, k_obstacle_max_range, 0.0);
   update();
 
   unsigned int mx, my;
   obstacle_layer_->worldToMap(0.79, 0.0, mx, my);
   unsigned char cost = obstacle_layer_->getCost(mx, my);
 
-  ASSERT_EQ(cost, nav2_costmap_2d::LETHAL_OBSTACLE);
+  ASSERT_NE(cost, nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
 /**

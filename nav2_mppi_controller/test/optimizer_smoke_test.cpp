@@ -92,19 +92,19 @@ INSTANTIATE_TEST_SUITE_P(
   OptimizerSuite,
   ::testing::Values(
     std::make_tuple(
-      "Omni",
+      "omni",
       std::vector<std::string>(
         {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"}, {"PathAlignCritic"},
           {"TwirlingCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}}),
       true),
     std::make_tuple(
-      "DiffDrive",
+      "diff_drive",
       std::vector<std::string>(
         {{"GoalCritic"}, {"GoalAngleCritic"}, {"CostCritic"},
           {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}}),
       true),
     std::make_tuple(
-      "Ackermann",
+      "ackermann",
       std::vector<std::string>(
         {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"},
           {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}}),
