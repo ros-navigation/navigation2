@@ -76,11 +76,18 @@ geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
   v = backward ? -v : v;
 
   // Compute the angular velocity
-  double w = curvature * v;
+  // double w = curvature * v;
+  double w = curvature * std::abs(v);
   // Bound angular velocity between [-max_angular_vel, max_angular_vel]
   double w_bound = std::clamp(w, -v_angular_max_, v_angular_max_);
   // And linear velocity to follow the curvature
-  v = (curvature != 0.0) ? (w_bound / curvature) : v;
+  // v = (curvature != 0.0) ? (w_bound / curvature) : v;
+
+  if (curvature != 0.0) {                                                                                                                                                                                          
+    v = std::abs(w_bound / curvature);
+    v = backward ? -v : v;
+  }
+
 
   // Return the velocity command
   geometry_msgs::msg::Twist cmd_vel;
