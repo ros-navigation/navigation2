@@ -30,15 +30,11 @@ namespace nav2_costmap_2d
 
 namespace
 {
-// Separator between target-node-name and parameter-name within a stored
-// rclcpp::Parameter's .get_name(). Chosen because ROS 2 parameter names
-// allow dots and slashes but not colons, so this is collision-free.
+// Colon — collision-free vs ROS 2 param-name grammar (no colons allowed).
 constexpr char kNodeParamSep = ':';
 
-// Match `suffix` against an explicit list of target-node names, using
-// longest-prefix-first (so that a nested-namespace target like
-// "local_costmap.inflation_layer" is matched before its prefix
-// "local_costmap"). `sorted_nodes` MUST be pre-sorted by length descending.
+// Longest-prefix match against `sorted_nodes` (sorted by length descending),
+// so nested-namespace targets resolve unambiguously.
 // Returns (target_node, param_path) on hit, or std::nullopt on miss.
 std::optional<std::pair<std::string, std::string>>
 matchTargetNode(
@@ -75,7 +71,6 @@ void ZoneParameterFilter::initializeFilter(
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // Per-plugin parameters specific to ZoneParameterFilter.
   state_event_topic_ =
     node->declare_or_get_parameter<std::string>(name_ + "." + "state_event_topic", std::string(""));
 
@@ -94,7 +89,6 @@ void ZoneParameterFilter::initializeFilter(
     }
   }
 
-  // Filter info subscription — same shape as SpeedFilter / BinaryFilter.
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   RCLCPP_INFO(
     logger_,
@@ -149,8 +143,7 @@ void ZoneParameterFilter::filterInfoCallback(
     return;
   }
 
-  // ZoneParameterFilter is config-driven — base/multiplier are unused.
-  // Mirror KeepoutFilter's check (it requires defaults too).
+  // base/multiplier unused (config-driven).
   if (msg->base != BASE_DEFAULT || msg->multiplier != MULTIPLIER_DEFAULT) {
     RCLCPP_WARN(
       logger_,
@@ -213,11 +206,9 @@ void ZoneParameterFilter::loadStateConfig()
     return;
   }
 
-  // target_nodes: explicit list of nodes the filter will mutate. Required
-  // because ROS 2 parameter names admit dots — without an explicit list the
-  // parser cannot unambiguously locate the node-name boundary in a flattened
-  // override key like `<plugin>.state_1.<target>.<param.with.dots>`.
-  // Schema is also self-documenting and catches typos at config-load.
+  // target_nodes: explicit list required because ROS 2 parameter names
+  // admit dots; without it the parser cannot locate the node-name boundary
+  // in a flattened override key like `<plugin>.state_1.<target>.<param.with.dots>`.
   std::vector<std::string> target_nodes_input =
     node->declare_or_get_parameter<std::vector<std::string>>(
     name_ + ".target_nodes", std::vector<std::string>{});
@@ -230,9 +221,7 @@ void ZoneParameterFilter::loadStateConfig()
     return;
   }
 
-  // Sort by length descending so longest-prefix-first matching works for
-  // nested-namespace targets (e.g., \"local_costmap.inflation_layer\" wins
-  // over the bare prefix \"local_costmap\").
+  // Length-descending so longest-prefix wins (nested namespaces).
   std::vector<std::string> sorted_target_nodes = target_nodes_input;
   std::sort(
     sorted_target_nodes.begin(), sorted_target_nodes.end(),
@@ -242,8 +231,6 @@ void ZoneParameterFilter::loadStateConfig()
     logger_,
     "ZoneParameterFilter: %zu target_nodes registered.", sorted_target_nodes.size());
 
-  // For each state_id, expect a sub-namespace `state_<N>.<target_node>.<param_path>: value`
-  // in the YAML overrides. We discover them by iterating overrides with the matching prefix.
   auto overrides = node->get_node_parameters_interface()->get_parameter_overrides();
 
   for (int64_t id_i64 : state_ids) {
@@ -262,10 +249,7 @@ void ZoneParameterFilter::loadStateConfig()
       if (override_name.rfind(state_prefix, 0) != 0) {
         continue;  // not for this state
       }
-      // override_name is like "<plugin_name>.state_<N>.<target_node>.<param_path>"
-      // Strip the prefix to get "<target_node>.<param_path>".
       const std::string suffix = override_name.substr(state_prefix.size());
-      // Match against the explicit target_nodes list (longest-prefix wins).
       const auto match = matchTargetNode(suffix, sorted_target_nodes);
       if (!match) {
         RCLCPP_WARN(
@@ -275,8 +259,6 @@ void ZoneParameterFilter::loadStateConfig()
           state_id, override_name.c_str());
         continue;
       }
-      // Stored Parameter name is "<target_node>:<target_param>"; the colon
-      // separator routes applyState() to the right per-node async client.
       params_for_state.emplace_back(
         match->first + kNodeParamSep + match->second, override_value);
     }
@@ -296,15 +278,8 @@ void ZoneParameterFilter::loadStateConfig()
       state_id, state_param_map_[state_id].size());
   }
 
-  // Load YAML-declared nominal defaults for state-0 reset. Format:
-  //   <plugin>.nominal_defaults.<target_node>.<param_path>: <value>
-  //
-  // Declarative-explicit (rather than auto-captured) because get_parameters
-  // and set_parameters use separate underlying services::Client instances,
-  // so FIFO ordering of "capture-then-override" cannot be guaranteed at the
-  // server. A late get response would capture the overridden value, not the
-  // nominal. YAML nominals avoid the race entirely and match Steve Macenski's
-  // config-driven preference on #6080.
+  // Declarative YAML nominals — auto-capture races on separate underlying
+  // services::Client instances for get/set on the target.
   const std::string nominal_prefix = name_ + ".nominal_defaults.";
   for (const auto & [override_name, override_value] : overrides) {
     if (override_name.rfind(nominal_prefix, 0) != 0) {
@@ -328,9 +303,7 @@ void ZoneParameterFilter::loadStateConfig()
     "ZoneParameterFilter: %zu nominal default(s) loaded for state-0 reset.",
     nominal_defaults_.size());
 
-  // Quality-of-life: warn for any state-N override that has no nominal
-  // counterpart. Such params will NOT be restored by state-0 reset; a v1
-  // user almost certainly wants symmetric coverage.
+  // Warn on state-N override without matching nominal (state-0 reset gap).
   for (const auto & [state_id, params] : state_param_map_) {
     for (const auto & p : params) {
       if (nominal_defaults_.find(p.get_name()) == nominal_defaults_.end()) {
@@ -351,9 +324,7 @@ void ZoneParameterFilter::process(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  // Drain any completed futures from prior set_parameters calls. Must not
-  // block — the future-lifetime regression in #3796 review item 5 was
-  // exactly about destructing futures before callbacks fire.
+  // Drain completed futures non-blockingly (must not destruct in-flight).
   drainPendingFutures();
 
   if (!filter_mask_) {
@@ -375,7 +346,6 @@ void ZoneParameterFilter::process(
       filter_mask_, mask_pose.position.x, mask_pose.position.y,
       mask_robot_i, mask_robot_j))
   {
-    // Robot is outside mask range — treat as reset state to be safe.
     if (state_initialized_ && current_state_ != 0) {
       RCLCPP_WARN(
         logger_,
@@ -435,8 +405,7 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
             std::to_string(new_state) + " map.");
   }
 
-  // Group params by target node so each AsyncParametersClient set call
-  // batches all params for that node — Steve's #3796 first review point.
+  // Batch per target node (one set_parameters call per node).
   std::map<std::string, std::vector<rclcpp::Parameter>> per_node_params;
   for (const auto & stored : it->second) {
     const std::string stored_name = stored.get_name();
@@ -451,13 +420,6 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
     const std::string target_node = stored_name.substr(0, sep_pos);
     const std::string target_param = stored_name.substr(sep_pos + 1);
 
-    // Nominal defaults are loaded declaratively from YAML at config time
-    // (see loadStateConfig — `<plugin>.nominal_defaults.<node>.<param>`).
-    // No auto-capture here: an async get_parameters round-trip racing
-    // against this set_parameters call cannot guarantee ordering at the
-    // server, and blocking in process() is forbidden by #3796 review item 2.
-    // If the user did not declare a nominal for this param, state-0 reset
-    // will skip it (warned at config-load time).
     per_node_params[target_node].emplace_back(target_param, stored.get_parameter_value());
   }
 
@@ -501,7 +463,6 @@ void ZoneParameterFilter::issueAsyncSetParameters(
     return;
   }
 
-  // Lazily build per-node async client.
   auto client_it = param_clients_.find(target_node);
   if (client_it == param_clients_.end()) {
     auto client = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -514,8 +475,7 @@ void ZoneParameterFilter::issueAsyncSetParameters(
     client_it = inserted.first;
   }
 
-  // Per #3796 review item 2: never wait_for_service in the hot path.
-  // Use service_is_ready() as a non-blocking probe; if not ready, log + skip.
+  // Non-blocking probe; never wait_for_service in the hot path.
   if (!client_it->second->service_is_ready()) {
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 2000,
@@ -524,8 +484,6 @@ void ZoneParameterFilter::issueAsyncSetParameters(
     return;
   }
 
-  // AsyncParametersClient::set_parameters returns std::shared_future directly;
-  // no .share() needed (it's already shared).
   pending_futures_.push_back(client_it->second->set_parameters(params));
 }
 
@@ -577,9 +535,7 @@ void ZoneParameterFilter::resetFilter()
   filter_info_received_ = false;
   state_initialized_ = false;
   current_state_ = 0;
-  // Keep nominal_defaults_ + param_clients_ across resets — they're cheap
-  // to retain, and re-discovering them every reset would cause extra
-  // service round-trips.
+  // Retain nominal_defaults_ + param_clients_ across resets.
 }
 
 bool ZoneParameterFilter::isActive()
