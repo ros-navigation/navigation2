@@ -177,8 +177,7 @@ TEST(ZoneParameterFilterScaffold, DefaultConstructedIsInactive)
 // Listed for the next slice (95% target):
 //   - state_transitions_apply_correct_parameters
 //   - state_zero_resets_to_nominal_defaults
-//   - unknown_state_warn_logs_and_keeps_previous
-//   - unknown_state_throw_throws
+//   - unknown_state_throws (now Test 8 — always throws per Steve review C.2.a)
 //   - state_event_published_on_transition
 //   - state_event_not_published_when_topic_unset
 //   - filter_disabled_when_inactive
@@ -473,10 +472,12 @@ TEST_F(TestZpf, State0ResetsToNominalDefaults)
 }
 
 // =========================================================================
-// Test 8 — unknown mask value with on_unknown_state="warn" (default):
-// log throttled warn, do not mutate any target parameter.
+// Test 8 — unknown mask value: ZPF throws std::runtime_error so the
+// lifecycle layer surfaces the configuration / data-integrity fault.
+// Silently continuing with stale parameters would be V14 silent-failure
+// for any safety-relevant downstream that uses ZPF for parameter mutation.
 // =========================================================================
-TEST_F(TestZpf, UnknownStateWarnLogsAndKeepsPrevious)
+TEST_F(TestZpf, UnknownStateThrows)
 {
   // state_ids=[1] only; mask filled with 2 (unknown).
   ASSERT_TRUE(createFilter(
@@ -489,20 +490,13 @@ TEST_F(TestZpf, UnknownStateWarnLogsAndKeepsPrevious)
 
   ASSERT_DOUBLE_EQ(target_node_->getSpeed(), 1.0) << "precondition: default 1.0";
 
-  // process() samples mask=2 -> applyState(2) -> unknown -> warn + return.
-  // Give the (non-existent) async path 250ms in case anything slips through.
-  runProcess();
-  auto start = node_->now();
-  while (node_->now() - start < rclcpp::Duration(250ms)) {
-    pub_executor_.spin_some();
-    node_executor_.spin_some();
-    target_executor_.spin_some();
-    state_event_executor_.spin_some();
-    std::this_thread::sleep_for(10ms);
-  }
+  // process() samples mask=2 -> applyState(2) -> unknown -> throws.
+  EXPECT_THROW(runProcess(), std::runtime_error);
 
+  // Throw fires BEFORE any per-node set_parameters iteration begins, so
+  // the target speed must remain at the nominal default (no partial leak).
   EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0)
-    << "speed must NOT change when mask state is unknown (warn policy)";
+    << "speed must NOT change when applyState throws on unknown state";
 }
 
 // =========================================================================
