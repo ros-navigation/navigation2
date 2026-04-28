@@ -374,15 +374,23 @@ void Optimizer::shiftControlSequence()
   }
 }
 
+void Optimizer::generateNoisedTrajectories()
+{
+  applyControlSequenceInterIterationConstraints();
+  noise_generator_.setNoisedControls(state_, control_sequence_);
+  noise_generator_.generateNextNoises();
+  updateStateVelocities(state_);
+  integrateStateVelocities(generated_trajectories_, state_);
+}
+
 void Optimizer::applyControlSequenceInterIterationConstraints()
 {
   // Enforce t=0 to be dynamically feasible from the current speed for inter-iteration feasibility
   // Re-centers the distribution at t=0, but still applied in a information theoretic sound way
 
-  // In open-loop, use controller_period for t=0 to realistically model the physics intra-iteration
-  // In closed-loop, use model_dt for t=0 since the robot will have execution latency of 1 timestep
+  // Use controller_period for t=0 to realistically model the physics intra-iteration
   auto & s = settings_;
-  float first_dt = s.open_loop ? s.controller_period : s.model_dt;
+  float first_dt = s.controller_period;
   float max_delta_vx = first_dt * s.constraints.ax_max;
   float min_delta_vx = first_dt * s.constraints.ax_min;
   float max_delta_vy = first_dt * s.constraints.ay_max;
@@ -391,11 +399,9 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
 
   float speed_vx = static_cast<float>(state_.speed.linear.x);
   float speed_wz = static_cast<float>(state_.speed.angular.z);
-  if (s.shift_control_sequence && s.open_loop) {
+  if (s.shift_control_sequence) {
     // When shifting, vx(0) is not sent and represents 'now'
     // so that vx(1), the sent command, needs to be only one step away.
-    // Only appliable to open-loop as closed-loop control will take
-    // an update period to accelerate to the requested target velocity
     control_sequence_.vx(0) = speed_vx;
     control_sequence_.wz(0) = speed_wz;
     if (isHolonomic()) {
@@ -415,15 +421,6 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
   }
 }
 
-void Optimizer::generateNoisedTrajectories()
-{
-  applyControlSequenceInterIterationConstraints();
-  noise_generator_.setNoisedControls(state_, control_sequence_);
-  noise_generator_.generateNextNoises();
-  updateStateVelocities(state_);
-  integrateStateVelocities(generated_trajectories_, state_);
-}
-
 void Optimizer::applyControlSequenceConstraints()
 {
   auto & s = settings_;
@@ -431,9 +428,8 @@ void Optimizer::applyControlSequenceConstraints()
   // Apply constraints to set the optimal control sequence within bounds
   motion_model_->applyConstraints(control_sequence_);
 
-  // In open-loop, use controller_period for t=0 to realistically model the physics intra-iteration
-  // In closed-loop, use model_dt for t=0 since the robot will have execution latency of 1 timestep
-  float first_dt = s.open_loop ? s.controller_period : s.model_dt;
+  // Use controller_period for t=0 to realistically model physical limits
+  float first_dt = s.controller_period;
   float max_delta_vx = first_dt * s.constraints.ax_max;
   float min_delta_vx = first_dt * s.constraints.ax_min;
   float max_delta_vy = first_dt * s.constraints.ay_max;
@@ -447,8 +443,7 @@ void Optimizer::applyControlSequenceConstraints()
 
   // When shifting, vx(0) is "now" and not sent. Pin it so vx(1), the sent command,
   // is exactly one constraint step from current speed when shift_control_sequence
-  // Only appliable to open-loop which assumes instantaneous application of efforts
-  if (s.shift_control_sequence && s.open_loop) {
+  if (s.shift_control_sequence) {
     control_sequence_.vx(0) = vx_last;
     control_sequence_.wz(0) = wz_last;
     if (isHolonomic()) {
