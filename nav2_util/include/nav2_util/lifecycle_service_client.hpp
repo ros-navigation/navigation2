@@ -44,9 +44,10 @@ public:
     get_state_(lifecycle_node_name + "/get_state", parent_node,
       true /*creates and spins an internal executor*/)
   {
-    // Block until server is up
+    // Block until server is up, but bail out if the context is shutting down
+    // so we don't spin forever after SIGINT during construction.
     rclcpp::Rate r(20);
-    while (!get_state_.wait_for_service(2s)) {
+    while (rclcpp::ok() && !get_state_.wait_for_service(2s)) {
       RCLCPP_INFO(
         parent_node->get_logger(),
         "Waiting for service %s...", get_state_.getServiceName().c_str());
