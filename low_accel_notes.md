@@ -50,7 +50,7 @@ However (funnily enough), Tony commented that it broke [his acceleration limitat
 
 I believe the disconnect is that the motion model is supposed to model the robot's actual capabilities. You send a `cvx` and you get a `vx` out (thus `vx` used for trajectory rollouts of what the vehicle actually does for scoring, yet `cvx` is used in the optimization softmax). When setting the acceleration limits artificially lower in the motion model, then there needs to be a complimentary system between the controller and the base hardware to enact that limit (i.e. the velocity smoother or base controller) such that the system acts the way the prediction of the motion model implied.
 
-With that interpretation, I believe the change from [PR #5266](https://github.com/ros-navigation/navigation2/pull/5266) is technically correct and was why I merged it in the first place. I believe now that this should once more be considered, so lets dive into the two open issue topics to discuss: [Issue 5464](https://github.com/ros-navigation/navigation2/issues/5464) and [Issue 5214](https://github.com/ros-navigation/navigation2/issues/5214).
+With that interpretation, I believe the change from [PR #5266](https://github.com/ros-navigation/navigation2/pull/5266) is technically correct and was why I merged it in the first place. I believe now that this should once more be considered, so let's dive into the two open issue topics to discuss: [Issue 5464](https://github.com/ros-navigation/navigation2/issues/5464) and [Issue 5214](https://github.com/ros-navigation/navigation2/issues/5214).
 
 [**Original Issue #5214**:](https://github.com/ros-navigation/navigation2/issues/5214)
 
@@ -62,7 +62,7 @@ Removing the `cvx` clamping reportedly allows for lower acceleration limits. Nom
 
 I believe that is the intended interpretation of the MPPI technique and gamma cost. We are actually *wrong* now in the way its using clamped controls. This person is just flatly wrong with confidence.
 
-> [Seeing oscillations from this PR (this comment and under)](https://github.com/ros-navigation/navigation2/issues/5214#issuecomment-3162767761) 
+> [Seeing oscillations from this PR (this comment and under)](https://github.com/ros-navigation/navigation2/issues/5214#issuecomment-3162767761)
 
 This seems like a real problem that will need to be addressed. Removing the `cvx` clamping will cause the importance sampling to be updated to use the raw controls **which is actually correct**. As well, it will update the main optimization to now use the raw, more noised controls:
 
@@ -170,7 +170,7 @@ Note that the before and after for using the full acceleration seems very relate
 
 ![image](./low_accel_graphics/before_full_accel.png) ![image](./low_accel_graphics/after_full_accel.png)
 
-Using `open_loop: true` with low-acceleration limits we again see the higher maximum velocities (possibly more noise between the two?) but consistent convergence times to the path. The noise compared to the original after unclamped controls certainly is improved so I can see why the original authors thought that Open Loop would be a viable short-term solution. 
+Using `open_loop: true` with low-acceleration limits we again see the higher maximum velocities (possibly more noise between the two?) but consistent convergence times to the path. The noise compared to the original after unclamped controls certainly is improved so I can see why the original authors thought that Open Loop would be a viable short-term solution.
 
 ![image](./low_accel_graphics/before_open_loop.png) ![image](./low_accel_graphics/after_open_loop.png)
 
@@ -178,7 +178,7 @@ So far so good; just more noise in tracking which we expected.
 
 #### Investigation 2: Low Acceleration Limits Respected
 
-Now, I am curious though: what accelerations are being used on these plots? Its curious to me that the after would have seemingly higher accelerations than before looking at the shapes of the curves. The sharpness of the dip and adjustment back onto the path also implies less lag/smoothing occurring -- which would make sense if we're using unbounded controls for the optimization rather than the bounded velocities. However I'm concerned that the acceleration limits aren't being respected for some reason. 
+Now, I am curious though: what accelerations are being used on these plots? Its curious to me that the after would have seemingly higher accelerations than before looking at the shapes of the curves. The sharpness of the dip and adjustment back onto the path also implies less lag/smoothing occurring -- which would make sense if we're using unbounded controls for the optimization rather than the bounded velocities. However I'm concerned that the acceleration limits aren't being respected for some reason.
 
 I added the following block at the end of `optimize()` which does not trigger, which proves that acceleration constraints within the optimal control sequence are being respected. A small `episilon` is used to ensure that we don't trigger on numerical issues with the acceleration calculations.
 
@@ -240,11 +240,11 @@ Moreover when we set it to use open-loop so there is no odometry contribution, w
 
 We're still regularly violating the acceleration constraints externally without clamped controls.
 
-Its clear at this moment as to why that is now that everything else should be the same (`model_dt = control_freq`, `open_loop` should have perfect matching, etc). The issue is that between iterations, the dynamic feasibility is not being respected. Intra-trajectory dynamic limits are correctly set, but when we have a `speed` as the initial state, that is never being checked against the validity of the first optimal control sample. The optimal control sequence is having the speed set as current `vx(0) = speed.x` to initialize, but that is not being done in the controls which are used to compute / override the optimal trajectory at the end of the process. Now that the `cvx` are unbounded by the acceleration limits, its even more free to do anything it wishes, though even when it was bounded it was still able to cause these issues. 
+Its clear at this moment as to why that is now that everything else should be the same (`model_dt = control_freq`, `open_loop` should have perfect matching, etc). The issue is that between iterations, the dynamic feasibility is not being respected. Intra-trajectory dynamic limits are correctly set, but when we have a `speed` as the initial state, that is never being checked against the validity of the first optimal control sample. The optimal control sequence is having the speed set as current `vx(0) = speed.x` to initialize, but that is not being done in the controls which are used to compute / override the optimal trajectory at the end of the process. Now that the `cvx` are unbounded by the acceleration limits, its even more free to do anything it wishes, though even when it was bounded it was still able to cause these issues.
 
-So lets do two things:
+So let's do two things:
 1. Add acceleration constraints in `applyControlSequenceConstraints()`  relative to the starting speed to ensure that the trajectory is feasible to execute from the current state as well as within the optimal trajectory. These are the hard 'we know we're going to be feasible' guardrails. In addition:
-2. Add the initial acceleration contraint to the first samples in the optimal control sequence before noising it for generating controls (i.e. `cvx.col(0)`) with respect to the current speed. This will make sure that the first timestep is in the reachable regime when the initial speed and the last control sequence deviate, regardless of what it was before, before performing rollouts and scoring. Rather than simply setting it to the initial speed, we clamp the control sequence by the acceleration limits so we don't modify it unless we absolutely have to. This all could technically be skipped using the guardrails, but it would be good to have the shape of the trajectory's controls to match what's drivable in case of large deviations - rather than waiting for the end to clamp them in `applyControlSequenceConstraints` and deforming the shape without a chance to score with that in mind.
+2. Add the initial acceleration constraint to the first samples in the optimal control sequence before noising it for generating controls (i.e. `cvx.col(0)`) with respect to the current speed. This will make sure that the first timestep is in the reachable regime when the initial speed and the last control sequence deviate, regardless of what it was before, before performing rollouts and scoring. Rather than simply setting it to the initial speed, we clamp the control sequence by the acceleration limits so we don't modify it unless we absolutely have to. This all could technically be skipped using the guardrails, but it would be good to have the shape of the trajectory's controls to match what's drivable in case of large deviations - rather than waiting for the end to clamp them in `applyControlSequenceConstraints` and deforming the shape without a chance to score with that in mind.
 
 That should ensure we have feasibility between iterations, and indeed that is what we now see we follow the constraints (note check out the right side of the plot, the left side is state from some previous setting up moves):
 
@@ -264,11 +264,11 @@ Open Loop with `model_dt` *not* equal to control frequency:
 
 ![image](./low_accel_graphics/inter_iteration_feasibility_open_loop_model_dt_not_equal_control_frequency.png)
 
-For closed loop configurations, the acceleration constraints are respected and we ramp up to the velocity with feedback so it take a bit longer. For open loop configurations, we still interestingly violate the constraint. This seems due to the fact that we do the t=0 acceleration constraint using `model_dt` rather than the actual `control_frequency` and since we don't have real odometry to ground us into reality, it uses the acceleration corresponding to `accel * model_dt / control_frequency` (in the case of this: x2) when they are not the same. Using the `control_period` instead during the acceleration constraint added in (1) and (2) above, we fix this case. 
+For closed loop configurations, the acceleration constraints are respected and we ramp up to the velocity with feedback so it take a bit longer. For open loop configurations, we still interestingly violate the constraint. This seems due to the fact that we do the t=0 acceleration constraint using `model_dt` rather than the actual `control_frequency` and since we don't have real odometry to ground us into reality, it uses the acceleration corresponding to `accel * model_dt / control_frequency` (in the case of this: x2) when they are not the same. Using the `control_period` instead during the acceleration constraint added in (1) and (2) above, we fix this case.
 
 ![image](./low_accel_graphics/intra_iteration_open_loop_not_equal_model_control_freq_t=0.png)
 
-However when they are equal, it is still not addressed. This took me several hours to figure this one out. Essentially the shifting logic 'skips' the first control sample `vx(0)` and applies `vx(1)`. Its pretty obvious we then allow ourselves to use an additional timestep which lets us double the acceleration limits, precisely. Now how to fix this cleanly up-front and not in post-processing took some pencil and paper work that we'll skip to the solution for:
+However when they are equal, it is still not addressed. This took me several hours to figure this one out. Essentially the shifting logic 'skips' the first control sample `vx(0)` and applies `vx(1)`. Its pretty obvious we then allow ourselves to use an additional timestep which let's us double the acceleration limits, precisely. Now how to fix this cleanly up-front and not in post-processing took some pencil and paper work that we'll skip to the solution for:
 
 In  (1) and (2) above where we apply the acceleration constraints based on the speed, we need to hard-set the t=0 index to be the speed, such that `t=1` is required to be within dynamic limits of that current speed by 1 timestep duration -- only for the case of `model_dt = control_frequency`. Otherwise, we should let it float as any value as long as it is within the acceleration limit window.
 
@@ -276,7 +276,7 @@ Viola!
 
 ![image](./low_accel_graphics/intra_iteration_open_loop_equal_model_control_freq_t=0.png)
 
-Finally, lets just sanity check that if we use all of these other acceleration fixes, do we actually **need** to unclamp the raw controls? Does that impact things? 
+Finally, let's just sanity check that if we use all of these other acceleration fixes, do we actually **need** to unclamp the raw controls? Does that impact things?
 
 ![image](./low_accel_graphics/all_changes_clamped_controls_again.png)
 
@@ -305,7 +305,7 @@ We do not see the 'wobble' effect, but that may well be due to model lag in that
 
 #### Investigation 4-6: Improving Oscillation / Wobble Behavior
 
-Lets start with something easy: There's notes in various publications that the importance sampling (gamma) is not terribly important and may contribute in this way. Lets remove it and see if it helps with the noise.
+Let's start with something easy: There's notes in various publications that the importance sampling (gamma) is not terribly important and may contribute in this way. Let's remove it and see if it helps with the noise.
 
 ```cpp
   // auto vx_T = control_sequence_.vx.transpose();
@@ -333,7 +333,7 @@ Relatedly, perhaps we should smooth using the SGF with a more aggressive smoothi
 
 ![image](./low_accel_graphics/SGF_order1.png)
 
-What about tuning? We have a few values that are related to averaging and noise: `temperature`, `gamma`, and the sampling standard deviations. 
+What about tuning? We have a few values that are related to averaging and noise: `temperature`, `gamma`, and the sampling standard deviations.
 
 Increasing Temperature does successfully reduce magnitude the noise, but may be slower to react to dynamic obstacles or changes. Additionally, the noise spikes are quite significant and change sign frequently in large swings.
 
@@ -343,7 +343,7 @@ We could say that this "works" but I don't think this is what anyone would want.
 
 Manipulating Gamma did not seem to have a great impact on this so I'll clip the analysis here and move on.
 
-Lets do some back of the envelope math. We're currently using a STD of 0.2 for linear and angular velocities. That would put is within 1 sigma of 0.2 m/s and 0.2 rad/s for each timestep. If the timestep is 0.1, then with the acceleration of 0.25 m/s2, we're only actually able to differ by a measly 0.025 m/s, significantly lower than our noised values. For 0.2 STD to make sense, we would need to be able to accelerate proportionate to ~ 0.2 m/s (or rad/s) in a single timestep, which amounts to 2 m/s^2, which is totally sane for a normal AMR without low acceleration limits. Hence why we have such a value set for Nav2 by default.
+Let's do some back of the envelope math. We're currently using a STD of 0.2 for linear and angular velocities. That would put is within 1 sigma of 0.2 m/s and 0.2 rad/s for each timestep. If the timestep is 0.1, then with the acceleration of 0.25 m/s2, we're only actually able to differ by a measly 0.025 m/s, significantly lower than our noised values. For 0.2 STD to make sense, we would need to be able to accelerate proportionate to ~ 0.2 m/s (or rad/s) in a single timestep, which amounts to 2 m/s^2, which is totally sane for a normal AMR without low acceleration limits. Hence why we have such a value set for Nav2 by default.
 
 If we reduce the STD to 0.1, we see a pretty big reduction in that noise and still explore far more that we can realistically achieve with the acceleration limits in place.
 

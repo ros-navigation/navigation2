@@ -762,13 +762,16 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
 
   EXPECT_LE(
     std::abs(cmd1.twist.linear.x),
-    optimizer_tester.getSettings().controller_period * optimizer_tester.getControlConstraints().ax_max);
+    optimizer_tester.getSettings().controller_period *
+    optimizer_tester.getControlConstraints().ax_max);
   EXPECT_LE(
     std::abs(cmd1.twist.angular.z),
-    optimizer_tester.getSettings().controller_period * optimizer_tester.getControlConstraints().az_max);
+    optimizer_tester.getSettings().controller_period *
+    optimizer_tester.getControlConstraints().az_max);
   EXPECT_LE(
     std::abs(cmd1.twist.linear.y),
-    optimizer_tester.getSettings().controller_period * optimizer_tester.getControlConstraints().ay_max);
+    optimizer_tester.getSettings().controller_period *
+    optimizer_tester.getControlConstraints().ay_max);
 
   auto [cmd2, optimal_trajectory2] = optimizer_tester.evalControl(
     pose, robot_speed, path,
@@ -780,13 +783,16 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
 
   EXPECT_LE(
     vx_delta,
-    optimizer_tester.getSettings().controller_period * optimizer_tester.getControlConstraints().ax_max);
+    optimizer_tester.getSettings().controller_period *
+    optimizer_tester.getControlConstraints().ax_max);
   EXPECT_LE(
     wz_delta,
-    optimizer_tester.getSettings().controller_period * optimizer_tester.getControlConstraints().az_max);
+    optimizer_tester.getSettings().controller_period *
+    optimizer_tester.getControlConstraints().az_max);
   EXPECT_LE(
     vy_delta,
-    optimizer_tester.getSettings().controller_period * optimizer_tester.getControlConstraints().ay_max);
+    optimizer_tester.getSettings().controller_period *
+    optimizer_tester.getControlConstraints().ay_max);
 }
 
 TEST(OptimizerTests, SpeedLimitDynamicParameterGuard)
