@@ -79,21 +79,6 @@ void ZoneParameterFilter::initializeFilter(
   state_event_topic_ =
     node->declare_or_get_parameter<std::string>(name_ + "." + "state_event_topic", std::string(""));
 
-  std::string unknown_state_str =
-    node->declare_or_get_parameter<std::string>(name_ + "." + "on_unknown_state",
-      std::string("warn"));
-  if (unknown_state_str == "throw") {
-    unknown_state_policy_ = UnknownStatePolicy::kThrow;
-  } else {
-    unknown_state_policy_ = UnknownStatePolicy::kWarn;
-    if (unknown_state_str != "warn") {
-      RCLCPP_WARN(
-        logger_,
-        "ZoneParameterFilter: on_unknown_state=%s not recognised; defaulting to 'warn'.",
-        unknown_state_str.c_str());
-    }
-  }
-
   std::string param_set_failure_str =
     node->declare_or_get_parameter<std::string>(
     name_ + "." + "on_param_set_failure", std::string("warn"));
@@ -439,17 +424,15 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
 
   auto it = state_param_map_.find(new_state);
   if (it == state_param_map_.end()) {
-    if (unknown_state_policy_ == UnknownStatePolicy::kThrow) {
-      throw std::runtime_error(
-              std::string("ZoneParameterFilter: unknown state ") +
-              std::to_string(new_state) + " encountered (on_unknown_state=throw)");
-    }
-    RCLCPP_WARN(
-      logger_,
-      "ZoneParameterFilter: state %u not in configuration; not changing parameters "
-      "(on_unknown_state=warn). Add to state_ids + state_%u map to enable.",
-      new_state, new_state);
-    return;
+    // Configuration / data-integrity fault: the mask emitted a state value
+    // not in our configured map. Throw so the lifecycle layer surfaces the
+    // fault — silently continuing with stale parameters is strictly worse
+    // than a fail-safe stack-stop for any safety-relevant downstream.
+    throw std::runtime_error(
+            std::string("ZoneParameterFilter: unknown state ") +
+            std::to_string(new_state) +
+            " encountered; add to state_ids + state_" +
+            std::to_string(new_state) + " map.");
   }
 
   // Group params by target node so each AsyncParametersClient set call

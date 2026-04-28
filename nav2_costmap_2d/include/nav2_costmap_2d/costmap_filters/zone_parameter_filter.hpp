@@ -136,9 +136,6 @@ private:
   // ===== Configuration =====
   std::string state_event_topic_;
 
-  enum class UnknownStatePolicy { kWarn, kThrow };
-  UnknownStatePolicy unknown_state_policy_{UnknownStatePolicy::kWarn};
-
   enum class ParamSetFailurePolicy { kWarn, kThrow };
   ParamSetFailurePolicy param_set_failure_policy_{ParamSetFailurePolicy::kWarn};
 
