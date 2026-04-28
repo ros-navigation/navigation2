@@ -36,13 +36,9 @@ namespace nav2_costmap_2d
  * @brief Costmap filter that applies a configured set of ROS parameters
  *        based on the mask value at the robot's pose.
  *
- * The filter mask uses occupancy-grid values (0..255). Value 0 is reserved
- * as a "reset to nominal defaults" state. Each non-zero value is mapped via
- * this layer's configuration to a list of parameters (any reachable nav2
- * parameter on any node) to set when that state is active.
- *
- * Generalises the pattern of @ref SpeedFilter to N parameters per state.
- * Discussion: https://github.com/ros-navigation/navigation2/issues/6080
+ * The filter mask uses occupancy-grid values. State 0 is the reset state;
+ * each non-zero state ID maps via configuration to a list of parameter
+ * overrides on configured target nodes.
  */
 class ZoneParameterFilter : public CostmapFilter
 {
@@ -77,63 +73,39 @@ public:
   bool isActive();
 
 private:
-  // Subscription wiring — mirrors SpeedFilter / BinaryFilter.
   void filterInfoCallback(
     const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr & msg);
   void maskCallback(
     const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg);
 
-  // Parameter map loading (declares state_<N>.* params from YAML overrides).
   void loadStateConfig();
 
-  // State-application helpers.
   void applyState(uint8_t new_state);
   void resetToNominal();
   void issueAsyncSetParameters(
     const std::string & target_node,
     const std::vector<rclcpp::Parameter> & params);
 
-  // Drain in-flight set_parameters futures; called at the top of every
-  // process() so we never destruct a future before its callback fires
-  // (guards against the navigation2#3796 future-lifetime regression).
   void drainPendingFutures();
 
-  // ===== Subscribers / publisher =====
   nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
   nav2::Publisher<std_msgs::msg::UInt8>::SharedPtr state_event_pub_;
 
-  // ===== Mask state =====
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask_;
   std::string global_frame_;
 
-  // ===== State tracking =====
   uint8_t current_state_{0};
   bool state_initialized_{false};
 
-  // state -> list of parameters to set when entering this state.
-  // Each Parameter's .get_name() is "<target_node>:<param_name>" — colon
-  // separates the target node from the parameter on it. Resolved at
-  // applyState() time via param_clients_.
+  // Key shape: "<target_node>:<param_name>" (see kNodeParamSep).
   std::map<uint8_t, std::vector<rclcpp::Parameter>> state_param_map_;
-
-  // Captured nominal defaults — keyed by "<target_node>:<param_name>".
-  // Lazy-populated the first time we override each parameter; absence
-  // from this map means "not yet captured" (no empty-string sentinel
-  // per navigation2#3796 fix 4).
   std::map<std::string, rclcpp::Parameter> nominal_defaults_;
-
-  // Per-target-node async parameter clients (one per remote node we
-  // ever set parameters on). Built lazily in issueAsyncSetParameters.
-  // Steve's preference per #3796 first review: AsyncParametersClient,
-  // not per-call /set_parameter services.
   std::map<std::string, rclcpp::AsyncParametersClient::SharedPtr> param_clients_;
 
-  // In-flight set_parameters futures, drained each process() call.
   std::vector<std::shared_future<
       std::vector<rcl_interfaces::msg::SetParametersResult>>> pending_futures_;
 
-  // ===== Configuration =====
   std::string state_event_topic_;
 
   enum class ParamSetFailurePolicy { kWarn, kThrow };
