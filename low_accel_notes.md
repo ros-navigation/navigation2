@@ -295,7 +295,7 @@ Before:
 ![image](./low_accel_graphics/steady_state_noise_before2.png)
 
 
-After: 
+After:
 
 ![image](./low_accel_graphics/steady_state_noise_after.png)
 
