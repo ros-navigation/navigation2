@@ -109,7 +109,7 @@ private:
   std::string state_event_topic_;
 
   enum class ParamSetFailurePolicy { kWarn, kThrow };
-  ParamSetFailurePolicy param_set_failure_policy_{ParamSetFailurePolicy::kWarn};
+  ParamSetFailurePolicy param_set_failure_policy_{ParamSetFailurePolicy::kThrow};
 
   bool filter_info_received_{false};
 };
