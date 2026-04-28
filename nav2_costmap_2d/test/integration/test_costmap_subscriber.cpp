@@ -44,6 +44,11 @@ public:
       topicName + "_raw_updates", std::bind(
         &TestCostmapSubscriberShould::costmapRawUpdateCallback, this,
         std::placeholders::_1));
+
+    // Transition the node to active so all managed nav2::Subscriptions
+    // (including those created by CostmapSubscriber later) auto-activate.
+    node->configure();
+    node->activate();
   }
 
   void SetUp() override
@@ -52,11 +57,6 @@ public:
     fullCostmapRawMsgCount = 0;
     updateCostmapMsgCount = 0;
     updateCostmapRawMsgCount = 0;
-
-    dummyCostmapMsgSubscriber->on_activate();
-    dummyCostmapRawMsgSubscriber->on_activate();
-    dummyCostmapUpdateMsgSubscriber->on_activate();
-    dummyCostmapRawUpdateMsgSubscriber->on_activate();
 
     costmapSubscriber =
       std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, topicName + "_raw");

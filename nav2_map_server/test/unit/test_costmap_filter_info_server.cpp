@@ -84,6 +84,7 @@ public:
       FILTER_INFO_TOPIC,
       std::bind(&InfoServerTester::infoCallback, this, std::placeholders::_1),
       nav2::qos::LatchedSubscriptionQoS());
+    subscription_->on_activate();
   }
 
   ~InfoServerTester()

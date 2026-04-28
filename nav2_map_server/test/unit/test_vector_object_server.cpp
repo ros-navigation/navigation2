@@ -179,6 +179,7 @@ Tester::Tester()
   vo_map_sub_ = vo_server_->create_subscription<nav_msgs::msg::OccupancyGrid>(
     "vo_map", std::bind(&Tester::mapCallback, this, std::placeholders::_1),
     nav2::qos::LatchedSubscriptionQoS());
+  vo_map_sub_->on_activate();
 
   // Transform buffer and listener initialization
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(vo_server_->get_clock());
