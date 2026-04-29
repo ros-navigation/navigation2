@@ -47,7 +47,7 @@ public:
   void setAsymmetryFactor(double a) {asymmetry_factor_ = a;}
   void setNeutralThreshold(double n) {neutral_threshold_ = n;}
   void setCostScalingFactor(double c) {cost_scaling_factor_ = c;}
-  
+
   double getNeutralThreshold() const {return neutral_threshold_;}
 };
 
@@ -151,7 +151,7 @@ protected:
 
   // Helper method to simulate the spatial hash construction from updateCosts
   std::unordered_map<uint64_t, std::vector<size_t>> buildSpatialHash(
-    const std::vector<std::pair<double, double>> & path, 
+    const std::vector<std::pair<double, double>> & path,
     double bucket_size)
   {
     std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
@@ -175,8 +175,8 @@ protected:
 
       for (int64_t b_x = min_bx; b_x <= max_bx; ++b_x) {
         for (int64_t b_y = min_by; b_y <= max_by; ++b_y) {
-          uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) | 
-                         (static_cast<uint32_t>(b_y));
+          uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) |
+            (static_cast<uint32_t>(b_y));
           spatial_hash[key].push_back(p);
         }
       }
@@ -210,12 +210,14 @@ TEST_F(ObstacleSideTest, computeObstacleSide_classification)
   // South cell: world (2.0, 1.5)
   unsigned int mx_s, my_s;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 1.5, mx_s, my_s));
-  EXPECT_EQ(layer_->computeObstacleSide(mx_s, my_s, path, spatial_hash, bucket_size, *costmap_), -1);
+  EXPECT_EQ(layer_->computeObstacleSide(mx_s, my_s, path, spatial_hash, bucket_size, *costmap_),
+    -1);
 
   // Far north cell: world (2.0, 3.5) — 1.5m from path, beyond neutral_threshold 1.0
   unsigned int mx_far, my_far;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 3.5, mx_far, my_far));
-  EXPECT_EQ(layer_->computeObstacleSide(mx_far, my_far, path, spatial_hash, bucket_size, *costmap_), 0);
+  EXPECT_EQ(layer_->computeObstacleSide(mx_far, my_far, path, spatial_hash, bucket_size, *costmap_),
+    0);
 }
 
 // Test 6: L-shaped path — obstacle near the corner is assigned to the nearest segment,

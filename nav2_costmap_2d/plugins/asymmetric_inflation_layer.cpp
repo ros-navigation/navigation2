@@ -115,7 +115,7 @@ AsymmetricInflationLayer::onInitialize()
       throw std::runtime_error(
         "AsymmetricInflationLayer: goal_distance_threshold must be >= 0");
     }
-    
+
     plan_topic_ = joinWithParentNamespace(plan_topic_);
     path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
       plan_topic_,
@@ -333,8 +333,8 @@ AsymmetricInflationLayer::computeObstacleSide(
   // 1. BROAD PHASE (Hash Lookup)
   int64_t b_x = static_cast<int64_t>(std::floor(cx / bucket_size));
   int64_t b_y = static_cast<int64_t>(std::floor(cy / bucket_size));
-  uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) | 
-                 (static_cast<uint32_t>(b_y));
+  uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) |
+    (static_cast<uint32_t>(b_y));
 
   auto it = spatial_hash.find(key);
   if (it == spatial_hash.end()) {
@@ -343,9 +343,9 @@ AsymmetricInflationLayer::computeObstacleSide(
   }
 
   // 2. NARROW PHASE & EXACT PHASE
-  const auto& segments_to_check = it->second;
+  const auto & segments_to_check = it->second;
   const double neutral_threshold_sq = neutral_threshold_ * neutral_threshold_;
-  
+
   double min_dist_sq = std::numeric_limits<double>::max();
   double best_cross = 0.0;
 
@@ -358,11 +358,11 @@ AsymmetricInflationLayer::computeObstacleSide(
     // Segment AABB check (Narrow Phase)
     double min_x = std::min(ax, bx) - neutral_threshold_;
     double max_x = std::max(ax, bx) + neutral_threshold_;
-    if (cx < min_x || cx > max_x) continue;
+    if (cx < min_x || cx > max_x) {continue;}
 
     double min_y = std::min(ay, by) - neutral_threshold_;
     double max_y = std::max(ay, by) + neutral_threshold_;
-    if (cy < min_y || cy > max_y) continue;
+    if (cy < min_y || cy > max_y) {continue;}
 
     // Projection Math (Exact Phase)
     double abx = bx - ax, aby = by - ay;
@@ -373,7 +373,7 @@ AsymmetricInflationLayer::computeObstacleSide(
 
     double dist_sq;
     double cross;
-    
+
     if (len_sq < 1e-10) {
       // Degenerate zero-length segment
       dist_sq = acx * acx + acy * acy;
@@ -381,7 +381,7 @@ AsymmetricInflationLayer::computeObstacleSide(
     } else {
       // t is the scalar projection of AC onto AB, clamped to [0, 1]
       double t = std::clamp((acx * abx + acy * aby) / len_sq, 0.0, 1.0);
-      
+
       // Calculate perpendicular distance squared
       double proj_dx = acx - t * abx;
       double proj_dy = acy - t * aby;
@@ -450,7 +450,7 @@ AsymmetricInflationLayer::updateCosts(
   bool use_asymmetry = (local_path_pts.size() >= 2) && (asymmetry_factor_ != 0.0);
 
   // Spatial Hash Grid Construction
-  double bucket_size = std::max(neutral_threshold_, 1.0); 
+  double bucket_size = std::max(neutral_threshold_, 1.0);
   std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
 
   if (use_asymmetry) {
@@ -475,9 +475,9 @@ AsymmetricInflationLayer::updateCosts(
       for (int64_t b_x = min_bx; b_x <= max_bx; ++b_x) {
         for (int64_t b_y = min_by; b_y <= max_by; ++b_y) {
           // Bitwise magic to safely map 2D signed coordinates into a 1D unsigned 64-bit key
-          uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) | 
-                         (static_cast<uint32_t>(b_y));
-          
+          uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) |
+            (static_cast<uint32_t>(b_y));
+
           spatial_hash[key].push_back(p);
         }
       }
@@ -494,34 +494,34 @@ AsymmetricInflationLayer::updateCosts(
 
     // Helper lambda to check if a neighbor is "traversable" (i.e., open space)
     auto is_traversable = [&](int nx, int ny) {
-      unsigned char n_cost = master_array[master_grid.getIndex(nx, ny)];
-      if (inflate_around_unknown_) {
-        return (n_cost != LETHAL_OBSTACLE && n_cost != NO_INFORMATION);
-      } else {
-        return (n_cost != LETHAL_OBSTACLE);
-      }
-    };
+        unsigned char n_cost = master_array[master_grid.getIndex(nx, ny)];
+        if (inflate_around_unknown_) {
+          return  n_cost != LETHAL_OBSTACLE && n_cost != NO_INFORMATION;
+        } else {
+          return  n_cost != LETHAL_OBSTACLE;
+        }
+      };
 
     // Seed all lethal obstacles (Boundary cells only)
     for (int j = min_j; j < max_j; j++) {
       for (int i = min_i; i < max_i; i++) {
         int index = static_cast<int>(master_grid.getIndex(i, j));
         unsigned char cost = master_array[index];
-        
+
         if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
-          
+
           bool is_boundary = false;
-          
+
           // Map edge cells are treated as boundaries
-          if (i == 0 || i == static_cast<int>(size_x) - 1 || 
-              j == 0 || j == static_cast<int>(size_y) - 1) 
+          if (i == 0 || i == static_cast<int>(size_x) - 1 ||
+            j == 0 || j == static_cast<int>(size_y) - 1)
           {
             is_boundary = true;
           } else {
             // Check 4-connected neighbors. If any neighbor is traversable space,
             // this cell is on the outer perimeter of the obstacle.
             if (is_traversable(i - 1, j) || is_traversable(i + 1, j) ||
-                is_traversable(i, j - 1) || is_traversable(i, j + 1)) 
+              is_traversable(i, j - 1) || is_traversable(i, j + 1))
             {
               is_boundary = true;
             }
@@ -529,11 +529,12 @@ AsymmetricInflationLayer::updateCosts(
 
           if (is_boundary) {
             obs_bin_asym.emplace_back(i, j, i, j);
-            obstacle_side_grid_[index] = computeObstacleSide(i, j, local_path_pts, spatial_hash, bucket_size, master_grid);
+            obstacle_side_grid_[index] = computeObstacleSide(i, j, local_path_pts, spatial_hash,
+                bucket_size, master_grid);
           } else {
-            // Mark interior cells as 'seen' so the BFS wave doesn't 
+            // Mark interior cells as 'seen' so the BFS wave doesn't
             // waste time propagating backwards into the solid obstacle mass.
-            seen_[index] = true; 
+            seen_[index] = true;
           }
         }
       }

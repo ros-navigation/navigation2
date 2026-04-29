@@ -155,9 +155,9 @@ protected:
    * relative to the closest path segment.
    *
    * Uses a spatial hash grid to perform an O(1) broad-phase lookup of nearby
-   * path segments, then projects the cell onto each overlapping path segment and 
-   * uses the cross product of the segment direction and the cell offset to 
-   * determine the side. Obstacles beyond neutral_threshold_ from the path 
+   * path segments, then projects the cell onto each overlapping path segment and
+   * uses the cross product of the segment direction and the cell offset to
+   * determine the side. Obstacles beyond neutral_threshold_ from the path
    * are classified as neutral.
    */
   int8_t computeObstacleSide(
