@@ -23,6 +23,7 @@
 
 #include "tf2/utils.hpp"
 
+#include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_smac_planner/smoother.hpp"
 #include "nav2_util/smoother_utils.hpp"
@@ -127,6 +128,21 @@ bool Smoother::smoothImpl(
   nav_msgs::msg::Path new_path = path;
   nav_msgs::msg::Path last_path = path;
 
+  // Oriented footprint collision checker for non-circular robots (fix for #5330).
+  // Built once and reused across iterations. The center-cost check inside the
+  // inner pose loop is sufficient for circular robots (costmap inflation captures
+  // the radius) but misses orientation-dependent footprint extensions for
+  // non-circular robots. The oriented-footprint check below is evaluated per
+  // gradient-descent iteration, after orientation assignment, on the new_path.
+  // On collision, the iteration is reverted (path = last_path) — matching the
+  // nav2_smoother::SimpleSmoother per-iteration revert idiom — so the smoother
+  // never publishes a smoothed path it knows to be in oriented collision.
+  const bool check_oriented_footprint = !footprint.empty() && costmap;
+  // FootprintCollisionChecker is only instantiated for Costmap2D* (non-const).
+  // const_cast is safe here: footprintCostAtPose only reads the costmap.
+  nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
+  oriented_checker(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
+
   while (change >= tolerance_) {
     its += 1;
     change = 0.0;
@@ -188,6 +204,48 @@ bool Smoother::smoothImpl(
       }
     }
 
+    // Oriented footprint collision check (fix for #5330).
+    // Evaluated per iteration so the smoother stops smoothing as soon as a step
+    // would pull the oriented footprint into a lethal cell. On collision, the
+    // path is reverted to last_path (the last collision-free iteration) and
+    // nav2_core::SmoothedPathInCollision is thrown — matching the canonical
+    // fail-loud signal used by nav2_smoother::Nav2Smoother (collision_checker
+    // catch site at nav2_smoother.cpp:285-303). The caller's input path is
+    // length-preserved (std::copy back-into-segment is bypassed by the throw)
+    // so downstream consumers receive either a fully-smoothed-and-clean path
+    // or an explicit collision exception, never a silently-truncated path.
+    // Combines Maurice's r3072469939 in-loop guidance (UPA reading-α) with the
+    // nav2_core SmoothedPathInCollision idiom (AAA reading-β safety class).
+    if (check_oriented_footprint) {
+      nav_msgs::msg::Path oriented_candidate = new_path;
+      nav2_util::updateApproximatePathOrientations(
+        oriented_candidate, reversing_segment, is_holonomic_);
+      for (size_t idx = 0; idx < oriented_candidate.poses.size(); ++idx) {
+        const double yaw = tf2::getYaw(oriented_candidate.poses[idx].pose.orientation);
+        const double oriented_cost = oriented_checker.footprintCostAtPose(
+          oriented_candidate.poses[idx].pose.position.x,
+          oriented_candidate.poses[idx].pose.position.y,
+          yaw, footprint);
+        if (
+          static_cast<float>(oriented_cost) >=
+          static_cast<float>(nav2_costmap_2d::LETHAL_OBSTACLE) &&
+          static_cast<float>(oriented_cost) != UNKNOWN_COST)
+        {
+          RCLCPP_DEBUG(
+            rclcpp::get_logger("SmacPlannerSmoother"),
+            "Smoothing iteration produced an oriented footprint collision for a "
+            "non-circular robot. Reverting to the last collision-free iteration.");
+          path = last_path;
+          nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
+          throw nav2_core::SmoothedPathInCollision(
+                  "Smoothed path collides with the oriented robot footprint at "
+                  "X: " + std::to_string(oriented_candidate.poses[idx].pose.position.x) +
+                  " Y: " + std::to_string(oriented_candidate.poses[idx].pose.position.y) +
+                  " Theta: " + std::to_string(yaw));
+        }
+      }
+    }
+
     last_path = new_path;
   }
 
@@ -199,41 +257,6 @@ bool Smoother::smoothImpl(
   }
 
   nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
-
-  // Oriented footprint collision check for non-circular robots (fix for #5330).
-  // The per-iteration cost check above uses center-point cost only, which is
-  // sufficient for circular robots (costmap inflation captures the radius) but
-  // misses orientation-dependent footprint extensions for non-circular robots.
-  // After orientations are assigned we validate each smoothed pose with the full
-  // oriented footprint. When a collision is detected the loop stops at that pose
-  // so the maximum collision-free smoothed prefix is used. The caller's path
-  // retains the original planner poses from the collision point onward (via the
-  // partial std::copy in Smoother::smooth).
-  if (!footprint.empty() && costmap) {
-    // FootprintCollisionChecker is only instantiated for Costmap2D* (non-const).
-    // const_cast is safe here: footprintCostAtPose only reads the costmap.
-    nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
-    checker(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
-    for (size_t idx = 0; idx < new_path.poses.size(); ++idx) {
-      const double yaw = tf2::getYaw(new_path.poses[idx].pose.orientation);
-      const double cost = checker.footprintCostAtPose(
-        new_path.poses[idx].pose.position.x,
-        new_path.poses[idx].pose.position.y,
-        yaw, footprint);
-      if (static_cast<float>(cost) >= static_cast<float>(nav2_costmap_2d::LETHAL_OBSTACLE) &&
-        static_cast<float>(cost) != UNKNOWN_COST)
-      {
-        RCLCPP_WARN(
-          rclcpp::get_logger("SmacPlannerSmoother"),
-          "Smoothed path produces an oriented footprint collision for a non-circular robot. "
-          "Stopping smoothed path at collision-free boundary.");
-        new_path.poses.resize(idx);
-        path = new_path;
-        return false;
-      }
-    }
-  }
-
   path = new_path;
   return true;
 }

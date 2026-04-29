@@ -20,6 +20,7 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -238,10 +239,11 @@ TEST(SmootherTest, test_footprint_collision_detection)
   plan_copy = plan;
   EXPECT_TRUE(smoother->smooth(plan_copy, costmap, maxtime, narrow_footprint));
 
-  // With a wide footprint (1.2m wide): oriented footprint check detects collision at
-  // the very first pose (footprint extends ±0.6m in y, touching the lethal walls at
-  // y=4.4 and y=5.6). The smoothed path is truncated at idx=0 (empty prefix) and
-  // false is returned; the caller's path segment is left with the original planner poses.
+  // With a wide footprint (1.2m wide): the per-iteration oriented footprint check
+  // detects collision (footprint extends ±0.6m in y, touching the lethal walls at
+  // y=4.4 and y=5.6) and throws nav2_core::SmoothedPathInCollision — matching the
+  // canonical fail-loud idiom used by nav2_smoother::Nav2Smoother. The caller's
+  // path is left unchanged (full length preserved); no truncated path is returned.
   nav2_costmap_2d::Footprint wide_footprint;
   pt.x = 0.4; pt.y = 0.6; wide_footprint.push_back(pt);
   pt.x = 0.4; pt.y = -0.6; wide_footprint.push_back(pt);
@@ -249,7 +251,12 @@ TEST(SmootherTest, test_footprint_collision_detection)
   pt.x = -0.4; pt.y = 0.6; wide_footprint.push_back(pt);
 
   plan_copy = plan;
-  EXPECT_FALSE(smoother->smooth(plan_copy, costmap, maxtime, wide_footprint));
+  const size_t original_size = plan_copy.poses.size();
+  EXPECT_THROW(
+    smoother->smooth(plan_copy, costmap, maxtime, wide_footprint),
+    nav2_core::SmoothedPathInCollision);
+  // Path length is preserved on collision-throw — matches simple_smoother revert idiom.
+  EXPECT_EQ(plan_copy.poses.size(), original_size);
 
   delete costmap;
 }
