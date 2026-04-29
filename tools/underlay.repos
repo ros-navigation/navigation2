@@ -1,8 +1,8 @@
 repositories:
   BehaviorTree/BehaviorTree.CPP:
     type: git
-    url: https://github.com/mini-1235/BehaviorTree.CPP.git
-    version: cde8f2daf5d01db667cf877db1bacea253504749
+    url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
+    version: 7119df95a17086f55e3690cf8d7b7663b59319d0
   # ros2/rviz:
   #   type: git
   #   url: https://github.com/ros2/rviz.git
