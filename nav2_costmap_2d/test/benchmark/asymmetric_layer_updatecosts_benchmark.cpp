@@ -1,4 +1,4 @@
-// Copyright 2026 Duatic AG
+// Copyright (c) 2026
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,16 +13,27 @@
 // limitations under the License.
 
 /**
- * @file asymmetric_inflation_layer_benchmark.cpp
- * @brief Performance comparison between LegacyInflationLayer and
- *        AsymmetricInflationLayer::updateCosts() at four costmap sizes
- *        (3×3 m, 5×5 m, 10×10 m, 20×20 m) at 0.05 m/cell resolution.
+ * @file asymmetric_inflation_overhead_benchmark.cpp
+ * @brief Measures the per-update overhead of AsymmetricInflationLayer in a
+ *        realistic chained pipeline.
  *
- * The asymmetric layer is benchmarked with asymmetry fully active
- * (asymmetry_factor=0.5, diagonal path injected), which exercises the full
- * Dial's-algorithm BFS.  Each configuration is run for 50 iterations;
- * the costmap is reset to 10% random rectangular obstacles between each
- * iteration (under timing pause) for consistent per-iteration measurements.
+ * Two fixtures are compared at four costmap sizes (3×3 m, 5×5 m, 10×10 m,
+ * 20×20 m) at 0.05 m/cell, 50 iterations each:
+ *
+ *   LegacyOnlyFixture  — LegacyInflationLayer::updateCosts() alone
+ *                        (the current pipeline without the new layer)
+ *
+ *   ChainedFixture     — LegacyInflationLayer::updateCosts() followed by
+ *                        AsymmetricInflationLayer::updateCosts() on the same
+ *                        costmap (the full production pipeline with the new layer)
+ *
+ * The difference between the two reported times is the actual overhead that
+ * enabling the asymmetric layer adds to each costmap update cycle.
+ * Crucially, the asymmetric BFS operates on the symmetric baseline that
+ * LegacyInflationLayer has already written, so only cells on the disfavored
+ * side whose asymmetric cost exceeds the symmetric cost are written — matching
+ * real production behaviour and giving a tighter bound than testing the layer
+ * in isolation.
  */
 
 #include <algorithm>
@@ -57,10 +68,7 @@ static constexpr double kOccupancy = 0.10;          ///< lethal-obstacle fractio
 static constexpr unsigned int kObstacleSeed = 42;
 
 /**
- * @brief Subclass that exposes the protected globalPathCallback for benchmarking.
- *
- * Injects a path directly without a ROS publisher / executor spin, avoiding
- * message-passing latency noise in the measurements.
+ * @brief Exposes the protected globalPathCallback for path injection in benchmarks.
  */
 class BenchmarkAsymmetricInflationLayer : public nav2_costmap_2d::AsymmetricInflationLayer
 {
@@ -73,8 +81,7 @@ public:
  * @brief Seed lethal rectangular obstacles covering ~@p occupancy_pct of the costmap.
  *
  * Clears the entire map first, then places random-sized rectangles until the
- * target cell count is reached.  Adapted from
- * inflation_layer_updatecosts_benchmark.cpp (file-static there, so not linkable).
+ * target cell count is reached.
  */
 void generateRectangularObstacles(
   nav2_costmap_2d::Costmap2D & costmap,
@@ -116,9 +123,7 @@ void generateRectangularObstacles(
   }
 }
 
-/**
- * @brief Build a 0.6 m × 0.4 m rectangular robot footprint.
- */
+/** @brief Build a 0.6 m × 0.4 m rectangular robot footprint. */
 std::vector<geometry_msgs::msg::Point> makeFootprint()
 {
   std::vector<geometry_msgs::msg::Point> fp(4);
@@ -132,15 +137,15 @@ std::vector<geometry_msgs::msg::Point> makeFootprint()
 }  // namespace
 
 // ---------------------------------------------------------------------------
-// LegacyInflationLayer benchmark
+// Baseline: LegacyInflationLayer alone
 // ---------------------------------------------------------------------------
 
 /**
- * @brief Fixture that times LegacyInflationLayer::updateCosts().
+ * @brief Fixture for the baseline pipeline: LegacyInflationLayer only.
  *
  * Benchmark arguments: {width_cells, height_cells}.
  */
-class LegacyInflationLayerFixture : public benchmark::Fixture
+class LegacyOnlyFixture : public benchmark::Fixture
 {
 public:
   void SetUp(benchmark::State & state) override
@@ -155,7 +160,7 @@ public:
       rclcpp::Parameter("inflation.inflate_unknown", false),
       rclcpp::Parameter("inflation.inflate_around_unknown", false),
     });
-    node_ = std::make_shared<nav2::LifecycleNode>("legacy_inflation_benchmark", "", opts);
+    node_ = std::make_shared<nav2::LifecycleNode>("legacy_only_benchmark", "", opts);
 
     layers_ = std::make_unique<nav2_costmap_2d::LayeredCostmap>(kGlobalFrame, false, false);
     layers_->resizeMap(width_, height_, kResolution, 0.0, 0.0);
@@ -163,7 +168,6 @@ public:
     layer_ = std::make_shared<nav2_costmap_2d::LegacyInflationLayer>();
     layer_->initialize(layers_.get(), "inflation", nullptr, node_, nullptr);
     layers_->addPlugin(std::static_pointer_cast<nav2_costmap_2d::Layer>(layer_));
-    // setFootprint after addPlugin so onFootprintChanged() reaches the layer.
     layers_->setFootprint(makeFootprint());
 
     generateRectangularObstacles(*layers_->getCostmap(), kOccupancy);
@@ -183,10 +187,7 @@ public:
   std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> layer_;
 };
 
-/**
- * @brief Benchmark body: reset costmap (under pause) then time one updateCosts().
- */
-BENCHMARK_DEFINE_F(LegacyInflationLayerFixture, UpdateCosts)(benchmark::State & state)
+BENCHMARK_DEFINE_F(LegacyOnlyFixture, UpdateCosts)(benchmark::State & state)
 {
   auto * costmap = layers_->getCostmap();
   const int w = static_cast<int>(width_);
@@ -204,7 +205,7 @@ BENCHMARK_DEFINE_F(LegacyInflationLayerFixture, UpdateCosts)(benchmark::State & 
   state.counters["map_side_m"] = static_cast<double>(width_) * kResolution;
 }
 
-BENCHMARK_REGISTER_F(LegacyInflationLayerFixture, UpdateCosts)
+BENCHMARK_REGISTER_F(LegacyOnlyFixture, UpdateCosts)
 ->Args({60, 60})      // 3x3 m
 ->Args({100, 100})    // 5x5 m
 ->Args({200, 200})    // 10x10 m
@@ -218,19 +219,21 @@ BENCHMARK_REGISTER_F(LegacyInflationLayerFixture, UpdateCosts)
 ->Unit(benchmark::kMillisecond);
 
 // ---------------------------------------------------------------------------
-// AsymmetricInflationLayer benchmark (asymmetry fully active)
+// Full pipeline: LegacyInflationLayer + AsymmetricInflationLayer chained
 // ---------------------------------------------------------------------------
 
 /**
- * @brief Fixture that times AsymmetricInflationLayer::updateCosts() with a
- *        diagonal path injected so use_asymmetry = true (full BFS runs).
+ * @brief Fixture for the full chained pipeline:
+ *        LegacyInflationLayer then AsymmetricInflationLayer on the same costmap.
  *
- * This represents the production steady-state: a plan has been published,
- * asymmetry_factor is non-zero, and the BFS executes on every costmap update.
+ * This reproduces the production call sequence.  LegacyInflationLayer writes
+ * the symmetric baseline; AsymmetricInflationLayer then raises costs only where
+ * the asymmetric effective distance exceeds the existing symmetric cost, i.e.
+ * on the disfavoured side of obstacles.
  *
  * Benchmark arguments: {width_cells, height_cells}.
  */
-class AsymmetricInflationLayerFixture : public benchmark::Fixture
+class ChainedFixture : public benchmark::Fixture
 {
 public:
   void SetUp(benchmark::State & state) override
@@ -238,8 +241,13 @@ public:
     width_ = static_cast<unsigned int>(state.range(0));
     height_ = static_cast<unsigned int>(state.range(1));
 
+    // Both layers share one node; parameters are separated by their name prefix.
     auto opts = rclcpp::NodeOptions().parameter_overrides(
     {
+      rclcpp::Parameter("inflation.inflation_radius", kInflationRadius),
+      rclcpp::Parameter("inflation.cost_scaling_factor", kCostScalingFactor),
+      rclcpp::Parameter("inflation.inflate_unknown", false),
+      rclcpp::Parameter("inflation.inflate_around_unknown", false),
       rclcpp::Parameter("asymmetric_inflation_layer.enabled", true),
       rclcpp::Parameter("asymmetric_inflation_layer.inflation_radius", kInflationRadius),
       rclcpp::Parameter("asymmetric_inflation_layer.cost_scaling_factor", kCostScalingFactor),
@@ -247,33 +255,34 @@ public:
       rclcpp::Parameter("asymmetric_inflation_layer.inflate_around_unknown", false),
       rclcpp::Parameter("asymmetric_inflation_layer.goal_distance_threshold", 1.5),
       rclcpp::Parameter("asymmetric_inflation_layer.neutral_threshold", 2.0),
-      // Absolute topic so joinWithParentNamespace() leaves it unchanged.
       rclcpp::Parameter(
-        "asymmetric_inflation_layer.plan_topic", std::string("/benchmark_asym_plan")),
+        "asymmetric_inflation_layer.plan_topic", std::string("/benchmark_chain_plan")),
     });
-    node_ = std::make_shared<nav2::LifecycleNode>("asymmetric_inflation_benchmark", "", opts);
+    node_ = std::make_shared<nav2::LifecycleNode>("chained_benchmark", "", opts);
 
     layers_ = std::make_unique<nav2_costmap_2d::LayeredCostmap>(kGlobalFrame, false, false);
     layers_->resizeMap(width_, height_, kResolution, 0.0, 0.0);
 
-    layer_ = std::make_shared<BenchmarkAsymmetricInflationLayer>();
-    layer_->initialize(layers_.get(), "asymmetric_inflation_layer", nullptr, node_, nullptr);
-    layers_->addPlugin(std::static_pointer_cast<nav2_costmap_2d::Layer>(layer_));
-    // setFootprint after addPlugin: onFootprintChanged() sets inscribed_radius_
-    // before the first updateCosts() call.
+    legacy_layer_ = std::make_shared<nav2_costmap_2d::LegacyInflationLayer>();
+    legacy_layer_->initialize(layers_.get(), "inflation", nullptr, node_, nullptr);
+    layers_->addPlugin(std::static_pointer_cast<nav2_costmap_2d::Layer>(legacy_layer_));
+
+    asym_layer_ = std::make_shared<BenchmarkAsymmetricInflationLayer>();
+    asym_layer_->initialize(
+      layers_.get(), "asymmetric_inflation_layer", nullptr, node_, nullptr);
+    layers_->addPlugin(std::static_pointer_cast<nav2_costmap_2d::Layer>(asym_layer_));
+
+    // setFootprint after both addPlugin calls so onFootprintChanged() reaches both layers.
     layers_->setFootprint(makeFootprint());
 
-    // Inject a diagonal path spanning the full map so use_asymmetry = true inside
-    // updateCosts().  The goal (far corner) is always >> goal_distance_threshold_
-    // from the robot at (0, 0).
     injectDiagonalPath();
-
     generateRectangularObstacles(*layers_->getCostmap(), kOccupancy);
   }
 
   void TearDown(benchmark::State &) override
   {
-    layer_.reset();
+    asym_layer_.reset();
+    legacy_layer_.reset();
     layers_.reset();
     node_.reset();
   }
@@ -282,7 +291,8 @@ public:
   unsigned int height_{0};
   nav2::LifecycleNode::SharedPtr node_;
   std::unique_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
-  std::shared_ptr<BenchmarkAsymmetricInflationLayer> layer_;
+  std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> legacy_layer_;
+  std::shared_ptr<BenchmarkAsymmetricInflationLayer> asym_layer_;
 
 private:
   void injectDiagonalPath()
@@ -290,7 +300,7 @@ private:
     const double width_m = static_cast<double>(width_) * kResolution;
     const double height_m = static_cast<double>(height_) * kResolution;
     const double diag = std::hypot(width_m, height_m);
-    const double step = 0.5;  // one pose every 0.5 m along the diagonal
+    const double step = 0.5;
     const int n = std::max(2, static_cast<int>(std::ceil(diag / step)) + 1);
 
     auto path = std::make_shared<nav_msgs::msg::Path>();
@@ -306,14 +316,11 @@ private:
       path->poses.push_back(ps);
     }
 
-    layer_->injectPath(path);
+    asym_layer_->injectPath(path);
   }
 };
 
-/**
- * @brief Benchmark body: reset costmap (under pause) then time one updateCosts().
- */
-BENCHMARK_DEFINE_F(AsymmetricInflationLayerFixture, UpdateCosts)(benchmark::State & state)
+BENCHMARK_DEFINE_F(ChainedFixture, UpdateCosts)(benchmark::State & state)
 {
   auto * costmap = layers_->getCostmap();
   const int w = static_cast<int>(width_);
@@ -324,18 +331,21 @@ BENCHMARK_DEFINE_F(AsymmetricInflationLayerFixture, UpdateCosts)(benchmark::Stat
     generateRectangularObstacles(*costmap, kOccupancy);
     state.ResumeTiming();
 
-    layer_->updateCosts(*costmap, 0, 0, w, h);
+    // Production call order: symmetric baseline first, asymmetric bumps second.
+    legacy_layer_->updateCosts(*costmap, 0, 0, w, h);
+    asym_layer_->updateCosts(*costmap, 0, 0, w, h);
   }
 
   state.counters["cells"] = static_cast<double>(width_ * height_);
   state.counters["map_side_m"] = static_cast<double>(width_) * kResolution;
 }
 
-BENCHMARK_REGISTER_F(AsymmetricInflationLayerFixture, UpdateCosts)
+BENCHMARK_REGISTER_F(ChainedFixture, UpdateCosts)
 ->Args({60, 60})      // 3x3 m
 ->Args({100, 100})    // 5x5 m
 ->Args({200, 200})    // 10x10 m
 ->Args({400, 400})    // 20x20 m
+->Args({800, 800})    // 40x40 m
 ->Args({1600, 1600})  // 80x80 m
 ->Args({3200, 3200})  // 160x160 m
 ->Args({6400, 6400})  // 320x320 m
@@ -351,11 +361,9 @@ int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
-  // Silence ROS log noise so benchmark output is readable.
-  auto ret = rcutils_logging_set_logger_level(
-    "legacy_inflation_benchmark", RCUTILS_LOG_SEVERITY_ERROR);
-  ret = rcutils_logging_set_logger_level(
-    "asymmetric_inflation_benchmark", RCUTILS_LOG_SEVERITY_ERROR);
+  auto ret =
+    rcutils_logging_set_logger_level("legacy_only_benchmark", RCUTILS_LOG_SEVERITY_ERROR);
+  ret = rcutils_logging_set_logger_level("chained_benchmark", RCUTILS_LOG_SEVERITY_ERROR);
   ret = rcutils_logging_set_logger_level("rclcpp_lifecycle", RCUTILS_LOG_SEVERITY_ERROR);
   (void)ret;
 
