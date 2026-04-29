@@ -18,6 +18,7 @@
 #include <chrono>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -313,6 +314,40 @@ void ZoneParameterFilter::loadStateConfig()
       }
     }
   }
+
+  // Build one AsyncParametersClient per unique target node (init-time;
+  // not lazy). Client construction registers locally; the remote service
+  // need not be reachable yet — set_parameters failures surface via
+  // drainPendingFutures.
+  std::set<std::string> all_target_nodes;
+  for (const auto & [_state_id, params] : state_param_map_) {
+    for (const auto & p : params) {
+      const auto sep_pos = p.get_name().find(kNodeParamSep);
+      if (sep_pos != std::string::npos) {
+        all_target_nodes.insert(p.get_name().substr(0, sep_pos));
+      }
+    }
+  }
+  for (const auto & [stored_name, _nominal_param] : nominal_defaults_) {
+    const auto sep_pos = stored_name.find(kNodeParamSep);
+    if (sep_pos != std::string::npos) {
+      all_target_nodes.insert(stored_name.substr(0, sep_pos));
+    }
+  }
+  for (const auto & target_node : all_target_nodes) {
+    param_clients_.emplace(
+      target_node,
+      std::make_shared<rclcpp::AsyncParametersClient>(
+        node->get_node_base_interface(),
+        node->get_node_topics_interface(),
+        node->get_node_graph_interface(),
+        node->get_node_services_interface(),
+        target_node));
+  }
+  RCLCPP_INFO(
+    logger_,
+    "ZoneParameterFilter: %zu AsyncParametersClient(s) built at init.",
+    param_clients_.size());
 }
 
 void ZoneParameterFilter::process(
@@ -456,28 +491,16 @@ void ZoneParameterFilter::issueAsyncSetParameters(
   const std::string & target_node,
   const std::vector<rclcpp::Parameter> & params)
 {
-  nav2::LifecycleNode::SharedPtr node = node_.lock();
-  if (!node) {
-    return;
-  }
-
+  // Clients are built at init in loadStateConfig(); a missing entry here
+  // indicates a state references a target_node that wasn't enumerated at
+  // config-load (programmer error). Failed set_parameters surfaces via
+  // drainPendingFutures + param_set_failure_policy_, not by skip-here.
   auto client_it = param_clients_.find(target_node);
   if (client_it == param_clients_.end()) {
-    auto client = std::make_shared<rclcpp::AsyncParametersClient>(
-      node->get_node_base_interface(),
-      node->get_node_topics_interface(),
-      node->get_node_graph_interface(),
-      node->get_node_services_interface(),
-      target_node);
-    auto inserted = param_clients_.emplace(target_node, std::move(client));
-    client_it = inserted.first;
-  }
-
-  // Non-blocking probe; never wait_for_service in the hot path.
-  if (!client_it->second->service_is_ready()) {
-    RCLCPP_WARN_THROTTLE(
-      logger_, *(clock_), 2000,
-      "ZoneParameterFilter: parameter service for node '%s' not ready; skipping set.",
+    RCLCPP_ERROR(
+      logger_,
+      "ZoneParameterFilter: no client for target_node '%s' "
+      "(should have been built at config-load).",
       target_node.c_str());
     return;
   }
