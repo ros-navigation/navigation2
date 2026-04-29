@@ -409,6 +409,7 @@ TEST(SmacTest, test_smac_se2_smoother_coverage)
   EXPECT_TRUE(planner->hasSmootherInitialized());
 
   auto dummy_cancel_checker = []() {return false;};
+  std::vector<geometry_msgs::msg::PoseStamped> no_viapoints{};
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
@@ -418,7 +419,7 @@ TEST(SmacTest, test_smac_se2_smoother_coverage)
   goal.pose.orientation.w = 1.0;
 
   nav_msgs::msg::Path plan;
-  EXPECT_NO_THROW(plan = planner->createPlan(start, goal, dummy_cancel_checker));
+  EXPECT_NO_THROW(plan = planner->createPlan(start, goal, no_viapoints, dummy_cancel_checker));
   EXPECT_FALSE(plan.poses.empty());
 
   planner->deactivate();
