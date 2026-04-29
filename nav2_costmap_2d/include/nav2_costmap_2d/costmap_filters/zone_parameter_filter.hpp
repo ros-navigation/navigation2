@@ -126,9 +126,15 @@ protected:
   uint8_t current_state_{0};
   bool state_initialized_{false};
 
-  // Key shape: "<target_node>:<param_name>" (see kNodeParamSep).
-  std::map<uint8_t, std::vector<rclcpp::Parameter>> state_param_map_;
-  std::map<std::string, rclcpp::Parameter> nominal_defaults_;
+  // One per-state-override or per-nominal-default entry.
+  struct StateParamEntry
+  {
+    std::string target_node;
+    rclcpp::Parameter param;
+  };
+  std::map<uint8_t, std::vector<StateParamEntry>> state_param_map_;
+  // Keyed by target_node; values are bare-named Parameters to restore.
+  std::map<std::string, std::vector<rclcpp::Parameter>> nominal_defaults_;
   std::map<std::string, rclcpp::AsyncParametersClient::SharedPtr> param_clients_;
 
   std::vector<std::shared_future<
