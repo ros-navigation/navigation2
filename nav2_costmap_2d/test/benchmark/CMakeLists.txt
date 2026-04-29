@@ -16,3 +16,17 @@ if(ENABLE_OPENMP)
   target_compile_options(inflation_layer_updatecosts_benchmark PRIVATE -fopenmp)
   target_link_libraries(inflation_layer_updatecosts_benchmark OpenMP::OpenMP_CXX)
 endif()
+
+ament_add_google_benchmark(asymmetric_inflation_layer_benchmark
+  asymmetric_inflation_layer_benchmark.cpp)
+target_link_libraries(asymmetric_inflation_layer_benchmark
+  nav2_costmap_2d_core
+  layers
+)
+
+ament_add_google_benchmark(asymmetric_inflation_overhead_benchmark
+  asymmetric_inflation_overhead_benchmark.cpp)
+target_link_libraries(asymmetric_inflation_overhead_benchmark
+  nav2_costmap_2d_core
+  layers
+)

@@ -24,6 +24,9 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <unordered_map>
+#include <cmath>
+#include <cstdint>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/asymmetric_inflation_layer.hpp"
@@ -44,6 +47,8 @@ public:
   void setAsymmetryFactor(double a) {asymmetry_factor_ = a;}
   void setNeutralThreshold(double n) {neutral_threshold_ = n;}
   void setCostScalingFactor(double c) {cost_scaling_factor_ = c;}
+  
+  double getNeutralThreshold() const {return neutral_threshold_;}
 };
 
 }  // namespace nav2_costmap_2d
@@ -144,6 +149,41 @@ protected:
     layer_->setAsymmetryFactor(0.3);
   }
 
+  // Helper method to simulate the spatial hash construction from updateCosts
+  std::unordered_map<uint64_t, std::vector<size_t>> buildSpatialHash(
+    const std::vector<std::pair<double, double>> & path, 
+    double bucket_size)
+  {
+    std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
+    double neutral_threshold = layer_->getNeutralThreshold();
+
+    for (size_t p = 0; p < path.size() - 1; ++p) {
+      double ax = path[p].first;
+      double ay = path[p].second;
+      double bx = path[p + 1].first;
+      double by = path[p + 1].second;
+
+      double min_x = std::min(ax, bx) - neutral_threshold;
+      double max_x = std::max(ax, bx) + neutral_threshold;
+      double min_y = std::min(ay, by) - neutral_threshold;
+      double max_y = std::max(ay, by) + neutral_threshold;
+
+      int64_t min_bx = static_cast<int64_t>(std::floor(min_x / bucket_size));
+      int64_t max_bx = static_cast<int64_t>(std::floor(max_x / bucket_size));
+      int64_t min_by = static_cast<int64_t>(std::floor(min_y / bucket_size));
+      int64_t max_by = static_cast<int64_t>(std::floor(max_y / bucket_size));
+
+      for (int64_t b_x = min_bx; b_x <= max_bx; ++b_x) {
+        for (int64_t b_y = min_by; b_y <= max_by; ++b_y) {
+          uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) | 
+                         (static_cast<uint32_t>(b_y));
+          spatial_hash[key].push_back(p);
+        }
+      }
+    }
+    return spatial_hash;
+  }
+
   std::unique_ptr<nav2_costmap_2d::Costmap2D> costmap_;
   std::unique_ptr<TestableAsymmetricInflationLayer> layer_;
 };
@@ -159,20 +199,23 @@ TEST_F(ObstacleSideTest, computeObstacleSide_classification)
     {0.5, 2.0}, {1.5, 2.0}, {2.5, 2.0}, {3.5, 2.0}
   };
 
+  double bucket_size = std::max(layer_->getNeutralThreshold(), 1.0);
+  auto spatial_hash = buildSpatialHash(path, bucket_size);
+
   // North cell: world (2.0, 2.5) → map indices
   unsigned int mx_n, my_n;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 2.5, mx_n, my_n));
-  EXPECT_EQ(layer_->computeObstacleSide(mx_n, my_n, path, *costmap_), 1);
+  EXPECT_EQ(layer_->computeObstacleSide(mx_n, my_n, path, spatial_hash, bucket_size, *costmap_), 1);
 
   // South cell: world (2.0, 1.5)
   unsigned int mx_s, my_s;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 1.5, mx_s, my_s));
-  EXPECT_EQ(layer_->computeObstacleSide(mx_s, my_s, path, *costmap_), -1);
+  EXPECT_EQ(layer_->computeObstacleSide(mx_s, my_s, path, spatial_hash, bucket_size, *costmap_), -1);
 
   // Far north cell: world (2.0, 3.5) — 1.5m from path, beyond neutral_threshold 1.0
   unsigned int mx_far, my_far;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 3.5, mx_far, my_far));
-  EXPECT_EQ(layer_->computeObstacleSide(mx_far, my_far, path, *costmap_), 0);
+  EXPECT_EQ(layer_->computeObstacleSide(mx_far, my_far, path, spatial_hash, bucket_size, *costmap_), 0);
 }
 
 // Test 6: L-shaped path — obstacle near the corner is assigned to the nearest segment,
@@ -186,11 +229,14 @@ TEST_F(ObstacleSideTest, computeObstacleSide_closest_segment_selection)
     {2.0, 1.5}, {2.0, 1.0}, {2.0, 0.5}
   };
 
+  double bucket_size = std::max(layer_->getNeutralThreshold(), 1.0);
+  auto spatial_hash = buildSpatialHash(path, bucket_size);
+
   unsigned int mx, my;
   ASSERT_TRUE(costmap_->worldToMap(2.3, 1.7, mx, my));
   // Nearest segment is the vertical leg (2.0,2.0)->(2.0,1.5)->... (direction = (0,-1)).
   // A cell at +x of a southbound path is on the LEFT of its forward motion → +1.
-  EXPECT_EQ(layer_->computeObstacleSide(mx, my, path, *costmap_), 1);
+  EXPECT_EQ(layer_->computeObstacleSide(mx, my, path, spatial_hash, bucket_size, *costmap_), 1);
 }
 
 int main(int argc, char ** argv)
