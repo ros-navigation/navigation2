@@ -214,8 +214,6 @@ bool Smoother::smoothImpl(
     // length-preserved (std::copy back-into-segment is bypassed by the throw)
     // so downstream consumers receive either a fully-smoothed-and-clean path
     // or an explicit collision exception, never a silently-truncated path.
-    // Combines Maurice's r3072469939 in-loop guidance (UPA reading-α) with the
-    // nav2_core SmoothedPathInCollision idiom (AAA reading-β safety class).
     if (check_oriented_footprint) {
       nav_msgs::msg::Path oriented_candidate = new_path;
       nav2_util::updateApproximatePathOrientations(
