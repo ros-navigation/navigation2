@@ -19,6 +19,9 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include <unordered_map>
+#include <cstdint>
+#include <cmath>
 
 #include "nav2_costmap_2d/costmap_math.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
@@ -295,52 +298,82 @@ int8_t
 AsymmetricInflationLayer::computeObstacleSide(
   int i, int j,
   const std::vector<std::pair<double, double>> & local_path_pts,
+  const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
+  double bucket_size,
   nav2_costmap_2d::Costmap2D & master_grid)
 {
   double cx, cy;
   master_grid.mapToWorld(i, j, cx, cy);
 
-  double min_dist = std::numeric_limits<double>::max();
+  // 1. BROAD PHASE ($O(1)$ Hash Lookup)
+  int64_t b_x = static_cast<int64_t>(std::floor(cx / bucket_size));
+  int64_t b_y = static_cast<int64_t>(std::floor(cy / bucket_size));
+  uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) | 
+                 (static_cast<uint32_t>(b_y));
+
+  auto it = spatial_hash.find(key);
+  if (it == spatial_hash.end()) {
+    // Instant rejection: Obstacle is far away from all path segments
+    return 0;
+  }
+
+  // 2. NARROW PHASE & EXACT PHASE
+  const auto& segments_to_check = it->second;
+  const double neutral_threshold_sq = neutral_threshold_ * neutral_threshold_;
+  
+  double min_dist_sq = std::numeric_limits<double>::max();
   double best_cross = 0.0;
 
-  // For each segment, project the obstacle perpendicularly onto it and track the
-  // closest segment.  This is more accurate than finding the closest vertex,
-  // which can misclassify obstacles near concave bends in the path.
-  for (size_t p = 0; p < local_path_pts.size() - 1; ++p) {
-    double ax = local_path_pts[p].first, ay = local_path_pts[p].second;
-    double bx = local_path_pts[p + 1].first, by = local_path_pts[p + 1].second;
+  for (size_t p : segments_to_check) {
+    double ax = local_path_pts[p].first;
+    double ay = local_path_pts[p].second;
+    double bx = local_path_pts[p + 1].first;
+    double by = local_path_pts[p + 1].second;
 
+    // Segment AABB check (Narrow Phase)
+    double min_x = std::min(ax, bx) - neutral_threshold_;
+    double max_x = std::max(ax, bx) + neutral_threshold_;
+    if (cx < min_x || cx > max_x) continue;
+
+    double min_y = std::min(ay, by) - neutral_threshold_;
+    double max_y = std::max(ay, by) + neutral_threshold_;
+    if (cy < min_y || cy > max_y) continue;
+
+    // Projection Math (Exact Phase)
     double abx = bx - ax, aby = by - ay;
     double len_sq = abx * abx + aby * aby;
 
-    double dist;
+    double acx = cx - ax;
+    double acy = cy - ay;
+
+    double dist_sq;
     double cross;
+    
     if (len_sq < 1e-10) {
-      // Degenerate zero-length segment — fall back to point distance
-      dist = std::hypot(cx - ax, cy - ay);
+      // Degenerate zero-length segment
+      dist_sq = acx * acx + acy * acy;
       cross = 0.0;
     } else {
       // t is the scalar projection of AC onto AB, clamped to [0, 1]
-      double t = std::clamp(((cx - ax) * abx + (cy - ay) * aby) / len_sq, 0.0, 1.0);
-      double proj_x = ax + t * abx;
-      double proj_y = ay + t * aby;
-      dist = std::hypot(cx - proj_x, cy - proj_y);
-      cross = abx * (cy - ay) - aby * (cx - ax);
+      double t = std::clamp((acx * abx + acy * aby) / len_sq, 0.0, 1.0);
+      
+      // Calculate perpendicular distance squared
+      double proj_dx = acx - t * abx;
+      double proj_dy = acy - t * aby;
+      dist_sq = proj_dx * proj_dx + proj_dy * proj_dy;
+      cross = abx * acy - aby * acx;
     }
 
-    if (dist < min_dist) {
-      min_dist = dist;
+    if (dist_sq < min_dist_sq) {
+      min_dist_sq = dist_sq;
       best_cross = cross;
     }
   }
 
-  // Neutral threshold: ignore obstacles far from the trajectory (e.g., in cross-streets)
-  // to prevent blocky artifacts at corridor intersections.
-  if (min_dist > neutral_threshold_) {
+  if (min_dist_sq > neutral_threshold_sq) {
     return 0;
   }
 
-  // Cross product AB × AC: > 0 means obstacle is to the left of the path's forward flow.
   if (best_cross > 0.0) {return 1;}
   if (best_cross < 0.0) {return -1;}
   return 0;
@@ -391,6 +424,42 @@ AsymmetricInflationLayer::updateCosts(
   std::vector<std::pair<double, double>> local_path_pts = extractLocalPath(master_grid);
   bool use_asymmetry = (local_path_pts.size() >= 2) && (asymmetry_factor_ != 0.0);
 
+  // --- Spatial Hash Grid Construction ---
+  // Ensure bucket size is at least 1.0 meters to prevent memory explosion on tight thresholds
+  double bucket_size = std::max(neutral_threshold_, 1.0); 
+  std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
+
+  if (use_asymmetry) {
+    for (size_t p = 0; p < local_path_pts.size() - 1; ++p) {
+      double ax = local_path_pts[p].first;
+      double ay = local_path_pts[p].second;
+      double bx = local_path_pts[p + 1].first;
+      double by = local_path_pts[p + 1].second;
+
+      // Pad the segment's bounding box by the threshold
+      double min_x = std::min(ax, bx) - neutral_threshold_;
+      double max_x = std::max(ax, bx) + neutral_threshold_;
+      double min_y = std::min(ay, by) - neutral_threshold_;
+      double max_y = std::max(ay, by) + neutral_threshold_;
+
+      // Find which buckets this padded segment touches
+      int64_t min_bx = static_cast<int64_t>(std::floor(min_x / bucket_size));
+      int64_t max_bx = static_cast<int64_t>(std::floor(max_x / bucket_size));
+      int64_t min_by = static_cast<int64_t>(std::floor(min_y / bucket_size));
+      int64_t max_by = static_cast<int64_t>(std::floor(max_y / bucket_size));
+
+      for (int64_t b_x = min_bx; b_x <= max_bx; ++b_x) {
+        for (int64_t b_y = min_by; b_y <= max_by; ++b_y) {
+          // Bitwise magic to safely map 2D signed coordinates into a 1D unsigned 64-bit key
+          uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) | 
+                         (static_cast<uint32_t>(b_y));
+          
+          spatial_hash[key].push_back(p);
+        }
+      }
+    }
+  }
+
   // The standard Nav2 inflation_layer has already populated master_array
   // with the symmetric baseline. We only need to calculate asymmetric costs
   // and increase the cost where our effective distance is harsher.
@@ -399,14 +468,49 @@ AsymmetricInflationLayer::updateCosts(
 
     auto & obs_bin_asym = inflation_cells_[0];
 
-    // Seed all lethal obstacles
+    // Helper lambda to check if a neighbor is "traversable" (i.e., open space)
+    auto is_traversable = [&](int nx, int ny) {
+      unsigned char n_cost = master_array[master_grid.getIndex(nx, ny)];
+      if (inflate_around_unknown_) {
+        return (n_cost != LETHAL_OBSTACLE && n_cost != NO_INFORMATION);
+      } else {
+        return (n_cost != LETHAL_OBSTACLE);
+      }
+    };
+
+    // Seed all lethal obstacles (Boundary cells only)
     for (int j = min_j; j < max_j; j++) {
       for (int i = min_i; i < max_i; i++) {
         int index = static_cast<int>(master_grid.getIndex(i, j));
         unsigned char cost = master_array[index];
+        
         if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
-          obs_bin_asym.emplace_back(i, j, i, j);
-          obstacle_side_grid_[index] = computeObstacleSide(i, j, local_path_pts, master_grid);
+          
+          bool is_boundary = false;
+          
+          // Map edge cells are treated as boundaries
+          if (i == 0 || i == static_cast<int>(size_x) - 1 || 
+              j == 0 || j == static_cast<int>(size_y) - 1) 
+          {
+            is_boundary = true;
+          } else {
+            // Check 4-connected neighbors. If any neighbor is traversable space,
+            // this cell is on the outer perimeter of the obstacle.
+            if (is_traversable(i - 1, j) || is_traversable(i + 1, j) ||
+                is_traversable(i, j - 1) || is_traversable(i, j + 1)) 
+            {
+              is_boundary = true;
+            }
+          }
+
+          if (is_boundary) {
+            obs_bin_asym.emplace_back(i, j, i, j);
+            obstacle_side_grid_[index] = computeObstacleSide(i, j, local_path_pts, spatial_hash, bucket_size, master_grid);
+          } else {
+            // Optional: Mark interior cells as 'seen' so the BFS wave doesn't 
+            // waste time propagating backwards into the solid obstacle mass.
+            seen_[index] = true; 
+          }
         }
       }
     }
