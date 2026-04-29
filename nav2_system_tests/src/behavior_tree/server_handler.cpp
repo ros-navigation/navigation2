@@ -35,6 +35,8 @@ ServerHandler::ServerHandler()
     node_, "local_costmap/clear_entirely_local_costmap");
   clear_global_costmap_server = std::make_unique<DummyService<nav2_msgs::srv::ClearEntireCostmap>>(
     node_, "global_costmap/clear_entirely_global_costmap");
+  validate_path_server = std::make_unique<DummyService<nav2_msgs::srv::IsPathValid>>(
+    node_, "is_path_valid");
   compute_path_to_pose_server = std::make_unique<DummyComputePathToPoseActionServer>(node_);
   follow_path_server = std::make_unique<DummyFollowPathActionServer>(node_);
   spin_server = std::make_unique<DummyActionServer<nav2_msgs::action::Spin>>(

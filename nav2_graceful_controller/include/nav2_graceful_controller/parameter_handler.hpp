@@ -53,6 +53,8 @@ struct Parameters
   double footprint_scaling_linear_vel;
   double footprint_scaling_factor;
   double footprint_scaling_step;
+  int obstacle_cost_margin;
+  double final_rotation_search_step;
 };
 
 /**

@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include <memory>
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 
 namespace mppi
@@ -105,32 +108,96 @@ void TrajectoryVisualizer::add(
 }
 
 void TrajectoryVisualizer::add(
-  const models::Trajectories & trajectories, const std::string & marker_namespace)
+  const models::Trajectories & trajectories,
+  const Eigen::ArrayXf & costs,
+  const std::vector<bool> & collisions,
+  const builtin_interfaces::msg::Time & stamp)
 {
   if (trajectories_publisher_->get_subscription_count() == 0) {
     return;
   }
 
-  size_t n_rows = trajectories.x.rows();
-  size_t n_cols = trajectories.x.cols();
-  const float shape_1 = static_cast<float>(n_cols);
-  points_->markers.reserve(floor(n_rows / trajectory_step_) * floor(n_cols * time_step_));
+  const size_t n_rows = trajectories.x.rows();
+  if (n_rows == 0 || costs.size() == 0 ||
+    static_cast<size_t>(costs.size()) < n_rows)
+  {
+    return;
+  }
+
+  // Normalize costs excluding collision trajectories for better gradient resolution.
+  float min_val = std::numeric_limits<float>::max();
+  float max_val = std::numeric_limits<float>::lowest();
+  for (Eigen::Index k = 0; k < costs.size(); ++k) {
+    if (!collisions.empty() && static_cast<size_t>(k) < collisions.size() && collisions[k]) {
+      continue;
+    }
+    auto curr_cost = costs(k);
+    if (curr_cost < min_val) {min_val = curr_cost;}
+    if (curr_cost > max_val) {max_val = curr_cost;}
+  }
+  if (max_val < min_val) {
+    min_val = costs.minCoeff();
+    max_val = costs.maxCoeff();
+  }
+  float range = max_val - min_val;
 
   for (size_t i = 0; i < n_rows; i += trajectory_step_) {
-    for (size_t j = 0; j < n_cols; j += time_step_) {
-      const float j_flt = static_cast<float>(j);
-      float blue_component = 1.0f - j_flt / shape_1;
-      float green_component = j_flt / shape_1;
-
-      auto pose = utils::createPose(trajectories.x(i, j), trajectories.y(i, j), 0.03);
-      auto scale = utils::createScale(0.03, 0.03, 0.03);
-      auto color = utils::createColor(0, green_component, blue_component, 1);
-      auto marker = utils::createMarker(
-        marker_id_++, pose, scale, color, frame_id_, marker_namespace);
-
-      points_->markers.push_back(marker);
-    }
+    float norm = (range > 0.0f) ?
+      (costs(i) - min_val) / range : 0.0f;
+    bool in_collision =
+      !collisions.empty() && i < collisions.size() && collisions[i];
+    addCostColoredTrajectory(i, trajectories, norm, in_collision, stamp);
   }
+}
+
+void TrajectoryVisualizer::addCostColoredTrajectory(
+  size_t trajectory_idx,
+  const models::Trajectories & trajectories,
+  float normalized_cost,
+  bool in_collision,
+  const builtin_interfaces::msg::Time & stamp)
+{
+  using visualization_msgs::msg::Marker;
+  const size_t n_cols = trajectories.x.cols();
+
+  Marker marker;
+  marker.header.frame_id = frame_id_;
+  marker.header.stamp = stamp;
+  marker.ns = "Candidate Trajectories";
+  marker.id = marker_id_++;
+  marker.type = Marker::LINE_STRIP;
+  marker.action = Marker::ADD;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.01;  // line width
+  marker.color = in_collision ?
+    utils::createColor(1.0f, 0.0f, 1.0f, 0.6f) :  // magenta for collisions
+    costToColor(normalized_cost);
+
+  marker.points.reserve(n_cols / time_step_ + 1);
+  for (size_t j = 0; j < n_cols; j += time_step_) {
+    geometry_msgs::msg::Point pt;
+    pt.x = trajectories.x(trajectory_idx, j);
+    pt.y = trajectories.y(trajectory_idx, j);
+    pt.z = 0.03;
+    marker.points.push_back(pt);
+  }
+
+  points_->markers.push_back(std::move(marker));
+}
+
+std_msgs::msg::ColorRGBA TrajectoryVisualizer::costToColor(float normalized)
+{
+  // Green (0) -> Yellow (0.5) -> Red (1.0)
+  normalized = std::clamp(normalized, 0.0f, 1.0f);
+  float r, g;
+  if (normalized < 0.5f) {
+    r = 2.0f * normalized;
+    g = 1.0f;
+  } else {
+    r = 1.0f;
+    g = 2.0f * (1.0f - normalized);
+  }
+  return utils::createColor(r, g, 0.0f, 0.8f);
 }
 
 void TrajectoryVisualizer::reset()

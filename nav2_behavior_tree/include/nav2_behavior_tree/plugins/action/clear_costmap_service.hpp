@@ -30,6 +30,11 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtServiceNode class that wraps nav2_msgs::srv::ClearEntireCostmap
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+ * @endcode
  */
 class ClearEntireCostmapService : public BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>
 {
@@ -54,6 +59,11 @@ public:
  * @brief A nav2_behavior_tree::BtServiceNode class that
  * wraps nav2_msgs::srv::ClearCostmapExceptRegion
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <ClearCostmapExceptRegion name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_except_local_costmap"/>
+ * @endcode
  */
 class ClearCostmapExceptRegionService
   : public BtServiceNode<nav2_msgs::srv::ClearCostmapExceptRegion>
@@ -93,6 +103,11 @@ public:
  * @brief A nav2_behavior_tree::BtServiceNode class that
  * wraps nav2_msgs::srv::ClearCostmapAroundRobot
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <ClearCostmapAroundRobot name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_around_local_costmap"/>
+ * @endcode
  */
 class ClearCostmapAroundRobotService : public BtServiceNode<nav2_msgs::srv::ClearCostmapAroundRobot>
 {
@@ -131,6 +146,14 @@ public:
  * @brief A nav2_behavior_tree::BtServiceNode class that
  * wraps nav2_msgs::srv::ClearCostmapAroundPose
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <ClearCostmapAroundPose name="ClearLocalCostmapAroundPose"
+ *                         service_name="local_costmap/clear_around_pose_local_costmap"
+ *                         pose="{goal_pose}"
+ *                         reset_distance="2.0"/>
+ * @endcode
  */
 class ClearCostmapAroundPoseService : public BtServiceNode<nav2_msgs::srv::ClearCostmapAroundPose>
 {

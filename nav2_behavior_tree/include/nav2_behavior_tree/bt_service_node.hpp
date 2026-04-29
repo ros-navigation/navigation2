@@ -109,6 +109,15 @@ public:
   {
     std::string service_new;
     getInput("service_name", service_new);
+    // If port_name is empty, fallback to the service name provided in the constructor.
+    // If that is empty too, throw an error.
+    service_new = service_new.empty() ? service_name_ : service_new;
+    if (service_new.empty()) {
+      throw std::runtime_error(
+              std::string("Service name not provided for ") + service_node_name_ +
+              std::string(" BT node"));
+    }
+
     if (service_new != service_name_ || !service_client_) {
       service_name_ = service_new;
       node_ = config().blackboard->template get<nav2::LifecycleNode::SharedPtr>("node");

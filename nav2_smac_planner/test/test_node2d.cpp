@@ -23,6 +23,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/a_star.hpp"
 
 TEST(Node2DTest, test_node_2d)
 {
@@ -39,18 +40,28 @@ TEST(Node2DTest, test_node_2d)
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
-  // test construction
-  unsigned char cost = static_cast<unsigned char>(1);
-  nav2_smac_planner::Node2D testA(1);
-  testA.setCost(cost);
-  nav2_smac_planner::Node2D testB(1);
-  testB.setCost(cost);
-  EXPECT_EQ(testA.getCost(), 1.0f);
   nav2_smac_planner::SearchInfo info;
   info.cost_penalty = 1.0;
-  unsigned int size = 10;
-  nav2_smac_planner::Node2D::initMotionModel(
-    nav2_smac_planner::MotionModel::TWOD, size, size, size, info);
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::Node2D> a_star(
+    nav2_smac_planner::MotionModel::TWOD, info);
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 0.0, 1);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  // test construction
+  unsigned char cost = static_cast<unsigned char>(1);
+  nav2_smac_planner::Node2D testA(1, ctx);
+  testA.setCost(cost);
+  nav2_smac_planner::Node2D testB(1, ctx);
+  testB.setCost(cost);
+  EXPECT_EQ(testA.getCost(), 1.0f);
 
   // test reset
   testA.reset();
@@ -74,7 +85,7 @@ TEST(Node2DTest, test_node_2d)
 
   // check operator== works on index
   unsigned char costC = '2';
-  nav2_smac_planner::Node2D testC(1);
+  nav2_smac_planner::Node2D testC(1, ctx);
   testC.setCost(costC);
   EXPECT_TRUE(testA == testC);
 
@@ -104,26 +115,7 @@ TEST(Node2DTest, test_node_2d)
 TEST(Node2DTest, test_node_2d_neighbors)
 {
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
-  nav2_smac_planner::SearchInfo info;
-  unsigned int size_x = 10u;
-  unsigned int size_y = 10u;
-  unsigned int quant = 0u;
-  // test neighborhood computation
-  size_x = 100u;
-  nav2_smac_planner::Node2D::initMotionModel(
-    nav2_smac_planner::MotionModel::TWOD, size_x, size_y,
-    quant, info);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 8u);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[1], 1);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[2], -100);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[3], 100);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[4], -101);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[5], -99);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[6], 99);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[7], 101);
-
-  nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
+  nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
 
   // Convert raw costmap into a costmap ros object
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
@@ -133,8 +125,33 @@ TEST(Node2DTest, test_node_2d_neighbors)
 
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  nav2_smac_planner::SearchInfo info;
+  info.cost_penalty = 1.0;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::Node2D> a_star(
+    nav2_smac_planner::MotionModel::TWOD, info);
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 0.0, 1);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+  EXPECT_EQ(ctx->neighbors_grid_offsets.size(), 8u);
+  EXPECT_EQ(ctx->neighbors_grid_offsets[0], -1);
+  EXPECT_EQ(ctx->neighbors_grid_offsets[1], 1);
+  EXPECT_EQ(ctx->neighbors_grid_offsets[2], -100);
+  EXPECT_EQ(ctx->neighbors_grid_offsets[3], 100);
+  EXPECT_EQ(ctx->neighbors_grid_offsets[4], -101);
+  EXPECT_EQ(ctx->neighbors_grid_offsets[5], -99);
+  EXPECT_EQ(ctx->neighbors_grid_offsets[6], 99);
+  EXPECT_EQ(ctx->neighbors_grid_offsets[7], 101);
+
   unsigned char cost = static_cast<unsigned int>(1);
-  nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(1);
+  nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(1, ctx);
   node->setCost(cost);
   std::function<bool(const uint64_t &, nav2_smac_planner::Node2D * &)> neighborGetter =
     [](const uint64_t &, nav2_smac_planner::Node2D * &) -> bool

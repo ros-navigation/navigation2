@@ -47,8 +47,10 @@ TEST(CornerSmoothingTest, test_corner_smoothing)
   test_node3.coords.y = 10.0;
 
   double smoothing_radius = 2.0;
+  double angle_threshold = 2.9;
 
-  CornerArc corner_arc(test_node1.coords, test_node2.coords, test_node3.coords, smoothing_radius);
+  CornerArc corner_arc(test_node1.coords, test_node2.coords, test_node3.coords, smoothing_radius,
+    angle_threshold);
 
   Coordinates start = corner_arc.getCornerStart();
   Coordinates end = corner_arc.getCornerEnd();
@@ -74,8 +76,10 @@ TEST(LargeRadiusTest, test_large_radius_smoothing)
   test_node3.coords.y = 10.0;
 
   double smoothing_radius = 20.0;
+  double angle_threshold = 2.9;
 
-  CornerArc corner_arc(test_node1.coords, test_node2.coords, test_node3.coords, smoothing_radius);
+  CornerArc corner_arc(test_node1.coords, test_node2.coords, test_node3.coords, smoothing_radius,
+    angle_threshold);
 
   EXPECT_FALSE(corner_arc.isCornerValid());
 }
@@ -94,8 +98,10 @@ TEST(ColinearSmoothingTest, test_colinear_smoothing)
   test_node3.coords.y = 0.0;
 
   double smoothing_radius = 2.0;
+  double angle_threshold = 2.9;
 
-  CornerArc corner_arc(test_node1.coords, test_node2.coords, test_node3.coords, smoothing_radius);
+  CornerArc corner_arc(test_node1.coords, test_node2.coords, test_node3.coords, smoothing_radius,
+    angle_threshold);
 
   EXPECT_FALSE(corner_arc.isCornerValid());
 }
@@ -108,8 +114,10 @@ TEST(DegeneratePointsTest, test_degenerate_points_smoothing)
   test_node1.coords.y = 0.0;
 
   double smoothing_radius = 2.0;
+  double angle_threshold = 2.9;
 
-  CornerArc corner_arc(test_node1.coords, test_node1.coords, test_node1.coords, smoothing_radius);
+  CornerArc corner_arc(test_node1.coords, test_node1.coords, test_node1.coords, smoothing_radius,
+    angle_threshold);
 
   EXPECT_FALSE(corner_arc.isCornerValid());
 }

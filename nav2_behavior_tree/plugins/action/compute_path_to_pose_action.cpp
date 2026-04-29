@@ -33,6 +33,11 @@ void ComputePathToPoseAction::on_tick()
   getInput("goal", goal_.goal);
   getInput("planner_id", goal_.planner_id);
 
+  // use waypoints if available
+  if (!getInput("viapoints", goal_.viapoints)) {
+    goal_.viapoints = std::vector<geometry_msgs::msg::PoseStamped>();
+  }
+
   // if "use_start" is provided try to enforce it (true or false), but we cannot enforce true if
   // start is not provided
   goal_.use_start = false;

@@ -114,7 +114,6 @@ protected:
    * @brief Validate a given target pose for calculating command velocity
    * @param target_pose Target pose to validate
    * @param dist_to_target Distance to target pose
-   * @param dist_to_goal Distance to navigation goal
    * @param trajectory Trajectory to validate in simulation
    * @param costmap_transform Transform between global and local costmap
    * @param cmd_vel Initial command velocity to validate in simulation
@@ -123,10 +122,45 @@ protected:
   bool validateTargetPose(
     geometry_msgs::msg::PoseStamped & target_pose,
     double dist_to_target,
+    nav_msgs::msg::Path & trajectory,
+    geometry_msgs::msg::TransformStamped & costmap_transform,
+    geometry_msgs::msg::TwistStamped & cmd_vel);
+
+  /**
+   * @brief Validate a given target pose for calculating command velocity on approach to goal
+   * @param target_pose Target pose to validate
+   * @param dist_to_target Distance to target pose
+   * @param dist_to_goal Distance to navigation goal
+   * @param trajectory Trajectory to validate in simulation
+   * @param costmap_transform Transform between global and local costmap
+   * @param cmd_vel Initial command velocity to validate in simulation
+   * @return true if target pose is valid, false otherwise
+   */
+  bool validateTargetPoseOnApproach(
+    geometry_msgs::msg::PoseStamped & target_pose,
+    double dist_to_target,
     double dist_to_goal,
     nav_msgs::msg::Path & trajectory,
     geometry_msgs::msg::TransformStamped & costmap_transform,
     geometry_msgs::msg::TwistStamped & cmd_vel);
+
+  /**
+   * @brief Find the best approach trajectory by searching multiple orientations
+   * @param target_pose Base target pose (position will be used)
+   * @param dist_to_target Distance to target
+   * @param costmap_transform Transform
+   * @param safety_cost Safety cost threshold
+   * @param best_trajectory Reference to store best trajectory
+   * @param best_cmd_vel Reference to store best cmd_vel
+   * @return true if a valid trajectory was found
+   */
+  bool findBestApproachTrajectory(
+    geometry_msgs::msg::PoseStamped & target_pose,
+    double dist_to_target,
+    geometry_msgs::msg::TransformStamped & costmap_transform,
+    double safety_cost,
+    nav_msgs::msg::Path & best_trajectory,
+    geometry_msgs::msg::TwistStamped & best_cmd_vel);
 
   /**
    * @brief Simulate trajectory calculating in every step the new velocity command based on
@@ -167,6 +201,16 @@ protected:
     double inflation_scale = 1.0);
 
   /**
+   * @brief Get the maximum cost of a path
+   * @param path Path to check
+   * @param costmap_transform Transform between global and local costmap
+   * @return Maximum cost encountered
+   */
+  double getMaxCost(
+    const nav_msgs::msg::Path & path,
+    geometry_msgs::msg::TransformStamped & costmap_transform);
+
+  /**
    * @brief Compute the distance to each pose in a path
    * @param poses Poses to compute distances with
    * @param distances Computed distances
@@ -194,6 +238,8 @@ protected:
 
   // True from the time a new path arrives until we have completed an initial rotation
   bool do_initial_rotation_;
+
+  std::optional<double> safe_approach_angle_;
 
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr local_plan_pub_;
   nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr motion_target_pub_;

@@ -30,6 +30,11 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS every time a specified
  * time period passes and FAILURE otherwise
+ *
+ * Usage in XML:
+ * @code
+ * <PathExpiringTimer seconds="15" path="{path}"/>
+ * @endcode
  */
 class PathExpiringTimerCondition : public BT::ConditionNode
 {

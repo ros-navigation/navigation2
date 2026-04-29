@@ -253,6 +253,12 @@ TEST(ControllerTests, DynamicParameters) {
   EXPECT_EQ(node->get_parameter("controller.rotate_to_heading_angular_vel").as_double(), 12.0);
   EXPECT_EQ(
     node->get_parameter("controller.rotate_to_heading_max_angular_accel").as_double(), 13.0);
+
+  // Test setting invalid parameters
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("controller.k_phi", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("controller.k_phi").as_double(), 1.0);
 }
 
 TEST(ControllerTests, TFException)

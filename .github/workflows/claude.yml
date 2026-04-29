@@ -39,6 +39,9 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Install latest Claude Code
+        run: npm install -g @anthropic-ai/claude-code@latest
+
       - name: Run Claude PR Action
         uses: grll/claude-code-action@beta
         with:

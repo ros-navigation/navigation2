@@ -37,6 +37,7 @@ void MPPIController::configure(
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);
+  getParam(critic_index_to_visualize_, "critic_index_to_visualize", 0);
 
   getParam(publish_optimal_trajectory_, "publish_optimal_trajectory", false);
 
@@ -47,7 +48,7 @@ void MPPIController::configure(
     costmap_ros_->getGlobalFrameID(), parameters_handler_.get());
 
   if (publish_optimal_trajectory_) {
-    opt_traj_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
+    opt_traj_pub_ = node->create_publisher<nav_msgs::msg::Trajectory>(
       "~/optimal_trajectory");
   }
 
@@ -114,7 +115,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   RCLCPP_INFO(logger_, "Control loop execution time: %ld [ms]", duration);
 #endif
 
-  if (publish_optimal_trajectory_ && opt_traj_pub_->get_subscription_count() > 0) {
+  if (publish_optimal_trajectory_ && opt_traj_pub_ && opt_traj_pub_->get_subscription_count() > 0) {
     std_msgs::msg::Header trajectory_header;
     trajectory_header.stamp = cmd.header.stamp;
     trajectory_header.frame_id = costmap_ros_->getGlobalFrameID();
@@ -138,7 +139,19 @@ void MPPIController::visualize(
   const builtin_interfaces::msg::Time & cmd_stamp,
   const Eigen::ArrayXXf & optimal_trajectory)
 {
-  trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
+  const auto & critic_costs = optimizer_.getCriticCosts();
+  const Eigen::ArrayXf & costs =
+    (critic_index_to_visualize_ <= 0 ||
+    critic_index_to_visualize_ > static_cast<int>(critic_costs.size())) ?
+    optimizer_.getCosts() :
+    critic_costs[critic_index_to_visualize_ - 1].second;
+
+  trajectory_visualizer_.add(
+    optimizer_.getGeneratedTrajectories(),
+    costs,
+    optimizer_.getCollisionFlags(),
+    cmd_stamp);
+
   trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
   trajectory_visualizer_.visualize();
 }

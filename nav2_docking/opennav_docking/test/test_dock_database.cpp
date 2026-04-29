@@ -31,8 +31,8 @@ namespace opennav_docking
 class DbShim : public opennav_docking::DockDatabase
 {
 public:
-  DbShim()
-  : DockDatabase()
+  explicit DbShim(std::mutex & mutex)
+  : DockDatabase(mutex)
   {}
 
   void populateOne()
@@ -55,7 +55,8 @@ public:
 TEST(DatabaseTests, ObjectLifecycle)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  opennav_docking::DockDatabase db;
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
   db.activate();
   db.deactivate();
@@ -69,7 +70,8 @@ TEST(DatabaseTests, initializeBogusPlugins)
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::vector<std::string> plugins{"dockv1", "dockv2"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
-  opennav_docking::DockDatabase db;
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
 
   plugins.clear();
@@ -80,7 +82,8 @@ TEST(DatabaseTests, initializeBogusPlugins)
 TEST(DatabaseTests, findTests)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  DbShim db;
+  std::mutex mutex;
+  DbShim db(mutex);
   db.populateOne();
 
   db.findDockPlugin("");
@@ -107,8 +110,8 @@ TEST(DatabaseTests, getDockInstancesBadConversionFile)
     rclcpp::ParameterValue(
       nav2::get_package_share_directory("opennav_docking") +
       "/dock_files/test_dock_bad_conversion_file.yaml"));
-
-  opennav_docking::DockDatabase db;
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
 
   EXPECT_EQ(db.plugin_size(), 1u);
@@ -127,7 +130,8 @@ TEST(DatabaseTests, getDockInstancesWrongPath)
   // Set a wrong path
   node->declare_parameter("dock_database", rclcpp::ParameterValue("file_does_not_exist.yaml"));
 
-  opennav_docking::DockDatabase db;
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
 
   EXPECT_EQ(db.plugin_size(), 1u);
@@ -142,7 +146,8 @@ TEST(DatabaseTests, reloadDbService)
   node->declare_parameter(
     "dockv1.plugin",
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
-  opennav_docking::DockDatabase db;
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
 
   // Call service with a filepath
@@ -181,8 +186,8 @@ TEST(DatabaseTests, reloadDbMutexLocked)
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
 
   // This mutex is locked when dock / undock is called
-  auto mutex = std::make_shared<std::mutex>();
-  mutex->lock();
+  std::mutex mutex;
+  mutex.lock();
   opennav_docking::DockDatabase db(mutex);
   db.initialize(node, nullptr);
 
@@ -200,7 +205,7 @@ TEST(DatabaseTests, reloadDbMutexLocked)
     rclcpp::FutureReturnCode::SUCCESS);
   EXPECT_FALSE(result.get()->success);
 
-  mutex->unlock();
+  mutex.unlock();
 }
 
 }  // namespace opennav_docking

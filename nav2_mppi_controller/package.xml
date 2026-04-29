@@ -42,6 +42,7 @@
     <nav2_core plugin="${prefix}/mppic.xml" />
     <nav2_mppi_controller plugin="${prefix}/critics.xml" />
     <nav2_mppi_controller plugin="${prefix}/trajectory_validators.xml" />
+    <nav2_mppi_controller plugin="${prefix}/motion_models.xml" />
   </export>
 
 </package>

@@ -37,6 +37,16 @@ namespace nav2_behavior_tree
 enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
 
 /**
+ * @struct nav2_behavior_tree::BTInfo
+ * @brief A struct to hold Behavior Tree ID information
+ */
+struct BTInfo
+{
+  std::string main_id;
+  std::vector<std::string> behavior_tree_ids;
+};
+
+/**
  * @class nav2_behavior_tree::BehaviorTreeEngine
  * @brief A class to create and handle behavior trees
  */
@@ -87,11 +97,11 @@ public:
     BT::Blackboard::Ptr blackboard);
 
   /**
-   * @brief Extract BehaviorTree ID from BT file path or BT ID
-   * @param file_or_id
-   * @return std::string
+   * @brief Function to parse Behavior Tree information from an XML file
+   * @param filename Path to BT XML file
+   * @return BTInfo Struct containing BT ID information
    */
-  std::string extractBehaviorTreeID(const std::string & file_or_id);
+  BTInfo parseTreeInfo(const std::string & filename);
 
   /**
  * @brief Function to create a BT from a BehaviorTree ID
@@ -131,8 +141,8 @@ protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 
-  // Clock
-  rclcpp::Clock::SharedPtr clock_;
+  // Node handle used to obtain clocks at run time
+  nav2::LifecycleNode::WeakPtr node_;
 
   // Groot2 monitor
   std::unique_ptr<BT::Groot2Publisher> groot_monitor_;

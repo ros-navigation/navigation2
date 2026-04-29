@@ -16,6 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__COMPUTE_PATH_TO_POSE_ACTION_HPP_
 
 #include <string>
+#include <vector>
 
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -28,6 +29,13 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::ComputePathToPose
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"
+ *                    server_name="ComputePathToPose" server_timeout="10"
+ *                    error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
+ * @endcode
  */
 class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePathToPose>
 {
@@ -94,6 +102,9 @@ public:
           "start",
           "Used as the planner start pose instead of the current robot pose, if use_start is"
           " not false (i.e. not provided or set to true)"),
+        BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+          "viapoints",
+          "A list of intermediate viapoints (excluding goal) to consider for planning"),
         BT::InputPort<bool>(
           "use_start", "For using or not using (i.e. ignoring) the provided start pose"),
         BT::InputPort<std::string>(

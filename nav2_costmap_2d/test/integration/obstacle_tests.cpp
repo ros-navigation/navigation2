@@ -410,12 +410,12 @@ TEST_F(TestNode, testDynParamsSetObstacle)
   // Add obstacle layer
   std::vector<std::string> plugins_str;
   plugins_str.push_back("obstacle_layer");
-  costmap->set_parameter(rclcpp::Parameter("plugins", plugins_str));
+  costmap->declare_parameter("plugins", plugins_str);
   costmap->declare_parameter(
     "obstacle_layer.plugin",
     rclcpp::ParameterValue(std::string("nav2_costmap_2d::ObstacleLayer")));
 
-  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));
+  costmap->declare_parameter("global_frame", std::string("base_link"));
   costmap->on_configure(rclcpp_lifecycle::State());
 
   costmap->on_activate(rclcpp_lifecycle::State());
@@ -428,6 +428,7 @@ TEST_F(TestNode, testDynParamsSetObstacle)
   auto results = parameter_client->set_parameters_atomically(
   {
     rclcpp::Parameter("obstacle_layer.combination_method", 5),
+    rclcpp::Parameter("obstacle_layer.min_obstacle_height", 0.5),
     rclcpp::Parameter("obstacle_layer.max_obstacle_height", 4.0),
     rclcpp::Parameter("obstacle_layer.enabled", false),
     rclcpp::Parameter("obstacle_layer.footprint_clearing_enabled", false)
@@ -438,6 +439,7 @@ TEST_F(TestNode, testDynParamsSetObstacle)
     results);
 
   EXPECT_EQ(costmap->get_parameter("obstacle_layer.combination_method").as_int(), 5);
+  EXPECT_EQ(costmap->get_parameter("obstacle_layer.min_obstacle_height").as_double(), 0.5);
   EXPECT_EQ(costmap->get_parameter("obstacle_layer.max_obstacle_height").as_double(), 4.0);
   EXPECT_EQ(costmap->get_parameter("obstacle_layer.enabled").as_bool(), false);
   EXPECT_EQ(costmap->get_parameter("obstacle_layer.footprint_clearing_enabled").as_bool(), false);
@@ -457,12 +459,12 @@ TEST_F(TestNode, testDynParamsSetVoxel)
   // Add voxel layer
   std::vector<std::string> plugins_str;
   plugins_str.push_back("voxel_layer");
-  costmap->set_parameter(rclcpp::Parameter("plugins", plugins_str));
+  costmap->declare_parameter("plugins", plugins_str);
   costmap->declare_parameter(
     "voxel_layer.plugin",
     rclcpp::ParameterValue(std::string("nav2_costmap_2d::VoxelLayer")));
 
-  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));
+  costmap->declare_parameter("global_frame", std::string("base_link"));
   costmap->on_configure(rclcpp_lifecycle::State());
 
   costmap->on_activate(rclcpp_lifecycle::State());
@@ -480,10 +482,10 @@ TEST_F(TestNode, testDynParamsSetVoxel)
     rclcpp::Parameter("voxel_layer.z_resolution", 0.4),
     rclcpp::Parameter("voxel_layer.origin_z", 1.0),
     rclcpp::Parameter("voxel_layer.z_voxels", 14),
+    rclcpp::Parameter("voxel_layer.min_obstacle_height", 0.5),
     rclcpp::Parameter("voxel_layer.max_obstacle_height", 4.0),
     rclcpp::Parameter("voxel_layer.footprint_clearing_enabled", false),
-    rclcpp::Parameter("voxel_layer.enabled", false),
-    rclcpp::Parameter("voxel_layer.publish_voxel_map", true)
+    rclcpp::Parameter("voxel_layer.enabled", false)
   });
 
   rclcpp::spin_until_future_complete(
@@ -496,10 +498,33 @@ TEST_F(TestNode, testDynParamsSetVoxel)
   EXPECT_EQ(costmap->get_parameter("voxel_layer.z_resolution").as_double(), 0.4);
   EXPECT_EQ(costmap->get_parameter("voxel_layer.origin_z").as_double(), 1.0);
   EXPECT_EQ(costmap->get_parameter("voxel_layer.z_voxels").as_int(), 14);
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.min_obstacle_height").as_double(), 0.5);
   EXPECT_EQ(costmap->get_parameter("voxel_layer.max_obstacle_height").as_double(), 4.0);
   EXPECT_EQ(costmap->get_parameter("voxel_layer.footprint_clearing_enabled").as_bool(), false);
   EXPECT_EQ(costmap->get_parameter("voxel_layer.enabled").as_bool(), false);
-  EXPECT_EQ(costmap->get_parameter("voxel_layer.publish_voxel_map").as_bool(), true);
+
+  // Try setting publish_voxel_map, should be rejected
+  results = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("voxel_layer.publish_voxel_map", true)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.publish_voxel_map").as_bool(), false);
+
+  results = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("voxel_layer.z_resolution", -1.0)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.z_resolution").as_double(), 0.4);
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
@@ -513,7 +538,7 @@ TEST_F(TestNode, testDynParamsSetStatic)
 {
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
-  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));
+  costmap->declare_parameter("global_frame", std::string("base_link"));
   costmap->on_configure(rclcpp_lifecycle::State());
 
   costmap->on_activate(rclcpp_lifecycle::State());
@@ -525,22 +550,33 @@ TEST_F(TestNode, testDynParamsSetStatic)
 
   auto results = parameter_client->set_parameters_atomically(
   {
-    rclcpp::Parameter("static_layer.transform_tolerance", 1.0),
     rclcpp::Parameter("static_layer.enabled", false),
     rclcpp::Parameter("static_layer.map_subscribe_transient_local", false),
     rclcpp::Parameter("static_layer.map_topic", "dynamic_topic"),
-    rclcpp::Parameter("static_layer.subscribe_to_updates", true)
+    rclcpp::Parameter("static_layer.subscribe_to_updates", true),
+    rclcpp::Parameter("static_layer.footprint_clearing_enabled", true),
   });
 
   rclcpp::spin_until_future_complete(
     costmap->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(costmap->get_parameter("static_layer.transform_tolerance").as_double(), 1.0);
   EXPECT_EQ(costmap->get_parameter("static_layer.enabled").as_bool(), false);
   EXPECT_EQ(costmap->get_parameter("static_layer.map_subscribe_transient_local").as_bool(), false);
   EXPECT_EQ(costmap->get_parameter("static_layer.map_topic").as_string(), "dynamic_topic");
   EXPECT_EQ(costmap->get_parameter("static_layer.subscribe_to_updates").as_bool(), true);
+  EXPECT_EQ(costmap->get_parameter("static_layer.footprint_clearing_enabled").as_bool(), true);
+
+  results = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("static_layer.restore_cleared_footprint", true)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(costmap->get_parameter("static_layer.restore_cleared_footprint").as_bool(), true);
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());

@@ -266,6 +266,10 @@ Note: `dock_plugins` and either `docks` or `dock_database` are required.
 
 Note: The external detection rotation angles are setup to work out of the box with Apriltags detectors in `image_proc` and `isaac_ros`.
 
+Note: The external detection rotation order has changed in ROS2 L-turtle to Rx -> Ry -> Rz (was: Rz -> Rx -> Ry). Behavior is retained only when
+* `external_detection_rotation_yaw` equals 0.0, or
+* `external_detection_rotation_pitch` and `external_detection_rotation_roll` both equal 0.0
+
 ## Etc
 
 ### On Staging Poses

@@ -58,6 +58,9 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   getInput("max_robot_pose_search_dist", max_robot_pose_search_dist);
 
   bool path_pruning = std::isfinite(max_robot_pose_search_dist);
+  if (distance_forward < 0.0) {
+    distance_forward = std::numeric_limits<double>::max();
+  }
   nav_msgs::msg::Path new_path;
   getInput("input_path", new_path);
   if (!path_pruning || new_path != path_) {

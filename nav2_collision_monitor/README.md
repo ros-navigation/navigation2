@@ -68,6 +68,13 @@ The following diagram is showing the high-level design of Collision Monitor modu
 Detailed configuration parameters, their description and how to setup a Collision Monitor could be found at its [Configuration Guide](https://docs.nav2.org/configuration/packages/configuring-collision-monitor.html) and [Using Collision Monitor tutorial](https://docs.nav2.org/tutorials/docs/using_collision_monitor.html) pages.
 
 
+For `stop`, `slowdown`, and `limit` polygons, temporal debounce can be tuned with:
+- `trigger_consecutive_points`: number of consecutive cycles required to trigger.
+- `release_consecutive_points`: number of consecutive cycles required to release.
+
+A value of `1/1` behaves like the historical behavior (single-cycle trigger/release). In practice, values larger than `1` are recommended to reduce sensor noise flicker while keeping response times reasonable.
+
+
 ### Metrics
 
 Designed to be used in wide variety of robots (incl. moving fast) and have a high level of reliability, Collision Monitor node should operate at fast rates.

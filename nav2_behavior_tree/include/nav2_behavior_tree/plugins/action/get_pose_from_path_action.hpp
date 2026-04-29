@@ -32,6 +32,12 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * Usage in XML:
+ * @code
+ * <GetPoseFromPath path="{path}" index="-1" pose="{goal}"/>
+ * @endcode
+ */
 class GetPoseFromPath : public BT::ActionNodeBase
 {
 public:

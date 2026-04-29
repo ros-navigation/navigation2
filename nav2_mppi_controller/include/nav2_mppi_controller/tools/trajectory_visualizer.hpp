@@ -19,6 +19,8 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -78,10 +80,17 @@ public:
     const builtin_interfaces::msg::Time & cmd_stamp);
 
   /**
-    * @brief Add candidate trajectories to visualize
+    * @brief Add candidate trajectories colored by cost gradient
     * @param trajectories Candidate trajectories
+    * @param costs Cost per trajectory for the selected layer
+    * @param collisions Per-trajectory collision flags
+    * @param stamp Timestamp for markers
     */
-  void add(const models::Trajectories & trajectories, const std::string & marker_namespace);
+  void add(
+    const models::Trajectories & trajectories,
+    const Eigen::ArrayXf & costs,
+    const std::vector<bool> & collisions,
+    const builtin_interfaces::msg::Time & stamp);
 
   /**
     * @brief Visualize the plan
@@ -94,6 +103,28 @@ public:
   void reset();
 
 protected:
+  /**
+    * @brief Create a LINE_STRIP marker for a single trajectory colored by normalized cost
+    * @param trajectory_idx Row index into the trajectories arrays
+    * @param trajectories Trajectory data
+    * @param normalized_cost Cost value in [0, 1] range
+    * @param in_collision Whether this trajectory is in collision
+    * @param stamp Timestamp
+    */
+  void addCostColoredTrajectory(
+    size_t trajectory_idx,
+    const models::Trajectories & trajectories,
+    float normalized_cost,
+    bool in_collision,
+    const builtin_interfaces::msg::Time & stamp);
+
+  /**
+    * @brief Convert a normalized cost [0,1] to a green->yellow->red color
+    * @param normalized Value in [0, 1]
+    * @return ColorRGBA
+    */
+  static std_msgs::msg::ColorRGBA costToColor(float normalized);
+
   std::string frame_id_;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     trajectories_publisher_;

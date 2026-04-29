@@ -66,13 +66,13 @@ DenoiseLayer::onInitialize()
     }
   }
 
-  current_ = true;
+  setCurrent(true);
 }
 
 void
 DenoiseLayer::reset()
 {
-  current_ = false;
+  setCurrent(false);
 }
 
 bool
@@ -114,7 +114,7 @@ DenoiseLayer::updateCosts(
     RCLCPP_ERROR(logger_, "%s", (std::string("Inner error: ") + ex.what()).c_str());
   }
 
-  current_ = true;
+  setCurrent(true);
 }
 
 void

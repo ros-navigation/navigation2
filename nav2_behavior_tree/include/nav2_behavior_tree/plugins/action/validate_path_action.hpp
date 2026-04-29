@@ -1,0 +1,145 @@
+// Copyright (c) 2021 Joshua Wallace
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__VALIDATE_PATH_ACTION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__VALIDATE_PATH_ACTION_HPP_
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "behaviortree_cpp/action_node.h"
+#include "behaviortree_cpp/json_export.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_msgs/srv/is_path_valid.hpp"
+#include "nav2_ros_common/service_client.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
+#include "nav2_behavior_tree/bt_service_node.hpp"
+
+namespace nav2_behavior_tree
+{
+
+/**
+ * @brief A nav2_behavior_tree::BtServiceNode class that validates a path by calling the IsPathValid service on the path provided in the input port
+ *
+ * Usage in XML:
+ * @code
+ * <ValidatePath
+ *   server_timeout="10"
+ *   path="{path}"
+ *   max_cost="100"
+ *   consider_unknown_as_obstacle="false"
+ *   layer_name=""
+ *   footprint=""
+ *   stop_at_first_collision="true"
+ *   collision_poses="{collision_poses}" />
+ *
+ * <!-- With max_lookahead_distance: -->
+ * <ValidatePath
+ *   path="{path}"
+ *   max_lookahead_distance="5.0"
+ *   collision_poses="{collision_poses}" />
+ *
+ * <!-- With custom footprint: -->
+ * <ValidatePath
+ *   path="{path}"
+ *   footprint="[[0.5,0.5],[0.5,-0.5],[-0.5,-0.5],[-0.5,0.5]]"
+ *   collision_poses="{collision_poses}" />
+ *
+ * <!-- Checking a specific costmap layer: -->
+ * <ValidatePath
+ *   path="{path}"
+ *   layer_name="obstacle_layer"
+ *   stop_at_first_collision="false"
+ *   collision_poses="{collision_poses}" />
+ * @endcode
+ */
+class ValidatePath : public BtServiceNode<nav2_msgs::srv::IsPathValid>
+{
+public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::ValidatePath
+   * @param service_node_name Service name this node creates a client for
+   * @param conf BT node configuration
+   */
+  ValidatePath(
+    const std::string & service_node_name,
+    const BT::NodeConfiguration & conf);
+
+  /**
+   * @brief The main override required by a BT service
+   * @return BT::NodeStatus Status of tick execution
+   */
+  void on_tick() override;
+
+  /**
+   * @brief Function to perform some user-defined operation after receiving a result from the service
+   * @param response The response received from the service
+   * @return BT::NodeStatus Status of tick execution after processing the response
+   */
+  BT::NodeStatus on_completion(std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
+  override;
+
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing node-specific ports
+   */
+  static BT::PortsList providedPorts()
+  {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+    BT::RegisterJsonDefinition<std::chrono::milliseconds>();
+    BT::RegisterJsonDefinition<std::vector<geometry_msgs::msg::PoseStamped>>();
+
+    return providedBasicPorts(
+      {
+        BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
+        BT::InputPort<unsigned int>("max_cost", 254, "Maximum cost of the path"),
+        BT::InputPort<bool>(
+        "consider_unknown_as_obstacle", false,
+        "Whether to consider unknown cost as obstacle"),
+        BT::InputPort<std::string>(
+        "layer_name", "",
+        "Name of the costmap layer to check against (empty = full costmap)"),
+        BT::InputPort<std::string>(
+        "footprint", "",
+        "Custom footprint specification as bracketed array of arrays, e.g., "
+        "[[x1,y1],[x2,y2],...] (empty = use robot footprint)"),
+        BT::InputPort<bool>(
+        "stop_at_first_collision", true,
+        "Whether to stop validation at first collision (true) or check all poses (false)"),
+        BT::InputPort<double>(
+        "max_lookahead_distance", -1.0,
+        "Maximum distance ahead of the robot to validate (-1 = full path)"),
+        BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+        "collision_poses",
+        "Poses in the path that are in collision")
+    });
+  }
+
+private:
+  unsigned int max_cost_;
+  bool consider_unknown_as_obstacle_;
+  std::string layer_name_;
+  std::string footprint_;
+  bool stop_at_first_collision_;
+  double max_lookahead_distance_;
+  nav_msgs::msg::Path path_;
+};
+
+}  // namespace nav2_behavior_tree
+
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__VALIDATE_PATH_ACTION_HPP_

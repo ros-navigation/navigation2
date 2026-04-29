@@ -130,7 +130,9 @@ TEST(MotionModelTests, AckermannTest)
   std::string name = "test";
   ParametersHandler param_handler(node, name);
   std::unique_ptr<AckermannMotionModel> model =
-    std::make_unique<AckermannMotionModel>(&param_handler, node->get_name());
+    std::make_unique<AckermannMotionModel>();
+  // Initialize the plugin: parameters live under "test.ackermann"
+  model->initialize(&param_handler, name + ".ackermann");
 
   // Check that predict properly populates the trajectory velocities with the control velocities
   state.cvx = 10 * Eigen::ArrayXXf::Ones(batches, timesteps);
@@ -189,7 +191,9 @@ TEST(MotionModelTests, AckermannReversingTest)
   std::string name = "test";
   ParametersHandler param_handler(node, name);
   std::unique_ptr<AckermannMotionModel> model =
-    std::make_unique<AckermannMotionModel>(&param_handler, node->get_name());
+    std::make_unique<AckermannMotionModel>();
+  // Initialize the plugin: parameters live under "test.ackermann"
+  model->initialize(&param_handler, name + ".ackermann");
 
   // Check that predict properly populates the trajectory velocities with the control velocities
   state.cvx = 10 * Eigen::ArrayXXf::Ones(batches, timesteps);

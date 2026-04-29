@@ -183,7 +183,7 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
 
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
 
   // Attempt to set furthest point if notionally set, should not change
   data.furthest_reached_path_point = 99999;
@@ -193,7 +193,7 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   // Attempt to set if not set already with no other information, should fail
   CriticData data2 =
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
   setPathFurthestPointIfNotSet(data2);
   EXPECT_EQ(data2.furthest_reached_path_point, 0);
 
@@ -212,7 +212,7 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
 
   CriticData data3 =
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
   EXPECT_EQ(findPathFurthestReachedPoint(data3), 5);
 }
 
@@ -228,7 +228,7 @@ TEST(UtilsTests, findPathCosts)
 
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
 
   // Test not set if already set, should not change
   data.path_pts_valid = std::vector<bool>(10, false);
@@ -241,7 +241,7 @@ TEST(UtilsTests, findPathCosts)
 
   CriticData data3 =
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
 
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
@@ -514,11 +514,17 @@ TEST(UtilsTests, toTrajectoryMsgTest)
   EXPECT_EQ(trajectory_msg->points[4].velocity.linear.y, 0.0);
   EXPECT_EQ(trajectory_msg->points[4].velocity.angular.z, 1.0);
 
-  EXPECT_EQ(trajectory_msg->points[0].time_from_start, rclcpp::Duration(0, 0));
-  EXPECT_EQ(trajectory_msg->points[1].time_from_start, rclcpp::Duration(1, 0));
-  EXPECT_EQ(trajectory_msg->points[2].time_from_start, rclcpp::Duration(2, 0));
-  EXPECT_EQ(trajectory_msg->points[3].time_from_start, rclcpp::Duration(3, 0));
-  EXPECT_EQ(trajectory_msg->points[4].time_from_start, rclcpp::Duration(4, 0));
+  rclcpp::Time base_time(header.stamp);
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[0].header.stamp) - base_time,
+    rclcpp::Duration(0, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[1].header.stamp) - base_time,
+    rclcpp::Duration(1, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[2].header.stamp) - base_time,
+    rclcpp::Duration(2, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[3].header.stamp) - base_time,
+    rclcpp::Duration(3, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[4].header.stamp) - base_time,
+    rclcpp::Duration(4, 0));
 }
 
 TEST(UtilsTests, getLastPathPoseTest)

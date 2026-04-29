@@ -35,13 +35,27 @@ AxisGoalChecker::AxisGoalChecker()
 {
 }
 
+AxisGoalChecker::~AxisGoalChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 void AxisGoalChecker::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>/*costmap_ros*/)
 {
   plugin_name_ = plugin_name;
-  auto node = parent.lock();
+  node_ = parent;
+  auto node = node_.lock();
   logger_ = node->get_logger();
 
   along_path_tolerance_ = node->declare_or_get_parameter(
@@ -54,8 +68,14 @@ void AxisGoalChecker::initialize(
     plugin_name + ".is_overshoot_valid", false);
 
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&AxisGoalChecker::dynamicParametersCallback, this, _1));
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &AxisGoalChecker::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &AxisGoalChecker::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 }
 
 void AxisGoalChecker::reset()
@@ -67,6 +87,7 @@ bool AxisGoalChecker::isGoalReached(
   const geometry_msgs::msg::Twist &,
   const nav_msgs::msg::Path & transformed_global_plan)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   // If the local plan length is longer than the tolerance, we skip the check
   if (nav2_util::geometry_utils::calculate_path_length(transformed_global_plan) >
     path_length_tolerance_)
@@ -148,6 +169,7 @@ bool AxisGoalChecker::getTolerances(
   geometry_msgs::msg::Pose & pose_tolerance,
   geometry_msgs::msg::Twist & vel_tolerance)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   double invalid_field = std::numeric_limits<double>::lowest();
 
   pose_tolerance.position.x = std::min(along_path_tolerance_, cross_track_tolerance_);
@@ -168,10 +190,36 @@ bool AxisGoalChecker::getTolerances(
 }
 
 rcl_interfaces::msg::SetParametersResult
-AxisGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+AxisGoalChecker::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  for (auto & parameter : parameters) {
+  result.successful = true;
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+AxisGoalChecker::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  for (const auto & parameter : parameters) {
     const auto & type = parameter.get_type();
     const auto & name = parameter.get_name();
     if (name.find(plugin_name_ + ".") != 0) {
@@ -191,8 +239,6 @@ AxisGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parame
       }
     }
   }
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_controller

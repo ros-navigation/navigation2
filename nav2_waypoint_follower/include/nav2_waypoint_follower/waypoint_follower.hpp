@@ -35,6 +35,7 @@
 #include "nav2_msgs/action/follow_gps_waypoints.hpp"
 #include "nav2_ros_common/service_client.hpp"
 #include "nav2_core/waypoint_task_executor.hpp"
+#include "nav2_waypoint_follower/parameter_handler.hpp"
 
 #include "robot_localization/srv/from_ll.hpp"
 #include "tf2_ros/buffer.hpp"
@@ -186,17 +187,6 @@ protected:
 
   // Common vars used for both GPS and cartesian point following
   std::vector<int> failed_ids_;
-  std::string global_frame_id_{"map"};
-
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
-
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Our action server
   typename ActionServer::SharedPtr xyz_action_server_;
@@ -209,8 +199,6 @@ protected:
   typename ActionServerGPS::SharedPtr gps_action_server_;
   nav2::ServiceClient<robot_localization::srv::FromLL>::SharedPtr from_ll_to_map_client_;
 
-  bool stop_on_failure_;
-  int loop_rate_;
   GoalStatus current_goal_status_;
 
   // Task Execution At Waypoint Plugin
@@ -218,8 +206,10 @@ protected:
   waypoint_task_executor_loader_;
   pluginlib::UniquePtr<nav2_core::WaypointTaskExecutor>
   waypoint_task_executor_;
-  std::string waypoint_task_executor_id_;
-  std::string waypoint_task_executor_type_;
+
+  // Parameter Handler
+  std::unique_ptr<nav2_waypoint_follower::ParameterHandler> param_handler_;
+  Parameters * params_;
 };
 
 }  // namespace nav2_waypoint_follower

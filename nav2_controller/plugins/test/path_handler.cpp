@@ -117,7 +117,7 @@ TEST(PathHandlerTests, TestBounds)
 
   // Test initialization and getting costmap basic metadata
   handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
-  EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.475);
+  EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.5);
 
   // Set tf between map odom and base_link
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
@@ -168,7 +168,7 @@ TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
 
   // Test initialization and getting costmap basic metadata
   handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
-  EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.475);
+  EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.5);
 
   // Set tf between map odom and base_link
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
@@ -362,6 +362,25 @@ TEST(PathHandlerTests, TestDynamicParams)
   EXPECT_EQ(node->get_parameter("dummy.minimum_rotation_angle").as_double(), 500.0);
   EXPECT_EQ(node->get_parameter("dummy.enforce_path_inversion").as_bool(), true);
   EXPECT_EQ(node->get_parameter("dummy.enforce_path_rotation").as_bool(), true);
+
+  // Test setting invalid values
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("dummy.max_robot_pose_search_dist", -1.0)}
+  );
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+  // Value should remain unchanged
+  EXPECT_EQ(node->get_parameter("dummy.max_robot_pose_search_dist").as_double(), 100.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("dummy.inversion_xy_tolerance", -1.0)}
+  );
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+  // Value should remain unchanged
+  EXPECT_EQ(node->get_parameter("dummy.inversion_xy_tolerance").as_double(), 200.0);
 }
 
 int main(int argc, char **argv)

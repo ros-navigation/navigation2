@@ -35,7 +35,10 @@ class HybridWrap : public nav2_smac_planner::SmacPlannerHybrid
 public:
   void callDynamicParams(std::vector<rclcpp::Parameter> parameters)
   {
-    dynamicParametersCallback(parameters);
+    auto result = validateParameterUpdatesCallback(parameters);
+    if (result.successful) {
+      updateParametersCallback(parameters);
+    }
   }
 
   int getCoarseSearchResolution()
@@ -106,13 +109,18 @@ TEST(SmacTest, test_smac_se2)
       return false;
     };
 
-  geometry_msgs::msg::PoseStamped start, goal;
+  std::vector<geometry_msgs::msg::PoseStamped> no_viapoints{};
+  geometry_msgs::msg::PoseStamped start, goal, viapoint;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
   start.pose.orientation.w = 1.0;
   goal.pose.position.x = 1.0;
   goal.pose.position.y = 1.0;
   goal.pose.orientation.w = 1.0;
+  viapoint.pose.position.x = 0.5;
+  viapoint.pose.position.y = 0.5;
+  viapoint.pose.orientation.w = 1.0;
+  std::vector<geometry_msgs::msg::PoseStamped> viapoints{viapoint};
   auto planner = std::make_unique<HybridWrap>();
 
   // invalid goal heading mode
@@ -157,7 +165,7 @@ TEST(SmacTest, test_smac_se2)
   planner->activate();
 
   try {
-    planner->createPlan(start, goal, dummy_cancel_checker);
+    planner->createPlan(start, goal, viapoints, dummy_cancel_checker);
   } catch (...) {
   }
 
@@ -183,7 +191,8 @@ TEST(SmacTest, test_smac_se2)
   goal.pose.position.x = 0.01;
   goal.pose.position.y = 0.01;
 
-  nav_msgs::msg::Path plan = planner->createPlan(start, goal, dummy_cancel_checker);
+  nav_msgs::msg::Path plan = planner->createPlan(
+    start, goal, no_viapoints, dummy_cancel_checker);
   EXPECT_EQ(plan.poses.size(), 1);  // single point path
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -197,7 +206,8 @@ TEST(SmacTest, test_smac_se2)
   executor.spin_until_future_complete(results);
   goal.pose.position.x = 4.0;
   goal.pose.position.y = 4.0;
-  EXPECT_THROW(planner->createPlan(start, goal, dummy_cancel_checker), std::runtime_error);
+  EXPECT_THROW(planner->createPlan(
+    start, goal, no_viapoints, dummy_cancel_checker), std::runtime_error);
 
   planner->deactivate();
   planner->cleanup();
@@ -256,7 +266,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP")),
       rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
-      rclcpp::Parameter("test.coarse_search_resolution", -1)});
+      rclcpp::Parameter("test.coarse_search_resolution", 1)});
 
   rclcpp::spin_until_future_complete(
     nodeSE2->get_node_base_interface(),
@@ -289,28 +299,74 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     nodeSE2->get_parameter("test.goal_heading_mode").as_string(),
     std::string("BIDIRECTIONAL"));
 
-  auto results2 = rec_param->set_parameters_atomically(
+  // test invalid analytic expansion max length does not modify current
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.analytic_expansion_max_length", -1.0)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  EXPECT_EQ(
+    nodeSE2->get_parameter("test.analytic_expansion_max_length").as_double(),
+    42.0);
+
+  results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("resolution", 0.2)});
   rclcpp::spin_until_future_complete(
     nodeSE2->get_node_base_interface(),
-    results2);
+    results);
   EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
-  EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), -1);
+  EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), 1);
   EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+
+  // test min_turning_radius < resolution * downsampling_factor
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.minimum_turning_radius", 0.1)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  EXPECT_EQ(
+    nodeSE2->get_parameter("test.minimum_turning_radius").as_double(),
+    1.0);
+
+  // test angle_quantizations % _coarse_search_resolution != 0
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.coarse_search_resolution", 2)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.angle_quantization_bins", 73)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 2);
+  EXPECT_EQ(
+    nodeSE2->get_parameter("test.angle_quantization_bins").as_int(),
+    72);
+
+  // test unknown motion model
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.motion_model_for_search", std::string("INVALID"))});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  EXPECT_EQ(
+    nodeSE2->get_parameter("test.motion_model_for_search").as_string(),
+    std::string("REEDS_SHEPP"));
 
   // test coarse resolution edge cases. Consider when coarse resolution
   // is not multiple of angle bin quantization(72)
   std::vector<rclcpp::Parameter> parameters;
   parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 7));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
-  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 2);
 
   // same test as before but the error comes from the angular bin
   parameters.clear();
   parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 4));
   parameters.push_back(rclcpp::Parameter("test.angle_quantization_bins", 87));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
-  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 2);
 
   // test invalid goal heading mode does not modify current
   // goal heading mode
@@ -319,6 +375,12 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
+
+  // test invalid downsampling factor
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.downsampling_factor", -1));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(nodeSE2->get_parameter("test.downsampling_factor").as_int(), 2);
 }
 
 int main(int argc, char ** argv)

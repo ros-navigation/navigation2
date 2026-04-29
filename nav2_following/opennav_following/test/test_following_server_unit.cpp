@@ -105,16 +105,6 @@ public:
   {
     detected_dynamic_pose_ = pose;
   }
-
-  void setSkipOrientation(bool skip_orientation)
-  {
-    skip_orientation_ = skip_orientation;
-  }
-
-  void setFixedFrame(const std::string & fixed_frame)
-  {
-    fixed_frame_ = fixed_frame;
-  }
 };
 
 TEST(FollowingServerTests, ObjectLifecycle)
@@ -254,7 +244,13 @@ TEST(FollowingServerTests, RefinedPose)
   EXPECT_FALSE(node->getRefinedPose(pose));
 
   // Set skip orientation to false
-  node->setSkipOrientation(false);
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("skip_orientation", false)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
 
   // Set the detected pose
   geometry_msgs::msg::PoseStamped detected_pose;
@@ -264,13 +260,17 @@ TEST(FollowingServerTests, RefinedPose)
   detected_pose.pose.position.y = -0.1;
   node->setDynamicPose(detected_pose);
 
-  node->setFixedFrame("my_frame");
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("fixed_frame", rclcpp::ParameterValue("my_frame"))});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_TRUE(node->getRefinedPose(pose));
   EXPECT_NEAR(pose.pose.position.x, 0.1, 0.01);
   EXPECT_NEAR(pose.pose.position.y, -0.1, 0.01);
 
   // Now, set skip orientation to true
-  node->setSkipOrientation(true);
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("skip_orientation", false)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
 
   detected_pose.header.stamp = node->now();
   node->setDynamicPose(detected_pose);
@@ -299,7 +299,13 @@ TEST(FollowingServerTests, GetFramePose)
 
   // Not frame set, should return false
   auto frame_test = std::string("my_frame");
-  node->setFixedFrame("fixed_frame_test");
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("fixed_frame", rclcpp::ParameterValue("fixed_frame_test"))});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_FALSE(node->getFramePose(pose, frame_test));
 
   // Set transform between my_frame and fixed_frame_test
@@ -370,6 +376,17 @@ TEST(FollowingServerTests, DynamicParams)
   EXPECT_EQ(node->get_parameter("search_by_rotating").as_bool(), true);
   EXPECT_EQ(node->get_parameter("search_angle").as_double(), 8.0);
   EXPECT_EQ(node->get_parameter("transform_tolerance").as_double(), 9.0);
+
+  // Now, set invalid parameters and check that they are not set
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("controller_frequency", 0.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("controller_frequency").as_double(), 1.0);
+
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("linear_tolerance", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("linear_tolerance").as_double(), 6.0);
 }
 
 }  // namespace opennav_following

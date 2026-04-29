@@ -66,11 +66,6 @@ namespace nav2_costmap_2d
 
 ObstacleLayer::~ObstacleLayer()
 {
-  auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
-  }
-  dyn_params_handler_.reset();
   for (auto & notifier : observation_notifiers_) {
     notifier.reset();
   }
@@ -109,12 +104,6 @@ void ObstacleLayer::onInitialize()
     "tf_filter_tolerance", 0.05);
   combination_method_ = combination_method_from_int(combination_method_param);
 
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &ObstacleLayer::dynamicParametersCallback,
-      this,
-      std::placeholders::_1));
-
   RCLCPP_INFO(
     logger_,
     "Subscribed to Topics: %s", topics_string.c_str());
@@ -128,7 +117,7 @@ void ObstacleLayer::onInitialize()
   }
 
   ObstacleLayer::matchSize();
-  current_ = true;
+  setCurrent(true);
   was_reset_ = false;
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
@@ -351,14 +340,21 @@ void ObstacleLayer::onInitialize()
   }
 }
 
-rcl_interfaces::msg::SetParametersResult
-ObstacleLayer::dynamicParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult ObstacleLayer::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & /*parameters*/)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  return result;
+}
+
+void
+ObstacleLayer::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  rcl_interfaces::msg::SetParametersResult result;
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(name_ + ".") != 0) {
@@ -366,15 +362,21 @@ ObstacleLayer::dynamicParametersCallback(
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "min_obstacle_height") {
+      if (param_name == name_ + "." + "min_obstacle_height" &&
+        min_obstacle_height_ != parameter.as_double())
+      {
         min_obstacle_height_ = parameter.as_double();
-      } else if (param_name == name_ + "." + "max_obstacle_height") {
+        setCurrent(false);
+      } else if (param_name == name_ + "." + "max_obstacle_height" &&  // NOLINT(readability/braces)
+        max_obstacle_height_ != parameter.as_double())
+      {
         max_obstacle_height_ = parameter.as_double();
+        setCurrent(false);
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
-        current_ = false;
+        setCurrent(false);
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       }
@@ -384,9 +386,6 @@ ObstacleLayer::dynamicParametersCallback(
       }
     }
   }
-
-  result.successful = true;
-  return result;
 }
 
 void
@@ -501,7 +500,7 @@ ObstacleLayer::updateBounds(
   current = current && getClearingObservations(clearing_observations);
 
   // update the global current status
-  current_ = current;
+  setCurrent(current);
 
   // raytrace freespace
   for (const auto & clearing_observation : clearing_observations) {
@@ -546,6 +545,18 @@ ObstacleLayer::updateBounds(
       unsigned int mx, my;
       if (!worldToMap(px, py, mx, my)) {
         RCLCPP_DEBUG(logger_, "Computing map coords failed");
+        continue;
+      }
+
+      // Pre-filter by world distance to avoid cell discretization boundary
+      // effects where hypot(dx,dy) truncation makes far points appear in range
+      const double wdx = px - obs.origin_.x;
+      const double wdy = py - obs.origin_.y;
+      const double world_dist_sq = wdx * wdx + wdy * wdy;
+      if (world_dist_sq > obs.obstacle_max_range_ * obs.obstacle_max_range_) {
+        continue;
+      }
+      if (world_dist_sq < obs.obstacle_min_range_ * obs.obstacle_min_range_) {
         continue;
       }
 
@@ -605,9 +616,9 @@ ObstacleLayer::updateCosts(
   }
 
   // if not current due to reset, set current now after clearing
-  if (!current_ && was_reset_) {
+  if (!isCurrent() && was_reset_) {
     was_reset_ = false;
-    current_ = true;
+    setCurrent(true);
   }
 
   if (footprint_clearing_enabled_) {
@@ -789,6 +800,16 @@ ObstacleLayer::raytraceFreespace(
 void
 ObstacleLayer::activate()
 {
+  auto node = node_.lock();
+  // Add callback for dynamic parameters
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &ObstacleLayer::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &ObstacleLayer::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
   for (auto & notifier : observation_notifiers_) {
     notifier->clear();
   }
@@ -805,6 +826,16 @@ ObstacleLayer::activate()
 void
 ObstacleLayer::deactivate()
 {
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+
   for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
     if (observation_subscribers_[i] != NULL) {
       observation_subscribers_[i]->unsubscribe();
@@ -832,7 +863,7 @@ ObstacleLayer::reset()
 {
   resetMaps();
   resetBuffersLastUpdated();
-  current_ = false;
+  setCurrent(false);
   was_reset_ = true;
 }
 

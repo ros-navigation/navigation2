@@ -40,7 +40,7 @@ This process is then repeated a number of times and returns a converged solution
 ### Controller
  | Parameter                  | Type   | Definition                                                                                                                                                                                                                                                                                                           |
  | ---------------------      | ------ | -------------------------------------------------------------------------------------------------------- |
- | motion_model               | string | Default: DiffDrive. Type of model [DiffDrive, Omni, Ackermann].                                          |
+ | motion_model               | string | Default: diff_drive. Name of the motion model plugin instance to use. A sub-namespace with the same name must declare the `plugin` type. |
  | critics                    | string | Default: None. Critics (plugins) names                                                                   |
  | iteration_count            | int    | Default 1. Iteration count in MPPI algorithm. Recommend to keep as 1 and prefer more batches.            |
  | batch_size                 | int    | Default 1000. Count of randomly sampled candidate trajectories                                            |
@@ -56,10 +56,10 @@ This process is then repeated a number of times and returns a converged solution
  | temperature                | double | Default: 0.3. Selectiveness of trajectories by their costs (The closer this value to 0, the "more" we take in consideration controls with less cost), 0 mean use control with best cost, huge value will lead to just taking mean of all trajectories without cost consideration                                                   |
  | gamma                      | double | Default: 0.015. A trade-off between smoothness (high) and low energy (low). This is a complex parameter that likely won't need to be changed from the default of `0.1` which works well for a broad range of cases. See Section 3D-2 in "Information Theoretic Model Predictive Control: Theory and Applications to Autonomous Driving" for detailed information.       |
  | visualize                  | bool   | Default: false. Publish visualization of trajectories, which can slow down the controller significantly. Use only for debugging.                                                                                                                                       |
+ | critic_index_to_visualize  | int    | Default: 0. Selects which critic to visualize when `visualize` is true. `0` shows the total cost across all critics, `1..N` selects an individual critic by index.                                                                                                        |
  | retry_attempt_limit        | int    | Default 1. Number of attempts to find feasible trajectory on failure for soft-resets before reporting failure.                                                                                                                                                                                                       |
  | regenerate_noises          | bool   | Default false. Whether to regenerate noises each iteration or use single noise distribution computed on initialization and reset. Practically, this is found to work fine since the trajectories are being sampled stochastically from a normal distribution and reduces compute jittering at run-time due to thread wake-ups to resample normal distribution. |
  | publish_optimal_trajectory | bool   | Publishes the full optimal trajectory sequence each control iteration for downstream  control systems, collision checkers, etc to have context beyond the next timestep. |
- | publish_critics_stats      | bool   | Default false. Whether to publish statistics about each critic's performance. When enabled, publishes a `nav2_msgs::msg::CriticsStats` message containing critic names, whether they changed costs, and the sum of costs added by each critic. Useful for debugging and tuning critic behavior. |
  | open_loop        | bool    | Default false. Useful when using low accelerations and when wheel odometry's latency causes issues in initial state estimation. |
 
 #### Trajectory Visualizer
@@ -68,10 +68,23 @@ This process is then repeated a number of times and returns a converged solution
  | trajectory_step       | int    | Default: 5. The step between trajectories to visualize to downsample candidate trajectory pool.             |
  | time_step             | int    | Default: 3. The step between points on trajectories to visualize to downsample trajectory density.          |
 
+#### Motion Model Plugins
+
+Motion models are loaded as plugins. Set `motion_model` and declare the plugin type under a matching namespace.
+
+Three built-in motion models are provided:
+
+| Plugin type                    | Description                                  |
+| ------------------------------ | -------------------------------------------- |
+| `mppi::AckermannMotionModel`   | Ackermann steering                           |
+| `mppi::DiffDriveMotionModel`   | Differential drive                           |
+| `mppi::OmniMotionModel`        | Omnidirectional                              |
+
 #### Ackermann Motion Model
  | Parameter            | Type   | Definition                                                                                                  |
  | -------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
- | min_turning_r        | double | minimum turning radius for ackermann motion model                                                           |
+ | plugin               | string | Required: `"mppi::AckermannMotionModel"`                                                                    |
+ | min_turning_r        | double | Default 0.2. Minimum turning radius in metres                                                               |
 
 #### Constraint Critic
  | Parameter             | Type   | Definition                                                                                                  |
@@ -198,13 +211,18 @@ controller_server:
       iteration_count: 1
       temperature: 0.3
       gamma: 0.015
-      motion_model: "DiffDrive"
+      motion_model: "diff_drive"
       visualize: false
       TrajectoryVisualizer:
         trajectory_step: 5
         time_step: 3
-      AckermannConstraints:
-        min_turning_r: 0.2
+      diff_drive:
+        plugin: "mppi::DiffDriveMotionModel"
+      # To use Ackermann steering instead:
+      # motion_model: "ackermann"
+      # ackermann:
+      #   plugin: "mppi::AckermannMotionModel"
+      #   min_turning_r: 0.2
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
         enabled: true
@@ -282,7 +300,7 @@ controller_server:
 | Topic                     | Type                             | Description                                                           |
 |---------------------------|----------------------------------|-----------------------------------------------------------------------|
 | `trajectories`            | `visualization_msgs/MarkerArray` | Randomly generated trajectories, including resulting control sequence |
-| `critics_stats`           | `nav2_msgs/CriticsStats`         | Statistics about each critic's performance (published when `publish_critics_stats` is enabled) |
+| `critics_stats`           | `nav2_msgs/CriticsStats`         | Statistics about each critic's performance (published when `visualize` is enabled) |
 
 ## Notes to Users
 
@@ -320,7 +338,7 @@ Once you have your obstacle avoidance behavior tuned and matched with an appropr
 
 ### Critic costs debugging
 
-The `publish_critics_stats` parameter enables publishing of statistics about each critic's performance, which can be visualized using tools like PlotJuggler or Foxglove to analyze and debug critic behavior.
+The `visualize` parameter enables publishing of statistics about each critic's performance, which can be visualized using tools like PlotJuggler or Foxglove to analyze and debug critic behavior.
 
 The published `nav2_msgs::msg::CriticsStats` message contains the following fields:
 

@@ -18,6 +18,7 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/optimizer.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "tf2_ros/buffer.hpp"
 
 // Tests main optimizer functions
@@ -35,7 +36,7 @@ public:
   void testSetDiffModel()
   {
     EXPECT_EQ(motion_model_.get(), nullptr);
-    EXPECT_NO_THROW(setMotionModel("DiffDrive"));
+    EXPECT_NO_THROW(setMotionModel("diff_drive"));
     EXPECT_NE(motion_model_.get(), nullptr);
     EXPECT_TRUE(dynamic_cast<DiffDriveMotionModel *>(motion_model_.get()));
     EXPECT_FALSE(isHolonomic());
@@ -44,7 +45,7 @@ public:
   void testSetOmniModel()
   {
     EXPECT_EQ(motion_model_.get(), nullptr);
-    EXPECT_NO_THROW(setMotionModel("Omni"));
+    EXPECT_NO_THROW(setMotionModel("omni"));
     EXPECT_NE(motion_model_.get(), nullptr);
     EXPECT_TRUE(dynamic_cast<OmniMotionModel *>(motion_model_.get()));
     EXPECT_TRUE(isHolonomic());
@@ -53,17 +54,35 @@ public:
   void testSetAckModel()
   {
     EXPECT_EQ(motion_model_.get(), nullptr);
-    EXPECT_NO_THROW(setMotionModel("Ackermann"));
+    EXPECT_NO_THROW(setMotionModel("ackermann"));
     EXPECT_NE(motion_model_.get(), nullptr);
     EXPECT_TRUE(dynamic_cast<AckermannMotionModel *>(motion_model_.get()));
     EXPECT_FALSE(isHolonomic());
   }
 
+  void testSetModelMissingPlugin()
+  {
+    EXPECT_EQ(motion_model_.get(), nullptr);
+    // Do not declare plugin type so the loader throws
+    try {
+      setMotionModel("no_plugin_model");
+      FAIL();
+    } catch (...) {
+      SUCCEED();
+    }
+    EXPECT_EQ(motion_model_.get(), nullptr);
+  }
+
   void testSetRandModel()
   {
     EXPECT_EQ(motion_model_.get(), nullptr);
+    // Pre-declare an invalid plugin type so the loader throws
+    auto node = parent_.lock();
+    node->declare_parameter(
+      name_ + ".invalid_model.plugin",
+      rclcpp::ParameterValue("mppi::NoSuchMotionModel"));
     try {
-      setMotionModel("Random");
+      setMotionModel("invalid_model");
       FAIL();
     } catch (...) {
       SUCCEED();
@@ -148,6 +167,16 @@ public:
     return settings_.constraints;
   }
 
+  models::ControlConstraints & getBaseConstraints()
+  {
+    return settings_.base_constraints;
+  }
+
+  bool isSpeedLimitActiveWrapper() const
+  {
+    return isSpeedLimitActive();
+  }
+
   void applyControlSequenceConstraintsWrapper()
   {
     return applyControlSequenceConstraints();
@@ -228,6 +257,11 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(3.0));
   node->declare_parameter("mppic.ay_min", rclcpp::ParameterValue(3.0));
+
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -267,6 +301,13 @@ TEST(OptimizerTests, TestOptimizerMotionModels)
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   OptimizerTester optimizer_tester;
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  // Declare plugin types for the motion model tests
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
+  node->declare_parameter(
+    "mppic.ackermann.plugin", rclcpp::ParameterValue("mppi::AckermannMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -288,6 +329,10 @@ TEST(OptimizerTests, TestOptimizerMotionModels)
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetAckModel();
 
+  // // Missing motion model plugin type, it should fail
+  optimizer_tester.resetMotionModel();
+  optimizer_tester.testSetModelMissingPlugin();
+
   // // Rand should fail
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetRandModel();
@@ -301,6 +346,8 @@ TEST(OptimizerTests, setOffsetTests)
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -326,6 +373,8 @@ TEST(OptimizerTests, resetTests)
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -348,6 +397,8 @@ TEST(OptimizerTests, FallbackTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -374,6 +425,8 @@ TEST(OptimizerTests, PrepareTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -404,6 +457,10 @@ TEST(OptimizerTests, shiftControlSequenceTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -449,6 +506,8 @@ TEST(OptimizerTests, SpeedLimitTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -491,6 +550,10 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-1.0));
   node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.75));
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -554,6 +617,10 @@ TEST(OptimizerTests, updateStateVelocitiesTests)
   node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(3.0));
   node->declare_parameter("mppic.ay_min", rclcpp::ParameterValue(-3.0));
   node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(3.5));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -581,6 +648,10 @@ TEST(OptimizerTests, getControlFromSequenceAsTwistTests)
   node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-1.0));
   node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.60));
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -618,6 +689,10 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.model_dt", rclcpp::ParameterValue(0.1));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -686,6 +761,8 @@ TEST(OptimizerTests, TestGetters)
 
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string test = "test";
@@ -709,6 +786,10 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(0.5));
   node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(0.5));
   node->declare_parameter("mppic.open_loop", rclcpp::ParameterValue(true));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -761,6 +842,70 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   EXPECT_LE(
     vy_delta,
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ay_max);
+}
+
+TEST(OptimizerTests, SpeedLimitDynamicParameterGuard)
+{
+  // This test verifies that kinematic parameters (vx_max, etc.) are rejected
+  // when a speed limit is active, but allowed when no speed limit is active.
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter("mppic.vx_max", rclcpp::ParameterValue(0.5));
+  node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-0.35));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  // Use "mppic" to match the optimizer's name_ so ParametersHandler correctly routes callbacks
+  std::string name = "mppic";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  // Start the parameter handler to enable dynamic parameter callbacks
+  param_handler.start();
+
+  // Verify initial state: no speed limit active
+  EXPECT_FALSE(optimizer_tester.isSpeedLimitActiveWrapper());
+
+  // Store original base_constraints value
+  float original_vx_max = optimizer_tester.getBaseConstraints().vx_max;
+  EXPECT_EQ(original_vx_max, 0.5f);
+
+  // Test 1: Dynamic parameter update SHOULD SUCCEED when no speed limit is active
+  auto result1 = node->set_parameter(rclcpp::Parameter("mppic.vx_max", 0.8));
+  EXPECT_TRUE(result1.successful);
+  // Verify the parameter was updated
+  EXPECT_EQ(optimizer_tester.getBaseConstraints().vx_max, 0.8f);
+
+  // Apply a speed limit (50% reduction)
+  optimizer_tester.setSpeedLimit(50.0, true);
+  EXPECT_TRUE(optimizer_tester.isSpeedLimitActiveWrapper());
+
+  // Verify constraints differ from base_constraints now
+  EXPECT_NE(
+    optimizer_tester.getControlConstraints().vx_max,
+    optimizer_tester.getBaseConstraints().vx_max);
+
+  // Test 2: Dynamic parameter update SHOULD BE REJECTED when speed limit is active
+  auto result2 = node->set_parameter(rclcpp::Parameter("mppic.vx_max", 1.0));
+  EXPECT_FALSE(result2.successful);
+  // Verify the base_constraints value was NOT updated
+  EXPECT_EQ(optimizer_tester.getBaseConstraints().vx_max, 0.8f);
+
+  // Clear the speed limit using NO_SPEED_LIMIT constant
+  optimizer_tester.setSpeedLimit(nav2_costmap_2d::NO_SPEED_LIMIT, false);
+  EXPECT_FALSE(optimizer_tester.isSpeedLimitActiveWrapper());
+
+  // Test 3: Dynamic parameter update SHOULD SUCCEED again after clearing speed limit
+  auto result3 = node->set_parameter(rclcpp::Parameter("mppic.vx_max", 1.0));
+  EXPECT_TRUE(result3.successful);
+  EXPECT_EQ(optimizer_tester.getBaseConstraints().vx_max, 1.0f);
 }
 
 int main(int argc, char ** argv)
