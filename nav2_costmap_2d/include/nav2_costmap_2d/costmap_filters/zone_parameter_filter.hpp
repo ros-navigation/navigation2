@@ -72,20 +72,48 @@ public:
    */
   bool isActive();
 
-private:
+protected:
+  /**
+   * @brief Subscriber callback for the filter info topic.
+   */
   void filterInfoCallback(
     const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr & msg);
+
+  /**
+   * @brief Subscriber callback for the filter mask topic.
+   */
   void maskCallback(
     const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg);
 
+  /**
+   * @brief Parse the per-state parameter map and nominal_defaults from
+   *        YAML overrides.
+   */
   void loadStateConfig();
 
+  /**
+   * @brief Apply the parameter set associated with the given state.
+   *        State 0 restores nominal_defaults; throws on unknown state.
+   */
   void applyState(uint8_t new_state);
+
+  /**
+   * @brief Restore all overridden parameters to their nominal_defaults
+   *        values via async set_parameters.
+   */
   void resetToNominal();
+
+  /**
+   * @brief Issue an async set_parameters call to the named target node.
+   */
   void issueAsyncSetParameters(
     const std::string & target_node,
     const std::vector<rclcpp::Parameter> & params);
 
+  /**
+   * @brief Drain completed set_parameters futures non-blockingly. Called
+   *        at the start of every process() to guard future lifetimes.
+   */
   void drainPendingFutures();
 
   nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
