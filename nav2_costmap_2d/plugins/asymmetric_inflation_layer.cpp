@@ -51,6 +51,11 @@ AsymmetricInflationLayer::AsymmetricInflationLayer()
   inflate_around_unknown_(false),
   goal_distance_threshold_(0),
   neutral_threshold_(0),
+  last_min_x_(std::numeric_limits<double>::lowest()),
+  last_min_y_(std::numeric_limits<double>::lowest()),
+  last_max_x_(std::numeric_limits<double>::max()),
+  last_max_y_(std::numeric_limits<double>::max()),
+  need_reinflation_(false),
   cell_inflation_radius_(0),
   resolution_(0),
   cache_length_(0)
@@ -78,7 +83,7 @@ AsymmetricInflationLayer::onInitialize()
     cost_scaling_factor_ = node->declare_or_get_parameter(
       name_ + "." + "cost_scaling_factor", 10.0);
     asymmetry_factor_ = node->declare_or_get_parameter(
-      name_ + "." + "asymmetry_factor", 0.0);
+      name_ + "." + "asymmetry_factor", 0.75);
     inflate_around_unknown_ = node->declare_or_get_parameter(
       name_ + "." + "inflate_around_unknown", false);
     plan_topic_ = node->declare_or_get_parameter<std::string>(
@@ -90,9 +95,9 @@ AsymmetricInflationLayer::onInitialize()
 
     // Apply the same bound checks as dynamic reconfigure, so bad YAML values fail
     // loudly at startup instead of silently producing bad costmaps.
-    if (std::abs(asymmetry_factor_) >= 0.8) {
+    if (std::abs(asymmetry_factor_) >= 1.0) {
       throw std::runtime_error(
-        "AsymmetricInflationLayer: asymmetry_factor magnitude must be < 0.8");
+        "AsymmetricInflationLayer: asymmetry_factor magnitude must be < 1.0");
     }
     if (inflation_radius_ < 0.0) {
       throw std::runtime_error(
@@ -124,6 +129,7 @@ AsymmetricInflationLayer::onInitialize()
   seen_.clear();
   cached_distances_.clear();
   cached_costs_.clear();
+  need_reinflation_ = false;
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
 }
@@ -164,8 +170,9 @@ AsymmetricInflationLayer::globalPathCallback(const nav_msgs::msg::Path::SharedPt
 {
   std::lock_guard<std::mutex> lock(path_mutex_);
   latest_global_path_ = msg;
-  // Path change invalidates all asymmetric costs in the costmap;
-  // updateBounds() already requests a full-map reinflation every cycle.
+  // Path change invalidates all asymmetric costs in the costmap.
+  // Force a full-map reinflation on the next update cycle.
+  need_reinflation_ = true;
   setCurrent(false);
 }
 
@@ -194,14 +201,31 @@ AsymmetricInflationLayer::updateBounds(
   current_robot_x_ = robot_x;
   current_robot_y_ = robot_y;
 
-  // Asymmetric costs are path-relative in world frame.  When the rolling window
-  // costmap shifts with the robot, shifted cells carry stale asymmetric values
-  // that are incorrect for the current path geometry.  Always requesting the full
-  // map ensures these are cleared and recomputed every cycle.
-  *min_x = std::numeric_limits<double>::lowest();
-  *min_y = std::numeric_limits<double>::lowest();
-  *max_x = std::numeric_limits<double>::max();
-  *max_y = std::numeric_limits<double>::max();
+  if (need_reinflation_) {
+    // Reset last_* to "no expansion" values so the next cycle won't
+    // merge with these full-map bounds (avoids double full-map update after reset)
+    last_min_x_ = last_min_y_ = std::numeric_limits<double>::max();
+    last_max_x_ = last_max_y_ = std::numeric_limits<double>::lowest();
+
+    *min_x = std::numeric_limits<double>::lowest();
+    *min_y = std::numeric_limits<double>::lowest();
+    *max_x = std::numeric_limits<double>::max();
+    *max_y = std::numeric_limits<double>::max();
+    need_reinflation_ = false;
+  } else {
+    double tmp_min_x = last_min_x_;
+    double tmp_min_y = last_min_y_;
+    double tmp_max_x = last_max_x_;
+    double tmp_max_y = last_max_y_;
+    last_min_x_ = *min_x;
+    last_min_y_ = *min_y;
+    last_max_x_ = *max_x;
+    last_max_y_ = *max_y;
+    *min_x = std::min(tmp_min_x, *min_x) - inflation_radius_;
+    *min_y = std::min(tmp_min_y, *min_y) - inflation_radius_;
+    *max_x = std::max(tmp_max_x, *max_x) + inflation_radius_;
+    *max_y = std::max(tmp_max_y, *max_y) + inflation_radius_;
+  }
 }
 
 void
@@ -211,6 +235,7 @@ AsymmetricInflationLayer::onFootprintChanged()
   inscribed_radius_ = layered_costmap_->getInscribedRadius();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
+  need_reinflation_ = true;
 
   if (inflation_radius_ < inscribed_radius_) {
     RCLCPP_ERROR(
@@ -305,7 +330,7 @@ AsymmetricInflationLayer::computeObstacleSide(
   double cx, cy;
   master_grid.mapToWorld(i, j, cx, cy);
 
-  // 1. BROAD PHASE ($O(1)$ Hash Lookup)
+  // 1. BROAD PHASE (Hash Lookup)
   int64_t b_x = static_cast<int64_t>(std::floor(cx / bucket_size));
   int64_t b_y = static_cast<int64_t>(std::floor(cy / bucket_size));
   uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) | 
@@ -424,8 +449,7 @@ AsymmetricInflationLayer::updateCosts(
   std::vector<std::pair<double, double>> local_path_pts = extractLocalPath(master_grid);
   bool use_asymmetry = (local_path_pts.size() >= 2) && (asymmetry_factor_ != 0.0);
 
-  // --- Spatial Hash Grid Construction ---
-  // Ensure bucket size is at least 1.0 meters to prevent memory explosion on tight thresholds
+  // Spatial Hash Grid Construction
   double bucket_size = std::max(neutral_threshold_, 1.0); 
   std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
 
@@ -507,7 +531,7 @@ AsymmetricInflationLayer::updateCosts(
             obs_bin_asym.emplace_back(i, j, i, j);
             obstacle_side_grid_[index] = computeObstacleSide(i, j, local_path_pts, spatial_hash, bucket_size, master_grid);
           } else {
-            // Optional: Mark interior cells as 'seen' so the BFS wave doesn't 
+            // Mark interior cells as 'seen' so the BFS wave doesn't 
             // waste time propagating backwards into the solid obstacle mass.
             seen_[index] = true; 
           }
@@ -584,7 +608,7 @@ AsymmetricInflationLayer::enqueue(
 
   double physical_dist = distanceLookup(mx, my, src_x, src_y);
 
-  // Hard cutoff: stop propagating the wave at the configured inflation radius
+  // Stop propagating the wave at the configured inflation radius
   if (physical_dist > cell_inflation_radius_) {
     return current_bin;
   }
@@ -732,18 +756,21 @@ AsymmetricInflationLayer::updateParametersCallback(
         inflation_radius_ != parameter.as_double())
       {
         inflation_radius_ = parameter.as_double();
+        need_reinflation_ = true;
         need_cache_recompute = true;
         setCurrent(false);
       } else if (param_name == name_ + ".cost_scaling_factor" &&  // NOLINT
         cost_scaling_factor_ != parameter.as_double())
       {
         cost_scaling_factor_ = parameter.as_double();
+        need_reinflation_ = true;
         need_cache_recompute = true;
         setCurrent(false);
       } else if (param_name == name_ + ".asymmetry_factor" &&  // NOLINT
         asymmetry_factor_ != parameter.as_double())
       {
         asymmetry_factor_ = parameter.as_double();
+        need_reinflation_ = true;
         need_cache_recompute = true;
         setCurrent(false);
       } else if (param_name == name_ + ".goal_distance_threshold" &&  // NOLINT
@@ -760,11 +787,13 @@ AsymmetricInflationLayer::updateParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + ".enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
+        need_reinflation_ = true;
         setCurrent(false);
       } else if (param_name == name_ + ".inflate_around_unknown" &&  // NOLINT
         inflate_around_unknown_ != parameter.as_bool())
       {
         inflate_around_unknown_ = parameter.as_bool();
+        need_reinflation_ = true;
         setCurrent(false);
       }
     }

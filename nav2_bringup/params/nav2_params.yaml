@@ -293,7 +293,7 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer", "asymmetric_inflation_layer"]
       filters: ["keepout_filter", "speed_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
@@ -332,7 +332,17 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.7
+        inflation_radius: 2.0
+      asymmetric_inflation_layer:
+        plugin: "nav2_costmap_2d::AsymmetricInflationLayer"
+        enabled: True
+        inflation_radius: 2.0
+        cost_scaling_factor: 3.0
+        asymmetry_factor: 0.75
+        inflate_around_unknown: False
+        plan_topic: "plan"
+        goal_distance_threshold: 0.5
+        neutral_threshold: 4.0
       always_send_full_costmap: true
       introspection_mode: "disabled"
 
