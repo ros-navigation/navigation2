@@ -521,34 +521,19 @@ VoxelLayer::dynamicParametersCallback(
     const auto & param_name = parameter.get_name();
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "min_obstacle_height" &&
-        min_obstacle_height_ != parameter.as_double())
-      {
+      if (param_name == name_ + "." + "min_obstacle_height") {
         min_obstacle_height_ = parameter.as_double();
-        current_ = false;
-      } else if (param_name == name_ + "." + "max_obstacle_height" &&  // NOLINT(readability/braces)
-        max_obstacle_height_ != parameter.as_double())
-      {
+      } else if (param_name == name_ + "." + "max_obstacle_height") {
         max_obstacle_height_ = parameter.as_double();
-        current_ = false;
-      } else if (param_name == name_ + "." + "origin_z" &&  // NOLINT(readability/braces)
-        origin_z_ != parameter.as_double())
-      {
+      } else if (param_name == name_ + "." + "origin_z") {
         origin_z_ = parameter.as_double();
         resize_map_needed = true;
-        current_ = false;
-      } else if (param_name == name_ + "." + "z_resolution" &&  // NOLINT(readability/braces)
-        z_resolution_ != parameter.as_double())
-      {
+      } else if (param_name == name_ + "." + "z_resolution") {
         z_resolution_ = parameter.as_double();
         resize_map_needed = true;
-        current_ = false;
       }
-
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled" &&
-        enabled_ != parameter.as_bool())
-      {
+      if (param_name == name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
         current_ = false;
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
@@ -561,18 +546,13 @@ VoxelLayer::dynamicParametersCallback(
       }
 
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == name_ + "." + "z_voxels" &&
-        size_z_ != parameter.as_int())
-      {
+      if (param_name == name_ + "." + "z_voxels") {
         size_z_ = parameter.as_int();
         resize_map_needed = true;
-        current_ = false;
       } else if (param_name == name_ + "." + "unknown_threshold") {
         unknown_threshold_ = parameter.as_int() + (VOXEL_BITS - size_z_);
-        current_ = false;
       } else if (param_name == name_ + "." + "mark_threshold") {
         mark_threshold_ = parameter.as_int();
-        current_ = false;
       } else if (param_name == name_ + "." + "combination_method") {
         combination_method_ = combination_method_from_int(parameter.as_int());
       }
