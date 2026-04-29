@@ -31,9 +31,6 @@ namespace nav2_costmap_2d
 
 namespace
 {
-// Colon — collision-free vs ROS 2 param-name grammar (no colons allowed).
-constexpr char kNodeParamSep = ':';
-
 // Longest-prefix match against `sorted_nodes` (sorted by length descending),
 // so nested-namespace targets resolve unambiguously.
 // Returns (target_node, param_path) on hit, or std::nullopt on miss.
@@ -42,11 +39,12 @@ matchTargetNode(
   const std::string & suffix, const std::vector<std::string> & sorted_nodes)
 {
   for (const auto & node : sorted_nodes) {
-    if (suffix.size() > node.size() + 1 &&
-      suffix.compare(0, node.size(), node) == 0 &&
-      suffix[node.size()] == '.')
+    const size_t boundary = node.size();
+    if (suffix.size() > boundary + 1 &&
+      suffix.compare(0, boundary, node) == 0 &&
+      suffix[boundary] == '.')
     {
-      return std::make_pair(node, suffix.substr(node.size() + 1));
+      return std::make_pair(node, suffix.substr(boundary + 1));
     }
   }
   return std::nullopt;
@@ -243,7 +241,7 @@ void ZoneParameterFilter::loadStateConfig()
     const uint8_t state_id = static_cast<uint8_t>(id_i64);
     const std::string state_prefix = name_ + ".state_" + std::to_string(state_id) + ".";
 
-    std::vector<rclcpp::Parameter> params_for_state;
+    std::vector<StateParamEntry> params_for_state;
     for (const auto & [override_name, override_value] : overrides) {
       if (override_name.rfind(state_prefix, 0) != 0) {
         continue;  // not for this state
@@ -258,8 +256,8 @@ void ZoneParameterFilter::loadStateConfig()
           state_id, override_name.c_str());
         continue;
       }
-      params_for_state.emplace_back(
-        match->first + kNodeParamSep + match->second, override_value);
+      params_for_state.push_back(
+        StateParamEntry{match->first, rclcpp::Parameter(match->second, override_value)});
     }
 
     if (params_for_state.empty()) {
@@ -280,6 +278,7 @@ void ZoneParameterFilter::loadStateConfig()
   // Declarative YAML nominals — auto-capture races on separate underlying
   // services::Client instances for get/set on the target.
   const std::string nominal_prefix = name_ + ".nominal_defaults.";
+  size_t nominal_count = 0;
   for (const auto & [override_name, override_value] : overrides) {
     if (override_name.rfind(nominal_prefix, 0) != 0) {
       continue;
@@ -294,23 +293,36 @@ void ZoneParameterFilter::loadStateConfig()
         override_name.c_str());
       continue;
     }
-    const std::string stored_name = match->first + kNodeParamSep + match->second;
-    nominal_defaults_[stored_name] = rclcpp::Parameter(match->second, override_value);
+    nominal_defaults_[match->first].emplace_back(match->second, override_value);
+    ++nominal_count;
   }
   RCLCPP_INFO(
     logger_,
     "ZoneParameterFilter: %zu nominal default(s) loaded for state-0 reset.",
-    nominal_defaults_.size());
+    nominal_count);
 
   // Warn on state-N override without matching nominal (state-0 reset gap).
-  for (const auto & [state_id, params] : state_param_map_) {
-    for (const auto & p : params) {
-      if (nominal_defaults_.find(p.get_name()) == nominal_defaults_.end()) {
+  auto has_nominal = [this](const StateParamEntry & e) -> bool {
+      const auto node_it = nominal_defaults_.find(e.target_node);
+      if (node_it == nominal_defaults_.end()) {
+        return false;
+      }
+      const auto & param_name = e.param.get_name();
+      for (const auto & nominal : node_it->second) {
+        if (nominal.get_name() == param_name) {
+          return true;
+        }
+      }
+      return false;
+    };
+  for (const auto & [state_id, entries] : state_param_map_) {
+    for (const auto & entry : entries) {
+      if (!has_nominal(entry)) {
         RCLCPP_WARN(
           logger_,
-          "ZoneParameterFilter: state_%u sets '%s' but no matching nominal_defaults "
+          "ZoneParameterFilter: state_%u sets '%s:%s' but no matching nominal_defaults "
           "entry exists; state-0 reset will NOT restore this parameter.",
-          state_id, p.get_name().c_str());
+          state_id, entry.target_node.c_str(), entry.param.get_name().c_str());
       }
     }
   }
@@ -320,19 +332,13 @@ void ZoneParameterFilter::loadStateConfig()
   // need not be reachable yet — set_parameters failures surface via
   // drainPendingFutures.
   std::set<std::string> all_target_nodes;
-  for (const auto & [_state_id, params] : state_param_map_) {
-    for (const auto & p : params) {
-      const auto sep_pos = p.get_name().find(kNodeParamSep);
-      if (sep_pos != std::string::npos) {
-        all_target_nodes.insert(p.get_name().substr(0, sep_pos));
-      }
+  for (const auto & [_state_id, entries] : state_param_map_) {
+    for (const auto & e : entries) {
+      all_target_nodes.insert(e.target_node);
     }
   }
-  for (const auto & [stored_name, _nominal_param] : nominal_defaults_) {
-    const auto sep_pos = stored_name.find(kNodeParamSep);
-    if (sep_pos != std::string::npos) {
-      all_target_nodes.insert(stored_name.substr(0, sep_pos));
-    }
+  for (const auto & [target_node, _params] : nominal_defaults_) {
+    all_target_nodes.insert(target_node);
   }
   for (const auto & target_node : all_target_nodes) {
     param_clients_.emplace(
@@ -440,20 +446,8 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
 
   // Batch per target node (one set_parameters call per node).
   std::map<std::string, std::vector<rclcpp::Parameter>> per_node_params;
-  for (const auto & stored : it->second) {
-    const std::string stored_name = stored.get_name();
-    auto sep_pos = stored_name.find(kNodeParamSep);
-    if (sep_pos == std::string::npos) {
-      RCLCPP_ERROR(
-        logger_,
-        "ZoneParameterFilter: stored parameter name '%s' missing node separator; skipping.",
-        stored_name.c_str());
-      continue;
-    }
-    const std::string target_node = stored_name.substr(0, sep_pos);
-    const std::string target_param = stored_name.substr(sep_pos + 1);
-
-    per_node_params[target_node].emplace_back(target_param, stored.get_parameter_value());
+  for (const auto & entry : it->second) {
+    per_node_params[entry.target_node].push_back(entry.param);
   }
 
   for (const auto & [target_node, params] : per_node_params) {
@@ -468,21 +462,7 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
 
 void ZoneParameterFilter::resetToNominal()
 {
-  if (nominal_defaults_.empty()) {
-    return;  // nothing captured yet; nothing to restore
-  }
-
-  std::map<std::string, std::vector<rclcpp::Parameter>> per_node_params;
-  for (const auto & [stored_name, nominal_param] : nominal_defaults_) {
-    auto sep_pos = stored_name.find(kNodeParamSep);
-    if (sep_pos == std::string::npos) {
-      continue;
-    }
-    const std::string target_node = stored_name.substr(0, sep_pos);
-    per_node_params[target_node].emplace_back(nominal_param);
-  }
-
-  for (const auto & [target_node, params] : per_node_params) {
+  for (const auto & [target_node, params] : nominal_defaults_) {
     issueAsyncSetParameters(target_node, params);
   }
 }
