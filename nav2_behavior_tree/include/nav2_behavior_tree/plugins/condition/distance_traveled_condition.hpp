@@ -33,6 +33,11 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that returns SUCCESS every time the robot
  * travels a specified distance and FAILURE otherwise
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <DistanceTraveled distance="0.8" global_frame="map" robot_base_frame="base_link"/>
+ * @endcode
  */
 class DistanceTraveledCondition : public BT::ConditionNode
 {

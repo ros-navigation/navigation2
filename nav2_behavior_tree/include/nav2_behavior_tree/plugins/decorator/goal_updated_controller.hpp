@@ -33,6 +33,13 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::DecoratorNode that ticks its child if the goal was updated
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <GoalUpdatedController goal="{goal}" goals="{goals}">
+ *     <!--Add tree components here-->
+ * </GoalUpdatedController>
+ * @endcode
  */
 class GoalUpdatedController : public BT::DecoratorNode
 {

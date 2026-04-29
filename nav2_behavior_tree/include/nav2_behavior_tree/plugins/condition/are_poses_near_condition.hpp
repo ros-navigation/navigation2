@@ -29,6 +29,11 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS when a specified goal
  * is reached and FAILURE otherwise
+ *
+ * Usage in XML:
+ * @code
+ * <ArePosesNear ref_pose="{init_pose}" target_pose="{goal_pose}" tolerance="0.10"/>
+ * @endcode
  */
 class ArePosesNearCondition : public BT::ConditionNode
 {

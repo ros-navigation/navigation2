@@ -20,16 +20,13 @@
 #include <string>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
-
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "nav_msgs/msg/path.hpp"
-
-#include "tf2_ros/buffer.hpp"
-
-#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_goal_nearby_condition.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/buffer.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 
 using namespace std::chrono_literals;
 
@@ -38,11 +35,13 @@ class IsGoalNearbyConditionTestFixture : public nav2_behavior_tree::BehaviorTree
 public:
   void SetUp() override
   {
-    BT::NodeBuilder builder =
-      [](const std::string & name, const BT::NodeConfiguration & config)
-      {
+    BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & config) {
         return std::make_unique<nav2_behavior_tree::IsGoalNearbyCondition>(name, config);
       };
+    nav2::declare_parameter_if_not_declared(
+      node_, "robot_base_frame", rclcpp::ParameterValue("base_link"));
+
+    nav2::declare_parameter_if_not_declared(node_, "global_frame", rclcpp::ParameterValue("map"));
 
     try {
       factory_->registerBuilder<nav2_behavior_tree::IsGoalNearbyCondition>("IsGoalNearby", builder);
@@ -51,18 +50,15 @@ public:
     tf_buffer_ = config_->blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   }
 
-  void TearDown() override
-  {
-    tree_.reset();
-  }
+  void TearDown() override {tree_.reset();}
 
 protected:
-  void setRobotPoseInMap(double x, double y)
+  void setRobotPoseInMap(double x, double y, std::string frame_id = "base_link")
   {
     geometry_msgs::msg::TransformStamped tf;
     tf.header.stamp = node_->now();
     tf.header.frame_id = "map";
-    tf.child_frame_id = "base_link";
+    tf.child_frame_id = frame_id;
     tf.transform.translation.x = x;
     tf.transform.translation.y = y;
     tf.transform.translation.z = 0.0;
@@ -71,8 +67,7 @@ protected:
     tf_buffer_->setTransform(tf, "unit_test", true);
   }
 
-  static nav_msgs::msg::Path makePathInMap(
-    const std::vector<std::pair<double, double>> & pts)
+  static nav_msgs::msg::Path makePathInMap(const std::vector<std::pair<double, double>> & pts)
   {
     nav_msgs::msg::Path path;
     path.header.frame_id = "map";
@@ -88,8 +83,7 @@ protected:
     return path;
   }
 
-  static nav_msgs::msg::Path makeStraightPathInMap(
-    const std::vector<double> & xs)
+  static nav_msgs::msg::Path makeStraightPathInMap(const std::vector<double> & xs)
   {
     std::vector<std::pair<double, double>> pts;
     pts.reserve(xs.size());
@@ -182,8 +176,7 @@ TEST_F(IsGoalNearbyConditionTestFixture, near_goal_returns_success)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 }
 
-TEST_F(IsGoalNearbyConditionTestFixture,
-  pruning_bounded_search_ignores_far_ahead_close_point)
+TEST_F(IsGoalNearbyConditionTestFixture, pruning_bounded_search_ignores_far_ahead_close_point)
 {
   std::string xml_txt =
     R"(
@@ -199,8 +192,7 @@ TEST_F(IsGoalNearbyConditionTestFixture,
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
-  auto path = makeStraightPathInMap({
-    0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0});
+  auto path = makeStraightPathInMap({0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0});
   config_->blackboard->set("path", path);
 
   setRobotPoseInMap(5.0, 0.0);
@@ -298,6 +290,48 @@ TEST_F(IsGoalNearbyConditionTestFixture, invalid_path_frame_returns_failure)
 
   tree_->rootNode()->executeTick();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
+}
+
+TEST_F(IsGoalNearbyConditionTestFixture, parameter_from_ros_node)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <IsGoalNearby
+            path="{path}"
+            proximity_threshold="0.5"
+          />
+        </BehaviorTree>
+      </root>)";
+
+  // Change robot_base_frame parameter to non-standard frame and verify that it is correctly used
+  // for transforms in the node
+  std::string non_standard_frame = "sensor_frame";
+  node_->set_parameter(rclcpp::Parameter("robot_base_frame", non_standard_frame));
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "map";
+  geometry_msgs::msg::PoseStamped ps;
+  ps.header.frame_id = "map";
+  ps.pose.orientation.w = 1.0;
+  ps.pose.position.x = 0.0;
+  path.poses.push_back(ps);
+  ps.pose.position.x = 10.0;
+  path.poses.push_back(ps);
+
+  // Set robot pose in non-standard frame at start of path
+  config_->blackboard->set("path", path);
+  setRobotPoseInMap(0.0, 0.0, non_standard_frame);
+  tree_->rootNode()->executeTick();
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
+
+  // Set robot pose in non-standard frame near end of path
+  setRobotPoseInMap(9.5, 0.0, non_standard_frame);
+  tree_->rootNode()->executeTick();
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)

@@ -30,6 +30,12 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * Usage in XML:
+ * @code
+ * <ExtractRouteNodesAsGoals route="{route}" goals="{route_goals}"/>
+ * @endcode
+ */
 class ExtractRouteNodesAsGoals : public BT::ActionNodeBase
 {
 public:

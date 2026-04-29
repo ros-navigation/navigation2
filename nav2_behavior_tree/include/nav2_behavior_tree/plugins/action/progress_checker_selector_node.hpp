@@ -35,6 +35,13 @@ namespace nav2_behavior_tree
  * the FollowPath. The selected_progress_checker output port is passed to progress_checker_id
  * input port of the FollowPath
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <ProgressCheckerSelector selected_progress_checker="{selected_progress_checker}"
+ *                          default_progress_checker="precise_progress_checker"
+ *                          topic_name="progress_checker_selector"/>
+ * @endcode
  */
 class ProgressCheckerSelector : public BT::SyncActionNode
 {

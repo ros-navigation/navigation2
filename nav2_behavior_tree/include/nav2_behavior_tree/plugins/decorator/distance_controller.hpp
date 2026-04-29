@@ -32,6 +32,13 @@ namespace nav2_behavior_tree
  * @brief A BT::DecoratorNode that ticks its child every time the robot
  * travels a specified distance
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <DistanceController distance="0.5" global_frame="map" robot_base_frame="base_link">
+ *     <!--Add tree components here-->
+ * </DistanceController>
+ * @endcode
  */
 class DistanceController : public BT::DecoratorNode
 {

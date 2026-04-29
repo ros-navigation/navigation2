@@ -57,7 +57,7 @@ TEST(nav_2d_utils, PosesToPathEmpty)
 
   EXPECT_EQ(path.poses.size(), 0ul);
   EXPECT_EQ(path.header.frame_id, frame);
-  EXPECT_EQ(path.header.stamp, time);
+  EXPECT_EQ(rclcpp::Time(path.header.stamp, RCL_ROS_TIME), time);
 }
 
 TEST(nav_2d_utils, PosesToPathNonEmpty)
@@ -92,11 +92,11 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
 
   for (const auto & stamped_pose : path.poses) {
     EXPECT_EQ(stamped_pose.header.frame_id, frame);
-    EXPECT_EQ(stamped_pose.header.stamp, time);
+    EXPECT_EQ(rclcpp::Time(stamped_pose.header.stamp, RCL_ROS_TIME), time);
   }
 
   EXPECT_EQ(path.header.frame_id, frame);
-  EXPECT_EQ(path.header.stamp, time);
+  EXPECT_EQ(rclcpp::Time(path.header.stamp, RCL_ROS_TIME), time);
 }
 
 

@@ -96,6 +96,7 @@
     <Action ID="ComputePathToPose">
       <input_port name="goal">Destination to plan to</input_port>
       <input_port name="start">Use as the planner start pose instead of the current robot pose, if use_start is not false (i.e. not provided or set to true)</input_port>
+      <input_port name="viapoints">A vector of intermediate viapoints (excluding goal) to consider for planning</input_port>
       <input_port name="use_start">For using or not using (i.e. ignoring) the provided start pose</input_port>
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
       <input_port name="server_name">Server name</input_port>
@@ -483,6 +484,8 @@
       <input_port name="path">Planned path</input_port>
       <input_port name="proximity_threshold">Proximity length (m) of the remaining path considered as a nearby</input_port>
       <input_port name="max_robot_pose_search_dist">Maximum forward integrated distance along the path (starting from the last detected pose) to bound the search for the closest pose to the robot. When set to infinity (default), whole path is searched every time</input_port>
+      <input_port name="global_frame">Global frame</input_port>
+      <input_port name="robot_base_frame">Robot base frame</input_port>
     </Condition>
 
     <Condition ID="IsWithinPathTrackingBounds">

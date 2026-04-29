@@ -202,6 +202,9 @@ protected:
 
   /// @brief Frame of output map
   std::string global_frame_id_;
+  /// @brief If true, disables TF listener and requires all incoming shapes
+  /// to have frame_id empty or equal to global_frame_id_
+  bool enforce_global_frame_id_;
   /// @brief Transform tolerance
   double transform_tolerance_;
 

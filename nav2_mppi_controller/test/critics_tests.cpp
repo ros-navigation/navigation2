@@ -89,8 +89,6 @@ TEST(CriticTests, ConstraintsCritic)
   ConstraintCritic critic;
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   EXPECT_EQ(critic.getName(), "critic");
-  EXPECT_TRUE(critic.getMaxVelConstraint() > 0.0);
-  EXPECT_TRUE(critic.getMinVelConstraint() < 0.0);
 
   // Scoring testing
   critic.score(data);
@@ -112,10 +110,25 @@ TEST(CriticTests, ConstraintsCritic)
   EXPECT_NEAR(costs(1), 1.2, 0.01);
   costs.setZero();
 
+  // Test with different cost power
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
+  critic = ConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 1.2^2 = 1.44
+  EXPECT_NEAR(costs(1), 1.44, 0.01);
+  costs.setZero();
+
   // Now with ackermann, all in constraint so no costs to score
   state.vx.setConstant(0.40f);
   state.wz.setConstant(1.5f);
-  data.motion_model = std::make_shared<AckermannMotionModel>(&param_handler, node->get_name());
+  auto ackermann_model = std::make_shared<AckermannMotionModel>();
+  ackermann_model->initialize(&param_handler, std::string(node->get_name()) + ".ackermann");
+  data.motion_model = ackermann_model;
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
+  critic = ConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0, 1e-6);
 
@@ -125,6 +138,69 @@ TEST(CriticTests, ConstraintsCritic)
   EXPECT_GT(costs.sum(), 0);
   // 4.0 weight * 0.1 model_dt * (0.2 - 0.4/2.5) * 30 timesteps = 0.48
   EXPECT_NEAR(costs(1), 0.48, 0.01);
+  costs.setZero();
+
+  // Test with different cost power
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
+  critic = ConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 0.48^2 = 0.23
+  EXPECT_NEAR(costs(1), 0.23, 0.01);
+  costs.setZero();
+
+  // Now with Holonomic
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
+  node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.3));
+  critic = ConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  data.motion_model = std::make_shared<OmniMotionModel>();
+
+  // reset state
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.wz.setConstant(0.0f);
+
+  // vx violation check
+  state.vx.row(999).setConstant(0.60f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 4.0 weight * 0.1 model_dt * 0.1 error introduced * 30 timesteps = 1.2
+  EXPECT_NEAR(costs(999), 1.2, 0.01);
+  costs.setZero();
+
+  // vy violation check
+  state.vx.setConstant(0.0f);
+  state.vy.row(999).setConstant(0.50f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 4.0 weight * 0.1 model_dt * 0.2 error introduced * 30 timesteps = 2.4
+  EXPECT_NEAR(costs(999), 2.4, 0.01);
+  costs.setZero();
+
+  // combined check
+  state.vx.row(999).setConstant(0.6f);
+  state.vy.row(999).setConstant(-0.5f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // vx-violation 4.0 weight * 0.1 model_dt * 0.1 error introduced * 30 timesteps = 1.2
+  // vy-violation 4.0 weight * 0.1 model_dt * 0.2 error introduced * 30 timesteps = 2.4
+  // total-violation = 1.2 + 2.4
+  EXPECT_NEAR(costs(999), 3.6, 0.01);
+  costs.setZero();
+
+  // Test with different cost power
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
+  critic = ConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 3.6^2 = 12.96
+  EXPECT_NEAR(costs(999), 12.96, 0.01);
+  costs.setZero();
 }
 
 TEST(CriticTests, ObstacleCriticMisalignedParams) {

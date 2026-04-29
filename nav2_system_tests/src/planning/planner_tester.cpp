@@ -42,8 +42,7 @@ PlannerTester::PlannerTester()
   map_set_(false), costmap_set_(false),
   using_fake_costmap_(true), trinary_costmap_(true),
   track_unknown_space_(false), lethal_threshold_(100), unknown_cost_value_(-1),
-  testCostmapType_(TestCostmap::open_space), base_transform_(nullptr),
-  map_publish_rate_(100s)
+  testCostmapType_(TestCostmap::open_space), base_transform_(nullptr)
 {
 }
 
