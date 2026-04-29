@@ -444,7 +444,7 @@ inline void savitskyGolayFilter(
   // Savitzky-Golay filter coefficients, 9-point window
   Eigen::Array<float, 9, 1> filter;
   if (settings.sgf_order == 1) {
-    // Degree-1 (linear): uniform moving average — more aggressive smoothing
+    // Degree-1 (linear): uniform moving average with more aggressive smoothing
     filter = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     filter /= 9.0f;
   } else {
