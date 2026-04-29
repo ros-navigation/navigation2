@@ -32,56 +32,8 @@ using ClientGoalHandle = rclcpp_action::ClientGoalHandle<SmoothAction>;
 
 using namespace std::chrono_literals;
 
-// A smoother for testing the base class
-
-class DummySmoother : public nav2_core::Smoother
-{
-public:
-  DummySmoother() {}
-
-  ~DummySmoother() {}
-
-  virtual void configure(
-    const nav2::LifecycleNode::WeakPtr &,
-    std::string, std::shared_ptr<tf2_ros::Buffer>,
-    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
-    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>) {}
-
-  virtual void cleanup() {}
-
-  virtual void activate() {}
-
-  virtual void deactivate() {}
-
-  virtual bool smooth(
-    nav_msgs::msg::Path & path,
-    const rclcpp::Duration & max_time)
-  {
-    assert(path.poses.size() == 2);
-
-    if (path.poses.front() == path.poses.back()) {
-      throw nav2_core::PlannerException("Start and goal pose must differ");
-    }
-
-    auto max_time_ms = max_time.to_chrono<std::chrono::milliseconds>();
-    std::this_thread::sleep_for(std::min(max_time_ms, 100ms));
-
-    // place dummy pose in the middle of the path
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x =
-      (path.poses.front().pose.position.x + path.poses.back().pose.position.x) / 2;
-    pose.pose.position.y =
-      (path.poses.front().pose.position.y + path.poses.back().pose.position.y) / 2;
-    pose.pose.orientation.w = 1.0;
-    path.poses.push_back(pose);
-
-    return max_time_ms > 100ms;
-  }
-
-private:
-  std::string command_;
-  std::chrono::system_clock::time_point start_time_;
-};
+// Forward declare DummySmoother defined in dummy_smoother.cpp
+class DummySmoother;
 
 // Mocked class loader
 void onPluginDeletion(nav2_core::Smoother * obj)
@@ -89,32 +41,6 @@ void onPluginDeletion(nav2_core::Smoother * obj)
   if (nullptr != obj) {
     delete (obj);
   }
-}
-
-template<>
-pluginlib::UniquePtr<nav2_core::Smoother> pluginlib::ClassLoader<nav2_core::Smoother>::
-createUniqueInstance(const std::string & lookup_name)
-{
-  if (lookup_name != "DummySmoother") {
-    // original method body
-    if (!isClassLoaded(lookup_name)) {
-      loadLibraryForClass(lookup_name);
-    }
-    try {
-      std::string class_type = getClassType(lookup_name);
-      pluginlib::UniquePtr<nav2_core::Smoother> obj =
-        lowlevel_class_loader_.createUniqueInstance<nav2_core::Smoother>(class_type);
-      return obj;
-    } catch (const class_loader::CreateClassException & ex) {
-      throw pluginlib::CreateClassException(ex.what());
-    }
-  }
-
-  // mocked plugin creation
-  return std::unique_ptr<nav2_core::Smoother,
-           class_loader::ClassLoader::DeleterType<nav2_core::Smoother>>(
-    new DummySmoother(),
-    onPluginDeletion);
 }
 
 class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber

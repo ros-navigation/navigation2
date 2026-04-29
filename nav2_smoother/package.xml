@@ -35,5 +35,6 @@
   <export>
     <build_type>ament_cmake</build_type>
     <nav2_core plugin="${prefix}/plugins.xml" />
+    <nav2_core plugin="${prefix}/test/plugins_test.xml" />
   </export>
 </package>

@@ -1,0 +1,8 @@
+
+<class_libraries>
+  <library path="dummy_smoother">
+    <class type="DummySmoother" base_class_type="nav2_core::Smoother">
+      <description>Dummy smoother for testing</description>
+    </class>
+  </library>
+</class_libraries>
