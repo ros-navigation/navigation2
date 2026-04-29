@@ -164,7 +164,17 @@ controller_server:
         plugin: "mppi::DefaultOptimalTrajectoryValidator"
         collision_lookahead_time: 2.0  # Time to look ahead to check for collisions
         consider_footprint: false  # Whether to consider the full robot's footprint (or circle) in trajectory validation collision checks
-      critics: ["ConstraintCritic", "GoalAngleCritic", "GoalCritic", "PathFollowCritic", "PathAngleCritic", "CostCritic"]
+      critics:
+        [
+          "ConstraintCritic",
+          "CostCritic",
+          "GoalCritic",
+          "GoalAngleCritic",
+          "PathAlignCritic",
+          "PathFollowCritic",
+          "PathAngleCritic",
+          "PreferForwardCritic",
+        ]
       ConstraintCritic:
         enabled: true
         cost_power: 1
@@ -173,12 +183,17 @@ controller_server:
         enabled: true
         cost_power: 1
         cost_weight: 5.0
-        threshold_to_consider: 1.0
+        threshold_to_consider: 1.4
       GoalAngleCritic:
         enabled: true
         cost_power: 1
         cost_weight: 3.0
-        threshold_to_consider: 1.0
+        threshold_to_consider: 0.5
+      PreferForwardCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+        threshold_to_consider: 0.5
       CostCritic:
         enabled: true
         cost_power: 1
@@ -203,7 +218,7 @@ controller_server:
         cost_power: 1
         cost_weight: 5.0
         offset_from_furthest: 5
-        threshold_to_consider: 1.0
+        threshold_to_consider: 1.4
       PathAngleCritic:
         enabled: true
         cost_power: 1
@@ -225,11 +240,11 @@ local_costmap:
       global_frame: odom
       robot_base_frame: base_link
       rolling_window: true
-      width: 10
-      height: 10
+      width: 3
+      height: 3
       resolution: 0.05
       robot_radius: 0.22
-      plugins: ["static_layer", "inflation_layer", "asymmetric_inflation_layer"]
+      plugins: ["voxel_layer", "inflation_layer"]
       filters: ["keepout_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
@@ -237,20 +252,10 @@ local_costmap:
         filter_info_topic: "keepout_costmap_filter_info"
         override_lethal_cost: true
         lethal_override_cost: 200
-      asymmetric_inflation_layer:
-        plugin: "nav2_costmap_2d::AsymmetricInflationLayer"
-        enabled: True
-        inflation_radius: 3.0
-        cost_scaling_factor: 3.0
-        asymmetry_factor: 0.75
-        inflate_around_unknown: False
-        plan_topic: "plan"
-        goal_distance_threshold: 0.5
-        neutral_threshold: 4.0
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 3.0
+        inflation_radius: 0.70
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: true
@@ -293,7 +298,7 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer", "asymmetric_inflation_layer"]
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       filters: ["keepout_filter", "speed_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
@@ -332,17 +337,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 2.0
-      asymmetric_inflation_layer:
-        plugin: "nav2_costmap_2d::AsymmetricInflationLayer"
-        enabled: True
-        inflation_radius: 2.0
-        cost_scaling_factor: 3.0
-        asymmetry_factor: 0.75
-        inflate_around_unknown: False
-        plan_topic: "plan"
-        goal_distance_threshold: 0.5
-        neutral_threshold: 4.0
+        inflation_radius: 0.7
       always_send_full_costmap: true
       introspection_mode: "disabled"
 
