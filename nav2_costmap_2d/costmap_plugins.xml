@@ -6,6 +6,9 @@
     <class type="nav2_costmap_2d::LegacyInflationLayer"  base_class_type="nav2_costmap_2d::Layer">
       <description>Legacy inflation layer using traditional CellData-based algorithm (original Navigation2 implementation).</description>
     </class>
+    <class type="nav2_costmap_2d::AsymmetricInflationLayer" base_class_type="nav2_costmap_2d::Layer">
+      <description>Path-aware asymmetric inflation overlay; chains after a symmetric inflation layer and bumps costs on the disfavored side of obstacles relative to the global path.</description>
+    </class>
     <class type="nav2_costmap_2d::ObstacleLayer"   base_class_type="nav2_costmap_2d::Layer">
       <description>Listens to laser scan and point cloud messages and marks and clears grid cells.</description>
     </class>
