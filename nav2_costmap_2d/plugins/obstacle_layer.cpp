@@ -492,6 +492,18 @@ ObstacleLayer::updateBounds(
         continue;
       }
 
+      // Pre-filter by world distance to avoid cell discretization boundary
+      // effects where hypot(dx,dy) truncation makes far points appear in range
+      const double wdx = px - obs.origin_.x;
+      const double wdy = py - obs.origin_.y;
+      const double world_dist_sq = wdx * wdx + wdy * wdy;
+      if (world_dist_sq > obs.obstacle_max_range_ * obs.obstacle_max_range_) {
+        continue;
+      }
+      if (world_dist_sq < obs.obstacle_min_range_ * obs.obstacle_min_range_) {
+        continue;
+      }
+
       // compute the distance from the hitpoint to the pointcloud's origin
       // Calculate the distance in cell space to match the ray trace algorithm
       // used for clearing obstacles (see Costmap2D::raytraceLine).
