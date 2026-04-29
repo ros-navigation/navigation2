@@ -1,0 +1,200 @@
+// Copyright 2026 Duatic AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Unit tests for AsymmetricInflationLayer — pure-algorithm coverage.
+//
+// These tests exercise computeCost, getEffectiveDistance, and computeObstacleSide
+// via a test-subclass that exposes the protected members and methods without
+// requiring a full LayeredCostmap / LifecycleNode stack.
+
+#include <gtest/gtest.h>
+
+#include <algorithm>
+#include <memory>
+#include <utility>
+#include <vector>
+
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/asymmetric_inflation_layer.hpp"
+
+namespace nav2_costmap_2d
+{
+
+class TestableAsymmetricInflationLayer : public AsymmetricInflationLayer
+{
+public:
+  // Expose protected methods for testing
+  using AsymmetricInflationLayer::getEffectiveDistance;
+  using AsymmetricInflationLayer::computeObstacleSide;
+
+  // Plain setters so tests can configure the math without going through ROS init
+  void setResolution(double r) {resolution_ = r;}
+  void setInscribedRadius(double r) {inscribed_radius_ = r;}
+  void setAsymmetryFactor(double a) {asymmetry_factor_ = a;}
+  void setNeutralThreshold(double n) {neutral_threshold_ = n;}
+  void setCostScalingFactor(double c) {cost_scaling_factor_ = c;}
+};
+
+}  // namespace nav2_costmap_2d
+
+using nav2_costmap_2d::TestableAsymmetricInflationLayer;
+
+class EffectiveDistanceTest : public ::testing::Test
+{
+protected:
+  void SetUp() override
+  {
+    layer_ = std::make_unique<TestableAsymmetricInflationLayer>();
+    layer_->setResolution(0.1);
+    layer_->setInscribedRadius(0.3);  // 3 cells
+    layer_->setNeutralThreshold(2.0);
+  }
+
+  std::unique_ptr<TestableAsymmetricInflationLayer> layer_;
+};
+
+// Formula under test: eff = min(inscribed_cells, physical * (1 - alpha * side))
+// with inscribed_cells = inscribed_radius / resolution.
+
+// Test 1: when asymmetry_factor=0, effective distance is the physical distance
+// clamped at the inscribed-radius cap.
+TEST_F(EffectiveDistanceTest, getEffectiveDistance_symmetric_when_alpha_zero)
+{
+  layer_->setAsymmetryFactor(0.0);
+  const double inscribed_cells = 3.0;  // 0.3 / 0.1
+  for (double d = 0.0; d < 20.0; d += 0.5) {
+    const double expected = std::min(inscribed_cells, d);
+    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, +1), expected);
+    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, -1), expected);
+    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, 0), expected);
+  }
+}
+
+// Test 2: output is always capped at inscribed_cells regardless of side or alpha.
+TEST_F(EffectiveDistanceTest, getEffectiveDistance_capped_at_inscribed_cells)
+{
+  layer_->setAsymmetryFactor(0.5);
+  const double inscribed_cells = 3.0;
+  // Far outside the inscribed radius, both sides clamp to the cap.
+  const double d = 20.0;
+  EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, +1), inscribed_cells);
+  EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, -1), inscribed_cells);
+  EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, 0), inscribed_cells);
+}
+
+// Test 3: below the cap, LEFT effective distance is compressed and RIGHT is
+// stretched relative to neutral (for positive asymmetry_factor).
+TEST_F(EffectiveDistanceTest, getEffectiveDistance_left_compressed_right_stretched)
+{
+  layer_->setAsymmetryFactor(0.3);
+  // Pick d small enough that even the stretched side stays below the cap:
+  // d * (1 + alpha) = 1.0 * 1.3 = 1.3 < inscribed_cells = 3.
+  const double d = 1.0;
+  const double left = layer_->getEffectiveDistance(d, +1);
+  const double right = layer_->getEffectiveDistance(d, -1);
+  const double neutral = layer_->getEffectiveDistance(d, 0);
+
+  EXPECT_DOUBLE_EQ(left, d * 0.7);
+  EXPECT_DOUBLE_EQ(right, d * 1.3);
+  EXPECT_DOUBLE_EQ(neutral, d);
+  EXPECT_LT(left, neutral) << "LEFT should have compressed (smaller) effective distance";
+  EXPECT_GT(right, neutral) << "RIGHT should have stretched (larger) effective distance";
+}
+
+// Test 4: flipping asymmetry sign and the side classification produces identical output.
+// Use d below the cap so the test is not vacuously satisfied by both sides clamping.
+TEST_F(EffectiveDistanceTest, getEffectiveDistance_mirrors_on_sign_flip)
+{
+  const double d = 1.0;  // d * (1 + 0.3) = 1.3 < inscribed_cells = 3
+  layer_->setAsymmetryFactor(+0.3);
+  double pos_left = layer_->getEffectiveDistance(d, +1);
+  double pos_right = layer_->getEffectiveDistance(d, -1);
+
+  layer_->setAsymmetryFactor(-0.3);
+  double neg_left = layer_->getEffectiveDistance(d, +1);
+  double neg_right = layer_->getEffectiveDistance(d, -1);
+
+  EXPECT_DOUBLE_EQ(pos_left, neg_right);
+  EXPECT_DOUBLE_EQ(pos_right, neg_left);
+  EXPECT_NE(pos_left, pos_right) << "test setup: sides must differ to be meaningful";
+}
+
+class ObstacleSideTest : public ::testing::Test
+{
+protected:
+  void SetUp() override
+  {
+    // 40x40 cells, 0.1m resolution, origin at (0,0) — world range [0, 4]m.
+    costmap_ = std::make_unique<nav2_costmap_2d::Costmap2D>(40, 40, 0.1, 0.0, 0.0);
+    layer_ = std::make_unique<TestableAsymmetricInflationLayer>();
+    layer_->setResolution(0.1);
+    layer_->setInscribedRadius(0.3);
+    layer_->setNeutralThreshold(1.0);
+    layer_->setAsymmetryFactor(0.3);
+  }
+
+  std::unique_ptr<nav2_costmap_2d::Costmap2D> costmap_;
+  std::unique_ptr<TestableAsymmetricInflationLayer> layer_;
+};
+
+// Test 5: straight path along +x axis
+//   - cells north of the path should be classified +1 (left)
+//   - cells south of the path should be classified -1 (right)
+//   - cells beyond neutral_threshold should be classified 0 (neutral)
+TEST_F(ObstacleSideTest, computeObstacleSide_classification)
+{
+  // Path along y=2.0 from x=0.5 to x=3.5
+  std::vector<std::pair<double, double>> path = {
+    {0.5, 2.0}, {1.5, 2.0}, {2.5, 2.0}, {3.5, 2.0}
+  };
+
+  // North cell: world (2.0, 2.5) → map indices
+  unsigned int mx_n, my_n;
+  ASSERT_TRUE(costmap_->worldToMap(2.0, 2.5, mx_n, my_n));
+  EXPECT_EQ(layer_->computeObstacleSide(mx_n, my_n, path, *costmap_), 1);
+
+  // South cell: world (2.0, 1.5)
+  unsigned int mx_s, my_s;
+  ASSERT_TRUE(costmap_->worldToMap(2.0, 1.5, mx_s, my_s));
+  EXPECT_EQ(layer_->computeObstacleSide(mx_s, my_s, path, *costmap_), -1);
+
+  // Far north cell: world (2.0, 3.5) — 1.5m from path, beyond neutral_threshold 1.0
+  unsigned int mx_far, my_far;
+  ASSERT_TRUE(costmap_->worldToMap(2.0, 3.5, mx_far, my_far));
+  EXPECT_EQ(layer_->computeObstacleSide(mx_far, my_far, path, *costmap_), 0);
+}
+
+// Test 6: L-shaped path — obstacle near the corner is assigned to the nearest segment,
+// not the one whose vertex is closest.
+TEST_F(ObstacleSideTest, computeObstacleSide_closest_segment_selection)
+{
+  // L-shape: horizontal leg along y=2.0 from x=0.5 to x=2.0, then vertical leg down
+  // to y=0.5 at x=2.0. A test cell at world (2.3, 1.7) is right of the vertical leg.
+  std::vector<std::pair<double, double>> path = {
+    {0.5, 2.0}, {1.0, 2.0}, {1.5, 2.0}, {2.0, 2.0},
+    {2.0, 1.5}, {2.0, 1.0}, {2.0, 0.5}
+  };
+
+  unsigned int mx, my;
+  ASSERT_TRUE(costmap_->worldToMap(2.3, 1.7, mx, my));
+  // Nearest segment is the vertical leg (2.0,2.0)->(2.0,1.5)->... (direction = (0,-1)).
+  // A cell at +x of a southbound path is on the LEFT of its forward motion → +1.
+  EXPECT_EQ(layer_->computeObstacleSide(mx, my, path, *costmap_), 1);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
