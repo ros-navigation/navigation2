@@ -22,6 +22,8 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <unordered_map>
+#include <cstdint>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
@@ -152,13 +154,17 @@ protected:
    * @brief Classify an obstacle cell as left (+1), right (-1), or neutral (0)
    * relative to the closest path segment.
    *
-   * Projects the cell onto each path segment and uses the cross product
-   * of the segment direction and the cell offset to determine the side.
-   * Obstacles beyond neutral_threshold_ from the path are classified as neutral.
+   * Uses a spatial hash grid to perform an O(1) broad-phase lookup of nearby
+   * path segments, then projects the cell onto each overlapping path segment and 
+   * uses the cross product of the segment direction and the cell offset to 
+   * determine the side. Obstacles beyond neutral_threshold_ from the path 
+   * are classified as neutral.
    */
   int8_t computeObstacleSide(
     int i, int j,
     const std::vector<std::pair<double, double>> & local_path_pts,
+    const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
+    double bucket_size,
     nav2_costmap_2d::Costmap2D & master_grid);
 
   /**
