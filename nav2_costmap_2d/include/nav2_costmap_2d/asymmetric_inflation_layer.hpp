@@ -264,6 +264,11 @@ protected:
   // --- State ---
   double current_robot_x_{0.0};
   double current_robot_y_{0.0};
+  double last_min_x_;
+  double last_min_y_;
+  double last_max_x_;
+  double last_max_y_;
+  bool need_reinflation_;
   unsigned int cell_inflation_radius_;
   unsigned int cached_cell_inflation_radius_{0};
   double resolution_;
