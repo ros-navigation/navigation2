@@ -32,9 +32,6 @@ using ClientGoalHandle = rclcpp_action::ClientGoalHandle<SmoothAction>;
 
 using namespace std::chrono_literals;
 
-// Forward declare DummySmoother defined in dummy_smoother.cpp
-class DummySmoother;
-
 // Mocked class loader
 void onPluginDeletion(nav2_core::Smoother * obj)
 {

@@ -71,10 +71,6 @@ public:
 
     return max_time_ms > 100ms;
   }
-
-private:
-  std::string command_;
-  std::chrono::system_clock::time_point start_time_;
 };
 
 PLUGINLIB_EXPORT_CLASS(DummySmoother, nav2_core::Smoother)
