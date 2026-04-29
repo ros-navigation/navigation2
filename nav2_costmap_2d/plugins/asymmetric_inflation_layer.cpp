@@ -509,7 +509,6 @@ AsymmetricInflationLayer::updateCosts(
         unsigned char cost = master_array[index];
 
         if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
-
           bool is_boundary = false;
 
           // Map edge cells are treated as boundaries
