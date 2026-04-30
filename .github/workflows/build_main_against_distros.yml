@@ -37,7 +37,7 @@ jobs:
 
         COPY ws /root/ws
 
-        RUN vcs import src < src/tools/underlay.repos
+        RUN vcs import src < src/tools/underlay.${{ matrix.ros_distro }}.repos
 
         RUN apt-get update && rosdep update && \
           rosdep install --from-paths src --ignore-src -r -y \
