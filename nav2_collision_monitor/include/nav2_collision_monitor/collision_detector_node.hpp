@@ -172,6 +172,8 @@ protected:
 
   /// @brief main loop frequency
   double frequency_;
+  /// @brief Whether to include z in the collision_points_marker
+  bool collision_points_marker_3d_;
 };  // class CollisionDetector
 
 }  // namespace nav2_collision_monitor

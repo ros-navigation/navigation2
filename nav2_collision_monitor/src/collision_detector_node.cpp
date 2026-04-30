@@ -161,6 +161,7 @@ bool CollisionDetector::getParameters()
   source_timeout = rclcpp::Duration::from_seconds(
     node->declare_or_get_parameter("source_timeout", 2.0));
   const bool base_shift_correction = node->declare_or_get_parameter("base_shift_correction", true);
+  collision_points_marker_3d_ = node->declare_or_get_parameter("collision_points_marker_3d", false);
 
   if (!configureSources(
       base_frame_id, odom_frame_id, transform_tolerance, source_timeout,
@@ -359,7 +360,7 @@ void CollisionDetector::process()
         geometry_msgs::msg::Point p;
         p.x = point.x;
         p.y = point.y;
-        p.z = point.z;
+        p.z = collision_points_marker_3d_ ? point.z : 0.0;
         marker.points.push_back(p);
       }
     }

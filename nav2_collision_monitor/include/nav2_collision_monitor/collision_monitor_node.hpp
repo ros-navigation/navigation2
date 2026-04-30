@@ -254,6 +254,9 @@ protected:
   /// @brief Enable/disable collision monitor service
   nav2::ServiceServer<nav2_msgs::srv::Toggle>::SharedPtr toggle_cm_service_;
 
+  /// @brief Whether to include z in the collision_points_marker
+  bool collision_points_marker_3d_;
+
   /// @brief Whether collision monitor is enabled
   bool enabled_;
 

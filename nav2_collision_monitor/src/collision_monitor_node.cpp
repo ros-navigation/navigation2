@@ -273,6 +273,7 @@ bool CollisionMonitor::getParameters(
   source_timeout = rclcpp::Duration::from_seconds(
     node->declare_or_get_parameter("source_timeout", 2.0));
   const bool base_shift_correction = node->declare_or_get_parameter("base_shift_correction", true);
+  collision_points_marker_3d_ = node->declare_or_get_parameter("collision_points_marker_3d", false);
 
   stop_pub_timeout_ = rclcpp::Duration::from_seconds(
     node->declare_or_get_parameter("stop_pub_timeout", 1.0));
@@ -469,7 +470,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
         geometry_msgs::msg::Point p;
         p.x = point.x;
         p.y = point.y;
-        p.z = point.z;
+        p.z = collision_points_marker_3d_ ? point.z : 0.0;
         marker.points.push_back(p);
       }
       marker_array->markers.push_back(marker);
