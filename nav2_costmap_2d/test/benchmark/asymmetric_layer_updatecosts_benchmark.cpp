@@ -1,4 +1,4 @@
-// Copyright (c) 2026
+// Copyright (c) 2026 Marc Blöchlinger
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -132,6 +132,59 @@ std::vector<geometry_msgs::msg::Point> makeFootprint()
   fp[2].x = -0.3; fp[2].y = -0.2;
   fp[3].x = -0.3; fp[3].y = 0.2;
   return fp;
+}
+
+/**
+ * @brief Clear and re-seed lethal obstacles within a square sub-region.
+ *
+ * Simulates one cycle of incremental sensor data: the patch is cleared then
+ * re-filled with random rectangular obstacles at @p kOccupancy density.
+ * Called during paused timing so only the resulting updateCosts() is measured.
+ *
+ * @param costmap  The costmap to modify in-place.
+ * @param ox       Left cell coordinate of the patch.
+ * @param oy       Bottom cell coordinate of the patch.
+ * @param side     Side length of the square patch in cells.
+ * @param seed     RNG seed; increment each call to vary the obstacle layout.
+ */
+void modifyPatch(
+  nav2_costmap_2d::Costmap2D & costmap,
+  unsigned int ox, unsigned int oy, unsigned int side, unsigned int seed)
+{
+  const unsigned int ex = ox + side;
+  const unsigned int ey = oy + side;
+
+  for (unsigned int cy = oy; cy < ey; ++cy) {
+    for (unsigned int cx = ox; cx < ex; ++cx) {
+      costmap.setCost(cx, cy, nav2_costmap_2d::FREE_SPACE);
+    }
+  }
+
+  const unsigned int target = static_cast<unsigned int>(side * side * kOccupancy);
+  const unsigned int min_d = std::max(1u, side / 10u);
+  const unsigned int max_d = std::max(min_d + 1u, side / 5u);
+
+  std::mt19937 gen(seed);
+  std::uniform_int_distribution<unsigned int> dist_x(ox, ex - 1u);
+  std::uniform_int_distribution<unsigned int> dist_y(oy, ey - 1u);
+  std::uniform_int_distribution<unsigned int> dist_w(min_d, max_d);
+  std::uniform_int_distribution<unsigned int> dist_h(min_d, max_d);
+
+  unsigned int occupied = 0;
+  for (unsigned int a = 0; occupied < target && a < 10000u; ++a) {
+    unsigned int rx = dist_x(gen);
+    unsigned int ry = dist_y(gen);
+    unsigned int bx = std::min(rx + dist_w(gen), ex);
+    unsigned int by = std::min(ry + dist_h(gen), ey);
+    for (unsigned int cy = ry; cy < by && occupied < target; ++cy) {
+      for (unsigned int cx = rx; cx < bx && occupied < target; ++cx) {
+        if (costmap.getCost(cx, cy) != nav2_costmap_2d::LETHAL_OBSTACLE) {
+          costmap.setCost(cx, cy, nav2_costmap_2d::LETHAL_OBSTACLE);
+          ++occupied;
+        }
+      }
+    }
+  }
 }
 
 }  // namespace
@@ -354,6 +407,269 @@ BENCHMARK_REGISTER_F(ChainedFixture, UpdateCosts)
 ->Unit(benchmark::kMillisecond);
 
 // ---------------------------------------------------------------------------
+// Incremental: LegacyInflationLayer with a small dirty window
+// ---------------------------------------------------------------------------
+
+/**
+ * @brief Fixture for incremental updates: LegacyInflationLayer only.
+ *
+ * Pre-warms the costmap with a full updateCosts() call, then benchmarks
+ * updateCosts() on a small moving patch — simulating an upstream obstacle
+ * layer that dirtied only a local window.
+ *
+ * The patch_side_cells argument represents the window after updateBounds()
+ * has expanded the raw dirty region by inflation_radius_ on each side.
+ * At kInflationRadius = 0.55 m and kResolution = 0.05 m/cell that is 11
+ * cells per side, so:
+ *   22 cells ≈ point obstacle expanded to ~1.1 m
+ *   60 cells ≈ 2 m dirty region expanded to ~3 m
+ *  120 cells ≈ 5 m dirty region expanded to ~6 m
+ *
+ * Benchmark arguments: {width_cells, height_cells, patch_side_cells}.
+ */
+class IncrementalLegacyFixture : public benchmark::Fixture
+{
+public:
+  void SetUp(benchmark::State & state) override
+  {
+    width_ = static_cast<unsigned int>(state.range(0));
+    height_ = static_cast<unsigned int>(state.range(1));
+    patch_ = static_cast<unsigned int>(state.range(2));
+
+    auto opts = rclcpp::NodeOptions().parameter_overrides(
+    {
+      rclcpp::Parameter("inflation.inflation_radius", kInflationRadius),
+      rclcpp::Parameter("inflation.cost_scaling_factor", kCostScalingFactor),
+      rclcpp::Parameter("inflation.inflate_unknown", false),
+      rclcpp::Parameter("inflation.inflate_around_unknown", false),
+    });
+    node_ = std::make_shared<nav2::LifecycleNode>("incremental_legacy_benchmark", "", opts);
+
+    layers_ = std::make_unique<nav2_costmap_2d::LayeredCostmap>(kGlobalFrame, false, false);
+    layers_->resizeMap(width_, height_, kResolution, 0.0, 0.0);
+
+    layer_ = std::make_shared<nav2_costmap_2d::LegacyInflationLayer>();
+    layer_->initialize(layers_.get(), "inflation", nullptr, node_, nullptr);
+    layers_->addPlugin(std::static_pointer_cast<nav2_costmap_2d::Layer>(layer_));
+    layers_->setFootprint(makeFootprint());
+
+    // Pre-warm: full update to put the layer in a valid post-update state.
+    auto * costmap = layers_->getCostmap();
+    generateRectangularObstacles(*costmap, kOccupancy);
+    layer_->updateCosts(*costmap, 0, 0, static_cast<int>(width_), static_cast<int>(height_));
+  }
+
+  void TearDown(benchmark::State &) override
+  {
+    layer_.reset();
+    layers_.reset();
+    node_.reset();
+  }
+
+  unsigned int width_{0};
+  unsigned int height_{0};
+  unsigned int patch_{0};
+  nav2::LifecycleNode::SharedPtr node_;
+  std::unique_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
+  std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> layer_;
+};
+
+BENCHMARK_DEFINE_F(IncrementalLegacyFixture, UpdateCosts)(benchmark::State & state)
+{
+  auto * costmap = layers_->getCostmap();
+  const unsigned int max_ox = (width_ > patch_) ? width_ - patch_ : 0u;
+  const unsigned int max_oy = (height_ > patch_) ? height_ - patch_ : 0u;
+  unsigned int step = 0;
+
+  for (auto _ : state) {
+    state.PauseTiming();
+    // Cycle patch position with co-prime strides to avoid hot-cache repetition.
+    const unsigned int ox = max_ox ? (step * 37u) % max_ox : 0u;
+    const unsigned int oy = max_oy ? (step * 53u) % max_oy : 0u;
+    modifyPatch(*costmap, ox, oy, patch_, kObstacleSeed + step);
+    ++step;
+    state.ResumeTiming();
+
+    layer_->updateCosts(
+      *costmap,
+      static_cast<int>(ox), static_cast<int>(oy),
+      static_cast<int>(ox + patch_), static_cast<int>(oy + patch_));
+  }
+
+  state.counters["cells"] = static_cast<double>(width_ * height_);
+  state.counters["patch_side_m"] = static_cast<double>(patch_) * kResolution;
+  state.counters["map_side_m"] = static_cast<double>(width_) * kResolution;
+}
+
+BENCHMARK_REGISTER_F(IncrementalLegacyFixture, UpdateCosts)
+->Args({800, 800, 100})    // 40×40 m map, ~5 m patch
+->Args({800, 800, 200})    // 40×40 m map, ~10 m patch
+->Args({1600, 1600, 100})  // 80×80 m map, ~5 m patch
+->Args({1600, 1600, 200})  // 80×80 m map, ~10 m patch
+->Args({3200, 3200, 100})  // 160×160 m map, ~5 m patch
+->Args({3200, 3200, 200})  // 160×160 m map, ~10 m patch
+->Args({6400, 6400, 100})  // 320×320 m map, ~5 m patch
+->Args({6400, 6400, 200})  // 320×320 m map, ~10 m patch
+->Args({12800, 12800, 100})  // 640×640 m map, ~5 m patch
+->Args({12800, 12800, 200})  // 640×640 m map, ~10 m patch
+->Args({23600, 23600, 100})  // 1280×1280 m map, ~5 m patch
+->Args({23600, 23600, 200})  // 1280×1280 m map, ~10 m patch
+->Iterations(50)
+->Iterations(50)
+->Unit(benchmark::kMillisecond);
+
+// ---------------------------------------------------------------------------
+// Incremental: LegacyInflationLayer + AsymmetricInflationLayer chained
+// ---------------------------------------------------------------------------
+
+/**
+ * @brief Fixture for incremental updates: full chained pipeline.
+ *
+ * Same structure as IncrementalLegacyFixture but chains AsymmetricInflationLayer
+ * after LegacyInflationLayer, reproducing the production call sequence on a
+ * small dirty window. A diagonal path is injected so asymmetric BFS is active.
+ *
+ * Benchmark arguments: {width_cells, height_cells, patch_side_cells}.
+ */
+class IncrementalChainedFixture : public benchmark::Fixture
+{
+public:
+  void SetUp(benchmark::State & state) override
+  {
+    width_ = static_cast<unsigned int>(state.range(0));
+    height_ = static_cast<unsigned int>(state.range(1));
+    patch_ = static_cast<unsigned int>(state.range(2));
+
+    auto opts = rclcpp::NodeOptions().parameter_overrides(
+    {
+      rclcpp::Parameter("inflation.inflation_radius", kInflationRadius),
+      rclcpp::Parameter("inflation.cost_scaling_factor", kCostScalingFactor),
+      rclcpp::Parameter("inflation.inflate_unknown", false),
+      rclcpp::Parameter("inflation.inflate_around_unknown", false),
+      rclcpp::Parameter("asymmetric_inflation_layer.enabled", true),
+      rclcpp::Parameter("asymmetric_inflation_layer.inflation_radius", kInflationRadius),
+      rclcpp::Parameter("asymmetric_inflation_layer.cost_scaling_factor", kCostScalingFactor),
+      rclcpp::Parameter("asymmetric_inflation_layer.asymmetry_factor", kAsymmetryFactor),
+      rclcpp::Parameter("asymmetric_inflation_layer.inflate_around_unknown", false),
+      rclcpp::Parameter("asymmetric_inflation_layer.goal_distance_threshold", 1.5),
+      rclcpp::Parameter("asymmetric_inflation_layer.neutral_threshold", 2.0),
+      rclcpp::Parameter(
+        "asymmetric_inflation_layer.plan_topic", std::string("/benchmark_incr_chain_plan")),
+    });
+    node_ = std::make_shared<nav2::LifecycleNode>("incremental_chained_benchmark", "", opts);
+
+    layers_ = std::make_unique<nav2_costmap_2d::LayeredCostmap>(kGlobalFrame, false, false);
+    layers_->resizeMap(width_, height_, kResolution, 0.0, 0.0);
+
+    legacy_layer_ = std::make_shared<nav2_costmap_2d::LegacyInflationLayer>();
+    legacy_layer_->initialize(layers_.get(), "inflation", nullptr, node_, nullptr);
+    layers_->addPlugin(std::static_pointer_cast<nav2_costmap_2d::Layer>(legacy_layer_));
+
+    asym_layer_ = std::make_shared<BenchmarkAsymmetricInflationLayer>();
+    asym_layer_->initialize(
+      layers_.get(), "asymmetric_inflation_layer", nullptr, node_, nullptr);
+    layers_->addPlugin(std::static_pointer_cast<nav2_costmap_2d::Layer>(asym_layer_));
+
+    layers_->setFootprint(makeFootprint());
+    injectDiagonalPath();
+
+    // Pre-warm: full update so both layers start in a valid post-update state.
+    auto * costmap = layers_->getCostmap();
+    generateRectangularObstacles(*costmap, kOccupancy);
+    legacy_layer_->updateCosts(
+      *costmap, 0, 0, static_cast<int>(width_), static_cast<int>(height_));
+    asym_layer_->updateCosts(
+      *costmap, 0, 0, static_cast<int>(width_), static_cast<int>(height_));
+  }
+
+  void TearDown(benchmark::State &) override
+  {
+    asym_layer_.reset();
+    legacy_layer_.reset();
+    layers_.reset();
+    node_.reset();
+  }
+
+  unsigned int width_{0};
+  unsigned int height_{0};
+  unsigned int patch_{0};
+  nav2::LifecycleNode::SharedPtr node_;
+  std::unique_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
+  std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> legacy_layer_;
+  std::shared_ptr<BenchmarkAsymmetricInflationLayer> asym_layer_;
+
+private:
+  void injectDiagonalPath()
+  {
+    const double width_m = static_cast<double>(width_) * kResolution;
+    const double height_m = static_cast<double>(height_) * kResolution;
+    const double diag = std::hypot(width_m, height_m);
+    const double step = 0.5;
+    const int n = std::max(2, static_cast<int>(std::ceil(diag / step)) + 1);
+
+    auto path = std::make_shared<nav_msgs::msg::Path>();
+    path->header.frame_id = kGlobalFrame;
+    for (int i = 0; i < n; ++i) {
+      double t = static_cast<double>(i) / static_cast<double>(n - 1);
+      geometry_msgs::msg::PoseStamped ps;
+      ps.header.frame_id = kGlobalFrame;
+      ps.pose.position.x = t * width_m;
+      ps.pose.position.y = t * height_m;
+      ps.pose.orientation.w = 1.0;
+      path->poses.push_back(ps);
+    }
+    asym_layer_->injectPath(path);
+  }
+};
+
+BENCHMARK_DEFINE_F(IncrementalChainedFixture, UpdateCosts)(benchmark::State & state)
+{
+  auto * costmap = layers_->getCostmap();
+  const unsigned int max_ox = (width_ > patch_) ? width_ - patch_ : 0u;
+  const unsigned int max_oy = (height_ > patch_) ? height_ - patch_ : 0u;
+  unsigned int step = 0;
+
+  for (auto _ : state) {
+    state.PauseTiming();
+    const unsigned int ox = max_ox ? (step * 37u) % max_ox : 0u;
+    const unsigned int oy = max_oy ? (step * 53u) % max_oy : 0u;
+    modifyPatch(*costmap, ox, oy, patch_, kObstacleSeed + step);
+    ++step;
+    state.ResumeTiming();
+
+    // Production call order: symmetric baseline first, asymmetric bumps second.
+    legacy_layer_->updateCosts(
+      *costmap,
+      static_cast<int>(ox), static_cast<int>(oy),
+      static_cast<int>(ox + patch_), static_cast<int>(oy + patch_));
+    asym_layer_->updateCosts(
+      *costmap,
+      static_cast<int>(ox), static_cast<int>(oy),
+      static_cast<int>(ox + patch_), static_cast<int>(oy + patch_));
+  }
+
+  state.counters["cells"] = static_cast<double>(width_ * height_);
+  state.counters["patch_side_m"] = static_cast<double>(patch_) * kResolution;
+  state.counters["map_side_m"] = static_cast<double>(width_) * kResolution;
+}
+
+BENCHMARK_REGISTER_F(IncrementalChainedFixture, UpdateCosts)
+->Args({800, 800, 100})  // 40×40 m map, ~5 m patch
+->Args({800, 800, 200})  // 40×40 m map, ~10 m patch
+->Args({1600, 1600, 100})  // 80×80 m map, ~5 m patch
+->Args({1600, 1600, 200})  // 80×80 m map, ~10 m patch
+->Args({3200, 3200, 100})  // 160×160 m map, ~5 m patch
+->Args({3200, 3200, 200})  // 160×160 m map, ~10 m patch
+->Args({6400, 6400, 100})  // 320×320 m map, ~5 m patch
+->Args({6400, 6400, 200})  // 320×320 m map, ~10 m patch
+->Args({12800, 12800, 100})  // 640×640 m map, ~5 m patch
+->Args({12800, 12800, 200})  // 640×640 m map, ~10 m patch
+->Args({23600, 23600, 100})  // 1280×1280 m map, ~5 m patch
+->Args({23600, 23600, 200})  // 1280×1280 m map, ~10 m patch
+->Iterations(50)
+->Unit(benchmark::kMillisecond);
+
+// ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
 
@@ -364,6 +680,10 @@ int main(int argc, char ** argv)
   auto ret =
     rcutils_logging_set_logger_level("legacy_only_benchmark", RCUTILS_LOG_SEVERITY_ERROR);
   ret = rcutils_logging_set_logger_level("chained_benchmark", RCUTILS_LOG_SEVERITY_ERROR);
+  ret = rcutils_logging_set_logger_level("incremental_legacy_benchmark",
+    RCUTILS_LOG_SEVERITY_ERROR);
+  ret = rcutils_logging_set_logger_level("incremental_chained_benchmark",
+    RCUTILS_LOG_SEVERITY_ERROR);
   ret = rcutils_logging_set_logger_level("rclcpp_lifecycle", RCUTILS_LOG_SEVERITY_ERROR);
   (void)ret;
 
