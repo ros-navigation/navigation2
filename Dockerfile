@@ -47,6 +47,7 @@ ENV PYTHONUNBUFFERED 1
 
 # install CI dependencies
 ARG RTI_NC_LICENSE_ACCEPTED=yes
+ENV ROSDISTRO_INDEX_URL=https://raw.githubusercontent.com/ros/rosdistro/1fdaf67f4091ea3e9235c4fb5f73e9b12f3587e2/index-v4.yaml
 RUN apt-get update && \
     apt-get upgrade -y --with-new-pkgs && \
     apt-get install -y \
