@@ -90,7 +90,9 @@ public:
   void testUpdateParams(const std::vector<rclcpp::Parameter> & params)
   {updateParametersCallback(params);}
 
-  void testSaveCorridorInterior(nav2_costmap_2d::Costmap2D & master_grid, const WallPolygons & walls)
+  void testSaveCorridorInterior(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    const WallPolygons & walls)
   {saveCorridorInterior(master_grid, walls);}
 
   void testMarkCircleAsInterior(nav2_costmap_2d::Costmap2D & master_grid, int cx, int cy, int r_sq)
@@ -350,7 +352,6 @@ TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsStepSizeSkipsPoses)
 }
 
 
-
 TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsMarksWallsAndPreservesCentre)
 {
   layer_->matchSize();
@@ -375,13 +376,14 @@ TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsMarksWallsAndPreserve
   const double inner_off = 0.25, outer_off = 0.35;
   const double wall_mid = (inner_off + outer_off) * 0.5;
 
-  ASSERT_TRUE(costmap->worldToMap(2.0, path_y + wall_mid, mx, my));
+  // wall_mid = 0.30 lands on the pre-placed LETHAL at y=2.80 — use a clear point instead
+  ASSERT_TRUE(costmap->worldToMap(1.5, path_y + wall_mid, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), 190);
 
-  ASSERT_TRUE(costmap->worldToMap(2.0, path_y - wall_mid, mx, my));
+  ASSERT_TRUE(costmap->worldToMap(1.5, path_y - wall_mid, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), 190);
 
-  ASSERT_TRUE(costmap->worldToMap(2.0, path_y, mx, my));
+  ASSERT_TRUE(costmap->worldToMap(1.5, path_y, mx, my));
   EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE);
 
   ASSERT_TRUE(costmap->worldToMap(2.0, 2.80, mx, my));
@@ -399,13 +401,13 @@ TEST_F(BoundedTrackingErrorLayerTest, testDrawCorridorWallsEdgeCases)
     0, 0, costmap->getSizeInCellsX(), costmap->getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
 
   auto isAnyMarked = [&]() {
-    for (unsigned int y = 0; y < costmap->getSizeInCellsY(); ++y) {
-      for (unsigned int x = 0; x < costmap->getSizeInCellsX(); ++x) {
-        if (costmap->getCost(x, y) != nav2_costmap_2d::FREE_SPACE) {return true;}
+      for (unsigned int y = 0; y < costmap->getSizeInCellsY(); ++y) {
+        for (unsigned int x = 0; x < costmap->getSizeInCellsX(); ++x) {
+          if (costmap->getCost(x, y) != nav2_costmap_2d::FREE_SPACE) {return true;}
+        }
       }
-    }
-    return false;
-  };
+      return false;
+    };
 
   layer_->testDrawCorridorWalls(*costmap, {{1.0, 1.0}}, {{1.0, 1.1}});
   EXPECT_FALSE(isAnyMarked());
@@ -455,24 +457,24 @@ TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsRejectsInvalidValues)
   layer_->activate();
 
   EXPECT_FALSE(layer_->testValidateParams(
-    {rclcpp::Parameter("bte_layer.look_ahead", -1.0)}).successful);
+      {rclcpp::Parameter("bte_layer.look_ahead", -1.0)}).successful);
   EXPECT_FALSE(layer_->testValidateParams(
-    {rclcpp::Parameter("bte_layer.look_ahead", 0.0)}).successful);
+      {rclcpp::Parameter("bte_layer.look_ahead", 0.0)}).successful);
   EXPECT_FALSE(layer_->testValidateParams(
-    {rclcpp::Parameter("bte_layer.corridor_width", 0.0)}).successful);
+      {rclcpp::Parameter("bte_layer.corridor_width", 0.0)}).successful);
 
   EXPECT_TRUE(layer_->testValidateParams(
-    {rclcpp::Parameter("bte_layer.look_ahead", 1.0)}).successful);
+      {rclcpp::Parameter("bte_layer.look_ahead", 1.0)}).successful);
 
   EXPECT_TRUE(layer_->testValidateParams(
-    {rclcpp::Parameter("bte_layer.step", 0)}).successful);
+      {rclcpp::Parameter("bte_layer.step", 0)}).successful);
   EXPECT_TRUE(layer_->testValidateParams(
-    {rclcpp::Parameter("bte_layer.corridor_cost", 255)}).successful);
+      {rclcpp::Parameter("bte_layer.corridor_cost", 255)}).successful);
   EXPECT_TRUE(layer_->testValidateParams(
-    {rclcpp::Parameter("bte_layer.cost_write_mode", -1)}).successful);
+      {rclcpp::Parameter("bte_layer.cost_write_mode", -1)}).successful);
 
   EXPECT_TRUE(layer_->testValidateParams(
-    {rclcpp::Parameter("some_other_layer.look_ahead", -99.0)}).successful);
+      {rclcpp::Parameter("some_other_layer.look_ahead", -99.0)}).successful);
 }
 
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsApplyAndCurrentReset)
@@ -480,30 +482,30 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateParamsApplyAndCurrentReset)
   layer_->activate();
 
   auto applyAndCheck = [&](auto param, auto getter, auto expected) {
-    layer_->currentRef() = true;
-    layer_->testUpdateParams({param});
-    EXPECT_EQ(getter(), expected);
-    EXPECT_FALSE(layer_->currentRef());
-  };
+      layer_->currentRef() = true;
+      layer_->testUpdateParams({param});
+      EXPECT_EQ(getter(), expected);
+      EXPECT_FALSE(layer_->currentRef());
+    };
 
   applyAndCheck(
     rclcpp::Parameter("bte_layer.look_ahead", 5.0),
-    [&]() { return layer_->getLookAhead(); }, 5.0);
+    [&]() {return layer_->getLookAhead();}, 5.0);
   applyAndCheck(
     rclcpp::Parameter("bte_layer.corridor_width", 3.0),
-    [&]() { return layer_->getCorridorWidth(); }, 3.0);
+    [&]() {return layer_->getCorridorWidth();}, 3.0);
   applyAndCheck(
     rclcpp::Parameter("bte_layer.step", 20),
-    [&]() { return layer_->getStepSize(); }, size_t{20});
+    [&]() {return layer_->getStepSize();}, size_t{20});
   applyAndCheck(
     rclcpp::Parameter("bte_layer.corridor_cost", 250),
-    [&]() { return layer_->getCorridorCost(); }, static_cast<unsigned char>(250));
+    [&]() {return layer_->getCorridorCost();}, static_cast<unsigned char>(250));
   applyAndCheck(
     rclcpp::Parameter("bte_layer.wall_thickness", 3),
-    [&]() { return layer_->getWallThickness(); }, 3);
+    [&]() {return layer_->getWallThickness();}, 3);
   applyAndCheck(
     rclcpp::Parameter("bte_layer.cost_write_mode", 2),
-    [&]() { return layer_->getCostWriteMode(); }, 2);
+    [&]() {return layer_->getCostWriteMode();}, 2);
 
   layer_->currentRef() = true;
   layer_->enabledRef() = true;
@@ -639,13 +641,13 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsEarlyReturns)
   prepareForUpdateCosts(layer_.get(), costmap);
 
   auto isClean = [&]() {
-    for (unsigned int y = 0; y < costmap->getSizeInCellsY(); ++y) {
-      for (unsigned int x = 0; x < costmap->getSizeInCellsX(); ++x) {
-        if (costmap->getCost(x, y) != nav2_costmap_2d::FREE_SPACE) {return false;}
+      for (unsigned int y = 0; y < costmap->getSizeInCellsY(); ++y) {
+        for (unsigned int x = 0; x < costmap->getSizeInCellsX(); ++x) {
+          if (costmap->getCost(x, y) != nav2_costmap_2d::FREE_SPACE) {return false;}
+        }
       }
-    }
-    return true;
-  };
+      return true;
+    };
 
   auto now = node_->now();
   layer_->enabledRef() = false;
@@ -654,12 +656,15 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsEarlyReturns)
   EXPECT_TRUE(isClean());
 
   layer_->enabledRef() = true;
+  prepareForUpdateCosts(layer_.get(), costmap);
+  layer_->reset();  // clear stored path so no painting occurs
   layer_->updateCosts(*costmap, 0, 0, 100, 100);
   EXPECT_TRUE(isClean());
 
-  // stale path (5.1 s > 5.0 s threshold) must reset index
+  // stale path (15.1 s > 15.0 s threshold) must reset index
+  prepareForUpdateCosts(layer_.get(), costmap);
   layer_->testPathCallback(makeSharedPath(0, 0, 1, 0, 30, 0.1,
-    now - rclcpp::Duration::from_seconds(5.1)));
+    now - rclcpp::Duration::from_seconds(15.1)));
   layer_->pathIndexRef().store(7);
   layer_->updateCosts(*costmap, 0, 0, 100, 100);
   EXPECT_TRUE(isClean());
@@ -685,11 +690,13 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsCorridorMode)
   setCorridorParams(1, 0.5, 2, 190);
 
   layer_->testPathCallback([&]() {
-    auto p = std::make_shared<nav_msgs::msg::Path>();
-    p->header.frame_id = "map";
-    p->header.stamp = node_->now() - rclcpp::Duration::from_seconds(4.9);
-    for (int i = 0; i < 30; ++i) {p->poses.push_back(makePose(i * 0.1, 2.5));}
-    return p;
+      auto p = std::make_shared<nav_msgs::msg::Path>();
+      p->header.frame_id = "map";
+      p->header.stamp = node_->now() - rclcpp::Duration::from_seconds(4.9);
+      for (int i = 0; i < 30; ++i) {
+        p->poses.push_back(makePose(i * 0.1, 2.5));
+      }
+      return p;
   }());
   layer_->updateCosts(*costmap, 0, 0, 100, 100);
 
@@ -713,11 +720,13 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillMode)
   layer_->setLookAhead(2.5);
 
   layer_->testPathCallback([&]() {
-    auto p = std::make_shared<nav_msgs::msg::Path>();
-    p->header.frame_id = "map";
-    p->header.stamp = node_->now();
-    for (int i = 0; i < 60; ++i) {p->poses.push_back(makePose(i * 0.05, 2.5));}
-    return p;
+      auto p = std::make_shared<nav_msgs::msg::Path>();
+      p->header.frame_id = "map";
+      p->header.stamp = node_->now();
+      for (int i = 0; i < 60; ++i) {
+        p->poses.push_back(makePose(i * 0.05, 2.5));
+      }
+      return p;
   }());
   ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
 
@@ -737,8 +746,9 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillMode)
   ASSERT_TRUE(costmap->worldToMap(0.0, 0.0, rx, ry));
   EXPECT_TRUE(layer_->isInterior(ry * costmap->getSizeInCellsX() + rx));
 
+  // robot at (0,0), path along y=0 — check a point off the path axis
   unsigned int fx, fy;
-  ASSERT_TRUE(costmap->worldToMap(1.0, 0.0, fx, fy));
+  ASSERT_TRUE(costmap->worldToMap(2.0, 1.5, fx, fy));
   EXPECT_FALSE(layer_->isInterior(fy * costmap->getSizeInCellsX() + fx));
 }
 
@@ -752,9 +762,15 @@ TEST_F(BoundedTrackingErrorLayerTest, testFillBranchPathExitsAndReentersBbox)
   auto msg = std::make_shared<nav_msgs::msg::Path>();
   msg->header.frame_id = "map";
   msg->header.stamp = node_->now();
-  for (int i = 0; i <= 10; ++i) {msg->poses.push_back(makePose(i * 0.1, 0.3));}   // chunk A
-  for (int i = 13; i <= 20; ++i) {msg->poses.push_back(makePose(i * 0.1, 0.3));}  // gap
-  for (int i = 10; i >= 0; --i) {msg->poses.push_back(makePose(i * 0.1, 0.7));}   // chunk B
+  for (int i = 0; i <= 10; ++i) {
+    msg->poses.push_back(makePose(i * 0.1, 0.3));
+                                                                              }   // chunk A
+  for (int i = 13; i <= 20; ++i) {
+    msg->poses.push_back(makePose(i * 0.1, 0.3));
+                                                                               }  // gap
+  for (int i = 10; i >= 0; --i) {
+    msg->poses.push_back(makePose(i * 0.1, 0.7));
+                                                                              }   // chunk B
 
   layer_->testPathCallback(msg);
   ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));

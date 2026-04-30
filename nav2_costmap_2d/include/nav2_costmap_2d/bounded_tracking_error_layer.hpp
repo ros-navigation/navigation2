@@ -395,6 +395,10 @@ private:
   WallPolygons walls_buffer_;
   std::vector<int> span_x_min_buffer_;
   std::vector<int> span_x_max_buffer_;
+
+  std::vector<unsigned int> end_cap_cells_;
+  geometry_msgs::msg::Point last_end_pose_;
+  bool end_pose_changed_{false};
 };
 
 }  // namespace nav2_costmap_2d
