@@ -98,6 +98,61 @@ BoundedTrackingErrorLayer::reset()
 }
 
 void
+BoundedTrackingErrorLayer::getParameters()
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  path_topic_ = node->declare_or_get_parameter(
+    name_ + "." + "path_topic", std::string("plan"));
+
+  const int step_param = node->declare_or_get_parameter(name_ + "." + "step", 10);
+  if (step_param <= 0) {
+    throw std::runtime_error{"step must be greater than zero"};
+  }
+  step_size_ = static_cast<size_t>(step_param);
+
+  look_ahead_ = node->declare_or_get_parameter(name_ + "." + "look_ahead", 2.5);
+  if (look_ahead_ <= 0.0) {
+    throw std::runtime_error{"look_ahead must be positive"};
+  }
+
+  corridor_width_ = node->declare_or_get_parameter(name_ + "." + "corridor_width", 2.0);
+  if (corridor_width_ <= 0.0) {
+    throw std::runtime_error{"corridor_width must be positive"};
+  }
+
+  wall_thickness_ = node->declare_or_get_parameter(name_ + "." + "wall_thickness", 1);
+  if (wall_thickness_ <= 0) {
+    throw std::runtime_error{"wall_thickness must be greater than zero"};
+  }
+
+  int corridor_cost_param = node->declare_or_get_parameter(name_ + "." + "corridor_cost", 190);
+  if (corridor_cost_param <= 0 || corridor_cost_param > 254) {
+    throw std::runtime_error{"corridor_cost must be between 1 and 254"};
+  }
+  corridor_cost_ = static_cast<unsigned char>(corridor_cost_param);
+
+  int cost_write_mode_param = node->declare_or_get_parameter(
+      name_ + "." + "cost_write_mode", 0);
+  if (cost_write_mode_param < 0 || cost_write_mode_param > 2) {
+    throw std::runtime_error{
+            "cost_write_mode must be 0 (max), 1 (overwrite walls), or 2 (overwrite all)"};
+  }
+  cost_write_mode_ = cost_write_mode_param;
+
+  enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+
+  double temp_tf_tol = 0.1;
+  node->get_parameter("transform_tolerance", temp_tf_tol);
+  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+
+  node->get_parameter("robot_base_frame", robot_base_frame_);
+}
+
+void
 BoundedTrackingErrorLayer::matchSize()
 {
   resolution_ = layered_costmap_->getCostmap()->getResolution();
@@ -434,6 +489,9 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
       corridor_half_width_cells_sq);
   }
 
+  // Near the goal the segment shrinks below the polygon threshold, leaving the corridor
+  // tube open at the end and letting fill bleed through. A circle at the last path pose
+  // closes it. Cells are pre-cached on goal change to avoid per-cycle rasterisation.
   if (end_pose_changed_) {
     end_cap_cells_.clear();
     unsigned int end_mx, end_my;
@@ -656,61 +714,6 @@ BoundedTrackingErrorLayer::resetState()
   prev_fill_max_j_ = -1;
   end_cap_cells_.clear();
   end_pose_changed_ = false;
-}
-
-void
-BoundedTrackingErrorLayer::getParameters()
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  path_topic_ = node->declare_or_get_parameter(
-    name_ + "." + "path_topic", std::string("plan"));
-
-  const int step_param = node->declare_or_get_parameter(name_ + "." + "step", 10);
-  if (step_param <= 0) {
-    throw std::runtime_error{"step must be greater than zero"};
-  }
-  step_size_ = static_cast<size_t>(step_param);
-
-  look_ahead_ = node->declare_or_get_parameter(name_ + "." + "look_ahead", 2.5);
-  if (look_ahead_ <= 0.0) {
-    throw std::runtime_error{"look_ahead must be positive"};
-  }
-
-  corridor_width_ = node->declare_or_get_parameter(name_ + "." + "corridor_width", 2.0);
-  if (corridor_width_ <= 0.0) {
-    throw std::runtime_error{"corridor_width must be positive"};
-  }
-
-  wall_thickness_ = node->declare_or_get_parameter(name_ + "." + "wall_thickness", 1);
-  if (wall_thickness_ <= 0) {
-    throw std::runtime_error{"wall_thickness must be greater than zero"};
-  }
-
-  int corridor_cost_param = node->declare_or_get_parameter(name_ + "." + "corridor_cost", 190);
-  if (corridor_cost_param <= 0 || corridor_cost_param > 254) {
-    throw std::runtime_error{"corridor_cost must be between 1 and 254"};
-  }
-  corridor_cost_ = static_cast<unsigned char>(corridor_cost_param);
-
-  int cost_write_mode_param = node->declare_or_get_parameter(
-      name_ + "." + "cost_write_mode", 0);
-  if (cost_write_mode_param < 0 || cost_write_mode_param > 2) {
-    throw std::runtime_error{
-            "cost_write_mode must be 0 (max), 1 (overwrite walls), or 2 (overwrite all)"};
-  }
-  cost_write_mode_ = cost_write_mode_param;
-
-  enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
-
-  double temp_tf_tol = 0.1;
-  node->get_parameter("transform_tolerance", temp_tf_tol);
-  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
-
-  node->get_parameter("robot_base_frame", robot_base_frame_);
 }
 
 bool
