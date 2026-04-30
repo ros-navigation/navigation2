@@ -100,7 +100,7 @@ public:
    */
   bool smooth(
     nav_msgs::msg::Path & path,
-    const nav2_costmap_2d::Costmap2D * costmap,
+    nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time,
     const nav2_costmap_2d::Footprint & footprint = {});
 
@@ -117,7 +117,7 @@ protected:
   bool smoothImpl(
     nav_msgs::msg::Path & path,
     bool & reversing_segment,
-    const nav2_costmap_2d::Costmap2D * costmap,
+    nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time,
     const nav2_costmap_2d::Footprint & footprint = {});
 
@@ -152,7 +152,7 @@ protected:
   void enforceStartBoundaryConditions(
     const geometry_msgs::msg::Pose & start_pose,
     nav_msgs::msg::Path & path,
-    const nav2_costmap_2d::Costmap2D * costmap,
+    nav2_costmap_2d::Costmap2D * costmap,
     const bool & reversing_segment);
 
   /**
@@ -166,7 +166,7 @@ protected:
   void enforceEndBoundaryConditions(
     const geometry_msgs::msg::Pose & end_pose,
     nav_msgs::msg::Path & path,
-    const nav2_costmap_2d::Costmap2D * costmap,
+    nav2_costmap_2d::Costmap2D * costmap,
     const bool & reversing_segment);
 
   /**
@@ -191,7 +191,7 @@ protected:
     const geometry_msgs::msg::Pose & start,
     const geometry_msgs::msg::Pose & end,
     BoundaryExpansion & expansion,
-    const nav2_costmap_2d::Costmap2D * costmap);
+    nav2_costmap_2d::Costmap2D * costmap);
 
   /**
    * @brief Generates boundary expansions with end idx at least strategic

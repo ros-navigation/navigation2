@@ -53,7 +53,7 @@ void Smoother::initialize(const double & min_turning_radius)
 
 bool Smoother::smooth(
   nav_msgs::msg::Path & path,
-  const nav2_costmap_2d::Costmap2D * costmap,
+  nav2_costmap_2d::Costmap2D * costmap,
   const double & max_time,
   const nav2_costmap_2d::Footprint & footprint)
 {
@@ -112,7 +112,7 @@ bool Smoother::smooth(
 bool Smoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment,
-  const nav2_costmap_2d::Costmap2D * costmap,
+  nav2_costmap_2d::Costmap2D * costmap,
   const double & max_time,
   const nav2_costmap_2d::Footprint & footprint)
 {
@@ -138,10 +138,8 @@ bool Smoother::smoothImpl(
   // nav2_smoother::SimpleSmoother per-iteration revert idiom — so the smoother
   // never publishes a smoothed path it knows to be in oriented collision.
   const bool check_oriented_footprint = !footprint.empty() && costmap;
-  // FootprintCollisionChecker is only instantiated for Costmap2D* (non-const).
-  // const_cast is safe here: footprintCostAtPose only reads the costmap.
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
-  oriented_checker(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
+  oriented_checker(costmap);
 
   while (change >= tolerance_) {
     its += 1;
@@ -310,7 +308,7 @@ void Smoother::findBoundaryExpansion(
   const geometry_msgs::msg::Pose & start,
   const geometry_msgs::msg::Pose & end,
   BoundaryExpansion & expansion,
-  const nav2_costmap_2d::Costmap2D * costmap)
+  nav2_costmap_2d::Costmap2D * costmap)
 {
   ompl::base::ScopedState<> from(state_space_), to(state_space_), s(state_space_);
 
@@ -406,7 +404,7 @@ BoundaryExpansions Smoother::generateBoundaryExpansionPoints(IteratorT start, It
 void Smoother::enforceStartBoundaryConditions(
   const geometry_msgs::msg::Pose & start_pose,
   nav_msgs::msg::Path & path,
-  const nav2_costmap_2d::Costmap2D * costmap,
+  nav2_costmap_2d::Costmap2D * costmap,
   const bool & reversing_segment)
 {
   // Find range of points for testing
@@ -452,7 +450,7 @@ void Smoother::enforceStartBoundaryConditions(
 void Smoother::enforceEndBoundaryConditions(
   const geometry_msgs::msg::Pose & end_pose,
   nav_msgs::msg::Path & path,
-  const nav2_costmap_2d::Costmap2D * costmap,
+  nav2_costmap_2d::Costmap2D * costmap,
   const bool & reversing_segment)
 {
   // Find range of points for testing
