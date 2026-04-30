@@ -403,8 +403,8 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   prev_fill_max_i_ = fill_max_i;
   prev_fill_max_j_ = fill_max_j;
 
-  const double r_cells = (corridor_width_ * 0.5) / resolution_;
-  const int r_cells_sq = static_cast<int>(std::llround(r_cells * r_cells));
+  const double corridor_half_width_cells = (corridor_width_ * 0.5) / resolution_;
+  const int corridor_half_width_cells_sq = static_cast<int>(std::llround(corridor_half_width_cells * corridor_half_width_cells));
 
   // extra_poses extends wall polygon generation beyond the bbox boundary to cover
   // geometric gaps at sub-segment exit points on diagonal paths.
@@ -413,7 +413,7 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
 
   unsigned int robot_mx, robot_my;
   if (master_grid.worldToMap(rx, ry, robot_mx, robot_my)) {
-    markCircleAsInterior(master_grid, static_cast<int>(robot_mx), static_cast<int>(robot_my), r_cells_sq);
+    markCircleAsInterior(master_grid, static_cast<int>(robot_mx), static_cast<int>(robot_my), corridor_half_width_cells_sq);
   }
 
   buildCorridorMask(
@@ -819,16 +819,16 @@ BoundedTrackingErrorLayer::flushSubSegment(
     return;
   }
 
-  nav_msgs::msg::Path bbox_segment;
-  bbox_segment.header = sub_segment.header;
+  nav_msgs::msg::Path margin_segment;
+  margin_segment.header = sub_segment.header;
 
-  auto flush_bbox_segment = [&]() {
-      if (bbox_segment.poses.size() >= 2) {
+  auto flush_margin_segment = [&]() {
+      if (margin_segment.poses.size() >= 2) {
         WallPolygons fill_walls;
-        getWallPolygons(bbox_segment, fill_walls);
+        getWallPolygons(margin_segment, fill_walls);
         saveCorridorInterior(master_grid, fill_walls);
       }
-      bbox_segment.poses.clear();
+      margin_segment.poses.clear();
     };
 
   for (const auto & p : sub_segment.poses) {
@@ -841,12 +841,12 @@ BoundedTrackingErrorLayer::flushSubSegment(
       static_cast<int>(my) <= fill_max_j + static_cast<int>(extra_poses);
 
     if (in_margin) {
-      bbox_segment.poses.push_back(p);
+      margin_segment.poses.push_back(p);
     } else {
-      flush_bbox_segment();
+      flush_margin_segment();
     }
   }
-  flush_bbox_segment();
+  flush_margin_segment();
 
   sub_segment.poses.clear();
 }
@@ -969,7 +969,7 @@ BoundedTrackingErrorLayer::updateParametersCallback(
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       const bool is_step = param_name == name_ + "." + "step";
-      const bool is_cost = param_name == name_ + "." + "corridor_cost";
+      const bool is_corridor_cost = param_name == name_ + "." + "corridor_cost";
       const bool is_thickness = param_name == name_ + "." + "wall_thickness";
       const bool is_write_mode = param_name == name_ + "." + "cost_write_mode";
       if (is_step) {
@@ -978,7 +978,7 @@ BoundedTrackingErrorLayer::updateParametersCallback(
           step_size_ = static_cast<size_t>(new_step);
           current_ = false;
         }
-      } else if (is_cost && corridor_cost_ != static_cast<unsigned char>(parameter.as_int())) {
+      } else if (is_corridor_cost && corridor_cost_ != static_cast<unsigned char>(parameter.as_int())) {
         corridor_cost_ = static_cast<unsigned char>(parameter.as_int());
         current_ = false;
       } else if (is_thickness && wall_thickness_ != parameter.as_int()) {
