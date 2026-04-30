@@ -47,13 +47,7 @@ ENV PYTHONUNBUFFERED 1
 
 # install CI dependencies
 ARG RTI_NC_LICENSE_ACCEPTED=yes
-
-RUN cat /etc/ros/rosdep/sources.list.d/20-default.list
-RUN sed -i "s|ros/rosdistro/master|ros/rosdistro/1fdaf67f4091ea3e9235c4fb5f73e9b12f3587e2|g" \
-    /etc/ros/rosdep/sources.list.d/20-default.list
-RUN cat /etc/ros/rosdep/sources.list.d/20-default.list
 ENV ROSDISTRO_INDEX_URL=https://raw.githubusercontent.com/ros/rosdistro/1fdaf67f4091ea3e9235c4fb5f73e9b12f3587e2/index-v4.yaml
-RUN rm -rf ~/.ros/rosdep && rosdep update
 RUN apt-get update && \
     apt-get upgrade -y --with-new-pkgs && \
     apt-get install -y \
@@ -69,6 +63,9 @@ RUN apt-get update && \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
       git+https://github.com/ruffsl/colcon-clean.git@a7f1074d1ebc1a54a6508625b117974f2672f2a9 \
+    && sed -i "s|ros/rosdistro/master|ros/rosdistro/1fdaf67f4091ea3e9235c4fb5f73e9b12f3587e2|g" \
+        /etc/ros/rosdep/sources.list.d/20-default.list \
+    && rm -rf /root/.ros/rosdep \
     && rosdep update \
     && colcon mixin update \
     && colcon metadata update \
