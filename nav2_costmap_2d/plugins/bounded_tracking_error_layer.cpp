@@ -45,7 +45,6 @@ BoundedTrackingErrorLayer::onInitialize()
     std::bind(&BoundedTrackingErrorLayer::pathCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS());
 
-  // Seed resolution and frame eagerly; matchSize() will keep them current on subsequent resizes.
   if (layered_costmap_) {
     resolution_ = layered_costmap_->getCostmap()->getResolution();
     costmap_frame_ = layered_costmap_->getGlobalFrameID();
@@ -110,16 +109,6 @@ BoundedTrackingErrorLayer::matchSize()
   prev_fill_min_j_ = -1;
   prev_fill_max_i_ = -1;
   prev_fill_max_j_ = -1;
-}
-
-void
-BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
-{
-  std::lock_guard<std::mutex> lock(data_mutex_);
-  if (!last_path_ptr_ || msg->header.stamp != last_path_ptr_->header.stamp) {
-    current_path_index_.store(0);
-  }
-  last_path_ptr_ = msg;
 }
 
 void
@@ -254,6 +243,16 @@ BoundedTrackingErrorLayer::updateCosts(
     drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
     drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
   }
+}
+
+void
+BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
+{
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  if (!last_path_ptr_ || msg->header.stamp != last_path_ptr_->header.stamp) {
+    current_path_index_.store(0);
+  }
+  last_path_ptr_ = msg;
 }
 
 void
@@ -867,69 +866,12 @@ BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "look_ahead") {
-        const double new_value = parameter.as_double();
-        if (new_value <= 0.0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %f, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "look_ahead must be positive";
-        }
-      } else if (param_name == name_ + "." + "corridor_width") {
-        const double new_value = parameter.as_double();
-        if (new_value <= 0.0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %f, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "corridor_width must be positive";
-        }
-      }
-    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == name_ + "." + "step") {
-        const int new_value = parameter.as_int();
-        if (new_value <= 0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "step must be greater than zero";
-        }
-      } else if (param_name == name_ + "." + "corridor_cost") {
-        const int new_value = parameter.as_int();
-        if (new_value <= 0 || new_value > 254) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be between 1 and 254. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "corridor_cost must be between 1 and 254";
-        }
-      } else if (param_name == name_ + "." + "wall_thickness") {
-        const int new_value = parameter.as_int();
-        if (new_value <= 0) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be > 0. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason = "wall_thickness must be greater than zero";
-        }
-      } else if (param_name == name_ + "." + "cost_write_mode") {
-        const int new_value = parameter.as_int();
-        if (new_value < 0 || new_value > 2) {
-          RCLCPP_WARN(
-            logger_, "The value of parameter '%s' is incorrectly set to %d, "
-            "it should be 0, 1, or 2. Rejecting parameter update.",
-            param_name.c_str(), new_value);
-          result.successful = false;
-          result.reason =
-            "cost_write_mode must be 0 (corridor), 1 (fill max), or 2 (fill overwrite)";
-        }
+      if (parameter.as_double() <= 0.0) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be > 0. Rejecting parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
       }
     }
   }

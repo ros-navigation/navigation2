@@ -69,6 +69,26 @@ public:
   void onInitialize() override;
 
   /**
+   * @brief Activates the layer and registers parameter update callbacks.
+   */
+  void activate() override;
+
+  /**
+   * @brief Deactivates the layer and removes parameter update callbacks.
+   */
+  void deactivate() override;
+
+  /**
+   * @brief Resets the layer, clearing path state and marking as not current.
+   */
+  void reset() override;
+
+  /**
+   * @brief Updates resolution and frame ID from the layered costmap on resize.
+   */
+  void matchSize() override;
+
+  /**
    * @brief Expands the update bounds to cover the corridor region around the robot.
    * @param robot_x Robot X position in world coordinates.
    * @param robot_y Robot Y position in world coordinates.
@@ -95,31 +115,11 @@ public:
     int min_i, int min_j, int max_i, int max_j) override;
 
   /**
-   * @brief Deactivates the layer and removes parameter update callbacks.
-   */
-  void deactivate() override;
-
-  /**
-   * @brief Activates the layer and registers parameter update callbacks.
-   */
-  void activate() override;
-
-  /**
-   * @brief Resets the layer, clearing path state and marking as not current.
-   */
-  void reset() override;
-
-  /**
    * @brief Returns whether this layer can be cleared by the costmap clearing service.
    * @return Always true; clearing is safe since costs are recomputed every cycle,
    *         and allows recovery behaviors to give the robot room to maneuver out.
    */
   bool isClearable() override {return true;}
-
-  /**
-   * @brief Updates resolution and frame ID from the layered costmap on resize.
-   */
-  void matchSize() override;
 
   /**
    * @brief Validate parameter updates before they are applied.
