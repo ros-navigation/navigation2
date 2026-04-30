@@ -154,7 +154,7 @@ BoundedTrackingErrorLayer::updateCosts(
 
     if (path_ptr && !path_ptr->poses.empty()) {
       const auto age = (clock_->now() - rclcpp::Time(path_ptr->header.stamp)).seconds();
-      if (age > 5.0) {
+      if (age > 10.0) {
         RCLCPP_WARN_THROTTLE(
           logger_, *clock_, 5000,
           "Path is %.2f seconds old, clearing corridor state — waiting for new plan", age);
@@ -220,13 +220,7 @@ BoundedTrackingErrorLayer::updateCosts(
   getPathSegment(*full_transformed_ptr, search_result.closest_segment_index, segment_buffer_);
 
   const size_t min_poses = (step_size_ * 2) + 1;
-  if (segment_buffer_.poses.size() < min_poses) {
-    RCLCPP_DEBUG_THROTTLE(
-      logger_, *clock_, 2000,
-      "Segment too small (%zu poses), need at least %zu — expected near end of path",
-      segment_buffer_.poses.size(), min_poses);
-    return;
-  }
+  const bool segment_too_small = segment_buffer_.poses.size() < min_poses;
 
   if (cost_write_mode_ >= 1) {
     if (corridor_interior_mask_.size() !=
@@ -237,8 +231,21 @@ BoundedTrackingErrorLayer::updateCosts(
         "Corridor interior mask size mismatch, skipping fill update — call matchSize()");
       return;
     }
+    if (segment_too_small) {
+      RCLCPP_INFO_THROTTLE(
+        logger_, *clock_, 2000,
+        "Segment too small (%zu poses), need at least %zu — near end of path, applying end-cap",
+        segment_buffer_.poses.size(), min_poses);
+    }
     applyFillOutsideCorridor(master_grid, robot_pose, *full_transformed_ptr);
   } else {
+    if (segment_too_small) {
+      RCLCPP_DEBUG_THROTTLE(
+        logger_, *clock_, 2000,
+        "Segment too small (%zu poses), need at least %zu — expected near end of path",
+        segment_buffer_.poses.size(), min_poses);
+      return;
+    }
     getWallPolygons(segment_buffer_, walls_buffer_);
     drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
     drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
@@ -251,6 +258,16 @@ BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPt
   std::lock_guard<std::mutex> lock(data_mutex_);
   if (!last_path_ptr_ || msg->header.stamp != last_path_ptr_->header.stamp) {
     current_path_index_.store(0);
+  }
+  if (!msg->poses.empty()) {
+    const auto & new_end = msg->poses.back().pose.position;
+    if (!last_path_ptr_ ||
+      new_end.x != last_end_pose_.x ||
+      new_end.y != last_end_pose_.y)
+    {
+      last_end_pose_ = new_end;
+      end_pose_changed_ = true;
+    }
   }
   last_path_ptr_ = msg;
 }
@@ -403,7 +420,8 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   prev_fill_max_j_ = fill_max_j;
 
   const double corridor_half_width_cells = (corridor_width_ * 0.5) / resolution_;
-  const int corridor_half_width_cells_sq = static_cast<int>(std::llround(corridor_half_width_cells * corridor_half_width_cells));
+  const int corridor_half_width_cells_sq = static_cast<int>(corridor_half_width_cells *
+    corridor_half_width_cells);
 
   // extra_poses extends wall polygon generation beyond the bbox boundary to cover
   // geometric gaps at sub-segment exit points on diagonal paths.
@@ -412,7 +430,37 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
 
   unsigned int robot_mx, robot_my;
   if (master_grid.worldToMap(rx, ry, robot_mx, robot_my)) {
-    markCircleAsInterior(master_grid, static_cast<int>(robot_mx), static_cast<int>(robot_my), corridor_half_width_cells_sq);
+    markCircleAsInterior(master_grid, static_cast<int>(robot_mx), static_cast<int>(robot_my),
+      corridor_half_width_cells_sq);
+  }
+
+  if (end_pose_changed_) {
+    end_cap_cells_.clear();
+    unsigned int end_mx, end_my;
+    if (master_grid.worldToMap(last_end_pose_.x, last_end_pose_.y, end_mx, end_my)) {
+      const unsigned int size_x = master_grid.getSizeInCellsX();
+      const unsigned int size_y = master_grid.getSizeInCellsY();
+      const int r_sq = corridor_half_width_cells_sq;
+      const int r = static_cast<int>(std::ceil(std::sqrt(static_cast<double>(r_sq))));
+      const int cx = static_cast<int>(end_mx);
+      const int cy = static_cast<int>(end_my);
+      for (int y = std::max(cy - r, 0); y <= std::min(cy + r, static_cast<int>(size_y) - 1); ++y) {
+        const int dy = y - cy;
+        for (int x = std::max(cx - r, 0); x <= std::min(cx + r, static_cast<int>(size_x) - 1);
+          ++x)
+        {
+          const int dx = x - cx;
+          if (dx * dx + dy * dy <= r_sq) {
+            end_cap_cells_.push_back(
+              static_cast<unsigned int>(y) * size_x + static_cast<unsigned int>(x));
+          }
+        }
+      }
+      RCLCPP_INFO(
+        logger_, "End-cap cached: %zu cells at world (%.3f, %.3f)",
+        end_cap_cells_.size(), last_end_pose_.x, last_end_pose_.y);
+    }
+    end_pose_changed_ = false;
   }
 
   buildCorridorMask(
@@ -531,6 +579,12 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
       }
     }
   }
+
+  for (const unsigned int flat_idx : end_cap_cells_) {
+    if (flat_idx < corridor_interior_mask_.size()) {
+      corridor_interior_mask_[flat_idx] = 1;
+    }
+  }
 }
 
 void
@@ -600,6 +654,8 @@ BoundedTrackingErrorLayer::resetState()
   prev_fill_min_j_ = -1;
   prev_fill_max_i_ = -1;
   prev_fill_max_j_ = -1;
+  end_cap_cells_.clear();
+  end_pose_changed_ = false;
 }
 
 void
@@ -920,7 +976,9 @@ BoundedTrackingErrorLayer::updateParametersCallback(
           step_size_ = static_cast<size_t>(new_step);
           current_ = false;
         }
-      } else if (is_corridor_cost && corridor_cost_ != static_cast<unsigned char>(parameter.as_int())) {
+      } else if (is_corridor_cost &&
+        corridor_cost_ != static_cast<unsigned char>(parameter.as_int()))
+      {
         corridor_cost_ = static_cast<unsigned char>(parameter.as_int());
         current_ = false;
       } else if (is_thickness && wall_thickness_ != parameter.as_int()) {
