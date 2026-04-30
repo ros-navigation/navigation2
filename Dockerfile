@@ -48,7 +48,7 @@ ENV PYTHONUNBUFFERED 1
 # install CI dependencies
 ARG RTI_NC_LICENSE_ACCEPTED=yes
 RUN apt-get update && \
-    # apt-get upgrade -y --with-new-pkgs && \
+    apt-get upgrade -y --with-new-pkgs && \
     apt-get install -y \
       ccache \
       lcov \
