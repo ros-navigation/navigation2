@@ -122,7 +122,6 @@ bool Smoother::smoothImpl(
   double change = tolerance_;
   const unsigned int & path_size = path.poses.size();
   double x_i, y_i, y_m1, y_ip1, y_i_org;
-  unsigned int mx, my;
 
   nav_msgs::msg::Path new_path = path;
   nav_msgs::msg::Path last_path = path;
@@ -172,24 +171,28 @@ bool Smoother::smoothImpl(
         change += abs(y_i - y_i_org);
       }
 
-      // validate update is admissible, only checks cost if a valid costmap pointer is provided
-      float cost = 0.0;
-      if (costmap) {
-        costmap->worldToMap(
-          getFieldByDim(new_path.poses[i], 0),
-          getFieldByDim(new_path.poses[i], 1),
-          mx, my);
-        cost = static_cast<float>(costmap->getCost(mx, my));
-      }
+      // Center-point cost check: only run when no oriented footprint check is
+      // configured. The oriented check below subsumes the center-point lookup.
+      if (!check_oriented_footprint) {
+        float cost = 0.0;
+        if (costmap) {
+          unsigned int mx, my;
+          costmap->worldToMap(
+            getFieldByDim(new_path.poses[i], 0),
+            getFieldByDim(new_path.poses[i], 1),
+            mx, my);
+          cost = static_cast<float>(costmap->getCost(mx, my));
+        }
 
-      if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
-        RCLCPP_DEBUG(
-          rclcpp::get_logger("SmacPlannerSmoother"),
-          "Smoothing process resulted in an infeasible collision. "
-          "Returning the last path before the infeasibility was introduced.");
-        path = last_path;
-        nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
-        return false;
+        if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
+          RCLCPP_DEBUG(
+            rclcpp::get_logger("SmacPlannerSmoother"),
+            "Smoothing process resulted in an infeasible collision. "
+            "Returning the last path before the infeasibility was introduced.");
+          path = last_path;
+          nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
+          return false;
+        }
       }
     }
 
