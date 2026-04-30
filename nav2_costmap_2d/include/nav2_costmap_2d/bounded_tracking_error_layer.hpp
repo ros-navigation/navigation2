@@ -360,7 +360,7 @@ private:
     const nav_msgs::msg::Path & full_path,
     int fill_min_i, int fill_min_j,
     int fill_max_i, int fill_max_j,
-    size_t extra_poses, int r_cells_sq);
+    size_t extra_poses);
 
   /**
    * @brief Process a sub-segment of the path, filtering to the fill bbox margin

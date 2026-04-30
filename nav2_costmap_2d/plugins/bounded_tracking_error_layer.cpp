@@ -411,11 +411,16 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   const size_t extra_poses = static_cast<size_t>(
     std::ceil(corridor_width_ / resolution_)) + step_size_;
 
+  unsigned int robot_mx, robot_my;
+  if (master_grid.worldToMap(rx, ry, robot_mx, robot_my)) {
+    markCircleAsInterior(master_grid, static_cast<int>(robot_mx), static_cast<int>(robot_my), r_cells_sq);
+  }
+
   buildCorridorMask(
     master_grid, full_path,
     fill_min_i, fill_min_j,
     fill_max_i, fill_max_j,
-    extra_poses, r_cells_sq);
+    extra_poses);
 
   RCLCPP_DEBUG_THROTTLE(
     logger_, *clock_, 2000,
@@ -766,11 +771,10 @@ BoundedTrackingErrorLayer::buildCorridorMask(
   const nav_msgs::msg::Path & full_path,
   int fill_min_i, int fill_min_j,
   int fill_max_i, int fill_max_j,
-  size_t extra_poses, int r_cells_sq)
+  size_t extra_poses)
 {
   nav_msgs::msg::Path sub_segment;
   sub_segment.header = full_path.header;
-  bool first_hit_marked = false;
 
   for (size_t i = 0; i < full_path.poses.size(); ++i) {
     const auto & pose = full_path.poses[i];
@@ -783,10 +787,6 @@ BoundedTrackingErrorLayer::buildCorridorMask(
       static_cast<int>(my) <= fill_max_j;
 
     if (in_area) {
-      if (!first_hit_marked) {
-        markCircleAsInterior(master_grid, static_cast<int>(mx), static_cast<int>(my), r_cells_sq);
-        first_hit_marked = true;
-      }
       sub_segment.poses.push_back(pose);
     } else {
       for (size_t j = i; j < std::min(i + extra_poses, full_path.poses.size()); ++j) {
