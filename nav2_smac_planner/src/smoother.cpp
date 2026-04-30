@@ -128,15 +128,7 @@ bool Smoother::smoothImpl(
   nav_msgs::msg::Path new_path = path;
   nav_msgs::msg::Path last_path = path;
 
-  // Oriented footprint collision checker for non-circular robots (fix for #5330).
-  // Built once and reused across iterations. The center-cost check inside the
-  // inner pose loop is sufficient for circular robots (costmap inflation captures
-  // the radius) but misses orientation-dependent footprint extensions for
-  // non-circular robots. The oriented-footprint check below is evaluated per
-  // gradient-descent iteration, after orientation assignment, on the new_path.
-  // On collision, the iteration is reverted (path = last_path) — matching the
-  // nav2_smoother::SimpleSmoother per-iteration revert idiom — so the smoother
-  // never publishes a smoothed path it knows to be in oriented collision.
+  // Oriented footprint collision checker for non-circular robots (#5330).
   const bool check_oriented_footprint = !footprint.empty() && costmap;
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
   oriented_checker(costmap);
@@ -202,16 +194,7 @@ bool Smoother::smoothImpl(
       }
     }
 
-    // Oriented footprint collision check (fix for #5330).
-    // Evaluated per iteration so the smoother stops smoothing as soon as a step
-    // would pull the oriented footprint into a lethal cell. On collision, the
-    // path is reverted to last_path (the last collision-free iteration) and
-    // nav2_core::SmoothedPathInCollision is thrown — matching the canonical
-    // fail-loud signal used by nav2_smoother::Nav2Smoother (collision_checker
-    // catch site at nav2_smoother.cpp:285-303). The caller's input path is
-    // length-preserved (std::copy back-into-segment is bypassed by the throw)
-    // so downstream consumers receive either a fully-smoothed-and-clean path
-    // or an explicit collision exception, never a silently-truncated path.
+    // Per-iteration oriented footprint check; revert to last_path on collision.
     if (check_oriented_footprint) {
       nav_msgs::msg::Path oriented_candidate = new_path;
       nav2_util::updateApproximatePathOrientations(
