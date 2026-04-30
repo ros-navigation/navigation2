@@ -23,7 +23,6 @@
 
 #include "tf2/utils.hpp"
 
-#include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_smac_planner/smoother.hpp"
 #include "nav2_util/smoother_utils.hpp"
@@ -216,11 +215,7 @@ bool Smoother::smoothImpl(
             "non-circular robot. Reverting to the last collision-free iteration.");
           path = last_path;
           nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
-          throw nav2_core::SmoothedPathInCollision(
-                  "Smoothed path collides with the oriented robot footprint at "
-                  "X: " + std::to_string(oriented_candidate.poses[idx].pose.position.x) +
-                  " Y: " + std::to_string(oriented_candidate.poses[idx].pose.position.y) +
-                  " Theta: " + std::to_string(yaw));
+          return false;
         }
       }
     }
