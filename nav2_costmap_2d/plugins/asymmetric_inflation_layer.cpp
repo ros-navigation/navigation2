@@ -439,16 +439,12 @@ AsymmetricInflationLayer::updateCosts(
     return;
   }
 
-  // Sanity check: bins must be empty at the start of each cycle.
-  // On failure, log a single summary (avoid per-cell log flood).
-  size_t leftover = 0;
-  for (const auto & bin : inflation_cells_) {
-    leftover += bin.size();
+  // make sure the inflation list is empty at the beginning of the cycle (should always be true)
+  for (auto & dist : inflation_cells_) {
+    RCLCPP_FATAL_EXPRESSION(
+      logger_,
+      !dist.empty(), "The inflation list must be empty at the beginning of inflation");
   }
-  RCLCPP_FATAL_EXPRESSION(
-    logger_, leftover != 0,
-    "AsymmetricInflationLayer: BFS bins not empty at start of updateCosts() "
-    "(%zu leftover cells)", leftover);
 
   unsigned char * master_array = master_grid.getCharMap();
   unsigned int size_x = master_grid.getSizeInCellsX();
@@ -478,33 +474,36 @@ AsymmetricInflationLayer::updateCosts(
   double bucket_size = std::max(neutral_threshold_, 1.0);
   std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
 
-  if (use_asymmetry) {
-    for (size_t p = 0; p < local_path_pts.size() - 1; ++p) {
-      double ax = local_path_pts[p].first;
-      double ay = local_path_pts[p].second;
-      double bx = local_path_pts[p + 1].first;
-      double by = local_path_pts[p + 1].second;
+  if (!use_asymmetry) {
+    setCurrent(true);
+    return;
+  }
 
-      // Pad the segment's bounding box by the threshold
-      double min_x = std::min(ax, bx) - neutral_threshold_;
-      double max_x = std::max(ax, bx) + neutral_threshold_;
-      double min_y = std::min(ay, by) - neutral_threshold_;
-      double max_y = std::max(ay, by) + neutral_threshold_;
+  for (size_t p = 0; p < local_path_pts.size() - 1; ++p) {
+    double ax = local_path_pts[p].first;
+    double ay = local_path_pts[p].second;
+    double bx = local_path_pts[p + 1].first;
+    double by = local_path_pts[p + 1].second;
 
-      // Find which buckets this padded segment touches
-      int64_t min_bx = static_cast<int64_t>(std::floor(min_x / bucket_size));
-      int64_t max_bx = static_cast<int64_t>(std::floor(max_x / bucket_size));
-      int64_t min_by = static_cast<int64_t>(std::floor(min_y / bucket_size));
-      int64_t max_by = static_cast<int64_t>(std::floor(max_y / bucket_size));
+    // Pad the segment's bounding box by the threshold
+    double min_x = std::min(ax, bx) - neutral_threshold_;
+    double max_x = std::max(ax, bx) + neutral_threshold_;
+    double min_y = std::min(ay, by) - neutral_threshold_;
+    double max_y = std::max(ay, by) + neutral_threshold_;
 
-      for (int64_t b_x = min_bx; b_x <= max_bx; ++b_x) {
-        for (int64_t b_y = min_by; b_y <= max_by; ++b_y) {
-          // Bitwise magic to safely map 2D signed coordinates into a 1D unsigned 64-bit key
-          uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) |
-            (static_cast<uint32_t>(b_y));
+    // Find which buckets this padded segment touches
+    int64_t min_bx = static_cast<int64_t>(std::floor(min_x / bucket_size));
+    int64_t max_bx = static_cast<int64_t>(std::floor(max_x / bucket_size));
+    int64_t min_by = static_cast<int64_t>(std::floor(min_y / bucket_size));
+    int64_t max_by = static_cast<int64_t>(std::floor(max_y / bucket_size));
 
-          spatial_hash[key].push_back(p);
-        }
+    for (int64_t b_x = min_bx; b_x <= max_bx; ++b_x) {
+      for (int64_t b_y = min_by; b_y <= max_by; ++b_y) {
+        // Bitwise magic to safely map 2D signed coordinates into a 1D unsigned 64-bit key
+        uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) |
+          (static_cast<uint32_t>(b_y));
+
+        spatial_hash[key].push_back(p);
       }
     }
   }
@@ -512,109 +511,107 @@ AsymmetricInflationLayer::updateCosts(
   // The standard Nav2 inflation_layer has already populated master_array
   // with the symmetric baseline. We only need to calculate asymmetric costs
   // and increase the cost where our effective distance is harsher.
-  if (use_asymmetry) {
-    std::fill(begin(seen_), end(seen_), false);
+  std::fill(begin(seen_), end(seen_), false);
 
-    auto & obs_bin_asym = inflation_cells_[0];
+  auto & obs_bin_asym = inflation_cells_[0];
 
-    // Helper lambda to check if a neighbor is "traversable" (i.e., open space)
-    auto is_traversable = [&](int nx, int ny) {
-        unsigned char n_cost = master_array[master_grid.getIndex(nx, ny)];
-        if (inflate_around_unknown_) {
-          return  n_cost != LETHAL_OBSTACLE && n_cost != NO_INFORMATION;
+  // Helper lambda to check if a neighbor is "traversable" (i.e., open space)
+  auto is_traversable = [&](int nx, int ny) {
+      unsigned char n_cost = master_array[master_grid.getIndex(nx, ny)];
+      if (inflate_around_unknown_) {
+        return  n_cost != LETHAL_OBSTACLE && n_cost != NO_INFORMATION;
+      } else {
+        return  n_cost != LETHAL_OBSTACLE;
+      }
+    };
+
+  // Seed all lethal obstacles (Boundary cells only)
+  for (int j = min_j; j < max_j; j++) {
+    for (int i = min_i; i < max_i; i++) {
+      int index = static_cast<int>(master_grid.getIndex(i, j));
+      unsigned char cost = master_array[index];
+
+      if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
+        bool is_boundary = false;
+
+        // Map edge cells are treated as boundaries
+        if (i == 0 || i == static_cast<int>(size_x) - 1 ||
+          j == 0 || j == static_cast<int>(size_y) - 1)
+        {
+          is_boundary = true;
         } else {
-          return  n_cost != LETHAL_OBSTACLE;
-        }
-      };
-
-    // Seed all lethal obstacles (Boundary cells only)
-    for (int j = min_j; j < max_j; j++) {
-      for (int i = min_i; i < max_i; i++) {
-        int index = static_cast<int>(master_grid.getIndex(i, j));
-        unsigned char cost = master_array[index];
-
-        if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
-          bool is_boundary = false;
-
-          // Map edge cells are treated as boundaries
-          if (i == 0 || i == static_cast<int>(size_x) - 1 ||
-            j == 0 || j == static_cast<int>(size_y) - 1)
+          // Check 4-connected neighbors. If any neighbor is traversable space,
+          // this cell is on the outer perimeter of the obstacle.
+          if (is_traversable(i - 1, j) || is_traversable(i + 1, j) ||
+            is_traversable(i, j - 1) || is_traversable(i, j + 1))
           {
             is_boundary = true;
-          } else {
-            // Check 4-connected neighbors. If any neighbor is traversable space,
-            // this cell is on the outer perimeter of the obstacle.
-            if (is_traversable(i - 1, j) || is_traversable(i + 1, j) ||
-              is_traversable(i, j - 1) || is_traversable(i, j + 1))
-            {
-              is_boundary = true;
-            }
           }
+        }
 
-          if (is_boundary) {
-            obs_bin_asym.emplace_back(i, j, i, j);
-            obstacle_side_grid_[index] = computeObstacleSide(i, j, local_path_pts, spatial_hash,
-                bucket_size, master_grid);
-          } else {
-            // Mark interior cells as 'seen' so the BFS wave doesn't
-            // waste time propagating backwards into the solid obstacle mass.
-            seen_[index] = true;
-          }
+        if (is_boundary) {
+          obs_bin_asym.emplace_back(i, j, i, j);
+          obstacle_side_grid_[index] = computeObstacleSide(i, j, local_path_pts, spatial_hash,
+              bucket_size, master_grid);
+        } else {
+          // Mark interior cells as 'seen' so the BFS wave doesn't
+          // waste time propagating backwards into the solid obstacle mass.
+          seen_[index] = true;
         }
       }
     }
+  }
 
-    // Asymmetric BFS expansion: Implements Dial's Algorithm for fast expansion by scaling
-    // effective distances into discrete bucket indices (`inflation_cells_`).
-    for (size_t current_bin = 0; current_bin < inflation_cells_.size(); ++current_bin) {
-      while (!inflation_cells_[current_bin].empty()) {
-        const CellData cell = inflation_cells_[current_bin].back();
-        inflation_cells_[current_bin].pop_back();
+  // Asymmetric BFS expansion: Implements Dial's Algorithm for fast expansion by scaling
+  // effective distances into discrete bucket indices (`inflation_cells_`).
+  for (size_t current_bin = 0; current_bin < inflation_cells_.size(); ++current_bin) {
+    while (!inflation_cells_[current_bin].empty()) {
+      const CellData cell = inflation_cells_[current_bin].back();
+      inflation_cells_[current_bin].pop_back();
 
-        unsigned int mx = cell.x_;
-        unsigned int my = cell.y_;
-        unsigned int sx = cell.src_x_;
-        unsigned int sy = cell.src_y_;
-        unsigned int index = master_grid.getIndex(mx, my);
+      unsigned int mx = cell.x_;
+      unsigned int my = cell.y_;
+      unsigned int sx = cell.src_x_;
+      unsigned int sy = cell.src_y_;
+      unsigned int index = master_grid.getIndex(mx, my);
 
-        if (seen_[index]) {
-          continue;
+      if (seen_[index]) {
+        continue;
+      }
+      seen_[index] = true;
+
+      int src_index = master_grid.getIndex(sx, sy);
+      int8_t path_side = obstacle_side_grid_[src_index];
+
+      double physical_dist = distanceLookup(mx, my, sx, sy);
+      double eff_dist = getEffectiveDistance(physical_dist, path_side);
+      size_t bin = static_cast<size_t>(eff_dist * kEffDistPrecision);
+
+      unsigned char eff_cost = (bin < cached_costs_.size()) ? cached_costs_[bin] : 0;
+      unsigned char old_cost = master_array[index];
+
+      // Only increase — never decrease below the symmetric baseline
+      if (static_cast<int>(mx) >= base_min_i &&
+        static_cast<int>(my) >= base_min_j &&
+        static_cast<int>(mx) < base_max_i &&
+        static_cast<int>(my) < base_max_j)
+      {
+        if (eff_cost > old_cost) {
+          master_array[index] = eff_cost;
         }
-        seen_[index] = true;
+      }
 
-        int src_index = master_grid.getIndex(sx, sy);
-        int8_t path_side = obstacle_side_grid_[src_index];
-
-        double physical_dist = distanceLookup(mx, my, sx, sy);
-        double eff_dist = getEffectiveDistance(physical_dist, path_side);
-        size_t bin = static_cast<size_t>(eff_dist * kEffDistPrecision);
-
-        unsigned char eff_cost = (bin < cached_costs_.size()) ? cached_costs_[bin] : 0;
-        unsigned char old_cost = master_array[index];
-
-        // Only increase — never decrease below the symmetric baseline
-        if (static_cast<int>(mx) >= base_min_i &&
-          static_cast<int>(my) >= base_min_j &&
-          static_cast<int>(mx) < base_max_i &&
-          static_cast<int>(my) < base_max_j)
-        {
-          if (eff_cost > old_cost) {
-            master_array[index] = eff_cost;
-          }
-        }
-
-        if (mx > 0) {
-          current_bin = enqueue(index - 1, mx - 1, my, sx, sy, path_side, current_bin);
-        }
-        if (my > 0) {
-          current_bin = enqueue(index - size_x, mx, my - 1, sx, sy, path_side, current_bin);
-        }
-        if (mx < size_x - 1) {
-          current_bin = enqueue(index + 1, mx + 1, my, sx, sy, path_side, current_bin);
-        }
-        if (my < size_y - 1) {
-          current_bin = enqueue(index + size_x, mx, my + 1, sx, sy, path_side, current_bin);
-        }
+      if (mx > 0) {
+        current_bin = enqueue(index - 1, mx - 1, my, sx, sy, path_side, current_bin);
+      }
+      if (my > 0) {
+        current_bin = enqueue(index - size_x, mx, my - 1, sx, sy, path_side, current_bin);
+      }
+      if (mx < size_x - 1) {
+        current_bin = enqueue(index + 1, mx + 1, my, sx, sy, path_side, current_bin);
+      }
+      if (my < size_y - 1) {
+        current_bin = enqueue(index + size_x, mx, my + 1, sx, sy, path_side, current_bin);
       }
     }
   }
