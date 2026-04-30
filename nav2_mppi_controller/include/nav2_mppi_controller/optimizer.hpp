@@ -31,7 +31,6 @@
 #include "tf2_ros/buffer.hpp"
 #include "pluginlib/class_loader.hpp"
 
-#include "geometry_msgs/msg/accel_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -216,12 +215,6 @@ protected:
   void generateNoisedTrajectories();
 
   /**
-   * @brief Apply inter-iteration dynamic feasibility constraints on the
-   * first control sequence element before noise generation
-   */
-  void applyControlSequenceInterIterationConstraints();
-
-  /**
    * @brief Apply hard vehicle constraints on control sequence
    */
   void applyControlSequenceConstraints();
@@ -284,10 +277,10 @@ protected:
   bool isHolonomic() const;
 
   /**
-   * @brief Using control period and time step size, determine if trajectory
+   * @brief Using control frequencies and time step size, determine if trajectory
    * offset should be used to populate initial state of the next cycle
    */
-  void setOffset(double controller_period);
+  void setOffset(double controller_frequency);
 
   /**
    * @brief Perform fallback behavior to try to recover from a set of trajectories in collision
@@ -330,11 +323,6 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 
   geometry_msgs::msg::Twist last_command_vel_;
-  rclcpp::Time last_command_time_;
-
-  // Temporary: acceleration debug publisher
-  rclcpp::Publisher<geometry_msgs::msg::AccelStamped>::SharedPtr accel_pub_;
-  double smoothed_ax_{0.0}, smoothed_az_{0.0};
 };
 
 }  // namespace mppi
