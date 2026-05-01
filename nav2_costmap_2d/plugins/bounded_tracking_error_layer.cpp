@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::BoundedTrackingErrorLayer, nav2_costmap_2d::Layer)
@@ -145,11 +146,17 @@ BoundedTrackingErrorLayer::getParameters()
 
   enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
 
-  double temp_tf_tol = 0.1;
-  node->get_parameter("transform_tolerance", temp_tf_tol);
-  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
-
-  node->get_parameter("robot_base_frame", robot_base_frame_);
+  auto costmap_ros = std::dynamic_pointer_cast<nav2_costmap_2d::Costmap2DROS>(node);
+  if (costmap_ros) {
+    transform_tolerance_ = tf2::durationFromSec(costmap_ros->getTransformTolerance());
+    robot_base_frame_ = costmap_ros->getBaseFrameID();
+  } else {
+    // Fallback for unit tests where the node is not a Costmap2DROS instance
+    double temp_tf_tol = 0.3;
+    node->get_parameter("transform_tolerance", temp_tf_tol);
+    transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+    node->get_parameter("robot_base_frame", robot_base_frame_);
+  }
 }
 
 void
@@ -481,7 +488,7 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   // extra_poses extends wall polygon generation beyond the bbox boundary to cover
   // geometric gaps at sub-segment exit points on diagonal paths.
   const size_t extra_poses = static_cast<size_t>(
-    std::ceil(corridor_width_ / resolution_)) + step_size_;
+    std::ceil(corridor_width_ * M_SQRT2 / resolution_)) + step_size_;
 
   unsigned int robot_mx, robot_my;
   if (master_grid.worldToMap(rx, ry, robot_mx, robot_my)) {
