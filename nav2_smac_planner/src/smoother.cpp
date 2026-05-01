@@ -23,6 +23,7 @@
 
 #include "tf2/utils.hpp"
 
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_smac_planner/smoother.hpp"
 #include "nav2_util/smoother_utils.hpp"
 
@@ -51,8 +52,9 @@ void Smoother::initialize(const double & min_turning_radius)
 
 bool Smoother::smooth(
   nav_msgs::msg::Path & path,
-  const nav2_costmap_2d::Costmap2D * costmap,
-  const double & max_time)
+  nav2_costmap_2d::Costmap2D * costmap,
+  const double & max_time,
+  const nav2_costmap_2d::Footprint & footprint)
 {
   // by-pass path orientations approximation when skipping smac smoother
   if (max_its_ == 0) {
@@ -86,7 +88,7 @@ bool Smoother::smooth(
       const geometry_msgs::msg::Pose start_pose = curr_path_segment.poses.front().pose;
       const geometry_msgs::msg::Pose goal_pose = curr_path_segment.poses.back().pose;
       bool local_success =
-        smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining);
+        smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining, footprint);
       success = success && local_success;
 
       // Enforce boundary conditions
@@ -109,8 +111,9 @@ bool Smoother::smooth(
 bool Smoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment,
-  const nav2_costmap_2d::Costmap2D * costmap,
-  const double & max_time)
+  nav2_costmap_2d::Costmap2D * costmap,
+  const double & max_time,
+  const nav2_costmap_2d::Footprint & footprint)
 {
   steady_clock::time_point a = steady_clock::now();
   rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);
@@ -119,10 +122,14 @@ bool Smoother::smoothImpl(
   double change = tolerance_;
   const unsigned int & path_size = path.poses.size();
   double x_i, y_i, y_m1, y_ip1, y_i_org;
-  unsigned int mx, my;
 
   nav_msgs::msg::Path new_path = path;
   nav_msgs::msg::Path last_path = path;
+
+  // Oriented footprint collision checker for non-circular robots (#5330).
+  const bool check_oriented_footprint = !footprint.empty() && costmap;
+  nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
+  oriented_checker(costmap);
 
   while (change >= tolerance_) {
     its += 1;
@@ -164,24 +171,55 @@ bool Smoother::smoothImpl(
         change += abs(y_i - y_i_org);
       }
 
-      // validate update is admissible, only checks cost if a valid costmap pointer is provided
-      float cost = 0.0;
-      if (costmap) {
-        costmap->worldToMap(
-          getFieldByDim(new_path.poses[i], 0),
-          getFieldByDim(new_path.poses[i], 1),
-          mx, my);
-        cost = static_cast<float>(costmap->getCost(mx, my));
-      }
+      // Center-point cost check: only run when no oriented footprint check is
+      // configured. The oriented check below subsumes the center-point lookup.
+      if (!check_oriented_footprint) {
+        float cost = 0.0;
+        if (costmap) {
+          unsigned int mx, my;
+          costmap->worldToMap(
+            getFieldByDim(new_path.poses[i], 0),
+            getFieldByDim(new_path.poses[i], 1),
+            mx, my);
+          cost = static_cast<float>(costmap->getCost(mx, my));
+        }
 
-      if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
-        RCLCPP_DEBUG(
-          rclcpp::get_logger("SmacPlannerSmoother"),
-          "Smoothing process resulted in an infeasible collision. "
-          "Returning the last path before the infeasibility was introduced.");
-        path = last_path;
-        nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
-        return false;
+        if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
+          RCLCPP_DEBUG(
+            rclcpp::get_logger("SmacPlannerSmoother"),
+            "Smoothing process resulted in an infeasible collision. "
+            "Returning the last path before the infeasibility was introduced.");
+          path = last_path;
+          nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
+          return false;
+        }
+      }
+    }
+
+    // Per-iteration oriented footprint check; revert to last_path on collision.
+    if (check_oriented_footprint) {
+      nav_msgs::msg::Path oriented_candidate = new_path;
+      nav2_util::updateApproximatePathOrientations(
+        oriented_candidate, reversing_segment, is_holonomic_);
+      for (size_t idx = 0; idx < oriented_candidate.poses.size(); ++idx) {
+        const double yaw = tf2::getYaw(oriented_candidate.poses[idx].pose.orientation);
+        const double oriented_cost = oriented_checker.footprintCostAtPose(
+          oriented_candidate.poses[idx].pose.position.x,
+          oriented_candidate.poses[idx].pose.position.y,
+          yaw, footprint);
+        if (
+          static_cast<float>(oriented_cost) >=
+          static_cast<float>(nav2_costmap_2d::LETHAL_OBSTACLE) &&
+          static_cast<float>(oriented_cost) != UNKNOWN_COST)
+        {
+          RCLCPP_DEBUG(
+            rclcpp::get_logger("SmacPlannerSmoother"),
+            "Smoothing iteration produced an oriented footprint collision for a "
+            "non-circular robot. Reverting to the last collision-free iteration.");
+          path = last_path;
+          nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
+          return false;
+        }
       }
     }
 
@@ -192,7 +230,7 @@ bool Smoother::smoothImpl(
   // but really puts the path quality over the top.
   if (do_refinement_ && refinement_ctr_ < refinement_num_) {
     refinement_ctr_++;
-    smoothImpl(new_path, reversing_segment, costmap, max_time);
+    smoothImpl(new_path, reversing_segment, costmap, max_time, footprint);
   }
 
   nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
@@ -251,7 +289,7 @@ void Smoother::findBoundaryExpansion(
   const geometry_msgs::msg::Pose & start,
   const geometry_msgs::msg::Pose & end,
   BoundaryExpansion & expansion,
-  const nav2_costmap_2d::Costmap2D * costmap)
+  nav2_costmap_2d::Costmap2D * costmap)
 {
   ompl::base::ScopedState<> from(state_space_), to(state_space_), s(state_space_);
 
@@ -347,7 +385,7 @@ BoundaryExpansions Smoother::generateBoundaryExpansionPoints(IteratorT start, It
 void Smoother::enforceStartBoundaryConditions(
   const geometry_msgs::msg::Pose & start_pose,
   nav_msgs::msg::Path & path,
-  const nav2_costmap_2d::Costmap2D * costmap,
+  nav2_costmap_2d::Costmap2D * costmap,
   const bool & reversing_segment)
 {
   // Find range of points for testing
@@ -393,7 +431,7 @@ void Smoother::enforceStartBoundaryConditions(
 void Smoother::enforceEndBoundaryConditions(
   const geometry_msgs::msg::Pose & end_pose,
   nav_msgs::msg::Path & path,
-  const nav2_costmap_2d::Costmap2D * costmap,
+  nav2_costmap_2d::Costmap2D * costmap,
   const bool & reversing_segment)
 {
   // Find range of points for testing

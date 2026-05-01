@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -92,12 +93,16 @@ public:
    * @param path Reference to path
    * @param costmap Pointer to minimal costmap
    * @param max_time Maximum time to compute, stop early if over limit
+   * @param footprint Robot footprint for oriented collision checking (non-circular robots).
+   *        When non-empty, an oriented footprint collision check is performed on the
+   *        smoothed path after orientation assignment. Empty footprint skips the check.
    * @return If smoothing was successful
    */
   bool smooth(
     nav_msgs::msg::Path & path,
-    const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time);
+    nav2_costmap_2d::Costmap2D * costmap,
+    const double & max_time,
+    const nav2_costmap_2d::Footprint & footprint = {});
 
 protected:
   /**
@@ -106,13 +111,15 @@ protected:
    * @param reversing_segment Return if this is a reversing segment
    * @param costmap Pointer to minimal costmap
    * @param max_time Maximum time to compute, stop early if over limit
+   * @param footprint Robot footprint for oriented collision checking (non-circular robots)
    * @return If smoothing was successful
    */
   bool smoothImpl(
     nav_msgs::msg::Path & path,
     bool & reversing_segment,
-    const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time);
+    nav2_costmap_2d::Costmap2D * costmap,
+    const double & max_time,
+    const nav2_costmap_2d::Footprint & footprint = {});
 
   /**
    * @brief Get the field value for a given dimension
@@ -145,7 +152,7 @@ protected:
   void enforceStartBoundaryConditions(
     const geometry_msgs::msg::Pose & start_pose,
     nav_msgs::msg::Path & path,
-    const nav2_costmap_2d::Costmap2D * costmap,
+    nav2_costmap_2d::Costmap2D * costmap,
     const bool & reversing_segment);
 
   /**
@@ -159,7 +166,7 @@ protected:
   void enforceEndBoundaryConditions(
     const geometry_msgs::msg::Pose & end_pose,
     nav_msgs::msg::Path & path,
-    const nav2_costmap_2d::Costmap2D * costmap,
+    nav2_costmap_2d::Costmap2D * costmap,
     const bool & reversing_segment);
 
   /**
@@ -184,7 +191,7 @@ protected:
     const geometry_msgs::msg::Pose & start,
     const geometry_msgs::msg::Pose & end,
     BoundaryExpansion & expansion,
-    const nav2_costmap_2d::Costmap2D * costmap);
+    nav2_costmap_2d::Costmap2D * costmap);
 
   /**
    * @brief Generates boundary expansions with end idx at least strategic
