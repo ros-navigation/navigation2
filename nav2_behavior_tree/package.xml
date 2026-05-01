@@ -11,11 +11,12 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <build_depend>nav2_common</build_depend>
+
   <depend>action_msgs</depend>
   <depend>backward_ros</depend>
   <depend>behaviortree_cpp</depend>
   <depend>geometry_msgs</depend>
-  <depend>nav2_common</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
   <depend>nav_msgs</depend>
