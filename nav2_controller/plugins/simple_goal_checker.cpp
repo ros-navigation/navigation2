@@ -51,6 +51,7 @@ namespace nav2_controller
 
 SimpleGoalChecker::SimpleGoalChecker()
 : xy_goal_tolerance_(0.25),
+  xy_goal_tolerance_buffer_(0.0),
   yaw_goal_tolerance_(0.25),
   path_length_tolerance_(1.0),
   stateful_(true),
@@ -84,6 +85,8 @@ void SimpleGoalChecker::initialize(
   logger_ = node->get_logger();
 
   xy_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".xy_goal_tolerance", 0.25);
+  xy_goal_tolerance_buffer_ = node->declare_or_get_parameter(
+    plugin_name + ".xy_goal_tolerance_buffer", 0.0);
   yaw_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".yaw_goal_tolerance", 0.25);
   path_length_tolerance_ = node->declare_or_get_parameter(
     plugin_name + ".path_length_tolerance", 1.0);
@@ -92,6 +95,8 @@ void SimpleGoalChecker::initialize(
     plugin_name + ".symmetric_yaw_tolerance", false);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+  xy_goal_tolerance_reset_sq_ = (xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+    (xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
 
   // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -130,6 +135,15 @@ bool SimpleGoalChecker::isGoalReached(
     // If we are stateful, change the state.
     if (stateful_) {
       check_xy_ = false;
+    }
+  } else if (stateful_ && xy_goal_tolerance_buffer_ > 0.0) {
+    // If we are stateful and have a buffer,
+    // check if we have left the buffer region to reset the state
+    double dx = query_pose.position.x - goal_pose.position.x,
+      dy = query_pose.position.y - goal_pose.position.y;
+    if (dx * dx + dy * dy > xy_goal_tolerance_reset_sq_) {
+      check_xy_ = true;
+      return false;
     }
   }
 
@@ -216,6 +230,10 @@ SimpleGoalChecker::updateParametersCallback(
       if (param_name == plugin_name_ + ".xy_goal_tolerance") {
         xy_goal_tolerance_ = parameter.as_double();
         xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+      } else if (param_name == plugin_name_ + ".xy_goal_tolerance_buffer") {
+        xy_goal_tolerance_buffer_ = parameter.as_double();
+        xy_goal_tolerance_reset_sq_ = (xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+          (xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
       } else if (param_name == plugin_name_ + ".yaw_goal_tolerance") {
         yaw_goal_tolerance_ = parameter.as_double();
       } else if (param_name == plugin_name_ + ".path_length_tolerance") {
