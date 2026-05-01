@@ -97,7 +97,7 @@ _commands:
               sha256sum $PWD/lockfile.txt >> lockfile.txt
 
               apt-get update
-              rosdep update --rosdistro $ROS_DISTRO
+              # rosdep update --rosdistro $ROS_DISTRO
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \

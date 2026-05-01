@@ -124,6 +124,7 @@ if(BUILD_TESTING)
 
   ament_find_gtest()
   add_subdirectory(test)
+  pluginlib_export_plugin_description_file(nav2_core test/plugins_test.xml)
 endif()
 
 rclcpp_components_register_nodes(${library_name} "nav2_smoother::SmootherServer")
