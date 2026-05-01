@@ -427,7 +427,7 @@ AsymmetricInflationLayer::computeObstacleSide(
   if (best_cross > 0.0) {return 1;}    // Left
   if (best_cross < 0.0) {return -1;}   // Right
 
-  return 0; // Neutral/On the line
+  return 0;  // Neutral/On the line
 }
 
 void
@@ -532,7 +532,7 @@ AsymmetricInflationLayer::updateCosts(
   // free cell. Neutral boundary cells (exact distance > neutral_threshold_) are also skipped:
   // they cannot raise costs above the symmetric baseline already written by the InflationLayer.
 
-  // Reset seen_ so the BFS can track which cells we've visited without needing to clear master_array.
+  // Reset seen_ so the BFS can track which cells we visited without needing to clear master_array.
   std::fill(begin(seen_), end(seen_), false);
 
   // Helper lambda to check if a neighbor is "traversable" (i.e., open space)
@@ -593,7 +593,7 @@ AsymmetricInflationLayer::updateCosts(
       // Early exit 3: Skip cells with no nearby path segments
       if (it == spatial_hash.end()) {continue;}
 
-      // Forward the candidate segments to determine which side of the path this obstacle cell is on (left/right/neutral).
+      // Forward the candidate segments to determine which side of the path this cell is on
       int8_t side = computeObstacleSide(cx, cy, it->second, local_path_pts);
       obstacle_side_grid_[index] = side;
 
