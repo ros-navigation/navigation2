@@ -411,6 +411,38 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
     }
   }
 
+  // When prefer_forward_expansions is set and the motion model is Reeds-Shepp,
+  // also attempt a Dubins (forward-only) expansion over the same range of turning
+  // radii and prefer it if it scores below the ReedsShepp score multiplied by reverse_penalty.
+  if (_search_info.prefer_forward_expansions &&
+    _ctx->motion_table.motion_model == MotionModel::REEDS_SHEPP)
+  {
+    AnalyticExpansionNodes dubins_nodes;
+    float best_dubins_score = std::numeric_limits<float>::max();
+    float dubins_min_turn_rad = _ctx->motion_table.min_turning_radius;
+    const float dubins_max_turn_rad = 4.0 * dubins_min_turn_rad;
+
+    while (dubins_min_turn_rad < dubins_max_turn_rad) {
+      dubins_min_turn_rad += 0.5;
+      ompl::base::StateSpacePtr dubins_space =
+        std::make_shared<ompl::base::DubinsStateSpace>(dubins_min_turn_rad);
+      AnalyticExpansionNodes dubins_refined_nodes =
+        getAnalyticPath(node, goal_node, getter, dubins_space);
+      float dubins_score = scoringFn(dubins_refined_nodes);
+
+      if (dubins_score < best_dubins_score) {
+        dubins_nodes = dubins_refined_nodes;
+        best_dubins_score = dubins_score;
+      }
+    }
+
+    // Penalise the ReedsShepp score to bias toward the forward-only Dubins result
+    if (best_dubins_score < best_score * _search_info.reverse_penalty) {
+      analytic_nodes = dubins_nodes;
+      best_score = best_dubins_score;
+    }
+  }
+
   return best_score;
 }
 
