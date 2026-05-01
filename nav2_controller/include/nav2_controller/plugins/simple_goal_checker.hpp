@@ -109,11 +109,11 @@ public:
 protected:
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_{rclcpp::get_logger("simple_goal_checker")};
-  double xy_goal_tolerance_, yaw_goal_tolerance_, path_length_tolerance_;
+  double xy_goal_tolerance_, xy_goal_tolerance_buffer_, yaw_goal_tolerance_, path_length_tolerance_;
   bool stateful_, check_xy_;
   bool symmetric_yaw_tolerance_;
-  // Cached squared xy_goal_tolerance_
-  double xy_goal_tolerance_sq_;
+  // Cached squared xy_goal_tolerance_ and xy_goal_tolerance_reset_
+  double xy_goal_tolerance_sq_, xy_goal_tolerance_reset_sq_;
   // Dynamic parameters handler
   std::mutex mutex_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
