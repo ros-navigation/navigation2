@@ -113,6 +113,20 @@ public:
   : PlannerException(description) {}
 };
 
+class InsufficientViapoints : public PlannerException
+{
+public:
+  explicit InsufficientViapoints(const std::string & description)
+  : PlannerException(description) {}
+};
+
+class InvalidViapoints : public PlannerException
+{
+public:
+  explicit InvalidViapoints(const std::string & description)
+  : PlannerException(description) {}
+};
+
 class PlannerCancelled : public PlannerException
 {
 public:
