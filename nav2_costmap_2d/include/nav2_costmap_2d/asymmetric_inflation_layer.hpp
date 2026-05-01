@@ -205,9 +205,14 @@ protected:
    */
   inline double getEffectiveDistance(double physical_dist, int8_t path_side) const
   {
-    return std::min(
-      inscribed_radius_ / resolution_,
-      physical_dist * std::max(0.0, 1.0 - asymmetry_factor_ * path_side));
+    const double inscribed_radius_cells = inscribed_radius_ / resolution_;
+    if (physical_dist <= inscribed_radius_cells) {
+      return physical_dist;
+    }
+
+    double excess_dist = physical_dist - inscribed_radius_cells;
+    double scale = std::max(0.0, 1.0 - asymmetry_factor_ * path_side);
+    return inscribed_radius_cells + excess_dist * scale;
   }
 
   /**
@@ -222,10 +227,10 @@ protected:
     if (distance == 0) {
       return LETHAL_OBSTACLE;
     }
-    if(distance <= inscribed_radius_) {
+    if (distance * resolution_ <= inscribed_radius_) {
       return INSCRIBED_INFLATED_OBSTACLE;
     }
-    double factor = exp(-1.0 * cost_scaling_factor_ * (distance - inscribed_radius_) * resolution_);
+    double factor = exp(-1.0 * cost_scaling_factor_ * (distance * resolution_ - inscribed_radius_));
     return static_cast<unsigned char>((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
   }
 
