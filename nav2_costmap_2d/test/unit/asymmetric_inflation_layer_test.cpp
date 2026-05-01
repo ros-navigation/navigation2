@@ -69,59 +69,58 @@ protected:
   std::unique_ptr<TestableAsymmetricInflationLayer> layer_;
 };
 
-// Formula under test: eff = min(inscribed_cells, physical * (1 - alpha * side))
-// with inscribed_cells = inscribed_radius / resolution.
+// Formula under test (inscribed_cells = inscribed_radius / resolution = 0.3 / 0.1 = 3):
+//   d <= inscribed_cells: eff = d  (no asymmetry inside the collision core)
+//   d >  inscribed_cells: eff = inscribed_cells + (d - inscribed_cells) * max(0, 1 - alpha * side)
 
-// Test 1: when asymmetry_factor=0, effective distance is the physical distance
-// clamped at the inscribed-radius cap.
+// Test 1: when asymmetry_factor=0, scale=1 for all sides, so the function is the identity.
 TEST_F(EffectiveDistanceTest, getEffectiveDistance_symmetric_when_alpha_zero)
 {
   layer_->setAsymmetryFactor(0.0);
-  const double inscribed_cells = 3.0;  // 0.3 / 0.1
   for (double d = 0.0; d < 20.0; d += 0.5) {
-    const double expected = std::min(inscribed_cells, d);
-    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, +1), expected);
-    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, -1), expected);
-    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, 0), expected);
+    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, +1), d);
+    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, -1), d);
+    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, 0), d);
   }
 }
 
-// Test 2: output is always capped at inscribed_cells regardless of side or alpha.
-TEST_F(EffectiveDistanceTest, getEffectiveDistance_capped_at_inscribed_cells)
+// Test 2: inside the inscribed radius all sides are treated identically, regardless of alpha.
+TEST_F(EffectiveDistanceTest, getEffectiveDistance_symmetric_inside_inscribed_radius)
 {
   layer_->setAsymmetryFactor(0.5);
-  const double inscribed_cells = 3.0;
-  // Far outside the inscribed radius, both sides clamp to the cap.
-  const double d = 20.0;
-  EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, +1), inscribed_cells);
-  EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, -1), inscribed_cells);
-  EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, 0), inscribed_cells);
+  const double inscribed_cells = 3.0;  // 0.3 / 0.1
+  for (double d = 0.0; d < inscribed_cells; d += 0.5) {
+    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, +1), d);
+    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, -1), d);
+    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, 0), d);
+  }
 }
 
-// Test 3: below the cap, LEFT effective distance is compressed and RIGHT is
-// stretched relative to neutral (for positive asymmetry_factor).
+// Test 3: outside the inscribed radius, LEFT effective distance is compressed and
+// RIGHT is stretched relative to neutral (for positive asymmetry_factor).
 TEST_F(EffectiveDistanceTest, getEffectiveDistance_left_compressed_right_stretched)
 {
   layer_->setAsymmetryFactor(0.3);
-  // Pick d small enough that even the stretched side stays below the cap:
-  // d * (1 + alpha) = 1.0 * 1.3 = 1.3 < inscribed_cells = 3.
-  const double d = 1.0;
+  const double inscribed_cells = 3.0;
+  // d=4: excess = 1.0 cell beyond inscribed radius; asymmetry is active here.
+  const double d = 4.0;
+  const double excess = d - inscribed_cells;
   const double left = layer_->getEffectiveDistance(d, +1);
   const double right = layer_->getEffectiveDistance(d, -1);
   const double neutral = layer_->getEffectiveDistance(d, 0);
 
-  EXPECT_DOUBLE_EQ(left, d * 0.7);
-  EXPECT_DOUBLE_EQ(right, d * 1.3);
+  EXPECT_DOUBLE_EQ(left, inscribed_cells + excess * 0.7);
+  EXPECT_DOUBLE_EQ(right, inscribed_cells + excess * 1.3);
   EXPECT_DOUBLE_EQ(neutral, d);
   EXPECT_LT(left, neutral) << "LEFT should have compressed (smaller) effective distance";
   EXPECT_GT(right, neutral) << "RIGHT should have stretched (larger) effective distance";
 }
 
 // Test 4: flipping asymmetry sign and the side classification produces identical output.
-// Use d below the cap so the test is not vacuously satisfied by both sides clamping.
+// Use d outside the inscribed radius so asymmetry is active.
 TEST_F(EffectiveDistanceTest, getEffectiveDistance_mirrors_on_sign_flip)
 {
-  const double d = 1.0;  // d * (1 + 0.3) = 1.3 < inscribed_cells = 3
+  const double d = 4.0;  // outside inscribed_cells=3 so asymmetry is active
   layer_->setAsymmetryFactor(+0.3);
   double pos_left = layer_->getEffectiveDistance(d, +1);
   double pos_right = layer_->getEffectiveDistance(d, -1);
@@ -184,6 +183,27 @@ protected:
     return spatial_hash;
   }
 
+  // Replicates the Phase 2 broad-phase + narrow/exact pipeline:
+  // hash lookup → if miss return 0, else call computeObstacleSide.
+  int8_t classifyObstacleSide(
+    unsigned int mx, unsigned int my,
+    const std::vector<std::pair<double, double>> & path,
+    const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
+    double bucket_size)
+  {
+    double cx, cy;
+    costmap_->mapToWorld(mx, my, cx, cy);
+    int64_t b_x = static_cast<int64_t>(std::floor(cx / bucket_size));
+    int64_t b_y = static_cast<int64_t>(std::floor(cy / bucket_size));
+    uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) |
+      static_cast<uint32_t>(b_y);
+    auto it = spatial_hash.find(key);
+    if (it == spatial_hash.end()) {
+      return 0;
+    }
+    return layer_->computeObstacleSide(cx, cy, it->second, path);
+  }
+
   std::unique_ptr<nav2_costmap_2d::Costmap2D> costmap_;
   std::unique_ptr<TestableAsymmetricInflationLayer> layer_;
 };
@@ -205,19 +225,17 @@ TEST_F(ObstacleSideTest, computeObstacleSide_classification)
   // North cell: world (2.0, 2.5) → map indices
   unsigned int mx_n, my_n;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 2.5, mx_n, my_n));
-  EXPECT_EQ(layer_->computeObstacleSide(mx_n, my_n, path, spatial_hash, bucket_size, *costmap_), 1);
+  EXPECT_EQ(classifyObstacleSide(mx_n, my_n, path, spatial_hash, bucket_size), 1);
 
   // South cell: world (2.0, 1.5)
   unsigned int mx_s, my_s;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 1.5, mx_s, my_s));
-  EXPECT_EQ(layer_->computeObstacleSide(mx_s, my_s, path, spatial_hash, bucket_size, *costmap_),
-    -1);
+  EXPECT_EQ(classifyObstacleSide(mx_s, my_s, path, spatial_hash, bucket_size), -1);
 
   // Far north cell: world (2.0, 3.5) — 1.5m from path, beyond neutral_threshold 1.0
   unsigned int mx_far, my_far;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 3.5, mx_far, my_far));
-  EXPECT_EQ(layer_->computeObstacleSide(mx_far, my_far, path, spatial_hash, bucket_size, *costmap_),
-    0);
+  EXPECT_EQ(classifyObstacleSide(mx_far, my_far, path, spatial_hash, bucket_size), 0);
 }
 
 // Test 6: L-shaped path — obstacle near the corner is assigned to the nearest segment,
@@ -238,7 +256,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_closest_segment_selection)
   ASSERT_TRUE(costmap_->worldToMap(2.3, 1.7, mx, my));
   // Nearest segment is the vertical leg (2.0,2.0)->(2.0,1.5)->... (direction = (0,-1)).
   // A cell at +x of a southbound path is on the LEFT of its forward motion → +1.
-  EXPECT_EQ(layer_->computeObstacleSide(mx, my, path, spatial_hash, bucket_size, *costmap_), 1);
+  EXPECT_EQ(classifyObstacleSide(mx, my, path, spatial_hash, bucket_size), 1);
 }
 
 int main(int argc, char ** argv)

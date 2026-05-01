@@ -63,25 +63,16 @@ namespace nav2_costmap_2d
 
 /**
  * @class AsymmetricInflationLayer
- * @brief A costmap layer that boosts obstacle inflation asymmetrically relative
- *        to the global path.
+ * @brief Costmap layer that inflates obstacles asymmetrically relative to the
+ *        global path, biasing the navigable corridor toward one side.
  *
- * This layer must be chained **after** the standard nav2_costmap_2d::InflationLayer.
- * That upstream layer is responsible for writing the symmetric baseline cost
- * field; this layer then runs a single BFS pass that, for obstacles near the
- * path, can raise costs on the "disfavored" side while leaving the "favored"
- * side untouched.
- *
- * Mechanism: each lethal obstacle is classified as left (+1), right (-1) or
- * neutral (0) relative to the global path.  The BFS priority queue is indexed
- * by an asymmetric effective distance so that waves from the disfavored side
- * expand earlier and claim contested cells first.  Because cells are only
- * written with `max(old, new)`, the effect relative to the symmetric baseline
- * is strictly additive: this layer can only increase costs.
- *
- * When no path is available, the goal is nearby, or asymmetry_factor is zero,
- * the layer becomes a no-op and the symmetric baseline from the upstream
- * InflationLayer is left unchanged.
+ * Must be chained after nav2_costmap_2d::InflationLayer, which writes the
+ * symmetric baseline. This layer classifies each lethal obstacle as left (+1),
+ * right (-1), or neutral (0) relative to the path and uses a BFS with
+ * asymmetric effective distances to raise costs on the disfavored side.
+ * Costs are written with max(old, new) so they can only increase. Falls back
+ * to a no-op when no path is available, the goal is nearby, or
+ * asymmetry_factor is zero.
  */
 class AsymmetricInflationLayer : public nav2_costmap_2d::Layer
 {
@@ -107,9 +98,17 @@ public:
   /**
    * @brief Update the bounds of the master costmap by this layer's update dimensions.
    *
-   * Always requests full-map reinflation because asymmetric costs are
-   * path-relative in world frame; when a rolling-window costmap shifts,
-   * shifted cells carry stale asymmetric values.
+   * Stores the robot position for goal-proximity checks in updateCosts(). When
+   * need_reinflation_ is set, expands to full-map bounds and clears the flag;
+   * otherwise takes the union of the previous and incoming bounds padded by
+   * inflation_radius_.
+   * @param robot_x X pose of robot
+   * @param robot_y Y pose of robot
+   * @param robot_yaw Robot orientation
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
    */
   void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
@@ -118,11 +117,14 @@ public:
   /**
    * @brief Update the costs in the master costmap.
    *
-   * Assumes master_grid already holds the symmetric baseline written by the
-   * upstream InflationLayer.  When a valid path is available and
-   * asymmetry_factor is non-zero, runs one BFS with asymmetric effective
-   * distances and writes max(old, new) so costs can only increase.
-   * Otherwise returns without modifying the costmap.
+   * Assumes master_grid already holds the symmetric baseline from the upstream
+   * InflationLayer. Runs asymmetric BFS when a valid path is available and
+   * asymmetry_factor is non-zero; otherwise returns without modification.
+   * @param master_grid The master costmap grid to update
+   * @param min_i X min cell index of the window to update
+   * @param min_j Y min cell index of the window to update
+   * @param max_i X max cell index of the window to update
+   * @param max_j Y max cell index of the window to update
    */
   void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
@@ -166,42 +168,48 @@ protected:
   void globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg);
 
   /**
-   * @brief Extract the global path into the costmap's coordinate frame.
+   * @brief Extract the global path points that fall inside the local costmap window.
    *
-   * Transforms the stored global path into the costmap frame via TF2,
-   * filters to points inside the local costmap window, and returns an
-   * empty vector when the robot is within goal_distance_threshold_ of
-   * the goal (disabling asymmetry near the goal).
+   * Transforms the path into the costmap frame via TF2. Returns an empty
+   * vector when the robot is within goal_distance_threshold_ of the goal,
+   * which disables asymmetry near the goal to prevent docking oscillations.
+   * @param master_grid Reference costmap used to filter points to the current window.
+   * @return Path points in costmap-frame world coordinates; empty disables asymmetry.
    */
   std::vector<std::pair<double, double>> extractLocalPath(
     nav2_costmap_2d::Costmap2D & master_grid);
 
   /**
    * @brief Classify an obstacle cell as left (+1), right (-1), or neutral (0)
-   * relative to the closest path segment.
+   *        relative to the closest path segment.
    *
-   * Uses a spatial hash grid to perform an O(1) broad-phase lookup of nearby
-   * path segments, then projects the cell onto each overlapping path segment and
-   * uses the cross product of the segment direction and the cell offset to
-   * determine the side. Obstacles beyond neutral_threshold_ from the path
-   * are classified as neutral.
+   * For each candidate segment, performs an AABB rejection pass followed by an
+   * exact perpendicular-distance and cross-product computation to determine side.
+   * Obstacles whose nearest perpendicular distance exceeds neutral_threshold_
+   * are returned as 0 (neutral -> symmetric inflation).
+   *
+   * @param cx             World x-coordinate of the obstacle cell (metres).
+   * @param cy             World y-coordinate of the obstacle cell (metres).
+   * @param candidates     Segment indices whose padded AABB may contain (cx, cy).
+   * @param local_path_pts Path points in costmap-frame order; consecutive pairs form segments.
+   * @return +1 (left of path), -1 (right of path), or 0 (neutral / beyond influence radius).
    */
   int8_t computeObstacleSide(
-    int i, int j,
-    const std::vector<std::pair<double, double>> & local_path_pts,
-    const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
-    double bucket_size,
-    nav2_costmap_2d::Costmap2D & master_grid);
+    double cx, double cy,
+    const std::vector<size_t> & candidates,
+    const std::vector<std::pair<double, double>> & local_path_pts);
 
   /**
    * @brief Compute the asymmetric effective distance (in cells) for BFS priority.
    *
-   * Scales the physical distance by (1 - asymmetry_factor * path_side) and caps
-   * the result at the inscribed radius (in cells).  The cap means every cell
-   * outside the inscribed radius lands in the INSCRIBED bin: the asymmetry then
-   * manifests as which obstacle's wave reaches each contested cell first (i.e.
-   * a Voronoi-boundary shift toward the disfavored side), not as a tilt in the
-   * cost magnitude outside the inscribed plateau.
+   * Preserves physical distance inside the inscribed radius to keep the collision
+   * core symmetric. It scales the excess distance by (1 - asymmetry_factor * path_side).
+   * A scale < 1 shrinks the effective distance so that side's BFS wave expands
+   * earlier and claims more cells, raising costs further into contested space.
+   * A scale > 1 does the opposite.
+   * @param physical_dist Euclidean distance from the source obstacle cell, in cells.
+   * @param path_side +1 (left of path), -1 (right of path), or 0 (neutral).
+   * @return Effective distance in cells.
    */
   inline double getEffectiveDistance(double physical_dist, int8_t path_side) const
   {
@@ -217,10 +225,9 @@ protected:
 
   /**
    * @brief Compute an exponential-decay cost for a distance expressed in cells.
-   *
-   * Matches the formula used by nav2_costmap_2d::InflationLayer: `distance` is
-   * in cells and is converted to meters (via resolution_) before comparison
-   * with inscribed_radius_ (meters) and feeding the exponential.
+   * @param distance Distance from the source obstacle cell, in cells.
+   * @return LETHAL_OBSTACLE at 0, INSCRIBED_INFLATED_OBSTACLE - 1 within the inscribed
+   *         radius, exponentially decaying to 0 beyond it.
    */
   inline unsigned char computeCost(double distance) const
   {
@@ -236,6 +243,11 @@ protected:
 
   /**
    * @brief Lookup pre-computed Euclidean distance between two cells.
+   * @param mx X coordinate of the current cell.
+   * @param my Y coordinate of the current cell.
+   * @param src_x X coordinate of the source obstacle cell.
+   * @param src_y Y coordinate of the source obstacle cell.
+   * @return Euclidean distance in cells.
    */
   inline double distanceLookup(
     unsigned int mx, unsigned int my,
@@ -268,7 +280,7 @@ protected:
 
   /**
    * @brief Validate parameter updates (pre-set callback). Returns success/failure
-   * without mutating any state. Mirrors nav2_costmap_2d::InflationLayer.
+   * without mutating any state.
    */
   rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
     const std::vector<rclcpp::Parameter> & parameters);

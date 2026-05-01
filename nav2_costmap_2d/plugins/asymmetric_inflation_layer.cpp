@@ -346,41 +346,26 @@ AsymmetricInflationLayer::extractLocalPath(
 
 int8_t
 AsymmetricInflationLayer::computeObstacleSide(
-  int i, int j,
-  const std::vector<std::pair<double, double>> & local_path_pts,
-  const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
-  double bucket_size,
-  nav2_costmap_2d::Costmap2D & master_grid)
+  double cx, double cy,
+  const std::vector<size_t> & candidates,
+  const std::vector<std::pair<double, double>> & local_path_pts)
 {
-  double cx, cy;
-  master_grid.mapToWorld(i, j, cx, cy);
-
-  // 1. BROAD PHASE (Hash Lookup)
-  int64_t b_x = static_cast<int64_t>(std::floor(cx / bucket_size));
-  int64_t b_y = static_cast<int64_t>(std::floor(cy / bucket_size));
-  uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) |
-    (static_cast<uint32_t>(b_y));
-
-  auto it = spatial_hash.find(key);
-  if (it == spatial_hash.end()) {
-    // Instant rejection: Obstacle is far away from all path segments
-    return 0;
-  }
-
-  // 2. NARROW PHASE & EXACT PHASE
-  const auto & segments_to_check = it->second;
   const double neutral_threshold_sq = neutral_threshold_ * neutral_threshold_;
 
   double min_dist_sq = std::numeric_limits<double>::max();
   double best_cross = 0.0;
 
-  for (size_t p : segments_to_check) {
+  // Evaluate candidate segments provided by the spatial hash.
+  for (size_t p : candidates) {
+    // Define segment endpoints A (start) and B (end).
     double ax = local_path_pts[p].first;
     double ay = local_path_pts[p].second;
     double bx = local_path_pts[p + 1].first;
     double by = local_path_pts[p + 1].second;
 
-    // Segment AABB check (Narrow Phase)
+    // --- Boundary Check ---
+    // Quickly skip segments if the point is further than the neutral threshold from the segment's
+    // bounding box. This prevents unnecessary calculations for distant segments.
     double min_x = std::min(ax, bx) - neutral_threshold_;
     double max_x = std::max(ax, bx) + neutral_threshold_;
     if (cx < min_x || cx > max_x) {continue;}
@@ -389,8 +374,10 @@ AsymmetricInflationLayer::computeObstacleSide(
     double max_y = std::max(ay, by) + neutral_threshold_;
     if (cy < min_y || cy > max_y) {continue;}
 
-    // Projection Math (Exact Phase)
-    double abx = bx - ax, aby = by - ay;
+    // --- Distance and Orientation Calculation ---
+    // Vector AB represents the path segment, Vector AC represents the path to the cell.
+    double abx = bx - ax;
+    double aby = by - ay;
     double len_sq = abx * abx + aby * aby;
 
     double acx = cx - ax;
@@ -399,34 +386,48 @@ AsymmetricInflationLayer::computeObstacleSide(
     double dist_sq;
     double cross;
 
+    // Handle the case of a zero-length segment to avoid division by zero.
     if (len_sq < 1e-10) {
-      // Degenerate zero-length segment
       dist_sq = acx * acx + acy * acy;
       cross = 0.0;
     } else {
-      // t is the scalar projection of AC onto AB, clamped to [0, 1]
+      /*
+       * Calculate 't', the scalar projection of C onto the line AB.
+       * We clamp 't' to the [0, 1] range so that points projecting outside the
+       * segment endpoints are snapped to the nearest vertex.
+       */
       double t = std::clamp((acx * abx + acy * aby) / len_sq, 0.0, 1.0);
 
-      // Calculate perpendicular distance squared
+      // Compute the vector from the projected point on the segment to the cell C.
       double proj_dx = acx - t * abx;
       double proj_dy = acy - t * aby;
       dist_sq = proj_dx * proj_dx + proj_dy * proj_dy;
+
+      /*
+       * Determine the side of the segment using the 2D cross product (AB x AC).
+       * Positive values indicate the point is on the Left side of the path.
+       * Negative values indicate the point is on the Right side.
+       */
       cross = abx * acy - aby * acx;
     }
 
+    // Update the best match if this segment is the closest one found so far.
     if (dist_sq < min_dist_sq) {
       min_dist_sq = dist_sq;
       best_cross = cross;
     }
   }
 
+  // Check if the cell is outside the influence radius.
   if (min_dist_sq > neutral_threshold_sq) {
     return 0;
   }
 
-  if (best_cross > 0.0) {return 1;}
-  if (best_cross < 0.0) {return -1;}
-  return 0;
+  // Return the orientation based on the cross product of the closest segment.
+  if (best_cross > 0.0) {return 1;}    // Left
+  if (best_cross < 0.0) {return -1;}   // Right
+
+  return 0; // Neutral/On the line
 }
 
 void
@@ -470,8 +471,24 @@ AsymmetricInflationLayer::updateCosts(
   std::vector<std::pair<double, double>> local_path_pts = extractLocalPath(master_grid);
   bool use_asymmetry = (local_path_pts.size() >= 2) && (asymmetry_factor_ != 0.0);
 
-  // Spatial Hash Grid Construction
-  double bucket_size = std::max(neutral_threshold_, 1.0);
+  // This method runs in three phases:
+  //
+  //   Phase 1 – Spatial-hash construction  O(P)  P = path segments in window
+  //   Phase 2 – BFS seed                   O(W)  W = update-window cells
+  //   Phase 3 – Dial's Algorithm BFS       O(B)  B = cells within inflation radius
+  //
+  // neutral_threshold_ is the maximum perpendicular distance (metres) from the
+  // path centreline within which an obstacle is classified as left (+1) or
+  // right (-1). Obstacles farther away are "neutral" and receive symmetric
+  // inflation.  path_bucket_size equals neutral_threshold_ so each hash bucket
+  // spans exactly one influence radius: the padded AABB insertion ensures every
+  // segment that can affect a cell in bucket B is stored in B, making per-cell
+  // lookups in Phase 2 O(1) instead of O(P).
+
+  // ── Phase 1: Spatial-hash construction ──────────────────────────────────
+  // Pre-partition path segments into spatial buckets so that per-cell nearest-
+  // segment queries in Phase 2 are O(1) instead of O(path_segments).
+  const double path_bucket_size = std::max(neutral_threshold_, 1.0);
   std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
 
   if (!use_asymmetry) {
@@ -492,10 +509,10 @@ AsymmetricInflationLayer::updateCosts(
     double max_y = std::max(ay, by) + neutral_threshold_;
 
     // Find which buckets this padded segment touches
-    int64_t min_bx = static_cast<int64_t>(std::floor(min_x / bucket_size));
-    int64_t max_bx = static_cast<int64_t>(std::floor(max_x / bucket_size));
-    int64_t min_by = static_cast<int64_t>(std::floor(min_y / bucket_size));
-    int64_t max_by = static_cast<int64_t>(std::floor(max_y / bucket_size));
+    int64_t min_bx = static_cast<int64_t>(std::floor(min_x / path_bucket_size));
+    int64_t max_bx = static_cast<int64_t>(std::floor(max_x / path_bucket_size));
+    int64_t min_by = static_cast<int64_t>(std::floor(min_y / path_bucket_size));
+    int64_t max_by = static_cast<int64_t>(std::floor(max_y / path_bucket_size));
 
     for (int64_t b_x = min_bx; b_x <= max_bx; ++b_x) {
       for (int64_t b_y = min_by; b_y <= max_by; ++b_y) {
@@ -508,12 +525,15 @@ AsymmetricInflationLayer::updateCosts(
     }
   }
 
-  // The standard Nav2 inflation_layer has already populated master_array
-  // with the symmetric baseline. We only need to calculate asymmetric costs
-  // and increase the cost where our effective distance is harsher.
-  std::fill(begin(seen_), end(seen_), false);
+  // ── Phase 2: BFS seed – classify boundary obstacle cells ─────────────────
+  // Only the outer perimeter of each lethal obstacle mass is seeded.
+  // Interior cells (no traversable 4-connected neighbour) are pre-marked seen
+  // so the BFS wave skips them; they can never be the nearest obstacle to any
+  // free cell. Neutral boundary cells (exact distance > neutral_threshold_) are also skipped:
+  // they cannot raise costs above the symmetric baseline already written by the InflationLayer.
 
-  auto & obs_bin_asym = inflation_cells_[0];
+  // Reset seen_ so the BFS can track which cells we've visited without needing to clear master_array.
+  std::fill(begin(seen_), end(seen_), false);
 
   // Helper lambda to check if a neighbor is "traversable" (i.e., open space)
   auto is_traversable = [&](int nx, int ny) {
@@ -525,45 +545,71 @@ AsymmetricInflationLayer::updateCosts(
       }
     };
 
-  // Seed all lethal obstacles (Boundary cells only)
+  // Seed all lethal cells
   for (int j = min_j; j < max_j; j++) {
     for (int i = min_i; i < max_i; i++) {
       int index = static_cast<int>(master_grid.getIndex(i, j));
       unsigned char cost = master_array[index];
 
-      if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
-        bool is_boundary = false;
+      // Early exit 1: Skip cells that aren't lethal/unknown obstacles
+      if (cost != LETHAL_OBSTACLE && !(inflate_around_unknown_ && cost == NO_INFORMATION)) {
+        continue;
+      }
 
-        // Map edge cells are treated as boundaries
-        if (i == 0 || i == static_cast<int>(size_x) - 1 ||
-          j == 0 || j == static_cast<int>(size_y) - 1)
-        {
-          is_boundary = true;
-        } else {
-          // Check 4-connected neighbors. If any neighbor is traversable space,
-          // this cell is on the outer perimeter of the obstacle.
-          if (is_traversable(i - 1, j) || is_traversable(i + 1, j) ||
-            is_traversable(i, j - 1) || is_traversable(i, j + 1))
-          {
-            is_boundary = true;
-          }
-        }
+      // Check if the cell touches the absolute edges of the costmap
+      bool is_on_map_edge = (i == 0 || i == static_cast<int>(size_x) - 1 ||
+        j == 0 || j == static_cast<int>(size_y) - 1);
 
-        if (is_boundary) {
-          obs_bin_asym.emplace_back(i, j, i, j);
-          obstacle_side_grid_[index] = computeObstacleSide(i, j, local_path_pts, spatial_hash,
-              bucket_size, master_grid);
-        } else {
-          // Mark interior cells as 'seen' so the BFS wave doesn't
-          // waste time propagating backwards into the solid obstacle mass.
-          seen_[index] = true;
-        }
+      // An obstacle cell is a boundary if it's on the map edge OR touches free space.
+      bool is_obstacle_boundary = is_on_map_edge ||
+        is_traversable(i - 1, j) ||
+        is_traversable(i + 1, j) ||
+        is_traversable(i, j - 1) ||
+        is_traversable(i, j + 1);
+
+      // Early exit 2: Skip interior obstacle cells
+      if (!is_obstacle_boundary) {
+        // Mark interior cells as 'seen' so the BFS wave doesn't
+        // waste time propagating backwards into the solid obstacle mass.
+        seen_[index] = true;
+        continue;
+      }
+
+      // O(1) hash lookup to find candidate segments near this cell.
+      double cx, cy;
+      master_grid.mapToWorld(i, j, cx, cy);
+      int64_t b_x = static_cast<int64_t>(std::floor(cx / path_bucket_size));
+      int64_t b_y = static_cast<int64_t>(std::floor(cy / path_bucket_size));
+
+      // Reinterpret each signed int64 bucket coordinate as uint32 (preserving the bit
+      // pattern for negative values via two's complement) then pack both into a single
+      // uint64. Collision-free for any coordinate fitting in int32 — true for all
+      // real-world costmap sizes.
+      uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) |
+        static_cast<uint32_t>(b_y);
+
+      auto it = spatial_hash.find(key);
+
+      // Early exit 3: Skip cells with no nearby path segments
+      if (it == spatial_hash.end()) {continue;}
+
+      // Forward the candidate segments to determine which side of the path this obstacle cell is on (left/right/neutral).
+      int8_t side = computeObstacleSide(cx, cy, it->second, local_path_pts);
+      obstacle_side_grid_[index] = side;
+
+      // Skip neutral cells since they won't receive asymmetric inflation.
+      if (side != 0) {
+        inflation_cells_[0].emplace_back(i, j, i, j);
       }
     }
   }
 
-  // Asymmetric BFS expansion: Implements Dial's Algorithm for fast expansion by scaling
-  // effective distances into discrete bucket indices (`inflation_cells_`).
+  // ── Phase 3: Dial's Algorithm BFS ────────────────────────────────────────
+  // inflation_cells_ is a bucket-priority queue indexed by
+  //   floor(effective_distance * kEffDistPrecision).
+  // Expanding the lowest non-empty bin first guarantees monotonic wave order.
+  // Cells are written with max(old, new) so this layer can only raise costs
+  // above the symmetric baseline left by the upstream InflationLayer.
   for (size_t current_bin = 0; current_bin < inflation_cells_.size(); ++current_bin) {
     while (!inflation_cells_[current_bin].empty()) {
       const CellData cell = inflation_cells_[current_bin].back();
@@ -575,14 +621,23 @@ AsymmetricInflationLayer::updateCosts(
       unsigned int sy = cell.src_y_;
       unsigned int index = master_grid.getIndex(mx, my);
 
+      // A cell can be enqueued by multiple obstacle sources.
+      // The bucket queue guarantees the first dequeue is the minimum effective
+      // distance, so any later arrival for this cell is a duplicate.
       if (seen_[index]) {
         continue;
       }
       seen_[index] = true;
 
+      // src_x/src_y is the original obstacle seed, carried intact through the wave.
+      // Every cell expanding from the same seed shares its left/right classification.
       int src_index = master_grid.getIndex(sx, sy);
       int8_t path_side = obstacle_side_grid_[src_index];
 
+      // physical_dist is the true Euclidean distance from the source obstacle.
+      // eff_dist applies the asymmetric scale factor, determining the priority-queue bin:
+      // the disfavoured side gets a smaller eff_dist so its wave expands into contested
+      // space before the favoured side, shifting the Voronoi boundary.
       double physical_dist = distanceLookup(mx, my, sx, sy);
       double eff_dist = getEffectiveDistance(physical_dist, path_side);
       size_t bin = static_cast<size_t>(eff_dist * kEffDistPrecision);
@@ -590,7 +645,7 @@ AsymmetricInflationLayer::updateCosts(
       unsigned char eff_cost = (bin < cached_costs_.size()) ? cached_costs_[bin] : 0;
       unsigned char old_cost = master_array[index];
 
-      // Only increase — never decrease below the symmetric baseline
+      // Write costs only within the originally requested window (base_min/max)
       if (static_cast<int>(mx) >= base_min_i &&
         static_cast<int>(my) >= base_min_j &&
         static_cast<int>(mx) < base_max_i &&
@@ -601,6 +656,9 @@ AsymmetricInflationLayer::updateCosts(
         }
       }
 
+      // Propagate to 4-connected neighbours. enqueue() returns the lowest non-empty
+      // bin after insertion; asymmetric scaling can place a neighbour in a bin below
+      // current_bin, so current_bin must be allowed to decrease here.
       if (mx > 0) {
         current_bin = enqueue(index - 1, mx - 1, my, sx, sy, path_side, current_bin);
       }
@@ -712,14 +770,19 @@ AsymmetricInflationLayer::validateParameterUpdatesCallback(
 
     if (param_name == name_ + ".asymmetry_factor") {
       double val = parameter.as_double();
-      if (std::abs(val) >= 0.8) {
+      if (std::abs(val) >= 1.0) {
         RCLCPP_WARN(
           logger_,
-          "asymmetry_factor magnitude %.2f >= 0.8 is out of range. "
+          "asymmetry_factor magnitude %.2f >= 1.0 is out of range. "
           "Rejecting parameter update.", val);
         result.successful = false;
-        result.reason = "asymmetry_factor magnitude must be < 0.8";
+        result.reason = "asymmetry_factor magnitude must be < 1.0";
         return result;
+      } else if (std::abs(val) > 0.9) {
+        RCLCPP_WARN(
+          logger_,
+          "asymmetry_factor magnitude %.2f is high. "
+          "Values over 0.9 can lead to artefacts.", val);
       }
     } else if (param_name == name_ + ".inflation_radius") {
       if (parameter.as_double() < 0.0) {
