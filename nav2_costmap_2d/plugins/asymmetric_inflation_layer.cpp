@@ -104,9 +104,9 @@ AsymmetricInflationLayer::onInitialize()
 
     enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
     inflation_radius_ = node->declare_or_get_parameter(
-      name_ + "." + "inflation_radius", 0.55);
+      name_ + "." + "inflation_radius", 2.0);
     cost_scaling_factor_ = node->declare_or_get_parameter(
-      name_ + "." + "cost_scaling_factor", 10.0);
+      name_ + "." + "cost_scaling_factor", 4.0);
     asymmetry_factor_ = node->declare_or_get_parameter(
       name_ + "." + "asymmetry_factor", 0.75);
     inflate_around_unknown_ = node->declare_or_get_parameter(
