@@ -233,8 +233,6 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("GracefulController")};
 
   Parameters * params_;
-  double goal_dist_tolerance_;
-  bool goal_reached_;
 
   // True from the time a new path arrives until we have completed an initial rotation
   bool do_initial_rotation_;

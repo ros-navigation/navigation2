@@ -98,11 +98,29 @@ public:
    * that each independent field could be assuming the other has no error (e.x. X and Y).
    * @param pose_tolerance The tolerance used for checking in Pose fields
    * @param vel_tolerance The tolerance used for checking velocity fields
+   * @param path_length_tolerance The tolerance used for checking the path length
    * @return True if the tolerances are valid to use
    */
   virtual bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & vel_tolerance) = 0;
+    geometry_msgs::msg::Twist & vel_tolerance,
+    double & path_length_tolerance) = 0;
+
+  /**
+   * @brief Check if XY goal position has been reached (without considering yaw)
+   * This is useful for controllers that want to rotate to goal heading while
+   * keeping zero linear velocity but preserving angular velocity capability.
+   * @param query_pose The pose to check
+   * @param goal_pose The pose to check against
+   * @param velocity The robot's current velocity
+   * @param transformed_global_plan The global plan after being processed by the path handler
+   * @return True if XY goal is reached (position within tolerance, yaw ignored)
+   */
+  virtual bool isGoalXYReached(
+    const geometry_msgs::msg::Pose & query_pose,
+    const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity,
+    const nav_msgs::msg::Path & transformed_global_plan) = 0;
 };
 
 }  // namespace nav2_core

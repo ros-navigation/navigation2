@@ -216,12 +216,14 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   pgc.initialize(x, "test3", costmap);
   geometry_msgs::msg::Pose pose_tol;
   geometry_msgs::msg::Twist vel_tol;
+  double path_length_tol;
 
   // Test stopped goal checker's tolerance API
-  EXPECT_TRUE(sgc.getTolerances(pose_tol, vel_tol));
+  EXPECT_TRUE(sgc.getTolerances(pose_tol, vel_tol, path_length_tol));
   EXPECT_EQ(vel_tol.linear.x, 0.25);
   EXPECT_EQ(vel_tol.linear.y, 0.25);
   EXPECT_EQ(vel_tol.angular.z, 0.25);
+  EXPECT_EQ(path_length_tol, 1.0);
 
   // Test Stopped goal checker's dynamic parameters
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -259,14 +261,16 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   EXPECT_EQ(x->get_parameter("test2.symmetric_yaw_tolerance").as_bool(), true);
 
   // Test the dynamic parameters impacted the tolerances
-  EXPECT_TRUE(sgc.getTolerances(pose_tol, vel_tol));
+  EXPECT_TRUE(sgc.getTolerances(pose_tol, vel_tol, path_length_tol));
   EXPECT_EQ(vel_tol.linear.x, 100.0);
   EXPECT_EQ(vel_tol.linear.y, 100.0);
   EXPECT_EQ(vel_tol.angular.z, 100.0);
+  EXPECT_EQ(path_length_tol, 1.0);
 
-  EXPECT_TRUE(gc.getTolerances(pose_tol, vel_tol));
+  EXPECT_TRUE(gc.getTolerances(pose_tol, vel_tol, path_length_tol));
   EXPECT_EQ(pose_tol.position.x, 200.0);
   EXPECT_EQ(pose_tol.position.y, 200.0);
+  EXPECT_EQ(path_length_tol, 200.0);
 
   // Test position goal checker's dynamic parameters
   results = rec_param->set_parameters_atomically(
@@ -282,9 +286,10 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   EXPECT_EQ(x->get_parameter("test3.path_length_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test3.stateful").as_bool(), true);
 
-  EXPECT_TRUE(pgc.getTolerances(pose_tol, vel_tol));
+  EXPECT_TRUE(pgc.getTolerances(pose_tol, vel_tol, path_length_tol));
   EXPECT_EQ(pose_tol.position.x, 200.0);
   EXPECT_EQ(pose_tol.position.y, 200.0);
+  EXPECT_EQ(path_length_tol, 200.0);
 
   // Test setting invalid values
   results = rec_param->set_parameters_atomically(

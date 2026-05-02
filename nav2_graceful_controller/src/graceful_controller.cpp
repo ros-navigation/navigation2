@@ -117,7 +117,7 @@ void GracefulController::deactivate()
 
 geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
-  const geometry_msgs::msg::Twist & /*velocity*/,
+  const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * goal_checker,
   const nav_msgs::msg::Path & transformed_global_plan,
   const geometry_msgs::msg::PoseStamped & /*global_goal*/)
@@ -126,15 +126,6 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
 
   geometry_msgs::msg::TwistStamped cmd_vel;
   cmd_vel.header = pose.header;
-
-  // Update for the current goal checker's state
-  geometry_msgs::msg::Pose pose_tolerance;
-  geometry_msgs::msg::Twist velocity_tolerance;
-  if (!goal_checker->getTolerances(pose_tolerance, velocity_tolerance)) {
-    RCLCPP_WARN(logger_, "Unable to retrieve goal checker's tolerances!");
-  } else {
-    goal_dist_tolerance_ = pose_tolerance.position.x;
-  }
 
   // Transform the plan from costmap's global frame to robot base frame
   nav_msgs::msg::Path transformed_plan;
@@ -173,8 +164,9 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
 
   // If we've reached the XY goal tolerance, just rotate
-  if (dist_to_goal < goal_dist_tolerance_ || goal_reached_) {
-    goal_reached_ = true;
+  if (goal_checker->isGoalXYReached(pose.pose, transformed_plan.poses.back().pose, velocity,
+      transformed_plan))
+  {
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     // Check for collisions between our current pose and goal pose
     size_t num_steps = fabs(angle_to_goal) / params_->in_place_collision_resolution;
@@ -258,7 +250,6 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
 
 void GracefulController::newPathReceived(const nav_msgs::msg::Path & /*raw_global_path*/)
 {
-  goal_reached_ = false;
   do_initial_rotation_ = true;
   safe_approach_angle_.reset();
 }

@@ -46,12 +46,20 @@ public:
 
   virtual bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & /*vel_tolerance*/)
+    geometry_msgs::msg::Twist & /*vel_tolerance*/,
+    double & path_length_tolerance)
   {
     pose_tolerance.position.x = 0.25;
     pose_tolerance.position.y = 0.25;
+    path_length_tolerance = 0.5;
     return true;
   }
+
+  virtual bool isGoalXYReached(
+    const geometry_msgs::msg::Pose & /*query_pose*/,
+    const geometry_msgs::msg::Pose & /*goal_pose*/,
+    const geometry_msgs::msg::Twist & /*velocity*/,
+    const nav_msgs::msg::Path & /*transformed_global_plan*/) {return false;}
 };
 
 TEST(UtilsTests, MarkerPopulationUtils)

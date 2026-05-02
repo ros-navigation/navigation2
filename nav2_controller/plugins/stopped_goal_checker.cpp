@@ -111,15 +111,24 @@ bool StoppedGoalChecker::isGoalReached(
          hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_;
 }
 
+bool StoppedGoalChecker::isGoalXYReached(
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & transformed_global_plan)
+{
+  return SimpleGoalChecker::isGoalXYReached(query_pose, goal_pose, velocity,
+         transformed_global_plan);
+}
+
 bool StoppedGoalChecker::getTolerances(
   geometry_msgs::msg::Pose & pose_tolerance,
-  geometry_msgs::msg::Twist & vel_tolerance)
+  geometry_msgs::msg::Twist & vel_tolerance,
+  double & path_length_tolerance)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
   double invalid_field = std::numeric_limits<double>::lowest();
 
   // populate the poses
-  bool rtn = SimpleGoalChecker::getTolerances(pose_tolerance, vel_tolerance);
+  bool rtn = SimpleGoalChecker::getTolerances(pose_tolerance, vel_tolerance, path_length_tolerance);
 
   // override the velocities
   vel_tolerance.linear.x = trans_stopped_velocity_;
@@ -129,6 +138,8 @@ bool StoppedGoalChecker::getTolerances(
   vel_tolerance.angular.x = invalid_field;
   vel_tolerance.angular.y = invalid_field;
   vel_tolerance.angular.z = rot_stopped_velocity_;
+
+  path_length_tolerance = path_length_tolerance_;
 
   return true && rtn;
 }
