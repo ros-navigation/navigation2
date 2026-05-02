@@ -1,0 +1,205 @@
+{
+  "context": {
+    "date": "2026-04-27T17:29:25+08:00",
+    "host_name": "chen",
+    "executable": "./build/nav2_dstar_lite_planner/benchmark/dstar_lite_benchmark",
+    "num_cpus": 32,
+    "mhz_per_cpu": 5752,
+    "cpu_scaling_enabled": true,
+    "caches": [
+      {
+        "type": "Data",
+        "level": 1,
+        "size": 49152,
+        "num_sharing": 2
+      },
+      {
+        "type": "Instruction",
+        "level": 1,
+        "size": 32768,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 2,
+        "size": 1048576,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 3,
+        "size": 33554432,
+        "num_sharing": 16
+      }
+    ],
+    "load_avg": [0.435547,0.539062,0.570801],
+    "library_build_type": "release"
+  },
+  "benchmarks": [
+    {
+      "name": "BM_OpenSpace_FirstPlan/100",
+      "run_name": "BM_OpenSpace_FirstPlan/100",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 5932,
+      "real_time": 1.1753978405247446e-01,
+      "cpu_time": 1.1754084575185436e-01,
+      "time_unit": "ms",
+      "nodes_opened": 9.8000000000000000e+01,
+      "path_length": 9.8000000000000000e+01
+    },
+    {
+      "name": "BM_OpenSpace_FirstPlan/200",
+      "run_name": "BM_OpenSpace_FirstPlan/200",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 2632,
+      "real_time": 2.5951943427024321e-01,
+      "cpu_time": 2.5950996884498484e-01,
+      "time_unit": "ms",
+      "nodes_opened": 1.9800000000000000e+02,
+      "path_length": 1.9800000000000000e+02
+    },
+    {
+      "name": "BM_OpenSpace_FirstPlan/400",
+      "run_name": "BM_OpenSpace_FirstPlan/400",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1159,
+      "real_time": 6.0224164365781740e-01,
+      "cpu_time": 6.0222038481449514e-01,
+      "time_unit": "ms",
+      "nodes_opened": 3.9800000000000000e+02,
+      "path_length": 3.9800000000000000e+02
+    },
+    {
+      "name": "BM_StaticObstacles_FirstPlan/200/10",
+      "run_name": "BM_StaticObstacles_FirstPlan/200/10",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 117,
+      "real_time": 6.0969397606804234e+00,
+      "cpu_time": 6.0962158034188052e+00,
+      "time_unit": "ms",
+      "nodes_opened": 1.8555000000000000e+04,
+      "obstacle_pct": 1.0000000000000000e+01
+    },
+    {
+      "name": "BM_StaticObstacles_FirstPlan/200/20",
+      "run_name": "BM_StaticObstacles_FirstPlan/200/20",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 113,
+      "real_time": 6.2605395132858117e+00,
+      "cpu_time": 6.2606028318584031e+00,
+      "time_unit": "ms",
+      "nodes_opened": 1.9248000000000000e+04,
+      "obstacle_pct": 2.0000000000000000e+01
+    },
+    {
+      "name": "BM_StaticObstacles_FirstPlan/200/30",
+      "run_name": "BM_StaticObstacles_FirstPlan/200/30",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 95,
+      "real_time": 7.0285847894985256e+00,
+      "cpu_time": 7.0286204526315847e+00,
+      "time_unit": "ms",
+      "nodes_opened": 2.1978000000000000e+04,
+      "obstacle_pct": 3.0000000000000000e+01
+    },
+    {
+      "name": "BM_IncrementalReplan/200/10",
+      "run_name": "BM_IncrementalReplan/200/10",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 6301,
+      "real_time": 1.1196471512446027e-01,
+      "cpu_time": 1.1196574416759250e-01,
+      "time_unit": "ms",
+      "avg_nodes_per_replan": 0.0000000000000000e+00,
+      "num_costmap_changes": 1.0000000000000000e+01
+    },
+    {
+      "name": "BM_IncrementalReplan/200/50",
+      "run_name": "BM_IncrementalReplan/200/50",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 6183,
+      "real_time": 1.1155191185541333e-01,
+      "cpu_time": 1.1155043474041730e-01,
+      "time_unit": "ms",
+      "avg_nodes_per_replan": 2.2998544395924309e-01,
+      "num_costmap_changes": 5.0000000000000000e+01
+    },
+    {
+      "name": "BM_IncrementalReplan/200/100",
+      "run_name": "BM_IncrementalReplan/200/100",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 6048,
+      "real_time": 1.1417779431227131e-01,
+      "cpu_time": 1.1417883167989416e-01,
+      "time_unit": "ms",
+      "avg_nodes_per_replan": 2.1511243386243387e-01,
+      "num_costmap_changes": 1.0000000000000000e+02
+    },
+    {
+      "name": "BM_FullReplan_AfterChange/200/10",
+      "run_name": "BM_FullReplan_AfterChange/200/10",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 2715,
+      "real_time": 2.5816619300188515e-01,
+      "cpu_time": 2.5817127992633510e-01,
+      "time_unit": "ms",
+      "num_costmap_changes": 1.0000000000000000e+01
+    },
+    {
+      "name": "BM_FullReplan_AfterChange/200/50",
+      "run_name": "BM_FullReplan_AfterChange/200/50",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1024,
+      "real_time": 6.8400113671884810e-01,
+      "cpu_time": 6.8398315039062441e-01,
+      "time_unit": "ms",
+      "num_costmap_changes": 5.0000000000000000e+01
+    },
+    {
+      "name": "BM_FullReplan_AfterChange/200/100",
+      "run_name": "BM_FullReplan_AfterChange/200/100",
+      "run_type": "iteration",
+      "repetitions": 0,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1215,
+      "real_time": 5.7783103045260575e-01,
+      "cpu_time": 5.7785137201646075e-01,
+      "time_unit": "ms",
+      "num_costmap_changes": 1.0000000000000000e+02
+    }
+  ]
+}
