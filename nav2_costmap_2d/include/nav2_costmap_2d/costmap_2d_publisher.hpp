@@ -54,7 +54,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "nav2_ros_common/service_server.hpp"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -167,7 +167,8 @@ private:
     costmap_update_pub_;
 
   // Publisher for raw costmap values as msg::Costmap from layered costmap
-  nav2::Publisher<nav2_msgs::msg::Costmap>::SharedPtr costmap_raw_pub_;
+  nav2::Publisher<nav2_costmap_2d::Costmap2DStamped>::SharedPtr
+    costmap_raw_pub_;
   nav2::Publisher<nav2_msgs::msg::CostmapUpdate>::SharedPtr
     costmap_raw_update_pub_;
 
@@ -178,7 +179,7 @@ private:
   float grid_resolution_;
   unsigned int grid_width_, grid_height_;
   std::unique_ptr<nav_msgs::msg::OccupancyGrid> grid_;
-  std::unique_ptr<nav2_msgs::msg::Costmap> costmap_raw_;
+  std::unique_ptr<nav2_costmap_2d::Costmap2DStamped> costmap_raw_;
   // Translate from 0-255 values in costmap to -1 to 100 values in message.
   static char * cost_translation_table_;
 };
