@@ -40,6 +40,10 @@ protected:
     node_ = std::make_shared<nav2::LifecycleNode>("clock_test_node");
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_node(node_->get_node_base_interface());
+    // Drive the lifecycle to ACTIVE so create_subscription() in each test
+    // auto-activates under the nav2::Subscription wrapper.
+    node_->configure();
+    node_->activate();
   }
 
   void TearDown() override
