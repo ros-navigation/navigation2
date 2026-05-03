@@ -139,6 +139,22 @@ public:
     return twist_stamped;
   }
 
+  /**
+   * @brief Activate the odometry subscription. Call when the node is activated.
+   */
+  void on_activate()
+  {
+    odom_sub_->on_activate();
+  }
+
+  /**
+   * @brief Deactivate the odometry subscription. Call when the node is deactivated.
+   */
+  void on_deactivate()
+  {
+    odom_sub_->on_deactivate();
+  }
+
 protected:
   /**
    * @brief Callback of odometry subscriber to process

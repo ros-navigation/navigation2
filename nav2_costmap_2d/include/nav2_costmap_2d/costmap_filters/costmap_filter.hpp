@@ -161,6 +161,18 @@ public:
 
 protected:
   /**
+   * @brief Activate lifecycle-managed subscriptions (filter info, filter mask).
+   * Override in derived filters to call on_activate() on filter_info_sub_ and mask_sub_.
+   */
+  virtual void activateSubscriptions() {}
+
+  /**
+   * @brief Deactivate lifecycle-managed subscriptions before resetFilter() clears them.
+   * Override in derived filters to call on_deactivate() on filter_info_sub_ and mask_sub_.
+   */
+  virtual void deactivateSubscriptions() {}
+
+  /**
    * @brief Costmap filter enabling/disabling callback
    * @param request_header Service request header
    * @param request Service request

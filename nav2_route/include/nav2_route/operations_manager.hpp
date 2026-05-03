@@ -54,6 +54,18 @@ public:
   ~OperationsManager() = default;
 
   /**
+   * @brief Activate all loaded route operation plugins (forwarding from
+   * RouteServer::on_activate). Plugins that own lifecycle resources
+   * (e.g. their own CostmapSubscriber) bring them up here.
+   */
+  void activate();
+
+  /**
+   * @brief Deactivate all loaded route operation plugins.
+   */
+  void deactivate();
+
+  /**
    * @brief Finds the set of operations stored in the graph to trigger at this transition
    * @param node Node to check
    * @param edge_entered Edge entered to check for ON_ENTER events

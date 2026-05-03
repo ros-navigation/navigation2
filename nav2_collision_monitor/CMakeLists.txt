@@ -19,6 +19,11 @@ find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(point_cloud_transport REQUIRED)
 
+# Rolling point_cloud_transport prefers subscribe(..., rclcpp::QoS, ...); Jazzy/Kilted use rmw_qos_profile_t
+if(DEFINED ENV{ROS_DISTRO} AND "$ENV{ROS_DISTRO}" STREQUAL "rolling")
+  add_compile_definitions(POINT_CLOUD_TRANSPORT_SUBSCRIBE_USE_QOS)
+endif()
+
 nav2_package()
 
 set(monitor_executable_name collision_monitor)
@@ -33,6 +38,7 @@ add_library(${monitor_library_name} SHARED
   src/circle.cpp
   src/source.cpp
   src/scan.cpp
+  src/lifecycle_point_cloud_subscription.cpp
   src/pointcloud.cpp
   src/polygon_source.cpp
   src/range.cpp
@@ -70,6 +76,7 @@ add_library(${detector_library_name} SHARED
   src/circle.cpp
   src/source.cpp
   src/scan.cpp
+  src/lifecycle_point_cloud_subscription.cpp
   src/pointcloud.cpp
   src/polygon_source.cpp
   src/costmap.cpp

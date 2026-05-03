@@ -48,6 +48,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
     "~/candidate_trajectories",
     [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
+  my_sub->on_activate();
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
 
@@ -112,6 +113,7 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
     "~/candidate_trajectories",
     [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
+  my_sub->on_activate();
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
@@ -149,6 +151,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
   auto my_sub = node->create_subscription<nav_msgs::msg::Path>(
     "~/optimal_path",
     [&](const nav_msgs::msg::Path msg) {received_path = msg;});
+  my_sub->on_activate();
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());

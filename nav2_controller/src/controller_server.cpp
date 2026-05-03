@@ -225,6 +225,8 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     return nav2::CallbackReturn::FAILURE;
   }
+  odom_sub_->on_activate();
+  speed_limit_sub_->on_activate();
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->activate();
@@ -274,7 +276,8 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
    */
   costmap_ros_->deactivate();
-
+  odom_sub_->on_deactivate();
+  speed_limit_sub_->on_deactivate();
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
   transformed_plan_pub_->on_deactivate();

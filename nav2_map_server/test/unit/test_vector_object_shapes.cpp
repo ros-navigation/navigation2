@@ -22,6 +22,8 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
@@ -129,7 +131,16 @@ Tester::~Tester()
   polygon_.reset();
   circle_.reset();
 
-  node_.reset();
+  // Shut down the lifecycle node properly to avoid "Node still in state(1) in destructor" warning
+  if (node_) {
+    if (node_->get_current_state().id() ==
+      lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED)
+    {
+      node_->trigger_transition(
+        lifecycle_msgs::msg::Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+    }
+    node_.reset();
+  }
 
   tf_listener_.reset();
   tf_buffer_.reset();

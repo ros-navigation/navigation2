@@ -30,8 +30,10 @@
 #include "rclcpp/rclcpp.hpp"
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
+#include "nav2_ros_common/qos_profiles.hpp"
 #include "nav2_ros_common/interface_factories.hpp"
 #include "nav2_ros_common/rate.hpp"
+#include "nav2_ros_common/subscription.hpp"
 
 namespace nav2
 {
@@ -140,28 +142,42 @@ public:
       default_value, parameter_descriptor);
   }
 
-  /**
-   * @brief Create a subscription to a topic using Nav2 QoS profiles and SubscriptionOptions
-   * @param topic_name Name of topic
-   * @param callback Callback function to handle incoming messages
-   * @param qos QoS settings for the subscription (default is nav2::qos::StandardTopicQoS())
-   * @param callback_group The callback group to use (if provided)
-   * @return A shared pointer to the created nav2::Subscription
-   */
-  template<
-    typename MessageT,
-    typename CallbackT>
-  typename nav2::Subscription<MessageT>::SharedPtr
+/**
+ * @brief Create a subscription to a topic using Nav2 QoS profiles and SubscriptionOptions.
+ * The resulting subscription is managed/activated through the Nav2 interface factory.
+ *
+ * @param topic_name Name of topic
+ * @param callback Callback function to handle incoming messages
+ * @param qos QoS settings for the subscription (default is nav2::qos::StandardTopicQoS())
+ * @param callback_group The callback group to use (if provided)
+ * @return A shared pointer to the created nav2::Subscription
+ */
+  template<typename MessageT, typename CallbackT, typename Alloc = std::allocator<void>>
+  typename nav2::Subscription<MessageT, Alloc>::SharedPtr
   create_subscription(
     const std::string & topic_name,
     CallbackT && callback,
     const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
     const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
   {
-    return nav2::interfaces::create_subscription<MessageT>(
-      shared_from_this(), topic_name,
-      std::forward<CallbackT>(callback), qos, callback_group);
+    auto sub = nav2::interfaces::create_subscription<MessageT>(
+      shared_from_this(), topic_name, std::forward<CallbackT>(callback), qos, callback_group);
+    this->add_managed_entity(sub);
+
+    // Auto-activate when the node is ACTIVE, or in the middle of ACTIVATING.
+    // The latter covers subscriptions created from callbacks that fire
+    // synchronously inside on_activate (e.g. transient_local replay during a
+    // newly-activated parent subscription's first spin).
+    auto state_id = get_current_state().id();
+    if (state_id == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE ||
+      state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_ACTIVATING)
+    {
+      sub->on_activate();
+    }
+
+    return sub;
   }
+
 
   /**
    * @brief Create a publisher to a topic using Nav2 QoS profiles and PublisherOptions
@@ -181,9 +197,11 @@ public:
       shared_from_this(), topic_name, qos, callback_group);
     this->add_managed_entity(pub);
 
-    // Automatically activate the publisher if the node is already active
-    if (get_current_state().id() ==
-      lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+    // Auto-activate when the node is ACTIVE, or in the middle of ACTIVATING
+    // (i.e. a publisher created from a callback running inside on_activate).
+    auto state_id = get_current_state().id();
+    if (state_id == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE ||
+      state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_ACTIVATING)
     {
       pub->on_activate();
     }

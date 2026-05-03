@@ -92,7 +92,18 @@ public:
 
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_callback_group(callback_group_, node->get_node_base_interface());
-    executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
+  }
+
+  void activate()
+  {
+    if (layer_sub_) {
+      // Build the underlying rclcpp::Subscription before the executor starts
+      // spinning, so it observes the entity from its first wait_for_work().
+      layer_sub_->on_activate();
+    }
+    if (!executor_thread_) {
+      executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
+    }
   }
 
   ~LayerSubscriber()
@@ -127,6 +138,10 @@ public:
     layer_subscriber_ = std::make_shared<LayerSubscriber>(
       costmap_lifecycle_node_->shared_from_this());
     costmap_lifecycle_node_->on_configure(costmap_lifecycle_node_->get_current_state());
+    // Activate the subscriber before the costmap so the underlying
+    // rclcpp::Subscription exists (per PR #5834 create-on-activate design)
+    // by the time mapUpdateLoop starts publishing.
+    layer_subscriber_->activate();
     costmap_lifecycle_node_->on_activate(costmap_lifecycle_node_->get_current_state());
   }
 

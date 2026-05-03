@@ -21,6 +21,7 @@
 #include "nav2_map_server/map_mode.hpp"
 #include "nav2_map_server/map_saver.hpp"
 
+#include "lifecycle_msgs/msg/transition.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using namespace nav2_map_server;  // NOLINT
@@ -165,6 +166,7 @@ int main(int argc, char ** argv)
   try {
     auto map_saver = std::make_shared<nav2_map_server::MapSaver>();
     map_saver->on_configure(rclcpp_lifecycle::State());
+    map_saver->on_activate(rclcpp_lifecycle::State());
     if (map_saver->saveMapTopicToFile(map_topic, save_parameters)) {
       retcode = 0;
     } else {

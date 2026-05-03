@@ -87,13 +87,13 @@ public:
   nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(this->get_logger(), "Activating");
-    costmap_pub_->on_activate();
     return nav2::CallbackReturn::SUCCESS;
   }
 
   nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(this->get_logger(), "Deactivating");
+    footprint_pub_->on_deactivate();
     costmap_pub_->on_deactivate();
     costmap_.reset();
     return nav2::CallbackReturn::SUCCESS;
@@ -296,6 +296,8 @@ TEST(ControllerTests, CollisionCheckerDockForward) {
 
   auto controller = std::make_unique<opennav_docking::ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
+  node->configure();
+  node->activate();
   collision_tester->configure();
   collision_tester->activate();
   auto executor_thread = std::make_unique<nav2::NodeThread>(node->get_node_base_interface());
@@ -362,6 +364,8 @@ TEST(ControllerTests, CollisionCheckerDockBackward) {
 
   auto controller = std::make_unique<opennav_docking::ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
+  node->configure();
+  node->activate();
   collision_tester->configure();
   collision_tester->activate();
   auto executor_thread = std::make_unique<nav2::NodeThread>(node->get_node_base_interface());
@@ -428,6 +432,8 @@ TEST(ControllerTests, CollisionCheckerUndockBackward) {
 
   auto controller = std::make_unique<opennav_docking::ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
+  node->configure();
+  node->activate();
   collision_tester->configure();
   collision_tester->activate();
   auto executor_thread = std::make_unique<nav2::NodeThread>(node->get_node_base_interface());
@@ -502,6 +508,8 @@ TEST(ControllerTests, CollisionCheckerUndockForward) {
 
   auto controller = std::make_unique<opennav_docking::ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
+  node->configure();
+  node->activate();
   collision_tester->configure();
   collision_tester->activate();
   auto executor_thread = std::make_unique<nav2::NodeThread>(node->get_node_base_interface());

@@ -380,6 +380,7 @@ bool SimpleChargingDock::startDetectionProcess()
         initial_pose_received_ = true;
       },
       nav2::qos::StandardTopicQoS());
+    dock_pose_sub_->on_activate();
   }
 
   detection_active_ = true;
@@ -434,10 +435,28 @@ void SimpleChargingDock::activate()
   dock_pose_pub_->on_activate();
   filtered_dock_pose_pub_->on_activate();
   staging_pose_pub_->on_activate();
+  if (dock_pose_sub_) {
+    dock_pose_sub_->on_activate();
+  }
+  if (battery_sub_) {
+    battery_sub_->on_activate();
+  }
+  if (joint_state_sub_) {
+    joint_state_sub_->on_activate();
+  }
 }
 
 void SimpleChargingDock::deactivate()
 {
+  if (dock_pose_sub_) {
+    dock_pose_sub_->on_deactivate();
+  }
+  if (battery_sub_) {
+    battery_sub_->on_deactivate();
+  }
+  if (joint_state_sub_) {
+    joint_state_sub_->on_deactivate();
+  }
   stopDetectionProcess();
   dock_pose_pub_->on_deactivate();
   filtered_dock_pose_pub_->on_deactivate();

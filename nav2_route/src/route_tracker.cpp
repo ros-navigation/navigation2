@@ -45,6 +45,16 @@ void RouteTracker::configure(
   operations_manager_ = std::make_unique<OperationsManager>(node, costmap_subscriber);
 }
 
+void RouteTracker::activate()
+{
+  if (operations_manager_) {operations_manager_->activate();}
+}
+
+void RouteTracker::deactivate()
+{
+  if (operations_manager_) {operations_manager_->deactivate();}
+}
+
 geometry_msgs::msg::PoseStamped RouteTracker::getRobotPose()
 {
   geometry_msgs::msg::PoseStamped pose;
