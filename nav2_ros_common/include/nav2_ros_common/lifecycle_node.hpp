@@ -164,9 +164,13 @@ public:
       shared_from_this(), topic_name, std::forward<CallbackT>(callback), qos, callback_group);
     this->add_managed_entity(sub);
 
-    // Automatically activate the subscription if the node is already active
-    if (get_current_state().id() ==
-      lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+    // Auto-activate when the node is ACTIVE, or in the middle of ACTIVATING.
+    // The latter covers subscriptions created from callbacks that fire
+    // synchronously inside on_activate (e.g. transient_local replay during a
+    // newly-activated parent subscription's first spin).
+    auto state_id = get_current_state().id();
+    if (state_id == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE ||
+      state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_ACTIVATING)
     {
       sub->on_activate();
     }
@@ -193,9 +197,11 @@ public:
       shared_from_this(), topic_name, qos, callback_group);
     this->add_managed_entity(pub);
 
-    // Automatically activate the publisher if the node is already active
-    if (get_current_state().id() ==
-      lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+    // Auto-activate when the node is ACTIVE, or in the middle of ACTIVATING
+    // (i.e. a publisher created from a callback running inside on_activate).
+    auto state_id = get_current_state().id();
+    if (state_id == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE ||
+      state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_ACTIVATING)
     {
       pub->on_activate();
     }

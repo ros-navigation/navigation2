@@ -104,6 +104,7 @@ RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
   compute_route_server_->activate();
   compute_and_track_route_server_->activate();
+  if (costmap_subscriber_) {costmap_subscriber_->on_activate();}
   graph_vis_publisher_->on_activate();
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
   route_publisher_->on_activate();
@@ -117,6 +118,7 @@ RouteServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
   compute_route_server_->deactivate();
   compute_and_track_route_server_->deactivate();
+  if (costmap_subscriber_) {costmap_subscriber_->on_deactivate();}
   graph_vis_publisher_->on_deactivate();
   route_publisher_->on_deactivate();
   destroyBond();

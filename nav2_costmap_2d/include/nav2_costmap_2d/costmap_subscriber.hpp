@@ -86,6 +86,29 @@ public:
   ~CostmapSubscriber() {}
 
   /**
+   * @brief Activate the underlying lifecycle-managed subscriptions so that
+   * the costmap and its updates start being received. Owners with a
+   * LifecycleNode parent must call this from their on_activate(); when
+   * constructed against a non-lifecycle node the subscriptions are already
+   * active and this is a no-op.
+   */
+  void on_activate()
+  {
+    if (costmap_sub_) {costmap_sub_->on_activate();}
+    if (costmap_update_sub_) {costmap_update_sub_->on_activate();}
+  }
+
+  /**
+   * @brief Deactivate the underlying lifecycle-managed subscriptions, tearing
+   * down the rclcpp endpoints. Symmetric counterpart to on_activate().
+   */
+  void on_deactivate()
+  {
+    if (costmap_sub_) {costmap_sub_->on_deactivate();}
+    if (costmap_update_sub_) {costmap_update_sub_->on_deactivate();}
+  }
+
+  /**
    * @brief Get current costmap
    */
   std::shared_ptr<Costmap2D> getCostmap();
