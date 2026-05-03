@@ -72,16 +72,28 @@ OperationsManager::OperationsManager(
 
 void OperationsManager::activate()
 {
-  for (auto & op : query_operations_) {op->activate();}
-  for (auto & op : change_operations_) {op->activate();}
-  for (auto & kv : graph_operations_) {kv.second->activate();}
+  for (auto & op : query_operations_) {
+    op->activate();
+  }
+  for (auto & op : change_operations_) {
+    op->activate();
+  }
+  for (auto & kv : graph_operations_) {
+    kv.second->activate();
+  }
 }
 
 void OperationsManager::deactivate()
 {
-  for (auto & op : query_operations_) {op->deactivate();}
-  for (auto & op : change_operations_) {op->deactivate();}
-  for (auto & kv : graph_operations_) {kv.second->deactivate();}
+  for (auto & op : query_operations_) {
+    op->deactivate();
+  }
+  for (auto & op : change_operations_) {
+    op->deactivate();
+  }
+  for (auto & kv : graph_operations_) {
+    kv.second->deactivate();
+  }
 }
 
 template<typename T>

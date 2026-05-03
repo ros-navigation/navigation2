@@ -64,12 +64,16 @@ EdgeScorer::EdgeScorer(
 
 void EdgeScorer::activate()
 {
-  for (auto & plugin : plugins_) {plugin->activate();}
+  for (auto & plugin : plugins_) {
+    plugin->activate();
+  }
 }
 
 void EdgeScorer::deactivate()
 {
-  for (auto & plugin : plugins_) {plugin->deactivate();}
+  for (auto & plugin : plugins_) {
+    plugin->deactivate();
+  }
 }
 
 bool EdgeScorer::score(
