@@ -176,6 +176,12 @@ BehaviorServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Activate lifecycle-managed subscriptions so they receive /local_costmap/published_footprint
   // and /global_costmap/published_footprint (and costmaps). Without this, footprint is never
   // received and behaviors like AssistedTeleop wait forever for the collision checker.
+  if (local_costmap_sub_) {
+    local_costmap_sub_->on_activate();
+  }
+  if (global_costmap_sub_) {
+    global_costmap_sub_->on_activate();
+  }
   if (local_footprint_sub_) {
     local_footprint_sub_->on_activate();
   }
@@ -201,6 +207,12 @@ BehaviorServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     (*iter)->deactivate();
   }
 
+  if (local_costmap_sub_) {
+    local_costmap_sub_->on_deactivate();
+  }
+  if (global_costmap_sub_) {
+    global_costmap_sub_->on_deactivate();
+  }
   if (local_footprint_sub_) {
     local_footprint_sub_->on_deactivate();
   }

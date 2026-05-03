@@ -62,6 +62,16 @@ EdgeScorer::EdgeScorer(
   }
 }
 
+void EdgeScorer::activate()
+{
+  for (auto & plugin : plugins_) {plugin->activate();}
+}
+
+void EdgeScorer::deactivate()
+{
+  for (auto & plugin : plugins_) {plugin->deactivate();}
+}
+
 bool EdgeScorer::score(
   const EdgePtr edge, const RouteRequest & route_request,
   const EdgeType & edge_type, float & total_score)

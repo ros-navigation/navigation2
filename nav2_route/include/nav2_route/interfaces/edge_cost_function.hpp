@@ -61,6 +61,18 @@ public:
     const std::string & name) = 0;
 
   /**
+   * @brief Activate any lifecycle-managed resources owned by the plugin
+   * (e.g. CostmapSubscribers it created in configure()). Called by
+   * RouteServer on_activate. Default no-op.
+   */
+  virtual void activate() {}
+
+  /**
+   * @brief Deactivate the resources activated in activate(). Default no-op.
+   */
+  virtual void deactivate() {}
+
+  /**
    * @brief Main scoring plugin API
    * @param edge The edge pointer to score, which has access to the
    * start/end nodes and their associated metadata and actions

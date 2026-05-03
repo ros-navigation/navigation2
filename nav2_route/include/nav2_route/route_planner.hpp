@@ -62,6 +62,16 @@ public:
     const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber);
 
   /**
+   * @brief Activate edge scoring plugins (forwarded from RouteServer).
+   */
+  void activate();
+
+  /**
+   * @brief Deactivate edge scoring plugins.
+   */
+  void deactivate();
+
+  /**
    * @brief Find the route from start to goal on the graph
    * @param graph Graph to search
    * @param start Start index in the graph of the start node
