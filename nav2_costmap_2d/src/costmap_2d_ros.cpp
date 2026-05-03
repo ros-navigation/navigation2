@@ -729,8 +729,15 @@ Costmap2DROS::resetLayers()
 }
 
 bool
-Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
+Costmap2DROS::getRobotPose(
+  geometry_msgs::msg::PoseStamped & global_pose, bool use_latest_time)
 {
+  if (use_latest_time) {
+    return nav2_util::getCurrentPose(
+      global_pose, *tf_buffer_,
+      global_frame_, robot_base_frame_, transform_tolerance_, now());
+  }
+
   return nav2_util::getCurrentPose(
     global_pose, *tf_buffer_,
     global_frame_, robot_base_frame_, transform_tolerance_);

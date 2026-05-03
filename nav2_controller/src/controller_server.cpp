@@ -923,7 +923,7 @@ bool ControllerServer::isGoalReached()
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!costmap_ros_->getRobotPose(current_pose)) {
+  if (!costmap_ros_->getRobotPose(current_pose, true)) {
     return false;
   }
   pose = current_pose;
