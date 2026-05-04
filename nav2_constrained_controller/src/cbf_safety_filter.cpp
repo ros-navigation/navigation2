@@ -57,36 +57,99 @@ bool CBFSafetyFilter::emitOuterWallConstraint(
   const std::array<Point2D, 4> & corners,
   CbfConstraint & out) const
 {
-  // For each corner, h_c = L_w(Pc) since L_w(robot)=c >= 0 puts the
-  // robot on the safe side; corners on the same side have L_w >= 0
-  // (the wall is far) and corners that have CROSSED the wall produce
-  // L_w < 0. We take the smallest L_w across all four corners as the
-  // active barrier for this wall: that corner is the one most at risk
-  // of clipping.
+  // Segment-distance CBF.
+  //
+  // For each (corner Pc, wall segment [p1, p2]) pair we compute the
+  // closest point on the segment and build the CBF row from that
+  // point's geometry. Three Voronoi regions of the segment yield
+  // three constraint forms, all linear in u with the same Saradagi
+  // structure (effective wall normal n, and a wz lever-arm term):
+  //
+  //   1. Foot of perpendicular falls inside [p1, p2] — the body is
+  //      "alongside" the wall. Use the wall line's normal (lx, ly):
+  //         h     = lx·Pcx + ly·Pcy + c
+  //         n     = (lx, ly)
+  //         lever = lx·Pcy − ly·Pcx          (lever uses corner)
+  //
+  //   2. Foot is past p1 — the segment endpoint p1 is the closest
+  //      hazard. The CBF becomes a corner-vs-endpoint distance:
+  //         h     = ‖Pc − p1‖
+  //         n     = (Pc − p1) / ‖Pc − p1‖   (unit vector p1→Pc)
+  //         lever = n.x·p1.y − n.y·p1.x      (lever uses endpoint —
+  //                                          the moving reference)
+  //
+  //   3. Foot is past p2 — same as (2) with p2 substituted for p1.
+  //
+  // h is continuous across region boundaries (perpendicular distance
+  // matches endpoint distance at the foot endpoints), so the QP sees
+  // a smooth constraint. This is the natural extension of Saradagi's
+  // "wall is a half-plane" assumption to finite walls; the same math
+  // also covers L-bend inner corners (when L-bend support returns,
+  // the inner-corner CP is just an endpoint shared by two walls).
+  //
+  // ≤-form for the QP:
+  //   [-n.x, -n.y, lever] · u  ≤  γ·h
+
+  const double dx = w.p2.x - w.p1.x;
+  const double dy = w.p2.y - w.p1.y;
+  const double seg_len = std::hypot(dx, dy);
+  if (seg_len < 1e-6) {
+    return false;  // degenerate segment — skip
+  }
+  const double tx = dx / seg_len;
+  const double ty = dy / seg_len;
+
   double h_min = std::numeric_limits<double>::infinity();
   int worst_c = -1;
+  Eigen::Vector3d worst_grad;
+
   for (int i = 0; i < 4; ++i) {
-    const double h_i = evalWall(w, corners[i]);
+    const Point2D & Pc = corners[i];
+    const double along = (Pc.x - w.p1.x) * tx + (Pc.y - w.p1.y) * ty;
+
+    double h_i;
+    Eigen::Vector3d grad_i;
+
+    if (along >= 0.0 && along <= seg_len) {
+      // Region 1: inside segment — line CBF.
+      h_i = w.lx * Pc.x + w.ly * Pc.y + w.c;
+      const double lever = w.lx * Pc.y - w.ly * Pc.x;
+      grad_i = Eigen::Vector3d(-w.lx, -w.ly, lever);
+    } else {
+      // Regions 2/3: endpoint CBF.
+      const Point2D & ref = (along < 0.0) ? w.p1 : w.p2;
+      const double rdx = Pc.x - ref.x;
+      const double rdy = Pc.y - ref.y;
+      const double d = std::hypot(rdx, rdy);
+      if (d < 1e-6) {
+        // Body corner sits ON the endpoint — pathological.
+        // Emit a near-zero h with an arbitrary safe-direction
+        // gradient so the QP nudges away rather than NaN-ing.
+        h_i = 0.0;
+        grad_i = Eigen::Vector3d(-1.0, 0.0, 0.0);
+      } else {
+        const double n_x = rdx / d;
+        const double n_y = rdy / d;
+        h_i = d;
+        const double lever = n_x * ref.y - n_y * ref.x;
+        grad_i = Eigen::Vector3d(-n_x, -n_y, lever);
+      }
+    }
+
     if (h_i < h_min) {
       h_min = h_i;
       worst_c = i;
+      worst_grad = grad_i;
     }
   }
+
   if (worst_c < 0) {return false;}
 
-  // Skip walls way out of range (no point spending QP rows on walls
-  // 5+ metres from the robot in a 1m-wide alley).
-  // We use the perpendicular distance from the origin (= |c|) plus
-  // the body half-length as a coarse activation gate. h_min already
-  // includes the corner offset, so we test h_min directly.
+  // Range gate — same as before, but h is now a unified
+  // distance-to-wall measure (perpendicular OR endpoint distance).
   if (h_min > params_->wall_consideration_range) {return false;}
 
-  // CBF row in QP form (≤): [lx, ly, (lx·Pcy - ly·Pcx)] · u ≤ γ·h_min
-  // Derivation in cbf_safety_filter.hpp.
-  const Point2D & Pc = corners[worst_c];
-  const double r_term = w.lx * Pc.y - w.ly * Pc.x;
-  // out.grad = Eigen::Vector3d(w.lx, w.ly, r_term);
-  out.grad = Eigen::Vector3d(-w.lx, -w.ly, r_term);
+  out.grad = worst_grad;
   out.rhs = params_->cbf_gamma * h_min;
   out.h = h_min;
   out.corner_id = worst_c + 1;       // 1..4

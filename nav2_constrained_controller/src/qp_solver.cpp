@@ -149,6 +149,31 @@ QpResult solveProjectionQP(
     u = u_try;
   }
 
+  // ---------- safety nets ----------
+  // 1. If we exited the loop by hitting max_iter, the active-set may
+  //    have been cycling and `u` may not satisfy all constraints.
+  //    Re-check feasibility and flag if not converged. The caller
+  //    decides what to do (we still return the best-effort u).
+  if (res.iterations >= max_iter) {
+    bool feasible = true;
+    for (int i = 0; i < m; ++i) {
+      if (A.row(i).dot(u) > b(i) + 1e-4) {
+        feasible = false;
+        break;
+      }
+    }
+    if (!feasible) {res.ok = false;}
+  }
+  // 2. Defensive box clamp. The active-set method should already
+  //    respect the box (added as the last 6 inequalities), but a
+  //    cycling solver, an infeasible problem, or a numerically bad
+  //    KKT solve can let `u` drift out. Never return out-of-envelope
+  //    velocities — the controller would otherwise command the
+  //    actuators beyond their declared limits.
+  for (int i = 0; i < 3; ++i) {
+    u(i) = std::clamp(u(i), u_min(i), u_max(i));
+  }
+
   res.u = u;
   res.n_active = static_cast<int>(active.size());
   res.deviation = (u - u_nom).norm();

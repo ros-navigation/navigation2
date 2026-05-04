@@ -329,9 +329,27 @@ ConstrainedController::computeVelocityCommands(
 
   // 5. CBF safety filter.
   CbfFilterResult cbf_res;
-  cbf_res.u = u_nom;  // pass-through fallback
+  cbf_res.u = u_nom;  // pass-through fallback when no walls
   if (!snap.walls.empty()) {
     cbf_res = cbf_filter_->filter(snap, u_nom);
+
+    // QP convergence guard. If the active-set method did not
+    // converge to a feasible u (qp.ok = false), the constraint set
+    // is infeasible at the current pose — usually a transient from
+    // sensor noise or geometry the model can't represent. Falling
+    // back to the (box-clamped) nominal keeps the robot moving on
+    // its commanded path; the next tick re-evaluates with fresh
+    // LiDAR. Log so we can see how often this fires.
+    if (!cbf_res.qp.ok) {
+      log_->event(
+        "QP infeasible — falling back to u_nom (clamped)");
+      cbf_res.u.linear.x = std::clamp(
+        u_nom.linear.x, -params->v_linear_max, params->v_linear_max);
+      cbf_res.u.linear.y = std::clamp(
+        u_nom.linear.y, -params->v_lateral_max, params->v_lateral_max);
+      cbf_res.u.angular.z = std::clamp(
+        u_nom.angular.z, -params->v_angular_max, params->v_angular_max);
+    }
   }
 
   // 6. Logging.
