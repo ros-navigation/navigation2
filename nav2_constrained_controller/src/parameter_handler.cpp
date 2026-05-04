@@ -62,6 +62,7 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(alley_width_max, 1.10);
   DECL_DOUBLE(alley_width_tol, 0.10);
   DECL_DOUBLE(wall_consideration_range, 2.5);
+  DECL_BOOL(enable_inner_corner_cbf, false);
 
   DECL_STRING(lidar_topic, "/scan");
   DECL_DOUBLE(lidar_max_range, 8.0);

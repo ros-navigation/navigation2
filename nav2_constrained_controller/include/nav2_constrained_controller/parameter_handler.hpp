@@ -56,6 +56,13 @@ struct Parameters
   // Cutoff at which we consider a wall too far to bother emitting a CBF
   // for it. Guards against producing useless inactive constraints.
   double wall_consideration_range{2.5};
+  // Inner-corner CBFs (Saradagi h5/h6) are gated off in the current
+  // scope (straight alleys + door entry/exit only). The previous
+  // implementation built a virtual wall along the passage line A–B,
+  // which is wrong for an opening the robot must cross. Re-enable
+  // only when L-bend support returns AND the emission rule is
+  // rewritten to gate on real intersection corners, not passages.
+  bool enable_inner_corner_cbf{false};
 
   // ---------- LiDAR scene parser ----------
   std::string lidar_topic{"/scan"};

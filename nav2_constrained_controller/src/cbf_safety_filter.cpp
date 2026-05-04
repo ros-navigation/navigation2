@@ -177,8 +177,30 @@ CbfFilterResult CBFSafetyFilter::filter(
     }
   }
 
-  // 2. Inner-corner constraints from any detected passage.
-  emitInnerCornerConstraints(snap.passage, res.corners, res.constraints);
+  // 2. Inner-corner constraints — gated off in current scope.
+  //
+  // The previous implementation built a virtual wall along the line
+  // connecting the two passage endpoints (a, b) and forced the body
+  // corners to stay on the alley-interior side. That is correct for
+  // a real L-turn (where two walls converge at a CP and the line A–B
+  // bounds the inner corner the body must not sweep through), but it
+  // is WRONG for a straight-alley exit / entry, where A–B is an
+  // OPENING the robot has to cross. Crossing the line drove h < 0,
+  // the QP fought the nominal command, and the robot oscillated at
+  // the door zone (see logs at /home/abhinash/nav2_logs/n_l/backward,
+  // tick 1099+ for the canonical failure).
+  //
+  // Current scope is straight alleys + door entry/exit only — there
+  // are no real inner corners — so we disable this path entirely.
+  // Outer-wall CBFs from the alley side walls still protect against
+  // corner clipping. Passage detection itself remains on for logging.
+  //
+  // Re-enable when L-bends come back into scope, but rewrite first to
+  // gate on c.is_intersection (real geometric corner) rather than on
+  // any detected passage.
+  if (params_->enable_inner_corner_cbf) {
+    emitInnerCornerConstraints(snap.passage, res.corners, res.constraints);
+  }
 
   // 3. Track minimum h across all constraints — useful telemetry.
   res.min_h = std::numeric_limits<double>::infinity();
