@@ -336,11 +336,11 @@ global_costmap:
         enabled: true
         path_topic: "/plan"
         look_ahead: 2.0
-        step: 40
-        corridor_width: 2.0
+        step: 20
+        corridor_width: 1.5
         corridor_cost: 190
         wall_thickness: 4
-        cost_write_mode: 2
+        cost_write_mode: 0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
