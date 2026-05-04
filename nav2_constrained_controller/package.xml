@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>nav2_constrained_controller</name>
+  <version>1.0.0</version>
+  <description>
+    Constrained-space local controller for a holonomic AMR.
+    Sign-symmetric decoupled P nominal + body-aware CBF safety filter
+    over a LiDAR scene parser. Replaces nav2_graceful_controller in
+    constrained-segment slots (narrow alleys, door entry/exit).
+  </description>
+  <maintainer email="akshat@origin.tech">Origin Autonomy</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>nav2_core</depend>
+  <depend>nav2_common</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_util</depend>
+  <depend>nav_2d_utils</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>angles</depend>
+  <depend>eigen</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <nav2_core plugin="${prefix}/constrained_controller_plugin.xml" />
+  </export>
+</package>

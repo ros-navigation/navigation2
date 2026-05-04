@@ -1,0 +1,12 @@
+<library path="nav2_constrained_controller">
+  <class name="nav2_constrained_controller::ConstrainedController"
+         type="nav2_constrained_controller::ConstrainedController"
+         base_class_type="nav2_core::Controller">
+    <description>
+      CBF-based holonomic constrained-space controller for narrow alleys
+      and door-to-door transitions. Pairs a sign-symmetric decoupled P
+      nominal with a 4-corner CBF QP safety filter fed by a LiDAR scene
+      parser.
+    </description>
+  </class>
+</library>
