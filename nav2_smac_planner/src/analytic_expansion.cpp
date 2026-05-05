@@ -413,7 +413,7 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
 
   // When prefer_forward_expansions is set and the motion model is Reeds-Shepp,
   // also attempt a Dubins (forward-only) expansion over the same range of turning
-  // radii and prefer it if it scores below the ReedsShepp score multiplied by reverse_penalty.
+  // radii and prefer it if it achieves a lower score than the Reeds-Shepp result.
   if (_search_info.prefer_forward_expansions &&
     _ctx->motion_table.motion_model == MotionModel::REEDS_SHEPP)
   {
@@ -436,8 +436,7 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
       }
     }
 
-    // Penalise the ReedsShepp score to bias toward the forward-only Dubins result
-    if (best_dubins_score < best_score * _search_info.reverse_penalty) {
+    if (best_dubins_score < best_score) {
       analytic_nodes = dubins_nodes;
       best_score = best_dubins_score;
     }
