@@ -253,7 +253,7 @@ bool CollisionMonitor::getParameters(
   std::string & cmd_vel_out_topic,
   std::string & state_topic)
 {
-  std::string base_frame_id, odom_frame_id;
+  std::string odom_frame_id;
   tf2::Duration transform_tolerance;
   rclcpp::Duration source_timeout(2.0, 0.0);
 
@@ -265,7 +265,7 @@ bool CollisionMonitor::getParameters(
     "cmd_vel_out_topic", std::string("cmd_vel"));
   state_topic = node->declare_or_get_parameter("state_topic", std::string(""));
 
-  base_frame_id = node->declare_or_get_parameter(
+  base_frame_id_ = node->declare_or_get_parameter(
     "base_frame_id", std::string("base_footprint"));
   odom_frame_id = node->declare_or_get_parameter("odom_frame_id", std::string("odom"));
   transform_tolerance = tf2::durationFromSec(
@@ -280,12 +280,12 @@ bool CollisionMonitor::getParameters(
 
   if (
     !configureSources(
-      base_frame_id, odom_frame_id, transform_tolerance, source_timeout, base_shift_correction))
+        base_frame_id_, odom_frame_id, transform_tolerance, source_timeout, base_shift_correction))
   {
     return false;
   }
 
-  if (!configurePolygons(base_frame_id, transform_tolerance)) {
+  if (!configurePolygons(base_frame_id_, transform_tolerance)) {
     return false;
   }
 
@@ -453,7 +453,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
     if (collision_points_marker_pub_->get_subscription_count() > 0) {
       // visualize collision points with markers
       visualization_msgs::msg::Marker marker;
-      marker.header.frame_id = get_parameter("base_frame_id").as_string();
+      marker.header.frame_id = base_frame_id_;
       marker.header.stamp = rclcpp::Time(0, 0);
       marker.ns = "collision_points_" + source->getSourceName();
       marker.id = 0;
@@ -677,7 +677,6 @@ void CollisionMonitor::notifyActionState(
 void CollisionMonitor::publishTriggeringPoints(const Action & action)
 {
   auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-  const std::string base_frame = get_parameter("base_frame_id").as_string();
 
   // Colour by action type: STOP=red, SLOWDOWN=yellow, APPROACH=blue, LIMIT=orange
   float r = 0.0f, g = 0.0f, b = 0.0f;
@@ -697,7 +696,7 @@ void CollisionMonitor::publishTriggeringPoints(const Action & action)
     const bool is_active_polygon = (polygon_name == action.polygon_name);
     for (const auto & source_name : polygon->getSourcesNames()) {
       visualization_msgs::msg::Marker marker;
-      marker.header.frame_id = base_frame;
+      marker.header.frame_id = base_frame_id_;
       marker.header.stamp = rclcpp::Time(0, 0);
       marker.ns = polygon_name + "/" + source_name;
       marker.id = 0;

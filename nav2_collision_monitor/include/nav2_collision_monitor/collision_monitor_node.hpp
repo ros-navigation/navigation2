@@ -257,6 +257,9 @@ protected:
   /// @brief Whether to include z in the collision_points_marker
   bool collision_points_marker_3d_;
 
+  /// @brief Robot base frame ID
+  std::string base_frame_id_;
+
   /// @brief Whether collision monitor is enabled
   bool enabled_;
 

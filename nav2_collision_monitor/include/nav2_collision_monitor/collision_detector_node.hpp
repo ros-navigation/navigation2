@@ -174,6 +174,8 @@ protected:
   double frequency_;
   /// @brief Whether to include z in the collision_points_marker
   bool collision_points_marker_3d_;
+  /// @brief Robot base frame ID
+  std::string base_frame_id_;
 };  // class CollisionDetector
 
 }  // namespace nav2_collision_monitor

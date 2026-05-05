@@ -147,14 +147,14 @@ CollisionDetector::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 
 bool CollisionDetector::getParameters()
 {
-  std::string base_frame_id, odom_frame_id;
+  std::string odom_frame_id;
   tf2::Duration transform_tolerance;
   rclcpp::Duration source_timeout(2.0, 0.0);
 
   auto node = shared_from_this();
 
   frequency_ = node->declare_or_get_parameter("frequency", 10.0);
-  base_frame_id = node->declare_or_get_parameter("base_frame_id", std::string("base_footprint"));
+  base_frame_id_ = node->declare_or_get_parameter("base_frame_id", std::string("base_footprint"));
   odom_frame_id = node->declare_or_get_parameter("odom_frame_id", std::string("odom"));
   transform_tolerance = tf2::durationFromSec(
     node->declare_or_get_parameter("transform_tolerance", 0.1));
@@ -164,13 +164,13 @@ bool CollisionDetector::getParameters()
   collision_points_marker_3d_ = node->declare_or_get_parameter("collision_points_marker_3d", false);
 
   if (!configureSources(
-      base_frame_id, odom_frame_id, transform_tolerance, source_timeout,
+      base_frame_id_, odom_frame_id, transform_tolerance, source_timeout,
       base_shift_correction))
   {
     return false;
   }
 
-  if (!configurePolygons(base_frame_id, transform_tolerance)) {
+  if (!configurePolygons(base_frame_id_, transform_tolerance)) {
     return false;
   }
 
@@ -342,7 +342,7 @@ void CollisionDetector::process()
     // visualize collision points with markers
     auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
     visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = get_parameter("base_frame_id").as_string();
+    marker.header.frame_id = base_frame_id_;
     marker.header.stamp = rclcpp::Time(0, 0);
     marker.ns = "collision_points";
     marker.id = 0;
@@ -401,7 +401,6 @@ void CollisionDetector::publishTriggeringPoints(
     std::unordered_map<std::string, std::vector<Point>>> & all_triggering_points)
 {
   auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-  const std::string base_frame = get_parameter("base_frame_id").as_string();
 
   // Iterate the static (polygon, source) pair set so every namespace we ever emit gets an
   // ADD marker every cycle. Empty `points` on inactive pairs overwrites any prior ADD
@@ -412,7 +411,7 @@ void CollisionDetector::publishTriggeringPoints(
     const bool has_triggering = (poly_iter != all_triggering_points.end());
     for (const auto & source_name : polygon->getSourcesNames()) {
       visualization_msgs::msg::Marker marker;
-      marker.header.frame_id = base_frame;
+      marker.header.frame_id = base_frame_id_;
       marker.header.stamp = rclcpp::Time(0, 0);
       marker.ns = polygon_name + "/" + source_name;
       marker.id = 0;
