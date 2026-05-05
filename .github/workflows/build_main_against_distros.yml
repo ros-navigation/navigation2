@@ -23,7 +23,9 @@ jobs:
       run: |
         mkdir -p /tmp/docker_context/ws/src
         cp -r . /tmp/docker_context/ws/src
-        echo 'FROM ghcr.io/ros-navigation/nav2_docker:${{ matrix.ros_distro }}-nightly-standard
+        cat > /tmp/docker_context/Dockerfile << 'EOF'
+
+        FROM ghcr.io/ros-navigation/nav2_docker:${{ matrix.ros_distro }}-nightly-standard
 
         RUN apt-get update && apt-get install -y \
           python3-pip \
@@ -41,9 +43,24 @@ jobs:
 
         RUN apt-get update && rosdep update && \
           rosdep install --from-paths src --ignore-src -r -y \
-          --skip-keys=slam_toolbox
+            -t build \
+            -t buildtool \
+            -t build_export \
+            -t buildtool_export \
+            -t exec \
+            --skip-keys=slam_toolbox
 
-        RUN . /opt/ros/${{ matrix.ros_distro }}/setup.sh && colcon build --packages-skip nav2_system_tests nav2_bringup nav2_simple_commander nav2_loopback_sim navigation2' > /tmp/docker_context/Dockerfile
+        RUN . /opt/ros/${{ matrix.ros_distro }}/setup.sh && \
+          colcon build \
+            --packages-skip \
+              nav2_system_tests \
+              nav2_bringup \
+              nav2_simple_commander \
+              nav2_loopback_sim \
+              navigation2 \
+            --cmake-args -DBUILD_TESTING=OFF
+
+        EOF
 
 
     - name: Build Docker image
