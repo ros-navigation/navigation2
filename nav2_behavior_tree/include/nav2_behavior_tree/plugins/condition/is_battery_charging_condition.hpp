@@ -31,6 +31,11 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that listens to a battery topic and
  * returns SUCCESS when battery is charging and FAILURE otherwise
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <IsBatteryCharging battery_topic="/battery_status"/>
+ * @endcode
  */
 class IsBatteryChargingCondition : public BT::ConditionNode
 {

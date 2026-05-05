@@ -33,6 +33,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A BT::ActionNodeBase to shorten path by some distance
+ *
+ * Usage in XML:
+ * @code
+ * <GetCurrentPose current_pose="{current_pose}"/>
+ * @endcode
  */
 class GetCurrentPoseAction : public BT::ActionNodeBase
 {

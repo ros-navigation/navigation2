@@ -1,0 +1,370 @@
+// Copyright (c) 2026, David Grbac
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <memory>
+#include <string>
+#include <limits>
+#include <vector>
+#include <cmath>
+
+#include "nav2_controller/plugins/adaptive_tolerance_goal_checker.hpp"
+#include "pluginlib/class_list_macros.hpp"
+#include "angles/angles.h"
+#include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "tf2/utils.hpp"
+
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
+
+namespace nav2_controller
+{
+
+AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
+: fine_xy_goal_tolerance_(0.10),
+  fine_xy_goal_tolerance_sq_(0.01),
+  coarse_xy_goal_tolerance_(0.25),
+  coarse_xy_goal_tolerance_sq_(0.0625),
+  yaw_goal_tolerance_(0.25),
+  path_length_tolerance_(1.0),
+  stateful_(true),
+  symmetric_yaw_tolerance_(false),
+  trans_stopped_velocity_(0.10),
+  rot_stopped_velocity_(0.10),
+  required_stagnation_cycles_(15),
+  check_xy_(true),
+  in_tolerance_zone_(false),
+  stopped_stagnation_count_(0),
+  distance_stagnation_count_(0),
+  best_distance_sq_(std::numeric_limits<double>::max()),
+  approach_dx_(0.0),
+  approach_dy_(0.0),
+  xy_acceptance_reason_("")
+{
+}
+
+AdaptiveToleranceGoalChecker::~AdaptiveToleranceGoalChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
+void AdaptiveToleranceGoalChecker::initialize(
+  const nav2::LifecycleNode::WeakPtr & parent,
+  const std::string & plugin_name,
+  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>/*costmap_ros*/)
+{
+  plugin_name_ = plugin_name;
+  node_ = parent;
+  auto node = node_.lock();
+  logger_ = node->get_logger();
+
+  fine_xy_goal_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".fine_xy_goal_tolerance", 0.10);
+  coarse_xy_goal_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".coarse_xy_goal_tolerance", 0.25);
+  yaw_goal_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".yaw_goal_tolerance", 0.25);
+  path_length_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".path_length_tolerance", 1.0);
+  stateful_ = node->declare_or_get_parameter(plugin_name + ".stateful", true);
+  symmetric_yaw_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".symmetric_yaw_tolerance", false);
+  trans_stopped_velocity_ = node->declare_or_get_parameter(
+    plugin_name + ".trans_stopped_velocity", 0.10);
+  rot_stopped_velocity_ = node->declare_or_get_parameter(
+    plugin_name + ".rot_stopped_velocity", 0.10);
+  required_stagnation_cycles_ = node->declare_or_get_parameter(
+    plugin_name + ".required_stagnation_cycles", 15);
+
+  fine_xy_goal_tolerance_sq_ = fine_xy_goal_tolerance_ * fine_xy_goal_tolerance_;
+  coarse_xy_goal_tolerance_sq_ = coarse_xy_goal_tolerance_ * coarse_xy_goal_tolerance_;
+
+  if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
+    RCLCPP_WARN(
+      logger_, "Fine XY goal tolerance (%.3f) is greater or equal to coarse XY goal "
+      "tolerance (%.3f). This may lead to unintended behavior (when fine >= coarse the "
+      "checker will act as a simple goal checker). Consider setting "
+      "fine_xy_goal_tolerance < coarse_xy_goal_tolerance.",
+      fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+  }
+
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &AdaptiveToleranceGoalChecker::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &AdaptiveToleranceGoalChecker::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void AdaptiveToleranceGoalChecker::reset()
+{
+  check_xy_ = true;
+  in_tolerance_zone_ = false;
+  stopped_stagnation_count_ = 0;
+  distance_stagnation_count_ = 0;
+  best_distance_sq_ = std::numeric_limits<double>::max();
+  approach_dx_ = 0.0;
+  approach_dy_ = 0.0;
+  xy_acceptance_reason_ = "";
+}
+
+bool AdaptiveToleranceGoalChecker::isGoalReached(
+  const geometry_msgs::msg::Pose & query_pose,
+  const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist & velocity,
+  const nav_msgs::msg::Path & transformed_global_plan)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  // Skip check if local plan is still long (robot is far from goal region)
+  if (nav2_util::geometry_utils::calculate_path_length(transformed_global_plan) >
+    path_length_tolerance_)
+  {
+    return false;
+  }
+
+  if (check_xy_) {
+    const double dx = query_pose.position.x - goal_pose.position.x;
+    const double dy = query_pose.position.y - goal_pose.position.y;
+    const double dist_sq = dx * dx + dy * dy;
+
+    // Tier 1: Tight (desired) tolerance — immediate acceptance
+    if (dist_sq <= fine_xy_goal_tolerance_sq_) {
+      xy_acceptance_reason_ = "fine tolerance";
+      if (stateful_) {
+        check_xy_ = false;
+      }
+      // Fall through to yaw check
+
+    // Tier 2: Within the coarse tolerance zone — check velocity stagnation
+    } else if (dist_sq <= coarse_xy_goal_tolerance_sq_) {
+      // Just entered the zone: initialize tracking
+      if (!in_tolerance_zone_) {
+        in_tolerance_zone_ = true;
+        stopped_stagnation_count_ = 0;
+        distance_stagnation_count_ = 0;
+        best_distance_sq_ = dist_sq;
+        approach_dx_ = -dx;
+        approach_dy_ = -dy;
+        return false;
+      }
+
+      // Check if best distance has been improved
+      if (dist_sq < best_distance_sq_) {
+        best_distance_sq_ = dist_sq;
+        distance_stagnation_count_ = 0;
+      } else {
+        distance_stagnation_count_++;
+      }
+
+      // Check if the robot is stopped or not making progress toward goal
+      if (
+        std::hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_ &&
+        std::fabs(velocity.angular.z) <= rot_stopped_velocity_)
+      {
+        stopped_stagnation_count_++;
+      } else {
+        stopped_stagnation_count_ = 0;
+      }
+
+      // Finish line: robot crossed from approaching (dot<0) to passed (dot>=0) the
+      // virtual line orthogonal to the approach pose and the goal pose, representing
+      // that the robot has passed the goal longitudinally while approaching.
+      const bool crossed_finish_line = dx * approach_dx_ + dy * approach_dy_ >= 0.0;
+
+      if (!crossed_finish_line &&
+        stopped_stagnation_count_ < required_stagnation_cycles_ &&
+        distance_stagnation_count_ < required_stagnation_cycles_)
+      {
+        return false;
+      }
+
+      // Accepted at coarse: record which trigger fired
+      if (crossed_finish_line) {
+        xy_acceptance_reason_ = "coarse tolerance / finish line";
+      } else if (stopped_stagnation_count_ >= required_stagnation_cycles_) {
+        xy_acceptance_reason_ = "coarse tolerance / stopped stagnation";
+      } else {
+        xy_acceptance_reason_ = "coarse tolerance / distance stagnation";
+      }
+
+      if (stateful_) {
+        check_xy_ = false;
+      }
+    } else {
+      // Outside both tolerances: reset tracking state
+      in_tolerance_zone_ = false;
+      stopped_stagnation_count_ = 0;
+      distance_stagnation_count_ = 0;
+      return false;
+    }
+  }
+
+  // XY is satisfied — check yaw
+  const double query_yaw = tf2::getYaw(query_pose.orientation);
+  const double goal_yaw = tf2::getYaw(goal_pose.orientation);
+  bool yaw_reached = false;
+
+  if (symmetric_yaw_tolerance_) {
+    const double dyaw_forward = angles::shortest_angular_distance(query_yaw, goal_yaw);
+    const double dyaw_backward = angles::shortest_angular_distance(
+      query_yaw, angles::normalize_angle(goal_yaw + M_PI));
+    yaw_reached = std::fabs(dyaw_forward) <= yaw_goal_tolerance_ ||
+      std::fabs(dyaw_backward) <= yaw_goal_tolerance_;
+  } else {
+    const double dyaw = angles::shortest_angular_distance(query_yaw, goal_yaw);
+    yaw_reached = std::fabs(dyaw) <= yaw_goal_tolerance_;
+  }
+
+  if (yaw_reached) {
+    RCLCPP_INFO(
+      logger_,
+      "AdaptiveToleranceGoalChecker: goal reached via %s "
+      "(fine: %.3f m, coarse: %.3f m)",
+      xy_acceptance_reason_, fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+  }
+
+  return yaw_reached;
+}
+
+bool AdaptiveToleranceGoalChecker::getTolerances(
+  geometry_msgs::msg::Pose & pose_tolerance,
+  geometry_msgs::msg::Twist & vel_tolerance)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  const double invalid_field = std::numeric_limits<double>::lowest();
+
+  // Report max tolerance as the worst-case bound
+  pose_tolerance.position.x = coarse_xy_goal_tolerance_;
+  pose_tolerance.position.y = coarse_xy_goal_tolerance_;
+  pose_tolerance.position.z = invalid_field;
+  pose_tolerance.orientation =
+    nav2_util::geometry_utils::orientationAroundZAxis(yaw_goal_tolerance_);
+
+  vel_tolerance.linear.x = trans_stopped_velocity_;
+  vel_tolerance.linear.y = trans_stopped_velocity_;
+  vel_tolerance.linear.z = invalid_field;
+
+  vel_tolerance.angular.x = invalid_field;
+  vel_tolerance.angular.y = invalid_field;
+  vel_tolerance.angular.z = rot_stopped_velocity_;
+
+  return true;
+}
+
+rcl_interfaces::msg::SetParametersResult
+AdaptiveToleranceGoalChecker::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == plugin_name_ + ".required_stagnation_cycles" &&
+        parameter.as_int() < 1)
+      {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >= 1. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+AdaptiveToleranceGoalChecker::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".fine_xy_goal_tolerance") {
+        fine_xy_goal_tolerance_ = parameter.as_double();
+        fine_xy_goal_tolerance_sq_ = fine_xy_goal_tolerance_ * fine_xy_goal_tolerance_;
+        if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
+          RCLCPP_WARN(
+            logger_, "Fine XY goal tolerance (%.3f) is greater or equal to coarse XY goal "
+            "tolerance (%.3f). This may lead to unintended behavior (when fine >= coarse the "
+            "checker will act as a simple goal checker). Consider setting "
+            "fine_xy_goal_tolerance < coarse_xy_goal_tolerance.",
+            fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+        }
+      } else if (param_name == plugin_name_ + ".coarse_xy_goal_tolerance") {
+        coarse_xy_goal_tolerance_ = parameter.as_double();
+        coarse_xy_goal_tolerance_sq_ = coarse_xy_goal_tolerance_ * coarse_xy_goal_tolerance_;
+        if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
+          RCLCPP_WARN(
+            logger_, "Fine XY goal tolerance (%.3f) is greater or equal to coarse XY goal "
+            "tolerance (%.3f). This may lead to unintended behavior (when fine >= coarse the "
+            "checker will act as a simple goal checker). Consider setting "
+            "fine_xy_goal_tolerance < coarse_xy_goal_tolerance.",
+            fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+        }
+      } else if (param_name == plugin_name_ + ".yaw_goal_tolerance") {
+        yaw_goal_tolerance_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".path_length_tolerance") {
+        path_length_tolerance_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".trans_stopped_velocity") {
+        trans_stopped_velocity_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".rot_stopped_velocity") {
+        rot_stopped_velocity_ = parameter.as_double();
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == plugin_name_ + ".stateful") {
+        stateful_ = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".symmetric_yaw_tolerance") {
+        symmetric_yaw_tolerance_ = parameter.as_bool();
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == plugin_name_ + ".required_stagnation_cycles") {
+        required_stagnation_cycles_ = static_cast<int>(parameter.as_int());
+      }
+    }
+  }
+}
+
+}  // namespace nav2_controller
+
+PLUGINLIB_EXPORT_CLASS(nav2_controller::AdaptiveToleranceGoalChecker, nav2_core::GoalChecker)

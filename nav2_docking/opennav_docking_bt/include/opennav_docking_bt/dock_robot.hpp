@@ -28,6 +28,11 @@ namespace opennav_docking_bt
 
 /**
  * @brief nav2_behavior_tree::BtActionNode class that wraps opnav2_msgsennav_docking_msgs/DockRobot
+ *
+ * Usage in XML:
+ * @code
+ * <DockRobot dock_id="{dock_id}" error_code_id="{dock_error_code}" error_msg="{dock_error_msg}"/>
+ * @endcode
  */
 class DockRobotAction
   : public nav2_behavior_tree::BtActionNode<

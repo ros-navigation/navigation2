@@ -33,6 +33,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::ActionNodeBase class that checks if the robot has been stopped for a specified duration
+ *
+ * Usage in XML:
+ * @code
+ * <CheckStopStatus velocity_threshold="0.01" duration_stopped="1000"/>
+ * @endcode
  */
 class CheckStopStatus : public BT::ActionNodeBase
 {

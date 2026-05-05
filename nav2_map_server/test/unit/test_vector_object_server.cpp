@@ -97,6 +97,11 @@ public:
   {
     VectorObjectServer::putVectorObjectsOnMap();
   }
+
+  bool hasTfListener() const
+  {
+    return static_cast<bool>(tf_listener_);
+  }
 };  // VOServerWrapper
 
 class Tester : public ::testing::Test
@@ -203,6 +208,11 @@ void Tester::setVOServerParams()
     "global_frame_id", rclcpp::ParameterValue("map"));
   vo_server_->set_parameter(
     rclcpp::Parameter("global_frame_id", "map"));
+
+  vo_server_->declare_parameter(
+    "enforce_global_frame_id", rclcpp::ParameterValue(false));
+  vo_server_->set_parameter(
+    rclcpp::Parameter("enforce_global_frame_id", false));
 
   vo_server_->declare_parameter(
     "resolution", rclcpp::ParameterValue(0.1));
@@ -1224,6 +1234,228 @@ TEST_F(Tester, testSwitchDynamicStatic)
   ASSERT_NE(add_shapes_result, nullptr);
   ASSERT_TRUE(add_shapes_result->success);
 
+  verifyMap(true);
+
+  vo_server_->stop();
+}
+
+TEST_F(Tester, testEnforceGlobalFrameIdDisablesTfListener)
+{
+  setVOServerParams();
+  vo_server_->set_parameter(rclcpp::Parameter("enforce_global_frame_id", true));
+  vo_server_->start();
+
+  ASSERT_FALSE(vo_server_->hasTfListener());
+
+  vo_server_->stop();
+}
+
+TEST_F(Tester, testEnforceGlobalFrameIdAcceptsValidFrames)
+{
+  setVOServerParams();
+  vo_server_->set_parameter(rclcpp::Parameter("enforce_global_frame_id", true));
+  vo_server_->start();
+
+  auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
+
+  // Case 1: polygon with global_frame_id, circle with global_frame_id
+  auto po_msg = makePolygonObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+  po_msg->header.frame_id = GLOBAL_FRAME_ID;
+  auto co_msg = makeCircleObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2});
+  co_msg->header.frame_id = GLOBAL_FRAME_ID;
+  add_shapes_msg->polygons.push_back(*po_msg);
+  add_shapes_msg->circles.push_back(*co_msg);
+  map_.reset();
+  auto add_shapes_result =
+    sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
+  ASSERT_NE(add_shapes_result, nullptr);
+  ASSERT_TRUE(add_shapes_result->success);
+  verifyMap(true);
+
+  // Case 2: polygon with empty frame_id, circle with empty frame_id
+  auto remove_all_msg = std::make_shared<nav2_msgs::srv::RemoveShapes::Request>();
+  remove_all_msg->all_objects = true;
+  sendRequest<nav2_msgs::srv::RemoveShapes>(remove_shapes_client_, remove_all_msg, 2s);
+
+  po_msg->header.frame_id = "";
+  co_msg->header.frame_id = "";
+  add_shapes_msg->polygons.clear();
+  add_shapes_msg->circles.clear();
+  add_shapes_msg->polygons.push_back(*po_msg);
+  add_shapes_msg->circles.push_back(*co_msg);
+  map_.reset();
+  add_shapes_result =
+    sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
+  ASSERT_NE(add_shapes_result, nullptr);
+  ASSERT_TRUE(add_shapes_result->success);
+  verifyMap(true);
+
+  // Case 3: polygon with global_frame_id, circle with empty frame_id
+  sendRequest<nav2_msgs::srv::RemoveShapes>(remove_shapes_client_, remove_all_msg, 2s);
+
+  po_msg->header.frame_id = GLOBAL_FRAME_ID;
+  co_msg->header.frame_id = "";
+  add_shapes_msg->polygons.clear();
+  add_shapes_msg->circles.clear();
+  add_shapes_msg->polygons.push_back(*po_msg);
+  add_shapes_msg->circles.push_back(*co_msg);
+  map_.reset();
+  add_shapes_result =
+    sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
+  ASSERT_NE(add_shapes_result, nullptr);
+  ASSERT_TRUE(add_shapes_result->success);
+  verifyMap(true);
+
+  // Case 4: polygon with empty frame_id, circle with global_frame_id
+  sendRequest<nav2_msgs::srv::RemoveShapes>(remove_shapes_client_, remove_all_msg, 2s);
+
+  po_msg->header.frame_id = "";
+  co_msg->header.frame_id = GLOBAL_FRAME_ID;
+  add_shapes_msg->polygons.clear();
+  add_shapes_msg->circles.clear();
+  add_shapes_msg->polygons.push_back(*po_msg);
+  add_shapes_msg->circles.push_back(*co_msg);
+  map_.reset();
+  add_shapes_result =
+    sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
+  ASSERT_NE(add_shapes_result, nullptr);
+  ASSERT_TRUE(add_shapes_result->success);
+  verifyMap(true);
+
+  vo_server_->stop();
+}
+
+TEST_F(Tester, testEnforceGlobalFrameIdRejectsDifferentFrame)
+{
+  setVOServerParams();
+  vo_server_->set_parameter(rclcpp::Parameter("enforce_global_frame_id", true));
+  vo_server_->start();
+
+  auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
+  auto get_shapes_msg = std::make_shared<nav2_msgs::srv::GetShapes::Request>();
+
+  // Case 1: polygon only with non-global frame_id.
+  auto po_msg = makePolygonObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+  po_msg->header.frame_id = SHAPE_FRAME_ID;
+  add_shapes_msg->polygons.push_back(*po_msg);
+
+  auto add_shapes_result =
+    sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
+  ASSERT_NE(add_shapes_result, nullptr);
+  ASSERT_FALSE(add_shapes_result->success);
+
+  auto get_shapes_result =
+    sendRequest<nav2_msgs::srv::GetShapes>(get_shapes_client_, get_shapes_msg, 2s);
+  ASSERT_NE(get_shapes_result, nullptr);
+  ASSERT_TRUE(get_shapes_result->polygons.empty());
+  ASSERT_TRUE(get_shapes_result->circles.empty());
+
+  // Case 2: circle only with non-global frame_id.
+  add_shapes_msg->polygons.clear();
+  add_shapes_msg->circles.clear();
+  auto co_msg = makeCircleObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2});
+  co_msg->header.frame_id = SHAPE_FRAME_ID;
+  add_shapes_msg->circles.push_back(*co_msg);
+
+  add_shapes_result =
+    sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
+  ASSERT_NE(add_shapes_result, nullptr);
+  ASSERT_FALSE(add_shapes_result->success);
+
+  // No shapes should have been added
+  get_shapes_result =
+    sendRequest<nav2_msgs::srv::GetShapes>(get_shapes_client_, get_shapes_msg, 2s);
+  ASSERT_NE(get_shapes_result, nullptr);
+  ASSERT_TRUE(get_shapes_result->polygons.empty());
+  ASSERT_TRUE(get_shapes_result->circles.empty());
+
+  // Case 3: polygon global, circle non-global.
+  add_shapes_msg->polygons.clear();
+  add_shapes_msg->circles.clear();
+  po_msg = makePolygonObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+  po_msg->header.frame_id = GLOBAL_FRAME_ID;
+  co_msg = makeCircleObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2});
+  co_msg->header.frame_id = SHAPE_FRAME_ID;
+  add_shapes_msg->polygons.push_back(*po_msg);
+  add_shapes_msg->circles.push_back(*co_msg);
+
+  add_shapes_result =
+    sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
+  ASSERT_NE(add_shapes_result, nullptr);
+  ASSERT_FALSE(add_shapes_result->success);
+
+  // No shapes should have been added
+  get_shapes_result =
+    sendRequest<nav2_msgs::srv::GetShapes>(get_shapes_client_, get_shapes_msg, 2s);
+  ASSERT_NE(get_shapes_result, nullptr);
+  ASSERT_TRUE(get_shapes_result->polygons.empty());
+  ASSERT_TRUE(get_shapes_result->circles.empty());
+
+  // Case 4: polygon non-global, circle global.
+  add_shapes_msg->polygons.clear();
+  add_shapes_msg->circles.clear();
+  po_msg = makePolygonObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+  po_msg->header.frame_id = SHAPE_FRAME_ID;
+  co_msg = makeCircleObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2});
+  co_msg->header.frame_id = GLOBAL_FRAME_ID;
+  add_shapes_msg->polygons.push_back(*po_msg);
+  add_shapes_msg->circles.push_back(*co_msg);
+
+  add_shapes_result =
+    sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
+  ASSERT_NE(add_shapes_result, nullptr);
+  ASSERT_FALSE(add_shapes_result->success);
+
+  // No shapes should have been added
+  get_shapes_result =
+    sendRequest<nav2_msgs::srv::GetShapes>(get_shapes_client_, get_shapes_msg, 2s);
+  ASSERT_NE(get_shapes_result, nullptr);
+  ASSERT_TRUE(get_shapes_result->polygons.empty());
+  ASSERT_TRUE(get_shapes_result->circles.empty());
+
+  vo_server_->stop();
+}
+
+TEST_F(Tester, testEnforceGlobalFrameIdYamlShapesMismatch)
+{
+  setVOServerParams();
+  vo_server_->set_parameter(rclcpp::Parameter("enforce_global_frame_id", true));
+  setShapesParams(
+    "01010101-0101-0101-0101-010101010101",
+    "01010101-0101-0101-0101-010101010102");
+  // Override polygon's frame_id to a frame different from global_frame_id
+  vo_server_->set_parameter(
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".frame_id", SHAPE_FRAME_ID));
+
+  // obtainParams() should detect the mismatch and return false
+  vo_server_->configureFail();
+
+  vo_server_->cleanup();
+}
+
+TEST_F(Tester, testEnforceGlobalFrameIdYamlShapesValid)
+{
+  setVOServerParams();
+  vo_server_->set_parameter(rclcpp::Parameter("enforce_global_frame_id", true));
+  // setShapesParams already sets frame_id to GLOBAL_FRAME_ID for both shapes
+  setShapesParams(
+    "01010101-0101-0101-0101-010101010101",
+    "01010101-0101-0101-0101-010101010102");
+
+  vo_server_->start();
+
+  // TF listener must not have been created
+  ASSERT_FALSE(vo_server_->hasTfListener());
+
+  // Map should still be published correctly without TF
   verifyMap(true);
 
   vo_server_->stop();

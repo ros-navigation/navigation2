@@ -24,6 +24,12 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * Usage in XML:
+ * @code
+ * <WouldARouteRecoveryHelp error_code="{compute_route_to_pose_error_code}"/>
+ * @endcode
+ */
 class WouldARouteRecoveryHelp : public AreErrorCodesPresent
 {
   using Action = nav2_msgs::action::ComputeRoute;

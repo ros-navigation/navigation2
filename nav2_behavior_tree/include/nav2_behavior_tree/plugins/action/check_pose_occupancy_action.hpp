@@ -33,6 +33,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtServiceNode class that checks if a pose is occupied by calling the GetCosts service on the costmap
+ *
+ * Usage in XML:
+ * @code
+ * <CheckPoseOccupancy server_timeout="10" pose="{goal}"/>
+ * @endcode
  */
 class CheckPoseOccupancy : public BtServiceNode<nav2_msgs::srv::GetCosts>
 {

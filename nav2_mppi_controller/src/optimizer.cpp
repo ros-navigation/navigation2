@@ -137,8 +137,7 @@ void Optimizer::getParams()
       "Sign of the parameter ay_min is incorrect, consider setting it negative.");
   }
 
-
-  getParam(motion_model_name, "motion_model", std::string("DiffDrive"));
+  getParam(motion_model_name, "motion_model", std::string("diff_drive"));
 
   s.constraints = s.base_constraints;
 
@@ -192,7 +191,7 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());
-  motion_model_->initialize(settings_.constraints, settings_.model_dt);
+  motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
   trajectory_validator_->initialize(
     parent_, name_ + ".TrajectoryValidator",
     costmap_ros_, parameters_handler_, tf_buffer_, settings_);
@@ -576,21 +575,27 @@ geometry_msgs::msg::TwistStamped Optimizer::getControlFromSequenceAsTwist(
   return utils::toTwistStamped(vx, wz, stamp, costmap_ros_->getBaseFrameID());
 }
 
-void Optimizer::setMotionModel(const std::string & model)
+void Optimizer::setMotionModel(const std::string & motion_model_name)
 {
-  if (model == "DiffDrive") {
-    motion_model_ = std::make_shared<DiffDriveMotionModel>();
-  } else if (model == "Omni") {
-    motion_model_ = std::make_shared<OmniMotionModel>();
-  } else if (model == "Ackermann") {
-    motion_model_ = std::make_shared<AckermannMotionModel>(parameters_handler_, name_);
-  } else {
+  auto node = parent_.lock();
+  const std::string plugin_ns = name_ + "." + motion_model_name;
+  std::string plugin_type;
+  motion_model_loader_ =
+    std::make_unique<pluginlib::ClassLoader<MotionModel>>(
+    "nav2_mppi_controller", "mppi::MotionModel");
+
+  try {
+    plugin_type = nav2::get_plugin_type_param(node, plugin_ns);
+    motion_model_ = motion_model_loader_->createSharedInstance(plugin_type);
+    motion_model_->initialize(parameters_handler_, plugin_ns);
+    motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
+  } catch (const pluginlib::PluginlibException & ex) {
     throw nav2_core::ControllerException(
-            std::string(
-              "Model " + model + " is not valid! Valid options are DiffDrive, Omni, "
-              "or Ackermann"));
+            std::string("Failed to load motion model plugin '") + motion_model_name +
+            "': " + ex.what());
   }
-  motion_model_->initialize(settings_.constraints, settings_.model_dt);
+
+  RCLCPP_INFO(logger_, "Loaded motion model plugin: %s", plugin_type.c_str());
 }
 
 void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
@@ -618,7 +623,7 @@ void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
       s.constraints.wz = s.base_constraints.wz * ratio;
     }
   }
-  motion_model_->initialize(settings_.constraints, settings_.model_dt);
+  motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
 }
 
 models::Trajectories & Optimizer::getGeneratedTrajectories()

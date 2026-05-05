@@ -123,8 +123,8 @@ LoopbackSimulator::on_activate(const rclcpp_lifecycle::State & /*state*/)
     scan_pub_->on_activate();
   }
 
-  setup_timer_ = rclcpp::create_timer(
-    this, get_clock(), 100ms,
+  setup_timer_ = this->create_timer(
+    100ms,
     std::bind(&LoopbackSimulator::setupTimerCallback, this));
 
   if (clock_publisher_) {
@@ -297,17 +297,14 @@ void LoopbackSimulator::initialPoseCallback(
       setup_timer_->cancel();
       setup_timer_.reset();
     }
-    timer_ = rclcpp::create_timer(
-      this, get_clock(),
+    timer_ = this->create_timer(
       std::chrono::duration<double>(update_dur_),
       std::bind(&LoopbackSimulator::timerCallback, this));
-    odom_timer_ = rclcpp::create_timer(
-      this, get_clock(),
+    odom_timer_ = this->create_timer(
       std::chrono::duration<double>(odom_publish_dur_),
       std::bind(&LoopbackSimulator::odomTimerCallback, this));
     if (publish_scan_) {
-      scan_timer_ = rclcpp::create_timer(
-        this, get_clock(),
+      scan_timer_ = this->create_timer(
         std::chrono::duration<double>(scan_publish_dur_),
         std::bind(&LoopbackSimulator::publishLaserScan, this));
     }
