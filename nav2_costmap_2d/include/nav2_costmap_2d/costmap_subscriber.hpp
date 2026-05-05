@@ -78,7 +78,7 @@ public:
   std::shared_ptr<Costmap2D> getCostmap();
 
   /**
-   * @brief Callback for the costmap topic (TypeAdapter path)
+   * @brief Callback for the costmap topic
    */
   void costmapCallback(const std::shared_ptr<const nav2_costmap_2d::Costmap2DStamped> & msg);
 
