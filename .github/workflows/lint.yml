@@ -54,8 +54,8 @@ jobs:
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v6
-      - uses: returntocorp/semgrep-action@v1
-        with:
-          config: .semgrep.yml
-          args: scan --quiet --oneline
+      - name: Checkout Code
+        uses: actions/checkout@v4 # v4 is the current stable standard
+        
+      - name: Run Semgrep Scan
+        run: semgrep ci --config .semgrep.yml --quiet --oneline
