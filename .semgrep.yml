@@ -6,4 +6,4 @@ rules:
     languages: [cpp]
     paths:
       include:
-        - nav2_*
+        - "**/nav2_*/**"
