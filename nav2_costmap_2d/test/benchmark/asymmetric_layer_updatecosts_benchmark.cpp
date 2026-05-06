@@ -512,8 +512,8 @@ BENCHMARK_REGISTER_F(IncrementalLegacyFixture, UpdateCosts)
 ->Args({6400, 6400, 200})  // 320×320 m map, ~10 m patch
 ->Args({12800, 12800, 100})  // 640×640 m map, ~5 m patch
 ->Args({12800, 12800, 200})  // 640×640 m map, ~10 m patch
-->Args({23600, 23600, 100})  // 1280×1280 m map, ~5 m patch
-->Args({23600, 23600, 200})  // 1280×1280 m map, ~10 m patch
+->Args({25600, 25600, 100})  // 1280×1280 m map, ~5 m patch
+->Args({25600, 25600, 200})  // 1280×1280 m map, ~10 m patch
 ->Iterations(50)
 ->Iterations(50)
 ->Unit(benchmark::kMillisecond);
