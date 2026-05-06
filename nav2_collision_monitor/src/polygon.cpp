@@ -395,7 +395,7 @@ double Polygon::getCollisionTime(
       transformPoints(pose, kv.second);
     }
     // If the collision occurred on this stage, return the actual time before a collision
-    // as if robot was moved with given velocity. The original triggering points are passed 
+    // as if robot was moved with given velocity. The original triggering points are passed
     // to out_triggering_points for visualization.
     triggering_points.clear();
     if (getPointsInsideApproach(

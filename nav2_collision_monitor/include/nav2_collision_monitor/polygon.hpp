@@ -215,7 +215,7 @@ public:
    * @param sources_collision_points_map Map containing source name as key,
    * and input array of source's 2D obstacle points as value
    * @param velocity Simulated robot velocity
-   * @param out_triggering_points Output map for source name and the points responsible 
+   * @param out_triggering_points Output map for source name and the points responsible
    * for the triggering points
    * @return Estimated time before a collision. If there is no collision,
    * return value will be negative.

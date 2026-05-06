@@ -398,7 +398,7 @@ void CollisionDetector::process()
 
 void CollisionDetector::publishTriggeringPoints(
   const std::unordered_map<std::string,
-    std::unordered_map<std::string, std::vector<Point>>> & all_triggering_points)
+  std::unordered_map<std::string, std::vector<Point>>> & all_triggering_points)
 {
   auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
 

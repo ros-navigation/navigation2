@@ -144,7 +144,7 @@ protected:
    */
   void publishTriggeringPoints(
     const std::unordered_map<std::string,
-      std::unordered_map<std::string, std::vector<Point>>> & all_triggering_points);
+    std::unordered_map<std::string, std::vector<Point>>> & all_triggering_points);
 
   // ----- Variables -----
 
