@@ -58,4 +58,4 @@ jobs:
         uses: actions/checkout@v4 # v4 is the current stable standard
         
       - name: Run Semgrep Scan
-        run: semgrep ci --config .semgrep.yml --quiet --oneline
+        run: semgrep ci --config .semgrep.yml --quiet --text --max-lines-per-finding 0
