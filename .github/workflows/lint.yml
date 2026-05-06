@@ -50,6 +50,8 @@ jobs:
   semgrep:
     name: semgrep
     runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
     steps:
       - uses: actions/checkout@v6
       - uses: returntocorp/semgrep-action@v1
