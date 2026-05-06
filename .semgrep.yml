@@ -6,5 +6,4 @@ rules:
     languages: [cpp]
     paths:
       include:
-        - src/**
-        - include/**
+        - nav2_*
