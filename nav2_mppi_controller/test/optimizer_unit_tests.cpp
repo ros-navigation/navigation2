@@ -95,9 +95,9 @@ public:
     motion_model_.reset();
   }
 
-  void setOffsetWrapper(const double freq)
+  void setOffsetWrapper(const double controller_period)
   {
-    return setOffset(freq);
+    return setOffset(controller_period);
   }
 
   bool getShiftControlSequence()
@@ -372,12 +372,12 @@ TEST(OptimizerTests, setOffsetTests)
   auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
 
-  // Test offsets are properly set based on relationship of model_dt and controller frequency
+  // Test offsets are properly set based on relationship of model_dt and controller period
   // Also tests getting set model_dt parameter.
-  EXPECT_THROW(optimizer_tester.setOffsetWrapper(1.0), std::runtime_error);
-  EXPECT_NO_THROW(optimizer_tester.setOffsetWrapper(30.0));
+  EXPECT_THROW(optimizer_tester.setOffsetWrapper(1.0), std::runtime_error);  // period >> model_dt
+  EXPECT_NO_THROW(optimizer_tester.setOffsetWrapper(1.0 / 30.0));  // period < model_dt
   EXPECT_FALSE(optimizer_tester.getShiftControlSequence());
-  EXPECT_NO_THROW(optimizer_tester.setOffsetWrapper(10.0));
+  EXPECT_NO_THROW(optimizer_tester.setOffsetWrapper(0.1));  // period == model_dt
   EXPECT_TRUE(optimizer_tester.getShiftControlSequence());
 }
 
@@ -587,8 +587,13 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();
   auto & sequence = optimizer_tester.grabControlSequence();
+  auto & state = optimizer_tester.grabState();
 
   // Test boundary of limits
+  // Set state speed to match so acceleration constraints are satisfied
+  state.speed.linear.x = 1.0;
+  state.speed.linear.y = 0.75;
+  state.speed.angular.z = 2.0;
   sequence.vx = Eigen::ArrayXf::Ones(50);
   sequence.vy = 0.75 * Eigen::ArrayXf::Ones(50);
   sequence.wz = 2.0 * Eigen::ArrayXf::Ones(50);
@@ -598,6 +603,9 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
 
   // Test breaking limits sets to maximum
+  state.speed.linear.x = 1.0;
+  state.speed.linear.y = 0.75;
+  state.speed.angular.z = 2.0;
   sequence.vx = 5.0 * Eigen::ArrayXf::Ones(50);
   sequence.vy = 5.0 * Eigen::ArrayXf::Ones(50);
   sequence.wz = 5.0 * Eigen::ArrayXf::Ones(50);
@@ -607,6 +615,9 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
 
   // Test breaking limits sets to minimum
+  state.speed.linear.x = -1.0;
+  state.speed.linear.y = -0.75;
+  state.speed.angular.z = -2.0;
   sequence.vx = -5.0 * Eigen::ArrayXf::Ones(50);
   sequence.vy = -5.0 * Eigen::ArrayXf::Ones(50);
   sequence.wz = -5.0 * Eigen::ArrayXf::Ones(50);
@@ -943,6 +954,10 @@ TEST(OptimizerTests, InterIterationConstraintsTests)
   node->declare_parameter("mppic.ay_min", rclcpp::ParameterValue(-1.0));
   node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(2.0));
   node->declare_parameter("mppic.open_loop", rclcpp::ParameterValue(true));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
