@@ -60,6 +60,15 @@ public:
     return shouldRotateToPath(carrot_pose, angle_to_path, x_vel_sign);
   }
 
+  bool shouldRotateToGoalHeadingWrapper(
+    nav2_core::GoalChecker * goal_checker,
+    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::Twist & speed,
+    const nav_msgs::msg::Path & transformed_plan)
+  {
+    return shouldRotateToGoalHeading(goal_checker, pose, speed, transformed_plan);
+  }
+
   void rotateToHeadingWrapper(
     double & linear_vel, double & angular_vel,
     const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed)
@@ -170,6 +179,25 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
 
 TEST(RegulatedPurePursuitTest, rotateTests)
 {
+  auto make_orientation = [](double yaw) {
+      geometry_msgs::msg::Quaternion q;
+      q.z = sin(yaw * 0.5);
+      q.w = cos(yaw * 0.5);
+      return q;
+    };
+  auto make_transformed_plan = [&](double goal_x, double goal_y, double goal_yaw) {
+      nav_msgs::msg::Path plan;
+      geometry_msgs::msg::PoseStamped goal_pose;
+      goal_pose.pose.position.x = goal_x;
+      goal_pose.pose.position.y = goal_y;
+      goal_pose.pose.orientation = make_orientation(goal_yaw);
+      plan.poses.push_back(goal_pose);
+      return plan;
+    };
+
+  // --------------------------
+  // Non-Stateful Configuration
+  // --------------------------
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
 
@@ -179,6 +207,11 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
   ctrl->configure(node, name, tf, costmap);
+
+  nav2_controller::SimpleGoalChecker goal_checker;
+  nav2::declare_parameter_if_not_declared(
+    node, "checker.stateful", rclcpp::ParameterValue(false));
+  goal_checker.initialize(node, "checker", costmap);
 
   // shouldRotateToPath
   geometry_msgs::msg::PoseStamped carrot;
@@ -192,6 +225,23 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   carrot.pose.position.x = 0.5;
   carrot.pose.position.y = 1.0;
   EXPECT_EQ(ctrl->shouldRotateToPathWrapper(carrot, angle_to_path_rtn), true);
+
+  // shouldRotateToGoalHeading
+  geometry_msgs::msg::PoseStamped robot_pose;
+  geometry_msgs::msg::Twist robot_speed;
+  const double goal_yaw = 1.0;  // > rotate_to_heading_min_angle default (0.785)
+
+  auto plan_in_tolerance = make_transformed_plan(0.0, 0.24, goal_yaw);
+  EXPECT_EQ(
+    ctrl->shouldRotateToGoalHeadingWrapper(&goal_checker, robot_pose, robot_speed,
+    plan_in_tolerance),
+    true);
+
+  auto plan_outside_tolerance = make_transformed_plan(0.0, 0.26, goal_yaw);
+  EXPECT_EQ(
+    ctrl->shouldRotateToGoalHeadingWrapper(
+      &goal_checker, robot_pose, robot_speed, plan_outside_tolerance),
+    false);
 
   // rotateToHeading
   double lin_v = 10.0;
@@ -225,6 +275,39 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   curr_speed.angular.z = 1.0;
   ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
   EXPECT_NEAR(ang_v, 0.84, 0.01);
+
+  // -----------------------
+  // Stateful Configuration
+  // -----------------------
+  node->set_parameter(
+    rclcpp::Parameter("checker.stateful", true));
+
+  ctrl->configure(node, name, tf, costmap);
+
+  nav2_controller::SimpleGoalChecker stateful_goal_checker;
+  node->set_parameter(rclcpp::Parameter("checker.stateful", true));
+  stateful_goal_checker.initialize(node, "checker", costmap);
+  stateful_goal_checker.reset();
+
+  // Start just outside tolerance
+  auto stateful_plan_outside = make_transformed_plan(0.0, 0.26, goal_yaw);
+  EXPECT_EQ(
+    ctrl->shouldRotateToGoalHeadingWrapper(
+      &stateful_goal_checker, robot_pose, robot_speed, stateful_plan_outside),
+    false);
+
+  // Enter tolerance (should set internal flag)
+  auto stateful_plan_inside = make_transformed_plan(0.0, 0.24, goal_yaw);
+  EXPECT_EQ(
+    ctrl->shouldRotateToGoalHeadingWrapper(
+      &stateful_goal_checker, robot_pose, robot_speed, stateful_plan_inside),
+    true);
+
+  // Move outside tolerance again - still expect true (due to persistent state in goal checker)
+  EXPECT_EQ(
+    ctrl->shouldRotateToGoalHeadingWrapper(
+      &stateful_goal_checker, robot_pose, robot_speed, stateful_plan_outside),
+    true);
 }
 
 TEST(RegulatedPurePursuitTest, applyConstraints)

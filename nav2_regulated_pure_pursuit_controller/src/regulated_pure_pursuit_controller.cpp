@@ -216,9 +216,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   //        - equal to "normal" carrot_pose when curvature_lookahead_pose = false
   //        - otherwise equal to curvature_lookahead_pose (which can be interpolated after goal)
   double angle_to_heading;
-  if (goal_checker->isGoalXYReached(pose.pose, transformed_plan.poses.back().pose, speed,
-      transformed_plan))
-  {
+  if (shouldRotateToGoalHeading(goal_checker, pose, speed, transformed_plan)) {
     is_rotating_to_heading_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
@@ -327,6 +325,16 @@ bool RegulatedPurePursuitController::shouldRotateToPath(
   }
   return params_->use_rotate_to_heading &&
          fabs(angle_to_path) > params_->rotate_to_heading_min_angle;
+}
+
+bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
+  nav2_core::GoalChecker * goal_checker,
+  const geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::Twist & speed,
+  const nav_msgs::msg::Path & transformed_plan)
+{
+  return goal_checker->isGoalXYReached(pose.pose, transformed_plan.poses.back().pose, speed,
+    transformed_plan);
 }
 
 void RegulatedPurePursuitController::rotateToHeading(

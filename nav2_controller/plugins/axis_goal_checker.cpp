@@ -87,6 +87,8 @@ bool AxisGoalChecker::isGoalReached(
   const geometry_msgs::msg::Twist & velocity,
   const nav_msgs::msg::Path & transformed_global_plan)
 {
+  // Since we do not consider orientation in this goal checker
+  // we can directly check if the XY position is reached
   return isGoalXYReached(query_pose, goal_pose, velocity, transformed_global_plan);
 }
 

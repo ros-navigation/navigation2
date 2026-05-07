@@ -263,7 +263,6 @@ bool AdaptiveToleranceGoalChecker::isGoalXYReached(
   return true;
 }
 
-
 bool AdaptiveToleranceGoalChecker::getTolerances(
   geometry_msgs::msg::Pose & pose_tolerance,
   geometry_msgs::msg::Twist & vel_tolerance,
