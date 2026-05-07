@@ -330,11 +330,6 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 
   geometry_msgs::msg::Twist last_command_vel_;
-  rclcpp::Time last_command_time_;
-
-  // Temporary: acceleration debug publisher
-  rclcpp::Publisher<geometry_msgs::msg::AccelStamped>::SharedPtr accel_pub_;
-  double smoothed_ax_{0.0}, smoothed_az_{0.0};
 };
 
 }  // namespace mppi

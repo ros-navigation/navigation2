@@ -65,9 +65,6 @@ void Optimizer::initialize(
     costmap_ros_, parameters_handler_, tf_buffer, settings_);
   RCLCPP_INFO(logger_, "Loaded trajectory validator plugin: %s", validator_plugin_type.c_str());
 
-  accel_pub_ = node->create_publisher<geometry_msgs::msg::AccelStamped>(
-    name_ + "/cmd_acceleration", 10);
-
   reset();
 }
 
@@ -188,9 +185,6 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
   control_history_[3] = {0.0f, 0.0f, 0.0f};
 
   last_command_vel_ = geometry_msgs::msg::Twist();
-  last_command_time_ = rclcpp::Time(0, 0, RCL_CLOCK_UNINITIALIZED);
-  smoothed_ax_ = 0.0;
-  smoothed_az_ = 0.0;
 
   if (reset_dynamic_speed_limits) {
     settings_.constraints = settings_.base_constraints;
@@ -258,26 +252,7 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
 
   auto control = getControlFromSequenceAsTwist(plan.header.stamp);
 
-  // Publish acceleration between last command and current first control
-  if (accel_pub_ && last_command_time_.nanoseconds() != 0) {
-    double dt = (rclcpp::Time(plan.header.stamp) - last_command_time_).seconds();
-    if (dt > 0.0) {
-      geometry_msgs::msg::AccelStamped accel_msg;
-      accel_msg.header.stamp = plan.header.stamp;
-      accel_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
-      constexpr double alpha = 0.3;
-      smoothed_ax_ = alpha * (control.twist.linear.x - last_command_vel_.linear.x) / dt +
-        (1.0 - alpha) * smoothed_ax_;
-      smoothed_az_ = alpha * (control.twist.angular.z - last_command_vel_.angular.z) / dt +
-        (1.0 - alpha) * smoothed_az_;
-      accel_msg.accel.linear.x = smoothed_ax_;
-      accel_msg.accel.angular.z = smoothed_az_;
-      accel_pub_->publish(accel_msg);
-    }
-  }
-
   last_command_vel_ = control.twist;
-  last_command_time_ = plan.header.stamp;
 
   if (settings_.shift_control_sequence) {
     shiftControlSequence();
