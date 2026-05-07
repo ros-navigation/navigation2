@@ -308,6 +308,7 @@ protected:
   CriticManager critic_manager_;
   NoiseGenerator noise_generator_;
 
+  std::unique_ptr<pluginlib::ClassLoader<MotionModel>> motion_model_loader_;
   std::unique_ptr<pluginlib::ClassLoader<OptimalTrajectoryValidator>> validator_loader_;
   OptimalTrajectoryValidator::Ptr trajectory_validator_;
 

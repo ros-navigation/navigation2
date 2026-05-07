@@ -56,7 +56,7 @@ TEST(SmacTest, test_smac_2d) {
       return false;
     };
 
-  geometry_msgs::msg::PoseStamped start, goal;
+  geometry_msgs::msg::PoseStamped start, goal, viapoint;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
   start.pose.orientation.w = 1.0;
@@ -64,11 +64,16 @@ TEST(SmacTest, test_smac_2d) {
   goal.pose.position.x = 7.0;
   goal.pose.position.y = 0.0;
   goal.pose.orientation.w = 1.0;
+  // viapoint = start;
+  goal.pose.position.x = 3.5;
+  goal.pose.position.y = 0.0;
+  goal.pose.orientation.w = 1.0;
+  std::vector<geometry_msgs::msg::PoseStamped> viapoints{viapoint};
   auto planner_2d = std::make_unique<nav2_smac_planner::SmacPlanner2D>();
   planner_2d->configure(node2D, "test", nullptr, costmap_ros);
   planner_2d->activate();
   try {
-    planner_2d->createPlan(start, goal, dummy_cancel_checker);
+    planner_2d->createPlan(start, goal, viapoints, dummy_cancel_checker);
   } catch (...) {
   }
 
@@ -76,7 +81,7 @@ TEST(SmacTest, test_smac_2d) {
   goal.pose.position.x = 0.01;
   goal.pose.position.y = 0.01;
 
-  nav_msgs::msg::Path plan = planner_2d->createPlan(start, goal, dummy_cancel_checker);
+  nav_msgs::msg::Path plan = planner_2d->createPlan(start, goal, viapoints, dummy_cancel_checker);
   EXPECT_EQ(plan.poses.size(), 1);  // single point path
 
   planner_2d->deactivate();

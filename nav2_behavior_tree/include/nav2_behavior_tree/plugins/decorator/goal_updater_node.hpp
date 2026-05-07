@@ -37,6 +37,13 @@ namespace nav2_behavior_tree
  * @brief A BT::DecoratorNode that subscribes to a goal topic and updates
  * the current goal on the blackboard
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <GoalUpdater input_goal="{goal}" input_goals="{goals}" output_goal="{goal}" output_goals="{goals}">
+ *     <!--Add tree components here-->
+ * </GoalUpdater>
+ * @endcode
  */
 class GoalUpdater : public BT::DecoratorNode
 {

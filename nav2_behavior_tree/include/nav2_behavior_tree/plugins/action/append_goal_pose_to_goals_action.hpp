@@ -30,6 +30,12 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * Usage in XML:
+ * @code
+ * <AppendGoalPoseToGoals goal_pose="{goal}" input_goals="{goal_poses}" output_goals="{goal_poses}"/>
+ * @endcode
+ */
 class AppendGoalPoseToGoals : public BT::ActionNodeBase
 {
 public:

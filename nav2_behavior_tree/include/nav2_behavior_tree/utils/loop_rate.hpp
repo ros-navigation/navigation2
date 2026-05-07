@@ -16,6 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__UTILS__LOOP_RATE_HPP_
 
 #include <memory>
+#include <utility>
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/bt_factory.h"
@@ -27,8 +28,10 @@ namespace nav2_behavior_tree
 class LoopRate
 {
 public:
-  LoopRate(const rclcpp::Duration & period, BT::Tree * tree)
-  : clock_(std::make_shared<rclcpp::Clock>(RCL_STEADY_TIME)), period_(period),
+  LoopRate(
+    const rclcpp::Duration & period, BT::Tree * tree,
+    rclcpp::Clock::SharedPtr clock)
+  : clock_(std::move(clock)), period_(period),
     last_interval_(clock_->now()), tree_(tree)
   {}
 
@@ -57,11 +60,27 @@ public:
       // Either way do not sleep and return false
       return false;
     }
-    // Calculate the time to sleep
-    auto time_to_sleep = next_interval - now;
-    std::chrono::nanoseconds time_to_sleep_ns(time_to_sleep.nanoseconds());
-    // Sleep (can get interrupted by emitWakeUpSignal())
-    tree_->sleep(std::chrono::duration_cast<std::chrono::microseconds>(time_to_sleep_ns));
+    // Sleep until the target time, preemptible by emitWakeUpSignal().
+    auto wake_up = tree_->wakeUpSignal();
+    const bool is_sim_time =
+      clock_->get_clock_type() == RCL_ROS_TIME &&
+      clock_->ros_time_is_active();
+    if (is_sim_time) {
+      // Sim time diverges from wall time — poll the target clock in short
+      // intervals while remaining interruptible by emitWakeUpSignal().
+      while (clock_->now() < next_interval) {
+        if (wake_up->waitFor(std::chrono::microseconds(500))) {
+          return true;  // preempted
+        }
+      }
+    } else {
+      // Steady/system clock agrees with wall time — sleep for the exact
+      // remaining duration, still interruptible by emitWakeUpSignal().
+      auto remaining = next_interval - clock_->now();
+      wake_up->waitFor(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::nanoseconds(remaining.nanoseconds())));
+    }
     return true;
   }
 

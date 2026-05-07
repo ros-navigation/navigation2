@@ -32,6 +32,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A BT::ActionNodeBase to shorten path by some distance
+ *
+ * Usage in XML:
+ * @code
+ * <TruncatePath distance="1.0" input_path="{path}" output_path="{truncated_path}"/>
+ * @endcode
  */
 class TruncatePath : public BT::ActionNodeBase
 {

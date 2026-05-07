@@ -1,0 +1,27 @@
+<class_libraries>
+  <library path="mppi_motion_models">
+
+    <class type="mppi::AckermannMotionModel" base_class_type="mppi::MotionModel">
+      <description>
+        Ackermann steering motion model. Enforces a minimum turning radius constraint.
+        Parameters (under the plugin namespace):
+          min_turning_r (float, default 0.2): minimum turning radius in metres.
+      </description>
+    </class>
+
+    <class type="mppi::DiffDriveMotionModel" base_class_type="mppi::MotionModel">
+      <description>
+        Differential drive motion model. Non-holonomic, no additional kinematic constraints
+        beyond the standard velocity and acceleration limits.
+      </description>
+    </class>
+
+    <class type="mppi::OmniMotionModel" base_class_type="mppi::MotionModel">
+      <description>
+        Omnidirectional motion model. Holonomic — supports independent vx, vy, and wz control.
+        This is the default model when no plugin is explicitly configured.
+      </description>
+    </class>
+
+  </library>
+</class_libraries>

@@ -28,6 +28,14 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::FollowPath
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="precise_goal_checker"
+ *             path_handler_id="PathHandler" server_name="FollowPath" server_timeout="10"
+ *             error_code_id="{follow_path_error_code}" error_msg="{follow_path_error_msg}"
+ *             tracking_feedback="{tracking_feedback}"/>
+ * @endcode
  */
 class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
