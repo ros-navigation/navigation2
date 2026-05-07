@@ -57,6 +57,7 @@ void CostmapScorer::configure(
   if (costmap_topic != server_costmap_topic) {
     costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
       node, costmap_topic);
+    owns_costmap_subscriber_ = true;
     RCLCPP_INFO(
       node->get_logger(),
       "Using costmap topic: %s instead of server costmap topic: %s for CostmapScorer.",
@@ -68,6 +69,20 @@ void CostmapScorer::configure(
   // Find the proportional weight to apply, if multiple cost functions
   weight_ = static_cast<float>(
     node->declare_or_get_parameter(getName() + ".weight", 1.0));
+}
+
+void CostmapScorer::activate()
+{
+  if (owns_costmap_subscriber_ && costmap_subscriber_) {
+    costmap_subscriber_->on_activate();
+  }
+}
+
+void CostmapScorer::deactivate()
+{
+  if (owns_costmap_subscriber_ && costmap_subscriber_) {
+    costmap_subscriber_->on_deactivate();
+  }
 }
 
 void CostmapScorer::prepare()

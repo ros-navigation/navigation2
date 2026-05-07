@@ -67,6 +67,16 @@ void InputAtWaypoint::initialize(
     input_topic, std::bind(&InputAtWaypoint::Cb, this, _1));
 }
 
+void InputAtWaypoint::on_activate()
+{
+  subscription_->on_activate();
+}
+
+void InputAtWaypoint::on_deactivate()
+{
+  subscription_->on_deactivate();
+}
+
 void InputAtWaypoint::Cb(const std_msgs::msg::Empty::ConstSharedPtr & /*msg*/)
 {
   std::lock_guard<std::mutex> lock(mutex_);

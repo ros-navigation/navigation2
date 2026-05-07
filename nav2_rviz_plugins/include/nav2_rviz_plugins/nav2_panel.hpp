@@ -32,6 +32,7 @@
 #include "nav2_rviz_plugins/ros_action_qevent.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 #include "rviz_common/panel.hpp"
 #include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -150,9 +151,9 @@ private:
     navigation_feedback_sub_;
   nav2::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>::SharedPtr
     nav_through_poses_feedback_sub_;
-  nav2::Subscription<nav2_msgs::action::NavigateToPose::Impl::GoalStatusMessage>::SharedPtr
+  nav2::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr
     navigation_goal_status_sub_;
-  nav2::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
+  nav2::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr
     nav_through_poses_goal_status_sub_;
 
   // Tf's for initial pose

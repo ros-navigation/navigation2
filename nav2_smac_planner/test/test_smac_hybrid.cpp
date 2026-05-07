@@ -104,6 +104,8 @@ TEST(SmacTest, test_smac_se2)
       unsmoothed_plan_received = true;
       received_unsmoothed_plan = msg;
     });
+  expansions_sub->on_activate();
+  unsmoothed_plan_sub->on_activate();
 
   auto dummy_cancel_checker = []() {
       return false;

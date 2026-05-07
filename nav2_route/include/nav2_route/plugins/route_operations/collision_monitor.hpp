@@ -67,6 +67,16 @@ public:
     const std::string & name) override;
 
   /**
+   * @brief Activate the plugin-owned CostmapSubscriber if any.
+   */
+  void activate() override;
+
+  /**
+   * @brief Deactivate the plugin-owned CostmapSubscriber if any.
+   */
+  void deactivate() override;
+
+  /**
    * @brief Get name of the plugin for parameter scope mapping
    * @return Name
    */
@@ -150,6 +160,10 @@ protected:
   unsigned int check_resolution_{1u};
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
+  // True when this plugin allocated its own CostmapSubscriber in configure().
+  // The shared route-server subscriber is activated/deactivated by RouteServer,
+  // so we only fan out activate/deactivate to a subscriber we own.
+  bool owns_costmap_subscriber_{false};
 };
 
 }  // namespace nav2_route

@@ -44,6 +44,11 @@ public:
       topicName + "_raw_updates", std::bind(
         &TestCostmapSubscriberShould::costmapRawUpdateCallback, this,
         std::placeholders::_1));
+
+    // Transition the node to active so all managed nav2::Subscriptions
+    // (including those created by CostmapSubscriber later) auto-activate.
+    node->configure();
+    node->activate();
   }
 
   void SetUp() override

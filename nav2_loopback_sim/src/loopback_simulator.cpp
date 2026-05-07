@@ -118,6 +118,15 @@ LoopbackSimulator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
+  // Activate lifecycle-managed subscriptions created in on_configure(); under
+  // the create-on-activate wrapper they would otherwise stay dormant.
+  if (initial_pose_sub_) {
+    initial_pose_sub_->on_activate();
+  }
+  if (cmd_vel_sub_) {
+    cmd_vel_sub_->on_activate();
+  }
+
   odom_pub_->on_activate();
   if (scan_pub_) {
     scan_pub_->on_activate();
@@ -166,6 +175,12 @@ LoopbackSimulator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   odom_pub_->on_deactivate();
   if (scan_pub_) {
     scan_pub_->on_deactivate();
+  }
+  if (initial_pose_sub_) {
+    initial_pose_sub_->on_deactivate();
+  }
+  if (cmd_vel_sub_) {
+    cmd_vel_sub_->on_deactivate();
   }
 
   has_initial_pose_ = false;

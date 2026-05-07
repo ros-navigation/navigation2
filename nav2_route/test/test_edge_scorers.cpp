@@ -213,6 +213,8 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
   node->declare_parameter("costmap_topic", "dummy_topic");
+  node->configure();
+  node->activate();
   auto node_thread = std::make_unique<nav2::NodeThread>(node);
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
@@ -328,6 +330,8 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
   node->declare_parameter("costmap_topic", "dummy_costmap/costmap_raw");
+  node->configure();
+  node->activate();
   auto node_thread = std::make_unique<nav2::NodeThread>(node);
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 

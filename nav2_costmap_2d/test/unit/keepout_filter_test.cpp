@@ -230,6 +230,9 @@ void TestNode::createKeepoutFilter(const std::string & global_frame)
   keepout_filter_->initialize(&layers, std::string(FILTER_NAME), tf_buffer_.get(), node_, nullptr);
   keepout_filter_->initializeFilter(INFO_TOPIC);
 
+  node_->configure();
+  node_->activate();
+
   // Wait until mask will be received by KeepoutFilter
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node_->get_node_base_interface());

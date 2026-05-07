@@ -63,6 +63,17 @@ public:
    */
   virtual bool processAtWaypoint(
     const geometry_msgs::msg::PoseStamped & curr_pose, const int & curr_waypoint_index) = 0;
+
+  /**
+   * @brief Activate the plugin (e.g. lifecycle subscriptions). Call when the waypoint follower
+   *        node is activated. Override in plugins that use lifecycle-managed subscriptions.
+   */
+  virtual void on_activate() {}
+
+  /**
+   * @brief Deactivate the plugin. Call when the waypoint follower node is deactivated.
+   */
+  virtual void on_deactivate() {}
 };
 }  // namespace nav2_core
 #endif  // NAV2_CORE__WAYPOINT_TASK_EXECUTOR_HPP_

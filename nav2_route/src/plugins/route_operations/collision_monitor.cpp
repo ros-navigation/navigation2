@@ -41,6 +41,7 @@ void CollisionMonitor::configure(
       "Using costmap topic: %s instead of server costmap topic: %s for CollisionMonitor.",
       costmap_topic.c_str(), server_costmap_topic.c_str());
     costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
+    owns_costmap_subscriber_ = true;
     topic_ = costmap_topic;
   } else {
     costmap_subscriber_ = costmap_subscriber;
@@ -66,6 +67,20 @@ void CollisionMonitor::configure(
     RCLCPP_INFO(
       logger_, "Max collision distance to evaluate is zero or negative, checking the full route.");
     max_collision_dist_ = std::numeric_limits<float>::max();
+  }
+}
+
+void CollisionMonitor::activate()
+{
+  if (owns_costmap_subscriber_ && costmap_subscriber_) {
+    costmap_subscriber_->on_activate();
+  }
+}
+
+void CollisionMonitor::deactivate()
+{
+  if (owns_costmap_subscriber_ && costmap_subscriber_) {
+    costmap_subscriber_->on_deactivate();
   }
 }
 

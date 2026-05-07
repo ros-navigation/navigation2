@@ -172,14 +172,28 @@ nav2::CallbackReturn
 BehaviorServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
+
+  // Activate lifecycle-managed subscriptions so they receive /local_costmap/published_footprint
+  // and /global_costmap/published_footprint (and costmaps). Without this, footprint is never
+  // received and behaviors like AssistedTeleop wait forever for the collision checker.
+  if (local_costmap_sub_) {
+    local_costmap_sub_->on_activate();
+  }
+  if (global_costmap_sub_) {
+    global_costmap_sub_->on_activate();
+  }
+  if (local_footprint_sub_) {
+    local_footprint_sub_->on_activate();
+  }
+  if (global_footprint_sub_) {
+    global_footprint_sub_->on_activate();
+  }
+
   std::vector<pluginlib::UniquePtr<nav2_core::Behavior>>::iterator iter;
   for (iter = behaviors_.begin(); iter != behaviors_.end(); ++iter) {
     (*iter)->activate();
   }
-
-  // create bond connection
   createBond();
-
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -191,6 +205,19 @@ BehaviorServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   std::vector<pluginlib::UniquePtr<nav2_core::Behavior>>::iterator iter;
   for (iter = behaviors_.begin(); iter != behaviors_.end(); ++iter) {
     (*iter)->deactivate();
+  }
+
+  if (local_costmap_sub_) {
+    local_costmap_sub_->on_deactivate();
+  }
+  if (global_costmap_sub_) {
+    global_costmap_sub_->on_deactivate();
+  }
+  if (local_footprint_sub_) {
+    local_footprint_sub_->on_deactivate();
+  }
+  if (global_footprint_sub_) {
+    global_footprint_sub_->on_deactivate();
   }
 
   // destroy bond connection

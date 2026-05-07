@@ -54,6 +54,20 @@ void AssistedTeleop::onConfigure()
       this, std::placeholders::_1));
 }
 
+void AssistedTeleop::activate()
+{
+  TimedBehavior<AssistedTeleopAction>::activate();
+  vel_sub_->on_activate();
+  preempt_teleop_sub_->on_activate();
+}
+
+void AssistedTeleop::deactivate()
+{
+  preempt_teleop_sub_->on_deactivate();
+  vel_sub_->on_deactivate();
+  TimedBehavior<AssistedTeleopAction>::deactivate();
+}
+
 ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command)
 {
   preempt_teleop_ = false;

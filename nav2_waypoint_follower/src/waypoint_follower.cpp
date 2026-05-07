@@ -99,12 +99,12 @@ WaypointFollower::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
+  waypoint_task_executor_->on_activate();
   xyz_action_server_->activate();
   gps_action_server_->activate();
 
   // create bond connection
   createBond();
-
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -113,6 +113,7 @@ WaypointFollower::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
+  waypoint_task_executor_->on_deactivate();
   xyz_action_server_->deactivate();
   gps_action_server_->deactivate();
   // destroy bond connection

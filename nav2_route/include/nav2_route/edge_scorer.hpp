@@ -59,6 +59,18 @@ public:
   ~EdgeScorer() = default;
 
   /**
+   * @brief Activate loaded edge cost function plugins so that any
+   * lifecycle resources they own (e.g. plugin-private CostmapSubscriber)
+   * are brought up. Forwarded from RouteServer::on_activate().
+   */
+  void activate();
+
+  /**
+   * @brief Deactivate loaded edge cost function plugins.
+   */
+  void deactivate();
+
+  /**
    * @brief Score the edge with the set of plugins
    * @param edge Ptr to edge for scoring
    * @param goal_pose Pose Stamped of desired goal

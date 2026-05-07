@@ -137,6 +137,7 @@ TEST(OperationsManagerTest, test_processing_speed_on_status)
   auto sub = node->create_subscription<nav2_msgs::msg::SpeedLimit>(
     "speed_limit",
     [&, this](nav2_msgs::msg::SpeedLimit msg) {got_msg = true; my_msg = msg;});
+  sub->on_activate();
 
   Node node2;
   DirectionalEdge enter;

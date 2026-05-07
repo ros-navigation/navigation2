@@ -45,11 +45,12 @@ PointCloud::PointCloud(
 PointCloud::~PointCloud()
 {
   RCLCPP_INFO(logger_, "[%s]: Destroying PointCloud", source_name_.c_str());
-  #if RCLCPP_VERSION_GTE(30, 0, 0)
-  data_sub_.shutdown();
-  #else
-  data_sub_.reset();
+  #if defined(RCLCPP_VERSION_MAJOR) && RCLCPP_VERSION_MAJOR >= 30
+  if (data_sub_) {
+    data_sub_->shutdown();
+  }
   #endif
+  data_sub_.reset();
   auto node = node_.lock();
   if (post_set_params_handler_ && node) {
     node->remove_post_set_parameters_callback(post_set_params_handler_.get());
@@ -73,13 +74,13 @@ void PointCloud::configure()
 
   getParameters(source_topic);
 
-  #if RCLCPP_VERSION_GTE(30, 0, 0)
+  #if defined(RCLCPP_VERSION_MAJOR) && RCLCPP_VERSION_MAJOR >= 30
   const point_cloud_transport::TransportHints hint(transport_type_);
-  pct_ = std::make_shared<point_cloud_transport::PointCloudTransport>(*node);
-  data_sub_ = pct_->subscribe(
+  data_sub_ = LifecyclePointCloudSubscription::make_shared(node);
+  data_sub_->subscribe(
     source_topic, nav2::qos::SensorDataQoS(),
     std::bind(&PointCloud::dataCallback, this, std::placeholders::_1),
-    {}, &hint
+    hint
   );
   #else
   data_sub_ = node->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -97,6 +98,16 @@ void PointCloud::configure()
     std::bind(
       &PointCloud::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
+}
+
+void PointCloud::activate()
+{
+  data_sub_->on_activate();
+}
+
+void PointCloud::deactivate()
+{
+  data_sub_->on_deactivate();
 }
 
 bool PointCloud::getData(

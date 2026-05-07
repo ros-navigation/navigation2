@@ -89,6 +89,18 @@ public:
     const std::string & name) = 0;
 
   /**
+   * @brief Activate any lifecycle-managed resources owned by the plugin
+   * (e.g. CostmapSubscribers it created itself in configure()). Called by
+   * RouteServer on_activate. Default no-op.
+   */
+  virtual void activate() {}
+
+  /**
+   * @brief Deactivate the resources activated in activate(). Default no-op.
+   */
+  virtual void deactivate() {}
+
+  /**
    * @brief An API to get the name of a particular operation for triggering, query
    * or logging
    * @return the plugin's name

@@ -74,6 +74,15 @@ public:
    */
   bool isShapeSet() override;
 
+  /**
+   * @brief Activates circle subscription(s)
+   */
+  void activate() override;
+  /**
+   * @brief Deactivates circle subscription(s)
+   */
+  void deactivate() override;
+
 protected:
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters

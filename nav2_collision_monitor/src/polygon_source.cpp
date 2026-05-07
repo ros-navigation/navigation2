@@ -65,6 +65,16 @@ void PolygonSource::configure()
     nav2::qos::SensorDataQoS());
 }
 
+void PolygonSource::activate()
+{
+  data_sub_->on_activate();
+}
+
+void PolygonSource::deactivate()
+{
+  data_sub_->on_deactivate();
+}
+
 bool PolygonSource::getData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)

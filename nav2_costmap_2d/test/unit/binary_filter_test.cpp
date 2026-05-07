@@ -23,6 +23,8 @@
 #include <stdexcept>
 
 #include "rclcpp/rclcpp.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
@@ -36,6 +38,8 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_costmap_2d/costmap_filters/binary_filter.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
+
 
 using namespace std::chrono_literals;
 
@@ -104,14 +108,23 @@ class BinaryStateSubscriber : public rclcpp::Node
 {
 public:
   explicit BinaryStateSubscriber(const std::string & binary_state_topic, bool default_state)
-  : Node("binary_state_sub"), binary_state_updated_(false)
+  : Node("binary_state_sub"), binary_state_topic_(binary_state_topic), binary_state_updated_(false)
   {
-    subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
-      binary_state_topic, rclcpp::QoS(10),
-      std::bind(&BinaryStateSubscriber::binaryStateCallback, this, std::placeholders::_1));
-
-    // Initialize with default state
     msg_.data = default_state;
+  }
+
+  void initSubscription()
+  {
+    subscriber_ = nav2::interfaces::create_subscription<std_msgs::msg::Bool>(
+      shared_from_this(),
+      binary_state_topic_,
+      std::bind(&BinaryStateSubscriber::binaryStateCallback, this, std::placeholders::_1),
+      rclcpp::QoS(10));
+  }
+
+  void activate()
+  {
+    subscriber_->on_activate();
   }
 
   void binaryStateCallback(
@@ -137,6 +150,7 @@ public:
   }
 
 private:
+  std::string binary_state_topic_;
   nav2::Subscription<std_msgs::msg::Bool>::SharedPtr subscriber_;
   std_msgs::msg::Bool msg_;
   bool binary_state_updated_;
@@ -390,8 +404,14 @@ bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_
 
   binary_state_subscriber_ =
     std::make_shared<BinaryStateSubscriber>(BINARY_STATE_TOPIC, default_state_);
+  binary_state_subscriber_->initSubscription();
+  binary_state_subscriber_->activate();
   binary_state_subscriber_executor_.add_node(binary_state_subscriber_);
   node_executor_.add_node(node_->get_node_base_interface());
+
+  // Activate lifecycle so the costmap_filter_info subscription can receive messages
+  node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+  node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
 
   // Wait until mask will be received by BinaryFilter
   const std::chrono::nanoseconds timeout = 500ms;
@@ -724,7 +744,23 @@ void TestNode::reset()
   mask_publisher_.reset();
   binary_state_subscriber_.reset();
   binary_filter_.reset();
-  node_.reset();
+
+  // Shut down lifecycle node properly to avoid destructor warning
+  if (node_) {
+    const auto state = node_->get_current_state().id();
+    if (state == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CLEANUP);
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+    } else if (state == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE) {
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CLEANUP);
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+    } else if (state == lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED) {
+      node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+    }
+    node_.reset();
+  }
+
   tf_listener_.reset();
   tf_broadcaster_.reset();
   tf_buffer_.reset();

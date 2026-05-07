@@ -72,21 +72,24 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  // Activating lifecycle publisher
-  state_pub_->on_activate();
-  collision_points_marker_pub_->on_activate();
-
-  // Activating polygons
+  // 1. Activate all input subscriptions first (sources, then polygons)
+  for (std::shared_ptr<Source> source : sources_) {
+    source->activate();
+  }
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->activate();
   }
 
-  // Creating timer
+  // 2. Activate publishers
+  state_pub_->on_activate();
+  collision_points_marker_pub_->on_activate();
+
+  // 3. Create timer
   timer_ = this->create_timer(
     std::chrono::duration<double>{1.0 / frequency_},
     std::bind(&CollisionDetector::process, this));
 
-  // Creating bond connection
+  // 4. Creating bond connection last
   createBond();
 
   return nav2::CallbackReturn::SUCCESS;
@@ -107,6 +110,11 @@ CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->deactivate();
+  }
+
+  // Deactivating sources
+  for (std::shared_ptr<Source> source : sources_) {
+    source->deactivate();
   }
 
   // Destroying bond connection

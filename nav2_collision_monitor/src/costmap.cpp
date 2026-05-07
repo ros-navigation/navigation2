@@ -64,6 +64,16 @@ void CostmapSource::configure()
     nav2::qos::StandardTopicQoS());
 }
 
+void CostmapSource::activate()
+{
+  data_sub_->on_activate();
+}
+
+void CostmapSource::deactivate()
+{
+  data_sub_->on_deactivate();
+}
+
 bool CostmapSource::getData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)

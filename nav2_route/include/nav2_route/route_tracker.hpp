@@ -65,6 +65,16 @@ public:
     const std::string & base_frame);
 
   /**
+   * @brief Activate route operation plugins (forwarded from RouteServer).
+   */
+  void activate();
+
+  /**
+   * @brief Deactivate route operation plugins.
+   */
+  void deactivate();
+
+  /**
    * @brief Determine if a node is to be considered achieved at the current position
    * @param pose Current robot pose to query
    * @param state Tracker state

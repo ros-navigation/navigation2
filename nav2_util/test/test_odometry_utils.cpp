@@ -66,6 +66,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
   odom_pub->on_activate();
 
   nav2_util::OdomSmoother odom_smoother(node, 0.3, "odom");
+  odom_smoother.on_activate();
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
   nav_msgs::msg::Odometry odom_msg;

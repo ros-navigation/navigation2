@@ -104,6 +104,27 @@ target_link_libraries(test_lifecycle_node
   pluginlib::pluginlib
 )
 
+nav2_add_gtest(test_subscription_latched test_subscription_latched.cpp)
+target_include_directories(test_subscription_latched PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../include
+)
+target_link_libraries(test_subscription_latched
+  bondcpp::bondcpp
+  ${geometry_msgs_TARGETS}
+  ${lifecycle_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${rcl_interfaces_TARGETS}
+  rclcpp::rclcpp
+  rclcpp_action::rclcpp_action
+  rclcpp_lifecycle::rclcpp_lifecycle
+  tf2_ros::tf2_ros
+  tf2::tf2
+  ${tf2_geometry_msgs_TARGETS}
+  pluginlib::pluginlib
+  ${std_msgs_TARGETS}
+)
+
 nav2_add_gtest(test_validation_messages test_validation_messages.cpp)
 target_include_directories(test_validation_messages PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../include

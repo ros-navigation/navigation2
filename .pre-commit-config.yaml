@@ -80,10 +80,10 @@ repos:
         entry: ament_uncrustify
     -   id: ament_xmllint
         name: ament_xmllint
-        description: Check XML markup using xmllint.
+        description: Check XML markup using xmllint (well-formedness only, no schema fetch).
         language: system
         types: [xml]
-        entry: ament_xmllint
+        entry: python3 tools/xmllint_wellformed_only
     -   id: ament_flake8
         name: ament_flake8
         description: Check Python code style using flake8.

@@ -20,7 +20,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/qos_profiles.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_costmap_2d
@@ -47,11 +49,19 @@ public:
     robot_base_frame_(robot_base_frame),
     transform_tolerance_(transform_tolerance)
   {
-    // Could be using a user rclcpp::Node, so need to use the Nav2 factory to create the
-    // subscription to convert nav2::LifecycleNode, rclcpp::Node or rclcpp_lifecycle::LifecycleNode
-    footprint_sub_ = nav2::interfaces::create_subscription<geometry_msgs::msg::PolygonStamped>(
-      parent, topic_name,
-      std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
+    // Use lifecycle node's create_subscription when parent is a LifecycleNode so the
+    // subscription is added to managed entities and deactivated with the node
+    auto lc_node = std::dynamic_pointer_cast<nav2::LifecycleNode>(parent);
+    if (lc_node) {
+      footprint_sub_ = lc_node->template create_subscription<geometry_msgs::msg::PolygonStamped>(
+        topic_name,
+        std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1),
+        nav2::qos::StandardTopicQoS());
+    } else {
+      footprint_sub_ = nav2::interfaces::create_subscription<geometry_msgs::msg::PolygonStamped>(
+        parent, topic_name,
+        std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
+    }
   }
 
   /**
@@ -80,6 +90,18 @@ public:
   bool getFootprintInRobotFrame(
     std::vector<geometry_msgs::msg::Point> & footprint,
     std_msgs::msg::Header & footprint_header);
+
+  /**
+   * @brief Activate the subscription (for lifecycle-managed nav2::Subscription).
+   * Call from node on_activate when using a lifecycle node.
+   */
+  void on_activate();
+
+  /**
+   * @brief Deactivate the subscription.
+   * Call from node on_deactivate when using a lifecycle node.
+   */
+  void on_deactivate();
 
 protected:
   /**

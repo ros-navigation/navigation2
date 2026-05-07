@@ -28,6 +28,7 @@ target_link_libraries(test_vector_object_shapes ${vo_server_dependencies})
 
 target_link_libraries(test_vector_object_shapes
   ${vo_library_name}
+  ${lifecycle_msgs_TARGETS}
 )
 
 # test_vector_object_server unit test

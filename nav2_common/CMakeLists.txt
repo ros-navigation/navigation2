@@ -25,6 +25,7 @@ install(
 if(BUILD_TESTING)
   find_package(ament_cmake_test REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/nav2_package.cmake)
 
   nav2_add_pytest_test(test_rewritten_yaml test/test_rewritten_yaml.py
   )

@@ -27,6 +27,7 @@
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 #include "rviz_common/panel.hpp"
 #include "std_msgs/msg/int16.hpp"
 #include "std_msgs/msg/string.hpp"

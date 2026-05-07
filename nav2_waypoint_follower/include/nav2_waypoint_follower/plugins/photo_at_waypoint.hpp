@@ -58,6 +58,16 @@ public:
     const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name);
 
+  /**
+   * @brief Activate the subscription. Call at same lifecycle point as publisher on_activate()
+   *        (e.g. from WaypointFollower::on_activate or in tests).
+   */
+  void on_activate() override;
+
+  /**
+   * @brief Deactivate the subscription.
+   */
+  void on_deactivate() override;
 
   /**
    * @brief Override this to define the body of your task that you would like to execute once the robot arrived to waypoint

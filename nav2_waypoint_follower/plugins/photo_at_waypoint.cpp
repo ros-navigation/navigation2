@@ -89,6 +89,20 @@ void PhotoAtWaypoint::initialize(
   }
 }
 
+void PhotoAtWaypoint::on_activate()
+{
+  if (camera_image_subscriber_) {
+    camera_image_subscriber_->on_activate();
+  }
+}
+
+void PhotoAtWaypoint::on_deactivate()
+{
+  if (camera_image_subscriber_) {
+    camera_image_subscriber_->on_deactivate();
+  }
+}
+
 bool PhotoAtWaypoint::processAtWaypoint(
   const geometry_msgs::msg::PoseStamped & curr_pose, const int & curr_waypoint_index)
 {

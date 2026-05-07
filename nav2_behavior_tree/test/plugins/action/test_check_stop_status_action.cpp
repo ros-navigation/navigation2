@@ -38,6 +38,7 @@ public:
     std::chrono::milliseconds duration = 100ms;
     config_->input_ports["duration_stopped"] = std::to_string(duration.count()) + "ms";
     bt_node_ = std::make_shared<nav2_behavior_tree::CheckStopStatus>("check_stop_status", *config_);
+    odom_smoother_->on_activate();
   }
 
   void TearDown()

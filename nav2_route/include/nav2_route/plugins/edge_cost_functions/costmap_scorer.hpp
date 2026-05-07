@@ -55,6 +55,16 @@ public:
     const std::string & name) override;
 
   /**
+   * @brief Activate the plugin-owned CostmapSubscriber if any.
+   */
+  void activate() override;
+
+  /**
+   * @brief Deactivate the plugin-owned CostmapSubscriber if any.
+   */
+  void deactivate() override;
+
+  /**
    * @brief Main scoring plugin API
    * @param edge The edge pointer to score, which has access to the
    * start/end nodes and their associated metadata and actions
@@ -86,6 +96,8 @@ protected:
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
   unsigned int check_resolution_ {1u};
+  // True when this plugin allocated its own CostmapSubscriber in configure().
+  bool owns_costmap_subscriber_{false};
 };
 
 }  // namespace nav2_route

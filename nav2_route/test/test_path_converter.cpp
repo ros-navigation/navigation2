@@ -40,6 +40,7 @@ TEST(PathConverterTest, test_path_converter_api)
   nav_msgs::msg::Path path_msg;
   auto sub = node->create_subscription<nav_msgs::msg::Path>(
     "plan", [&, this](nav_msgs::msg::Path msg) {path_msg = msg;});
+  sub->on_activate();
 
   PathConverter converter;
   converter.configure(node);

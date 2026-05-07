@@ -88,6 +88,7 @@ TEST(VelocitySmootherTest, openLoopTestTimer6dof)
     }, [&](geometry_msgs::msg::TwistStamped::ConstSharedPtr msg) {
       linear_vels.push_back(msg->twist.linear.x);
     });
+  subscription.on_activate();  // subscription created after node activate()
 
   // Send a velocity command
   auto cmd = std::make_shared<geometry_msgs::msg::TwistStamped>();
@@ -146,6 +147,7 @@ TEST(VelocitySmootherTest, openLoopTestTimer)
     }, [&](geometry_msgs::msg::TwistStamped::ConstSharedPtr msg) {
       linear_vels.push_back(msg->twist.linear.x);
     });
+  subscription.on_activate();  // subscription created after node activate()
 
   // Send a velocity command
   auto cmd = std::make_shared<geometry_msgs::msg::TwistStamped>();
@@ -201,6 +203,7 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
     }, [&](geometry_msgs::msg::TwistStamped::ConstSharedPtr msg) {
       linear_vels.push_back(msg->twist.linear.x);
     });
+  subscription.on_activate();  // subscription created after node activate()
 
   auto odom_pub = smoother->create_publisher<nav_msgs::msg::Odometry>("odom");
   odom_pub->on_activate();

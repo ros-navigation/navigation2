@@ -265,6 +265,28 @@ void SpeedFilter::process(
   }
 }
 
+void SpeedFilter::activateSubscriptions()
+{
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
+  if (filter_info_sub_) {
+    filter_info_sub_->on_activate();
+  }
+  if (mask_sub_) {
+    mask_sub_->on_activate();
+  }
+}
+
+void SpeedFilter::deactivateSubscriptions()
+{
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
+  if (filter_info_sub_) {
+    filter_info_sub_->on_deactivate();
+  }
+  if (mask_sub_) {
+    mask_sub_->on_deactivate();
+  }
+}
+
 void SpeedFilter::resetFilter()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());

@@ -19,6 +19,7 @@
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 
 using namespace std::chrono_literals;
 
@@ -41,9 +42,13 @@ public:
 
     initial_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "initialpose", rclcpp::SystemDefaultsQoS());
-    subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-      "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-      std::bind(&TestAmclPose::amcl_pose_callback, this, std::placeholders::_1));
+    subscription_ = nav2::interfaces::create_subscription<
+      geometry_msgs::msg::PoseWithCovarianceStamped>(
+      node,
+      "amcl_pose",
+      std::bind(&TestAmclPose::amcl_pose_callback, this, std::placeholders::_1),
+      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
     initial_pose_pub_->publish(testPose_);
   }
 

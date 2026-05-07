@@ -100,6 +100,8 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   // Lifecycle publishers must be explicitly activated
+  map_sub_->on_activate();
+  initial_pose_sub_->on_activate();
   pose_pub_->on_activate();
   particle_cloud_pub_->on_activate();
 
@@ -178,6 +180,8 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   active_ = false;
 
   // Lifecycle publishers must be explicitly deactivated
+  map_sub_->on_deactivate();
+  initial_pose_sub_->on_deactivate();
   pose_pub_->on_deactivate();
   particle_cloud_pub_->on_deactivate();
 

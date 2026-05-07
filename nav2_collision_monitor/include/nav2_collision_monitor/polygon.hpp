@@ -72,11 +72,11 @@ public:
   /**
    * @brief Activates polygon lifecycle publisher
    */
-  void activate();
+  virtual void activate();
   /**
    * @brief Deactivates polygon lifecycle publisher
    */
-  void deactivate();
+  virtual void deactivate();
 
   /**
    * @brief Returns the name of polygon

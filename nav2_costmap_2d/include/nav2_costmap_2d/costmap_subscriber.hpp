@@ -25,7 +25,9 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/msg/costmap_update.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/qos_profiles.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -52,23 +54,59 @@ public:
   {
     logger_ = parent->get_logger();
 
-    // Could be using a user rclcpp::Node, so need to use the Nav2 factory to create the
-    // subscription to convert nav2::LifecycleNode, rclcpp::Node or rclcpp_lifecycle::LifecycleNode
-    costmap_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
-      parent, topic_name_,
-      std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
-      nav2::qos::LatchedSubscriptionQoS(3), callback_group);
+    // Use lifecycle node's create_subscription when parent is a LifecycleNode so the
+    // subscription is added to managed entities and deactivated with the node
+    auto lc_node = std::dynamic_pointer_cast<nav2::LifecycleNode>(parent);
+    if (lc_node) {
+      costmap_sub_ = lc_node->template create_subscription<nav2_msgs::msg::Costmap>(
+        topic_name_,
+        std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
+        nav2::qos::LatchedSubscriptionQoS(3), callback_group);
 
-    costmap_update_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::CostmapUpdate>(
-      parent, topic_name_ + "_updates",
-      std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1),
-      nav2::qos::LatchedSubscriptionQoS(), callback_group);
+      costmap_update_sub_ = lc_node->template create_subscription<nav2_msgs::msg::CostmapUpdate>(
+        topic_name_ + "_updates",
+        std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1),
+        nav2::qos::LatchedSubscriptionQoS(), callback_group);
+    } else {
+      costmap_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
+        parent, topic_name_,
+        std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
+        nav2::qos::LatchedSubscriptionQoS(3), callback_group);
+
+      costmap_update_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::CostmapUpdate>(
+        parent, topic_name_ + "_updates",
+        std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1),
+        nav2::qos::LatchedSubscriptionQoS(), callback_group);
+    }
   }
 
   /**
    * @brief A destructor
    */
   ~CostmapSubscriber() {}
+
+  /**
+   * @brief Activate the underlying lifecycle-managed subscriptions so that
+   * the costmap and its updates start being received. Owners with a
+   * LifecycleNode parent must call this from their on_activate(); when
+   * constructed against a non-lifecycle node the subscriptions are already
+   * active and this is a no-op.
+   */
+  void on_activate()
+  {
+    if (costmap_sub_) {costmap_sub_->on_activate();}
+    if (costmap_update_sub_) {costmap_update_sub_->on_activate();}
+  }
+
+  /**
+   * @brief Deactivate the underlying lifecycle-managed subscriptions, tearing
+   * down the rclcpp endpoints. Symmetric counterpart to on_activate().
+   */
+  void on_deactivate()
+  {
+    if (costmap_sub_) {costmap_sub_->on_deactivate();}
+    if (costmap_update_sub_) {costmap_update_sub_->on_deactivate();}
+  }
 
   /**
    * @brief Get current costmap

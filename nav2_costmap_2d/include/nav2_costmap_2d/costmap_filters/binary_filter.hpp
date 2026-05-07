@@ -86,6 +86,10 @@ public:
    */
   bool isActive();
 
+protected:
+  void activateSubscriptions() override;
+  void deactivateSubscriptions() override;
+
 private:
   /**
    * @brief Callback for the filter information
