@@ -72,7 +72,8 @@ class NavTester(Node):
         self.action_client: ActionClient[
             NavigateThroughPoses.Goal,
             NavigateThroughPoses.Result,
-            NavigateThroughPoses.Feedback
+            NavigateThroughPoses.Feedback,
+            NavigateThroughPoses.Impl
         ] = ActionClient(self, NavigateThroughPoses, 'navigate_through_poses')
 
         self.controller_param_cli: Client[SetParameters.Request, SetParameters.Response] = \

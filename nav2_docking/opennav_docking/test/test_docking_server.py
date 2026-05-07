@@ -237,11 +237,11 @@ class TestDockingServer(unittest.TestCase):
 
         # Create action client
         self.dock_action_client: ActionClient[
-            DockRobot.Goal, DockRobot.Result, DockRobot.Feedback
+            DockRobot.Goal, DockRobot.Result, DockRobot.Feedback, DockRobot.Impl
         ] = ActionClient(self.node, DockRobot, 'dock_robot')
 
         self.undock_action_client: ActionClient[
-            UndockRobot.Goal, UndockRobot.Result, UndockRobot.Feedback
+            UndockRobot.Goal, UndockRobot.Result, UndockRobot.Feedback, UndockRobot.Impl
         ] = ActionClient(self.node, UndockRobot, 'undock_robot')
 
         # Subscribe to command velocity

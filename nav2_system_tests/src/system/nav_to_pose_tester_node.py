@@ -62,7 +62,8 @@ class NavTester(Node):
         self.action_client: ActionClient[
             NavigateToPose.Goal,
             NavigateToPose.Result,
-            NavigateToPose.Feedback
+            NavigateToPose.Feedback,
+            NavigateToPose.Impl
         ] = ActionClient(self, NavigateToPose, 'navigate_to_pose')
 
     def info_msg(self, msg: str) -> None:

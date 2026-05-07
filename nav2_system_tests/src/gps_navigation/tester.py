@@ -38,12 +38,13 @@ class GpsWaypointFollowerTest(Node):
         self.action_client: ActionClient[
             FollowGPSWaypoints.Goal,
             FollowGPSWaypoints.Result,
-            FollowGPSWaypoints.Feedback
+            FollowGPSWaypoints.Feedback,
+            FollowGPSWaypoints.Impl
         ] = ActionClient(
             self, FollowGPSWaypoints, 'follow_gps_waypoints')
         self.goal_handle: Optional[ClientGoalHandle[
                 FollowGPSWaypoints.Goal, FollowGPSWaypoints.Result,
-                FollowGPSWaypoints.Feedback]] = None
+                FollowGPSWaypoints.Feedback, FollowGPSWaypoints.Impl]] = None
         self.action_result = FollowGPSWaypoints.Result()
 
         self.param_cli: Client[SetParameters.Request, SetParameters.Response] \

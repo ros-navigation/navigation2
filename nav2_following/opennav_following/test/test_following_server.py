@@ -301,7 +301,7 @@ class TestFollowingServer(unittest.TestCase):
 
         # Create action client
         self.follow_action_client: ActionClient[
-            FollowObject.Goal, FollowObject.Result, FollowObject.Feedback
+            FollowObject.Goal, FollowObject.Result, FollowObject.Feedback, FollowObject.Impl
         ] = ActionClient(self.node, FollowObject, 'follow_object')
 
         # Subscribe to command velocity

@@ -44,14 +44,15 @@ class BackupTest(Node):
         self.action_client: ActionClient[
             BackUp.Goal,
             BackUp.Result,
-            BackUp.Feedback
+            BackUp.Feedback,
+            BackUp.Impl
         ] = ActionClient(self, BackUp, 'backup')
         self.costmap_pub = self.create_publisher(
             Costmap, 'local_costmap/costmap_raw', self.costmap_qos)
         self.footprint_pub = self.create_publisher(
             PolygonStamped, 'local_costmap/published_footprint', 10)
         self.goal_handle: Optional[ClientGoalHandle[
-                BackUp.Goal, BackUp.Result, BackUp.Feedback]] = None
+                BackUp.Goal, BackUp.Result, BackUp.Feedback, BackUp.Impl]] = None
         self.action_result = BackUp.Result()
 
     def sendCommand(self, command: BackUp.Goal) -> bool:

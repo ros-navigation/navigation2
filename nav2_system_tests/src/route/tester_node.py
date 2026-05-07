@@ -56,12 +56,14 @@ class RouteTester(Node):
         self.compute_action_client: ActionClient[
             ComputeRoute.Goal,
             ComputeRoute.Result,
-            ComputeRoute.Feedback
+            ComputeRoute.Feedback,
+            ComputeRoute.Impl
         ] = ActionClient(self, ComputeRoute, 'compute_route')
         self.compute_track_action_client: ActionClient[
             ComputeAndTrackRoute.Goal,
             ComputeAndTrackRoute.Result,
-            ComputeAndTrackRoute.Feedback
+            ComputeAndTrackRoute.Feedback,
+            ComputeAndTrackRoute.Impl
         ] = ActionClient(
             self, ComputeAndTrackRoute, 'compute_and_track_route')
         self.feedback_msgs: list[ComputeAndTrackRoute.Feedback] = []

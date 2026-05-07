@@ -19,5 +19,5 @@ import pytest
 @pytest.mark.copyright
 @pytest.mark.linter
 def test_copyright() -> None:
-    rc = main(argv=['.', 'test'])  # type: ignore[no-untyped-call]
+    rc = main(argv=['.', 'test'])
     assert rc == 0, 'Found errors'

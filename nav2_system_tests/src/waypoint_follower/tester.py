@@ -39,7 +39,8 @@ class WaypointFollowerTest(Node):
         self.action_client: ActionClient[
             FollowWaypoints.Goal,
             FollowWaypoints.Result,
-            FollowWaypoints.Feedback
+            FollowWaypoints.Feedback,
+            FollowWaypoints.Impl
         ] = ActionClient(self, FollowWaypoints, 'follow_waypoints')
         self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, 'initialpose', 10
@@ -47,7 +48,7 @@ class WaypointFollowerTest(Node):
         self.initial_pose_received = False
         self.goal_handle: Optional[ClientGoalHandle[
                 FollowWaypoints.Goal, FollowWaypoints.Result,
-                FollowWaypoints.Feedback]] = None
+                FollowWaypoints.Feedback, FollowWaypoints.Impl]] = None
         self.action_result = FollowWaypoints.Result()
 
         pose_qos = QoSProfile(
