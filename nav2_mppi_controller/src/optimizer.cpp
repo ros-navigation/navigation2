@@ -361,8 +361,6 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
 {
   // Enforce t=0 to be dynamically feasible from the current speed for inter-iteration feasibility
   // Re-centers the distribution at t=0, but still applied in a information theoretic sound way
-
-  // Use controller_period for t=0 to realistically model the physics intra-iteration
   auto & s = settings_;
   float first_dt = s.controller_period;
   float max_delta_vx = first_dt * s.constraints.ax_max;
