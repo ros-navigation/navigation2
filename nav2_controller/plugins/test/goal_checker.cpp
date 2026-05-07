@@ -801,7 +801,8 @@ TEST(AdaptiveToleranceGoalChecker, get_tol_and_dynamic_params)
 
   geometry_msgs::msg::Pose pose_tol;
   geometry_msgs::msg::Twist vel_tol;
-  EXPECT_TRUE(gc.getTolerances(pose_tol, vel_tol));
+  double path_len_tol;
+  EXPECT_TRUE(gc.getTolerances(pose_tol, vel_tol, path_len_tol));
   EXPECT_DOUBLE_EQ(pose_tol.position.x, coarse_xy_tol);
   EXPECT_DOUBLE_EQ(pose_tol.position.y, coarse_xy_tol);
   EXPECT_DOUBLE_EQ(vel_tol.linear.x, trans_stopped_vel);
@@ -834,9 +835,10 @@ TEST(AdaptiveToleranceGoalChecker, get_tol_and_dynamic_params)
   EXPECT_EQ(x->get_parameter("pgc.rot_stopped_velocity").as_double(), 0.05);
   EXPECT_EQ(x->get_parameter("pgc.required_stagnation_cycles").as_int(), 5);
 
-  EXPECT_TRUE(gc.getTolerances(pose_tol, vel_tol));
+  EXPECT_TRUE(gc.getTolerances(pose_tol, vel_tol, path_len_tol));
   EXPECT_DOUBLE_EQ(pose_tol.position.x, 0.50);
   EXPECT_DOUBLE_EQ(vel_tol.linear.x, 0.05);
+  EXPECT_DOUBLE_EQ(path_len_tol, 2.0);
 
   // Invalid values rejected
   results = rec_param->set_parameters_atomically(
