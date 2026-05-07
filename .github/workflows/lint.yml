@@ -7,7 +7,7 @@ jobs:
     name: pre-commit
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ros-navigation/nav2_docker:rolling-nightly-standard
+      image: ghcr.io/ros-navigation/navigation2:main
     env:
         path: src/${{ github.repository }}
     steps:
