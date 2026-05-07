@@ -8,554 +8,589 @@
   <TreeNodesModel>
     <!-- ############################### ACTION NODES ################################# -->
     <Action ID="BackUp">
-      <input_port name="backup_dist">Distance to backup</input_port>
-      <input_port name="backup_speed">Speed at which to backup</input_port>
-      <input_port name="time_allowance">Allowed time for reversing</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="disable_collision_checks" type="bool" default="false">Disable collision checking</input_port>
-      <output_port name="error_code_id">"Back up error code"</output_port>
-      <output_port name="error_msg">"Back up error message"</output_port>
+      <input_port name="backup_dist" type="double" default="0.15">Total distance to backup (m).</input_port>
+      <input_port name="backup_speed" type="double" default="0.025">Backup speed (m/s).</input_port>
+      <input_port name="time_allowance" type="double" default="10.0">Time to invoke behavior for, if exceeds considers it a stuck condition or failure case (seconds).</input_port>
+      <input_port name="disable_collision_checks" type="bool" default="false">Disable collision checking.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `backup` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="error_code_id" type="uint16">Backup error code. See `BackUp` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Backup error message. See `BackUp` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="DriveOnHeading">
-      <input_port name="dist_to_travel">Distance to travel</input_port>
-      <input_port name="speed">Speed at which to travel</input_port>
-      <input_port name="time_allowance">Allowed time for reversing</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="disable_collision_checks">Disable collision checking</input_port>
-      <output_port name="error_code_id">"Drive on heading error code"</output_port>
-      <output_port name="error_msg">"Drive on heading error message"</output_port>
+      <input_port name="dist_to_travel" type="double" default="0.15">Distance to travel (m).</input_port>
+      <input_port name="speed" type="double" default="0.025">Speed at which to travel (m/s).</input_port>
+      <input_port name="time_allowance" type="double" default="10.0">Time to invoke behavior for, if exceeds considers it a stuck condition or failure case (seconds).</input_port>
+      <input_port name="disable_collision_checks" type="bool" default="false">Disable collision checking.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `drive_on_heading` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="error_code_id" type="uint16">Drive on heading error code. See `DriveOnHeading` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Drive on heading error message. See `DriveOnHeading` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="CancelControl">
-      <input_port name="server_name">Server name to cancel the controller server</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="server_name" type="string">Action server name to cancel the controller server. If not specified, `follow_path` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="CancelBackUp">
-      <input_port name="server_name">Server name to cancel the backup behavior</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="server_name" type="string">Action server name to cancel the backup behavior. If not specified, `backup` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="CancelDriveOnHeading">
-      <input_port name="server_name">Service name to cancel the drive on heading behavior</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="server_name" type="string">Action server name to cancel the drive on heading behavior. If not specified, `drive_on_heading` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="CancelSpin">
-      <input_port name="server_name">Server name to cancel the spin behavior</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="server_name" type="string">Action server name to cancel the spin behavior. If not specified, `spin` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="CancelAssistedTeleop">
-      <input_port name="server_name">Server name to cancel the assisted teleop behavior</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="server_name" type="string">Action server name to cancel the assisted teleop behavior. If not specified, `assisted_teleop` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="CancelWait">
-      <input_port name="server_name">Server name to cancel the wait behavior</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="server_name" type="string">Action server name to cancel the wait behavior. If not specified, `wait` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="CancelComputeAndTrackRoute">
-      <input_port name="server_name">Server name to cancel the route compute and tracker server</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="server_name" type="string">Action server name to cancel the route compute and tracker server. If not specified, `compute_and_track_route` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="CancelFollowObject">
-      <input_port name="server_name">Server name to cancel the follow object behavior</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="server_name" type="string">Action server name to cancel the follow object behavior. If not specified, `follow_object` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+    </Action>
+
+    <Action ID="CancelCoverage">
+      <input_port name="server_name" type="string">Action server name. If not specified, `compute_coverage_path` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="ClearEntireCostmap">
-      <input_port name="service_name">Service name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="ClearCostmapExceptRegion">
-      <input_port name="service_name">Service name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="reset_distance">Distance from the robot above which obstacles are cleared</input_port>
+      <input_port name="reset_distance" type="double" default="1.0">Side size of the square area centered on the robot that will not be cleared on the costmap (all the rest of the costmap will).</input_port>
+      <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="ClearCostmapAroundRobot">
-      <input_port name="service_name">Service name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="reset_distance">Distance from the robot under which obstacles are cleared</input_port>
+      <input_port name="reset_distance" type="double" default="1.0">Side size of the square area centered on the robot that will be cleared on the costmap (the rest of the costmap won't).</input_port>
+      <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="ClearCostmapAroundPose">
-      <input_port name="service_name">Service name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="pose">Pose around which to clear the costmap</input_port>
-      <input_port name="reset_distance">Distance from the pose under which obstacles are cleared</input_port>
+      <input_port name="pose" type="geometry_msgs::msg::PoseStamped">Pose around which to clear the costmap.</input_port>
+      <input_port name="reset_distance" type="double" default="1.0">Distance from the pose under which obstacles are cleared.</input_port>
+      <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="ComputePathToPose">
-      <input_port name="goal">Destination to plan to</input_port>
-      <input_port name="start">Use as the planner start pose instead of the current robot pose, if use_start is not false (i.e. not provided or set to true)</input_port>
-      <input_port name="viapoints">A vector of intermediate viapoints (excluding goal) to consider for planning</input_port>
-      <input_port name="use_start">For using or not using (i.e. ignoring) the provided start pose</input_port>
-      <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <output_port name="path">Path created by ComputePathToPose node</output_port>
-      <output_port name="error_code_id">"Compute path to pose error code"</output_port>
-      <output_port name="error_msg">"Compute path to pose error message"</output_port>
+      <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Used as the planner start pose instead of the current robot pose, if `use_start` is not false (i.e. not provided or set to true). Takes in a blackboard variable, e.g. "{start}".</input_port>
+      <input_port name="use_start" type="bool">Optional. For using or not using (i.e. ignoring) the provided start pose `start`. Takes in a blackboard variable, e.g. "{use_start}".</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Goal pose. Takes in a blackboard variable, e.g. "{goal}".</input_port>
+      <input_port name="viapoints" type="vector&lt;geometry_msgs::msg::PoseStamped&gt;">Optional. A list of intermediate viapoints (excluding goal) to consider for planning. Takes in a blackboard variable, e.g. "{viapoints}".</input_port>
+      <input_port name="planner_id" type="string">Mapped name to the planner plugin type to use, e.g. GridBased.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `compute_path_to_pose` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="path" type="nav_msgs::msg::Path">Path created by action server. Takes in a blackboard variable, e.g. "{path}".</output_port>
+      <output_port name="error_code_id" type="uint16">Compute path to pose error code. See `ComputePathToPose` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Compute path to pose error message. See `ComputePathToPose` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="ComputePathThroughPoses">
-      <input_port name="goals">Destinations to plan through</input_port>
-      <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
-      <output_port name="path">Path created by ComputePathToPose node</output_port>
-      <output_port name="last_reached_index">Index of the last reached pose from the goals list. -1 if all goals were reached</output_port>
-      <output_port name="error_code_id">"Compute path through poses error code"</output_port>
-      <output_port name="error_msg">"Compute path through poses error message"</output_port>
+      <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Only used if not left empty. Takes in a blackboard variable, e.g. "{start}".</input_port>
+      <input_port name="goals" type="nav_msgs::msg::Goals">Goal poses. Takes in a blackboard variable, e.g. "{goals}".</input_port>
+      <input_port name="planner_id" type="string">Mapped name to the planner plugin type to use, e.g. GridBased.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `compute_path_through_poses` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="path" type="nav_msgs::msg::Path">Path created by action server. Takes in a blackboard variable, e.g. "{path}".</output_port>
+      <output_port name="last_reached_index" type="int">In the case of a partial plan, index of the last reached pose from the goals list. Otherwise -1 which also corresponds to ComputePathThroughPosesResult::ALL_GOALS if a full plan through all the goals was possible.</output_port>
+      <output_port name="error_code_id" type="uint16">Compute path through poses error code. See `ComputePathThroughPoses` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Compute path through poses error message. See `ComputePathThroughPoses` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="ComputeRoute">
-      <input_port name="start_id">Node ID to start at</input_port>
-      <input_port name="goal_id">Node ID for the goal</input_port>
-      <input_port name="start">Start pose of the route if overriding current robot pose and using poses over IDs</input_port>
-      <input_port name="goal">Goal pose of the route if using poses over IDs</input_port>
-      <input_port name="use_start">Whether to use a fixed start pose or the TF current robot pose</input_port>
-      <input_port name="use_poses">Whether to use start/goal poses or startid and goalids on the graph</input_port>
-      <output_port name="planning_time">Duration to compute route</output_port>
-      <output_port name="path">Path created by ComputeRoute node</output_port>
-      <output_port name="route">Route created by ComputeRoute node</output_port>
-      <output_port name="error_code_id">"Compute route to pose error code"</output_port>
-      <output_port name="error_msg">"Compute route to pose error message"</output_port>
+      <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Only used if not left empty. Takes in a blackboard variable, e.g. "{start}".</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Goal pose. Takes in a blackboard variable, e.g. "{goal}".</input_port>
+      <input_port name="start_id" type="unsigned int">Start node ID to use.</input_port>
+      <input_port name="goal_id" type="unsigned int">Goal node ID to use.</input_port>
+      <input_port name="use_start" type="bool" default="false">Whether to use the start or use TF to obtain the robot's start pose.</input_port>
+      <input_port name="use_poses" type="bool" default="false">Whether to use the start and goal poses or start and goal node IDs.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `compute_route` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="route" type="nav2_msgs::msg::Route">Route created by action server. Takes in a blackboard variable, e.g. "{route}".</output_port>
+      <output_port name="path" type="nav_msgs::msg::Path">Path created by action server. Takes in a blackboard variable, e.g. "{path}".</output_port>
+      <output_port name="planning_time" type="builtin_interfaces::msg::Duration">Time it took to compute the route.</output_port>
+      <output_port name="error_code_id" type="uint16">Compute route error code. See `ComputeRoute` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Compute route error message. See `ComputeRoute` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="ComputeAndTrackRoute">
-      <input_port name="start_id">Node ID to start at</input_port>
-      <input_port name="goal_id">Node ID for the goal</input_port>
-      <input_port name="start">Start pose of the route if overriding current robot pose and using poses over IDs</input_port>
-      <input_port name="goal">Goal pose of the route if using poses over IDs</input_port>
-      <input_port name="use_start">Whether to use a fixed start pose or the TF current robot pose</input_port>
-      <input_port name="use_poses">Whether to use start/goal poses or startid and goalids on the graph</input_port>
-      <output_port name="execution_time">Duration to compute route</output_port>
-      <output_port name="error_code_id">"Compute route to pose error code"</output_port>
-      <output_port name="error_msg">"Compute route to pose error message"</output_port>
-      <output_port name="last_node_id">"ID of the previous node"</output_port>
-      <output_port name="next_node_id">"ID of the next node"</output_port>
-      <output_port name="current_edge_id">"ID of the current edge"</output_port>
-      <output_port name="route">"List of RouteNodes to go from start to end"</output_port>
-      <output_port name="path">"Path created by ComputeAndTrackRoute node"</output_port>
-      <output_port name="rerouted">"Whether the plan has rerouted"</output_port>
+      <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Only used if not left empty. Takes in a blackboard variable, e.g. "{start}".</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Goal pose. Takes in a blackboard variable, e.g. "{goal}".</input_port>
+      <input_port name="start_id" type="unsigned int">Start node ID to use.</input_port>
+      <input_port name="goal_id" type="unsigned int">Goal node ID to use.</input_port>
+      <input_port name="use_start" type="bool" default="false">Whether to use the start or use TF to obtain the robot's start pose.</input_port>
+      <input_port name="use_poses" type="bool" default="false">Whether to use the start and goal poses or start and goal node IDs.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `compute_and_track_route` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="execution_duration" type="builtin_interfaces::msg::Duration">Time it took to compute the route.</output_port>
+      <output_port name="last_node_id" type="uint16">ID of the previous node.</output_port>
+      <output_port name="next_node_id" type="uint16">ID of the next node.</output_port>
+      <output_port name="current_edge_id" type="uint16">ID of the current edge.</output_port>
+      <output_port name="route" type="nav2_msgs::msg::Route">List of RouteNodes to go from start to end.</output_port>
+      <output_port name="path" type="nav_msgs::msg::Path">Path created by ComputeAndTrackRoute node.</output_port>
+      <output_port name="rerouted" type="bool">Whether the plan has rerouted.</output_port>
+      <output_port name="error_code_id" type="uint16">Compute route error code. See `ComputeAndTrackRoute` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Compute route error message. See `ComputeAndTrackRoute` action message for the enumerated set of error codes.</output_port>
+    </Action>
+
+    <Action ID="ComputeCoveragePath">
+      <input_port name="generate_headland" type="bool" default="true">Whether or not to generate a headland of the field or polygon to compute coverage of.</input_port>
+      <input_port name="generate_route" type="bool" default="true">Whether or not to generate a route, e.g. an ordered set of swaths.</input_port>
+      <input_port name="generate_path" type="bool" default="true">Whether or not to generate a path, e.g. adding path connectors to the ordered route.</input_port>
+      <input_port name="file_field" type="string">The filepath to the field's GML file to use, if not specifying the field via `polygons`.</input_port>
+      <input_port name="file_field_id" type="int" default="0">The ID of the field in the GML File to use, if multiple exist in the same file. This is the ordered number of the fields in the file.</input_port>
+      <input_port name="polygons" type="vector&lt;geometry_msgs::msg::Polygon&gt;">The polygons of the field, if not specifying via a GML file. The first polygon should be the outermost region, whereas additional polygons are voids.</input_port>
+      <input_port name="polygons_frame_id" type="string" default="map">The polygon's frame ID, since the GML file provides the frame ID for its format, this is the frame ID for user-defined input `polygons`.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `compute_coverage_path` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="nav_path" type="nav_msgs::msg::Path">Path created by action server in the form of a navigation path. Takes in a blackboard variable, e.g. "{path}".</output_port>
+      <output_port name="coverage_path" type="opennav_coverage_msgs::msg::PathComponents">An ordered set of swaths and turns corresponding to the coverage path when its important to distinguish between turns and swaths for applications. A `opennav_coverage::utils::PathComponentsIterator` object is provided to help make this easy to use by iterating through the outputs's path components to return you the next swath and turn one at a time.</output_port>
+      <output_port name="planning_time" type="builtin_interfaces::msg::Duration">The time to compute coverage plan.</output_port>
+      <output_port name="error_code_id" type="uint16">Compute coverage error code. See `ComputeCoveragePath` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="RemovePassedGoals">
-      <input_port name="input_goals">Input goals to remove if passed</input_port>
-      <input_port name="radius">Radius tolerance on a goal to consider it passed</input_port>
-      <input_port name="robot_base_frame">Robot base frame</input_port>
-      <input_port name="input_waypoint_statuses">Original waypoint_statuses to mark waypoint status from</input_port>
-      <output_port name="output_goals">Set of goals after removing any passed</output_port>
-      <output_port name="output_waypoint_statuses">Waypoint_statuses with passed waypoints marked</output_port>
+      <input_port name="radius" type="double" default="0.5">The radius (m) in proximity to the viapoint for the BT node to remove from the list as having passed.</input_port>
+      <input_port name="robot_base_frame" type="string">Robot base frame. If not provided, uses the BT Navigator's `robot_base_frame` parameter value (`base_link` by default).</input_port>
+      <input_port name="input_goals" type="nav_msgs::msg::Goals">A vector of goals to check if it passed any in the current iteration.</input_port>
+      <input_port name="input_waypoint_statuses" type="vector&lt;nav2_msgs::msg::WaypointStatus&gt;">Original waypoint_statuses to mark waypoint status from.</input_port>
+      <output_port name="output_goals" type="nav_msgs::msg::Goals">A vector of goals with goals removed in proximity to the robot.</output_port>
+      <output_port name="output_waypoint_statuses" type="vector&lt;nav2_msgs::msg::WaypointStatus&gt;">Waypoint_statuses with passed waypoints marked.</output_port>
     </Action>
 
     <Action ID="RemoveInCollisionGoals">
-      <input_port name="service_name">Costmap service name responsible for getting the cost</input_port>
-      <input_port name="input_goals">A vector of goals to check if in collision</input_port>
-      <input_port name="use_footprint">Whether to use the footprint cost or the point cost.</input_port>
-      <input_port name="cost_threshold">The cost threshold above which a waypoint is considered in collision and should be removed.</input_port>
-      <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
-      <input_port name="input_waypoint_statuses">Original waypoint_statuses to mark waypoint status from</input_port>
-      <output_port name="output_goals">A vector of goals containing only those that are not in collision.</output_port>
-      <output_port name="output_waypoint_statuses">Waypoint_statuses with in-collision waypoints marked</output_port>
+      <input_port name="input_goals" type="nav_msgs::msg::Goals">A vector of goals to check if in collision.</input_port>
+      <input_port name="cost_threshold" type="double" default="254.0">The cost threshold above which a waypoint is considered in collision and should be removed. If `use_footprint = false`, consider setting to 253 for occupied.</input_port>
+      <input_port name="use_footprint" type="bool" default="true">Whether to use the footprint cost or the point cost.</input_port>
+      <input_port name="consider_unknown_as_obstacle" type="bool" default="false">Whether to consider unknown cost (255) as obstacle.</input_port>
+      <input_port name="input_waypoint_statuses" type="vector&lt;nav2_msgs::msg::WaypointStatus&gt;">Original waypoint_statuses to mark waypoint status from.</input_port>
+      <input_port name="service_name" type="string">Costmap service name responsible for getting the cost. If not specified, `/global_costmap/get_cost_global_costmap` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="output_goals" type="nav_msgs::msg::Goals">A vector of goals containing only those that are not in collision.</output_port>
+      <output_port name="output_waypoint_statuses" type="vector&lt;nav2_msgs::msg::WaypointStatus&gt;">waypoint_statuses with in-collision waypoints marked.</output_port>
     </Action>
 
     <Action ID="SmoothPath">
-      <input_port name="smoother_id" default="SmoothPath"/>
-      <input_port name="unsmoothed_path">Path to be smoothed</input_port>
-      <input_port name="max_smoothing_duration">Maximum smoothing duration</input_port>
-      <input_port name="check_for_collisions">Bool if collision check should be performed</input_port>
-      <output_port name="smoothed_path">Smoothed path</output_port>
-      <output_port name="smoothing_duration">Smoothing duration</output_port>
-      <output_port name="was_completed">True if smoothing was not interrupted by time limit</output_port>
-      <output_port name="error_code_id">"Smooth Path error code"</output_port>
-      <output_port name="error_msg">"Smooth Path error message"</output_port>
+      <input_port name="unsmoothed_path" type="nav_msgs::msg::Path">The blackboard variable or hard-coded input path to smooth.</input_port>
+      <input_port name="max_smoothing_duration" type="double" default="3.0">Maximum time to smooth for (seconds).</input_port>
+      <input_port name="check_for_collisions" type="bool" default="false">Whether to check the output smoothed path for collisions.</input_port>
+      <input_port name="smoother_id" type="string">The smoother plugin ID to use for smoothing in the smoother server.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `smooth_path` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="smoothed_path" type="nav_msgs::msg::Path">The output blackboard variable to assign the smoothed path to.</output_port>
+      <output_port name="smoothing_duration" type="double">The actual duration used for smoothing.</output_port>
+      <output_port name="was_completed" type="bool">Indicates if the smoothing process was completed. Will return `false` if `check_for_collisions` is set to `true` and a collision is detected.</output_port>
+      <output_port name="error_code_id" type="uint16">Follow smoother error code. See `SmoothPath` action for the enumerated set of error code definitions.</output_port>
+      <output_port name="error_msg" type="string">Follow smoother error message. See `SmoothPath` action for the enumerated set of error code definitions.</output_port>
     </Action>
 
     <Action ID="FollowPath">
-      <input_port name="controller_id" default="FollowPath"/>
-      <input_port name="path">Path to follow</input_port>
-      <input_port name="goal_checker_id">Goal checker</input_port>
-      <input_port name="progress_checker_id">Progress checker</input_port>
-      <input_port name="path_handler_id">Path handler</input_port>
-      <input_port name="server_name">Action server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <output_port name="tracking_feedback">Tracking feedback from controller server</output_port>
-      <output_port name="error_code_id">Follow Path error code</output_port>
-      <output_port name="error_msg">Follow Path error message</output_port>
+      <input_port name="path" type="nav_msgs::msg::Path">Takes in a blackboard variable containing the path to follow, eg. "{path}".</input_port>
+      <input_port name="controller_id" type="string">Mapped name of the controller plugin type to use, e.g. FollowPath.</input_port>
+      <input_port name="goal_checker_id" type="string">Mapped name of the goal checker plugin type to use, e.g. SimpleGoalChecker.</input_port>
+      <input_port name="progress_checker_id" type="string">Mapped name of the progress checker plugin type to use, e.g. SimpleProgressChecker.</input_port>
+      <input_port name="path_handler_id" type="string">Mapped name of the path handler plugin type to use, e.g. FeasiblePathHandler.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `follow_path` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="tracking_feedback" type="nav2_msgs::msg::TrackingFeedback">Tracking feedback message from the controller server, including cross track error, current path index, remaining path length, etc.</output_port>
+      <output_port name="error_code_id" type="uint16">Follow path error code. See `FollowPath` action for the enumerated set of error code definitions.</output_port>
+      <output_port name="error_msg" type="string">Follow path error message. See `FollowPath` action for the enumerated set of error code definitions.</output_port>
     </Action>
 
     <Action ID="FollowObject">
-      <input_port name="pose_topic">Topic to publish the pose of the object to follow</input_port>
-      <input_port name="tracked_frame">Target frame to follow (Optional, used if pose_topic is not set)</input_port>
-      <input_port name="max_duration">The maximum duration to follow the object (Optional)</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="server_name">Action server name</input_port>
-      <output_port name="total_elapsed_time">Total elapsed time</output_port>
-      <output_port name="error_msg">Error message</output_port>
-      <output_port name="error_code_id">Error code</output_port>
+      <input_port name="pose_topic" type="string" default="dynamic_pose">Topic to publish the pose of the object to follow.</input_port>
+      <input_port name="max_duration" type="double" default="0.0">The maximum duration to follow the object (Optional).</input_port>
+      <input_port name="tracked_frame" type="string">Target frame to follow (Optional, used if pose_topic is not set).</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `follow_object` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="total_elapsed_time" type="builtin_interfaces::msg::Duration">Total elapsed time.</output_port>
+      <output_port name="error_code_id" type="uint16">Follow object error code. See `FollowObject` action for the enumerated set of error code definitions.</output_port>
+      <output_port name="error_msg" type="string">Follow object error message. See `FollowObject` action for the enumerated set of error code definitions.</output_port>
     </Action>
 
     <Action ID="NavigateToPose">
-      <input_port name="goal">Goal</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="behavior_tree">Behavior tree to run</input_port>
-      <output_port name="error_code_id">Navigate to pose error code</output_port>
-      <output_port name="error_msg">Navigate to pose error message</output_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Takes in a blackboard variable containing the goal, eg. "{goal}".</input_port>
+      <input_port name="behavior_tree" type="string">Behavior tree absolute path or ID. If none is specified, NavigateToPose action server uses a default behavior tree.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `navigate_to_pose` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="error_code_id" type="uint16">The lowest error code in the list of the `error_code_names_prefixes` + `_error_code` suffix parameter.</output_port>
+      <output_port name="error_msg" type="string">The error messages associated with the lowest error code in the list of the `error_code_name_prefixes` + `_error_code` parameter.</output_port>
     </Action>
 
     <Action ID="NavigateThroughPoses">
-      <input_port name="goals">Goals</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="behavior_tree">Behavior tree to run</input_port>
-      <output_port name="error_code_id">Navigate through poses error code</output_port>
-      <output_port name="error_msg">Navigate through poses error message</output_port>
+      <input_port name="goals" type="nav_msgs::msg::Goals">Goal poses. Takes in a blackboard variable, e.g. "{goals}".</input_port>
+      <input_port name="behavior_tree" type="string">Behavior tree absolute path or ID. If none is specified, NavigateThroughPoses action server uses a default behavior tree.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `navigate_through_poses` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="error_code_id" type="uint16">The lowest error code in the list of the `error_code_name_prefixes` parameter.</output_port>
+      <output_port name="error_msg" type="string">The error message associated with the lowest error code in the list of the `error_code_name_prefixes` parameter.</output_port>
     </Action>
 
     <Action ID="ReinitializeGlobalLocalization">
-      <input_port name="service_name">Service name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="service_name" type="string">Service name.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="TruncatePath">
-      <input_port name="distance">Distance before goal to truncate</input_port>
-      <input_port name="input_path">Path to truncate</input_port>
-      <output_port name="output_path">Truncated path to utilize</output_port>
+      <input_port name="input_path" type="nav_msgs::msg::Path">The original path to be truncated.</input_port>
+      <input_port name="distance" type="double" default="1.0">The distance to the original goal for truncating the path.</input_port>
+      <output_port name="output_path" type="nav_msgs::msg::Path">The resulting truncated path.</output_port>
     </Action>
 
     <Action ID="TruncatePathLocal">
-      <input_port name="input_path">Path to truncate</input_port>
-      <input_port name="distance_forward">Distance in forward direction</input_port>
-      <input_port name="distance_backward">Distance in backward direction</input_port>
-      <input_port name="robot_frame">Robot base frame id</input_port>
-      <input_port name="transform_tolerance">Transform lookup tolerance</input_port>
-      <input_port name="pose">Manually specified pose to be used if overriding current robot pose</input_port>
-      <input_port name="angular_distance_weight">Weight of angular distance relative to positional distance when finding which path pose is closest to robot. Not applicable on paths without orientations assigned</input_port>
-      <input_port name="max_robot_pose_search_dist">Maximum forward integrated distance along the path (starting from the last detected pose) to bound the search for the closest pose to the robot. When set to infinity (default), whole path is searched every time</input_port>
-      <output_port name="output_path">Truncated path to utilize</output_port>
+      <input_port name="input_path" type="nav_msgs::msg::Path">The original path to be truncated.</input_port>
+      <input_port name="distance_forward" type="double" default="8.0">The trimming distance in forward direction. Set to -1 to search full path forward.</input_port>
+      <input_port name="distance_backward" type="double" default="4.0">The trimming distance in backward direction.</input_port>
+      <input_port name="robot_frame" type="string" default="base_link">Robot base frame id.</input_port>
+      <input_port name="transform_tolerance" type="double" default="0.2">Robot pose lookup tolerance.</input_port>
+      <input_port name="pose" type="geometry_msgs::msg::PoseStamped">Manually specified pose to be used alternatively to current robot pose.</input_port>
+      <input_port name="angular_distance_weight" type="double" default="0.0">Weight of angular distance relative to positional distance when finding which path pose is closest to robot. Not applicable on paths without orientations assigned.</input_port>
+      <input_port name="max_robot_pose_search_dist" type="double" default="numeric_limits&lt;double&gt;::infinity()">Maximum forward integrated distance along the path (starting from the last detected pose) to bound the search for the closest pose to the robot. When set to infinity (default), whole path is searched every time.</input_port>
+      <output_port name="output_path" type="nav_msgs::msg::Path">The resulting truncated path.</output_port>
     </Action>
 
     <Action ID="PlannerSelector">
-      <input_port name="topic_name">Name of the topic to receive planner selection commands</input_port>
-      <input_port name="default_planner">Default planner of the planner selector</input_port>
-      <output_port name="selected_planner">Name of the selected planner received from the topic subscription</output_port>
+      <input_port name="topic_name" type="string" default="planner_selector">The name of the topic used to received select command messages. This is used to support multiple PlannerSelector nodes.</input_port>
+      <input_port name="default_planner" type="string">The default value for the selected planner if no message is received from the input topic.</input_port>
+      <output_port name="selected_planner" type="string">The output selected planner id. This selected_planner string is usually passed to the ComputePathToPose behavior via the planner_id input port.</output_port>
     </Action>
 
     <Action ID="ControllerSelector">
-      <input_port name="topic_name">Name of the topic to receive controller selection commands</input_port>
-      <input_port name="default_controller">Default controller of the controller selector</input_port>
-      <output_port name="selected_controller">Name of the selected controller received from the topic subscription</output_port>
+      <input_port name="topic_name" type="string" default="controller_selector">The name of the topic used to received select command messages. This is used to support multiple ControllerSelector nodes.</input_port>
+      <input_port name="default_controller" type="string">The default value for the selected Controller if no message is received from the input topic.</input_port>
+      <output_port name="selected_controller" type="string">The output selected Controller id. This selected_controller string is usually passed to the FollowPath behavior via the controller_id input port.</output_port>
     </Action>
 
     <Action ID="SmootherSelector">
-      <input_port name="topic_name">Name of the topic to receive smoother selection commands</input_port>
-      <input_port name="default_smoother">Default smoother of the smoother selector</input_port>
-      <output_port name="selected_smoother">Name of the selected smoother received from the topic subscription</output_port>
+      <input_port name="topic_name" type="string" default="smoother_selector">The name of the topic used to received select command messages. This is used to support multiple SmootherSelector nodes.</input_port>
+      <input_port name="default_smoother" type="string">The default value for the selected Smoother if no message is received from the input topic.</input_port>
+      <output_port name="selected_smoother" type="string">The output selected Smoother id.</output_port>
     </Action>
 
     <Action ID="GoalCheckerSelector">
-      <input_port name="topic_name">Name of the topic to receive goal checker selection commands</input_port>
-      <input_port name="default_goal_checker">Default goal checker of the controller selector</input_port>
-      <output_port name="selected_goal_checker">Name of the selected goal checker received from the topic subscription</output_port>
+      <input_port name="topic_name" type="string" default="goal_checker_selector">The name of the topic used to received select command messages. This is used to support multiple GoalCheckerSelector nodes.</input_port>
+      <input_port name="default_goal_checker" type="string">The default value for the selected GoalChecker if no message is received from the input topic.</input_port>
+      <output_port name="selected_goal_checker" type="string">The output selected GoalChecker id. This selected_goal_checker string is usually passed to the FollowPath behavior via the goal_checker_id input port.</output_port>
     </Action>
 
     <Action ID="ProgressCheckerSelector">
-      <input_port name="topic_name">Name of the topic to receive progress checker selection commands</input_port>
-      <input_port name="default_progress_checker">Default progress checker of the controller selector</input_port>
-      <output_port name="selected_progress_checker">Name of the selected progress checker received from the topic subscription</output_port>
+      <input_port name="topic_name" type="string" default="progress_checker_selector">The name of the topic used to received select command messages. This is used to support multiple ProgressCheckerSelector nodes.</input_port>
+      <input_port name="default_progress_checker" type="string">The default value for the selected ProgressChecker if no message is received from the input topic.</input_port>
+      <output_port name="selected_progress_checker" type="string">The output selected ProgressChecker id. This selected_progress_checker string is usually passed to the FollowPath behavior via the progress_checker_id input port.</output_port>
     </Action>
 
     <Action ID="PathHandlerSelector">
-      <input_port name="topic_name">Name of the topic to receive path handler selection commands</input_port>
-      <input_port name="default_path_handler">Default path handler of the controller selector</input_port>
-      <output_port name="selected_path_handler">Name of the selected path handler received from the topic subscription</output_port>
+      <input_port name="topic_name" type="string" default="path_handler_selector">The name of the topic used to received select command messages. This is used to support multiple PathHandlerSelector nodes.</input_port>
+      <input_port name="default_path_handler" type="string">The default value for the selected PathHandler if no message is received from the input topic.</input_port>
+      <output_port name="selected_path_handler" type="string">The output selected PathHandler id. This selected_path_handler string is usually passed to the FollowPath behavior via the path_handler_id input port.</output_port>
     </Action>
 
     <Action ID="Spin">
-      <input_port name="spin_dist">Spin distance</input_port>
-      <input_port name="time_allowance">Allowed time for spinning</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="is_recovery">If true recovery count will be incremented</input_port>
-      <input_port name="disable_collision_checks">Disable collision checking</input_port>
-      <output_port name="error_code_id">Spin error code</output_port>
-      <output_port name="error_msg">Spin error message</output_port>
+      <input_port name="spin_dist" type="double" default="1.57">Spin distance (radians).</input_port>
+      <input_port name="time_allowance" type="double" default="10.0">Time to invoke behavior for, if exceeds considers it a stuck condition or failure case (seconds).</input_port>
+      <input_port name="is_recovery" type="bool" default="true">True if the action is being used as a recovery.</input_port>
+      <input_port name="disable_collision_checks" type="bool" default="false">Disable collision checking.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `spin` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="error_code_id" type="uint16">Spin error code. See `Spin` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Spin error message. See `Spin` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="Wait">
-      <input_port name="wait_duration">Wait time</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <output_port name="error_code_id">Wait error code</output_port>
-      <output_port name="error_msg">Wait error message</output_port>
+      <input_port name="wait_duration" type="double" default="1.0">Wait time (s).</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `wait` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="error_code_id" type="uint16">Wait error code. See `Wait` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Wait error message. See `Wait` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="AssistedTeleop">
-      <input_port name="time_allowance">Allowed time for spinning</input_port>
-      <input_port name="is_recovery">If true recovery count will be incremented</input_port>
-      <input_port name="server_name">Service name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <output_port name="error_code_id">Assisted teleop error code</output_port>
+      <input_port name="is_recovery" type="bool" default="false">If true increment the recovery counter.</input_port>
+      <input_port name="time_allowance" type="double" default="10.0">Time to invoke behavior for, if exceeds considers it a stuck condition or failure case (seconds).</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `assisted_teleop` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="error_code_id" type="uint16">Assisted teleop error code. See `AssistedTeleop` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Assisted teleop error message. See `AssistedTeleop` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="DockRobot">
-      <input_port name="dock_id">Dock ID or name to use</input_port>
-      <input_port name="dock_pose">The dock pose, if not using dock id</input_port>
-      <input_port name="dock_type">The dock plugin type, if using dock pose</input_port>
-      <input_port name="max_staging_time">Maximum time to navigate to the staging pose</input_port>
-      <input_port name="navigate_to_staging_pose">Whether to autonomously navigate to staging pose</input_port>
-      <input_port name="use_dock_id">Whether to use the dock's ID or dock pose fields</input_port>
-      <output_port name="error_code_id">Dock error code</output_port>
-      <output_port name="error_msg">Dock error message</output_port>
-      <output_port name="num_retries">The number of retries executed</output_port>
-      <output_port name="success">If the action was successful</output_port>
+      <input_port name="use_dock_id" type="bool" default="true">Whether to use the dock's ID or dock pose fields.</input_port>
+      <input_port name="dock_id" type="string">Dock ID or name to use.</input_port>
+      <input_port name="dock_pose" type="geometry_msgs::msg::PoseStamped">The dock pose, if not using dock id.</input_port>
+      <input_port name="dock_type" type="string">The dock plugin type, if using dock pose.</input_port>
+      <input_port name="max_staging_time" type="float" default="1000.0">Maximum time to navigate to the staging pose.</input_port>
+      <input_port name="navigate_to_staging_pose" type="bool" default="true">Whether to autonomously navigate to staging pose.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `dock_robot` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="success" type="bool">If the action was successful.</output_port>
+      <output_port name="num_retries" type="uint16">The number of retries executed.</output_port>
+      <output_port name="error_code_id" type="uint16">Dock robot error code. See `DockRobot` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Dock robot error message. See `DockRobot` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="UndockRobot">
-      <input_port name="dock_type">The dock plugin type, if not previous instance used for docking</input_port>
-      <input_port name="max_undocking_time">Maximum time to get back to the staging pose</input_port>
-      <output_port name="error_code_id">Undock error code</output_port>
-      <output_port name="error_msg">Undock error message</output_port>
-      <output_port name="success">If the action was successful</output_port>
+      <input_port name="dock_type" type="string">The dock plugin type, if not previous instance used for docking.</input_port>
+      <input_port name="max_undocking_time" type="float" default="30.0">Maximum time to get back to the staging pose.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `undock_robot` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="success" type="bool">If the action was successful.</output_port>
+      <output_port name="error_code_id" type="uint16">Dock robot error code. See `UndockRobot` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Dock robot error message. See `UndockRobot` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="GetPoseFromPath">
-      <input_port name="path">Path to extract pose from</input_port>
-      <input_port name="index">Index of pose to extract from. -1 is end of list</input_port>
-      <output_port name="pose">Stamped extracted pose</output_port>
+      <input_port name="path" type="nav_msgs::msg::Path">Path to extract pose from.</input_port>
+      <input_port name="index" type="int" default="0">Index from path to use. Use `-1` to get the last pose, `-2` for second to last, and so on.</input_port>
+      <output_port name="pose" type="geometry_msgs::msg::PoseStamped">Pose from path, with the Path's set header.</output_port>
     </Action>
 
     <Action ID="ToggleCollisionMonitor">
-      <input_port name="enable">Whether to enable collision monitoring</input_port>
-      <input_port name="service_name">Service name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="enable" type="bool" default="true">Whether to enable or disable the collision monitor.</input_port>
+      <input_port name="service_name" type="string">Service name.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="GetCurrentPose">
-      <input_port name="global_frame">Global reference frame</input_port>
-      <input_port name="robot_base_frame">robot base frame</input_port>
-      <output_port name="current_pose">Current pose output</output_port>
+      <input_port name="robot_base_frame" type="string">Robot base frame to transform poses to if not given in the same frame. If not provided, uses the BT Navigator's `base_frame` parameter value (`base_link` by default).</input_port>
+      <input_port name="global_frame" type="string">Global frame to transform poses to if not given in the same frame. If not provided, uses the BT Navigator's `global_frame` parameter value (`map` by default).</input_port>
+      <output_port name="current_pose" type="geometry_msgs::msg::PoseStamped">The current pose in the global frame.</output_port>
     </Action>
 
     <Action ID="ConcatenatePaths">
-      <input_port name="input_path1">Input Path 1 to cancatenate</input_port>
-      <input_port name="input_path2">Input Path 2 to cancatenate</input_port>
-      <output_port name="output_path">Paths concatenated</output_port>
+      <input_port name="input_path1" type="nav_msgs::msg::Path">First path to concatenate.</input_port>
+      <input_port name="input_path2" type="nav_msgs::msg::Path">Second path to concatenate.</input_port>
+      <output_port name="output_path" type="nav_msgs::msg::Path">Output concatenated path.</output_port>
     </Action>
 
     <Action ID="AppendGoalPoseToGoals">
-      <input_port name="input_goals">Input goals vector to append to</input_port>
-      <input_port name="goal_pose">Goal pose to append to the goals vector</input_port>
-      <output_port name="output_goals">Output goals vector appended to</output_port>
+      <input_port name="goal_pose" type="geometry_msgs::msg::PoseStamped">Goal pose to append to the `goals` vector.</input_port>
+      <input_port name="input_goals" type="nav_msgs::msg::Goals">Input goals vector to append to.</input_port>
+      <output_port name="output_goals" type="nav_msgs::msg::Goals">Output goals vector appended to.</output_port>
     </Action>
 
     <Action ID="ExtractRouteNodesAsGoals">
-      <input_port name="route">Route to convert its nodes into Goals</input_port>
-      <output_port name="goals">Goals comparing the route's nodes</output_port>
+      <input_port name="route" type="nav2_msgs::msg::Route">Route to convert its `nodes` into Goals.</input_port>
+      <output_port name="goals" type="nav_msgs::msg::Goals">Goals comparing the route's `nodes`.</output_port>
     </Action>
 
     <Action ID="GetNextFewGoals">
-      <input_port name="num_goals">How many of the goals to take from the input goals</input_port>
-      <input_port name="input_goals">Input goals list</input_port>
-      <output_port name="output_goals">The output pruned goals list</output_port>
+      <input_port name="num_goals" type="int">How many of the goals to take from the input goals.</input_port>
+      <input_port name="input_goals" type="nav_msgs::msg::Goals">Input goals list.</input_port>
+      <output_port name="output_goals" type="nav_msgs::msg::Goals">The output pruned goals list.</output_port>
     </Action>
 
     <Action ID="CheckPoseOccupancy">
-      <input_port name="cost_threshold">Cost threshold for considering a pose occupied</input_port>
-      <input_port name="consider_unknown_as_obstacle">Whether to consider unknown cost as obstacle</input_port>
-      <input_port name="pose">Pose to check if occupied</input_port>
-      <input_port name="use_footprint">Whether to use footprint cost</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="service_name">Service name</input_port>
+      <input_port name="pose" type="geometry_msgs::msg::PoseStamped">Pose to check if it is occupied.</input_port>
+      <input_port name="cost_threshold" type="double" default="254.0">The cost threshold above which a waypoint is considered in collision and should be removed. If `use_footprint = false`, consider setting to 253 for occupied.</input_port>
+      <input_port name="use_footprint" type="bool" default="true">Whether to use the footprint cost or the point cost.</input_port>
+      <input_port name="consider_unknown_as_obstacle" type="bool" default="false">Whether to consider unknown cost (255) as obstacle.</input_port>
+      <input_port name="service_name" type="string">Costmap service name responsible for getting the cost. If not specified, `/global_costmap/get_cost_global_costmap` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="CheckStopStatus">
-      <input_port name="duration_stopped">Duration (ms) the velocity must remain below the threshold</input_port>
-      <input_port name="velocity_threshold">Velocity threshold below which robot is considered stopped</input_port>
+      <input_port name="velocity_threshold" type="double" default="0.01">Velocity threshold below which robot is considered stopped.</input_port>
+      <input_port name="duration_stopped" type="chrono::milliseconds" default="1000">Duration (ms) the velocity must remain below the threshold.</input_port>
     </Action>
 
     <Action ID="ValidatePath">
-      <input_port name="path">Path to Check</input_port>
-      <input_port name="max_cost">Maximum cost of the path</input_port>
-      <input_port name="consider_unknown_as_obstacle">Whether to consider unknown cost as obstacle</input_port>
-      <input_port name="stop_at_first_collision">Whether to stop validation at first collision (true) or check all poses (false)</input_port>
-      <input_port name="max_lookahead_distance">Maximum distance ahead of the robot to validate (-1 = full path)</input_port>
-      <input_port name="layer_name">Name of the costmap layer to check against (empty = full costmap)</input_port>
-      <input_port name="footprint">Custom footprint specification as bracketed array of arrays, e.g., [[x1,y1],[x2,y2],...] (empty = use robot footprint)</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="service_name">Service name</input_port>
-      <output_port name="collision_poses">Poses in the path that are in collision</output_port>
+      <input_port name="path" type="nav_msgs::msg::Path">The global path to check for validity.</input_port>
+      <input_port name="max_cost" type="unsigned int" default="254">The maximum allowable cost for the path to be considered valid.</input_port>
+      <input_port name="consider_unknown_as_obstacle" type="bool" default="false">Whether to consider unknown cost (255) as obstacle.</input_port>
+      <input_port name="layer_name" type="string">Name of the specific costmap layer to check against. If empty, checks against the full costmap.</input_port>
+      <input_port name="footprint" type="string">Custom footprint specification as a bracketed array of arrays, e.g., "[[x1,y1],[x2,y2],...]". If empty, uses the robot's configured footprint.</input_port>
+      <input_port name="stop_at_first_collision" type="bool" default="true">Whether to stop validation at the first collision (true) or check all poses in the path (false). When false, all collision poses are reported.</input_port>
+      <input_port name="max_lookahead_distance" type="double" default="-1.0">Maximum distance ahead of the robot along the path to validate. When set to -1.0 (default), the full path is validated. A positive value limits validation to only the portion of the path within that distance from the robot's current position.</input_port>
+      <input_port name="service_name" type="string">Costmap service name responsible for getting the cost. If not specified, `is_path_valid` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="collision_poses" type="vector&lt;geometry_msgs::msg::PoseStamped&gt;">Vector of poses in the path that are in collision or invalid. Empty if the path is valid.</output_port>
     </Action>
 
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
-      <input_port name="goal">Destination</input_port>
-      <input_port name="robot_base_frame">Robot base frame</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Destination to check. Takes in a blackboard variable, e.g. "{goal}". The global reference frame is taken from the goal's header `frame_id` field.</input_port>
+      <input_port name="robot_base_frame" type="string">Robot base frame. If not provided, uses the BT Navigator's `robot_base_frame` parameter value (`base_link` by default).</input_port>
     </Condition>
 
     <Condition ID="IsStuck"/>
 
     <Condition ID="TransformAvailable">
-      <input_port name="child">Child frame for transform</input_port>
-      <input_port name="parent">Parent frame for transform</input_port>
+      <input_port name="child" type="string">Child frame for transform.</input_port>
+      <input_port name="parent" type="string">Parent frame for transform.</input_port>
     </Condition>
 
     <Condition ID="GoalUpdated">
-      <input_port name="goal">Vector of navigation goals</input_port>
-      <input_port name="goals">Navigation goal</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Destination to check. Takes in a blackboard variable, "{goal}" if not specified.</input_port>
+      <input_port name="goals" type="nav_msgs::msg::Goals">Vector of goals to check. Takes in a blackboard variable, "{goals}" if not specified.</input_port>
     </Condition>
 
     <Condition ID="GlobalUpdatedGoal">
-      <input_port name="goal">Vector of navigation goals</input_port>
-      <input_port name="goals">Navigation goal</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Destination to check. Takes in a blackboard variable, "{goal}" if not specified.</input_port>
+      <input_port name="goals" type="nav_msgs::msg::Goals">Vector of goals to check. Takes in a blackboard variable, "{goals}" if not specified.</input_port>
     </Condition>
 
     <Condition ID="IsBatteryLow">
-      <input_port name="min_battery">Min battery % or voltage before triggering</input_port>
-      <input_port name="battery_topic">Topic for battery info</input_port>
-      <input_port name="is_voltage">Bool if check based on voltage or total %</input_port>
+      <input_port name="min_battery" type="double">Min battery percentage or voltage before triggering.</input_port>
+      <input_port name="battery_topic" type="string" default="/battery_status">Topic for battery info.</input_port>
+      <input_port name="is_voltage" type="bool" default="false">If true voltage will be used to check for low battery.</input_port>
     </Condition>
 
     <Condition ID="IsBatteryCharging">
-      <input_port name="battery_topic">Topic for battery info</input_port>
+      <input_port name="battery_topic" type="string" default="/battery_status">Topic for battery info.</input_port>
     </Condition>
 
     <Condition ID="DistanceTraveled">
-      <input_port name="distance">Distance to check if passed</input_port>
-      <input_port name="global_frame">reference frame to check in</input_port>
-      <input_port name="robot_base_frame">Robot frame to check relative to global_frame</input_port>
+      <input_port name="distance" type="double" default="1.0">The distance that must travel before returning success (m).</input_port>
+      <input_port name="global_frame" type="string">Reference frame. If not provided, uses the BT Navigator's `global_frame` parameter value (`map` by default).</input_port>
+      <input_port name="robot_base_frame" type="string">Robot base frame. If not provided, uses the BT Navigator's `robot_base_frame` parameter value (`base_link` by default).</input_port>
     </Condition>
 
     <Condition ID="TimeExpired">
-      <input_port name="seconds">Time to check if expired</input_port>
+      <input_port name="seconds" type="double" default="1.0">The time passed to return success (s).</input_port>
     </Condition>
 
-
     <Condition ID="PathExpiringTimer">
-      <input_port name="seconds">Time to check if expired</input_port>
-      <input_port name="path">Check if path has been updated to enable timer reset</input_port>
+      <input_port name="seconds" type="double" default="1.0">Time to check if expired.</input_port>
+      <input_port name="path" type="nav_msgs::msg::Path">Check if path has been updated to enable timer reset.</input_port>
     </Condition>
 
     <Condition ID="InitialPoseReceived">
-      <input_port name="initial_pose_received">SUCCESS if initial_pose_received true</input_port>
+      <input_port name="initial_pose_received" type="bool">Success if the value in the port is true. Takes in a blackboard variable, "{initial_pose_received}" if not specified.</input_port>
     </Condition>
 
     <Condition ID="WouldAControllerRecoveryHelp">
-      <input_port name="error_code">Error code</input_port>
+      <input_port name="error_code" type="uint16">The active error code to compare against. This should match the controller server error code.</input_port>
+      <input_port name="error_codes_to_check" type="vector&lt;int&gt;">The set of controller server error codes you wish to compare against the active error code.</input_port>
     </Condition>
 
     <Condition ID="WouldAPlannerRecoveryHelp">
-      <input_port name="error_code">Error code</input_port>
+      <input_port name="error_code" type="uint16">The active error code to compare against. This should match the planner server error code.</input_port>
+      <input_port name="error_codes_to_check" type="vector&lt;int&gt;">The set of planner server error codes you wish to compare against the active error code.</input_port>
     </Condition>
 
     <Condition ID="WouldASmootherRecoveryHelp">
-      <input_port name="error_code">Error code</input_port>
+      <input_port name="error_code" type="uint16">The active error code to compare against. This should match the smoother server error code.</input_port>
+      <input_port name="error_codes_to_check" type="vector&lt;int&gt;">The set of smoother server error codes you wish to compare against the active error code.</input_port>
     </Condition>
 
     <Condition ID="WouldARouteRecoveryHelp">
-      <input_port name="error_code">Error code</input_port>
+      <input_port name="error_code" type="uint16">The active error code to compare against. This should match the route server error code.</input_port>
+      <input_port name="error_codes_to_check" type="vector&lt;int&gt;">The set of route server error codes you wish to compare against the active error code.</input_port>
     </Condition>
 
     <Condition ID="AreErrorCodesPresent">
-      <input_port name="error_code">Error code</input_port>
-      <input_port name="error_codes_to_check">Error codes to check, user defined</input_port>
+      <input_port name="error_code" type="uint16">The active error code to compare against.</input_port>
+      <input_port name="error_codes_to_check" type="vector&lt;int&gt;">The set of error codes you wish to compare against the active error code.</input_port>
     </Condition>
 
     <Condition ID="ArePosesNear">
-      <input_port name="ref_pose">Destination</input_port>
-      <input_port name="target_pose">Destination</input_port>
-      <input_port name="global_frame">Global frame</input_port>
-      <input_port name="tolerance">Tolerance</input_port>
+      <input_port name="ref_pose" type="geometry_msgs::msg::PoseStamped">Takes in a blackboard variable containing the initial pose to check.</input_port>
+      <input_port name="target_pose" type="geometry_msgs::msg::PoseStamped">Takes in a blackboard variable containing the other pose to check against.</input_port>
+      <input_port name="global_frame" type="string">Global frame to transform poses to if not given in the same frame. If not provided, uses the BT Navigator's `global_frame` parameter value (`map` by default).</input_port>
+      <input_port name="tolerance" type="double" default="0.5">Tolerance to check poses if nearby with respect to.</input_port>
     </Condition>
 
     <Condition ID="IsGoalNearby">
-      <input_port name="path">Planned path</input_port>
-      <input_port name="proximity_threshold">Proximity length (m) of the remaining path considered as a nearby</input_port>
-      <input_port name="max_robot_pose_search_dist">Maximum forward integrated distance along the path (starting from the last detected pose) to bound the search for the closest pose to the robot. When set to infinity (default), whole path is searched every time</input_port>
-      <input_port name="global_frame">Global frame</input_port>
-      <input_port name="robot_base_frame">Robot base frame</input_port>
+      <input_port name="path" type="nav_msgs::msg::Path">The planned path to evaluate.</input_port>
+      <input_port name="proximity_threshold" type="double" default="1.0">The remaining path length (in meters) considered as "nearby". When the remaining distance along the path is less than this threshold, the condition returns SUCCESS.</input_port>
+      <input_port name="max_robot_pose_search_dist" type="double" default="-1.0">Maximum forward integrated distance along the path (starting from the last detected pose) to bound the search for the closest pose to the robot. When set to a negative value (default), the entire path is searched every time. Setting this to a positive value (e.g., 1.0-2.0 meters) can improve performance when this BT node is ticked frequently to address looping or crossed paths (when present).</input_port>
+      <input_port name="global_frame" type="string">The global reference frame. If not provided, uses the BT Navigator's `global_frame` parameter value (`map` by default).</input_port>
+      <input_port name="robot_base_frame" type="string">Robot base frame. If not provided, uses the BT Navigator's `robot_base_frame` parameter value (`base_link` by default).</input_port>
     </Condition>
 
     <Condition ID="IsWithinPathTrackingBounds">
-      <input_port name="max_error_left">Maximum distance the robot can deviate from the path in meters on the left side</input_port>
-      <input_port name="max_error_right">Maximum distance the robot can deviate from the path in meters on the right side</input_port>
-      <input_port name="max_error_heading">Maximum heading error in radians</input_port>
-      <input_port name="tracking_feedback">Tracking feedback from the controller server</input_port>
+      <input_port name="max_error_left" type="double" default="0.5">Maximum allowable tracking error (m) on the left side of the path before returning FAILURE. Must be a positive value.</input_port>
+      <input_port name="max_error_right" type="double" default="0.5">Maximum allowable tracking error (m) on the right side of the path before returning FAILURE. Must be a positive value.</input_port>
+      <input_port name="max_error_heading" type="double" default="3.14">Maximum allowable heading error (rad) before returning FAILURE. Must be a positive value.</input_port>
+      <input_port name="tracking_feedback" type="nav2_msgs::msg::TrackingFeedback">Generally, the feedback message from the controller server, which contains the current tracking error information. Though, it may be populated by another source or topic if need be.</input_port>
     </Condition>
 
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
 
     <Control ID="RecoveryNode">
-      <input_port name="number_of_retries">Number of retries</input_port>
+      <input_port name="number_of_retries" type="int" default="1">Number of retries.</input_port>
     </Control>
 
     <Control ID="RoundRobin">
-      <input_port name="wrap_around" default="false">Enable wrap-around to first child after last child fails</input_port>
+      <input_port name="wrap_around" type="bool" default="false">Controls wrap-around behavior. When `false`, the node returns FAILURE instead of wrapping to the first child after all children have been attempted. When `true`, the node wraps around to the first child and continues the round-robin behavior.</input_port>
     </Control>
 
     <Control ID="NonblockingSequence"/>
 
     <Control ID="PauseResumeController">
-      <input_port name="pause_service_name">Service to call to pause</input_port>
-      <input_port name="resume_service_name">Service to call to resume</input_port>
+      <input_port name="pause_service_name" type="string">Service to call to pause.</input_port>
+      <input_port name="resume_service_name" type="string">Service to call to resume.</input_port>
     </Control>
 
     <Control ID="PersistentSequence">
-      <bidirectional_port name="current_child_idx">Index of the child to execute</bidirectional_port>
+      <bidirectional_port name="current_child_idx" type="int">The index of the current child.</bidirectional_port>
     </Control>
 
     <!-- ############################### DECORATOR NODES ############################## -->
     <Decorator ID="RateController">
-      <input_port name="hz">Rate</input_port>
+      <input_port name="hz" type="double" default="10.0">Rate to throttle an action or a group of actions.</input_port>
     </Decorator>
 
     <Decorator ID="DistanceController">
-      <input_port name="distance">Distance</input_port>
-      <input_port name="global_frame">Reference frame</input_port>
-      <input_port name="robot_base_frame">Robot base frame</input_port>
+      <input_port name="distance" type="double" default="1.0">The distance travelled to trigger an action such as planning a path (m).</input_port>
+      <input_port name="global_frame" type="string">Reference frame. If not provided, uses the BT Navigator's `global_frame` parameter value (`map` by default).</input_port>
+      <input_port name="robot_base_frame" type="string">Robot base frame. If not provided, uses the BT Navigator's `robot_base_frame` parameter value (`base_link` by default).</input_port>
     </Decorator>
 
-    <Decorator ID="SingleTrigger">
-    </Decorator>
+    <Decorator ID="SingleTrigger"/>
 
     <Decorator ID="GoalUpdater">
-      <input_port name="input_goal">Original goal in</input_port>
-      <input_port name="input_goals">Original goals in</input_port>
-      <output_port name="output_goal">Output goal set by subscription</output_port>
-      <output_port name="output_goals">Output goals set by subscription</output_port>
+      <input_port name="input_goal" type="geometry_msgs::msg::PoseStamped">The original goal pose.</input_port>
+      <input_port name="input_goals" type="nav_msgs::msg::Goals">The original goals poses.</input_port>
+      <output_port name="output_goal" type="geometry_msgs::msg::PoseStamped">The resulting updated goal. If no goal received by subscription, it will be the input_goal.</output_port>
+      <output_port name="output_goals" type="nav_msgs::msg::Goals">The resulting updated goals. If no goals received by subscription, it will be the input_goals.</output_port>
     </Decorator>
 
     <Decorator ID="SpeedController">
-      <input_port name="min_rate">Minimum rate</input_port>
-      <input_port name="max_rate">Maximum rate</input_port>
-      <input_port name="min_speed">Minimum speed</input_port>
-      <input_port name="max_speed">Maximum speed</input_port>
-      <input_port name="goal">Vector of navigation goals</input_port>
-      <input_port name="goals">Navigation goal</input_port>
+      <input_port name="min_rate" type="double" default="0.1">The minimum rate at which child node can be ticked (hz).</input_port>
+      <input_port name="max_rate" type="double" default="1.0">The maximum rate at which child node can be ticked (hz).</input_port>
+      <input_port name="min_speed" type="double" default="0.0">The minimum robot speed below which the child node is ticked at minimum rate (m/s).</input_port>
+      <input_port name="max_speed" type="double" default="0.5">The maximum robot speed above which the child node is ticked at maximum rate (m/s).</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Destination to check. Takes in a blackboard variable, "{goal}" if not specified.</input_port>
+      <input_port name="goals" type="nav_msgs::msg::Goals">Vector of goals to check. Takes in a blackboard variable, "{goals}" if not specified.</input_port>
     </Decorator>
 
     <Decorator ID="PathLongerOnApproach">
-      <input_port name="path">Planned Path</input_port>
-      <input_port name="prox_len">Proximity length (m) for the path to be longer on approach</input_port>
-      <input_port name="length_factor">Length multiplication factor to check if the path is significantly longer </input_port>
+      <input_port name="path" type="nav_msgs::msg::Path">Path created by action server. Takes in a blackboard variable, e.g. "{path}".</input_port>
+      <input_port name="prox_len" type="double" default="3.0">Proximity length (m) for the path to be longer on approach.</input_port>
+      <input_port name="length_factor" type="double" default="2.0">Length multiplication factor to check if the path is significantly longer.</input_port>
     </Decorator>
 
     <Decorator ID="GoalUpdatedController">
-      <input_port name="goal">Vector of navigation goals</input_port>
-      <input_port name="goals">Navigation goal</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Destination to check. Takes in a blackboard variable, "{goal}" if not specified.</input_port>
+      <input_port name="goals" type="nav_msgs::msg::Goals">Vector of goals to check. Takes in a blackboard variable, "{goals}" if not specified.</input_port>
     </Decorator>
 
   </TreeNodesModel>

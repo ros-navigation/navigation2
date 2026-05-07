@@ -9,12 +9,13 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <build_depend>eigen</build_depend>
+  <build_depend>libceres-dev</build_depend>
   <build_depend>nav2_common</build_depend>
 
   <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
-  <depend>libceres-dev</depend>
   <depend>nav2_core</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>nav2_msgs</depend>
