@@ -799,17 +799,18 @@ TEST_F(Tester, testPolygonGetPointsInside)
 {
   createPolygon("stop", true);
 
+  // Each point must carry the source field so it passes the polygon's source filter.
   std::vector<nav2_collision_monitor::Point> points;
 
   // Out of boundaries points
-  points.push_back({1.0, 0.0});
-  points.push_back({0.0, 1.0});
-  points.push_back({-1.0, 0.0});
-  points.push_back({0.0, -1.0});
+  points.push_back({1.0, 0.0, 0.0, OBSERVATION_SOURCE_NAME});
+  points.push_back({0.0, 1.0, 0.0, OBSERVATION_SOURCE_NAME});
+  points.push_back({-1.0, 0.0, 0.0, OBSERVATION_SOURCE_NAME});
+  points.push_back({0.0, -1.0, 0.0, OBSERVATION_SOURCE_NAME});
   ASSERT_EQ(polygon_->getPointsInside(points), 0);
 
   // Add one point inside
-  points.push_back({-0.1, 0.3});
+  points.push_back({-0.1, 0.3, 0.0, OBSERVATION_SOURCE_NAME});
   ASSERT_EQ(polygon_->getPointsInside(points), 1);
 }
 
@@ -828,16 +829,16 @@ TEST_F(Tester, testPolygonGetPointsInsideEdge)
   std::vector<nav2_collision_monitor::Point> points;
 
   // Out of boundaries points
-  points.push_back({-2.0, -1.0});
-  points.push_back({-2.0, 0.0});
-  points.push_back({-2.0, 1.0});
-  points.push_back({3.0, -1.0});
-  points.push_back({3.0, 0.0});
-  points.push_back({3.0, 1.0});
+  points.push_back({-2.0, -1.0, 0.0, OBSERVATION_SOURCE_NAME});
+  points.push_back({-2.0, 0.0, 0.0, OBSERVATION_SOURCE_NAME});
+  points.push_back({-2.0, 1.0, 0.0, OBSERVATION_SOURCE_NAME});
+  points.push_back({3.0, -1.0, 0.0, OBSERVATION_SOURCE_NAME});
+  points.push_back({3.0, 0.0, 0.0, OBSERVATION_SOURCE_NAME});
+  points.push_back({3.0, 1.0, 0.0, OBSERVATION_SOURCE_NAME});
   ASSERT_EQ(polygon_->getPointsInside(points), 0);
 
   // Add one point inside
-  points.push_back({0.0, 0.0});
+  points.push_back({0.0, 0.0, 0.0, OBSERVATION_SOURCE_NAME});
   ASSERT_EQ(polygon_->getPointsInside(points), 1);
 }
 
@@ -847,11 +848,11 @@ TEST_F(Tester, testCircleGetPointsInside)
 
   std::vector<nav2_collision_monitor::Point> points;
   // Point out of radius
-  points.push_back({1.0, 0.0});
+  points.push_back({1.0, 0.0, 0.0, OBSERVATION_SOURCE_NAME});
   ASSERT_EQ(circle_->getPointsInside(points), 0);
 
   // Add one point inside
-  points.push_back({-0.1, 0.3});
+  points.push_back({-0.1, 0.3, 0.0, OBSERVATION_SOURCE_NAME});
   ASSERT_EQ(circle_->getPointsInside(points), 1);
 }
 
@@ -865,40 +866,43 @@ TEST_F(Tester, testPolygonGetCollisionTime)
   ASSERT_TRUE(waitFootprint(500ms, footprint));
   ASSERT_EQ(footprint.size(), 4u);
 
+  // Helper: build a vector of two source-tagged points.
+  auto makePts = [](double x1, double y1, double x2, double y2) {
+      return std::vector<nav2_collision_monitor::Point>{
+      {x1, y1, 0.0, OBSERVATION_SOURCE_NAME},
+      {x2, y2, 0.0, OBSERVATION_SOURCE_NAME}};
+    };
+
   // Forward movement check
   nav2_collision_monitor::Velocity vel{0.5, 0.0, 0.0};  // 0.5 m/s forward movement
   // Two points 0.2 m ahead the footprint (0.5 m)
-  std::unordered_map<std::string, std::vector<nav2_collision_monitor::Point>> points_map;
-  points_map.insert({OBSERVATION_SOURCE_NAME, {{0.7, -0.01}, {0.7, 0.01}}});
-  std::unordered_map<std::string, std::vector<nav2_collision_monitor::Point>> triggering_points;
+  auto points = makePts(0.7, -0.01, 0.7, 0.01);
+  std::vector<nav2_collision_monitor::Point> triggering_points;
   // Collision is expected to be ~= 0.2 m / 0.5 m/s seconds
   EXPECT_NEAR(
-    polygon_->getCollisionTime(points_map, vel, triggering_points), 0.4, SIMULATION_TIME_STEP);
+    polygon_->getCollisionTime(points, vel, triggering_points), 0.4, SIMULATION_TIME_STEP);
   // On trigger, triggering_points holds only the points responsible for the collision
-  EXPECT_EQ(triggering_points.size(), 1u);
-  EXPECT_EQ(triggering_points[OBSERVATION_SOURCE_NAME].size(), 2u);
+  EXPECT_EQ(triggering_points.size(), 2u);
 
   // Backward movement check
   vel = {-0.5, 0.0, 0.0};  // 0.5 m/s backward movement
   // Two points 0.2 m behind the footprint (0.5 m)
-  points_map.clear();
-  points_map.insert({OBSERVATION_SOURCE_NAME, {{-0.7, -0.01}, {-0.7, 0.01}}});
+  points = makePts(-0.7, -0.01, -0.7, 0.01);
   triggering_points.clear();
   // Collision is expected to be in ~= 0.2 m / 0.5 m/s seconds
   EXPECT_NEAR(
-    polygon_->getCollisionTime(points_map, vel, triggering_points), 0.4, SIMULATION_TIME_STEP);
-  EXPECT_EQ(triggering_points[OBSERVATION_SOURCE_NAME].size(), 2u);
+    polygon_->getCollisionTime(points, vel, triggering_points), 0.4, SIMULATION_TIME_STEP);
+  EXPECT_EQ(triggering_points.size(), 2u);
 
   // Sideway movement check
   vel = {0.0, 0.5, 0.0};  // 0.5 m/s sideway movement
   // Two points 0.1 m ahead the footprint (0.5 m)
-  points_map.clear();
-  points_map.insert({OBSERVATION_SOURCE_NAME, {{-0.01, 0.6}, {0.01, 0.6}}});
+  points = makePts(-0.01, 0.6, 0.01, 0.6);
   triggering_points.clear();
   // Collision is expected to be in ~= 0.1 m / 0.5 m/s seconds
   EXPECT_NEAR(
-    polygon_->getCollisionTime(points_map, vel, triggering_points), 0.2, SIMULATION_TIME_STEP);
-  EXPECT_EQ(triggering_points[OBSERVATION_SOURCE_NAME].size(), 2u);
+    polygon_->getCollisionTime(points, vel, triggering_points), 0.2, SIMULATION_TIME_STEP);
+  EXPECT_EQ(triggering_points.size(), 2u);
 
   // Rotation check
   vel = {0.0, 0.0, 1.0};  // 1.0 rad/s rotation
@@ -912,33 +916,30 @@ TEST_F(Tester, testPolygonGetCollisionTime)
   //     |    '    |
   //     -----------
   //          '
-  points_map.clear();
-  points_map.insert({OBSERVATION_SOURCE_NAME, {{0.49, -0.01}, {0.49, 0.01}}});
+  points = makePts(0.49, -0.01, 0.49, 0.01);
   triggering_points.clear();
   // Collision is expected to be in ~= 45 degrees * M_PI / (180 degrees * 1.0 rad/s) seconds
   double exp_res = 45 / 180 * M_PI;
   EXPECT_NEAR(
-    polygon_->getCollisionTime(points_map, vel, triggering_points), exp_res, EPSILON);
-  EXPECT_EQ(triggering_points[OBSERVATION_SOURCE_NAME].size(), 2u);
+    polygon_->getCollisionTime(points, vel, triggering_points), exp_res, EPSILON);
+  EXPECT_EQ(triggering_points.size(), 2u);
 
   // Two points are already inside footprint
   vel = {0.5, 0.0, 0.0};  // 0.5 m/s forward movement
   // Two points inside
-  points_map.clear();
-  points_map.insert({OBSERVATION_SOURCE_NAME, {{0.1, -0.01}, {0.1, 0.01}}});
+  points = makePts(0.1, -0.01, 0.1, 0.01);
   triggering_points.clear();
   // Collision already appeared: collision time should be 0
-  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel, triggering_points), 0.0, EPSILON);
-  EXPECT_EQ(triggering_points[OBSERVATION_SOURCE_NAME].size(), 2u);
+  EXPECT_NEAR(polygon_->getCollisionTime(points, vel, triggering_points), 0.0, EPSILON);
+  EXPECT_EQ(triggering_points.size(), 2u);
 
   // All points are out of simulation prediction
   vel = {0.5, 0.0, 0.0};  // 0.5 m/s forward movement
   // Two points 0.6 m ahead the footprint (0.5 m)
-  points_map.clear();
-  points_map.insert({OBSERVATION_SOURCE_NAME, {{1.1, -0.01}, {1.1, 0.01}}});
+  points = makePts(1.1, -0.01, 1.1, 0.01);
   triggering_points.clear();
   // There is no collision: return value should be negative and no triggering points reported
-  EXPECT_LT(polygon_->getCollisionTime(points_map, vel, triggering_points), 0.0);
+  EXPECT_LT(polygon_->getCollisionTime(points, vel, triggering_points), 0.0);
   EXPECT_TRUE(triggering_points.empty());
 }
 
@@ -1045,7 +1046,7 @@ TEST_F(Tester, testPolygonDebounceDefaultBehavior)
       std::vector<nav2_collision_monitor::Point> points;
       points.reserve(count);
       for (int i = 0; i < count; ++i) {
-        points.push_back(nav2_collision_monitor::Point{0.0, 0.0});
+        points.push_back(nav2_collision_monitor::Point{0.0, 0.0, 0.0, OBSERVATION_SOURCE_NAME});
       }
       return points;
     };
@@ -1070,7 +1071,7 @@ TEST_F(Tester, testPolygonDebounceConsecutiveTriggerRelease)
       std::vector<nav2_collision_monitor::Point> points;
       points.reserve(count);
       for (int i = 0; i < count; ++i) {
-        points.push_back(nav2_collision_monitor::Point{0.0, 0.0});
+        points.push_back(nav2_collision_monitor::Point{0.0, 0.0, 0.0, OBSERVATION_SOURCE_NAME});
       }
       return points;
     };

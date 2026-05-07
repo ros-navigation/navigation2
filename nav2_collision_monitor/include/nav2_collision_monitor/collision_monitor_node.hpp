@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -162,30 +161,28 @@ protected:
   /**
    * @brief Processes the polygon of STOP, SLOWDOWN and LIMIT action type
    * @param polygon Polygon to process
-   * @param sources_collision_points_map Map containing source name as key and
-   * array of source's 2D obstacle points as value
+   * @param collision_points Array of obstacle points with source name
    * @param velocity Desired robot velocity
    * @param robot_action Output processed robot action
    * @return True if returned action is caused by current polygon, otherwise false
    */
   bool processStopSlowdownLimit(
     const std::shared_ptr<Polygon> polygon,
-    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+    const std::vector<Point> & collision_points,
     const Velocity & velocity,
     Action & robot_action) const;
 
   /**
    * @brief Processes APPROACH action type
    * @param polygon Polygon to process
-   * @param sources_collision_points_map Map containing source name as key and
-   * array of source's 2D obstacle points as value
+   * @param collision_points Array of obstacle points with source name
    * @param velocity Desired robot velocity
    * @param robot_action Output processed robot action
    * @return True if returned action is caused by current polygon, otherwise false
    */
   bool processApproach(
     const std::shared_ptr<Polygon> polygon,
-    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+    const std::vector<Point> & collision_points,
     const Velocity & velocity,
     Action & robot_action) const;
 
@@ -203,9 +200,7 @@ protected:
   void publishPolygons() const;
 
   /**
-   * @brief Publishes the points responsible for the current collision-monitor action.
-   * Publish action.triggering_points (populated by processStopSlowdownLimit / processApproach),
-   * colour-coded by action type, as markers.
+   * @brief Publishes action.triggering_points as markers, colour-coded by action type.
    * @param action Current robot action
    */
   void publishTriggeringPoints(const Action & action);

@@ -139,12 +139,11 @@ protected:
 
   /**
    * @brief Publishes the points inside each detected polygon as markers,
-   * keyed by per-source. Caller should gate on subscriber count.
-   * @param all_triggering_points Map from polygon name to its per-source triggering points
+   * bucketed by polygon name and per-point source.
+   * @param all_triggering_points Map from polygon name to its triggering points.
    */
   void publishTriggeringPoints(
-    const std::unordered_map<std::string,
-    std::unordered_map<std::string, std::vector<Point>>> & all_triggering_points);
+    const std::unordered_map<std::string, std::vector<Point>> & all_triggering_points);
 
   // ----- Variables -----
 

@@ -314,18 +314,15 @@ void CollisionDetector::process()
   rclcpp::Time curr_time = this->now();
 
   // Points array collected from different data sources in a robot base frame
-  std::unordered_map<std::string, std::vector<Point>> sources_collision_points_map;
+  std::vector<Point> collision_points;
 
   std::unique_ptr<nav2_msgs::msg::CollisionDetectorState> state_msg =
     std::make_unique<nav2_msgs::msg::CollisionDetectorState>();
 
-  // Fill collision_points map from different data sources
+  // Fill collision_points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
-    auto iter = sources_collision_points_map.insert(
-      {source->getSourceName(), std::vector<Point>()});
-
     if (source->getEnabled()) {
-      if (!source->getData(curr_time, iter.first->second) &&
+      if (!source->getData(curr_time, collision_points) &&
         source->getSourceTimeout().seconds() != 0.0)
       {
         RCLCPP_WARN(
@@ -355,30 +352,26 @@ void CollisionDetector::process()
     marker.lifetime = rclcpp::Duration(0, 0);
     marker.frame_locked = true;
 
-    for (const auto & [_, points] : sources_collision_points_map) {
-      for (const auto & point : points) {
-        geometry_msgs::msg::Point p;
-        p.x = point.x;
-        p.y = point.y;
-        p.z = collision_points_marker_3d_ ? point.z : 0.0;
-        marker.points.push_back(p);
-      }
+    for (const auto & point : collision_points) {
+      geometry_msgs::msg::Point p;
+      p.x = point.x;
+      p.y = point.y;
+      p.z = collision_points_marker_3d_ ? point.z : 0.0;
+      marker.points.push_back(p);
     }
     marker_array->markers.push_back(marker);
     collision_points_marker_pub_->publish(std::move(marker_array));
   }
 
   // Per-polygon triggering points; populated only for polygons that detect.
-  std::unordered_map<std::string,
-    std::unordered_map<std::string, std::vector<Point>>> all_triggering_points;
+  std::unordered_map<std::string, std::vector<Point>> all_triggering_points;
 
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (!polygon->getEnabled()) {
       continue;
     }
-    // Single pass: count and collect inside points keyed by source.
-    std::unordered_map<std::string, std::vector<Point>> triggering_points;
-    const bool detected = polygon->isTriggered(sources_collision_points_map, &triggering_points);
+    std::vector<Point> triggering_points;
+    const bool detected = polygon->isTriggered(collision_points, &triggering_points);
     state_msg->polygons.push_back(polygon->getName());
     state_msg->detections.push_back(detected);
     if (detected) {
@@ -397,8 +390,7 @@ void CollisionDetector::process()
 }
 
 void CollisionDetector::publishTriggeringPoints(
-  const std::unordered_map<std::string,
-  std::unordered_map<std::string, std::vector<Point>>> & all_triggering_points)
+  const std::unordered_map<std::string, std::vector<Point>> & all_triggering_points)
 {
   auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
 
@@ -427,15 +419,15 @@ void CollisionDetector::publishTriggeringPoints(
       marker.frame_locked = true;
 
       if (has_triggering) {
-        const auto src_iter = poly_iter->second.find(source_name);
-        if (src_iter != poly_iter->second.end()) {
-          for (const auto & p : src_iter->second) {
-            geometry_msgs::msg::Point gp;
-            gp.x = p.x;
-            gp.y = p.y;
-            gp.z = p.z;
-            marker.points.push_back(gp);
+        for (const auto & p : poly_iter->second) {
+          if (p.source != source_name) {
+            continue;
           }
+          geometry_msgs::msg::Point gp;
+          gp.x = p.x;
+          gp.y = p.y;
+          gp.z = p.z;
+          marker.points.push_back(gp);
         }
       }
       marker_array->markers.push_back(marker);

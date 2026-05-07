@@ -146,6 +146,7 @@ void PolygonSource::convertPolygonStampedToPoints(
       Point p;
       p.x = current_point.x + j * dx;
       p.y = current_point.y + j * dy;
+      p.source = source_name_;
       data.push_back(p);
     }
   }
