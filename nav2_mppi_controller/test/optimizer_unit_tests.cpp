@@ -990,7 +990,7 @@ TEST(OptimizerTests, InterIterationConstraintsTests)
   EXPECT_FLOAT_EQ(seq.vy(0), 0.3f);
   EXPECT_FLOAT_EQ(seq.wz(0), 0.2f);
 
-  // Closed-loop + shift: vx(0) should clamp with model_dt, not pin
+  // Closed-loop + shift: vx(0) should still be pinned to state_.speed
   settings.open_loop = false;
   state.speed.linear.x = 0.0;
   state.speed.linear.y = 0.0;
@@ -1000,10 +1000,10 @@ TEST(OptimizerTests, InterIterationConstraintsTests)
   seq.vy(0) = 5.0;
   seq.wz(0) = 5.0;
   optimizer_tester.applyControlSequenceInterIterationConstraintsWrapper();
-  // max delta = model_dt * accel = 0.05 * 2.0 = 0.1
-  EXPECT_NEAR(seq.vx(0), 0.1f, 1e-6);
-  EXPECT_NEAR(seq.vy(0), 0.1f, 1e-6);
-  EXPECT_NEAR(seq.wz(0), 0.1f, 1e-6);
+  // shift always pins vx(0) to current speed regardless of open/closed loop
+  EXPECT_FLOAT_EQ(seq.vx(0), 0.0f);
+  EXPECT_FLOAT_EQ(seq.vy(0), 0.0f);
+  EXPECT_FLOAT_EQ(seq.wz(0), 0.0f);
 
   // Open-loop + no shift (controller faster): clamp with controller_period
   settings.open_loop = true;
@@ -1024,16 +1024,17 @@ TEST(OptimizerTests, InterIterationConstraintsTests)
   // Tighter than model_dt would give (0.1)
   EXPECT_LT(seq.vx(0), 0.05f * 2.0f);
 
-  // Closed-loop + no shift: uses model_dt regardless
+  // Closed-loop + no shift: uses controller_period for clamping
   settings.open_loop = false;
   seq.reset(10);
   seq.vx(0) = 5.0;
   seq.vy(0) = 5.0;
   seq.wz(0) = 5.0;
   optimizer_tester.applyControlSequenceInterIterationConstraintsWrapper();
-  EXPECT_NEAR(seq.vx(0), 0.1f, 1e-6);
-  EXPECT_NEAR(seq.vy(0), 0.1f, 1e-6);
-  EXPECT_NEAR(seq.wz(0), 0.1f, 1e-6);
+  // max delta = controller_period * accel = 0.025 * 2.0 = 0.05
+  EXPECT_NEAR(seq.vx(0), 0.05f, 1e-6);
+  EXPECT_NEAR(seq.vy(0), 0.05f, 1e-6);
+  EXPECT_NEAR(seq.wz(0), 0.05f, 1e-6);
 
   // Deceleration: from positive speed with asymmetric accel/decel limits
   settings.open_loop = true;
