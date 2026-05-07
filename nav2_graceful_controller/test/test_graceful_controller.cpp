@@ -29,15 +29,17 @@ class SCLFixture : public nav2_graceful_controller::SmoothControlLaw
 public:
   SCLFixture(
     double k_phi, double k_delta, double beta, double lambda,
-    double slowdown_radius, double v_linear_min, double v_linear_max, double v_angular_max)
+    double slowdown_radius, double deceleration_max,
+    double v_linear_min, double v_linear_max, double v_angular_max)
   : nav2_graceful_controller::SmoothControlLaw(k_phi, k_delta, beta, lambda,
-      slowdown_radius, v_linear_min, v_linear_max, v_angular_max) {}
+      slowdown_radius, deceleration_max, v_linear_min, v_linear_max, v_angular_max) {}
 
   double getCurvatureKPhi() {return k_phi_;}
   double getCurvatureKDelta() {return k_delta_;}
   double getCurvatureBeta() {return beta_;}
   double getCurvatureLambda() {return lambda_;}
   double getSlowdownRadius() {return slowdown_radius_;}
+  double getDecelMax() {return deceleration_max_;}
   double getSpeedLinearMin() {return v_linear_min_;}
   double getSpeedLinearMax() {return v_linear_max_;}
   double getSpeedAngularMax() {return v_angular_max_;}
@@ -78,7 +80,7 @@ public:
 
 TEST(SmoothControlLawTest, setCurvatureConstants) {
   // Initialize SmoothControlLaw
-  SCLFixture scl(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  SCLFixture scl(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0);
 
   // Set curvature constants
   scl.setCurvatureConstants(1.0, 2.0, 3.0, 4.0);
@@ -86,17 +88,21 @@ TEST(SmoothControlLawTest, setCurvatureConstants) {
   // Set slowdown radius
   scl.setSlowdownRadius(5.0);
 
+  // Set max deceleration
+  scl.setMaxDeceleration(6.0);
+
   // Check results
   EXPECT_EQ(scl.getCurvatureKPhi(), 1.0);
   EXPECT_EQ(scl.getCurvatureKDelta(), 2.0);
   EXPECT_EQ(scl.getCurvatureBeta(), 3.0);
   EXPECT_EQ(scl.getCurvatureLambda(), 4.0);
   EXPECT_EQ(scl.getSlowdownRadius(), 5.0);
+  EXPECT_EQ(scl.getDecelMax(), 6.0);
 }
 
 TEST(SmoothControlLawTest, setSpeedLimits) {
   // Initialize SmoothControlLaw
-  SCLFixture scl(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  SCLFixture scl(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
   // Set speed limits
   scl.setSpeedLimit(1.0, 2.0, 3.0);
@@ -109,7 +115,7 @@ TEST(SmoothControlLawTest, setSpeedLimits) {
 
 TEST(SmoothControlLawTest, calculateCurvature) {
   // Initialize SmoothControlLaw
-  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 0.0, 1.0, 1.0);
+  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 2.5, 0.0, 1.0, 1.0);
 
   // Initialize target
   geometry_msgs::msg::Pose target;
@@ -144,7 +150,7 @@ TEST(SmoothControlLawTest, calculateCurvature) {
 
 TEST(SmoothControlLawTest, calculateRegularVelocity) {
   // Initialize SmoothControlLaw
-  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 0.0, 1.0, 1.0);
+  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 2.5, 0.0, 1.0, 1.0);
 
   // Initialize target
   geometry_msgs::msg::Pose target;
@@ -181,7 +187,7 @@ TEST(SmoothControlLawTest, calculateRegularVelocity) {
 
 TEST(SmoothControlLawTest, calculateNextPose) {
   // Initialize SmoothControlLaw
-  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 0.0, 1.0, 1.0);
+  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 2.5, 0.0, 1.0, 1.0);
 
   // Initialize target
   geometry_msgs::msg::Pose target;
@@ -243,6 +249,7 @@ TEST(GracefulControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.v_angular_max", 10.0),
       rclcpp::Parameter("test.v_angular_min_in_place", 14.0),
       rclcpp::Parameter("test.slowdown_radius", 11.0),
+      rclcpp::Parameter("test.deceleration_max", 21.0),
       rclcpp::Parameter("test.initial_rotation", false),
       rclcpp::Parameter("test.initial_rotation_tolerance", 12.0),
       rclcpp::Parameter("test.prefer_final_rotation", false),
@@ -271,6 +278,7 @@ TEST(GracefulControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.v_angular_max").as_double(), 10.0);
   EXPECT_EQ(node->get_parameter("test.v_angular_min_in_place").as_double(), 14.0);
   EXPECT_EQ(node->get_parameter("test.slowdown_radius").as_double(), 11.0);
+  EXPECT_EQ(node->get_parameter("test.deceleration_max").as_double(), 21.0);
   EXPECT_EQ(node->get_parameter("test.initial_rotation").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.initial_rotation_tolerance").as_double(), 12.0);
   EXPECT_EQ(node->get_parameter("test.prefer_final_rotation").as_bool(), false);

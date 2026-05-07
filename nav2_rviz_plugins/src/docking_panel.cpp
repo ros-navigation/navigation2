@@ -395,7 +395,7 @@ void DockingPanel::onDockingButtonPressed()
     };
 
   auto future_goal_handle = dock_client_->async_send_goal(goal_msg, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
+  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");

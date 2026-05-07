@@ -8,18 +8,19 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>eigen</build_depend>
   <build_depend>nav2_common</build_depend>
+  <build_depend>nlohmann-json-dev</build_depend>
+  <build_depend>angles</build_depend>
 
   <depend>ament_index_cpp</depend>
-  <depend>angles</depend>
   <depend>backward_ros</depend>
-  <depend>eigen</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_core</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>nav2_util</depend>
   <depend>nav_msgs</depend>
-  <depend>nlohmann-json-dev</depend>
   <depend>ompl</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
