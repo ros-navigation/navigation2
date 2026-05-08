@@ -191,7 +191,7 @@ bool ThetaStar::losCheck(
       return false;
     }
     int e2 = 2 * e;
-    if (e2 > -dy && e2 < dx) {
+    if (e2 > -dy && e2 <= dx) {
       if (!isSafe(cx + sx, cy) || !isSafe(cx, cy + sy)) {
         return false;
       }
@@ -205,10 +205,6 @@ bool ThetaStar::losCheck(
       cy += sy;
       e += dx;
     }
-  }
-
-  if (!isSafe(cx, cy, sl_cost)) {
-    return false;
   }
 
   return true;
