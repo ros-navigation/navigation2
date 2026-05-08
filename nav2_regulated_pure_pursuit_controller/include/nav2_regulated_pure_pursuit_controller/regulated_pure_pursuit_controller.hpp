@@ -145,14 +145,16 @@ protected:
   /**
    * @brief Whether robot should rotate to final goal orientation
    * @param goal_checker Goal checker instance for tolerances / state
-   * @param pose Current robot pose in base frame
+   * @param robot_pose Current robot pose in costmap's global frame
+   * @param goal_pose Goal pose in costmap's global frame
    * @param speed Current robot speed
    * @param transformed_plan The plan in the robot base frame
    * @return Whether should rotate to goal heading
    */
   bool shouldRotateToGoalHeading(
     nav2_core::GoalChecker * goal_checker,
-    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const geometry_msgs::msg::PoseStamped & goal_pose,
     const geometry_msgs::msg::Twist & speed,
     const nav_msgs::msg::Path & transformed_plan);
 

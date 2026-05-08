@@ -162,7 +162,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   const geometry_msgs::msg::Twist & speed,
   nav2_core::GoalChecker * goal_checker,
   const nav_msgs::msg::Path & transformed_global_plan,
-  const geometry_msgs::msg::PoseStamped & /*global_goal*/)
+  const geometry_msgs::msg::PoseStamped & global_goal)
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
 
@@ -216,8 +216,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   //        - equal to "normal" carrot_pose when curvature_lookahead_pose = false
   //        - otherwise equal to curvature_lookahead_pose (which can be interpolated after goal)
   double angle_to_heading;
-  // Note that we need to pass the transformed plan in costmap's global frame here
-  if (shouldRotateToGoalHeading(goal_checker, pose, speed, transformed_global_plan)) {
+  if (shouldRotateToGoalHeading(goal_checker, pose, global_goal, speed, transformed_plan)) {
     is_rotating_to_heading_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
@@ -330,7 +329,8 @@ bool RegulatedPurePursuitController::shouldRotateToPath(
 
 bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
   nav2_core::GoalChecker * goal_checker,
-  const geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::PoseStamped & robot_pose,
+  const geometry_msgs::msg::PoseStamped & goal_pose,
   const geometry_msgs::msg::Twist & speed,
   const nav_msgs::msg::Path & transformed_plan)
 {
@@ -338,7 +338,7 @@ bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
   if (!params_->use_rotate_to_heading) {
     return false;
   }
-  return goal_checker->isGoalXYReached(pose.pose, transformed_plan.poses.back().pose, speed,
+  return goal_checker->isGoalXYReached(robot_pose.pose, goal_pose.pose, speed,
     transformed_plan);
 }
 

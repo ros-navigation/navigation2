@@ -130,7 +130,6 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
     std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
 
     try {
-      // Note that we need to pass the transformed plan in costmap's global frame here
       if (goal_checker->isGoalXYReached(pose.pose, global_goal.pose, velocity,
         transformed_global_plan))
       {

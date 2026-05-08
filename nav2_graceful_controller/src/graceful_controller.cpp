@@ -120,7 +120,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * goal_checker,
   const nav_msgs::msg::Path & transformed_global_plan,
-  const geometry_msgs::msg::PoseStamped & /*global_goal*/)
+  const geometry_msgs::msg::PoseStamped & global_goal)
 {
   std::lock_guard<std::mutex> param_lock(param_handler_->getMutex());
 
@@ -164,9 +164,8 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
 
   // If we've reached the XY goal tolerance, just rotate
-  // Note that we need to pass the transformed plan in costmap's global frame here
-  if (goal_checker->isGoalXYReached(pose.pose, transformed_global_plan.poses.back().pose, velocity,
-      transformed_global_plan))
+  if (goal_checker->isGoalXYReached(pose.pose, global_goal.pose, velocity,
+      transformed_plan))
   {
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     // Check for collisions between our current pose and goal pose

@@ -62,11 +62,12 @@ public:
 
   bool shouldRotateToGoalHeadingWrapper(
     nav2_core::GoalChecker * goal_checker,
-    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const geometry_msgs::msg::PoseStamped & goal_pose,
     const geometry_msgs::msg::Twist & speed,
     const nav_msgs::msg::Path & transformed_plan)
   {
-    return shouldRotateToGoalHeading(goal_checker, pose, speed, transformed_plan);
+    return shouldRotateToGoalHeading(goal_checker, robot_pose, goal_pose, speed, transformed_plan);
   }
 
   void rotateToHeadingWrapper(
@@ -233,14 +234,15 @@ TEST(RegulatedPurePursuitTest, rotateTests)
 
   auto plan_in_tolerance = make_transformed_plan(0.0, 0.24, goal_yaw);
   EXPECT_EQ(
-    ctrl->shouldRotateToGoalHeadingWrapper(&goal_checker, robot_pose, robot_speed,
-    plan_in_tolerance),
+    ctrl->shouldRotateToGoalHeadingWrapper(
+      &goal_checker, robot_pose, plan_in_tolerance.poses.back(), robot_speed, plan_in_tolerance),
     true);
 
   auto plan_outside_tolerance = make_transformed_plan(0.0, 0.26, goal_yaw);
   EXPECT_EQ(
     ctrl->shouldRotateToGoalHeadingWrapper(
-      &goal_checker, robot_pose, robot_speed, plan_outside_tolerance),
+      &goal_checker, robot_pose, plan_outside_tolerance.poses.back(), robot_speed,
+      plan_outside_tolerance),
     false);
 
   // rotateToHeading
@@ -293,20 +295,23 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   auto stateful_plan_outside = make_transformed_plan(0.0, 0.26, goal_yaw);
   EXPECT_EQ(
     ctrl->shouldRotateToGoalHeadingWrapper(
-      &stateful_goal_checker, robot_pose, robot_speed, stateful_plan_outside),
+      &stateful_goal_checker, robot_pose, stateful_plan_outside.poses.back(), robot_speed,
+      stateful_plan_outside),
     false);
 
   // Enter tolerance (should set internal flag)
   auto stateful_plan_inside = make_transformed_plan(0.0, 0.24, goal_yaw);
   EXPECT_EQ(
     ctrl->shouldRotateToGoalHeadingWrapper(
-      &stateful_goal_checker, robot_pose, robot_speed, stateful_plan_inside),
+      &stateful_goal_checker, robot_pose, stateful_plan_inside.poses.back(), robot_speed,
+      stateful_plan_inside),
     true);
 
   // Move outside tolerance again - still expect true (due to persistent state in goal checker)
   EXPECT_EQ(
     ctrl->shouldRotateToGoalHeadingWrapper(
-      &stateful_goal_checker, robot_pose, robot_speed, stateful_plan_outside),
+      &stateful_goal_checker, robot_pose, stateful_plan_outside.poses.back(), robot_speed,
+      stateful_plan_outside),
     true);
 }
 
