@@ -65,7 +65,6 @@ void RegulatedPurePursuitController::configure(
   collision_checker_ = std::make_unique<CollisionChecker>(node, costmap_ros_, params_);
 
   double control_frequency = 20.0;
-  goal_dist_tol_ = 0.25;  // reasonable default before first update
 
   node->get_parameter("controller_frequency", control_frequency);
   control_duration_ = 1.0 / control_frequency;
@@ -163,21 +162,12 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   const geometry_msgs::msg::Twist & speed,
   nav2_core::GoalChecker * goal_checker,
   const nav_msgs::msg::Path & transformed_global_plan,
-  const geometry_msgs::msg::PoseStamped & /*global_goal*/)
+  const geometry_msgs::msg::PoseStamped & global_goal)
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
-
-  // Update for the current goal checker's state
-  geometry_msgs::msg::Pose pose_tolerance;
-  geometry_msgs::msg::Twist vel_tolerance;
-  if (!goal_checker->getTolerances(pose_tolerance, vel_tolerance)) {
-    RCLCPP_WARN(logger_, "Unable to retrieve goal checker's tolerances!");
-  } else {
-    goal_dist_tol_ = pose_tolerance.position.x;
-  }
 
   // Transform the plan from costmap's global frame to robot base frame
   nav_msgs::msg::Path transformed_plan;
@@ -226,7 +216,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   //        - equal to "normal" carrot_pose when curvature_lookahead_pose = false
   //        - otherwise equal to curvature_lookahead_pose (which can be interpolated after goal)
   double angle_to_heading;
-  if (shouldRotateToGoalHeading(carrot_pose)) {
+  if (shouldRotateToGoalHeading(goal_checker, pose, global_goal, speed, transformed_plan)) {
     is_rotating_to_heading_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
@@ -291,7 +281,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   const double & carrot_dist = hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
   if (params_->use_collision_detection &&
     collision_checker_->isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist,
-      dist_to_path_end))
+    dist_to_path_end))
   {
     throw nav2_core::NoValidControl("RegulatedPurePursuitController detected collision ahead!");
   }
@@ -338,24 +328,18 @@ bool RegulatedPurePursuitController::shouldRotateToPath(
 }
 
 bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
-  const geometry_msgs::msg::PoseStamped & carrot_pose)
+  nav2_core::GoalChecker * goal_checker,
+  const geometry_msgs::msg::PoseStamped & robot_pose,
+  const geometry_msgs::msg::PoseStamped & goal_pose,
+  const geometry_msgs::msg::Twist & speed,
+  const nav_msgs::msg::Path & transformed_plan)
 {
   // Whether we should rotate robot to goal heading
   if (!params_->use_rotate_to_heading) {
     return false;
   }
-
-  double dist_to_goal = std::hypot(
-    carrot_pose.pose.position.x, carrot_pose.pose.position.y);
-
-  if (params_->stateful) {
-    if (!has_reached_xy_tolerance_ && dist_to_goal < goal_dist_tol_) {
-      has_reached_xy_tolerance_ = true;
-    }
-    return has_reached_xy_tolerance_;
-  }
-
-  return dist_to_goal < goal_dist_tol_;
+  return goal_checker->isGoalXYReached(robot_pose.pose, goal_pose.pose, speed,
+    transformed_plan);
 }
 
 void RegulatedPurePursuitController::rotateToHeading(
@@ -413,7 +397,6 @@ void RegulatedPurePursuitController::applyConstraints(
 void RegulatedPurePursuitController::newPathReceived(
   const nav_msgs::msg::Path & /*raw_global_path*/)
 {
-  has_reached_xy_tolerance_ = false;
 }
 
 void RegulatedPurePursuitController::setSpeedLimit(
@@ -440,7 +423,6 @@ void RegulatedPurePursuitController::reset()
 {
   cancelling_ = false;
   finished_cancelling_ = false;
-  has_reached_xy_tolerance_ = false;
   last_command_velocity_ = geometry_msgs::msg::Twist();
 }
 }  // namespace nav2_regulated_pure_pursuit_controller
