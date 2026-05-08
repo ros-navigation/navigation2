@@ -176,7 +176,7 @@ public:
    * @brief Gets number of points inside given polygon
    * @param sources_collision_points_map Map containing source name as key,
    * and input array of source's points to be checked as value
-    * @param out_triggering_points Output array of triggering points.
+   * @param out_triggering_points Output array of triggering points.
    * @return Number of points inside polygon,
    * for sources in map that are associated with current polygon.
    * If there are no points, returns zero value.
