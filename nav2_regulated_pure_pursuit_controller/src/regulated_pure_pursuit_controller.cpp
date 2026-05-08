@@ -333,6 +333,10 @@ bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
   const geometry_msgs::msg::Twist & speed,
   const nav_msgs::msg::Path & transformed_plan)
 {
+  // Whether we should rotate robot to goal heading
+  if (!params_->use_rotate_to_heading) {
+    return false;
+  }
   return goal_checker->isGoalXYReached(pose.pose, transformed_plan.poses.back().pose, speed,
     transformed_plan);
 }
