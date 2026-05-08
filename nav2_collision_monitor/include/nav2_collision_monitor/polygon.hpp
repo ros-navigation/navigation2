@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
