@@ -73,6 +73,21 @@ int Circle::getPointsInside(
   return num;
 }
 
+int Circle::getPointsInside(
+  const std::vector<Point> & points,
+  std::vector<std::size_t> & out_triggering_indices) const
+{
+  int num = 0;
+  for (std::size_t i = 0; i < points.size(); ++i) {
+    const Point & point = points[i];
+    if (point.x * point.x + point.y * point.y < radius_squared_) {
+      out_triggering_indices.push_back(i);
+      num++;
+    }
+  }
+  return num;
+}
+
 bool Circle::isShapeSet()
 {
   if (radius_squared_ == -1.0) {

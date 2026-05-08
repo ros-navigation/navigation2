@@ -300,6 +300,20 @@ int Polygon::getPointsInside(
 }
 
 int Polygon::getPointsInside(
+  const std::vector<Point> & points,
+  std::vector<std::size_t> & out_triggering_indices) const
+{
+  int num = 0;
+  for (std::size_t i = 0; i < points.size(); ++i) {
+    if (nav2_util::geometry_utils::isPointInsidePolygon(points[i].x, points[i].y, poly_)) {
+      out_triggering_indices.push_back(i);
+      num++;
+    }
+  }
+  return num;
+}
+
+int Polygon::getPointsInside(
   const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
   std::vector<Point> & out_triggering_points) const
 {
@@ -345,7 +359,6 @@ double Polygon::getCollisionTime(
     return 0.0;
   }
 
-  // TODO(nelson): Follow up on how to get the non-transformed triggering points
   // Robot movement simulation
   for (double time = 0.0; time <= time_before_collision_; time += simulation_time_step_) {
     // Shift the robot pose towards to the vel during simulation_time_step_ time interval
@@ -356,7 +369,11 @@ double Polygon::getCollisionTime(
     transformPoints(pose, points_transformed);
     // If the collision occurred on this stage, return the actual time before a collision
     // as if robot was moved with given velocity
-    if (getPointsInside(points_transformed, out_triggering_points) >= min_points_) {
+    std::vector<std::size_t> triggering_indices;
+    if (getPointsInside(points_transformed, triggering_indices) >= min_points_) {
+      for (std::size_t i : triggering_indices) {
+        out_triggering_points.push_back(collision_points[i]);
+      }
       return time;
     }
   }

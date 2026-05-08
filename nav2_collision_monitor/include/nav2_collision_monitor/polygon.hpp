@@ -173,6 +173,17 @@ public:
     std::vector<Point> & out_triggering_points) const;
 
   /**
+   * @brief Gets indices of points inside given polygon
+   * @param points Input array of points to be checked
+   * @param out_triggering_indices Output array of triggering points indices
+   * @return Number of points inside polygon. If there are no points,
+   * returns zero value.
+   */
+  virtual int getPointsInside(
+    const std::vector<Point> & points,
+    std::vector<std::size_t> & out_triggering_indices) const;
+
+  /**
    * @brief Gets number of points inside given polygon
    * @param sources_collision_points_map Map containing source name as key,
    * and input array of source's points to be checked as value
