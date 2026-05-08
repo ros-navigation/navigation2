@@ -675,55 +675,51 @@ void CollisionMonitor::publishTriggeringPoints(const Action & action)
 {
   auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
 
-  // Colour by action type: STOP=red, SLOWDOWN=yellow, APPROACH=blue, LIMIT=orange
-  float r = 0.0f, g = 0.0f, b = 0.0f;
-  switch (action.action_type) {
-    case STOP:     r = 1.0f; g = 0.0f; b = 0.0f; break;
-    case SLOWDOWN: r = 1.0f; g = 1.0f; b = 0.0f; break;
-    case APPROACH: r = 0.0f; g = 0.5f; b = 1.0f; break;
-    case LIMIT:    r = 1.0f; g = 0.5f; b = 0.0f; break;
-    default: break;
-  }
+  // Clear markers from previous cycle.
+  visualization_msgs::msg::Marker clear;
+  clear.action = visualization_msgs::msg::Marker::DELETEALL;
+  marker_array->markers.push_back(clear);
 
-  // Iterate the static (polygon, source) pair set so every namespace we ever emit gets an
-  // ADD marker every cycle. Empty `points` on inactive pairs overwrites any prior ADD
-  // in RViz, clearing the inactive points.
-  for (const auto & polygon : polygons_) {
-    const std::string polygon_name = polygon->getName();
-    const bool is_active_polygon = (polygon_name == action.polygon_name);
-    for (const auto & source_name : polygon->getSourcesNames()) {
-      visualization_msgs::msg::Marker marker;
-      marker.header.frame_id = base_frame_id_;
-      marker.header.stamp = rclcpp::Time(0, 0);
-      marker.ns = polygon_name + "/" + source_name;
-      marker.id = 0;
-      marker.type = visualization_msgs::msg::Marker::POINTS;
-      marker.action = visualization_msgs::msg::Marker::ADD;
-      marker.scale.x = 0.05;
-      marker.scale.y = 0.05;
-      marker.color.r = r;
-      marker.color.g = g;
-      marker.color.b = b;
-      marker.color.a = 1.0f;
-      marker.lifetime = rclcpp::Duration(0, 0);
-      marker.frame_locked = true;
+  if (!action.triggering_points.empty()) {
+    // Colour by action type: STOP=red, SLOWDOWN=yellow, APPROACH=blue, LIMIT=orange
+    float r = 0.0f, g = 0.0f, b = 0.0f;
+    switch (action.action_type) {
+      case STOP:     r = 1.0f; g = 0.0f; b = 0.0f; break;
+      case SLOWDOWN: r = 1.0f; g = 1.0f; b = 0.0f; break;
+      case APPROACH: r = 0.0f; g = 0.5f; b = 1.0f; break;
+      case LIMIT:    r = 1.0f; g = 0.5f; b = 0.0f; break;
+      default: break;
+    }
 
-      if (is_active_polygon) {
-        for (const auto & p : action.triggering_points) {
-          if (p.source != source_name) {
-            continue;
-          }
-          geometry_msgs::msg::Point gp;
-          gp.x = p.x;
-          gp.y = p.y;
-          gp.z = p.z;
-          marker.points.push_back(gp);
-        }
+    std::unordered_map<std::string, size_t> marker_index;
+    for (const auto & p : action.triggering_points) {
+      auto [it, new_source] = marker_index.try_emplace(p.source, marker_array->markers.size());
+
+      if (new_source) {
+        visualization_msgs::msg::Marker marker;
+        marker.header.frame_id = base_frame_id_;
+        marker.header.stamp = rclcpp::Time(0, 0);
+        marker.ns = action.polygon_name + "/" + p.source;
+        marker.id = 0;
+        marker.type = visualization_msgs::msg::Marker::POINTS;
+        marker.action = visualization_msgs::msg::Marker::ADD;
+        marker.scale.x = 0.05;
+        marker.scale.y = 0.05;
+        marker.color.r = r;
+        marker.color.g = g;
+        marker.color.b = b;
+        marker.color.a = 1.0f;
+        marker.lifetime = rclcpp::Duration(0, 0);
+        marker.frame_locked = true;
+        marker_array->markers.push_back(std::move(marker));
       }
-      marker_array->markers.push_back(marker);
+      geometry_msgs::msg::Point gp;
+      gp.x = p.x;
+      gp.y = p.y;
+      gp.z = p.z;
+      marker_array->markers[it->second].points.push_back(gp);
     }
   }
-
   triggering_points_pub_->publish(std::move(marker_array));
 }
 
