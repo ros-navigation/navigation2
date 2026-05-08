@@ -859,7 +859,8 @@ class BasicNavigator(Node):
         rtn = self._getPathImpl(start, goal, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            return rtn.path
+            path: Path = rtn.path
+            return path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
             self.warn('Getting path failed with'
@@ -921,7 +922,8 @@ class BasicNavigator(Node):
         rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            return rtn.path
+            path: Path = rtn.path
+            return path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
             self.warn('Getting path failed with'
@@ -1087,7 +1089,8 @@ class BasicNavigator(Node):
         rtn = self._smoothPathImpl(path, smoother_id, max_duration, check_for_collision)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            return rtn.path
+            smoothed_path: Path = rtn.path
+            return smoothed_path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
             self.warn('Getting path failed with'

@@ -374,10 +374,10 @@ class TestDockingServer(unittest.TestCase):
         rclpy.spin_until_future_complete(self.node, undock_result_future)
         self.undock_action_result.append(undock_result_future.result())
 
-        self.assertIsNotNone(self.undock_action_result[3])
-        if self.undock_action_result[3] is not None:
-            self.assertEqual(self.undock_action_result[3].status, GoalStatus.STATUS_SUCCEEDED)
-            self.assertTrue(self.undock_action_result[3].result.success)
+        self.assertIsNotNone(self.undock_action_result[-1])
+        if self.undock_action_result[-1] is not None:
+            self.assertEqual(self.undock_action_result[-1].status, GoalStatus.STATUS_SUCCEEDED)
+            self.assertTrue(self.undock_action_result[-1].result.success)
 
 
 @launch_testing.post_shutdown_test()  # type: ignore[no-untyped-call]
