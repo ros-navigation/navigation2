@@ -808,10 +808,14 @@ TEST_F(Tester, testPolygonGetPointsInside)
   points.push_back({-1.0, 0.0});
   points.push_back({0.0, -1.0});
   ASSERT_EQ(polygon_->getPointsInside(points, triggering_points), 0);
+  ASSERT_EQ(triggering_points.size(), 0u);
 
   // Add one point inside
   points.push_back({-0.1, 0.3});
   ASSERT_EQ(polygon_->getPointsInside(points, triggering_points), 1);
+  ASSERT_EQ(triggering_points.size(), 1u);
+  EXPECT_NEAR(triggering_points[0].x, -0.1, EPSILON);
+  EXPECT_NEAR(triggering_points[0].y, 0.3, EPSILON);
 }
 
 TEST_F(Tester, testPolygonGetPointsInsideEdge)
@@ -852,10 +856,14 @@ TEST_F(Tester, testCircleGetPointsInside)
   // Point out of radius
   points.push_back({1.0, 0.0});
   ASSERT_EQ(circle_->getPointsInside(points, triggering_points), 0);
+  ASSERT_EQ(triggering_points.size(), 0u);
 
   // Add one point inside
   points.push_back({-0.1, 0.3});
   ASSERT_EQ(circle_->getPointsInside(points, triggering_points), 1);
+  ASSERT_EQ(triggering_points.size(), 1u);
+  EXPECT_NEAR(triggering_points[0].x, -0.1, EPSILON);
+  EXPECT_NEAR(triggering_points[0].y, 0.3, EPSILON);
 }
 
 TEST_F(Tester, testPolygonGetCollisionTime)
