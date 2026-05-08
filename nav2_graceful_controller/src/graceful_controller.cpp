@@ -164,8 +164,9 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
 
   // If we've reached the XY goal tolerance, just rotate
-  if (goal_checker->isGoalXYReached(pose.pose, transformed_plan.poses.back().pose, velocity,
-      transformed_plan))
+  // Note that we need to pass the transformed plan in costmap's global frame here
+  if (goal_checker->isGoalXYReached(pose.pose, transformed_global_plan.poses.back().pose, velocity,
+      transformed_global_plan))
   {
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     // Check for collisions between our current pose and goal pose
