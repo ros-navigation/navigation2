@@ -423,7 +423,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   }
 
   // Points array collected from different data sources in a robot base frame
-  std::vector<Point> collision_points;
+  std::unordered_map<std::string, std::vector<Point>> sources_collision_points_map;
 
   // By default - there is no action
   Action robot_action{DO_NOTHING, cmd_vel_in, "", std::vector<Point>()};
@@ -433,8 +433,11 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   // Fill collision points array from different data sources
   auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
   for (std::shared_ptr<Source> source : sources_) {
+    auto iter = sources_collision_points_map.insert(
+      {source->getSourceName(), std::vector<Point>()});
+
     if (source->getEnabled()) {
-      if (!source->getData(curr_time, collision_points) &&
+      if (!source->getData(curr_time, iter.first->second) &&
         source->getSourceTimeout().seconds() != 0.0)
       {
         action_polygon = nullptr;
@@ -463,7 +466,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
       marker.lifetime = rclcpp::Duration(0, 0);
       marker.frame_locked = true;
 
-      for (const auto & point : collision_points) {
+      for (const auto & point : iter.first->second) {
         geometry_msgs::msg::Point p;
         p.x = point.x;
         p.y = point.y;
@@ -493,12 +496,14 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
     const ActionType at = polygon->getActionType();
     if (at == STOP || at == SLOWDOWN || at == LIMIT) {
       // Process STOP/SLOWDOWN for the selected polygon
-      if (processStopSlowdownLimit(polygon, collision_points, cmd_vel_in, robot_action)) {
+      if (processStopSlowdownLimit(
+          polygon, sources_collision_points_map, cmd_vel_in, robot_action))
+      {
         action_polygon = polygon;
       }
     } else if (at == APPROACH) {
       // Process APPROACH for the selected polygon
-      if (processApproach(polygon, collision_points, cmd_vel_in, robot_action)) {
+      if (processApproach(polygon, sources_collision_points_map, cmd_vel_in, robot_action)) {
         action_polygon = polygon;
       }
     }
@@ -524,7 +529,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
 
 bool CollisionMonitor::processStopSlowdownLimit(
   const std::shared_ptr<Polygon> polygon,
-  const std::vector<Point> & collision_points,
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
   const Velocity & velocity,
   Action & robot_action) const
 {
@@ -534,7 +539,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
 
   // Single pass: collect in-polygon points while isTriggered counts them.
   std::vector<Point> triggering_points;
-  if (polygon->isTriggered(collision_points, &triggering_points)) {
+  if (polygon->isTriggered(sources_collision_points_map, triggering_points)) {
     if (polygon->getActionType() == STOP) {
       // Setting up zero velocity for STOP model
       robot_action.polygon_name = polygon->getName();
@@ -588,7 +593,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
 
 bool CollisionMonitor::processApproach(
   const std::shared_ptr<Polygon> polygon,
-  const std::vector<Point> & collision_points,
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
   const Velocity & velocity,
   Action & robot_action) const
 {
@@ -598,8 +603,8 @@ bool CollisionMonitor::processApproach(
 
   // Obtain time before a collision, capturing the responsible points at the collision step.
   std::vector<Point> triggering_points;
-  const double collision_time =
-    polygon->getCollisionTime(collision_points, velocity, triggering_points);
+  const double collision_time = polygon->getCollisionTime(sources_collision_points_map, velocity,
+      triggering_points);
   if (collision_time >= 0.0) {
     // If collision will occur, reduce robot speed
     const double change_ratio = collision_time / polygon->getTimeBeforeCollision();

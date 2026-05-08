@@ -101,12 +101,12 @@ public:
   /**
    * @brief Temporal debounce for min_points trigger.
    * @param points Input array of points to be checked.
-   * @param out_triggering_points Optional output vector receiving the triggering points.
+   * @param out_triggering_points Output array of triggering points.
    * @return true if trigger should be considered active after debounce/hold logic.
    */
   bool isTriggered(
-    const std::vector<Point> & points,
-    std::vector<Point> * out_triggering_points = nullptr);
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+    std::vector<Point> & out_triggering_points);
 
   /**
    * @brief Reset temporal debounce state.
@@ -161,21 +161,29 @@ public:
   virtual void updatePolygon(const Velocity & /*cmd_vel_in*/);
 
   /**
-   * @brief Tests whether a single point lies inside the polygon shape.
-   * Subclasses override to use shape-specific math (e.g. Circle uses radius).
-   */
-  virtual bool isPointInside(const Point & point) const;
-
-  /**
    * @brief Gets number of points inside given polygon
    * @param points Input array of points to be checked
-   * @param out_triggering_points Optional output vector receiving the points inside
+   * @param out_triggering_points Output array of triggering points.
    * @return Number of points inside polygon. If there are no points,
    * returns zero value.
    */
   virtual int getPointsInside(
     const std::vector<Point> & points,
-    std::vector<Point> * out_triggering_points = nullptr) const;
+    std::vector<Point> & out_triggering_points) const;
+
+  /**
+   * @brief Gets number of points inside given polygon
+   * @param sources_collision_points_map Map containing source name as key,
+   * and input array of source's points to be checked as value
+    * @param out_triggering_points Output array of triggering points.
+   * @return Number of points inside polygon,
+   * for sources in map that are associated with current polygon.
+   * If there are no points, returns zero value.
+   */
+  virtual int getPointsInside(
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+    std::vector<Point> & out_triggering_points) const;
+
 
   /**
    * @brief Obtains estimated (simulated) time before a collision.
@@ -188,7 +196,7 @@ public:
    * return value will be negative.
    */
   double getCollisionTime(
-    const std::vector<Point> & collision_points,
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
     const Velocity & velocity,
     std::vector<Point> & out_triggering_points) const;
 

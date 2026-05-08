@@ -61,20 +61,15 @@ public:
   void getPolygon(std::vector<Point> & poly) const override;
 
   /**
-   * @brief Tests whether a single point lies inside the circle (radius math).
-   */
-  bool isPointInside(const Point & point) const override;
-
-  /**
    * @brief Gets number of points inside circle
    * @param points Input array of points to be checked
-   * @param out_triggering_points Optional output vector receiving the points inside
+   * @param out_triggering_points Output array of triggering points
    * @return Number of points inside circle. If there are no points,
    * returns zero value.
    */
   int getPointsInside(
     const std::vector<Point> & points,
-    std::vector<Point> * out_triggering_points = nullptr) const override;
+    std::vector<Point> & out_triggering_points) const override;
 
   /**
    * @brief Returns true if circle radius is set.
