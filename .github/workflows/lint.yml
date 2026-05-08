@@ -2,6 +2,10 @@ name: Lint
 on:
   pull_request:
 
+defaults:
+  run:
+    shell: bash -l {0}
+
 jobs:
   pre-commit:
     name: pre-commit
@@ -9,26 +13,29 @@ jobs:
     container:
       image: ghcr.io/ros-navigation/navigation2:main
     env:
-        path: src/${{ github.repository }}
+      repo_path: src/${{ github.repository }}
     steps:
       - uses: actions/checkout@v6
         with:
-          path: ${{ env.path }}
+          path: ${{ env.repo_path }}
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pre-commit
+            .venv
+          key: pre-commit-3|${{ env.repo_path }}|${{ hashFiles(format('{0}/.pre-commit-config.yaml', env.repo_path)) }}
+
       - name: Install pre-commit
-        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-venv
           python3 -m venv .venv
           source .venv/bin/activate
           python3 -m pip install pre-commit
-      - uses: actions/cache@v4
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-3|${{ env.path }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - run: |
+
+      - name: Run pre-commit
+        run: |
           source .venv/bin/activate
           source /opt/ros/rolling/setup.bash
-          cd ${{ env.path }}
+          cd ${{ env.repo_path }}
           pre-commit run --show-diff-on-failure --color=always --all-files
-        shell: bash
