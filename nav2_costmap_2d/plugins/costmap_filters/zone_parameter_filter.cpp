@@ -39,12 +39,8 @@ matchTargetNode(
   const std::string & suffix, const std::vector<std::string> & sorted_nodes)
 {
   for (const auto & node : sorted_nodes) {
-    const size_t boundary = node.size();
-    if (suffix.size() > boundary + 1 &&
-      suffix.compare(0, boundary, node) == 0 &&
-      suffix[boundary] == '.')
-    {
-      return std::make_pair(node, suffix.substr(boundary + 1));
+    if (suffix.starts_with(node + ".") && suffix.size() > node.size() + 1) {
+      return std::make_pair(node, suffix.substr(node.size() + 1));
     }
   }
   return std::nullopt;
@@ -246,6 +242,10 @@ void ZoneParameterFilter::loadStateConfig()
       if (override_name.rfind(state_prefix, 0) != 0) {
         continue;  // not for this state
       }
+      // We resolve only the (target_node, param_path) split so the
+      // override can be routed; we do not query the target node for the
+      // param's existence or type — set_parameters surfaces those at
+      // apply-time.
       const std::string suffix = override_name.substr(state_prefix.size());
       const auto match = matchTargetNode(suffix, sorted_target_nodes);
       if (!match) {
@@ -531,33 +531,42 @@ void ZoneParameterFilter::issueAsyncSetParameters(
 
 void ZoneParameterFilter::drainPendingFutures()
 {
+  // wait_for(0s) does not throw; future::get() may rethrow a stored
+  // exception from the rclcpp parameter-client side. On policy=kThrow we
+  // surface either path; on policy=kWarn we log and continue.
   auto it = pending_futures_.begin();
   while (it != pending_futures_.end()) {
-    if (it->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-      try {
-        const auto results = it->get();
-        for (const auto & r : results) {
-          if (!r.successful) {
-            if (param_set_failure_policy_ == ParamSetFailurePolicy::kThrow) {
-              throw std::runtime_error(
-                      "ZoneParameterFilter: set_parameters failed: " + r.reason);
-            }
-            RCLCPP_WARN(
-              logger_,
-              "ZoneParameterFilter: set_parameters returned unsuccessful: %s",
-              r.reason.c_str());
-          }
-        }
-      } catch (const std::exception & ex) {
-        if (param_set_failure_policy_ == ParamSetFailurePolicy::kThrow) {
-          throw;
-        }
-        RCLCPP_WARN(
-          logger_, "ZoneParameterFilter: future.get() threw: %s", ex.what());
-      }
-      it = pending_futures_.erase(it);
-    } else {
+    if (it->wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
       ++it;
+      continue;
+    }
+
+    std::vector<rcl_interfaces::msg::SetParametersResult> results;
+    try {
+      results = it->get();
+    } catch (const std::exception & ex) {
+      it = pending_futures_.erase(it);
+      if (param_set_failure_policy_ == ParamSetFailurePolicy::kThrow) {
+        throw;
+      }
+      RCLCPP_WARN(
+        logger_, "ZoneParameterFilter: future.get() threw: %s", ex.what());
+      continue;
+    }
+
+    it = pending_futures_.erase(it);
+    for (const auto & r : results) {
+      if (r.successful) {
+        continue;
+      }
+      if (param_set_failure_policy_ == ParamSetFailurePolicy::kThrow) {
+        throw std::runtime_error(
+                "ZoneParameterFilter: set_parameters failed: " + r.reason);
+      }
+      RCLCPP_WARN(
+        logger_,
+        "ZoneParameterFilter: set_parameters returned unsuccessful: %s",
+        r.reason.c_str());
     }
   }
 }
