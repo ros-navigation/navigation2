@@ -27,6 +27,7 @@
   <depend>tf2_ros</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
+  <depend>graphicsmagick</depend>
   <depend>lifecycle_msgs</depend>
   <depend>nav2_ros_common</depend>
   <depend>uuid</depend>
