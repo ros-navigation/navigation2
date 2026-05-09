@@ -433,15 +433,47 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
 
   auto it = state_param_map_.find(new_state);
   if (it == state_param_map_.end()) {
-    // Configuration / data-integrity fault: the mask emitted a state value
-    // not in our configured map. Throw so the lifecycle layer surfaces the
-    // fault — silently continuing with stale parameters is strictly worse
-    // than a fail-safe stack-stop for any safety-relevant downstream.
     throw std::runtime_error(
             std::string("ZoneParameterFilter: unknown state ") +
             std::to_string(new_state) +
             " encountered; add to state_ids + state_" +
             std::to_string(new_state) + " map.");
+  }
+
+  // Build (target_node, param_name) keys for the destination state M.
+  std::set<std::pair<std::string, std::string>> m_keys;
+  for (const auto & entry : it->second) {
+    m_keys.emplace(entry.target_node, entry.param.get_name());
+  }
+
+  // Reset params touched by the previous state N but not the destination M
+  // back to nominal_defaults before applying M's overrides. This preserves
+  // the invariant that all params equal state-0 defaults except those
+  // specifically set in the active state.
+  std::map<std::string, std::vector<rclcpp::Parameter>> reset_per_node;
+  if (state_initialized_ && current_state_ != 0) {
+    auto prev_it = state_param_map_.find(current_state_);
+    if (prev_it != state_param_map_.end()) {
+      for (const auto & entry : prev_it->second) {
+        const auto key = std::make_pair(entry.target_node, entry.param.get_name());
+        if (m_keys.count(key) > 0) {
+          continue;  // M will set this param; reset is wasted work.
+        }
+        const auto node_it = nominal_defaults_.find(entry.target_node);
+        if (node_it == nominal_defaults_.end()) {
+          continue;  // Gap warned at config-load (Test 24); param keeps N's value.
+        }
+        bool found = false;
+        for (const auto & nominal : node_it->second) {
+          if (nominal.get_name() == entry.param.get_name()) {
+            reset_per_node[entry.target_node].push_back(nominal);
+            found = true;
+            break;
+          }
+        }
+        (void)found;  // Gap is structural; warn substrate fired at config-load.
+      }
+    }
   }
 
   // Batch per target node (one set_parameters call per node).
@@ -450,14 +482,23 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
     per_node_params[entry.target_node].push_back(entry.param);
   }
 
+  // Reset first, then apply M. issueAsyncSetParameters preserves submission
+  // order on the per-node future queue.
+  size_t reset_count = 0;
+  for (const auto & [target_node, params] : reset_per_node) {
+    issueAsyncSetParameters(target_node, params);
+    reset_count += params.size();
+  }
+
   for (const auto & [target_node, params] : per_node_params) {
     issueAsyncSetParameters(target_node, params);
   }
 
   RCLCPP_INFO(
     logger_,
-    "ZoneParameterFilter: Entered state %u (applied %zu parameter(s) across %zu node(s)).",
-    new_state, it->second.size(), per_node_params.size());
+    "ZoneParameterFilter: Entered state %u (reset %zu N-only parameter(s); "
+    "applied %zu parameter(s) across %zu node(s)).",
+    new_state, reset_count, it->second.size(), per_node_params.size());
 }
 
 void ZoneParameterFilter::resetToNominal()

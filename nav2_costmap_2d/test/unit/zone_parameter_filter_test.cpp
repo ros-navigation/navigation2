@@ -1097,6 +1097,237 @@ TEST_F(TestZpf, NestedNamespaceTargetNodeRoutesCorrectly)
 }
 
 // =========================================================================
+// Tests 32-37 — cross-state-transition reset coverage. State N→M
+// transitions now reset params that N touched but M does not, restoring
+// nominal_defaults before applying M's overrides. Preserves the invariant
+// that all params equal state-0 defaults except those specifically set in
+// the active state.
+// =========================================================================
+
+// Test 32 — CrossStateTransitionResetsParamTouchedByNOnly
+//
+// state 1 sets speed=0.3 AND inflation=0.8; state 2 sets speed=0.5 only.
+// Transition 1→2 must restore inflation to its nominal_defaults value
+// while applying state 2's speed override.
+TEST_F(TestZpf, CrossStateTransitionResetsParamTouchedByNOnly)
+{
+  ASSERT_TRUE(createFilter(
+      {1, 2},
+  {
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.inflation", 0.8),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_2.zpf_target_node.speed", 0.5),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.inflation", 2.0),
+      },
+      1)) << "Filter did not become active";
+
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.3;}));
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getInflation() == 0.8;}));
+
+  rePublishMask(2);
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.5;}));
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getInflation() == 2.0;}))
+    << "inflation must be reset to nominal_defaults on 1→2 transition";
+}
+
+// Test 33 — CrossStateTransitionParamInBothStatesAppliesMValue
+//
+// Both states touch the same param. The destination state's value wins;
+// the in-both optimization must not corrupt M's value with N's nominal.
+TEST_F(TestZpf, CrossStateTransitionParamInBothStatesAppliesMValue)
+{
+  ASSERT_TRUE(createFilter(
+      {1, 2},
+  {
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_2.zpf_target_node.speed", 0.5),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
+      },
+      1)) << "Filter did not become active";
+
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.3;}));
+
+  rePublishMask(2);
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.5;}))
+    << "in-both param must land at M's value, not N's nominal";
+}
+
+// Test 34 — CyclicTransitionABAReturnsToAValue
+//
+// state 1 sets speed; state 2 sets inflation only. Cyclic 1→2→1 must end
+// with speed at state-1's value AND inflation at nominal (state 1 does
+// not touch inflation, so the 2→1 transition resets it).
+TEST_F(TestZpf, CyclicTransitionABAReturnsToAValue)
+{
+  ASSERT_TRUE(createFilter(
+      {1, 2},
+  {
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_2.zpf_target_node.inflation", 0.8),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.inflation", 2.0),
+      },
+      1)) << "Filter did not become active";
+
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.3;}));
+
+  rePublishMask(2);
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 1.0;}))
+    << "speed must reset to nominal on 1→2 (state 2 does not touch speed)";
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getInflation() == 0.8;}));
+
+  rePublishMask(1);
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.3;}))
+    << "cyclic 1→2→1 must return speed to state-1 value";
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getInflation() == 2.0;}))
+    << "inflation must reset to nominal on 2→1 (state 1 does not touch inflation)";
+}
+
+// Test 35 — CrossStateTransitionParamInNNoNominalStaysAtNValue
+//
+// state 1 sets a param with NO nominal_defaults entry; state 2 does not
+// touch it. The N→M transition cannot restore (no nominal to restore to)
+// so the param stays at state-1's value. Documented gap; warned at config.
+TEST_F(TestZpf, CrossStateTransitionParamInNNoNominalStaysAtNValue)
+{
+  ASSERT_TRUE(createFilter(
+      {1, 2},
+  {
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.inflation", 0.8),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_2.zpf_target_node.speed", 0.5),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
+    // No nominal_defaults entry for inflation — gap warned at config-load.
+      },
+      1)) << "Filter did not become active";
+
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.3;}));
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getInflation() == 0.8;}));
+
+  rePublishMask(2);
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.5;}));
+  // Inflation has no nominal; the gap is documented, the override persists.
+  EXPECT_DOUBLE_EQ(target_node_->getInflation(), 0.8)
+    << "param without nominal_defaults legitimately persists across N→M";
+}
+
+// Test 36 — CrossStateTransitionInflationLeakDoesNotPersist
+//
+// Safety-class regression guard. State 2 sets BOTH max_vel_x AND
+// inflation_radius (named per nav2 controller / costmap convention);
+// state 3 sets max_vel_x ONLY. The 2→3 transition must restore
+// inflation_radius to nominal so a downstream zone does not inherit
+// the prior zone's inflated obstacle clearance.
+//
+// Reuses the fixture's TargetNode but exercises additional declared
+// parameters (max_vel_x + inflation_radius) so the test reads as a
+// safety-class regression guard with controller-class names.
+TEST_F(TestZpf, CrossStateTransitionInflationLeakDoesNotPersist)
+{
+  // Add the controller-class params to the fixture's existing target node.
+  target_node_->declare_parameter("max_vel_x", 0.5);
+  target_node_->declare_parameter("inflation_radius", 0.55);
+  auto get_max_vel = [&]() {
+      return target_node_->get_parameter("max_vel_x").as_double();
+    };
+  auto get_infl = [&]() {
+      return target_node_->get_parameter("inflation_radius").as_double();
+    };
+
+  ASSERT_TRUE(createFilter(
+      {2, 3},
+  {
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_2.zpf_target_node.max_vel_x", 0.2),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_2.zpf_target_node.inflation_radius", 1.2),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_3.zpf_target_node.max_vel_x", 0.15),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.max_vel_x", 0.5),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.inflation_radius",
+          0.55),
+      },
+      2)) << "Filter did not become active";
+
+  // Drive into state 2 (construction zone): both params override.
+  runProcess();
+  ASSERT_TRUE(waitFor([&]() {return get_max_vel() == 0.2;}));
+  ASSERT_TRUE(waitFor([&]() {return get_infl() == 1.2;}));
+
+  // Transition to state 3 (school zone): max_vel_x overrides; inflation_radius
+  // must reset to nominal so the prior construction-zone clearance does not
+  // leak into a downstream zone with different safety geometry.
+  rePublishMask(3);
+  runProcess();
+  ASSERT_TRUE(waitFor([&]() {return get_max_vel() == 0.15;}));
+  ASSERT_TRUE(waitFor([&]() {return get_infl() == 0.55;}))
+    << "inflation_radius must reset to nominal on 2→3 (cross-state leak);"
+       " stale clearance from a prior zone is the named safety hazard";
+}
+
+// Test 37 — ParamWithoutNominalLeaksWithDocumentedWarnAndAcceptedGap
+//
+// Honesty regression. A param touched by state N with NO matching
+// nominal_defaults entry is the documented residual leak: the cross-state
+// reset cannot restore a value it does not have, so the param keeps N's
+// value across N→M when M does not set it. The config-load warn substrate
+// surfaces this gap (Test 24 covers the warn). This test pins the
+// behavior under N→M (M≠0) so the gap remains documented-by-test rather
+// than silent-by-omission.
+TEST_F(TestZpf, ParamWithoutNominalLeaksWithDocumentedWarnAndAcceptedGap)
+{
+  ASSERT_TRUE(createFilter(
+      {1, 2},
+  {
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.4),
+    rclcpp::Parameter(
+          std::string(kFilterName) + ".state_2.zpf_target_node.inflation", 0.7),
+    // Neither speed nor inflation has a nominal_defaults entry — gap warned.
+      },
+      1)) << "Filter did not become active";
+
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.4;}));
+
+  rePublishMask(2);
+  runProcess();
+  ASSERT_TRUE(waitFor([this]() {return target_node_->getInflation() == 0.7;}));
+  // No nominal for speed; the cross-state reset has nothing to restore;
+  // speed retains state-1's value. Documented gap.
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 0.4)
+    << "param without nominal legitimately persists across N→M; gap warned at config";
+}
+
+// =========================================================================
 // Top-level main: standard rclcpp init + gtest run.
 // =========================================================================
 int main(int argc, char ** argv)
