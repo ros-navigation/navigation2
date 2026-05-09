@@ -199,9 +199,6 @@ void ZoneParameterFilter::loadStateConfig()
     return;
   }
 
-  // target_nodes: explicit list required because ROS 2 parameter names
-  // admit dots; without it the parser cannot locate the node-name boundary
-  // in a flattened override key like `<plugin>.state_1.<target>.<param.with.dots>`.
   std::vector<std::string> target_nodes_input =
     node->declare_or_get_parameter<std::vector<std::string>>(
     name_ + ".target_nodes", std::vector<std::string>{});
@@ -220,10 +217,8 @@ void ZoneParameterFilter::loadStateConfig()
     sorted_target_nodes.begin(), sorted_target_nodes.end(),
     [](const std::string & a, const std::string & b) {return a.size() > b.size();});
 
-  RCLCPP_INFO(
-    logger_,
-    "ZoneParameterFilter: %zu target_nodes registered.", sorted_target_nodes.size());
-
+  // Pull this filter's YAML overrides; the loops below route the
+  // `state_N.<target>.<param>` keys to the configured target nodes.
   auto overrides = node->get_node_parameters_interface()->get_parameter_overrides();
 
   for (int64_t id_i64 : state_ids) {
@@ -330,7 +325,7 @@ void ZoneParameterFilter::loadStateConfig()
   // Build one AsyncParametersClient per unique target node (init-time;
   // not lazy). Client construction registers locally; the remote service
   // need not be reachable yet — set_parameters failures surface via
-  // drainPendingFutures.
+  // checkPendingParameterUpdates.
   std::set<std::string> all_target_nodes;
   for (const auto & [_state_id, entries] : state_param_map_) {
     for (const auto & e : entries) {
@@ -363,8 +358,7 @@ void ZoneParameterFilter::process(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  // Drain completed futures non-blockingly (must not destruct in-flight).
-  drainPendingFutures();
+  checkPendingParameterUpdates();
 
   if (!filter_mask_) {
     RCLCPP_WARN_THROTTLE(
@@ -512,10 +506,6 @@ void ZoneParameterFilter::issueAsyncSetParameters(
   const std::string & target_node,
   const std::vector<rclcpp::Parameter> & params)
 {
-  // Clients are built at init in loadStateConfig(); a missing entry here
-  // indicates a state references a target_node that wasn't enumerated at
-  // config-load (programmer error). Failed set_parameters surfaces via
-  // drainPendingFutures + param_set_failure_policy_, not by skip-here.
   auto client_it = param_clients_.find(target_node);
   if (client_it == param_clients_.end()) {
     RCLCPP_ERROR(
@@ -529,7 +519,7 @@ void ZoneParameterFilter::issueAsyncSetParameters(
   pending_futures_.push_back(client_it->second->set_parameters(params));
 }
 
-void ZoneParameterFilter::drainPendingFutures()
+void ZoneParameterFilter::checkPendingParameterUpdates()
 {
   // wait_for(0s) does not throw; future::get() may rethrow a stored
   // exception from the rclcpp parameter-client side. On policy=kThrow we
