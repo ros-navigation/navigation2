@@ -150,7 +150,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
 
 template<typename NodeT>
 int AnalyticExpansion<NodeT>::countDirectionChanges(
-  const ompl::base::ReedsSheppStateSpace::ReedsSheppPath & path)
+  const ompl::base::ReedsSheppStateSpace::PathType & path)
 {
   const double * lengths = path.length_;
   int changes = 0;
@@ -190,7 +190,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   auto rs_state_space = dynamic_cast<ompl::base::ReedsSheppStateSpace *>(state_space.get());
   int direction_changes = 0;
   if (rs_state_space) {
-    direction_changes = countDirectionChanges(rs_state_space->reedsShepp(from.get(), to.get()));
+    direction_changes = countDirectionChanges(rs_state_space->getPath(from.get(), to.get()));
   }
 
   // A move of sqrt(2) is guaranteed to be in a new cell

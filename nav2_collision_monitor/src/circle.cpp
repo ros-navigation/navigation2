@@ -147,7 +147,7 @@ void Circle::createSubscription(std::string & polygon_sub_topic)
   }
 }
 
-void Circle::updatePolygon(double radius)
+void Circle::updatePolygonFromRadius(double radius)
 {
   // Update circle radius
   radius_ = radius;
@@ -172,7 +172,7 @@ void Circle::radiusCallback(std_msgs::msg::Float32::ConstSharedPtr msg)
     logger_,
     "[%s]: Polygon circle radius update has been arrived",
     polygon_name_.c_str());
-  updatePolygon(msg->data);
+  updatePolygonFromRadius(msg->data);
 }
 
 }  // namespace nav2_collision_monitor
