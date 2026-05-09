@@ -3,7 +3,6 @@
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2026, Marc Blöchlinger
- *  Copyright (c) 2008, 2013, Willow Garage, Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -40,7 +39,6 @@
 #include "nav2_costmap_2d/asymmetric_inflation_layer.hpp"
 
 #include <limits>
-#include <map>
 #include <vector>
 #include <algorithm>
 #include <utility>
@@ -48,11 +46,12 @@
 #include <cstdint>
 #include <cmath>
 
-#include "nav2_costmap_2d/costmap_math.hpp"
-#include "nav2_costmap_2d/footprint.hpp"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "nav2_ros_common/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "rclcpp/parameter_events_filter.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -60,37 +59,18 @@
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::AsymmetricInflationLayer, nav2_costmap_2d::Layer)
 
 using nav2_costmap_2d::LETHAL_OBSTACLE;
-using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 using nav2_costmap_2d::NO_INFORMATION;
-using nav2_costmap_2d::FREE_SPACE;
 using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
 
 AsymmetricInflationLayer::AsymmetricInflationLayer()
-: inflation_radius_(0),
-  inscribed_radius_(0),
-  cost_scaling_factor_(0),
-  asymmetry_factor_(0),
-  inflate_around_unknown_(false),
+: cost_scaling_factor_left_(0),
+  cost_scaling_factor_right_(0),
   goal_distance_threshold_(0),
-  neutral_threshold_(0),
-  last_min_x_(std::numeric_limits<double>::lowest()),
-  last_min_y_(std::numeric_limits<double>::lowest()),
-  last_max_x_(std::numeric_limits<double>::max()),
-  last_max_y_(std::numeric_limits<double>::max()),
-  need_reinflation_(false),
-  cell_inflation_radius_(0),
-  resolution_(0),
   cache_length_(0)
 {
-  access_ = new mutex_t();
-}
-
-AsymmetricInflationLayer::~AsymmetricInflationLayer()
-{
-  delete access_;
 }
 
 void
@@ -105,41 +85,45 @@ AsymmetricInflationLayer::onInitialize()
     enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
     inflation_radius_ = node->declare_or_get_parameter(
       name_ + "." + "inflation_radius", 2.0);
-    cost_scaling_factor_ = node->declare_or_get_parameter(
-      name_ + "." + "cost_scaling_factor", 4.0);
-    asymmetry_factor_ = node->declare_or_get_parameter(
-      name_ + "." + "asymmetry_factor", 0.75);
+    inflate_unknown_ = node->declare_or_get_parameter(name_ + "." + "inflate_unknown", false);
     inflate_around_unknown_ = node->declare_or_get_parameter(
       name_ + "." + "inflate_around_unknown", false);
+    num_threads_ = node->declare_or_get_parameter(
+      name_ + "." + "num_threads", -1);
+    cost_scaling_factor_left_ = node->declare_or_get_parameter(
+      name_ + "." + "cost_scaling_factor_left", 4.0);
+    cost_scaling_factor_right_ = node->declare_or_get_parameter(
+      name_ + "." + "cost_scaling_factor_right", 4.0);
     plan_topic_ = node->declare_or_get_parameter<std::string>(
       name_ + "." + "plan_topic", "plan");
     goal_distance_threshold_ = node->declare_or_get_parameter(
       name_ + "." + "goal_distance_threshold", 1.5);
-    neutral_threshold_ = node->declare_or_get_parameter(
-      name_ + "." + "neutral_threshold", 2.0);
 
     // Apply the same bound checks as dynamic reconfigure, so bad YAML values fail
     // loudly at startup instead of silently producing bad costmaps.
-    if (std::abs(asymmetry_factor_) >= 1.0) {
+    if (inflation_radius_ <= 0.0) {
       throw std::runtime_error(
-        "AsymmetricInflationLayer: asymmetry_factor magnitude must be < 1.0");
+        "AsymmetricInflationLayer: inflation_radius must be > 0");
     }
-    if (inflation_radius_ < 0.0) {
+    if (cost_scaling_factor_left_ <= 0.0) {
       throw std::runtime_error(
-        "AsymmetricInflationLayer: inflation_radius must be >= 0");
+        "AsymmetricInflationLayer: cost_scaling_factor_left must be > 0");
     }
-    if (cost_scaling_factor_ <= 0.0) {
+    if (cost_scaling_factor_right_ <= 0.0) {
       throw std::runtime_error(
-        "AsymmetricInflationLayer: cost_scaling_factor must be > 0");
-    }
-    if (neutral_threshold_ < 0.0) {
-      throw std::runtime_error(
-        "AsymmetricInflationLayer: neutral_threshold must be >= 0");
+        "AsymmetricInflationLayer: cost_scaling_factor_right must be > 0");
     }
     if (goal_distance_threshold_ < 0.0) {
       throw std::runtime_error(
         "AsymmetricInflationLayer: goal_distance_threshold must be >= 0");
     }
+    if (num_threads_ < -1) {
+      throw std::runtime_error(
+        "AsymmetricInflationLayer: num_threads must be -1 (auto) or > 0");
+    }
+
+    cost_scaling_factor_ =
+      std::max(cost_scaling_factor_left_, cost_scaling_factor_right_);
 
     plan_topic_ = joinWithParentNamespace(plan_topic_);
     path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
@@ -193,8 +177,11 @@ AsymmetricInflationLayer::deactivate()
 void
 AsymmetricInflationLayer::globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg)
 {
-  std::lock_guard<std::mutex> lock(path_mutex_);
-  latest_global_path_ = msg;
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  {
+    std::lock_guard<std::mutex> lock(path_mutex_);
+    latest_global_path_ = msg;
+  }
   // Path change invalidates all asymmetric costs in the costmap.
   // Force a full-map reinflation on the next update cycle.
   need_reinflation_ = true;
@@ -205,10 +192,10 @@ void
 AsymmetricInflationLayer::matchSize()
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  InflationLayer::matchSize();
+
   nav2_costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
-  resolution_ = costmap->getResolution();
-  cell_inflation_radius_ = cellDistance(inflation_radius_);
-  computeCaches();
+  computeAsymmetricCaches();
 
   unsigned int size = costmap->getSizeInCellsX() * costmap->getSizeInCellsY();
   seen_ = std::vector<bool>(size, false);
@@ -217,7 +204,7 @@ AsymmetricInflationLayer::matchSize()
 
 void
 AsymmetricInflationLayer::updateBounds(
-  double robot_x, double robot_y, double /*robot_yaw*/, double * min_x,
+  double robot_x, double robot_y, double robot_yaw, double * min_x,
   double * min_y, double * max_x, double * max_y)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
@@ -226,56 +213,15 @@ AsymmetricInflationLayer::updateBounds(
   current_robot_x_ = robot_x;
   current_robot_y_ = robot_y;
 
-  if (need_reinflation_) {
-    // Reset last_* to "no expansion" values so the next cycle won't
-    // merge with these full-map bounds (avoids double full-map update after reset)
-    last_min_x_ = last_min_y_ = std::numeric_limits<double>::max();
-    last_max_x_ = last_max_y_ = std::numeric_limits<double>::lowest();
-
-    *min_x = std::numeric_limits<double>::lowest();
-    *min_y = std::numeric_limits<double>::lowest();
-    *max_x = std::numeric_limits<double>::max();
-    *max_y = std::numeric_limits<double>::max();
-    need_reinflation_ = false;
-  } else {
-    double tmp_min_x = last_min_x_;
-    double tmp_min_y = last_min_y_;
-    double tmp_max_x = last_max_x_;
-    double tmp_max_y = last_max_y_;
-    last_min_x_ = *min_x;
-    last_min_y_ = *min_y;
-    last_max_x_ = *max_x;
-    last_max_y_ = *max_y;
-    *min_x = std::min(tmp_min_x, *min_x) - inflation_radius_;
-    *min_y = std::min(tmp_min_y, *min_y) - inflation_radius_;
-    *max_x = std::max(tmp_max_x, *max_x) + inflation_radius_;
-    *max_y = std::max(tmp_max_y, *max_y) + inflation_radius_;
-  }
+  InflationLayer::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
 void
 AsymmetricInflationLayer::onFootprintChanged()
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  inscribed_radius_ = layered_costmap_->getInscribedRadius();
-  cell_inflation_radius_ = cellDistance(inflation_radius_);
-  computeCaches();
-  need_reinflation_ = true;
-
-  if (inflation_radius_ < inscribed_radius_) {
-    RCLCPP_ERROR(
-      logger_,
-      "The configured inflation radius (%.3f) is smaller than "
-      "the computed inscribed radius (%.3f) of your footprint, "
-      "it is highly recommended to set inflation radius to be at "
-      "least as big as the inscribed radius to avoid collisions",
-      inflation_radius_, inscribed_radius_);
-  }
-
-  RCLCPP_DEBUG(
-    logger_, "AsymmetricInflationLayer::onFootprintChanged(): num footprint points: %zu,"
-    " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
-    layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
+  InflationLayer::onFootprintChanged();
+  computeAsymmetricCaches();
 }
 
 std::vector<std::pair<double, double>>
@@ -292,12 +238,13 @@ AsymmetricInflationLayer::extractLocalPath(
     current_path = *latest_global_path_;
   }
 
+  // Check if the path is already in costmap frame
   std::string global_frame = layered_costmap_->getGlobalFrameID();
   std::string path_frame = current_path.header.frame_id;
   geometry_msgs::msg::TransformStamped transform;
   bool need_transform = (global_frame != path_frame && !path_frame.empty());
 
-  // Transform the global path into the costmap frame (e.g., map -> odom)
+  // Find the transform from path frame to costmap frame (e.g., map -> odom)
   if (need_transform) {
     try {
       transform = tf_->lookupTransform(global_frame, path_frame, tf2::TimePointZero);
@@ -326,6 +273,7 @@ AsymmetricInflationLayer::extractLocalPath(
     return local_path_pts;
   }
 
+  // Extract local path
   for (const auto & pose : current_path.poses) {
     geometry_msgs::msg::PoseStamped transformed_pose = pose;
     if (need_transform) {
@@ -350,7 +298,7 @@ AsymmetricInflationLayer::computeObstacleSide(
   const std::vector<size_t> & candidates,
   const std::vector<std::pair<double, double>> & local_path_pts)
 {
-  const double neutral_threshold_sq = neutral_threshold_ * neutral_threshold_;
+  const double inflation_radius_sq = inflation_radius_ * inflation_radius_;
 
   double min_dist_sq = std::numeric_limits<double>::max();
   double best_cross = 0.0;
@@ -363,19 +311,17 @@ AsymmetricInflationLayer::computeObstacleSide(
     double bx = local_path_pts[p + 1].first;
     double by = local_path_pts[p + 1].second;
 
-    // --- Boundary Check ---
-    // Quickly skip segments if the point is further than the neutral threshold from the segment's
-    // bounding box. This prevents unnecessary calculations for distant segments.
-    double min_x = std::min(ax, bx) - neutral_threshold_;
-    double max_x = std::max(ax, bx) + neutral_threshold_;
+    // Skip cells outside of the segment bounding box expanded by the inflation radius.
+    double min_x = std::min(ax, bx) - inflation_radius_;
+    double max_x = std::max(ax, bx) + inflation_radius_;
     if (cx < min_x || cx > max_x) {continue;}
 
-    double min_y = std::min(ay, by) - neutral_threshold_;
-    double max_y = std::max(ay, by) + neutral_threshold_;
+    double min_y = std::min(ay, by) - inflation_radius_;
+    double max_y = std::max(ay, by) + inflation_radius_;
     if (cy < min_y || cy > max_y) {continue;}
 
-    // --- Distance and Orientation Calculation ---
-    // Vector AB represents the path segment, Vector AC represents the path to the cell.
+    // Calculate distance to path segment and orientation via cross product.
+    // Vectors: AB (path segment) and AC (path to cell)
     double abx = bx - ax;
     double aby = by - ay;
     double len_sq = abx * abx + aby * aby;
@@ -386,40 +332,32 @@ AsymmetricInflationLayer::computeObstacleSide(
     double dist_sq;
     double cross;
 
-    // Handle the case of a zero-length segment to avoid division by zero.
+    // Prevent division by zero for zero-length segments
     if (len_sq < 1e-10) {
       dist_sq = acx * acx + acy * acy;
       cross = 0.0;
     } else {
-      /*
-       * Calculate 't', the scalar projection of C onto the line AB.
-       * We clamp 't' to the [0, 1] range so that points projecting outside the
-       * segment endpoints are snapped to the nearest vertex.
-       */
+      // 't': Scalar projection of C onto AB, clamped to segment bounds [0, 1]
       double t = std::clamp((acx * abx + acy * aby) / len_sq, 0.0, 1.0);
 
-      // Compute the vector from the projected point on the segment to the cell C.
+      // Vector from the projected point on AB to C
       double proj_dx = acx - t * abx;
       double proj_dy = acy - t * aby;
       dist_sq = proj_dx * proj_dx + proj_dy * proj_dy;
 
-      /*
-       * Determine the side of the segment using the 2D cross product (AB x AC).
-       * Positive values indicate the point is on the Left side of the path.
-       * Negative values indicate the point is on the Right side.
-       */
+      // 2D cross product for orientation (Positive = Left, Negative = Right)
       cross = abx * acy - aby * acx;
     }
 
-    // Update the best match if this segment is the closest one found so far.
+    // Update if shortest distance so far
     if (dist_sq < min_dist_sq) {
       min_dist_sq = dist_sq;
       best_cross = cross;
     }
   }
 
-  // Check if the cell is outside the influence radius.
-  if (min_dist_sq > neutral_threshold_sq) {
+  // Check if the cell is outside the inflation radius.
+  if (min_dist_sq > inflation_radius_sq) {
     return 0;
   }
 
@@ -436,83 +374,62 @@ AsymmetricInflationLayer::updateCosts(
   int max_i, int max_j)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  if (!enabled_ || (cell_inflation_radius_ == 0)) {
+
+  // Abort inflation if it's disabled
+  if (!enabled_) {
     return;
   }
 
-  // make sure the inflation list is empty at the beginning of the cycle (should always be true)
-  for (auto & dist : inflation_cells_) {
-    RCLCPP_FATAL_EXPRESSION(
-      logger_,
-      !dist.empty(), "The inflation list must be empty at the beginning of inflation");
-  }
+  // Fill the symmetric inflation baseline, then apply asymmetric inflation afterwards.
+  InflationLayer::updateCosts(master_grid, min_i, min_j, max_i, max_j);
 
-  unsigned char * master_array = master_grid.getCharMap();
-  unsigned int size_x = master_grid.getSizeInCellsX();
-  unsigned int size_y = master_grid.getSizeInCellsY();
-
-  if (seen_.size() != size_x * size_y) {
-    RCLCPP_WARN(
-      logger_, "AsymmetricInflationLayer::updateCosts(): seen_ vector size is wrong");
-    seen_ = std::vector<bool>(size_x * size_y, false);
-    obstacle_side_grid_ = std::vector<int8_t>(size_x * size_y, 0);
-  }
-
-  const int base_min_i = min_i;
-  const int base_min_j = min_j;
-  const int base_max_i = max_i;
-  const int base_max_j = max_j;
-
-  min_i = std::max(0, min_i - static_cast<int>(cell_inflation_radius_));
-  min_j = std::max(0, min_j - static_cast<int>(cell_inflation_radius_));
-  max_i = std::min(static_cast<int>(size_x), max_i + static_cast<int>(cell_inflation_radius_));
-  max_j = std::min(static_cast<int>(size_y), max_j + static_cast<int>(cell_inflation_radius_));
-
+  // Extract path that's inside the costmap
   std::vector<std::pair<double, double>> local_path_pts = extractLocalPath(master_grid);
-  bool use_asymmetry = (local_path_pts.size() >= 2) && (asymmetry_factor_ != 0.0);
 
-  // This method runs in three phases:
-  //
-  //   Phase 1 – Spatial-hash construction  O(P)  P = path segments in window
-  //   Phase 2 – BFS seed                   O(W)  W = update-window cells
-  //   Phase 3 – Dial's Algorithm BFS       O(B)  B = cells within inflation radius
-  //
-  // neutral_threshold_ is the maximum perpendicular distance (metres) from the
-  // path centreline within which an obstacle is classified as left (+1) or
-  // right (-1). Obstacles farther away are "neutral" and receive symmetric
-  // inflation.  path_bucket_size equals neutral_threshold_ so each hash bucket
-  // spans exactly one influence radius: the padded AABB insertion ensures every
-  // segment that can affect a cell in bucket B is stored in B, making per-cell
-  // lookups in Phase 2 O(1) instead of O(P).
-
-  // ── Phase 1: Spatial-hash construction ──────────────────────────────────
-  // Pre-partition path segments into spatial buckets so that per-cell nearest-
-  // segment queries in Phase 2 are O(1) instead of O(path_segments).
-  const double path_bucket_size = std::max(neutral_threshold_, 1.0);
-  std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
-
-  if (!use_asymmetry) {
+  // Abort if we don't have a valid path or if the scaling rates are equal (no asymmetry).
+  if (!((local_path_pts.size() >= 2) &&
+    (cost_scaling_factor_left_ != cost_scaling_factor_right_)))
+  {
     setCurrent(true);
     return;
   }
 
+  // Build a spatial hash to map nearby segments to a cell
+  auto spatial_hash = buildPathSpatialHash(local_path_pts);
+
+  // Seed the asymmetric BFS by classifying boundary obstacle cells
+  seedAsymmetricBFS(master_grid, min_i, min_j, max_i, max_j, spatial_hash, local_path_pts);
+
+  // Run Dial's Algorithm BFS to propagate asymmetric inflation costs
+  runAsymmetricBFS(master_grid, min_i, min_j, max_i, max_j);
+
+  setCurrent(true);
+}
+
+std::unordered_map<uint64_t, std::vector<size_t>>
+AsymmetricInflationLayer::buildPathSpatialHash(
+  const std::vector<std::pair<double, double>> & local_path_pts)
+{
+  std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
+
   for (size_t p = 0; p < local_path_pts.size() - 1; ++p) {
+    // Create segment AB from consecutive path points
     double ax = local_path_pts[p].first;
     double ay = local_path_pts[p].second;
     double bx = local_path_pts[p + 1].first;
     double by = local_path_pts[p + 1].second;
 
-    // Pad the segment's bounding box by the threshold
-    double min_x = std::min(ax, bx) - neutral_threshold_;
-    double max_x = std::max(ax, bx) + neutral_threshold_;
-    double min_y = std::min(ay, by) - neutral_threshold_;
-    double max_y = std::max(ay, by) + neutral_threshold_;
+    // Pad the segment's bounding box by the inflation radius.
+    double min_x = std::min(ax, bx) - inflation_radius_;
+    double max_x = std::max(ax, bx) + inflation_radius_;
+    double min_y = std::min(ay, by) - inflation_radius_;
+    double max_y = std::max(ay, by) + inflation_radius_;
 
     // Find which buckets this padded segment touches
-    int64_t min_bx = static_cast<int64_t>(std::floor(min_x / path_bucket_size));
-    int64_t max_bx = static_cast<int64_t>(std::floor(max_x / path_bucket_size));
-    int64_t min_by = static_cast<int64_t>(std::floor(min_y / path_bucket_size));
-    int64_t max_by = static_cast<int64_t>(std::floor(max_y / path_bucket_size));
+    int64_t min_bx = static_cast<int64_t>(std::floor(min_x / inflation_radius_));
+    int64_t max_bx = static_cast<int64_t>(std::floor(max_x / inflation_radius_));
+    int64_t min_by = static_cast<int64_t>(std::floor(min_y / inflation_radius_));
+    int64_t max_by = static_cast<int64_t>(std::floor(max_y / inflation_radius_));
 
     for (int64_t b_x = min_bx; b_x <= max_bx; ++b_x) {
       for (int64_t b_y = min_by; b_y <= max_by; ++b_y) {
@@ -525,17 +442,29 @@ AsymmetricInflationLayer::updateCosts(
     }
   }
 
-  // ── Phase 2: BFS seed – classify boundary obstacle cells ─────────────────
-  // Only the outer perimeter of each lethal obstacle mass is seeded.
-  // Interior cells (no traversable 4-connected neighbour) are pre-marked seen
-  // so the BFS wave skips them; they can never be the nearest obstacle to any
-  // free cell. Neutral boundary cells (exact distance > neutral_threshold_) are also skipped:
-  // they cannot raise costs above the symmetric baseline already written by the InflationLayer.
+  return spatial_hash;
+}
+
+void
+AsymmetricInflationLayer::seedAsymmetricBFS(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  int min_i, int min_j, int max_i, int max_j,
+  const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
+  const std::vector<std::pair<double, double>> & local_path_pts)
+{
+  unsigned char * master_array = master_grid.getCharMap();
+  const int size_x = static_cast<int>(master_grid.getSizeInCellsX());
+  const int size_y = static_cast<int>(master_grid.getSizeInCellsY());
+
+  const int seed_min_i = std::max(0, min_i - static_cast<int>(cell_inflation_radius_));
+  const int seed_min_j = std::max(0, min_j - static_cast<int>(cell_inflation_radius_));
+  const int seed_max_i = std::min(size_x, max_i + static_cast<int>(cell_inflation_radius_));
+  const int seed_max_j = std::min(size_y, max_j + static_cast<int>(cell_inflation_radius_));
 
   // Reset seen_ so the BFS can track which cells we visited without needing to clear master_array.
   std::fill(begin(seen_), end(seen_), false);
 
-  // Helper lambda to check if a neighbor is "traversable" (i.e., open space)
+  // Helper function to check if a neighbor is "traversable" (i.e., open space)
   auto is_traversable = [&](int nx, int ny) {
       unsigned char n_cost = master_array[master_grid.getIndex(nx, ny)];
       if (inflate_around_unknown_) {
@@ -545,9 +474,9 @@ AsymmetricInflationLayer::updateCosts(
       }
     };
 
-  // Seed all lethal cells
-  for (int j = min_j; j < max_j; j++) {
-    for (int i = min_i; i < max_i; i++) {
+  // Seed all obstacle boundary cells, that are nearby a path segment
+  for (int j = seed_min_j; j < seed_max_j; j++) {
+    for (int i = seed_min_i; i < seed_max_i; i++) {
       int index = static_cast<int>(master_grid.getIndex(i, j));
       unsigned char cost = master_array[index];
 
@@ -557,8 +486,7 @@ AsymmetricInflationLayer::updateCosts(
       }
 
       // Check if the cell touches the absolute edges of the costmap
-      bool is_on_map_edge = (i == 0 || i == static_cast<int>(size_x) - 1 ||
-        j == 0 || j == static_cast<int>(size_y) - 1);
+      bool is_on_map_edge = (i == 0 || i == size_x - 1 || j == 0 || j == size_y - 1);
 
       // An obstacle cell is a boundary if it's on the map edge OR touches free space.
       bool is_obstacle_boundary = is_on_map_edge ||
@@ -567,34 +495,28 @@ AsymmetricInflationLayer::updateCosts(
         is_traversable(i, j - 1) ||
         is_traversable(i, j + 1);
 
-      // Early exit 2: Skip interior obstacle cells
+      // Early exit 2: Skip interior obstacle cells, mark as seen so we don't enqueue them
       if (!is_obstacle_boundary) {
-        // Mark interior cells as 'seen' so the BFS wave doesn't
-        // waste time propagating backwards into the solid obstacle mass.
         seen_[index] = true;
         continue;
       }
 
-      // O(1) hash lookup to find candidate segments near this cell.
+      // Find segments that are nearby this cell using the spatial hash
       double cx, cy;
       master_grid.mapToWorld(i, j, cx, cy);
-      int64_t b_x = static_cast<int64_t>(std::floor(cx / path_bucket_size));
-      int64_t b_y = static_cast<int64_t>(std::floor(cy / path_bucket_size));
+      int64_t b_x = static_cast<int64_t>(std::floor(cx / inflation_radius_));
+      int64_t b_y = static_cast<int64_t>(std::floor(cy / inflation_radius_));
 
-      // Reinterpret each signed int64 bucket coordinate as uint32 (preserving the bit
-      // pattern for negative values via two's complement) then pack both into a single
-      // uint64. Collision-free for any coordinate fitting in int32 — true for all
-      // real-world costmap sizes.
       uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) |
         static_cast<uint32_t>(b_y);
 
-      auto it = spatial_hash.find(key);
+      auto candidate_segments = spatial_hash.find(key);
 
       // Early exit 3: Skip cells with no nearby path segments
-      if (it == spatial_hash.end()) {continue;}
+      if (candidate_segments == spatial_hash.end()) {continue;}
 
-      // Forward the candidate segments to determine which side of the path this cell is on
-      int8_t side = computeObstacleSide(cx, cy, it->second, local_path_pts);
+      // Determine which side of the path this cell is on
+      int8_t side = computeObstacleSide(cx, cy, candidate_segments->second, local_path_pts);
       obstacle_side_grid_[index] = side;
 
       // Skip neutral cells since they won't receive asymmetric inflation.
@@ -603,13 +525,18 @@ AsymmetricInflationLayer::updateCosts(
       }
     }
   }
+}
 
-  // ── Phase 3: Dial's Algorithm BFS ────────────────────────────────────────
-  // inflation_cells_ is a bucket-priority queue indexed by
-  //   floor(effective_distance * kEffDistPrecision).
-  // Expanding the lowest non-empty bin first guarantees monotonic wave order.
-  // Cells are written with max(old, new) so this layer can only raise costs
-  // above the symmetric baseline left by the upstream InflationLayer.
+void
+AsymmetricInflationLayer::runAsymmetricBFS(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  int min_i, int min_j, int max_i, int max_j)
+{
+  unsigned char * master_array = master_grid.getCharMap();
+  unsigned int size_x = master_grid.getSizeInCellsX();
+  unsigned int size_y = master_grid.getSizeInCellsY();
+
+  // Cells are enqueued by effective distance, combining true distance with path-side weighting.
   for (size_t current_bin = 0; current_bin < inflation_cells_.size(); ++current_bin) {
     while (!inflation_cells_[current_bin].empty()) {
       const CellData cell = inflation_cells_[current_bin].back();
@@ -617,76 +544,65 @@ AsymmetricInflationLayer::updateCosts(
 
       unsigned int mx = cell.x_;
       unsigned int my = cell.y_;
-      unsigned int sx = cell.src_x_;
-      unsigned int sy = cell.src_y_;
+      unsigned int src_x = cell.src_x_;
+      unsigned int src_y = cell.src_y_;
       unsigned int index = master_grid.getIndex(mx, my);
 
-      // A cell can be enqueued by multiple obstacle sources.
-      // The bucket queue guarantees the first dequeue is the minimum effective
-      // distance, so any later arrival for this cell is a duplicate.
+      // Skip cells we've already visited
       if (seen_[index]) {
         continue;
       }
       seen_[index] = true;
 
-      // src_x/src_y is the original obstacle seed, carried intact through the wave.
       // Every cell expanding from the same seed shares its left/right classification.
-      int src_index = master_grid.getIndex(sx, sy);
+      int src_index = master_grid.getIndex(cell.src_x_, cell.src_y_);
       int8_t path_side = obstacle_side_grid_[src_index];
 
-      // physical_dist is the true Euclidean distance from the source obstacle.
-      // eff_dist applies the asymmetric scale factor, determining the priority-queue bin:
-      // the disfavoured side gets a smaller eff_dist so its wave expands into contested
-      // space before the favoured side, shifting the Voronoi boundary.
-      double physical_dist = distanceLookup(mx, my, sx, sy);
+      // Get effective distance to categorise the cell into a cost bin.
+      // This is where the asymmetry happens: each side uses a different effective distance.
+      double physical_dist = asymmetricDistanceLookup(mx, my, src_x, src_y);
       double eff_dist = getEffectiveDistance(physical_dist, path_side);
       size_t bin = static_cast<size_t>(eff_dist * kEffDistPrecision);
 
-      unsigned char eff_cost = (bin < cached_costs_.size()) ? cached_costs_[bin] : 0;
+      unsigned char new_cost = (bin < cached_costs_.size()) ? cached_costs_[bin] : 0;
       unsigned char old_cost = master_array[index];
 
-      // Write costs only within the originally requested window (base_min/max)
-      if (static_cast<int>(mx) >= base_min_i &&
-        static_cast<int>(my) >= base_min_j &&
-        static_cast<int>(mx) < base_max_i &&
-        static_cast<int>(my) < base_max_j)
-      {
-        if (eff_cost > old_cost) {
-          master_array[index] = eff_cost;
+      // Write costs only within the originally requested window (min/max)
+      if (new_cost > old_cost) {
+        if (static_cast<int>(mx) >= min_i &&
+          static_cast<int>(my) >= min_j &&
+          static_cast<int>(mx) < max_i &&
+          static_cast<int>(my) < max_j)
+        {
+          master_array[index] = new_cost;
         }
       }
 
-      // Propagate to 4-connected neighbours. enqueue() returns the lowest non-empty
-      // bin after insertion; asymmetric scaling can place a neighbour in a bin below
-      // current_bin, so current_bin must be allowed to decrease here.
-      if (mx > 0) {
-        current_bin = enqueue(index - 1, mx - 1, my, sx, sy, path_side, current_bin);
+      // Propagate to unvisited neighbors.
+      // enqueueAsymmetric() returns the lowest non-empty bin after insertion.
+      // This ensures that we always expand the lowest effective distance wavefront next.
+      if (mx > 0 && !seen_[index - 1]) {
+        current_bin = enqueueAsymmetric(mx - 1, my, src_x, src_y, path_side, current_bin);
       }
-      if (my > 0) {
-        current_bin = enqueue(index - size_x, mx, my - 1, sx, sy, path_side, current_bin);
+      if (my > 0 && !seen_[index - size_x]) {
+        current_bin = enqueueAsymmetric(mx, my - 1, src_x, src_y, path_side, current_bin);
       }
-      if (mx < size_x - 1) {
-        current_bin = enqueue(index + 1, mx + 1, my, sx, sy, path_side, current_bin);
+      if (mx < size_x - 1 && !seen_[index + 1]) {
+        current_bin = enqueueAsymmetric(mx + 1, my, src_x, src_y, path_side, current_bin);
       }
-      if (my < size_y - 1) {
-        current_bin = enqueue(index + size_x, mx, my + 1, sx, sy, path_side, current_bin);
+      if (my < size_y - 1 && !seen_[index + size_x]) {
+        current_bin = enqueueAsymmetric(mx, my + 1, src_x, src_y, path_side, current_bin);
       }
     }
   }
-
-  setCurrent(true);
 }
 
 size_t
-AsymmetricInflationLayer::enqueue(
-  unsigned int index, unsigned int mx, unsigned int my,
+AsymmetricInflationLayer::enqueueAsymmetric(
+  unsigned int mx, unsigned int my,
   unsigned int src_x, unsigned int src_y, int8_t path_side, size_t current_bin)
 {
-  if (seen_[index]) {
-    return current_bin;
-  }
-
-  double physical_dist = distanceLookup(mx, my, src_x, src_y);
+  double physical_dist = asymmetricDistanceLookup(mx, my, src_x, src_y);
 
   // Stop propagating the wave at the configured inflation radius
   if (physical_dist > cell_inflation_radius_) {
@@ -698,46 +614,32 @@ AsymmetricInflationLayer::enqueue(
   // shifting the Voronoi boundary toward the disfavored side.
   double eff_dist = getEffectiveDistance(physical_dist, path_side);
   size_t target_bin = static_cast<size_t>(eff_dist * kEffDistPrecision);
+  inflation_cells_[target_bin].emplace_back(mx, my, src_x, src_y);
 
-  if (target_bin < inflation_cells_.size()) {
-    inflation_cells_[target_bin].emplace_back(mx, my, src_x, src_y);
-    return std::min(target_bin, current_bin);
-  } else {
-    RCLCPP_WARN(
-      logger_,
-      "Effective distance %.3f exceeds maximum cache range. "
-      "This should not happen and indicates a bug.",
-      eff_dist);
-    return current_bin;
-  }
+  // Return the lowest bin, to ensure we always expand the lowest effective distance wavefront.
+  return std::min(target_bin, current_bin);
 }
 
 void
-AsymmetricInflationLayer::computeCaches()
+AsymmetricInflationLayer::computeAsymmetricCaches()
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  if (cell_inflation_radius_ == 0) {
-    return;
-  }
 
-  cache_length_ = cell_inflation_radius_ + 2;
-
-  // Pre-compute the distance cache
+  // If the inflation radius has changed -> update the distance cache.
   if (cell_inflation_radius_ != cached_cell_inflation_radius_) {
+    cached_cell_inflation_radius_ = cell_inflation_radius_;
+
+    cache_length_ = cell_inflation_radius_ + 2;
     cached_distances_.resize(cache_length_ * cache_length_);
     for (unsigned int i = 0; i < cache_length_; ++i) {
       for (unsigned int j = 0; j < cache_length_; ++j) {
         cached_distances_[i * cache_length_ + j] = hypot(i, j);
       }
     }
-    cached_cell_inflation_radius_ = cell_inflation_radius_;
   }
 
-  // Determine the maximum possible effective distance to size the priority queue.
-  // Both sides are considered because asymmetry_factor_ can be positive or negative.
-  double max_eff_dist = std::max(
-    getEffectiveDistance(cell_inflation_radius_, -1),
-    getEffectiveDistance(cell_inflation_radius_, 1));
+  // Recompute the cost cache
+  double max_eff_dist = static_cast<double>(cell_inflation_radius_);
   size_t max_bin = static_cast<size_t>(std::ceil(max_eff_dist * kEffDistPrecision)) + 2;
 
   cached_costs_.resize(max_bin);
@@ -746,6 +648,7 @@ AsymmetricInflationLayer::computeCaches()
     cached_costs_[i] = computeCost(eff_dist);
   }
 
+  // Reinitialize the inflation_cells buckets
   inflation_cells_.clear();
   inflation_cells_.resize(max_bin);
 }
@@ -764,56 +667,66 @@ AsymmetricInflationLayer::validateParameterUpdatesCallback(
       continue;
     }
 
-    if (param_type != ParameterType::PARAMETER_DOUBLE) {
+    if (param_type == ParameterType::PARAMETER_DOUBLE &&
+      param_name == name_ + ".inflation_radius")
+    {
+      if (parameter.as_double() <= 0.0) {
+        RCLCPP_WARN(
+          logger_, "inflation_radius must be > 0. Rejecting parameter update.");
+        result.successful = false;
+        result.reason = "inflation_radius must be > 0";
+        return result;
+      }
       continue;
     }
 
-    if (param_name == name_ + ".asymmetry_factor") {
-      double val = parameter.as_double();
-      if (std::abs(val) >= 1.0) {
-        RCLCPP_WARN(
-          logger_,
-          "asymmetry_factor magnitude %.2f >= 1.0 is out of range. "
-          "Rejecting parameter update.", val);
-        result.successful = false;
-        result.reason = "asymmetry_factor magnitude must be < 1.0";
-        return result;
-      } else if (std::abs(val) > 0.9) {
-        RCLCPP_WARN(
-          logger_,
-          "asymmetry_factor magnitude %.2f is high. "
-          "Values over 0.9 can lead to artefacts.", val);
-      }
-    } else if (param_name == name_ + ".inflation_radius") {
-      if (parameter.as_double() < 0.0) {
-        RCLCPP_WARN(
-          logger_, "inflation_radius must be >= 0. Rejecting parameter update.");
-        result.successful = false;
-        result.reason = "inflation_radius must be >= 0";
-        return result;
-      }
-    } else if (param_name == name_ + ".cost_scaling_factor") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE &&
+      param_name == name_ + ".cost_scaling_factor_left")
+    {
       if (parameter.as_double() <= 0.0) {
         RCLCPP_WARN(
-          logger_, "cost_scaling_factor must be > 0. Rejecting parameter update.");
+          logger_, "cost_scaling_factor_left must be > 0. Rejecting parameter update.");
         result.successful = false;
-        result.reason = "cost_scaling_factor must be > 0";
+        result.reason = "cost_scaling_factor_left must be > 0";
         return result;
       }
-    } else if (param_name == name_ + ".neutral_threshold") {
-      if (parameter.as_double() < 0.0) {
+      continue;
+    }
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE &&
+      param_name == name_ + ".cost_scaling_factor_right")
+    {
+      if (parameter.as_double() <= 0.0) {
         RCLCPP_WARN(
-          logger_, "neutral_threshold must be >= 0. Rejecting parameter update.");
+          logger_, "cost_scaling_factor_right must be > 0. Rejecting parameter update.");
         result.successful = false;
-        result.reason = "neutral_threshold must be >= 0";
+        result.reason = "cost_scaling_factor_right must be > 0";
         return result;
       }
-    } else if (param_name == name_ + ".goal_distance_threshold") {
+      continue;
+    }
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE &&
+      param_name == name_ + ".goal_distance_threshold")
+    {
       if (parameter.as_double() < 0.0) {
         RCLCPP_WARN(
           logger_, "goal_distance_threshold must be >= 0. Rejecting parameter update.");
         result.successful = false;
         result.reason = "goal_distance_threshold must be >= 0";
+        return result;
+      }
+      continue;
+    }
+
+    if (param_type == ParameterType::PARAMETER_INTEGER &&
+      param_name == name_ + ".num_threads")
+    {
+      if (parameter.as_int() < -1) {
+        RCLCPP_WARN(
+          logger_, "num_threads must be -1 (auto) or > 0. Rejecting parameter update.");
+        result.successful = false;
+        result.reason = "num_threads must be -1 (auto) or > 0";
         return result;
       }
     }
@@ -828,6 +741,7 @@ AsymmetricInflationLayer::updateParametersCallback(
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   bool need_cache_recompute = false;
+  bool side_scaling_changed = false;
 
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -844,29 +758,21 @@ AsymmetricInflationLayer::updateParametersCallback(
         need_reinflation_ = true;
         need_cache_recompute = true;
         setCurrent(false);
-      } else if (param_name == name_ + ".cost_scaling_factor" &&  // NOLINT
-        cost_scaling_factor_ != parameter.as_double())
+      } else if (param_name == name_ + ".cost_scaling_factor_left" &&  // NOLINT
+        cost_scaling_factor_left_ != parameter.as_double())
       {
-        cost_scaling_factor_ = parameter.as_double();
-        need_reinflation_ = true;
-        need_cache_recompute = true;
-        setCurrent(false);
-      } else if (param_name == name_ + ".asymmetry_factor" &&  // NOLINT
-        asymmetry_factor_ != parameter.as_double())
+        cost_scaling_factor_left_ = parameter.as_double();
+        side_scaling_changed = true;
+      } else if (param_name == name_ + ".cost_scaling_factor_right" &&  // NOLINT
+        cost_scaling_factor_right_ != parameter.as_double())
       {
-        asymmetry_factor_ = parameter.as_double();
-        need_reinflation_ = true;
-        need_cache_recompute = true;
-        setCurrent(false);
+        cost_scaling_factor_right_ = parameter.as_double();
+        side_scaling_changed = true;
       } else if (param_name == name_ + ".goal_distance_threshold" &&  // NOLINT
         goal_distance_threshold_ != parameter.as_double())
       {
         goal_distance_threshold_ = parameter.as_double();
-        setCurrent(false);
-      } else if (param_name == name_ + ".neutral_threshold" &&  // NOLINT
-        neutral_threshold_ != parameter.as_double())
-      {
-        neutral_threshold_ = parameter.as_double();
+        need_reinflation_ = true;
         setCurrent(false);
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
@@ -880,8 +786,50 @@ AsymmetricInflationLayer::updateParametersCallback(
         inflate_around_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
         setCurrent(false);
+      } else if (param_name == name_ + ".inflate_unknown" &&  // NOLINT
+        inflate_unknown_ != parameter.as_bool())
+      {
+        inflate_unknown_ = parameter.as_bool();
+        need_reinflation_ = true;
+        setCurrent(false);
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == name_ + ".num_threads" &&  // NOLINT
+        num_threads_ != parameter.as_int())
+      {
+        int new_value = parameter.as_int();
+#ifdef _OPENMP
+        int available_cores = omp_get_max_threads();
+        if (new_value > available_cores) {
+          RCLCPP_WARN(
+            logger_,
+            "num_threads=%d exceeds available cores (%d). Ignoring.",
+            new_value, available_cores);
+        } else {
+          num_threads_ = new_value;
+          RCLCPP_INFO(
+            logger_,
+            "Updated num_threads to %d %s",
+            num_threads_,
+            num_threads_ == -1 ? "(auto)" : "");
+        }
+#else
+        RCLCPP_WARN(
+          logger_,
+          "num_threads parameter ignored - OpenMP support not available. "
+          "Inflation layer will use single thread.");
+        num_threads_ = new_value;
+#endif
       }
     }
+  }
+
+  if (side_scaling_changed) {
+    cost_scaling_factor_ =
+      std::max(cost_scaling_factor_left_, cost_scaling_factor_right_);
+    need_reinflation_ = true;
+    need_cache_recompute = true;
+    setCurrent(false);
   }
 
   if (need_cache_recompute) {
