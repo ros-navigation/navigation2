@@ -3,7 +3,6 @@
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2026, Marc Blöchlinger
- *  Copyright (c) 2008, 2013, Willow Garage, Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -42,7 +41,6 @@
 #define NAV2_COSTMAP_2D__ASYMMETRIC_INFLATION_LAYER_HPP_
 
 #include <algorithm>
-#include <map>
 #include <vector>
 #include <mutex>
 #include <memory>
@@ -52,10 +50,8 @@
 #include <cstdint>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_costmap_2d/layer.hpp"
-#include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/legacy_inflation_layer.hpp"  // for nav2_costmap_2d::CellData
-#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace nav2_costmap_2d
@@ -66,19 +62,20 @@ namespace nav2_costmap_2d
  * @brief Costmap layer that inflates obstacles asymmetrically relative to the
  *        global path, biasing the navigable corridor toward one side.
  *
- * Must be chained after nav2_costmap_2d::InflationLayer, which writes the
- * symmetric baseline. This layer classifies each lethal obstacle as left (+1),
- * right (-1), or neutral (0) relative to the path and uses a BFS with
- * asymmetric effective distances to raise costs on the disfavored side.
- * Costs are written with max(old, new) so they can only increase. Falls back
- * to a no-op when no path is available, the goal is nearby, or
- * asymmetry_factor is zero.
+ * Inherits the distance-transform based InflationLayer, which writes the
+ * symmetric baseline first. This layer then classifies each lethal obstacle as
+ * left (+1), right (-1), or neutral (0) relative to the path and uses a BFS
+ * with per-side exponential decay rates (`cost_scaling_factor_left` and
+ * `cost_scaling_factor_right`) to raise costs on the side with the smaller
+ * decay rate (= longer reach). Costs are written with max(old, new) so they can
+ * only increase. Falls back to the inherited symmetric inflation when no path
+ * is available, the goal is nearby, or the per-side scaling factors are equal.
  */
-class AsymmetricInflationLayer : public nav2_costmap_2d::Layer
+class AsymmetricInflationLayer : public nav2_costmap_2d::InflationLayer
 {
 public:
   AsymmetricInflationLayer();
-  ~AsymmetricInflationLayer();
+  ~AsymmetricInflationLayer() override = default;
 
   /**
    * @brief Initialization process of layer on startup
@@ -98,10 +95,8 @@ public:
   /**
    * @brief Update the bounds of the master costmap by this layer's update dimensions.
    *
-   * Stores the robot position for goal-proximity checks in updateCosts(). When
-   * need_reinflation_ is set, expands to full-map bounds and clears the flag;
-   * otherwise takes the union of the previous and incoming bounds padded by
-   * inflation_radius_.
+   * Stores the robot position for goal-proximity checks in updateCosts(), then
+   * delegates the actual inflation bound expansion to InflationLayer.
    * @param robot_x X pose of robot
    * @param robot_y Y pose of robot
    * @param robot_yaw Robot orientation
@@ -117,9 +112,9 @@ public:
   /**
    * @brief Update the costs in the master costmap.
    *
-   * Assumes master_grid already holds the symmetric baseline from the upstream
-   * InflationLayer. Runs asymmetric BFS when a valid path is available and
-   * asymmetry_factor is non-zero; otherwise returns without modification.
+   * First writes the inherited symmetric inflation baseline. Runs the
+   * asymmetric BFS overlay when a valid path is available and the two per-side
+   * decay rates differ; otherwise leaves the symmetric baseline unchanged.
    * @param master_grid The master costmap grid to update
    * @param min_i X min cell index of the window to update
    * @param min_j Y min cell index of the window to update
@@ -134,27 +129,6 @@ public:
    * @brief Match the size of the master costmap
    */
   void matchSize() override;
-
-  /**
-   * @brief If clearing operations should be processed on this layer or not
-   */
-  bool isClearable() override {return false;}
-
-  /**
-   * @brief Reset this costmap
-   */
-  void reset() override
-  {
-    matchSize();
-    setCurrent(false);
-  }
-
-  typedef std::recursive_mutex mutex_t;
-
-  /**
-   * @brief Get the mutex of the inflation information
-   */
-  mutex_t * getMutex() {return access_;}
 
 protected:
   /**
@@ -185,14 +159,14 @@ protected:
    *
    * For each candidate segment, performs an AABB rejection pass followed by an
    * exact perpendicular-distance and cross-product computation to determine side.
-   * Obstacles whose nearest perpendicular distance exceeds neutral_threshold_
+   * Obstacles whose nearest perpendicular distance exceeds the inflation radius
    * are returned as 0 (neutral -> symmetric inflation).
    *
    * @param cx             World x-coordinate of the obstacle cell (metres).
    * @param cy             World y-coordinate of the obstacle cell (metres).
    * @param candidates     Segment indices whose padded AABB may contain (cx, cy).
    * @param local_path_pts Path points in costmap-frame order; consecutive pairs form segments.
-   * @return +1 (left of path), -1 (right of path), or 0 (neutral / beyond influence radius).
+   * @return +1 (left of path), -1 (right of path), or 0 (neutral / beyond inflation radius).
    */
   int8_t computeObstacleSide(
     double cx, double cy,
@@ -200,13 +174,63 @@ protected:
     const std::vector<std::pair<double, double>> & local_path_pts);
 
   /**
+   * @brief Build a spatial hash mapping 2D bucket keys to path segment indices.
+   *
+   * Uses inflation_radius_ as the bucket size so each bucket spans exactly one
+   * inflation radius. Each segment is inserted into every bucket whose padded
+   * AABB it overlaps, enabling O(1) nearest-segment queries during the BFS seed phase.
+   * @param local_path_pts Path waypoints in costmap-frame world coordinates.
+   * @return Hash map from packed (bucket_x, bucket_y) key to segment index list.
+   */
+  std::unordered_map<uint64_t, std::vector<size_t>>
+  buildPathSpatialHash(
+    const std::vector<std::pair<double, double>> & local_path_pts);
+
+  /**
+   * @brief Seed the asymmetric BFS by classifying boundary obstacle cells.
+   *
+   * Resets seen_, then iterates lethal/unknown obstacle cells in the provided
+   * window. Interior cells (no traversable 4-connected neighbour) are
+   * pre-marked seen and skipped. Boundary cells are classified via
+   * computeObstacleSide and non-neutral cells are pushed into
+   * inflation_cells_[0] to seed the BFS.
+   * @param master_grid Costmap used for coordinate lookups.
+   * @param min_i X lower bound of the update window.
+   * @param min_j Y lower bound of the update window.
+   * @param max_i X upper bound of the update window.
+   * @param max_j Y upper bound of the update window.
+   * @param spatial_hash Segment lookup structure from buildPathSpatialHash().
+   * @param local_path_pts Path waypoints in costmap-frame world coordinates.
+   */
+  void seedAsymmetricBFS(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    int min_i, int min_j, int max_i, int max_j,
+    const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
+    const std::vector<std::pair<double, double>> & local_path_pts);
+
+  /**
+   * @brief Run Dial's Algorithm BFS to propagate asymmetric inflation costs.
+   *
+   * Expands the BFS wave from seeds placed by seedAsymmetricBFS(). Each cell's
+   * effective distance is scaled by its path-side factor. Costs are written with
+   * max(old, new) so this layer can only raise the symmetric baseline.
+   * @param master_grid Costmap to write costs into.
+   * @param min_i X lower bound of the update window.
+   * @param min_j Y lower bound of the update window.
+   * @param max_i X upper bound of the update window.
+   * @param max_j Y upper bound of the update window.
+   */
+  void runAsymmetricBFS(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    int min_i, int min_j, int max_i, int max_j);
+
+  /**
    * @brief Compute the asymmetric effective distance (in cells) for BFS priority.
    *
    * Preserves physical distance inside the inscribed radius to keep the collision
-   * core symmetric. It scales the excess distance by (1 - asymmetry_factor * path_side).
-   * A scale < 1 shrinks the effective distance so that side's BFS wave expands
-   * earlier and claims more cells, raising costs further into contested space.
-   * A scale > 1 does the opposite.
+   * core symmetric. Beyond the inscribed radius the excess distance is scaled by
+   * `c_side / cost_scaling_factor_`, where `c_side` is the side's cost_scaling_factor.
+   * Distance for neutral cells doesn't get scaled and returns `eff_dist = physical_dist`.
    * @param physical_dist Euclidean distance from the source obstacle cell, in cells.
    * @param path_side +1 (left of path), -1 (right of path), or 0 (neutral).
    * @return Effective distance in cells.
@@ -218,27 +242,12 @@ protected:
       return physical_dist;
     }
 
-    double excess_dist = physical_dist - inscribed_radius_cells;
-    double scale = std::max(0.0, 1.0 - asymmetry_factor_ * path_side);
-    return inscribed_radius_cells + excess_dist * scale;
-  }
+    const double scale =
+      (path_side > 0) ? cost_scaling_factor_left_ / cost_scaling_factor_ :
+      (path_side < 0) ? cost_scaling_factor_right_ / cost_scaling_factor_ :
+      1.0;  // Neutral cells are unaffected by asymmetry
 
-  /**
-   * @brief Compute an exponential-decay cost for a distance expressed in cells.
-   * @param distance Distance from the source obstacle cell, in cells.
-   * @return LETHAL_OBSTACLE at 0, INSCRIBED_INFLATED_OBSTACLE - 1 within the inscribed
-   *         radius, exponentially decaying to 0 beyond it.
-   */
-  inline unsigned char computeCost(double distance) const
-  {
-    if (distance == 0) {
-      return LETHAL_OBSTACLE;
-    }
-    if (distance * resolution_ <= inscribed_radius_) {
-      return INSCRIBED_INFLATED_OBSTACLE;
-    }
-    double factor = exp(-1.0 * cost_scaling_factor_ * (distance * resolution_ - inscribed_radius_));
-    return static_cast<unsigned char>((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
+    return inscribed_radius_cells + (physical_dist - inscribed_radius_cells) * scale;
   }
 
   /**
@@ -249,7 +258,7 @@ protected:
    * @param src_y Y coordinate of the source obstacle cell.
    * @return Euclidean distance in cells.
    */
-  inline double distanceLookup(
+  inline double asymmetricDistanceLookup(
     unsigned int mx, unsigned int my,
     unsigned int src_x, unsigned int src_y)
   {
@@ -259,23 +268,15 @@ protected:
   }
 
   /**
-   * @brief Convert a world distance (meters) to a cell distance
-   */
-  unsigned int cellDistance(double world_dist)
-  {
-    return layered_costmap_->getCostmap()->cellDistance(world_dist);
-  }
-
-  /**
    * @brief Pre-compute distance and cost caches and size the BFS priority queue
    */
-  void computeCaches();
+  void computeAsymmetricCaches();
 
   /**
    * @brief Enqueue a cell into the BFS priority queue at the appropriate bin
    */
-  inline size_t enqueue(
-    unsigned int index, unsigned int mx, unsigned int my,
+  inline size_t enqueueAsymmetric(
+    unsigned int mx, unsigned int my,
     unsigned int src_x, unsigned int src_y, int8_t path_side, size_t current_bin);
 
   /**
@@ -293,28 +294,18 @@ protected:
     const std::vector<rclcpp::Parameter> & parameters);
 
   // --- Parameters ---
-  double inflation_radius_;
-  double inscribed_radius_;
-  double cost_scaling_factor_;
-  double asymmetry_factor_;
-  bool inflate_around_unknown_;
+  /// Exponential decay rate for cells on the LEFT side of the path
+  double cost_scaling_factor_left_;
+  /// Exponential decay rate for cells on the RIGHT side of the path
+  double cost_scaling_factor_right_;
   /// Distance to goal where asymmetry disables to prevent docking oscillations
   double goal_distance_threshold_;
-  /// Distance from path beyond which obstacles are treated symmetrically
-  double neutral_threshold_;
   std::string plan_topic_;
 
   // --- State ---
   double current_robot_x_{0.0};
   double current_robot_y_{0.0};
-  double last_min_x_;
-  double last_min_y_;
-  double last_max_x_;
-  double last_max_y_;
-  bool need_reinflation_;
-  unsigned int cell_inflation_radius_;
   unsigned int cached_cell_inflation_radius_{0};
-  double resolution_;
   unsigned int cache_length_;
 
   // --- BFS data structures ---
@@ -336,13 +327,6 @@ protected:
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   nav_msgs::msg::Path::SharedPtr latest_global_path_;
   std::mutex path_mutex_;
-
-  // --- Synchronization ---
-  mutex_t * access_;
-
-  // --- Dynamic parameter handlers (split: validate + update) ---
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
-  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
 };
 
 }  // namespace nav2_costmap_2d
