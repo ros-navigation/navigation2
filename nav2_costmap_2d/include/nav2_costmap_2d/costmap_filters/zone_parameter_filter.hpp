@@ -111,10 +111,11 @@ protected:
     const std::vector<rclcpp::Parameter> & params);
 
   /**
-   * @brief Drain completed set_parameters futures non-blockingly. Called
-   *        at the start of every process() to guard future lifetimes.
+   * @brief Process completed set_parameters results non-blockingly. Called
+   *        at the start of every process(); surfaces failures per the
+   *        configured param_set_failure_policy.
    */
-  void drainPendingFutures();
+  void checkPendingParameterUpdates();
 
   nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
