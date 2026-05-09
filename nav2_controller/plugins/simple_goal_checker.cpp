@@ -57,7 +57,8 @@ SimpleGoalChecker::SimpleGoalChecker()
   stateful_(true),
   check_xy_(true),
   symmetric_yaw_tolerance_(false),
-  xy_goal_tolerance_sq_(0.0625)
+  xy_goal_tolerance_sq_(0.0625),
+  xy_goal_tolerance_reset_sq_(0.0625)
 {
 }
 
@@ -230,6 +231,8 @@ SimpleGoalChecker::updateParametersCallback(
       if (param_name == plugin_name_ + ".xy_goal_tolerance") {
         xy_goal_tolerance_ = parameter.as_double();
         xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+        xy_goal_tolerance_reset_sq_ = (xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+          (xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
       } else if (param_name == plugin_name_ + ".xy_goal_tolerance_buffer") {
         xy_goal_tolerance_buffer_ = parameter.as_double();
         xy_goal_tolerance_reset_sq_ = (xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
