@@ -96,12 +96,14 @@ TEST(AxisGoalChecker, initialize_and_tolerances)
 
   geometry_msgs::msg::Pose pose_tol;
   geometry_msgs::msg::Twist vel_tol;
+  double path_length_tol;
 
   // Test tolerance API
-  EXPECT_TRUE(agc.getTolerances(pose_tol, vel_tol));
+  EXPECT_TRUE(agc.getTolerances(pose_tol, vel_tol, path_length_tol));
   // Default tolerances should be 0.25
   EXPECT_EQ(pose_tol.position.x, 0.25);
   EXPECT_EQ(pose_tol.position.y, 0.25);
+  EXPECT_EQ(path_length_tol, 1.0);
 }
 
 TEST(AxisGoalChecker, dynamic_parameters)
@@ -136,9 +138,12 @@ TEST(AxisGoalChecker, dynamic_parameters)
   // Test that tolerances are updated
   geometry_msgs::msg::Pose pose_tol;
   geometry_msgs::msg::Twist vel_tol;
-  EXPECT_TRUE(agc.getTolerances(pose_tol, vel_tol));
+  double path_length_tol;
+  EXPECT_TRUE(agc.getTolerances(pose_tol, vel_tol, path_length_tol));
   EXPECT_EQ(pose_tol.position.x, 0.3);  // min of along_path and cross_track
   EXPECT_EQ(pose_tol.position.y, 0.3);
+  EXPECT_EQ(path_length_tol, 2.0);
+
 
   // Setting invalid values
   results = rec_param->set_parameters_atomically(

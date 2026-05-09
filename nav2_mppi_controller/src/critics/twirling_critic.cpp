@@ -39,7 +39,8 @@ void TwirlingCritic::score(CriticData & data)
   if (data.goal_checker != nullptr) {
     geometry_msgs::msg::Pose pose_tolerance;
     geometry_msgs::msg::Twist velocity_tolerance;
-    data.goal_checker->getTolerances(pose_tolerance, velocity_tolerance);
+    double path_length_tolerance;
+    data.goal_checker->getTolerances(pose_tolerance, velocity_tolerance, path_length_tolerance);
 
     if (data.state.local_path_length < pose_tolerance.position.x) {
       return;

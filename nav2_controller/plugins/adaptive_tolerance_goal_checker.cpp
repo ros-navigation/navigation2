@@ -141,6 +141,45 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
   const geometry_msgs::msg::Twist & velocity,
   const nav_msgs::msg::Path & transformed_global_plan)
 {
+  if (!isGoalXYReached(query_pose, goal_pose, velocity, transformed_global_plan)) {
+    return false;
+  }
+
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  // XY is satisfied — check yaw
+  const double query_yaw = tf2::getYaw(query_pose.orientation);
+  const double goal_yaw = tf2::getYaw(goal_pose.orientation);
+  bool yaw_reached = false;
+
+  if (symmetric_yaw_tolerance_) {
+    const double dyaw_forward = angles::shortest_angular_distance(query_yaw, goal_yaw);
+    const double dyaw_backward = angles::shortest_angular_distance(
+      query_yaw, angles::normalize_angle(goal_yaw + M_PI));
+    yaw_reached = std::fabs(dyaw_forward) <= yaw_goal_tolerance_ ||
+      std::fabs(dyaw_backward) <= yaw_goal_tolerance_;
+  } else {
+    const double dyaw = angles::shortest_angular_distance(query_yaw, goal_yaw);
+    yaw_reached = std::fabs(dyaw) <= yaw_goal_tolerance_;
+  }
+
+  if (yaw_reached) {
+    RCLCPP_INFO(
+      logger_,
+      "AdaptiveToleranceGoalChecker: goal reached via %s "
+      "(fine: %.3f m, coarse: %.3f m)",
+      xy_acceptance_reason_, fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+  }
+
+  return yaw_reached;
+}
+
+bool AdaptiveToleranceGoalChecker::isGoalXYReached(
+  const geometry_msgs::msg::Pose & query_pose,
+  const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist & velocity,
+  const nav_msgs::msg::Path & transformed_global_plan)
+{
   std::lock_guard<std::mutex> lock_reinit(mutex_);
 
   // Skip check if local plan is still long (robot is far from goal region)
@@ -240,36 +279,13 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
     }
   }
 
-  // XY is satisfied — check yaw
-  const double query_yaw = tf2::getYaw(query_pose.orientation);
-  const double goal_yaw = tf2::getYaw(goal_pose.orientation);
-  bool yaw_reached = false;
-
-  if (symmetric_yaw_tolerance_) {
-    const double dyaw_forward = angles::shortest_angular_distance(query_yaw, goal_yaw);
-    const double dyaw_backward = angles::shortest_angular_distance(
-      query_yaw, angles::normalize_angle(goal_yaw + M_PI));
-    yaw_reached = std::fabs(dyaw_forward) <= yaw_goal_tolerance_ ||
-      std::fabs(dyaw_backward) <= yaw_goal_tolerance_;
-  } else {
-    const double dyaw = angles::shortest_angular_distance(query_yaw, goal_yaw);
-    yaw_reached = std::fabs(dyaw) <= yaw_goal_tolerance_;
-  }
-
-  if (yaw_reached) {
-    RCLCPP_INFO(
-      logger_,
-      "AdaptiveToleranceGoalChecker: goal reached via %s "
-      "(fine: %.3f m, coarse: %.3f m)",
-      xy_acceptance_reason_, fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
-  }
-
-  return yaw_reached;
+  return true;
 }
 
 bool AdaptiveToleranceGoalChecker::getTolerances(
   geometry_msgs::msg::Pose & pose_tolerance,
-  geometry_msgs::msg::Twist & vel_tolerance)
+  geometry_msgs::msg::Twist & vel_tolerance,
+  double & path_length_tolerance)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
   const double invalid_field = std::numeric_limits<double>::lowest();
@@ -288,6 +304,8 @@ bool AdaptiveToleranceGoalChecker::getTolerances(
   vel_tolerance.angular.x = invalid_field;
   vel_tolerance.angular.y = invalid_field;
   vel_tolerance.angular.z = rot_stopped_velocity_;
+
+  path_length_tolerance = path_length_tolerance_;
 
   return true;
 }
