@@ -91,8 +91,8 @@ public:
 protected:
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_{rclcpp::get_logger("position_goal_checker")};
-  double xy_goal_tolerance_;
-  double xy_goal_tolerance_sq_;
+  double xy_goal_tolerance_, xy_goal_tolerance_buffer_;
+  double xy_goal_tolerance_sq_, xy_goal_tolerance_reset_sq_;
   double path_length_tolerance_;
   bool stateful_;
   bool position_reached_;

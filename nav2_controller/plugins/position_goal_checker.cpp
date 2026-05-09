@@ -28,7 +28,9 @@ namespace nav2_controller
 
 PositionGoalChecker::PositionGoalChecker()
 : xy_goal_tolerance_(0.25),
+  xy_goal_tolerance_buffer_(0.0),
   xy_goal_tolerance_sq_(0.0625),
+  xy_goal_tolerance_reset_sq_(0.0625),
   path_length_tolerance_(1.0),
   stateful_(true),
   position_reached_(false)
@@ -59,11 +61,15 @@ void PositionGoalChecker::initialize(
   logger_ = node->get_logger();
 
   xy_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".xy_goal_tolerance", 0.25);
+  xy_goal_tolerance_buffer_ = node->declare_or_get_parameter(
+    plugin_name + ".xy_goal_tolerance_buffer", 0.0);
   path_length_tolerance_ = node->declare_or_get_parameter(
     plugin_name + ".path_length_tolerance", 1.0);
   stateful_ = node->declare_or_get_parameter(plugin_name + ".stateful", true);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+  xy_goal_tolerance_reset_sq_ = (xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+    (xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
 
    // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -92,16 +98,23 @@ bool PositionGoalChecker::isGoalReached(
   {
     return false;
   }
-  // If stateful and position was already reached, maintain state
+
+  double dx = query_pose.position.x - goal_pose.position.x;
+  double dy = query_pose.position.y - goal_pose.position.y;
+  double dist_sq = dx * dx + dy * dy;
+
+  // If stateful and position was already reached, keep the state
+  // unless we leave the reset region.
   if (stateful_ && position_reached_) {
+    if (xy_goal_tolerance_buffer_ > 0.0 && dist_sq > xy_goal_tolerance_reset_sq_) {
+      position_reached_ = false;
+      return false;
+    }
     return true;
   }
 
   // Check if position is within tolerance
-  double dx = query_pose.position.x - goal_pose.position.x;
-  double dy = query_pose.position.y - goal_pose.position.y;
-
-  bool position_reached = (dx * dx + dy * dy <= xy_goal_tolerance_sq_);
+  bool position_reached = (dist_sq <= xy_goal_tolerance_sq_);
 
   // If stateful, remember that we reached the position
   if (stateful_ && position_reached) {
@@ -187,6 +200,12 @@ PositionGoalChecker::updateParametersCallback(
       if (param_name == plugin_name_ + ".xy_goal_tolerance") {
         xy_goal_tolerance_ = parameter.as_double();
         xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+        xy_goal_tolerance_reset_sq_ = (xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+          (xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
+      } else if (param_name == plugin_name_ + ".xy_goal_tolerance_buffer") {
+        xy_goal_tolerance_buffer_ = parameter.as_double();
+        xy_goal_tolerance_reset_sq_ = (xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+          (xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
       } else if (param_name == plugin_name_ + ".path_length_tolerance") {
         path_length_tolerance_ = parameter.as_double();
       }
