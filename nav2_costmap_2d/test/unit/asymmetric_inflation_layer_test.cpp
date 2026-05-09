@@ -14,8 +14,8 @@
 
 // Unit tests for AsymmetricInflationLayer — pure-algorithm coverage.
 //
-// These tests exercise computeCost, getEffectiveDistance, and computeObstacleSide
-// via a test-subclass that exposes the protected members and methods without
+// These tests exercise getEffectiveDistance and computeObstacleSide via a
+// test-subclass that exposes the protected members and methods without
 // requiring a full LayeredCostmap / LifecycleNode stack.
 
 #include <gtest/gtest.h>
@@ -44,11 +44,27 @@ public:
   // Plain setters so tests can configure the math without going through ROS init
   void setResolution(double r) {resolution_ = r;}
   void setInscribedRadius(double r) {inscribed_radius_ = r;}
-  void setAsymmetryFactor(double a) {asymmetry_factor_ = a;}
-  void setNeutralThreshold(double n) {neutral_threshold_ = n;}
-  void setCostScalingFactor(double c) {cost_scaling_factor_ = c;}
+  void setInflationRadius(double r)
+  {
+    inflation_radius_ = r;
+  }
+  void setCostScalingFactorLeft(double c)
+  {
+    cost_scaling_factor_left_ = c;
+    updateCostScalingFactor();
+  }
 
-  double getNeutralThreshold() const {return neutral_threshold_;}
+  void setCostScalingFactorRight(double c)
+  {
+    cost_scaling_factor_right_ = c;
+    updateCostScalingFactor();
+  }
+
+private:
+  void updateCostScalingFactor()
+  {
+    cost_scaling_factor_ = std::max(cost_scaling_factor_left_, cost_scaling_factor_right_);
+  }
 };
 
 }  // namespace nav2_costmap_2d
@@ -63,7 +79,7 @@ protected:
     layer_ = std::make_unique<TestableAsymmetricInflationLayer>();
     layer_->setResolution(0.1);
     layer_->setInscribedRadius(0.3);  // 3 cells
-    layer_->setNeutralThreshold(2.0);
+    layer_->setInflationRadius(2.0);
   }
 
   std::unique_ptr<TestableAsymmetricInflationLayer> layer_;
@@ -71,12 +87,14 @@ protected:
 
 // Formula under test (inscribed_cells = inscribed_radius / resolution = 0.3 / 0.1 = 3):
 //   d <= inscribed_cells: eff = d  (no asymmetry inside the collision core)
-//   d >  inscribed_cells: eff = inscribed_cells + (d - inscribed_cells) * max(0, 1 - alpha * side)
+//   d >  inscribed_cells: eff = inscribed_cells + (d - inscribed_cells) * (c_side / c_max)
+// where c_max = max(c_left, c_right) and neutral side uses c_side = c_max.
 
-// Test 1: when asymmetry_factor=0, scale=1 for all sides, so the function is the identity.
-TEST_F(EffectiveDistanceTest, getEffectiveDistance_symmetric_when_alpha_zero)
+// Test 1: when c_left == c_right, scale=1 for all sides, so the function is the identity.
+TEST_F(EffectiveDistanceTest, getEffectiveDistance_symmetric_when_sides_equal)
 {
-  layer_->setAsymmetryFactor(0.0);
+  layer_->setCostScalingFactorLeft(4.0);
+  layer_->setCostScalingFactorRight(4.0);
   for (double d = 0.0; d < 20.0; d += 0.5) {
     EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, +1), d);
     EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, -1), d);
@@ -84,10 +102,11 @@ TEST_F(EffectiveDistanceTest, getEffectiveDistance_symmetric_when_alpha_zero)
   }
 }
 
-// Test 2: inside the inscribed radius all sides are treated identically, regardless of alpha.
+// Test 2: inside the inscribed radius all sides are treated identically, regardless of factors.
 TEST_F(EffectiveDistanceTest, getEffectiveDistance_symmetric_inside_inscribed_radius)
 {
-  layer_->setAsymmetryFactor(0.5);
+  layer_->setCostScalingFactorLeft(1.0);
+  layer_->setCostScalingFactorRight(7.0);
   const double inscribed_cells = 3.0;  // 0.3 / 0.1
   for (double d = 0.0; d < inscribed_cells; d += 0.5) {
     EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, +1), d);
@@ -96,11 +115,13 @@ TEST_F(EffectiveDistanceTest, getEffectiveDistance_symmetric_inside_inscribed_ra
   }
 }
 
-// Test 3: outside the inscribed radius, LEFT effective distance is compressed and
-// RIGHT is stretched relative to neutral (for positive asymmetry_factor).
+// Test 3: with c_left=1, c_right=7 (so c_max=7), the LEFT effective distance is
+// compressed (smaller decay rate → bigger reach) while RIGHT and neutral match the
+// physical distance.
 TEST_F(EffectiveDistanceTest, getEffectiveDistance_left_compressed_right_stretched)
 {
-  layer_->setAsymmetryFactor(0.3);
+  layer_->setCostScalingFactorLeft(1.0);
+  layer_->setCostScalingFactorRight(7.0);
   const double inscribed_cells = 3.0;
   // d=4: excess = 1.0 cell beyond inscribed radius; asymmetry is active here.
   const double d = 4.0;
@@ -109,23 +130,25 @@ TEST_F(EffectiveDistanceTest, getEffectiveDistance_left_compressed_right_stretch
   const double right = layer_->getEffectiveDistance(d, -1);
   const double neutral = layer_->getEffectiveDistance(d, 0);
 
-  EXPECT_DOUBLE_EQ(left, inscribed_cells + excess * 0.7);
-  EXPECT_DOUBLE_EQ(right, inscribed_cells + excess * 1.3);
-  EXPECT_DOUBLE_EQ(neutral, d);
-  EXPECT_LT(left, neutral) << "LEFT should have compressed (smaller) effective distance";
-  EXPECT_GT(right, neutral) << "RIGHT should have stretched (larger) effective distance";
+  EXPECT_DOUBLE_EQ(left, inscribed_cells + excess * (1.0 / 7.0));
+  EXPECT_DOUBLE_EQ(right, inscribed_cells + excess);  // c_right == c_max → scale=1
+  EXPECT_DOUBLE_EQ(neutral, d);                       // neutral uses c_max → scale=1
+  EXPECT_LT(left, right) << "LEFT (smaller decay) should have compressed eff_dist";
+  EXPECT_DOUBLE_EQ(right, neutral) << "RIGHT == c_max so it matches neutral";
 }
 
-// Test 4: flipping asymmetry sign and the side classification produces identical output.
+// Test 4: swapping the per-side decay rates swaps left/right effective distances.
 // Use d outside the inscribed radius so asymmetry is active.
-TEST_F(EffectiveDistanceTest, getEffectiveDistance_mirrors_on_sign_flip)
+TEST_F(EffectiveDistanceTest, getEffectiveDistance_swaps_when_sides_swap)
 {
   const double d = 4.0;  // outside inscribed_cells=3 so asymmetry is active
-  layer_->setAsymmetryFactor(+0.3);
+  layer_->setCostScalingFactorLeft(1.0);
+  layer_->setCostScalingFactorRight(7.0);
   double pos_left = layer_->getEffectiveDistance(d, +1);
   double pos_right = layer_->getEffectiveDistance(d, -1);
 
-  layer_->setAsymmetryFactor(-0.3);
+  layer_->setCostScalingFactorLeft(7.0);
+  layer_->setCostScalingFactorRight(1.0);
   double neg_left = layer_->getEffectiveDistance(d, +1);
   double neg_right = layer_->getEffectiveDistance(d, -1);
 
@@ -144,8 +167,10 @@ protected:
     layer_ = std::make_unique<TestableAsymmetricInflationLayer>();
     layer_->setResolution(0.1);
     layer_->setInscribedRadius(0.3);
-    layer_->setNeutralThreshold(1.0);
-    layer_->setAsymmetryFactor(0.3);
+    layer_->setInflationRadius(1.0);
+    // Side classification doesn't depend on the decay rates; pick any unequal pair.
+    layer_->setCostScalingFactorLeft(2.0);
+    layer_->setCostScalingFactorRight(8.0);
   }
 
   // Helper method to simulate the spatial hash construction from updateCosts
@@ -154,7 +179,7 @@ protected:
     double bucket_size)
   {
     std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
-    double neutral_threshold = layer_->getNeutralThreshold();
+    double inflation_radius = layer_->getInflationRadius();
 
     for (size_t p = 0; p < path.size() - 1; ++p) {
       double ax = path[p].first;
@@ -162,10 +187,10 @@ protected:
       double bx = path[p + 1].first;
       double by = path[p + 1].second;
 
-      double min_x = std::min(ax, bx) - neutral_threshold;
-      double max_x = std::max(ax, bx) + neutral_threshold;
-      double min_y = std::min(ay, by) - neutral_threshold;
-      double max_y = std::max(ay, by) + neutral_threshold;
+      double min_x = std::min(ax, bx) - inflation_radius;
+      double max_x = std::max(ax, bx) + inflation_radius;
+      double min_y = std::min(ay, by) - inflation_radius;
+      double max_y = std::max(ay, by) + inflation_radius;
 
       int64_t min_bx = static_cast<int64_t>(std::floor(min_x / bucket_size));
       int64_t max_bx = static_cast<int64_t>(std::floor(max_x / bucket_size));
@@ -211,7 +236,7 @@ protected:
 // Test 5: straight path along +x axis
 //   - cells north of the path should be classified +1 (left)
 //   - cells south of the path should be classified -1 (right)
-//   - cells beyond neutral_threshold should be classified 0 (neutral)
+//   - cells beyond inflation_radius should be classified 0 (neutral)
 TEST_F(ObstacleSideTest, computeObstacleSide_classification)
 {
   // Path along y=2.0 from x=0.5 to x=3.5
@@ -219,7 +244,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_classification)
     {0.5, 2.0}, {1.5, 2.0}, {2.5, 2.0}, {3.5, 2.0}
   };
 
-  double bucket_size = std::max(layer_->getNeutralThreshold(), 1.0);
+  double bucket_size = std::max(layer_->getInflationRadius(), 1.0);
   auto spatial_hash = buildSpatialHash(path, bucket_size);
 
   // North cell: world (2.0, 2.5) → map indices
@@ -232,7 +257,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_classification)
   ASSERT_TRUE(costmap_->worldToMap(2.0, 1.5, mx_s, my_s));
   EXPECT_EQ(classifyObstacleSide(mx_s, my_s, path, spatial_hash, bucket_size), -1);
 
-  // Far north cell: world (2.0, 3.5) — 1.5m from path, beyond neutral_threshold 1.0
+  // Far north cell: world (2.0, 3.5) — 1.5m from path, beyond inflation_radius 1.0
   unsigned int mx_far, my_far;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 3.5, mx_far, my_far));
   EXPECT_EQ(classifyObstacleSide(mx_far, my_far, path, spatial_hash, bucket_size), 0);
@@ -249,7 +274,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_closest_segment_selection)
     {2.0, 1.5}, {2.0, 1.0}, {2.0, 0.5}
   };
 
-  double bucket_size = std::max(layer_->getNeutralThreshold(), 1.0);
+  double bucket_size = std::max(layer_->getInflationRadius(), 1.0);
   auto spatial_hash = buildSpatialHash(path, bucket_size);
 
   unsigned int mx, my;
