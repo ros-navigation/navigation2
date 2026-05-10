@@ -841,7 +841,7 @@ BoundedTrackingErrorLayer::buildCorridorMask(
   nav_msgs::msg::Path sub_segment;
   sub_segment.header = full_path.header;
 
-  for (size_t i = 0; i < full_path.poses.size(); ++i) {
+  for (size_t i = current_path_index_; i < full_path.poses.size(); ++i) {
     const auto & pose = full_path.poses[i];
     unsigned int mx, my;
     const bool in_area = master_grid.worldToMap(
