@@ -376,7 +376,7 @@ AsymmetricInflationLayer::updateCosts(
   const int roi_min_j = std::max(0, cmin_j - padding);
   const int roi_max_i = std::min(static_cast<int>(size_x), cmax_i + padding);
   const int roi_max_j = std::min(static_cast<int>(size_y), cmax_j + padding);
-  const int roi_width  = roi_max_i - roi_min_i;
+  const int roi_width = roi_max_i - roi_min_i;
   const int roi_height = roi_max_j - roi_min_j;
 
   auto spatial_hash = buildPathSpatialHash(local_path_pts);
@@ -456,14 +456,14 @@ AsymmetricInflationLayer::seedDistanceMap(
   auto is_traversable = [&](int nx, int ny) {
       unsigned char c = master_array[master_grid.getIndex(nx, ny)];
       return inflate_around_unknown_ ?
-        (c != LETHAL_OBSTACLE && c != NO_INFORMATION) : (c != LETHAL_OBSTACLE);
+             (c != LETHAL_OBSTACLE && c != NO_INFORMATION) : (c != LETHAL_OBSTACLE);
     };
-  
+
   // Seed all obstacle boundary cells, that are nearby a path segment
   for (int j = roi_min_j; j < roi_max_j; ++j) {
     for (int i = roi_min_i; i < roi_max_i; ++i) {
       unsigned char cost = master_array[master_grid.getIndex(i, j)];
-      
+
       // Early exit 1: Skip cells that aren't lethal/unknown obstacles
       if (cost != LETHAL_OBSTACLE && !(inflate_around_unknown_ && cost == NO_INFORMATION)) {
         continue;
@@ -472,7 +472,7 @@ AsymmetricInflationLayer::seedDistanceMap(
       // Check if the cell touches the absolute edges of the costmap
       bool is_on_map_edge = (i == 0 || i == static_cast<int>(size_x) - 1 ||
         j == 0 || j == static_cast<int>(size_y) - 1);
-      
+
       // An obstacle cell is a boundary if it's on the map edge OR touches free space.
       bool is_boundary = is_on_map_edge ||
         is_traversable(i - 1, j) || is_traversable(i + 1, j) ||
@@ -497,7 +497,7 @@ AsymmetricInflationLayer::seedDistanceMap(
       if (it == spatial_hash.end()) {
         continue;
       }
-      
+
       // Determine which side of the path this cell is on
       int8_t side = computeObstacleSide(cx, cy, it->second, local_path_pts);
       if (side != 0 && side == disfavored_side) {
