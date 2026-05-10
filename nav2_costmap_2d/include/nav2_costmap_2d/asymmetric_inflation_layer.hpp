@@ -51,11 +51,25 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
-#include "nav2_costmap_2d/legacy_inflation_layer.hpp"  // for nav2_costmap_2d::CellData
 #include "nav_msgs/msg/path.hpp"
 
 namespace nav2_costmap_2d
 {
+
+/**
+ * @struct AsymmetricCellData
+ * @brief BFS queue entry that carries the path-side classification inline,
+ *        eliminating the need for a full-map obstacle_side_grid_ lookup.
+ */
+struct AsymmetricCellData
+{
+  unsigned int x_, y_, src_x_, src_y_;
+  int8_t path_side_;
+  AsymmetricCellData(
+    unsigned int x, unsigned int y,
+    unsigned int sx, unsigned int sy, int8_t side)
+  : x_(x), y_(y), src_x_(sx), src_y_(sy), path_side_(side) {}
+};
 
 /**
  * @class AsymmetricInflationLayer
@@ -192,7 +206,7 @@ protected:
    * Resets seen_, then iterates lethal/unknown obstacle cells in the provided
    * window. Interior cells (no traversable 4-connected neighbour) are
    * pre-marked seen and skipped. Boundary cells are classified via
-   * computeObstacleSide and non-neutral cells are pushed into
+   * computeObstacleSide and cells from the disfavored side are pushed into
    * inflation_cells_[0] to seed the BFS.
    * @param master_grid Costmap used for coordinate lookups.
    * @param min_i X lower bound of the update window.
@@ -310,13 +324,18 @@ protected:
 
   // --- BFS data structures ---
   /// Priority queue bins, indexed by floor(effective_distance * kEffDistPrecision)
-  std::vector<std::vector<CellData>> inflation_cells_;
-  std::vector<bool> seen_;
+  std::vector<std::vector<AsymmetricCellData>> inflation_cells_;
+  /// ROI-local visited array; sized to the seed window each update, not the full map
+  std::vector<uint8_t> seen_roi_;
   std::vector<double> cached_distances_;
   /// Pre-computed exponential costs indexed by effective distance bin
   std::vector<unsigned char> cached_costs_;
-  /// Maps lethal obstacles to their left/right/neutral identity
-  std::vector<int8_t> obstacle_side_grid_;
+
+  // --- ROI state ---
+  int roi_min_i_{0};
+  int roi_min_j_{0};
+  int roi_width_{0};
+  int roi_height_{0};
 
   /// Number of priority-queue bins per cell of effective distance.
   /// Higher values give finer BFS priority ordering (bin width = 1/20 cell
