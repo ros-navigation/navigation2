@@ -1,41 +1,16 @@
-/*********************************************************************
- *
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2026, Marc Blöchlinger
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of Willow Garage, Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Marc Blöchlinger
- *         Eitan Marder-Eppstein (Original author)
- *         David V. Lu!! (Original author)
- *********************************************************************/
+// Copyright (c) 2026, Marc Blöchlinger
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef NAV2_COSTMAP_2D__ASYMMETRIC_INFLATION_LAYER_HPP_
 #define NAV2_COSTMAP_2D__ASYMMETRIC_INFLATION_LAYER_HPP_
@@ -57,33 +32,16 @@ namespace nav2_costmap_2d
 {
 
 /**
- * @struct AsymmetricCellData
- * @brief BFS queue entry that carries the path-side classification inline,
- *        eliminating the need for a full-map obstacle_side_grid_ lookup.
- */
-struct AsymmetricCellData
-{
-  unsigned int x_, y_, src_x_, src_y_;
-  int8_t path_side_;
-  AsymmetricCellData(
-    unsigned int x, unsigned int y,
-    unsigned int sx, unsigned int sy, int8_t side)
-  : x_(x), y_(y), src_x_(sx), src_y_(sy), path_side_(side) {}
-};
-
-/**
  * @class AsymmetricInflationLayer
  * @brief Costmap layer that inflates obstacles asymmetrically relative to the
  *        global path, biasing the navigable corridor toward one side.
  *
  * Inherits the distance-transform based InflationLayer, which writes the
  * symmetric baseline first. This layer then classifies each lethal obstacle as
- * left (+1), right (-1), or neutral (0) relative to the path and uses a BFS
- * with per-side exponential decay rates (`cost_scaling_factor_left` and
- * `cost_scaling_factor_right`) to raise costs on the side with the smaller
- * decay rate (= longer reach). Costs are written with max(old, new) so they can
- * only increase. Falls back to the inherited symmetric inflation when no path
- * is available, the goal is nearby, or the per-side scaling factors are equal.
+ * left (+1), right (-1), or neutral (0) relative to the path and runs a second
+ * distance transform seeded from only the disfavored-side boundary cells.
+ * Falls back to the inherited symmetric inflation when no path is available, 
+ * the goal is nearby, or the per-side scaling factors are equal.
  */
 class AsymmetricInflationLayer : public nav2_costmap_2d::InflationLayer
 {
@@ -126,9 +84,10 @@ public:
   /**
    * @brief Update the costs in the master costmap.
    *
-   * First writes the inherited symmetric inflation baseline. Runs the
-   * asymmetric BFS overlay when a valid path is available and the two per-side
-   * decay rates differ; otherwise leaves the symmetric baseline unchanged.
+   * First writes the inherited symmetric inflation baseline. Runs a second
+   * distance-transform pass seeded from disfavored-side boundary cells when a
+   * valid path is available and the two per-side decay rates differ.
+   * Otherwise leaves the symmetric baseline unchanged.
    * @param master_grid The master costmap grid to update
    * @param min_i X min cell index of the window to update
    * @param min_j Y min cell index of the window to update
@@ -192,7 +151,7 @@ protected:
    *
    * Uses inflation_radius_ as the bucket size so each bucket spans exactly one
    * inflation radius. Each segment is inserted into every bucket whose padded
-   * AABB it overlaps, enabling O(1) nearest-segment queries during the BFS seed phase.
+   * AABB it overlaps, enabling O(1) nearest-segment queries during the disfavored-cell seeding phase.
    * @param local_path_pts Path waypoints in costmap-frame world coordinates.
    * @return Hash map from packed (bucket_x, bucket_y) key to segment index list.
    */
@@ -201,97 +160,53 @@ protected:
     const std::vector<std::pair<double, double>> & local_path_pts);
 
   /**
-   * @brief Seed the asymmetric BFS by classifying boundary obstacle cells.
+   * @brief Build a distance map seeded from disfavored-side obstacle boundary cells.
    *
-   * Resets seen_, then iterates lethal/unknown obstacle cells in the provided
-   * window. Interior cells (no traversable 4-connected neighbour) are
-   * pre-marked seen and skipped. Boundary cells are classified via
-   * computeObstacleSide and cells from the disfavored side are pushed into
-   * inflation_cells_[0] to seed the BFS.
-   * @param master_grid Costmap used for coordinate lookups.
-   * @param min_i X lower bound of the update window.
-   * @param min_j Y lower bound of the update window.
-   * @param max_i X upper bound of the update window.
-   * @param max_j Y upper bound of the update window.
+   * Initialises a MatrixXfRM (roi_height × roi_width) to DT_INF, then sets
+   * disfavored boundary cells to 0.0f. The caller passes the result to
+   * DistanceTransform::distanceTransform2D() then applyInflation().
+   * @param master_grid Costmap used for coordinate and cost lookups.
+   * @param roi_min_i Left edge of the padded ROI (cells).
+   * @param roi_min_j Bottom edge of the padded ROI (cells).
+   * @param roi_width Width of the padded ROI (cells).
+   * @param roi_height Height of the padded ROI (cells).
    * @param spatial_hash Segment lookup structure from buildPathSpatialHash().
    * @param local_path_pts Path waypoints in costmap-frame world coordinates.
+   * @return Distance map with 0.0f at disfavored seeds and DT_INF elsewhere.
    */
-  void seedAsymmetricBFS(
-    nav2_costmap_2d::Costmap2D & master_grid,
-    int min_i, int min_j, int max_i, int max_j,
+  MatrixXfRM seedDistanceMap(
+    nav2_costmap_2d::Costmap2D & master_grid, 
+    int roi_min_i, int roi_min_j, int roi_width, int roi_height,
     const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
     const std::vector<std::pair<double, double>> & local_path_pts);
 
   /**
-   * @brief Run Dial's Algorithm BFS to propagate asymmetric inflation costs.
+   * @brief Apply disfavored-side costs from a distance map with max(old, new) semantics.
    *
-   * Expands the BFS wave from seeds placed by seedAsymmetricBFS(). Each cell's
-   * effective distance is scaled by its path-side factor. Costs are written with
-   * max(old, new) so this layer can only raise the symmetric baseline.
-   * @param master_grid Costmap to write costs into.
-   * @param min_i X lower bound of the update window.
-   * @param min_j Y lower bound of the update window.
-   * @param max_i X upper bound of the update window.
-   * @param max_j Y upper bound of the update window.
+   * Mirrors InflationLayer::applyInflation() but uses cost_lut_disfavored_
+   * (built with c_side) instead of the parent's cost_lut_ (built with c_max).
+   * Costs are applied only within the originally requested update window.
+   * @param master_array Raw costmap data pointer.
+   * @param distance_map Result of distanceTransform2D() on the disfavored seed map.
+   * @param min_i Left edge of the write window.
+   * @param min_j Bottom edge of the write window.
+   * @param max_i Right edge of the write window.
+   * @param max_j Top edge of the write window.
+   * @param roi_min_i Left edge of the padded ROI used to build distance_map.
+   * @param roi_min_j Bottom edge of the padded ROI used to build distance_map.
+   * @param size_x Full costmap width (cells), for index arithmetic.
    */
-  void runAsymmetricBFS(
-    nav2_costmap_2d::Costmap2D & master_grid,
-    int min_i, int min_j, int max_i, int max_j);
+  void applyInflation(
+    unsigned char * master_array,
+    const MatrixXfRM & distance_map,
+    int min_i, int min_j, int max_i, int max_j,
+    int roi_min_i, int roi_min_j,
+    unsigned int size_x);
 
   /**
-   * @brief Compute the asymmetric effective distance (in cells) for BFS priority.
-   *
-   * Preserves physical distance inside the inscribed radius to keep the collision
-   * core symmetric. Beyond the inscribed radius the excess distance is scaled by
-   * `c_side / cost_scaling_factor_`, where `c_side` is the side's cost_scaling_factor.
-   * Distance for neutral cells doesn't get scaled and returns `eff_dist = physical_dist`.
-   * @param physical_dist Euclidean distance from the source obstacle cell, in cells.
-   * @param path_side +1 (left of path), -1 (right of path), or 0 (neutral).
-   * @return Effective distance in cells.
-   */
-  inline double getEffectiveDistance(double physical_dist, int8_t path_side) const
-  {
-    const double inscribed_radius_cells = inscribed_radius_ / resolution_;
-    if (physical_dist <= inscribed_radius_cells) {
-      return physical_dist;
-    }
-
-    const double scale =
-      (path_side > 0) ? cost_scaling_factor_left_ / cost_scaling_factor_ :
-      (path_side < 0) ? cost_scaling_factor_right_ / cost_scaling_factor_ :
-      1.0;  // Neutral cells are unaffected by asymmetry
-
-    return inscribed_radius_cells + (physical_dist - inscribed_radius_cells) * scale;
-  }
-
-  /**
-   * @brief Lookup pre-computed Euclidean distance between two cells.
-   * @param mx X coordinate of the current cell.
-   * @param my Y coordinate of the current cell.
-   * @param src_x X coordinate of the source obstacle cell.
-   * @param src_y Y coordinate of the source obstacle cell.
-   * @return Euclidean distance in cells.
-   */
-  inline double asymmetricDistanceLookup(
-    unsigned int mx, unsigned int my,
-    unsigned int src_x, unsigned int src_y)
-  {
-    unsigned int dx = (mx > src_x) ? mx - src_x : src_x - mx;
-    unsigned int dy = (my > src_y) ? my - src_y : src_y - my;
-    return cached_distances_[dx * cache_length_ + dy];
-  }
-
-  /**
-   * @brief Pre-compute distance and cost caches and size the BFS priority queue
+   * @brief Pre-compute cost_lut_disfavored_ using c_side (the smaller per-side scaling factor)
    */
   void computeAsymmetricCaches();
-
-  /**
-   * @brief Enqueue a cell into the BFS priority queue at the appropriate bin
-   */
-  inline size_t enqueueAsymmetric(
-    unsigned int mx, unsigned int my,
-    unsigned int src_x, unsigned int src_y, int8_t path_side, size_t current_bin);
 
   /**
    * @brief Validate parameter updates (pre-set callback). Returns success/failure
@@ -319,28 +234,10 @@ protected:
   // --- State ---
   double current_robot_x_{0.0};
   double current_robot_y_{0.0};
-  unsigned int cached_cell_inflation_radius_{0};
-  unsigned int cache_length_;
 
-  // --- BFS data structures ---
-  /// Priority queue bins, indexed by floor(effective_distance * kEffDistPrecision)
-  std::vector<std::vector<AsymmetricCellData>> inflation_cells_;
-  /// ROI-local visited array; sized to the seed window each update, not the full map
-  std::vector<uint8_t> seen_roi_;
-  std::vector<double> cached_distances_;
-  /// Pre-computed exponential costs indexed by effective distance bin
-  std::vector<unsigned char> cached_costs_;
-
-  // --- ROI state ---
-  int roi_min_i_{0};
-  int roi_min_j_{0};
-  int roi_width_{0};
-  int roi_height_{0};
-
-  /// Number of priority-queue bins per cell of effective distance.
-  /// Higher values give finer BFS priority ordering (bin width = 1/20 cell
-  /// ≈ 0.05 cells) at the cost of a larger `inflation_cells_` vector.
-  static constexpr double kEffDistPrecision = 20.0;
+  // --- Asymmetric Lookup Table ---
+  /// Cost LUT for the disfavored side, built with c_side (the smaller per-side scaling factor)
+  std::vector<unsigned char> cost_lut_disfavored_;
 
   // --- Path subscription ---
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;

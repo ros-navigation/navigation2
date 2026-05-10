@@ -1,41 +1,17 @@
-/*********************************************************************
- *
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2026, Marc Blöchlinger
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of Willow Garage, Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Marc Blöchlinger
- *         Eitan Marder-Eppstein (Original author)
- *         David V. Lu!! (Original author)
- *********************************************************************/
+// Copyright (c) 2026, Marc Blöchlinger
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "nav2_costmap_2d/asymmetric_inflation_layer.hpp"
 
 #include <limits>
@@ -68,8 +44,7 @@ namespace nav2_costmap_2d
 AsymmetricInflationLayer::AsymmetricInflationLayer()
 : cost_scaling_factor_left_(0),
   cost_scaling_factor_right_(0),
-  goal_distance_threshold_(0),
-  cache_length_(0)
+  goal_distance_threshold_(0)
 {
 }
 
@@ -135,9 +110,6 @@ AsymmetricInflationLayer::onInitialize()
   }
 
   setCurrent(true);
-  seen_roi_.clear();
-  cached_distances_.clear();
-  cached_costs_.clear();
   need_reinflation_ = false;
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
@@ -370,15 +342,13 @@ AsymmetricInflationLayer::updateCosts(
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
-  // Abort inflation if it's disabled
   if (!enabled_) {
     return;
   }
 
-  // Fill the symmetric inflation baseline, then apply asymmetric inflation afterwards.
+  // Pass 1: symmetric baseline via inherited distance-transform inflation
   InflationLayer::updateCosts(master_grid, min_i, min_j, max_i, max_j);
 
-  // Extract path that's inside the costmap
   std::vector<std::pair<double, double>> local_path_pts = extractLocalPath(master_grid);
 
   // Abort if we don't have a valid path or if the scaling rates are equal (no asymmetry).
@@ -389,14 +359,38 @@ AsymmetricInflationLayer::updateCosts(
     return;
   }
 
-  // Build a spatial hash to map nearby segments to a cell
+  // Pass 2: disfavored-side asymmetric overlay via distance transform
+  unsigned char * master_array = master_grid.getCharMap();
+  const unsigned int size_x = master_grid.getSizeInCellsX();
+  const unsigned int size_y = master_grid.getSizeInCellsY();
+
+  // Clamp update window (mirrors InflationLayer::updateCosts)
+  const int cmin_i = std::max(0, min_i);
+  const int cmin_j = std::max(0, min_j);
+  const int cmax_i = std::min(static_cast<int>(size_x), max_i);
+  const int cmax_j = std::min(static_cast<int>(size_y), max_j);
+
+  // Padded ROI — same formula as InflationLayer::updateCosts
+  const int padding = static_cast<int>(cell_inflation_radius_);
+  const int roi_min_i = std::max(0, cmin_i - padding);
+  const int roi_min_j = std::max(0, cmin_j - padding);
+  const int roi_max_i = std::min(static_cast<int>(size_x), cmax_i + padding);
+  const int roi_max_j = std::min(static_cast<int>(size_y), cmax_j + padding);
+  const int roi_width  = roi_max_i - roi_min_i;
+  const int roi_height = roi_max_j - roi_min_j;
+
   auto spatial_hash = buildPathSpatialHash(local_path_pts);
 
-  // Seed the asymmetric BFS by classifying boundary obstacle cells
-  seedAsymmetricBFS(master_grid, min_i, min_j, max_i, max_j, spatial_hash, local_path_pts);
+  MatrixXfRM dist_map = seedDistanceMap(
+    master_grid, roi_min_i, roi_min_j, roi_width, roi_height,
+    spatial_hash, local_path_pts);
 
-  // Run Dial's Algorithm BFS to propagate asymmetric inflation costs
-  runAsymmetricBFS(master_grid, min_i, min_j, max_i, max_j);
+  DistanceTransform::distanceTransform2D(dist_map, roi_height, roi_width);
+
+  applyInflation(
+    master_array, dist_map,
+    cmin_i, cmin_j, cmax_i, cmax_j,
+    roi_min_i, roi_min_j, size_x);
 
   setCurrent(true);
 }
@@ -440,64 +434,52 @@ AsymmetricInflationLayer::buildPathSpatialHash(
   return spatial_hash;
 }
 
-void
-AsymmetricInflationLayer::seedAsymmetricBFS(
+MatrixXfRM
+AsymmetricInflationLayer::seedDistanceMap(
   nav2_costmap_2d::Costmap2D & master_grid,
-  int min_i, int min_j, int max_i, int max_j,
+  int roi_min_i, int roi_min_j, int roi_width, int roi_height,
   const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
   const std::vector<std::pair<double, double>> & local_path_pts)
 {
   unsigned char * master_array = master_grid.getCharMap();
-  const int size_x = static_cast<int>(master_grid.getSizeInCellsX());
-  const int size_y = static_cast<int>(master_grid.getSizeInCellsY());
+  const unsigned int size_x = master_grid.getSizeInCellsX();
+  const unsigned int size_y = master_grid.getSizeInCellsY();
 
-  // Inflate update window by inflation radius.
-  roi_min_i_ = std::max(0, min_i - static_cast<int>(cell_inflation_radius_));
-  roi_min_j_ = std::max(0, min_j - static_cast<int>(cell_inflation_radius_));
-  const int roi_max_i = std::min(size_x, max_i + static_cast<int>(cell_inflation_radius_));
-  const int roi_max_j = std::min(size_y, max_j + static_cast<int>(cell_inflation_radius_));
-  roi_width_ = roi_max_i - roi_min_i_;
-  roi_height_ = roi_max_j - roi_min_j_;
+  MatrixXfRM dist_map(roi_height, roi_width);
+  dist_map.setConstant(DistanceTransform::DT_INF);
 
-  seen_roi_.assign(static_cast<size_t>(roi_width_) * static_cast<size_t>(roi_height_), 0u);
+  int8_t disfavored_side = (cost_scaling_factor_left_ < cost_scaling_factor_right_) ? 1 : -1;
+  const int roi_max_i = roi_min_i + roi_width;
+  const int roi_max_j = roi_min_j + roi_height;
 
   // Helper function to check if a neighbor is "traversable" (i.e., open space)
   auto is_traversable = [&](int nx, int ny) {
-      unsigned char n_cost = master_array[master_grid.getIndex(nx, ny)];
-      if (inflate_around_unknown_) {
-        return  n_cost != LETHAL_OBSTACLE && n_cost != NO_INFORMATION;
-      } else {
-        return  n_cost != LETHAL_OBSTACLE;
-      }
+      unsigned char c = master_array[master_grid.getIndex(nx, ny)];
+      return inflate_around_unknown_ ?
+        (c != LETHAL_OBSTACLE && c != NO_INFORMATION) : (c != LETHAL_OBSTACLE);
     };
-
-  // The symmetric inflation pass has already applied the correct costs to the favored side.
-  // Therefore we now only need to seed the BFS with cells from the disfavored side.
-  int8_t disfavored_side = (cost_scaling_factor_left_ < cost_scaling_factor_right_) ? 1 : -1;
-
+  
   // Seed all obstacle boundary cells, that are nearby a path segment
-  for (int j = roi_min_j_; j < roi_max_j; j++) {
-    for (int i = roi_min_i_; i < roi_max_i; i++) {
+  for (int j = roi_min_j; j < roi_max_j; ++j) {
+    for (int i = roi_min_i; i < roi_max_i; ++i) {
       unsigned char cost = master_array[master_grid.getIndex(i, j)];
-
+      
       // Early exit 1: Skip cells that aren't lethal/unknown obstacles
       if (cost != LETHAL_OBSTACLE && !(inflate_around_unknown_ && cost == NO_INFORMATION)) {
         continue;
       }
 
       // Check if the cell touches the absolute edges of the costmap
-      bool is_on_map_edge = (i == 0 || i == size_x - 1 || j == 0 || j == size_y - 1);
-
+      bool is_on_map_edge = (i == 0 || i == static_cast<int>(size_x) - 1 ||
+        j == 0 || j == static_cast<int>(size_y) - 1);
+      
       // An obstacle cell is a boundary if it's on the map edge OR touches free space.
-      bool is_obstacle_boundary = is_on_map_edge ||
-        is_traversable(i - 1, j) ||
-        is_traversable(i + 1, j) ||
-        is_traversable(i, j - 1) ||
-        is_traversable(i, j + 1);
+      bool is_boundary = is_on_map_edge ||
+        is_traversable(i - 1, j) || is_traversable(i + 1, j) ||
+        is_traversable(i, j - 1) || is_traversable(i, j + 1);
 
-      // Early exit 2: Skip interior obstacle cells, mark as seen so we don't enqueue them
-      if (!is_obstacle_boundary) {
-        seen_roi_[(j - roi_min_j_) * roi_width_ + (i - roi_min_i_)] = 1u;
+      // Early exit 2: Skip interior obstacle cells
+      if (!is_boundary) {
         continue;
       }
 
@@ -506,134 +488,70 @@ AsymmetricInflationLayer::seedAsymmetricBFS(
       master_grid.mapToWorld(i, j, cx, cy);
       int64_t b_x = static_cast<int64_t>(std::floor(cx / inflation_radius_));
       int64_t b_y = static_cast<int64_t>(std::floor(cy / inflation_radius_));
-
       uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(b_x)) << 32) |
         static_cast<uint32_t>(b_y);
 
-      auto candidate_segments = spatial_hash.find(key);
-
-      // Early exit 3: Skip cells with no nearby path segments
-      if (candidate_segments == spatial_hash.end()) {continue;}
-
-      // Determine which side of the path this cell is on
-      int8_t side = computeObstacleSide(cx, cy, candidate_segments->second, local_path_pts);
-
       // Only enqueue boundary cells on the disfavored side of the path.
       // Cells on favored side already got correctly inflated during the symmetric inflation pass.
+      auto it = spatial_hash.find(key);
+      if (it == spatial_hash.end()) {
+        continue;
+      }
+      
+      // Determine which side of the path this cell is on
+      int8_t side = computeObstacleSide(cx, cy, it->second, local_path_pts);
       if (side != 0 && side == disfavored_side) {
-        inflation_cells_[0].emplace_back(i, j, i, j, side);
+        dist_map(j - roi_min_j, i - roi_min_i) = 0.0f;
       }
     }
   }
+
+  return dist_map;
 }
 
 void
-AsymmetricInflationLayer::runAsymmetricBFS(
-  nav2_costmap_2d::Costmap2D & master_grid,
-  int min_i, int min_j, int max_i, int max_j)
+AsymmetricInflationLayer::applyInflation(
+  unsigned char * master_array,
+  const MatrixXfRM & distance_map,
+  int min_i, int min_j, int max_i, int max_j,
+  int roi_min_i, int roi_min_j,
+  unsigned int size_x)
 {
-  unsigned char * master_array = master_grid.getCharMap();
-  unsigned int size_x = master_grid.getSizeInCellsX();
-  unsigned int size_y = master_grid.getSizeInCellsY();
+  if (cost_lut_disfavored_.empty()) {
+    return;
+  }
 
-  // Cells are enqueued by effective distance, combining true distance with path-side weighting.
-  for (size_t current_bin = 0; current_bin < inflation_cells_.size(); ++current_bin) {
-    while (!inflation_cells_[current_bin].empty()) {
-      const AsymmetricCellData cell = inflation_cells_[current_bin].back();
-      inflation_cells_[current_bin].pop_back();
+  const float cell_inflation_radius_f = static_cast<float>(cell_inflation_radius_);
+  const int lut_max = static_cast<int>(cost_lut_disfavored_.size() - 1);
+  const unsigned char * lut_data = cost_lut_disfavored_.data();
+  const int lut_precision = COST_LUT_PRECISION;
 
-      unsigned int mx = cell.x_;
-      unsigned int my = cell.y_;
-      unsigned int src_x = cell.src_x_;
-      unsigned int src_y = cell.src_y_;
-      unsigned int index = master_grid.getIndex(mx, my);
+#ifdef _OPENMP
+  const int num_threads = getOptimalThreadCount();
+  #pragma omp parallel for num_threads(num_threads) schedule(dynamic, 16)
+#endif
+  for (int j = min_j; j < max_j; ++j) {
+    const int row_offset = j * static_cast<int>(size_x);
+    const int dist_row = j - roi_min_j;
 
-      // Get index
-      const int roi_x = static_cast<int>(mx) - roi_min_i_;
-      const int roi_y = static_cast<int>(my) - roi_min_j_;
-      const size_t roi_idx =
-        static_cast<size_t>(roi_y) * static_cast<size_t>(roi_width_) +
-        static_cast<size_t>(roi_x);
-
-      // Skip cells we've already visited
-      if (seen_roi_[roi_idx]) {
-        continue;
-      }
-      seen_roi_[roi_idx] = 1u;
-
-      // path_side is carried inline in the queue entry — no global array lookup needed.
-      int8_t path_side = cell.path_side_;
-
-      // Get effective distance to categorise the cell into a cost bin.
-      // This is where the asymmetry happens: each side uses a different effective distance.
-      double physical_dist = asymmetricDistanceLookup(mx, my, src_x, src_y);
-      double eff_dist = getEffectiveDistance(physical_dist, path_side);
-      size_t bin = static_cast<size_t>(eff_dist * kEffDistPrecision);
-
-      unsigned char new_cost = (bin < cached_costs_.size()) ? cached_costs_[bin] : 0;
-      unsigned char old_cost = master_array[index];
-
-      // Skip cells, where the new cost is less than the old cost
-      // This means we reached the Voronoi boundary and can stop expanding
-      if (new_cost < old_cost) {
+    for (int i = min_i; i < max_i; ++i) {
+      const float distance_cells = distance_map(dist_row, i - roi_min_i);
+      if (distance_cells > cell_inflation_radius_f) {
         continue;
       }
 
-      // Write costs only within the originally requested window (min/max)
+      const unsigned int index = row_offset + i;
+      const unsigned char old_cost = master_array[index];
+      const unsigned int d_scaled = std::min(
+        static_cast<unsigned int>(lut_max),
+        static_cast<unsigned int>(distance_cells * lut_precision + 0.5f));
+      const unsigned char new_cost = lut_data[d_scaled];
+
       if (new_cost > old_cost) {
-        if (static_cast<int>(mx) >= min_i &&
-          static_cast<int>(my) >= min_j &&
-          static_cast<int>(mx) < max_i &&
-          static_cast<int>(my) < max_j)
-        {
-          master_array[index] = new_cost;
-        }
-      }
-
-      // Propagate to unvisited neighbors within the ROI.
-      // enqueueAsymmetric() returns the lowest non-empty bin after insertion.
-      // This ensures that we always expand the lowest effective distance wavefront next.
-      if (roi_x > 0 && mx > 0 && !seen_roi_[roi_y * roi_width_ + (roi_x - 1)]) {
-        current_bin = enqueueAsymmetric(mx - 1, my, src_x, src_y, path_side, current_bin);
-      }
-      if (roi_y > 0 && my > 0 && !seen_roi_[(roi_y - 1) * roi_width_ + roi_x]) {
-        current_bin = enqueueAsymmetric(mx, my - 1, src_x, src_y, path_side, current_bin);
-      }
-      if (roi_x < roi_width_ - 1 && mx < size_x - 1 &&
-        !seen_roi_[roi_y * roi_width_ + (roi_x + 1)])
-      {
-        current_bin = enqueueAsymmetric(mx + 1, my, src_x, src_y, path_side, current_bin);
-      }
-      if (roi_y < roi_height_ - 1 && my < size_y - 1 &&
-        !seen_roi_[(roi_y + 1) * roi_width_ + roi_x])
-      {
-        current_bin = enqueueAsymmetric(mx, my + 1, src_x, src_y, path_side, current_bin);
+        master_array[index] = new_cost;
       }
     }
   }
-}
-
-size_t
-AsymmetricInflationLayer::enqueueAsymmetric(
-  unsigned int mx, unsigned int my,
-  unsigned int src_x, unsigned int src_y, int8_t path_side, size_t current_bin)
-{
-  double physical_dist = asymmetricDistanceLookup(mx, my, src_x, src_y);
-
-  // Stop propagating the wave at the configured inflation radius
-  if (physical_dist > cell_inflation_radius_) {
-    return current_bin;
-  }
-
-  // Map the effective (asymmetric) distance to a priority queue bin.
-  // This allows disfavored-side obstacles to claim contested cells first,
-  // shifting the Voronoi boundary toward the disfavored side.
-  double eff_dist = getEffectiveDistance(physical_dist, path_side);
-  size_t target_bin = static_cast<size_t>(eff_dist * kEffDistPrecision);
-  inflation_cells_[target_bin].emplace_back(mx, my, src_x, src_y, path_side);
-
-  // Return the lowest bin, to ensure we always expand the lowest effective distance wavefront.
-  return std::min(target_bin, current_bin);
 }
 
 void
@@ -641,32 +559,29 @@ AsymmetricInflationLayer::computeAsymmetricCaches()
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
-  // If the inflation radius has changed -> update the distance cache.
-  if (cell_inflation_radius_ != cached_cell_inflation_radius_) {
-    cached_cell_inflation_radius_ = cell_inflation_radius_;
+  if (cell_inflation_radius_ == 0) {
+    return;
+  }
 
-    cache_length_ = cell_inflation_radius_ + 2;
-    cached_distances_.resize(cache_length_ * cache_length_);
-    for (unsigned int i = 0; i < cache_length_; ++i) {
-      for (unsigned int j = 0; j < cache_length_; ++j) {
-        cached_distances_[i * cache_length_ + j] = hypot(i, j);
-      }
+  // Build cost LUT for the disfavored side using c_side (the smaller scaling factor).
+  // computeCost() always uses cost_scaling_factor_ (c_max), so we inline the formula with c_side.
+  const double c_side = std::min(cost_scaling_factor_left_, cost_scaling_factor_right_);
+  const unsigned int max_dist_scaled = cell_inflation_radius_ * COST_LUT_PRECISION + 1;
+
+  cost_lut_disfavored_.resize(max_dist_scaled + 1);
+  for (unsigned int d_scaled = 0; d_scaled <= max_dist_scaled; ++d_scaled) {
+    const double distance = static_cast<double>(d_scaled) / COST_LUT_PRECISION;
+    unsigned char cost = 0;
+    if (distance == 0.0) {
+      cost = LETHAL_OBSTACLE;
+    } else if (distance * resolution_ <= inscribed_radius_) {
+      cost = INSCRIBED_INFLATED_OBSTACLE;
+    } else {
+      double factor = exp(-c_side * (distance * resolution_ - inscribed_radius_));
+      cost = static_cast<unsigned char>((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
     }
+    cost_lut_disfavored_[d_scaled] = cost;
   }
-
-  // Recompute the cost cache
-  double max_eff_dist = static_cast<double>(cell_inflation_radius_);
-  size_t max_bin = static_cast<size_t>(std::ceil(max_eff_dist * kEffDistPrecision)) + 2;
-
-  cached_costs_.resize(max_bin);
-  for (size_t i = 0; i < max_bin; ++i) {
-    double eff_dist = static_cast<double>(i) / kEffDistPrecision;
-    cached_costs_[i] = computeCost(eff_dist);
-  }
-
-  // Reinitialize the inflation_cells buckets
-  inflation_cells_.clear();
-  inflation_cells_.resize(max_bin);
 }
 
 rcl_interfaces::msg::SetParametersResult

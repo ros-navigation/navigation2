@@ -14,9 +14,9 @@
 
 // Unit tests for AsymmetricInflationLayer — pure-algorithm coverage.
 //
-// These tests exercise getEffectiveDistance and computeObstacleSide via a
-// test-subclass that exposes the protected members and methods without
-// requiring a full LayeredCostmap / LifecycleNode stack.
+// Tests exercise cost_lut_disfavored_ and computeObstacleSide via a test-subclass
+// that exposes protected members and methods without requiring a full
+// LayeredCostmap / LifecycleNode stack.
 
 #include <gtest/gtest.h>
 
@@ -37,28 +37,26 @@ namespace nav2_costmap_2d
 class TestableAsymmetricInflationLayer : public AsymmetricInflationLayer
 {
 public:
-  // Expose protected methods for testing
-  using AsymmetricInflationLayer::getEffectiveDistance;
+  // Expose protected methods and members for testing
   using AsymmetricInflationLayer::computeObstacleSide;
+  using AsymmetricInflationLayer::cost_lut_disfavored_;
 
   // Plain setters so tests can configure the math without going through ROS init
   void setResolution(double r) {resolution_ = r;}
   void setInscribedRadius(double r) {inscribed_radius_ = r;}
-  void setInflationRadius(double r)
-  {
-    inflation_radius_ = r;
-  }
+  void setInflationRadius(double r) {inflation_radius_ = r;}
   void setCostScalingFactorLeft(double c)
   {
     cost_scaling_factor_left_ = c;
     updateCostScalingFactor();
   }
-
   void setCostScalingFactorRight(double c)
   {
     cost_scaling_factor_right_ = c;
     updateCostScalingFactor();
   }
+  void setCellInflationRadius(unsigned int r) {cell_inflation_radius_ = r;}
+  void rebuildCaches() {computeAsymmetricCaches();}
 
 private:
   void updateCostScalingFactor()
@@ -71,90 +69,73 @@ private:
 
 using nav2_costmap_2d::TestableAsymmetricInflationLayer;
 
-class EffectiveDistanceTest : public ::testing::Test
+// Test 1: cost_lut_disfavored_ is built with c_side (the smaller scaling factor).
+// Verifies the mathematical equivalence: using c_max on effective distance equals
+// using c_side on physical distance, so the LUT must reflect c_side.
+TEST(DisfavoredLutTest, lut_uses_c_side_scaling_factor)
 {
-protected:
-  void SetUp() override
-  {
-    layer_ = std::make_unique<TestableAsymmetricInflationLayer>();
-    layer_->setResolution(0.1);
-    layer_->setInscribedRadius(0.3);  // 3 cells
-    layer_->setInflationRadius(2.0);
+  auto layer = std::make_unique<TestableAsymmetricInflationLayer>();
+  // resolution=0.1m, inscribed_radius=0.3m (3 cells), cell_inflation_radius=20 cells
+  layer->setResolution(0.1);
+  layer->setInscribedRadius(0.3);
+  layer->setInflationRadius(2.0);
+  layer->setCellInflationRadius(20);
+
+  // c_left=1, c_right=7 → c_side=1 (left is disfavored), c_max=7
+  layer->setCostScalingFactorLeft(1.0);
+  layer->setCostScalingFactorRight(7.0);
+  layer->rebuildCaches();
+
+  ASSERT_FALSE(layer->cost_lut_disfavored_.empty());
+
+  const double resolution = 0.1;
+  const double inscribed_radius = 0.3;
+  const double c_side = 1.0;
+  const int lut_precision = 100;  // COST_LUT_PRECISION
+
+  // Spot-check several distances beyond the inscribed radius
+  for (int d_scaled = lut_precision * 4; d_scaled <= lut_precision * 19; d_scaled += lut_precision) {
+    double distance = static_cast<double>(d_scaled) / lut_precision;  // cells
+    double factor = exp(-c_side * (distance * resolution - inscribed_radius));
+    unsigned char expected =
+      static_cast<unsigned char>((nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
+
+    EXPECT_EQ(layer->cost_lut_disfavored_[d_scaled], expected)
+      << "LUT mismatch at d_scaled=" << d_scaled;
   }
 
-  std::unique_ptr<TestableAsymmetricInflationLayer> layer_;
-};
-
-// Formula under test (inscribed_cells = inscribed_radius / resolution = 0.3 / 0.1 = 3):
-//   d <= inscribed_cells: eff = d  (no asymmetry inside the collision core)
-//   d >  inscribed_cells: eff = inscribed_cells + (d - inscribed_cells) * (c_side / c_max)
-// where c_max = max(c_left, c_right) and neutral side uses c_side = c_max.
-
-// Test 1: when c_left == c_right, scale=1 for all sides, so the function is the identity.
-TEST_F(EffectiveDistanceTest, getEffectiveDistance_symmetric_when_sides_equal)
-{
-  layer_->setCostScalingFactorLeft(4.0);
-  layer_->setCostScalingFactorRight(4.0);
-  for (double d = 0.0; d < 20.0; d += 0.5) {
-    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, +1), d);
-    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, -1), d);
-    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, 0), d);
+  // Inside the inscribed radius: costs must equal INSCRIBED_INFLATED_OBSTACLE
+  for (int d_scaled = 1; d_scaled < lut_precision * 3; ++d_scaled) {
+    EXPECT_EQ(
+      layer->cost_lut_disfavored_[d_scaled],
+      nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+      << "Expected INSCRIBED at d_scaled=" << d_scaled;
   }
+
+  // At distance=0: must be LETHAL_OBSTACLE
+  EXPECT_EQ(layer->cost_lut_disfavored_[0], nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
-// Test 2: inside the inscribed radius all sides are treated identically, regardless of factors.
-TEST_F(EffectiveDistanceTest, getEffectiveDistance_symmetric_inside_inscribed_radius)
+// Test 2: swapping side factors rebuilds the LUT with the new c_side.
+TEST(DisfavoredLutTest, lut_reflects_updated_c_side)
 {
-  layer_->setCostScalingFactorLeft(1.0);
-  layer_->setCostScalingFactorRight(7.0);
-  const double inscribed_cells = 3.0;  // 0.3 / 0.1
-  for (double d = 0.0; d < inscribed_cells; d += 0.5) {
-    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, +1), d);
-    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, -1), d);
-    EXPECT_DOUBLE_EQ(layer_->getEffectiveDistance(d, 0), d);
-  }
-}
+  auto layer = std::make_unique<TestableAsymmetricInflationLayer>();
+  layer->setResolution(0.1);
+  layer->setInscribedRadius(0.3);
+  layer->setCellInflationRadius(10);
+  layer->setCostScalingFactorLeft(1.0);
+  layer->setCostScalingFactorRight(7.0);
+  layer->rebuildCaches();
 
-// Test 3: with c_left=1, c_right=7 (so c_max=7), the LEFT effective distance is
-// compressed (smaller decay rate → bigger reach) while RIGHT and neutral match the
-// physical distance.
-TEST_F(EffectiveDistanceTest, getEffectiveDistance_left_compressed_right_stretched)
-{
-  layer_->setCostScalingFactorLeft(1.0);
-  layer_->setCostScalingFactorRight(7.0);
-  const double inscribed_cells = 3.0;
-  // d=4: excess = 1.0 cell beyond inscribed radius; asymmetry is active here.
-  const double d = 4.0;
-  const double excess = d - inscribed_cells;
-  const double left = layer_->getEffectiveDistance(d, +1);
-  const double right = layer_->getEffectiveDistance(d, -1);
-  const double neutral = layer_->getEffectiveDistance(d, 0);
+  std::vector<unsigned char> lut_c1 = layer->cost_lut_disfavored_;
 
-  EXPECT_DOUBLE_EQ(left, inscribed_cells + excess * (1.0 / 7.0));
-  EXPECT_DOUBLE_EQ(right, inscribed_cells + excess);  // c_right == c_max → scale=1
-  EXPECT_DOUBLE_EQ(neutral, d);                       // neutral uses c_max → scale=1
-  EXPECT_LT(left, right) << "LEFT (smaller decay) should have compressed eff_dist";
-  EXPECT_DOUBLE_EQ(right, neutral) << "RIGHT == c_max so it matches neutral";
-}
+  // Swap sides: now c_right=1 is disfavored, c_left=7 is favored
+  layer->setCostScalingFactorLeft(7.0);
+  layer->setCostScalingFactorRight(1.0);
+  layer->rebuildCaches();
 
-// Test 4: swapping the per-side decay rates swaps left/right effective distances.
-// Use d outside the inscribed radius so asymmetry is active.
-TEST_F(EffectiveDistanceTest, getEffectiveDistance_swaps_when_sides_swap)
-{
-  const double d = 4.0;  // outside inscribed_cells=3 so asymmetry is active
-  layer_->setCostScalingFactorLeft(1.0);
-  layer_->setCostScalingFactorRight(7.0);
-  double pos_left = layer_->getEffectiveDistance(d, +1);
-  double pos_right = layer_->getEffectiveDistance(d, -1);
-
-  layer_->setCostScalingFactorLeft(7.0);
-  layer_->setCostScalingFactorRight(1.0);
-  double neg_left = layer_->getEffectiveDistance(d, +1);
-  double neg_right = layer_->getEffectiveDistance(d, -1);
-
-  EXPECT_DOUBLE_EQ(pos_left, neg_right);
-  EXPECT_DOUBLE_EQ(pos_right, neg_left);
-  EXPECT_NE(pos_left, pos_right) << "test setup: sides must differ to be meaningful";
+  // With both cases having c_side=1, LUTs should be identical
+  EXPECT_EQ(lut_c1, layer->cost_lut_disfavored_);
 }
 
 class ObstacleSideTest : public ::testing::Test
