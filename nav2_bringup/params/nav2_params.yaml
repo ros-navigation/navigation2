@@ -99,8 +99,8 @@ controller_server:
     failure_tolerance: 0.3
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
-    controller_plugins: ["FollowPath"]
-    path_handler_plugins: ["PathHandler"]
+    controller_plugins: ["follow_path"]
+    path_handler_plugins: ["path_handler"]
     use_realtime_priority: false
     speed_limit_topic: "speed_limit"
 
@@ -121,7 +121,7 @@ controller_server:
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
       path_length_tolerance: 1.0
-    PathHandler:
+    path_handler:
       plugin: "nav2_controller::FeasiblePathHandler"
       prune_distance: 2.0
       enforce_path_inversion: false
@@ -130,7 +130,7 @@ controller_server:
       inversion_yaw_tolerance: 0.4
       minimum_rotation_angle: 0.785
       reject_unit_path: false
-    FollowPath:
+    follow_path:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56
       model_dt: 0.05
@@ -388,10 +388,10 @@ planner_server:
   ros__parameters:
     allow_partial_planning: false
     expected_planner_frequency: 20.0
-    planner_plugins: ["GridBased"]
+    planner_plugins: ["grid_based"]
     costmap_update_timeout: 1.0
     introspection_mode: "disabled"
-    GridBased:
+    grid_based:
       plugin: "nav2_navfn_planner::NavfnPlanner"
       tolerance: 0.5
       use_astar: false
