@@ -62,14 +62,14 @@ namespace
 
 static constexpr const char * kGlobalFrame = "map";
 static constexpr double kResolution = 0.05;         ///< metres per cell
-static constexpr double kInflationRadius = 0.55;    ///< metres
+static constexpr double kInflationRadius = 2.0;    ///< metres
 /// Asymmetric per-side decay rates so the overlay work is active.
-static constexpr double kCostScalingFactorLeft = 5.0;
-static constexpr double kCostScalingFactorRight = 15.0;
+static constexpr double kCostScalingFactorLeft = 4.0;
+static constexpr double kCostScalingFactorRight = 1.0;
 static constexpr double kCostScalingFactor =
   (kCostScalingFactorLeft > kCostScalingFactorRight) ?
   kCostScalingFactorLeft : kCostScalingFactorRight;
-static constexpr double kOccupancy = 0.10;          ///< lethal-obstacle fraction
+static constexpr double kOccupancy = 0.50;          ///< lethal-obstacle fraction
 static constexpr unsigned int kObstacleSeed = 42;
 
 /**
@@ -695,7 +695,7 @@ BENCHMARK_REGISTER_F(IncrementalLegacyInflationFixture, UpdateCosts)
  * Same structure as IncrementalInflationFixture but benchmarks
  * AsymmetricInflationLayer, which internally runs the inherited symmetric
  * baseline before the asymmetric overlay. A diagonal path is injected so the
- * overlay BFS is active.
+ * overlay asymmetric layer is active.
  *
  * Benchmark arguments:
  *   {width_cells, height_cells, patch_side_cells, fixed_path_length_m}
