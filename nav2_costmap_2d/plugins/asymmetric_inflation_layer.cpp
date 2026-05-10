@@ -135,7 +135,7 @@ AsymmetricInflationLayer::onInitialize()
   }
 
   setCurrent(true);
-  seen_.clear();
+  seen_roi_.clear();
   cached_distances_.clear();
   cached_costs_.clear();
   need_reinflation_ = false;
@@ -194,12 +194,7 @@ AsymmetricInflationLayer::matchSize()
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   InflationLayer::matchSize();
 
-  nav2_costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
   computeAsymmetricCaches();
-
-  unsigned int size = costmap->getSizeInCellsX() * costmap->getSizeInCellsY();
-  seen_ = std::vector<bool>(size, false);
-  obstacle_side_grid_ = std::vector<int8_t>(size, 0);
 }
 
 void
@@ -456,13 +451,15 @@ AsymmetricInflationLayer::seedAsymmetricBFS(
   const int size_x = static_cast<int>(master_grid.getSizeInCellsX());
   const int size_y = static_cast<int>(master_grid.getSizeInCellsY());
 
-  const int seed_min_i = std::max(0, min_i - static_cast<int>(cell_inflation_radius_));
-  const int seed_min_j = std::max(0, min_j - static_cast<int>(cell_inflation_radius_));
-  const int seed_max_i = std::min(size_x, max_i + static_cast<int>(cell_inflation_radius_));
-  const int seed_max_j = std::min(size_y, max_j + static_cast<int>(cell_inflation_radius_));
+  // Inflate update window by inflation radius.
+  roi_min_i_ = std::max(0, min_i - static_cast<int>(cell_inflation_radius_));
+  roi_min_j_ = std::max(0, min_j - static_cast<int>(cell_inflation_radius_));
+  const int roi_max_i = std::min(size_x, max_i + static_cast<int>(cell_inflation_radius_));
+  const int roi_max_j = std::min(size_y, max_j + static_cast<int>(cell_inflation_radius_));
+  roi_width_ = roi_max_i - roi_min_i_;
+  roi_height_ = roi_max_j - roi_min_j_;
 
-  // Reset seen_ so the BFS can track which cells we visited without needing to clear master_array.
-  std::fill(begin(seen_), end(seen_), false);
+  seen_roi_.assign(static_cast<size_t>(roi_width_) * static_cast<size_t>(roi_height_), 0u);
 
   // Helper function to check if a neighbor is "traversable" (i.e., open space)
   auto is_traversable = [&](int nx, int ny) {
@@ -474,11 +471,14 @@ AsymmetricInflationLayer::seedAsymmetricBFS(
       }
     };
 
+  // The symmetric inflation pass has already applied the correct costs to the favored side.
+  // Therefore we now only need to seed the BFS with cells from the disfavored side.
+  int8_t disfavored_side = (cost_scaling_factor_left_ < cost_scaling_factor_right_) ? 1 : -1;
+
   // Seed all obstacle boundary cells, that are nearby a path segment
-  for (int j = seed_min_j; j < seed_max_j; j++) {
-    for (int i = seed_min_i; i < seed_max_i; i++) {
-      int index = static_cast<int>(master_grid.getIndex(i, j));
-      unsigned char cost = master_array[index];
+  for (int j = roi_min_j_; j < roi_max_j; j++) {
+    for (int i = roi_min_i_; i < roi_max_i; i++) {
+      unsigned char cost = master_array[master_grid.getIndex(i, j)];
 
       // Early exit 1: Skip cells that aren't lethal/unknown obstacles
       if (cost != LETHAL_OBSTACLE && !(inflate_around_unknown_ && cost == NO_INFORMATION)) {
@@ -497,7 +497,7 @@ AsymmetricInflationLayer::seedAsymmetricBFS(
 
       // Early exit 2: Skip interior obstacle cells, mark as seen so we don't enqueue them
       if (!is_obstacle_boundary) {
-        seen_[index] = true;
+        seen_roi_[(j - roi_min_j_) * roi_width_ + (i - roi_min_i_)] = 1u;
         continue;
       }
 
@@ -517,11 +517,11 @@ AsymmetricInflationLayer::seedAsymmetricBFS(
 
       // Determine which side of the path this cell is on
       int8_t side = computeObstacleSide(cx, cy, candidate_segments->second, local_path_pts);
-      obstacle_side_grid_[index] = side;
 
-      // Skip neutral cells since they won't receive asymmetric inflation.
-      if (side != 0) {
-        inflation_cells_[0].emplace_back(i, j, i, j);
+      // Only enqueue boundary cells on the disfavored side of the path.
+      // Cells on favored side already got correctly inflated during the symmetric inflation pass.
+      if (side != 0 && side == disfavored_side) {
+        inflation_cells_[0].emplace_back(i, j, i, j, side);
       }
     }
   }
@@ -539,7 +539,7 @@ AsymmetricInflationLayer::runAsymmetricBFS(
   // Cells are enqueued by effective distance, combining true distance with path-side weighting.
   for (size_t current_bin = 0; current_bin < inflation_cells_.size(); ++current_bin) {
     while (!inflation_cells_[current_bin].empty()) {
-      const CellData cell = inflation_cells_[current_bin].back();
+      const AsymmetricCellData cell = inflation_cells_[current_bin].back();
       inflation_cells_[current_bin].pop_back();
 
       unsigned int mx = cell.x_;
@@ -548,15 +548,21 @@ AsymmetricInflationLayer::runAsymmetricBFS(
       unsigned int src_y = cell.src_y_;
       unsigned int index = master_grid.getIndex(mx, my);
 
+      // Get index
+      const int roi_x = static_cast<int>(mx) - roi_min_i_;
+      const int roi_y = static_cast<int>(my) - roi_min_j_;
+      const size_t roi_idx =
+        static_cast<size_t>(roi_y) * static_cast<size_t>(roi_width_) +
+        static_cast<size_t>(roi_x);
+
       // Skip cells we've already visited
-      if (seen_[index]) {
+      if (seen_roi_[roi_idx]) {
         continue;
       }
-      seen_[index] = true;
+      seen_roi_[roi_idx] = 1u;
 
-      // Every cell expanding from the same seed shares its left/right classification.
-      int src_index = master_grid.getIndex(cell.src_x_, cell.src_y_);
-      int8_t path_side = obstacle_side_grid_[src_index];
+      // path_side is carried inline in the queue entry — no global array lookup needed.
+      int8_t path_side = cell.path_side_;
 
       // Get effective distance to categorise the cell into a cost bin.
       // This is where the asymmetry happens: each side uses a different effective distance.
@@ -566,6 +572,12 @@ AsymmetricInflationLayer::runAsymmetricBFS(
 
       unsigned char new_cost = (bin < cached_costs_.size()) ? cached_costs_[bin] : 0;
       unsigned char old_cost = master_array[index];
+
+      // Skip cells, where the new cost is less than the old cost
+      // This means we reached the Voronoi boundary and can stop expanding
+      if (new_cost < old_cost) {
+        continue;
+      }
 
       // Write costs only within the originally requested window (min/max)
       if (new_cost > old_cost) {
@@ -578,19 +590,23 @@ AsymmetricInflationLayer::runAsymmetricBFS(
         }
       }
 
-      // Propagate to unvisited neighbors.
+      // Propagate to unvisited neighbors within the ROI.
       // enqueueAsymmetric() returns the lowest non-empty bin after insertion.
       // This ensures that we always expand the lowest effective distance wavefront next.
-      if (mx > 0 && !seen_[index - 1]) {
+      if (roi_x > 0 && mx > 0 && !seen_roi_[roi_y * roi_width_ + (roi_x - 1)]) {
         current_bin = enqueueAsymmetric(mx - 1, my, src_x, src_y, path_side, current_bin);
       }
-      if (my > 0 && !seen_[index - size_x]) {
+      if (roi_y > 0 && my > 0 && !seen_roi_[(roi_y - 1) * roi_width_ + roi_x]) {
         current_bin = enqueueAsymmetric(mx, my - 1, src_x, src_y, path_side, current_bin);
       }
-      if (mx < size_x - 1 && !seen_[index + 1]) {
+      if (roi_x < roi_width_ - 1 && mx < size_x - 1 &&
+        !seen_roi_[roi_y * roi_width_ + (roi_x + 1)])
+      {
         current_bin = enqueueAsymmetric(mx + 1, my, src_x, src_y, path_side, current_bin);
       }
-      if (my < size_y - 1 && !seen_[index + size_x]) {
+      if (roi_y < roi_height_ - 1 && my < size_y - 1 &&
+        !seen_roi_[(roi_y + 1) * roi_width_ + roi_x])
+      {
         current_bin = enqueueAsymmetric(mx, my + 1, src_x, src_y, path_side, current_bin);
       }
     }
@@ -614,7 +630,7 @@ AsymmetricInflationLayer::enqueueAsymmetric(
   // shifting the Voronoi boundary toward the disfavored side.
   double eff_dist = getEffectiveDistance(physical_dist, path_side);
   size_t target_bin = static_cast<size_t>(eff_dist * kEffDistPrecision);
-  inflation_cells_[target_bin].emplace_back(mx, my, src_x, src_y);
+  inflation_cells_[target_bin].emplace_back(mx, my, src_x, src_y, path_side);
 
   // Return the lowest bin, to ensure we always expand the lowest effective distance wavefront.
   return std::min(target_bin, current_bin);
