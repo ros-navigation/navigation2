@@ -94,7 +94,9 @@ TEST(DisfavoredLutTest, lut_uses_c_side_scaling_factor)
   const int lut_precision = 100;  // COST_LUT_PRECISION
 
   // Spot-check several distances beyond the inscribed radius
-  for (int d_scaled = lut_precision * 4; d_scaled <= lut_precision * 19; d_scaled += lut_precision) {
+  for (int d_scaled = lut_precision * 4; d_scaled <= lut_precision * 19;
+    d_scaled += lut_precision)
+  {
     double distance = static_cast<double>(d_scaled) / lut_precision;  // cells
     double factor = exp(-c_side * (distance * resolution - inscribed_radius));
     unsigned char expected =

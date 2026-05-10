@@ -40,7 +40,7 @@ namespace nav2_costmap_2d
  * symmetric baseline first. This layer then classifies each lethal obstacle as
  * left (+1), right (-1), or neutral (0) relative to the path and runs a second
  * distance transform seeded from only the disfavored-side boundary cells.
- * Falls back to the inherited symmetric inflation when no path is available, 
+ * Falls back to the inherited symmetric inflation when no path is available,
  * the goal is nearby, or the per-side scaling factors are equal.
  */
 class AsymmetricInflationLayer : public nav2_costmap_2d::InflationLayer
@@ -175,7 +175,7 @@ protected:
    * @return Distance map with 0.0f at disfavored seeds and DT_INF elsewhere.
    */
   MatrixXfRM seedDistanceMap(
-    nav2_costmap_2d::Costmap2D & master_grid, 
+    nav2_costmap_2d::Costmap2D & master_grid,
     int roi_min_i, int roi_min_j, int roi_width, int roi_height,
     const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
     const std::vector<std::pair<double, double>> & local_path_pts);
