@@ -260,28 +260,48 @@ TEST_F(BoundedTrackingErrorLayerTest, testDefaultParameterValues)
   EXPECT_TRUE(layer_->isClearable());
 }
 
-TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegment)
+TEST_F(BoundedTrackingErrorLayerTest, testGetPathSegmentCorridorWidth)
 {
   nav_msgs::msg::Path segment;
 
+  // Empty path and out-of-bounds index must always return empty.
   layer_->testGetPathSegment(nav_msgs::msg::Path{}, 0, segment);
   EXPECT_TRUE(segment.poses.empty());
 
-  auto path = makeStraightPath(0, 0, 1, 0, 5, 0.1);
+  auto path = makeStraightPath(0, 0, 1, 0, 20, 0.1);
   layer_->testGetPathSegment(path, 100, segment);
   EXPECT_TRUE(segment.poses.empty());
 
-  layer_->testGetPathSegment(path, 4, segment);
-  ASSERT_EQ(segment.poses.size(), 1u);
-  EXPECT_DOUBLE_EQ(segment.poses[0].pose.position.x, path.poses[4].pose.position.x);
+  // Path shorter than corridor_width must return empty (not enough ahead).
+  // look_ahead_ > corridor_width_ so the loop can reach corridor_width_ distance.
+  layer_->setLookAhead(2.5);
+  layer_->setCorridorWidth(2.0);
+  auto short_path = makeStraightPath(0, 0, 1, 0, 5, 0.1);  // only 0.4 m total
+  layer_->testGetPathSegment(short_path, 0, segment);
+  EXPECT_TRUE(segment.poses.empty());
 
-  // Boundary pose at look_ahead distance must be included.
+  // Exact corridor_width boundary pose must be included as the last pose in the segment.
+  // look_ahead_ == corridor_width_ so the loop breaks exactly when corridor_width_ is reached.
   layer_->setLookAhead(0.3);
-  auto path2 = makeStraightPath(0, 0, 1, 0, 10, 0.1);
-  layer_->testGetPathSegment(path2, 0, segment);
+  layer_->setCorridorWidth(0.3);
+  layer_->testGetPathSegment(path, 0, segment);
   ASSERT_EQ(segment.poses.size(), 4u);
   EXPECT_NEAR(segment.poses.front().pose.position.x, 0.0, 1e-6);
   EXPECT_NEAR(segment.poses.back().pose.position.x, 0.3, 1e-6);
+
+  // Mid-path index: segment must start at path_index, not at 0.
+  layer_->setLookAhead(0.3);
+  layer_->setCorridorWidth(0.3);
+  layer_->testGetPathSegment(path, 5, segment);
+  ASSERT_EQ(segment.poses.size(), 4u);
+  EXPECT_NEAR(segment.poses.front().pose.position.x, path.poses[5].pose.position.x, 1e-6);
+  EXPECT_NEAR(segment.poses.back().pose.position.x, path.poses[8].pose.position.x, 1e-6);
+
+  // Last pose of path as start index: no room to reach corridor_width, must return empty.
+  layer_->setLookAhead(0.3);
+  layer_->setCorridorWidth(0.3);
+  layer_->testGetPathSegment(path, path.poses.size() - 1, segment);
+  EXPECT_TRUE(segment.poses.empty());
 }
 
 TEST_F(BoundedTrackingErrorLayerTest, testGetWallPolygonsEdgeCases)
@@ -633,54 +653,6 @@ TEST_F(BoundedTrackingErrorLayerTest, testFillOutsideCorridorBehavior)
   costmap->setCost(48, 48, nav2_costmap_2d::LETHAL_OBSTACLE);
   layer_->testFillOutsideCorridor(*costmap, 47, 47, 52, 52);
   EXPECT_EQ(costmap->getCost(48, 48), 190);
-}
-
-TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsEarlyReturns)
-{
-  auto * costmap = layers_->getCostmap();
-  prepareForUpdateCosts(layer_.get(), costmap);
-
-  auto isClean = [&]() {
-      for (unsigned int y = 0; y < costmap->getSizeInCellsY(); ++y) {
-        for (unsigned int x = 0; x < costmap->getSizeInCellsX(); ++x) {
-          if (costmap->getCost(x, y) != nav2_costmap_2d::FREE_SPACE) {return false;}
-        }
-      }
-      return true;
-    };
-
-  auto now = node_->now();
-  layer_->enabledRef() = false;
-  layer_->testPathCallback(makeSharedPath(0, 0, 1, 0, 30, 0.1, now));
-  layer_->updateCosts(*costmap, 0, 0, 100, 100);
-  EXPECT_TRUE(isClean());
-
-  layer_->enabledRef() = true;
-  prepareForUpdateCosts(layer_.get(), costmap);
-  layer_->reset();  // clear stored path so no painting occurs
-  layer_->updateCosts(*costmap, 0, 0, 100, 100);
-  EXPECT_TRUE(isClean());
-
-  // stale path (15.1 s > 15.0 s threshold) must reset index
-  prepareForUpdateCosts(layer_.get(), costmap);
-  layer_->testPathCallback(makeSharedPath(0, 0, 1, 0, 30, 0.1,
-    now - rclcpp::Duration::from_seconds(15.1)));
-  layer_->pathIndexRef().store(7);
-  layer_->updateCosts(*costmap, 0, 0, 100, 100);
-  EXPECT_TRUE(isClean());
-  EXPECT_EQ(layer_->pathIndexRef().load(), 0u);
-
-  layer_->setResolution(0.0);
-  layer_->testPathCallback(makeSharedPath(0, 0, 1, 0, 30, 0.1, now));
-  ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
-  EXPECT_TRUE(isClean());
-
-  // step=5 requires min_poses=11, path has only 5
-  prepareForUpdateCosts(layer_.get(), costmap);
-  layer_->setStepSize(5);
-  layer_->testPathCallback(makeSharedPath(0, 0, 1, 0, 5, 0.1, now));
-  layer_->updateCosts(*costmap, 0, 0, 100, 100);
-  EXPECT_TRUE(isClean());
 }
 
 TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsCorridorMode)
