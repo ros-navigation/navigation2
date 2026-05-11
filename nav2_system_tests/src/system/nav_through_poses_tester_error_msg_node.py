@@ -295,9 +295,10 @@ def run_all_tests(robot_tester: NavTester) -> bool:
             goal_pose=pose_out_of_bounds,
             behavior_tree='',
             expected_error_code=304,
-            expected_error_msg=('GridBasedplugin failed to plan from '
-                                '(-2.00, -0.50) to (2000.00, 4000.00): '
-                                '"Goal Coordinates of(2000.000000, 4000.000000) '
+            expected_error_msg=('GridBasedplugin failed to plan from (-2.00, -0.50) '
+                                '[q: 0.00, 0.00, 0.00, 1.00] (yaw: 0.00) '
+                                'to (2000.00, 4000.00) [q: 0.00, 0.00, 0.00, 1.00] '
+                                '(yaw: 0.00): "Goal Coordinates of(2000.000000, 4000.000000) '
                                 'was outside bounds"'))
 
     if result:

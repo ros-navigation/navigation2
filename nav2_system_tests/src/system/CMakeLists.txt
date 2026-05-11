@@ -55,6 +55,21 @@ nav2_add_test(test_bt_navigator_with_groot_monitoring
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
+nav2_add_test(test_bt_navigator_with_legacy_inflation
+  GENERATE_RESULT_FOR_RETURN_CODE_ZERO
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+  TIMEOUT 180
+  ENV
+  TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+  BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
+  TESTER=nav_to_pose_tester_node.py
+  ASTAR=False
+  INFLATION_LAYER=nav2_costmap_2d::LegacyInflationLayer
+  CONTROLLER=dwb_core::DWBLocalPlanner
+  PLANNER=nav2_navfn_planner::NavfnPlanner
+)
+
 nav2_add_test(test_dynamic_obstacle
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_with_obstacle_launch.py"

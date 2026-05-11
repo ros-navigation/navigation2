@@ -42,8 +42,7 @@ PlannerTester::PlannerTester()
   map_set_(false), costmap_set_(false),
   using_fake_costmap_(true), trinary_costmap_(true),
   track_unknown_space_(false), lethal_threshold_(100), unknown_cost_value_(-1),
-  testCostmapType_(TestCostmap::open_space), base_transform_(nullptr),
-  map_publish_rate_(100s)
+  testCostmapType_(TestCostmap::open_space), base_transform_(nullptr)
 {
 }
 
@@ -69,12 +68,10 @@ void PlannerTester::activate()
   planner_tester_ = std::make_shared<NavFnPlannerTester>();
   planner_tester_->declare_parameter(
     "GridBased.use_astar", rclcpp::ParameterValue(true));
-  planner_tester_->set_parameter(
-    rclcpp::Parameter(std::string("GridBased.use_astar"), rclcpp::ParameterValue(true)));
-  planner_tester_->set_parameter(
-    rclcpp::Parameter(std::string("expected_planner_frequency"), rclcpp::ParameterValue(-1.0)));
-  planner_tester_->set_parameter(
-    rclcpp::Parameter(std::string("costmap_update_timeout"), rclcpp::ParameterValue(0.0)));
+  planner_tester_->declare_parameter(
+    "expected_planner_frequency", rclcpp::ParameterValue(-1.0));
+  planner_tester_->declare_parameter(
+    "costmap_update_timeout", rclcpp::ParameterValue(0.0));
   planner_tester_->onConfigure(state);
   publishRobotTransform();
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
@@ -403,7 +400,8 @@ TaskStatus PlannerTester::createPlan(
 std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> PlannerTester::isPathValid(
   nav_msgs::msg::Path & path, unsigned int max_cost,
   bool consider_unknown_as_obstacle, const std::string & layer_name,
-  const std::string & footprint, bool check_full_path)
+  const std::string & footprint, bool stop_at_first_collision,
+  double max_lookahead_distance)
 {
   planner_tester_->setCostmap(costmap_.get());
   // create a fake service request
@@ -413,7 +411,8 @@ std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> PlannerTester::isPathVali
   request->consider_unknown_as_obstacle = consider_unknown_as_obstacle;
   request->layer_name = layer_name;
   request->footprint = footprint;
-  request->check_full_path = check_full_path;
+  request->stop_at_first_collision = stop_at_first_collision;
+  request->max_lookahead_distance = max_lookahead_distance;
   auto result = path_valid_client_->async_call(request);
 
   RCLCPP_INFO(this->get_logger(), "Waiting for service complete");

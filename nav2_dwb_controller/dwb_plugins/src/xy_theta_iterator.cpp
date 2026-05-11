@@ -38,8 +38,6 @@
 #include <memory>
 #include <string>
 
-#include "nav2_ros_common/node_utils.hpp"
-
 namespace dwb_plugins
 {
 void XYThetaIterator::initialize(
@@ -49,19 +47,12 @@ void XYThetaIterator::initialize(
 {
   kinematics_handler_ = kinematics;
 
-  nav2::declare_parameter_if_not_declared(
-    nh,
-    plugin_name + ".vx_samples", rclcpp::ParameterValue(20));
-  nav2::declare_parameter_if_not_declared(
-    nh,
-    plugin_name + ".vy_samples", rclcpp::ParameterValue(5));
-  nav2::declare_parameter_if_not_declared(
-    nh,
-    plugin_name + ".vtheta_samples", rclcpp::ParameterValue(20));
-
-  nh->get_parameter(plugin_name + ".vx_samples", vx_samples_);
-  nh->get_parameter(plugin_name + ".vy_samples", vy_samples_);
-  nh->get_parameter(plugin_name + ".vtheta_samples", vtheta_samples_);
+  vx_samples_ = nh->declare_or_get_parameter(
+    plugin_name + ".vx_samples", 20);
+  vy_samples_ = nh->declare_or_get_parameter(
+    plugin_name + ".vy_samples", 5);
+  vtheta_samples_ = nh->declare_or_get_parameter(
+    plugin_name + ".vtheta_samples", 20);
 }
 
 void XYThetaIterator::startNewIteration(

@@ -42,14 +42,12 @@
 
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "nav_2d_utils/conversions.hpp"
-#include "nav2_ros_common/node_utils.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
 using std::max;
 using std::string;
-using nav2::declare_parameter_if_not_declared;
 
 namespace dwb_core
 {
@@ -72,35 +70,22 @@ DWBPublisher::on_configure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  declare_parameter_if_not_declared(
-    node, plugin_name_ + ".publish_evaluation",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, plugin_name_ + ".publish_local_plan",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, plugin_name_ + ".publish_trajectories",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, plugin_name_ + ".publish_cost_grid_pc",
-    rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(
-    node, plugin_name_ + ".marker_lifetime",
-    rclcpp::ParameterValue(0.1));
-
-  node->get_parameter(plugin_name_ + ".publish_evaluation", publish_evaluation_);
-  node->get_parameter(plugin_name_ + ".publish_local_plan", publish_local_plan_);
-  node->get_parameter(plugin_name_ + ".publish_trajectories", publish_trajectories_);
-  node->get_parameter(plugin_name_ + ".publish_cost_grid_pc", publish_cost_grid_pc_);
+  publish_evaluation_ = node->declare_or_get_parameter(
+    plugin_name_ + ".publish_evaluation", true);
+  publish_local_plan_ = node->declare_or_get_parameter(
+    plugin_name_ + ".publish_local_plan", true);
+  publish_trajectories_ = node->declare_or_get_parameter(
+    plugin_name_ + ".publish_trajectories", true);
+  publish_cost_grid_pc_ = node->declare_or_get_parameter(
+    plugin_name_ + ".publish_cost_grid_pc", false);
+  double marker_lifetime = node->declare_or_get_parameter(
+    plugin_name_ + ".marker_lifetime", 0.1);
+  marker_lifetime_ = rclcpp::Duration::from_seconds(marker_lifetime);
 
   eval_pub_ = node->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation");
   local_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan");
   marker_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>("marker");
   cost_grid_pc_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud2>("cost_cloud");
-
-  double marker_lifetime = 0.0;
-  node->get_parameter(plugin_name_ + ".marker_lifetime", marker_lifetime);
-  marker_lifetime_ = rclcpp::Duration::from_seconds(marker_lifetime);
 
   return nav2::CallbackReturn::SUCCESS;
 }

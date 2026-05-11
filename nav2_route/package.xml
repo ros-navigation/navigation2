@@ -8,7 +8,11 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>libnanoflann-dev</build_depend>
   <build_depend>nav2_common</build_depend>
+  <build_depend>nlohmann-json-dev</build_depend>
+  <build_depend>angles</build_depend>
 
   <depend>backward_ros</depend>
   <depend>rclcpp</depend>
@@ -23,9 +27,6 @@
   <depend>tf2_ros</depend>
   <depend>nav2_util</depend>
   <depend>nav2_core</depend>
-  <depend>angles</depend>
-  <depend>libnanoflann-dev</depend>
-  <depend>nlohmann-json-dev</depend>
   <depend>nav2_ros_common</depend>
 
   <test_depend>ament_lint_common</test_depend>

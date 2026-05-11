@@ -31,6 +31,7 @@
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
 #include "nav2_ros_common/interface_factories.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2
 {
@@ -225,6 +226,29 @@ public:
   }
 
   /**
+   * @brief Create a sim-time-aware timer for Nav2 lifecycle nodes.
+   * @param period The duration between timer callbacks
+   * @param callback Callback function to execute on each timer tick
+   * @param group The callback group to use (if provided)
+   * @return A shared pointer to the created GenericTimer
+   */
+  template<typename DurationRepT, typename DurationT, typename CallbackT>
+  typename rclcpp::GenericTimer<CallbackT>::SharedPtr
+  create_timer(
+    std::chrono::duration<DurationRepT, DurationT> period,
+    CallbackT callback,
+    rclcpp::CallbackGroup::SharedPtr group = nullptr)
+  {
+    return rclcpp::create_timer(
+      nav2::selectSteadyOrSimClock(this),
+      period,
+      std::move(callback),
+      group,
+      this->get_node_base_interface().get(),
+      this->get_node_timers_interface().get());
+  }
+
+  /**
    * @brief Create a SimpleActionServer to host with an action
    * @param action_name Name of action
    * @param execute_callback Callback function to handle action execution
@@ -303,7 +327,7 @@ public:
   void autostart()
   {
     using lifecycle_msgs::msg::State;
-    autostart_timer_ = this->create_wall_timer(
+    autostart_timer_ = this->create_timer(
       0s,
       [this]() -> void {
         autostart_timer_->cancel();

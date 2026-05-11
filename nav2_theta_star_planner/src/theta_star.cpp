@@ -20,21 +20,16 @@
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
 
-namespace theta_star
+namespace nav2_theta_star_planner
 {
 
-ThetaStar::ThetaStar()
-: w_traversal_cost_(1.0),
-  w_euc_cost_(2.0),
-  w_heuristic_cost_(1.0),
-  how_many_corners_(8),
-  allow_unknown_(true),
-  size_x_(0),
+ThetaStar::ThetaStar(Parameters * params)
+: size_x_(0),
   size_y_(0),
-  terminal_checking_interval_(5000),
   index_generated_(0)
 {
   exp_node = new tree_node;
+  params_ = params;
 }
 
 void ThetaStar::setStartAndGoal(
@@ -66,7 +61,7 @@ bool ThetaStar::generatePath(std::vector<coordsW> & raw_path, std::function<bool
   while (!queue_.empty()) {
     nodes_opened++;
 
-    if (nodes_opened % terminal_checking_interval_ == 0 && cancel_checker()) {
+    if (nodes_opened % params_->terminal_checking_interval == 0 && cancel_checker()) {
       clearQueue();
       throw nav2_core::PlannerCancelled("Planner was canceled");
     }
@@ -118,7 +113,7 @@ void ThetaStar::setNeighbors(const tree_node * curr_data)
   tree_node * m_id = nullptr;
   double g_cost, h_cost, cal_cost;
 
-  for (int i = 0; i < how_many_corners_; i++) {
+  for (int i = 0; i < params_->how_many_corners; i++) {
     mx = curr_data->x + moves[i].x;
     my = curr_data->y + moves[i].y;
 
@@ -187,54 +182,31 @@ bool ThetaStar::losCheck(
 {
   sl_cost = 0;
 
-  int cx, cy;
-  int dy = abs(y1 - y0), dx = abs(x1 - x0), f = 0;
-  int sx, sy;
-  sx = x1 > x0 ? 1 : -1;
-  sy = y1 > y0 ? 1 : -1;
+  int dx = abs(x1 - x0), sx = (x0 < x1) ? 1 : -1;
+  int dy = abs(y1 - y0), sy = (y0 < y1) ? 1 : -1;
+  int cx = x0, cy = y0, e = dx - dy;
 
-  int u_x = (sx - 1) / 2;
-  int u_y = (sy - 1) / 2;
-  cx = x0;
-  cy = y0;
-
-  if (dx >= dy) {
-    while (cx != x1) {
-      f += dy;
-      if (f >= dx) {
-        if (!isSafe(cx + u_x, cy + u_y, sl_cost)) {
-          return false;
-        }
-        cy += sy;
-        f -= dx;
-      }
-      if (f != 0 && !isSafe(cx + u_x, cy + u_y, sl_cost)) {
-        return false;
-      }
-      if (dy == 0 && !isSafe(cx + u_x, cy, sl_cost) && !isSafe(cx + u_x, cy - 1, sl_cost)) {
+  while (cx != x1 || cy != y1) {
+    if (!isSafe(cx, cy, sl_cost)) {
+      return false;
+    }
+    int e2 = 2 * e;
+    if (e2 > -dy && e2 <= dx) {
+      if (!isSafe(cx + sx, cy) || !isSafe(cx, cy + sy)) {
         return false;
       }
       cx += sx;
-    }
-  } else {
-    while (cy != y1) {
-      f = f + dx;
-      if (f >= dy) {
-        if (!isSafe(cx + u_x, cy + u_y, sl_cost)) {
-          return false;
-        }
-        cx += sx;
-        f -= dy;
-      }
-      if (f != 0 && !isSafe(cx + u_x, cy + u_y, sl_cost)) {
-        return false;
-      }
-      if (dx == 0 && !isSafe(cx, cy + u_y, sl_cost) && !isSafe(cx - 1, cy + u_y, sl_cost)) {
-        return false;
-      }
       cy += sy;
+      e += dx - dy;
+    } else if (e2 > -dy) {
+      cx += sx;
+      e -= dy;
+    } else {
+      cy += sy;
+      e += dx;
     }
   }
+
   return true;
 }
 
@@ -277,4 +249,4 @@ void ThetaStar::clearStart()
   costmap_->setCost(mx_start, my_start, nav2_costmap_2d::FREE_SPACE);
 }
 
-}  //  namespace theta_star
+}  //  namespace nav2_theta_star_planner

@@ -45,12 +45,6 @@ MapSaver::MapSaver(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("map_saver", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
-
-  // Declare the node parameters
-  declare_parameter("save_map_timeout", 2.0);
-  declare_parameter("free_thresh_default", 0.25);
-  declare_parameter("occupied_thresh_default", 0.65);
-  declare_parameter("map_subscribe_transient_local", true);
 }
 
 MapSaver::~MapSaver()
@@ -61,15 +55,20 @@ nav2::CallbackReturn
 MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
+  auto node = shared_from_this();
 
   // Make name prefix for services
   const std::string service_prefix = get_name() + std::string("/");
 
   save_map_timeout_ = std::make_shared<rclcpp::Duration>(
-    rclcpp::Duration::from_seconds(get_parameter("save_map_timeout").as_double()));
-  free_thresh_default_ = get_parameter("free_thresh_default").as_double();
-  occupied_thresh_default_ = get_parameter("occupied_thresh_default").as_double();
-  map_subscribe_transient_local_ = get_parameter("map_subscribe_transient_local").as_bool();
+    rclcpp::Duration::from_seconds(
+      node->declare_or_get_parameter("save_map_timeout", 2.0)));
+  free_thresh_default_ = node->declare_or_get_parameter(
+    "free_thresh_default", 0.25);
+  occupied_thresh_default_ = node->declare_or_get_parameter(
+    "occupied_thresh_default", 0.65);
+  map_subscribe_transient_local_ = node->declare_or_get_parameter(
+    "map_subscribe_transient_local", true);
 
   // Create a service that saves the occupancy grid from map topic to a file
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(

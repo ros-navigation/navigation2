@@ -165,6 +165,28 @@ TEST_F(SpinActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
   EXPECT_EQ(action_server_->getCurrentGoal()->target_yaw, 3.14f);
+  EXPECT_EQ(action_server_->getCurrentGoal()->disable_collision_checks, false);
+}
+
+TEST_F(SpinActionTestFixture, test_tick_disable_collision_checks)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Spin spin_dist="3.14" disable_collision_checks="true" />
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+    tree_->rootNode()->executeTick();
+  }
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(action_server_->getCurrentGoal()->target_yaw, 3.14f);
+  EXPECT_EQ(action_server_->getCurrentGoal()->disable_collision_checks, true);
 }
 
 TEST_F(SpinActionTestFixture, test_failure)

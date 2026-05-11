@@ -43,20 +43,12 @@ void WaitAtWaypoint::initialize(
   }
   logger_ = node->get_logger();
   clock_ = node->get_clock();
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".waypoint_pause_duration",
-    rclcpp::ParameterValue(0));
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".enabled",
-    rclcpp::ParameterValue(true));
-  node->get_parameter(
-    plugin_name + ".waypoint_pause_duration",
-    waypoint_pause_duration_);
-  node->get_parameter(
-    plugin_name + ".enabled",
-    is_enabled_);
+
+  waypoint_pause_duration_ = node->declare_or_get_parameter(
+    plugin_name + ".waypoint_pause_duration", 0);
+  is_enabled_ = node->declare_or_get_parameter(
+    plugin_name + ".enabled", true);
+
   if (waypoint_pause_duration_ == 0) {
     is_enabled_ = false;
     RCLCPP_INFO(

@@ -90,10 +90,7 @@ public:
     const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS()
   )
   {
-    nav2::declare_parameter_if_not_declared(
-      node, "enable_stamped_cmd_vel",
-      rclcpp::ParameterValue(true));
-    node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
+    is_stamped_ = node->declare_or_get_parameter("enable_stamped_cmd_vel", true);
     if (is_stamped_) {
       twist_stamped_sub_ = node->create_subscription<geometry_msgs::msg::TwistStamped>(
         topic,
@@ -123,10 +120,7 @@ public:
     const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS()
   )
   {
-    nav2::declare_parameter_if_not_declared(
-      node, "enable_stamped_cmd_vel",
-      rclcpp::ParameterValue(true));
-    node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
+    is_stamped_ = node->declare_or_get_parameter("enable_stamped_cmd_vel", true);
     if (is_stamped_) {
       twist_stamped_sub_ = node->create_subscription<geometry_msgs::msg::TwistStamped>(
         topic,

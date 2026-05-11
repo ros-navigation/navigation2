@@ -32,6 +32,7 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/waypoint_follower.cpp
+  src/parameter_handler.cpp
 )
 target_include_directories(${library_name} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -183,6 +184,6 @@ ament_export_dependencies(
   tf2_ros
 )
 ament_export_targets(${PROJECT_NAME})
-pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)
+pluginlib_export_plugin_description_file(nav2_core plugins.xml)
 
 ament_package()

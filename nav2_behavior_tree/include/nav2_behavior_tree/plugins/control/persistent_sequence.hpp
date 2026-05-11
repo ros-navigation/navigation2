@@ -36,6 +36,13 @@ namespace nav2_behavior_tree
  * - If a child returns FAILURE, stop the loop and return FAILURE.
  *   Restart the loop only if (reset_on_failure == true)
  *
+ * Usage in XML:
+ * @code
+ * <Script code="current_child_idx := 0" />
+ * <PersistentSequence current_child_idx="{current_child_idx}">
+ *     <!-- Child nodes here -->
+ * </PersistentSequence>
+ * @endcode
  */
 class PersistentSequenceNode : public BT::ControlNode
 {

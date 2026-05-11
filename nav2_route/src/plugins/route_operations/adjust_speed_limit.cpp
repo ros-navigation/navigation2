@@ -29,14 +29,11 @@ void AdjustSpeedLimit::configure(
   RCLCPP_INFO(node->get_logger(), "Configuring Adjust speed limit operation.");
   name_ = name;
   logger_ = node->get_logger();
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".speed_tag", rclcpp::ParameterValue("speed_limit"));
-  speed_tag_ = node->get_parameter(getName() + ".speed_tag").as_string();
+  speed_tag_ = node->declare_or_get_parameter(
+    getName() + ".speed_tag", std::string("speed_limit"));
 
-
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
-  std::string topic = node->get_parameter(getName() + ".speed_tag").as_string();
+  std::string topic = node->declare_or_get_parameter(
+    getName() + ".speed_limit_topic", std::string("speed_limit"));
 
   speed_limit_pub_ = node->create_publisher<nav2_msgs::msg::SpeedLimit>(topic);
   speed_limit_pub_->on_activate();

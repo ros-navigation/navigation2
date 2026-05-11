@@ -19,11 +19,14 @@
 #include <memory>
 #include <unordered_map>
 #include <limits>
+#include "ompl/base/spaces/SE2StateSpace.h"
+#include "ompl/base/spaces/ReedsSheppStateSpace.h"
 #include "nav2_smac_planner/node_lattice.hpp"
 #include "gtest/gtest.h"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_smac_planner/a_star.hpp"
 
 using json = nlohmann::json;
 
@@ -87,6 +90,7 @@ TEST(NodeLatticeTest, parser_test)
 
 TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 {
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
@@ -104,19 +108,35 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
   info.lattice_filepath = filePath;
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
-
-  unsigned int x = 100;
-  unsigned int y = 100;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeLattice> a_star(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, info);
+  int max_iterations = 10000;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
   unsigned int angle_quantization = 16;
 
-  nav2_smac_planner::NodeLattice::initMotionModel(
-    nav2_smac_planner::MotionModel::STATE_LATTICE, x, y, angle_quantization, info);
+  a_star.initialize(
+    false, max_iterations,
+    std::numeric_limits<int>::max(), terminal_checking_interval, max_planning_time, 401,
+    angle_quantization);
 
-  nav2_smac_planner::NodeLattice aNode(0);
+  nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = costmapA;
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  nav2_smac_planner::NodeLattice aNode(0, ctx);
   unsigned int direction_change_index = 0;
   aNode.setPose(nav2_smac_planner::NodeHybrid::Coordinates(0, 0, 0));
   nav2_smac_planner::MotionPrimitivePtrs projections =
-    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(
+    ctx->motion_table.getMotionPrimitives(
     &aNode,
     direction_change_index);
 
@@ -125,7 +145,7 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
   EXPECT_NEAR(projections[0]->poses.back()._theta, 5.176, 0.01);
 
   EXPECT_NEAR(
-    nav2_smac_planner::NodeLattice::motion_table.getLatticeMetadata(
+    ctx->motion_table.getLatticeMetadata(
       filePath)
     .grid_resolution,
     0.05, 0.005);
@@ -133,6 +153,7 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 
 TEST(NodeLatticeTest, test_node_lattice_conversions)
 {
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
@@ -150,23 +171,40 @@ TEST(NodeLatticeTest, test_node_lattice_conversions)
   info.lattice_filepath = filePath;
   info.cache_obstacle_heuristic = true;
 
-  unsigned int x = 100;
-  unsigned int y = 100;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeLattice> a_star(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, info);
+  int max_iterations = 10000;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
   unsigned int angle_quantization = 16;
 
-  nav2_smac_planner::NodeLattice::initMotionModel(
-    nav2_smac_planner::MotionModel::STATE_LATTICE, x, y, angle_quantization, info);
+  a_star.initialize(
+    false, max_iterations,
+    std::numeric_limits<int>::max(), terminal_checking_interval, max_planning_time, 401,
+    angle_quantization);
 
-  nav2_smac_planner::NodeLattice aNode(0);
+  nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = costmapA;
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  nav2_smac_planner::NodeLattice aNode(0, ctx);
   aNode.setPose(nav2_smac_planner::NodeHybrid::Coordinates(0, 0, 0));
 
-  EXPECT_NEAR(aNode.motion_table.getAngleFromBin(0u), 0.0, 0.005);
-  EXPECT_NEAR(aNode.motion_table.getAngleFromBin(1u), 0.46364, 0.005);
-  EXPECT_NEAR(aNode.motion_table.getAngleFromBin(2u), 0.78539, 0.005);
+  EXPECT_NEAR(ctx->motion_table.getAngleFromBin(0u), 0.0, 0.005);
+  EXPECT_NEAR(ctx->motion_table.getAngleFromBin(1u), 0.46364, 0.005);
+  EXPECT_NEAR(ctx->motion_table.getAngleFromBin(2u), 0.78539, 0.005);
 
-  EXPECT_EQ(aNode.motion_table.getClosestAngularBin(0.0), 0u);
-  EXPECT_EQ(aNode.motion_table.getClosestAngularBin(0.5), 1u);
-  EXPECT_EQ(aNode.motion_table.getClosestAngularBin(1.5), 4u);
+  EXPECT_EQ(ctx->motion_table.getClosestAngularBin(0.0), 0u);
+  EXPECT_EQ(ctx->motion_table.getClosestAngularBin(0.5), 1u);
+  EXPECT_EQ(ctx->motion_table.getClosestAngularBin(1.5), 4u);
 }
 
 TEST(NodeLatticeTest, test_node_lattice)
@@ -190,27 +228,17 @@ TEST(NodeLatticeTest, test_node_lattice)
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
 
-  unsigned int x = 100;
-  unsigned int y = 100;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeLattice> a_star(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, info);
+  int max_iterations = 10000;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
   unsigned int angle_quantization = 16;
 
-  nav2_smac_planner::NodeLattice::initMotionModel(
-    nav2_smac_planner::MotionModel::STATE_LATTICE, x, y, angle_quantization, info);
-
-  // Check defaults
-  nav2_smac_planner::NodeLattice aNode(0);
-  nav2_smac_planner::NodeLattice testA(49);
-  EXPECT_EQ(testA.getIndex(), 49u);
-  EXPECT_EQ(testA.getAccumulatedCost(), std::numeric_limits<float>::max());
-  EXPECT_TRUE(std::isnan(testA.getCost()));
-  EXPECT_EQ(testA.getMotionPrimitive(), nullptr);
-
-  // Test visited state / reset
-  EXPECT_EQ(testA.wasVisited(), false);
-  testA.visited();
-  EXPECT_EQ(testA.wasVisited(), true);
-  testA.reset();
-  EXPECT_EQ(testA.wasVisited(), false);
+  a_star.initialize(
+    false, max_iterations,
+    std::numeric_limits<int>::max(), terminal_checking_interval, max_planning_time, 401,
+    angle_quantization);
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
@@ -224,6 +252,24 @@ TEST(NodeLatticeTest, test_node_lattice)
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  // Check defaults
+  nav2_smac_planner::NodeLattice aNode(0, ctx);
+  nav2_smac_planner::NodeLattice testA(49, ctx);
+  EXPECT_EQ(testA.getIndex(), 49u);
+  EXPECT_EQ(testA.getAccumulatedCost(), std::numeric_limits<float>::max());
+  EXPECT_TRUE(std::isnan(testA.getCost()));
+  EXPECT_EQ(testA.getMotionPrimitive(), nullptr);
+
+  // Test visited state / reset
+  EXPECT_EQ(testA.wasVisited(), false);
+  testA.visited();
+  EXPECT_EQ(testA.wasVisited(), true);
+  testA.reset();
+  EXPECT_EQ(testA.wasVisited(), false);
+
 
   // test node valid and cost
   testA.pose.x = 5;
@@ -237,7 +283,7 @@ TEST(NodeLatticeTest, test_node_lattice)
   EXPECT_EQ(testA.isNodeValid(false, checker.get()), true);
 
   // check operator== works on index
-  nav2_smac_planner::NodeLattice testC(49);
+  nav2_smac_planner::NodeLattice testC(49, ctx);
   EXPECT_TRUE(testA == testC);
 
   // check accumulated costs are set
@@ -274,14 +320,17 @@ TEST(NodeLatticeTest, test_get_neighbors)
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
 
-  unsigned int x = 100;
-  unsigned int y = 100;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeLattice> a_star(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, info);
+  int max_iterations = 10000;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
   unsigned int angle_quantization = 16;
 
-  nav2_smac_planner::NodeLattice::initMotionModel(
-    nav2_smac_planner::MotionModel::STATE_LATTICE, x, y, angle_quantization, info);
-
-  nav2_smac_planner::NodeLattice node(49);
+  a_star.initialize(
+    false, max_iterations,
+    std::numeric_limits<int>::max(), terminal_checking_interval, max_planning_time, 401,
+    angle_quantization);
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
@@ -295,6 +344,9 @@ TEST(NodeLatticeTest, test_get_neighbors)
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+  nav2_smac_planner::NodeLattice node(49, ctx);
 
   std::function<bool(const uint64_t &, nav2_smac_planner::NodeLattice * &)> neighborGetter =
     [](const uint64_t &, nav2_smac_planner::NodeLattice * &) -> bool
@@ -332,14 +384,17 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
 
-  unsigned int x = 100;
-  unsigned int y = 100;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeLattice> a_star(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, info);
+  int max_iterations = 10000;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
   unsigned int angle_quantization = 16;
 
-  nav2_smac_planner::NodeLattice::initMotionModel(
-    nav2_smac_planner::MotionModel::STATE_LATTICE, x, y, angle_quantization, info);
-
-  nav2_smac_planner::NodeLattice node(49);
+  a_star.initialize(
+    false, max_iterations,
+    std::numeric_limits<int>::max(), terminal_checking_interval, max_planning_time, 401,
+    angle_quantization);
 
   nav2_costmap_2d::Costmap2D * costmap = new nav2_costmap_2d::Costmap2D(
     40, 40, 0.05, 0.0, 0.0, 0);
@@ -369,6 +424,10 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
   p.y = 0.22;
   footprint.push_back(p);
   checker->setFootprint(footprint, false, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  nav2_smac_planner::NodeLattice node(49, ctx);
 
   // Setting initial robot pose to (1.0, 1.0, 0.0)
   node.pose.x = 20;
@@ -379,7 +438,7 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
   unsigned int direction_change_index = 0;
   // Test that the node is valid though all motion primitives poses for custom footprint
   nav2_smac_planner::MotionPrimitivePtrs motion_primitives =
-    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(&node, direction_change_index);
+    ctx->motion_table.getMotionPrimitives(&node, direction_change_index);
   EXPECT_GT(motion_primitives.size(), 0u);
   for (unsigned int i = 0; i < motion_primitives.size(); i++) {
     EXPECT_EQ(node.isNodeValid(true, checker.get(), motion_primitives[i], false), true);
@@ -411,15 +470,17 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
   info.allow_reverse_expansion = true;
   info.rotation_penalty = 5.0;
 
-  unsigned int size_x = 10;
-  unsigned int size_y = 10;
-  unsigned int size_theta = 16;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeLattice> a_star(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, info);
+  int max_iterations = 10000;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+  unsigned int angle_quantization = 16;
 
-  // Check defaulted constants
-  nav2_smac_planner::NodeLattice testA(49);
-
-  nav2_smac_planner::NodeLattice::initMotionModel(
-    nav2_smac_planner::MotionModel::STATE_LATTICE, size_x, size_y, size_theta, info);
+  a_star.initialize(
+    false, max_iterations,
+    std::numeric_limits<int>::max(), terminal_checking_interval, max_planning_time, 401,
+    angle_quantization);
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
@@ -437,11 +498,15 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
   *costmap = *costmapA;
 
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, node);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, angle_quantization,
+    node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
 
   // test construction
-  nav2_smac_planner::NodeLattice testB(49);
+  nav2_smac_planner::NodeLattice testA(49, ctx);
+  nav2_smac_planner::NodeLattice testB(49, ctx);
   EXPECT_TRUE(std::isnan(testA.getCost()));
 
   // test node valid and cost
@@ -454,10 +519,10 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
   // Get motion primitives for testing
   unsigned int direction_change_index = 0;
   nav2_smac_planner::MotionPrimitivePtrs testB_prims =
-    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(
+    ctx->motion_table.getMotionPrimitives(
     &testB, direction_change_index);
   nav2_smac_planner::MotionPrimitivePtrs testA_prims =
-    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(
+    ctx->motion_table.getMotionPrimitives(
     &testA, direction_change_index);
 
   testB.setMotionPrimitive(testB_prims[0]);
@@ -477,6 +542,92 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
   delete costmapA;
 }
 
+
+TEST(NodeLatticeTest, test_omni_selects_se2_state_space)
+{
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
+  std::string filePath =
+    pkg_share_dir +
+    "/sample_primitives/5cm_resolution/0.5m_turning_radius/omni" +
+    "/output.json";
+
+  nav2_smac_planner::SearchInfo info;
+  info.minimum_turning_radius = 0.5;
+  info.non_straight_penalty = 1;
+  info.change_penalty = 1;
+  info.reverse_penalty = 1;
+  info.cost_penalty = 1;
+  info.retrospective_penalty = 0.0;
+  info.lattice_filepath = filePath;
+  info.allow_reverse_expansion = false;
+
+  nav2_smac_planner::LatticeMotionTable motion_table;
+  unsigned int size_x = 100;
+  motion_table.initMotionModel(size_x, info);
+
+  // Verify omni motion model selects SE2StateSpace
+  EXPECT_EQ(motion_table.motion_model, nav2_smac_planner::MotionModel::OMNI);
+  EXPECT_NE(
+    dynamic_cast<ompl::base::SE2StateSpace *>(
+      motion_table.state_space.get()),
+    nullptr);
+}
+
+TEST(NodeLatticeTest, test_non_omni_selects_reeds_shepp)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
+  std::string filePath =
+    pkg_share_dir +
+    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
+    "/output.json";
+
+  nav2_smac_planner::SearchInfo info;
+  info.minimum_turning_radius = 0.5;
+  info.non_straight_penalty = 1;
+  info.change_penalty = 1;
+  info.reverse_penalty = 1;
+  info.cost_penalty = 1;
+  info.retrospective_penalty = 0.0;
+  info.analytic_expansion_ratio = 1;
+  info.lattice_filepath = filePath;
+  info.cache_obstacle_heuristic = true;
+  info.allow_reverse_expansion = true;
+
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeLattice> a_star(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, info);
+  int max_iterations = 10000;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+  unsigned int angle_quantization = 16;
+
+  a_star.initialize(
+    false, max_iterations,
+    std::numeric_limits<int>::max(), terminal_checking_interval,
+    max_planning_time, 401, angle_quantization);
+
+  nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = costmapA;
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(
+    costmap_ros, 72, node);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  // Verify non-omni (ackermann with reverse) selects Reeds-Shepp
+  EXPECT_EQ(
+    ctx->motion_table.motion_model,
+    nav2_smac_planner::MotionModel::REEDS_SHEPP);
+  EXPECT_NE(
+    dynamic_cast<ompl::base::ReedsSheppStateSpace *>(
+      ctx->motion_table.state_space.get()),
+    nullptr);
+}
 
 int main(int argc, char ** argv)
 {

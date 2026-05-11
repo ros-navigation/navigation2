@@ -43,6 +43,11 @@ public:
    */
   AxisGoalChecker();
 
+  /**
+   * @brief Destroy the Axis Goal Checker object
+   */
+  ~AxisGoalChecker();
+
   // Standard GoalChecker Interface
   /**
    * @brief Initialize the goal checker
@@ -77,11 +82,27 @@ public:
    * @brief Get the position and velocity tolerances
    * @param pose_tolerance Output parameter for pose tolerance
    * @param vel_tolerance Output parameter for velocity tolerance
+   * @param path_length_tolerance Output parameter for path length tolerance
    * @return true if tolerances are available, false otherwise
    */
   bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & vel_tolerance) override;
+    geometry_msgs::msg::Twist & vel_tolerance,
+    double & path_length_tolerance) override;
+
+  /**
+   * @brief Check if XY goal position has been reached (without considering yaw)
+   * @param query_pose The pose to check
+   * @param goal_pose The pose to check against
+   * @param velocity The robot's current velocity
+   * @param transformed_global_plan The global plan after being processed by the path handler
+   * @return True if XY goal is reached (position within tolerance, yaw ignored)
+   */
+  bool isGoalXYReached(
+    const geometry_msgs::msg::Pose & query_pose,
+    const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity,
+    const nav_msgs::msg::Path & transformed_global_plan) override;
 
 protected:
   double along_path_tolerance_;
@@ -89,16 +110,31 @@ protected:
   double path_length_tolerance_;
   bool is_overshoot_valid_;
   // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::mutex mutex_;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   std::string plugin_name_;
+  nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_{rclcpp::get_logger("AxisGoalChecker")};
 
   /**
-   * @brief Callback executed when a parameter change is detected
-   * @param parameters list of changed parameters
+   * @brief Validate incoming parameter updates before applying them.
+   * This callback is triggered when one or more parameters are about to be updated.
+   * It checks the validity of parameter values and rejects updates that would lead
+   * to invalid or inconsistent configurations
+   * @param parameters List of parameters that are being updated.
+   * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
+    const std::vector<rclcpp::Parameter> & parameters);
+
+  /**
+   * @brief Apply parameter updates after validation
+   * This callback is executed when parameters have been successfully updated.
+   * It updates the internal configuration of the node with the new parameter values.
+   * @param parameters List of parameters that have been updated.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 };
 
 }  // namespace nav2_controller

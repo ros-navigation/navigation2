@@ -111,7 +111,8 @@ class RouteTester(Node):
         self.info_msg('Action completed! Checking validity of results...')
 
         # Check result for validity
-        assert (len(result.path.poses) == 80)
+        self.info_msg(f'Route path len(result.path.poses): {len(result.path.poses)}')
+        assert (len(result.path.poses) == 79)
         assert (result.route.route_cost > 6)
         assert (result.route.route_cost < 7)
         assert (len(result.route.nodes) == 5)

@@ -27,6 +27,7 @@
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
 #include "nav2_msgs/srv/clear_costmap_around_pose.hpp"
+#include "nav2_msgs/srv/is_path_valid.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_msgs/action/spin.hpp"
@@ -192,6 +193,7 @@ public:
   std::unique_ptr<DummyClearCostmapAroundRobotService> clear_costmap_around_robot_server;
   std::unique_ptr<DummyClearCostmapExceptRegionService> clear_costmap_except_region_server;
   std::unique_ptr<DummyClearCostmapAroundPoseService> clear_costmap_around_pose_server;
+  std::unique_ptr<DummyService<nav2_msgs::srv::IsPathValid>> validate_path_server;
   std::unique_ptr<DummyComputePathToPoseActionServer> compute_path_to_pose_server;
   std::unique_ptr<DummyFollowPathActionServer> follow_path_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Spin>> spin_server;

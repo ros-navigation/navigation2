@@ -118,13 +118,14 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  nav2::Publisher<nav2_msgs::msg::Trajectory>::SharedPtr opt_traj_pub_;
+  nav2::Publisher<nav_msgs::msg::Trajectory>::SharedPtr opt_traj_pub_;
 
   std::unique_ptr<ParametersHandler> parameters_handler_;
   Optimizer optimizer_;
   TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;
+  int critic_index_to_visualize_;
   bool publish_optimal_trajectory_;
 };
 

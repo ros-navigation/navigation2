@@ -27,6 +27,13 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::ComputeRoute
+ *
+ * Usage in XML:
+ * @code
+ * <ComputeRoute start="{start}" goal="{goal}" use_poses="{true}" use_start="{true}" path="{path}"
+ *               server_name="ComputeRoute" server_timeout="10"
+ *               error_code_id="{compute_route_error_code}" error_msg="{compute_route_error_msg}"/>
+ * @endcode
  */
 class ComputeRouteAction : public BtActionNode<nav2_msgs::action::ComputeRoute>
 {

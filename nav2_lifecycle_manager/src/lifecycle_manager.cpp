@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -37,37 +38,25 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  // The list of names is parameterized, allowing this module to be used with a different set
-  // of nodes
-  declare_parameter("node_names", rclcpp::PARAMETER_STRING_ARRAY);
-  declare_parameter("autostart", rclcpp::ParameterValue(false));
-  declare_parameter("bond_timeout", 4.0);
-  declare_parameter("service_timeout", 5.0);
-  declare_parameter("bond_respawn_max_duration", 10.0);
-  declare_parameter("attempt_respawn_reconnection", true);
-  declare_parameter("bond_heartbeat_period", 0.25);
+  // Node names are parameterized, allowing this module to be used with a different set of nodes
+  auto node = this;
+  node_names_ = nav2::declare_or_get_parameter<std::vector<std::string>>(node, "node_names");
+  autostart_ = nav2::declare_or_get_parameter(node, "autostart", false);
+  double bond_timeout_s = nav2::declare_or_get_parameter(node, "bond_timeout", 4.0);
+  double service_timeout_s = nav2::declare_or_get_parameter(node, "service_timeout", 5.0);
+  double respawn_timeout_s = nav2::declare_or_get_parameter(
+    node, "bond_respawn_max_duration", 10.0);
+  attempt_respawn_reconnection_ = nav2::declare_or_get_parameter(
+    node, "attempt_respawn_reconnection", true);
+  bond_heartbeat_period_ = nav2::declare_or_get_parameter(node, "bond_heartbeat_period", 0.25);
 
   registerRclPreshutdownCallback();
 
-  node_names_ = get_parameter("node_names").as_string_array();
-  get_parameter("autostart", autostart_);
-  double bond_timeout_s;
-  get_parameter("bond_timeout", bond_timeout_s);
   bond_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::duration<double>(bond_timeout_s));
-
-  double service_timeout_s;
-  get_parameter("service_timeout", service_timeout_s);
   service_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::duration<double>(service_timeout_s));
-
-  double respawn_timeout_s;
-  get_parameter("bond_respawn_max_duration", respawn_timeout_s);
   bond_respawn_max_duration_ = rclcpp::Duration::from_seconds(respawn_timeout_s);
-
-  get_parameter("attempt_respawn_reconnection", attempt_respawn_reconnection_);
-
-  get_parameter("bond_heartbeat_period", bond_heartbeat_period_);
 
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
 
@@ -85,7 +74,8 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
     std::string("Shutting down ");
 
-  init_timer_ = this->create_wall_timer(
+  init_timer_ = nav2::create_timer(
+    this,
     0s,
     [this]() -> void {
       init_timer_->cancel();
@@ -93,7 +83,8 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
       createLifecycleServiceClients();
       createLifecycleServiceServers();
       if (autostart_) {
-        init_timer_ = this->create_wall_timer(
+        init_timer_ = nav2::create_timer(
+          this,
           0s,
           [this]() -> void {
             init_timer_->cancel();
@@ -493,7 +484,8 @@ LifecycleManager::createBondTimer()
   }
 
   message("Creating bond timer...");
-  bond_timer_ = this->create_wall_timer(
+  bond_timer_ = nav2::create_timer(
+    this,
     200ms,
     std::bind(&LifecycleManager::checkBondConnections, this),
     callback_group_);
@@ -568,7 +560,8 @@ LifecycleManager::checkBondConnections()
       // Initialize the bond respawn timer to check if server comes back online
       // after a failure, within a maximum timeout period.
       if (attempt_respawn_reconnection_) {
-        bond_respawn_timer_ = this->create_wall_timer(
+        bond_respawn_timer_ = nav2::create_timer(
+          this,
           1s,
           std::bind(&LifecycleManager::checkBondRespawnConnection, this),
           callback_group_);

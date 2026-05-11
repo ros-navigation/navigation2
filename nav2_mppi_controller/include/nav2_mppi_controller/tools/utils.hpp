@@ -32,7 +32,7 @@
 
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_msgs/msg/trajectory.hpp"
+#include "nav_msgs/msg/trajectory.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "rclcpp/rclcpp.hpp"
@@ -171,19 +171,20 @@ inline geometry_msgs::msg::TwistStamped toTwistStamped(
   return twist;
 }
 
-inline std::unique_ptr<nav2_msgs::msg::Trajectory> toTrajectoryMsg(
+inline std::unique_ptr<nav_msgs::msg::Trajectory> toTrajectoryMsg(
   const Eigen::ArrayXXf & trajectory,
   const models::ControlSequence & control_sequence,
   const double & model_dt,
   const std_msgs::msg::Header & header)
 {
-  auto trajectory_msg = std::make_unique<nav2_msgs::msg::Trajectory>();
+  auto trajectory_msg = std::make_unique<nav_msgs::msg::Trajectory>();
   trajectory_msg->header = header;
   trajectory_msg->points.resize(trajectory.rows());
 
   for (int i = 0; i < trajectory.rows(); ++i) {
     auto & curr_pt = trajectory_msg->points[i];
-    curr_pt.time_from_start = rclcpp::Duration::from_seconds(i * model_dt);
+    curr_pt.header.frame_id = header.frame_id;
+    curr_pt.header.stamp = header.stamp + rclcpp::Duration::from_seconds(i * model_dt);
     curr_pt.pose.position.x = trajectory(i, 0);
     curr_pt.pose.position.y = trajectory(i, 1);
     tf2::Quaternion quat;
@@ -282,40 +283,59 @@ auto shortest_angular_distance(
 }
 
 /**
- * @brief Evaluate furthest point idx of data.path which is
- * nearest to some trajectory in data.trajectories
+ * @brief Find the index of the furthest path point reached by a set
+ * of trajectories, where each trajectory's nearest-point search is
+ * restricted to path points within its own arc-length.
  * @param data Data to use
- * @return Idx of furthest path point reached by a set of trajectories
+ * @return Index of furthest path point reached by a set of trajectories
  */
 inline size_t findPathFurthestReachedPoint(const CriticData & data)
 {
-  int traj_cols = data.trajectories.x.cols();
-  const auto traj_x = data.trajectories.x.col(traj_cols - 1);
-  const auto traj_y = data.trajectories.y.col(traj_cols - 1);
+  const int traj_cols = data.trajectories.x.cols();
+  const int n_rows = static_cast<int>(data.trajectories.x.rows());
+  const int n_cols = static_cast<int>(data.path.x.size());
 
-  int max_id_by_trajectories = 0, min_id_by_path = 0;
-  float min_distance_by_path = std::numeric_limits<float>::max();
-  size_t n_rows = traj_x.rows();
-  size_t n_cols = data.path.x.size();
-  for (size_t i = 0; i != n_rows; i++) {
-    min_id_by_path = 0;
-    min_distance_by_path = std::numeric_limits<float>::max();
-    for (size_t j = 0; j != n_cols; j++) {
-      const float dx = data.path.x(j) - traj_x(i);
-      const float dy = data.path.y(j) - traj_y(i);
-      const float cur_dist = dx * dx + dy * dy;
-      if (cur_dist < min_distance_by_path) {
-        min_distance_by_path = cur_dist;
-        min_id_by_path = j;
-      }
-    }
-    max_id_by_trajectories = std::max(max_id_by_trajectories, min_id_by_path);
+  // Cumulative arc-lengths along the reference path
+  std::vector<float> path_integrated_dists(n_cols, 0.0f);
+  for (int i = 1; i < n_cols; ++i) {
+    const float dx = data.path.x(i) - data.path.x(i - 1);
+    const float dy = data.path.y(i) - data.path.y(i - 1);
+    path_integrated_dists[i] = path_integrated_dists[i - 1] + sqrtf(dx * dx + dy * dy);
+  }
+
+  // Arc-length of all candidate trajectories
+  const Eigen::ArrayXf traj_integrated_dists =
+    ((data.trajectories.x.rightCols(traj_cols - 1) -
+    data.trajectories.x.leftCols(traj_cols - 1)).square() +
+    (data.trajectories.y.rightCols(traj_cols - 1) -
+    data.trajectories.y.leftCols(traj_cols - 1)).square())
+    .sqrt().rowwise().sum();
+
+  const auto & traj_x_end = data.trajectories.x.col(traj_cols - 1);
+  const auto & traj_y_end = data.trajectories.y.col(traj_cols - 1);
+
+  int max_idx = 0;
+  for (int i = 0; i < n_rows; ++i) {
+    int max_reachable_idx = static_cast<int>(
+      std::lower_bound(
+        path_integrated_dists.begin(), path_integrated_dists.end(),
+        traj_integrated_dists(i)) - path_integrated_dists.begin());
+    max_reachable_idx = std::min(max_reachable_idx, n_cols - 1);
+
+    // Bounded Euclidean search: closest path point within [0..max_reachable_idx]
+    Eigen::Index eucl_idx;
+    ((data.path.x.head(max_reachable_idx + 1) - traj_x_end(i)).square() +
+    (data.path.y.head(max_reachable_idx + 1) - traj_y_end(i)).square()).minCoeff(&eucl_idx);
+
+    max_idx = std::max(max_idx, static_cast<int>(eucl_idx));
+
     // Early exit if we've already reached the end of the path
-    if (max_id_by_trajectories == static_cast<int>(n_cols) - 1) {
+    if (max_idx == n_cols - 1) {
       break;
     }
   }
-  return max_id_by_trajectories;
+
+  return static_cast<size_t>(max_idx);
 }
 
 /**
@@ -440,10 +460,17 @@ inline void savitskyGolayFilter(
   std::array<mppi::models::Control, 4> & control_history,
   const models::OptimizerSettings & settings)
 {
-  // Savitzky-Golay Quadratic, 9-point Coefficients
-  Eigen::Array<float, 9, 1> filter = {-21.0f, 14.0f, 39.0f, 54.0f, 59.0f, 54.0f, 39.0f, 14.0f,
-    -21.0f};
-  filter /= 231.0f;
+  // Savitzky-Golay filter coefficients, 9-point window
+  Eigen::Array<float, 9, 1> filter;
+  if (settings.sgf_order == 1) {
+    // Degree-1 (linear): uniform moving average with more aggressive smoothing
+    filter = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+    filter /= 9.0f;
+  } else {
+    // Degree-2 (quadratic): standard 9-point SG coefficients
+    filter = {-21.0f, 14.0f, 39.0f, 54.0f, 59.0f, 54.0f, 39.0f, 14.0f, -21.0f};
+    filter /= 231.0f;
+  }
 
   // Too short to smooth meaningfully
   const unsigned int num_sequences = control_sequence.vx.size() - 1;
@@ -631,6 +658,25 @@ inline float clamp(
   const float lower_bound, const float upper_bound, const float input)
 {
   return std::min(upper_bound, std::max(input, lower_bound));
+}
+
+/**
+ * @brief Clamp velocity by acceleration limits, whereas max is used for
+ * accelerating in speed (forward or reverse) and min is used for deceleration
+ * @param last_vel Previous velocity
+ * @param curr_vel Current velocity to clamp
+ * @param min_delta Minimum velocity change (deceleration, typically negative)
+ * @param max_delta Maximum velocity change (acceleration, typically positive)
+ * @return Clamped velocity
+ */
+inline float clampVelocityByAccel(
+  const float last_vel, const float curr_vel,
+  const float min_delta, const float max_delta)
+{
+  if (last_vel >= 0) {
+    return clamp(last_vel + min_delta, last_vel + max_delta, curr_vel);
+  }
+  return clamp(last_vel - max_delta, last_vel - min_delta, curr_vel);
 }
 
 }  // namespace mppi::utils

@@ -46,12 +46,20 @@ public:
 
   virtual bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & /*vel_tolerance*/)
+    geometry_msgs::msg::Twist & /*vel_tolerance*/,
+    double & path_length_tolerance)
   {
     pose_tolerance.position.x = 0.25;
     pose_tolerance.position.y = 0.25;
+    path_length_tolerance = 0.5;
     return true;
   }
+
+  virtual bool isGoalXYReached(
+    const geometry_msgs::msg::Pose & /*query_pose*/,
+    const geometry_msgs::msg::Pose & /*goal_pose*/,
+    const geometry_msgs::msg::Twist & /*velocity*/,
+    const nav_msgs::msg::Path & /*transformed_global_plan*/) {return false;}
 };
 
 TEST(UtilsTests, MarkerPopulationUtils)
@@ -183,7 +191,7 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
 
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
 
   // Attempt to set furthest point if notionally set, should not change
   data.furthest_reached_path_point = 99999;
@@ -193,12 +201,13 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   // Attempt to set if not set already with no other information, should fail
   CriticData data2 =
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
   setPathFurthestPointIfNotSet(data2);
   EXPECT_EQ(data2.furthest_reached_path_point, 0);
 
   // Test the actual computation of the path point reached
-  generated_trajectories.x = Eigen::ArrayXXf::Ones(100, 2);
+  generated_trajectories.x = Eigen::ArrayXXf::Zero(100, 2);
+  generated_trajectories.x.col(1).setOnes();
   generated_trajectories.y = Eigen::ArrayXXf::Zero(100, 2);
   generated_trajectories.yaws = Eigen::ArrayXXf::Zero(100, 2);
 
@@ -212,8 +221,49 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
 
   CriticData data3 =
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
   EXPECT_EQ(findPathFurthestReachedPoint(data3), 5);
+}
+
+// Verify that the returned index of findPathFurthestReachedPoint() doesn't
+// exceed what is physically reachable (longest trajectory's arc-length)
+TEST(UtilsTests, FurthestReachedPointUturn)
+{
+  models::State state;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs;
+  float model_dt = 0.1;
+
+  // U-turn path: (0, 0) to (8, 0), turn (8, 1), and go back to (0, 1)
+  const float path_x[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+  const float path_y[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  nav_msgs::msg::Path plan;
+  plan.poses.resize(18);
+  for (unsigned int i = 0; i != 18; i++) {
+    plan.poses[i].pose.position.x = path_x[i];
+    plan.poses[i].pose.position.y = path_y[i];
+  }
+  path = toTensor(plan);
+
+  // 10 identical trajectories from (0,0) to (5,1), arc-length ~5.1m
+  generated_trajectories.x = Eigen::ArrayXXf::Zero(10, 4);
+  generated_trajectories.x.col(1).setConstant(5.0f / 3.0f);
+  generated_trajectories.x.col(2).setConstant(10.0f / 3.0f);
+  generated_trajectories.x.col(3).setConstant(5.0f);
+  generated_trajectories.y = Eigen::ArrayXXf::Zero(10, 4);
+  generated_trajectories.y.col(1).setConstant(1.0f / 3.0f);
+  generated_trajectories.y.col(2).setConstant(2.0f / 3.0f);
+  generated_trajectories.y.col(3).setConstant(1.0f);
+  generated_trajectories.yaws = Eigen::ArrayXXf::Zero(10, 4);
+
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
+
+  size_t result = findPathFurthestReachedPoint(data);
+  EXPECT_LE(result, 6u);
 }
 
 TEST(UtilsTests, findPathCosts)
@@ -228,7 +278,7 @@ TEST(UtilsTests, findPathCosts)
 
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
 
   // Test not set if already set, should not change
   data.path_pts_valid = std::vector<bool>(10, false);
@@ -241,7 +291,7 @@ TEST(UtilsTests, findPathCosts)
 
   CriticData data3 =
   {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
 
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
@@ -514,11 +564,17 @@ TEST(UtilsTests, toTrajectoryMsgTest)
   EXPECT_EQ(trajectory_msg->points[4].velocity.linear.y, 0.0);
   EXPECT_EQ(trajectory_msg->points[4].velocity.angular.z, 1.0);
 
-  EXPECT_EQ(trajectory_msg->points[0].time_from_start, rclcpp::Duration(0, 0));
-  EXPECT_EQ(trajectory_msg->points[1].time_from_start, rclcpp::Duration(1, 0));
-  EXPECT_EQ(trajectory_msg->points[2].time_from_start, rclcpp::Duration(2, 0));
-  EXPECT_EQ(trajectory_msg->points[3].time_from_start, rclcpp::Duration(3, 0));
-  EXPECT_EQ(trajectory_msg->points[4].time_from_start, rclcpp::Duration(4, 0));
+  rclcpp::Time base_time(header.stamp);
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[0].header.stamp) - base_time,
+    rclcpp::Duration(0, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[1].header.stamp) - base_time,
+    rclcpp::Duration(1, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[2].header.stamp) - base_time,
+    rclcpp::Duration(2, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[3].header.stamp) - base_time,
+    rclcpp::Duration(3, 0));
+  EXPECT_EQ(rclcpp::Time(trajectory_msg->points[4].header.stamp) - base_time,
+    rclcpp::Duration(4, 0));
 }
 
 TEST(UtilsTests, getLastPathPoseTest)

@@ -21,7 +21,6 @@ namespace nav2_smoother
 {
 using namespace nav2_util::geometry_utils;  // NOLINT
 using namespace std::chrono;  // NOLINT
-using nav2::declare_parameter_if_not_declared;
 using nav2_util::PathSegment;
 
 void SavitzkyGolaySmoother::configure(
@@ -33,21 +32,17 @@ void SavitzkyGolaySmoother::configure(
   auto node = parent.lock();
   logger_ = node->get_logger();
 
-  declare_parameter_if_not_declared(
-    node, name + ".do_refinement", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, name + ".refinement_num", rclcpp::ParameterValue(2));
-  declare_parameter_if_not_declared(
-    node, name + ".enforce_path_inversion", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, name + ".window_size", rclcpp::ParameterValue(7));
-  declare_parameter_if_not_declared(
-    node, name + ".poly_order", rclcpp::ParameterValue(3));
-  node->get_parameter(name + ".do_refinement", do_refinement_);
-  node->get_parameter(name + ".refinement_num", refinement_num_);
-  node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
-  node->get_parameter(name + ".window_size", window_size_);
-  node->get_parameter(name + ".poly_order", poly_order_);
+  do_refinement_ = node->declare_or_get_parameter(
+    name + ".do_refinement", true);
+  refinement_num_ = node->declare_or_get_parameter(
+    name + ".refinement_num", 2);
+  enforce_path_inversion_ = node->declare_or_get_parameter(
+    name + ".enforce_path_inversion", true);
+  window_size_ = node->declare_or_get_parameter(
+    name + ".window_size", 7);
+  poly_order_ = node->declare_or_get_parameter(
+    name + ".poly_order", 3);
+
   if (window_size_ % 2 == 0 || window_size_ <= 2) {
     throw nav2_core::SmootherException(
             "Savitzky-Golay Smoother requires an odd window size of 3 or greater");

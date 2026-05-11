@@ -232,19 +232,19 @@ TEST(GeoJsonGraphFileLoader, test_node_metadata) {
 
   std::string name;
   name = metadata.getValue("name", name);
-  EXPECT_EQ(name, node_metadata["metadata"]["person"]["name"]);
+  EXPECT_EQ(name, node_metadata["metadata"]["person"]["name"].get<std::string>());
 
   bool can_drive = false;
   can_drive = metadata.getValue("can_drive", can_drive);
-  EXPECT_EQ(can_drive, node_metadata["metadata"]["person"]["can_drive"]);
+  EXPECT_EQ(can_drive, node_metadata["metadata"]["person"]["can_drive"].get<bool>());
 
   float top_speed = 0.0f;
   top_speed = metadata.getValue("top_speed", top_speed);
-  EXPECT_NEAR(top_speed, node_metadata["metadata"]["person"]["top_speed"], 1e-6);
+  EXPECT_NEAR(top_speed, node_metadata["metadata"]["person"]["top_speed"].get<float>(), 1e-6);
 
   unsigned int age = 0;
   age = metadata.getValue("age", age);
-  EXPECT_EQ(age, node_metadata["metadata"]["person"]["age"]);
+  EXPECT_EQ(age, node_metadata["metadata"]["person"]["age"].get<unsigned int>());
 
   std::vector<std::any> array;
   array = graph[0].metadata.getValue("array", array);
@@ -257,7 +257,7 @@ TEST(GeoJsonGraphFileLoader, test_node_metadata) {
   // Check edge metadata
   std::string color;
   color = graph[0].neighbors[0].metadata.getValue("color", color);
-  EXPECT_EQ(color, edge_metadata["metadata"]["color"]);
+  EXPECT_EQ(color, edge_metadata["metadata"]["color"].get<std::string>());
 }
 
 TEST(GeoJsonGraphFileLoader, operations)

@@ -18,12 +18,15 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
 #include "nav2_theta_star_planner/theta_star_planner.hpp"
+#include "nav2_theta_star_planner/parameter_handler.hpp"
 
 /// class created to access the protected members of the ThetaStar class
 /// u is used as shorthand for use
-class test_theta_star : public theta_star::ThetaStar
+class test_theta_star : public nav2_theta_star_planner::ThetaStar
 {
 public:
+  explicit test_theta_star(nav2_theta_star_planner::Parameters * params)
+  : ThetaStar(params) {}
   int getSizeOfNodePosition()
   {
     return static_cast<int>(node_position_.size());
@@ -66,7 +69,13 @@ public:
 
 // Tests meant to test the algorithm itself and its helper functions
 TEST(ThetaStarTest, test_theta_star) {
-  auto planner_ = std::make_unique<test_theta_star>();
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarTestNode");
+  auto plugin_name = std::string("test");
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+  auto planner_ = std::make_unique<test_theta_star>(params);
   planner_->costmap_ = new nav2_costmap_2d::Costmap2D(50, 50, 1.0, 0.0, 0.0, 0);
   for (int i = 7; i <= 14; i++) {
     for (int j = 7; j <= 14; j++) {
@@ -146,11 +155,12 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
-  geometry_msgs::msg::PoseStamped start, goal;
+  geometry_msgs::msg::PoseStamped start, goal, viapoint;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
   start.pose.orientation.w = 1.0;
   goal = start;
+  viapoint = start;
   auto planner_2d = std::make_unique<nav2_theta_star_planner::ThetaStarPlanner>();
   planner_2d->configure(life_node, "test", nullptr, costmap_ros);
   planner_2d->activate();
@@ -159,7 +169,9 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
       return false;
     };
 
-  nav_msgs::msg::Path path = planner_2d->createPlan(start, goal, dummy_cancel_checker);
+  std::vector<geometry_msgs::msg::PoseStamped> viapoints{viapoint};
+  nav_msgs::msg::Path path = planner_2d->createPlan(
+    start, goal, viapoints, dummy_cancel_checker);
   EXPECT_GT(static_cast<int>(path.poses.size()), 0);
 
   // test if the goal is unsafe
@@ -171,7 +183,8 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
   goal.pose.position.x = 1.0;
   goal.pose.position.y = 1.0;
 
-  EXPECT_THROW(planner_2d->createPlan(start, goal, dummy_cancel_checker), nav2_core::GoalOccupied);
+  EXPECT_THROW(planner_2d->createPlan(start, goal, viapoints, dummy_cancel_checker),
+    nav2_core::GoalOccupied);
 
   planner_2d->deactivate();
   planner_2d->cleanup();
@@ -228,6 +241,22 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
   rclcpp::spin_until_future_complete(
     life_node->get_node_base_interface(),
     results);
+
+  // Try setting invalid value for how_many_corners
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.how_many_corners", 5)});
+  rclcpp::spin_until_future_complete(
+    life_node->get_node_base_interface(),
+    results);
+  EXPECT_EQ(life_node->get_parameter("test.how_many_corners").as_int(), 8);
+
+  // Try setting invalid value for w_euc_cost
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.w_euc_cost", -1.0)});
+  rclcpp::spin_until_future_complete(
+    life_node->get_node_base_interface(),
+    results);
+  EXPECT_EQ(life_node->get_parameter("test.w_euc_cost").as_double(), 1.0);
 }
 
 int main(int argc, char ** argv)

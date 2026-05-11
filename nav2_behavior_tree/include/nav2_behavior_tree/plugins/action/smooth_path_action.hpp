@@ -28,6 +28,14 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::SmoothPath
+ *
+ * Usage in XML:
+ * @code
+ * <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}" max_smoothing_duration="3.0"
+ *             smoother_id="simple_smoother" check_for_collisions="false"
+ *             smoothing_duration="{smoothing_duration_used}" was_completed="{smoothing_completed}"
+ *             error_code_id="{smoothing_path_error_code}" error_msg="{smoothing_path_error_msg}"/>
+ * @endcode
  */
 class SmoothPathAction : public nav2_behavior_tree::BtActionNode<nav2_msgs::action::SmoothPath>
 {

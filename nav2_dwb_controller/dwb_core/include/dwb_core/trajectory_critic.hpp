@@ -102,12 +102,8 @@ public:
     name_ = name;
     costmap_ros_ = costmap_ros;
     dwb_plugin_name_ = ns;
-    if (!nh->has_parameter(dwb_plugin_name_ + "." + name_ + ".scale")) {
-      nh->declare_parameter(
-        dwb_plugin_name_ + "." + name_ + ".scale",
-        rclcpp::ParameterValue(1.0));
-    }
-    nh->get_parameter(dwb_plugin_name_ + "." + name_ + ".scale", scale_);
+    scale_ = nh->declare_or_get_parameter(
+      dwb_plugin_name_ + "." + name_ + ".scale", 1.0);
     onInit();
   }
   virtual void onInit() {}

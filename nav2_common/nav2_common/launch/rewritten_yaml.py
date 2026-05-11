@@ -50,6 +50,7 @@ class RewrittenYaml(launch.Substitution):
         key_rewrites: Optional[dict[str, launch.SomeSubstitutionsType]] = None,
         value_rewrites: Optional[dict[str, launch.SomeSubstitutionsType]] = None,
         convert_types: bool = False,
+        out_dir: Optional[launch.SomeSubstitutionsType] = None,
     ) -> None:
         super().__init__()
         """
@@ -61,6 +62,7 @@ class RewrittenYaml(launch.Substitution):
         :param: key_rewrites keys of mappings to replace
         :param: value_rewrites values to replace
         :param: convert_types whether to attempt converting the string to a number or boolean
+        :param: out_dir if provided, the directory where the temporary YAML file will be created
         """
 
         # import here to avoid loop
@@ -73,6 +75,8 @@ class RewrittenYaml(launch.Substitution):
         self.__value_rewrites = {}
         self.__convert_types = convert_types
         self.__root_key = None
+        self.__out_dir = None
+
         for key in param_rewrites:
             self.__param_rewrites[key] = normalize_to_list_of_substitutions(
                 param_rewrites[key]
@@ -90,6 +94,9 @@ class RewrittenYaml(launch.Substitution):
         if root_key is not None:
             self.__root_key = normalize_to_list_of_substitutions(root_key)
 
+        if out_dir is not None:
+            self.__out_dir = normalize_to_list_of_substitutions(out_dir)
+
     @property
     def name(self) -> list[launch.Substitution]:
         """Getter for name."""
@@ -101,7 +108,12 @@ class RewrittenYaml(launch.Substitution):
 
     def perform(self, context: launch.LaunchContext) -> str:
         yaml_filename = launch.utilities.perform_substitutions(context, self.name)
-        rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
+
+        out_dir = None
+        if self.__out_dir is not None:
+            out_dir = launch.utilities.perform_substitutions(context, self.__out_dir)
+
+        rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False, dir=out_dir)
         param_rewrites, keys_rewrites, value_rewrites = self.resolve_rewrites(context)
 
         with open(yaml_filename, 'r') as yaml_file:

@@ -116,6 +116,7 @@ route_server:
     max_planning_time: 2.0                        # Maximum planning time (seconds)
     smooth_corners: true                          # Whether to smooth corners formed by adjacent edges or not
     smoothing_radius: 1.0                         # Radius of corner to fit into the corner
+    smoothing_angle_threshold: 2.9                # Angle threshold (rad). If angle > threshold, no smoothing is applied. This prevents unnecessary smoothing of largely straight segments caused by small differences or annotation error.
     costmap_topic: 'global_costmap/costmap_raw'   # Costmap topic when enable_nn_search is enabled. May also be used by the collision monitor operation and/or the costmap edge scorer if using the same topic to share resources.
 
     graph_file_loader: "GeoJsonGraphFileLoader"   # Name of default file loader

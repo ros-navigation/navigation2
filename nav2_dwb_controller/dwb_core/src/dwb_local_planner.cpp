@@ -46,13 +46,11 @@
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 
-using nav2::declare_parameter_if_not_declared;
 using nav2_util::geometry_utils::euclidean_distance;
 
 namespace dwb_core
@@ -77,29 +75,14 @@ void DWBLocalPlanner::configure(
   costmap_ros_ = costmap_ros;
   tf_ = tf;
   dwb_plugin_name_ = name;
-  declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".critics",
-    rclcpp::PARAMETER_STRING_ARRAY);
-  declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".default_critic_namespaces",
-    rclcpp::ParameterValue(std::vector<std::string>()));
-  declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".debug_trajectory_details",
-    rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".trajectory_generator_name",
-    rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
-  declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
-    rclcpp::ParameterValue(true));
 
-  std::string traj_generator_name;
-
-  node->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
-  node->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
-  node->get_parameter(
-    dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
-    short_circuit_trajectory_evaluation_);
+  debug_trajectory_details_ = node->declare_or_get_parameter(
+    dwb_plugin_name_ + ".debug_trajectory_details", false);
+  std::string traj_generator_name = node->declare_or_get_parameter(
+    dwb_plugin_name_ + ".trajectory_generator_name",
+    std::string("dwb_plugins::StandardTrajectoryGenerator"));
+  short_circuit_trajectory_evaluation_ = node->declare_or_get_parameter(
+    dwb_plugin_name_ + ".short_circuit_trajectory_evaluation", true);
 
   pub_ = std::make_unique<DWBPublisher>(node, dwb_plugin_name_);
   pub_->on_configure();
@@ -166,25 +149,26 @@ DWBLocalPlanner::loadCritics()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  node->get_parameter(dwb_plugin_name_ + ".default_critic_namespaces", default_critic_namespaces_);
+  default_critic_namespaces_ = node->declare_or_get_parameter(
+    dwb_plugin_name_ + ".default_critic_namespaces",
+    std::vector<std::string>());
   if (default_critic_namespaces_.empty()) {
     default_critic_namespaces_.emplace_back("dwb_critics");
   }
 
-  std::vector<std::string> critic_names;
-  if (!node->get_parameter(dwb_plugin_name_ + ".critics", critic_names)) {
+  std::vector<std::string> critic_names =
+    node->declare_or_get_parameter<std::vector<std::string>>(
+      dwb_plugin_name_ + ".critics");
+  if (critic_names.empty()) {
     throw std::runtime_error("No critics defined for " + dwb_plugin_name_);
   }
 
-  node->get_parameter(dwb_plugin_name_ + ".critics", critic_names);
   for (unsigned int i = 0; i < critic_names.size(); i++) {
     std::string critic_plugin_name = critic_names[i];
-    std::string plugin_class;
 
-    declare_parameter_if_not_declared(
-      node, dwb_plugin_name_ + "." + critic_plugin_name + ".class",
-      rclcpp::ParameterValue(critic_plugin_name));
-    node->get_parameter(dwb_plugin_name_ + "." + critic_plugin_name + ".class", plugin_class);
+    std::string plugin_class = node->declare_or_get_parameter(
+      dwb_plugin_name_ + "." + critic_plugin_name + ".class",
+      critic_plugin_name);
 
     plugin_class = resolveCriticClassName(plugin_class);
 

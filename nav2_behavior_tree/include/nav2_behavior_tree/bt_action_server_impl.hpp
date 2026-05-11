@@ -169,6 +169,9 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   always_reload_bt_ = node->declare_or_get_parameter(
     "always_reload_bt_xml", false);
 
+  log_idle_ = node->declare_or_get_parameter(
+    "bt_log_idle_transitions", true);
+
   // Get error code id names to grab off of the blackboard
   error_code_name_prefixes_ = node->get_parameter("error_code_name_prefixes").as_string_array();
 
@@ -254,13 +257,12 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   bt_->resetGrootMonitor();
 
   bool is_bt_id = false;
-  if ((file_or_id.length() < 4) ||
-    file_or_id.substr(file_or_id.length() - 4) != ".xml")
-  {
+  if (!file_or_id.ends_with(".xml")) {
     is_bt_id = true;
   }
 
   std::set<std::string> registered_ids;
+  std::vector<std::string> conflicting_files;
   std::string main_id;
   auto register_all_bt_files = [&](const std::string & skip_file = "") {
       for (const auto & directory : search_directories_) {
@@ -272,21 +274,29 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
             continue;
           }
 
-          auto id = bt_->extractBehaviorTreeID(entry.path().string());
-          if (id.empty()) {
+          auto tree_info = bt_->parseTreeInfo(entry.path().string());
+          if (tree_info.behavior_tree_ids.empty()) {
             RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)", entry.path().c_str());
             continue;
           }
-          if (registered_ids.count(id)) {
-            RCLCPP_WARN(
-              logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
-              entry.path().c_str(), id.c_str());
+          // Check for conflicts with all IDs in the file
+          bool conflict_found = false;
+          for (const auto & id : tree_info.behavior_tree_ids) {
+            if (registered_ids.count(id)) {
+              conflict_found = true;
+              break;
+            }
+          }
+          if (conflict_found) {
+            conflicting_files.push_back(entry.path().string());
             continue;
           }
 
           RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
           bt_->registerTreeFromFile(entry.path().string());
-          registered_ids.insert(id);
+          for (const auto & id : tree_info.behavior_tree_ids) {
+            registered_ids.insert(id);
+          }
         }
       }
     };
@@ -295,14 +305,20 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     if (!is_bt_id) {
       // file_or_id is a filename: register it first
       std::string main_file = file_or_id;
-      main_id = bt_->extractBehaviorTreeID(main_file);
-      if (main_id.empty()) {
+      auto tree_info = bt_->parseTreeInfo(main_file);
+      if (tree_info.main_id.empty()) {
         RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
+        setInternalError(
+          ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+          "Failed to extract ID from " + main_file);
         return false;
       }
+      main_id = tree_info.main_id;
       RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", main_file.c_str());
       bt_->registerTreeFromFile(main_file);
-      registered_ids.insert(main_id);
+      for (const auto & id : tree_info.behavior_tree_ids) {
+        registered_ids.insert(id);
+      }
 
       // When a filename is specified, it must be register first
       // and treat it as the "main" tree to execute.
@@ -317,6 +333,23 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       // file_or_id is an ID: register all files, skipping conflicts
       main_id = file_or_id;
       register_all_bt_files();
+    }
+
+    // Log all conflicting files once at the end
+    if (!conflicting_files.empty()) {
+      std::string files_list;
+      for (const auto & file : conflicting_files) {
+        if (!files_list.empty()) {
+          files_list += ", ";
+        }
+        files_list += file;
+      }
+      RCLCPP_WARN(
+        logger_,
+        "Skipping conflicting BT XML files, multiple files have the same ID. "
+        "Please set unique behavior tree IDs. This may affect loading of subtrees. "
+        "Files not loaded: %s",
+        files_list.c_str());
     }
   } catch (const std::exception & e) {
     setInternalError(
@@ -350,7 +383,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   }
 
   // Optional logging and monitoring
-  topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
+  topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_, log_idle_);
   current_bt_file_or_id_ = file_or_id;
 
   if (enable_groot_monitoring_) {
@@ -366,6 +399,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
 template<class ActionT, class NodeT>
 void BtActionServer<ActionT, NodeT>::executeCallback()
 {
+  muxer_preemption_requested_ = false;
+
   if (!on_goal_received_callback_(action_server_->get_current_goal())) {
     // Give server an opportunity to populate the result message
     // if the goal is not accepted
@@ -385,7 +420,7 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
         RCLCPP_DEBUG(logger_, "Action server is inactive. Canceling.");
         return true;
       }
-      return action_server_->is_cancel_requested();
+      return action_server_->is_cancel_requested() || muxer_preemption_requested_;
     };
 
   auto on_loop = [&]() {

@@ -22,6 +22,7 @@
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/a_star.hpp"
 
 using namespace nav2_smac_planner; // NOLINT
 
@@ -34,7 +35,25 @@ using CoordinateVector = GoalManagerHybrid::CoordinateVector;
 TEST(GoalManagerTest, test_goal_manager)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.1;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = 2.0;
+  info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
+  info.cost_penalty = 1.7;
+  info.retrospective_penalty = 0.1;
+  unsigned int size_theta = 72;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
 
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
   auto costmapA = new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
 
   // Create an island of lethal cost in the middle
@@ -53,16 +72,19 @@ TEST(GoalManagerTest, test_goal_manager)
   auto checker = std::make_unique<nav2_smac_planner::GridCollisionChecker>(
     costmap_ros, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
 
   GoalManagerHybrid goal_manager;
+  goal_manager.setContext(ctx);
   float tolerance = 20.0f;
   bool allow_unknow = false;
 
   EXPECT_TRUE(goal_manager.goalsIsEmpty());
 
   // Create two valid goals
-  NodePtr pose_a = new NodeHybrid(48);
-  NodePtr pose_b = new NodeHybrid(49);
+  NodePtr pose_a = new NodeHybrid(48, ctx);
+  NodePtr pose_b = new NodeHybrid(49, ctx);
   pose_a->setPose(NodeHybrid::Coordinates(0, 0, 0));
   pose_b->setPose(NodeHybrid::Coordinates(0, 0, 10));
 
@@ -94,7 +116,7 @@ TEST(GoalManagerTest, test_goal_manager)
   EXPECT_EQ(goal_manager.getGoalsCoordinates().size(), 0);
 
   // Add invalid goal
-  NodePtr pose_c = new NodeHybrid(50);
+  NodePtr pose_c = new NodeHybrid(50, ctx);
   pose_c->setPose(NodeHybrid::Coordinates(50, 50, 0));  // inside lethal zone
 
   goal_manager.addGoal(pose_c);
@@ -157,7 +179,7 @@ TEST(GoalManagerTest, test_goal_manager)
   unsigned int test_goal_size = 16;
 
   for (unsigned int i = 0; i < test_goal_size; ++i) {
-    NodePtr goal = new NodeHybrid(i);
+    NodePtr goal = new NodeHybrid(i, ctx);
     goal->setPose(NodeHybrid::Coordinates(i, i, 0));
     goal_manager.addGoal(goal);
   }
@@ -190,7 +212,6 @@ TEST(GoalManagerTest, test_goal_manager)
   );
 
   delete costmapA;
-  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 

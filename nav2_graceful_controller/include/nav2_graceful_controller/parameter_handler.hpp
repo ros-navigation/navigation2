@@ -43,6 +43,7 @@ struct Parameters
   double v_angular_max_initial;
   double v_angular_min_in_place;
   double slowdown_radius;
+  double deceleration_max;
   bool initial_rotation;
   double initial_rotation_tolerance;
   bool prefer_final_rotation;
@@ -50,6 +51,11 @@ struct Parameters
   bool allow_backward;
   double in_place_collision_resolution;
   bool use_collision_detection;
+  double footprint_scaling_linear_vel;
+  double footprint_scaling_factor;
+  double footprint_scaling_step;
+  int obstacle_cost_margin;
+  double final_rotation_search_step;
 };
 
 /**

@@ -28,6 +28,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::Wait
+ *
+ * Usage in XML:
+ * @code
+ * <CancelWait server_name="Wait" server_timeout="10"/>
+ * @endcode
  */
 class WaitCancel : public BtCancelActionNode<nav2_msgs::action::Wait>
 {

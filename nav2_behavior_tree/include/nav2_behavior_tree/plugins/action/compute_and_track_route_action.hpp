@@ -27,6 +27,13 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::ComputeAndTrackRoute
+ *
+ * Usage in XML:
+ * @code
+ * <ComputeAndTrackRoute start="{start}" goal="{goal}" use_poses="{true}" use_start="{true}"
+ *                       server_name="ComputeAndTrackRoute" server_timeout="10"
+ *                       error_code_id="{compute_route_error_code}" error_msg="{compute_route_error_msg}"/>
+ * @endcode
  */
 class ComputeAndTrackRouteAction : public BtActionNode<nav2_msgs::action::ComputeAndTrackRoute>
 {

@@ -60,13 +60,28 @@ SimpleGoalChecker::SimpleGoalChecker()
 {
 }
 
+SimpleGoalChecker::~SimpleGoalChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 void SimpleGoalChecker::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>/*costmap_ros*/)
 {
   plugin_name_ = plugin_name;
-  auto node = parent.lock();
+  node_ = parent;
+  auto node = node_.lock();
+  logger_ = node->get_logger();
 
   xy_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".xy_goal_tolerance", 0.25);
   yaw_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".yaw_goal_tolerance", 0.25);
@@ -79,8 +94,14 @@ void SimpleGoalChecker::initialize(
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&SimpleGoalChecker::dynamicParametersCallback, this, _1));
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &SimpleGoalChecker::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &SimpleGoalChecker::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 }
 
 void SimpleGoalChecker::reset()
@@ -90,26 +111,13 @@ void SimpleGoalChecker::reset()
 
 bool SimpleGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-  const geometry_msgs::msg::Twist &, const nav_msgs::msg::Path & transformed_global_plan)
+  const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & transformed_global_plan)
 {
-  // If the local plan length is longer than the tolerance, we skip the check
-  if (nav2_util::geometry_utils::calculate_path_length(transformed_global_plan) >
-    path_length_tolerance_)
-  {
+  if (!isGoalXYReached(query_pose, goal_pose, velocity, transformed_global_plan)) {
     return false;
   }
-  if (check_xy_) {
-    double dx = query_pose.position.x - goal_pose.position.x,
-      dy = query_pose.position.y - goal_pose.position.y;
-    if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
-      return false;
-    }
-    // We are within the window
-    // If we are stateful, change the state.
-    if (stateful_) {
-      check_xy_ = false;
-    }
-  }
+
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
 
   double query_yaw = tf2::getYaw(query_pose.orientation);
   double goal_yaw = tf2::getYaw(goal_pose.orientation);
@@ -129,10 +137,39 @@ bool SimpleGoalChecker::isGoalReached(
   }
 }
 
+bool SimpleGoalChecker::isGoalXYReached(
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist &, const nav_msgs::msg::Path & transformed_global_plan)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  // If the local plan length is longer than the tolerance, we skip the check
+  if (nav2_util::geometry_utils::calculate_path_length(transformed_global_plan) >
+    path_length_tolerance_)
+  {
+    return false;
+  }
+  if (check_xy_) {
+    double dx = query_pose.position.x - goal_pose.position.x,
+      dy = query_pose.position.y - goal_pose.position.y;
+    if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
+      return false;
+    }
+    // We are within the window
+    // If we are stateful, change the state.
+    if (stateful_) {
+      check_xy_ = false;
+    }
+  }
+
+  return true;
+}
+
 bool SimpleGoalChecker::getTolerances(
   geometry_msgs::msg::Pose & pose_tolerance,
-  geometry_msgs::msg::Twist & vel_tolerance)
+  geometry_msgs::msg::Twist & vel_tolerance,
+  double & path_length_tolerance)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   double invalid_field = std::numeric_limits<double>::lowest();
 
   pose_tolerance.position.x = xy_goal_tolerance_;
@@ -149,14 +186,43 @@ bool SimpleGoalChecker::getTolerances(
   vel_tolerance.angular.y = invalid_field;
   vel_tolerance.angular.z = invalid_field;
 
+  path_length_tolerance = path_length_tolerance_;
+
   return true;
 }
 
 rcl_interfaces::msg::SetParametersResult
-SimpleGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+SimpleGoalChecker::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  for (auto & parameter : parameters) {
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+SimpleGoalChecker::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  rcl_interfaces::msg::SetParametersResult result;
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {
@@ -179,8 +245,6 @@ SimpleGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       }
     }
   }
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_controller

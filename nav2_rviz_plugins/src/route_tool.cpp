@@ -65,14 +65,18 @@ void RouteTool::onInitialize(void)
 
 void RouteTool::on_load_button_clicked(void)
 {
-  graph_to_id_map_.clear();
-  edge_to_node_map_.clear();
-  graph_to_incoming_edges_map_.clear();
-  graph_.clear();
   QString filename = QFileDialog::getOpenFileName(
     this,
     tr("Open Address Book"), "",
     tr("Address Book (*.geojson);;All Files (*)"));
+  if (filename.isEmpty()) {
+    RCLCPP_INFO(node_->get_logger(), "Load operation cancelled by user");
+    return;
+  }
+  graph_to_id_map_.clear();
+  edge_to_node_map_.clear();
+  graph_to_incoming_edges_map_.clear();
+  graph_.clear();
   graph_loader_->loadGraphFromFile(graph_, graph_to_id_map_, filename.toStdString());
   unsigned int max_node_id = 0;
   for (const auto & node : graph_) {

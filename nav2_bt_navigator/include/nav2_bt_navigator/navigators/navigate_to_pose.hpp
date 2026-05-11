@@ -111,7 +111,7 @@ protected:
    */
   void goalCompleted(
     typename ActionT::Result::SharedPtr result,
-    const nav2_behavior_tree::BtStatus final_bt_status) override;
+    nav2_behavior_tree::BtStatus & final_bt_status) override;
 
   /**
    * @brief Goal pose initialization on the blackboard

@@ -21,9 +21,11 @@ namespace nav2_graceful_controller
 {
 
 SmoothControlLaw::SmoothControlLaw(
-  double k_phi, double k_delta, double beta, double lambda, double slowdown_radius,
+  double k_phi, double k_delta, double beta, double lambda,
+  double slowdown_radius, double deceleration_max,
   double v_linear_min, double v_linear_max, double v_angular_max)
-: k_phi_(k_phi), k_delta_(k_delta), beta_(beta), lambda_(lambda), slowdown_radius_(slowdown_radius),
+: k_phi_(k_phi), k_delta_(k_delta), beta_(beta), lambda_(lambda),
+  slowdown_radius_(slowdown_radius), deceleration_max_(deceleration_max),
   v_linear_min_(v_linear_min), v_linear_max_(v_linear_max), v_angular_max_(v_angular_max)
 {
 }
@@ -40,6 +42,11 @@ void SmoothControlLaw::setCurvatureConstants(
 void SmoothControlLaw::setSlowdownRadius(double slowdown_radius)
 {
   slowdown_radius_ = slowdown_radius;
+}
+
+void SmoothControlLaw::setMaxDeceleration(double deceleration_max)
+{
+  deceleration_max_ = deceleration_max;
 }
 
 void SmoothControlLaw::setSpeedLimit(
@@ -67,6 +74,9 @@ geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
 
   // Slowdown when the robot is near the target to remove singularity
   v = std::min(v_linear_max_ * (ego_coords.r / slowdown_radius_), v);
+
+  // Constraint robot velocity within deceleration limits
+  v = std::min(sqrt(2 * ego_coords.r * deceleration_max_), v);
 
   // Set some small v_min when far away from origin to promote faster
   // turning motion when the curvature is very high

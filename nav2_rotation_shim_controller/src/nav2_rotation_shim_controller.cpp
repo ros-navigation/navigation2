@@ -43,8 +43,6 @@ void RotationShimController::configure(
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  position_goal_checker_ = std::make_unique<nav2_controller::PositionGoalChecker>();
-  position_goal_checker_->initialize(parent, plugin_name_ + ".position_checker", costmap_ros);
   plugin_name_ = name;
   node_ = parent;
   auto node = parent.lock();
@@ -90,7 +88,6 @@ void RotationShimController::activate()
   primary_controller_->activate();
   in_rotation_ = false;
   last_angular_vel_ = std::numeric_limits<double>::max();
-  position_goal_checker_->reset();
   param_handler_->activate();
 }
 
@@ -116,7 +113,6 @@ void RotationShimController::cleanup()
 
   primary_controller_->cleanup();
   primary_controller_.reset();
-  position_goal_checker_.reset();
 }
 
 geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands(
@@ -134,13 +130,8 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
     std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
 
     try {
-      geometry_msgs::msg::Pose pose_tolerance;
-      geometry_msgs::msg::Twist vel_tolerance;
-      goal_checker->getTolerances(pose_tolerance, vel_tolerance);
-      position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
-
-      if (position_goal_checker_->isGoalReached(pose.pose, global_goal.pose, velocity,
-          transformed_global_plan))
+      if (goal_checker->isGoalXYReached(pose.pose, global_goal.pose, velocity,
+        transformed_global_plan))
       {
         double pose_yaw = tf2::getYaw(pose.pose.orientation);
         double goal_yaw = tf2::getYaw(global_goal.pose.orientation);
@@ -253,7 +244,9 @@ geometry_msgs::msg::Pose
 RotationShimController::transformPoseToBaseFrame(const geometry_msgs::msg::PoseStamped & pt)
 {
   geometry_msgs::msg::PoseStamped pt_base;
-  if (!nav2_util::transformPoseInTargetFrame(pt, pt_base, *tf_, costmap_ros_->getBaseFrameID())) {
+  if (!nav2_util::transformPoseInTargetFrame(pt, pt_base, *tf_, costmap_ros_->getBaseFrameID(),
+      costmap_ros_->getTransformTolerance()))
+  {
     throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
   }
   return pt_base.pose;
@@ -345,7 +338,6 @@ bool RotationShimController::isGoalChanged(const geometry_msgs::msg::PoseStamped
 void RotationShimController::newPathReceived(const nav_msgs::msg::Path & raw_global_path)
 {
   primary_controller_->newPathReceived(raw_global_path);
-  position_goal_checker_->reset();
 }
 
 void RotationShimController::setSpeedLimit(const double & speed_limit, const bool & percentage)
@@ -357,7 +349,6 @@ void RotationShimController::reset()
 {
   last_angular_vel_ = std::numeric_limits<double>::max();
   primary_controller_->reset();
-  position_goal_checker_->reset();
 }
 
 }  // namespace nav2_rotation_shim_controller

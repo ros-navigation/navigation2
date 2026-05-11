@@ -19,6 +19,7 @@
 #include "pluginlib/class_list_macros.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -46,24 +47,18 @@ void InputAtWaypoint::initialize(
     throw std::runtime_error{"Failed to lock node in input at waypoint plugin!"};
   }
 
+  node_ = parent;
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
   double timeout;
   std::string input_topic;
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name + ".timeout",
-    rclcpp::ParameterValue(10.0));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name + ".enabled",
-    rclcpp::ParameterValue(true));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name + ".input_topic",
-    rclcpp::ParameterValue("input_at_waypoint/input"));
-  timeout = node->get_parameter(plugin_name + ".timeout").as_double();
-  node->get_parameter(plugin_name + ".enabled", is_enabled_);
-  node->get_parameter(plugin_name + ".input_topic", input_topic);
-
+  is_enabled_ = node->declare_or_get_parameter(
+    plugin_name + ".enabled", true);
+  input_topic = node->declare_or_get_parameter(
+    plugin_name + ".input_topic", std::string("input_at_waypoint/input"));
+  timeout = node->declare_or_get_parameter(
+    plugin_name + ".timeout", 10.0);
   timeout_ = rclcpp::Duration(timeout, 0.0);
 
   RCLCPP_INFO(
@@ -88,8 +83,14 @@ bool InputAtWaypoint::processAtWaypoint(
 
   input_received_ = false;
 
+  auto node = node_.lock();
+  if (!node) {
+    RCLCPP_ERROR(logger_, "Failed to lock node in input at waypoint plugin.");
+    return false;
+  }
+
   rclcpp::Time start = clock_->now();
-  rclcpp::Rate r(50);
+  nav2::Rate r(node, 50);
   bool input_received = false;
   while (clock_->now() - start < timeout_) {
     {

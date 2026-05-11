@@ -9,7 +9,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>nav2_common</depend>
+  <build_depend>nav2_common</build_depend>
 
   <depend>backward_ros</depend>
   <depend>bond</depend>
@@ -26,7 +26,6 @@
   <depend>std_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
-  <depend>tf2_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>pluginlib</depend>
   <depend>ament_index_cpp</depend>

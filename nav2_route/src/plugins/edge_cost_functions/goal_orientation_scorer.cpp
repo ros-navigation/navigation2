@@ -30,20 +30,12 @@ void GoalOrientationScorer::configure(
   name_ = name;
   logger_ = node->get_logger();
 
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI / 2.0));
-
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".orientation_weight", rclcpp::ParameterValue(1.0));
-
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".use_orientation_threshold", rclcpp::ParameterValue(false));
-
-  orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();
-  orientation_weight_ =
-    static_cast<float>(node->get_parameter(getName() + ".orientation_weight").as_double());
-  use_orientation_threshold_ =
-    node->get_parameter(getName() + ".use_orientation_threshold").as_bool();
+  orientation_tolerance_ = node->declare_or_get_parameter(
+    getName() + ".orientation_tolerance", M_PI / 2.0);
+  orientation_weight_ = static_cast<float>(
+    node->declare_or_get_parameter(getName() + ".orientation_weight", 1.0));
+  use_orientation_threshold_ = node->declare_or_get_parameter(
+    getName() + ".use_orientation_threshold", false);
 }
 
 bool GoalOrientationScorer::score(

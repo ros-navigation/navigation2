@@ -72,18 +72,11 @@ public:
     access_ = new mutex_t();
 
     info_server_ = std::make_shared<InfoServerWrapper>();
-    try {
-      info_server_->set_parameter(rclcpp::Parameter("filter_info_topic", FILTER_INFO_TOPIC));
-      info_server_->set_parameter(rclcpp::Parameter("type", TYPE));
-      info_server_->set_parameter(rclcpp::Parameter("mask_topic", MASK_TOPIC));
-      info_server_->set_parameter(rclcpp::Parameter("base", BASE));
-      info_server_->set_parameter(rclcpp::Parameter("multiplier", MULTIPLIER));
-    } catch (rclcpp::exceptions::ParameterNotDeclaredException & ex) {
-      RCLCPP_ERROR(
-        info_server_->get_logger(),
-        "Error while setting parameters for CostmapFilterInfoServer: %s", ex.what());
-      throw;
-    }
+    info_server_->declare_parameter("filter_info_topic", FILTER_INFO_TOPIC);
+    info_server_->declare_parameter("type", TYPE);
+    info_server_->declare_parameter("mask_topic", MASK_TOPIC);
+    info_server_->declare_parameter("base", BASE);
+    info_server_->declare_parameter("multiplier", MULTIPLIER);
 
     info_server_->start();
 
