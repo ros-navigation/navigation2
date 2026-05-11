@@ -213,22 +213,6 @@ BoundedTrackingErrorLayer::updateCosts(
     std::lock_guard<std::mutex> data_lock(data_mutex_);
     path_ptr = last_path_ptr_;
     path_index = current_path_index_.load();
-
-    if (path_ptr && !path_ptr->poses.empty()) {
-      const auto age = (clock_->now() - rclcpp::Time(path_ptr->header.stamp)).seconds();
-      if (age > 10.0) {
-        RCLCPP_WARN_THROTTLE(
-          logger_, *clock_, 5000,
-          "Path is %.2f seconds old, clearing corridor state — waiting for new plan", age);
-        last_path_ptr_.reset();
-        current_path_index_.store(0);
-        prev_fill_min_i_ = -1;
-        prev_fill_min_j_ = -1;
-        prev_fill_max_i_ = -1;
-        prev_fill_max_j_ = -1;
-        return;
-      }
-    }
   }
 
   if (!path_ptr || path_ptr->poses.empty()) {
@@ -282,36 +266,30 @@ BoundedTrackingErrorLayer::updateCosts(
   getPathSegment(*full_transformed_ptr, search_result.closest_segment_index, segment_buffer_);
 
   const size_t min_poses = (step_size_ * 2) + 1;
-  const bool segment_too_small = segment_buffer_.poses.size() < min_poses;
+    const bool segment_too_small = segment_buffer_.poses.size() < min_poses;
 
-  if (cost_write_mode_ >= 1) {
-    if (corridor_interior_mask_.size() !=
-      master_grid.getSizeInCellsX() * master_grid.getSizeInCellsY())
-    {
-      RCLCPP_WARN_THROTTLE(
-        logger_, *clock_, 5000,
-        "Corridor interior mask size mismatch, skipping fill update — call matchSize()");
-      return;
-    }
     if (segment_too_small) {
       RCLCPP_INFO_THROTTLE(
         logger_, *clock_, 2000,
-        "Segment too small (%zu poses), need at least %zu — near end of path, applying end-cap",
-        segment_buffer_.poses.size(), min_poses);
-    }
-    applyFillOutsideCorridor(master_grid, robot_pose, *full_transformed_ptr);
-  } else {
-    if (segment_too_small) {
-      RCLCPP_DEBUG_THROTTLE(
-        logger_, *clock_, 2000,
-        "Segment too small (%zu poses), need at least %zu — expected near end of path",
-        segment_buffer_.poses.size(), min_poses);
+        "Close to end, closing BoundedTrackingError layer");
       return;
     }
-    getWallPolygons(segment_buffer_, walls_buffer_);
-    drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
-    drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
-  }
+
+    if (cost_write_mode_ >= 1) {
+      if (corridor_interior_mask_.size() !=
+        master_grid.getSizeInCellsX() * master_grid.getSizeInCellsY())
+      {
+        RCLCPP_WARN_THROTTLE(
+          logger_, *clock_, 5000,
+          "Corridor interior mask size mismatch, skipping fill update — call matchSize()");
+        return;
+      }
+      applyFillOutsideCorridor(master_grid, robot_pose, *full_transformed_ptr);
+    } else {
+      getWallPolygons(segment_buffer_, walls_buffer_);
+      drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
+      drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
+    }
 }
 
 void
@@ -357,6 +335,10 @@ BoundedTrackingErrorLayer::getPathSegment(
     if (dist_traversed >= look_ahead_) {
       break;
     }
+  }
+
+  if (dist_traversed < look_ahead_) {
+    return;
   }
 
   if (path_index < end_index && end_index < path.poses.size()) {
