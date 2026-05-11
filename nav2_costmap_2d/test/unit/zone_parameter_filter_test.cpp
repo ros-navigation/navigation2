@@ -163,8 +163,8 @@ protected:
   }
 
   // Builds a ZPF host node + filter + info/mask publishers. Spins until
-  // the filter becomes active or 2s pass. Optional info_type lets the
-  // wrong-type test inject a non-ZPF info publisher.
+  // the filter becomes active or 2s pass. Optional info_type allows the
+  // wrong-type test to inject a non-ZPF info publisher.
   bool createFilter(
     const std::vector<int64_t> & state_ids,
     const std::vector<rclcpp::Parameter> & state_overrides,
