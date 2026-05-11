@@ -81,6 +81,39 @@ struct Parameters
   // Type-II perpendicularity tolerance.
   double perp_cos_tol{0.20};
 
+  // ---------- D_L/D_R LiDAR-based lateral centering ----------
+  // Master switch. When true, vy_nom is overridden by the centering
+  // law whenever at least one flanking wall is detected. Path-derived
+  // vy is used as fallback (no flanking walls visible).
+  bool   enable_lateral_centering{true};
+  // Proportional gain on lateral error. vy = k_lat * (D_L - D_R).
+  double k_lat{1.0};
+  // A wall is "flanking" iff |t.x| >= flanking_cos_tol (its tangent is
+  // roughly parallel to the robot's forward axis) AND its segment
+  // x-range overlaps the robot body. cos(20°) = 0.94.
+  double flanking_cos_tol{0.94};
+  // Target half-width used by the single-wall (door-zone) regime.
+  // vy = k_lat * (D_visible - target_half_width) when only one side
+  // is observable. Defaults to mid of the alley_width band / 2.
+  double target_half_width{0.5125};
+  // Hard distance gate. A flanking wall farther than this (perpendicular
+  // distance from robot origin to the wall LINE) is ignored — it cannot
+  // be an alley wall. Without this, a stray distant wall in free space
+  // can hijack the centering law and saturate vy. Default = 1.1 m
+  // (wider than the worst-case 1.10 m alley).
+  double max_centering_range{1.1};
+  // If true, centering only fires when BOTH flanking walls are visible
+  // and within max_centering_range. Single-side regimes are disabled.
+  // Recommended: keep true. Single-side mode is dangerous in free
+  // space where only one stray wall is visible.
+  bool   require_both_walls{true};
+  // Hysteresis: require this many consecutive ticks in the new regime
+  // before switching from the previous one. Kills jitter at handoff.
+  int    regime_switch_hyst_ticks{3};
+  // Exponential low-pass on the centering vy command across ticks.
+  // alpha = weight on the new sample (in [0,1]). 1 = no smoothing.
+  double vy_centering_lpf_alpha{0.4};
+
   // ---------- logging ----------
   std::string log_dir{"/root/navigation_log"};
   bool   log_enabled{true};

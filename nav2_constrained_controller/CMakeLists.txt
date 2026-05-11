@@ -52,6 +52,7 @@ add_library(${library_name} SHARED
   src/path_handler.cpp
   src/nominal_controller.cpp
   src/scene_parser.cpp
+  src/lateral_centering.cpp
   src/cbf_safety_filter.cpp
   src/qp_solver.cpp
   src/parameter_handler.cpp

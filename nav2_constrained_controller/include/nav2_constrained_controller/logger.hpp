@@ -106,6 +106,22 @@ public:
     uint64_t tick, double stamp,
     const sensor_msgs::msg::LaserScan & scan);
 
+  // D_L/D_R lateral-centering snapshot. regime: 0=NONE,1=BOTH,
+  // 2=LEFT_ONLY, 3=RIGHT_ONLY. D_L/D_R are body-aware (min over body
+  // corners of segment-distance). yaw_misalign is the angle between
+  // the alley axis (avg flanking-wall tangent, +x-folded) and robot's
+  // +x, in radians.
+  void logCentering(
+    uint64_t tick, double stamp,
+    int regime,
+    double D_L, double D_R,
+    bool has_L, bool has_R,
+    int n_flanking,
+    double yaw_misalign,
+    double vy_raw, double vy_smoothed,
+    double vy_path, double vy_used,
+    bool override_active);
+
 private:
   bool enabled_{false};
   uint64_t tick_{0};
@@ -121,6 +137,7 @@ private:
   std::ofstream f_qp_;
   std::ofstream f_lidar_;
   std::ofstream f_events_;
+  std::ofstream f_centering_;
 
   void writeHeaders();
   static std::string nowSuffix();

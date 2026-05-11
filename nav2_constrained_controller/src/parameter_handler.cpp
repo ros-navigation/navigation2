@@ -73,6 +73,15 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(parallel_cos_tol, 0.95);
   DECL_DOUBLE(perp_cos_tol, 0.20);
 
+  DECL_BOOL(enable_lateral_centering, true);
+  DECL_DOUBLE(k_lat, 1.0);
+  DECL_DOUBLE(flanking_cos_tol, 0.94);
+  DECL_DOUBLE(target_half_width, 0.5125);
+  DECL_DOUBLE(max_centering_range, 1.1);
+  DECL_BOOL(require_both_walls, true);
+  DECL_INT(regime_switch_hyst_ticks, 3);
+  DECL_DOUBLE(vy_centering_lpf_alpha, 0.4);
+
   DECL_STRING(log_dir, "/root/navigation_log");
   DECL_BOOL(log_enabled, true);
   DECL_INT(log_lidar_every_n_ticks, 10);
@@ -122,6 +131,16 @@ ParameterHandler::dynamicParametersCallback(
         params_.footprint_dl = v;
       } else if (name == plugin_name_ + ".footprint_db") {
         params_.footprint_db = v;
+      } else if (name == plugin_name_ + ".k_lat") {
+        params_.k_lat = v;
+      } else if (name == plugin_name_ + ".flanking_cos_tol") {
+        params_.flanking_cos_tol = v;
+      } else if (name == plugin_name_ + ".target_half_width") {
+        params_.target_half_width = v;
+      } else if (name == plugin_name_ + ".vy_centering_lpf_alpha") {
+        params_.vy_centering_lpf_alpha = v;
+      } else if (name == plugin_name_ + ".max_centering_range") {
+        params_.max_centering_range = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_BOOL) {
       const bool v = p.as_bool();
@@ -129,6 +148,10 @@ ParameterHandler::dynamicParametersCallback(
         params_.yaw_correction_ramp = v;
       } else if (name == plugin_name_ + ".log_enabled") {
         params_.log_enabled = v;
+      } else if (name == plugin_name_ + ".enable_lateral_centering") {
+        params_.enable_lateral_centering = v;
+      } else if (name == plugin_name_ + ".require_both_walls") {
+        params_.require_both_walls = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_INTEGER) {
       const int v = static_cast<int>(p.as_int());
@@ -136,6 +159,8 @@ ParameterHandler::dynamicParametersCallback(
         params_.line_min_points = v;
       } else if (name == plugin_name_ + ".log_lidar_every_n_ticks") {
         params_.log_lidar_every_n_ticks = v;
+      } else if (name == plugin_name_ + ".regime_switch_hyst_ticks") {
+        params_.regime_switch_hyst_ticks = v;
       }
     }
   }

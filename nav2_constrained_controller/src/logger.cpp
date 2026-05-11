@@ -53,6 +53,7 @@ void Logger::open(const std::string & log_dir, bool enabled)
   f_cbf_.open(path("ctrl_cbf"), std::ios::trunc);
   f_qp_.open(path("ctrl_qp"), std::ios::trunc);
   f_lidar_.open(path("ctrl_lidar"), std::ios::trunc);
+  f_centering_.open(path("ctrl_centering"), std::ios::trunc);
   f_events_.open(
     log_dir_ + "/ctrl_events_" + ts_suffix_ + ".txt", std::ios::trunc);
 
@@ -70,6 +71,7 @@ void Logger::close()
   if (f_cbf_.is_open()) {f_cbf_.close();}
   if (f_qp_.is_open()) {f_qp_.close();}
   if (f_lidar_.is_open()) {f_lidar_.close();}
+  if (f_centering_.is_open()) {f_centering_.close();}
   if (f_events_.is_open()) {f_events_.close();}
 }
 
@@ -94,9 +96,12 @@ void Logger::writeHeaders()
     "deviation,iterations\n";
   f_lidar_ <<
     "tick,stamp_sec,idx,angle,range\n";
+  f_centering_ <<
+    "tick,stamp_sec,regime,D_L,D_R,has_L,has_R,n_flanking,"
+    "yaw_misalign,vy_raw,vy_smoothed,vy_path,vy_used,override_active\n";
   for (auto * f : {
       &f_main_, &f_path_, &f_walls_, &f_corners_, &f_passage_,
-      &f_cbf_, &f_qp_, &f_lidar_})
+      &f_cbf_, &f_qp_, &f_lidar_, &f_centering_})
   {
     f->flush();
   }
@@ -233,6 +238,30 @@ void Logger::logQp(
         << n_constraints << "," << n_active << ","
         << solve_time_us << "," << deviation << "," << iterations << "\n";
   f_qp_.flush();
+}
+
+void Logger::logCentering(
+  uint64_t tick, double stamp,
+  int regime,
+  double D_L, double D_R,
+  bool has_L, bool has_R,
+  int n_flanking,
+  double yaw_misalign,
+  double vy_raw, double vy_smoothed,
+  double vy_path, double vy_used,
+  bool override_active)
+{
+  if (!enabled_ || !f_centering_.is_open()) {return;}
+  f_centering_ << std::fixed << std::setprecision(6)
+               << tick << "," << stamp << "," << regime << ","
+               << D_L << "," << D_R << ","
+               << (has_L ? 1 : 0) << "," << (has_R ? 1 : 0) << ","
+               << n_flanking << ","
+               << yaw_misalign << ","
+               << vy_raw << "," << vy_smoothed << ","
+               << vy_path << "," << vy_used << ","
+               << (override_active ? 1 : 0) << "\n";
+  f_centering_.flush();
 }
 
 void Logger::logLidar(

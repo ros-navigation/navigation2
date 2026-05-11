@@ -51,11 +51,17 @@ geometry_msgs::msg::Twist NominalController::compute(
   const double yaw_t = tf2::getYaw(target.orientation);
   const double yaw_err = angles::shortest_angular_distance(0.0, yaw_t);
 
-  // ramp = small near goal so we don't fight a far-end yaw the
-  // lookahead picker can't actually steer toward yet.
-  const double ramp = params_->yaw_correction_ramp
-    ? std::clamp((slowdown - r) / std::max(slowdown, 1e-6), 0.0, 1.0)
-    : 1.0;
+  // Yaw correction is full during traversal and tapers near the goal.
+  // We reuse `s = min(1, r/slowdown_radius)` (the linear-speed taper)
+  // so the lateral-speed and yaw-correction envelopes share one
+  // monotone shape: at goal both are 0, far from goal both are 1.
+  //
+  // Previous code used `(slowdown - r)/slowdown` — the inverse shape.
+  // It killed yaw correction *far* from goal, exactly when we need
+  // it most for long-corridor tracking. With slowdown_radius < r,
+  // ramp went to 0 and wz_nom = 0 throughout alley traversal, letting
+  // un-corrected yaw drift translate into wall clips.
+  const double ramp = params_->yaw_correction_ramp ? s : 1.0;
   const double wz_unclamp = params_->k_yaw * ramp * yaw_err;
 
   // Clamp to actuation envelope. vx is signed: clamp symmetrically.

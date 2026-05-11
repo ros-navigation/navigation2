@@ -38,6 +38,7 @@
 #include "nav2_constrained_controller/path_handler.hpp"
 #include "nav2_constrained_controller/nominal_controller.hpp"
 #include "nav2_constrained_controller/scene_parser.hpp"
+#include "nav2_constrained_controller/lateral_centering.hpp"
 #include "nav2_constrained_controller/cbf_safety_filter.hpp"
 #include "nav2_constrained_controller/logger.hpp"
 
@@ -105,6 +106,7 @@ protected:
   std::unique_ptr<PathHandler> path_handler_;
   std::unique_ptr<NominalController> nominal_;
   std::unique_ptr<SceneParser> scene_parser_;
+  std::unique_ptr<LateralCentering> lateral_centering_;
   std::unique_ptr<CBFSafetyFilter> cbf_filter_;
   std::unique_ptr<Logger> log_;
 
