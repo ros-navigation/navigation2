@@ -167,27 +167,6 @@ TEST(ZoneParameterFilterScaffold, DefaultConstructedIsInactive)
   EXPECT_FALSE(filter.isActive());
 }
 
-// =========================================================================
-// Tests 3-5 — full lifecycle integration cases. These exercise the live
-// filter against in-process publishers; gtest discovers via rclcpp::init.
-// Each test mirrors binary_filter_test.cpp's setup discipline.
-//
-// TODO(zone-pf-1): expand to the full 11-case matrix from the §5 plan
-// once binary_filter_test.cpp's helper harness is factored out for reuse.
-// Listed for the next slice (95% target):
-//   - state_transitions_apply_correct_parameters
-//   - state_zero_resets_to_nominal_defaults
-//   - unknown_state_throws (now Test 8 — always throws per Steve review C.2.a)
-//   - state_event_published_on_transition
-//   - state_event_not_published_when_topic_unset
-//   - filter_disabled_when_inactive
-//   - reset_clears_subscriptions_keeps_param_clients
-//   - param_set_failure_logged_does_not_crash
-//   - service_not_ready_in_hot_path_does_not_block
-//   - relative_namespace_param_resolves_against_costmap_node
-//   - pending_futures_drained_in_subsequent_process_call
-// =========================================================================
-
 TEST(ZoneParameterFilterScaffold, FilterInfoTypeCheckRejectsWrongType)
 {
   // When filterInfoCallback receives a CostmapFilterInfo with type !=
