@@ -260,7 +260,7 @@ protected:
   }
 
   template<typename Pred>
-  bool waitFor(Pred pred, std::chrono::milliseconds timeout = 1500ms)
+  bool waitForCond(Pred pred, std::chrono::milliseconds timeout = 1500ms)
   {
     auto start = node_->now();
     while (!pred()) {
@@ -345,7 +345,7 @@ TEST_F(TestZpf, State1AppliesParameterAndResetFilterDeactivates)
   EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0);
 
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.5;}))
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.5;}))
     << "Target node 'speed' did not become 0.5 within 1.5s";
 
   EXPECT_DOUBLE_EQ(target_node_->getInflation(), 0.5);
@@ -368,11 +368,11 @@ TEST_F(TestZpf, State0ResetsToNominalDefaults)
       1)) << "Filter did not become active";
 
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.3;}));
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.3;}));
 
   rePublishMask(0);
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 1.0;}))
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 1.0;}))
     << "speed never restored to nominal default 1.0 after state 0";
 }
 
@@ -405,7 +405,7 @@ TEST_F(TestZpf, StateEventPublishedOnTransition)
   ASSERT_FALSE(state_event_sub_->received());
 
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return state_event_sub_->received();}));
+  ASSERT_TRUE(waitForCond([this]() {return state_event_sub_->received();}));
   EXPECT_EQ(state_event_sub_->lastState(), 1u);
 }
 
@@ -459,10 +459,10 @@ TEST_F(TestZpf, RobotOutsideMaskResetsToState0)
       1)) << "Filter did not become active";
 
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.4;}));
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.4;}));
 
   runProcess(100.0, 100.0);
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 1.0;}))
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 1.0;}))
     << "speed never restored to nominal after out-of-mask pose";
 }
 
@@ -481,7 +481,7 @@ TEST_F(TestZpf, LongestPrefixMatchForOverlappingTargetNodes)
       {"zpf", "zpf_target_node"})) << "Filter did not become active";
 
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.7;}))
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.7;}))
     << "speed never became 0.7 — longest-prefix-match likely broken";
 }
 
@@ -498,7 +498,7 @@ TEST_F(TestZpf, InfoAndMaskRePublishUpdateSubscriptions)
       1)) << "Filter did not become active";
 
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.5;}));
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.5;}));
 
   // Re-publish info; filter must remain active and rebuild mask sub.
   pub_executor_.remove_node(info_pub_);
@@ -512,7 +512,7 @@ TEST_F(TestZpf, InfoAndMaskRePublishUpdateSubscriptions)
   ASSERT_TRUE(filter_->isActive()) << "filter must remain active after info re-publish";
 
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.2;}))
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.2;}))
     << "state-2 speed never landed after mask re-publish";
 }
 
@@ -533,7 +533,7 @@ TEST_F(TestZpf, EmptyAndInvalidConfigEdgesDoNotCrash)
       1)) << "Filter did not become active";
 
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.5;}))
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.5;}))
     << "valid override did not apply alongside invalid state_ids + unmatched node";
 }
 
@@ -544,18 +544,18 @@ TEST_F(TestZpf, OnParamSetFailurePolicyParsing)
   for (const auto & policy : std::vector<std::string>{"warn", "bogus"}) {
     rclcpp::NodeOptions opts;
     opts.parameter_overrides({
-        rclcpp::Parameter(std::string(kFilterName) + ".state_ids", std::vector<int64_t>{1}),
-        rclcpp::Parameter(
-          std::string(kFilterName) + ".target_nodes",
-          std::vector<std::string>{"zpf_target_node"}),
-        rclcpp::Parameter(
-          std::string(kFilterName) + ".filter_info_topic", std::string(kInfoTopic)),
-        rclcpp::Parameter(std::string(kFilterName) + ".transform_tolerance", 0.5),
-        rclcpp::Parameter(
-          std::string(kFilterName) + ".on_param_set_failure", policy),
-        rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
-      });
+      rclcpp::Parameter(std::string(kFilterName) + ".state_ids", std::vector<int64_t>{1}),
+      rclcpp::Parameter(
+        std::string(kFilterName) + ".target_nodes",
+        std::vector<std::string>{"zpf_target_node"}),
+      rclcpp::Parameter(
+        std::string(kFilterName) + ".filter_info_topic", std::string(kInfoTopic)),
+      rclcpp::Parameter(std::string(kFilterName) + ".transform_tolerance", 0.5),
+      rclcpp::Parameter(
+        std::string(kFilterName) + ".on_param_set_failure", policy),
+      rclcpp::Parameter(
+        std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
+    });
     auto node = std::make_shared<nav2::LifecycleNode>("zpf_policy_test_host", opts);
     auto layers = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, false);
     auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
@@ -579,13 +579,12 @@ TEST_F(TestZpf, OnParamSetFailureThrowsByDefaultAndWarnSwallows)
       },
       1)) << "Filter did not become active under default policy";
 
-  EXPECT_THROW(
-  {
-    runProcess();
-    spinFor(300ms);  // drain pending futures; failure surfaces here under kThrow
-    runProcess();
-  },
-    std::runtime_error);
+  auto drive_and_drain = [this]() {
+      runProcess();
+      spinFor(300ms);  // drain pending futures; failure surfaces here under kThrow
+      runProcess();
+    };
+  EXPECT_THROW(drive_and_drain(), std::runtime_error);
 
   // Tear down and rebuild with "warn" policy.
   filter_.reset();
@@ -606,12 +605,12 @@ TEST_F(TestZpf, OnParamSetFailureThrowsByDefaultAndWarnSwallows)
       {"zpf_target_node"},
       "warn")) << "Filter did not become active under warn policy";
 
-  EXPECT_NO_THROW(
-  {
-    runProcess();
-    spinFor(300ms);
-    runProcess();
-  });
+  auto drive_and_drain_warn = [this]() {
+      runProcess();
+      spinFor(300ms);
+      runProcess();
+    };
+  EXPECT_NO_THROW(drive_and_drain_warn());
 }
 
 TEST_F(TestZpf, CrossStateTransitionResetsParamTouchedByNOnly)
@@ -636,14 +635,14 @@ TEST_F(TestZpf, CrossStateTransitionResetsParamTouchedByNOnly)
       1)) << "Filter did not become active";
 
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.3;}));
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getInflation() == 0.8;}));
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.3;}));
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getInflation() == 0.8;}));
 
   rePublishMask(2);
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.5;}))
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.5;}))
     << "in-both param must land at state-2's value, not state-1's nominal";
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getInflation() == 2.0;}))
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getInflation() == 2.0;}))
     << "inflation must be reset to nominal_defaults on 1→2 transition";
 }
 
@@ -668,12 +667,12 @@ TEST_F(TestZpf, ParamWithoutNominalDefaultsPersistsAcrossTransitions)
       1)) << "Filter did not become active";
 
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.3;}));
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getInflation() == 0.8;}));
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.3;}));
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getInflation() == 0.8;}));
 
   rePublishMask(2);
   runProcess();
-  ASSERT_TRUE(waitFor([this]() {return target_node_->getSpeed() == 0.5;}));
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.5;}));
   EXPECT_DOUBLE_EQ(target_node_->getInflation(), 0.8)
     << "param without nominal_defaults legitimately persists across N→M";
 }
