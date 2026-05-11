@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::BoundedTrackingErrorLayer, nav2_costmap_2d::Layer)
@@ -146,17 +145,10 @@ BoundedTrackingErrorLayer::getParameters()
 
   enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
 
-  auto costmap_ros = std::dynamic_pointer_cast<nav2_costmap_2d::Costmap2DROS>(node);
-  if (costmap_ros) {
-    transform_tolerance_ = tf2::durationFromSec(costmap_ros->getTransformTolerance());
-    robot_base_frame_ = costmap_ros->getBaseFrameID();
-  } else {
-    // Fallback for unit tests where the node is not a Costmap2DROS instance
-    double temp_tf_tol = 0.3;
-    node->get_parameter("transform_tolerance", temp_tf_tol);
-    transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
-    node->get_parameter("robot_base_frame", robot_base_frame_);
-  }
+  double transform_tolerance = 0.3;
+  node->get_parameter("transform_tolerance", transform_tolerance);
+  transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
+  node->get_parameter("robot_base_frame", robot_base_frame_);
 }
 
 void
@@ -266,30 +258,30 @@ BoundedTrackingErrorLayer::updateCosts(
   getPathSegment(*full_transformed_ptr, search_result.closest_segment_index, segment_buffer_);
 
   const size_t min_poses = (step_size_ * 2) + 1;
-    const bool segment_too_small = segment_buffer_.poses.size() < min_poses;
+  const bool segment_too_small = segment_buffer_.poses.size() < min_poses;
 
-    if (segment_too_small) {
-      RCLCPP_INFO_THROTTLE(
+  if (segment_too_small) {
+    RCLCPP_INFO_THROTTLE(
         logger_, *clock_, 2000,
         "Close to end, closing BoundedTrackingError layer");
-      return;
-    }
+    return;
+  }
 
-    if (cost_write_mode_ >= 1) {
-      if (corridor_interior_mask_.size() !=
-        master_grid.getSizeInCellsX() * master_grid.getSizeInCellsY())
-      {
-        RCLCPP_WARN_THROTTLE(
+  if (cost_write_mode_ >= 1) {
+    if (corridor_interior_mask_.size() !=
+      master_grid.getSizeInCellsX() * master_grid.getSizeInCellsY())
+    {
+      RCLCPP_WARN_THROTTLE(
           logger_, *clock_, 5000,
           "Corridor interior mask size mismatch, skipping fill update — call matchSize()");
-        return;
-      }
-      applyFillOutsideCorridor(master_grid, robot_pose, *full_transformed_ptr);
-    } else {
-      getWallPolygons(segment_buffer_, walls_buffer_);
-      drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
-      drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
+      return;
     }
+    applyFillOutsideCorridor(master_grid, robot_pose, *full_transformed_ptr);
+  } else {
+    getWallPolygons(segment_buffer_, walls_buffer_);
+    drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
+    drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
+  }
 }
 
 void
@@ -337,7 +329,7 @@ BoundedTrackingErrorLayer::getPathSegment(
     }
   }
 
-  if (dist_traversed < look_ahead_) {
+  if (dist_traversed < corridor_width_) {
     return;
   }
 
@@ -346,9 +338,6 @@ BoundedTrackingErrorLayer::getPathSegment(
     segment.poses.assign(
       path.poses.begin() + path_index,
       path.poses.begin() + end_index + 1);
-  } else if (path_index == path.poses.size() - 1) {
-    segment.header = path.header;
-    segment.poses.push_back(path.poses[path_index]);
   }
 }
 
