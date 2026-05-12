@@ -59,21 +59,21 @@ public:
 
   /**
    * @brief Clears the region outside of a user-specified area reverting to the static map
-   * @return true if at least one layer was successfully cleared, false otherwise
+   * @return true if the requested plugins were successfully cleared, false otherwise
    */
   bool clearRegion(double reset_distance, bool invert, const std::vector<std::string> & plugins);
 
   /**
    * @brief Clears the region around a specific pose
-   * @return true if at least one layer was successfully cleared, false otherwise
+   * @return true if the requested plugins were successfully cleared, false otherwise
    */
   bool clearAroundPose(
     const geometry_msgs::msg::PoseStamped & pose, double reset_distance,
     const std::vector<std::string> & plugins);
 
   /**
-   * @brief Clears all layers
-   * @return true if at least one layer was successfully cleared, false otherwise
+   * @brief Clears the entire layer
+   * @return true if the requested plugins were successfully cleared, false otherwise
    */
   bool clearEntirely(const std::vector<std::string> & plugins);
 
@@ -141,9 +141,9 @@ private:
   bool getPosition(double & x, double & y) const;
 
   /**
-   * @brief Validates requested plugins and returns list of invalid plugins
+   * @brief Checks if the requested plugins are clearable and exist in the costmap layers
    * @param requested_plugins List of plugin names to validate
-   * @param layers Pointer to all available layers
+   * @param layers Pointer to all available plugins
    * @param invalid_plugins Output: list of invalid plugins with reasons
    */
   void validatePlugins(
@@ -152,10 +152,12 @@ private:
     std::vector<std::string> & invalid_plugins) const;
 
   /**
-   * @brief Validates plugins and clears valid ones using provided callback
+   * @brief Checks if the requested plugins are valid.
+   * If valid, clears the requested plugins using the provided callback.
+   * If not valid, logs warnings for the invalid plugins and does not clear any plugins.
    * @param plugins List of plugin names to clear
-   * @param layers Pointer to all available layers
-   * @param clear_callback Function to call for each valid plugin
+   * @param layers Pointer to all available plugins
+   * @param clear_callback Clearing function to call if requested plugins are valid
    * @param operation_name Name of the operation for logging (e.g. "clearAroundPose")
    * @return true if all requested plugins were valid and cleared, false otherwise
    */
