@@ -51,7 +51,7 @@ bool ObstacleBypassCritic::determineBestBypassSide(
 
   auto isNonLethal = [&](unsigned char c) {
       return c < nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE &&
-        (c != nav2_costmap_2d::NO_INFORMATION || tracking_unknown);
+             (c != nav2_costmap_2d::NO_INFORMATION || tracking_unknown);
     };
 
   // Scan perpendicular to the path to find the first non-lethal cell on each side.

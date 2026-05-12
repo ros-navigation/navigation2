@@ -960,17 +960,22 @@ TEST(CriticTests, ObstacleBypassCritic)
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Default costmap cells may be NO_INFORMATION (255), which the bypass critic's
-  // isNonLethal check treats as blocked. Explicitly set all cells to FREE_SPACE.
+  // isNonLethal check treats as blocked. Set explicit free bands around the obstacle
+  // so perpendicular scans find free space at deterministic distances.
   auto * costmap = costmap_ros->getCostmap();
-  for (unsigned int i = 0; i < costmap->getSizeInCellsX(); ++i) {
-    for (unsigned int j = 0; j < costmap->getSizeInCellsY(); ++j) {
-      costmap->setCost(i, j, 0);
-    }
-  }
   // Place lethal obstacle at cells [25,30]x[22,27], world [2.5,3.0]x[2.2,2.7]
   for (unsigned int i = 25; i <= 30; ++i) {
     for (unsigned int j = 22; j <= 27; ++j) {
       costmap->setCost(i, j, 254);
+    }
+  }
+  // Free cells above and below obstacle for left/right perpendicular scans
+  for (unsigned int i = 25; i <= 30; ++i) {
+    for (unsigned int j = 28; j <= 40; ++j) {
+      costmap->setCost(i, j, 0);
+    }
+    for (unsigned int j = 10; j <= 21; ++j) {
+      costmap->setCost(i, j, 0);
     }
   }
 
@@ -1065,10 +1070,16 @@ TEST(CriticTests, ObstacleBypassCritic)
   costs.setZero();
 
   // -- Scenario 8: Right side preferred bypass (L71 right < left) --
-  // Extend obstacle upward: add cells [25,30]x[28,30] so left is farther
+  // Extend obstacle upward: cells [25,30]x[28,30] now lethal (were free above)
   for (unsigned int i = 25; i <= 30; ++i) {
     for (unsigned int j = 28; j <= 30; ++j) {
       costmap->setCost(i, j, 254);
+    }
+  }
+  // Ensure free cells above extended obstacle for left scan
+  for (unsigned int i = 25; i <= 30; ++i) {
+    for (unsigned int j = 31; j <= 40; ++j) {
+      costmap->setCost(i, j, 0);
     }
   }
   // Obstacle now [25,30]x[22,30]. Left free at s=6, right free at s=4 → right preferred

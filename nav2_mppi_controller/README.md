@@ -178,6 +178,20 @@ Uses inflated costmap cost directly to avoid obstacles
  | cost_power            | int      | Default 1. Power order to apply to term.                                                                    |
  | deadband_velocities   | double[] | Default [0.0, 0.0, 0.0].  The array of deadband velocities [vx, vz, wz]. A zero array indicates that the critic will take no action.      |
 
+#### Obstacle Bypass Critic
+
+Steers the robot around dynamic obstacles blocking the path by determining the best side to bypass using the costmap and scoring trajectories toward an offset target point.
+
+ | Parameter                    | Type   | Definition                                                                                                  |
+ | ---------------              | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight                  | double | Default 4.667. Weight to apply to critic term.                                                              |
+ | cost_power                   | int    | Default 1. Power order to apply to term.                                                                    |
+ | min_distance_occupancy_check | double | Default 2.0. Minimum distance (m) along the path to check for occupancy to determine if the path is blocked. |
+ | max_path_occupancy_ratio     | double | Default 0.07 (7%). Maximum proportion of the checked path segment that can be occupied before the bypass behavior activates. |
+ | offset_from_furthest         | int    | Default 20. Number of path points after the furthest reached point to place the bypass target, controlling how far ahead the robot aims while bypassing. |
+ | threshold_to_consider        | double | Default 0.5. Distance between robot and goal above which the bypass critic stops being considered.          |
+ | bypass_offset_dist           | double | Default 1.0. Additional offset distance (m) beyond the first free cell when computing the bypass target point perpendicular to the path. |
+
 
 ### XML configuration example
 ```
