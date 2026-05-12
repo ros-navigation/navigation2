@@ -80,9 +80,11 @@ void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<ClearExceptRegion::Request> request,
   const shared_ptr<ClearExceptRegion::Response> response)
 {
-  RCLCPP_INFO(
-    logger_, "%s",
-    ("Received request to clear except a region the " + costmap_.getName()).c_str());
+  RCLCPP_INFO_STREAM(
+    logger_,
+      "Received request to clear except a region for " <<
+      (request->plugins.empty() ? "all layers" : "specific layers") << " in " <<
+      costmap_.getName());
 
   response->success = clearRegion(request->reset_distance, true, request->plugins);
 }
@@ -92,6 +94,12 @@ void ClearCostmapService::clearAroundRobotCallback(
   const shared_ptr<ClearAroundRobot::Request> request,
   const shared_ptr<ClearAroundRobot::Response> response)
 {
+  RCLCPP_INFO_STREAM(
+    logger_,
+      "Received request to clear around robot for " <<
+      (request->plugins.empty() ? "all layers" : "specific layers") << " in " <<
+      costmap_.getName());
+
   response->success = clearRegion(request->reset_distance, false, request->plugins);
 }
 
@@ -100,9 +108,11 @@ void ClearCostmapService::clearAroundPoseCallback(
   const shared_ptr<ClearAroundPose::Request> request,
   const shared_ptr<ClearAroundPose::Response> response)
 {
-  RCLCPP_INFO(
-    logger_, "%s",
-    ("Received request to clear around pose for " + costmap_.getName()).c_str());
+  RCLCPP_INFO_STREAM(
+    logger_,
+      "Received request to clear around pose for " <<
+      (request->plugins.empty() ? "all layers" : "specific layers") << " in " <<
+      costmap_.getName());
 
   response->success = clearAroundPose(request->pose, request->reset_distance, request->plugins);
 }
@@ -112,9 +122,11 @@ void ClearCostmapService::clearEntireCallback(
   const std::shared_ptr<ClearEntirely::Request> request,
   const std::shared_ptr<ClearEntirely::Response> response)
 {
-  RCLCPP_INFO(
-    logger_, "%s",
-    ("Received request to clear entirely the " + costmap_.getName()).c_str());
+  RCLCPP_INFO_STREAM(
+    logger_,
+      "Received request to clear entirely for " <<
+      (request->plugins.empty() ? "all layers" : "specific layers") << " in " <<
+      costmap_.getName());
 
   response->success = clearEntirely(request->plugins);
 }
@@ -239,8 +251,6 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
       plugins, layers,
       [this](std::shared_ptr<CostmapLayer> & layer) {
         layer->resetMap(0, 0, layer->getSizeInCellsX(), layer->getSizeInCellsY());
-        RCLCPP_INFO(logger_, "Performed action '%s' on layer: %s", "clear entirely",
-          layer->getName().c_str());
       },
       "clear costmap entirely");
 
