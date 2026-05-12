@@ -93,7 +93,7 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<double>(
-          "reset_distance", 1,
+          "reset_distance", 1.0,
           "Distance from the robot above which obstacles are cleared")
       });
   }
@@ -136,7 +136,7 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<double>(
-          "reset_distance", 1,
+          "reset_distance", 1.0,
           "Distance from the robot under which obstacles are cleared")
       });
   }
