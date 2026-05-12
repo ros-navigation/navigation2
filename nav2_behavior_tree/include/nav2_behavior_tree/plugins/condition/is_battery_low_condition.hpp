@@ -77,7 +77,7 @@ public:
     return {
       BT::InputPort<double>("min_battery", "Minimum battery percentage/voltage"),
       BT::InputPort<std::string>(
-        "battery_topic", std::string("/battery_status"), "Battery topic"),
+        "battery_topic", "/battery_status", "Battery topic"),
       BT::InputPort<bool>(
         "is_voltage", false, "If true voltage will be used to check for low battery"),
     };

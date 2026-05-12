@@ -103,7 +103,7 @@
       <input_port name="use_start" type="bool">Optional. For using or not using (i.e. ignoring) the provided start pose `start`. Takes in a blackboard variable, e.g. "{use_start}".</input_port>
       <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Goal pose. Takes in a blackboard variable, e.g. "{goal}".</input_port>
       <input_port name="viapoints" type="vector&lt;geometry_msgs::msg::PoseStamped&gt;">Optional. A list of intermediate viapoints (excluding goal) to consider for planning. Takes in a blackboard variable, e.g. "{viapoints}".</input_port>
-      <input_port name="planner_id" type="string">Mapped name to the planner plugin type to use, e.g. GridBased.</input_port>
+      <input_port name="planner_id" type="string" default="&quot;&quot;">Mapped name to the planner plugin type to use, e.g. GridBased.</input_port>
       <input_port name="server_name" type="string">Action server name. If not specified, `compute_path_to_pose` is used.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
       <output_port name="path" type="nav_msgs::msg::Path">Path created by action server. Takes in a blackboard variable, e.g. "{path}".</output_port>
@@ -114,7 +114,7 @@
     <Action ID="ComputePathThroughPoses">
       <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Only used if not left empty. Takes in a blackboard variable, e.g. "{start}".</input_port>
       <input_port name="goals" type="nav_msgs::msg::Goals">Goal poses. Takes in a blackboard variable, e.g. "{goals}".</input_port>
-      <input_port name="planner_id" type="string">Mapped name to the planner plugin type to use, e.g. GridBased.</input_port>
+      <input_port name="planner_id" type="string" default="&quot;&quot;">Mapped name to the planner plugin type to use, e.g. GridBased.</input_port>
       <input_port name="server_name" type="string">Action server name. If not specified, `compute_path_through_poses` is used.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
       <output_port name="path" type="nav_msgs::msg::Path">Path created by action server. Takes in a blackboard variable, e.g. "{path}".</output_port>
@@ -166,7 +166,7 @@
       <input_port name="file_field" type="string">The filepath to the field's GML file to use, if not specifying the field via `polygons`.</input_port>
       <input_port name="file_field_id" type="int" default="0">The ID of the field in the GML File to use, if multiple exist in the same file. This is the ordered number of the fields in the file.</input_port>
       <input_port name="polygons" type="vector&lt;geometry_msgs::msg::Polygon&gt;">The polygons of the field, if not specifying via a GML file. The first polygon should be the outermost region, whereas additional polygons are voids.</input_port>
-      <input_port name="polygons_frame_id" type="string" default="map">The polygon's frame ID, since the GML file provides the frame ID for its format, this is the frame ID for user-defined input `polygons`.</input_port>
+      <input_port name="polygons_frame_id" type="string" default="&quot;map&quot;">The polygon's frame ID, since the GML file provides the frame ID for its format, this is the frame ID for user-defined input `polygons`.</input_port>
       <input_port name="server_name" type="string">Action server name. If not specified, `compute_coverage_path` is used.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
       <output_port name="nav_path" type="nav_msgs::msg::Path">Path created by action server in the form of a navigation path. Takes in a blackboard variable, e.g. "{path}".</output_port>
@@ -224,8 +224,8 @@
     </Action>
 
     <Action ID="FollowObject">
-      <input_port name="pose_topic" type="string" default="dynamic_pose">Topic to publish the pose of the object to follow.</input_port>
-      <input_port name="max_duration" type="double" default="0.0">The maximum duration to follow the object (Optional).</input_port>
+      <input_port name="pose_topic" type="string" default="&quot;dynamic_pose&quot;">Topic to publish the pose of the object to follow.</input_port>
+      <input_port name="max_duration" type="float" default="0.0">The maximum duration to follow the object (Optional).</input_port>
       <input_port name="tracked_frame" type="string">Target frame to follow (Optional, used if pose_topic is not set).</input_port>
       <input_port name="server_name" type="string">Action server name. If not specified, `follow_object` is used.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
@@ -267,7 +267,7 @@
       <input_port name="input_path" type="nav_msgs::msg::Path">The original path to be truncated.</input_port>
       <input_port name="distance_forward" type="double" default="8.0">The trimming distance in forward direction. Set to -1 to search full path forward.</input_port>
       <input_port name="distance_backward" type="double" default="4.0">The trimming distance in backward direction.</input_port>
-      <input_port name="robot_frame" type="string" default="base_link">Robot base frame id.</input_port>
+      <input_port name="robot_frame" type="string" default="&quot;base_link&quot;">Robot base frame id.</input_port>
       <input_port name="transform_tolerance" type="double" default="0.2">Robot pose lookup tolerance.</input_port>
       <input_port name="pose" type="geometry_msgs::msg::PoseStamped">Manually specified pose to be used alternatively to current robot pose.</input_port>
       <input_port name="angular_distance_weight" type="double" default="0.0">Weight of angular distance relative to positional distance when finding which path pose is closest to robot. Not applicable on paths without orientations assigned.</input_port>
@@ -276,37 +276,37 @@
     </Action>
 
     <Action ID="PlannerSelector">
-      <input_port name="topic_name" type="string" default="planner_selector">The name of the topic used to received select command messages. This is used to support multiple PlannerSelector nodes.</input_port>
+      <input_port name="topic_name" type="string" default="&quot;planner_selector&quot;">The name of the topic used to received select command messages. This is used to support multiple PlannerSelector nodes.</input_port>
       <input_port name="default_planner" type="string">The default value for the selected planner if no message is received from the input topic.</input_port>
       <output_port name="selected_planner" type="string">The output selected planner id. This selected_planner string is usually passed to the ComputePathToPose behavior via the planner_id input port.</output_port>
     </Action>
 
     <Action ID="ControllerSelector">
-      <input_port name="topic_name" type="string" default="controller_selector">The name of the topic used to received select command messages. This is used to support multiple ControllerSelector nodes.</input_port>
+      <input_port name="topic_name" type="string" default="&quot;controller_selector&quot;">The name of the topic used to received select command messages. This is used to support multiple ControllerSelector nodes.</input_port>
       <input_port name="default_controller" type="string">The default value for the selected Controller if no message is received from the input topic.</input_port>
       <output_port name="selected_controller" type="string">The output selected Controller id. This selected_controller string is usually passed to the FollowPath behavior via the controller_id input port.</output_port>
     </Action>
 
     <Action ID="SmootherSelector">
-      <input_port name="topic_name" type="string" default="smoother_selector">The name of the topic used to received select command messages. This is used to support multiple SmootherSelector nodes.</input_port>
+      <input_port name="topic_name" type="string" default="&quot;smoother_selector&quot;">The name of the topic used to received select command messages. This is used to support multiple SmootherSelector nodes.</input_port>
       <input_port name="default_smoother" type="string">The default value for the selected Smoother if no message is received from the input topic.</input_port>
       <output_port name="selected_smoother" type="string">The output selected Smoother id.</output_port>
     </Action>
 
     <Action ID="GoalCheckerSelector">
-      <input_port name="topic_name" type="string" default="goal_checker_selector">The name of the topic used to received select command messages. This is used to support multiple GoalCheckerSelector nodes.</input_port>
+      <input_port name="topic_name" type="string" default="&quot;goal_checker_selector&quot;">The name of the topic used to received select command messages. This is used to support multiple GoalCheckerSelector nodes.</input_port>
       <input_port name="default_goal_checker" type="string">The default value for the selected GoalChecker if no message is received from the input topic.</input_port>
       <output_port name="selected_goal_checker" type="string">The output selected GoalChecker id. This selected_goal_checker string is usually passed to the FollowPath behavior via the goal_checker_id input port.</output_port>
     </Action>
 
     <Action ID="ProgressCheckerSelector">
-      <input_port name="topic_name" type="string" default="progress_checker_selector">The name of the topic used to received select command messages. This is used to support multiple ProgressCheckerSelector nodes.</input_port>
+      <input_port name="topic_name" type="string" default="&quot;progress_checker_selector&quot;">The name of the topic used to received select command messages. This is used to support multiple ProgressCheckerSelector nodes.</input_port>
       <input_port name="default_progress_checker" type="string">The default value for the selected ProgressChecker if no message is received from the input topic.</input_port>
       <output_port name="selected_progress_checker" type="string">The output selected ProgressChecker id. This selected_progress_checker string is usually passed to the FollowPath behavior via the progress_checker_id input port.</output_port>
     </Action>
 
     <Action ID="PathHandlerSelector">
-      <input_port name="topic_name" type="string" default="path_handler_selector">The name of the topic used to received select command messages. This is used to support multiple PathHandlerSelector nodes.</input_port>
+      <input_port name="topic_name" type="string" default="&quot;path_handler_selector&quot;">The name of the topic used to received select command messages. This is used to support multiple PathHandlerSelector nodes.</input_port>
       <input_port name="default_path_handler" type="string">The default value for the selected PathHandler if no message is received from the input topic.</input_port>
       <output_port name="selected_path_handler" type="string">The output selected PathHandler id. This selected_path_handler string is usually passed to the FollowPath behavior via the path_handler_id input port.</output_port>
     </Action>
@@ -423,8 +423,8 @@
       <input_port name="path" type="nav_msgs::msg::Path">The global path to check for validity.</input_port>
       <input_port name="max_cost" type="unsigned int" default="254">The maximum allowable cost for the path to be considered valid.</input_port>
       <input_port name="consider_unknown_as_obstacle" type="bool" default="false">Whether to consider unknown cost (255) as obstacle.</input_port>
-      <input_port name="layer_name" type="string">Name of the specific costmap layer to check against. If empty, checks against the full costmap.</input_port>
-      <input_port name="footprint" type="string">Custom footprint specification as a bracketed array of arrays, e.g., "[[x1,y1],[x2,y2],...]". If empty, uses the robot's configured footprint.</input_port>
+      <input_port name="layer_name" type="string" default="&quot;&quot;">Name of the specific costmap layer to check against. If empty, checks against the full costmap.</input_port>
+      <input_port name="footprint" type="string" default="&quot;&quot;">Custom footprint specification as a bracketed array of arrays, e.g., "[[x1,y1],[x2,y2],...]". If empty, uses the robot's configured footprint.</input_port>
       <input_port name="stop_at_first_collision" type="bool" default="true">Whether to stop validation at the first collision (true) or check all poses in the path (false). When false, all collision poses are reported.</input_port>
       <input_port name="max_lookahead_distance" type="double" default="-1.0">Maximum distance ahead of the robot along the path to validate. When set to -1.0 (default), the full path is validated. A positive value limits validation to only the portion of the path within that distance from the robot's current position.</input_port>
       <input_port name="service_name" type="string">Costmap service name responsible for getting the cost. If not specified, `is_path_valid` is used.</input_port>
@@ -441,8 +441,8 @@
     <Condition ID="IsStuck"/>
 
     <Condition ID="TransformAvailable">
-      <input_port name="child" type="string">Child frame for transform.</input_port>
-      <input_port name="parent" type="string">Parent frame for transform.</input_port>
+      <input_port name="child" type="string" default="&quot;&quot;">Child frame for transform.</input_port>
+      <input_port name="parent" type="string" default="&quot;&quot;">Parent frame for transform.</input_port>
     </Condition>
 
     <Condition ID="GoalUpdated">
@@ -457,12 +457,12 @@
 
     <Condition ID="IsBatteryLow">
       <input_port name="min_battery" type="double">Min battery percentage or voltage before triggering.</input_port>
-      <input_port name="battery_topic" type="string" default="/battery_status">Topic for battery info.</input_port>
+      <input_port name="battery_topic" type="string" default="&quot;/battery_status&quot;">Topic for battery info.</input_port>
       <input_port name="is_voltage" type="bool" default="false">If true voltage will be used to check for low battery.</input_port>
     </Condition>
 
     <Condition ID="IsBatteryCharging">
-      <input_port name="battery_topic" type="string" default="/battery_status">Topic for battery info.</input_port>
+      <input_port name="battery_topic" type="string" default="&quot;/battery_status&quot;">Topic for battery info.</input_port>
     </Condition>
 
     <Condition ID="DistanceTraveled">
