@@ -17,15 +17,25 @@
 #include "nav2_mppi_controller/critics/obstacle_bypass_critic.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 
-// TODO
-//   * Testing working well, not jumping around
-
-//   * Checking across a variety of configuration parameters
-//   * Fine-Tuning
-//   * Dex integration
-
 namespace mppi::critics
 {
+
+void ObstacleBypassCritic::initialize()
+{
+  auto getParam = parameters_handler_->getParamGetter(name_);
+  getParam(power_, "cost_power", 1);
+  getParam(weight_, "cost_weight", 4.667f);
+  getParam(min_distance_occupancy_check_, "min_distance_occupancy_check", 2.0f);
+  getParam(max_path_occupancy_ratio_, "max_path_occupancy_ratio", 0.07f);
+  getParam(offset_from_furthest_, "offset_from_furthest", 20);
+  getParam(threshold_to_consider_, "threshold_to_consider", 0.5f);
+  getParam(bypass_offset_dist_, "bypass_offset_dist", 1.0f);
+
+  RCLCPP_INFO(
+    logger_,
+    "ObstacleBypassCritic instantiated with %d power and %f weight",
+    power_, weight_);
+}
 
 bool ObstacleBypassCritic::determineBestBypassSide(
   float path_x, float path_y, float path_yaw, float & signed_offset)
@@ -95,23 +105,6 @@ bool ObstacleBypassCritic::determineBestBypassSide(
   }
 
   return false;
-}
-
-void ObstacleBypassCritic::initialize()
-{
-  auto getParam = parameters_handler_->getParamGetter(name_);
-  getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 14.0f / 3.0f);
-  getParam(min_distance_occupancy_check_, "min_distance_occupancy_check", 2.0f);
-  getParam(max_path_occupancy_ratio_, "max_path_occupancy_ratio", 0.07f);
-  getParam(offset_from_furthest_, "offset_from_furthest", 20);
-  getParam(threshold_to_consider_, "threshold_to_consider", 0.5f);
-  getParam(bypass_offset_dist_, "bypass_offset_dist", 1.0f);
-
-  RCLCPP_INFO(
-    logger_,
-    "ObstacleBypassCritic instantiated with %d power and %f weight",
-    power_, weight_);
 }
 
 void ObstacleBypassCritic::score(CriticData & data)
@@ -207,10 +200,18 @@ void ObstacleBypassCritic::score(CriticData & data)
   // Score against a forward-looking target point offset from the path
   // in the direction of the bypass to incentivize trajectories to steer around
   // the obstacle in the direction with the least disruption to path tracking.
-  const float perp_x = -tangent_y / tangent_len;
-  const float perp_y = tangent_x / tangent_len;
   const size_t target_idx = std::min(
     furthest_reached_path_point + offset_from_furthest_, path_segments_count - 1);
+  const size_t target_next = std::min(target_idx + 1, path_segments_count - 1);
+  const float target_tx = data.path.x(target_next) - data.path.x(target_idx);
+  const float target_ty = data.path.y(target_next) - data.path.y(target_idx);
+  const float target_tlen = sqrtf(target_tx * target_tx + target_ty * target_ty);
+  if (target_tlen < 1e-6f) {
+    bypass_active_ = false;
+    return;
+  }
+  const float perp_x = -target_ty / target_tlen;
+  const float perp_y = target_tx / target_tlen;
   const float target_x = data.path.x(target_idx) + signed_offset * perp_x;
   const float target_y = data.path.y(target_idx) + signed_offset * perp_y;
   const int last_idx = data.trajectories.y.cols() - 1;

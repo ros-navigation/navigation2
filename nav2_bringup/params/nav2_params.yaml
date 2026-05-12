@@ -123,7 +123,7 @@ controller_server:
       path_length_tolerance: 1.0
     PathHandler:
       plugin: "nav2_controller::FeasiblePathHandler"
-      prune_distance: 2.0
+      prune_distance: 10.0 #TODO
       enforce_path_inversion: false
       enforce_path_rotation: false
       inversion_xy_tolerance: 0.2
@@ -132,9 +132,10 @@ controller_server:
       reject_unit_path: false
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
-      time_steps: 56
-      model_dt: 0.05
-      batch_size: 2000
+      time_steps: 56 #TODO
+      model_dt: 0.1 #TODO
+      batch_size: 2000 
+      open_loop: false
       ax_max: 3.0
       ax_min: -3.0
       ay_max: 3.0
@@ -171,6 +172,7 @@ controller_server:
           "GoalCritic",
           "GoalAngleCritic",
           "PathAlignCritic",
+          "ObstacleBypassCritic",
           "PathFollowCritic",
           "PathAngleCritic",
           "PreferForwardCritic",
@@ -209,15 +211,25 @@ controller_server:
         cost_power: 1
         cost_weight: 14.0
         max_path_occupancy_ratio: 0.05
+        min_distance_occupancy_check: 4.5 # TODO his: 4.5. my horizon is 2.8, so try 3.3?
         trajectory_point_step: 4
         threshold_to_consider: 0.5
         offset_from_furthest: 20
         use_path_orientations: false
+      ObstacleBypassCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 4.667 #TODO
+        bypass_offset_dist: 1.0 #TODO
+        max_path_occupancy_ratio: 0.05
+        min_distance_occupancy_check: 4.5 #TODO
+        threshold_to_consider: 0.5 #TODO
+        offset_from_furthest: 20 #TODO
       PathFollowCritic:
         enabled: true
         cost_power: 1
         cost_weight: 5.0
-        offset_from_furthest: 5
+        offset_from_furthest: 5 #TODO
         threshold_to_consider: 1.4
       PathAngleCritic:
         enabled: true
@@ -240,9 +252,13 @@ local_costmap:
       global_frame: odom
       robot_base_frame: base_link
       rolling_window: true
-      width: 3
-      height: 3
+      width: 10
+      height: 10
       resolution: 0.05
+      # footprint: "[ [2.230, 0.65], [-1.4312, 0.65], [-1.4312, -0.65], [2.230, -0.65] ]"
+      # footprint_padding: 0.1
+      # footprint: "[ [0.725, 0.525], [0.725, -0.525], [-0.725, -0.525], [-0.725, 0.525] ]"
+      # footprint_padding: 0.12
       robot_radius: 0.22
       plugins: ["voxel_layer", "inflation_layer"]
       filters: ["keepout_filter"]
@@ -254,8 +270,8 @@ local_costmap:
         lethal_override_cost: 200
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.70
+        cost_scaling_factor: 0.7 #TODO
+        inflation_radius: 5.0 #TODO
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: true
@@ -278,9 +294,9 @@ local_costmap:
           clearing: true
           marking: true
           data_type: "LaserScan"
-          raytrace_max_range: 3.0
+          raytrace_max_range: 10.0 # TODO 10.0
           raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
+          obstacle_max_range: 9.5 # TODO 9.5
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
@@ -298,7 +314,7 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      plugins: ["static_layer", "inflation_layer"]
       filters: ["keepout_filter", "speed_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"

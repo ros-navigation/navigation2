@@ -297,7 +297,7 @@ The most common parameters you might want to start off changing are the velocity
 
 If you don't require path following behavior (e.g. just want to follow a goal pose and let the model predictive elements decide the best way to accomplish that), you may easily remove the PathAlign, PathFollow and PathAngle critics.
 
-By default, the controller is tuned and has the capabilities established in the PathAlign/Obstacle critics to generally follow the path closely when no obstacles prevent it, but able to deviate from the path when blocked. See `PathAlignCritic::score()` for details, but it is disabled when the local path is blocked so the obstacle critic takes over in that state.
+By default, the controller is tuned and has the capabilities established in the PathAlign/Obstacle critics to generally follow the path closely when no obstacles prevent it, but able to deviate from the path when blocked. See `PathAlignCritic::score()` for details, but it is disabled when the local path is blocked so the obstacle critic takes over in that state. The ``ObstacleBypassCritic`` can be helpful to bypass around obstacles on the path, if desired. Just make sure to have a reasoanble prediction horizon (model_dt * time_steps), prune distance, and costmap sensor range to see far enough ahead to start going around an obstacle before approaching it to slow down. As such, `min_distance_occupancy_check >= prediction horizon`, in general.
 
 If you want to slow further on approach to goal, consider increasing the ``threshold_to_consider`` parameters to give a hand off from the path tracking critics to the goal approach critics sooner - then tune those critics for your profile of interest.
 
