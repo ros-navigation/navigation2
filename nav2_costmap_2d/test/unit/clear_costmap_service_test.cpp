@@ -29,10 +29,10 @@
 
 using namespace std::chrono_literals;
 
-const std::string clear_entirely_service_name = "/costmap/clear_entirely_costmap";
-const std::string clear_around_pose_service_name = "/costmap/clear_around_pose_costmap";
-const std::string clear_around_robot_service_name = "/costmap/clear_around_costmap";
-const std::string clear_except_region_service_name = "/costmap/clear_except_costmap";
+static constexpr char clear_entirely_srv_name[]{"/costmap/clear_entirely_costmap"};
+static constexpr char clear_around_pose_srv_name[]{"/costmap/clear_around_pose_costmap"};
+static constexpr char clear_around_robot_srv_name[]{"/costmap/clear_around_costmap"};
+static constexpr char clear_except_region_srv_name[]{"/costmap/clear_except_costmap"};
 
 using ClearEntireCostMapSrv = nav2_msgs::srv::ClearEntireCostmap;
 using ClearCostmapAroundPoseSrv = nav2_msgs::srv::ClearCostmapAroundPose;
@@ -181,7 +181,7 @@ private:
 
 // Specialized class for ClearEntireCostmap service tests
 using ClearEntireCostmapTest = ClearCostmapServiceTest<ClearEntireCostMapSrv>;
-template<> std::string ClearEntireCostmapTest::service_name_ = clear_entirely_service_name;
+template<> std::string ClearEntireCostmapTest::service_name_ = clear_entirely_srv_name;
 template<>
 ClearEntireCostMapSrv::Request::SharedPtr ClearEntireCostmapTest::createDefaultSrvRequest()
 {
@@ -190,7 +190,7 @@ ClearEntireCostMapSrv::Request::SharedPtr ClearEntireCostmapTest::createDefaultS
 
 // Specialized class for ClearCostmapAroundPose service tests
 using ClearCostmapAroundPoseTest = ClearCostmapServiceTest<ClearCostmapAroundPoseSrv>;
-template<> std::string ClearCostmapAroundPoseTest::service_name_ = clear_around_pose_service_name;
+template<> std::string ClearCostmapAroundPoseTest::service_name_ = clear_around_pose_srv_name;
 template<>
 ClearCostmapAroundPoseSrv::Request::SharedPtr ClearCostmapAroundPoseTest::createDefaultSrvRequest()
 {
@@ -198,7 +198,7 @@ ClearCostmapAroundPoseSrv::Request::SharedPtr ClearCostmapAroundPoseTest::create
   request->pose.header.frame_id = costmap_->getGlobalFrameID();
   request->pose.pose.position.x = 0.0;
   request->pose.pose.position.y = 0.0;
-  request->pose.pose.orientation.w = 1.0; // Identity orientation
+  request->pose.pose.orientation.w = 1.0;  // Identity orientation
   request->reset_distance = 1.0;
   return request;
 }
@@ -206,9 +206,10 @@ ClearCostmapAroundPoseSrv::Request::SharedPtr ClearCostmapAroundPoseTest::create
 // Specialized class for ClearCostmapAroundRobot service tests
 using ClearCostmapAroundRobotTest =
   ClearCostmapServiceTest<ClearCostmapAroundRobotSrv>;
-template<> std::string ClearCostmapAroundRobotTest::service_name_ = clear_around_robot_service_name;
+template<> std::string ClearCostmapAroundRobotTest::service_name_ = clear_around_robot_srv_name;
 template<>
-ClearCostmapAroundRobotSrv::Request::SharedPtr ClearCostmapAroundRobotTest::createDefaultSrvRequest()
+ClearCostmapAroundRobotSrv::Request::SharedPtr
+ClearCostmapAroundRobotTest::createDefaultSrvRequest()
 {
   auto request = std::make_shared<ClearCostmapAroundRobotSrv::Request>();
   request->reset_distance = 1.0;
@@ -217,8 +218,7 @@ ClearCostmapAroundRobotSrv::Request::SharedPtr ClearCostmapAroundRobotTest::crea
 
 // Specialized class for ClearCostmapExceptRegion service tests
 using ClearCostmapExceptRegionTest = ClearCostmapServiceTest<ClearCostmapExceptRegionSrv>;
-template<> std::string ClearCostmapExceptRegionTest::service_name_ =
-  clear_except_region_service_name;
+template<> std::string ClearCostmapExceptRegionTest::service_name_ = clear_except_region_srv_name;
 template<>
 ClearCostmapExceptRegionSrv::Request::SharedPtr ClearCostmapExceptRegionTest::
 createDefaultSrvRequest()
