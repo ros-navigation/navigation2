@@ -11,13 +11,17 @@
 //        odom, retangent constant-yaw lattice poses.
 //
 //   computeVelocityCommands(robot_pose):
-//     1. PathHandler::getLocalPlan -> base_link slice (no AMCL).
-//     2. getMotionTarget          -> lookahead pose (base_link).
-//     3. NominalController::compute -> u_nom (sign-symmetric P).
-//     4. SceneParser::parse        -> walls, corners, passage.
-//     5. CBFSafetyFilter::filter   -> u* = QP(u_nom, walls, corners).
-//     6. Logger::* per-tick rows.
-//     7. Return TwistStamped(u*).
+//     1. PathHandler::getLocalPlan  -> base_link slice (no AMCL).
+//     2. getMotionTarget            -> single lookahead pose (base_link).
+//     3. SceneParser::parse         -> walls, corners, passage.
+//     4. NominalController::compute -> u_nom (sign-symmetric P).
+//     5. LateralCentering::compute  -> vy_walls, yaw_misalign.
+//     6. Single-scalar blend (when both flanking walls visible):
+//          vy = w*vy_walls + (1-w)*vy_path
+//          wz = w*wz_walls + (1-w)*wz_path
+//     7. CBFSafetyFilter::filter    -> u* = QP(u_blend, walls).
+//     8. Logger::* per-tick rows.
+//     9. Return TwistStamped(u*).
 
 #ifndef NAV2_CONSTRAINED_CONTROLLER__CONSTRAINED_CONTROLLER_HPP_
 #define NAV2_CONSTRAINED_CONTROLLER__CONSTRAINED_CONTROLLER_HPP_

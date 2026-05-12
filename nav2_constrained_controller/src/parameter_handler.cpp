@@ -82,6 +82,8 @@ ParameterHandler::ParameterHandler(
   DECL_INT(regime_switch_hyst_ticks, 3);
   DECL_DOUBLE(vy_centering_lpf_alpha, 0.4);
 
+  DECL_DOUBLE(wall_blend_weight, 1.0);
+
   DECL_STRING(log_dir, "/root/navigation_log");
   DECL_BOOL(log_enabled, true);
   DECL_INT(log_lidar_every_n_ticks, 10);
@@ -141,6 +143,8 @@ ParameterHandler::dynamicParametersCallback(
         params_.vy_centering_lpf_alpha = v;
       } else if (name == plugin_name_ + ".max_centering_range") {
         params_.max_centering_range = v;
+      } else if (name == plugin_name_ + ".wall_blend_weight") {
+        params_.wall_blend_weight = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_BOOL) {
       const bool v = p.as_bool();

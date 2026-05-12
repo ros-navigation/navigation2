@@ -114,6 +114,16 @@ struct Parameters
   // alpha = weight on the new sample (in [0,1]). 1 = no smoothing.
   double vy_centering_lpf_alpha{0.4};
 
+  // ---------- Path-vs-walls blending (vy, wz) ----------
+  // Single scalar weight applied to BOTH vy and wz when both flanking
+  // walls are visible (walls_quality == 1, post-hysteresis):
+  //   u = w * u_walls + (1 - w) * u_path
+  // When walls_quality == 0 (one or no flanking walls — door / free
+  // space), blend collapses to pure path. Default 1.0 = walls fully
+  // dominate inside the alley, path takes over automatically at the
+  // door zone via walls_quality.
+  double wall_blend_weight{1.0};
+
   // ---------- logging ----------
   std::string log_dir{"/root/navigation_log"};
   bool   log_enabled{true};

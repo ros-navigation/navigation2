@@ -48,8 +48,6 @@ void Logger::open(const std::string & log_dir, bool enabled)
   f_main_.open(path("ctrl_main"), std::ios::trunc);
   f_path_.open(path("ctrl_path"), std::ios::trunc);
   f_walls_.open(path("ctrl_walls"), std::ios::trunc);
-  f_corners_.open(path("ctrl_corners"), std::ios::trunc);
-  f_passage_.open(path("ctrl_passage"), std::ios::trunc);
   f_cbf_.open(path("ctrl_cbf"), std::ios::trunc);
   f_qp_.open(path("ctrl_qp"), std::ios::trunc);
   f_lidar_.open(path("ctrl_lidar"), std::ios::trunc);
@@ -66,8 +64,6 @@ void Logger::close()
   if (f_main_.is_open()) {f_main_.close();}
   if (f_path_.is_open()) {f_path_.close();}
   if (f_walls_.is_open()) {f_walls_.close();}
-  if (f_corners_.is_open()) {f_corners_.close();}
-  if (f_passage_.is_open()) {f_passage_.close();}
   if (f_cbf_.is_open()) {f_cbf_.close();}
   if (f_qp_.is_open()) {f_qp_.close();}
   if (f_lidar_.is_open()) {f_lidar_.close();}
@@ -84,10 +80,6 @@ void Logger::writeHeaders()
     "tick,stamp_sec,xt,yt,yawt,r,s,ramp,yaw_err,sel_idx,n_poses\n";
   f_walls_ <<
     "tick,stamp_sec,id,lx,ly,c,p1x,p1y,p2x,p2y,length\n";
-  f_corners_ <<
-    "tick,stamp_sec,is_intersection,wall_a,wall_b,x,y\n";
-  f_passage_ <<
-    "tick,stamp_sec,present,type,ax,ay,bx,by,width\n";
   f_cbf_ <<
     "tick,stamp_sec,kind,corner_id,wall_id,grad_x,grad_y,grad_w,"
     "rhs,h,u_nom_vx,u_nom_vy,u_nom_w,u_vx,u_vy,u_w,active\n";
@@ -98,9 +90,11 @@ void Logger::writeHeaders()
     "tick,stamp_sec,idx,angle,range\n";
   f_centering_ <<
     "tick,stamp_sec,regime,D_L,D_R,has_L,has_R,n_flanking,"
-    "yaw_misalign,vy_raw,vy_smoothed,vy_path,vy_used,override_active\n";
+    "yaw_misalign,vy_path,vy_walls,vy_used,"
+    "w,"
+    "wz_path,wz_walls,wz_used\n";
   for (auto * f : {
-      &f_main_, &f_path_, &f_walls_, &f_corners_, &f_passage_,
+      &f_main_, &f_path_, &f_walls_,
       &f_cbf_, &f_qp_, &f_lidar_, &f_centering_})
   {
     f->flush();
@@ -171,34 +165,6 @@ void Logger::logWalls(
   f_walls_.flush();
 }
 
-void Logger::logCorners(
-  uint64_t tick, double stamp,
-  const std::vector<CornerPoint> & corners)
-{
-  if (!enabled_ || !f_corners_.is_open()) {return;}
-  for (const auto & c : corners) {
-    f_corners_ << std::fixed << std::setprecision(6)
-               << tick << "," << stamp << ","
-               << (c.is_intersection ? 1 : 0) << ","
-               << c.wall_a << "," << c.wall_b << ","
-               << c.p.x << "," << c.p.y << "\n";
-  }
-  f_corners_.flush();
-}
-
-void Logger::logPassage(
-  uint64_t tick, double stamp,
-  const Passage & p)
-{
-  if (!enabled_ || !f_passage_.is_open()) {return;}
-  f_passage_ << std::fixed << std::setprecision(6)
-             << tick << "," << stamp << ","
-             << (p.present ? 1 : 0) << "," << p.type << ","
-             << p.a.x << "," << p.a.y << ","
-             << p.b.x << "," << p.b.y << "," << p.width << "\n";
-  f_passage_.flush();
-}
-
 void Logger::logCbfConstraints(
   uint64_t tick, double stamp,
   const std::vector<CbfConstraint> & cs,
@@ -247,9 +213,9 @@ void Logger::logCentering(
   bool has_L, bool has_R,
   int n_flanking,
   double yaw_misalign,
-  double vy_raw, double vy_smoothed,
-  double vy_path, double vy_used,
-  bool override_active)
+  double vy_path, double vy_walls, double vy_used,
+  double w,
+  double wz_path, double wz_walls, double wz_used)
 {
   if (!enabled_ || !f_centering_.is_open()) {return;}
   f_centering_ << std::fixed << std::setprecision(6)
@@ -258,9 +224,9 @@ void Logger::logCentering(
                << (has_L ? 1 : 0) << "," << (has_R ? 1 : 0) << ","
                << n_flanking << ","
                << yaw_misalign << ","
-               << vy_raw << "," << vy_smoothed << ","
-               << vy_path << "," << vy_used << ","
-               << (override_active ? 1 : 0) << "\n";
+               << vy_path << "," << vy_walls << "," << vy_used << ","
+               << w << ","
+               << wz_path << "," << wz_walls << "," << wz_used << "\n";
   f_centering_.flush();
 }
 

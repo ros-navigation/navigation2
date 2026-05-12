@@ -17,6 +17,7 @@
 //   ctrl_cbf_<ts>.csv       - one row per (tick, cbf constraint)
 //   ctrl_qp_<ts>.csv        - one row per tick: QP solve metrics
 //   ctrl_lidar_<ts>.csv     - one row per (tick, return) - throttled
+//   ctrl_centering_<ts>.csv - one row per tick: lateral centering + blend
 //   ctrl_events_<ts>.txt    - free-form text: setPlan, errors, regime changes
 //
 // Logger is intentionally synchronous and unbuffered-on-flush so that
@@ -81,14 +82,6 @@ public:
     uint64_t tick, double stamp,
     const std::vector<Wall> & walls);
 
-  void logCorners(
-    uint64_t tick, double stamp,
-    const std::vector<CornerPoint> & corners);
-
-  void logPassage(
-    uint64_t tick, double stamp,
-    const Passage & p);
-
   void logCbfConstraints(
     uint64_t tick, double stamp,
     const std::vector<CbfConstraint> & cs,
@@ -106,11 +99,12 @@ public:
     uint64_t tick, double stamp,
     const sensor_msgs::msg::LaserScan & scan);
 
-  // D_L/D_R lateral-centering snapshot. regime: 0=NONE,1=BOTH,
-  // 2=LEFT_ONLY, 3=RIGHT_ONLY. D_L/D_R are body-aware (min over body
-  // corners of segment-distance). yaw_misalign is the angle between
-  // the alley axis (avg flanking-wall tangent, +x-folded) and robot's
-  // +x, in radians.
+  // Lateral-centering + blending snapshot. regime: 0=NONE,1=BOTH,
+  // 2=LEFT_ONLY, 3=RIGHT_ONLY. D_L/D_R are body-aware perpendicular
+  // distances to the wall LINE. yaw_misalign is the angle (rad)
+  // between the alley axis (avg flanking-wall tangent, +x-folded)
+  // and robot's +x. `w` is the scalar blend weight actually applied
+  // this tick (walls_quality * wall_blend_weight).
   void logCentering(
     uint64_t tick, double stamp,
     int regime,
@@ -118,9 +112,9 @@ public:
     bool has_L, bool has_R,
     int n_flanking,
     double yaw_misalign,
-    double vy_raw, double vy_smoothed,
-    double vy_path, double vy_used,
-    bool override_active);
+    double vy_path, double vy_walls, double vy_used,
+    double w,
+    double wz_path, double wz_walls, double wz_used);
 
 private:
   bool enabled_{false};
@@ -131,8 +125,6 @@ private:
   std::ofstream f_main_;
   std::ofstream f_path_;
   std::ofstream f_walls_;
-  std::ofstream f_corners_;
-  std::ofstream f_passage_;
   std::ofstream f_cbf_;
   std::ofstream f_qp_;
   std::ofstream f_lidar_;

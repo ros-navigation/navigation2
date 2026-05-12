@@ -307,7 +307,7 @@ ConstrainedController::computeVelocityCommands(
   }
 
   // 3. LiDAR scene parse (must precede nominal so we can override vy
-  //    from the centering law before the CBF sees u_nom).
+  //    from the centering law before the CBF sees the blend).
   sensor_msgs::msg::LaserScan::SharedPtr scan;
   {
     std::lock_guard<std::mutex> lock(scan_mutex_);
@@ -327,26 +327,47 @@ ConstrainedController::computeVelocityCommands(
     log_->event("no LiDAR scan available yet — skipping CBF this tick");
   }
 
-  // 4. Nominal P controller (path-derived vx, vy, wz).
+  // 4. Nominal P controller (path-derived vx, vy, wz). Captured here
+  //    as the *true* nominal output so logging downstream is honest:
+  //    u_nominal holds the P-controller's verbatim command, u_blend
+  //    holds the post-blend command, cbf_res.u holds the final.
   NominalDebug nom_dbg;
-  auto u_nom = nominal_->compute(target_ps.pose, &nom_dbg);
-  const double vy_path = u_nom.linear.y;
+  const auto u_nominal = nominal_->compute(target_ps.pose, &nom_dbg);
+  const double vy_path = u_nominal.linear.y;
+  const double wz_path = u_nominal.angular.z;
 
-  // 4b. D_L/D_R lateral centering: override vy_nom when flanking walls
-  //     are visible. Path-derived vy is retained as fallback. The CBF
-  //     then sees this scene-aware nominal — corrections it does not
-  //     have to make are corrections that never have to fight u_nom.
+  // 4b. Sensor-based candidates from D_L/D_R + alley-axis estimation.
+  //     vy_walls := centering law output (k_lat·(D_L−D_R) etc., clamped).
+  //     wz_walls := k_yaw · s · yaw_misalign — drive heading toward
+  //                 the alley axis recovered from the closest flanking
+  //                 walls. Uses the same `s` taper as path-side wz so
+  //                 envelopes are consistent.
   CenteringDebug cent_dbg;
-  const double vy_override = lateral_centering_->compute(snap, &cent_dbg);
-  if (cent_dbg.override_active) {
-    u_nom.linear.y = vy_override;
-  }
+  const double vy_walls = lateral_centering_->compute(snap, &cent_dbg);
+  const double wz_walls = params->k_yaw * nom_dbg.s * cent_dbg.yaw_misalign;
 
-  // 5. CBF safety filter.
+  // 4c. Single-scalar blend on vy and wz. Gate by walls_quality so the
+  //     blend only fires when BOTH flanking walls are visible (post-
+  //     hysteresis in LateralCentering). At door / free-space (one or
+  //     no walls) walls_quality drops to 0 and we fall back to pure path.
+  const double walls_quality =
+    (cent_dbg.has_L && cent_dbg.has_R) ? 1.0 : 0.0;
+  const double w = walls_quality *
+    std::clamp(params->wall_blend_weight, 0.0, 1.0);
+
+  geometry_msgs::msg::Twist u_blend = u_nominal;
+  u_blend.linear.y  = w * vy_walls + (1.0 - w) * vy_path;
+  u_blend.angular.z = w * wz_walls + (1.0 - w) * wz_path;
+  u_blend.linear.y = std::clamp(
+    u_blend.linear.y, -params->v_lateral_max, params->v_lateral_max);
+  u_blend.angular.z = std::clamp(
+    u_blend.angular.z, -params->v_angular_max, params->v_angular_max);
+
+  // 5. CBF safety filter — sole safety layer. Sees u_blend directly.
   CbfFilterResult cbf_res;
-  cbf_res.u = u_nom;  // pass-through fallback when no walls
+  cbf_res.u = u_blend;  // pass-through fallback when no walls
   if (!snap.walls.empty()) {
-    cbf_res = cbf_filter_->filter(snap, u_nom);
+    cbf_res = cbf_filter_->filter(snap, u_blend);
 
     // QP convergence guard. If the active-set method did not
     // converge to a feasible u (qp.ok = false), the constraint set
@@ -357,13 +378,13 @@ ConstrainedController::computeVelocityCommands(
     // LiDAR. Log so we can see how often this fires.
     if (!cbf_res.qp.ok) {
       log_->event(
-        "QP infeasible — falling back to u_nom (clamped)");
+        "QP infeasible — falling back to u_blend (clamped)");
       cbf_res.u.linear.x = std::clamp(
-        u_nom.linear.x, -params->v_linear_max, params->v_linear_max);
+        u_blend.linear.x, -params->v_linear_max, params->v_linear_max);
       cbf_res.u.linear.y = std::clamp(
-        u_nom.linear.y, -params->v_lateral_max, params->v_lateral_max);
+        u_blend.linear.y, -params->v_lateral_max, params->v_lateral_max);
       cbf_res.u.angular.z = std::clamp(
-        u_nom.angular.z, -params->v_angular_max, params->v_angular_max);
+        u_blend.angular.z, -params->v_angular_max, params->v_angular_max);
     }
   }
 
@@ -376,8 +397,8 @@ ConstrainedController::computeVelocityCommands(
   log_->logState(
     tick, stamp.seconds(),
     0.0, 0.0, 0.0,  // rx,ry,ryaw (we operate in base_link)
-    u_nom, out.twist,
-    u_nom.linear.x < 0.0,
+    u_nominal, out.twist,
+    u_nominal.linear.x < 0.0,
     dist_to_goal);
 
   log_->logPath(
@@ -389,8 +410,6 @@ ConstrainedController::computeVelocityCommands(
     sel_idx, static_cast<int>(local_plan.poses.size()));
 
   log_->logWalls(tick, stamp.seconds(), snap.walls);
-  log_->logCorners(tick, stamp.seconds(), snap.corners);
-  log_->logPassage(tick, stamp.seconds(), snap.passage);
   log_->logCentering(
     tick, stamp.seconds(),
     static_cast<int>(cent_dbg.regime),
@@ -398,17 +417,17 @@ ConstrainedController::computeVelocityCommands(
     cent_dbg.has_L, cent_dbg.has_R,
     cent_dbg.n_flanking,
     cent_dbg.yaw_misalign,
-    cent_dbg.vy_raw, cent_dbg.vy_smoothed,
-    vy_path, u_nom.linear.y,
-    cent_dbg.override_active);
+    vy_path, vy_walls, u_blend.linear.y,
+    w,
+    wz_path, wz_walls, u_blend.angular.z);
 
   if (!cbf_res.constraints.empty()) {
-    const Eigen::Vector3d u_nom_e(
-      u_nom.linear.x, u_nom.linear.y, u_nom.angular.z);
+    const Eigen::Vector3d u_blend_e(
+      u_blend.linear.x, u_blend.linear.y, u_blend.angular.z);
     const Eigen::Vector3d u_final_e(
       out.twist.linear.x, out.twist.linear.y, out.twist.angular.z);
     log_->logCbfConstraints(
-      tick, stamp.seconds(), cbf_res.constraints, u_nom_e, u_final_e);
+      tick, stamp.seconds(), cbf_res.constraints, u_blend_e, u_final_e);
     log_->logQp(
       tick, stamp.seconds(),
       cbf_res.qp.ok,
