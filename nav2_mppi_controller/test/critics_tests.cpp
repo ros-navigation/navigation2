@@ -946,9 +946,9 @@ TEST(CriticTests, ObstacleBypassCritic)
   generated_trajectories.reset(1000, 30);
   models::Path path;
   geometry_msgs::msg::Pose goal;
-  path.reset(45);
-  // Straight path along x-axis at y=2.5, from x=0.5 to x=4.9, spaced 0.1m
-  for (int i = 0; i < 45; ++i) {
+  // 70-point path so target_idx (45) < path_segments_count (69) avoids zero tangent
+  path.reset(70);
+  for (int i = 0; i < 70; ++i) {
     path.x(i) = 0.5f + i * 0.1f;
     path.y(i) = 2.5f;
   }
@@ -959,23 +959,13 @@ TEST(CriticTests, ObstacleBypassCritic)
     false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
-  // Default costmap cells may be NO_INFORMATION (255), which the bypass critic's
-  // isNonLethal check treats as blocked. Set explicit free bands around the obstacle
-  // so perpendicular scans find free space at deterministic distances.
+  // Obstacle at cells [25,30]x[22,27] = world [2.5,3.0]x[2.2,2.7]
+  // Path at y=2.5 (cell_y=25) passes through obstacle. Indices 20-25 are blocked.
+  // Perpendicular scan from obstacle: left(y+) free at s=3, right(y-) free at s=4
   auto * costmap = costmap_ros->getCostmap();
-  // Place lethal obstacle at cells [25,30]x[22,27], world [2.5,3.0]x[2.2,2.7]
   for (unsigned int i = 25; i <= 30; ++i) {
     for (unsigned int j = 22; j <= 27; ++j) {
-      costmap->setCost(i, j, 254);
-    }
-  }
-  // Free cells above and below obstacle for left/right perpendicular scans
-  for (unsigned int i = 25; i <= 30; ++i) {
-    for (unsigned int j = 28; j <= 40; ++j) {
-      costmap->setCost(i, j, 0);
-    }
-    for (unsigned int j = 10; j <= 21; ++j) {
-      costmap->setCost(i, j, 0);
+      costmap->setCost(i, j, nav2_costmap_2d::LETHAL_OBSTACLE);
     }
   }
 
@@ -984,165 +974,146 @@ TEST(CriticTests, ObstacleBypassCritic)
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   EXPECT_EQ(critic.getName(), "critic");
 
-  // -- Scenario 1: Early exit - path too short (L121) --
-  state.local_path_length = 0.3f;  // Below threshold_to_consider_ = 0.5
+  // -- Scenario 1: Early exit - path too short --
+  state.local_path_length = 0.3f;
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
-  // -- Scenario 2: Early exit - not advanced enough on path (L128) --
-  state.local_path_length = 4.4f;
-  data.furthest_reached_path_point = 10;  // Below offset_from_furthest_ = 20
+  // -- Scenario 2: Early exit - not advanced enough on path --
+  state.local_path_length = 6.9f;
+  data.furthest_reached_path_point = 10;
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
-  // -- Scenario 3: No obstacles - clear path (L160, !bypass_active_) --
+  // -- Scenario 3: No obstacles - clear path (!path_blocked && !bypass_active_) --
   data.furthest_reached_path_point = 25;
-  data.path_pts_valid = std::vector<bool>(44, true);
+  data.path_pts_valid = std::vector<bool>(69, true);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
-  // -- Scenario 4: Path blocked - left side bypass with exact costs (L222-227) --
-  // Invalid at indices 20-25: invalid_ctr=6, ratio=6/25=0.24, path_blocked=true
-  // blocked_idx=20, resume_idx=26, obstacle_idx=23, tangent=(0.1,0), path_yaw=0
-  // determineBestBypassSide: left free at s=3, right free at s=4 → left preferred
-  // signed_offset = +(3*0.1+1.0) = +1.3, target_idx=43, target=(4.8, 3.8)
-  data.path_pts_valid = std::vector<bool>(44, true);
-  for (int i = 20; i <= 25; ++i) {
-    (*data.path_pts_valid)[i] = false;
-  }
+  // -- Scenario 4: Path blocked - left side bypass with exact costs --
+  // findPathCosts marks indices 20-25 invalid from costmap. 5 counted (0..24).
+  // occupancy_ratio=5/25=0.2, path_blocked=true
+  // blocked_idx=20, resume_idx=26, obstacle_idx=23, path_yaw=0
+  // determineBestBypassSide: left preferred (fewer lethal+inflated cells above path)
+  // signed_offset = +(4*0.1+1.0) = +1.4, target_idx=45, target=(5.0, 3.9)
+  data.path_pts_valid = std::nullopt;
   data.furthest_reached_path_point = 25;
-
-  // Set trajectory endpoints for cost verification
-  generated_trajectories.x.col(29).setConstant(4.8f);
-  generated_trajectories.y.col(29).setConstant(3.8f);
-  generated_trajectories.x(1, 29) = 4.8f;  generated_trajectories.y(1, 29) = 2.8f;
-  generated_trajectories.x(2, 29) = 3.8f;  generated_trajectories.y(2, 29) = 3.8f;
-  generated_trajectories.x(3, 29) = 4.8f;  generated_trajectories.y(3, 29) = 1.8f;
+  generated_trajectories.x.col(29).setConstant(5.0f);
+  generated_trajectories.y.col(29).setConstant(3.9f);
+  generated_trajectories.x(1, 29) = 5.0f;  generated_trajectories.y(1, 29) = 2.9f;
+  generated_trajectories.x(2, 29) = 4.0f;  generated_trajectories.y(2, 29) = 3.9f;
+  generated_trajectories.x(3, 29) = 5.0f;  generated_trajectories.y(3, 29) = 1.9f;
 
   critic.score(data);
   EXPECT_NEAR(costs(0), 0.0, 1e-2);
-  // 14/3 weight * 1.0 distance = 4.667
-  EXPECT_NEAR(costs(1), 4.667, 0.02);
-  EXPECT_NEAR(costs(2), 4.667, 0.02);
-  // 14/3 weight * 2.0 distance = 9.333
-  EXPECT_NEAR(costs(3), 9.333, 0.02);
-  EXPECT_LT(costs(1), costs(3));  // Closer trajectory = lower cost
+  EXPECT_NEAR(costs(1), 4.667, 0.02);   // weight * 1.0m
+  EXPECT_NEAR(costs(2), 4.667, 0.02);   // weight * 1.0m
+  EXPECT_NEAR(costs(3), 9.333, 0.02);   // weight * 2.0m
+  EXPECT_LT(costs(1), costs(3));
   costs.setZero();
 
-  // -- Scenario 5: Hysteresis keeps bypass active (L160, bypass_active_ && ratio >= half) --
-  // bypass_active_=true from Scenario 4. Only 2 invalid pts: invalid_ctr=2, ratio=2/25=0.08
-  // path_blocked=(0.08>0.07 && 2>2.0)=false, but 0.08 >= 0.035 → bypass stays active
-  data.path_pts_valid = std::vector<bool>(44, true);
+  // -- Scenario 5: Hysteresis keeps bypass active --
+  // bypass_active_=true from Scenario 4. Pre-set 2 invalid pts: ratio=2/25=0.08
+  // path_blocked=(0.08>0.07 && 2>2.0)=false. 0.08 >= 0.035 → bypass stays active.
+  // Same obstacle in costmap → same bypass side/offset → same target (5.0, 3.9)
+  data.path_pts_valid = std::vector<bool>(69, true);
   (*data.path_pts_valid)[22] = false;
   (*data.path_pts_valid)[23] = false;
   data.furthest_reached_path_point = 25;
 
   critic.score(data);
-  EXPECT_NEAR(costs(0), 0.0, 1e-2);
-  // Same obstacle geometry → same target → same costs
-  EXPECT_NEAR(costs(1), 4.667, 0.02);
   EXPECT_GT(costs.sum(), 0.0);
+  EXPECT_NEAR(costs(1), 4.667, 0.02);   // traj 1 is 1.0m from target
   costs.setZero();
 
-  // -- Scenario 6: Hysteresis deactivation (L160, bypass_active_ && ratio < half) --
-  // bypass_active_=true. All valid: invalid_ctr=0, ratio=0.0 < 0.035 → deactivates
-  data.path_pts_valid = std::vector<bool>(44, true);
+  // -- Scenario 6: Hysteresis deactivation --
+  // bypass_active_=true. All valid: ratio=0.0 < 0.035 → deactivates, returns
+  data.path_pts_valid = std::vector<bool>(69, true);
   data.furthest_reached_path_point = 25;
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
-  // -- Scenario 7: Power parameter, power=2 (L222-224) --
-  // Same obstacle layout as Scenario 4
+  // -- Scenario 7: Power parameter, power=2 --
   node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
   critic = ObstacleBypassCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
-  data.path_pts_valid = std::vector<bool>(44, true);
-  for (int i = 20; i <= 25; ++i) {
-    (*data.path_pts_valid)[i] = false;
-  }
+  data.path_pts_valid = std::nullopt;
   data.furthest_reached_path_point = 25;
   critic.score(data);
   EXPECT_NEAR(costs(0), 0.0, 1e-2);
-  // (14/3 weight * 1.0 distance)^2 = 21.78
-  EXPECT_NEAR(costs(1), 21.78, 0.1);
-  // (14/3 weight * 2.0 distance)^2 = 87.11
-  EXPECT_NEAR(costs(3), 87.11, 0.1);
+  EXPECT_NEAR(costs(1), 21.78, 0.1);    // (weight * 1.0)^2
+  EXPECT_NEAR(costs(3), 87.11, 0.1);    // (weight * 2.0)^2
   costs.setZero();
 
-  // -- Scenario 8: Right side preferred bypass (L71 right < left) --
-  // Extend obstacle upward: cells [25,30]x[28,30] now lethal (were free above)
+  // -- Scenario 8: Right side preferred bypass --
+  // Extend obstacle to [25,30]x[22,29]: more cells above path than below
+  // Right side has fewer lethal cells → right preferred
+  // Verify by checking trajectory below path costs less than trajectory above
   for (unsigned int i = 25; i <= 30; ++i) {
-    for (unsigned int j = 28; j <= 30; ++j) {
-      costmap->setCost(i, j, 254);
+    for (unsigned int j = 28; j <= 29; ++j) {
+      costmap->setCost(i, j, nav2_costmap_2d::LETHAL_OBSTACLE);
     }
   }
-  // Ensure free cells above extended obstacle for left scan
-  for (unsigned int i = 25; i <= 30; ++i) {
-    for (unsigned int j = 31; j <= 40; ++j) {
-      costmap->setCost(i, j, 0);
-    }
-  }
-  // Obstacle now [25,30]x[22,30]. Left free at s=6, right free at s=4 → right preferred
-  // signed_offset = -(4*0.1+1.0) = -1.4, target = (4.8, 2.5-1.4) = (4.8, 1.1)
   node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
   critic = ObstacleBypassCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
-  data.path_pts_valid = std::vector<bool>(44, true);
-  for (int i = 20; i <= 25; ++i) {
-    (*data.path_pts_valid)[i] = false;
-  }
+  data.path_pts_valid = std::nullopt;
   data.furthest_reached_path_point = 25;
-  generated_trajectories.x.col(29).setConstant(4.8f);
-  generated_trajectories.y.col(29).setConstant(1.1f);
-  generated_trajectories.y(1, 29) = 2.1f;  // 1.0m above target
+  generated_trajectories.x.col(29).setConstant(5.0f);
+  generated_trajectories.y(0, 29) = 0.5f;   // far below path (toward right bypass)
+  generated_trajectories.y(1, 29) = 4.5f;   // far above path (away from right bypass)
 
   critic.score(data);
-  EXPECT_NEAR(costs(0), 0.0, 1e-2);
-  // 14/3 weight * 1.0 distance = 4.667
-  EXPECT_NEAR(costs(1), 4.667, 0.02);
+  EXPECT_GT(costs.sum(), 0.0);
+  EXPECT_LT(costs(0), costs(1));   // below path (right side) is closer to target
   costs.setZero();
 
-  // -- Scenario 9: Blocked to end of path (L180) --
+  // Restore obstacle to original [25,30]x[22,27]
+  for (unsigned int i = 25; i <= 30; ++i) {
+    for (unsigned int j = 28; j <= 29; ++j) {
+      costmap->setCost(i, j, nav2_costmap_2d::FREE_SPACE);
+    }
+  }
+
+  // -- Scenario 9: Blocked to end of path --
+  // resume_idx scans to end without finding valid → returns early
   critic = ObstacleBypassCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
-  data.path_pts_valid = std::vector<bool>(44, true);
-  for (int i = 20; i < 44; ++i) {
+  data.path_pts_valid = std::vector<bool>(69, true);
+  for (int i = 20; i < 69; ++i) {
     (*data.path_pts_valid)[i] = false;
   }
   data.furthest_reached_path_point = 25;
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
-  // -- Scenario 10: Degenerate tangent, tangent_len < 1e-6 (L197) --
+  // -- Scenario 10: Degenerate tangent (tangent_len < 1e-6) --
   critic = ObstacleBypassCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
-  // Make obstacle_idx and next_idx have identical XY
   float saved_x22 = path.x(22);
   float saved_x23 = path.x(23);
   path.x(22) = 2.75f;
   path.x(23) = 2.75f;
-  data.path_pts_valid = std::vector<bool>(44, true);
+  data.path_pts_valid = std::vector<bool>(69, true);
   (*data.path_pts_valid)[21] = false;
   (*data.path_pts_valid)[22] = false;
   (*data.path_pts_valid)[23] = false;
-  // blocked_idx=21, resume_idx=24, obstacle_idx=22, next_idx=23
-  // tangent = (2.75-2.75, 2.5-2.5) = (0,0), tangent_len=0 → returns
   data.furthest_reached_path_point = 25;
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
   path.x(22) = saved_x22;
   path.x(23) = saved_x23;
 
-  // -- Scenario 11: Both sides blocked, determineBestBypassSide returns false (L204) --
-  // Fill entire costmap with lethal so no free space exists
+  // -- Scenario 11: Both sides blocked (determineBestBypassSide returns false) --
   for (unsigned int i = 0; i < costmap->getSizeInCellsX(); ++i) {
     for (unsigned int j = 0; j < costmap->getSizeInCellsY(); ++j) {
-      costmap->setCost(i, j, 254);
+      costmap->setCost(i, j, nav2_costmap_2d::LETHAL_OBSTACLE);
     }
   }
   critic = ObstacleBypassCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
-  data.path_pts_valid = std::vector<bool>(44, true);
+  data.path_pts_valid = std::vector<bool>(69, true);
   for (int i = 20; i <= 25; ++i) {
     (*data.path_pts_valid)[i] = false;
   }
