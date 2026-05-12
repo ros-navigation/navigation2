@@ -19,11 +19,9 @@
 
 // TODO
 //   * Testing working well, not jumping around
-//      some sitations iterating beteen solns?
 
 //   * Checking across a variety of configuration parameters
 //   * Fine-Tuning
-//   * unit tests
 //   * Dex integration
 
 namespace mppi::critics
@@ -129,8 +127,7 @@ void ObstacleBypassCritic::score(CriticData & data)
     return;
   }
 
-  // Find integrated distance in the path and find the first path IDX further than
-  //  max(min_distance_occupancy_check_, furthest_reached_path_point)
+  // Find the first path IDX further than max(min_distance_occ_check, furthest_reached_path_point)
   const size_t path_segments_count = data.path.x.size() - 1;
   size_t occupancy_check_distance_idx = 0;
   float dx = 0.0f, dy = 0.0f, path_dist = 0.0f;
@@ -138,7 +135,6 @@ void ObstacleBypassCritic::score(CriticData & data)
     dx = data.path.x(i) - data.path.x(i - 1);
     dy = data.path.y(i) - data.path.y(i - 1);
     path_dist += sqrtf(dx * dx + dy * dy);
-
     if (path_dist <= min_distance_occupancy_check_ || i < furthest_reached_path_point) {
       occupancy_check_distance_idx = (i + 1 < path_segments_count) ? i + 1 : i;
     }
@@ -152,67 +148,83 @@ void ObstacleBypassCritic::score(CriticData & data)
   float invalid_ctr = 0.0f;
   for (size_t i = 0; i < occupancy_check_distance_idx; i++) {
     if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
-    if (invalid_ctr / occupancy_check_distance_idx_flt > max_path_occupancy_ratio_ &&
-      invalid_ctr > 2.0f)
-    {
-      // Find the first blocked path point
-      size_t blocked_idx = 0;
-      for (size_t j = 0; j < occupancy_check_distance_idx; j++) {
-        if (!path_pts_valid[j]) {blocked_idx = j; break;}
-      }
+  }
 
-      // Find first valid path point past the blocked region
-      size_t resume_idx = blocked_idx;
-      for (; resume_idx < path_pts_valid.size(); resume_idx++) {
-        if (path_pts_valid[resume_idx]) {break;}
-      }
-      if (resume_idx >= path_pts_valid.size()) {
-        return;
-      }
+  const float occupancy_ratio = invalid_ctr / occupancy_check_distance_idx_flt;
+  const bool path_blocked = occupancy_ratio > max_path_occupancy_ratio_ && invalid_ctr > 2.0f;
 
-      // Midpoint of blocked region to score against. Note that the path is being continuously
-      // pruned, so the blocked_idx is updated and adjusted forward as the robot moves
-      const size_t obstacle_idx = (blocked_idx + resume_idx) / 2;
-
-      // Compute path tangent from XY poses at the obstacle region
-      const size_t next_idx = std::min(obstacle_idx + 1, path_segments_count - 1);
-      const float tangent_x = data.path.x(next_idx) - data.path.x(obstacle_idx);
-      const float tangent_y = data.path.y(next_idx) - data.path.y(obstacle_idx);
-      const float tangent_len = sqrtf(tangent_x * tangent_x + tangent_y * tangent_y);
-      if (tangent_len < 1e-6f) {
-        return;
-      }
-      const float path_yaw = atan2f(tangent_y, tangent_x);
-
-      // Use costmap to determine which side to steer around the obstacle
-      float signed_offset = 0.0f;
-      if (!determineBestBypassSide(
-          data.path.x(obstacle_idx), data.path.y(obstacle_idx),
-          path_yaw, signed_offset))
-      {
-        return;  // No valid bypass found, defer to obstacle critic
-      }
-
-      // Target point perpendicular to path tangent at the obstacle
-      const float perp_x = -tangent_y / tangent_len;
-      const float perp_y = tangent_x / tangent_len;
-      const float target_x = data.path.x(occupancy_check_distance_idx) + signed_offset * perp_x; // TGODO resume_idx not far way enough
-      const float target_y = data.path.y(occupancy_check_distance_idx) + signed_offset * perp_y; // TODO above, occupancy_check_distance_idx works, but maybe arbitrarily high?
-
-      // Score: distance from trajectory end to target
-      const int last_idx = data.trajectories.y.cols() - 1;
-      const auto diff_x = target_x - data.trajectories.x.col(last_idx);
-      const auto diff_y = target_y - data.trajectories.y.col(last_idx);
-
-      if (power_ > 1u) {
-        data.costs +=
-          (((diff_x.square() + diff_y.square()).sqrt()) * weight_).pow(power_);
-      } else {
-        data.costs += ((diff_x.square() + diff_y.square()).sqrt()) * weight_;
-      }
+  // Once bypass is active, require the ratio to drop well below the
+  // threshold before deactivating to prevent oscillation
+  if (!path_blocked) {
+    if (!bypass_active_ || occupancy_ratio < max_path_occupancy_ratio_ * 0.5f) {
+      bypass_active_ = false;
       return;
     }
   }
+
+  // Find the first blocked path point
+  size_t blocked_idx = 0;
+  for (size_t j = 0; j < occupancy_check_distance_idx; j++) {
+    if (!path_pts_valid[j]) {blocked_idx = j; break;}
+  }
+
+  // Find first valid path point past the blocked region
+  size_t resume_idx = blocked_idx;
+  for (; resume_idx < path_pts_valid.size(); resume_idx++) {
+    if (path_pts_valid[resume_idx]) {break;}
+  }
+
+  // If blocked until the end of the path, don't activate bypass
+  if (resume_idx >= path_pts_valid.size()) {
+    bypass_active_ = false;
+    return;
+  }
+
+  // Midpoint of blocked region to score against. The path is being continuously
+  // pruned, so the blocked_idx is updated and adjusted forward as the robot moves
+  const size_t obstacle_idx = (blocked_idx + resume_idx) / 2;
+
+  // Compute path tangent from XY poses at the obstacle region to determine which
+  // direction to steer the vehicle to attempt to bypass the obstacle.
+  const size_t next_idx = std::min(obstacle_idx + 1, path_segments_count - 1);
+  const float path_x = data.path.x(obstacle_idx);
+  const float path_y = data.path.y(obstacle_idx);
+  const float tangent_x = data.path.x(next_idx) - path_x;
+  const float tangent_y = data.path.y(next_idx) - path_y;
+  const float tangent_len = sqrtf(tangent_x * tangent_x + tangent_y * tangent_y);
+  if (tangent_len < 1e-6f) {
+    bypass_active_ = false;
+    return;
+  }
+  const float path_yaw = atan2f(tangent_y, tangent_x);
+
+  float signed_offset = 0.0f;
+  if (!determineBestBypassSide(path_x, path_y, path_yaw, signed_offset)) {
+    bypass_active_ = false;
+    return;  // No valid bypass found
+  }
+
+  // Score against a forward-looking target point offset from the path
+  // in the direction of the bypass to incentivize trajectories to steer around
+  // the obstacle in the direction with the least disruption to path tracking.
+  const float perp_x = -tangent_y / tangent_len;
+  const float perp_y = tangent_x / tangent_len;
+  const size_t target_idx = std::min(
+    furthest_reached_path_point + offset_from_furthest_, path_segments_count - 1);
+  const float target_x = data.path.x(target_idx) + signed_offset * perp_x;
+  const float target_y = data.path.y(target_idx) + signed_offset * perp_y;
+  const int last_idx = data.trajectories.y.cols() - 1;
+  const auto diff_x = target_x - data.trajectories.x.col(last_idx);
+  const auto diff_y = target_y - data.trajectories.y.col(last_idx);
+
+  if (power_ > 1u) {
+    data.costs +=
+      (((diff_x.square() + diff_y.square()).sqrt()) * weight_).pow(power_);
+  } else {
+    data.costs += ((diff_x.square() + diff_y.square()).sqrt()) * weight_;
+  }
+
+  bypass_active_ = true;
 }
 
 }  // namespace mppi::critics

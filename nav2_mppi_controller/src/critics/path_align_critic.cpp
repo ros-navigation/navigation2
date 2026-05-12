@@ -85,6 +85,7 @@ void PathAlignCritic::score(CriticData & data)
     if (invalid_ctr / occupancy_check_distance_idx_flt > max_path_occupancy_ratio_ &&
       invalid_ctr > 2.0f)
     {
+      // Path is blocked, defer to ObstacleBypassCritic if desired to go around dynamically
       return;
     }
   }

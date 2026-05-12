@@ -31,7 +31,15 @@ namespace mppi::critics
 class ObstacleBypassCritic : public CriticFunction
 {
 public:
+  /**
+   * @brief Initialize critic parameters and runtime state.
+   */
   void initialize() override;
+
+  /**
+   * @brief Score trajectories based on obstacle bypass objective.
+   * @param data Critic data containing trajectories, path, and context.
+   */
   void score(CriticData & data) override;
 
 protected:
@@ -53,6 +61,7 @@ protected:
   float bypass_offset_dist_{0};
   unsigned int power_{0};
   float weight_{0};
+  bool bypass_active_{false};
 };
 
 }  // namespace mppi::critics
