@@ -238,8 +238,9 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
     bool result = validateAndClearPlugins(
       plugins, layers,
       [this](std::shared_ptr<CostmapLayer> & layer) {
-        RCLCPP_INFO(logger_, "Clearing entire layer: %s", layer->getName().c_str());
         layer->resetMap(0, 0, layer->getSizeInCellsX(), layer->getSizeInCellsY());
+        RCLCPP_INFO(logger_, "Performed action '%s' on layer: %s", "clear entirely",
+          layer->getName().c_str());
       },
       "clear costmap entirely");
 
@@ -313,6 +314,8 @@ bool ClearCostmapService::validateAndClearPlugins(
     {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
       clear_callback(costmap_layer);
+      RCLCPP_INFO(logger_, "Performed action '%s' on layer: %s", operation_name.c_str(),
+          layer->getName().c_str());
     }
   }
 

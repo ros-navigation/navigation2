@@ -132,8 +132,8 @@ private:
    * @brief  Function used to clear a given costmap layer
    */
   void clearLayerRegion(
-    std::shared_ptr<CostmapLayer> & costmap,
-    double pose_x, double pose_y, double reset_distance, bool invert);
+    std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance,
+    bool invert);
 
   /**
    * @brief Get the robot's position in the costmap using the master costmap

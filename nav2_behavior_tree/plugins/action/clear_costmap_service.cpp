@@ -14,7 +14,6 @@
 
 #include <string>
 #include <memory>
-#include <vector>
 
 #include "nav2_behavior_tree/plugins/action/clear_costmap_service.hpp"
 
@@ -39,12 +38,9 @@ void ClearEntireCostmapService::on_tick()
 BT::NodeStatus ClearEntireCostmapService::on_completion(
   std::shared_ptr<typename nav2_msgs::srv::ClearEntireCostmap::Response> response)
 {
-  if (response->success) {
-    return BT::NodeStatus::SUCCESS;
-  } else {
-    RCLCPP_ERROR(node_->get_logger(), "ClearEntireCostmap: Failed to clear costmap layers");
-    return BT::NodeStatus::FAILURE;
-  }
+  RCLCPP_ERROR_EXPRESSION(node_->get_logger(), !response->success,
+      "ClearEntireCostmap: Failed to clear costmap layers");
+  return response->success ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 
 ClearCostmapExceptRegionService::ClearCostmapExceptRegionService(
@@ -67,12 +63,9 @@ void ClearCostmapExceptRegionService::on_tick()
 BT::NodeStatus ClearCostmapExceptRegionService::on_completion(
   std::shared_ptr<typename nav2_msgs::srv::ClearCostmapExceptRegion::Response> response)
 {
-  if (response->success) {
-    return BT::NodeStatus::SUCCESS;
-  } else {
-    RCLCPP_ERROR(node_->get_logger(), "ClearCostmapExceptRegion: Failed to clear costmap layers");
-    return BT::NodeStatus::FAILURE;
-  }
+  RCLCPP_ERROR_EXPRESSION(node_->get_logger(), !response->success,
+      "ClearCostmapExceptRegion: Failed to clear costmap layers");
+  return response->success ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 
 ClearCostmapAroundRobotService::ClearCostmapAroundRobotService(
@@ -96,12 +89,9 @@ void ClearCostmapAroundRobotService::on_tick()
 BT::NodeStatus ClearCostmapAroundRobotService::on_completion(
   std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundRobot::Response> response)
 {
-  if (response->success) {
-    return BT::NodeStatus::SUCCESS;
-  } else {
-    RCLCPP_ERROR(node_->get_logger(), "ClearCostmapAroundRobot: Failed to clear costmap layers");
-    return BT::NodeStatus::FAILURE;
-  }
+  RCLCPP_ERROR_EXPRESSION(node_->get_logger(), !response->success,
+      "ClearCostmapAroundRobot: Failed to clear costmap layers");
+  return response->success ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 
 ClearCostmapAroundPoseService::ClearCostmapAroundPoseService(
@@ -126,12 +116,9 @@ void ClearCostmapAroundPoseService::on_tick()
 BT::NodeStatus ClearCostmapAroundPoseService::on_completion(
   std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundPose::Response> response)
 {
-  if (response->success) {
-    return BT::NodeStatus::SUCCESS;
-  } else {
-    RCLCPP_ERROR(node_->get_logger(), "ClearCostmapAroundPose: Failed to clear costmap layers");
-    return BT::NodeStatus::FAILURE;
-  }
+  RCLCPP_ERROR_EXPRESSION(node_->get_logger(), !response->success,
+      "ClearCostmapAroundPose: Failed to clear costmap layers");
+  return response->success ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_behavior_tree
