@@ -345,7 +345,7 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
         test_node->parent->parent->parent->parent &&
         test_node->parent->parent->parent->parent->parent)
       {
-        test_node = test_node->parent->parent->parent->parent->parent;
+        test_node = static_cast<NodePtr>(test_node->parent->parent->parent->parent->parent);
         // print the goals pose
         refined_analytic_nodes =
           getAnalyticPath(
