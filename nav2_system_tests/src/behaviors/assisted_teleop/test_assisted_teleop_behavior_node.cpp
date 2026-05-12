@@ -85,8 +85,8 @@ TEST_P(AssistedTeleopBehaviorTestFixture, testAssistedTeleopBehavior)
   EXPECT_TRUE(success);
 }
 
-std::vector<TestParameters> test_params = {TestParameters{-0.1, 0.0},
-  TestParameters{0.35, 0.05}};
+std::vector<TestParameters> test_params = {TestParameters{-0.1f, 0.0},
+  TestParameters{0.35f, 0.05f}};
 
 INSTANTIATE_TEST_SUITE_P(
   TestAssistedTeleopBehavior,

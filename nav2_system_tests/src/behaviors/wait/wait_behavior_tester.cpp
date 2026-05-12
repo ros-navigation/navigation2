@@ -120,7 +120,7 @@ bool WaitBehaviorTester::behaviorTest(
 
   auto start_time = node_->now();
   auto goal_msg = Wait::Goal();
-  goal_msg.time = rclcpp::Duration(wait_time, 0.0);
+  goal_msg.time = rclcpp::Duration(static_cast<int32_t>(wait_time), 0);
 
   RCLCPP_INFO(this->node_->get_logger(), "Sending goal");
 
@@ -188,7 +188,7 @@ bool WaitBehaviorTester::behaviorTestCancel(
 
   auto start_time = node_->now();
   auto goal_msg = Wait::Goal();
-  goal_msg.time = rclcpp::Duration(wait_time, 0.0);
+  goal_msg.time = rclcpp::Duration(static_cast<int32_t>(wait_time), 0);
 
   RCLCPP_INFO(this->node_->get_logger(), "Sending goal");
 

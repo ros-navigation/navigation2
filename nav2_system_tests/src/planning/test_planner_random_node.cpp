@@ -37,7 +37,7 @@ TEST(testWithHundredRandomEndPoints, testWithHundredRandomEndPoints)
   bool success = false;
   int num_tries = 3;
   for (int i = 0; i != num_tries; i++) {
-    success = success || obj->defaultPlannerRandomTests(100, 0.1);
+    success = success || obj->defaultPlannerRandomTests(100, 0.1f);
     if (success) {
       break;
     }
