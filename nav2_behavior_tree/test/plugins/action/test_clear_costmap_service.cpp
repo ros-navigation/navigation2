@@ -110,6 +110,10 @@ TEST_F(ClearEntireCostmapServiceTestFixture, test_tick)
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
+
+  auto request = server_->getCurrentRequest();
+  ASSERT_NE(request, nullptr);
+  EXPECT_TRUE(request->plugins.empty());
 }
 
 TEST_F(ClearEntireCostmapServiceTestFixture, test_tick_with_plugins)
@@ -246,6 +250,10 @@ TEST_F(ClearCostmapExceptRegionServiceTestFixture, test_tick)
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
+
+  auto request = server_->getCurrentRequest();
+  ASSERT_NE(request, nullptr);
+  EXPECT_TRUE(request->plugins.empty());
 }
 
 TEST_F(ClearCostmapExceptRegionServiceTestFixture, test_tick_with_plugins)
@@ -362,6 +370,10 @@ TEST_F(ClearCostmapAroundRobotServiceTestFixture, test_tick)
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
+
+  auto request = server_->getCurrentRequest();
+  ASSERT_NE(request, nullptr);
+  EXPECT_TRUE(request->plugins.empty());
 }
 
 TEST_F(ClearCostmapAroundRobotServiceTestFixture, test_tick_with_plugins)
@@ -479,6 +491,10 @@ TEST_F(ClearCostmapAroundPoseServiceTestFixture, test_tick)
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
+
+  auto request = server_->getCurrentRequest();
+  ASSERT_NE(request, nullptr);
+  EXPECT_TRUE(request->plugins.empty());
 }
 
 TEST_F(ClearCostmapAroundPoseServiceTestFixture, test_tick_with_plugins)
