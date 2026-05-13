@@ -124,7 +124,7 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<double>(
-          "reset_distance", 1,
+          "reset_distance", 1.0,
           "Distance from the robot above which obstacles are cleared"),
         BT::InputPort<std::vector<std::string>>("plugins",
           "List of costmap plugin names to clear. If empty, all plugins will be cleared")
@@ -177,7 +177,7 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<double>(
-          "reset_distance", 1,
+          "reset_distance", 1.0,
           "Distance from the robot under which obstacles are cleared"),
         BT::InputPort<std::vector<std::string>>("plugins",
           "List of costmap plugin names to clear. If empty, all plugins will be cleared")
