@@ -3,6 +3,7 @@ set(TEST_NAMES
   controller_state_transition_test
   models_test
   noise_generator_test
+  noise_low_pass_filter_test
   parameter_handler_test
   motion_model_tests
   trajectory_visualizer_tests

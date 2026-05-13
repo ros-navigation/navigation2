@@ -13,12 +13,15 @@
 // limitations under the License.
 
 #include <chrono>
+#include <cmath>
+#include <limits>
 #include <thread>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_mppi_controller/tools/noise_generator.hpp"
+#include "nav2_mppi_controller/tools/noise_low_pass_filter.hpp"
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/models/optimizer_settings.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
@@ -27,6 +30,61 @@
 // Tests noise generator object
 
 using namespace mppi;  // NOLINT
+
+class NoiseGeneratorTester : public NoiseGenerator
+{
+public:
+  double getRequestedCutoff() const
+  {
+    return low_pass_filter_.getRequestedCutoffFrequency();
+  }
+
+  double getEffectiveCutoff() const
+  {
+    return low_pass_filter_.getEffectiveCutoffFrequency();
+  }
+
+  bool isFilterConfigured() const
+  {
+    return low_pass_filter_.isActive();
+  }
+};
+
+double meanAbsTemporalDifference(const Eigen::ArrayXXf & data)
+{
+  if (data.cols() < 2) {
+    return 0.0;
+  }
+
+  double total = 0.0;
+  size_t count = 0;
+  for (int row = 0; row < data.rows(); ++row) {
+    for (int col = 1; col < data.cols(); ++col) {
+      total += std::abs(data(row, col) - data(row, col - 1));
+      ++count;
+    }
+  }
+
+  return count > 0 ? total / static_cast<double>(count) : 0.0;
+}
+
+double columnStd(const Eigen::ArrayXXf & data, int col)
+{
+  if (data.rows() <= 0 || col < 0 || col >= data.cols()) {
+    return 0.0;
+  }
+
+  double sum = 0.0;
+  double sum_sq = 0.0;
+  for (int row = 0; row < data.rows(); ++row) {
+    const double value = static_cast<double>(data(row, col));
+    sum += value;
+    sum_sq += value * value;
+  }
+
+  const double mean = sum / static_cast<double>(data.rows());
+  return std::sqrt(std::max(0.0, sum_sq / static_cast<double>(data.rows()) - mean * mean));
+}
 
 TEST(NoiseGeneratorTest, NoiseGeneratorLifecycle)
 {
@@ -132,6 +190,266 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   EXPECT_NEAR(state.cvy(0, 9), 9, 0.3);
   EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
 
+  generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, LowPassFilterSmoothsPerturbations)
+{
+  auto filtered_node = std::make_shared<nav2::LifecycleNode>("filtered_node");
+  filtered_node->declare_parameter("filtered_ns.regenerate_noises", rclcpp::ParameterValue(false));
+  filtered_node->declare_parameter(
+    "filtered_ns.noise_low_pass_filter.active", rclcpp::ParameterValue(true));
+  filtered_node->declare_parameter(
+    "filtered_ns.noise_low_pass_filter.cutoff_frequency", rclcpp::ParameterValue(0.8));
+  filtered_node->declare_parameter(
+    "filtered_ns.noise_low_pass_filter.order", rclcpp::ParameterValue(2));
+  std::string filtered_name = "filtered";
+  ParametersHandler filtered_handler(filtered_node, filtered_name);
+
+  auto raw_node = std::make_shared<nav2::LifecycleNode>("raw_node");
+  raw_node->declare_parameter("raw_ns.regenerate_noises", rclcpp::ParameterValue(false));
+  raw_node->declare_parameter(
+    "raw_ns.noise_low_pass_filter.active", rclcpp::ParameterValue(false));
+  std::string raw_name = "raw";
+  ParametersHandler raw_handler(raw_node, raw_name);
+
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 128;
+  settings.time_steps = 80;
+  settings.model_dt = 0.05;
+  settings.sampling_std.vx = 0.25;
+  settings.sampling_std.vy = 0.25;
+  settings.sampling_std.wz = 0.25;
+
+  mppi::models::ControlSequence control_sequence;
+  control_sequence.reset(settings.time_steps);
+  mppi::models::State filtered_state, raw_state;
+  filtered_state.reset(settings.batch_size, settings.time_steps);
+  raw_state.reset(settings.batch_size, settings.time_steps);
+
+  NoiseGenerator filtered_generator;
+  filtered_generator.initialize(settings, false, "filtered_ns", &filtered_handler);
+  filtered_generator.reset(settings, false);
+  filtered_generator.setNoisedControls(filtered_state, control_sequence);
+  filtered_generator.shutdown();
+
+  NoiseGenerator raw_generator;
+  raw_generator.initialize(settings, false, "raw_ns", &raw_handler);
+  raw_generator.reset(settings, false);
+  raw_generator.setNoisedControls(raw_state, control_sequence);
+  raw_generator.shutdown();
+
+  const double filtered_vx_diff = meanAbsTemporalDifference(filtered_state.cvx);
+  const double raw_vx_diff = meanAbsTemporalDifference(raw_state.cvx);
+  const double filtered_wz_diff = meanAbsTemporalDifference(filtered_state.cwz);
+  const double raw_wz_diff = meanAbsTemporalDifference(raw_state.cwz);
+
+  EXPECT_LT(filtered_vx_diff, raw_vx_diff);
+  EXPECT_LT(filtered_wz_diff, raw_wz_diff);
+
+  // Repeat in holonomic mode to verify vy smoothing path.
+  filtered_state.reset(settings.batch_size, settings.time_steps);
+  raw_state.reset(settings.batch_size, settings.time_steps);
+
+  NoiseGenerator filtered_holo_generator;
+  filtered_holo_generator.initialize(settings, true, "filtered_ns", &filtered_handler);
+  filtered_holo_generator.reset(settings, true);
+  filtered_holo_generator.setNoisedControls(filtered_state, control_sequence);
+  filtered_holo_generator.shutdown();
+
+  NoiseGenerator raw_holo_generator;
+  raw_holo_generator.initialize(settings, true, "raw_ns", &raw_handler);
+  raw_holo_generator.reset(settings, true);
+  raw_holo_generator.setNoisedControls(raw_state, control_sequence);
+  raw_holo_generator.shutdown();
+
+  const double filtered_vy_diff = meanAbsTemporalDifference(filtered_state.cvy);
+  const double raw_vy_diff = meanAbsTemporalDifference(raw_state.cvy);
+
+  EXPECT_LT(filtered_vy_diff, raw_vy_diff);
+}
+
+TEST(NoiseGeneratorTest, LowPassFilterWarmupKeepsNearTermPerturbationAuthority)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("lp_warmup_node");
+  node->declare_parameter("lp.regenerate_noises", rclcpp::ParameterValue(false));
+  node->declare_parameter("lp.noise_low_pass_filter.active", rclcpp::ParameterValue(true));
+  node->declare_parameter(
+    "lp.noise_low_pass_filter.cutoff_frequency", rclcpp::ParameterValue(3.0));
+  node->declare_parameter("lp.noise_low_pass_filter.order", rclcpp::ParameterValue(4));
+  std::string name = "lp";
+  ParametersHandler handler(node, name);
+
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 3000;
+  settings.time_steps = 56;
+  settings.model_dt = 0.05;
+  settings.sampling_std.vx = 0.25;
+  settings.sampling_std.vy = 0.25;
+  settings.sampling_std.wz = 0.25;
+
+  mppi::models::ControlSequence control_sequence;
+  control_sequence.reset(settings.time_steps);
+  mppi::models::State state;
+  state.reset(settings.batch_size, settings.time_steps);
+
+  NoiseGenerator generator;
+  generator.initialize(settings, false, "lp", &handler);
+  generator.reset(settings, false);
+  generator.setNoisedControls(state, control_sequence);
+  generator.shutdown();
+
+  const double first_vx_std = columnStd(state.cvx, 0);
+  const double settled_vx_std = columnStd(state.cvx, 20);
+  const double first_wz_std = columnStd(state.cwz, 0);
+  const double settled_wz_std = columnStd(state.cwz, 20);
+
+  EXPECT_GT(first_vx_std, settled_vx_std * 0.5);
+  EXPECT_GT(first_wz_std, settled_wz_std * 0.5);
+}
+
+TEST(NoiseGeneratorTest, CutoffClampedToNyquist)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("node");
+  node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.active", rclcpp::ParameterValue(true));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.cutoff_frequency", rclcpp::ParameterValue(1000.0));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.order", rclcpp::ParameterValue(2));
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 64;
+  settings.time_steps = 32;
+  settings.model_dt = 0.1;
+  settings.sampling_std.vx = 0.2;
+  settings.sampling_std.vy = 0.2;
+  settings.sampling_std.wz = 0.2;
+
+  NoiseGeneratorTester generator;
+  generator.initialize(settings, false, "test_name", &handler);
+
+  const double nyquist = 1.0 / (2.0 * settings.model_dt);
+  EXPECT_TRUE(generator.isFilterConfigured());
+  EXPECT_DOUBLE_EQ(generator.getRequestedCutoff(), 1000.0);
+  EXPECT_GT(generator.getEffectiveCutoff(), 0.0);
+  EXPECT_LT(generator.getEffectiveCutoff(), nyquist);
+
+  generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, LowPassFilterDisabledWithNonPositiveModelDt)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("node_invalid_dt");
+  node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.active", rclcpp::ParameterValue(true));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.cutoff_frequency", rclcpp::ParameterValue(1.0));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.order", rclcpp::ParameterValue(2));
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 16;
+  settings.time_steps = 8;
+  settings.model_dt = 0.0;
+  settings.sampling_std.vx = 0.2;
+  settings.sampling_std.vy = 0.2;
+  settings.sampling_std.wz = 0.2;
+
+  NoiseGeneratorTester generator;
+  generator.initialize(settings, false, "test_name", &handler);
+
+  EXPECT_FALSE(generator.isFilterConfigured());
+  generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, LowPassFilterDisabledWithNonPositiveCutoff)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("node_invalid_cutoff");
+  node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.active", rclcpp::ParameterValue(true));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.cutoff_frequency", rclcpp::ParameterValue(0.0));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.order", rclcpp::ParameterValue(2));
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 16;
+  settings.time_steps = 8;
+  settings.model_dt = 0.1;
+  settings.sampling_std.vx = 0.2;
+  settings.sampling_std.vy = 0.2;
+  settings.sampling_std.wz = 0.2;
+
+  NoiseGeneratorTester generator;
+  generator.initialize(settings, false, "test_name", &handler);
+
+  EXPECT_FALSE(generator.isFilterConfigured());
+  generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, LowPassFilterDisabledWithInvalidOrder)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("node_invalid_order");
+  node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.active", rclcpp::ParameterValue(true));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.cutoff_frequency", rclcpp::ParameterValue(1.0));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.order", rclcpp::ParameterValue(0));
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 16;
+  settings.time_steps = 8;
+  settings.model_dt = 0.1;
+  settings.sampling_std.vx = 0.2;
+  settings.sampling_std.vy = 0.2;
+  settings.sampling_std.wz = 0.2;
+
+  NoiseGeneratorTester generator;
+  generator.initialize(settings, false, "test_name", &handler);
+
+  EXPECT_FALSE(generator.isFilterConfigured());
+  generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, LowPassFilterDisabledWhenDesignFails)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("node_design_fail");
+  node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.active", rclcpp::ParameterValue(true));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.cutoff_frequency", rclcpp::ParameterValue(1.0));
+  node->declare_parameter(
+    "test_name.noise_low_pass_filter.order", rclcpp::ParameterValue(2));
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 16;
+  settings.time_steps = 8;
+  settings.model_dt = std::numeric_limits<float>::quiet_NaN();
+  settings.sampling_std.vx = 0.2;
+  settings.sampling_std.vy = 0.2;
+  settings.sampling_std.wz = 0.2;
+
+  NoiseGeneratorTester generator;
+  generator.initialize(settings, false, "test_name", &handler);
+
+  EXPECT_FALSE(generator.isFilterConfigured());
   generator.shutdown();
 }
 

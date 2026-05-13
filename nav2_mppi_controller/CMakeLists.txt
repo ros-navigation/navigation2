@@ -43,6 +43,7 @@ add_library(mppi_controller SHARED
   src/controller.cpp
   src/critic_manager.cpp
   src/noise_generator.cpp
+  src/noise_low_pass_filter.cpp
   src/optimizer.cpp
   src/parameters_handler.cpp
   src/trajectory_visualizer.cpp

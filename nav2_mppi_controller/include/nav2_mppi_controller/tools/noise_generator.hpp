@@ -25,8 +25,10 @@
 #include <random>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/models/optimizer_settings.hpp"
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
+#include "nav2_mppi_controller/tools/noise_low_pass_filter.hpp"
 #include "nav2_mppi_controller/models/control_sequence.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 
@@ -111,6 +113,10 @@ protected:
   std::condition_variable noise_cond_;
   std::mutex noise_lock_;
   bool active_{false}, ready_{false}, regenerate_noises_{false};
+
+  NoiseLowPassFilter low_pass_filter_;
+
+  rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
 
 }  // namespace mppi

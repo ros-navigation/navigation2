@@ -14,6 +14,7 @@
 
 #include "nav2_mppi_controller/tools/noise_generator.hpp"
 
+#include <functional>
 #include <memory>
 #include <mutex>
 
@@ -34,6 +35,24 @@ void NoiseGenerator::initialize(
 
   auto getParam = param_handler->getParamGetter(name);
   getParam(regenerate_noises_, "regenerate_noises", false);
+  bool low_pass_filter_active = false;
+  double low_pass_filter_cutoff_frequency = 2.0;
+  int low_pass_filter_order = 2;
+  getParam(
+    low_pass_filter_active, "noise_low_pass_filter.active", false,
+    ParameterType::Static);
+  if (low_pass_filter_active) {
+    getParam(
+      low_pass_filter_cutoff_frequency, "noise_low_pass_filter.cutoff_frequency", 2.0,
+      ParameterType::Static);
+    getParam(
+      low_pass_filter_order, "noise_low_pass_filter.order", 2,
+      ParameterType::Static);
+  }
+
+  low_pass_filter_.configure(
+    low_pass_filter_active, settings_.model_dt, low_pass_filter_cutoff_frequency,
+    low_pass_filter_order, logger_);
 
   if (regenerate_noises_) {
     noise_thread_ = std::thread(std::bind(&NoiseGenerator::noiseThread, this));
@@ -76,23 +95,26 @@ void NoiseGenerator::setNoisedControls(
 
 void NoiseGenerator::reset(mppi::models::OptimizerSettings & settings, bool is_holonomic)
 {
-  settings_ = settings;
-  is_holonomic_ = is_holonomic;
-
   // Recompute the noises on reset, initialization, and fallback
   {
     std::unique_lock<std::mutex> guard(noise_lock_);
+    settings_ = settings;
+    is_holonomic_ = is_holonomic;
+    ndistribution_vx_ = std::normal_distribution(0.0f, settings_.sampling_std.vx);
+    ndistribution_vy_ = std::normal_distribution(0.0f, settings_.sampling_std.vy);
+    ndistribution_wz_ = std::normal_distribution(0.0f, settings_.sampling_std.wz);
+    low_pass_filter_.resetDt(settings_.model_dt, logger_);
+
     noises_vx_.setZero(settings_.batch_size, settings_.time_steps);
     noises_vy_.setZero(settings_.batch_size, settings_.time_steps);
     noises_wz_.setZero(settings_.batch_size, settings_.time_steps);
     ready_ = true;
+    if (!regenerate_noises_) {
+      generateNoisedControls();
+    }
   }
 
-  if (regenerate_noises_) {
-    noise_cond_.notify_all();
-  } else {
-    generateNoisedControls();
-  }
+  noise_cond_.notify_all();
 }
 
 void NoiseGenerator::noiseThread()
@@ -108,6 +130,26 @@ void NoiseGenerator::noiseThread()
 void NoiseGenerator::generateNoisedControls()
 {
   auto & s = settings_;
+  const int low_pass_warmup_steps = low_pass_filter_.getWarmupSteps(s.time_steps);
+
+  auto generateNoise = [&](std::normal_distribution<float> & distribution) {
+      Eigen::ArrayXXf noise = Eigen::ArrayXXf::NullaryExpr(
+        s.batch_size, s.time_steps + low_pass_warmup_steps,
+        [&]() {return distribution(generator_);});
+
+      low_pass_filter_.filter(noise);
+      return noise.rightCols(s.time_steps).eval();
+    };
+
+  if (low_pass_filter_.isActive()) {
+    noises_vx_ = generateNoise(ndistribution_vx_);
+    noises_wz_ = generateNoise(ndistribution_wz_);
+    if (is_holonomic_) {
+      noises_vy_ = generateNoise(ndistribution_vy_);
+    }
+    return;
+  }
+
   noises_vx_ = Eigen::ArrayXXf::NullaryExpr(
     s.batch_size, s.time_steps, [&]() {return ndistribution_vx_(generator_);});
   noises_wz_ = Eigen::ArrayXXf::NullaryExpr(
