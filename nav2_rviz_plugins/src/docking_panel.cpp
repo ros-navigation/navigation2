@@ -261,7 +261,7 @@ DockingPanel::DockingPanel(QWidget * parent)
 
   // Connect buttons with functions
   QObject::connect(
-    use_dock_id_checkbox_, &QCheckBox::stateChanged, this, &DockingPanel::dockIdCheckbox);
+    use_dock_id_checkbox_, &QCheckBox::checkStateChanged, this, &DockingPanel::dockIdCheckbox);
 }
 
 void DockingPanel::onInitialize()

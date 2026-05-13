@@ -416,7 +416,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     &Nav2Panel::loophandler);
   QObject::connect(
     store_initial_pose_checkbox_,
-    &QCheckBox::stateChanged,
+    &QCheckBox::checkStateChanged,
     this,
     &Nav2Panel::initialStateHandler);
 

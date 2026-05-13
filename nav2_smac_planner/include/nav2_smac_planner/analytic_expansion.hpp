@@ -178,7 +178,7 @@ public:
     * @param path The Reeds-Shepp path to count direction changes in
     * @return The number of direction changes in the path
     */
-  int countDirectionChanges(const ompl::base::ReedsSheppStateSpace::ReedsSheppPath & path);
+  int countDirectionChanges(const ompl::base::ReedsSheppStateSpace::PathType & path);
 
   /**
    * @brief Takes an expanded nodes to clean up, if necessary, of any state

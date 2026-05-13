@@ -99,7 +99,7 @@ protected:
    * @brief Updates polygon from radius value
    * @param radius New circle radius to update polygon
    */
-  void updatePolygon(double radius);
+  void updatePolygonFromRadius(double radius);
 
   /**
    * @brief Dynamic circle radius callback
