@@ -327,68 +327,99 @@ ConstrainedController::computeVelocityCommands(
     log_->event("no LiDAR scan available yet — skipping CBF this tick");
   }
 
-  // 4. Nominal P controller (path-derived vx, vy, wz). Captured here
-  //    as the *true* nominal output so logging downstream is honest:
-  //    u_nominal holds the P-controller's verbatim command, u_blend
-  //    holds the post-blend command, cbf_res.u holds the final.
+  // 4. Nominal P controller — path is primary. Captured into u_nominal
+  //    BEFORE any LiDAR-based modification so logging reflects the true
+  //    nominal command.
   NominalDebug nom_dbg;
   const auto u_nominal = nominal_->compute(target_ps.pose, &nom_dbg);
-  const double vy_path = u_nominal.linear.y;
-  const double wz_path = u_nominal.angular.z;
 
-  // 4b. Sensor-based candidates from D_L/D_R + alley-axis estimation.
-  //     vy_walls := centering law output (k_lat·(D_L−D_R) etc., clamped).
-  //     wz_walls := k_yaw · s · yaw_misalign — drive heading toward
-  //                 the alley axis recovered from the closest flanking
-  //                 walls. Uses the same `s` taper as path-side wz so
-  //                 envelopes are consistent.
+  // 5. LiDAR perception metrics (no command output — pure metrics).
+  //    Produces wall-relative signals (D_L/D_R, yaw_misalign, wall_quality)
+  //    and passage-relative signals (e_lat_passage, e_yaw_passage,
+  //    alignment_error, needs_alignment).
+  const double path_vx_sign = (u_nominal.linear.x >= 0.0) ? 1.0 : -1.0;
   CenteringDebug cent_dbg;
-  const double vy_walls = lateral_centering_->compute(snap, &cent_dbg);
-  const double wz_walls = params->k_yaw * nom_dbg.s * cent_dbg.yaw_misalign;
+  lateral_centering_->compute(snap, path_vx_sign, &cent_dbg);
 
-  // 4c. Single-scalar blend on vy and wz. Gate by walls_quality so the
-  //     blend only fires when BOTH flanking walls are visible (post-
-  //     hysteresis in LateralCentering). At door / free-space (one or
-  //     no walls) walls_quality drops to 0 and we fall back to pure path.
-  const double walls_quality =
-    (cent_dbg.has_L && cent_dbg.has_R) ? 1.0 : 0.0;
-  const double w = walls_quality *
-    std::clamp(params->wall_blend_weight, 0.0, 1.0);
+  // 6. Decide mode: ALIGNMENT (at passages, not yet aligned) vs NORMAL.
+  //    u_corrected is the post-correction command fed to the CBF.
+  geometry_msgs::msg::Twist u_corrected = u_nominal;
+  int mode = 0;          // 0 = normal, 1 = alignment
+  double vy_correction = 0.0;
+  double wz_correction = 0.0;
+  double vx_scale = 1.0;
 
-  geometry_msgs::msg::Twist u_blend = u_nominal;
-  u_blend.linear.y  = w * vy_walls + (1.0 - w) * vy_path;
-  u_blend.angular.z = w * wz_walls + (1.0 - w) * wz_path;
-  u_blend.linear.y = std::clamp(
-    u_blend.linear.y, -params->v_lateral_max, params->v_lateral_max);
-  u_blend.angular.z = std::clamp(
-    u_blend.angular.z, -params->v_angular_max, params->v_angular_max);
+  if (cent_dbg.needs_alignment) {
+    // ALIGNMENT MODE — docking-style.
+    //   vy, wz: LiDAR-driven, full envelope, aimed at gap center / passage
+    //           axis. These OVERRIDE the path's vy/wz contribution this tick
+    //           because LiDAR sees the gap geometry more precisely than the
+    //           path's discretization.
+    //   vx:     scaled down by alignment_error so the body has time to
+    //           strafe/rotate into alignment before reaching tight geometry.
+    //           Floor at vx_align_floor.
+    mode = 1;
+    vy_correction = std::clamp(
+      params->k_lat_align * cent_dbg.e_lat_passage,
+      -params->v_lateral_max, params->v_lateral_max);
+    wz_correction = std::clamp(
+      params->k_yaw_align * cent_dbg.e_yaw_passage,
+      -params->v_angular_max, params->v_angular_max);
+    vx_scale = std::max(
+      params->vx_align_floor,
+      1.0 - cent_dbg.alignment_error);
+    u_corrected.linear.x = u_nominal.linear.x * vx_scale;
+    u_corrected.linear.y = vy_correction;       // override (full magnitude)
+    u_corrected.angular.z = wz_correction;      // override (full magnitude)
+  } else {
+    // NORMAL MODE — path drives, LiDAR nudges with small deadbanded
+    // corrections gated by wall_quality.
+    mode = 0;
+    const double q = std::clamp(cent_dbg.wall_quality, 0.0, 1.0);
+    if (cent_dbg.has_L && cent_dbg.has_R) {
+      const double e_lat = cent_dbg.D_L - cent_dbg.D_R;
+      if (std::abs(e_lat) > params->centering_deadband_lat) {
+        vy_correction = q * std::clamp(
+          params->k_lat * e_lat,
+          -params->vy_correction_max, params->vy_correction_max);
+      }
+    }
+    if (std::abs(cent_dbg.yaw_misalign) > params->centering_deadband_yaw) {
+      wz_correction = q * std::clamp(
+        params->k_yaw * cent_dbg.yaw_misalign,
+        -params->wz_correction_max, params->wz_correction_max);
+    }
+    u_corrected.linear.y = u_nominal.linear.y + vy_correction;
+    u_corrected.angular.z = u_nominal.angular.z + wz_correction;
+  }
 
-  // 5. CBF safety filter — sole safety layer. Sees u_blend directly.
+  // Envelope clamp on corrected command.
+  u_corrected.linear.x = std::clamp(
+    u_corrected.linear.x, -params->v_linear_max, params->v_linear_max);
+  u_corrected.linear.y = std::clamp(
+    u_corrected.linear.y, -params->v_lateral_max, params->v_lateral_max);
+  u_corrected.angular.z = std::clamp(
+    u_corrected.angular.z, -params->v_angular_max, params->v_angular_max);
+
+  // 7. CBF safety filter — final layer. Sees u_corrected as its nominal.
   CbfFilterResult cbf_res;
-  cbf_res.u = u_blend;  // pass-through fallback when no walls
+  cbf_res.u = u_corrected;  // pass-through fallback when no walls
   if (!snap.walls.empty()) {
-    cbf_res = cbf_filter_->filter(snap, u_blend);
+    cbf_res = cbf_filter_->filter(snap, u_corrected);
 
-    // QP convergence guard. If the active-set method did not
-    // converge to a feasible u (qp.ok = false), the constraint set
-    // is infeasible at the current pose — usually a transient from
-    // sensor noise or geometry the model can't represent. Falling
-    // back to the (box-clamped) nominal keeps the robot moving on
-    // its commanded path; the next tick re-evaluates with fresh
-    // LiDAR. Log so we can see how often this fires.
     if (!cbf_res.qp.ok) {
       log_->event(
-        "QP infeasible — falling back to u_blend (clamped)");
+        "QP infeasible — falling back to u_corrected (clamped)");
       cbf_res.u.linear.x = std::clamp(
-        u_blend.linear.x, -params->v_linear_max, params->v_linear_max);
+        u_corrected.linear.x, -params->v_linear_max, params->v_linear_max);
       cbf_res.u.linear.y = std::clamp(
-        u_blend.linear.y, -params->v_lateral_max, params->v_lateral_max);
+        u_corrected.linear.y, -params->v_lateral_max, params->v_lateral_max);
       cbf_res.u.angular.z = std::clamp(
-        u_blend.angular.z, -params->v_angular_max, params->v_angular_max);
+        u_corrected.angular.z, -params->v_angular_max, params->v_angular_max);
     }
   }
 
-  // 6. Logging.
+  // 8. Logging.
   geometry_msgs::msg::TwistStamped out;
   out.header.frame_id = base_frame;
   out.header.stamp = stamp;
@@ -412,22 +443,26 @@ ConstrainedController::computeVelocityCommands(
   log_->logWalls(tick, stamp.seconds(), snap.walls);
   log_->logCentering(
     tick, stamp.seconds(),
-    static_cast<int>(cent_dbg.regime),
+    mode, cent_dbg.needs_alignment,
     cent_dbg.D_L, cent_dbg.D_R,
-    cent_dbg.has_L, cent_dbg.has_R,
-    cent_dbg.n_flanking,
-    cent_dbg.yaw_misalign,
-    vy_path, vy_walls, u_blend.linear.y,
-    w,
-    wz_path, wz_walls, u_blend.angular.z);
+    cent_dbg.has_L, cent_dbg.has_R, cent_dbg.n_flanking,
+    cent_dbg.yaw_misalign, cent_dbg.wall_quality,
+    cent_dbg.q_length, cent_dbg.q_span,
+    cent_dbg.q_width, cent_dbg.q_passage,
+    cent_dbg.passage_in_motion_direction,
+    cent_dbg.passage_distance,
+    cent_dbg.e_lat_passage, cent_dbg.e_yaw_passage,
+    cent_dbg.alignment_error,
+    vy_correction, wz_correction, vx_scale,
+    u_corrected);
 
   if (!cbf_res.constraints.empty()) {
-    const Eigen::Vector3d u_blend_e(
-      u_blend.linear.x, u_blend.linear.y, u_blend.angular.z);
+    const Eigen::Vector3d u_corrected_e(
+      u_corrected.linear.x, u_corrected.linear.y, u_corrected.angular.z);
     const Eigen::Vector3d u_final_e(
       out.twist.linear.x, out.twist.linear.y, out.twist.angular.z);
     log_->logCbfConstraints(
-      tick, stamp.seconds(), cbf_res.constraints, u_blend_e, u_final_e);
+      tick, stamp.seconds(), cbf_res.constraints, u_corrected_e, u_final_e);
     log_->logQp(
       tick, stamp.seconds(),
       cbf_res.qp.ok,

@@ -73,16 +73,31 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(parallel_cos_tol, 0.95);
   DECL_DOUBLE(perp_cos_tol, 0.20);
 
-  DECL_BOOL(enable_lateral_centering, true);
+  // Normal-mode correction parameters
   DECL_DOUBLE(k_lat, 1.0);
   DECL_DOUBLE(flanking_cos_tol, 0.94);
-  DECL_DOUBLE(target_half_width, 0.5125);
   DECL_DOUBLE(max_centering_range, 1.1);
-  DECL_BOOL(require_both_walls, true);
-  DECL_INT(regime_switch_hyst_ticks, 3);
-  DECL_DOUBLE(vy_centering_lpf_alpha, 0.4);
+  DECL_DOUBLE(vy_correction_max, 0.05);
+  DECL_DOUBLE(wz_correction_max, 0.10);
+  DECL_DOUBLE(centering_deadband_lat, 0.02);
+  DECL_DOUBLE(centering_deadband_yaw, 0.087);
 
-  DECL_DOUBLE(wall_blend_weight, 1.0);
+  // Wall quality scoring
+  DECL_DOUBLE(wall_quality_min_length, 0.30);
+  DECL_DOUBLE(wall_quality_min_span_ratio, 0.5);
+  DECL_DOUBLE(wall_quality_width_tol, 0.20);
+  DECL_DOUBLE(wall_quality_expected_width, 1.0);
+  DECL_DOUBLE(passage_penalty_range, 1.0);
+
+  // Alignment mode (passage entry/exit)
+  DECL_DOUBLE(alignment_passage_range, 1.0);
+  DECL_DOUBLE(alignment_yaw_tol, 0.087);
+  DECL_DOUBLE(alignment_lat_tol, 0.03);
+  DECL_DOUBLE(alignment_yaw_scale, 0.35);
+  DECL_DOUBLE(alignment_lat_scale, 0.10);
+  DECL_DOUBLE(vx_align_floor, 0.0);
+  DECL_DOUBLE(k_lat_align, 2.0);
+  DECL_DOUBLE(k_yaw_align, 2.0);
 
   DECL_STRING(log_dir, "/root/navigation_log");
   DECL_BOOL(log_enabled, true);
@@ -137,14 +152,42 @@ ParameterHandler::dynamicParametersCallback(
         params_.k_lat = v;
       } else if (name == plugin_name_ + ".flanking_cos_tol") {
         params_.flanking_cos_tol = v;
-      } else if (name == plugin_name_ + ".target_half_width") {
-        params_.target_half_width = v;
-      } else if (name == plugin_name_ + ".vy_centering_lpf_alpha") {
-        params_.vy_centering_lpf_alpha = v;
       } else if (name == plugin_name_ + ".max_centering_range") {
         params_.max_centering_range = v;
-      } else if (name == plugin_name_ + ".wall_blend_weight") {
-        params_.wall_blend_weight = v;
+      } else if (name == plugin_name_ + ".vy_correction_max") {
+        params_.vy_correction_max = v;
+      } else if (name == plugin_name_ + ".wz_correction_max") {
+        params_.wz_correction_max = v;
+      } else if (name == plugin_name_ + ".centering_deadband_lat") {
+        params_.centering_deadband_lat = v;
+      } else if (name == plugin_name_ + ".centering_deadband_yaw") {
+        params_.centering_deadband_yaw = v;
+      } else if (name == plugin_name_ + ".wall_quality_min_length") {
+        params_.wall_quality_min_length = v;
+      } else if (name == plugin_name_ + ".wall_quality_min_span_ratio") {
+        params_.wall_quality_min_span_ratio = v;
+      } else if (name == plugin_name_ + ".wall_quality_width_tol") {
+        params_.wall_quality_width_tol = v;
+      } else if (name == plugin_name_ + ".wall_quality_expected_width") {
+        params_.wall_quality_expected_width = v;
+      } else if (name == plugin_name_ + ".passage_penalty_range") {
+        params_.passage_penalty_range = v;
+      } else if (name == plugin_name_ + ".alignment_passage_range") {
+        params_.alignment_passage_range = v;
+      } else if (name == plugin_name_ + ".alignment_yaw_tol") {
+        params_.alignment_yaw_tol = v;
+      } else if (name == plugin_name_ + ".alignment_lat_tol") {
+        params_.alignment_lat_tol = v;
+      } else if (name == plugin_name_ + ".alignment_yaw_scale") {
+        params_.alignment_yaw_scale = v;
+      } else if (name == plugin_name_ + ".alignment_lat_scale") {
+        params_.alignment_lat_scale = v;
+      } else if (name == plugin_name_ + ".vx_align_floor") {
+        params_.vx_align_floor = v;
+      } else if (name == plugin_name_ + ".k_lat_align") {
+        params_.k_lat_align = v;
+      } else if (name == plugin_name_ + ".k_yaw_align") {
+        params_.k_yaw_align = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_BOOL) {
       const bool v = p.as_bool();
@@ -152,10 +195,6 @@ ParameterHandler::dynamicParametersCallback(
         params_.yaw_correction_ramp = v;
       } else if (name == plugin_name_ + ".log_enabled") {
         params_.log_enabled = v;
-      } else if (name == plugin_name_ + ".enable_lateral_centering") {
-        params_.enable_lateral_centering = v;
-      } else if (name == plugin_name_ + ".require_both_walls") {
-        params_.require_both_walls = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_INTEGER) {
       const int v = static_cast<int>(p.as_int());
@@ -163,8 +202,6 @@ ParameterHandler::dynamicParametersCallback(
         params_.line_min_points = v;
       } else if (name == plugin_name_ + ".log_lidar_every_n_ticks") {
         params_.log_lidar_every_n_ticks = v;
-      } else if (name == plugin_name_ + ".regime_switch_hyst_ticks") {
-        params_.regime_switch_hyst_ticks = v;
       }
     }
   }

@@ -11,15 +11,24 @@
 //        odom, retangent constant-yaw lattice poses.
 //
 //   computeVelocityCommands(robot_pose):
-//     1. PathHandler::getLocalPlan  -> base_link slice (no AMCL).
+//     1. PathHandler::getLocalPlan  -> base_link slice (no AMCL per tick).
 //     2. getMotionTarget            -> single lookahead pose (base_link).
 //     3. SceneParser::parse         -> walls, corners, passage.
-//     4. NominalController::compute -> u_nom (sign-symmetric P).
-//     5. LateralCentering::compute  -> vy_walls, yaw_misalign.
-//     6. Single-scalar blend (when both flanking walls visible):
-//          vy = w*vy_walls + (1-w)*vy_path
-//          wz = w*wz_walls + (1-w)*wz_path
-//     7. CBFSafetyFilter::filter    -> u* = QP(u_blend, walls).
+//     4. NominalController::compute -> u_nominal (sign-symmetric P, path).
+//     5. LateralCentering::compute  -> wall metrics (D_L, D_R,
+//                                       yaw_misalign, wall_quality) AND
+//                                       passage metrics (e_lat_passage,
+//                                       e_yaw_passage, alignment_error,
+//                                       needs_alignment). No command.
+//     6. Mode selection (mutually exclusive):
+//          ALIGNMENT (needs_alignment): docking-style. vy/wz are
+//             OVERRIDDEN by k_lat_align*e_lat_passage and
+//             k_yaw_align*e_yaw_passage (full envelope). vx is scaled
+//             by (1 - alignment_error), floored at vx_align_floor, so
+//             the body slows down at the alley mouth until aligned.
+//          NORMAL: path drives. LiDAR adds small, deadbanded, clamped
+//             vy/wz corrections gated by wall_quality. vx untouched.
+//     7. CBFSafetyFilter::filter    -> u* = QP(u_corrected, walls).
 //     8. Logger::* per-tick rows.
 //     9. Return TwistStamped(u*).
 

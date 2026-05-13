@@ -89,10 +89,14 @@ void Logger::writeHeaders()
   f_lidar_ <<
     "tick,stamp_sec,idx,angle,range\n";
   f_centering_ <<
-    "tick,stamp_sec,regime,D_L,D_R,has_L,has_R,n_flanking,"
-    "yaw_misalign,vy_path,vy_walls,vy_used,"
-    "w,"
-    "wz_path,wz_walls,wz_used\n";
+    "tick,stamp_sec,mode,needs_alignment,"
+    "D_L,D_R,has_L,has_R,n_flanking,"
+    "yaw_misalign,wall_quality,"
+    "q_length,q_span,q_width,q_passage,"
+    "passage_in_motion_dir,passage_distance,"
+    "e_lat_passage,e_yaw_passage,alignment_error,"
+    "vy_correction,wz_correction,vx_scale,"
+    "vx_corrected,vy_corrected,wz_corrected\n";
   for (auto * f : {
       &f_main_, &f_path_, &f_walls_,
       &f_cbf_, &f_qp_, &f_lidar_, &f_centering_})
@@ -208,25 +212,36 @@ void Logger::logQp(
 
 void Logger::logCentering(
   uint64_t tick, double stamp,
-  int regime,
+  int mode, bool needs_alignment,
   double D_L, double D_R,
-  bool has_L, bool has_R,
-  int n_flanking,
-  double yaw_misalign,
-  double vy_path, double vy_walls, double vy_used,
-  double w,
-  double wz_path, double wz_walls, double wz_used)
+  bool has_L, bool has_R, int n_flanking,
+  double yaw_misalign, double wall_quality,
+  double q_length, double q_span, double q_width, double q_passage,
+  bool passage_in_motion_direction,
+  double passage_distance,
+  double e_lat_passage, double e_yaw_passage, double alignment_error,
+  double vy_correction, double wz_correction, double vx_scale,
+  const geometry_msgs::msg::Twist & u_corrected)
 {
   if (!enabled_ || !f_centering_.is_open()) {return;}
   f_centering_ << std::fixed << std::setprecision(6)
-               << tick << "," << stamp << "," << regime << ","
+               << tick << "," << stamp << ","
+               << mode << "," << (needs_alignment ? 1 : 0) << ","
                << D_L << "," << D_R << ","
                << (has_L ? 1 : 0) << "," << (has_R ? 1 : 0) << ","
                << n_flanking << ","
-               << yaw_misalign << ","
-               << vy_path << "," << vy_walls << "," << vy_used << ","
-               << w << ","
-               << wz_path << "," << wz_walls << "," << wz_used << "\n";
+               << yaw_misalign << "," << wall_quality << ","
+               << q_length << "," << q_span << ","
+               << q_width << "," << q_passage << ","
+               << (passage_in_motion_direction ? 1 : 0) << ","
+               << passage_distance << ","
+               << e_lat_passage << "," << e_yaw_passage << ","
+               << alignment_error << ","
+               << vy_correction << "," << wz_correction << ","
+               << vx_scale << ","
+               << u_corrected.linear.x << ","
+               << u_corrected.linear.y << ","
+               << u_corrected.angular.z << "\n";
   f_centering_.flush();
 }
 

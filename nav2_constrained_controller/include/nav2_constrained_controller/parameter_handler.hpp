@@ -81,48 +81,62 @@ struct Parameters
   // Type-II perpendicularity tolerance.
   double perp_cos_tol{0.20};
 
-  // ---------- D_L/D_R LiDAR-based lateral centering ----------
-  // Master switch. When true, vy_nom is overridden by the centering
-  // law whenever at least one flanking wall is detected. Path-derived
-  // vy is used as fallback (no flanking walls visible).
-  bool   enable_lateral_centering{true};
-  // Proportional gain on lateral error. vy = k_lat * (D_L - D_R).
+  // ---------- LiDAR correction (NORMAL MODE) ----------
+  // Path is primary; LiDAR adds small, clamped, deadbanded corrections to
+  // vy and wz, gated by wall_quality. vx is untouched in normal mode.
+  //
+  // Proportional gain on lateral imbalance (D_L − D_R) → vy_correction.
   double k_lat{1.0};
-  // A wall is "flanking" iff |t.x| >= flanking_cos_tol (its tangent is
-  // roughly parallel to the robot's forward axis) AND its segment
-  // x-range overlaps the robot body. cos(20°) = 0.94.
+  // Flanking wall test: a wall counts as a flanking corridor side iff its
+  // segment tangent is approximately along robot +x. cos(20°) = 0.94.
   double flanking_cos_tol{0.94};
-  // Target half-width used by the single-wall (door-zone) regime.
-  // vy = k_lat * (D_visible - target_half_width) when only one side
-  // is observable. Defaults to mid of the alley_width band / 2.
-  double target_half_width{0.5125};
-  // Hard distance gate. A flanking wall farther than this (perpendicular
-  // distance from robot origin to the wall LINE) is ignored — it cannot
-  // be an alley wall. Without this, a stray distant wall in free space
-  // can hijack the centering law and saturate vy. Default = 1.1 m
-  // (wider than the worst-case 1.10 m alley).
+  // Hard cutoff on body-aware distance: a flanking-tangent wall farther
+  // than this from the body is ignored (can't be the alley corridor wall).
   double max_centering_range{1.1};
-  // If true, centering only fires when BOTH flanking walls are visible
-  // and within max_centering_range. Single-side regimes are disabled.
-  // Recommended: keep true. Single-side mode is dangerous in free
-  // space where only one stray wall is visible.
-  bool   require_both_walls{true};
-  // Hysteresis: require this many consecutive ticks in the new regime
-  // before switching from the previous one. Kills jitter at handoff.
-  int    regime_switch_hyst_ticks{3};
-  // Exponential low-pass on the centering vy command across ticks.
-  // alpha = weight on the new sample (in [0,1]). 1 = no smoothing.
-  double vy_centering_lpf_alpha{0.4};
+  // Small additive clamps on the per-tick correction. These are tight on
+  // purpose — corrections nudge, never override.
+  double vy_correction_max{0.05};   // m/s
+  double wz_correction_max{0.10};   // rad/s
+  // Deadbands: no correction issued when error is within these tolerances.
+  double centering_deadband_lat{0.02};   // m, |D_L − D_R| below this → no vy correction
+  double centering_deadband_yaw{0.087};  // rad (~5°), |yaw_misalign| below this → no wz correction
 
-  // ---------- Path-vs-walls blending (vy, wz) ----------
-  // Single scalar weight applied to BOTH vy and wz when both flanking
-  // walls are visible (walls_quality == 1, post-hysteresis):
-  //   u = w * u_walls + (1 - w) * u_path
-  // When walls_quality == 0 (one or no flanking walls — door / free
-  // space), blend collapses to pure path. Default 1.0 = walls fully
-  // dominate inside the alley, path takes over automatically at the
-  // door zone via walls_quality.
-  double wall_blend_weight{1.0};
+  // ---------- Wall quality scoring ----------
+  // wall_quality ∈ [0,1] gates the corrections in normal mode. It is the
+  // product of several factors. Any factor near zero drops quality to zero.
+  //
+  // Minimum segment length to be considered a credible alley wall (m).
+  double wall_quality_min_length{0.30};
+  // Minimum fraction of body length the wall's x-range must span.
+  double wall_quality_min_span_ratio{0.5};
+  // Width consistency tolerance: |D_L + D_R + body_width − alley_width|
+  // up to this much keeps quality high (m).
+  double wall_quality_width_tol{0.20};
+  // Expected alley width used for the width consistency factor (m).
+  double wall_quality_expected_width{1.0};
+  // Passage penalty: when a passage is detected within this distance of
+  // the body (along motion direction), wall_quality drops toward zero.
+  double passage_penalty_range{1.0};
+
+  // ---------- Passage alignment mode (ALIGNMENT MODE) ----------
+  // When a passage is detected in the motion direction within this range
+  // AND the body is not yet aligned with the passage, the controller
+  // switches to alignment mode: LiDAR drives vy and wz at full envelope
+  // toward the gap center / passage axis; vx is scaled by alignment error.
+  double alignment_passage_range{1.0};   // m
+  // Alignment is considered achieved when both errors are below tolerance.
+  double alignment_yaw_tol{0.087};       // rad (~5°)
+  double alignment_lat_tol{0.03};        // m
+  // Yaw and lateral error scale at which vx_scale reaches the floor.
+  // alignment_error = max(|e_yaw|/yaw_scale, |e_lat|/lat_scale).
+  // vx_scale = max(vx_align_floor, 1 − alignment_error).
+  double alignment_yaw_scale{0.35};      // rad (~20°) → at this error, vx hits floor
+  double alignment_lat_scale{0.10};      // m → at this error, vx hits floor
+  // Minimum vx during alignment (fraction of u_path.vx). 0 = full stop allowed.
+  double vx_align_floor{0.0};
+  // Gain on alignment errors. With full envelope clamping these are aggressive.
+  double k_lat_align{2.0};
+  double k_yaw_align{2.0};
 
   // ---------- logging ----------
   std::string log_dir{"/root/navigation_log"};

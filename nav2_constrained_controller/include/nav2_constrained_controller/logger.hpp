@@ -99,22 +99,30 @@ public:
     uint64_t tick, double stamp,
     const sensor_msgs::msg::LaserScan & scan);
 
-  // Lateral-centering + blending snapshot. regime: 0=NONE,1=BOTH,
-  // 2=LEFT_ONLY, 3=RIGHT_ONLY. D_L/D_R are body-aware perpendicular
-  // distances to the wall LINE. yaw_misalign is the angle (rad)
-  // between the alley axis (avg flanking-wall tangent, +x-folded)
-  // and robot's +x. `w` is the scalar blend weight actually applied
-  // this tick (walls_quality * wall_blend_weight).
+  // Lateral-centering snapshot. mode: 0=NORMAL, 1=ALIGNMENT.
+  // D_L/D_R are body-aware Voronoi-region segment-distances to the
+  // closest flanking wall on each side. yaw_misalign is the angle
+  // (rad) between the alley axis (avg flanking-wall tangent, +x-
+  // folded) and robot +x. wall_quality is the composite [0,1] gate
+  // used by NORMAL mode; q_length/q_span/q_width/q_passage are its
+  // factors (q_count is redundant with has_L && has_R). Passage and
+  // alignment fields come from the passage classifier;
+  // alignment_error = max(|e_yaw|/yaw_scale, |e_lat|/lat_scale).
+  // vy_correction, wz_correction, vx_scale capture what the
+  // controller actually applied this tick. u_corrected is the
+  // post-correction, pre-CBF twist that the CBF saw as nominal.
   void logCentering(
     uint64_t tick, double stamp,
-    int regime,
+    int mode, bool needs_alignment,
     double D_L, double D_R,
-    bool has_L, bool has_R,
-    int n_flanking,
-    double yaw_misalign,
-    double vy_path, double vy_walls, double vy_used,
-    double w,
-    double wz_path, double wz_walls, double wz_used);
+    bool has_L, bool has_R, int n_flanking,
+    double yaw_misalign, double wall_quality,
+    double q_length, double q_span, double q_width, double q_passage,
+    bool passage_in_motion_direction,
+    double passage_distance,
+    double e_lat_passage, double e_yaw_passage, double alignment_error,
+    double vy_correction, double wz_correction, double vx_scale,
+    const geometry_msgs::msg::Twist & u_corrected);
 
 private:
   bool enabled_{false};
