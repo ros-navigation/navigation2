@@ -55,6 +55,7 @@ void SmacPlanner2D::configure(
   _logger = node->get_logger();
   _clock = node->get_clock();
   _costmap = costmap_ros->getCostmap();
+  _costmap_ros = costmap_ros;
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
 
@@ -320,7 +321,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 #endif
 
   // Smooth plan
-  _smoother->smooth(plan, costmap, time_remaining);
+  _smoother->smooth(plan, costmap, time_remaining, _costmap_ros->getRobotFootprint());
 
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
