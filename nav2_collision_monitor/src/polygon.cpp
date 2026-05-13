@@ -14,6 +14,7 @@
 
 #include "nav2_collision_monitor/polygon.hpp"
 
+#include <algorithm>
 #include <exception>
 #include <utility>
 
@@ -122,6 +123,8 @@ bool Polygon::configure()
 
 void Polygon::activate()
 {
+  resetTriggerState();
+
   if (visualize_) {
     polygon_pub_->on_activate();
   }
@@ -153,6 +156,52 @@ bool Polygon::getEnabled() const
 int Polygon::getMinPoints() const
 {
   return min_points_;
+}
+
+bool Polygon::isTriggered(const std::vector<Point> & points)
+{
+  const int points_inside = getPointsInside(points);
+  return isTriggeredInternal(points_inside);
+}
+
+bool Polygon::isTriggered(
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map)
+{
+  const int points_inside = getPointsInside(sources_collision_points_map);
+  return isTriggeredInternal(points_inside);
+}
+
+bool Polygon::isTriggeredInternal(int points_inside)
+{
+  const bool hit_now = points_inside >= min_points_;
+
+  if (trigger_consecutive_points_ == 1 && release_consecutive_points_ == 1) {
+    trigger_active_ = hit_now;
+    return trigger_active_;
+  }
+
+  if (hit_now) {
+    trigger_hits_ += 1;
+    release_hits_ = 0;
+    if (trigger_hits_ >= trigger_consecutive_points_) {
+      trigger_active_ = true;
+    }
+  } else {
+    release_hits_ += 1;
+    trigger_hits_ = 0;
+    if (release_hits_ >= release_consecutive_points_) {
+      trigger_active_ = false;
+    }
+  }
+
+  return trigger_active_;
+}
+
+void Polygon::resetTriggerState()
+{
+  trigger_hits_ = 0;
+  release_hits_ = 0;
+  trigger_active_ = false;
 }
 
 double Polygon::getSlowdownRatio() const
@@ -366,6 +415,20 @@ bool Polygon::getCommonParameters(
 
     enabled_ = node->declare_or_get_parameter(polygon_name_ + ".enabled", true);
     min_points_ = node->declare_or_get_parameter(polygon_name_ + ".min_points", 4);
+    trigger_consecutive_points_ = node->declare_or_get_parameter(
+      polygon_name_ + ".trigger_consecutive_points", 1);
+    release_consecutive_points_ = node->declare_or_get_parameter(
+      polygon_name_ + ".release_consecutive_points", 1);
+
+    if (trigger_consecutive_points_ < 1 || release_consecutive_points_ < 1) {
+      RCLCPP_ERROR(
+        logger_,
+        "[%s]: trigger_consecutive_points and release_consecutive_points must be >= 1",
+        polygon_name_.c_str());
+      return false;
+    }
+
+    resetTriggerState();
 
     try {
       min_points_ = node->declare_or_get_parameter<int>(polygon_name_ + ".max_points") + 1;
@@ -550,6 +613,8 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   // Store incoming polygon for further (possible) poly_ vertices corrections
   // from PolygonStamped frame -> to base frame
   polygon_ = *msg;
+
+  resetTriggerState();
 }
 
 rcl_interfaces::msg::SetParametersResult Polygon::validateParameterUpdatesCallback(
@@ -574,6 +639,30 @@ void Polygon::updateParametersCallback(
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
       if (param_name == polygon_name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
+        resetTriggerState();
+      }
+    }
+
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER) {
+      if (param_name == polygon_name_ + "." + "min_points") {
+        min_points_ = std::max(1, static_cast<int>(parameter.as_int()));
+        resetTriggerState();
+      } else if (param_name == polygon_name_ + "." + "trigger_consecutive_points") {
+        const auto value = static_cast<int>(parameter.as_int());
+        if (value < 1) {
+          throw rclcpp::exceptions::InvalidParameterValueException(
+            "Parameter 'trigger_consecutive_points' must be >= 1");
+        }
+        trigger_consecutive_points_ = value;
+        resetTriggerState();
+      } else if (param_name == polygon_name_ + "." + "release_consecutive_points") {
+        const auto value = static_cast<int>(parameter.as_int());
+        if (value < 1) {
+          throw rclcpp::exceptions::InvalidParameterValueException(
+            "Parameter 'release_consecutive_points' must be >= 1");
+        }
+        release_consecutive_points_ = value;
+        resetTriggerState();
       }
     }
   }

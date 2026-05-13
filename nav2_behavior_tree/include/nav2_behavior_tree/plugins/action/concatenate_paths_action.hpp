@@ -29,6 +29,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A BT::ActionNodeBase to shorten path by some distance
+ *
+ * Usage in XML:
+ * @code
+ * <ConcatenatePaths input_path1="{main_path}" input_path2="{last_mile_path}" output_path="{path}"/>
+ * @endcode
  */
 class ConcatenatePaths : public BT::ActionNodeBase
 {

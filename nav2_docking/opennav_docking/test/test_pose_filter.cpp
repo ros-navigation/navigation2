@@ -57,7 +57,7 @@ TEST(PoseFilterTests, FilterTests)
   meas2.pose.position.z = 6.0;
   double yaw = 0.5, pitch = 0.0, roll = 0.0;
   tf2::Quaternion quat;
-  quat.setEuler(pitch, roll, yaw);
+  quat.setRPY(roll, pitch, yaw);
   meas2.pose.orientation = tf2::toMsg(quat);
 
   // Update filter, check expectations

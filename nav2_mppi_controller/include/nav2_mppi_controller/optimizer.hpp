@@ -20,6 +20,8 @@
 #include <string>
 #include <memory>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -29,6 +31,7 @@
 #include "tf2_ros/buffer.hpp"
 #include "pluginlib/class_loader.hpp"
 
+#include "geometry_msgs/msg/accel_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -119,6 +122,30 @@ public:
   const models::ControlSequence & getOptimalControlSequence();
 
   /**
+   * @brief Get the aggregated trajectory costs from last evaluation
+   * @return Array of costs per trajectory
+   */
+  const Eigen::ArrayXf & getCosts() const {return costs_;}
+
+  /**
+   * @brief Get per-critic cost breakdown from last evaluation
+   * @return Vector of (critic_name, cost_array) pairs
+   */
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & getCriticCosts() const
+  {
+    return critic_manager_.getCriticCosts();
+  }
+
+  /**
+   * @brief Get per-trajectory collision flags from last evaluation
+   * @return Vector of bools, true if trajectory is in collision
+   */
+  const std::vector<bool> & getCollisionFlags() const
+  {
+    return critics_data_.trajectories_in_collision;
+  }
+
+  /**
    * @brief Set the maximum speed based on the speed limits callback
    * @param speed_limit Limit of the speed for use
    * @param percentage Whether the speed limit is absolute or relative
@@ -189,6 +216,12 @@ protected:
   void generateNoisedTrajectories();
 
   /**
+   * @brief Apply inter-iteration dynamic feasibility constraints on the
+   * first control sequence element before noise generation
+   */
+  void applyControlSequenceInterIterationConstraints();
+
+  /**
    * @brief Apply hard vehicle constraints on control sequence
    */
   void applyControlSequenceConstraints();
@@ -251,10 +284,10 @@ protected:
   bool isHolonomic() const;
 
   /**
-   * @brief Using control frequencies and time step size, determine if trajectory
+   * @brief Using control period and time step size, determine if trajectory
    * offset should be used to populate initial state of the next cycle
    */
-  void setOffset(double controller_frequency);
+  void setOffset(double controller_period);
 
   /**
    * @brief Perform fallback behavior to try to recover from a set of trajectories in collision
@@ -275,6 +308,7 @@ protected:
   CriticManager critic_manager_;
   NoiseGenerator noise_generator_;
 
+  std::unique_ptr<pluginlib::ClassLoader<MotionModel>> motion_model_loader_;
   std::unique_ptr<pluginlib::ClassLoader<OptimalTrajectoryValidator>> validator_loader_;
   OptimalTrajectoryValidator::Ptr trajectory_validator_;
 
@@ -291,7 +325,7 @@ protected:
   CriticData critics_data_ = {
     state_, generated_trajectories_, path_, goal_,
     costs_, settings_.model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};  /// Caution, keep references
+    std::nullopt, std::nullopt, {}};  /// Caution, keep references
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 

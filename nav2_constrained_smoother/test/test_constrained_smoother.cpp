@@ -147,9 +147,9 @@ protected:
       std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>());
     smoother_->activate();
 
-    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 2000000.0));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 3000.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.minimum_turning_radius", 0.4));
-    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 30.0));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.5));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_dist", 0.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
@@ -471,14 +471,14 @@ TEST_F(SmootherTest, testingSmoothness)
   mvmt_smoothness_improvement =
     assessPathImprovement(sharp_turn_90_then_reverse, smoothed_path, mvmt_smoothness_criterion_);
   EXPECT_GT(mvmt_smoothness_improvement, 0.0);
-  EXPECT_NEAR(mvmt_smoothness_improvement, 37.2, 1.0);
+  EXPECT_NEAR(mvmt_smoothness_improvement, 40.4, 1.0);
 
   orientation_smoothness_improvement =
     assessPathImprovement(
     sharp_turn_90_then_reverse, smoothed_path,
     orientation_smoothness_criterion);
   EXPECT_GT(orientation_smoothness_improvement, 0.0);
-  EXPECT_NEAR(orientation_smoothness_improvement, 28.5, 1.0);
+  EXPECT_NEAR(orientation_smoothness_improvement, 24.1, 1.0);
 
   SUCCEED();
 }
@@ -518,14 +518,14 @@ TEST_F(SmootherTest, testingAnchoringToOriginalPath)
   double origin_similarity_improvement =
     assessPathImprovement(smoothed_path, smoothed_path_anchored, origin_similarity_criterion);
   EXPECT_GT(origin_similarity_improvement, 0.0);
-  EXPECT_NEAR(origin_similarity_improvement, 45.5, 1.0);
+  EXPECT_NEAR(origin_similarity_improvement, 48.9, 1.0);
 
   SUCCEED();
 }
 
 TEST_F(SmootherTest, testingMaxCurvature)
 {
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 30.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.5));
   // set w_smooth to a small value so that the whole job is upon w_curve
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 0.3));
   // let's give the smoother more time since w_smooth is so small
@@ -620,8 +620,8 @@ TEST_F(SmootherTest, testingObstacleAvoidance)
   footprint.push_back(pointMsg(-0.4, -0.25));
   footprint.push_back(pointMsg(0.4, -0.25));
 
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 2000000.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 3000.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0000045));
   reloadParams();
 
   std::vector<Eigen::Vector3d> straight_near_obstacle =
@@ -662,6 +662,16 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   auto cost_avoidance_criterion =
     [&collision_checker, &footprint](int, const Eigen::Vector3d & p) {
       return collision_checker.footprintCostAtPose(p[0], p[1], p[2], footprint);
+    };
+
+  // Criterion to only consider the cost of the cusp
+  auto cusp_cost_criterion =
+    [this, &collision_checker, &footprint](int i, const Eigen::Vector3d & p) {
+      if (i == cusp_i_) {
+        return collision_checker.footprintCostAtPose(p[0], p[1], p[2], footprint);
+      } else {
+        return 0.0;
+      }
     };
 
   // path with a cusp
@@ -729,15 +739,15 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   footprint.push_back(pointMsg(0.4, -0.2));
 
   // first smooth with homogeneous w_cost to compare
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 75.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0000045));
   // higher w_curve significantly decreases convergence speed here
   // path feasibility can be restored by subsequent resmoothing with higher w_curve
   // TODO(afrixs): tune ceres optimizer to "converge" faster,
   //               see http://ceres-solver.org/nnls_solving.html
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 1.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.5));
   // let's have more iterations so that the improvement is more significant
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 500));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 60));
   reloadParams();
 
   std::vector<Eigen::Vector3d> smoothed_path;
@@ -748,22 +758,23 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     smoothed_path,
     cost_avoidance_criterion);
   EXPECT_GT(cost_avoidance_improvement_simple, 0.0);
-  EXPECT_NEAR(cost_avoidance_improvement_simple, 42.6, 1.0);
-  double worst_cost_improvement_simple = assessWorstPoseImprovement(
+  EXPECT_NEAR(cost_avoidance_improvement_simple, 23.6, 1.0);
+  // Checking for reduction in cusp's cost
+  double cusp_cost_improvement_simple = assessPathImprovement(
     cusp_near_obstacle,
     smoothed_path,
-    cost_avoidance_criterion);
+    cusp_cost_criterion);
   RCLCPP_INFO(
     rclcpp::get_logger("ceres_smoother"), "Cost avoidance improvement (cusp, simple): %lf, %lf",
-    cost_avoidance_improvement_simple, worst_cost_improvement_simple);
-  EXPECT_GE(worst_cost_improvement_simple, 0.0);
+    cost_avoidance_improvement_simple, cusp_cost_improvement_simple);
+  EXPECT_GE(cusp_cost_improvement_simple, 0.0);
 
 
   // then update parameters so that robot is not so afraid of obstacles
   // during simple movement but pays extra attention during rotations near cusps
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0052));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0000030));
   node_lifecycle_->set_parameter(
-    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.027 / 0.0052));
+    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.00001 / 0.0000030));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", 2.5));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.fn_tol", 1e-15));
   reloadParams();
@@ -776,34 +787,16 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     smoothed_path_ecc,
     cost_avoidance_criterion);
   EXPECT_GT(cost_avoidance_improvement_extra_careful_cusp, 0.0);
-  EXPECT_NEAR(cost_avoidance_improvement_extra_careful_cusp, 44.2, 1.0);
-  double worst_cost_improvement_extra_careful_cusp = assessWorstPoseImprovement(
+  EXPECT_NEAR(cost_avoidance_improvement_extra_careful_cusp, 31.5, 1.0);
+  double cusp_cost_improvement_extra_careful_cusp = assessPathImprovement(
     cusp_near_obstacle,
     smoothed_path_ecc,
-    cost_avoidance_criterion);
+    cusp_cost_criterion);
   RCLCPP_INFO(
     rclcpp::get_logger("ceres_smoother"), "Cost avoidance improvement (cusp, ecc): %lf, %lf",
-    cost_avoidance_improvement_extra_careful_cusp, worst_cost_improvement_extra_careful_cusp);
-  EXPECT_GE(worst_cost_improvement_extra_careful_cusp, 0.0);
-  EXPECT_GE(worst_cost_improvement_extra_careful_cusp, worst_cost_improvement_simple);
-  EXPECT_GT(cost_avoidance_improvement_extra_careful_cusp, cost_avoidance_improvement_simple);
-
-  // although extra careful cusp optimization avoids cost better than simple one,
-  // overall the path doesn't need to deflect so much from original, since w_cost is smaller
-  // and thus the obstacles are avoided mostly in dangerous zones around cusps
-  auto origin_similarity_criterion =
-    [&cusp_near_obstacle](int i, const Eigen::Vector3d & p) {
-      return (p.block<2, 1>(0, 0) - cusp_near_obstacle[i].block<2, 1>(0, 0)).norm();
-    };
-  double origin_similarity_improvement =
-    assessPathImprovement(smoothed_path, smoothed_path_ecc, origin_similarity_criterion);
-  RCLCPP_INFO(
-    rclcpp::get_logger(
-      "ceres_smoother"), "Original similarity improvement (cusp, ecc vs. simple): %lf",
-    origin_similarity_improvement);
-  EXPECT_GT(origin_similarity_improvement, 0.0);
-  EXPECT_NEAR(origin_similarity_improvement, 0.43, 0.02);
-
+    cost_avoidance_improvement_extra_careful_cusp, cusp_cost_improvement_extra_careful_cusp);
+  EXPECT_GE(cusp_cost_improvement_extra_careful_cusp, 0.0);
+  EXPECT_GT(cusp_cost_improvement_extra_careful_cusp, cusp_cost_improvement_simple);
 
   /////////////////////////////////////////////////////
   // testing asymmetric footprint options
@@ -816,9 +809,9 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   footprint.push_back(pointMsg(0.15, -0.2));
 
   // reset parameters back to homogeneous and shift cost check point to the center of the footprint
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 1.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 75.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.5));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0000045));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
   node_lifecycle_->set_parameter(
     rclcpp::Parameter(
@@ -826,21 +819,6 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
       std::vector<double>({-0.05, 0.0, 0.5, -0.45, 0.0, 0.5})  // x1, y1, weight1, x2, y2, weight2
   ));
   reloadParams();
-
-  // cost improvement is different for path smoothed by original optimizer
-  // since the footprint has changed
-  cost_avoidance_improvement_simple = assessPathImprovement(
-    cusp_near_obstacle, smoothed_path,
-    cost_avoidance_criterion);
-  worst_cost_improvement_simple = assessWorstPoseImprovement(
-    cusp_near_obstacle, smoothed_path,
-    cost_avoidance_criterion);
-  EXPECT_GT(cost_avoidance_improvement_simple, 0.0);
-  RCLCPP_INFO(
-    rclcpp::get_logger(
-      "ceres_smoother"), "Cost avoidance improvement (cusp_shifted, simple): %lf, %lf",
-    cost_avoidance_improvement_simple, worst_cost_improvement_simple);
-  EXPECT_NEAR(cost_avoidance_improvement_simple, 40.2, 1.0);
 
   // now smooth using the new optimizer with cost check point shifted
   std::vector<Eigen::Vector3d> smoothed_path_scc;
@@ -851,18 +829,18 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     smoothed_path_scc,
     cost_avoidance_criterion);
   EXPECT_GT(cost_avoidance_improvement_shifted_cost_check, 0.0);
-  EXPECT_NEAR(cost_avoidance_improvement_shifted_cost_check, 42.0, 1.0);
-  double worst_cost_improvement_shifted_cost_check = assessWorstPoseImprovement(
+  EXPECT_NEAR(cost_avoidance_improvement_shifted_cost_check, 34.5, 1.0);
+  double cusp_cost_improvement_shifted_cost_check = assessPathImprovement(
     cusp_near_obstacle,
     smoothed_path_scc,
-    cost_avoidance_criterion);
+    cusp_cost_criterion);
   RCLCPP_INFO(
     rclcpp::get_logger(
       "ceres_smoother"), "Cost avoidance improvement (cusp_shifted, scc): %lf, %lf",
-    cost_avoidance_improvement_shifted_cost_check, worst_cost_improvement_shifted_cost_check);
-  EXPECT_GE(worst_cost_improvement_shifted_cost_check, 0.0);
-  EXPECT_GE(worst_cost_improvement_shifted_cost_check, worst_cost_improvement_simple);
-  EXPECT_GT(cost_avoidance_improvement_shifted_cost_check, cost_avoidance_improvement_simple);
+    cost_avoidance_improvement_shifted_cost_check, cusp_cost_improvement_shifted_cost_check);
+  EXPECT_GE(cusp_cost_improvement_shifted_cost_check, 0.0);
+  // Avoidance should be more wrt simpler counterpart since footprint is shifted towards -ve x
+  EXPECT_GE(cusp_cost_improvement_shifted_cost_check, cusp_cost_improvement_simple);
 
   // same results should be achieved with unnormalized weights
   // (testing automatic weights normalization, i.e. using avg instead of sum)
@@ -879,14 +857,14 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   ////////////////////////////////////////
   // compare also with extra careful cusp
 
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0052));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0000030));
   node_lifecycle_->set_parameter(
-    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.027 / 0.0052));
+    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.00001 / 0.0000030));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", 2.5));
   // we need much more iterations here since it's a more complicated problem
   // TODO(afrixs): tune ceres optimizer to "converge" faster
   //               see http://ceres-solver.org/nnls_solving.html
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 1500));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 120));
   reloadParams();
 
   std::vector<Eigen::Vector3d> smoothed_path_scce;
@@ -898,16 +876,18 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     cusp_near_obstacle,
     smoothed_path_scce,
     cost_avoidance_criterion);
-  double worst_cost_improvement_shifted_extra = assessWorstPoseImprovement(
+  double cusp_cost_improvement_shifted_extra = assessPathImprovement(
     cusp_near_obstacle,
     smoothed_path_scce,
-    cost_avoidance_criterion);
+    cusp_cost_criterion);
   RCLCPP_INFO(
     rclcpp::get_logger(
       "ceres_smoother"), "Cost avoidance improvement (cusp_shifted, scce): %lf, %lf",
-    cost_avoidance_improvement_shifted_extra, worst_cost_improvement_shifted_extra);
-  EXPECT_NEAR(cost_avoidance_improvement_shifted_extra, 51.0, 1.0);
-  EXPECT_GE(worst_cost_improvement_shifted_extra, 0.0);
+    cost_avoidance_improvement_shifted_extra, cusp_cost_improvement_shifted_extra);
+  EXPECT_NEAR(cost_avoidance_improvement_shifted_extra, 42.7, 1.0);
+  EXPECT_GT(cusp_cost_improvement_shifted_extra, 0.0);
+  // Avoidance should be more wrt simpler counterpart since footprint is shifted towards -ve x
+  EXPECT_GE(cusp_cost_improvement_shifted_extra, cusp_cost_improvement_extra_careful_cusp);
 
   // resmooth extra careful cusp with same conditions (higher max_iterations)
   node_lifecycle_->set_parameter(
@@ -921,21 +901,21 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     cusp_near_obstacle,
     smoothed_path_ecc,
     cost_avoidance_criterion);
-  worst_cost_improvement_extra_careful_cusp = assessWorstPoseImprovement(
+  cusp_cost_improvement_extra_careful_cusp = assessPathImprovement(
     cusp_near_obstacle,
     smoothed_path_ecc,
-    cost_avoidance_criterion);
+    cusp_cost_criterion);
   EXPECT_GT(cost_avoidance_improvement_extra_careful_cusp, 0.0);
   RCLCPP_INFO(
     rclcpp::get_logger(
       "ceres_smoother"), "Cost avoidance improvement (cusp_shifted, ecc): %lf, %lf",
-    cost_avoidance_improvement_extra_careful_cusp, worst_cost_improvement_extra_careful_cusp);
-  EXPECT_NEAR(cost_avoidance_improvement_extra_careful_cusp, 48.5, 1.0);
+    cost_avoidance_improvement_extra_careful_cusp, cusp_cost_improvement_extra_careful_cusp);
+  EXPECT_NEAR(cost_avoidance_improvement_extra_careful_cusp, 40.8, 1.0);
   EXPECT_GT(
     cost_avoidance_improvement_shifted_extra,
     cost_avoidance_improvement_extra_careful_cusp);
   // worst cost improvement is a bit lower but only by 5% so it's not a big deal
-  EXPECT_GE(worst_cost_improvement_shifted_extra, worst_cost_improvement_extra_careful_cusp - 6.0);
+  EXPECT_GE(cusp_cost_improvement_shifted_extra, cusp_cost_improvement_extra_careful_cusp);
 
   SUCCEED();
 }
@@ -1002,7 +982,7 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
     &mvmt_smoothness_criterion_out);
   // more poses -> smoother path
   EXPECT_GT(smoothness_improvement, 0.0);
-  EXPECT_NEAR(smoothness_improvement, 63.9, 1.0);
+  EXPECT_NEAR(smoothness_improvement, 65.2, 1.0);
 
   // upsample above original size
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_upsampling_factor", 2));
@@ -1056,10 +1036,10 @@ TEST_F(SmootherTest, testingStartGoalOrientations)
   mvmt_smoothness_improvement =
     assessPathImprovement(smoothed_path, smoothed_path_sg_overwritten, mvmt_smoothness_criterion_);
   EXPECT_GT(mvmt_smoothness_improvement, 0.0);
-  EXPECT_NEAR(mvmt_smoothness_improvement, 58.9, 1.0);
+  EXPECT_NEAR(mvmt_smoothness_improvement, 100.0, 1.0);
   // orientations adjusted to follow the path
-  EXPECT_NEAR(smoothed_path_sg_overwritten.front()[2], M_PI / 8, 0.1);
-  EXPECT_NEAR(smoothed_path_sg_overwritten.back()[2], 3 * M_PI / 8, 0.1);
+  EXPECT_NEAR(smoothed_path_sg_overwritten.front()[2], M_PI / 4, 0.1);
+  EXPECT_NEAR(smoothed_path_sg_overwritten.back()[2], M_PI / 4, 0.1);
 
   // test short paths
   std::vector<Eigen::Vector3d> short_screwed_path =

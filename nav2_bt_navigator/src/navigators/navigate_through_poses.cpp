@@ -95,7 +95,7 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 void
 NavigateThroughPosesNavigator::goalCompleted(
   typename ActionT::Result::SharedPtr result,
-  const nav2_behavior_tree::BtStatus final_bt_status)
+  nav2_behavior_tree::BtStatus & final_bt_status)
 {
   if (result->error_code == 0) {
     if (bt_action_server_->populateInternalError(result)) {
@@ -165,9 +165,10 @@ NavigateThroughPosesNavigator::onLoop()
   nav_msgs::msg::Path current_path;
   res = blackboard->get(path_blackboard_id_, current_path);
   if (res && current_path.poses.size() > 0u) {
-    // Reset start index if path is updated
-    if (nav2_util::isPathUpdated(current_path,
-        previous_path_) || previous_path_.poses.size() == 0u)
+    // Reset start index if path or goal is updated
+    if (nav2_util::isPathUpdated(current_path, previous_path_) ||
+      nav2_util::isGoalUpdated(current_path, previous_path_) ||
+      previous_path_.poses.size() == 0u)
     {
       start_index_ = 0;
       previous_path_ = current_path;

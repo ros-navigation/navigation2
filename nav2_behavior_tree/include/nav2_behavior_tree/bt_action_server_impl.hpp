@@ -257,9 +257,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   bt_->resetGrootMonitor();
 
   bool is_bt_id = false;
-  if ((file_or_id.length() < 4) ||
-    file_or_id.substr(file_or_id.length() - 4) != ".xml")
-  {
+  if (!file_or_id.ends_with(".xml")) {
     is_bt_id = true;
   }
 
@@ -401,6 +399,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
 template<class ActionT, class NodeT>
 void BtActionServer<ActionT, NodeT>::executeCallback()
 {
+  muxer_preemption_requested_ = false;
+
   if (!on_goal_received_callback_(action_server_->get_current_goal())) {
     // Give server an opportunity to populate the result message
     // if the goal is not accepted
@@ -420,7 +420,7 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
         RCLCPP_DEBUG(logger_, "Action server is inactive. Canceling.");
         return true;
       }
-      return action_server_->is_cancel_requested();
+      return action_server_->is_cancel_requested() || muxer_preemption_requested_;
     };
 
   auto on_loop = [&]() {

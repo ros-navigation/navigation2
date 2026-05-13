@@ -61,7 +61,7 @@ inline geometry_msgs::msg::Quaternion getWorldOrientation(
 {
   // theta is in radians already
   tf2::Quaternion q;
-  q.setEuler(0.0, 0.0, theta);
+  q.setRPY(0.0, 0.0, theta);
   return tf2::toMsg(q);
 }
 

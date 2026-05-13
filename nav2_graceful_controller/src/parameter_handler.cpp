@@ -56,6 +56,8 @@ ParameterHandler::ParameterHandler(
     plugin_name_ + ".v_angular_min_in_place", 0.25);
   params_.slowdown_radius = node->declare_or_get_parameter(
     plugin_name_ + ".slowdown_radius", 1.5);
+  params_.deceleration_max = node->declare_or_get_parameter(
+    plugin_name_ + ".deceleration_max", 2.5);
   params_.initial_rotation = node->declare_or_get_parameter(
     plugin_name_ + ".initial_rotation", true);
   params_.initial_rotation_tolerance = node->declare_or_get_parameter(
@@ -164,6 +166,8 @@ ParameterHandler::updateParametersCallback(
         params_.v_angular_min_in_place = parameter.as_double();
       } else if (param_name == plugin_name_ + ".slowdown_radius") {
         params_.slowdown_radius = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".deceleration_max") {
+        params_.deceleration_max = parameter.as_double();
       } else if (param_name == plugin_name_ + ".initial_rotation_tolerance") {
         params_.initial_rotation_tolerance = parameter.as_double();
       } else if (param_name == plugin_name_ + ".rotation_scaling_factor") {

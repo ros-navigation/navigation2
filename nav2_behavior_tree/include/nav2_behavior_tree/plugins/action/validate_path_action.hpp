@@ -34,6 +34,38 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtServiceNode class that validates a path by calling the IsPathValid service on the path provided in the input port
+ *
+ * Usage in XML:
+ * @code
+ * <ValidatePath
+ *   server_timeout="10"
+ *   path="{path}"
+ *   max_cost="100"
+ *   consider_unknown_as_obstacle="false"
+ *   layer_name=""
+ *   footprint=""
+ *   stop_at_first_collision="true"
+ *   collision_poses="{collision_poses}" />
+ *
+ * <!-- With max_lookahead_distance: -->
+ * <ValidatePath
+ *   path="{path}"
+ *   max_lookahead_distance="5.0"
+ *   collision_poses="{collision_poses}" />
+ *
+ * <!-- With custom footprint: -->
+ * <ValidatePath
+ *   path="{path}"
+ *   footprint="[[0.5,0.5],[0.5,-0.5],[-0.5,-0.5],[-0.5,0.5]]"
+ *   collision_poses="{collision_poses}" />
+ *
+ * <!-- Checking a specific costmap layer: -->
+ * <ValidatePath
+ *   path="{path}"
+ *   layer_name="obstacle_layer"
+ *   stop_at_first_collision="false"
+ *   collision_poses="{collision_poses}" />
+ * @endcode
  */
 class ValidatePath : public BtServiceNode<nav2_msgs::srv::IsPathValid>
 {
@@ -87,8 +119,11 @@ public:
         "Custom footprint specification as bracketed array of arrays, e.g., "
         "[[x1,y1],[x2,y2],...] (empty = use robot footprint)"),
         BT::InputPort<bool>(
-        "check_full_path", false,
-        "Whether to check all poses (true) or stop at first invalid pose (false)"),
+        "stop_at_first_collision", true,
+        "Whether to stop validation at first collision (true) or check all poses (false)"),
+        BT::InputPort<double>(
+        "max_lookahead_distance", -1.0,
+        "Maximum distance ahead of the robot to validate (-1 = full path)"),
         BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
         "collision_poses",
         "Poses in the path that are in collision")
@@ -100,7 +135,8 @@ private:
   bool consider_unknown_as_obstacle_;
   std::string layer_name_;
   std::string footprint_;
-  bool check_full_path_;
+  bool stop_at_first_collision_;
+  double max_lookahead_distance_;
   nav_msgs::msg::Path path_;
 };
 

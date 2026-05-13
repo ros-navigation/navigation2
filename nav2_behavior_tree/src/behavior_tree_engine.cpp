@@ -21,11 +21,11 @@
 #include "tinyxml2.h" //NOLINT
 
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp/version.h"
 #include "behaviortree_cpp/json_export.h"
 #include "behaviortree_cpp/utils/shared_library.h"
 #include "nav2_behavior_tree/json_utils.hpp"
 #include "nav2_behavior_tree/utils/loop_rate.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -39,8 +39,7 @@ BehaviorTreeEngine::BehaviorTreeEngine(
     factory_.registerFromPlugin(loader.getOSName(p));
   }
 
-  // clock for throttled debug log
-  clock_ = node->get_clock();
+  node_ = node;
 }
 
 BtStatus
@@ -50,7 +49,16 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  nav2_behavior_tree::LoopRate loopRate(loopTimeout, tree);
+  auto node = node_.lock();
+  if (!node) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("BehaviorTreeEngine"),
+      "BehaviorTreeEngine node expired. Exiting with failure.");
+    return BtStatus::FAILED;
+  }
+
+  auto rate_clock = nav2::selectSteadyOrSimClock(node);
+  nav2_behavior_tree::LoopRate loopRate(loopTimeout, tree, rate_clock);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes
@@ -70,12 +78,11 @@ BehaviorTreeEngine::run(
       if (!loopRate.sleep()) {
         RCLCPP_DEBUG_THROTTLE(
           rclcpp::get_logger("BehaviorTreeEngine"),
-          *clock_, 1000,
+          *rate_clock, 1000,
           "Behavior Tree tick rate %0.2f was exceeded!",
           1.0 / (loopRate.period().count() * 1.0e-9));
       }
     }
-  #if RCLCPP_VERSION_GTE(30, 1, 5)
   } catch (const BT::NodeExecutionError & ex) {
     RCLCPP_ERROR(
       rclcpp::get_logger("BehaviorTreeEngine"),
@@ -84,7 +91,6 @@ BehaviorTreeEngine::run(
       ex.failedNode().node_path.c_str(),
       ex.originalMessage().c_str());
     return BtStatus::FAILED;
-  #endif
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       rclcpp::get_logger("BehaviorTreeEngine"),

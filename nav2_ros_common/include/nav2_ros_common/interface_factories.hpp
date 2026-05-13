@@ -27,6 +27,7 @@
 #include "nav2_ros_common/subscription.hpp"
 #include "nav2_ros_common/action_client.hpp"
 #include "rclcpp_action/client.hpp"
+#include "nav2_ros_common/rate.hpp"
 
 namespace nav2
 {
@@ -330,6 +331,31 @@ typename nav2::ActionClient<ActionT>::SharedPtr create_action_client(
 }
 
 }  // namespace interfaces
+
+/**
+ * @brief A sim-time-aware timer creator for Nav2.
+ *
+ * When use_sim_time is true, the timer uses the node's ROS clock (simulation time).
+ * When use_sim_time is false, a steady (monotonic) clock is used.
+ *
+ * Usage:
+ *   auto timer = nav2::create_timer(this, 50ms, callback);
+ */
+template<typename NodeT, typename DurationRepT, typename DurationT, typename CallbackT>
+rclcpp::TimerBase::SharedPtr create_timer(
+  NodeT node,
+  std::chrono::duration<DurationRepT, DurationT> period,
+  CallbackT callback,
+  rclcpp::CallbackGroup::SharedPtr group = nullptr)
+{
+  return rclcpp::create_timer(
+    selectSteadyOrSimClock(node),
+    period,
+    std::move(callback),
+    group,
+    node->get_node_base_interface().get(),
+    node->get_node_timers_interface().get());
+}
 
 }  // namespace nav2
 

@@ -31,8 +31,11 @@ void SpinAction::initialize()
   getInput("spin_dist", dist);
   double time_allowance;
   getInput("time_allowance", time_allowance);
+  bool disable_collision_checks;
+  getInput("disable_collision_checks", disable_collision_checks);
   goal_.target_yaw = dist;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
+  goal_.disable_collision_checks = disable_collision_checks;
   getInput("is_recovery", is_recovery_);
 }
 

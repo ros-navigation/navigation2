@@ -41,18 +41,25 @@ nav2::CallbackReturn
 VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
-
-  // Transform buffer and listener initialization
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    this->get_node_base_interface(),
-    this->get_node_timers_interface());
-  tf_buffer_->setCreateTimerInterface(timer_interface);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
   // Obtaining ROS parameters
   if (!obtainParams()) {
     return nav2::CallbackReturn::FAILURE;
+  }
+
+  if (!enforce_global_frame_id_) {
+    // Transform buffer and listener initialization
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+      this->get_node_base_interface(),
+      this->get_node_timers_interface());
+    tf_buffer_->setCreateTimerInterface(timer_interface);
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  } else {
+    RCLCPP_INFO(
+      get_logger(),
+      "Parameter enforce_global_frame_id is true. TF listener is disabled. "
+      "All incoming shapes must have frame_id empty or equal to global_frame_id '%s'.",
+      global_frame_id_.c_str());
   }
 
   map_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -144,6 +151,7 @@ bool VectorObjectServer::obtainParams()
   // Main ROS-parameters
   map_topic_ = nav2::declare_or_get_parameter(node, "map_topic", std::string{"vo_map"});
   global_frame_id_ = nav2::declare_or_get_parameter(node, "global_frame_id", std::string{"map"});
+  enforce_global_frame_id_ = nav2::declare_or_get_parameter(node, "enforce_global_frame_id", false);
   resolution_ = nav2::declare_or_get_parameter(node, "resolution", 0.05);
   default_value_ = nav2::declare_or_get_parameter(
     node, "default_value",
@@ -184,6 +192,23 @@ bool VectorObjectServer::obtainParams()
         "Please specify the correct type for shape %s. Supported types are 'polygon' and 'circle'",
         shape_name.c_str());
       return false;
+    }
+  }
+
+  // if any shapes has non-global frame id, no shapes will be added and return false.
+  if (enforce_global_frame_id_) {
+    for (const auto & shape : shapes_) {
+      const std::string & frame_id = shape->getFrameID();
+      if (!frame_id.empty() && frame_id != global_frame_id_) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Shape '%s' has frame_id '%s' which differs from global_frame_id '%s'. "
+          "All shapes must have frame_id empty or equal to global_frame_id "
+          "when enforce_global_frame_id is true.",
+          shape->getUUID().c_str(), frame_id.c_str(), global_frame_id_.c_str());
+        shapes_.clear();
+        return false;
+      }
     }
   }
 
@@ -392,6 +417,32 @@ void VectorObjectServer::addShapesCallback(
   // Initialize result with true. If one of the required vector object was not added properly,
   // set it to false.
   response->success = true;
+
+  if (enforce_global_frame_id_) {
+    // Lambda for checking frame_id consistency
+    auto check_frame_id = [this](
+      const auto & shapes, const std::string & shape_type_name)
+      {
+        for (const auto & shape : shapes) {
+          if (!shape.header.frame_id.empty() && shape.header.frame_id != global_frame_id_) {
+            RCLCPP_ERROR(
+            get_logger(),
+            "%s frame_id '%s' must be empty or equal to global_frame_id '%s' "
+            "when enforce_global_frame_id is true. Rejecting request.",
+            shape_type_name.c_str(), shape.header.frame_id.c_str(), global_frame_id_.c_str());
+            return false;
+          }
+        }
+        return true;
+      };
+
+    if (!check_frame_id(request->polygons, "Polygon") ||
+      !check_frame_id(request->circles, "Circle"))
+    {
+      response->success = false;
+      return;
+    }
+  }
 
   auto node = shared_from_this();
 

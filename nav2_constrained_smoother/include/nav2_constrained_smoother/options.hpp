@@ -52,14 +52,18 @@ struct SmootherParams
     double minimum_turning_radius = node->declare_or_get_parameter(
       name + ".minimum_turning_radius", 0.4);
     max_curvature = 1.0f / minimum_turning_radius;
-    curvature_weight = node->declare_or_get_parameter(local_name + "w_curve", 30.0);
-    costmap_weight = node->declare_or_get_parameter(local_name + "w_cost", 0.015);
-    double cost_cusp_multiplier = node->declare_or_get_parameter(
-      local_name + "w_cost_cusp_multiplier", 3.0);
-    cusp_costmap_weight = costmap_weight * cost_cusp_multiplier;
+    curvature_weight_sqrt = std::sqrt(node->declare_or_get_parameter(local_name + "w_curve", 30.0));
+    costmap_weight_sqrt = std::sqrt(node->declare_or_get_parameter(local_name + "w_cost", 0.015));
+    double cost_cusp_multiplier_sqrt = std::sqrt(
+      node->declare_or_get_parameter(
+        local_name + "w_cost_cusp_multiplier", 3.0));
+    cusp_costmap_weight_sqrt = costmap_weight_sqrt * cost_cusp_multiplier_sqrt;
     cusp_zone_length = node->declare_or_get_parameter(local_name + "cusp_zone_length", 2.5);
-    distance_weight = node->declare_or_get_parameter(local_name + "w_dist", 0.0);
-    smooth_weight = node->declare_or_get_parameter(local_name + "w_smooth", 2000000.0);
+    distance_weight_sqrt = std::sqrt(node->declare_or_get_parameter(local_name + "w_dist", 0.0));
+    smooth_weight_sqrt = std::sqrt(
+      node->declare_or_get_parameter(
+        local_name + "w_smooth",
+        2000000.0));
     cost_check_points = node->declare_or_get_parameter(
       local_name + "cost_check_points", std::vector<double>());
     if (cost_check_points.size() % 3 != 0) {
@@ -69,6 +73,10 @@ struct SmootherParams
         "cost_check_points parameter must contain values as follows: "
         "[x1, y1, weight1, x2, y2, weight2, ...]");
       throw std::runtime_error("Invalid parameter: cost_check_points");
+    }
+    // sqrt the costs to account for ceres solver's internal squaring
+    for (size_t i = 2u; i < cost_check_points.size(); i += 3) {
+      cost_check_points[i] = std::sqrt(cost_check_points[i]);
     }
     // normalize check point weights so that their sum == 1.0
     double check_point_weights_sum = 0.0;
@@ -89,12 +97,12 @@ struct SmootherParams
       local_name + "keep_start_orientation", true);
   }
 
-  double smooth_weight{0.0};
-  double costmap_weight{0.0};
-  double cusp_costmap_weight{0.0};
+  double smooth_weight_sqrt{0.0};
+  double costmap_weight_sqrt{0.0};
+  double cusp_costmap_weight_sqrt{0.0};
   double cusp_zone_length{0.0};
-  double distance_weight{0.0};
-  double curvature_weight{0.0};
+  double distance_weight_sqrt{0.0};
+  double curvature_weight_sqrt{0.0};
   double max_curvature{0.0};
   double max_time{10.0};  // adjusted by action goal, not by parameters
   int path_downsampling_factor{1};
