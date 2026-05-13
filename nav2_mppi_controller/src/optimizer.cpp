@@ -121,6 +121,11 @@ void Optimizer::getParams()
   getParam(s.sampling_std.wz, "wz_std", 0.4f);
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
   getParam(s.open_loop, "open_loop", false);
+  getParam(s.sgf_order, "sgf_order", 2);
+  if (s.sgf_order < 1 || s.sgf_order > 2) {
+    RCLCPP_WARN(logger_, "sgf_order must be 1 or 2, defaulting to 2");
+    s.sgf_order = 2;
+  }
 
   s.base_constraints.ax_max = fabs(s.base_constraints.ax_max);
   if (s.base_constraints.ax_min > 0.0) {
@@ -137,8 +142,7 @@ void Optimizer::getParams()
       "Sign of the parameter ay_min is incorrect, consider setting it negative.");
   }
 
-
-  getParam(motion_model_name, "motion_model", std::string("DiffDrive"));
+  getParam(motion_model_name, "motion_model", std::string("diff_drive"));
 
   s.constraints = s.base_constraints;
 
@@ -147,12 +151,12 @@ void Optimizer::getParams()
 
   double controller_frequency;
   getParentParam(controller_frequency, "controller_frequency", 0.0, ParameterType::Static);
-  setOffset(controller_frequency);
+  s.controller_period = static_cast<float>(1.0 / controller_frequency);
+  setOffset(s.controller_period);
 }
 
-void Optimizer::setOffset(double controller_frequency)
+void Optimizer::setOffset(double controller_period)
 {
-  const double controller_period = 1.0 / controller_frequency;
   constexpr double eps = 1e-6;
 
   if ((controller_period + eps) < settings_.model_dt) {
@@ -180,9 +184,7 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
   control_history_[2] = {0.0f, 0.0f, 0.0f};
   control_history_[3] = {0.0f, 0.0f, 0.0f};
 
-  if (settings_.open_loop) {
-    last_command_vel_ = geometry_msgs::msg::Twist();
-  }
+  last_command_vel_ = geometry_msgs::msg::Twist();
 
   if (reset_dynamic_speed_limits) {
     settings_.constraints = settings_.base_constraints;
@@ -192,7 +194,7 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());
-  motion_model_->initialize(settings_.constraints, settings_.model_dt);
+  motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
   trajectory_validator_->initialize(
     parent_, name_ + ".TrajectoryValidator",
     costmap_ros_, parameters_handler_, tf_buffer_, settings_);
@@ -294,8 +296,32 @@ void Optimizer::prepare(
   const geometry_msgs::msg::Pose & goal,
   nav2_core::GoalChecker * goal_checker)
 {
+  if (settings_.open_loop) {
+    state_.speed = last_command_vel_;
+  } else {
+    // Predict state one controller_period forward toward the last command to compensate
+    // for the latency between measurement and when this command will take effect.
+    // Clamp to physically achievable range so prediction never exceeds dynamics.
+    const auto & c = settings_.constraints;
+    const double dt = settings_.controller_period;
+    state_.speed = robot_speed;
+    state_.speed.linear.x = std::clamp(
+      last_command_vel_.linear.x,
+      robot_speed.linear.x + dt * c.ax_min,
+      robot_speed.linear.x + dt * c.ax_max);
+    state_.speed.angular.z = std::clamp(
+      last_command_vel_.angular.z,
+      robot_speed.angular.z - dt * c.az_max,
+      robot_speed.angular.z + dt * c.az_max);
+    if (isHolonomic()) {
+      state_.speed.linear.y = std::clamp(
+        last_command_vel_.linear.y,
+        robot_speed.linear.y + dt * c.ay_min,
+        robot_speed.linear.y + dt * c.ay_max);
+    }
+  }
+
   state_.pose = robot_pose;
-  state_.speed = settings_.open_loop ? last_command_vel_ : robot_speed;
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
   costs_.setZero(settings_.batch_size);
@@ -324,58 +350,108 @@ void Optimizer::shiftControlSequence()
 
 void Optimizer::generateNoisedTrajectories()
 {
+  applyControlSequenceInterIterationConstraints();
   noise_generator_.setNoisedControls(state_, control_sequence_);
   noise_generator_.generateNextNoises();
   updateStateVelocities(state_);
   integrateStateVelocities(generated_trajectories_, state_);
 }
 
+void Optimizer::applyControlSequenceInterIterationConstraints()
+{
+  // Enforce t=0 to be dynamically feasible from the current speed for inter-iteration feasibility
+  // Re-centers the distribution at t=0, but still applied in a information theoretic sound way
+  auto & s = settings_;
+  float first_dt = s.controller_period;
+  float max_delta_vx = first_dt * s.constraints.ax_max;
+  float min_delta_vx = first_dt * s.constraints.ax_min;
+  float max_delta_vy = first_dt * s.constraints.ay_max;
+  float min_delta_vy = first_dt * s.constraints.ay_min;
+  float max_delta_wz = first_dt * s.constraints.az_max;
+
+  float speed_vx = static_cast<float>(state_.speed.linear.x);
+  float speed_wz = static_cast<float>(state_.speed.angular.z);
+  if (s.shift_control_sequence) {
+    // When shifting, vx(0) is not sent and represents 'now'
+    // so that vx(1), the sent command, needs to be only one step away.
+    control_sequence_.vx(0) = speed_vx;
+    control_sequence_.wz(0) = speed_wz;
+    if (isHolonomic()) {
+      control_sequence_.vy(0) = static_cast<float>(state_.speed.linear.y);
+    }
+  } else {
+    // When not shifting, vx(0) is the sent command, clamp to the feasible envelope
+    control_sequence_.vx(0) = utils::clampVelocityByAccel(
+      speed_vx, control_sequence_.vx(0), min_delta_vx, max_delta_vx);
+    control_sequence_.wz(0) = utils::clampVelocityByAccel(
+      speed_wz, control_sequence_.wz(0), -max_delta_wz, max_delta_wz);
+    if (isHolonomic()) {
+      float speed_vy = static_cast<float>(state_.speed.linear.y);
+      control_sequence_.vy(0) = utils::clampVelocityByAccel(
+        speed_vy, control_sequence_.vy(0), min_delta_vy, max_delta_vy);
+    }
+  }
+}
+
 void Optimizer::applyControlSequenceConstraints()
 {
   auto & s = settings_;
 
-  float max_delta_vx = s.model_dt * s.constraints.ax_max;
-  float min_delta_vx = s.model_dt * s.constraints.ax_min;
-  float max_delta_vy = s.model_dt * s.constraints.ay_max;
-  float min_delta_vy = s.model_dt * s.constraints.ay_min;
-  float max_delta_wz = s.model_dt * s.constraints.az_max;
-  float vx_last = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, control_sequence_.vx(0));
-  float wz_last = utils::clamp(-s.constraints.wz, s.constraints.wz, control_sequence_.wz(0));
-  control_sequence_.vx(0) = vx_last;
-  control_sequence_.wz(0) = wz_last;
-  float vy_last = 0;
-  if (isHolonomic()) {
-    vy_last = utils::clamp(-s.constraints.vy, s.constraints.vy, control_sequence_.vy(0));
-    control_sequence_.vy(0) = vy_last;
+  // Apply constraints to set the optimal control sequence within bounds
+  motion_model_->applyConstraints(control_sequence_);
+
+  // Use controller_period for t=0 to realistically model physical limits
+  float first_dt = s.controller_period;
+  float max_delta_vx = first_dt * s.constraints.ax_max;
+  float min_delta_vx = first_dt * s.constraints.ax_min;
+  float max_delta_vy = first_dt * s.constraints.ay_max;
+  float min_delta_vy = first_dt * s.constraints.ay_min;
+  float max_delta_wz = first_dt * s.constraints.az_max;
+
+  // Initialize as the current speed to create inter-iteration dynamic feasibility
+  float vx_last = static_cast<float>(state_.speed.linear.x);
+  float wz_last = static_cast<float>(state_.speed.angular.z);
+  float vy_last = isHolonomic() ? static_cast<float>(state_.speed.linear.y) : 0.0f;
+
+  // When shifting, vx(0) is "now" and not sent. Pin it so vx(1), the sent command,
+  // is exactly one constraint step from current speed when shift_control_sequence
+  if (s.shift_control_sequence) {
+    control_sequence_.vx(0) = vx_last;
+    control_sequence_.wz(0) = wz_last;
+    if (isHolonomic()) {
+      control_sequence_.vy(0) = vy_last;
+    }
   }
 
-  for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
+  for (unsigned int i = 0; i != control_sequence_.vx.size(); i++) {
+    // After first timestep, switch to MPC model_dt for intra-iteration feasibility
+    if (i == 1) {
+      max_delta_vx = s.model_dt * s.constraints.ax_max;
+      min_delta_vx = s.model_dt * s.constraints.ax_min;
+      max_delta_vy = s.model_dt * s.constraints.ay_max;
+      min_delta_vy = s.model_dt * s.constraints.ay_min;
+      max_delta_wz = s.model_dt * s.constraints.az_max;
+    }
+
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
-    if (vx_last > 0) {
-      vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
-    } else {
-      vx_curr = utils::clamp(vx_last - max_delta_vx, vx_last - min_delta_vx, vx_curr);
-    }
+    vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
     vx_last = vx_curr;
 
     float & wz_curr = control_sequence_.wz(i);
     wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
-    wz_curr = utils::clamp(wz_last - max_delta_wz, wz_last + max_delta_wz, wz_curr);
+    wz_curr = utils::clampVelocityByAccel(wz_last, wz_curr, -max_delta_wz, max_delta_wz);
     wz_last = wz_curr;
 
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-      if (vy_last > 0) {
-        vy_curr = utils::clamp(vy_last + min_delta_vy, vy_last + max_delta_vy, vy_curr);
-      } else {
-        vy_curr = utils::clamp(vy_last - max_delta_vy, vy_last - min_delta_vy, vy_curr);
-      }
+      vy_curr = utils::clampVelocityByAccel(vy_last, vy_curr, min_delta_vy, max_delta_vy);
       vy_last = vy_curr;
     }
   }
 
+  // Apply again to ensure accel constraints don't violate specialty limits
   motion_model_->applyConstraints(control_sequence_);
 }
 
@@ -576,21 +652,27 @@ geometry_msgs::msg::TwistStamped Optimizer::getControlFromSequenceAsTwist(
   return utils::toTwistStamped(vx, wz, stamp, costmap_ros_->getBaseFrameID());
 }
 
-void Optimizer::setMotionModel(const std::string & model)
+void Optimizer::setMotionModel(const std::string & motion_model_name)
 {
-  if (model == "DiffDrive") {
-    motion_model_ = std::make_shared<DiffDriveMotionModel>();
-  } else if (model == "Omni") {
-    motion_model_ = std::make_shared<OmniMotionModel>();
-  } else if (model == "Ackermann") {
-    motion_model_ = std::make_shared<AckermannMotionModel>(parameters_handler_, name_);
-  } else {
+  auto node = parent_.lock();
+  const std::string plugin_ns = name_ + "." + motion_model_name;
+  std::string plugin_type;
+  motion_model_loader_ =
+    std::make_unique<pluginlib::ClassLoader<MotionModel>>(
+    "nav2_mppi_controller", "mppi::MotionModel");
+
+  try {
+    plugin_type = nav2::get_plugin_type_param(node, plugin_ns);
+    motion_model_ = motion_model_loader_->createSharedInstance(plugin_type);
+    motion_model_->initialize(parameters_handler_, plugin_ns);
+    motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
+  } catch (const pluginlib::PluginlibException & ex) {
     throw nav2_core::ControllerException(
-            std::string(
-              "Model " + model + " is not valid! Valid options are DiffDrive, Omni, "
-              "or Ackermann"));
+            std::string("Failed to load motion model plugin '") + motion_model_name +
+            "': " + ex.what());
   }
-  motion_model_->initialize(settings_.constraints, settings_.model_dt);
+
+  RCLCPP_INFO(logger_, "Loaded motion model plugin: %s", plugin_type.c_str());
 }
 
 void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
@@ -618,7 +700,7 @@ void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
       s.constraints.wz = s.base_constraints.wz * ratio;
     }
   }
-  motion_model_->initialize(settings_.constraints, settings_.model_dt);
+  motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
 }
 
 models::Trajectories & Optimizer::getGeneratedTrajectories()

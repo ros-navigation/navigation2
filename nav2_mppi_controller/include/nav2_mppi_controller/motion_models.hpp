@@ -31,16 +31,9 @@
 namespace mppi
 {
 
-// Forward declaration of utils method, since utils.hpp can't be included here due
-// to recursive inclusion.
-namespace utils
-{
-float clamp(const float lower_bound, const float upper_bound, const float input);
-}
-
 /**
  * @class mppi::MotionModel
- * @brief Abstract motion model for modeling a vehicle
+ * @brief Abstract pluginlib class for modeling a vehicle
  */
 class MotionModel
 {
@@ -56,11 +49,21 @@ public:
   virtual ~MotionModel() = default;
 
   /**
+   * @brief Initialize motion model on bringup.
+   * @param param_handler Pointer to the shared parameters handler
+   * @param plugin_name   Namespaced name of this plugin instance
+   */
+  virtual void initialize(
+    ParametersHandler * /*param_handler*/,
+    const std::string & /*plugin_name*/)
+  {}
+
+  /**
     * @brief Initialize motion model on bringup and set required variables
     * @param control_constraints Constraints on control
     * @param model_dt duration of a time step
     */
-  void initialize(const models::ControlConstraints & control_constraints, float model_dt)
+  void setConstraints(const models::ControlConstraints & control_constraints, float model_dt)
   {
     control_constraints_ = control_constraints;
     model_dt_ = model_dt;
@@ -78,9 +81,9 @@ public:
     float max_delta_vy = model_dt_ * control_constraints_.ay_max;
     float min_delta_vy = model_dt_ * control_constraints_.ay_min;
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
-
     unsigned int n_cols = state.vx.cols();
 
+    // Set dynamic limits to the platform velocities from the raw controls sampling
     for (unsigned int i = 1; i < n_cols; i++) {
       auto lower_bound_vx = (state.vx.col(i - 1) >
         0).select(
@@ -90,16 +93,13 @@ public:
         0).select(
         state.vx.col(i - 1) + max_delta_vx,
         state.vx.col(i - 1) - min_delta_vx);
-
-      state.cvx.col(i - 1) = state.cvx.col(i - 1)
+      state.vx.col(i) = state.cvx.col(i - 1)
         .cwiseMax(lower_bound_vx)
         .cwiseMin(upper_bound_vx);
-      state.vx.col(i) = state.cvx.col(i - 1);
 
-      state.cwz.col(i - 1) = state.cwz.col(i - 1)
+      state.wz.col(i) = state.cwz.col(i - 1)
         .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
         .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
-      state.wz.col(i) = state.cwz.col(i - 1);
 
       if (is_holo) {
         auto lower_bound_vy = (state.vy.col(i - 1) >
@@ -110,10 +110,9 @@ public:
           0).select(
           state.vy.col(i - 1) + max_delta_vy,
           state.vy.col(i - 1) - min_delta_vy);
-        state.cvy.col(i - 1) = state.cvy.col(i - 1)
+        state.vy.col(i) = state.cvy.col(i - 1)
           .cwiseMax(lower_bound_vy)
           .cwiseMin(upper_bound_vy);
-        state.vy.col(i) = state.cvy.col(i - 1);
       }
     }
   }
@@ -122,7 +121,7 @@ public:
    * @brief Whether the motion model is holonomic, using Y axis
    * @return Bool If holonomic
    */
-  virtual bool isHolonomic() = 0;
+  virtual bool isHolonomic() const = 0;
 
   /**
    * @brief Apply hard vehicle constraints to a control sequence
@@ -146,17 +145,26 @@ public:
   /**
     * @brief Constructor for mppi::AckermannMotionModel
     */
-  explicit AckermannMotionModel(ParametersHandler * param_handler, const std::string & name)
+  AckermannMotionModel() = default;
+
+  /**
+   * @brief Initialize motion model.
+   * @param param_handler Pointer to the shared parameters handler
+   * @param plugin_name   Namespaced name of this plugin instance
+   */
+  void initialize(
+    ParametersHandler * param_handler,
+    const std::string & plugin_name) override
   {
-    auto getParam = param_handler->getParamGetter(name + ".AckermannConstraints");
-    getParam(min_turning_r_, "min_turning_r", 0.2);
+    auto getParam = param_handler->getParamGetter(plugin_name);
+    getParam(min_turning_r_, "min_turning_r", 0.2f);
   }
 
   /**
    * @brief Whether the motion model is holonomic, using Y axis
    * @return Bool If holonomic
    */
-  bool isHolonomic() override
+  bool isHolonomic() const override
   {
     return false;
   }
@@ -172,15 +180,14 @@ public:
       .max((-wz_constrained))
       .min(wz_constrained);
   }
-
   /**
    * @brief Get minimum turning radius of ackermann drive
    * @return Minimum turning radius
    */
-  float getMinTurningRadius() {return min_turning_r_;}
+  float getMinTurningRadius() const {return min_turning_r_;}
 
 private:
-  float min_turning_r_{0};
+  float min_turning_r_{0.0f};
 };
 
 /**
@@ -199,7 +206,7 @@ public:
    * @brief Whether the motion model is holonomic, using Y axis
    * @return Bool If holonomic
    */
-  bool isHolonomic() override
+  bool isHolonomic() const override
   {
     return false;
   }
@@ -221,7 +228,7 @@ public:
    * @brief Whether the motion model is holonomic, using Y axis
    * @return Bool If holonomic
    */
-  bool isHolonomic() override
+  bool isHolonomic() const override
   {
     return true;
   }

@@ -32,6 +32,11 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that listens to a battery topic and
  * returns SUCCESS when battery is low and FAILURE otherwise
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <IsBatteryLow min_battery="0.5" battery_topic="/battery_status" is_voltage="false"/>
+ * @endcode
  */
 class IsBatteryLowCondition : public BT::ConditionNode
 {
@@ -72,7 +77,7 @@ public:
     return {
       BT::InputPort<double>("min_battery", "Minimum battery percentage/voltage"),
       BT::InputPort<std::string>(
-        "battery_topic", std::string("/battery_status"), "Battery topic"),
+        "battery_topic", "/battery_status", "Battery topic"),
       BT::InputPort<bool>(
         "is_voltage", false, "If true voltage will be used to check for low battery"),
     };

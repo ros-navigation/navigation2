@@ -11,7 +11,8 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>nav2_common</depend>
+  <build_depend>angles</build_depend>
+  <build_depend>nav2_common</build_depend>
 
   <depend>backward_ros</depend>
   <depend>bond</depend>
@@ -32,7 +33,6 @@
   <depend>tf2_ros</depend>
   <depend>pluginlib</depend>
   <depend>nav2_ros_common</depend>
-  <depend>angles</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

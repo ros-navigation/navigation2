@@ -144,8 +144,6 @@ ParameterHandler::ParameterHandler(
       "The collision check distance will be capped by max_lookahead_dist.",
       params_.min_distance_to_obstacle, params_.max_lookahead_dist);
   }
-  params_.stateful =
-    node->declare_or_get_parameter(plugin_name_ + ".stateful", true);
   params_.use_dynamic_window =
     node->declare_or_get_parameter(plugin_name_ + ".use_dynamic_window", false);
   params_.allow_obstacle_checking_beyond_goal =
@@ -293,8 +291,6 @@ ParameterHandler::updateParametersCallback(
         params_.use_cost_regulated_linear_velocity_scaling = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".use_collision_detection") {
         params_.use_collision_detection = parameter.as_bool();
-      } else if (param_name == plugin_name_ + ".stateful") {
-        params_.stateful = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".use_rotate_to_heading") {
         params_.use_rotate_to_heading = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".use_cancel_deceleration") {

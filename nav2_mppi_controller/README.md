@@ -40,7 +40,7 @@ This process is then repeated a number of times and returns a converged solution
 ### Controller
  | Parameter                  | Type   | Definition                                                                                                                                                                                                                                                                                                           |
  | ---------------------      | ------ | -------------------------------------------------------------------------------------------------------- |
- | motion_model               | string | Default: DiffDrive. Type of model [DiffDrive, Omni, Ackermann].                                          |
+ | motion_model               | string | Default: diff_drive. Name of the motion model plugin instance to use. A sub-namespace with the same name must declare the `plugin` type. |
  | critics                    | string | Default: None. Critics (plugins) names                                                                   |
  | iteration_count            | int    | Default 1. Iteration count in MPPI algorithm. Recommend to keep as 1 and prefer more batches.            |
  | batch_size                 | int    | Default 1000. Count of randomly sampled candidate trajectories                                            |
@@ -68,10 +68,23 @@ This process is then repeated a number of times and returns a converged solution
  | trajectory_step       | int    | Default: 5. The step between trajectories to visualize to downsample candidate trajectory pool.             |
  | time_step             | int    | Default: 3. The step between points on trajectories to visualize to downsample trajectory density.          |
 
+#### Motion Model Plugins
+
+Motion models are loaded as plugins. Set `motion_model` and declare the plugin type under a matching namespace.
+
+Three built-in motion models are provided:
+
+| Plugin type                    | Description                                  |
+| ------------------------------ | -------------------------------------------- |
+| `mppi::AckermannMotionModel`   | Ackermann steering                           |
+| `mppi::DiffDriveMotionModel`   | Differential drive                           |
+| `mppi::OmniMotionModel`        | Omnidirectional                              |
+
 #### Ackermann Motion Model
  | Parameter            | Type   | Definition                                                                                                  |
  | -------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
- | min_turning_r        | double | minimum turning radius for ackermann motion model                                                           |
+ | plugin               | string | Required: `"mppi::AckermannMotionModel"`                                                                    |
+ | min_turning_r        | double | Default 0.2. Minimum turning radius in metres                                                               |
 
 #### Constraint Critic
  | Parameter             | Type   | Definition                                                                                                  |
@@ -213,13 +226,18 @@ controller_server:
       iteration_count: 1
       temperature: 0.3
       gamma: 0.015
-      motion_model: "DiffDrive"
+      motion_model: "diff_drive"
       visualize: false
       TrajectoryVisualizer:
         trajectory_step: 5
         time_step: 3
-      AckermannConstraints:
-        min_turning_r: 0.2
+      diff_drive:
+        plugin: "mppi::DiffDriveMotionModel"
+      # To use Ackermann steering instead:
+      # motion_model: "ackermann"
+      # ackermann:
+      #   plugin: "mppi::AckermannMotionModel"
+      #   min_turning_r: 0.2
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
         enabled: true
@@ -308,6 +326,8 @@ The `model_dt` parameter generally should be set to the duration of your control
 Visualization of the trajectories using `visualize` uses compute resources to back out trajectories for visualization and therefore slows compute time. It is not suggested that this parameter is set to `true` during a deployed use, but is a useful debug instrument while tuning the system, but use sparingly. Visualizing 2000 batches @ 56 points at 30 hz is _a lot_.
 
 The most common parameters you might want to start off changing are the velocity profiles (`vx_max`, `vx_min`, `wz_max`, and `vy_max` if holonomic) and the `motion_model` to correspond to your vehicle. Its wise to consider the `prune_distance` of the path plan in proportion to your maximum velocity and prediction horizon. The only deeper parameter that will likely need to be adjusted for your particular settings is the Obstacle critics' `repulsion_weight` since the tuning of this is proportional to your inflation layer's radius. Higher radii should correspond to reduced `repulsion_weight` due to the penalty formation (e.g. `inflation_radius - min_dist_to_obstacle`). If this penalty is too high, the robot will slow significantly when entering cost-space from non-cost space or jitter in narrow corridors. It is noteworthy, but likely not necessary to be changed, that the Obstacle critic may use the full footprint information if `consider_footprint = true`, though comes at an increased compute cost.
+
+Tune std's carefully for low acceleration. If you're seeing a lot of chatter in the angular velocity, reduce its std. If you're not seeing your robot get to full speed, increase your std to explore more of the space. Also take care that your odometry publishes at least as fast as your control frequency (ideally much faster) when using low accelerations to make the fullest use of the acceleration limits.
 
 If you don't require path following behavior (e.g. just want to follow a goal pose and let the model predictive elements decide the best way to accomplish that), you may easily remove the PathAlign, PathFollow and PathAngle critics.
 

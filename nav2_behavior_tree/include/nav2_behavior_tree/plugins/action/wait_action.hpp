@@ -27,6 +27,12 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::Wait
  * @note It will re-initialize when halted.
+ *
+ * Usage in XML:
+ * @code
+ * <Wait wait_duration="1.0" server_name="wait_server" server_timeout="10"
+ *       error_code_id="{wait_error_code}" error_msg="{wait_error_msg}"/>
+ * @endcode
  */
 class WaitAction : public BtActionNode<nav2_msgs::action::Wait>
 {

@@ -7,14 +7,14 @@
   <maintainer email="david@metrorobots.com">David V. Lu!!</maintainer>
   <license>BSD-3-Clause</license>
 
-  <build_export_depend>rosidl_default_runtime</build_export_depend>
-
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
 
   <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
-  <depend>rosidl_default_generators</depend>
+
+  <exec_depend>rosidl_default_runtime</exec_depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>
 
