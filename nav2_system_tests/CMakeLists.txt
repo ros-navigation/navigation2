@@ -5,6 +5,7 @@ find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 
 nav2_package()
+add_compile_options(-Wconversion)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
