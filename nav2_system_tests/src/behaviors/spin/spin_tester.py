@@ -41,7 +41,7 @@ class SpinTest(Node):
             history=QoSHistoryPolicy.KEEP_LAST,
             depth=1,
         )
-        self.action_client: ActionClient[Spin.Goal, Spin.Result, Spin.Feedback] \
+        self.action_client: ActionClient[Spin.Goal, Spin.Result, Spin.Feedback, Spin.Impl] \
             = ActionClient(self, Spin, 'spin')
 
         self.costmap_pub = self.create_publisher(
@@ -49,7 +49,7 @@ class SpinTest(Node):
         self.footprint_pub = self.create_publisher(
             PolygonStamped, 'local_costmap/published_footprint', 10)
         self.goal_handle: Optional[ClientGoalHandle[
-                Spin.Goal, Spin.Result, Spin.Feedback]] = None
+                Spin.Goal, Spin.Result, Spin.Feedback, Spin.Impl]] = None
         self.action_result = Spin.Result()
 
     def sendCommand(self, command: Spin.Goal) -> bool:
@@ -289,7 +289,7 @@ class SpinTest(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             rclpy.spin_until_future_complete(self, future)

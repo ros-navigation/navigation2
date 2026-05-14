@@ -39,7 +39,8 @@ class WaypointFollowerTest(Node):
         self.action_client: ActionClient[
             FollowWaypoints.Goal,
             FollowWaypoints.Result,
-            FollowWaypoints.Feedback
+            FollowWaypoints.Feedback,
+            FollowWaypoints.Impl
         ] = ActionClient(self, FollowWaypoints, 'follow_waypoints')
         self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, 'initialpose', 10
@@ -47,7 +48,7 @@ class WaypointFollowerTest(Node):
         self.initial_pose_received = False
         self.goal_handle: Optional[ClientGoalHandle[
                 FollowWaypoints.Goal, FollowWaypoints.Result,
-                FollowWaypoints.Feedback]] = None
+                FollowWaypoints.Feedback, FollowWaypoints.Impl]] = None
         self.action_result = FollowWaypoints.Result()
 
         pose_qos = QoSProfile(
@@ -165,7 +166,7 @@ class WaypointFollowerTest(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             rclpy.spin_until_future_complete(self, future)
@@ -181,7 +182,7 @@ class WaypointFollowerTest(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             rclpy.spin_until_future_complete(self, future)
@@ -248,7 +249,7 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     result = not result
     assert (
         test.action_result.missed_waypoints[0].error_code
-        == ComputePathToPose.Result().GOAL_OUTSIDE_MAP
+        == ComputePathToPose.Result.GOAL_OUTSIDE_MAP
     )
     assert (test.action_result.missed_waypoints[0].error_msg != '')
 

@@ -34,7 +34,6 @@ module = [
     "tf2_ros.*",
     "nav_msgs.*",
     "rosgraph_msgs.*",
-    "tf_transformations.*",
     "ament_pep257.*",
     "ament_flake8.*",
     "ament_copyright.*",
@@ -45,6 +44,8 @@ module = [
     "std_msgs.*",
     "zmq.*",
     "std_srvs.*",
+    "graphviz.*",
+    "transforms3d.*",
     "geopandas.*",
     "pandas.*",
 ]

@@ -38,12 +38,13 @@ class GpsWaypointFollowerTest(Node):
         self.action_client: ActionClient[
             FollowGPSWaypoints.Goal,
             FollowGPSWaypoints.Result,
-            FollowGPSWaypoints.Feedback
+            FollowGPSWaypoints.Feedback,
+            FollowGPSWaypoints.Impl
         ] = ActionClient(
             self, FollowGPSWaypoints, 'follow_gps_waypoints')
         self.goal_handle: Optional[ClientGoalHandle[
                 FollowGPSWaypoints.Goal, FollowGPSWaypoints.Result,
-                FollowGPSWaypoints.Feedback]] = None
+                FollowGPSWaypoints.Feedback, FollowGPSWaypoints.Impl]] = None
         self.action_result = FollowGPSWaypoints.Result()
 
         self.param_cli: Client[SetParameters.Request, SetParameters.Response] \
@@ -137,7 +138,7 @@ class GpsWaypointFollowerTest(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             rclpy.spin_until_future_complete(self, future)
@@ -196,7 +197,7 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     result = not result
     assert (
         test.action_result.missed_waypoints[0].error_code
-        == ComputePathToPose.Result().GOAL_OUTSIDE_MAP
+        == ComputePathToPose.Result.GOAL_OUTSIDE_MAP
     )
     assert (test.action_result.missed_waypoints[0].error_msg != '')
 

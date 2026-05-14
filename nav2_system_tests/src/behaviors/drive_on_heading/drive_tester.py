@@ -44,7 +44,8 @@ class DriveTest(Node):
         self.action_client: ActionClient[
             DriveOnHeading.Goal,
             DriveOnHeading.Result,
-            DriveOnHeading.Feedback
+            DriveOnHeading.Feedback,
+            DriveOnHeading.Impl
         ] = ActionClient(self, DriveOnHeading, 'drive_on_heading')
         self.costmap_pub = self.create_publisher(
             Costmap, 'local_costmap/costmap_raw', self.costmap_qos)
@@ -52,7 +53,7 @@ class DriveTest(Node):
             PolygonStamped, 'local_costmap/published_footprint', 10)
         self.goal_handle: Optional[ClientGoalHandle[
                 DriveOnHeading.Goal, DriveOnHeading.Result,
-                DriveOnHeading.Feedback]] = None
+                DriveOnHeading.Feedback, DriveOnHeading.Impl]] = None
         self.action_result = DriveOnHeading.Result()
 
     def sendCommand(self, command: DriveOnHeading.Goal) -> bool:
@@ -308,7 +309,7 @@ class DriveTest(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             rclpy.spin_until_future_complete(self, future)

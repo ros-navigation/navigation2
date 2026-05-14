@@ -56,12 +56,14 @@ class RouteTester(Node):
         self.compute_action_client: ActionClient[
             ComputeRoute.Goal,
             ComputeRoute.Result,
-            ComputeRoute.Feedback
+            ComputeRoute.Feedback,
+            ComputeRoute.Impl
         ] = ActionClient(self, ComputeRoute, 'compute_route')
         self.compute_track_action_client: ActionClient[
             ComputeAndTrackRoute.Goal,
             ComputeAndTrackRoute.Result,
-            ComputeAndTrackRoute.Feedback
+            ComputeAndTrackRoute.Feedback,
+            ComputeAndTrackRoute.Impl
         ] = ActionClient(
             self, ComputeAndTrackRoute, 'compute_and_track_route')
         self.feedback_msgs: list[ComputeAndTrackRoute.Feedback] = []
@@ -264,11 +266,14 @@ class RouteTester(Node):
         while progressing:
             rclpy.spin_until_future_complete(self, get_result_future, timeout_sec=0.10)
             if get_result_future.result() is not None:
-                status = get_result_future.result().status  # type: ignore[union-attr]
-                if status == GoalStatus.STATUS_SUCCEEDED:
+                result_status = get_result_future.result().status  # type: ignore[union-attr]
+                if result_status == GoalStatus.STATUS_SUCCEEDED:
                     progressing = False
-                elif status == GoalStatus.STATUS_CANCELED or status == GoalStatus.STATUS_ABORTED:
-                    self.info_msg(f'Goal failed with status code: {status}')
+                elif (
+                    result_status == GoalStatus.STATUS_CANCELED
+                    or result_status == GoalStatus.STATUS_ABORTED
+                ):
+                    self.info_msg(f'Goal failed with status code: {result_status}')
                     return False
 
             # Else, processing. Check feedback

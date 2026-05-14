@@ -55,7 +55,8 @@ class NavTester(Node):
         self.action_client: ActionClient[
             NavigateThroughPoses.Goal,
             NavigateThroughPoses.Result,
-            NavigateThroughPoses.Feedback
+            NavigateThroughPoses.Feedback,
+            NavigateThroughPoses.Impl
         ] = ActionClient(self, NavigateThroughPoses, 'navigate_through_poses')
 
     def info_msg(self, msg: str) -> None:
@@ -239,7 +240,7 @@ class NavTester(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             self.info_msg('Shutting down navigation lifecycle manager...')
@@ -254,7 +255,7 @@ class NavTester(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             self.info_msg('Shutting down localization lifecycle manager...')

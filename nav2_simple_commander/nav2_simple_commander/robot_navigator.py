@@ -24,11 +24,11 @@ from builtin_interfaces.msg import Duration
 from geographic_msgs.msg import GeoPose
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import (AssistedTeleop, BackUp,  # type: ignore[attr-defined]
-                              ComputeAndTrackRoute, ComputePathThroughPoses, ComputePathToPose,
-                              ComputeRoute, DockRobot, DriveOnHeading, FollowGPSWaypoints,
-                              FollowObject, FollowPath, FollowWaypoints, NavigateThroughPoses,
-                              NavigateToPose, SmoothPath, Spin, UndockRobot)
+from nav2_msgs.action import (AssistedTeleop, BackUp, ComputeAndTrackRoute,
+                              ComputePathThroughPoses, ComputePathToPose, ComputeRoute, DockRobot,
+                              DriveOnHeading, FollowGPSWaypoints, FollowObject, FollowPath,
+                              FollowWaypoints, NavigateThroughPoses, NavigateToPose, SmoothPath,
+                              Spin, UndockRobot)
 from nav2_msgs.msg import Costmap, Route
 from nav2_msgs.srv import (ClearCostmapAroundPose, ClearCostmapAroundRobot,
                            ClearCostmapExceptRegion, ClearEntireCostmap, GetCostmap, LoadMap,
@@ -80,7 +80,7 @@ class BasicNavigator(Node):
         self.initial_pose = PoseStamped()
         self.initial_pose.header.frame_id = 'map'
 
-        self.goal_handle: Optional[ClientGoalHandle[Any, Any, Any]] = None
+        self.goal_handle: Optional[ClientGoalHandle[Any, Any, Any, Any]] = None
         self.result_future: \
             Optional[Future[GetResultServiceResponse[Any]]] = None
         self.feedback: Any = None
@@ -90,7 +90,7 @@ class BasicNavigator(Node):
         # to be running simultaneously with another (e.g. controller, WPF) server,
         # we must track its futures and feedback separately. Additionally, the
         # route tracking feedback is uniquely important to be complete and ordered
-        self.route_goal_handle: Optional[ClientGoalHandle[Any, Any, Any]] = None
+        self.route_goal_handle: Optional[ClientGoalHandle[Any, Any, Any, Any]] = None
         self.route_result_future: \
             Optional[Future[GetResultServiceResponse[Any]]] = None
         self.route_feedback: list[Any] = []
@@ -110,101 +110,118 @@ class BasicNavigator(Node):
         self.nav_through_poses_client: ActionClient[
             NavigateThroughPoses.Goal,
             NavigateThroughPoses.Result,
-            NavigateThroughPoses.Feedback
+            NavigateThroughPoses.Feedback,
+            NavigateThroughPoses.Impl
         ] = ActionClient(
             self, NavigateThroughPoses, 'navigate_through_poses')
         self.nav_to_pose_client: ActionClient[
             NavigateToPose.Goal,
             NavigateToPose.Result,
-            NavigateToPose.Feedback
+            NavigateToPose.Feedback,
+            NavigateToPose.Impl
         ] = ActionClient(self, NavigateToPose, 'navigate_to_pose')
         self.follow_waypoints_client: ActionClient[
             FollowWaypoints.Goal,
             FollowWaypoints.Result,
-            FollowWaypoints.Feedback
+            FollowWaypoints.Feedback,
+            FollowWaypoints.Impl
         ] = ActionClient(
             self, FollowWaypoints, 'follow_waypoints'
         )
         self.follow_gps_waypoints_client: ActionClient[
             FollowGPSWaypoints.Goal,
             FollowGPSWaypoints.Result,
-            FollowGPSWaypoints.Feedback
+            FollowGPSWaypoints.Feedback,
+            FollowGPSWaypoints.Impl
         ] = ActionClient(
             self, FollowGPSWaypoints, 'follow_gps_waypoints'
         )
         self.follow_path_client: ActionClient[
             FollowPath.Goal,
             FollowPath.Result,
-            FollowPath.Feedback
+            FollowPath.Feedback,
+            FollowPath.Impl
         ] = ActionClient(self, FollowPath, 'follow_path')
         self.compute_path_to_pose_client: ActionClient[
             ComputePathToPose.Goal,
             ComputePathToPose.Result,
-            ComputePathToPose.Feedback
+            ComputePathToPose.Feedback,
+            ComputePathToPose.Impl
         ] = ActionClient(
             self, ComputePathToPose, 'compute_path_to_pose'
         )
         self.compute_path_through_poses_client: ActionClient[
             ComputePathThroughPoses.Goal,
             ComputePathThroughPoses.Result,
-            ComputePathThroughPoses.Feedback
+            ComputePathThroughPoses.Feedback,
+            ComputePathThroughPoses.Impl
         ] = ActionClient(
             self, ComputePathThroughPoses, 'compute_path_through_poses'
         )
         self.smoother_client: ActionClient[
             SmoothPath.Goal,
             SmoothPath.Result,
-            SmoothPath.Feedback
+            SmoothPath.Feedback,
+            SmoothPath.Impl
         ] = ActionClient(self, SmoothPath, 'smooth_path')
         self.compute_route_client: ActionClient[
             ComputeRoute.Goal,
             ComputeRoute.Result,
-            ComputeRoute.Feedback
+            ComputeRoute.Feedback,
+            ComputeRoute.Impl
         ] = ActionClient(self, ComputeRoute, 'compute_route')
         self.compute_and_track_route_client: ActionClient[
             ComputeAndTrackRoute.Goal,
             ComputeAndTrackRoute.Result,
-            ComputeAndTrackRoute.Feedback
+            ComputeAndTrackRoute.Feedback,
+            ComputeAndTrackRoute.Impl
         ] = ActionClient(self, ComputeAndTrackRoute, 'compute_and_track_route')
         self.spin_client: ActionClient[
             Spin.Goal,
             Spin.Result,
-            Spin.Feedback
+            Spin.Feedback,
+            Spin.Impl
         ] = ActionClient(self, Spin, 'spin')
 
         self.backup_client: ActionClient[
             BackUp.Goal,
             BackUp.Result,
-            BackUp.Feedback
+            BackUp.Feedback,
+            BackUp.Impl
         ] = ActionClient(self, BackUp, 'backup')
         self.drive_on_heading_client: ActionClient[
             DriveOnHeading.Goal,
             DriveOnHeading.Result,
-            DriveOnHeading.Feedback
+            DriveOnHeading.Feedback,
+            DriveOnHeading.Impl
         ] = ActionClient(
             self, DriveOnHeading, 'drive_on_heading'
         )
         self.assisted_teleop_client: ActionClient[
             AssistedTeleop.Goal,
             AssistedTeleop.Result,
-            AssistedTeleop.Feedback
+            AssistedTeleop.Feedback,
+            AssistedTeleop.Impl
         ] = ActionClient(
             self, AssistedTeleop, 'assisted_teleop'
         )
         self.docking_client: ActionClient[
             DockRobot.Goal,
             DockRobot.Result,
-            DockRobot.Feedback
+            DockRobot.Feedback,
+            DockRobot.Impl
         ] = ActionClient(self, DockRobot, 'dock_robot')
         self.undocking_client: ActionClient[
             UndockRobot.Goal,
             UndockRobot.Result,
-            UndockRobot.Feedback
+            UndockRobot.Feedback,
+            UndockRobot.Impl
         ] = ActionClient(self, UndockRobot, 'undock_robot')
         self.following_client: ActionClient[
             FollowObject.Goal,
             FollowObject.Result,
-            FollowObject.Feedback
+            FollowObject.Feedback,
+            FollowObject.Impl
         ] = ActionClient(self, FollowObject, 'follow_object')
 
         self.localization_pose_sub = self.create_subscription(
@@ -842,7 +859,8 @@ class BasicNavigator(Node):
         rtn = self._getPathImpl(start, goal, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            return rtn.path
+            path: Path = rtn.path
+            return path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
             self.warn('Getting path failed with'
@@ -904,7 +922,8 @@ class BasicNavigator(Node):
         rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            return rtn.path
+            path: Path = rtn.path
+            return path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
             self.warn('Getting path failed with'
@@ -1070,7 +1089,8 @@ class BasicNavigator(Node):
         rtn = self._smoothPathImpl(path, smoother_id, max_duration, check_for_collision)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            return rtn.path
+            smoothed_path: Path = rtn.path
+            return smoothed_path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
             self.warn('Getting path failed with'
