@@ -1,6 +1,10 @@
 <class_libraries>
   <library path="mppi_critics">
 
+    <class type="mppi::critics::ObstacleBypassCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for steering around dynamic obstacles blocking the path</description>
+    </class>
+
     <class type="mppi::critics::ObstaclesCritic" base_class_type="mppi::critics::CriticFunction">
       <description>mppi critic for obstacle avoidance</description>
     </class>
