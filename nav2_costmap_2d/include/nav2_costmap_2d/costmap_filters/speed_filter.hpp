@@ -142,6 +142,7 @@ private:
   double speed_limit_, speed_limit_prev_;
 
   // Path lookahead
+  static constexpr double POSE_SEARCH_EXIT_THRESHOLD_ = 1.0;
   size_t cached_start_idx_;
   bool enable_path_lookahead_;
   double max_decel_;       // Deceleration (m/s^2) used to size lookahead

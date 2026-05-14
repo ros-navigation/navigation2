@@ -342,11 +342,10 @@ double SpeedFilter::getSpeedLimitFromLookahead(
 
   size_t start_idx = search_start;
   double min_dist = std::numeric_limits<double>::max();
-  constexpr double kClosestExitMargin = 1.0;
 
   // Find the closest pose to the robot
-  // To save computation time, stop searching path poses start getting further than
-  // the closest pose + a margin
+  // To save computation time, stop searching path when poses get further than
+  // the closest pose + a threshold
   for (size_t i = search_start; i < poses.size(); i++) {
     const auto & p = poses[i].pose.position;
     const double dx = p.x - robot_pose.position.x;
@@ -355,7 +354,7 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     if (d < min_dist) {
       min_dist = d;
       start_idx = i;
-    } else if (d > min_dist + kClosestExitMargin) {
+    } else if (d > min_dist + POSE_SEARCH_EXIT_THRESHOLD_) {
       break;
     }
   }
@@ -370,12 +369,11 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   double dist_along_path = 0.0;
   double last_sample_dist = -path_sample_resolution_;
 
+  // Lookahead endpoint for visualization
   geometry_msgs::msg::PointStamped lookahead_endpoint;
   lookahead_endpoint.header.frame_id = global_frame_;
   lookahead_endpoint.header.stamp = clock_->now();
-  lookahead_endpoint.point.x = robot_pose.position.x;
-  lookahead_endpoint.point.y = robot_pose.position.y;
-  lookahead_endpoint.point.z = robot_pose.position.z;
+  lookahead_endpoint.point = robot_pose.position;
 
   // Check robot's current pose to list of poses to be checked
   double speed_limit_at_robot_pose = NO_SPEED_LIMIT;
