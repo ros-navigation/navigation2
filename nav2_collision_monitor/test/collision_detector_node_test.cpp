@@ -55,6 +55,7 @@ static const char POLYGON_NAME[]{"Polygon"};
 static const char COSTMAP_NAME[]{"Costmap"};
 static const char STATE_TOPIC[]{"collision_detector_state"};
 static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_detector/collision_points_marker"};
+static const char TRIGGERING_POINTS_TOPIC[]{"/collision_detector/triggering_points"};
 static const int MIN_POINTS{1};
 static const double SIMULATION_TIME_STEP{0.01};
 static const double TRANSFORM_TOLERANCE{0.5};
@@ -156,6 +157,8 @@ public:
   void stateCallback(nav2_msgs::msg::CollisionDetectorState::ConstSharedPtr msg);
   bool waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout);
   void collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg);
+  bool waitTriggeringPoints(const std::chrono::nanoseconds & timeout);
+  void triggeringPointsCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg);
 
 protected:
   // CollisionDetector node
@@ -181,6 +184,11 @@ protected:
   nav2::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_sub_;
   visualization_msgs::msg::MarkerArray::ConstSharedPtr collision_points_marker_msg_;
+
+  // CollisionDetector triggering points markers
+  nav2::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
+    triggering_points_sub_;
+  visualization_msgs::msg::MarkerArray::ConstSharedPtr triggering_points_msg_;
 };  // Tester
 
 Tester::Tester()
@@ -212,6 +220,10 @@ Tester::Tester()
   collision_points_marker_sub_ = cd_->create_subscription<visualization_msgs::msg::MarkerArray>(
     COLLISION_POINTS_MARKERS_TOPIC,
     std::bind(&Tester::collisionPointsMarkerCallback, this, std::placeholders::_1));
+
+  triggering_points_sub_ = cd_->create_subscription<visualization_msgs::msg::MarkerArray>(
+    TRIGGERING_POINTS_TOPIC,
+    std::bind(&Tester::triggeringPointsCallback, this, std::placeholders::_1));
 }
 
 Tester::~Tester()
@@ -226,6 +238,7 @@ Tester::~Tester()
   costmap_pub_->on_deactivate();
   costmap_pub_.reset();
   collision_points_marker_sub_.reset();
+  triggering_points_sub_.reset();
 
   cd_.reset();
   executor_.reset();
@@ -258,6 +271,20 @@ bool Tester::waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout)
   return false;
 }
 
+bool Tester::waitTriggeringPoints(const std::chrono::nanoseconds & timeout)
+{
+  triggering_points_msg_ = nullptr;
+  rclcpp::Time start_time = cd_->now();
+  while (rclcpp::ok() && cd_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (triggering_points_msg_) {
+      return true;
+    }
+    executor_->spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
 void Tester::stateCallback(nav2_msgs::msg::CollisionDetectorState::ConstSharedPtr msg)
 {
   state_msg_ = msg;
@@ -266,6 +293,11 @@ void Tester::stateCallback(nav2_msgs::msg::CollisionDetectorState::ConstSharedPt
 void Tester::collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg)
 {
   collision_points_marker_msg_ = msg;
+}
+
+void Tester::triggeringPointsCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg)
+{
+  triggering_points_msg_ = msg;
 }
 
 void Tester::setCommonParameters()
@@ -858,6 +890,60 @@ TEST_F(Tester, testCollisionPointsMarkers)
   ASSERT_TRUE(waitCollisionPointsMarker(500ms));
   ASSERT_NE(collision_points_marker_msg_->markers[0].points.size(), 0u);
   // Stop Collision Monitor node
+  cd_->stop();
+}
+
+TEST_F(Tester, testTriggeringPointsMarkers)
+{
+  rclcpp::Time curr_time = cd_->now();
+
+  // Detection polygon of half-size 1.0 around base_link, single scan source.
+  setCommonParameters();
+  addPolygon("DetectionRegion", POLYGON, 1.0, "none");
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"DetectionRegion"}, {SCAN_NAME});
+
+  cd_->start();
+  sendTransforms(curr_time);
+
+  // No obstacle: nothing detected, marker array contains only the DELETEALL clear marker.
+  ASSERT_TRUE(waitTriggeringPoints(500ms));
+  ASSERT_EQ(triggering_points_msg_->markers.size(), 1u);
+  EXPECT_EQ(
+    triggering_points_msg_->markers[0].action,
+    visualization_msgs::msg::Marker::DELETEALL);
+
+  // Obstacle inside the detection polygon: marker array must contain the
+  // clear marker plus one POINTS marker for the Scan source.
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  ASSERT_TRUE(waitTriggeringPoints(500ms));
+  ASSERT_TRUE(waitState(500ms));
+  ASSERT_NE(state_msg_->detections.size(), 0u);
+  ASSERT_EQ(state_msg_->detections[0], true);
+
+  ASSERT_EQ(triggering_points_msg_->markers.size(), 2u);
+  EXPECT_EQ(
+    triggering_points_msg_->markers[0].action,
+    visualization_msgs::msg::Marker::DELETEALL);
+
+  const auto & points_marker = triggering_points_msg_->markers[1];
+  EXPECT_EQ(points_marker.type, visualization_msgs::msg::Marker::POINTS);
+  EXPECT_EQ(points_marker.action, visualization_msgs::msg::Marker::ADD);
+  EXPECT_EQ(points_marker.ns, std::string("DetectionRegion/") + SCAN_NAME);
+  EXPECT_EQ(points_marker.header.frame_id, BASE_FRAME_ID);
+  EXPECT_TRUE(points_marker.frame_locked);
+  EXPECT_FLOAT_EQ(points_marker.color.r, 1.0f);
+  EXPECT_FLOAT_EQ(points_marker.color.g, 0.0f);
+  EXPECT_FLOAT_EQ(points_marker.color.b, 0.0f);
+  EXPECT_FLOAT_EQ(points_marker.color.a, 1.0f);
+
+  ASSERT_FALSE(points_marker.points.empty());
+  for (const auto & p : points_marker.points) {
+    EXPECT_LE(std::abs(p.x), 1.0 + EPSILON);
+    EXPECT_LE(std::abs(p.y), 1.0 + EPSILON);
+  }
+
   cd_->stop();
 }
 
