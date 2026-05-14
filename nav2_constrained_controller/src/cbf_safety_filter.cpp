@@ -20,30 +20,28 @@ CBFSafetyFilter::CBFSafetyFilter(const Parameters * params)
 std::array<Point2D, 4> CBFSafetyFilter::bodyCorners(
   double xr, double yr, double theta) const
 {
-  // Saradagi Eq. 1, with Origin Autonomy convention: +x is forward,
-  // robot reference (xr, yr) sits at the FRONT of the body (front
-  // wheel pivot).  The four corners (front-right is P¹, then
-  // back-right P², back-left P³, front-left P⁴) come from translating
-  // (xr, yr) by ±dl along body-x and ±db along body-y, plus a -L
-  // shift along body-x for the rear corners.
-  const double L = params_->footprint_length;
-  const double dl = params_->footprint_dl;
+  // Saradagi Eq. 1, Origin Autonomy convention: +x is forward, body is
+  // CENTERED on base_link (matches URDF base_link at body geometric
+  // center and costmap footprint [[±0.45, ±0.375]]). The CBF rectangle
+  // extends ±(L/2 + dl) in body-x and ±db in body-y. Corners P¹–P⁴ are:
+  //   P¹ front-right, P² back-right, P³ back-left, P⁴ front-left.
+  const double Lext = 0.5 * params_->footprint_length + params_->footprint_dl;
   const double db = params_->footprint_db;
   const double ct = std::cos(theta);
   const double st = std::sin(theta);
   std::array<Point2D, 4> c;
-  // P1: front-right
-  c[0].x = xr + dl * ct - db * st;
-  c[0].y = yr + dl * st + db * ct;
-  // P2: back-right
-  c[1].x = xr - L * ct - dl * ct - db * st;
-  c[1].y = yr - L * st - dl * st + db * ct;
-  // P3: back-left
-  c[2].x = xr - L * ct - dl * ct + db * st;
-  c[2].y = yr - L * st - dl * st - db * ct;
-  // P4: front-left
-  c[3].x = xr + dl * ct + db * st;
-  c[3].y = yr + dl * st - db * ct;
+  // P1: front-right (body-frame (+Lext, -db))
+  c[0].x = xr + Lext * ct + db * st;
+  c[0].y = yr + Lext * st - db * ct;
+  // P2: back-right (body-frame (-Lext, -db))
+  c[1].x = xr - Lext * ct + db * st;
+  c[1].y = yr - Lext * st - db * ct;
+  // P3: back-left (body-frame (-Lext, +db))
+  c[2].x = xr - Lext * ct - db * st;
+  c[2].y = yr - Lext * st + db * ct;
+  // P4: front-left (body-frame (+Lext, +db))
+  c[3].x = xr + Lext * ct - db * st;
+  c[3].y = yr + Lext * st + db * ct;
   return c;
 }
 

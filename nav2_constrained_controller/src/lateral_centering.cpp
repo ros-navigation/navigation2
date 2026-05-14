@@ -80,11 +80,11 @@ WallClass classifyWall(const Wall & w, const Parameters * p)
   // centering distance (it extrapolates beyond the visible segment),
   // so we must guard against a distant unrelated wall projecting
   // across the body. Require the segment to be within
-  // LONG_HORIZON of the body's x-range. Inside the alley the visible
-  // fragment is usually 0.3–0.5 m ahead of the body; 1.5 m gives
-  // plenty of margin without inviting far walls.
-  const double body_xmin = -(p->footprint_length + p->footprint_dl);
-  const double body_xmax = p->footprint_dl;
+  // LONG_HORIZON of the body's x-range. Body is CENTERED on base_link
+  // (per URDF and costmap footprint); body extends ±(L/2 + dl).
+  const double L_half = 0.5 * p->footprint_length;
+  const double body_xmin = -(L_half + p->footprint_dl);
+  const double body_xmax = +(L_half + p->footprint_dl);
   const double seg_xmin = std::min(w.p1.x, w.p2.x);
   const double seg_xmax = std::max(w.p1.x, w.p2.x);
   const double LONG_HORIZON = 1.5;
@@ -94,16 +94,17 @@ WallClass classifyWall(const Wall & w, const Parameters * p)
     return wc;
   }
 
-  // Body corners in base_link, at theta=0 (we always evaluate at
-  // robot frame, robot origin).
-  const double L = p->footprint_length;
+  // Body corners in base_link, at theta=0. Body is CENTERED on
+  // base_link (matches costmap footprint [[±0.45, ±0.375]]); the CBF
+  // rectangle extends ±(L/2 + dl) in x and ±db in y.
+  const double L_half2 = 0.5 * p->footprint_length;
   const double dl = p->footprint_dl;
   const double db = p->footprint_db;
   const std::array<Point2D, 4> corners = {{
-    {+dl, +db},          // front-left
-    {-(L + dl), +db},    // back-left
-    {-(L + dl), -db},    // back-right
-    {+dl, -db}           // front-right
+    {+(L_half2 + dl), +db},   // front-left
+    {-(L_half2 + dl), +db},   // back-left
+    {-(L_half2 + dl), -db},   // back-right
+    {+(L_half2 + dl), -db}    // front-right
   }};
 
   // Body-aware distance: MIN over the 4 corners of the perpendicular
