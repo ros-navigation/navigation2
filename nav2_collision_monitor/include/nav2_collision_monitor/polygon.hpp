@@ -102,18 +102,12 @@ public:
   /**
    * @brief Temporal debounce for min_points trigger.
    * @param points Input array of points to be checked.
-   * @return true if trigger should be considered active after debounce/hold logic.
-   */
-  bool isTriggered(const std::vector<Point> & points);
-
-  /**
-   * @brief Temporal debounce for min_points trigger.
-   * @param sources_collision_points_map Map containing source name as key,
-   * and input array of source's points to be checked as value.
+   * @param out_triggering_points Output array of triggering points.
    * @return true if trigger should be considered active after debounce/hold logic.
    */
   bool isTriggered(
-    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map);
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+    std::vector<Point> & out_triggering_points);
 
   /**
    * @brief Reset temporal debounce state.
@@ -170,34 +164,53 @@ public:
   /**
    * @brief Gets number of points inside given polygon
    * @param points Input array of points to be checked
+   * @param out_triggering_points Output array of triggering points.
    * @return Number of points inside polygon. If there are no points,
    * returns zero value.
    */
-  virtual int getPointsInside(const std::vector<Point> & points) const;
+  virtual int getPointsInside(
+    const std::vector<Point> & points,
+    std::vector<Point> & out_triggering_points) const;
+
+  /**
+   * @brief Gets indices of points inside given polygon
+   * @param points Input array of points to be checked
+   * @param out_triggering_indices Output array of triggering points indices
+   * @return Number of points inside polygon. If there are no points,
+   * returns zero value.
+   */
+  virtual int getPointsInside(
+    const std::vector<Point> & points,
+    std::vector<std::size_t> & out_triggering_indices) const;
 
   /**
    * @brief Gets number of points inside given polygon
    * @param sources_collision_points_map Map containing source name as key,
    * and input array of source's points to be checked as value
+   * @param out_triggering_points Output array of triggering points.
    * @return Number of points inside polygon,
    * for sources in map that are associated with current polygon.
    * If there are no points, returns zero value.
    */
   virtual int getPointsInside(
-    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map) const;
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+    std::vector<Point> & out_triggering_points) const;
+
 
   /**
    * @brief Obtains estimated (simulated) time before a collision.
    * Applicable for APPROACH model.
-   * @param sources_collision_points_map Map containing source name as key,
-   * and input array of source's 2D obstacle points as value
+   * @param collision_points Input 2D obstacle points
    * @param velocity Simulated robot velocity
+   * @param out_triggering_points Output vector receiving the original points
+   * responsible for the collision (populated only on a triggering step)
    * @return Estimated time before a collision. If there is no collision,
    * return value will be negative.
    */
   double getCollisionTime(
     const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
-    const Velocity & velocity) const;
+    const Velocity & velocity,
+    std::vector<Point> & out_triggering_points) const;
 
   /**
    * @brief Publishes polygon message into a its own topic
