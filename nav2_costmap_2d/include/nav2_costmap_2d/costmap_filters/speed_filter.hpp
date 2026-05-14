@@ -105,18 +105,17 @@ private:
   /**
    * @brief Look up the speed limit at a single pose in the costmap's global frame
    * @param pose Pose in global_frame_
-   * @param speed_limit Output: computed speed limit if pose maps to a valid mask cell
-   * @return true if pose mapped to a valid mask cell, false if outside mask or
-   *         transform failed. When false, speed_limit is unchanged.
+   * @param speed_limit output: computed speed limit
+   * @return true if pose mapped to a valid mask cell, false otherwise
    */
   bool getSpeedLimitAtPose(
     const geometry_msgs::msg::Pose & pose,
     double & speed_limit);
   /**
    * @brief Get the speed limit from the path lookahead
-   * @param robot_pose Robot pose
-   * @param lookahead_dist Lookahead distance
-   * @return Speed limit from the path lookahead
+   * @param robot_pose robot pose
+   * @param lookahead_dist lookahead distance
+   * @return speed limit from the path lookahead
    */
   double getSpeedLimitFromLookahead(
     const geometry_msgs::msg::Pose & robot_pose,
@@ -132,7 +131,7 @@ private:
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask_;
   nav_msgs::msg::Path::ConstSharedPtr current_path_;
 
-  // Odometry for lookahead calculation
+  // Odometry for variable lookahead distance calculation
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 
   std::string global_frame_;  // Frame of current layer (master_grid)
@@ -143,11 +142,11 @@ private:
 
   // Path lookahead
   static constexpr double POSE_SEARCH_EXIT_THRESHOLD_ = 1.0;
-  size_t cached_start_idx_;
-  bool enable_path_lookahead_;
+  size_t cached_lookahead_start_idx_;  // Cached start index for closest pose search
+  bool enable_path_lookahead_;  // Whether to enable path lookahead
   double max_decel_;       // Deceleration (m/s^2) used to size lookahead
-  double min_lookahead_;   // Lower clamp on lookahead distance (m)
-  double max_lookahead_;   // Upper clamp on lookahead distance (m)
+  double min_lookahead_;   // Lower limit on lookahead distance (m)
+  double max_lookahead_;   // Upper limit on lookahead distance (m)
   double path_sample_resolution_;     // Resolution for sampling the path (m)
   bool publish_lookahead_;    // Whether to publish the last lookahead point for debugging
 };

@@ -52,7 +52,7 @@ SpeedFilter::SpeedFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   speed_limit_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
   speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT),
-  cached_start_idx_(0)
+  cached_lookahead_start_idx_(0)
 {
 }
 
@@ -95,7 +95,7 @@ void SpeedFilter::initializeFilter(
       RCLCPP_WARN(
         logger_,
         "SpeedFilter: max_decel = %f is non-positive,"
-        "lookahead distance will be clamped to max_lookahead",
+        "lookahead distance will be set to max_lookahead",
           max_decel_);
     }
     if (min_lookahead_ < 0.0) {
@@ -253,7 +253,7 @@ void SpeedFilter::pathCallback(
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
   current_path_ = msg;
   // Reset cached start index when new path is received
-  cached_start_idx_ = 0;
+  cached_lookahead_start_idx_ = 0;
 }
 
 bool SpeedFilter::getSpeedLimitAtPose(
@@ -326,9 +326,7 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   const auto & poses = current_path_->poses;
 
   // Validate frame id
-  if (!current_path_->header.frame_id.empty() &&
-    current_path_->header.frame_id != global_frame_)
-  {
+  if (current_path_->header.frame_id != global_frame_) {
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 5000,
       "SpeedFilter: Path frame [%s] differs from costmap global frame [%s],"
@@ -337,30 +335,30 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     return NO_SPEED_LIMIT;
   }
 
-  const size_t search_start =
-    (cached_start_idx_ < poses.size()) ? cached_start_idx_ : 0;
+  const size_t pose_search_start =
+    (cached_lookahead_start_idx_ < poses.size()) ? cached_lookahead_start_idx_ : 0;
 
-  size_t start_idx = search_start;
+  size_t lookahead_start_idx = pose_search_start;
   double min_dist = std::numeric_limits<double>::max();
 
   // Find the closest pose to the robot
   // To save computation time, stop searching path when poses get further than
   // the closest pose + a threshold
-  for (size_t i = search_start; i < poses.size(); i++) {
+  for (size_t i = pose_search_start; i < poses.size(); i++) {
     const auto & p = poses[i].pose.position;
     const double dx = p.x - robot_pose.position.x;
     const double dy = p.y - robot_pose.position.y;
     const double d = std::sqrt(dx * dx + dy * dy);
     if (d < min_dist) {
       min_dist = d;
-      start_idx = i;
+      lookahead_start_idx = i;
     } else if (d > min_dist + POSE_SEARCH_EXIT_THRESHOLD_) {
       break;
     }
   }
 
   // Update cached start index
-  cached_start_idx_ = start_idx;
+  cached_lookahead_start_idx_ = lookahead_start_idx;
 
   double min_speed_limit = NO_SPEED_LIMIT;
   bool found_any_limit = false;
@@ -386,9 +384,9 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     found_any_limit = true;
   }
 
-  // Walk poses from start_idx forward. Sample the speed limit at each pose.
-  for (size_t i = start_idx; i < poses.size(); ++i) {
-    if(i > start_idx) {
+  // Walk poses from lookahead_start_idx forward. Sample the speed limit at each pose.
+  for (size_t i = lookahead_start_idx; i < poses.size(); ++i) {
+    if(i > lookahead_start_idx) {
       const auto & prev = poses[i - 1].pose.position;
       const auto & curr = poses[i].pose.position;
       const double dx = curr.x - prev.x;
@@ -405,6 +403,7 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     }
     last_sample_dist = dist_along_path;
 
+    // Update lookahead endpoint for visualization
     lookahead_endpoint.point = poses[i].pose.position;
 
     double sampled_speed_limit = NO_SPEED_LIMIT;
