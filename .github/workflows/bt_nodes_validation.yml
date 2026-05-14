@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  bt_nodes_validation_against_docs:
-    name: XML BT Nodes validation against Nav2 Docs
+  bt_nodes_validation_against_code:
+    name: XML BT Nodes validation against Nav2 code
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v6
@@ -25,15 +25,7 @@ jobs:
     - name: Install dependencies
       run: pip install -r tools/bt_nodes_validation/requirements.txt
 
-    - name: Compare XML BT Nodes with Nav2 Docs data
-      env:
-        DOCS_REPO: ros-navigation/mk.docs.nav2.org # update repo name after release
-        DOCS_BRANCH: ${{ github.base_ref == 'main' && 'rolling' || github.base_ref }}
-        DOCS_CONFIG_PATH: nav.yml
-        NAV2_BT_NODES_FILE_PATH: nav2_behavior_tree/nav2_tree_nodes.xml
+    - name: Compare XML BT Nodes with Nav2 code
       run: |
-        python3 tools/bt_nodes_validation/validate_bt_xml_nodes_against_mkdocs.py \
-          --docs_repo "${DOCS_REPO}" \
-          --docs_branch "${DOCS_BRANCH}" \
-          --docs_config_file_path "${DOCS_CONFIG_PATH}" \
-          --nav2_bt_nodes_file_path "${NAV2_BT_NODES_FILE_PATH}"
+        python3 tools/bt_nodes_validation/validate_bt_xml_nodes.py \
+          --config "tools/bt_nodes_validation/config.yml"
