@@ -47,23 +47,10 @@ geometry_msgs::msg::Twist NominalController::compute(
   const double vy_unclamp = s * params_->v_lateral_max * (y_t / denom);
 
   // Heading reference: direction-to-lookahead-point, with a sign-flip
-  // for backward motion so the rear faces the lookahead. We do NOT use
-  // the lookahead pose's stored orientation here.
-  //
-  // Why: the stored orientation is set by validateOrientations() to
-  // atan2(dy, dx) between consecutive path poses. For a backward-going
-  // path that's ≈ ±π, which under angular-distance arithmetic asks the
-  // robot to spin around 180° — the controller then saturates wz_path
-  // at the angular envelope on every backward tick and bleeds rotation
-  // into the blend that the body can't physically execute in narrow
-  // alleys. Backtesting against run6 plan 2 confirmed 100% of backward
-  // ticks were saturated and 79% had wz_path sign-flipped from what
-  // the path actually wanted.
-  //
-  // Direction-to-lookahead is the standard pure-pursuit signal and is
-  // direction-aware: forward motion targets the lookahead in front;
-  // backward motion targets the lookahead behind (via the +π rear
-  // shift). Sign matches the geometry the robot can actually drive.
+  // for backward motion so the rear faces the lookahead. Do NOT use
+  // the lookahead pose's stored orientation — for backward paths
+  // validateOrientations() sets it to atan2(dy, dx) between consecutive
+  // poses, which is ≈ ±π in reverse and asks the robot to spin 180°.
   const double alpha = std::atan2(y_t, x_t);
   const double yaw_err = (x_t >= 0.0)
     ? alpha
