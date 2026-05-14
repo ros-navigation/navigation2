@@ -103,7 +103,7 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
   auto path = obj->getPlan(start, goal, no_viapoints, "GridBased", dummy_cancel_checker);
   EXPECT_GT((int)path.poses.size(), 0);
 
-  int path_size = path.poses.size();
+  size_t path_size = path.poses.size();
   if (path_size == 1) {
     EXPECT_NEAR(
       tf2::getYaw(path.poses.back().pose.orientation),

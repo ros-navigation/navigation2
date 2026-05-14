@@ -14,6 +14,7 @@
 
 #include <string>
 #include <random>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -278,7 +279,7 @@ bool PlannerTester::defaultPlannerTest(
 
 bool PlannerTester::defaultPlannerRandomTests(
   const unsigned int number_tests,
-  const float acceptable_fail_ratio = 0.1)
+  const float acceptable_fail_ratio = 0.1f)
 {
   if (!costmap_set_) {
     RCLCPP_ERROR(this->get_logger(), "Costmap must be set before requesting a plan");
@@ -348,7 +349,7 @@ bool PlannerTester::defaultPlannerRandomTests(
     "Tested with %u tests. Planner failed on %u. Test time %ld ms",
     number_tests, num_fail, elapsed.count());
 
-  if ((num_fail / number_tests) > acceptable_fail_ratio) {
+  if ((static_cast<float>(num_fail) / static_cast<float>(number_tests)) > acceptable_fail_ratio) {
     return false;
   }
 
@@ -364,7 +365,7 @@ bool PlannerTester::plannerTest(
 
   // First make available the current robot position for the planner to take as starting point
   updateRobotPosition(robot_position);
-  sleep(0.05);
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
   // Then request to compute a path
   TaskStatus status = createPlan(goal, path);
@@ -407,7 +408,7 @@ std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> PlannerTester::isPathVali
   // create a fake service request
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
   request->path = path;
-  request->max_cost = max_cost;
+  request->max_cost = static_cast<unsigned char>(max_cost);
   request->consider_unknown_as_obstacle = consider_unknown_as_obstacle;
   request->layer_name = layer_name;
   request->footprint = footprint;

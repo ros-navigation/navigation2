@@ -41,8 +41,8 @@ TEST(testIsPathValid, testIsPathValid)
   EXPECT_FALSE(response->is_valid);
 
   // invalid path
-  for (float i = 0; i < 10; i += 1.0) {
-    for (float j = 0; j < 10; j += 1.0) {
+  for (float i = 0; i < 10; i += 1) {
+    for (float j = 0; j < 10; j += 1) {
       geometry_msgs::msg::PoseStamped pose;
       pose.pose.position.x = i;
       pose.pose.position.y = j;
@@ -56,7 +56,7 @@ TEST(testIsPathValid, testIsPathValid)
 
   // valid path
   path.poses.clear();
-  for (float i = 0; i < 10; i += 1.0) {
+  for (float i = 0; i < 10; i += 1) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = 1.0;
     pose.pose.position.y = i;
@@ -70,7 +70,7 @@ TEST(testIsPathValid, testIsPathValid)
   // valid path, but contains NO_INFORMATION(255)
   path.poses.clear();
   consider_unknown_as_obstacle = true;
-  for (float i = 0; i < 10; i += 1.0) {
+  for (float i = 0; i < 10; i += 1) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = 1.0;
     pose.pose.position.y = i;
@@ -100,8 +100,8 @@ TEST(testIsPathValid, testInvalidPoseIndices)
   bool consider_unknown_as_obstacle = false;
 
   // Create path that goes through obstacle
-  for (float i = 0; i < 10; i += 1.0) {
-    for (float j = 0; j < 10; j += 1.0) {
+  for (float i = 0; i < 10; i += 1) {
+    for (float j = 0; j < 10; j += 1) {
       geometry_msgs::msg::PoseStamped pose;
       pose.pose.position.x = i;
       pose.pose.position.y = j;
@@ -129,7 +129,7 @@ TEST(testIsPathValid, testCustomFootprint)
   bool consider_unknown_as_obstacle = false;
 
   // Create a simple path
-  for (float i = 1.0; i < 5.0; i += 1.0) {
+  for (float i = 1; i < 5; i += 1) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = i;
     pose.pose.position.y = 5.0;
@@ -157,7 +157,7 @@ TEST(testIsPathValid, testInvalidFootprint)
   bool consider_unknown_as_obstacle = false;
 
   // Create a simple path
-  for (float i = 1.0; i < 5.0; i += 1.0) {
+  for (float i = 1; i < 5; i += 1) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = i;
     pose.pose.position.y = 5.0;
@@ -183,7 +183,7 @@ TEST(testIsPathValid, testLayerName)
   bool consider_unknown_as_obstacle = false;
 
   // Create a simple path
-  for (float i = 1.0; i < 5.0; i += 1.0) {
+  for (float i = 1; i < 5; i += 1) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = i;
     pose.pose.position.y = 5.0;
@@ -210,7 +210,7 @@ TEST(testIsPathValid, testEmptyLayerName)
   bool consider_unknown_as_obstacle = false;
 
   // Create a simple path
-  for (float i = 1.0; i < 5.0; i += 1.0) {
+  for (float i = 1; i < 5; i += 1) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = i;
     pose.pose.position.y = 5.0;
@@ -237,7 +237,7 @@ TEST(testIsPathValid, testFootprintCollisionChecking)
   bool consider_unknown_as_obstacle = false;
 
   // Create a path near the obstacle
-  for (float i = 2.0; i < 5.0; i += 0.5) {
+  for (float i = 2; i < 5; i += 0.5f) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = i;
     pose.pose.position.y = 2.0;
@@ -268,8 +268,8 @@ TEST(testIsPathValid, testStopAtFirstCollision)
   bool consider_unknown_as_obstacle = false;
 
   // Create path with multiple points that go through obstacles
-  for (float i = 0; i < 10; i += 1.0) {
-    for (float j = 0; j < 10; j += 1.0) {
+  for (float i = 0; i < 10; i += 1) {
+    for (float j = 0; j < 10; j += 1) {
       geometry_msgs::msg::PoseStamped pose;
       pose.pose.position.x = i;
       pose.pose.position.y = j;
@@ -305,7 +305,7 @@ TEST(testIsPathValid, testMaxLookaheadDistance)
   bool consider_unknown_as_obstacle = false;
 
   // Create a long straight path along y-axis at x=1.0 (clear of top-left obstacle)
-  for (float i = 0; i < 10; i += 0.5) {
+  for (float i = 0; i < 10; i += 0.5f) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = 1.0;
     pose.pose.position.y = i;
@@ -328,8 +328,8 @@ TEST(testIsPathValid, testMaxLookaheadDistance)
 
   // Now create a path that goes through the obstacle area
   nav_msgs::msg::Path obstacle_path;
-  for (float i = 0; i < 10; i += 1.0) {
-    for (float j = 0; j < 10; j += 1.0) {
+  for (float i = 0; i < 10; i += 1) {
+    for (float j = 0; j < 10; j += 1) {
       geometry_msgs::msg::PoseStamped pose;
       pose.pose.position.x = i;
       pose.pose.position.y = j;
