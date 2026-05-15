@@ -157,9 +157,8 @@ def extract_sections(
     return result
 
 
-def fetch_external_repos(config: dict, clone_dir: Path) -> None:
+def fetch_external_repos(github_repos: dict, clone_dir: Path) -> None:
     """Fetch external repositories specified in the YAML configuration file."""
-    github_repos = config.get('github_repositories', {})
     for repo_name, repo_info in github_repos.items():
 
         bt_paths: list[str] = []
@@ -582,7 +581,7 @@ def main():
 
         print('Cloning external repositories...')
         try:
-            fetch_external_repos(repos_config_yaml, clone_dir)
+            fetch_external_repos(github_repos_yaml, clone_dir)
         except (subprocess.CalledProcessError, FileNotFoundError, OSError) as exc:
             stderr = getattr(exc, 'stderr', None)
             print(f'Failed to fetch external repositories: {stderr or exc}')
