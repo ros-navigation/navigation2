@@ -461,20 +461,25 @@ def extract_code_nodes_data(config: dict) -> BTNodes:
     return bt_node_ids_code
 
 
-def compare_bt_nodes(bt_node_ids_code: BTNodes, bt_node_ids_xml: BTNodes) -> bool:
-    """Compare BT node data extracted from code and XML."""
-    mismatch_found = False
+def detect_bt_nodes_mismatches(bt_node_ids_code: BTNodes, bt_node_ids_xml: BTNodes) -> bool:
+    """
+    Compare BT node data extracted from code and XML.
+
+    Compares node IDs, port names, data types, and default values.
+    Returns True if any mismatch is found, False otherwise.
+    """
+    is_mismatch_found = False
 
     diff_xml_code = bt_node_ids_xml.keys() - bt_node_ids_code.keys()
     if diff_xml_code:
-        mismatch_found = True
+        is_mismatch_found = True
         print('[ERROR] Nodes present in XML but missing in code:')
         for node in diff_xml_code:
             print(f'\t - {node}')
 
     diff_code_xml = bt_node_ids_code.keys() - bt_node_ids_xml.keys()
     if diff_code_xml:
-        mismatch_found = True
+        is_mismatch_found = True
         print('[ERROR] Nodes present in code but missing in XML:')
         for node in diff_code_xml:
             print(f'\t - {node}')
@@ -486,14 +491,14 @@ def compare_bt_nodes(bt_node_ids_code: BTNodes, bt_node_ids_xml: BTNodes) -> boo
 
         diff_ports_xml_code = ports_xml - ports_code
         if diff_ports_xml_code:
-            mismatch_found = True
+            is_mismatch_found = True
             print(f'[ERROR] {node_name} node: ports present in XML but missing in code:')
             for port in diff_ports_xml_code:
                 print(f'\t - {port}')
 
         diff_ports_code_xml = ports_code - ports_xml
         if diff_ports_code_xml:
-            mismatch_found = True
+            is_mismatch_found = True
             print(f'[ERROR] {node_name} node: ports present in code but missing in XML:')
             for port in diff_ports_code_xml:
                 print(f'\t - {port}')
@@ -503,7 +508,7 @@ def compare_bt_nodes(bt_node_ids_code: BTNodes, bt_node_ids_xml: BTNodes) -> boo
             port_type_code = bt_node_ids_code[node_name][port]['data_type']
             port_type_xml = bt_node_ids_xml[node_name][port]['data_type']
             if port_type_code != port_type_xml:
-                mismatch_found = True
+                is_mismatch_found = True
                 print(f'[ERROR] {node_name} node: data type mismatch for {port} port:')
                 print(f'\t Code: {port_type_code}')
                 print(f'\t XML: {port_type_xml}')
@@ -511,11 +516,11 @@ def compare_bt_nodes(bt_node_ids_code: BTNodes, bt_node_ids_xml: BTNodes) -> boo
             port_default_code = bt_node_ids_code[node_name][port]['default']
             port_default_xml = bt_node_ids_xml[node_name][port]['default']
             if port_default_code != port_default_xml:
-                mismatch_found = True
+                is_mismatch_found = True
                 print(f'[ERROR] {node_name} node: default value mismatch for {port} port:')
                 print(f'\t Code: {port_default_code}')
                 print(f'\t XML: {port_default_xml}')
-    return mismatch_found
+    return is_mismatch_found
 
 
 def validate_descriptions(nodes: BTNodes) -> bool:
@@ -595,7 +600,7 @@ def main():
     bt_node_ids_code = extract_code_nodes_data(repos_config)
 
     print('Comparing BT nodes data extracted from code and XML files...')
-    is_mismatch_found = compare_bt_nodes(bt_node_ids_code, bt_node_ids_xml)
+    is_mismatch_found = detect_bt_nodes_mismatches(bt_node_ids_code, bt_node_ids_xml)
 
     print('Checking for missing descriptions in XML...')
     # Skip descriptions checking in bt_node_ids_code, as they are optional.
