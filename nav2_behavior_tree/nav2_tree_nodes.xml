@@ -69,10 +69,10 @@
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
-    <Action ID="CancelCoverage">
+    <!-- <Action ID="CancelCoverage">
       <input_port name="server_name" type="string">Action server name. If not specified, `compute_coverage_path` is used.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-    </Action>
+    </Action> -->
 
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
@@ -159,7 +159,7 @@
       <output_port name="error_msg" type="string">Compute route error message. See `ComputeAndTrackRoute` action message for the enumerated set of error codes.</output_port>
     </Action>
 
-    <Action ID="ComputeCoveragePath">
+    <!-- <Action ID="ComputeCoveragePath">
       <input_port name="generate_headland" type="bool" default="true">Whether or not to generate a headland of the field or polygon to compute coverage of.</input_port>
       <input_port name="generate_route" type="bool" default="true">Whether or not to generate a route, e.g. an ordered set of swaths.</input_port>
       <input_port name="generate_path" type="bool" default="true">Whether or not to generate a path, e.g. adding path connectors to the ordered route.</input_port>
@@ -173,7 +173,7 @@
       <output_port name="coverage_path" type="opennav_coverage_msgs::msg::PathComponents">An ordered set of swaths and turns corresponding to the coverage path when its important to distinguish between turns and swaths for applications. A `opennav_coverage::utils::PathComponentsIterator` object is provided to help make this easy to use by iterating through the outputs's path components to return you the next swath and turn one at a time.</output_port>
       <output_port name="planning_time" type="builtin_interfaces::msg::Duration">The time to compute coverage plan.</output_port>
       <output_port name="error_code_id" type="uint16">Compute coverage error code. See `ComputeCoveragePath` action message for the enumerated set of error codes.</output_port>
-    </Action>
+    </Action> -->
 
     <Action ID="RemovePassedGoals">
       <input_port name="radius" type="double" default="0.5">The radius (m) in proximity to the viapoint for the BT node to remove from the list as having passed.</input_port>
