@@ -542,16 +542,16 @@ def main():
         'path to the nav2_tree_nodes.xml file to compare against.'
     )
     args = parser.parse_args()
-    config = args.config
+    args_config = args.config
 
     try:
-        repos_config_content = config.read_text()
-        repos_config_yaml = yaml.safe_load(repos_config_content)
+        config_yaml = args_config.read_text()
+        config = yaml.safe_load(config_yaml)
     except (FileNotFoundError, yaml.YAMLError) as exc:
-        print(f'Failed to load configuration file {config}: {exc}')
+        print(f'Failed to load configuration file {args_config}: {exc}')
         sys.exit(1)
 
-    nav2_bt_nodes = repos_config_yaml.get(
+    nav2_bt_nodes = config.get(
         'nav2_bt_nodes_file_path',
         'nav2_behavior_tree/nav2_tree_nodes.xml'
     )
@@ -569,8 +569,8 @@ def main():
         print(f'Failed to extract BT nodes data from XML: {exc}')
         sys.exit(1)
 
-    github_repos_yaml = repos_config_yaml.get('github_repositories', {})
-    if github_repos_yaml:
+    github_repos_config = config.get('github_repositories', {})
+    if github_repos_config:
         try:
             # Always copy external repositories to the navigation2 root directory,
             # regardless of the script's location
@@ -581,18 +581,18 @@ def main():
 
         print('Cloning external repositories...')
         try:
-            fetch_external_repos(github_repos_yaml, clone_dir)
+            fetch_external_repos(github_repos_config, clone_dir)
         except (subprocess.CalledProcessError, FileNotFoundError, OSError) as exc:
             stderr = getattr(exc, 'stderr', None)
             print(f'Failed to fetch external repositories: {stderr or exc}')
             sys.exit(1)
 
-        update_paths_for_external_repos(github_repos_yaml, clone_dir)
+        update_paths_for_external_repos(github_repos_config, clone_dir)
 
-    local_repos_yaml = repos_config_yaml.get('local_repositories', {})
-    repos_yaml = local_repos_yaml | github_repos_yaml
+    local_repos_config = config.get('local_repositories', {})
+    repos_config = local_repos_config | github_repos_config
 
-    bt_node_ids_code = extract_code_nodes_data(repos_yaml)
+    bt_node_ids_code = extract_code_nodes_data(repos_config)
 
     print('Comparing BT nodes data extracted from code and XML files...')
     is_mismatch_found = compare_bt_nodes(bt_node_ids_code, bt_node_ids_xml)
