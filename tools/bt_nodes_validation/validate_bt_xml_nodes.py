@@ -24,12 +24,12 @@ TYPE_DIRECT_MAPPINGS = {
 
 
 TYPE_REGEX_TRANSFORMS = [
-    (re.compile(r'^std::'), ''),
+    (re.compile(r'std::'), ''),
 ]
 
 
 DEFAULT_REGEX_TRANSFORMS = [
-    (re.compile(r'^std::'), ''),
+    (re.compile(r'std::'), ''),
 ]
 
 
