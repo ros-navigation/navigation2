@@ -95,6 +95,7 @@ public:
     costmap_update_pub_->on_activate();
     costmap_raw_pub_->on_activate();
     costmap_raw_update_pub_->on_activate();
+    costmap_service_->on_activate();
   }
 
   /**
@@ -102,6 +103,7 @@ public:
    */
   void on_deactivate()
   {
+    costmap_service_->on_deactivate();
     costmap_pub_->on_deactivate();
     costmap_update_pub_->on_deactivate();
     costmap_raw_pub_->on_deactivate();

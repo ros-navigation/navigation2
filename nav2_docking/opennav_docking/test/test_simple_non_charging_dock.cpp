@@ -403,6 +403,8 @@ TEST(SimpleNonChargingDockTests, DetectorLifecycle)
     "my_dock.detector_service_name",
     rclcpp::ParameterValue("test_detector_service"));
   node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(true));
+  node->configure();
+  node->activate();
 
   // Create a mock service to prevent timeout
   bool service_called = false;
@@ -415,6 +417,7 @@ TEST(SimpleNonChargingDockTests, DetectorLifecycle)
       service_called = true;
       response->success = true;
     });
+  service->on_activate();
 
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
   dock->configure(node, "my_dock", nullptr);

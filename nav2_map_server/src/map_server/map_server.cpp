@@ -136,6 +136,9 @@ MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     occ_pub_->publish(std::move(occ_grid));
   }
 
+  occ_service_->on_activate();
+  load_map_service_->on_activate();
+
   // create bond connection
   createBond();
 
@@ -146,6 +149,8 @@ nav2::CallbackReturn
 MapServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+  occ_service_->on_deactivate();
+  load_map_service_->on_deactivate();
 
   occ_pub_->on_deactivate();
 
