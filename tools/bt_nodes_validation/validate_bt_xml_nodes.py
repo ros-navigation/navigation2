@@ -453,6 +453,21 @@ def extract_code_nodes_data(config: dict) -> BTNodes:
         node_cpp_data = extract_cpp_classes_and_ids(cpp_files)
         node_hpp_data = extract_hpp_classes_and_ports_data(hpp_files, hpp_base_classes)
 
+        classes_cpp_hpp = node_cpp_data.keys() - node_hpp_data.keys()
+        if classes_cpp_hpp:
+            raise ValueError(
+                'Following classes are present in cpp files but missing in hpp files: '
+                f'{", ".join(classes_cpp_hpp)}.\n'
+                'Ensure that all provided cpp files have their corresponding hpp files.'
+            )
+        classes_hpp_cpp = node_hpp_data.keys() - node_cpp_data.keys()
+        if classes_hpp_cpp:
+            raise ValueError(
+                'Following classes are present in hpp files but missing in cpp files: '
+                f'{", ".join(classes_hpp_cpp)}.\n'
+                'Ensure that all provided hpp files have their corresponding cpp files.'
+            )
+
         # Combine data from cpp and hpp files by class names
         # {node_id: {port_name: {'data_type': 'x', 'default': 'y', 'has_description': bool}}}
         combined_code_data = {node_cpp_data[key]: node_hpp_data[key] for key in node_cpp_data}
@@ -597,7 +612,14 @@ def main():
     local_repos_config = config.get('local_repositories', {})
     repos_config = local_repos_config | github_repos_config
 
-    bt_node_ids_code = extract_code_nodes_data(repos_config)
+    try:
+        bt_node_ids_code = extract_code_nodes_data(repos_config)
+    except (ValueError, FileNotFoundError) as exc:
+        print(
+            f'Failed to extract BT nodes data from code: {exc}\n'
+            f'Review specified files in {args_config}'
+        )
+        sys.exit(1)
 
     print('Comparing BT nodes data extracted from code and XML files...')
     is_mismatch_found = detect_bt_nodes_mismatches(bt_node_ids_code, bt_node_ids_xml)
