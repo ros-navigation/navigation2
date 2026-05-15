@@ -325,7 +325,7 @@ def extract_code_port_data(content: str) -> NodePorts:
 
 def extract_xml_nodes_data(root: ET.Element) -> BTNodes:
     """
-    Extract Behaviour Tree nodes data from the given XML file.
+    Extract Behavior Tree nodes data from the given XML file.
 
     Returns dictionary mapping node IDs to their port data:
     {node_id:  {port_name: {'data_type': 'x', 'default': 'y', 'has_description': bool}}}
@@ -362,7 +362,7 @@ def extract_xml_nodes_data(root: ET.Element) -> BTNodes:
 
 def extract_cpp_classes_and_ids(cpp_files: list[Path]) -> dict[str, str]:
     """
-    Extract class names and their corresponding node IDs from the given list files.
+    Extract class names and their corresponding node IDs from the given list of source files.
 
     Returns dictionary mapping class names to node IDs: {class_name: node_id}
     """
