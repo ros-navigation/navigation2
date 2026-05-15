@@ -34,6 +34,49 @@ namespace mppi
 {
 
 /**
+ * @class mppi::ColoredNoiseGenerator
+ * @brief Generates low-frequency MPPI perturbations with power-law spectral density.
+ */
+class ColoredNoiseGenerator
+{
+public:
+  /**
+   * @brief Configure colored-noise sampling.
+   * @param enabled Whether colored noise is enabled.
+   * @param exponent Power spectral density exponent. 0.0 matches white noise.
+   * @param offset_t Horizon offset used by the doubled-horizon crop.
+   * @param offset_decay_rate Decay applied to the offset correction over the returned horizon.
+   * @param fmin Relative low-frequency cutoff in [0.0, 0.5].
+   * @param logger Logger for configuration warnings.
+   */
+  void configure(
+    bool enabled, float exponent, int offset_t, float offset_decay_rate,
+    float fmin, const rclcpp::Logger & logger);
+
+  /**
+   * @brief Whether colored-noise sampling is enabled.
+   * @return True when enabled.
+   */
+  bool isEnabled() const;
+
+  /**
+   * @brief Generate colored noise for one control axis.
+   * @param noise Output matrix [batch_size, time_steps].
+   * @param sigma Desired standard deviation of the output signal.
+   * @param generator Random engine.
+   */
+  void generate(
+    Eigen::ArrayXXf & noise, float sigma, std::default_random_engine & generator) const;
+
+protected:
+  bool enabled_{false};
+  float exponent_{2.0f};
+  int offset_t_{1};
+  float offset_decay_rate_{0.97f};
+  float fmin_{0.0f};
+};
+
+/**
  * @class mppi::NoiseGenerator
  * @brief Generates noise trajectories from optimal trajectory
  */
@@ -95,6 +138,8 @@ protected:
    */
   void generateNoisedControls();
 
+  ColoredNoiseGenerator colored_noise_generator_;
+
   Eigen::ArrayXXf noises_vx_;
   Eigen::ArrayXXf noises_vy_;
   Eigen::ArrayXXf noises_wz_;
@@ -111,6 +156,7 @@ protected:
   std::condition_variable noise_cond_;
   std::mutex noise_lock_;
   bool active_{false}, ready_{false}, regenerate_noises_{false};
+  rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
 
 }  // namespace mppi
