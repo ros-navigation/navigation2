@@ -48,32 +48,20 @@ public:
     const std::string & topic_name)
   : CostmapSubscriber(node, topic_name)
   {
-    auto costmap = std::make_shared<nav2_msgs::msg::Costmap>();
-    costmap->metadata.size_x = 100;
-    costmap->metadata.size_y = 100;
-    costmap->metadata.resolution = 0.1;
-    costmap->metadata.origin.position.x = -5.0;
-    costmap->metadata.origin.position.y = -5.0;
-
-    costmap->data.resize(costmap->metadata.size_x * costmap->metadata.size_y, 0);
-    for (unsigned int i = 0; i < costmap->metadata.size_y; ++i) {
+    auto costmap_2d = std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, -5.0, -5.0);
+    for (unsigned int i = 0; i < 100; ++i) {
       for (unsigned int j = 20; j < 40; ++j) {
-        costmap->data[i * costmap->metadata.size_x + j] = 254;
+        costmap_2d->setCost(j, i, 254);
       }
     }
-
-    setCostmap(costmap);
+    auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+    stamped->costmap = costmap_2d;
+    setCostmap(stamped);
   }
 
-  void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
+  void setCostmap(std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> stamped)
   {
-    costmap_msg_ = msg;
-    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
-      msg->metadata.size_x, msg->metadata.size_y,
-      msg->metadata.resolution, msg->metadata.origin.position.x,
-      msg->metadata.origin.position.y);
-
-    processCurrentCostmapMsg();
+    costmapCallback(stamped);
   }
 };
 
@@ -162,7 +150,8 @@ public:
 
     smoother_server_ = std::make_shared<DummySmootherServer>();
     smoother_server_->set_parameter(
-        rclcpp::Parameter("smoother_plugins",
+      rclcpp::Parameter(
+        "smoother_plugins",
         std::vector<std::string>(1, "DummySmoothPath")));
     smoother_server_->declare_parameter(
       "DummySmoothPath.plugin",

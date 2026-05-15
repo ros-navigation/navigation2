@@ -71,9 +71,11 @@ Costmap2DPublisher::Costmap2DPublisher(
   costmap_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name,
     nav2::qos::LatchedPublisherQoS());
-  costmap_raw_pub_ = node->create_publisher<nav2_msgs::msg::Costmap>(
+
+  costmap_raw_pub_ = node->create_publisher<nav2_costmap_2d::Costmap2DStamped>(
     topic_name + "_raw",
     nav2::qos::LatchedPublisherQoS());
+
   costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", nav2::qos::LatchedPublisherQoS());
   costmap_raw_update_pub_ = node->create_publisher<nav2_msgs::msg::CostmapUpdate>(
@@ -160,30 +162,13 @@ void Costmap2DPublisher::prepareGrid()
 void Costmap2DPublisher::prepareCostmap()
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-  double resolution = costmap_->getResolution();
 
-  costmap_raw_ = std::make_unique<nav2_msgs::msg::Costmap>();
+  costmap_raw_ = std::make_unique<nav2_costmap_2d::Costmap2DStamped>();
 
   costmap_raw_->header.frame_id = global_frame_;
   costmap_raw_->header.stamp = clock_->now();
 
-  costmap_raw_->metadata.layer = "master";
-  costmap_raw_->metadata.resolution = resolution;
-
-  costmap_raw_->metadata.size_x = costmap_->getSizeInCellsX();
-  costmap_raw_->metadata.size_y = costmap_->getSizeInCellsY();
-
-  double wx, wy;
-  costmap_->mapToWorld(0, 0, wx, wy);
-  costmap_raw_->metadata.origin.position.x = wx - resolution / 2;
-  costmap_raw_->metadata.origin.position.y = wy - resolution / 2;
-  costmap_raw_->metadata.origin.position.z = 0.0;
-  costmap_raw_->metadata.origin.orientation.w = 1.0;
-
-  costmap_raw_->data.resize(costmap_raw_->metadata.size_x * costmap_raw_->metadata.size_y);
-
-  unsigned char * data = costmap_->getCharMap();
-  memcpy(costmap_raw_->data.data(), data, costmap_raw_->data.size());
+  costmap_raw_->costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(*costmap_);
 }
 
 std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGridUpdateMsg()
