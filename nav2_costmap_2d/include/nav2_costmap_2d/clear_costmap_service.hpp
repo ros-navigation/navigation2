@@ -18,6 +18,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
@@ -58,18 +59,23 @@ public:
 
   /**
    * @brief Clears the region outside of a user-specified area reverting to the static map
+   * @return true if the requested plugins were successfully cleared, false otherwise
    */
-  void clearRegion(double reset_distance, bool invert);
+  bool clearRegion(double reset_distance, bool invert, const std::vector<std::string> & plugins);
 
   /**
    * @brief Clears the region around a specific pose
+   * @return true if the requested plugins were successfully cleared, false otherwise
    */
-  void clearAroundPose(const geometry_msgs::msg::PoseStamped & pose, double reset_distance);
+  bool clearAroundPose(
+    const geometry_msgs::msg::PoseStamped & pose, double reset_distance,
+    const std::vector<std::string> & plugins);
 
   /**
-   * @brief Clears all layers
+   * @brief Clears the entire layer
+   * @return true if the requested plugins were successfully cleared, false otherwise
    */
-  void clearEntirely();
+  bool clearEntirely(const std::vector<std::string> & plugins);
 
 private:
   // The Logger object for logging
@@ -133,6 +139,33 @@ private:
    * @brief Get the robot's position in the costmap using the master costmap
    */
   bool getPosition(double & x, double & y) const;
+
+  /**
+   * @brief Checks if the requested plugins are clearable and exist in the costmap layers
+   * @param requested_plugins List of plugin names to validate
+   * @param layers Pointer to all available plugins
+   * @param invalid_plugins Output: list of invalid plugins with reasons
+   */
+  void validatePlugins(
+    const std::vector<std::string> & requested_plugins,
+    const std::vector<std::shared_ptr<Layer>> * layers,
+    std::vector<std::string> & invalid_plugins) const;
+
+  /**
+   * @brief Checks if the requested plugins are valid.
+   * If valid, clears the requested plugins using the provided callback.
+   * If not valid, logs warnings for the invalid plugins and does not clear any plugins.
+   * @param plugins List of plugin names to clear
+   * @param layers Pointer to all available plugins
+   * @param clear_callback Clearing function to call if requested plugins are valid
+   * @param operation_name Name of the operation for logging (e.g. "clearAroundPose")
+   * @return true if all requested plugins were valid and cleared, false otherwise
+   */
+  bool validateAndClearPlugins(
+    const std::vector<std::string> & plugins,
+    const std::vector<std::shared_ptr<Layer>> * layers,
+    std::function<void(std::shared_ptr<CostmapLayer> &)> clear_callback,
+    const std::string & operation_name) const;
 };
 
 }  // namespace nav2_costmap_2d

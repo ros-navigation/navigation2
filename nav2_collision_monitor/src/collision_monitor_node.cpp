@@ -14,6 +14,7 @@
 
 #include "nav2_collision_monitor/collision_monitor_node.hpp"
 
+#include <algorithm>
 #include <exception>
 #include <utility>
 #include <functional>
@@ -32,7 +33,8 @@ namespace nav2_collision_monitor
 
 CollisionMonitor::CollisionMonitor(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("collision_monitor", options),
-  enabled_{true}, process_active_(false), robot_action_prev_{DO_NOTHING, {-1.0, -1.0, -1.0}, ""},
+  enabled_{true}, process_active_(false),
+  robot_action_prev_{DO_NOTHING, {-1.0, -1.0, -1.0}, "", std::vector<Point>()},
   stop_stamp_{0, 0, get_clock()->get_clock_type()}, stop_pub_timeout_(1.0, 0.0)
 {
 }
@@ -83,6 +85,9 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
   collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
     "~/collision_points_marker");
 
+  triggering_points_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
+    "~/triggering_points");
+
   // Toggle service initialization
   toggle_cm_service_ = create_service<nav2_msgs::srv::Toggle>(
     "~/toggle",
@@ -121,6 +126,7 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
     state_pub_->on_activate();
   }
   collision_points_marker_pub_->on_activate();
+  triggering_points_pub_->on_activate();
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -149,7 +155,7 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   process_active_ = false;
 
   // Reset action type to default after worker deactivating
-  robot_action_prev_ = {DO_NOTHING, {-1.0, -1.0, -1.0}, ""};
+  robot_action_prev_ = {DO_NOTHING, {-1.0, -1.0, -1.0}, "", std::vector<Point>()};
 
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -162,6 +168,7 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     state_pub_->on_deactivate();
   }
   collision_points_marker_pub_->on_deactivate();
+  triggering_points_pub_->on_deactivate();
 
   // Destroying bond connection
   destroyBond();
@@ -178,6 +185,7 @@ CollisionMonitor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   cmd_vel_out_pub_.reset();
   state_pub_.reset();
   collision_points_marker_pub_.reset();
+  triggering_points_pub_.reset();
 
   polygons_.clear();
   sources_.clear();
@@ -245,7 +253,7 @@ bool CollisionMonitor::getParameters(
   std::string & cmd_vel_out_topic,
   std::string & state_topic)
 {
-  std::string base_frame_id, odom_frame_id;
+  std::string odom_frame_id;
   tf2::Duration transform_tolerance;
   rclcpp::Duration source_timeout(2.0, 0.0);
 
@@ -257,7 +265,7 @@ bool CollisionMonitor::getParameters(
     "cmd_vel_out_topic", std::string("cmd_vel"));
   state_topic = node->declare_or_get_parameter("state_topic", std::string(""));
 
-  base_frame_id = node->declare_or_get_parameter(
+  base_frame_id_ = node->declare_or_get_parameter(
     "base_frame_id", std::string("base_footprint"));
   odom_frame_id = node->declare_or_get_parameter("odom_frame_id", std::string("odom"));
   transform_tolerance = tf2::durationFromSec(
@@ -265,18 +273,19 @@ bool CollisionMonitor::getParameters(
   source_timeout = rclcpp::Duration::from_seconds(
     node->declare_or_get_parameter("source_timeout", 2.0));
   const bool base_shift_correction = node->declare_or_get_parameter("base_shift_correction", true);
+  collision_points_marker_3d_ = node->declare_or_get_parameter("collision_points_marker_3d", false);
 
   stop_pub_timeout_ = rclcpp::Duration::from_seconds(
     node->declare_or_get_parameter("stop_pub_timeout", 1.0));
 
   if (
     !configureSources(
-      base_frame_id, odom_frame_id, transform_tolerance, source_timeout, base_shift_correction))
+        base_frame_id_, odom_frame_id, transform_tolerance, source_timeout, base_shift_correction))
   {
     return false;
   }
 
-  if (!configurePolygons(base_frame_id, transform_tolerance)) {
+  if (!configurePolygons(base_frame_id_, transform_tolerance)) {
     return false;
   }
 
@@ -417,7 +426,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   std::unordered_map<std::string, std::vector<Point>> sources_collision_points_map;
 
   // By default - there is no action
-  Action robot_action{DO_NOTHING, cmd_vel_in, ""};
+  Action robot_action{DO_NOTHING, cmd_vel_in, "", std::vector<Point>()};
   // Polygon causing robot action (if any)
   std::shared_ptr<Polygon> action_polygon;
 
@@ -444,7 +453,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
     if (collision_points_marker_pub_->get_subscription_count() > 0) {
       // visualize collision points with markers
       visualization_msgs::msg::Marker marker;
-      marker.header.frame_id = get_parameter("base_frame_id").as_string();
+      marker.header.frame_id = base_frame_id_;
       marker.header.stamp = rclcpp::Time(0, 0);
       marker.ns = "collision_points_" + source->getSourceName();
       marker.id = 0;
@@ -461,7 +470,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
         geometry_msgs::msg::Point p;
         p.x = point.x;
         p.y = point.y;
-        p.z = 0.0;
+        p.z = collision_points_marker_3d_ ? point.z : 0.0;
         marker.points.push_back(p);
       }
       marker_array->markers.push_back(marker);
@@ -500,6 +509,10 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
     }
   }
 
+  if (triggering_points_pub_->get_subscription_count() > 0) {
+    publishTriggeringPoints(robot_action);
+  }
+
   if ((robot_action.polygon_name != robot_action_prev_.polygon_name) && enabled_) {
     // Report changed robot behavior
     notifyActionState(robot_action, action_polygon);
@@ -524,7 +537,9 @@ bool CollisionMonitor::processStopSlowdownLimit(
     return false;
   }
 
-  if (polygon->isTriggered(sources_collision_points_map)) {
+  // Single pass: collect in-polygon points while isTriggered counts them.
+  std::vector<Point> triggering_points;
+  if (polygon->isTriggered(sources_collision_points_map, triggering_points)) {
     if (polygon->getActionType() == STOP) {
       // Setting up zero velocity for STOP model
       robot_action.polygon_name = polygon->getName();
@@ -532,6 +547,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
       robot_action.req_vel.x = 0.0;
       robot_action.req_vel.y = 0.0;
       robot_action.req_vel.tw = 0.0;
+      robot_action.triggering_points = std::move(triggering_points);
       return true;
     } else if (polygon->getActionType() == SLOWDOWN) {
       const Velocity safe_vel = velocity * polygon->getSlowdownRatio();
@@ -541,6 +557,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
         robot_action.polygon_name = polygon->getName();
         robot_action.action_type = SLOWDOWN;
         robot_action.req_vel = safe_vel;
+        robot_action.triggering_points = std::move(triggering_points);
         return true;
       }
     } else {  // Limit
@@ -565,6 +582,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
         robot_action.polygon_name = polygon->getName();
         robot_action.action_type = LIMIT;
         robot_action.req_vel = safe_vel;
+        robot_action.triggering_points = std::move(triggering_points);
         return true;
       }
     }
@@ -583,8 +601,10 @@ bool CollisionMonitor::processApproach(
     return false;
   }
 
-  // Obtain time before a collision
-  const double collision_time = polygon->getCollisionTime(sources_collision_points_map, velocity);
+  // Obtain time before a collision, capturing the responsible points at the collision step.
+  std::vector<Point> triggering_points;
+  const double collision_time = polygon->getCollisionTime(sources_collision_points_map, velocity,
+      triggering_points);
   if (collision_time >= 0.0) {
     // If collision will occur, reduce robot speed
     const double change_ratio = collision_time / polygon->getTimeBeforeCollision();
@@ -595,6 +615,7 @@ bool CollisionMonitor::processApproach(
       robot_action.polygon_name = polygon->getName();
       robot_action.action_type = APPROACH;
       robot_action.req_vel = safe_vel;
+      robot_action.triggering_points = std::move(triggering_points);
       return true;
     }
   }
@@ -648,6 +669,58 @@ void CollisionMonitor::notifyActionState(
 
     state_pub_->publish(std::move(state_msg));
   }
+}
+
+void CollisionMonitor::publishTriggeringPoints(const Action & action)
+{
+  auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+
+  // Clear markers from previous cycle.
+  visualization_msgs::msg::Marker clear;
+  clear.action = visualization_msgs::msg::Marker::DELETEALL;
+  marker_array->markers.push_back(clear);
+
+  if (!action.triggering_points.empty()) {
+    // Colour by action type: STOP=red, SLOWDOWN=yellow, APPROACH=blue, LIMIT=orange
+    float r = 0.0f, g = 0.0f, b = 0.0f;
+    switch (action.action_type) {
+      case STOP:     r = 1.0f; g = 0.0f; b = 0.0f; break;
+      case SLOWDOWN: r = 1.0f; g = 1.0f; b = 0.0f; break;
+      case APPROACH: r = 0.0f; g = 0.5f; b = 1.0f; break;
+      case LIMIT:    r = 1.0f; g = 0.5f; b = 0.0f; break;
+      default: break;
+    }
+
+    std::unordered_map<std::string, size_t> marker_index;
+    for (const auto & p : action.triggering_points) {
+      auto [it, new_source] = marker_index.try_emplace(p.source, marker_array->markers.size());
+
+      if (new_source) {
+        visualization_msgs::msg::Marker marker;
+        marker.header.frame_id = base_frame_id_;
+        marker.header.stamp = rclcpp::Time(0, 0);
+        marker.ns = action.polygon_name + "/" + p.source;
+        marker.id = 0;
+        marker.type = visualization_msgs::msg::Marker::POINTS;
+        marker.action = visualization_msgs::msg::Marker::ADD;
+        marker.scale.x = 0.05;
+        marker.scale.y = 0.05;
+        marker.color.r = r;
+        marker.color.g = g;
+        marker.color.b = b;
+        marker.color.a = 1.0f;
+        marker.lifetime = rclcpp::Duration(0, 0);
+        marker.frame_locked = true;
+        marker_array->markers.push_back(std::move(marker));
+      }
+      geometry_msgs::msg::Point gp;
+      gp.x = p.x;
+      gp.y = p.y;
+      gp.z = p.z;
+      marker_array->markers[it->second].points.push_back(gp);
+    }
+  }
+  triggering_points_pub_->publish(std::move(marker_array));
 }
 
 void CollisionMonitor::publishPolygons() const

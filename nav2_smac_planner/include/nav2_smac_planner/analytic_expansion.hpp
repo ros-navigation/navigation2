@@ -199,4 +199,6 @@ protected:
 
 }  // namespace nav2_smac_planner
 
+#include "nav2_smac_planner/analytic_expansion_impl.hpp"  // NOLINT
+
 #endif  // NAV2_SMAC_PLANNER__ANALYTIC_EXPANSION_HPP_

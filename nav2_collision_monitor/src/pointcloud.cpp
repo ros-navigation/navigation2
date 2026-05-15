@@ -167,7 +167,7 @@ bool PointCloud::getData(
 
     // Refill data array
     if (data_height >= min_height_ && data_height <= max_height_) {
-      data.push_back({p_v3_b.x(), p_v3_b.y()});
+      data.push_back({p_v3_b.x(), p_v3_b.y(), p_v3_b.z(), source_name_});
     }
   }
   return true;
