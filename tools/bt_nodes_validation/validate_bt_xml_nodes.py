@@ -140,23 +140,6 @@ def findall_in_file(pattern: re.Pattern, file_path: Path) -> list[str]:
     return pattern.findall(content)
 
 
-def extract_sections(
-        file_path: Path,
-        start_pattern: re.Pattern,
-        end_pattern: re.Pattern
-) -> list[str]:
-    """Extract a section of text from a file based on start and end patterns."""
-    if not file_path.exists() or not file_path.is_file():
-        return []
-    content = file_path.read_text()
-    pattern = re.compile(
-        rf'{start_pattern.pattern}.*?{end_pattern.pattern}',
-        re.DOTALL | re.MULTILINE
-    )
-    result = [match.group(0) for match in pattern.finditer(content)]
-    return result
-
-
 def fetch_external_repos(github_repos: dict, clone_dir: Path) -> None:
     """Fetch external repositories specified in the YAML configuration file."""
     for repo_name, repo_info in github_repos.items():
@@ -381,6 +364,59 @@ def extract_cpp_classes_and_ids(cpp_files: list[Path]) -> dict[str, str]:
     return node_cpp_data
 
 
+def extract_class_definitions(
+    content: str,
+) -> list[tuple[str, str, str]]:
+    """
+    Extract class data from headers.
+
+    Returns a list of tuples: (class_name, base_class_name, class_section).
+    """
+    class_pattern = re.compile(
+        r'^\s*class\s+([A-Za-z_][A-Za-z0-9_]*)',
+        re.MULTILINE
+    )
+    base_class_pattern = re.compile(
+        r'public\s+(?:[A-Za-z_][A-Za-z0-9_:]*::)?([A-Za-z_][A-Za-z0-9_]*)',
+        re.MULTILINE
+    )
+    class_definitions: list[tuple[str, str, str]] = []
+
+    pos = 0
+    while pos < len(content):
+        class_match = class_pattern.search(content, pos)
+        if not class_match:
+            break
+        class_name = class_match.group(1)
+
+        class_name_end = class_match.end()
+        class_brace = content.find('{', class_name_end)
+        base_class_area = content[class_name_end:class_brace]
+        base_class_matches = base_class_pattern.findall(base_class_area)
+        base_class_name = base_class_matches[0] if base_class_matches else ''
+
+        brace_count = 1
+        pos_brace_search = class_brace + 1
+        while pos_brace_search < len(content):
+            char = content[pos_brace_search]
+            if char == '{':
+                brace_count += 1
+            if char == '}':
+                brace_count -= 1
+            if brace_count == 0:
+                break
+            pos_brace_search += 1
+        else:
+            raise ValueError(f'Failed to parse class section for {class_name}.')
+
+        class_section = content[class_brace:pos_brace_search]
+        class_definitions.append((class_name, base_class_name, class_section))
+
+        pos = pos_brace_search
+
+    return class_definitions
+
+
 def extract_hpp_classes_and_ports_data(
     hpp_files: list[Path],
     hpp_base_classes: dict[str, Path]
@@ -391,32 +427,17 @@ def extract_hpp_classes_and_ports_data(
     Returns dictionary mapping class names to their port data:
     {class_name: {port_name: {'data_type': 'x', 'default': 'y', 'has_description': bool}}}
     """
-    hpp_class_start_pattern = re.compile(
-        r'^\s*class\s+([A-Za-z_][A-Za-z0-9_]*)',
-        re.MULTILINE
-    )
-    hpp_class_end_pattern = re.compile(
-        r'^\s*};',
-        re.MULTILINE
-    )
-    hpp_base_class_pattern = re.compile(
-        r'public\s+(?:[A-Za-z_][A-Za-z0-9_:]*::)?([A-Za-z_][A-Za-z0-9_]*)',
-        re.MULTILINE
-    )
-
     node_hpp_data: BTNodes = {}
     for hpp_file in hpp_files:
-        # Handle multiple classes declared in one file
-        class_sections = extract_sections(
-            hpp_file,
-            start_pattern=hpp_class_start_pattern,
-            end_pattern=hpp_class_end_pattern
-        )
-        for class_section in class_sections:
-            class_name = hpp_class_start_pattern.findall(class_section)[0]
-            base_class_name = hpp_base_class_pattern.findall(class_section)[0]
+        if not hpp_file.exists() or not hpp_file.is_file():
+            continue
+        content = hpp_file.read_text()
+        class_definitions = extract_class_definitions(content)
+        if not class_definitions:
+            raise ValueError(
+                f'No class definitions found in {hpp_file}.')
+        for class_name, base_class_name, class_section in class_definitions:
             ports = extract_code_port_data(class_section)
-
             if base_class_name in hpp_base_classes:
                 base_class_content = Path(hpp_base_classes[base_class_name]).read_text()
                 base_ports = extract_code_port_data(base_class_content)
