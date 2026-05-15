@@ -570,25 +570,27 @@ def main():
         print(f'Failed to extract BT nodes data from XML: {exc}')
         sys.exit(1)
 
-    try:
-        # Always copy external repositories to the navigation2 root directory,
-        # regardless of the script's location
-        clone_dir = git_root_path(Path(__file__).parent)
-    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
-        print(f'Failed to determine git root directory: {exc}')
-        sys.exit(1)
+    github_repos_yaml = repos_config_yaml.get('github_repositories', {})
+    if github_repos_yaml:
+        try:
+            # Always copy external repositories to the navigation2 root directory,
+            # regardless of the script's location
+            clone_dir = git_root_path(Path(__file__).parent)
+        except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+            print(f'Failed to determine git root directory: {exc}')
+            sys.exit(1)
 
-    print('Cloning external repositories...')
-    try:
-        fetch_external_repos(repos_config_yaml, clone_dir)
-    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as exc:
-        stderr = getattr(exc, 'stderr', None)
-        print(f'Failed to fetch external repositories: {stderr or exc}')
-        sys.exit(1)
+        print('Cloning external repositories...')
+        try:
+            fetch_external_repos(repos_config_yaml, clone_dir)
+        except (subprocess.CalledProcessError, FileNotFoundError, OSError) as exc:
+            stderr = getattr(exc, 'stderr', None)
+            print(f'Failed to fetch external repositories: {stderr or exc}')
+            sys.exit(1)
+
+        update_paths_for_external_repos(github_repos_yaml, clone_dir)
 
     local_repos_yaml = repos_config_yaml.get('local_repositories', {})
-    github_repos_yaml = repos_config_yaml.get('github_repositories', {})
-    update_paths_for_external_repos(github_repos_yaml, clone_dir)
     repos_yaml = local_repos_yaml | github_repos_yaml
 
     bt_node_ids_code = extract_code_nodes_data(repos_yaml)
