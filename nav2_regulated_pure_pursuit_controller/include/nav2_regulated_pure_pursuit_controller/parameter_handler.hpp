@@ -61,7 +61,6 @@ struct Parameters
   bool allow_reversing;
   bool interpolate_curvature_after_goal;
   bool use_collision_detection;
-  bool stateful;
   bool use_dynamic_window;
   bool allow_obstacle_checking_beyond_goal;
 };

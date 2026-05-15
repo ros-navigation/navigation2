@@ -1031,6 +1031,8 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
   robot_velocity.linear.x = 0.0;
   robot_velocity.linear.y = 0.0;
   geometry_msgs::msg::PoseStamped goal;
+  goal.pose.position.x = plan.poses.back().pose.position.x;
+  goal.pose.position.y = plan.poses.back().pose.position.y;
   auto cmd_vel_safe = controller->computeVelocityCommands(
     robot_pose, robot_velocity, &checker, transformed_plan1, goal);
 

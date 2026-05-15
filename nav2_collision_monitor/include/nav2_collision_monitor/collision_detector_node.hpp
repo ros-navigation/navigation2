@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -136,6 +137,14 @@ protected:
    */
   void publishPolygons() const;
 
+  /**
+   * @brief Publishes the points inside each detected polygon as markers,
+   * bucketed by polygon name and per-point source.
+   * @param all_triggering_points Map from polygon name to its triggering points.
+   */
+  void publishTriggeringPoints(
+    const std::unordered_map<std::string, std::vector<Point>> & all_triggering_points);
+
   // ----- Variables -----
 
   /// @brief TF buffer
@@ -154,11 +163,18 @@ protected:
   /// @brief Collision points marker publisher
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_pub_;
+  /// @brief Triggering points marker publisher (points inside each detected polygon)
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    triggering_points_pub_;
   /// @brief timer that runs actions
   rclcpp::TimerBase::SharedPtr timer_;
 
   /// @brief main loop frequency
   double frequency_;
+  /// @brief Whether to include z in the collision_points_marker
+  bool collision_points_marker_3d_;
+  /// @brief Robot base frame ID
+  std::string base_frame_id_;
 };  // class CollisionDetector
 
 }  // namespace nav2_collision_monitor

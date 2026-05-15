@@ -100,7 +100,7 @@ public:
    */
   bool isActive();
 
-private:
+protected:
   /**
    * @brief Callback for the filter information
    */
