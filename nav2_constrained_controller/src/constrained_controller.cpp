@@ -9,6 +9,8 @@
 
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 #include "tf2/utils.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -49,6 +51,10 @@ void ConstrainedController::configure(
     "constrained_controller/motion_target", 1);
   esdf_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     "constrained_controller/esdf_grid", rclcpp::SystemDefaultsQoS());
+  corners_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+    "constrained_controller/body_corners", rclcpp::SystemDefaultsQoS());
+  debug_pub_ = node->create_publisher<std_msgs::msg::Float32MultiArray>(
+    "constrained_controller/debug", rclcpp::SystemDefaultsQoS());
 
   RCLCPP_INFO(
     logger_,
@@ -75,11 +81,14 @@ void ConstrainedController::activate()
   transformed_plan_pub_->on_activate();
   motion_target_pub_->on_activate();
   esdf_pub_->on_activate();
+  corners_pub_->on_activate();
+  debug_pub_->on_activate();
 
   goal_reached_       = false;
   cloud_log_throttle_ = 0;
   esdf_pub_throttle_  = 0;
   has_lidar_tf_       = false;
+  last_min_h_         = 1.0;
 
   RCLCPP_INFO(logger_, "ConstrainedController activated, subscribing to %s",
     params->pointcloud_topic.c_str());
@@ -92,6 +101,8 @@ void ConstrainedController::deactivate()
   if (transformed_plan_pub_) {transformed_plan_pub_->on_deactivate();}
   if (motion_target_pub_)    {motion_target_pub_->on_deactivate();}
   if (esdf_pub_)             {esdf_pub_->on_deactivate();}
+  if (corners_pub_)          {corners_pub_->on_deactivate();}
+  if (debug_pub_)            {debug_pub_->on_deactivate();}
 }
 
 void ConstrainedController::cleanup()
@@ -229,9 +240,11 @@ geometry_msgs::msg::TwistStamped ConstrainedController::zeroTwist(
 geometry_msgs::msg::TwistStamped
 ConstrainedController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
-  const geometry_msgs::msg::Twist & /*velocity*/,
-  nav2_core::GoalChecker * /*goal_checker*/)
+  const geometry_msgs::msg::Twist & velocity,
+  nav2_core::GoalChecker * goal_checker)
 {
+  (void)velocity;
+  (void)goal_checker;
   std::lock_guard<std::mutex> param_lock(param_handler_->getMutex());
   const auto * params    = param_handler_->getParams();
   const std::string base_frame = costmap_ros_->getBaseFrameID();
@@ -267,9 +280,9 @@ ConstrainedController::computeVelocityCommands(
   // Goal-reached check against the stored odom path.
   const auto & odom_path = path_handler_->getPathInOdom();
   double dist_to_goal = std::numeric_limits<double>::infinity();
+  geometry_msgs::msg::PoseStamped robot_in_odom;
   if (!odom_path.poses.empty()) {
     const auto & last = odom_path.poses.back().pose.position;
-    geometry_msgs::msg::PoseStamped robot_in_odom;
     try {
       geometry_msgs::msg::TransformStamped tf_odom;
       tf_odom = tf_buffer_->lookupTransform(
@@ -281,6 +294,11 @@ ConstrainedController::computeVelocityCommands(
     } catch (const tf2::TransformException &) {}
   }
 
+  // Constrained-space goal check: position-only.
+  // Yaw at goal is determined by the corridor/doorway geometry, not a heading
+  // target — enforcing yaw tolerance here would stall the robot after it clears
+  // the obstacle.  The server-side goal checker must also be configured with a
+  // relaxed yaw_goal_tolerance (see constrained_goal_checker in params).
   if (dist_to_goal < params->goal_dist_tolerance) {
     if (!goal_reached_) {log_->event("goal reached"); goal_reached_ = true;}
     auto stop = zeroTwist(base_frame, stamp);
@@ -340,35 +358,59 @@ ConstrainedController::computeVelocityCommands(
   }
 
   // 5. CBF safety filter.
+  //
+  // wz safety in narrow passages:
+  // The full CBF lever arm (gx·py − gy·px)·wz is kinematically correct
+  // but causes contradictory constraints when both walls are close and wz
+  // is large — the QP becomes infeasible and outputs u*=0. The root cause
+  // is that the robot shouldn't be rotating while inside a doorway; it
+  // should align heading BEFORE entry, then translate through.
+  //
+  // Fix: when the previous tick's min_h was below a threshold (narrow
+  // passage detected), suppress wz in u_nom before passing to the CBF.
+  // The lever arm in the CBF is KEPT intact so the filter is still
+  // kinematically correct for the wz that does reach it.
+  bool wz_clamped = false;
+  auto u_cbf_in = u_nom;
+  constexpr double kNarrowHThresh = 0.15;  // metres
+  if (last_min_h_ < kNarrowHThresh) {
+    u_cbf_in.angular.z = 0.0;
+    wz_clamped = true;
+  }
+
   CbfFilterResult cbf_res;
   cbf_res.u = u_nom;  // pass-through when no ESDF data
 
   if (esdf_grid_->hasData()) {
-    cbf_res = cbf_filter_->filter(*esdf_grid_, u_nom);
+    cbf_res = cbf_filter_->filter(*esdf_grid_, u_cbf_in);
 
+    // Restore wz from u_nom — CBF only constrains translation while
+    // inside narrow passage; wz passes through unconstrained.
+    if (wz_clamped) {
+      cbf_res.u.angular.z = std::clamp(
+        u_nom.angular.z, -params->v_angular_max, params->v_angular_max);
+    }
+
+    const double u_star_norm = std::hypot(
+      cbf_res.u.linear.x, cbf_res.u.linear.y, cbf_res.u.angular.z);
+    const double u_nom_norm = std::hypot(
+      u_nom.linear.x, u_nom.linear.y, u_nom.angular.z);
+
+    bool fallback_fired = false;
     if (!cbf_res.qp.ok) {
       log_->event("QP infeasible — falling back to clamped u_nom");
+      fallback_fired = true;
+    } else if (u_star_norm < 0.05 && u_nom_norm > 0.05) {
+      log_->event("CBF near-zero output — falling back to clamped u_nom");
+      fallback_fired = true;
+    }
+    if (fallback_fired) {
       cbf_res.u.linear.x  = std::clamp(u_nom.linear.x,  -params->v_linear_max,  params->v_linear_max);
       cbf_res.u.linear.y  = std::clamp(u_nom.linear.y,  -params->v_lateral_max, params->v_lateral_max);
       cbf_res.u.angular.z = std::clamp(u_nom.angular.z, -params->v_angular_max, params->v_angular_max);
-    } else {
-      // Guard: QP is technically feasible but wz lever-arm at tight h can
-      // drive u* to near-zero even when u_nom is large. This happens when
-      // opposing wall constraints consume the entire rhs budget through
-      // the rotational lever arm. Fall back to u_nom so the robot keeps
-      // moving — it is better to move and let the CBF correct next tick
-      // than to stop entirely in a narrow passage.
-      const double u_star_norm = std::hypot(
-        cbf_res.u.linear.x, cbf_res.u.linear.y, cbf_res.u.angular.z);
-      const double u_nom_norm = std::hypot(
-        u_nom.linear.x, u_nom.linear.y, u_nom.angular.z);
-      if (u_star_norm < 0.02 && u_nom_norm > 0.05) {
-        log_->event("CBF near-zero output — falling back to clamped u_nom");
-        cbf_res.u.linear.x  = std::clamp(u_nom.linear.x,  -params->v_linear_max,  params->v_linear_max);
-        cbf_res.u.linear.y  = std::clamp(u_nom.linear.y,  -params->v_lateral_max, params->v_lateral_max);
-        cbf_res.u.angular.z = std::clamp(u_nom.angular.z, -params->v_angular_max, params->v_angular_max);
-      }
     }
+
+    last_min_h_ = cbf_res.min_h;
   }
 
   // 6. Assemble output and log.
@@ -400,6 +442,135 @@ ConstrainedController::computeVelocityCommands(
       cbf_res.solve_time_us,
       cbf_res.qp.deviation,
       cbf_res.qp.iterations);
+  }
+
+  // ---- Debug: console + RViz + rqt_plot ----
+
+  // Collect per-corner h values for markers and text.
+  std::array<double, 4> h_vals = {1.0, 1.0, 1.0, 1.0};
+  for (const auto & c : cbf_res.constraints) {
+    if (c.corner_id >= 1 && c.corner_id <= 4) {
+      h_vals[c.corner_id - 1] = std::min(h_vals[c.corner_id - 1], c.h);
+    }
+  }
+
+  // 1. Throttled one-line console summary — the fastest way to see state.
+  //    Format: [CBF] MODE | u_nom=(vx,vy,wz) u*=(vx,vy,wz) | h_min=X cst=N dev=X | dist=Xm
+  RCLCPP_INFO_THROTTLE(logger_, *clock_, 1000,
+    "[CBF t=%lu] %s | "
+    "u_nom=(%.2f,%.2f,%.2f) u*=(%.2f,%.2f,%.2f) | "
+    "h_min=%.3f cst=%zu dev=%.3f | dist=%.2fm",
+    tick,
+    wz_clamped ? "NARROW(wz=0)" : "NORMAL      ",
+    u_nom.linear.x, u_nom.linear.y, u_nom.angular.z,
+    out.twist.linear.x, out.twist.linear.y, out.twist.angular.z,
+    cbf_res.min_h,
+    cbf_res.constraints.size(),
+    cbf_res.qp.deviation,
+    dist_to_goal);
+
+  // 2. Warn immediately on abnormal conditions — always visible.
+  const double out_norm = std::hypot(
+    out.twist.linear.x, out.twist.linear.y, out.twist.angular.z);
+  const double nom_norm = std::hypot(
+    u_nom.linear.x, u_nom.linear.y, u_nom.angular.z);
+
+  if (out_norm < 0.02 && nom_norm > 0.05) {
+    RCLCPP_WARN(logger_,
+      "[CBF t=%lu] *** ZERO OUTPUT with nonzero u_nom=%.3f *** "
+      "h_min=%.3f qp_ok=%d wz_clamped=%d n_cst=%zu",
+      tick, nom_norm, cbf_res.min_h,
+      cbf_res.qp.ok ? 1 : 0,
+      wz_clamped ? 1 : 0,
+      cbf_res.constraints.size());
+  }
+
+  if (!cbf_res.qp.ok) {
+    RCLCPP_WARN(logger_,
+      "[CBF t=%lu] QP INFEASIBLE — h_min=%.3f n_cst=%zu wz_clamp=%d",
+      tick, cbf_res.min_h,
+      cbf_res.constraints.size(),
+      wz_clamped ? 1 : 0);
+  }
+
+  // 3. Body corners in RViz — sphere colour shows safety margin.
+  //    Green h>0.10m  Orange 0.02-0.10m  Red <0.02m (approaching limit)
+  //    Text label shows h in metres so you can read it in RViz.
+  if (corners_pub_ && corners_pub_->is_activated()) {
+    visualization_msgs::msg::MarkerArray ma;
+    const auto & corners = cbf_res.corners;
+    static const char * const kCornerNames[4] = {
+      "FR", "BR", "BL", "FL"};
+
+    for (int i = 0; i < 4; ++i) {
+      // Sphere
+      visualization_msgs::msg::Marker sph;
+      sph.header.frame_id = base_frame;
+      sph.header.stamp    = stamp;
+      sph.ns   = "cbf_corners";
+      sph.id   = i;
+      sph.type = visualization_msgs::msg::Marker::SPHERE;
+      sph.action = visualization_msgs::msg::Marker::ADD;
+      sph.pose.position.x = corners[i].x;
+      sph.pose.position.y = corners[i].y;
+      sph.pose.position.z = 0.05;
+      sph.pose.orientation.w = 1.0;
+      sph.scale.x = sph.scale.y = sph.scale.z = 0.10;
+      const double h = h_vals[i];
+      if (h > 0.10) {
+        sph.color.r = 0.0f; sph.color.g = 1.0f; sph.color.b = 0.0f; sph.color.a = 1.0f;
+      } else if (h > 0.02) {
+        sph.color.r = 1.0f; sph.color.g = 0.55f; sph.color.b = 0.0f; sph.color.a = 1.0f;
+      } else {
+        sph.color.r = 1.0f; sph.color.g = 0.0f; sph.color.b = 0.0f; sph.color.a = 1.0f;
+      }
+      sph.lifetime = rclcpp::Duration::from_seconds(0.3);
+      ma.markers.push_back(sph);
+
+      // Text label: "FR\nh=0.034"
+      visualization_msgs::msg::Marker txt;
+      txt.header  = sph.header;
+      txt.ns      = "cbf_corner_labels";
+      txt.id      = i;
+      txt.type    = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+      txt.action  = visualization_msgs::msg::Marker::ADD;
+      txt.pose.position.x = corners[i].x;
+      txt.pose.position.y = corners[i].y;
+      txt.pose.position.z = 0.25;
+      txt.pose.orientation.w = 1.0;
+      txt.scale.z = 0.08;
+      txt.color.r = 1.0f; txt.color.g = 1.0f; txt.color.b = 1.0f; txt.color.a = 1.0f;
+      char buf[32];
+      std::snprintf(buf, sizeof(buf), "%s\nh=%.3f", kCornerNames[i], h);
+      txt.text    = buf;
+      txt.lifetime = rclcpp::Duration::from_seconds(0.3);
+      ma.markers.push_back(txt);
+    }
+    corners_pub_->publish(ma);
+  }
+
+  // 4. Float32MultiArray for rqt_plot.
+  //    Add to rqt_plot: /constrained_controller/debug/data[0..10]
+  //    [0]=h_min  [1]=qp_dev  [2]=n_cst
+  //    [3]=vx_nom [4]=vy_nom  [5]=wz_nom
+  //    [6]=vx*    [7]=vy*     [8]=wz*
+  //    [9]=qp_infeasible(0/1) [10]=wz_clamped(0/1)
+  if (debug_pub_ && debug_pub_->is_activated()) {
+    std_msgs::msg::Float32MultiArray dbg;
+    dbg.data = {
+      static_cast<float>(cbf_res.min_h),
+      static_cast<float>(cbf_res.qp.deviation),
+      static_cast<float>(cbf_res.constraints.size()),
+      static_cast<float>(u_nom.linear.x),
+      static_cast<float>(u_nom.linear.y),
+      static_cast<float>(u_nom.angular.z),
+      static_cast<float>(out.twist.linear.x),
+      static_cast<float>(out.twist.linear.y),
+      static_cast<float>(out.twist.angular.z),
+      static_cast<float>(cbf_res.qp.ok ? 0.0f : 1.0f),
+      static_cast<float>(wz_clamped ? 1.0f : 0.0f)
+    };
+    debug_pub_->publish(dbg);
   }
 
   return out;

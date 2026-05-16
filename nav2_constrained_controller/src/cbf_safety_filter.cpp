@@ -57,13 +57,16 @@ CbfFilterResult CBFSafetyFilter::filter(
     if (h > params_->wall_consideration_range) {continue;}
 
     // Degenerate gradient (e.g. exactly on the medial axis): skip.
-    // The adjacent constraint from another corner will cover this region.
     if (std::hypot(q.gx, q.gy) < 1e-6) {continue;}
 
     // CBF condition: ∇d^T · J_i · u ≥ -γ·h
-    // J_i = [[1, 0, -py_i], [0, 1, px_i]]  (θ=0 in base_link)
-    // Rearranged to ≤-form for QP:
-    //   [-gx, -gy, gx·py - gy·px] · u  ≤  γ·h
+    // J_i = [[1, 0, -py_i], [0, 1, px_i]]  at θ=0
+    // QP ≤-form:  [-gx, -gy, gx·py - gy·px] · u  ≤  γ·h
+    //
+    // The caller suppresses wz in u_nom when inside a narrow passage so
+    // the lever arm term (gx·py − gy·px)·wz does not create contradictory
+    // constraints at tight clearances. The lever arm is kept here so the
+    // filter remains kinematically correct.
     CbfConstraint c;
     const double lever = q.gx * pc.y - q.gy * pc.x;
     c.grad      = Eigen::Vector3d(-q.gx, -q.gy, lever);

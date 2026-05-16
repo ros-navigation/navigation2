@@ -35,6 +35,8 @@ BT::NodeStatus PathManager::tick()
     if (!getInput("path_class_to_controller_map", path_class_to_controller_map_)) {
       throw BT::RuntimeError("PathManager: missing required input [path_class_to_controller_map]");
     }
+    // Optional: if not provided, goal_checker_id is left unset (server uses its default)
+    getInput("path_class_to_goal_checker_map", path_class_to_goal_checker_map_);
     auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
     bool pub_path_array{false};
     if (node->has_parameter("pub_path_array")) {
@@ -156,17 +158,32 @@ bool PathManager::loadCurrentSegment()
   setOutput("current_path", segment.path);
   setOutput("controller_id", path_class_to_controller_map_[segment.class_type]);
 
+  if (!path_class_to_goal_checker_map_.empty()) {
+    if (segment.class_type >= path_class_to_goal_checker_map_.size()) {
+      throw BT::RuntimeError(
+              "PathManager: class_type " + std::to_string(segment.class_type) +
+              " has no mapping in path_class_to_goal_checker_map (size=" +
+              std::to_string(path_class_to_goal_checker_map_.size()) + ")");
+    }
+    setOutput("goal_checker_id", path_class_to_goal_checker_map_[segment.class_type]);
+  }
+
   // local_goal = last pose of the segment's path
   if (!segment.path.poses.empty()) {
     auto local_goal = segment.path.poses.back();
     local_goal.header = segment.path.header;
     setOutput("local_goal", local_goal);
+    const std::string gc_id =
+      (!path_class_to_goal_checker_map_.empty() &&
+       segment.class_type < path_class_to_goal_checker_map_.size())
+      ? path_class_to_goal_checker_map_[segment.class_type] : "(default)";
     RCLCPP_INFO(
       rclcpp::get_logger("PathManager"),
-      "Loaded segment: class_type=%d, controller=%s, poses=%zu, "
+      "Loaded segment: class_type=%d, controller=%s, goal_checker=%s, poses=%zu, "
       "local_goal=(%.2f, %.2f), frame=%s, segments_remaining=%zu",
       segment.class_type,
       path_class_to_controller_map_[segment.class_type].c_str(),
+      gc_id.c_str(),
       segment.path.poses.size(),
       local_goal.pose.position.x, local_goal.pose.position.y,
       local_goal.header.frame_id.c_str(),

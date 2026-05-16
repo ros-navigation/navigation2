@@ -28,6 +28,8 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_constrained_controller/parameter_handler.hpp"
 #include "nav2_constrained_controller/path_handler.hpp"
@@ -114,14 +116,27 @@ protected:
     transformed_plan_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>::SharedPtr
     motion_target_pub_;
-  // ESDF grid as OccupancyGrid for RViz (base_link frame, throttled).
-  // Dark cells = near obstacles, light = free space.
+  // ESDF grid as OccupancyGrid (base_link frame, throttled at ~2Hz).
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr
     esdf_pub_;
+  // Body corners as coloured spheres: green=safe, yellow=warning, red=tight.
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    corners_pub_;
+  // Scalar debug metrics for rqt_plot:
+  //   [0]  min_h across corners
+  //   [1]  QP deviation ||u*-u_nom||
+  //   [2]  n_constraints
+  //   [3]  u_nom_vx   [4] u_nom_vy   [5] u_nom_wz
+  //   [6]  u_star_vx  [7] u_star_vy  [8] u_star_wz
+  //   [9]  fallback_fired (0/1)
+  //   [10] wz_clamped (0/1) — wz suppressed due to narrow passage
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32MultiArray>::SharedPtr
+    debug_pub_;
 
   bool goal_reached_{false};
   uint64_t cloud_log_throttle_{0};
   uint64_t esdf_pub_throttle_{0};
+  double last_min_h_{1.0};  // min_h from previous tick — used for wz clamping
 };
 
 }  // namespace nav2_constrained_controller

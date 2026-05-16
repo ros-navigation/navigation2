@@ -55,12 +55,17 @@ public:
         "replanned_path_array", "Reclassified sub-segments from a replan of the current segment"),
       BT::InputPort<std::vector<std::string>>(
         "path_class_to_controller_map", "Vector of controller IDs indexed by class_type"),
+      BT::InputPort<std::vector<std::string>>(
+        "path_class_to_goal_checker_map",
+        "Vector of goal checker IDs indexed by class_type (parallel to controller map)"),
       BT::OutputPort<nav2_msgs::msg::ClassifiedPathArray>(
         "updated_path_array", "Remaining path segments after popping completed ones"),
       BT::OutputPort<nav_msgs::msg::Path>(
         "current_path", "Path of the current segment"),
       BT::OutputPort<std::string>(
         "controller_id", "Controller ID for the current segment"),
+      BT::OutputPort<std::string>(
+        "goal_checker_id", "Goal checker ID for the current segment"),
       BT::OutputPort<geometry_msgs::msg::PoseStamped>(
         "local_goal", "Last pose of the current segment path"),
     };
@@ -78,6 +83,7 @@ private:
 
   nav2_msgs::msg::ClassifiedPathArray segments_;
   std::vector<std::string> path_class_to_controller_map_;
+  std::vector<std::string> path_class_to_goal_checker_map_;
   bool segment_loaded_;
   std_msgs::msg::Header last_replanned_header;  // to detect changes
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr path_array_pub_;
