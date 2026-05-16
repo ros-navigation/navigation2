@@ -1,0 +1,31 @@
+# Semgrep ignore patterns for navigation2
+# This file specifies paths and patterns to exclude from semgrep scanning
+
+# Exclude all test directories
+**/test/
+**/tests/
+
+# Exclude build and install directories
+**/build/
+**/install/
+**/devel/
+
+# Exclude git and CI/CD configuration directories
+.git/
+.github/
+.circleci/
+.devcontainer/
+
+# Exclude documentation directories
+**/doc/
+**/docs/
+
+# Exclude third-party and external code
+**/third_party/
+**/external/
+
+# Exclude generated files and build artifacts
+**/*.o
+**/*.so
+**/*.a
+**/CMakeFiles/
