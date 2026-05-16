@@ -354,7 +354,7 @@ def extract_cpp_classes_and_ids(cpp_files: list[Path]) -> dict[str, str]:
         r'register(?:NodeType|Builder)<[^>]+>\s*\(\s*"([^"]+)"'
     )
     cpp_class_pattern = re.compile(
-        r'register(?:NodeType|Builder)<[^>]*::([A-Za-z_][A-Za-z0-9_]*)>'
+        r'register(?:NodeType|Builder)<(?:[^>]*::)?([A-Za-z_][A-Za-z0-9_]*)>'
     )
 
     node_cpp_data: dict[str, str] = {}
