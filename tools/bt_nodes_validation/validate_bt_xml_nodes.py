@@ -106,7 +106,6 @@ def clone_sparse_github_data(
         raise FileNotFoundError(
             f'Following paths do not exist in {github_url} (branch: {branch}): '
             f'{", ".join(missing_paths)}.\n'
-            'Review provided paths in tools/bt_nodes_validation/config.yml.'
         )
 
     print(f'Cloned following data from {github_url} (branch: {branch}) to {repo_workdir}:')
@@ -615,7 +614,13 @@ def main():
         print('Cloning external repositories...')
         try:
             fetch_external_repos(github_repos_config, clone_dir)
-        except (subprocess.CalledProcessError, FileNotFoundError, OSError) as exc:
+        except FileNotFoundError as exc:
+            print(
+                f'Failed to fetch external repositories: {exc}'
+                f'Review specified paths in {args_config}.'
+            )
+            sys.exit(1)
+        except (subprocess.CalledProcessError, OSError) as exc:
             stderr = getattr(exc, 'stderr', None)
             print(f'Failed to fetch external repositories: {stderr or exc}')
             sys.exit(1)
