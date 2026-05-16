@@ -423,8 +423,6 @@ def extract_hpp_classes_and_ports_data(
     """
     node_hpp_data: BTNodes = {}
     for hpp_file in hpp_files:
-        if not hpp_file.exists() or not hpp_file.is_file():
-            continue
         content = hpp_file.read_text()
         class_definitions = extract_class_definitions(content)
         if not class_definitions:
