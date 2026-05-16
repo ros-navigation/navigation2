@@ -202,6 +202,24 @@ def has_leading_comments(content: str, pos: int, comment_symbol: str) -> bool:
     return leading_content.startswith(comment_symbol)
 
 
+def extract_template_type(content: str, template_start_pos: int) -> str:
+    """Extract the closing position of a C++ template parameter."""
+    angle_bracket_count = 1
+    pos = template_start_pos
+    while pos < len(content):
+        char = content[pos]
+        if char == '<':
+            angle_bracket_count += 1
+        if char == '>':
+            angle_bracket_count -= 1
+            if angle_bracket_count == 0:
+                break
+        pos += 1
+    else:
+        raise ValueError('Failed to extract template type: unmatched angle brackets.')
+    return content[template_start_pos:pos].strip()
+
+
 def extract_quoted_string(content: str, start_pos: int) -> str:
     """Extract the first quoted string starting from start_pos."""
     quote_start = content.find('"', start_pos)
@@ -230,12 +248,12 @@ def extract_code_port_data(content: str) -> NodePorts:
             continue
 
         port_type_start = content.find('<', start_pos) + 1
-        args_start = content.find('(', start_pos)
-
-        port_type = content[port_type_start:args_start-1].strip()
+        port_type = extract_template_type(content, port_type_start)
         port_type = TYPE_DIRECT_MAPPINGS.get(port_type, port_type)
         port_type = convert_with_regex(port_type, TYPE_REGEX_TRANSFORMS)
 
+        port_type_end = port_type_start + len(port_type)
+        args_start = content.find('(', port_type_end)
         quote_start = content.find('"', args_start + 1)
         port_name = extract_quoted_string(content, quote_start)
         if not port_name:
@@ -428,10 +446,22 @@ def extract_hpp_classes_and_ports_data(
             raise ValueError(
                 f'No class definitions found in {hpp_file}.')
         for class_name, base_class_name, class_section in class_definitions:
-            ports = extract_code_port_data(class_section)
+            try:
+                ports = extract_code_port_data(class_section)
+            except ValueError as exc:
+                raise ValueError(
+                    f'Failed to extract port data for {class_name} class in {hpp_file}: {exc}'
+                )
             if base_class_name in hpp_base_classes:
-                base_class_content = Path(hpp_base_classes[base_class_name]).read_text()
-                base_ports = extract_code_port_data(base_class_content)
+                base_class_path = hpp_base_classes[base_class_name]
+                base_class_content = Path(base_class_path).read_text()
+                try:
+                    base_ports = extract_code_port_data(base_class_content)
+                except ValueError as exc:
+                    raise ValueError(
+                        f'Failed to extract port data for {class_name} class '
+                        f'in {base_class_path}: {exc}'
+                    )
                 ports.update(base_ports)
             node_hpp_data[class_name] = ports
     return node_hpp_data
