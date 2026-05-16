@@ -1054,6 +1054,104 @@ TEST(OptimizerTests, InterIterationConstraintsTests)
   EXPECT_NEAR(seq.vx(0), 0.55f, 1e-6);
 }
 
+TEST(OptimizerTests, SamplingStdReductionFactorParamLoading)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("sampling_std_reduction_node");
+  OptimizerTester optimizer_tester;
+
+  node->declare_parameter(
+    "mppic.sampling_std.reduction_factor",
+    rclcpp::ParameterValue(0.7f));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(20));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin",
+    rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  EXPECT_FLOAT_EQ(optimizer_tester.getSettings().sampling_std_reduction_factor, 0.7f);
+}
+
+TEST(OptimizerTests, InvalidSamplingStdReductionFactorDefaultsToOne)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("invalid_sampling_std_reduction_node");
+  OptimizerTester optimizer_tester;
+
+  node->declare_parameter(
+    "mppic.sampling_std.reduction_factor",
+    rclcpp::ParameterValue(1.5f));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(20));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin",
+    rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap_invalid", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  EXPECT_FLOAT_EQ(optimizer_tester.getSettings().sampling_std_reduction_factor, 1.0f);
+}
+
+TEST(OptimizerTests, MultiIterationStdReductionRestoresOriginalSamplingStd)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("multi_iteration_std_reduction_node");
+  OptimizerTester optimizer_tester;
+
+  node->declare_parameter("mppic.iteration_count", rclcpp::ParameterValue(3));
+  node->declare_parameter(
+    "mppic.sampling_std.reduction_factor",
+    rclcpp::ParameterValue(0.5f));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(50));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(20));
+  node->declare_parameter("mppic.model_dt", rclcpp::ParameterValue(0.05));
+  node->declare_parameter("mppic.vx_std", rclcpp::ParameterValue(0.25));
+  node->declare_parameter("mppic.vy_std", rclcpp::ParameterValue(0.15));
+  node->declare_parameter("mppic.wz_std", rclcpp::ParameterValue(0.35));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin",
+    rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap_multi_iteration", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  geometry_msgs::msg::PoseStamped pose;
+  geometry_msgs::msg::Twist robot_speed;
+  nav_msgs::msg::Path path;
+  path.poses.resize(17);
+  geometry_msgs::msg::Pose goal;
+
+  EXPECT_NO_THROW(optimizer_tester.evalControl(pose, robot_speed, path, goal, nullptr));
+  EXPECT_FLOAT_EQ(optimizer_tester.getSettings().sampling_std.vx, 0.25f);
+  EXPECT_FLOAT_EQ(optimizer_tester.getSettings().sampling_std.vy, 0.15f);
+  EXPECT_FLOAT_EQ(optimizer_tester.getSettings().sampling_std.wz, 0.35f);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
