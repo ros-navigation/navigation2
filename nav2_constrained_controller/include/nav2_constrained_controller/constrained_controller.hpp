@@ -1,23 +1,17 @@
 // Copyright (c) 2026 Origin Autonomy
 // Licensed under the Apache License, Version 2.0
 //
-// ConstrainedController — Nav2 controller plugin for narrow-alley /
-// door-to-door navigation on a holonomic AMR.
+// ConstrainedController — Nav2 controller plugin for constrained-space
+// navigation (corridors, alleys, doorways) on a holonomic AMR.
 //
-// Architecture (see ~/nav2_ws/AMR_CBF_Navigation_Design.pdf):
-//
-//   setPlan(path_in_map)
-//     -> PathHandler::setPlan: one-shot AMCL touch, reproject into
-//        odom, retangent constant-yaw lattice poses.
-//
-//   computeVelocityCommands(robot_pose):
-//     1. PathHandler::getLocalPlan -> base_link slice (no AMCL).
-//     2. getMotionTarget          -> lookahead pose (base_link).
-//     3. NominalController::compute -> u_nom (sign-symmetric P).
-//     4. SceneParser::parse        -> walls, corners, passage.
-//     5. CBFSafetyFilter::filter   -> u* = QP(u_nom, walls, corners).
-//     6. Logger::* per-tick rows.
-//     7. Return TwistStamped(u*).
+// computeVelocityCommands() each tick:
+//   1. PathHandler::getLocalPlan  -> base_link slice (AMCL-free).
+//   2. getMotionTarget            -> lookahead pose (base_link).
+//   3. NominalController::compute -> u_nom (sign-symmetric P).
+//   4. ESDF update from latest PointCloud2 (local, base_link frame).
+//   5. CBFSafetyFilter::filter    -> u* = QP(u_nom, ESDF gradients).
+//   6. Logger per-tick rows.
+//   7. Return TwistStamped(u*).
 
 #ifndef NAV2_CONSTRAINED_CONTROLLER__CONSTRAINED_CONTROLLER_HPP_
 #define NAV2_CONSTRAINED_CONTROLLER__CONSTRAINED_CONTROLLER_HPP_
@@ -30,15 +24,15 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "sensor_msgs/msg/laser_scan.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 
 #include "nav2_constrained_controller/parameter_handler.hpp"
 #include "nav2_constrained_controller/path_handler.hpp"
 #include "nav2_constrained_controller/nominal_controller.hpp"
-#include "nav2_constrained_controller/scene_parser.hpp"
-#include "nav2_constrained_controller/lateral_centering.hpp"
+#include "nav2_constrained_controller/esdf_grid.hpp"
 #include "nav2_constrained_controller/cbf_safety_filter.hpp"
 #include "nav2_constrained_controller/logger.hpp"
 
@@ -70,26 +64,19 @@ public:
   void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
 protected:
-  // Lookahead picker — pure-pursuit by L2 distance, identical to
-  // graceful's getMotionTarget, operating on the base_link slice
-  // returned by PathHandler::getLocalPlan.
+  // Lookahead picker — pure-pursuit by L2 distance in base_link.
   geometry_msgs::msg::PoseStamped getMotionTarget(
     double motion_target_dist,
     const nav_msgs::msg::Path & local_plan,
     int * sel_idx_out) const;
 
-  // LiDAR callback. Stores the most recent scan; the control tick
-  // pulls from it.
-  void lidarCallback(sensor_msgs::msg::LaserScan::SharedPtr msg);
+  // PointCloud2 callback. Stores latest cloud for the control tick.
+  void pointcloudCallback(sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
-  // Convert a stored LaserScan into points in base_link, applying
-  // range filtering and the sensor->base_link TF.
-  bool scanToBaseLink(
-    const sensor_msgs::msg::LaserScan & scan,
-    std::vector<Point2D> & out_points,
-    const rclcpp::Time & stamp) const;
+  // Transform cloud to base_link, apply z filter (horizontal beams only),
+  // project to 2D and rebuild ESDF. Returns false if TF lookup failed.
+  bool updateEsdf(const sensor_msgs::msg::PointCloud2 & cloud);
 
-  // Reset to safe-zero command — used for goal-reached / fault paths.
   static geometry_msgs::msg::TwistStamped zeroTwist(
     const std::string & frame, const rclcpp::Time & stamp);
 
@@ -101,29 +88,40 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 
-  // Components (own all of them; constructed in configure()).
+  // Components.
   std::unique_ptr<ParameterHandler> param_handler_;
   std::unique_ptr<PathHandler> path_handler_;
   std::unique_ptr<NominalController> nominal_;
-  std::unique_ptr<SceneParser> scene_parser_;
-  std::unique_ptr<LateralCentering> lateral_centering_;
+  std::unique_ptr<EsdfGrid> esdf_grid_;
   std::unique_ptr<CBFSafetyFilter> cbf_filter_;
   std::unique_ptr<Logger> log_;
 
-  // LiDAR.
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr lidar_sub_;
-  std::mutex scan_mutex_;
-  sensor_msgs::msg::LaserScan::SharedPtr last_scan_;
+  // PointCloud2 subscription and latest cloud (protected by cloud_mutex_).
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_sub_;
+  std::mutex cloud_mutex_;
+  sensor_msgs::msg::PointCloud2::SharedPtr last_cloud_;
 
-  // Visualisation publishers (best-effort; failures are non-fatal).
+  // Cached static TF: base_link ← lidar frame.
+  bool has_lidar_tf_{false};
+  // Transform components cached for fast per-point application.
+  double tf_tx_{0.0}, tf_ty_{0.0}, tf_tz_{0.0};
+  double tf_R00_{1.0}, tf_R01_{0.0}, tf_R02_{0.0};
+  double tf_R10_{0.0}, tf_R11_{1.0}, tf_R12_{0.0};
+  double tf_R20_{0.0}, tf_R21_{0.0}, tf_R22_{1.0};
+
+  // Visualisation publishers.
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr
     transformed_plan_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>::
-    SharedPtr motion_target_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>::SharedPtr
+    motion_target_pub_;
+  // ESDF grid as OccupancyGrid for RViz (base_link frame, throttled).
+  // Dark cells = near obstacles, light = free space.
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr
+    esdf_pub_;
 
-  // State.
   bool goal_reached_{false};
-  uint64_t lidar_log_throttle_{0};
+  uint64_t cloud_log_throttle_{0};
+  uint64_t esdf_pub_throttle_{0};
 };
 
 }  // namespace nav2_constrained_controller

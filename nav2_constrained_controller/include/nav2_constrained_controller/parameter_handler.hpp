@@ -49,70 +49,27 @@ struct Parameters
 
   // ---------- CBF / QP ----------
   double cbf_gamma{2.0};
-  // Width band for passage classifier (metres).
-  double alley_width_min{0.95};
-  double alley_width_max{1.10};
-  double alley_width_tol{0.10};
-  // Cutoff at which we consider a wall too far to bother emitting a CBF
-  // for it. Guards against producing useless inactive constraints.
+  // Minimum safe distance (metres) subtracted from ESDF distance to form h.
+  // h = d_esdf - d_safe. When h < 0 the robot has violated the safe margin.
+  double esdf_d_safe{0.03};
+  // CBF constraints with h > this value are skipped (robot far from obstacles,
+  // constraint would be fully slack anyway).
   double wall_consideration_range{2.5};
-  // Inner-corner CBFs (Saradagi h5/h6) are gated off in the current
-  // scope (straight alleys + door entry/exit only). The previous
-  // implementation built a virtual wall along the passage line A–B,
-  // which is wrong for an opening the robot must cross. Re-enable
-  // only when L-bend support returns AND the emission rule is
-  // rewritten to gate on real intersection corners, not passages.
-  bool enable_inner_corner_cbf{false};
 
-  // ---------- LiDAR scene parser ----------
-  std::string lidar_topic{"/scan"};
-  // Crop returns to this max range before fitting (metres). Returns
-  // farther than this are treated as "open space" (no wall).
-  double lidar_max_range{8.0};
-  double lidar_min_range{0.05};
-  // Split-and-merge thresholds.
-  double line_split_threshold{0.04};   // metres, perpendicular distance
-  int    line_min_points{8};
-  // Two segments are "connected" iff their nearest endpoints are within
-  // this distance. Otherwise they are disconnected (gap → CP rule).
-  double segment_connect_dist{0.12};
-  // Type-I parallelism tolerance (cosine of angle between normals).
-  double parallel_cos_tol{0.95};
-  // Type-II perpendicularity tolerance.
-  double perp_cos_tol{0.20};
-
-  // ---------- D_L/D_R LiDAR-based lateral centering ----------
-  // Master switch. When true, vy_nom is overridden by the centering
-  // law whenever at least one flanking wall is detected. Path-derived
-  // vy is used as fallback (no flanking walls visible).
-  bool   enable_lateral_centering{true};
-  // Proportional gain on lateral error. vy = k_lat * (D_L - D_R).
-  double k_lat{1.0};
-  // A wall is "flanking" iff |t.x| >= flanking_cos_tol (its tangent is
-  // roughly parallel to the robot's forward axis) AND its segment
-  // x-range overlaps the robot body. cos(20°) = 0.94.
-  double flanking_cos_tol{0.94};
-  // Target half-width used by the single-wall (door-zone) regime.
-  // vy = k_lat * (D_visible - target_half_width) when only one side
-  // is observable. Defaults to mid of the alley_width band / 2.
-  double target_half_width{0.5125};
-  // Hard distance gate. A flanking wall farther than this (perpendicular
-  // distance from robot origin to the wall LINE) is ignored — it cannot
-  // be an alley wall. Without this, a stray distant wall in free space
-  // can hijack the centering law and saturate vy. Default = 1.1 m
-  // (wider than the worst-case 1.10 m alley).
-  double max_centering_range{1.1};
-  // If true, centering only fires when BOTH flanking walls are visible
-  // and within max_centering_range. Single-side regimes are disabled.
-  // Recommended: keep true. Single-side mode is dangerous in free
-  // space where only one stray wall is visible.
-  bool   require_both_walls{true};
-  // Hysteresis: require this many consecutive ticks in the new regime
-  // before switching from the previous one. Kills jitter at handoff.
-  int    regime_switch_hyst_ticks{3};
-  // Exponential low-pass on the centering vy command across ticks.
-  // alpha = weight on the new sample (in [0,1]). 1 = no smoothing.
-  double vy_centering_lpf_alpha{0.4};
+  // ---------- PointCloud2 / ESDF ----------
+  // Use horizontal beams from the raw 3D LiDAR.
+  // z filter in base_link must be centred on the lidar mounting height
+  // (1.347m) so only near-horizontal beams are used. These can see walls
+  // at any lateral distance including 75mm door clearance (0° elevation).
+  // The /scan approach uses lz=[0.162,0.312] which requires 65° elevation
+  // for 75mm walls — beyond the Livox 52° max.
+  std::string pointcloud_topic{"/livox/amr/lidar"};
+  double esdf_z_min{1.247};   // lidar_height(1.347) - 0.1m
+  double esdf_z_max{1.447};   // lidar_height(1.347) + 0.1m
+  // ESDF grid parameters. Grid is square, centred on base_link origin.
+  // Total grid extent = 2 * esdf_grid_size_m in each axis.
+  double esdf_grid_resolution{0.04};  // metres per cell
+  double esdf_grid_size_m{5.0};       // half-size (so 10m x 10m total)
 
   // ---------- logging ----------
   std::string log_dir{"/root/navigation_log"};

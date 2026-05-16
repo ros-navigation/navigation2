@@ -6,8 +6,8 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
-#include <utility>
 
+#include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 #include "pluginlib/class_list_macros.hpp"
@@ -25,44 +25,37 @@ void ConstrainedController::configure(
 {
   parent_ = parent;
   auto node = parent.lock();
-  if (!node) {
-    throw std::runtime_error("ConstrainedController: invalid parent node");
-  }
+  if (!node) {throw std::runtime_error("ConstrainedController: invalid parent node");}
 
-  plugin_name_ = name;
-  tf_buffer_ = tf;
-  costmap_ros_ = costmap_ros;
-  logger_ = node->get_logger();
-  clock_ = node->get_clock();
+  plugin_name_  = name;
+  tf_buffer_    = tf;
+  costmap_ros_  = costmap_ros;
+  logger_       = node->get_logger();
+  clock_        = node->get_clock();
 
-  param_handler_ = std::make_unique<ParameterHandler>(
-    parent, plugin_name_, logger_);
-  auto * params = param_handler_->getParams();
+  param_handler_ = std::make_unique<ParameterHandler>(parent, plugin_name_, logger_);
+  auto * params  = param_handler_->getParams();
 
-  // Use the costmap's transform tolerance default (matches what other
-  // Nav2 controllers do). 0.1s is a safe baseline.
   const tf2::Duration transform_tol = tf2::durationFromSec(0.1);
-
-  path_handler_ = std::make_unique<PathHandler>(
-    transform_tol, tf_buffer_, costmap_ros_);
-  nominal_ = std::make_unique<NominalController>(params);
-  scene_parser_ = std::make_unique<SceneParser>(params);
-  lateral_centering_ = std::make_unique<LateralCentering>(params);
-  cbf_filter_ = std::make_unique<CBFSafetyFilter>(params);
-  log_ = std::make_unique<Logger>();
+  path_handler_ = std::make_unique<PathHandler>(transform_tol, tf_buffer_, costmap_ros_);
+  nominal_      = std::make_unique<NominalController>(params);
+  esdf_grid_    = std::make_unique<EsdfGrid>(params);
+  cbf_filter_   = std::make_unique<CBFSafetyFilter>(params);
+  log_          = std::make_unique<Logger>();
 
   transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>(
     "constrained_controller/transformed_local_plan", 1);
-  motion_target_pub_ =
-    node->create_publisher<geometry_msgs::msg::PointStamped>(
+  motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
     "constrained_controller/motion_target", 1);
+  esdf_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    "constrained_controller/esdf_grid", rclcpp::SystemDefaultsQoS());
 
   RCLCPP_INFO(
     logger_,
-    "ConstrainedController '%s' configured. log_dir=%s, lidar=%s",
+    "ConstrainedController '%s' configured. log_dir=%s, cloud_topic=%s",
     plugin_name_.c_str(),
     params->log_dir.c_str(),
-    params->lidar_topic.c_str());
+    params->pointcloud_topic.c_str());
 }
 
 void ConstrainedController::activate()
@@ -74,29 +67,31 @@ void ConstrainedController::activate()
   log_->open(params->log_dir, params->log_enabled);
   log_->event("activate");
 
-  // Subscribe to LiDAR. Best-effort QoS to match typical sensor pubs.
-  rclcpp::QoS qos = rclcpp::SensorDataQoS();
-  lidar_sub_ = node->create_subscription<sensor_msgs::msg::LaserScan>(
-    params->lidar_topic, qos,
-    std::bind(
-      &ConstrainedController::lidarCallback, this,
-      std::placeholders::_1));
+  cloud_sub_ = node->create_subscription<sensor_msgs::msg::PointCloud2>(
+    params->pointcloud_topic,
+    rclcpp::SensorDataQoS(),
+    std::bind(&ConstrainedController::pointcloudCallback, this, std::placeholders::_1));
 
   transformed_plan_pub_->on_activate();
   motion_target_pub_->on_activate();
+  esdf_pub_->on_activate();
 
-  goal_reached_ = false;
-  lidar_log_throttle_ = 0;
+  goal_reached_       = false;
+  cloud_log_throttle_ = 0;
+  esdf_pub_throttle_  = 0;
+  has_lidar_tf_       = false;
 
-  RCLCPP_INFO(logger_, "ConstrainedController activated.");
+  RCLCPP_INFO(logger_, "ConstrainedController activated, subscribing to %s",
+    params->pointcloud_topic.c_str());
 }
 
 void ConstrainedController::deactivate()
 {
   if (log_) {log_->event("deactivate"); log_->close();}
-  lidar_sub_.reset();
+  cloud_sub_.reset();
   if (transformed_plan_pub_) {transformed_plan_pub_->on_deactivate();}
-  if (motion_target_pub_) {motion_target_pub_->on_deactivate();}
+  if (motion_target_pub_)    {motion_target_pub_->on_deactivate();}
+  if (esdf_pub_)             {esdf_pub_->on_deactivate();}
 }
 
 void ConstrainedController::cleanup()
@@ -104,8 +99,7 @@ void ConstrainedController::cleanup()
   param_handler_.reset();
   path_handler_.reset();
   nominal_.reset();
-  scene_parser_.reset();
-  lateral_centering_.reset();
+  esdf_grid_.reset();
   cbf_filter_.reset();
   log_.reset();
   transformed_plan_pub_.reset();
@@ -114,12 +108,9 @@ void ConstrainedController::cleanup()
 
 void ConstrainedController::setPlan(const nav_msgs::msg::Path & path)
 {
-  // Fix 1 lives entirely inside path_handler_->setPlan: single AMCL
-  // touch, reproject, retangent. Errors are logged but do not throw —
-  // Nav2 will detect missing plan via getLocalPlan exceptions later.
   const bool ok = path_handler_->setPlan(path);
   goal_reached_ = false;
-  if (lateral_centering_) {lateral_centering_->reset();}
+  esdf_grid_->reset();
   if (log_) {
     log_->event(
       std::string("setPlan ") + (ok ? "ok" : "FAILED") +
@@ -139,65 +130,71 @@ void ConstrainedController::setSpeedLimit(
     return;
   }
   if (percentage) {
-    p->v_linear_max = std::max(
-      p->v_linear_max_initial * speed_limit / 100.0,
-      p->v_linear_min);
+    p->v_linear_max  = std::max(p->v_linear_max_initial * speed_limit / 100.0, p->v_linear_min);
     p->v_angular_max = p->v_angular_max_initial * speed_limit / 100.0;
   } else {
-    p->v_linear_max = std::max(speed_limit, p->v_linear_min);
+    p->v_linear_max  = std::max(speed_limit, p->v_linear_min);
     p->v_angular_max = p->v_angular_max_initial *
       speed_limit / std::max(1e-6, p->v_linear_max_initial);
   }
 }
 
-void ConstrainedController::lidarCallback(
-  sensor_msgs::msg::LaserScan::SharedPtr msg)
+void ConstrainedController::pointcloudCallback(
+  sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
-  std::lock_guard<std::mutex> lock(scan_mutex_);
-  last_scan_ = msg;
+  std::lock_guard<std::mutex> lock(cloud_mutex_);
+  last_cloud_ = msg;
 }
 
-bool ConstrainedController::scanToBaseLink(
-  const sensor_msgs::msg::LaserScan & scan,
-  std::vector<Point2D> & out_points,
-  const rclcpp::Time & stamp) const
+bool ConstrainedController::updateEsdf(const sensor_msgs::msg::PointCloud2 & cloud)
 {
-  out_points.clear();
-  out_points.reserve(scan.ranges.size());
-
   const std::string base_frame = costmap_ros_->getBaseFrameID();
-  geometry_msgs::msg::TransformStamped tf_base_from_sensor;
-  try {
-    tf_base_from_sensor = tf_buffer_->lookupTransform(
-      base_frame, scan.header.frame_id, tf2::TimePointZero);
-  } catch (const tf2::TransformException & e) {
-    RCLCPP_WARN_THROTTLE(
-      logger_, *clock_, 1000,
-      "scanToBaseLink: TF %s<-%s failed: %s",
-      base_frame.c_str(), scan.header.frame_id.c_str(), e.what());
-    (void)stamp;
-    return false;
+
+  // Cache the static lidar→base_link transform after first lookup.
+  if (!has_lidar_tf_) {
+    geometry_msgs::msg::TransformStamped tf_stamped;
+    try {
+      tf_stamped = tf_buffer_->lookupTransform(
+        base_frame, cloud.header.frame_id, tf2::TimePointZero);
+    } catch (const tf2::TransformException & e) {
+      RCLCPP_WARN_THROTTLE(
+        logger_, *clock_, 2000,
+        "updateEsdf: TF %s<-%s failed: %s",
+        base_frame.c_str(), cloud.header.frame_id.c_str(), e.what());
+      return false;
+    }
+    const auto & t = tf_stamped.transform.translation;
+    const auto & r = tf_stamped.transform.rotation;
+    tf_tx_ = t.x; tf_ty_ = t.y; tf_tz_ = t.z;
+    const double qx=r.x, qy=r.y, qz=r.z, qw=r.w;
+    tf_R00_ = 1-2*(qy*qy+qz*qz); tf_R01_ = 2*(qx*qy-qw*qz); tf_R02_ = 2*(qx*qz+qw*qy);
+    tf_R10_ = 2*(qx*qy+qw*qz);   tf_R11_ = 1-2*(qx*qx+qz*qz); tf_R12_ = 2*(qy*qz-qw*qx);
+    tf_R20_ = 2*(qx*qz-qw*qy);   tf_R21_ = 2*(qy*qz+qw*qx);   tf_R22_ = 1-2*(qx*qx+qy*qy);
+    has_lidar_tf_ = true;
   }
 
   const auto * params = param_handler_->getParams();
-  const double r_min = std::max(
-    static_cast<double>(scan.range_min), params->lidar_min_range);
-  const double r_max = std::min(
-    static_cast<double>(scan.range_max), params->lidar_max_range);
+  const double z_min = params->esdf_z_min;
+  const double z_max = params->esdf_z_max;
 
-  for (size_t i = 0; i < scan.ranges.size(); ++i) {
-    const double r = scan.ranges[i];
-    if (!std::isfinite(r) || r < r_min || r > r_max) {continue;}
-    const double angle = scan.angle_min + i * scan.angle_increment;
-    geometry_msgs::msg::PointStamped p_in;
-    p_in.header = scan.header;
-    p_in.point.x = r * std::cos(angle);
-    p_in.point.y = r * std::sin(angle);
-    p_in.point.z = 0.0;
-    geometry_msgs::msg::PointStamped p_out;
-    tf2::doTransform(p_in, p_out, tf_base_from_sensor);
-    out_points.push_back({p_out.point.x, p_out.point.y});
+  std::vector<Point2D> pts;
+  pts.reserve(cloud.width * cloud.height);
+
+  sensor_msgs::PointCloud2ConstIterator<float> ix(cloud, "x");
+  sensor_msgs::PointCloud2ConstIterator<float> iy(cloud, "y");
+  sensor_msgs::PointCloud2ConstIterator<float> iz(cloud, "z");
+
+  for (; ix != ix.end(); ++ix, ++iy, ++iz) {
+    const float px = *ix, py = *iy, pz = *iz;
+    if (!std::isfinite(px) || !std::isfinite(py) || !std::isfinite(pz)) {continue;}
+    const double bx = tf_R00_*px + tf_R01_*py + tf_R02_*pz + tf_tx_;
+    const double by = tf_R10_*px + tf_R11_*py + tf_R12_*pz + tf_ty_;
+    const double bz = tf_R20_*px + tf_R21_*py + tf_R22_*pz + tf_tz_;
+    if (bz < z_min || bz > z_max) {continue;}
+    pts.push_back({bx, by});
   }
+
+  esdf_grid_->update(pts);
   return true;
 }
 
@@ -206,8 +203,6 @@ geometry_msgs::msg::PoseStamped ConstrainedController::getMotionTarget(
   const nav_msgs::msg::Path & local_plan,
   int * sel_idx_out) const
 {
-  // Pure-pursuit by L2 distance from base_link origin. Identical to
-  // graceful's getMotionTarget, lifted with one extra side output.
   int idx = 0;
   for (size_t i = 0; i < local_plan.poses.size(); ++i) {
     const auto & p = local_plan.poses[i].pose.position;
@@ -227,7 +222,7 @@ geometry_msgs::msg::TwistStamped ConstrainedController::zeroTwist(
 {
   geometry_msgs::msg::TwistStamped t;
   t.header.frame_id = frame;
-  t.header.stamp = stamp;
+  t.header.stamp    = stamp;
   return t;
 }
 
@@ -238,21 +233,18 @@ ConstrainedController::computeVelocityCommands(
   nav2_core::GoalChecker * /*goal_checker*/)
 {
   std::lock_guard<std::mutex> param_lock(param_handler_->getMutex());
-  const auto * params = param_handler_->getParams();
+  const auto * params    = param_handler_->getParams();
   const std::string base_frame = costmap_ros_->getBaseFrameID();
-  const rclcpp::Time stamp = pose.header.stamp;
+  const rclcpp::Time stamp     = pose.header.stamp;
+  const uint64_t tick          = log_->newTick(stamp.seconds());
 
-  const uint64_t tick = log_->newTick(stamp.seconds());
-
-  // 1. Slice the stored odom-frame plan into base_link.
+  // 1. Local plan slice in base_link (AMCL-free).
   nav_msgs::msg::Path local_plan;
   try {
-    local_plan = path_handler_->getLocalPlan(
-      pose, params->max_robot_pose_search_dist);
+    local_plan = path_handler_->getLocalPlan(pose, params->max_robot_pose_search_dist);
   } catch (const std::exception & e) {
     log_->event(std::string("getLocalPlan failed: ") + e.what());
-    RCLCPP_WARN_THROTTLE(
-      logger_, *clock_, 1000,
+    RCLCPP_WARN_THROTTLE(logger_, *clock_, 1000,
       "computeVelocityCommands: %s", e.what());
     return zeroTwist(base_frame, stamp);
   }
@@ -261,163 +253,145 @@ ConstrainedController::computeVelocityCommands(
     transformed_plan_pub_->publish(local_plan);
   }
 
-  // 2. Lookahead.
+  // 2. Lookahead point.
   int sel_idx = 0;
-  const auto target_ps = getMotionTarget(
-    params->motion_target_dist, local_plan, &sel_idx);
+  const auto target_ps = getMotionTarget(params->motion_target_dist, local_plan, &sel_idx);
 
   if (motion_target_pub_ && motion_target_pub_->is_activated()) {
     geometry_msgs::msg::PointStamped pt;
     pt.header = target_ps.header;
-    pt.point = target_ps.pose.position;
+    pt.point  = target_ps.pose.position;
     motion_target_pub_->publish(pt);
   }
 
-  // Goal-reached check: distance to last pose of the stored odom path
-  // (after pruning the local slice already advanced it).
+  // Goal-reached check against the stored odom path.
   const auto & odom_path = path_handler_->getPathInOdom();
   double dist_to_goal = std::numeric_limits<double>::infinity();
   if (!odom_path.poses.empty()) {
     const auto & last = odom_path.poses.back().pose.position;
     geometry_msgs::msg::PoseStamped robot_in_odom;
-    geometry_msgs::msg::TransformStamped tf_odom_from_pose;
     try {
-      tf_odom_from_pose = tf_buffer_->lookupTransform(
-        path_handler_->getOdomFrame(), pose.header.frame_id,
-        tf2::TimePointZero);
-      tf2::doTransform(pose, robot_in_odom, tf_odom_from_pose);
+      geometry_msgs::msg::TransformStamped tf_odom;
+      tf_odom = tf_buffer_->lookupTransform(
+        path_handler_->getOdomFrame(), pose.header.frame_id, tf2::TimePointZero);
+      tf2::doTransform(pose, robot_in_odom, tf_odom);
       dist_to_goal = std::hypot(
         robot_in_odom.pose.position.x - last.x,
         robot_in_odom.pose.position.y - last.y);
-    } catch (const tf2::TransformException &) {
-      // Non-fatal — leave dist_to_goal at infinity.
-    }
+    } catch (const tf2::TransformException &) {}
   }
+
   if (dist_to_goal < params->goal_dist_tolerance) {
-    if (!goal_reached_) {
-      log_->event("goal reached");
-      goal_reached_ = true;
-    }
+    if (!goal_reached_) {log_->event("goal reached"); goal_reached_ = true;}
     auto stop = zeroTwist(base_frame, stamp);
-    log_->logState(
-      tick, stamp.seconds(),
-      0.0, 0.0, 0.0,
-      stop.twist, stop.twist, false, dist_to_goal);
+    log_->logState(tick, stamp.seconds(), 0, 0, 0, stop.twist, stop.twist, false, dist_to_goal);
     return stop;
   }
 
-  // 3. LiDAR scene parse (must precede nominal so we can override vy
-  //    from the centering law before the CBF sees u_nom).
-  sensor_msgs::msg::LaserScan::SharedPtr scan;
-  {
-    std::lock_guard<std::mutex> lock(scan_mutex_);
-    scan = last_scan_;
-  }
-
-  std::vector<Point2D> points_base;
-  SceneSnapshot snap;
-  snap.stamp_sec = stamp.seconds();
-  if (scan) {
-    if (scanToBaseLink(*scan, points_base, stamp)) {
-      snap = scene_parser_->parse(points_base, stamp.seconds());
-    } else {
-      log_->event("scanToBaseLink failed (TF lookup)");
-    }
-  } else {
-    log_->event("no LiDAR scan available yet — skipping CBF this tick");
-  }
-
-  // 4. Nominal P controller (path-derived vx, vy, wz).
+  // 3. Nominal P controller.
   NominalDebug nom_dbg;
   auto u_nom = nominal_->compute(target_ps.pose, &nom_dbg);
-  const double vy_path = u_nom.linear.y;
 
-  // 4b. D_L/D_R lateral centering: override vy_nom when flanking walls
-  //     are visible. Path-derived vy is retained as fallback. The CBF
-  //     then sees this scene-aware nominal — corrections it does not
-  //     have to make are corrections that never have to fight u_nom.
-  CenteringDebug cent_dbg;
-  const double vy_override = lateral_centering_->compute(snap, &cent_dbg);
-  if (cent_dbg.override_active) {
-    u_nom.linear.y = vy_override;
-    // wz REPLACE: snap heading to the wall-derived alley axis. Same
-    // ramp `s` as NominalController so the correction tapers near the
-    // goal. Clamped to ±v_angular_max (matches the wz_nom envelope and
-    // the smoother cap downstream). Aggression tunable via k_yaw in YAML.
-    const double wz_override = std::clamp(
-      params->k_yaw * nom_dbg.s * cent_dbg.yaw_misalign,
-      -params->v_angular_max,
-      params->v_angular_max);
-    u_nom.angular.z = wz_override;
+  // 4. Update ESDF from latest point cloud (horizontal beams only).
+  {
+    sensor_msgs::msg::PointCloud2::SharedPtr cloud;
+    {
+      std::lock_guard<std::mutex> lock(cloud_mutex_);
+      cloud = last_cloud_;
+    }
+    if (cloud) {
+      if (!updateEsdf(*cloud)) {
+        log_->event("updateEsdf failed (TF lookup)");
+      }
+    } else {
+      log_->event("no point cloud yet — CBF pass-through this tick");
+    }
+  }
+
+  // Publish ESDF grid for RViz at ~2 Hz (every 5 ticks).
+  if (esdf_pub_ && esdf_pub_->is_activated() && esdf_grid_->hasData()) {
+    if (++esdf_pub_throttle_ % 5 == 0) {
+      const int n       = esdf_grid_->gridSize();
+      const double res  = esdf_grid_->resolution();
+      const double half = esdf_grid_->halfSize();
+
+      nav_msgs::msg::OccupancyGrid msg;
+      msg.header.frame_id            = base_frame;
+      msg.header.stamp               = stamp;
+      msg.info.resolution            = static_cast<float>(res);
+      msg.info.width                 = static_cast<uint32_t>(n);
+      msg.info.height                = static_cast<uint32_t>(n);
+      msg.info.origin.position.x     = -half;
+      msg.info.origin.position.y     = -half;
+      msg.info.origin.orientation.w  = 1.0;
+
+      // Map distance → occupancy: 0 = free (far), 100 = obstacle (near).
+      // Clamp display at 2 m so the gradient is visible in RViz.
+      constexpr double kMaxDist = 2.0;
+      const auto & dist = esdf_grid_->distGrid();
+      msg.data.resize(static_cast<size_t>(n * n));
+      for (int i = 0; i < n * n; ++i) {
+        const double d = static_cast<double>(dist[i]);
+        msg.data[i] = static_cast<int8_t>(
+          std::clamp(static_cast<int>((1.0 - d / kMaxDist) * 100.0), 0, 100));
+      }
+      esdf_pub_->publish(msg);
+    }
   }
 
   // 5. CBF safety filter.
   CbfFilterResult cbf_res;
-  cbf_res.u = u_nom;  // pass-through fallback when no walls
-  if (!snap.walls.empty()) {
-    cbf_res = cbf_filter_->filter(snap, u_nom);
+  cbf_res.u = u_nom;  // pass-through when no ESDF data
 
-    // QP convergence guard. If the active-set method did not
-    // converge to a feasible u (qp.ok = false), the constraint set
-    // is infeasible at the current pose — usually a transient from
-    // sensor noise or geometry the model can't represent. Falling
-    // back to the (box-clamped) nominal keeps the robot moving on
-    // its commanded path; the next tick re-evaluates with fresh
-    // LiDAR. Log so we can see how often this fires.
+  if (esdf_grid_->hasData()) {
+    cbf_res = cbf_filter_->filter(*esdf_grid_, u_nom);
+
     if (!cbf_res.qp.ok) {
-      log_->event(
-        "QP infeasible — falling back to u_nom (clamped)");
-      cbf_res.u.linear.x = std::clamp(
-        u_nom.linear.x, -params->v_linear_max, params->v_linear_max);
-      cbf_res.u.linear.y = std::clamp(
-        u_nom.linear.y, -params->v_lateral_max, params->v_lateral_max);
-      cbf_res.u.angular.z = std::clamp(
-        u_nom.angular.z, -params->v_angular_max, params->v_angular_max);
+      log_->event("QP infeasible — falling back to clamped u_nom");
+      cbf_res.u.linear.x  = std::clamp(u_nom.linear.x,  -params->v_linear_max,  params->v_linear_max);
+      cbf_res.u.linear.y  = std::clamp(u_nom.linear.y,  -params->v_lateral_max, params->v_lateral_max);
+      cbf_res.u.angular.z = std::clamp(u_nom.angular.z, -params->v_angular_max, params->v_angular_max);
+    } else {
+      // Guard: QP is technically feasible but wz lever-arm at tight h can
+      // drive u* to near-zero even when u_nom is large. This happens when
+      // opposing wall constraints consume the entire rhs budget through
+      // the rotational lever arm. Fall back to u_nom so the robot keeps
+      // moving — it is better to move and let the CBF correct next tick
+      // than to stop entirely in a narrow passage.
+      const double u_star_norm = std::hypot(
+        cbf_res.u.linear.x, cbf_res.u.linear.y, cbf_res.u.angular.z);
+      const double u_nom_norm = std::hypot(
+        u_nom.linear.x, u_nom.linear.y, u_nom.angular.z);
+      if (u_star_norm < 0.02 && u_nom_norm > 0.05) {
+        log_->event("CBF near-zero output — falling back to clamped u_nom");
+        cbf_res.u.linear.x  = std::clamp(u_nom.linear.x,  -params->v_linear_max,  params->v_linear_max);
+        cbf_res.u.linear.y  = std::clamp(u_nom.linear.y,  -params->v_lateral_max, params->v_lateral_max);
+        cbf_res.u.angular.z = std::clamp(u_nom.angular.z, -params->v_angular_max, params->v_angular_max);
+      }
     }
   }
 
-  // 6. Logging.
+  // 6. Assemble output and log.
   geometry_msgs::msg::TwistStamped out;
   out.header.frame_id = base_frame;
-  out.header.stamp = stamp;
-  out.twist = cbf_res.u;
+  out.header.stamp    = stamp;
+  out.twist           = cbf_res.u;
 
   log_->logState(
-    tick, stamp.seconds(),
-    0.0, 0.0, 0.0,  // rx,ry,ryaw (we operate in base_link)
-    u_nom, out.twist,
-    u_nom.linear.x < 0.0,
-    dist_to_goal);
+    tick, stamp.seconds(), 0, 0, 0,
+    u_nom, out.twist, u_nom.linear.x < 0.0, dist_to_goal);
 
   log_->logPath(
     tick, stamp.seconds(),
-    target_ps.pose.position.x,
-    target_ps.pose.position.y,
+    target_ps.pose.position.x, target_ps.pose.position.y,
     tf2::getYaw(target_ps.pose.orientation),
     nom_dbg.r, nom_dbg.s, nom_dbg.ramp, nom_dbg.yaw_err,
     sel_idx, static_cast<int>(local_plan.poses.size()));
 
-  log_->logWalls(tick, stamp.seconds(), snap.walls);
-  log_->logCorners(tick, stamp.seconds(), snap.corners);
-  log_->logPassage(tick, stamp.seconds(), snap.passage);
-  log_->logCentering(
-    tick, stamp.seconds(),
-    static_cast<int>(cent_dbg.regime),
-    cent_dbg.D_L, cent_dbg.D_R,
-    cent_dbg.has_L, cent_dbg.has_R,
-    cent_dbg.n_flanking,
-    cent_dbg.yaw_misalign,
-    cent_dbg.vy_raw, cent_dbg.vy_smoothed,
-    vy_path, u_nom.linear.y,
-    cent_dbg.override_active);
-
   if (!cbf_res.constraints.empty()) {
-    const Eigen::Vector3d u_nom_e(
-      u_nom.linear.x, u_nom.linear.y, u_nom.angular.z);
-    const Eigen::Vector3d u_final_e(
-      out.twist.linear.x, out.twist.linear.y, out.twist.angular.z);
-    log_->logCbfConstraints(
-      tick, stamp.seconds(), cbf_res.constraints, u_nom_e, u_final_e);
+    const Eigen::Vector3d u_nom_e(u_nom.linear.x, u_nom.linear.y, u_nom.angular.z);
+    const Eigen::Vector3d u_fin_e(out.twist.linear.x, out.twist.linear.y, out.twist.angular.z);
+    log_->logCbfConstraints(tick, stamp.seconds(), cbf_res.constraints, u_nom_e, u_fin_e);
     log_->logQp(
       tick, stamp.seconds(),
       cbf_res.qp.ok,
@@ -426,15 +400,6 @@ ConstrainedController::computeVelocityCommands(
       cbf_res.solve_time_us,
       cbf_res.qp.deviation,
       cbf_res.qp.iterations);
-  }
-
-  // Throttled raw LiDAR log.
-  if (scan && params->log_lidar_every_n_ticks > 0) {
-    if (++lidar_log_throttle_ %
-      static_cast<uint64_t>(params->log_lidar_every_n_ticks) == 0)
-    {
-      log_->logLidar(tick, stamp.seconds(), *scan);
-    }
   }
 
   return out;

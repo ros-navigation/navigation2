@@ -19,6 +19,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(angles REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(tf2_sensor_msgs REQUIRED)
 
 nav2_package()
 
@@ -43,6 +44,7 @@ set(dependencies
   tf2
   tf2_ros
   tf2_geometry_msgs
+  tf2_sensor_msgs
   pluginlib
   angles
 )
@@ -51,8 +53,7 @@ add_library(${library_name} SHARED
   src/constrained_controller.cpp
   src/path_handler.cpp
   src/nominal_controller.cpp
-  src/scene_parser.cpp
-  src/lateral_centering.cpp
+  src/esdf_grid.cpp
   src/cbf_safety_filter.cpp
   src/qp_solver.cpp
   src/parameter_handler.cpp

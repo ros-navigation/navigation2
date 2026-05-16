@@ -28,6 +28,7 @@
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_sensor_msgs</depend>
   <depend>pluginlib</depend>
   <depend>angles</depend>
   <depend>eigen</depend>

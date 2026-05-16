@@ -26,9 +26,7 @@ std::string Logger::nowSuffix()
 static void mkdirIfMissing(const std::string & dir)
 {
   struct stat st;
-  if (stat(dir.c_str(), &st) != 0) {
-    mkdir(dir.c_str(), 0755);
-  }
+  if (stat(dir.c_str(), &st) != 0) {mkdir(dir.c_str(), 0755);}
 }
 
 void Logger::open(const std::string & log_dir, bool enabled)
@@ -47,13 +45,8 @@ void Logger::open(const std::string & log_dir, bool enabled)
 
   f_main_.open(path("ctrl_main"), std::ios::trunc);
   f_path_.open(path("ctrl_path"), std::ios::trunc);
-  f_walls_.open(path("ctrl_walls"), std::ios::trunc);
-  f_corners_.open(path("ctrl_corners"), std::ios::trunc);
-  f_passage_.open(path("ctrl_passage"), std::ios::trunc);
-  f_cbf_.open(path("ctrl_cbf"), std::ios::trunc);
-  f_qp_.open(path("ctrl_qp"), std::ios::trunc);
-  f_lidar_.open(path("ctrl_lidar"), std::ios::trunc);
-  f_centering_.open(path("ctrl_centering"), std::ios::trunc);
+  f_cbf_.open(path("ctrl_cbf"),   std::ios::trunc);
+  f_qp_.open(path("ctrl_qp"),     std::ios::trunc);
   f_events_.open(
     log_dir_ + "/ctrl_events_" + ts_suffix_ + ".txt", std::ios::trunc);
 
@@ -63,15 +56,10 @@ void Logger::open(const std::string & log_dir, bool enabled)
 
 void Logger::close()
 {
-  if (f_main_.is_open()) {f_main_.close();}
-  if (f_path_.is_open()) {f_path_.close();}
-  if (f_walls_.is_open()) {f_walls_.close();}
-  if (f_corners_.is_open()) {f_corners_.close();}
-  if (f_passage_.is_open()) {f_passage_.close();}
-  if (f_cbf_.is_open()) {f_cbf_.close();}
-  if (f_qp_.is_open()) {f_qp_.close();}
-  if (f_lidar_.is_open()) {f_lidar_.close();}
-  if (f_centering_.is_open()) {f_centering_.close();}
+  if (f_main_.is_open())   {f_main_.close();}
+  if (f_path_.is_open())   {f_path_.close();}
+  if (f_cbf_.is_open())    {f_cbf_.close();}
+  if (f_qp_.is_open())     {f_qp_.close();}
   if (f_events_.is_open()) {f_events_.close();}
 }
 
@@ -82,29 +70,13 @@ void Logger::writeHeaders()
     "vx_nom,vy_nom,wz_nom,vx,vy,wz,reversing,dist_to_goal\n";
   f_path_ <<
     "tick,stamp_sec,xt,yt,yawt,r,s,ramp,yaw_err,sel_idx,n_poses\n";
-  f_walls_ <<
-    "tick,stamp_sec,id,lx,ly,c,p1x,p1y,p2x,p2y,length\n";
-  f_corners_ <<
-    "tick,stamp_sec,is_intersection,wall_a,wall_b,x,y\n";
-  f_passage_ <<
-    "tick,stamp_sec,present,type,ax,ay,bx,by,width\n";
   f_cbf_ <<
-    "tick,stamp_sec,kind,corner_id,wall_id,grad_x,grad_y,grad_w,"
+    "tick,stamp_sec,corner_id,grad_x,grad_y,grad_w,"
     "rhs,h,u_nom_vx,u_nom_vy,u_nom_w,u_vx,u_vy,u_w,active\n";
   f_qp_ <<
     "tick,stamp_sec,ok,n_constraints,n_active,solve_time_us,"
     "deviation,iterations\n";
-  f_lidar_ <<
-    "tick,stamp_sec,idx,angle,range\n";
-  f_centering_ <<
-    "tick,stamp_sec,regime,D_L,D_R,has_L,has_R,n_flanking,"
-    "yaw_misalign,vy_raw,vy_smoothed,vy_path,vy_used,override_active\n";
-  for (auto * f : {
-      &f_main_, &f_path_, &f_walls_, &f_corners_, &f_passage_,
-      &f_cbf_, &f_qp_, &f_lidar_, &f_centering_})
-  {
-    f->flush();
-  }
+  for (auto * f : {&f_main_, &f_path_, &f_cbf_, &f_qp_}) {f->flush();}
 }
 
 uint64_t Logger::newTick(double /*stamp_sec*/)
@@ -155,50 +127,6 @@ void Logger::logPath(
   f_path_.flush();
 }
 
-void Logger::logWalls(
-  uint64_t tick, double stamp,
-  const std::vector<Wall> & walls)
-{
-  if (!enabled_ || !f_walls_.is_open()) {return;}
-  for (const auto & w : walls) {
-    const double len = std::hypot(w.p2.x - w.p1.x, w.p2.y - w.p1.y);
-    f_walls_ << std::fixed << std::setprecision(6)
-             << tick << "," << stamp << "," << w.id << ","
-             << w.lx << "," << w.ly << "," << w.c << ","
-             << w.p1.x << "," << w.p1.y << ","
-             << w.p2.x << "," << w.p2.y << "," << len << "\n";
-  }
-  f_walls_.flush();
-}
-
-void Logger::logCorners(
-  uint64_t tick, double stamp,
-  const std::vector<CornerPoint> & corners)
-{
-  if (!enabled_ || !f_corners_.is_open()) {return;}
-  for (const auto & c : corners) {
-    f_corners_ << std::fixed << std::setprecision(6)
-               << tick << "," << stamp << ","
-               << (c.is_intersection ? 1 : 0) << ","
-               << c.wall_a << "," << c.wall_b << ","
-               << c.p.x << "," << c.p.y << "\n";
-  }
-  f_corners_.flush();
-}
-
-void Logger::logPassage(
-  uint64_t tick, double stamp,
-  const Passage & p)
-{
-  if (!enabled_ || !f_passage_.is_open()) {return;}
-  f_passage_ << std::fixed << std::setprecision(6)
-             << tick << "," << stamp << ","
-             << (p.present ? 1 : 0) << "," << p.type << ","
-             << p.a.x << "," << p.a.y << ","
-             << p.b.x << "," << p.b.y << "," << p.width << "\n";
-  f_passage_.flush();
-}
-
 void Logger::logCbfConstraints(
   uint64_t tick, double stamp,
   const std::vector<CbfConstraint> & cs,
@@ -207,15 +135,11 @@ void Logger::logCbfConstraints(
 {
   if (!enabled_ || !f_cbf_.is_open()) {return;}
   for (const auto & c : cs) {
-    // A CBF is "active" if h is small (close to the constraint
-    // boundary). We log the raw value; downstream tooling can apply
-    // its own threshold.
-    const double lhs_at_u = c.grad.dot(u_final) + c.rhs;
-    const bool active = lhs_at_u < 1e-3;
+    const double lhs = c.grad.dot(u_final);
+    const bool active = (lhs + c.rhs) < 1e-3;
     f_cbf_ << std::fixed << std::setprecision(6)
            << tick << "," << stamp << ","
-           << (c.kind == CbfConstraint::OUTER_WALL ? "outer" : "inner") << ","
-           << c.corner_id << "," << c.wall_id << ","
+           << c.corner_id << ","
            << c.grad.x() << "," << c.grad.y() << "," << c.grad.z() << ","
            << c.rhs << "," << c.h << ","
            << u_nom.x() << "," << u_nom.y() << "," << u_nom.z() << ","
@@ -238,44 +162,6 @@ void Logger::logQp(
         << n_constraints << "," << n_active << ","
         << solve_time_us << "," << deviation << "," << iterations << "\n";
   f_qp_.flush();
-}
-
-void Logger::logCentering(
-  uint64_t tick, double stamp,
-  int regime,
-  double D_L, double D_R,
-  bool has_L, bool has_R,
-  int n_flanking,
-  double yaw_misalign,
-  double vy_raw, double vy_smoothed,
-  double vy_path, double vy_used,
-  bool override_active)
-{
-  if (!enabled_ || !f_centering_.is_open()) {return;}
-  f_centering_ << std::fixed << std::setprecision(6)
-               << tick << "," << stamp << "," << regime << ","
-               << D_L << "," << D_R << ","
-               << (has_L ? 1 : 0) << "," << (has_R ? 1 : 0) << ","
-               << n_flanking << ","
-               << yaw_misalign << ","
-               << vy_raw << "," << vy_smoothed << ","
-               << vy_path << "," << vy_used << ","
-               << (override_active ? 1 : 0) << "\n";
-  f_centering_.flush();
-}
-
-void Logger::logLidar(
-  uint64_t tick, double stamp,
-  const sensor_msgs::msg::LaserScan & scan)
-{
-  if (!enabled_ || !f_lidar_.is_open()) {return;}
-  for (size_t i = 0; i < scan.ranges.size(); ++i) {
-    const double angle = scan.angle_min + i * scan.angle_increment;
-    f_lidar_ << std::fixed << std::setprecision(6)
-             << tick << "," << stamp << ","
-             << i << "," << angle << "," << scan.ranges[i] << "\n";
-  }
-  f_lidar_.flush();
 }
 
 }  // namespace nav2_constrained_controller

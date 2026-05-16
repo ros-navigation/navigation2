@@ -58,29 +58,14 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(footprint_db, 0.30);
 
   DECL_DOUBLE(cbf_gamma, 2.0);
-  DECL_DOUBLE(alley_width_min, 0.95);
-  DECL_DOUBLE(alley_width_max, 1.10);
-  DECL_DOUBLE(alley_width_tol, 0.10);
+  DECL_DOUBLE(esdf_d_safe, 0.03);
   DECL_DOUBLE(wall_consideration_range, 2.5);
-  DECL_BOOL(enable_inner_corner_cbf, false);
 
-  DECL_STRING(lidar_topic, "/scan");
-  DECL_DOUBLE(lidar_max_range, 8.0);
-  DECL_DOUBLE(lidar_min_range, 0.05);
-  DECL_DOUBLE(line_split_threshold, 0.04);
-  DECL_INT(line_min_points, 8);
-  DECL_DOUBLE(segment_connect_dist, 0.12);
-  DECL_DOUBLE(parallel_cos_tol, 0.95);
-  DECL_DOUBLE(perp_cos_tol, 0.20);
-
-  DECL_BOOL(enable_lateral_centering, true);
-  DECL_DOUBLE(k_lat, 1.0);
-  DECL_DOUBLE(flanking_cos_tol, 0.94);
-  DECL_DOUBLE(target_half_width, 0.5125);
-  DECL_DOUBLE(max_centering_range, 1.1);
-  DECL_BOOL(require_both_walls, true);
-  DECL_INT(regime_switch_hyst_ticks, 3);
-  DECL_DOUBLE(vy_centering_lpf_alpha, 0.4);
+  DECL_STRING(pointcloud_topic, "/livox/amr/lidar");
+  DECL_DOUBLE(esdf_z_min, 1.247);
+  DECL_DOUBLE(esdf_z_max, 1.447);
+  DECL_DOUBLE(esdf_grid_resolution, 0.04);
+  DECL_DOUBLE(esdf_grid_size_m, 5.0);
 
   DECL_STRING(log_dir, "/root/navigation_log");
   DECL_BOOL(log_enabled, true);
@@ -131,16 +116,10 @@ ParameterHandler::dynamicParametersCallback(
         params_.footprint_dl = v;
       } else if (name == plugin_name_ + ".footprint_db") {
         params_.footprint_db = v;
-      } else if (name == plugin_name_ + ".k_lat") {
-        params_.k_lat = v;
-      } else if (name == plugin_name_ + ".flanking_cos_tol") {
-        params_.flanking_cos_tol = v;
-      } else if (name == plugin_name_ + ".target_half_width") {
-        params_.target_half_width = v;
-      } else if (name == plugin_name_ + ".vy_centering_lpf_alpha") {
-        params_.vy_centering_lpf_alpha = v;
-      } else if (name == plugin_name_ + ".max_centering_range") {
-        params_.max_centering_range = v;
+      } else if (name == plugin_name_ + ".cbf_gamma") {params_.cbf_gamma = v;}
+      else if (name == plugin_name_ + ".esdf_d_safe") {params_.esdf_d_safe = v;}
+      else if (name == plugin_name_ + ".wall_consideration_range") {
+        params_.wall_consideration_range = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_BOOL) {
       const bool v = p.as_bool();
@@ -148,19 +127,11 @@ ParameterHandler::dynamicParametersCallback(
         params_.yaw_correction_ramp = v;
       } else if (name == plugin_name_ + ".log_enabled") {
         params_.log_enabled = v;
-      } else if (name == plugin_name_ + ".enable_lateral_centering") {
-        params_.enable_lateral_centering = v;
-      } else if (name == plugin_name_ + ".require_both_walls") {
-        params_.require_both_walls = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_INTEGER) {
       const int v = static_cast<int>(p.as_int());
-      if (name == plugin_name_ + ".line_min_points") {
-        params_.line_min_points = v;
-      } else if (name == plugin_name_ + ".log_lidar_every_n_ticks") {
+      if (name == plugin_name_ + ".log_lidar_every_n_ticks") {
         params_.log_lidar_every_n_ticks = v;
-      } else if (name == plugin_name_ + ".regime_switch_hyst_ticks") {
-        params_.regime_switch_hyst_ticks = v;
       }
     }
   }
