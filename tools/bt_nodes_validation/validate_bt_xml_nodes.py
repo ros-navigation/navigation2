@@ -71,25 +71,26 @@ def clone_sparse_github_data(
 
     github_url = f'https://github.com/{owner}/{repo_name}.git'
     print(f'Cloning data from {github_url} (branch: {branch}).')
-    subprocess.run([
-        'git', 'clone',
-        '--depth=1',
-        '--filter=blob:none',
-        '--sparse',
-        '--branch', branch,
-        github_url,
-        repo_workdir,
-    ], check=True, capture_output=True, text=True)
 
-    print(f'Performing sparse checkout in {repo_workdir} directory.')
     try:
+        subprocess.run([
+            'git', 'clone',
+            '--depth=1',
+            '--filter=blob:none',
+            '--sparse',
+            '--branch', branch,
+            github_url,
+            repo_workdir,
+        ], check=True, text=True)
+
+        print(f'Performing sparse checkout in {repo_workdir} directory...')
         subprocess.run([
             'git',
             'sparse-checkout',
             'set',
             '--no-cone',
             *data_to_clone,
-        ], cwd=repo_workdir, check=True, capture_output=True, text=True)
+        ], cwd=repo_workdir, check=True, text=True)
     except subprocess.CalledProcessError:
         rmtree(repo_workdir, ignore_errors=True)
         raise
@@ -103,12 +104,12 @@ def clone_sparse_github_data(
     if missing_paths:
         rmtree(repo_workdir, ignore_errors=True)
         raise FileNotFoundError(
-            f'The following paths do not exist in {github_url} (branch: {branch}): '
+            f'Following paths do not exist in {github_url} (branch: {branch}): '
             f'{", ".join(missing_paths)}.\n'
             'Review provided paths in tools/bt_nodes_validation/config.yml.'
         )
 
-    print(f'Cloned the following data from {github_url} (branch: {branch}) to {repo_workdir}:')
+    print(f'Cloned following data from {github_url} (branch: {branch}) to {repo_workdir}:')
     for path in data_to_clone:
         print(f'\t - {path}')
 
