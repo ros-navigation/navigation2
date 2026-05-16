@@ -1,0 +1,36 @@
+rules:
+  - id: use-nav2-service-client
+    pattern-regex: "rclcpp::Client\\s*\\<.*\\>"
+    message: "Use nav2::ServiceClient<T> instead of rclcpp::Client<T>"
+    severity: WARNING
+    languages: [cpp]
+
+  - id: use-nav2-service-server
+    pattern-regex: "rclcpp::Service\\s*\\<.*\\>"
+    message: "Use nav2::ServiceServer<T> instead of rclcpp::Service<T>"
+    severity: WARNING
+    languages: [cpp]
+
+  - id: use-nav2-subscription
+    pattern-regex: "rclcpp::Subscription\\s*\\<.*\\>"
+    message: "Use nav2::Subscription<T> instead of rclcpp::Subscription<T>"
+    severity: WARNING
+    languages: [cpp]
+
+  - id: use-nav2-publisher
+    pattern-regex: "rclcpp::Publisher\\s*\\<.*\\>"
+    message: "Use nav2::Publisher<T> instead of rclcpp::Publisher<T>"
+    severity: WARNING
+    languages: [cpp]
+
+  - id: use-nav2-action-client
+    pattern-regex: "rclcpp_action::Client\\s*\\<.*\\>"
+    message: "Use nav2::ActionClient<T> instead of rclcpp_action::Client<T>"
+    severity: WARNING
+    languages: [cpp]
+
+  - id: use-nav2-action-server
+    pattern-regex: "rclcpp_action::Server\\s*\\<.*\\>"
+    message: "Use nav2::ActionServer<T> instead of rclcpp_action::Server<T>"
+    severity: WARNING
+    languages: [cpp]
