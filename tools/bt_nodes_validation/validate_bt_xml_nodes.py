@@ -133,14 +133,6 @@ def load_bt_nodes_model(file_path: Path) -> ET.Element:
     return bt_nodes_model
 
 
-def findall_in_file(pattern: re.Pattern, file_path: Path) -> list[str]:
-    """Find all occurrences of a regex pattern in a file and return the matches as a list."""
-    if not file_path.exists() or not file_path.is_file():
-        return []
-    content = file_path.read_text()
-    return pattern.findall(content)
-
-
 def fetch_external_repos(github_repos: dict, clone_dir: Path) -> None:
     """Fetch external repositories specified in the YAML configuration file."""
     for repo_name, repo_info in github_repos.items():
@@ -351,17 +343,18 @@ def extract_cpp_classes_and_ids(cpp_files: list[Path]) -> dict[str, str]:
     Returns dictionary mapping class names to node IDs: {class_name: node_id}
     """
     register_pattern = re.compile(
-        r'register(?:NodeType|Builder)<[^>]+>\s*\(\s*"([^"]+)"'
-    )
-    cpp_class_pattern = re.compile(
-        r'register(?:NodeType|Builder)<(?:[^>]*::)?([A-Za-z_][A-Za-z0-9_]*)>'
+        r'register(?:NodeType|Builder)<(?:[^>]*::)?([A-Za-z_][A-Za-z0-9_]*)>[^(]*\([^"]*"([^"]+)"',
+        re.DOTALL
     )
 
     node_cpp_data: dict[str, str] = {}
     for cpp_file in cpp_files:
-        class_names = findall_in_file(cpp_class_pattern, cpp_file)
-        node_ids = findall_in_file(register_pattern, cpp_file)
-        node_cpp_data.update(dict(zip(class_names, node_ids)))
+        cpp_content = cpp_file.read_text()
+        class_names_and_ids = register_pattern.findall(cpp_content)
+        if not class_names_and_ids:
+            raise ValueError(
+                f'No node registrations found in {cpp_file}.')
+        node_cpp_data.update(dict(class_names_and_ids))
     return node_cpp_data
 
 
