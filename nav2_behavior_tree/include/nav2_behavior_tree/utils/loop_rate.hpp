@@ -61,7 +61,7 @@ public:
       return false;
     }
     // Sleep until the target time, preemptible by emitWakeUpSignal().
-    auto wake_up = tree_->wakeUpSignal();
+    auto wake_up = tree_->emitWakeUpSignal();
     const bool is_sim_time =
       clock_->get_clock_type() == RCL_ROS_TIME &&
       clock_->ros_time_is_active();
