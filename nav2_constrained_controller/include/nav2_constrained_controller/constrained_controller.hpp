@@ -136,7 +136,9 @@ protected:
   bool goal_reached_{false};
   uint64_t cloud_log_throttle_{0};
   uint64_t esdf_pub_throttle_{0};
-  double last_min_h_{1.0};  // min_h from previous tick — used for wz clamping
+  double last_min_h_{1.0};
+  int stuck_ticks_{0};       // consecutive ticks where commanded ≠ actual velocity
+  bool stuck_{false};
 };
 
 }  // namespace nav2_constrained_controller

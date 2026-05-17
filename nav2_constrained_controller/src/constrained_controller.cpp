@@ -12,6 +12,7 @@
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "tf2/utils.h"
+#include "angles/angles.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
@@ -89,6 +90,8 @@ void ConstrainedController::activate()
   esdf_pub_throttle_  = 0;
   has_lidar_tf_       = false;
   last_min_h_         = 1.0;
+  stuck_ticks_        = 0;
+  stuck_              = false;
 
   RCLCPP_INFO(logger_, "ConstrainedController activated, subscribing to %s",
     params->pointcloud_topic.c_str());
@@ -121,6 +124,8 @@ void ConstrainedController::setPlan(const nav_msgs::msg::Path & path)
 {
   const bool ok = path_handler_->setPlan(path);
   goal_reached_ = false;
+  stuck_        = false;
+  stuck_ticks_  = 0;
   esdf_grid_->reset();
   if (log_) {
     log_->event(
@@ -277,33 +282,94 @@ ConstrainedController::computeVelocityCommands(
     motion_target_pub_->publish(pt);
   }
 
-  // Goal-reached check against the stored odom path.
+  // Compute dist_to_goal using the same TF the controller server uses in
+  // isGoalReached(): re-transform the goal from its original map frame to
+  // odom with the CURRENT AMCL snapshot.  Using the plan-time snapshot
+  // accumulates AMCL drift, causing the controller to declare "goal reached"
+  // while the server's goal checker (which is always live) still sees the
+  // robot as outside XY tolerance.
   const auto & odom_path = path_handler_->getPathInOdom();
   double dist_to_goal = std::numeric_limits<double>::infinity();
   geometry_msgs::msg::PoseStamped robot_in_odom;
   if (!odom_path.poses.empty()) {
-    const auto & last = odom_path.poses.back().pose.position;
     try {
-      geometry_msgs::msg::TransformStamped tf_odom;
-      tf_odom = tf_buffer_->lookupTransform(
-        path_handler_->getOdomFrame(), pose.header.frame_id, tf2::TimePointZero);
-      tf2::doTransform(pose, robot_in_odom, tf_odom);
+      const std::string odom_frame = path_handler_->getOdomFrame();
+
+      // Robot → odom (EKF, same source as costmap::getRobotPose).
+      geometry_msgs::msg::TransformStamped tf_base_to_odom;
+      tf_base_to_odom = tf_buffer_->lookupTransform(
+        odom_frame, pose.header.frame_id, tf2::TimePointZero);
+      tf2::doTransform(pose, robot_in_odom, tf_base_to_odom);
+
+      // Goal → odom using live AMCL (same source as server's transformPose).
+      const auto & goal_map = path_handler_->getGoalInMap();
+      geometry_msgs::msg::PoseStamped goal_in_odom;
+      geometry_msgs::msg::TransformStamped tf_map_to_odom;
+      tf_map_to_odom = tf_buffer_->lookupTransform(
+        odom_frame, goal_map.header.frame_id, tf2::TimePointZero);
+      tf2::doTransform(goal_map, goal_in_odom, tf_map_to_odom);
+
       dist_to_goal = std::hypot(
-        robot_in_odom.pose.position.x - last.x,
-        robot_in_odom.pose.position.y - last.y);
-    } catch (const tf2::TransformException &) {}
+        robot_in_odom.pose.position.x - goal_in_odom.pose.position.x,
+        robot_in_odom.pose.position.y - goal_in_odom.pose.position.y);
+    } catch (const tf2::TransformException & e) {
+      RCLCPP_WARN_THROTTLE(logger_, *clock_, 1000,
+        "dist_to_goal TF failed: %s", e.what());
+    }
   }
 
-  // Constrained-space goal check: position-only.
-  // Yaw at goal is determined by the corridor/doorway geometry, not a heading
-  // target — enforcing yaw tolerance here would stall the robot after it clears
-  // the obstacle.  The server-side goal checker must also be configured with a
-  // relaxed yaw_goal_tolerance (see constrained_goal_checker in params).
+  // Near-goal phase: within position tolerance, actively correct yaw to match
+  // the planner's intended heading (= what the server's isGoalReached() checks).
+  // Without this the robot stops with a heading mismatch and the goal checker
+  // never fires, because validateOrientations only fixes intermediate poses —
+  // the last pose keeps the planner yaw, which may differ from the arrival
+  // travel direction.
+  //
+  // Threshold is 0.07 rad — just under yaw_goal_tolerance (0.10 rad) — so the
+  // server fires immediately when we return zero.
+  static constexpr double kNearGoalYawTol = 0.07;  // rad
+
   if (dist_to_goal < params->goal_dist_tolerance) {
-    if (!goal_reached_) {log_->event("goal reached"); goal_reached_ = true;}
-    auto stop = zeroTwist(base_frame, stamp);
-    log_->logState(tick, stamp.seconds(), 0, 0, 0, stop.twist, stop.twist, false, dist_to_goal);
-    return stop;
+    // Compute yaw error the same way isGoalReached() does:
+    // robot_yaw_odom vs transform(goal_in_map, current_AMCL).yaw
+    double yaw_err = 0.0;
+    bool yaw_ok = false;
+    if (!odom_path.poses.empty()) {
+      try {
+        const auto & goal_map = path_handler_->getGoalInMap();
+        geometry_msgs::msg::PoseStamped goal_odom_for_yaw;
+        geometry_msgs::msg::TransformStamped tf_m2o;
+        tf_m2o = tf_buffer_->lookupTransform(
+          path_handler_->getOdomFrame(), goal_map.header.frame_id, tf2::TimePointZero);
+        tf2::doTransform(goal_map, goal_odom_for_yaw, tf_m2o);
+        const double goal_yaw  = tf2::getYaw(goal_odom_for_yaw.pose.orientation);
+        const double robot_yaw = tf2::getYaw(robot_in_odom.pose.orientation);
+        yaw_err = angles::shortest_angular_distance(robot_yaw, goal_yaw);
+        yaw_ok  = std::abs(yaw_err) < kNearGoalYawTol;
+      } catch (const tf2::TransformException &) {
+        yaw_ok = true;  // TF failed: don't spin forever, just stop
+      }
+    } else {
+      yaw_ok = true;
+    }
+
+    if (yaw_ok) {
+      if (!goal_reached_) {log_->event("goal reached"); goal_reached_ = true;}
+      auto stop = zeroTwist(base_frame, stamp);
+      log_->logState(tick, stamp.seconds(), 0, 0, 0, stop.twist, stop.twist, false, dist_to_goal);
+      return stop;
+    }
+
+    // Yaw not yet within tolerance: pure in-place rotation, no translation.
+    RCLCPP_INFO_THROTTLE(logger_, *clock_, 500,
+      "[CBF t=%lu] near-goal yaw correction: yaw_err=%.3f rad dist=%.3fm",
+      tick, yaw_err, dist_to_goal);
+    geometry_msgs::msg::TwistStamped yaw_cmd;
+    yaw_cmd.header.frame_id = base_frame;
+    yaw_cmd.header.stamp    = stamp;
+    yaw_cmd.twist.angular.z =
+      std::clamp(yaw_err * params->k_yaw, -params->v_angular_max, params->v_angular_max);
+    return yaw_cmd;
   }
 
   // 3. Nominal P controller.
@@ -571,6 +637,40 @@ ConstrainedController::computeVelocityCommands(
       static_cast<float>(wz_clamped ? 1.0f : 0.0f)
     };
     debug_pub_->publish(dbg);
+  }
+
+  // ---- Stuck detection ----
+  // Compare what we commanded vs what the robot actually did (from odometry).
+  // If we commanded significant motion but the robot barely moved for
+  // kStuckTicks consecutive ticks, it has hit an obstacle the ESDF cannot see.
+  // Stop commanding and warn — the recovery is handled by Nav2's progress checker.
+  constexpr double kCommandedThresh = 0.05;   // m/s — "significant command"
+  constexpr double kActualThresh    = 0.02;   // m/s — "essentially not moving"
+  constexpr int    kStuckTicks      = 20;     // 2 seconds at 10 Hz
+
+  const double commanded_norm = std::hypot(
+    out.twist.linear.x, out.twist.linear.y, out.twist.angular.z);
+  const double actual_norm = std::hypot(
+    velocity.linear.x, velocity.linear.y, velocity.angular.z);
+
+  if (commanded_norm > kCommandedThresh && actual_norm < kActualThresh) {
+    ++stuck_ticks_;
+  } else {
+    stuck_ticks_ = 0;
+    stuck_       = false;
+  }
+
+  if (stuck_ticks_ >= kStuckTicks && !stuck_) {
+    stuck_ = true;
+    RCLCPP_WARN(logger_,
+      "[CBF t=%lu] *** STUCK *** commanded=%.3f m/s actual=%.3f m/s for %d ticks. "
+      "Obstacle not visible in ESDF (h_min=%.3f). Stopping — Nav2 recovery will take over.",
+      tick, commanded_norm, actual_norm, stuck_ticks_, cbf_res.min_h);
+    log_->event("STUCK — undetected obstacle, stopping for Nav2 recovery");
+  }
+
+  if (stuck_) {
+    return zeroTwist(base_frame, stamp);
   }
 
   return out;

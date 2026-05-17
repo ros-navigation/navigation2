@@ -40,13 +40,12 @@ std::string PathHandler::getBaseFrame() const
 void PathHandler::validateOrientations(
   std::vector<geometry_msgs::msg::PoseStamped> & poses)
 {
-  // Lifted verbatim from nav2_graceful_controller graceful_controller.cpp:432-447.
   // SmacLattice intermediate poses can carry a constant yaw across
-  // position-changing waypoints (the lattice was built diff-drive-style
-  // with arc primitives). Without retangenting, the heading-error P
-  // loop gets a lookahead yaw that snaps when the rolling horizon
-  // crosses a path bend, producing phantom rotations.
-  if (poses.size() < 3) {
+  // position-changing waypoints (lattice built diff-drive-style with arc
+  // primitives). Without retangenting, the heading-error P loop gets a
+  // lookahead yaw that snaps when the rolling horizon crosses a path bend,
+  // producing phantom rotations.
+  if (poses.size() < 2) {
     return;
   }
   for (size_t i = 0; i + 1 < poses.size(); ++i) {
@@ -59,7 +58,12 @@ void PathHandler::validateOrientations(
     poses[i].pose.orientation =
       nav2_util::geometry_utils::orientationAroundZAxis(yaw);
   }
+
 }
+// NOTE: the last pose keeps the planner's original yaw intentionally — the
+// controller server's isGoalReached() compares the robot's yaw against that
+// pose (via end_pose_).  Near-goal yaw correction in computeVelocityCommands
+// drives the robot to this heading before returning zero.
 
 bool PathHandler::setPlan(const nav_msgs::msg::Path & path_in_map)
 {
@@ -102,6 +106,12 @@ bool PathHandler::setPlan(const nav_msgs::msg::Path & path_in_map)
 
   validateOrientations(reprojected.poses);
   path_in_odom_ = std::move(reprojected);
+
+  // Keep goal in original map frame so dist_to_goal can be recomputed each
+  // tick using the current AMCL TF — matching the controller server's
+  // isGoalReached() which also re-transforms from map using the live TF.
+  goal_in_map_ = path_in_map.poses.back();
+  goal_in_map_.header.frame_id = source_frame;
 
   RCLCPP_INFO(
     logger_,

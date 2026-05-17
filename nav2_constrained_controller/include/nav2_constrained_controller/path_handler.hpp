@@ -57,9 +57,14 @@ public:
     const geometry_msgs::msg::PoseStamped & robot_pose,
     double max_robot_pose_search_dist);
 
-  // Returns the cached odom-frame plan (after retangenting). Useful for
-  // visualisation and goal-reach checks.
+  // Returns the cached odom-frame plan (after retangenting). Useful for visualisation.
   const nav_msgs::msg::Path & getPathInOdom() const {return path_in_odom_;}
+
+  // Returns the goal pose in its original map frame so callers can re-transform
+  // it using the current AMCL TF — matching how the controller server's
+  // isGoalReached() locates the goal. dist_to_goal must use the same TF snapshot
+  // as the server, otherwise AMCL drift accumulates into a false distance.
+  const geometry_msgs::msg::PoseStamped & getGoalInMap() const {return goal_in_map_;}
 
   bool hasPlan() const {return !path_in_odom_.poses.empty();}
 
@@ -83,8 +88,11 @@ protected:
   std::string odom_frame_{"odom"};
 
   // The plan after one-shot reprojection into odom + retangenting.
-  // This is the ground truth path for the rest of the plan's lifetime.
   nav_msgs::msg::Path path_in_odom_;
+
+  // Goal pose kept in map frame (not converted). Used to re-transform with
+  // the current AMCL TF each tick so dist_to_goal tracks AMCL updates.
+  geometry_msgs::msg::PoseStamped goal_in_map_;
   rclcpp::Logger logger_{rclcpp::get_logger("ConstrainedPathHandler")};
 };
 
