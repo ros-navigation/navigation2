@@ -121,6 +121,10 @@ InflationLayer::matchSize()
   resolution_ = costmap->getResolution();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
+  esdf_.setConstant(
+    static_cast<int>(costmap->getSizeInCellsY()),
+    static_cast<int>(costmap->getSizeInCellsX()),
+    DistanceTransform::DT_INF);
 }
 
 void
@@ -315,6 +319,13 @@ InflationLayer::updateCosts(
 
   // Perform Felzenszwalb-Huttenlocher distance transform
   DistanceTransform::distanceTransform2D(distance_map, roi_height, roi_width);
+
+  // Persist ESDF for the update window (convert cell distances to meters)
+  esdf_.block(min_j, min_i, max_j - min_j, max_i - min_i) =
+    distance_map.block(
+      min_j - roi_min_j, min_i - roi_min_i,
+      max_j - min_j, max_i - min_i) *
+    static_cast<float>(resolution_);
 
   // Apply inflation costs
   applyInflation(

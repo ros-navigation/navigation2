@@ -92,6 +92,8 @@ target_link_libraries(mppi_motion_models PUBLIC
 add_library(mppi_critics SHARED
   src/critics/constraint_critic.cpp
   src/critics/cost_critic.cpp
+  src/critics/corridor_critic.cpp
+  src/critics/esdf_critic.cpp
   src/critics/goal_critic.cpp
   src/critics/goal_angle_critic.cpp
   src/critics/obstacles_critic.cpp
