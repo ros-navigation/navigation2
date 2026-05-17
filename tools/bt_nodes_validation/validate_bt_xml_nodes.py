@@ -177,12 +177,12 @@ def update_paths_for_external_repos(config: dict, clone_dir: Path) -> None:
                 base_class[class_name] = updated_path
 
 
-def get_files(directories: list[Path]) -> list[Path]:
-    """Get all files from the specified directories."""
+def get_files(directories: list[str], pattern: str) -> list[Path]:
+    """Recursively get all files matching given pattern from the specified list of directories."""
     files: list[Path] = []
     for directory in directories:
         dir_path = Path(directory)
-        dir_files = [file for file in dir_path.iterdir() if file.is_file()]
+        dir_files = [file for file in dir_path.rglob(pattern) if file.is_file()]
         files.extend(dir_files)
     return files
 
@@ -482,13 +482,13 @@ def extract_code_nodes_data(config: dict) -> BTNodes:
     for _, repo_info in config.items():
         bt = repo_info.get('behavior_trees', {})
 
-        cpp_dirs: list[Path] = bt.get('cpp_dir_paths', [])
-        cpp_files = get_files(cpp_dirs)
+        cpp_dirs = bt.get('cpp_dir_paths', [])
+        cpp_files = get_files(cpp_dirs, '*.cpp')
 
-        hpp_dirs: list[Path] = bt.get('hpp_dir_paths', [])
-        hpp_files = get_files(hpp_dirs)
+        hpp_dirs = bt.get('hpp_dir_paths', [])
+        hpp_files = get_files(hpp_dirs, '*.hpp')
 
-        base_classes_config: list[dict[str, Path]] = bt.get('hpp_base_classes_paths', [])
+        base_classes_config = bt.get('hpp_base_classes_paths', [])
         for base_class in base_classes_config:
             hpp_base_classes.update(base_class)
 
