@@ -152,6 +152,36 @@ public:
     return inflation_radius_;
   }
 
+  /**
+   * @brief Query the ESDF distance to the nearest obstacle at a costmap cell.
+   *
+   * Returns the Euclidean distance in meters. Returns DT_INF for cells that
+   * have not yet been covered by an update window (e.g. before the first
+   * reinflation). Caller should hold getMutex() while reading.
+   *
+   * @param mx Costmap cell x index (column)
+   * @param my Costmap cell y index (row)
+   * @return Distance to nearest obstacle in meters, or DT_INF if unknown
+   */
+  float getDistanceToObstacle(unsigned int mx, unsigned int my) const
+  {
+    if (static_cast<int>(my) >= esdf_.rows() || static_cast<int>(mx) >= esdf_.cols()) {
+      return DistanceTransform::DT_INF;
+    }
+    return esdf_(static_cast<int>(my), static_cast<int>(mx));
+  }
+
+  /**
+   * @brief Get the full ESDF matrix (row = y cell, col = x cell, values in meters).
+   *
+   * Cells not yet covered by an update window have value DT_INF.
+   * Caller should hold getMutex() while reading.
+   */
+  const MatrixXfRM & getEsdf() const
+  {
+    return esdf_;
+  }
+
 protected:
   /**
    * @brief Apply inflation costs from distance map to costmap
@@ -220,6 +250,9 @@ protected:
   unsigned int cell_inflation_radius_;
   int num_threads_;  // Number of OpenMP threads (-1 = auto)
   double resolution_;
+
+  // Full-costmap ESDF; distances in meters, DT_INF for uninitialized cells
+  MatrixXfRM esdf_;
 
   // Cost LUT precision: 100 samples per cell provides smooth gradients
   static constexpr int COST_LUT_PRECISION = 100;

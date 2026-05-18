@@ -800,6 +800,83 @@ TEST_F(TestNode, testDynParamsSet)
   costmap->on_shutdown(rclcpp_lifecycle::State());
 }
 
+// ESDF: obstacle cell has distance 0, nearby free cells have correct Euclidean distance
+TEST_F(TestNode, testEsdfDistances)
+{
+  initNode(1.0);
+  tf2_ros::Buffer tf(node_->get_clock());
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  // 10x10 map, 0.1 m/cell → 1.0 m wide
+  layers.resizeMap(10, 10, 0.1, 0, 0);
+
+  setRadii(layers, 0.1, 0.1);
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
+  addObstacleLayer(layers, tf, node_, olayer);
+
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer = nullptr;
+  addInflationLayer(layers, tf, node_, ilayer);
+
+  // Place obstacle at cell (5, 5)
+  addObservation(olayer, 0.55, 0.55, MAX_Z);
+
+  layers.updateMap(0, 0, 0);
+
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> guard(*ilayer->getMutex());
+
+  // Obstacle cell itself: distance == 0
+  EXPECT_FLOAT_EQ(ilayer->getDistanceToObstacle(5, 5), 0.0f);
+
+  // Neighbor at (6, 5): one cell away = 0.1 m
+  const float d1 = ilayer->getDistanceToObstacle(6, 5);
+  EXPECT_NEAR(d1, 0.1f, 0.01f);
+
+  // Diagonal neighbor at (6, 6): sqrt(2) cells away ≈ 0.141 m
+  const float d2 = ilayer->getDistanceToObstacle(6, 6);
+  EXPECT_NEAR(d2, static_cast<float>(std::sqrt(2.0) * 0.1), 0.01f);
+
+  // ESDF matrix dimensions match the costmap
+  const auto & esdf = ilayer->getEsdf();
+  EXPECT_EQ(esdf.rows(), 10);
+  EXPECT_EQ(esdf.cols(), 10);
+}
+
+// ESDF resets correctly when matchSize is called (map resize)
+TEST_F(TestNode, testEsdfMatchSizeReset)
+{
+  initNode(0.5);
+  tf2_ros::Buffer tf(node_->get_clock());
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  layers.resizeMap(5, 5, 0.1, 0, 0);
+
+  setRadii(layers, 0.1, 0.1);
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
+  addObstacleLayer(layers, tf, node_, olayer);
+
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer = nullptr;
+  addInflationLayer(layers, tf, node_, ilayer);
+
+  {
+    std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> guard(*ilayer->getMutex());
+    const auto & esdf = ilayer->getEsdf();
+    EXPECT_EQ(esdf.rows(), 5);
+    EXPECT_EQ(esdf.cols(), 5);
+    // All cells uninitialised before any update
+    EXPECT_EQ(esdf(0, 0), nav2_costmap_2d::DistanceTransform::DT_INF);
+  }
+
+  // Resize map and verify ESDF tracks the new dimensions
+  layers.resizeMap(8, 8, 0.1, 0, 0);
+
+  {
+    std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> guard(*ilayer->getMutex());
+    const auto & esdf = ilayer->getEsdf();
+    EXPECT_EQ(esdf.rows(), 8);
+    EXPECT_EQ(esdf.cols(), 8);
+  }
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

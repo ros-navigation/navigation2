@@ -5,6 +5,14 @@
       <description>mppi critic for obstacle avoidance</description>
     </class>
 
+    <class type="mppi::critics::EsdfCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for obstacle avoidance using exact ESDF distances from InflationLayer</description>
+    </class>
+
+    <class type="mppi::critics::CorridorCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic that penalizes trajectories leaving the ESDF-derived safe corridor around the reference path</description>
+    </class>
+
     <class type="mppi::critics::CostCritic" base_class_type="mppi::critics::CriticFunction">
       <description>mppi critic for obstacle avoidance using costmap score</description>
     </class>
