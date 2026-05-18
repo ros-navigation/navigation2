@@ -19,6 +19,7 @@
 #include <limits>
 
 #include <Eigen/Core>
+#include <Eigen/Dense>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
@@ -62,8 +63,8 @@ public:
    * @return Eigen::ArrayXf of length path_x.size(), corridor widths in meters
    */
   static Eigen::ArrayXf computeWidths(
-    const Eigen::ArrayXf & path_x,
-    const Eigen::ArrayXf & path_y,
+    const Eigen::Ref<const Eigen::ArrayXf> & path_x,
+    const Eigen::Ref<const Eigen::ArrayXf> & path_y,
     const InflationLayer & layer,
     const Costmap2D & costmap,
     float robot_radius,

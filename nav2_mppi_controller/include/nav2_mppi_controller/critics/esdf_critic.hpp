@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <cmath>
 
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"

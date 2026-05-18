@@ -88,8 +88,8 @@ void CorridorCritic::score(CriticData & data)
   // ------------------------------------------------------------------
   const Eigen::ArrayXf corridor_widths =
     nav2_costmap_2d::SafeCorridorComputer::computeWidths(
-      data.path.x.head(path_len),
-      data.path.y.head(path_len),
+      data.path.x,
+      data.path.y,
       *inflation_layer_,
       *costmap_,
       robot_radius_,
