@@ -86,8 +86,6 @@ void SpeedFilter::initializeFilter(
     name_ + "." + "path_topic", std::string("plan"));
   std::string odom_topic = node->declare_or_get_parameter(
     name_ + "." + "odom_topic", std::string("odom"));
-  publish_lookahead_ = node->declare_or_get_parameter(
-    name_ + "." + "publish_lookahead", false);
 
   // Check params
   if (enable_path_lookahead_) {
@@ -155,11 +153,9 @@ void SpeedFilter::initializeFilter(
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(
       node, 0.3, odom_topic);
 
-    if (publish_lookahead_) {
-      lookahead_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
-        name_ + "/lookahead_endpoint");
-      lookahead_pub_->on_activate();
-    }
+    lookahead_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
+      name_ + "/lookahead_point");
+    lookahead_pub_->on_activate();
   }
 
   // Reset speed conversion states
@@ -258,8 +254,7 @@ void SpeedFilter::pathCallback(
 
 bool SpeedFilter::getSpeedLimitAtPose(
   const geometry_msgs::msg::Pose & pose,
-  double & speed_limit
-)
+  double & speed_limit)
 {
   geometry_msgs::msg::Pose mask_pose;  // robot coordinates in mask frame
 
@@ -345,10 +340,8 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   // To save computation time, stop searching path when poses get further than
   // the closest pose + a threshold
   for (size_t i = pose_search_start; i < poses.size(); i++) {
-    const auto & p = poses[i].pose.position;
-    const double dx = p.x - robot_pose.position.x;
-    const double dy = p.y - robot_pose.position.y;
-    const double d = std::sqrt(dx * dx + dy * dy);
+    const double d = nav2_util::geometry_utils::euclidean_distance(
+      poses[i].pose.position, robot_pose.position);
     if (d < min_dist) {
       min_dist = d;
       lookahead_start_idx = i;
@@ -368,10 +361,10 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   double last_sample_dist = -path_sample_resolution_;
 
   // Lookahead endpoint for visualization
-  geometry_msgs::msg::PointStamped lookahead_endpoint;
-  lookahead_endpoint.header.frame_id = global_frame_;
-  lookahead_endpoint.header.stamp = clock_->now();
-  lookahead_endpoint.point = robot_pose.position;
+  auto lookahead_point_msg = std::make_unique<geometry_msgs::msg::PointStamped>();
+  lookahead_point_msg->header.frame_id = global_frame_;
+  lookahead_point_msg->header.stamp = clock_->now();
+  lookahead_point_msg->point = robot_pose.position;
 
   // Check robot's current pose to list of poses to be checked
   double speed_limit_at_robot_pose = NO_SPEED_LIMIT;
@@ -387,11 +380,8 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   // Walk poses from lookahead_start_idx forward. Sample the speed limit at each pose.
   for (size_t i = lookahead_start_idx; i < poses.size(); ++i) {
     if(i > lookahead_start_idx) {
-      const auto & prev = poses[i - 1].pose.position;
-      const auto & curr = poses[i].pose.position;
-      const double dx = curr.x - prev.x;
-      const double dy = curr.y - prev.y;
-      dist_along_path += std::sqrt(dx * dx + dy * dy);
+      dist_along_path += nav2_util::geometry_utils::euclidean_distance(
+        poses[i - 1].pose.position, poses[i].pose.position);
     }
 
     if (dist_along_path > lookahead_dist) {
@@ -404,7 +394,7 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     last_sample_dist = dist_along_path;
 
     // Update lookahead endpoint for visualization
-    lookahead_endpoint.point = poses[i].pose.position;
+    lookahead_point_msg->point = poses[i].pose.position;
 
     double sampled_speed_limit = NO_SPEED_LIMIT;
     if (!getSpeedLimitAtPose(poses[i].pose, sampled_speed_limit)) {
@@ -425,8 +415,8 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     }
   }
 
-  if (publish_lookahead_ && lookahead_pub_) {
-    lookahead_pub_->publish(lookahead_endpoint);
+  if (lookahead_pub_ && lookahead_pub_->get_subscription_count() > 0) {
+    lookahead_pub_->publish(std::move(lookahead_point_msg));
   }
 
   return min_speed_limit;
@@ -447,13 +437,11 @@ void SpeedFilter::process(
     return;
   }
 
-  // Decide path lookahead vs just checking at robot pose. Path lookahead requires
-  // the feature enabled, a non-empty path received, and the OdomSmoother
-  // available to query current speed
+  // Decide path lookahead vs just checking at robot pose.
+  // Path lookahead requires a non-empty path received
   const bool use_path_lookahead =
     enable_path_lookahead_ &&
-    current_path_ && !current_path_->poses.empty() &&
-    odom_smoother_;
+    current_path_ && !current_path_->poses.empty();
 
   if (use_path_lookahead) {
     const auto twist = odom_smoother_->getTwist();
@@ -470,7 +458,7 @@ void SpeedFilter::process(
 
     speed_limit_ = getSpeedLimitFromLookahead(pose, d_lookahead);
   } else {
-    if(!getSpeedLimitAtPose(pose, speed_limit_)) {
+    if (!getSpeedLimitAtPose(pose, speed_limit_)) {
       RCLCPP_ERROR(logger_, "SpeedFilter: Failed to get speed limit at pose");
       return;
     }

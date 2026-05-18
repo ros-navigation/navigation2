@@ -48,6 +48,7 @@
 #include "nav2_msgs/msg/speed_limit.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/odometry_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -148,7 +149,6 @@ private:
   double min_lookahead_;   // Lower limit on lookahead distance (m)
   double max_lookahead_;   // Upper limit on lookahead distance (m)
   double path_sample_resolution_;     // Resolution for sampling the path (m)
-  bool publish_lookahead_;    // Whether to publish the last lookahead point for debugging
 };
 
 }  // namespace nav2_costmap_2d
