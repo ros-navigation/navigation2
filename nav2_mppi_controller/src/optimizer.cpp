@@ -102,6 +102,9 @@ void Optimizer::getParams()
   }
 
   getParam(s.model_dt, "model_dt", 0.05f);
+  getParam(s.model_delay_vx, "model_delay_vx", 0.0f);
+  getParam(s.model_delay_vy, "model_delay_vy", 0.0f);
+  getParam(s.model_delay_wz, "model_delay_wz", 0.0f);
   getParam(s.time_steps, "time_steps", 56);
   getParam(s.batch_size, "batch_size", 1000);
   getParam(s.iteration_count, "iteration_count", 1);
@@ -194,7 +197,9 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());
-  motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
+  motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
+    settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz);
+  motion_model_->clearCommandHistory();
   trajectory_validator_->initialize(
     parent_, name_ + ".TrajectoryValidator",
     costmap_ros_, parameters_handler_, tf_buffer_, settings_);
@@ -643,9 +648,11 @@ geometry_msgs::msg::TwistStamped Optimizer::getControlFromSequenceAsTwist(
 
   auto vx = control_sequence_.vx(offset);
   auto wz = control_sequence_.wz(offset);
+  auto vy = isHolonomic() ? control_sequence_.vy(offset) : 0.0f;
+
+  motion_model_->pushCommandHistory(vx, vy, wz);
 
   if (isHolonomic()) {
-    auto vy = control_sequence_.vy(offset);
     return utils::toTwistStamped(vx, vy, wz, stamp, costmap_ros_->getBaseFrameID());
   }
 
@@ -665,7 +672,8 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
     plugin_type = nav2::get_plugin_type_param(node, plugin_ns);
     motion_model_ = motion_model_loader_->createSharedInstance(plugin_type);
     motion_model_->initialize(parameters_handler_, plugin_ns);
-    motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
+    motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
+      settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz);
   } catch (const pluginlib::PluginlibException & ex) {
     throw nav2_core::ControllerException(
             std::string("Failed to load motion model plugin '") + motion_model_name +
@@ -700,7 +708,8 @@ void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
       s.constraints.wz = s.base_constraints.wz * ratio;
     }
   }
-  motion_model_->setConstraints(settings_.constraints, settings_.model_dt);
+  motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
+    settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz);
 }
 
 models::Trajectories & Optimizer::getGeneratedTrajectories()
