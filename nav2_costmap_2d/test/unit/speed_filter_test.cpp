@@ -54,7 +54,7 @@ static constexpr double EPSILON = 1e-5;
 struct PathLookaheadParams
 {
   bool enable_path_lookahead = false;
-  double max_decel = 0.5;
+  double max_decel = -0.5;
   double min_lookahead = 0.0;
   double max_lookahead = 5.0;
   double path_sample_resolution = 0.1;
@@ -964,7 +964,7 @@ TEST_F(TestNode, testPathLookaheadDetectsZoneAhead)
 
   PathLookaheadParams params;
   params.enable_path_lookahead = true;
-  params.max_decel = 0.2;
+  params.max_decel = -0.2;
   params.min_lookahead = 0.0;
   params.max_lookahead = 5.0;
   EXPECT_TRUE(createSpeedFilter("map", params));
@@ -983,7 +983,7 @@ TEST_F(TestNode, testPathLookaheadFallBackToRobotPose)
 
   PathLookaheadParams params;
   params.enable_path_lookahead = true;
-  params.max_decel = 0.2;
+  params.max_decel = -0.2;
   params.min_lookahead = 0.0;
   params.max_lookahead = 5.0;
   EXPECT_TRUE(createSpeedFilter("map", params));
@@ -1003,7 +1003,7 @@ TEST_F(TestNode, testPathLookaheadWithDifferentFrame)
 
   PathLookaheadParams params;
   params.enable_path_lookahead = true;
-  params.max_decel = 0.2;
+  params.max_decel = -0.2;
   params.min_lookahead = 0.0;
   params.max_lookahead = 5.0;
   EXPECT_TRUE(createSpeedFilter("map", params));

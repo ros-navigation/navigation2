@@ -75,7 +75,7 @@ void SpeedFilter::initializeFilter(
   enable_path_lookahead_ = node->declare_or_get_parameter(
     name_ + "." + "enable_path_lookahead", false);
   max_decel_ = node->declare_or_get_parameter(
-    name_ + "." + "max_decel", 0.5);
+    name_ + "." + "max_decel", -0.5);
   min_lookahead_ = node->declare_or_get_parameter(
     name_ + "." + "min_lookahead", 0.3);
   max_lookahead_ = node->declare_or_get_parameter(
@@ -89,12 +89,11 @@ void SpeedFilter::initializeFilter(
 
   // Check params
   if (enable_path_lookahead_) {
-    if (max_decel_ <= 0.0) {
+    if (max_decel_ >= 0.0) {
       RCLCPP_WARN(
         logger_,
-        "SpeedFilter: max_decel = %f is non-positive,"
-        "lookahead distance will be set to max_lookahead",
-          max_decel_);
+        "SpeedFilter: max_decel should be negative,"
+        "lookahead distance will be set to max_lookahead instead");
     }
     if (min_lookahead_ < 0.0) {
       RCLCPP_WARN(
@@ -454,8 +453,8 @@ void SpeedFilter::process(
 
     // Calculate lookahead distance at current velocity
     double d_lookahead;
-    if (max_decel_ > 0.0) {
-      d_lookahead = (linear_vel * linear_vel) / (2.0 * max_decel_);
+    if (max_decel_ < 0.0) {
+      d_lookahead = (linear_vel * linear_vel) / (2.0 * std::abs(max_decel_));
       d_lookahead = std::clamp(d_lookahead, min_lookahead_, max_lookahead_);
     } else {
       d_lookahead = max_lookahead_;
