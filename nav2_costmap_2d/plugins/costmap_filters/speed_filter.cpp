@@ -247,7 +247,22 @@ void SpeedFilter::pathCallback(
   const nav_msgs::msg::Path::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
-  current_path_ = msg;
+
+  current_path_ = std::make_shared<nav_msgs::msg::Path>();
+
+  // Transform path if not in the global frame
+  if(msg->header.frame_id != global_frame_) {
+    auto transformed_path = std::make_shared<nav_msgs::msg::Path>();
+    if(nav2_util::transformPathInTargetFrame(*msg, *transformed_path, *tf_, global_frame_)) {
+      current_path_ = transformed_path;
+    } else {
+      RCLCPP_ERROR(logger_,
+          "SpeedFilter: Failed to transform path to global frame, skipping path lookahead");
+    }
+  } else {
+    current_path_ = msg;
+  }
+
   // Reset cached start index when new path is received
   cached_lookahead_start_idx_ = 0;
 }
@@ -319,16 +334,6 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   double lookahead_dist)
 {
   const auto & poses = current_path_->poses;
-
-  // Validate frame id
-  if (current_path_->header.frame_id != global_frame_) {
-    RCLCPP_WARN_THROTTLE(
-      logger_, *(clock_), 5000,
-      "SpeedFilter: Path frame [%s] differs from costmap global frame [%s],"
-      "skipping path lookahead",
-      current_path_->header.frame_id.c_str(), global_frame_.c_str());
-    return NO_SPEED_LIMIT;
-  }
 
   const size_t pose_search_start =
     (cached_lookahead_start_idx_ < poses.size()) ? cached_lookahead_start_idx_ : 0;

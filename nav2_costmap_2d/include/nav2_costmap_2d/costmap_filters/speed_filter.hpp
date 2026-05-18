@@ -49,6 +49,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/path_utils.hpp"
 
 namespace nav2_costmap_2d
 {

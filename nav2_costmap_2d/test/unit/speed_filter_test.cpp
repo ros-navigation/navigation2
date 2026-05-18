@@ -289,7 +289,9 @@ protected:
     double tr_x, double tr_y);
   void testOutOfMask(uint8_t type, double base, double multiplier);
   void testIncorrectLimits(uint8_t type, double base, double multiplier);
-  void testPathLookaheadDetection(uint8_t type, double base, double multiplier, double linear_vel);
+  void testPathLookaheadDetection(
+    uint8_t type, double base, double multiplier, double linear_vel,
+    double tr_x, double tr_y);
 
   void reset();
 
@@ -771,7 +773,7 @@ void TestNode::testIncorrectLimits(uint8_t type, double base, double multiplier)
 
 void TestNode::testPathLookaheadDetection(
   uint8_t type, double base, double multiplier,
-  double linear_vel)
+  double linear_vel, double tr_x, double tr_y)
 {
   const int min_i = 0;
   const int min_j = 0;
@@ -785,9 +787,11 @@ void TestNode::testPathLookaheadDetection(
   pose.position.x = 2.0;
   pose.position.y = 0.0;
 
-  publishPath(createPath(2.0, 0.0, 2.0, 5.0, 0.5));
   publishOdom(linear_vel);
   publishTransform();
+
+  const std::string path_frame = (tr_x == 0.0 || tr_y == 0.0) ? "map" : "odom";
+  publishPath(createPath(2.0 - tr_x, 0.0 - tr_y, 2.0 - tr_x, 5.0 - tr_y, 0.5, path_frame));
   waitSome(100ms);
 
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
@@ -965,7 +969,8 @@ TEST_F(TestNode, testPathLookaheadDetectsZoneAhead)
   params.max_lookahead = 5.0;
   EXPECT_TRUE(createSpeedFilter("map", params));
 
-  testPathLookaheadDetection(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0);
+  testPathLookaheadDetection(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0, NO_TRANSLATION,
+    NO_TRANSLATION);
 
   speed_filter_->resetFilter();
   reset();
@@ -986,6 +991,27 @@ TEST_F(TestNode, testPathLookaheadFallBackToRobotPose)
   // No path or odom published, filter should fall back to just checking at robot pose
   testSimpleMask(
     nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, NO_TRANSLATION, NO_TRANSLATION);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadWithDifferentFrame)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = 0.2;
+  params.min_lookahead = 0.0;
+  params.max_lookahead = 5.0;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+  createTFBroadcaster("map", "odom");
+
+  // Path is published in odom frame, but filter is in map frame
+  testPathLookaheadDetection(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0, TRANSLATION_X,
+    TRANSLATION_Y);
 
   speed_filter_->resetFilter();
   reset();
