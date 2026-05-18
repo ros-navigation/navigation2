@@ -810,6 +810,21 @@ ObstacleLayer::activate()
     std::bind(
       &ObstacleLayer::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
+
+  // Resync cached params with the parameter store
+  std::vector<rclcpp::Parameter> initialized;
+  for (const auto & name : node->list_parameters({}, 0).names) {
+    rclcpp::Parameter p;
+    if (node->get_parameter(name, p) &&
+      p.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET)
+    {
+      initialized.push_back(p);
+    }
+  }
+  if (!initialized.empty()) {
+    updateParametersCallback(initialized);
+  }
+
   for (auto & notifier : observation_notifiers_) {
     notifier->clear();
   }
