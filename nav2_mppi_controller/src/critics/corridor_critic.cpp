@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <limits>
+#include <string>
 
 #include "nav2_mppi_controller/critics/corridor_critic.hpp"
 #include "nav2_costmap_2d/inflation_layer_interface.hpp"

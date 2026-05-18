@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+
 #include "nav2_mppi_controller/critics/esdf_critic.hpp"
 #include "nav2_costmap_2d/inflation_layer_interface.hpp"
 #include "nav2_core/controller_exceptions.hpp"
@@ -182,9 +184,13 @@ void EsdfCritic::score(CriticData & data)
       }
     }
 
-    if (!trajectory_collide) {all_trajectories_collide = false;}
+    if (!trajectory_collide) {
+      all_trajectories_collide = false;
+    }
     raw_cost(i) = trajectory_collide ? collision_cost_ : traj_critical_cost;
-    if (trajectory_collide && track_collisions) {collisions[i] = true;}
+    if (trajectory_collide && track_collisions) {
+      collisions[i] = true;
+    }
   }
 
   // Normalize repulsive cost by trajectory length so it doesn't outweigh critical cost
