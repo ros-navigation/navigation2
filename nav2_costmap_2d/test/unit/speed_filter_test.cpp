@@ -1017,6 +1017,92 @@ TEST_F(TestNode, testPathLookaheadWithDifferentFrame)
   reset();
 }
 
+TEST_F(TestNode, testPathLookaheadInvalidDecel)
+{
+  // Covers the max_decel >= 0 fallback and warning.
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = 0.0;  // invalid
+  params.min_lookahead = 0.3;
+  params.max_lookahead = 5.0;
+  params.path_sample_resolution = 0.1;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadDetection(
+    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0,
+    1.0, NO_TRANSLATION, NO_TRANSLATION);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadInvalidMinLookahead)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.25;
+  params.min_lookahead = -1.0;  // invalid: gets clamped to 0
+  params.max_lookahead = 5.0;
+  params.path_sample_resolution = 0.5;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  // Filter still works, min_lookahead was reset to 0.0
+  testPathLookaheadDetection(
+    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0,
+    NO_TRANSLATION, NO_TRANSLATION);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadInvalidMaxLookahead)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.5;
+  params.min_lookahead = 2.0;
+  params.max_lookahead = 0.5;  // invalid: less than min, gets clamped up to min
+  params.path_sample_resolution = 0.5;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadDetection(
+    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0,
+    NO_TRANSLATION, NO_TRANSLATION);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadInvalidPathSampleResolution)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.5;
+  params.min_lookahead = 5.0;
+  params.max_lookahead = 10.0;
+  params.path_sample_resolution = -0.5;  // invalid: gets reset to 0.1
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadDetection(
+    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0,
+    NO_TRANSLATION, NO_TRANSLATION);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
 int main(int argc, char ** argv)
 {
   // Initialize the system
