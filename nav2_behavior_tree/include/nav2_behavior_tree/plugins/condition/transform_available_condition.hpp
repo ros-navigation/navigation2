@@ -73,8 +73,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<std::string>("child", std::string(), "Child frame for transform"),
-      BT::InputPort<std::string>("parent", std::string(), "parent frame for transform")
+      BT::InputPort<std::string>("child", "", "Child frame for transform"),
+      BT::InputPort<std::string>("parent", "", "parent frame for transform")
     };
   }
 

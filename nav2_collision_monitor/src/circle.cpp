@@ -58,15 +58,33 @@ void Circle::getPolygon(std::vector<Point> & poly) const
   }
 }
 
-int Circle::getPointsInside(const std::vector<Point> & points) const
+int Circle::getPointsInside(
+  const std::vector<Point> & points,
+  std::vector<Point> & out_triggering_points) const
 {
   int num = 0;
   for (Point point : points) {
     if (point.x * point.x + point.y * point.y < radius_squared_) {
+      out_triggering_points.push_back(point);
       num++;
     }
   }
 
+  return num;
+}
+
+int Circle::getPointsInside(
+  const std::vector<Point> & points,
+  std::vector<std::size_t> & out_triggering_indices) const
+{
+  int num = 0;
+  for (std::size_t i = 0; i < points.size(); ++i) {
+    const Point & point = points[i];
+    if (point.x * point.x + point.y * point.y < radius_squared_) {
+      out_triggering_indices.push_back(i);
+      num++;
+    }
+  }
   return num;
 }
 

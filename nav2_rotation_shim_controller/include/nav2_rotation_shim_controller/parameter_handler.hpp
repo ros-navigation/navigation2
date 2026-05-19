@@ -36,6 +36,7 @@ struct Parameters
   double angular_disengage_threshold;
   double rotate_to_heading_angular_vel;
   double max_angular_accel;
+  double max_cost_threshold;
   double simulate_ahead_time;
   double control_duration;
   bool rotate_to_goal_heading;

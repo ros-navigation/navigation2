@@ -50,6 +50,7 @@ static const char CMD_VEL_IN_TOPIC[]{"cmd_vel_in"};
 static const char CMD_VEL_OUT_TOPIC[]{"cmd_vel_out"};
 static const char STATE_TOPIC[]{"collision_monitor_state"};
 static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_monitor/collision_points_marker"};
+static const char TRIGGERING_POINTS_TOPIC[]{"/collision_monitor/triggering_points"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
@@ -189,6 +190,7 @@ public:
     const std::chrono::nanoseconds & timeout);
   bool waitActionState(const std::chrono::nanoseconds & timeout);
   bool waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout);
+  bool waitTriggeringPoints(const std::chrono::nanoseconds & timeout);
   bool waitToggle(
     rclcpp::Client<nav2_msgs::srv::Toggle>::SharedFuture result_future,
     const std::chrono::nanoseconds & timeout);
@@ -197,6 +199,7 @@ protected:
   void cmdVelOutCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg);
   void actionStateCallback(nav2_msgs::msg::CollisionMonitorState::ConstSharedPtr msg);
   void collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg);
+  void triggeringPointsCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg);
 
   // CollisionMonitor node
   std::shared_ptr<CollisionMonitorWrapper> cm_;
@@ -227,6 +230,11 @@ protected:
   nav2::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_sub_;
   visualization_msgs::msg::MarkerArray::ConstSharedPtr collision_points_marker_msg_;
+
+  // CollisionMonitor triggering points markers
+  nav2::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
+    triggering_points_sub_;
+  visualization_msgs::msg::MarkerArray::ConstSharedPtr triggering_points_msg_;
 
   // Service client for setting CollisionMonitor parameters
   nav2::ServiceClient<rcl_interfaces::srv::SetParameters>::SharedPtr parameters_client_;
@@ -272,6 +280,9 @@ Tester::Tester()
   collision_points_marker_sub_ = cm_->create_subscription<visualization_msgs::msg::MarkerArray>(
     COLLISION_POINTS_MARKERS_TOPIC,
     std::bind(&Tester::collisionPointsMarkerCallback, this, std::placeholders::_1));
+  triggering_points_sub_ = cm_->create_subscription<visualization_msgs::msg::MarkerArray>(
+    TRIGGERING_POINTS_TOPIC,
+    std::bind(&Tester::triggeringPointsCallback, this, std::placeholders::_1));
   parameters_client_ =
     cm_->create_client<rcl_interfaces::srv::SetParameters>(
     std::string(
@@ -299,6 +310,7 @@ Tester::~Tester()
 
   action_state_sub_.reset();
   collision_points_marker_sub_.reset();
+  triggering_points_sub_.reset();
 
   cm_.reset();
   executor_.reset();
@@ -688,6 +700,7 @@ void Tester::publishCmdVel(const double x, const double y, const double tw)
   cmd_vel_out_ = nullptr;
   action_state_ = nullptr;
   collision_points_marker_msg_ = nullptr;
+  triggering_points_msg_ = nullptr;
 
   std::unique_ptr<geometry_msgs::msg::Twist> msg =
     std::make_unique<geometry_msgs::msg::Twist>();
@@ -786,6 +799,19 @@ bool Tester::waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout)
   return false;
 }
 
+bool Tester::waitTriggeringPoints(const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = cm_->now();
+  while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (triggering_points_msg_) {
+      return true;
+    }
+    executor_->spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
 void Tester::cmdVelOutCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg)
 {
   cmd_vel_out_ = msg;
@@ -799,6 +825,11 @@ void Tester::actionStateCallback(nav2_msgs::msg::CollisionMonitorState::ConstSha
 void Tester::collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg)
 {
   collision_points_marker_msg_ = msg;
+}
+
+void Tester::triggeringPointsCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg)
+{
+  triggering_points_msg_ = msg;
 }
 
 TEST_F(Tester, testToggleService)
@@ -1578,6 +1609,62 @@ TEST_F(Tester, testCollisionPointsMarkers)
   ASSERT_TRUE(waitCollisionPointsMarker(500ms));
   ASSERT_NE(collision_points_marker_msg_->markers[0].points.size(), 0u);
   // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testTriggeringPointsMarkers)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Stop polygon of half-size 1.0 around base_link, single scan source.
+  setCommonParameters();
+  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"Stop"}, {SCAN_NAME});
+
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // No obstacle: triggering_points should contain only the DELETEALL clear marker.
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitTriggeringPoints(500ms));
+  ASSERT_EQ(triggering_points_msg_->markers.size(), 1u);
+  EXPECT_EQ(
+    triggering_points_msg_->markers[0].action,
+    visualization_msgs::msg::Marker::DELETEALL);
+
+  // Obstacle inside the Stop polygon: STOP action triggers, marker array must
+  // contain the clear marker plus one POINTS marker for the Scan source.
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitTriggeringPoints(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+
+  ASSERT_EQ(triggering_points_msg_->markers.size(), 2u);
+  EXPECT_EQ(
+    triggering_points_msg_->markers[0].action,
+    visualization_msgs::msg::Marker::DELETEALL);
+
+  const auto & points_marker = triggering_points_msg_->markers[1];
+  EXPECT_EQ(points_marker.type, visualization_msgs::msg::Marker::POINTS);
+  EXPECT_EQ(points_marker.action, visualization_msgs::msg::Marker::ADD);
+  EXPECT_EQ(points_marker.ns, std::string("Stop/") + SCAN_NAME);
+  EXPECT_EQ(points_marker.header.frame_id, BASE_FRAME_ID);
+  EXPECT_TRUE(points_marker.frame_locked);
+  // STOP colour: red.
+  EXPECT_FLOAT_EQ(points_marker.color.r, 1.0f);
+  EXPECT_FLOAT_EQ(points_marker.color.g, 0.0f);
+  EXPECT_FLOAT_EQ(points_marker.color.b, 0.0f);
+  EXPECT_FLOAT_EQ(points_marker.color.a, 1.0f);
+
+  ASSERT_FALSE(points_marker.points.empty());
+  for (const auto & p : points_marker.points) {
+    EXPECT_LE(std::abs(p.x), 1.0 + EPSILON);
+    EXPECT_LE(std::abs(p.y), 1.0 + EPSILON);
+  }
+
   cm_->stop();
 }
 
