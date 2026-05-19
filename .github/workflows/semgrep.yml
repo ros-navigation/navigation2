@@ -1,0 +1,27 @@
+name: Semgrep
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  semgrep:
+    name: Semgrep Nav2 Coding Standards
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep:1.76.0
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run semgrep rules
+        run: |
+          semgrep \
+            --config .semgrep/nav2_coding_standards.yml \
+            --verbose \
+            --exclude "nav2_ros_common/" \
+            --include "*.cpp" \
+            --include "*.hpp" \
+            --include "*.h" \
+            .

@@ -1,0 +1,123 @@
+# Nav2 Coding Standards - Semgrep Rules
+#
+# Enforces Nav2 type conventions over raw rclcpp:: equivalents.
+# See: https://github.com/ros-navigation/navigation2/issues/6079
+#
+# Prefer:
+#   nav2::Publisher<T>       over  rclcpp::Publisher<T>
+#   nav2::ServiceClient<T>   over  rclcpp::Client<T>
+#   nav2::ServiceServer<T>   over  rclcpp::Service<T>
+#   nav2::Subscription<T>    over  rclcpp::Subscription<T>
+#   declare_or_get_parameter over  separate declare_parameter + get_parameter
+
+rules:
+  - id: nav2-use-nav2-publisher
+    patterns:
+      - pattern: rclcpp::Publisher<$T>
+      - pattern-not-inside: |
+          using $ALIAS = rclcpp::Publisher<$T>;
+    message: >
+      Use nav2::Publisher<$T> instead of rclcpp::Publisher<$T>.
+      nav2::Publisher is a lifecycle-aware publisher following Nav2 conventions.
+      Include: #include "nav2_ros_common/publisher.hpp"
+    languages: [cpp]
+    severity: WARNING
+    metadata:
+      category: style
+      subcategory: [maintainability]
+      references:
+        - https://github.com/ros-navigation/navigation2/issues/6079
+    paths:
+      exclude:
+        - "nav2_ros_common/**"
+        - "**/test/**"
+        - "**/*_test.cpp"
+
+  - id: nav2-use-nav2-service-client
+    patterns:
+      - pattern: rclcpp::Client<$T>
+      - pattern-not-inside: |
+          using $ALIAS = rclcpp::Client<$T>;
+    message: >
+      Use nav2::ServiceClient<$T> instead of rclcpp::Client<$T>.
+      nav2::ServiceClient provides lifecycle awareness and a simpler call interface.
+      Include: #include "nav2_ros_common/service_client.hpp"
+    languages: [cpp]
+    severity: WARNING
+    metadata:
+      category: style
+      subcategory: [maintainability]
+      references:
+        - https://github.com/ros-navigation/navigation2/issues/6079
+    paths:
+      exclude:
+        - "nav2_ros_common/**"
+        - "**/test/**"
+        - "**/*_test.cpp"
+
+  - id: nav2-use-nav2-service-server
+    patterns:
+      - pattern: rclcpp::Service<$T>
+      - pattern-not-inside: |
+          using $ALIAS = rclcpp::Service<$T>;
+    message: >
+      Use nav2::ServiceServer<$T> instead of rclcpp::Service<$T>.
+      nav2::ServiceServer integrates with the Nav2 lifecycle and bond system.
+      Include: #include "nav2_ros_common/service_server.hpp"
+    languages: [cpp]
+    severity: WARNING
+    metadata:
+      category: style
+      subcategory: [maintainability]
+      references:
+        - https://github.com/ros-navigation/navigation2/issues/6079
+    paths:
+      exclude:
+        - "nav2_ros_common/**"
+        - "**/test/**"
+        - "**/*_test.cpp"
+
+  - id: nav2-use-nav2-subscription
+    patterns:
+      - pattern: rclcpp::Subscription<$T>
+      - pattern-not-inside: |
+          using $ALIAS = rclcpp::Subscription<$T>;
+    message: >
+      Use nav2::Subscription<$T> instead of rclcpp::Subscription<$T>
+      for Nav2 naming consistency and potential future API extensions.
+      Include: #include "nav2_ros_common/subscription.hpp"
+    languages: [cpp]
+    severity: WARNING
+    metadata:
+      category: style
+      subcategory: [maintainability]
+      references:
+        - https://github.com/ros-navigation/navigation2/issues/6079
+    paths:
+      exclude:
+        - "nav2_ros_common/**"
+        - "**/test/**"
+        - "**/*_test.cpp"
+
+  - id: nav2-use-declare-or-get-parameter
+    pattern: |
+      $NODE->declare_parameter($PARAM_NAME, ...);
+      ...
+      $NODE->get_parameter($PARAM_NAME, ...);
+    message: >
+      Prefer nav2::declare_or_get_parameter() over calling declare_parameter() and
+      get_parameter() separately. This consolidates parameter declaration and retrieval
+      and follows Nav2 parameter conventions.
+      See: nav2_ros_common/node_utils.hpp
+    languages: [cpp]
+    severity: WARNING
+    metadata:
+      category: style
+      subcategory: [maintainability]
+      references:
+        - https://github.com/ros-navigation/navigation2/issues/6079
+    paths:
+      exclude:
+        - "nav2_ros_common/**"
+        - "**/test/**"
+        - "**/*_test.cpp"
