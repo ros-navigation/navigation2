@@ -52,7 +52,7 @@ SpeedFilter::SpeedFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   speed_limit_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
   speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT),
-  cached_lookahead_start_idx_(0)
+  held_lookahead_dist_(0.0), cached_lookahead_start_idx_(0)
 {
 }
 
@@ -456,11 +456,25 @@ void SpeedFilter::process(
     if (max_decel_ < 0.0) {
       d_lookahead = (linear_vel * linear_vel) / (2.0 * std::abs(max_decel_));
       d_lookahead = std::clamp(d_lookahead, min_lookahead_, max_lookahead_);
+
+      // If a limit is currently active, don't let the lookahead shrink below
+      // the one that captured the speed zone
+      if(speed_limit_ != NO_SPEED_LIMIT) {
+        d_lookahead = std::max(d_lookahead, held_lookahead_dist_);
+      }
     } else {
       d_lookahead = max_lookahead_;
     }
 
     speed_limit_ = getSpeedLimitFromLookahead(pose, d_lookahead);
+
+    // If a limit is currently active, hold the lookahead distance
+    if(speed_limit_ != NO_SPEED_LIMIT) {
+      held_lookahead_dist_ = d_lookahead;
+    } else {
+      // If no limit is currently active, reset the held distance
+      held_lookahead_dist_ = 0.0;
+    }
   } else {
     if (!getSpeedLimitAtPose(pose, speed_limit_)) {
       RCLCPP_ERROR(logger_, "SpeedFilter: Failed to get speed limit at pose");
@@ -502,6 +516,8 @@ void SpeedFilter::resetFilter()
     lookahead_pub_->on_deactivate();
     lookahead_pub_.reset();
   }
+  held_lookahead_dist_ = 0.0;
+  cached_lookahead_start_idx_ = 0;
 }
 
 bool SpeedFilter::isActive()
