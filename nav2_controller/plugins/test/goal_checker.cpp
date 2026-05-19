@@ -245,6 +245,7 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   // Test normal goal checker's dynamic parameters
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test2.xy_goal_tolerance", 200.0),
+      rclcpp::Parameter("test2.xy_goal_tolerance_buffer", 20.0),
       rclcpp::Parameter("test2.yaw_goal_tolerance", 200.0),
       rclcpp::Parameter("test2.path_length_tolerance", 200.0),
       rclcpp::Parameter("test2.stateful", true),
@@ -255,6 +256,7 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
     results);
 
   EXPECT_EQ(x->get_parameter("test2.xy_goal_tolerance").as_double(), 200.0);
+  EXPECT_EQ(x->get_parameter("test2.xy_goal_tolerance_buffer").as_double(), 20.0);
   EXPECT_EQ(x->get_parameter("test2.yaw_goal_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test2.path_length_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test2.stateful").as_bool(), true);
@@ -275,6 +277,7 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   // Test position goal checker's dynamic parameters
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test3.xy_goal_tolerance", 200.0),
+      rclcpp::Parameter("test3.xy_goal_tolerance_buffer", 20.0),
       rclcpp::Parameter("test3.path_length_tolerance", 200.0),
       rclcpp::Parameter("test3.stateful", true)});
 
@@ -283,6 +286,7 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
     results);
 
   EXPECT_EQ(x->get_parameter("test3.xy_goal_tolerance").as_double(), 200.0);
+  EXPECT_EQ(x->get_parameter("test3.xy_goal_tolerance_buffer").as_double(), 20.0);
   EXPECT_EQ(x->get_parameter("test3.path_length_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test3.stateful").as_bool(), true);
 
@@ -311,6 +315,15 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   EXPECT_EQ(x->get_parameter("test2.xy_goal_tolerance").as_double(), 200.0);
 
   results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test2.xy_goal_tolerance_buffer", -1.0)}
+  );
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(),
+    results);
+  // Value should remain unchanged
+  EXPECT_EQ(x->get_parameter("test2.xy_goal_tolerance_buffer").as_double(), 20.0);
+
+  results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test3.path_length_tolerance", -1.0)}
   );
   rclcpp::spin_until_future_complete(
@@ -318,6 +331,15 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
     results);
   // Value should remain unchanged
   EXPECT_EQ(x->get_parameter("test3.path_length_tolerance").as_double(), 200.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test3.xy_goal_tolerance_buffer", -1.0)}
+  );
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(),
+    results);
+  // Value should remain unchanged
+  EXPECT_EQ(x->get_parameter("test3.xy_goal_tolerance_buffer").as_double(), 20.0);
 }
 
 TEST(StoppedGoalChecker, is_reached)
@@ -473,6 +495,104 @@ TEST(StoppedGoalChecker, is_reached)
   EXPECT_TRUE(pgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
 }
 
+TEST(SimpleGoalChecker, xy_goal_tolerance_buffer)
+{
+  auto x = std::make_shared<TestLifecycleNode>("simple_goal_checker_buffer");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  const double xy_goal_tol = 0.25;
+  const double xy_goal_tol_buffer = 0.10;
+  const double yaw_goal_tol = 0.25;
+  x->declare_parameter("test.xy_goal_tolerance", 0.25);
+  x->declare_parameter("test.xy_goal_tolerance_buffer", 0.10);
+  x->declare_parameter("test.yaw_goal_tolerance", 0.25);
+  x->declare_parameter("test.stateful", true);
+  SimpleGoalChecker gc;
+  gc.initialize(x, "test", costmap);
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+  geometry_msgs::msg::Twist velocity;
+  nav_msgs::msg::Path transformed_global_plan;
+
+  // xy is within xy_goal_tolerance, but yaw is outside yaw_goal_tolerance.
+  // The xy reached state is latched, but the goal is not reached yet.
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+    yaw_goal_tol + std::numeric_limits<float>::epsilon());
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  // xy moves outside xy_goal_tolerance, but stays within
+  // xy_goal_tolerance + xy_goal_tolerance_buffer.
+  // Since xy was already latched and yaw is now within tolerance, the goal is reached.
+  current_pose.position.x = xy_goal_tol + xy_goal_tol_buffer;
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw_goal_tol);
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  // xy moves outside xy_goal_tolerance + xy_goal_tolerance_buffer.
+  // This clears the xy reached latch.
+  current_pose.position.x =
+    xy_goal_tol + xy_goal_tol_buffer + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  // xy moves back within the buffered tolerance, but the latch has already been cleared.
+  current_pose.position.x = xy_goal_tol + xy_goal_tol_buffer;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  // xy returns to xy_goal_tolerance, so the xy reached state is latched again.
+  // Since yaw is also within tolerance, the goal is reached.
+  current_pose.position.x = xy_goal_tol;
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+}
+
+TEST(PositionGoalChecker, xy_goal_tolerance_buffer)
+{
+  auto x = std::make_shared<TestLifecycleNode>("position_goal_checker_buffer");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  const double xy_goal_tol = 0.25;
+  const double xy_goal_tol_buffer = 0.10;
+  x->declare_parameter("test.xy_goal_tolerance", xy_goal_tol);
+  x->declare_parameter("test.xy_goal_tolerance_buffer", xy_goal_tol_buffer);
+  x->declare_parameter("test.stateful", true);
+  PositionGoalChecker gc;
+  gc.initialize(x, "test", costmap);
+
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Pose current_pose;
+  geometry_msgs::msg::Twist velocity;
+  nav_msgs::msg::Path transformed_global_plan;
+
+  // xy is outside xy_goal_tolerance, so the goal is not reached yet.
+  current_pose.position.x = xy_goal_tol + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  // XY enters xy_goal_tolerance, so the XY reached state is latched and the goal is reached.
+  current_pose.position.x = xy_goal_tol;
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  // xy moves outside xy_goal_tolerance, but remains within
+  // xy_goal_tolerance + xy_goal_tolerance_buffer.
+  // Since the xy reached state is already latched, the goal is still reached.
+  current_pose.position.x = xy_goal_tol + xy_goal_tol_buffer;
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  // xy moves outside xy_goal_tolerance + xy_goal_tolerance_buffer.
+  // This clears the xy reached latch and the goal is not reached.
+  current_pose.position.x =
+    xy_goal_tol + xy_goal_tol_buffer + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  // xy moves back within the buffered tolerance region,
+  // but the latch has already been cleared. The goal is not reached.
+  current_pose.position.x = xy_goal_tol + xy_goal_tol_buffer;
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  // xy returns to the original xy_goal_tolerance,
+  // so the xy reached state is latched again and the goal is reached.
+  current_pose.position.x = xy_goal_tol;
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+}
+
 TEST(AdaptiveToleranceGoalChecker, goal_reached)
 {
   auto x = std::make_shared<TestLifecycleNode>("adaptive_tol_gc");
@@ -493,6 +613,7 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
 
   const double fine_xy_tol = 0.10;
   const double coarse_xy_tol = 0.25;
+  const double xy_tol_buffer = 0.10;
   const double yaw_tol = 0.25;
   const double path_length_tol = 1.0;
   const double trans_stopped_vel = 0.10;
@@ -500,6 +621,7 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   const int required_stagnation_cycles = 3;
   x->declare_parameter("pgc.fine_xy_goal_tolerance", fine_xy_tol);
   x->declare_parameter("pgc.coarse_xy_goal_tolerance", coarse_xy_tol);
+  x->declare_parameter("pgc.xy_goal_tolerance_buffer", xy_tol_buffer);
   x->declare_parameter("pgc.yaw_goal_tolerance", yaw_tol);
   x->declare_parameter("pgc.path_length_tolerance", path_length_tol);
   x->declare_parameter("pgc.stateful", true);
@@ -723,12 +845,21 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   current.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI / 2.0);
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
 
-  // Stateful: XY latches after acceptance
+  // Stateful: XY latches after acceptance,
+  // but leaving coarse_xy_tolerance + xy_tolerance_buffer resets latch and requires re-acceptance
   gc.reset();
   current.orientation = geometry_msgs::msg::Quaternion();
-  current.position.x = 0.05;
+  current.position.x = fine_xy_tol / 2.0;
   EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
-  current.position.x = 0.50;
+  current.position.x = coarse_xy_tol + xy_tol_buffer;
+  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
+  current.position.x = coarse_xy_tol + xy_tol_buffer + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
+  current.position.x = coarse_xy_tol + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
+  current.position.x = fine_xy_tol / 2.0;
+  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
+  current.position.x = coarse_xy_tol + xy_tol_buffer;
   EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
   gc.reset();
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
@@ -816,6 +947,7 @@ TEST(AdaptiveToleranceGoalChecker, get_tol_and_dynamic_params)
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("pgc.fine_xy_goal_tolerance", 0.05),
       rclcpp::Parameter("pgc.coarse_xy_goal_tolerance", 0.50),
+      rclcpp::Parameter("pgc.xy_goal_tolerance_buffer", 0.10),
       rclcpp::Parameter("pgc.yaw_goal_tolerance", 0.10),
       rclcpp::Parameter("pgc.path_length_tolerance", 2.0),
       rclcpp::Parameter("pgc.stateful", false),
@@ -827,6 +959,7 @@ TEST(AdaptiveToleranceGoalChecker, get_tol_and_dynamic_params)
 
   EXPECT_EQ(x->get_parameter("pgc.fine_xy_goal_tolerance").as_double(), 0.05);
   EXPECT_EQ(x->get_parameter("pgc.coarse_xy_goal_tolerance").as_double(), 0.50);
+  EXPECT_EQ(x->get_parameter("pgc.xy_goal_tolerance_buffer").as_double(), 0.10);
   EXPECT_EQ(x->get_parameter("pgc.yaw_goal_tolerance").as_double(), 0.10);
   EXPECT_EQ(x->get_parameter("pgc.path_length_tolerance").as_double(), 2.0);
   EXPECT_EQ(x->get_parameter("pgc.stateful").as_bool(), false);
@@ -850,6 +983,11 @@ TEST(AdaptiveToleranceGoalChecker, get_tol_and_dynamic_params)
     {rclcpp::Parameter("pgc.coarse_xy_goal_tolerance", -1.0)});
   rclcpp::spin_until_future_complete(x->get_node_base_interface(), results);
   EXPECT_EQ(x->get_parameter("pgc.coarse_xy_goal_tolerance").as_double(), 0.50);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("pgc.xy_goal_tolerance_buffer", -1.0)});
+  rclcpp::spin_until_future_complete(x->get_node_base_interface(), results);
+  EXPECT_EQ(x->get_parameter("pgc.xy_goal_tolerance_buffer").as_double(), 0.10);
 
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("pgc.yaw_goal_tolerance", -1.0)});
