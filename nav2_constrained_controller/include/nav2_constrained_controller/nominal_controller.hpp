@@ -1,30 +1,27 @@
 // Copyright (c) 2026 Origin Autonomy
 // Licensed under the Apache License, Version 2.0
 //
-// NominalController — sign-symmetric decoupled P controller.
+// NominalController — Stanley-inspired path follower for omnidirectional AMR.
 //
-// Single law, no forward/backward branching, no curvature math, no
-// initial-rotation. Drives the robot toward a lookahead pose given in
-// base_link.
+// All three DoFs are commanded simultaneously — no mode switching.
+// The CBF safety filter downstream handles obstacle safety for all outputs.
 //
-//     vx_nom = sign(x_t) * s * v_lin_max  * (|x_t| / denom)
-//     vy_nom =             s * v_lat_max  * (y_t  / denom)
-//     wz_nom = k_yaw * ramp * shortest_angular_distance(yaw_r, yaw_t)
+// Control laws (robot at base_link origin, θ=0):
 //
-// where
-//     r     = sqrt(x_t^2 + y_t^2)
-//     denom = |x_t| + |y_t| + 1e-6
-//     s     = min(1, r / slowdown_radius)        — distance taper
-//     ramp  = clamp((slowdown_radius - r) / slowdown_radius, 0, 1)
-//                                                — heading taper near goal
-//     yaw_r = 0  (robot frame is at base_link origin, looking +x)
-//     yaw_t = retangented yaw of the lookahead pose
+//   closest  = local_plan.poses[0]  — closest path point in base_link
+//   lookahead = motion target        — first pose at ≥ motion_target_dist
 //
-// Lookahead is in base_link, so x_t, y_t already encode "where the
-// path wants me to go relative to my current heading". Lateral target
-// y_t comes straight from the path — no LiDAR D_L/D_R wall balancing
-// (per the design lock-in: path is in odom via Fix 1, CBF handles
-// wall safety, path-derived vy is sufficient).
+//   s        = clamp(taper_dist / slowdown_radius, 0, 1)   — speed taper
+//   taper_dist = dist_to_goal if available, else ||lookahead||
+//
+//   vx  = sign(lookahead.x) · v_linear_max · s
+//   vy  = k_lat · cte · s           where cte = closest.position.y
+//   wz  = k_yaw · heading_err       where heading_err = tf2::getYaw(closest.orientation)
+//                                   (sign-flipped for backward motion)
+//
+// Heading reference is the path tangent at the CLOSEST point, not the lookahead
+// bearing. The closest point moves monotonically along the path, so heading_err
+// never oscillates when the robot spins or the path end is reached.
 
 #ifndef NAV2_CONSTRAINED_CONTROLLER__NOMINAL_CONTROLLER_HPP_
 #define NAV2_CONSTRAINED_CONTROLLER__NOMINAL_CONTROLLER_HPP_
@@ -35,18 +32,16 @@
 namespace nav2_constrained_controller
 {
 
-struct Parameters;  // fwd decl
+struct Parameters;
 
 struct NominalDebug
 {
-  double r{0.0};
-  double s{1.0};
-  double ramp{1.0};
-  double yaw_err{0.0};
-  // Pre-clamp values so we can detect when the envelope is biting.
-  double vx_unclamped{0.0};
-  double vy_unclamped{0.0};
-  double wz_unclamped{0.0};
+  double r{0.0};           // distance to lookahead (metres)
+  double s{1.0};           // speed taper [0,1]
+  double ramp{1.0};        // = s (kept for log-file compatibility)
+  double cte_y{0.0};       // cross-track error: closest.position.y (metres)
+  double heading_err{0.0}; // heading error at closest point (radians)
+  bool   is_forward{true}; // true = forward motion (lookahead.x ≥ 0)
 };
 
 class NominalController
@@ -54,11 +49,13 @@ class NominalController
 public:
   explicit NominalController(const Parameters * params);
 
-  // target  : lookahead pose in base_link (yaw is retangented path
-  //           tangent)
-  // returns : (vx, vy, wz) command, clamped to actuation envelope
+  // closest  : local_plan.poses[0].pose in base_link (closest path point)
+  // lookahead: motion target pose in base_link (for direction and taper)
+  // dist_to_goal: live distance to goal (inf if TF unavailable — falls back to ||lookahead||)
   geometry_msgs::msg::Twist compute(
-    const geometry_msgs::msg::Pose & target,
+    const geometry_msgs::msg::Pose & closest,
+    const geometry_msgs::msg::Pose & lookahead,
+    double dist_to_goal,
     NominalDebug * dbg = nullptr) const;
 
 private:

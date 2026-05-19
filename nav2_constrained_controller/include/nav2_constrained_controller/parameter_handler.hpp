@@ -27,15 +27,14 @@ struct Parameters
   double v_linear_max_initial{0.4};
   double v_angular_max_initial{1.5};
 
-  // ---------- nominal P-controller gains ----------
-  double slowdown_radius{0.6};
+  // ---------- Stanley path-follower gains ----------
+  double slowdown_radius{0.20};
   double k_yaw{1.5};
-  bool   yaw_correction_ramp{true};
+  double k_lat{0.8};
 
   // ---------- lookahead / path slicing ----------
-  double motion_target_dist{0.4};
+  double motion_target_dist{0.30};
   double max_robot_pose_search_dist{2.0};
-  // Goal tolerance below which we declare the segment finished.
   double goal_dist_tolerance{0.05};
 
   // ---------- footprint rectangle (Saradagi Eq. 1) ----------
@@ -43,18 +42,36 @@ struct Parameters
   // short edges), 2*db is the body width (rear-track lateral span).
   // dl, db are added safety margins on each axis. The CBF rectangle is
   // (L + 2*dl) x (2*db).
-  double footprint_length{0.65};   // L
-  double footprint_dl{0.05};       // dl  (longitudinal margin)
-  double footprint_db{0.30};       // db  (half-width incl. margin)
+  // Robot physical dimensions: 900mm (length) x 750mm (width).
+  double footprint_length{0.90};   // L  — full robot length
+  double footprint_dl{0.05};       // dl — longitudinal margin
+  double footprint_db{0.375};      // db — exact robot half-width (750mm / 2)
 
   // ---------- CBF / QP ----------
-  double cbf_gamma{2.0};
+  double cbf_gamma{1.5};
+  // Proximity speed scaling — disabled (set to 0). MPPI output passes through
+  // at full speed; the predictive CBF QP is the correct speed controller.
+  // Kept as a parameter so existing YAML files do not cause unknown-param errors.
+  double wall_slow_h_thresh{0.0};
+  // Predictive CBF: evaluate constraints at t+dt, t+2dt, ... using u_nom to
+  // predict future perimeter positions. Catches Lie-derivative-degenerate cases
+  // where the robot moves parallel to a wall that narrows ahead — the reactive
+  // CBF sees L_g h ≈ 0 and does nothing, but the predicted positions reveal the
+  // upcoming narrowing and generate tight constraints in the current tick.
+  int    cbf_n_predict_steps{2};    // number of future steps to evaluate (0 = reactive only)
+  double cbf_predict_dt{0.10};      // seconds per step (= 1 control tick at 10Hz)
   // Minimum safe distance (metres) subtracted from ESDF distance to form h.
   // h = d_esdf - d_safe. When h < 0 the robot has violated the safe margin.
   double esdf_d_safe{0.03};
   // CBF constraints with h > this value are skipped (robot far from obstacles,
   // constraint would be fully slack anyway).
   double wall_consideration_range{2.5};
+  // Slack weight for soft CBF constraints. The QP solves:
+  //   min ½||u-u_nom||² + (w/2)||ε||²  s.t. Au ≤ b+ε, ε≥0, box hard
+  // Larger w → constraints harder (ε smaller). 0 → hard constraints (original).
+  // At w=100: violating a constraint by 0.01 m/s costs 100×(0.01)²/2 = 0.005,
+  // vs deviation cost of (0.01)²/2 = 0.00005 → slack is 100× more expensive.
+  double cbf_slack_weight{100.0};
 
   // ---------- PointCloud2 / ESDF ----------
   // Use horizontal beams from the raw 3D LiDAR.
@@ -68,8 +85,8 @@ struct Parameters
   double esdf_z_max{1.447};   // lidar_height(1.347) + 0.1m
   // ESDF grid parameters. Grid is square, centred on base_link origin.
   // Total grid extent = 2 * esdf_grid_size_m in each axis.
-  double esdf_grid_resolution{0.04};  // metres per cell
-  double esdf_grid_size_m{5.0};       // half-size (so 10m x 10m total)
+  double esdf_grid_resolution{0.01};  // metres per cell (1cm for ~50mm clearance)
+  double esdf_grid_size_m{3.0};       // half-size (so 6m x 6m total)
 
   // ---------- logging ----------
   std::string log_dir{"/root/navigation_log"};

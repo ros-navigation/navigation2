@@ -26,6 +26,15 @@ struct CbfConstraint
   double rhs{0.0};       // γ·h
   double h{0.0};         // raw barrier value (distance margin)
   int corner_id{-1};     // 1..4 for footprint corners
+
+  // Debug fields (populated by the filter, not used by the QP).
+  double Au{0.0};        // A·u_nom — how much nominal velocity activates this constraint
+  double margin{0.0};    // rhs - Au: positive=satisfied, negative=violated before QP
+  double gx{0.0};        // ESDF gradient x at the sample/predicted position
+  double gy{0.0};        // ESDF gradient y
+  double sample_x{0.0};  // position where ESDF was queried (current or predicted)
+  double sample_y{0.0};
+  int    predict_step{0}; // 0=reactive, 1=step1, 2=step2, ...
 };
 
 }  // namespace nav2_constrained_controller

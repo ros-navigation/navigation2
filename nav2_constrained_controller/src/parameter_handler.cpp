@@ -45,27 +45,31 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(v_lateral_max, 0.3);
   DECL_DOUBLE(v_angular_max, 1.5);
 
-  DECL_DOUBLE(slowdown_radius, 0.6);
+  DECL_DOUBLE(slowdown_radius, 0.20);
   DECL_DOUBLE(k_yaw, 1.5);
-  DECL_BOOL(yaw_correction_ramp, true);
-
-  DECL_DOUBLE(motion_target_dist, 0.4);
+  DECL_DOUBLE(k_lat, 0.8);
+  DECL_DOUBLE(motion_target_dist, 0.30);
   DECL_DOUBLE(max_robot_pose_search_dist, 2.0);
+
   DECL_DOUBLE(goal_dist_tolerance, 0.05);
 
-  DECL_DOUBLE(footprint_length, 0.65);
+  DECL_DOUBLE(footprint_length, 0.90);
   DECL_DOUBLE(footprint_dl, 0.05);
-  DECL_DOUBLE(footprint_db, 0.30);
+  DECL_DOUBLE(footprint_db, 0.375);
 
-  DECL_DOUBLE(cbf_gamma, 2.0);
+  DECL_DOUBLE(cbf_gamma, 1.5);
+  DECL_DOUBLE(wall_slow_h_thresh, 0.25);
+  DECL_INT(cbf_n_predict_steps, 2);
+  DECL_DOUBLE(cbf_predict_dt, 0.10);
   DECL_DOUBLE(esdf_d_safe, 0.03);
   DECL_DOUBLE(wall_consideration_range, 2.5);
+  DECL_DOUBLE(cbf_slack_weight, 100.0);
 
   DECL_STRING(pointcloud_topic, "/livox/amr/lidar");
   DECL_DOUBLE(esdf_z_min, 1.247);
   DECL_DOUBLE(esdf_z_max, 1.447);
-  DECL_DOUBLE(esdf_grid_resolution, 0.04);
-  DECL_DOUBLE(esdf_grid_size_m, 5.0);
+  DECL_DOUBLE(esdf_grid_resolution, 0.01);
+  DECL_DOUBLE(esdf_grid_size_m, 3.0);
 
   DECL_STRING(log_dir, "/root/navigation_log");
   DECL_BOOL(log_enabled, true);
@@ -104,13 +108,16 @@ ParameterHandler::dynamicParametersCallback(
         params_.v_lateral_max = v;
       } else if (name == plugin_name_ + ".v_angular_max") {
         params_.v_angular_max = v; params_.v_angular_max_initial = v;
-      } else if (name == plugin_name_ + ".slowdown_radius") {
-        params_.slowdown_radius = v;
-      } else if (name == plugin_name_ + ".k_yaw") {params_.k_yaw = v;}
-      else if (name == plugin_name_ + ".motion_target_dist") {
-        params_.motion_target_dist = v;
-      } else if (name == plugin_name_ + ".cbf_gamma") {params_.cbf_gamma = v;}
-      else if (name == plugin_name_ + ".footprint_length") {
+      } else if (name == plugin_name_ + ".slowdown_radius") {params_.slowdown_radius = v;}
+      else if (name == plugin_name_ + ".k_yaw") {params_.k_yaw = v;}
+      else if (name == plugin_name_ + ".k_lat") {params_.k_lat = v;}
+      else if (name == plugin_name_ + ".motion_target_dist") {params_.motion_target_dist = v;}
+      else if (name == plugin_name_ + ".cbf_gamma") {params_.cbf_gamma = v;}
+      else if (name == plugin_name_ + ".wall_slow_h_thresh") {
+        params_.wall_slow_h_thresh = v;
+      } else if (name == plugin_name_ + ".cbf_predict_dt") {
+        params_.cbf_predict_dt = v;
+      } else if (name == plugin_name_ + ".footprint_length") {
         params_.footprint_length = v;
       } else if (name == plugin_name_ + ".footprint_dl") {
         params_.footprint_dl = v;
@@ -120,18 +127,20 @@ ParameterHandler::dynamicParametersCallback(
       else if (name == plugin_name_ + ".esdf_d_safe") {params_.esdf_d_safe = v;}
       else if (name == plugin_name_ + ".wall_consideration_range") {
         params_.wall_consideration_range = v;
+      } else if (name == plugin_name_ + ".cbf_slack_weight") {
+        params_.cbf_slack_weight = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_BOOL) {
       const bool v = p.as_bool();
-      if (name == plugin_name_ + ".yaw_correction_ramp") {
-        params_.yaw_correction_ramp = v;
-      } else if (name == plugin_name_ + ".log_enabled") {
+      if (name == plugin_name_ + ".log_enabled") {
         params_.log_enabled = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_INTEGER) {
       const int v = static_cast<int>(p.as_int());
       if (name == plugin_name_ + ".log_lidar_every_n_ticks") {
         params_.log_lidar_every_n_ticks = v;
+      } else if (name == plugin_name_ + ".cbf_n_predict_steps") {
+        params_.cbf_n_predict_steps = v;
       }
     }
   }

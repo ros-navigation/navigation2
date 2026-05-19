@@ -1,29 +1,32 @@
 // Copyright (c) 2026 Origin Autonomy
 // Licensed under the Apache License, Version 2.0
 //
-// Tiny dense QP solver for the CBF safety filter. The problem is:
+// Tiny dense QP solver for the CBF safety filter.
 //
-//     min_u  ½ ||u - u_nom||²       (cost: identity Hessian)
-//     s.t.   A u <= b               (linear inequalities; CBF rewritten
-//                                    into ≤-form)
-//            l <= u <= u_max        (box bounds)
+// Hard-constraint problem (w_slack = 0):
 //
-// With identity Hessian this is exactly Euclidean projection of u_nom
-// onto the polytope defined by the constraints. We use a simple
-// primal active-set method:
+//     min_u  ½ ||u - u_nom||²
+//     s.t.   A u ≤ b          (CBF constraints, ≤-form)
+//            u_min ≤ u ≤ u_max  (box, always hard)
 //
-//   1. Start at u = u_nom (unconstrained optimum).
-//   2. While any constraint i has A_i u > b_i + tol:
-//        a. Add the most-violated constraint to the active set.
-//        b. Solve the equality-constrained KKT system (small linear
-//           solve via Eigen's dense LDLT).
-//        c. If the resulting u still violates any non-active constraint,
-//           re-add the worst one and continue.
-//        d. If the multipliers are all non-negative, we're done; else
-//           drop the most-negative one.
+// Soft-constraint problem (w_slack > 0):
 //
-// For 3 variables and ≤8 inequalities the loop converges in a handful
-// of iterations. We cap iterations defensively.
+//     min_{u,ε}  ½ ||u - u_nom||²  +  (w_slack/2) ||ε||²
+//     s.t.       A u ≤ b + ε        (CBF soft via per-constraint slack ε ≥ 0)
+//                u_min ≤ u ≤ u_max  (box always hard)
+//
+// The soft formulation is always feasible regardless of obstacle configuration.
+// Mathematically the slack reduces to Tikhonov regularisation of the KKT Gram
+// matrix: CBF rows get diagonal += 1/w_slack, box rows keep 1e-12 (numerical).
+// The active-set structure, multiplier sign checks and convergence criterion are
+// identical to the hard case.  w_slack = 0 reproduces the original hard solver.
+//
+// Primal active-set method:
+//   1. Start at u = clamp(u_nom, box).
+//   2. While a non-active CBF constraint is violated OR a box constraint is violated:
+//        a. Add the worst violator to the active set.
+//        b. Solve the soft KKT system via Eigen LDLT.
+//        c. If multipliers all ≥ 0, done; else drop the most-negative one.
 
 #ifndef NAV2_CONSTRAINED_CONTROLLER__QP_SOLVER_HPP_
 #define NAV2_CONSTRAINED_CONTROLLER__QP_SOLVER_HPP_
@@ -38,23 +41,28 @@ namespace nav2_constrained_controller
 struct QpResult
 {
   Eigen::Vector3d u{Eigen::Vector3d::Zero()};
-  bool ok{true};
+  bool ok{true};           // false only if box bounds infeasible or LDLT failed
   int iterations{0};
   int n_active{0};
-  double deviation{0.0};   // ||u - u_nom||
+  double deviation{0.0};   // ||u* - u_nom||
+  double max_slack{0.0};   // max ε_i = max λ_i/w_slack across active CBF rows
+                           // 0 when all hard constraints satisfied; > 0 means
+                           // the safety margin was partially relaxed this tick.
 };
 
-// Solve the box-constrained QP described above.
-//   A   : (m × 3)
-//   b   : (m)
-//   u_min, u_max : (3, 3)
-//   u_nom: (3)
+// Solve the (soft-)constrained projection QP.
+//   A       : (m_cbf × 3) — CBF constraint rows only (box added internally)
+//   b       : (m_cbf)
+//   u_min, u_max : box bounds (always hard)
+//   u_nom   : nominal velocity
+//   w_slack : slack weight > 0 → soft CBF; 0 → hard (original behaviour)
 QpResult solveProjectionQP(
   const Eigen::MatrixXd & A,
   const Eigen::VectorXd & b,
   const Eigen::Vector3d & u_min,
   const Eigen::Vector3d & u_max,
   const Eigen::Vector3d & u_nom,
+  double w_slack = 0.0,
   int max_iter = 50,
   double tol = 1e-7);
 

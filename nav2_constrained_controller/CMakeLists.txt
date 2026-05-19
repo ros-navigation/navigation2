@@ -51,8 +51,8 @@ set(dependencies
 
 add_library(${library_name} SHARED
   src/constrained_controller.cpp
-  src/path_handler.cpp
   src/nominal_controller.cpp
+  src/path_handler.cpp
   src/esdf_grid.cpp
   src/cbf_safety_filter.cpp
   src/qp_solver.cpp

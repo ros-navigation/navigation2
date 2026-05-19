@@ -21,82 +21,62 @@ NominalController::NominalController(const Parameters * params)
 }
 
 geometry_msgs::msg::Twist NominalController::compute(
-  const geometry_msgs::msg::Pose & target,
+  const geometry_msgs::msg::Pose & closest,
+  const geometry_msgs::msg::Pose & lookahead,
+  double dist_to_goal,
   NominalDebug * dbg) const
 {
-  const double x_t = target.position.x;
-  const double y_t = target.position.y;
-  const double r = std::hypot(x_t, y_t);
-  const double slowdown = params_->slowdown_radius;
+  // ----- direction and speed taper -----
+  const double x_t = lookahead.position.x;
+  const bool forward = (x_t >= 0.0);
 
-  const double s = (slowdown > 0.0)
-    ? std::min(1.0, r / slowdown)
-    : 1.0;
-  const double denom = std::abs(x_t) + std::abs(y_t) + 1e-6;
+  // Speed taper: slow to zero within slowdown_radius of the goal.
+  // Fall back to lookahead distance when dist_to_goal is unavailable.
+  const double r = std::hypot(x_t, lookahead.position.y);
+  const double taper_dist =
+    (dist_to_goal < std::numeric_limits<double>::infinity() / 2.0)
+    ? dist_to_goal : r;
+  const double s = std::min(
+    1.0, taper_dist / std::max(1e-6, params_->slowdown_radius));
 
-  // sign(x_t) makes the SAME law work for forward AND backward.
-  // For forward path: x_t > 0 -> +vx. For backward path (where the
-  // SmacLattice intermediate poses retangent to point opposite the
-  // direction of motion): x_t < 0 -> -vx. No fwd/back branching.
-  const double sign_xt = (x_t >= 0.0) ? 1.0 : -1.0;
-  const double vx_unclamp = sign_xt * s * params_->v_linear_max *
-    (std::abs(x_t) / denom);
+  // ----- vx: forward/backward along path -----
+  const double vx = (forward ? 1.0 : -1.0) * params_->v_linear_max * s;
 
-  // y_t comes from the path's lateral component in base_link. Path is
-  // in odom (Fix 1), so y_t is AMCL-free after setPlan.
-  const double vy_unclamp = s * params_->v_lateral_max * (y_t / denom);
+  // ----- vy: cross-track correction -----
+  // closest.position.y is the signed lateral deviation of the nearest path
+  // point from the robot's x-axis in base_link.
+  // +y → path is to the left → robot moves left (vy > 0) to close the gap.
+  const double cte_y = closest.position.y;
+  const double vy = params_->k_lat * cte_y * s;
 
-  // Heading reference: direction-to-lookahead-point, with a sign-flip
-  // for backward motion so the rear faces the lookahead. Do NOT use
-  // the lookahead pose's stored orientation — for backward paths
-  // validateOrientations() sets it to atan2(dy, dx) between consecutive
-  // poses, which is ≈ ±π in reverse and asks the robot to spin 180°.
-  const double alpha = std::atan2(y_t, x_t);
-  const double yaw_err = (x_t >= 0.0)
-    ? alpha
-    : angles::shortest_angular_distance(0.0, alpha + M_PI);
-
-  // Yaw correction is full during traversal and tapers near the goal.
-  // We reuse `s = min(1, r/slowdown_radius)` (the linear-speed taper)
-  // so the lateral-speed and yaw-correction envelopes share one
-  // monotone shape: at goal both are 0, far from goal both are 1.
+  // ----- wz: heading correction -----
+  // Use the PATH TANGENT at the closest point (not the bearing to the
+  // lookahead position). The closest-point tangent moves monotonically as the
+  // robot advances — it never oscillates when the robot spins in place or
+  // when the path end is approached.
   //
-  // Previous code used `(slowdown - r)/slowdown` — the inverse shape.
-  // It killed yaw correction *far* from goal, exactly when we need
-  // it most for long-corridor tracking. With slowdown_radius < r,
-  // ramp went to 0 and wz_nom = 0 throughout alley traversal, letting
-  // un-corrected yaw drift translate into wall clips.
-  const double ramp = params_->yaw_correction_ramp ? s : 1.0;
-  const double wz_unclamp = params_->k_yaw * ramp * yaw_err;
-
-  // Clamp to actuation envelope. vx is signed: clamp symmetrically.
-  const double vx = std::clamp(
-    vx_unclamp,
-    -params_->v_linear_max,
-    params_->v_linear_max);
-  const double vy = std::clamp(
-    vy_unclamp,
-    -params_->v_lateral_max,
-    params_->v_lateral_max);
-  const double wz = std::clamp(
-    wz_unclamp,
-    -params_->v_angular_max,
-    params_->v_angular_max);
+  // For backward motion add π: validateOrientations() stores atan2(dy,dx)
+  // which points "forward along the path" (= backward for the robot rear).
+  // Adding π converts it to the rear-facing reference frame.
+  const double path_yaw = tf2::getYaw(closest.orientation);
+  const double heading_err = forward
+    ? path_yaw
+    : angles::shortest_angular_distance(0.0, path_yaw + M_PI);
+  const double wz = params_->k_yaw * heading_err;
 
   if (dbg) {
-    dbg->r = r;
-    dbg->s = s;
-    dbg->ramp = ramp;
-    dbg->yaw_err = yaw_err;
-    dbg->vx_unclamped = vx_unclamp;
-    dbg->vy_unclamped = vy_unclamp;
-    dbg->wz_unclamped = wz_unclamp;
+    dbg->r           = r;
+    dbg->s           = s;
+    dbg->ramp        = s;  // kept for log compat; always equals s
+    dbg->cte_y       = cte_y;
+    dbg->heading_err = heading_err;
+    dbg->is_forward  = forward;
   }
 
   geometry_msgs::msg::Twist cmd;
-  cmd.linear.x = vx;
-  cmd.linear.y = vy;
-  cmd.angular.z = wz;
+  cmd.linear.x  = std::clamp(vx,  -params_->v_linear_max,  params_->v_linear_max);
+  cmd.linear.y  = std::clamp(vy,  -params_->v_lateral_max, params_->v_lateral_max);
+  cmd.angular.z = std::clamp(wz,  -params_->v_angular_max, params_->v_angular_max);
   return cmd;
 }
 

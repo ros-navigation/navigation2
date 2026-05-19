@@ -19,12 +19,12 @@ QpResult solveProjectionQP(
   const Eigen::Vector3d & u_min,
   const Eigen::Vector3d & u_max,
   const Eigen::Vector3d & u_nom,
+  double w_slack,
   int max_iter,
   double tol)
 {
-  // Stack box bounds onto the inequality matrix.
-  //   u_i <= u_max_i     ->   e_i^T u <=  u_max_i
-  //  -u_i <= -u_min_i    ->  -e_i^T u <= -u_min_i
+  // Rows 0..m_in-1 are CBF constraints (soft when w_slack > 0).
+  // Rows m_in..m-1 are box bounds (always hard).
   const int m_in = static_cast<int>(A_in.rows());
   const int m = m_in + 6;
   Eigen::MatrixXd A(m, 3);
@@ -34,57 +34,55 @@ QpResult solveProjectionQP(
     b.head(m_in) = b_in;
   }
   for (int i = 0; i < 3; ++i) {
-    A.row(m_in + 2 * i) = Eigen::RowVector3d::Unit(i);
-    b(m_in + 2 * i) = u_max(i);
+    A.row(m_in + 2 * i)     =  Eigen::RowVector3d::Unit(i);
+    b(m_in + 2 * i)         =  u_max(i);
     A.row(m_in + 2 * i + 1) = -Eigen::RowVector3d::Unit(i);
-    b(m_in + 2 * i + 1) = -u_min(i);
+    b(m_in + 2 * i + 1)     = -u_min(i);
   }
 
   Eigen::Vector3d u = u_nom;
-  // Project onto box first so initial guess is feasible w.r.t. the
-  // box, even if the inequalities push it.
   for (int i = 0; i < 3; ++i) {
     u(i) = std::clamp(u(i), u_min(i), u_max(i));
   }
 
-  std::vector<int> active;  // indices into A's rows
-  active.reserve(8);
+  std::vector<int> active;
+  active.reserve(m_in + 6);
 
   QpResult res;
   res.u = u;
-  res.iterations = 0;
 
-  // Convenience: solve KKT for a given working set.
+  // KKT solve for a working set W (equality-constrained subproblem).
   //
-  //   min ½ ||u - u_nom||²    s.t.  A_W u = b_W
+  // Hard case  (w_slack = 0 or box rows):
+  //   (A_W A_W^T + 1e-12·I) λ = A_W u_nom - b_W
   //
-  // Stationarity: u - u_nom + A_W^T λ = 0 -> u = u_nom - A_W^T λ
-  // Feasibility: A_W (u_nom - A_W^T λ) = b_W
-  //              -> (A_W A_W^T) λ = A_W u_nom - b_W
+  // Soft case  (w_slack > 0, CBF rows only):
+  //   (A_W A_W^T + (1/w_slack)·I_cbf) λ = A_W u_nom - b_W
   //
-  // For small problems this is fine to solve directly.
+  // The (1/w_slack) Tikhonov term is the exact reduction of the slack-variable
+  // KKT system (see header). Box rows always get 1e-12 (numerical stability only).
+  const bool use_slack = (w_slack > 0.0);
+  const double slack_reg = use_slack ? (1.0 / w_slack) : 1e-12;
+
   auto solveActive = [&](const std::vector<int> & W,
-      Eigen::Vector3d & u_out, Eigen::VectorXd & lam_out) -> bool {
-      if (W.empty()) {
-        u_out = u_nom;
-        lam_out.resize(0);
-        return true;
-      }
+    Eigen::Vector3d & u_out, Eigen::VectorXd & lam_out) -> bool
+    {
+      if (W.empty()) {u_out = u_nom; lam_out.resize(0); return true;}
       const int k = static_cast<int>(W.size());
       Eigen::MatrixXd Aw(k, 3);
       Eigen::VectorXd bw(k);
       for (int i = 0; i < k; ++i) {
         Aw.row(i) = A.row(W[i]);
-        bw(i) = b(W[i]);
+        bw(i)     = b(W[i]);
       }
-      // Lambda solve.
       Eigen::MatrixXd M = Aw * Aw.transpose();
-      Eigen::VectorXd r = Aw * u_nom - bw;
-      // Tikhonov nudge for ill-conditioned active sets.
-      for (int i = 0; i < k; ++i) {M(i, i) += 1e-12;}
-      Eigen::VectorXd lam = M.ldlt().solve(r);
+      for (int i = 0; i < k; ++i) {
+        // CBF rows: soft regularisation. Box rows: numerical nudge only.
+        M(i, i) += (use_slack && W[i] < m_in) ? slack_reg : 1e-12;
+      }
+      Eigen::VectorXd lam = M.ldlt().solve(Aw * u_nom - bw);
       if (!lam.allFinite()) {return false;}
-      u_out = u_nom - Aw.transpose() * lam;
+      u_out   = u_nom - Aw.transpose() * lam;
       lam_out = lam;
       return true;
     };
@@ -92,91 +90,81 @@ QpResult solveProjectionQP(
   for (int it = 0; it < max_iter; ++it) {
     res.iterations = it + 1;
 
-    // Find the most-violated inequality at current u.
+    // Find the most-violated constraint at current u.
+    // For soft mode: active CBF constraints are skipped — their violation is
+    // absorbed by slack ε = λ/w_slack and does not need to be resolved by
+    // adding the constraint again (it is already in the active set).
     int worst = -1;
     double worst_v = tol;
     for (int i = 0; i < m; ++i) {
       const double v = A.row(i).dot(u) - b(i);
-      if (v > worst_v) {
-        worst_v = v;
-        worst = i;
+      if (v <= worst_v) {continue;}
+      // Active soft CBF constraint: slack absorbs the violation — don't re-flag.
+      if (use_slack && i < m_in) {
+        const bool in_active =
+          std::find(active.begin(), active.end(), i) != active.end();
+        if (in_active) {continue;}
       }
+      worst_v = v;
+      worst   = i;
     }
 
     if (worst < 0) {
-      // Feasible. Now check Lagrange multipliers — if any are
-      // strictly negative, dropping that constraint will improve the
-      // cost.
+      // No unresolved violation. Check multiplier signs for optimality.
       Eigen::Vector3d u_try;
       Eigen::VectorXd lam;
-      if (!solveActive(active, u_try, lam)) {
-        res.ok = false;
-        break;
-      }
-      // Smallest multiplier (by sign) signals an active constraint
-      // that is not really binding; remove it.
+      if (!solveActive(active, u_try, lam)) {res.ok = false; break;}
       int min_idx = -1;
       double min_lam = -1e-9;
       for (int i = 0; i < lam.size(); ++i) {
-        if (lam(i) < min_lam) {
-          min_lam = lam(i);
-          min_idx = i;
-        }
+        if (lam(i) < min_lam) {min_lam = lam(i); min_idx = i;}
       }
-      if (min_idx < 0) {
-        // All multipliers nonneg → KKT satisfied. Done.
-        u = u_try;
-        break;
-      }
+      if (min_idx < 0) {u = u_try; break;}  // KKT satisfied
       active.erase(active.begin() + min_idx);
-      if (!solveActive(active, u, lam)) {
-        res.ok = false;
-        break;
-      }
+      if (!solveActive(active, u, lam)) {res.ok = false; break;}
       continue;
     }
 
-    // Add worst-violator to active set if not already present.
     if (std::find(active.begin(), active.end(), worst) == active.end()) {
       active.push_back(worst);
     }
     Eigen::Vector3d u_try;
     Eigen::VectorXd lam;
-    if (!solveActive(active, u_try, lam)) {
-      res.ok = false;
-      break;
-    }
+    if (!solveActive(active, u_try, lam)) {res.ok = false; break;}
     u = u_try;
   }
 
-  // ---------- safety nets ----------
-  // 1. If we exited the loop by hitting max_iter, the active-set may
-  //    have been cycling and `u` may not satisfy all constraints.
-  //    Re-check feasibility and flag if not converged. The caller
-  //    decides what to do (we still return the best-effort u).
+  // Safety net 1: at max_iter only flag infeasibility for BOX constraints.
+  // CBF constraint violations are legitimately absorbed by slack.
   if (res.iterations >= max_iter) {
-    bool feasible = true;
-    for (int i = 0; i < m; ++i) {
-      if (A.row(i).dot(u) > b(i) + 1e-4) {
-        feasible = false;
-        break;
-      }
+    for (int i = m_in; i < m; ++i) {
+      if (A.row(i).dot(u) > b(i) + 1e-4) {res.ok = false; break;}
     }
-    if (!feasible) {res.ok = false;}
   }
-  // 2. Defensive box clamp. The active-set method should already
-  //    respect the box (added as the last 6 inequalities), but a
-  //    cycling solver, an infeasible problem, or a numerically bad
-  //    KKT solve can let `u` drift out. Never return out-of-envelope
-  //    velocities — the controller would otherwise command the
-  //    actuators beyond their declared limits.
+
+  // Safety net 2: hard box clamp — never return out-of-envelope velocities.
   for (int i = 0; i < 3; ++i) {
     u(i) = std::clamp(u(i), u_min(i), u_max(i));
   }
 
-  res.u = u;
+  res.u       = u;
   res.n_active = static_cast<int>(active.size());
   res.deviation = (u - u_nom).norm();
+
+  // Compute max_slack: ε_i = λ_i / w_slack for active CBF rows.
+  if (use_slack && !active.empty()) {
+    Eigen::Vector3d u_tmp;
+    Eigen::VectorXd lam_final;
+    if (solveActive(active, u_tmp, lam_final)) {
+      for (int i = 0; i < static_cast<int>(active.size()); ++i) {
+        if (active[i] < m_in && i < lam_final.size()) {
+          res.max_slack = std::max(res.max_slack,
+            std::max(0.0, lam_final(i)) / w_slack);
+        }
+      }
+    }
+  }
+
   return res;
 }
 

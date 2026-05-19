@@ -1,0 +1,13 @@
+<class_libraries>
+  <library path="nav2_constrained_controller">
+    <class type="mppi::critics::EsdfCritic"
+           base_class_type="mppi::critics::CriticFunction">
+      <description>
+        ESDF-based MPPI critic for constrained-space navigation.
+        Scores trajectories using the same 1cm local ESDF used by the CBF
+        safety filter, bypassing the inflated costmap so tight passages
+        (850mm doors) remain navigable while MPPI still avoids walls.
+      </description>
+    </class>
+  </library>
+</class_libraries>
