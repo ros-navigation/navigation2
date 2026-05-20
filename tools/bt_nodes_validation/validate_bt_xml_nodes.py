@@ -39,8 +39,10 @@ class PortData(TypedDict):
     has_description: bool
 
 
-NodePorts = dict[str, PortData]  # {port_name: PortData}
-BTNodes = dict[str, NodePorts]  # {node_id: {port_name: PortData}}
+type NodePorts = dict[str, PortData]  # {port_name: PortData}
+type BTNodes = dict[str, NodePorts]  # {node_id: {port_name: PortData}}
+type CPPData = dict[str, str]  # {class_name: node_id}
+type HPPData = dict[str, NodePorts]  # {class_name: {port_name: PortData}}
 
 
 def git_root_path(path: Path) -> Path:
@@ -349,7 +351,7 @@ def extract_xml_nodes_data(nodes_model: ET.Element) -> BTNodes:
     return bt_xml
 
 
-def extract_cpp_classes_and_ids(cpp_files: list[Path]) -> dict[str, str]:
+def extract_cpp_classes_and_ids(cpp_files: list[Path]) -> CPPData:
     """
     Extract class names and their corresponding node IDs from the given list of source files.
 
@@ -360,7 +362,7 @@ def extract_cpp_classes_and_ids(cpp_files: list[Path]) -> dict[str, str]:
         re.DOTALL
     )
 
-    node_cpp_data: dict[str, str] = {}
+    node_cpp_data: CPPData = {}
     for cpp_file in cpp_files:
         cpp_content = cpp_file.read_text()
         class_names_and_ids = register_pattern.findall(cpp_content)
@@ -427,14 +429,14 @@ def extract_class_definitions(
 def extract_hpp_classes_and_ports_data(
     hpp_files: list[Path],
     hpp_base_classes: dict[str, Path]
-) -> BTNodes:
+) -> HPPData:
     """
     Extract class names and their corresponding port data from the given list of header files.
 
     Returns dictionary mapping class names to their port data:
     {class_name: {port_name: {'data_type': 'x', 'default': 'y', 'has_description': bool}}}
     """
-    node_hpp_data: BTNodes = {}
+    node_hpp_data: HPPData = {}
     for hpp_file in hpp_files:
         content = hpp_file.read_text()
         class_definitions = extract_class_definitions(content)
