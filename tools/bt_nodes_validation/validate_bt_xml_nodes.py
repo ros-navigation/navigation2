@@ -499,10 +499,10 @@ def extract_code_nodes_data(config: dict) -> BTNodes:
                 'Ensure that all provided hpp files have their corresponding cpp files.'
             )
 
-        # Combine data from cpp and hpp files by class names
+        # Combine data from cpp and hpp files by class names:
         # {node_id: {port_name: {'data_type': 'x', 'default': 'y', 'has_description': bool}}}
-        combined_code_data = {node_cpp_data[key]: node_hpp_data[key] for key in node_cpp_data}
-        bt_node_ids_code.update(combined_code_data)
+        for class_name, node_id in node_cpp_data.items():
+            bt_node_ids_code[node_id] = node_hpp_data[class_name]
 
     return bt_node_ids_code
 
