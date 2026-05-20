@@ -316,15 +316,15 @@ def extract_code_port_data(content: str) -> NodePorts:
     return ports
 
 
-def extract_xml_nodes_data(root: ET.Element) -> BTNodes:
+def extract_xml_nodes_data(nodes_model: ET.Element) -> BTNodes:
     """
-    Extract Behavior Tree nodes data from the given XML file.
+    Extract Behavior Tree nodes data from the given XML node model.
 
     Returns dictionary mapping node IDs to their port data:
     {node_id:  {port_name: {'data_type': 'x', 'default': 'y', 'has_description': bool}}}
     """
     bt_xml: BTNodes = {}
-    for node in root:
+    for node in nodes_model:
         node_id = node.get('ID')
         if not node_id:
             raise ValueError('Each BT node must have an "ID" attribute.')
