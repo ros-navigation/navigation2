@@ -201,7 +201,7 @@ def has_leading_comments(content: str, pos: int, comment_symbol: str) -> bool:
 
 
 def extract_template_type(content: str, template_start_pos: int) -> str:
-    """Extract the closing position of a C++ template parameter."""
+    """Extract the template type starting from template_start_pos."""
     angle_bracket_count = 1
     pos = template_start_pos
     while pos < len(content):
