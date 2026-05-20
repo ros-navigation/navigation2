@@ -600,8 +600,8 @@ def main():
         type=Path,
         default=Path('tools/bt_nodes_validation/config.yml'),
         help='YAML configuration file '
-        'containing repositories information and '
-        'path to the nav2_tree_nodes.xml file to compare against.'
+        'containing path to the nav2_tree_nodes.xml file '
+        'and paths to repositories with code files to compare against.'
     )
     args = parser.parse_args()
     args_config = args.config
