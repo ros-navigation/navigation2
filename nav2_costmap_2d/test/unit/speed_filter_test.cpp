@@ -57,7 +57,6 @@ struct PathLookaheadParams
   double max_decel = -0.5;
   double min_lookahead = 0.0;
   double max_lookahead = 5.0;
-  double path_sample_resolution = 0.1;
   std::string path_topic = "plan";
   std::string odom_topic = "odom";
   bool publish_lookahead = false;
@@ -469,12 +468,6 @@ bool TestNode::createSpeedFilter(
       std::string(FILTER_NAME) + ".max_lookahead", rclcpp::ParameterValue(params.max_lookahead));
     node_->set_parameter(
       rclcpp::Parameter(std::string(FILTER_NAME) + ".max_lookahead", params.max_lookahead));
-    node_->declare_parameter(
-      std::string(FILTER_NAME) + ".path_sample_resolution",
-      rclcpp::ParameterValue(params.path_sample_resolution));
-    node_->set_parameter(
-      rclcpp::Parameter(std::string(FILTER_NAME) + ".path_sample_resolution",
-      params.path_sample_resolution));
     node_->declare_parameter(
       std::string(FILTER_NAME) + ".path_topic", rclcpp::ParameterValue(params.path_topic));
     node_->set_parameter(
@@ -1028,7 +1021,6 @@ TEST_F(TestNode, testPathLookaheadInvalidDecel)
   params.max_decel = 0.0;  // invalid
   params.min_lookahead = 0.3;
   params.max_lookahead = 5.0;
-  params.path_sample_resolution = 0.1;
   EXPECT_TRUE(createSpeedFilter("map", params));
 
   testPathLookaheadDetection(
@@ -1049,7 +1041,6 @@ TEST_F(TestNode, testPathLookaheadInvalidMinLookahead)
   params.max_decel = -0.25;
   params.min_lookahead = -1.0;  // invalid: gets clamped to 0
   params.max_lookahead = 5.0;
-  params.path_sample_resolution = 0.5;
   EXPECT_TRUE(createSpeedFilter("map", params));
 
   // Filter still works, min_lookahead was reset to 0.0
@@ -1071,28 +1062,6 @@ TEST_F(TestNode, testPathLookaheadInvalidMaxLookahead)
   params.max_decel = -0.5;
   params.min_lookahead = 2.0;
   params.max_lookahead = 0.5;  // invalid: less than min, gets clamped up to min
-  params.path_sample_resolution = 0.5;
-  EXPECT_TRUE(createSpeedFilter("map", params));
-
-  testPathLookaheadDetection(
-    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0,
-    NO_TRANSLATION, NO_TRANSLATION);
-
-  speed_filter_->resetFilter();
-  reset();
-}
-
-TEST_F(TestNode, testPathLookaheadInvalidPathSampleResolution)
-{
-  createMaps("map");
-  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
-
-  PathLookaheadParams params;
-  params.enable_path_lookahead = true;
-  params.max_decel = -0.5;
-  params.min_lookahead = 5.0;
-  params.max_lookahead = 10.0;
-  params.path_sample_resolution = -0.5;  // invalid: gets reset to 0.1
   EXPECT_TRUE(createSpeedFilter("map", params));
 
   testPathLookaheadDetection(

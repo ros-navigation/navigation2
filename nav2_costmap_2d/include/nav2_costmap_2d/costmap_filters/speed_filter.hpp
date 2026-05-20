@@ -151,7 +151,6 @@ private:
   double max_decel_;       // Deceleration (m/s^2) used to size lookahead
   double min_lookahead_;   // Lower limit on lookahead distance (m)
   double max_lookahead_;   // Upper limit on lookahead distance (m)
-  double path_sample_resolution_;     // Resolution for sampling the path (m)
 };
 
 }  // namespace nav2_costmap_2d

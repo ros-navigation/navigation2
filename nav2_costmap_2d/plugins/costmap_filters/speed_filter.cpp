@@ -80,8 +80,6 @@ void SpeedFilter::initializeFilter(
     name_ + "." + "min_lookahead", 0.3);
   max_lookahead_ = node->declare_or_get_parameter(
     name_ + "." + "max_lookahead", 5.0);
-  path_sample_resolution_ = node->declare_or_get_parameter(
-    name_ + "." + "path_sample_resolution", 0.1);
   std::string path_topic = node->declare_or_get_parameter(
     name_ + "." + "path_topic", std::string("plan"));
   std::string odom_topic = node->declare_or_get_parameter(
@@ -109,13 +107,6 @@ void SpeedFilter::initializeFilter(
         "clamping to min_lookahead.",
         max_lookahead_, min_lookahead_);
       max_lookahead_ = min_lookahead_;
-    }
-    if (path_sample_resolution_ <= 0.0) {
-      RCLCPP_WARN(
-        logger_,
-        "SpeedFilter: path_sample_resolution = %f is non-positive; falling back to 0.1m.",
-        path_sample_resolution_);
-      path_sample_resolution_ = 0.1;
     }
   }
 
@@ -360,17 +351,13 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   double min_speed_limit = NO_SPEED_LIMIT;
   bool found_any_limit = false;
 
-  // Initialize last_sample_dist such that the first pose is always sampled.
-  double dist_along_path = 0.0;
-  double last_sample_dist = -path_sample_resolution_;
-
   // Lookahead endpoint for visualization
   auto lookahead_point_msg = std::make_unique<geometry_msgs::msg::PointStamped>();
   lookahead_point_msg->header.frame_id = global_frame_;
   lookahead_point_msg->header.stamp = clock_->now();
   lookahead_point_msg->point = robot_pose.position;
 
-  // Check robot's current pose to list of poses to be checked
+  // Check robot's current pose
   double speed_limit_at_robot_pose = NO_SPEED_LIMIT;
   if (!getSpeedLimitAtPose(robot_pose, speed_limit_at_robot_pose)) {
     // Pose mapped outside mask or transform failed
@@ -381,9 +368,10 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     found_any_limit = true;
   }
 
-  // Walk poses from lookahead_start_idx forward. Sample the speed limit at each pose.
+  // Walk poses from lookahead_start_idx forward, sampling the speed limit at each pose.
+  double dist_along_path = 0.0;
   for (size_t i = lookahead_start_idx; i < poses.size(); ++i) {
-    if(i > lookahead_start_idx) {
+    if (i > lookahead_start_idx) {
       dist_along_path += nav2_util::geometry_utils::euclidean_distance(
         poses[i - 1].pose.position, poses[i].pose.position);
     }
@@ -391,11 +379,6 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     if (dist_along_path > lookahead_dist) {
       break;
     }
-
-    if (dist_along_path - last_sample_dist < path_sample_resolution_) {
-      continue;
-    }
-    last_sample_dist = dist_along_path;
 
     // Update lookahead endpoint for visualization
     lookahead_point_msg->point = poses[i].pose.position;
@@ -469,7 +452,7 @@ void SpeedFilter::process(
     speed_limit_ = getSpeedLimitFromLookahead(pose, d_lookahead);
 
     // If a limit is currently active, hold the lookahead distance
-    if(speed_limit_ != NO_SPEED_LIMIT) {
+    if (speed_limit_ != NO_SPEED_LIMIT) {
       held_lookahead_dist_ = d_lookahead;
     } else {
       // If no limit is currently active, reset the held distance
