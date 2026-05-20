@@ -61,10 +61,6 @@ def clone_sparse_github_data(
     clone_dir: Path
 ) -> None:
     """Clone GitHub repository sparsely and checkout the specified directories."""
-    if not data_to_clone:
-        print(f'No directories specified in {repo_name} for sparse checkout.')
-        return
-
     repo_workdir = clone_dir / repo_name
     if repo_workdir.exists():
         rmtree(repo_workdir)
