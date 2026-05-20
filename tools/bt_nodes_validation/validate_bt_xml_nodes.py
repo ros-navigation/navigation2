@@ -279,8 +279,8 @@ def extract_code_port_data(content: str) -> NodePorts:
                     second_arg_start = end_pos + 1
 
             if char == ')' and not paren_count:
-                # No default value, description exists
                 if has_second_arg:
+                    # No default value, description exists
                     ports[port_name] = {
                         'data_type': port_type,
                         'default': '',
@@ -288,6 +288,7 @@ def extract_code_port_data(content: str) -> NodePorts:
                     }
                     break
                 else:
+                    # Port name only, no default value or description
                     ports[port_name] = {
                         'data_type': port_type,
                         'default': '',
