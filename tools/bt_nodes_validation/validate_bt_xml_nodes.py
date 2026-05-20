@@ -414,8 +414,8 @@ def extract_class_definitions(
                 brace_count += 1
             if char == '}':
                 brace_count -= 1
-            if brace_count == 0:
-                break
+                if brace_count == 0:
+                    break
             pos_brace_search += 1
         else:
             raise ValueError(f'Failed to parse class section for {class_name}.')
