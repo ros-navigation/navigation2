@@ -396,16 +396,17 @@ def extract_class_definitions(
         base_class_name = base_class_matches[0] if base_class_matches else ''
 
         brace_count = 1
-        pos_brace_search = class_brace + 1
+        pos_brace_search = class_brace
         while pos_brace_search < len(content):
+            pos_brace_search += 1
             char = content[pos_brace_search]
             if char == '{':
                 brace_count += 1
             if char == '}':
                 brace_count -= 1
                 if brace_count == 0:
+                    pos_brace_search += 1
                     break
-            pos_brace_search += 1
         else:
             raise ValueError(f'Failed to parse class section for {class_name}.')
 
