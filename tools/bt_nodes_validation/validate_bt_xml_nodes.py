@@ -484,18 +484,18 @@ def extract_code_nodes_data(config: dict) -> BTNodes:
         node_cpp_data = extract_cpp_classes_and_ids(cpp_files)
         node_hpp_data = extract_hpp_classes_and_ports_data(hpp_files, hpp_base_classes)
 
-        classes_cpp_hpp = node_cpp_data.keys() - node_hpp_data.keys()
-        if classes_cpp_hpp:
+        diff_classes_cpp_hpp = node_cpp_data.keys() - node_hpp_data.keys()
+        if diff_classes_cpp_hpp:
             raise ValueError(
                 'Following classes are present in cpp files but missing in hpp files: '
-                f'{", ".join(classes_cpp_hpp)}.\n'
+                f'{", ".join(diff_classes_cpp_hpp)}.\n'
                 'Ensure that all provided cpp files have their corresponding hpp files.'
             )
-        classes_hpp_cpp = node_hpp_data.keys() - node_cpp_data.keys()
-        if classes_hpp_cpp:
+        diff_classes_hpp_cpp = node_hpp_data.keys() - node_cpp_data.keys()
+        if diff_classes_hpp_cpp:
             raise ValueError(
                 'Following classes are present in hpp files but missing in cpp files: '
-                f'{", ".join(classes_hpp_cpp)}.\n'
+                f'{", ".join(diff_classes_hpp_cpp)}.\n'
                 'Ensure that all provided hpp files have their corresponding cpp files.'
             )
 
@@ -516,19 +516,19 @@ def detect_bt_nodes_mismatches(bt_node_ids_code: BTNodes, bt_node_ids_xml: BTNod
     """
     is_mismatch_found = False
 
-    diff_xml_code = bt_node_ids_xml.keys() - bt_node_ids_code.keys()
-    if diff_xml_code:
+    diff_node_ids_xml_code = bt_node_ids_xml.keys() - bt_node_ids_code.keys()
+    if diff_node_ids_xml_code:
         is_mismatch_found = True
         print('[ERROR] Nodes present in XML but missing in code:')
-        for node in diff_xml_code:
-            print(f'\t - {node}')
+        for node_id in diff_node_ids_xml_code:
+            print(f'\t - {node_id}')
 
-    diff_code_xml = bt_node_ids_code.keys() - bt_node_ids_xml.keys()
-    if diff_code_xml:
+    diff_node_ids_code_xml = bt_node_ids_code.keys() - bt_node_ids_xml.keys()
+    if diff_node_ids_code_xml:
         is_mismatch_found = True
         print('[ERROR] Nodes present in code but missing in XML:')
-        for node in diff_code_xml:
-            print(f'\t - {node}')
+        for node_id in diff_node_ids_code_xml:
+            print(f'\t - {node_id}')
 
     common_nodes = bt_node_ids_code.keys() & bt_node_ids_xml.keys()
     for node_name in common_nodes:
