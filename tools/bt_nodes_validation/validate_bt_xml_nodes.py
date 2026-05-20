@@ -609,7 +609,7 @@ def main():
     try:
         config_yaml = args_config.read_text()
         config = yaml.safe_load(config_yaml)
-    except (FileNotFoundError, yaml.YAMLError) as exc:
+    except (OSError, yaml.YAMLError) as exc:
         print(f'Failed to load configuration file {args_config}: {exc}')
         sys.exit(1)
 
@@ -621,7 +621,7 @@ def main():
 
     try:
         nav2_bt_nodes_model = load_bt_nodes_model(nav2_bt_nodes_file_path)
-    except (FileNotFoundError, ET.ParseError, ValueError, IndexError) as exc:
+    except (OSError, ET.ParseError, ValueError, IndexError) as exc:
         print(f'Failed to load BT node model from {nav2_bt_nodes_file_path}: {exc}')
         sys.exit(1)
 
@@ -662,7 +662,7 @@ def main():
 
     try:
         bt_node_ids_code = extract_code_nodes_data(repos_config)
-    except (ValueError, FileNotFoundError) as exc:
+    except (OSError, ValueError) as exc:
         print(
             f'Failed to extract BT nodes data from code: {exc}\n'
             f'Review specified files in {args_config}'
