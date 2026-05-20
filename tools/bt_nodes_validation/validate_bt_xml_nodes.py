@@ -218,17 +218,6 @@ def extract_template_type(content: str, template_start_pos: int) -> str:
     return content[template_start_pos:pos].strip()
 
 
-def extract_quoted_string(content: str, start_pos: int) -> str:
-    """Extract the first quoted string starting from start_pos."""
-    quote_start = content.find('"', start_pos)
-    if quote_start == -1:
-        return ''
-    quote_end = content.find('"', quote_start + 1)
-    if quote_end == -1:
-        return ''
-    return content[quote_start+1:quote_end]
-
-
 def extract_code_port_data(content: str) -> NodePorts:
     """
     Extract port information from the code.
@@ -251,12 +240,13 @@ def extract_code_port_data(content: str) -> NodePorts:
         port_type = convert_with_regex(port_type, TYPE_REGEX_TRANSFORMS)
 
         port_type_end = port_type_start + len(port_type)
-        args_start = content.find('(', port_type_end)
-        quote_start = content.find('"', args_start + 1)
-        port_name = extract_quoted_string(content, quote_start)
+        args_start = content.find('(', port_type_end) + 1
+        quote_start = content.find('"', args_start)
+        quote_end = content.find('"', quote_start + 1)
+
+        port_name = content[quote_start + 1:quote_end]
         if not port_name:
             continue
-        quote_end = quote_start + len(port_name) + 1
 
         paren_count = 0
         inside_quote = False
