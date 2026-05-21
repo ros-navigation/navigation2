@@ -334,22 +334,11 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   const size_t pose_search_start =
     (cached_lookahead_start_idx_ < poses.size()) ? cached_lookahead_start_idx_ : 0;
 
-  size_t lookahead_start_idx = pose_search_start;
-  double min_dist = std::numeric_limits<double>::max();
+  // Find the closest segment to the robot
+  auto path_search_result = nav2_util::distance_from_path(
+    transformed_path, robot_pose, pose_search_start);
 
-  // Find the closest pose to the robot
-  // To save computation time, stop searching path when poses get further than
-  // the closest pose + a threshold
-  for (size_t i = pose_search_start; i < poses.size(); i++) {
-    const double d = nav2_util::geometry_utils::euclidean_distance(
-      poses[i].pose.position, robot_pose.position);
-    if (d < min_dist) {
-      min_dist = d;
-      lookahead_start_idx = i;
-    } else if (d > min_dist + POSE_SEARCH_EXIT_THRESHOLD_) {
-      break;
-    }
-  }
+  size_t lookahead_start_idx = path_search_result.closest_segment_index;
 
   // Update cached start index
   cached_lookahead_start_idx_ = lookahead_start_idx;

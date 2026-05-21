@@ -142,8 +142,6 @@ private:
   bool percentage_;
   double speed_limit_, speed_limit_prev_;
 
-  // Path lookahead
-  static constexpr double POSE_SEARCH_EXIT_THRESHOLD_ = 1.0;
   // Lookahead distance held when entering a speed zone to avoid oscillations
   double held_lookahead_dist_;
   size_t cached_lookahead_start_idx_;  // Cached start index for closest pose search
