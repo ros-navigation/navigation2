@@ -1,7 +1,7 @@
 # BT Nodes Validation
 
-The [validate_bt_xml_nodes.py](validate_bt_xml_nodes.py) script validates Behavior Tree node definitions by comparing C++ code implementations 
-against their XML definitions in `nav2_tree_nodes.xml`.
+The [validate_bt_xml_nodes.py](validate_bt_xml_nodes.py) script validates Behavior Tree node definitions
+by comparing C++ code implementations against their XML definitions in `nav2_tree_nodes.xml`.
 
 The script ensures:
 - All nodes registered in code are defined in XML
@@ -55,4 +55,3 @@ It specifies:
 ## Running Tests
 
 To run the test suite for this validation tool, see [test/README.md](./test/README.md) for detailed instructions.
-
