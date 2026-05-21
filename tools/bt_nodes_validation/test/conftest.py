@@ -61,7 +61,11 @@ def file_creator(tmp_path):
 def run_validation():
     """Run the validation script with a given configuration file."""
     def validate(config_path: Path):
-        script_path = 'tools/bt_nodes_validation/validate_bt_xml_nodes.py'
+        script_path = Path(__file__).parent.parent / 'validate_bt_xml_nodes.py'
+
+        if not script_path.exists():
+            raise FileNotFoundError(f'Validation script not found: {script_path}')
+
         result = subprocess.run([
             'python3',
             script_path,
