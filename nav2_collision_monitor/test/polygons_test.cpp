@@ -800,17 +800,22 @@ TEST_F(Tester, testPolygonGetPointsInside)
   createPolygon("stop", true);
 
   std::vector<nav2_collision_monitor::Point> points;
+  std::vector<nav2_collision_monitor::Point> triggering_points;
 
   // Out of boundaries points
   points.push_back({1.0, 0.0});
   points.push_back({0.0, 1.0});
   points.push_back({-1.0, 0.0});
   points.push_back({0.0, -1.0});
-  ASSERT_EQ(polygon_->getPointsInside(points), 0);
+  ASSERT_EQ(polygon_->getPointsInside(points, triggering_points), 0);
+  ASSERT_EQ(triggering_points.size(), 0u);
 
   // Add one point inside
   points.push_back({-0.1, 0.3});
-  ASSERT_EQ(polygon_->getPointsInside(points), 1);
+  ASSERT_EQ(polygon_->getPointsInside(points, triggering_points), 1);
+  ASSERT_EQ(triggering_points.size(), 1u);
+  EXPECT_NEAR(triggering_points[0].x, -0.1, EPSILON);
+  EXPECT_NEAR(triggering_points[0].y, 0.3, EPSILON);
 }
 
 TEST_F(Tester, testPolygonGetPointsInsideEdge)
@@ -826,6 +831,7 @@ TEST_F(Tester, testPolygonGetPointsInsideEdge)
   ASSERT_TRUE(polygon_->configure());
 
   std::vector<nav2_collision_monitor::Point> points;
+  std::vector<nav2_collision_monitor::Point> triggering_points;
 
   // Out of boundaries points
   points.push_back({-2.0, -1.0});
@@ -834,11 +840,11 @@ TEST_F(Tester, testPolygonGetPointsInsideEdge)
   points.push_back({3.0, -1.0});
   points.push_back({3.0, 0.0});
   points.push_back({3.0, 1.0});
-  ASSERT_EQ(polygon_->getPointsInside(points), 0);
+  ASSERT_EQ(polygon_->getPointsInside(points, triggering_points), 0);
 
   // Add one point inside
   points.push_back({0.0, 0.0});
-  ASSERT_EQ(polygon_->getPointsInside(points), 1);
+  ASSERT_EQ(polygon_->getPointsInside(points, triggering_points), 1);
 }
 
 TEST_F(Tester, testCircleGetPointsInside)
@@ -846,13 +852,58 @@ TEST_F(Tester, testCircleGetPointsInside)
   createCircle("stop", true);
 
   std::vector<nav2_collision_monitor::Point> points;
+  std::vector<nav2_collision_monitor::Point> triggering_points;
   // Point out of radius
   points.push_back({1.0, 0.0});
-  ASSERT_EQ(circle_->getPointsInside(points), 0);
+  ASSERT_EQ(circle_->getPointsInside(points, triggering_points), 0);
+  ASSERT_EQ(triggering_points.size(), 0u);
 
   // Add one point inside
   points.push_back({-0.1, 0.3});
-  ASSERT_EQ(circle_->getPointsInside(points), 1);
+  ASSERT_EQ(circle_->getPointsInside(points, triggering_points), 1);
+  ASSERT_EQ(triggering_points.size(), 1u);
+  EXPECT_NEAR(triggering_points[0].x, -0.1, EPSILON);
+  EXPECT_NEAR(triggering_points[0].y, 0.3, EPSILON);
+}
+
+TEST_F(Tester, testPolygonGetPointsInsideIndices)
+{
+  createPolygon("stop", true);
+
+  std::vector<nav2_collision_monitor::Point> points;
+  std::vector<std::size_t> triggering_indices;
+
+  // Out of boundaries points
+  points.push_back({1.0, 0.0});
+  points.push_back({0.0, 1.0});
+  points.push_back({-1.0, 0.0});
+  points.push_back({0.0, -1.0});
+  ASSERT_EQ(polygon_->getPointsInside(points, triggering_indices), 0);
+  ASSERT_EQ(triggering_indices.size(), 0u);
+
+  // Add one point inside
+  points.push_back({-0.1, 0.3});
+  ASSERT_EQ(polygon_->getPointsInside(points, triggering_indices), 1);
+  ASSERT_EQ(triggering_indices.size(), 1u);
+  EXPECT_EQ(triggering_indices[0], 4u);
+}
+
+TEST_F(Tester, testCircleGetPointsInsideIndices)
+{
+  createCircle("stop", true);
+
+  std::vector<nav2_collision_monitor::Point> points;
+  std::vector<std::size_t> triggering_indices;
+  // Point out of radius
+  points.push_back({1.0, 0.0});
+  ASSERT_EQ(circle_->getPointsInside(points, triggering_indices), 0);
+  ASSERT_EQ(triggering_indices.size(), 0u);
+
+  // Add one point inside
+  points.push_back({-0.1, 0.3});
+  ASSERT_EQ(circle_->getPointsInside(points, triggering_indices), 1);
+  ASSERT_EQ(triggering_indices.size(), 1u);
+  EXPECT_EQ(triggering_indices[0], 1u);
 }
 
 TEST_F(Tester, testPolygonGetCollisionTime)
@@ -869,9 +920,11 @@ TEST_F(Tester, testPolygonGetCollisionTime)
   nav2_collision_monitor::Velocity vel{0.5, 0.0, 0.0};  // 0.5 m/s forward movement
   // Two points 0.2 m ahead the footprint (0.5 m)
   std::unordered_map<std::string, std::vector<nav2_collision_monitor::Point>> points_map;
+  std::vector<nav2_collision_monitor::Point> triggering_points;
   points_map.insert({OBSERVATION_SOURCE_NAME, {{0.7, -0.01}, {0.7, 0.01}}});
   // Collision is expected to be ~= 0.2 m / 0.5 m/s seconds
-  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel), 0.4, SIMULATION_TIME_STEP);
+  EXPECT_NEAR(
+    polygon_->getCollisionTime(points_map, vel, triggering_points), 0.4, SIMULATION_TIME_STEP);
 
   // Backward movement check
   vel = {-0.5, 0.0, 0.0};  // 0.5 m/s backward movement
@@ -879,7 +932,8 @@ TEST_F(Tester, testPolygonGetCollisionTime)
   points_map.clear();
   points_map.insert({OBSERVATION_SOURCE_NAME, {{-0.7, -0.01}, {-0.7, 0.01}}});
   // Collision is expected to be in ~= 0.2 m / 0.5 m/s seconds
-  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel), 0.4, SIMULATION_TIME_STEP);
+  EXPECT_NEAR(
+    polygon_->getCollisionTime(points_map, vel, triggering_points), 0.4, SIMULATION_TIME_STEP);
 
   // Sideway movement check
   vel = {0.0, 0.5, 0.0};  // 0.5 m/s sideway movement
@@ -887,7 +941,8 @@ TEST_F(Tester, testPolygonGetCollisionTime)
   points_map.clear();
   points_map.insert({OBSERVATION_SOURCE_NAME, {{-0.01, 0.6}, {0.01, 0.6}}});
   // Collision is expected to be in ~= 0.1 m / 0.5 m/s seconds
-  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel), 0.2, SIMULATION_TIME_STEP);
+  EXPECT_NEAR(
+    polygon_->getCollisionTime(points_map, vel, triggering_points), 0.2, SIMULATION_TIME_STEP);
 
   // Rotation check
   vel = {0.0, 0.0, 1.0};  // 1.0 rad/s rotation
@@ -902,26 +957,40 @@ TEST_F(Tester, testPolygonGetCollisionTime)
   //     -----------
   //          '
   points_map.clear();
+  triggering_points.clear();
   points_map.insert({OBSERVATION_SOURCE_NAME, {{0.49, -0.01}, {0.49, 0.01}}});
   // Collision is expected to be in ~= 45 degrees * M_PI / (180 degrees * 1.0 rad/s) seconds
   double exp_res = 45 / 180 * M_PI;
-  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel), exp_res, EPSILON);
+  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel, triggering_points), exp_res, EPSILON);
+  ASSERT_EQ(triggering_points.size(), 2u);
+  EXPECT_NEAR(triggering_points[0].x, 0.49, EPSILON);
+  EXPECT_NEAR(triggering_points[0].y, -0.01, EPSILON);
+  EXPECT_NEAR(triggering_points[1].x, 0.49, EPSILON);
+  EXPECT_NEAR(triggering_points[1].y, 0.01, EPSILON);
 
   // Two points are already inside footprint
   vel = {0.5, 0.0, 0.0};  // 0.5 m/s forward movement
   // Two points inside
   points_map.clear();
+  triggering_points.clear();
   points_map.insert({OBSERVATION_SOURCE_NAME, {{0.1, -0.01}, {0.1, 0.01}}});
   // Collision already appeared: collision time should be 0
-  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel), 0.0, EPSILON);
+  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel, triggering_points), 0.0, EPSILON);
+  ASSERT_EQ(triggering_points.size(), 2u);
+  EXPECT_NEAR(triggering_points[0].x, 0.1, EPSILON);
+  EXPECT_NEAR(triggering_points[0].y, -0.01, EPSILON);
+  EXPECT_NEAR(triggering_points[1].x, 0.1, EPSILON);
+  EXPECT_NEAR(triggering_points[1].y, 0.01, EPSILON);
 
   // All points are out of simulation prediction
   vel = {0.5, 0.0, 0.0};  // 0.5 m/s forward movement
   // Two points 0.6 m ahead the footprint (0.5 m)
   points_map.clear();
+  triggering_points.clear();
   points_map.insert({OBSERVATION_SOURCE_NAME, {{1.1, -0.01}, {1.1, 0.01}}});
   // There is no collision: return value should be negative
-  EXPECT_LT(polygon_->getCollisionTime(points_map, vel), 0.0);
+  EXPECT_LT(polygon_->getCollisionTime(points_map, vel, triggering_points), 0.0);
+  EXPECT_TRUE(triggering_points.empty());
 }
 
 TEST_F(Tester, testPolygonPublish)
@@ -1029,12 +1098,15 @@ TEST_F(Tester, testPolygonDebounceDefaultBehavior)
       for (int i = 0; i < count; ++i) {
         points.push_back(nav2_collision_monitor::Point{0.0, 0.0});
       }
-      return points;
+      std::unordered_map<std::string, std::vector<nav2_collision_monitor::Point>> points_map;
+      points_map.insert({OBSERVATION_SOURCE_NAME, std::move(points)});
+      return points_map;
     };
 
-  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
-  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS)));
-  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1), triggering_points));
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS), triggering_points));
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1), triggering_points));
 }
 
 TEST_F(Tester, testPolygonDebounceConsecutiveTriggerRelease)
@@ -1054,16 +1126,19 @@ TEST_F(Tester, testPolygonDebounceConsecutiveTriggerRelease)
       for (int i = 0; i < count; ++i) {
         points.push_back(nav2_collision_monitor::Point{0.0, 0.0});
       }
-      return points;
+      std::unordered_map<std::string, std::vector<nav2_collision_monitor::Point>> points_map;
+      points_map.insert({OBSERVATION_SOURCE_NAME, std::move(points)});
+      return points_map;
     };
 
-  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS)));
-  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS)));
-  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS)));
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS), triggering_points));
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS), triggering_points));
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS), triggering_points));
 
-  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
-  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
-  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1)));
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS - 1), triggering_points));
+  EXPECT_TRUE(polygon_->isTriggered(makePoints(MIN_POINTS - 1), triggering_points));
+  EXPECT_FALSE(polygon_->isTriggered(makePoints(MIN_POINTS - 1), triggering_points));
 }
 
 TEST_F(Tester, testPolygonDebounceRejectsInvalidConfiguredTriggerParameter)

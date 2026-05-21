@@ -16,6 +16,7 @@
 #define NAV2_COLLISION_MONITOR__TYPES_HPP_
 
 #include <string>
+#include <vector>
 
 namespace nav2_collision_monitor
 {
@@ -46,11 +47,13 @@ struct Velocity
   }
 };
 
-/// @brief 2D point
+/// @brief Point with 2D collision-check coordinates and optional z from the source
 struct Point
 {
   double x;  // x-coordinate of point
   double y;  // y-coordinate of point
+  double z = 0.0;  // z-coordinate of point (0 for inherently-2D sources)
+  std::string source = "";  // name of the data source
 };
 
 /// @brief 2D Pose
@@ -77,6 +80,7 @@ struct Action
   ActionType action_type;
   Velocity req_vel;
   std::string polygon_name;
+  std::vector<Point> triggering_points;
 };
 
 }  // namespace nav2_collision_monitor

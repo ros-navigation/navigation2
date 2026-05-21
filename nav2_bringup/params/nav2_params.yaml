@@ -135,6 +135,7 @@ controller_server:
       time_steps: 56
       model_dt: 0.05
       batch_size: 2000
+      open_loop: false
       ax_max: 3.0
       ax_min: -3.0
       ay_max: 3.0

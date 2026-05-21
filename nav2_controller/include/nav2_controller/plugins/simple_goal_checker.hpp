@@ -100,11 +100,27 @@ public:
    * @brief Get the position and velocity tolerances
    * @param pose_tolerance Output parameter for pose tolerance
    * @param vel_tolerance Output parameter for velocity tolerance
+   * @param path_length_tolerance Output parameter for path length tolerance
    * @return true if tolerances are available, false otherwise
    */
   bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & vel_tolerance) override;
+    geometry_msgs::msg::Twist & vel_tolerance,
+    double & path_length_tolerance) override;
+
+  /**
+   * @brief Check if XY goal position has been reached (without considering yaw)
+   * @param query_pose The pose to check
+   * @param goal_pose The pose to check against
+   * @param velocity The robot's current velocity
+   * @param transformed_global_plan The global plan after being processed by the path handler
+   * @return True if XY goal is reached (position within tolerance, yaw ignored)
+   */
+  bool isGoalXYReached(
+    const geometry_msgs::msg::Pose & query_pose,
+    const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity,
+    const nav_msgs::msg::Path & transformed_global_plan) override;
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;

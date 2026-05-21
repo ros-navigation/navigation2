@@ -158,16 +158,11 @@ int Polygon::getMinPoints() const
   return min_points_;
 }
 
-bool Polygon::isTriggered(const std::vector<Point> & points)
-{
-  const int points_inside = getPointsInside(points);
-  return isTriggeredInternal(points_inside);
-}
-
 bool Polygon::isTriggered(
-  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map)
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+  std::vector<Point> & out_triggering_points)
 {
-  const int points_inside = getPointsInside(sources_collision_points_map);
+  const int points_inside = getPointsInside(sources_collision_points_map, out_triggering_points);
   return isTriggeredInternal(points_inside);
 }
 
@@ -290,11 +285,14 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
   }
 }
 
-int Polygon::getPointsInside(const std::vector<Point> & points) const
+int Polygon::getPointsInside(
+  const std::vector<Point> & points,
+  std::vector<Point> & out_triggering_points) const
 {
   int num = 0;
   for (const Point & point : points) {
     if (nav2_util::geometry_utils::isPointInsidePolygon(point.x, point.y, poly_)) {
+      out_triggering_points.push_back(point);
       num++;
     }
   }
@@ -302,8 +300,22 @@ int Polygon::getPointsInside(const std::vector<Point> & points) const
 }
 
 int Polygon::getPointsInside(
-  const std::unordered_map<std::string,
-  std::vector<Point>> & sources_collision_points_map) const
+  const std::vector<Point> & points,
+  std::vector<std::size_t> & out_triggering_indices) const
+{
+  int num = 0;
+  for (std::size_t i = 0; i < points.size(); ++i) {
+    if (nav2_util::geometry_utils::isPointInsidePolygon(points[i].x, points[i].y, poly_)) {
+      out_triggering_indices.push_back(i);
+      num++;
+    }
+  }
+  return num;
+}
+
+int Polygon::getPointsInside(
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+  std::vector<Point> & out_triggering_points) const
 {
   int num = 0;
   std::vector<std::string> polygon_sources_names = getSourcesNames();
@@ -312,7 +324,7 @@ int Polygon::getPointsInside(
   for (const auto & source_name : polygon_sources_names) {
     const auto & iter = sources_collision_points_map.find(source_name);
     if (iter != sources_collision_points_map.end()) {
-      num += getPointsInside(iter->second);
+      num += getPointsInside(iter->second, out_triggering_points);
     }
   }
 
@@ -321,7 +333,8 @@ int Polygon::getPointsInside(
 
 double Polygon::getCollisionTime(
   const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
-  const Velocity & velocity) const
+  const Velocity & velocity,
+  std::vector<Point> & out_triggering_points) const
 {
   // Initial robot pose is {0,0} in base_footprint coordinates
   Pose pose = {0.0, 0.0, 0.0};
@@ -342,7 +355,7 @@ double Polygon::getCollisionTime(
   std::vector<Point> points_transformed = collision_points;
 
   // Check static polygon
-  if (getPointsInside(collision_points) >= min_points_) {
+  if (getPointsInside(collision_points, out_triggering_points) >= min_points_) {
     return 0.0;
   }
 
@@ -356,7 +369,11 @@ double Polygon::getCollisionTime(
     transformPoints(pose, points_transformed);
     // If the collision occurred on this stage, return the actual time before a collision
     // as if robot was moved with given velocity
-    if (getPointsInside(points_transformed) >= min_points_) {
+    std::vector<std::size_t> triggering_indices;
+    if (getPointsInside(points_transformed, triggering_indices) >= min_points_) {
+      for (std::size_t i : triggering_indices) {
+        out_triggering_points.push_back(collision_points[i]);
+      }
       return time;
     }
   }
