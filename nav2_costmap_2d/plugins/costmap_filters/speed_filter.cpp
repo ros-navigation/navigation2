@@ -51,8 +51,7 @@ namespace nav2_costmap_2d
 SpeedFilter::SpeedFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   speed_limit_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
-  speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT),
-  held_lookahead_dist_(0.0), cached_lookahead_start_idx_(0)
+  speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT)
 {
 }
 
@@ -152,6 +151,11 @@ void SpeedFilter::initializeFilter(
   base_ = BASE_DEFAULT;
   multiplier_ = MULTIPLIER_DEFAULT;
   percentage_ = false;
+
+  // Reset path lookahead states
+  held_lookahead_dist_ = 0.0;
+  cached_lookahead_start_idx_ = 0;
+  limit_at_robot_pose_ = NO_SPEED_LIMIT;
 }
 
 void SpeedFilter::filterInfoCallback(
@@ -363,6 +367,8 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     // Pose mapped outside mask or transform failed
     return NO_SPEED_LIMIT;
   }
+  limit_at_robot_pose_ = speed_limit_at_robot_pose;
+
   if (speed_limit_at_robot_pose != NO_SPEED_LIMIT) {
     min_speed_limit = speed_limit_at_robot_pose;
     found_any_limit = true;
@@ -440,23 +446,20 @@ void SpeedFilter::process(
       d_lookahead = (linear_vel * linear_vel) / (2.0 * std::abs(max_decel_));
       d_lookahead = std::clamp(d_lookahead, min_lookahead_, max_lookahead_);
 
-      // If a limit is currently active, don't let the lookahead shrink below
-      // the one that captured the speed zone
-      if(speed_limit_ != NO_SPEED_LIMIT) {
-        d_lookahead = std::max(d_lookahead, held_lookahead_dist_);
-      }
+      // If lookahead distance is being held, don't let it shrink below the held value
+      d_lookahead = std::max(d_lookahead, held_lookahead_dist_);
     } else {
       d_lookahead = max_lookahead_;
     }
 
     speed_limit_ = getSpeedLimitFromLookahead(pose, d_lookahead);
 
-    // If a limit is currently active, hold the lookahead distance
-    if (speed_limit_ != NO_SPEED_LIMIT) {
-      held_lookahead_dist_ = d_lookahead;
-    } else {
-      // If no limit is currently active, reset the held distance
+    // If the speed limit at robot pose is same as the strictest speed limit along path,
+    // release the lookahead hold
+    if (limit_at_robot_pose_ == speed_limit_) {
       held_lookahead_dist_ = 0.0;
+    } else {
+      held_lookahead_dist_ = d_lookahead;
     }
   } else {
     if (!getSpeedLimitAtPose(pose, speed_limit_)) {
@@ -499,8 +502,6 @@ void SpeedFilter::resetFilter()
     lookahead_pub_->on_deactivate();
     lookahead_pub_.reset();
   }
-  held_lookahead_dist_ = 0.0;
-  cached_lookahead_start_idx_ = 0;
 }
 
 bool SpeedFilter::isActive()
