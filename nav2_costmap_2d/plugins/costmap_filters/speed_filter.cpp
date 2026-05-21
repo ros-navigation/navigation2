@@ -242,20 +242,7 @@ void SpeedFilter::pathCallback(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  current_path_ = std::make_shared<nav_msgs::msg::Path>();
-
-  // Transform path if not in the global frame
-  if(msg->header.frame_id != global_frame_) {
-    auto transformed_path = std::make_shared<nav_msgs::msg::Path>();
-    if(nav2_util::transformPathInTargetFrame(*msg, *transformed_path, *tf_, global_frame_)) {
-      current_path_ = transformed_path;
-    } else {
-      RCLCPP_ERROR(logger_,
-          "SpeedFilter: Failed to transform path to global frame, skipping path lookahead");
-    }
-  } else {
-    current_path_ = msg;
-  }
+  current_path_ = msg;
 
   // Reset cached start index when new path is received
   cached_lookahead_start_idx_ = 0;
@@ -327,7 +314,22 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   const geometry_msgs::msg::Pose & robot_pose,
   double lookahead_dist)
 {
-  const auto & poses = current_path_->poses;
+  // Transform path if not in the global frame
+  nav_msgs::msg::Path transformed_path;
+  if(current_path_->header.frame_id != global_frame_) {
+    if(!nav2_util::transformPathInTargetFrame(*current_path_, transformed_path, *tf_,
+        global_frame_))
+    {
+      RCLCPP_ERROR_THROTTLE(logger_, *(clock_), 5000,
+          "SpeedFilter: Failed to transform path to global frame, "
+          "no speed limit will be published");
+      return NO_SPEED_LIMIT;
+    }
+  } else {
+    transformed_path = *current_path_;
+  }
+
+  const auto & poses = transformed_path.poses;
 
   const size_t pose_search_start =
     (cached_lookahead_start_idx_ < poses.size()) ? cached_lookahead_start_idx_ : 0;
