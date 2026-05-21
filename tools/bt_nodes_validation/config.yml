@@ -4,16 +4,10 @@ local_repositories:
   navigation2:
     behavior_trees:
       cpp_dir_paths:
-        - "nav2_behavior_tree/plugins/action"
-        - "nav2_behavior_tree/plugins/condition"
-        - "nav2_behavior_tree/plugins/control"
-        - "nav2_behavior_tree/plugins/decorator"
+        - "nav2_behavior_tree/plugins"
         - "nav2_docking/opennav_docking_bt/src"
       hpp_dir_paths:
-        - "nav2_behavior_tree/include/nav2_behavior_tree/plugins/action"
-        - "nav2_behavior_tree/include/nav2_behavior_tree/plugins/condition"
-        - "nav2_behavior_tree/include/nav2_behavior_tree/plugins/control"
-        - "nav2_behavior_tree/include/nav2_behavior_tree/plugins/decorator"
+        - "nav2_behavior_tree/include/nav2_behavior_tree/plugins"
         - "nav2_docking/opennav_docking_bt/include/opennav_docking_bt"
       hpp_base_classes_paths:
         - BtActionNode: "nav2_behavior_tree/include/nav2_behavior_tree/bt_action_node.hpp"
