@@ -331,7 +331,7 @@ def extract_xml_nodes_data(nodes_model: ET.Element) -> BTNodes:
                     f'{port_name} port in {node_id} node is missing a "type" attribute.'
                 )
             port_default = port.get('default', '')
-            port_description_exists = bool(port.text)
+            port_description_exists = bool((port.text or '').strip())
             port_names[port_name] = {
                 'data_type': port_type,
                 'default': port_default,
