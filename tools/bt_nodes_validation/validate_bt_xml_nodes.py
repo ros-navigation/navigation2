@@ -303,6 +303,8 @@ def extract_code_port_data(content: str) -> NodePorts:
             elif char == ')':
                 paren_count -= 1
             pos += 1
+        else:
+            raise ValueError('Failed to extract port arguments: unmatched parentheses.')
 
     return ports
 
