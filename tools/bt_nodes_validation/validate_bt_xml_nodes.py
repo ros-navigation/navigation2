@@ -236,59 +236,53 @@ def extract_code_port_data(content: str) -> NodePorts:
 
         port_type_start = content.find('<', start_pos) + 1
         port_type = extract_template_type(content, port_type_start)
+        port_type_end = port_type_start + len(port_type) + 1
+
         port_type = TYPE_DIRECT_MAPPINGS.get(port_type, port_type)
         port_type = convert_with_regex(port_type, TYPE_REGEX_TRANSFORMS)
 
-        port_type_end = port_type_start + len(port_type)
         args_start = content.find('(', port_type_end) + 1
-        quote_start = content.find('"', args_start)
-        quote_end = content.find('"', quote_start + 1)
 
-        port_name = content[quote_start + 1:quote_end]
-        if not port_name:
-            continue
-
+        port_name = ''
         paren_count = 0
         inside_quote = False
         has_second_arg = False
         second_arg_start = -1
-        end_pos = quote_end + 1
-        while end_pos < len(content):
+        pos = args_start
+        while pos < len(content):
 
-            if content[end_pos] == '"' and (end_pos == 0 or content[end_pos-1] != '\\'):
+            if content[pos] == '"' and (pos == 0 or content[pos-1] != '\\'):
                 inside_quote = not inside_quote
 
             if inside_quote:
-                end_pos += 1
+                pos += 1
                 continue
 
-            char = content[end_pos]
+            char = content[pos]
             if char == ',' and not paren_count:
-                if has_second_arg:
-                    # Default value and description exist
-                    default = content[second_arg_start:end_pos]
-                    default = convert_with_regex(default.strip(), DEFAULT_REGEX_TRANSFORMS)
-                    ports[port_name] = {
-                        'data_type': port_type,
-                        'default': default,
-                        'has_description': True
-                    }
-                    break
-                else:
+
+                if not has_second_arg:
                     has_second_arg = True
-                    second_arg_start = end_pos + 1
+                    port_name = content[args_start:pos].strip().strip('"')
+                    second_arg_start = pos + 1
+                    pos += 1
+                    continue
+
+                # Default value and description exist
+                default = content[second_arg_start:pos]
+                default = convert_with_regex(default.strip(), DEFAULT_REGEX_TRANSFORMS)
+                ports[port_name] = {
+                    'data_type': port_type,
+                    'default': default,
+                    'has_description': True
+                }
+                break
 
             if char == ')' and not paren_count:
-                if has_second_arg:
-                    # No default value, description exists
-                    ports[port_name] = {
-                        'data_type': port_type,
-                        'default': '',
-                        'has_description': True
-                    }
-                    break
-                else:
-                    # Port name only, no default value or description
+
+                # Port name only, no default value or description
+                if not has_second_arg:
+                    port_name = content[args_start:pos].strip().strip('"')
                     ports[port_name] = {
                         'data_type': port_type,
                         'default': '',
@@ -296,11 +290,19 @@ def extract_code_port_data(content: str) -> NodePorts:
                     }
                     break
 
+                # No default value, description exists
+                ports[port_name] = {
+                    'data_type': port_type,
+                    'default': '',
+                    'has_description': True
+                }
+                break
+
             if char == '(':
                 paren_count += 1
             elif char == ')':
                 paren_count -= 1
-            end_pos += 1
+            pos += 1
 
     return ports
 
