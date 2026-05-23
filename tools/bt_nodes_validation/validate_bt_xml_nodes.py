@@ -200,9 +200,9 @@ def has_leading_comments(content: str, pos: int, comment_symbol: str) -> bool:
     return leading_content.startswith(comment_symbol)
 
 
-def extract_template_type(content: str, template_start_pos: int) -> str:
-    """Extract the template type starting from template_start_pos."""
-    angle_bracket_count = 1
+def extract_template_data(content: str, template_start_pos: int) -> str:
+    """Extract template data starting from given position."""
+    angle_bracket_count = 0
     pos = template_start_pos
     while pos < len(content):
         char = content[pos]
@@ -214,8 +214,8 @@ def extract_template_type(content: str, template_start_pos: int) -> str:
                 break
         pos += 1
     else:
-        raise ValueError('Failed to extract template type: unmatched angle brackets.')
-    return content[template_start_pos:pos].strip()
+        raise ValueError('Failed to extract template data: unmatched angle brackets.')
+    return content[template_start_pos + 1:pos].strip()
 
 
 def extract_code_port_data(content: str) -> NodePorts:
@@ -227,20 +227,18 @@ def extract_code_port_data(content: str) -> NodePorts:
     """
     ports: NodePorts = {}
 
-    ports_code_pattern = re.compile(r'BT::(?:Input|Output|Bidirectional)Port<')
-    for file_iter in ports_code_pattern.finditer(content):
-        start_pos = file_iter.start()
+    ports_code_pattern = re.compile(r'BT::(?:Input|Output|Bidirectional)Port')
+    for port_match in ports_code_pattern.finditer(content):
+        start_pos = port_match.end()
 
         if has_leading_comments(content, start_pos, '//'):
             continue
 
-        port_type_start = content.find('<', start_pos) + 1
-        port_type = extract_template_type(content, port_type_start)
-        port_type_end = port_type_start + len(port_type) + 1
-
+        port_type = extract_template_data(content, start_pos)
         port_type = TYPE_DIRECT_MAPPINGS.get(port_type, port_type)
         port_type = convert_with_regex(port_type, TYPE_REGEX_TRANSFORMS)
 
+        port_type_end = start_pos + len(port_type) + 2
         args_start = content.find('(', port_type_end) + 1
 
         port_name = ''
