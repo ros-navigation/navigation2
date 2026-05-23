@@ -223,6 +223,60 @@ def extract_template_data(content: str, template_start_pos: int) -> str:
     return content[template_start_pos + 1:pos].strip()
 
 
+def extract_arguments(content: str, args_start_pos: int) -> list[str]:
+    """Extract arguments from a function starting from given position."""
+    args: list[str] = []
+
+    parens_count = 0
+    angle_brackets_count = 0
+    curly_brackets_count = 0
+    inside_quote = False
+    new_arg_start = args_start_pos + 1
+    pos = args_start_pos
+    while pos < len(content):
+        char = content[pos]
+
+        if char == '"' and (pos == 0 or content[pos-1] != '\\'):
+            inside_quote = not inside_quote
+
+        if inside_quote:
+            pos += 1
+            continue
+
+        match char:
+            case '(':
+                parens_count += 1
+            case ')':
+                parens_count -= 1
+                if parens_count == 0:
+                    arg = content[new_arg_start:pos].strip()
+                    args.append(arg)
+                    break
+            case '<':
+                angle_brackets_count += 1
+            case '>':
+                angle_brackets_count -= 1
+            case '{':
+                curly_brackets_count += 1
+            case '}':
+                curly_brackets_count -= 1
+
+        if angle_brackets_count or curly_brackets_count or parens_count > 1:
+            pos += 1
+            continue
+
+        if char == ',':
+            arg = content[new_arg_start:pos].strip()
+            args.append(arg)
+            pos += 1
+            new_arg_start = pos
+            continue
+        pos += 1
+    else:
+        raise ValueError('Failed to extract arguments: unmatched parentheses.')
+    return args
+
+
 def extract_code_port_data(content: str) -> NodePorts:
     """
     Extract port information from the code.
@@ -244,71 +298,48 @@ def extract_code_port_data(content: str) -> NodePorts:
         port_type = convert_with_regex(port_type, TYPE_REGEX_TRANSFORMS)
 
         port_type_end = start_pos + len(port_type) + 2
-        args_start = content.find('(', port_type_end) + 1
+        args_start = content.find('(', port_type_end)
 
-        port_name = ''
-        paren_count = 0
-        inside_quote = False
-        has_second_arg = False
-        second_arg_start = -1
-        pos = args_start
-        while pos < len(content):
+        port_args = extract_arguments(content, args_start)
+        args_number = len(port_args)
+        if not args_number:
+            raise ValueError('Failed to extract port arguments: no arguments found.')
 
-            if content[pos] == '"' and (pos == 0 or content[pos-1] != '\\'):
-                inside_quote = not inside_quote
+        port_name = port_args[0]
+        is_quoted = is_quoted_string(port_name)
+        if not is_quoted:
+            raise ValueError('Port name must be a quoted string.')
 
-            if inside_quote:
-                pos += 1
-                continue
+        port_name = port_name.strip('"')
+        if not port_name:
+            raise ValueError('Failed to extract port name: empty string.')
 
-            char = content[pos]
-            if char == ',' and not paren_count:
-
-                if not has_second_arg:
-                    has_second_arg = True
-                    port_name = content[args_start:pos].strip().strip('"')
-                    second_arg_start = pos + 1
-                    pos += 1
-                    continue
-
-                # Default value and description exist
-                default = content[second_arg_start:pos]
-                default = convert_with_regex(default.strip(), DEFAULT_REGEX_TRANSFORMS)
-                ports[port_name] = {
-                    'data_type': port_type,
-                    'default': default,
-                    'has_description': True
-                }
-                break
-
-            if char == ')' and not paren_count:
-
+        match args_number:
+            case 1:
                 # Port name only, no default value or description
-                if not has_second_arg:
-                    port_name = content[args_start:pos].strip().strip('"')
-                    ports[port_name] = {
-                        'data_type': port_type,
-                        'default': '',
-                        'has_description': False
-                    }
-                    break
-
-                # No default value, description exists
                 ports[port_name] = {
                     'data_type': port_type,
                     'default': '',
-                    'has_description': True
+                    'has_description': False
                 }
-                break
-
-            if char == '(':
-                paren_count += 1
-            elif char == ')':
-                paren_count -= 1
-            pos += 1
-        else:
-            raise ValueError('Failed to extract port arguments: unmatched parentheses.')
-
+            case 2:
+                # Port name and description exist, no default value
+                port_description_exists = bool((port_args[1]).strip('"').strip())
+                ports[port_name] = {
+                    'data_type': port_type,
+                    'default': '',
+                    'has_description': port_description_exists
+                }
+            case 3:
+                # Port name, default value, and description exist
+                port_default = port_args[1]
+                port_default = convert_with_regex(port_default, DEFAULT_REGEX_TRANSFORMS)
+                port_description_exists = bool((port_args[2]).strip('"').strip())
+                ports[port_name] = {
+                    'data_type': port_type,
+                    'default': port_default,
+                    'has_description': port_description_exists
+                }
     return ports
 
 
@@ -372,24 +403,25 @@ def extract_node_registration_data(content: str) -> dict[str, str]:
         class_name = class_name_match.group(1)
 
         register_type_end = start_pos + len(register_type) + 2
-        args_start = content.find('(', register_type_end) + 1
-        pos = args_start
-        while pos < len(content):
-            char = content[pos]
-            if char == ',' or char == ')':
-                node_id = content[args_start:pos].strip()
-                if not node_id:
-                    raise ValueError('Failed to extract node ID from node registration.')
-                is_quoted = is_quoted_string(node_id)
-                if not is_quoted:
-                    raise ValueError('Node ID must be a quoted string.')
-                register_data[class_name] = node_id.strip('"')
-                break
-            pos += 1
-        else:
+        args_start = content.find('(', register_type_end)
+
+        register_args = extract_arguments(content, args_start)
+        if not register_args:
             raise ValueError(
-                'Failed to extract node ID from node registration.'
+                'Failed to extract node ID from node registration: no arguments found.'
             )
+
+        node_id = register_args[0]
+        is_quoted = is_quoted_string(node_id)
+        if not is_quoted:
+            raise ValueError('Node ID must be a quoted string.')
+
+        node_id = node_id.strip('"')
+        if not node_id:
+            raise ValueError('Failed to extract node ID from node registration: empty string.')
+
+        register_data[class_name] = node_id
+
     if not register_data:
         raise ValueError('No node registration found.')
     return register_data
