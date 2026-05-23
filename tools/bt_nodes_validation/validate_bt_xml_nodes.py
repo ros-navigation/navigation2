@@ -205,9 +205,14 @@ def is_quoted_string(string: str) -> bool:
     return (string.startswith('"') and string.endswith('"'))
 
 
-def extract_template_data(content: str, template_start_pos: int) -> str:
-    """Extract template data starting from given position."""
+def extract_template_data(content: str, template_start_pos: int) -> tuple[str, int]:
+    """
+    Extract template data starting from given position.
+
+    Return extracted template and the position of the closing angle bracket.
+    """
     angle_bracket_count = 0
+    template_end_pos = -1
     pos = template_start_pos
     while pos < len(content):
         char = content[pos]
@@ -216,11 +221,12 @@ def extract_template_data(content: str, template_start_pos: int) -> str:
         if char == '>':
             angle_bracket_count -= 1
             if angle_bracket_count == 0:
+                template_end_pos = pos
                 break
         pos += 1
     else:
         raise ValueError('Failed to extract template data: unmatched angle brackets.')
-    return content[template_start_pos + 1:pos].strip()
+    return (content[template_start_pos + 1:template_end_pos].strip(), template_end_pos)
 
 
 def extract_arguments(content: str, args_start_pos: int) -> list[str]:
@@ -293,13 +299,11 @@ def extract_code_port_data(content: str) -> NodePorts:
         if has_leading_comments(content, start_pos, '//'):
             continue
 
-        port_type = extract_template_data(content, start_pos)
+        port_type, port_type_end = extract_template_data(content, start_pos)
         port_type = TYPE_DIRECT_MAPPINGS.get(port_type, port_type)
         port_type = convert_with_regex(port_type, TYPE_REGEX_TRANSFORMS)
 
-        port_type_end = start_pos + len(port_type) + 2
         args_start = content.find('(', port_type_end)
-
         port_args = extract_arguments(content, args_start)
         args_number = len(port_args)
         if not args_number:
@@ -392,7 +396,7 @@ def extract_node_registration_data(content: str) -> dict[str, str]:
     for register_match in register_pattern.finditer(content):
         start_pos = register_match.end()
 
-        register_type = extract_template_data(content, start_pos)
+        register_type, register_type_end = extract_template_data(content, start_pos)
         if not register_type:
             raise ValueError('Failed to extract node registration template data.')
 
@@ -402,9 +406,7 @@ def extract_node_registration_data(content: str) -> dict[str, str]:
             raise ValueError('Failed to extract class name from node registration.')
         class_name = class_name_match.group(1)
 
-        register_type_end = start_pos + len(register_type) + 2
         args_start = content.find('(', register_type_end)
-
         register_args = extract_arguments(content, args_start)
         if not register_args:
             raise ValueError(
