@@ -200,6 +200,11 @@ def has_leading_comments(content: str, pos: int, comment_symbol: str) -> bool:
     return leading_content.startswith(comment_symbol)
 
 
+def is_quoted_string(string: str) -> bool:
+    """Check if the given string is quoted."""
+    return (string.startswith('"') and string.endswith('"'))
+
+
 def extract_template_data(content: str, template_start_pos: int) -> str:
     """Extract template data starting from given position."""
     angle_bracket_count = 0
@@ -344,25 +349,67 @@ def extract_xml_nodes_data(nodes_model: ET.Element) -> BTNodes:
     return bt_xml
 
 
+def extract_node_registration_data(content: str) -> dict[str, str]:
+    """
+    Extract node registration data from the given content.
+
+    Returns dictionary mapping class names to node IDs: {class_name: node_id}
+    """
+    register_pattern = re.compile(r'register(?:NodeType|Builder)')
+
+    register_data: dict[str, str] = {}
+    for register_match in register_pattern.finditer(content):
+        start_pos = register_match.end()
+
+        register_type = extract_template_data(content, start_pos)
+        if not register_type:
+            raise ValueError('Failed to extract node registration template data.')
+
+        register_type = register_type.split('<')[0].strip()
+        class_name_match = re.match(r'(?:.*::)?([a-zA-Z_]\w*)', register_type)
+        if not class_name_match:
+            raise ValueError('Failed to extract class name from node registration.')
+        class_name = class_name_match.group(1)
+
+        register_type_end = start_pos + len(register_type) + 2
+        args_start = content.find('(', register_type_end) + 1
+        pos = args_start
+        while pos < len(content):
+            char = content[pos]
+            if char == ',' or char == ')':
+                node_id = content[args_start:pos].strip()
+                if not node_id:
+                    raise ValueError('Failed to extract node ID from node registration.')
+                is_quoted = is_quoted_string(node_id)
+                if not is_quoted:
+                    raise ValueError('Node ID must be a quoted string.')
+                register_data[class_name] = node_id.strip('"')
+                break
+            pos += 1
+        else:
+            raise ValueError(
+                'Failed to extract node ID from node registration.'
+            )
+    if not register_data:
+        raise ValueError('No node registration found.')
+    return register_data
+
+
 def extract_cpp_classes_and_ids(cpp_files: list[Path]) -> CPPData:
     """
     Extract class names and their corresponding node IDs from the given list of source files.
 
     Returns dictionary mapping class names to node IDs: {class_name: node_id}
     """
-    register_pattern = re.compile(
-        r'register(?:NodeType|Builder)<(?:[^>]*::)?([A-Za-z_][A-Za-z0-9_]*)>[^(]*\([^"]*"([^"]+)"',
-        re.DOTALL
-    )
-
     node_cpp_data: CPPData = {}
     for cpp_file in cpp_files:
         cpp_content = cpp_file.read_text()
-        class_names_and_ids = register_pattern.findall(cpp_content)
-        if not class_names_and_ids:
+        try:
+            class_names_and_ids = extract_node_registration_data(cpp_content)
+        except ValueError as exc:
             raise ValueError(
-                f'No node registrations found in {cpp_file}.')
-        node_cpp_data.update(dict(class_names_and_ids))
+                f'Failed to extract node registration data from {cpp_file}: {exc}\n')
+        node_cpp_data.update(class_names_and_ids)
     return node_cpp_data
 
 
