@@ -115,11 +115,13 @@ CbfFilterResult CBFSafetyFilter::filter(
   res.min_h_react = std::isfinite(min_h_react) ? min_h_react : 0.0;
 
   // ── Retreat overlay: state machine ─────────────────────────────────────
-  // Three states: NORMAL (path-following), RETREAT (overlay overrides u_nom
-  // with best candidate), GIVE_UP (zero output → Nav2 BT recovery). Hysteresis
-  // between NORMAL and RETREAT via h_enter < h_exit prevents flapping. GIVE_UP
-  // triggers when RETREAT has been active for cbf_retreat_give_up_ticks
-  // without min_h improving by cbf_retreat_progress_eps from its entry value.
+  // Two states only: NORMAL (path-following) and RETREAT (overlay overrides
+  // u_nom with the best candidate). Hysteresis between them via
+  // h_enter < h_exit prevents flapping. There is no GIVE_UP state — when the
+  // overlay can't make progress, the controller-level stuck detector and
+  // Nav2 BT recovery handle it. An extra failure state inside the filter
+  // created a deadlock (zero output evading the stuck threshold) for no
+  // benefit beyond what the existing stack already provides.
   if (params_->cbf_retreat_enabled && std::isfinite(min_h_react)) {
     const double h_enter = params_->cbf_retreat_h_enter;
     const double h_exit  = params_->cbf_retreat_h_exit;
@@ -127,9 +129,8 @@ CbfFilterResult CBFSafetyFilter::filter(
     switch (retreat_state_) {
       case RetreatState::NORMAL:
         if (min_h_react < h_enter) {
-          retreat_state_     = RetreatState::RETREAT;
-          retreat_ticks_     = 0;
-          min_h_at_entry_    = min_h_react;
+          retreat_state_  = RetreatState::RETREAT;
+          retreat_ticks_  = 0;
         }
         break;
       case RetreatState::RETREAT:
@@ -137,46 +138,12 @@ CbfFilterResult CBFSafetyFilter::filter(
           retreat_state_ = RetreatState::NORMAL;
           retreat_ticks_ = 0;
         } else {
-          retreat_ticks_++;
-          if (retreat_ticks_ >= params_->cbf_retreat_give_up_ticks &&
-              min_h_react < min_h_at_entry_ + params_->cbf_retreat_progress_eps)
-          {
-            retreat_state_ = RetreatState::GIVE_UP;
-          }
-        }
-        break;
-      case RetreatState::GIVE_UP:
-        // Exit when the body is comfortably clear again — typically after the
-        // BT has run a recovery and the robot is repositioned. Also cleared on
-        // setPlan() via reset(), so a fresh plan always starts in NORMAL.
-        if (min_h_react >= h_exit) {
-          retreat_state_ = RetreatState::NORMAL;
-          retreat_ticks_ = 0;
+          retreat_ticks_++;  // kept as a diagnostic counter only
         }
         break;
     }
   }
   res.retreat_state = retreat_state_;
-
-  // ── Retreat overlay: GIVE_UP short-circuit ─────────────────────────────
-  // No QP, no candidates — emit zero twist and update predictor cache to
-  // match. Stuck-detection in ConstrainedController will see the zero output
-  // and trigger BT recovery.
-  if (retreat_state_ == RetreatState::GIVE_UP) {
-    res.u.linear.x = res.u.linear.y = res.u.angular.z = 0.0;
-    res.min_h           = res.min_h_react;
-    res.qp.ok           = true;
-    res.qp.u            = Eigen::Vector3d::Zero();
-    res.qp.deviation    = 0.0;
-    res.qp.n_active     = 0;
-    res.qp.iterations   = 0;
-    res.qp.max_slack    = 0.0;
-    res.picked_candidate = 0;
-    res.picked_score     = 0.0;
-    last_u_star_ = Eigen::Vector3d::Zero();
-    has_last_u_  = true;
-    return res;
-  }
 
   // ── Retreat overlay: candidate selection ──────────────────────────────
   // In RETREAT state, build 9 candidate velocities and score each by ESDF

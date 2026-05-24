@@ -132,8 +132,8 @@ protected:
   double last_min_h_{1.0};
   bool stuck_{false};
   // Track retreat-overlay state across ticks so we can emit a single event on
-  // each transition (NORMAL ↔ RETREAT ↔ GIVE_UP) instead of every tick.
-  int last_retreat_state_{0};   // 0=NORMAL, 1=RETREAT, 2=GIVE_UP
+  // each transition (NORMAL ↔ RETREAT) instead of every tick.
+  int last_retreat_state_{0};   // 0=NORMAL, 1=RETREAT
   double stuck_start_x_{0.0};
   double stuck_start_y_{0.0};
   double stuck_start_yaw_{0.0};

@@ -77,8 +77,6 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(cbf_retreat_speed, 0.10);
   DECL_DOUBLE(cbf_retreat_rotation_speed, 0.30);
   DECL_DOUBLE(cbf_retreat_lookahead_s, 0.30);
-  DECL_INT(cbf_retreat_give_up_ticks, 30);
-  DECL_DOUBLE(cbf_retreat_progress_eps, 0.005);
 
   DECL_STRING(log_dir, "/root/navigation_log");
   DECL_BOOL(log_enabled, true);
@@ -148,8 +146,6 @@ ParameterHandler::dynamicParametersCallback(
         params_.cbf_retreat_rotation_speed = v;
       } else if (name == plugin_name_ + ".cbf_retreat_lookahead_s") {
         params_.cbf_retreat_lookahead_s = v;
-      } else if (name == plugin_name_ + ".cbf_retreat_progress_eps") {
-        params_.cbf_retreat_progress_eps = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_BOOL) {
       const bool v = p.as_bool();
@@ -164,8 +160,6 @@ ParameterHandler::dynamicParametersCallback(
         params_.log_lidar_every_n_ticks = v;
       } else if (name == plugin_name_ + ".cbf_n_predict_steps") {
         params_.cbf_n_predict_steps = v;
-      } else if (name == plugin_name_ + ".cbf_retreat_give_up_ticks") {
-        params_.cbf_retreat_give_up_ticks = v;
       }
     }
   }

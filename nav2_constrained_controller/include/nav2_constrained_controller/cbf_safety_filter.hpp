@@ -50,13 +50,15 @@ namespace nav2_constrained_controller
 struct Parameters;
 
 // High-level controller mode of the retreat overlay. Logged so we can see in
-// recordings when the overlay is active and which option it picked.
+// recordings when the overlay is active and which option it picked. There is
+// deliberately no GIVE_UP / failure state — controller-level stuck detection
+// and Nav2 BT recovery already handle the "retreat isn't working" case; an
+// extra failure state inside the overlay creates deadlock risk (zero output
+// evades the stuck detector's commanded_norm threshold).
 enum class RetreatState : int
 {
   NORMAL = 0,    // path-following, no overlay influence
-  RETREAT = 1,   // overlay active: blend u_nom toward best candidate
-  GIVE_UP = 2    // candidate evaluation isn't making progress; emit zero output
-                 // so Nav2 BT recovery can take over
+  RETREAT = 1    // overlay active: blend u_nom toward best candidate
 };
 
 struct CbfFilterResult
@@ -96,10 +98,9 @@ public:
   // bookkeeping leaks across plans.
   void reset()
   {
-    has_last_u_ = false;
-    retreat_state_ = RetreatState::NORMAL;
-    retreat_ticks_ = 0;
-    min_h_at_entry_ = 0.0;
+    has_last_u_            = false;
+    retreat_state_         = RetreatState::NORMAL;
+    retreat_ticks_         = 0;
     last_picked_candidate_ = 0;
   }
 
@@ -113,13 +114,12 @@ private:
   Eigen::Vector3d last_u_star_{Eigen::Vector3d::Zero()};
   bool has_last_u_{false};
 
-  // Retreat overlay state, persistent across ticks. See enum docstring above
-  // for state semantics. retreat_ticks_ counts consecutive ticks in RETREAT
-  // since entry; min_h_at_entry_ is the min_h_react snapshot at entry, used
-  // to gauge whether the overlay is making geometric progress.
+  // Retreat overlay state, persistent across ticks. retreat_ticks_ counts
+  // consecutive ticks in RETREAT since entry — kept as a diagnostic value
+  // only; no transition depends on it (failure handling is the controller +
+  // BT's job, not the filter's).
   RetreatState retreat_state_{RetreatState::NORMAL};
   int retreat_ticks_{0};
-  double min_h_at_entry_{0.0};
   int last_picked_candidate_{0};
 };
 

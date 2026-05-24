@@ -464,7 +464,7 @@ ConstrainedController::computeVelocityCommands(
     // deviation will reflect how much we deviated from u_nom toward retreat.
     const int rs_now = static_cast<int>(cbf_res.retreat_state);
     if (rs_now != last_retreat_state_) {
-      static const char * const kNames[3] = {"NORMAL", "RETREAT", "GIVE_UP"};
+      static const char * const kNames[2] = {"NORMAL", "RETREAT"};
       log_->event(
         std::string("retreat: ") + kNames[last_retreat_state_] + " → " +
         kNames[rs_now] +
