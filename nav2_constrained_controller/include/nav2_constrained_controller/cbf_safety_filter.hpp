@@ -49,6 +49,16 @@ namespace nav2_constrained_controller
 
 struct Parameters;
 
+// High-level controller mode of the retreat overlay. Logged so we can see in
+// recordings when the overlay is active and which option it picked.
+enum class RetreatState : int
+{
+  NORMAL = 0,    // path-following, no overlay influence
+  RETREAT = 1,   // overlay active: blend u_nom toward best candidate
+  GIVE_UP = 2    // candidate evaluation isn't making progress; emit zero output
+                 // so Nav2 BT recovery can take over
+};
+
 struct CbfFilterResult
 {
   geometry_msgs::msg::Twist u;          // u* (post-QP)
@@ -57,6 +67,13 @@ struct CbfFilterResult
   std::array<Point2D, 4> corners;       // body corners in base_link
   double min_h{0.0};                    // smallest h across all constraints
   double solve_time_us{0.0};
+
+  // Retreat overlay diagnostics. picked_candidate is the index (1..9) of the
+  // candidate the overlay chose this tick; 0 when overlay was NORMAL.
+  RetreatState retreat_state{RetreatState::NORMAL};
+  int picked_candidate{0};
+  double min_h_react{0.0};              // worst body-sample h pre-QP, used by overlay decision
+  double picked_score{0.0};             // predicted min_h of the picked candidate
 };
 
 class CBFSafetyFilter
@@ -74,10 +91,17 @@ public:
   // Called with (0,0,0) during normal operation; exposed for tests.
   std::array<Point2D, 4> bodyCorners(double xr, double yr, double theta) const;
 
-  // Clear the predictor state. Call on activate() and setPlan() so the
-  // previous-tick u* (used to extrapolate body samples into the future) does
-  // not leak across plans.
-  void reset() {has_last_u_ = false;}
+  // Clear the predictor state AND the retreat overlay state. Call on
+  // activate() and setPlan() so neither the previous-tick u* nor the retreat
+  // bookkeeping leaks across plans.
+  void reset()
+  {
+    has_last_u_ = false;
+    retreat_state_ = RetreatState::NORMAL;
+    retreat_ticks_ = 0;
+    min_h_at_entry_ = 0.0;
+    last_picked_candidate_ = 0;
+  }
 
 private:
   const Parameters * params_;
@@ -88,6 +112,15 @@ private:
   // On the first call (has_last_u_ = false), the filter falls back to u_nom.
   Eigen::Vector3d last_u_star_{Eigen::Vector3d::Zero()};
   bool has_last_u_{false};
+
+  // Retreat overlay state, persistent across ticks. See enum docstring above
+  // for state semantics. retreat_ticks_ counts consecutive ticks in RETREAT
+  // since entry; min_h_at_entry_ is the min_h_react snapshot at entry, used
+  // to gauge whether the overlay is making geometric progress.
+  RetreatState retreat_state_{RetreatState::NORMAL};
+  int retreat_ticks_{0};
+  double min_h_at_entry_{0.0};
+  int last_picked_candidate_{0};
 };
 
 }  // namespace nav2_constrained_controller

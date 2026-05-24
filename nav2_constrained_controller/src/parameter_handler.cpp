@@ -71,6 +71,15 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(esdf_grid_resolution, 0.01);
   DECL_DOUBLE(esdf_grid_size_m, 3.0);
 
+  DECL_BOOL(cbf_retreat_enabled, true);
+  DECL_DOUBLE(cbf_retreat_h_enter, 0.02);
+  DECL_DOUBLE(cbf_retreat_h_exit, 0.05);
+  DECL_DOUBLE(cbf_retreat_speed, 0.10);
+  DECL_DOUBLE(cbf_retreat_rotation_speed, 0.30);
+  DECL_DOUBLE(cbf_retreat_lookahead_s, 0.30);
+  DECL_INT(cbf_retreat_give_up_ticks, 30);
+  DECL_DOUBLE(cbf_retreat_progress_eps, 0.005);
+
   DECL_STRING(log_dir, "/root/navigation_log");
   DECL_BOOL(log_enabled, true);
   DECL_INT(log_lidar_every_n_ticks, 10);
@@ -129,11 +138,25 @@ ParameterHandler::dynamicParametersCallback(
         params_.wall_consideration_range = v;
       } else if (name == plugin_name_ + ".cbf_slack_weight") {
         params_.cbf_slack_weight = v;
+      } else if (name == plugin_name_ + ".cbf_retreat_h_enter") {
+        params_.cbf_retreat_h_enter = v;
+      } else if (name == plugin_name_ + ".cbf_retreat_h_exit") {
+        params_.cbf_retreat_h_exit = v;
+      } else if (name == plugin_name_ + ".cbf_retreat_speed") {
+        params_.cbf_retreat_speed = v;
+      } else if (name == plugin_name_ + ".cbf_retreat_rotation_speed") {
+        params_.cbf_retreat_rotation_speed = v;
+      } else if (name == plugin_name_ + ".cbf_retreat_lookahead_s") {
+        params_.cbf_retreat_lookahead_s = v;
+      } else if (name == plugin_name_ + ".cbf_retreat_progress_eps") {
+        params_.cbf_retreat_progress_eps = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_BOOL) {
       const bool v = p.as_bool();
       if (name == plugin_name_ + ".log_enabled") {
         params_.log_enabled = v;
+      } else if (name == plugin_name_ + ".cbf_retreat_enabled") {
+        params_.cbf_retreat_enabled = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_INTEGER) {
       const int v = static_cast<int>(p.as_int());
@@ -141,6 +164,8 @@ ParameterHandler::dynamicParametersCallback(
         params_.log_lidar_every_n_ticks = v;
       } else if (name == plugin_name_ + ".cbf_n_predict_steps") {
         params_.cbf_n_predict_steps = v;
+      } else if (name == plugin_name_ + ".cbf_retreat_give_up_ticks") {
+        params_.cbf_retreat_give_up_ticks = v;
       }
     }
   }

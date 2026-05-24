@@ -107,6 +107,7 @@ void ConstrainedController::activate()
   has_plan_              = false;
   near_goal_yaw_active_  = false;
   near_goal_yaw_start_   = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  last_retreat_state_    = 0;
 }
 
 void ConstrainedController::deactivate()
@@ -150,6 +151,7 @@ void ConstrainedController::setPlan(const nav_msgs::msg::Path & path)
   stuck_start_time_     = rclcpp::Time(0, 0, RCL_ROS_TIME);
   has_plan_             = false;
   near_goal_yaw_active_ = false;
+  last_retreat_state_   = 0;
   esdf_grid_->reset();
   cbf_filter_->reset();
 
@@ -455,6 +457,21 @@ ConstrainedController::computeVelocityCommands(
     }
     if (cbf_res.qp.max_slack > 0.01) {
       log_->event("CBF slack: " + std::to_string(cbf_res.qp.max_slack) + " m/s");
+    }
+    // Log retreat-overlay state transitions exactly once each. picked_candidate
+    // is 1..9 inside RETREAT, 0 elsewhere. picked_score is the predicted min_h
+    // of the chosen candidate; runner-up info isn't carried but the QP log's
+    // deviation will reflect how much we deviated from u_nom toward retreat.
+    const int rs_now = static_cast<int>(cbf_res.retreat_state);
+    if (rs_now != last_retreat_state_) {
+      static const char * const kNames[3] = {"NORMAL", "RETREAT", "GIVE_UP"};
+      log_->event(
+        std::string("retreat: ") + kNames[last_retreat_state_] + " → " +
+        kNames[rs_now] +
+        " | min_h_react=" + std::to_string(cbf_res.min_h_react) +
+        " | candidate=" + std::to_string(cbf_res.picked_candidate) +
+        " | pred_min_h=" + std::to_string(cbf_res.picked_score));
+      last_retreat_state_ = rs_now;
     }
     last_min_h_ = cbf_res.min_h;
   }

@@ -88,6 +88,23 @@ struct Parameters
   double esdf_grid_resolution{0.01};  // metres per cell (1cm for ~50mm clearance)
   double esdf_grid_size_m{3.0};       // half-size (so 6m x 6m total)
 
+  // ---------- retreat overlay ----------
+  // ESDF-lookahead candidate-evaluation overlay that activates when any body
+  // sample's h drops below h_enter. Inside RETREAT it scores 9 candidate
+  // velocities by predicting all 16 body samples τ_look seconds ahead and
+  // taking min_h_pred. Picks the best, blends with u_nom by how critical h
+  // is, hands the blended target to the CBF QP. Exits when min_h ≥ h_exit
+  // (hysteresis). Gives up (zero output for BT recovery) if min_h doesn't
+  // improve by progress_eps within give_up_ticks.
+  bool   cbf_retreat_enabled{true};
+  double cbf_retreat_h_enter{0.02};         // enter when min_h < this (m)
+  double cbf_retreat_h_exit{0.05};          // exit when min_h ≥ this (m, hysteresis)
+  double cbf_retreat_speed{0.10};           // linear retreat magnitude (m/s)
+  double cbf_retreat_rotation_speed{0.30};  // pure-rotation candidate magnitude (rad/s)
+  double cbf_retreat_lookahead_s{0.30};     // candidate scoring lookahead (s)
+  int    cbf_retreat_give_up_ticks{30};     // give up after this many no-progress ticks
+  double cbf_retreat_progress_eps{0.005};   // min_h improvement required to count as progress (m)
+
   // ---------- logging ----------
   std::string log_dir{"/root/navigation_log"};
   bool   log_enabled{true};

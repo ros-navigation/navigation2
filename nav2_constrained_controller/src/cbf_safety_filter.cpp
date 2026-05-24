@@ -91,6 +91,199 @@ CbfFilterResult CBFSafetyFilter::filter(
     samples[ns++] = {{-Lext, py}, (py >= 0.0) ? 3 : 2};  // rear:  BL or BR
   }
 
+  // ── Retreat overlay: scan body for min_h_react ─────────────────────────
+  // Walk all body samples once up-front to find the worst (smallest h). This
+  // drives the RETREAT state-machine and identifies the gradient at the worst
+  // sample for candidate construction. The reactive loop below also queries
+  // these samples but range-gates by wall_consideration_range — the overlay
+  // needs the true min_h regardless of range gating.
+  double min_h_react = std::numeric_limits<double>::infinity();
+  Point2D worst_pc{0.0, 0.0};
+  double worst_gx = 0.0, worst_gy = 0.0;
+  for (int si = 0; si < ns; ++si) {
+    const Point2D & pc = samples[si].p;
+    const auto q = esdf.query(pc.x, pc.y);
+    if (!q.valid) {continue;}
+    const double h = q.d - params_->esdf_d_safe;
+    if (h < min_h_react) {
+      min_h_react = h;
+      worst_pc = pc;
+      worst_gx = q.gx;
+      worst_gy = q.gy;
+    }
+  }
+  res.min_h_react = std::isfinite(min_h_react) ? min_h_react : 0.0;
+
+  // ── Retreat overlay: state machine ─────────────────────────────────────
+  // Three states: NORMAL (path-following), RETREAT (overlay overrides u_nom
+  // with best candidate), GIVE_UP (zero output → Nav2 BT recovery). Hysteresis
+  // between NORMAL and RETREAT via h_enter < h_exit prevents flapping. GIVE_UP
+  // triggers when RETREAT has been active for cbf_retreat_give_up_ticks
+  // without min_h improving by cbf_retreat_progress_eps from its entry value.
+  if (params_->cbf_retreat_enabled && std::isfinite(min_h_react)) {
+    const double h_enter = params_->cbf_retreat_h_enter;
+    const double h_exit  = params_->cbf_retreat_h_exit;
+
+    switch (retreat_state_) {
+      case RetreatState::NORMAL:
+        if (min_h_react < h_enter) {
+          retreat_state_     = RetreatState::RETREAT;
+          retreat_ticks_     = 0;
+          min_h_at_entry_    = min_h_react;
+        }
+        break;
+      case RetreatState::RETREAT:
+        if (min_h_react >= h_exit) {
+          retreat_state_ = RetreatState::NORMAL;
+          retreat_ticks_ = 0;
+        } else {
+          retreat_ticks_++;
+          if (retreat_ticks_ >= params_->cbf_retreat_give_up_ticks &&
+              min_h_react < min_h_at_entry_ + params_->cbf_retreat_progress_eps)
+          {
+            retreat_state_ = RetreatState::GIVE_UP;
+          }
+        }
+        break;
+      case RetreatState::GIVE_UP:
+        // Exit when the body is comfortably clear again — typically after the
+        // BT has run a recovery and the robot is repositioned. Also cleared on
+        // setPlan() via reset(), so a fresh plan always starts in NORMAL.
+        if (min_h_react >= h_exit) {
+          retreat_state_ = RetreatState::NORMAL;
+          retreat_ticks_ = 0;
+        }
+        break;
+    }
+  }
+  res.retreat_state = retreat_state_;
+
+  // ── Retreat overlay: GIVE_UP short-circuit ─────────────────────────────
+  // No QP, no candidates — emit zero twist and update predictor cache to
+  // match. Stuck-detection in ConstrainedController will see the zero output
+  // and trigger BT recovery.
+  if (retreat_state_ == RetreatState::GIVE_UP) {
+    res.u.linear.x = res.u.linear.y = res.u.angular.z = 0.0;
+    res.min_h           = res.min_h_react;
+    res.qp.ok           = true;
+    res.qp.u            = Eigen::Vector3d::Zero();
+    res.qp.deviation    = 0.0;
+    res.qp.n_active     = 0;
+    res.qp.iterations   = 0;
+    res.qp.max_slack    = 0.0;
+    res.picked_candidate = 0;
+    res.picked_score     = 0.0;
+    last_u_star_ = Eigen::Vector3d::Zero();
+    has_last_u_  = true;
+    return res;
+  }
+
+  // ── Retreat overlay: candidate selection ──────────────────────────────
+  // In RETREAT state, build 9 candidate velocities and score each by ESDF
+  // lookahead at all 16 body samples. The candidate with the highest predicted
+  // min_h wins. Blend with u_nom by how critical min_h is (linear in
+  // [h_enter, 0]) and feed the blended result to the QP as the target.
+  //
+  // Candidates (all in base_link, body velocity):
+  //   1: u_nom                                — status quo
+  //   2: 0.5·u_nom                            — slow follow
+  //   3: +∇d_center · v_retreat               — move along centre ESDF gradient
+  //   4: +∇d_worst  · v_retreat               — move along worst-sample gradient
+  //   5: (−vx_nom, −vy_nom, +wz_nom)          — reverse translation, keep rotation
+  //   6: (0, 0, +w_retreat)                   — pure CCW yaw
+  //   7: (0, 0, −w_retreat)                   — pure CW yaw
+  //   8: (0, +v_retreat, 0)                   — pure left strafe
+  //   9: (0, −v_retreat, 0)                   — pure right strafe
+  Eigen::Vector3d u_qp_target_e = u_nom_e;
+  int picked_idx_1based = 0;
+  double picked_score   = 0.0;
+
+  if (params_->cbf_retreat_enabled && retreat_state_ == RetreatState::RETREAT) {
+    const double v_ret  = params_->cbf_retreat_speed;
+    const double w_ret  = params_->cbf_retreat_rotation_speed;
+    const double tau_l  = params_->cbf_retreat_lookahead_s;
+    const double d_safe = params_->esdf_d_safe;
+    const double h_enter = params_->cbf_retreat_h_enter;
+
+    // Candidate 3 ingredients: ESDF gradient at robot centre (base_link origin).
+    // Falls through to zero if the centre cell is outside the grid or has a
+    // degenerate gradient (e.g., uniform-field cell).
+    Eigen::Vector3d retreat_center = Eigen::Vector3d::Zero();
+    {
+      const auto qc = esdf.query(0.0, 0.0);
+      if (qc.valid) {
+        const double nc = std::hypot(qc.gx, qc.gy);
+        if (nc > 1e-6) {
+          retreat_center.x() = (qc.gx / nc) * v_ret;
+          retreat_center.y() = (qc.gy / nc) * v_ret;
+        }
+      }
+    }
+    // Candidate 4 ingredients: gradient at the worst body sample. Already in
+    // hand from the scan above.
+    Eigen::Vector3d retreat_worst = Eigen::Vector3d::Zero();
+    {
+      const double nw = std::hypot(worst_gx, worst_gy);
+      if (nw > 1e-6) {
+        retreat_worst.x() = (worst_gx / nw) * v_ret;
+        retreat_worst.y() = (worst_gy / nw) * v_ret;
+      }
+    }
+
+    const std::array<Eigen::Vector3d, 9> candidates = {
+      u_nom_e,                                                          // 1
+      0.5 * u_nom_e,                                                    // 2
+      retreat_center,                                                   // 3
+      retreat_worst,                                                    // 4
+      Eigen::Vector3d(-u_nom_e.x(), -u_nom_e.y(), u_nom_e.z()),         // 5
+      Eigen::Vector3d(0.0, 0.0,  w_ret),                                // 6
+      Eigen::Vector3d(0.0, 0.0, -w_ret),                                // 7
+      Eigen::Vector3d(0.0,  v_ret, 0.0),                                // 8
+      Eigen::Vector3d(0.0, -v_ret, 0.0),                                // 9
+    };
+
+    // Score = min h_pred over all 16 body samples after τ_l of motion with u_c.
+    // Pick the candidate with the highest score (largest body clearance).
+    double best_score = -std::numeric_limits<double>::infinity();
+    int best_idx = 0;
+    for (size_t ci = 0; ci < candidates.size(); ++ci) {
+      const auto & u_c = candidates[ci];
+      const double vx_c = u_c.x();
+      const double vy_c = u_c.y();
+      const double wz_c = u_c.z();
+
+      double score = std::numeric_limits<double>::infinity();
+      for (int si = 0; si < ns; ++si) {
+        const Point2D & pc = samples[si].p;
+        const double pred_x = pc.x + tau_l * (vx_c - wz_c * pc.y);
+        const double pred_y = pc.y + tau_l * (vy_c + wz_c * pc.x);
+        const auto q = esdf.query(pred_x, pred_y);
+        if (!q.valid) {continue;}
+        const double h_pred = q.d - d_safe;
+        if (h_pred < score) {score = h_pred;}
+      }
+      if (score > best_score) {
+        best_score = score;
+        best_idx   = static_cast<int>(ci);
+      }
+    }
+
+    // Smooth blend: at min_h_react = h_enter, blend = 0 (pure u_nom); at
+    // min_h_react = 0, blend = 1 (pure candidate). Negative min_h saturates
+    // to blend = 1 (we want full override when already inside the buffer).
+    const double blend = std::clamp(
+      (h_enter - min_h_react) / std::max(1e-6, h_enter), 0.0, 1.0);
+    u_qp_target_e = (1.0 - blend) * u_nom_e + blend * candidates[best_idx];
+
+    picked_idx_1based      = best_idx + 1;
+    picked_score           = best_score;
+    last_picked_candidate_ = picked_idx_1based;
+  }
+  res.picked_candidate = picked_idx_1based;
+  res.picked_score     = picked_score;
+
+  // From here on the existing QP code treats u_qp_target_e as the optimisation
+  // target (= u_nom in NORMAL, = blended retreat target in RETREAT).
   for (int si = 0; si < ns; ++si) {
     const Point2D & pc = samples[si].p;
     const auto q = esdf.query(pc.x, pc.y);
@@ -114,8 +307,8 @@ CbfFilterResult CBFSafetyFilter::filter(
     c.rhs       = params_->cbf_gamma * h;
     c.h         = h;
     c.corner_id = samples[si].corner_id;
-    // Debug fields.
-    c.Au          = c.grad.dot(u_nom_e);
+    // Debug fields evaluated against the QP target (= u_nom if NORMAL).
+    c.Au          = c.grad.dot(u_qp_target_e);
     c.margin      = c.rhs - c.Au;
     c.gx          = q.gx; c.gy = q.gy;
     c.sample_x    = pc.x; c.sample_y = pc.y;
@@ -198,8 +391,9 @@ CbfFilterResult CBFSafetyFilter::filter(
         c.rhs       = params_->cbf_gamma * h;
         c.h         = h;
         c.corner_id = samples[si].corner_id;
-        // Debug fields. Log raw (un-rotated) gradient for diagnostics.
-        c.Au           = c.grad.dot(u_nom_e);
+        // Debug fields evaluated against the QP target (= u_nom if NORMAL,
+        // blended retreat target if RETREAT). Log raw (un-rotated) gradient.
+        c.Au           = c.grad.dot(u_qp_target_e);
         c.margin       = c.rhs - c.Au;
         c.gx           = q.gx; c.gy = q.gy;
         c.sample_x     = pred_x; c.sample_y = pred_y;
@@ -229,7 +423,7 @@ CbfFilterResult CBFSafetyFilter::filter(
     params_->v_lateral_max,
     params_->v_angular_max);
   const auto t0 = std::chrono::steady_clock::now();
-  res.qp = solveProjectionQP(A, b, u_min, u_max, u_nom_e, params_->cbf_slack_weight);
+  res.qp = solveProjectionQP(A, b, u_min, u_max, u_qp_target_e, params_->cbf_slack_weight);
   const auto t1 = std::chrono::steady_clock::now();
   res.solve_time_us =
     std::chrono::duration<double, std::micro>(t1 - t0).count();
