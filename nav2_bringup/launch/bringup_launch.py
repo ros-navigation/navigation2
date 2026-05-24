@@ -177,6 +177,8 @@ def generate_launch_description() -> LaunchDescription:
                 # single threaded + isolated
                 # arguments=['--isolated', '--executor-type', 'single-threaded',
                 #            '--ros-args', '--log-level', log_level],
+                remappings=remappings,
+                output='screen',
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
