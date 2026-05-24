@@ -137,7 +137,7 @@ protected:
   double rotate_to_heading_angular_vel_, rotate_to_heading_max_angular_accel_;
 
   // The trajectory of the robot while dock / undock for visualization / debug purposes
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr trajectory_pub_; //  nosemgrep
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr trajectory_pub_;  //  nosemgrep
 
   // Used for collision checking
   bool use_collision_detection_;

@@ -43,8 +43,8 @@ public:
 
   void callCostService(float x, float y);
 
-  void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture); //  nosemgrep
-  void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture); //  nosemgrep
+  void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);  //  nosemgrep
+  void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);  //  nosemgrep
 
 private Q_SLOTS:
 

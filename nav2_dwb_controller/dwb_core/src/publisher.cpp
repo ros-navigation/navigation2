@@ -315,7 +315,7 @@ DWBPublisher::publishLocalPlan(const nav_msgs::msg::Path plan)
 void
 DWBPublisher::publishGenericPlan(
   const nav_msgs::msg::Path plan,
-  rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag) //  nosemgrep
+  rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)  //  nosemgrep
 {
   if (pub.get_subscription_count() < 1) {return;}
   if (!flag) {return;}

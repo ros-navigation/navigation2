@@ -36,7 +36,7 @@ ClockPublisher::ClockPublisher(
     throw std::runtime_error("Node expired during ClockPublisher construction");
   }
   logger_ = shared_node->get_logger();
-  clock_pub_ = rclcpp::create_publisher<rosgraph_msgs::msg::Clock>( //  nosemgrep
+  clock_pub_ = rclcpp::create_publisher<rosgraph_msgs::msg::Clock>(  //  nosemgrep
     shared_node->get_node_topics_interface(), "/clock", 10);
 }
 

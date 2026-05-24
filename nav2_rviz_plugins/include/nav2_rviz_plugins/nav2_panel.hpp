@@ -130,7 +130,7 @@ private:
     rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateThroughPoses>;
 
   // The (non-spinning) client node used to invoke the action client
-  rclcpp::Node::SharedPtr client_node_; //  nosemgrep
+  rclcpp::Node::SharedPtr client_node_;  //  nosemgrep
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   // Timeout value when waiting for action servers to respond
   std::chrono::milliseconds server_timeout_;
@@ -261,7 +261,7 @@ private:
   static inline std::string toString(double val, int precision = 0);
 
   // Waypoint navigation visual markers publisher
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_; //  nosemgrep
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_;  //  nosemgrep
 };
 
 class InitialThread : public QThread

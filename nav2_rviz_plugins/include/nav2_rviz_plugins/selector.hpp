@@ -44,13 +44,13 @@ public:
 private:
   void loadPlugins();
 
-  rclcpp::Node::SharedPtr client_node_; //  nosemgrep
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_controller_; //  nosemgrep
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_planner_; //  nosemgrep
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_goal_checker_; //  nosemgrep
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_smoother_; //  nosemgrep
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_progress_checker_; //  nosemgrep
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_path_handler_; //  nosemgrep
+  rclcpp::Node::SharedPtr client_node_;  //  nosemgrep
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_controller_;  //  nosemgrep
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_planner_;  //  nosemgrep
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_goal_checker_;  //  nosemgrep
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_smoother_;  //  nosemgrep
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_progress_checker_;  //  nosemgrep
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_path_handler_;  //  nosemgrep
 
   bool plugins_loaded_ = false;
   bool server_failed_ = false;
@@ -85,7 +85,7 @@ private:
   */
   void setSelection(
     QComboBox * combo_box,
-    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher); //  nosemgrep
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher);  //  nosemgrep
 
 protected:
   QVBoxLayout * layout1 = new QVBoxLayout;
