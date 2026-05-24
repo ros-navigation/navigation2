@@ -33,14 +33,14 @@ repos:
         exclude_types: [rst]
       - id: fix-byte-order-marker
 -   repo: https://github.com/pycqa/isort
-    rev: 9.0.0a3
+    rev: 6.0.1
     hooks:
       - id: isort
         args: ["tools/pyproject.toml"]
         name: isort (python)
 
 -   repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.1
     hooks:
     -   id: codespell
         additional_dependencies:
@@ -48,7 +48,7 @@ repos:
         args:
             [--toml=./tools/pyproject.toml]
 -   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.2
+    rev: 0.31.1
     hooks:
       - id: check-github-workflows
         args: ["--verbose"]
