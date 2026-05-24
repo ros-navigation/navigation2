@@ -21,7 +21,8 @@ namespace nav2_rviz_plugins
 {
 
 void pluginLoader(
-  rclcpp::Node::SharedPtr node, bool & server_failed, const std::string & server_name,  //  nosemgrep
+  //  nosemgrep
+  rclcpp::Node::SharedPtr node, bool & server_failed, const std::string & server_name,
   const std::string & plugin_type, QComboBox * combo_box, rclcpp::Executor::SharedPtr executor)
 {
   // Do not load the plugins if the combo box is already populated

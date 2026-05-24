@@ -261,7 +261,8 @@ private:
   static inline std::string toString(double val, int precision = 0);
 
   // Waypoint navigation visual markers publisher
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_;  //  nosemgrep
+  //  nosemgrep
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_;
 };
 
 class InitialThread : public QThread

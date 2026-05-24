@@ -111,7 +111,8 @@ Selector::~Selector()
 
 // Publish the selected controller or planner
 void Selector::setSelection(
-  QComboBox * combo_box, rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher)  //  nosemgrep
+  //  nosemgrep
+  QComboBox * combo_box, rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher)
 {
   // If "default" option is selected, it gets removed and the next item is selected
   if (combo_box->findText("Default") != -1) {

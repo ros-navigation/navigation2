@@ -42,9 +42,11 @@ public:
   int processMouseEvent(rviz_common::ViewportMouseEvent & event) override;
 
   void callCostService(float x, float y);
-
-  void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);  //  nosemgrep
-  void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);  //  nosemgrep
+  
+  //  nosemgrep
+  void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);
+  //  nosemgrep
+  void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);
 
 private Q_SLOTS:
 
