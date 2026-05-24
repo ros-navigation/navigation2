@@ -15,12 +15,13 @@
 #ifndef NAV2_SMAC_PLANNER__ANALYTIC_EXPANSION_IMPL_HPP_
 #define NAV2_SMAC_PLANNER__ANALYTIC_EXPANSION_IMPL_HPP_
 
+#include <ompl/config.h>
+
 #include <algorithm>
 #include <limits>
 #include <memory>
 #include <type_traits>
 #include <vector>
-#include <ompl/config.h>
 
 #include "nav2_smac_planner/analytic_expansion.hpp"
 

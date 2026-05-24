@@ -18,13 +18,13 @@
 #include <ompl/base/ScopedState.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
+#include <ompl/config.h>
 
 #include <functional>
 #include <list>
 #include <memory>
 #include <string>
 #include <vector>
-#include <ompl/config.h>
 
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
