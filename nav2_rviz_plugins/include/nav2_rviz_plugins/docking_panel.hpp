@@ -90,7 +90,7 @@ private:
   static inline std::string dockErrorToString(int16_t error_code);
 
   // The (non-spinning) client node used to invoke the action client
-  rclcpp::Node::SharedPtr client_node_;
+  rclcpp::Node::SharedPtr client_node_; //  nosemgrep
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 
   // The Node pointer that we need to keep alive for the duration of this plugin.

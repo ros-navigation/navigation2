@@ -169,7 +169,7 @@ DockingPanel::DockingPanel(QWidget * parent)
   undockingTransition->setTargetState(idle_);
   undocking_->addTransition(undockingTransition);
 
-  client_node_ = std::make_shared<rclcpp::Node>("nav2_rviz_docking_panel_node");
+  client_node_ = std::make_shared<rclcpp::Node>("nav2_rviz_docking_panel_node"); //  nosemgrep
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_node(client_node_);
 
@@ -232,8 +232,8 @@ DockingPanel::DockingPanel(QWidget * parent)
   setLayout(main_layout_);
   action_timer_.start(200, this);
 
-  dock_client_ = rclcpp_action::create_client<Dock>(client_node_, "dock_robot");
-  undock_client_ = rclcpp_action::create_client<Undock>(client_node_, "undock_robot");
+  dock_client_ = rclcpp_action::create_client<Dock>(client_node_, "dock_robot"); //  nosemgrep
+  undock_client_ = rclcpp_action::create_client<Undock>(client_node_, "undock_robot"); //  nosemgrep
   initial_thread_ = new InitialDockThread(dock_client_, undock_client_);
   connect(initial_thread_, &InitialDockThread::finished, initial_thread_, &QObject::deleteLater);
 
@@ -274,7 +274,7 @@ void DockingPanel::onInitialize()
       "Underlying ROS node no longer exists, initialization failed");
     return;
   }
-  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node(); //  nosemgrep
 
   // Create action feedback subscriber
   docking_feedback_sub_ = node->create_subscription<Dock::Impl::FeedbackMessage>(

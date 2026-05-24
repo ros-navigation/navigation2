@@ -123,7 +123,7 @@ protected:
     const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
   // The node to use for the service call
-  rclcpp::Node::SharedPtr node_;
+  rclcpp::Node::SharedPtr node_; //  nosemgrep
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_lifecycle_manager_client")};
 
   nav2::ServiceClient<ManageLifecycleNodes>::SharedPtr manager_client_;

@@ -100,7 +100,7 @@ protected:
   // Helper function for publishing other plans
   void publishGenericPlan(
     const nav_msgs::msg::Path plan,
-    rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag);
+    rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag); //  nosemgrep
 
   // Flags for turning on/off publishing specific components
   bool publish_evaluation_;

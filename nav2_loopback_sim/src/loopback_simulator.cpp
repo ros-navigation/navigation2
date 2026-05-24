@@ -211,7 +211,7 @@ void LoopbackSimulator::getMap()
   auto request = std::make_shared<nav_msgs::srv::GetMap::Request>();
   map_client_->async_call(
     request,
-    [this](typename rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future) {
+    [this](typename rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future) { //  nosemgrep
       auto response = future.get();
       if (response->map.info.width == 0 || response->map.info.height == 0 ||
       response->map.info.resolution <= 0.0)

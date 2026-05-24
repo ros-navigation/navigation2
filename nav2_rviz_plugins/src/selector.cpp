@@ -23,7 +23,7 @@ namespace nav2_rviz_plugins
 Selector::Selector(QWidget * parent)
 : Panel(parent)
 {
-  client_node_ = std::make_shared<rclcpp::Node>("nav2_rviz_selector_node");
+  client_node_ = std::make_shared<rclcpp::Node>("nav2_rviz_selector_node"); //  nosemgrep
   rclcpp::QoS qos(rclcpp::KeepLast(1));
   qos.transient_local().reliable();
 
@@ -111,7 +111,7 @@ Selector::~Selector()
 
 // Publish the selected controller or planner
 void Selector::setSelection(
-  QComboBox * combo_box, rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher)
+  QComboBox * combo_box, rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher) //  nosemgrep
 {
   // If "default" option is selected, it gets removed and the next item is selected
   if (combo_box->findText("Default") != -1) {

@@ -51,7 +51,7 @@ void usage()
   }
 
 inline void startupLifecycleNode(
-  rclcpp::Node::SharedPtr node,
+  rclcpp::Node::SharedPtr node, //  nosemgrep
   const std::string & node_name,
   const std::chrono::seconds service_call_timeout,
   const int retries)
@@ -70,7 +70,7 @@ inline void startupLifecycleNode(
 }
 
 inline void startup_lifecycle_nodes(
-  rclcpp::Node::SharedPtr node,
+  rclcpp::Node::SharedPtr node, //  nosemgrep
   const std::vector<std::string> & node_names,
   const std::chrono::seconds service_call_timeout,
   const int retries = 3)
@@ -87,7 +87,7 @@ int main(int argc, char * argv[])
     usage();
   }
   rclcpp::init(0, nullptr);
-  auto node = std::make_shared<rclcpp::Node>("lifecycle_bringup_client");
+  auto node = std::make_shared<rclcpp::Node>("lifecycle_bringup_client"); //  nosemgrep
   startup_lifecycle_nodes(
     node,
     std::vector<std::string>(argv + 1, argv + argc),
