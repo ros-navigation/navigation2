@@ -234,7 +234,7 @@ DockingPanel::DockingPanel(QWidget * parent)
 
   dock_client_ = rclcpp_action::create_client<Dock>(client_node_, "dock_robot");  //  nosemgrep
   //  nosemgrep
-  undock_client_ = rclcpp_action::create_client<Undock>(client_node_, "undock_robot");  //  nosemgrep
+  undock_client_ = rclcpp_action::create_client<Undock>(client_node_, "undock_robot")
   initial_thread_ = new InitialDockThread(dock_client_, undock_client_);
   connect(initial_thread_, &InitialDockThread::finished, initial_thread_, &QObject::deleteLater);
 

@@ -42,7 +42,6 @@ public:
   int processMouseEvent(rviz_common::ViewportMouseEvent & event) override;
 
   void callCostService(float x, float y);
-  
   //  nosemgrep
   void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);
   //  nosemgrep
