@@ -260,8 +260,13 @@ DockingPanel::DockingPanel(QWidget * parent)
     });
 
   // Connect buttons with functions
+  #if QT_VERSION >= QT_VERSION_CHECK(6, 10, 2)
   QObject::connect(
     use_dock_id_checkbox_, &QCheckBox::checkStateChanged, this, &DockingPanel::dockIdCheckbox);
+  #else
+  QObject::connect(
+    use_dock_id_checkbox_, &QCheckBox::stateChanged, this, &DockingPanel::dockIdCheckbox);
+  #endif
 }
 
 void DockingPanel::onInitialize()
