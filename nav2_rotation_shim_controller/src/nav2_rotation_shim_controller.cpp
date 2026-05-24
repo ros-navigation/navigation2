@@ -318,7 +318,7 @@ void RotationShimController::isCollisionFree(
               "RotationShimController detected a potential collision ahead!");
     }
 
-    if (footprint_cost >= static_cast<double>(LETHAL_OBSTACLE)) {
+    if (footprint_cost >= params_->max_cost_threshold) {
       throw nav2_core::NoValidControl("RotationShimController detected collision ahead!");
     }
   }

@@ -63,10 +63,24 @@ public:
   /**
    * @brief Gets number of points inside circle
    * @param points Input array of points to be checked
+   * @param out_triggering_points Output array of triggering points
    * @return Number of points inside circle. If there are no points,
    * returns zero value.
    */
-  int getPointsInside(const std::vector<Point> & points) const override;
+  int getPointsInside(
+    const std::vector<Point> & points,
+    std::vector<Point> & out_triggering_points) const override;
+
+  /**
+   * @brief Gets indices of points inside circle
+   * @param points Input array of points to be checked
+   * @param out_triggering_indices Output array of triggering points indices
+   * @return Number of points inside circle. If there are no points,
+   * returns zero value.
+   */
+  int getPointsInside(
+    const std::vector<Point> & points,
+    std::vector<std::size_t> & out_triggering_indices) const override;
 
   /**
    * @brief Returns true if circle radius is set.

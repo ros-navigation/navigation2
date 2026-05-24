@@ -18,9 +18,10 @@
 #define NAV2_SMAC_PLANNER__GOAL_MANAGER_HPP_
 
 #include <algorithm>
+#include <functional>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
-#include <functional>
 
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
@@ -150,7 +151,7 @@ public:
         const auto mx = static_cast<unsigned int>(point.x);
         const auto my = static_cast<unsigned int>(point.y);
 
-        if constexpr (!std::is_same_v<NodeT, Node2D>) {
+        if constexpr (!std::is_base_of_v<Node2D, NodeT>) {
           const auto angle = static_cast<unsigned int>(point.theta);
           index = NodeT::getIndex(mx, my, angle, _ctx->motion_table.size_x,
                                   _ctx->motion_table.num_angle_quantization);
