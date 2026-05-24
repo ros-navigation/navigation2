@@ -151,6 +151,7 @@ void ConstrainedController::setPlan(const nav_msgs::msg::Path & path)
   has_plan_             = false;
   near_goal_yaw_active_ = false;
   esdf_grid_->reset();
+  cbf_filter_->reset();
 
   if (!path.poses.empty()) {
     goal_in_map_ = path.poses.back();

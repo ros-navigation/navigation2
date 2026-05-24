@@ -129,36 +129,53 @@ CbfFilterResult CBFSafetyFilter::filter(
 
   // ── Predictive CBF ──────────────────────────────────────────────────────
   // For each future step j=1..N, predict where each perimeter sample will be
-  // if the robot continues with u_nom, then add a CBF constraint based on the
-  // predicted ESDF reading at that future position.
+  // if the robot continues with the PREDICTOR velocity (last tick's u*, or
+  // u_nom on the first tick), then add a CBF constraint based on the predicted
+  // ESDF reading at that future position.
   //
-  // This fixes the Lie-derivative-degeneracy failure: when the robot moves
-  // parallel to a wall that narrows ahead, the reactive CBF sees L_g h ≈ 0 at
-  // the current position (constraint trivially satisfied) and does nothing.
-  // The predicted positions reveal the upcoming narrowing — h_pred < h_curr —
-  // and generate tighter constraints that force the QP to correct NOW.
+  // Predictor choice: last_u_star_ instead of u_nom. The QP is going to
+  // re-shape u_nom into u* anyway — using u* from the previous tick as the
+  // predictor makes the rollout reflect the trajectory the robot will actually
+  // follow, not a hypothetical "what if we ignored safety" trajectory. The
+  // previous tick's u* is a one-tick-stale estimate of this tick's u*, but at
+  // 10Hz with smooth costmaps this is a tight approximation. Avoids the
+  // chicken-and-egg of fixed-point iteration with no measurable cost.
+  //
+  // Rotated Jacobian: the predicted-step Jacobian uses rotation θ̂_j =
+  // wz_predict · j · dt to account for body rotation across the prediction
+  // horizon. At θ̂_j ≠ 0 the world-frame velocity of a body-fixed sample is
+  // R(θ̂_j) · J_body(px,py) · u; rotating the gradient by θ̂_j (same as
+  // pre-multiplying J by R) gives an equivalent linear-in-u QP row. When
+  // wz_predict = 0 this degenerates to the previous (constant-θ) formulation.
   //
   // Constraint formulation: at step j the predicted sample position is
-  //   p_pred = p_curr + τ·[vx - wz·py, vy + wz·px]   where τ = j·predict_dt
-  // We query the ESDF gradient (gx, gy) and distance h at p_pred, then build
-  // the QP row with the CURRENT Jacobian J(p_curr) — because u is chosen NOW
-  // and the Jacobian is evaluated at the current robot state (θ=0, body at origin).
+  //   p_pred = p_curr + τ·[vx_p − wz_p·py, vy_p + wz_p·px]
+  // where (vx_p, vy_p, wz_p) is the predictor velocity and τ = j·predict_dt.
+  // We query the ESDF gradient (gx, gy) at p_pred, rotate it by θ̂_j, then
+  // build the QP row using the rotated gradient and the body-fixed (px, py).
   {
     const int    N   = params_->cbf_n_predict_steps;
     const double dt  = params_->cbf_predict_dt;
-    const double vx  = u_nom.linear.x;
-    const double vy  = u_nom.linear.y;
-    const double wz  = u_nom.angular.z;
+
+    // Predictor velocity: last-tick u* if we have one, otherwise fall back to
+    // u_nom (first call after setPlan/activate).
+    const Eigen::Vector3d u_pred = has_last_u_ ? last_u_star_ : u_nom_e;
+    const double vx_p = u_pred.x();
+    const double vy_p = u_pred.y();
+    const double wz_p = u_pred.z();
 
     for (int step = 1; step <= N; ++step) {
-      const double tau = step * dt;
+      const double tau    = step * dt;
+      const double theta  = wz_p * tau;
+      const double cos_t  = std::cos(theta);
+      const double sin_t  = std::sin(theta);
 
       for (int si = 0; si < ns; ++si) {
         const Point2D & pc = samples[si].p;
 
-        // Predict sample position: p + τ · J(p) · u_nom
-        const double pred_x = pc.x + tau * (vx - wz * pc.y);
-        const double pred_y = pc.y + tau * (vy + wz * pc.x);
+        // Predict sample position: p + τ · J(p) · u_pred
+        const double pred_x = pc.x + tau * (vx_p - wz_p * pc.y);
+        const double pred_y = pc.y + tau * (vy_p + wz_p * pc.x);
 
         const auto q = esdf.query(pred_x, pred_y);
         if (!q.valid) {continue;}
@@ -167,15 +184,21 @@ CbfFilterResult CBFSafetyFilter::filter(
         if (h > params_->wall_consideration_range) {continue;}
         if (std::hypot(q.gx, q.gy) < 1e-6) {continue;}
 
-        // QP row uses gradient at PREDICTED position (sees upcoming wall)
-        // but lever arm at CURRENT position (robot Jacobian is at θ=0 now).
+        // Rotate gradient by θ̂_j: ∇d · R(θ̂_j). Equivalent to applying the
+        // body→world rotation to J before dotting with ∇d. Keeps the QP row
+        // linear in u while respecting accumulated yaw across the horizon.
+        const double gx_eff = q.gx * cos_t + q.gy * sin_t;
+        const double gy_eff = -q.gx * sin_t + q.gy * cos_t;
+
+        // QP row uses effective gradient at PREDICTED position (sees upcoming
+        // wall, accounts for predicted body rotation) and body-fixed (px, py).
         CbfConstraint c;
-        const double lever = q.gx * pc.y - q.gy * pc.x;
-        c.grad      = Eigen::Vector3d(-q.gx, -q.gy, lever);
+        const double lever = gx_eff * pc.y - gy_eff * pc.x;
+        c.grad      = Eigen::Vector3d(-gx_eff, -gy_eff, lever);
         c.rhs       = params_->cbf_gamma * h;
         c.h         = h;
         c.corner_id = samples[si].corner_id;
-        // Debug fields.
+        // Debug fields. Log raw (un-rotated) gradient for diagnostics.
         c.Au           = c.grad.dot(u_nom_e);
         c.margin       = c.rhs - c.Au;
         c.gx           = q.gx; c.gy = q.gy;
@@ -214,6 +237,14 @@ CbfFilterResult CBFSafetyFilter::filter(
   res.u.linear.x  = res.qp.u.x();
   res.u.linear.y  = res.qp.u.y();
   res.u.angular.z = res.qp.u.z();
+
+  // Save u* for next tick's predictor. On QP infeasibility the controller
+  // overrides res.u to zero downstream — but we still cache res.qp.u (the QP's
+  // best attempt) so the next-tick predictor has a sensible velocity rather
+  // than a hard zero, which would collapse all predicted positions onto the
+  // current body samples and silence the predictive horizon.
+  last_u_star_  = res.qp.u;
+  has_last_u_   = true;
   return res;
 }
 

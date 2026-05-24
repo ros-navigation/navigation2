@@ -74,8 +74,20 @@ public:
   // Called with (0,0,0) during normal operation; exposed for tests.
   std::array<Point2D, 4> bodyCorners(double xr, double yr, double theta) const;
 
+  // Clear the predictor state. Call on activate() and setPlan() so the
+  // previous-tick u* (used to extrapolate body samples into the future) does
+  // not leak across plans.
+  void reset() {has_last_u_ = false;}
+
 private:
   const Parameters * params_;
+
+  // Last solved u* — used as the predictor velocity for the next tick's
+  // forward-rollout of perimeter samples. Replaces u_nom-as-predictor so the
+  // predicted positions reflect the trajectory the robot will actually follow.
+  // On the first call (has_last_u_ = false), the filter falls back to u_nom.
+  Eigen::Vector3d last_u_star_{Eigen::Vector3d::Zero()};
+  bool has_last_u_{false};
 };
 
 }  // namespace nav2_constrained_controller
