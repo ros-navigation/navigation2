@@ -19,6 +19,7 @@
 #include <vector>
 #include <mutex>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <unordered_map>
@@ -27,6 +28,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -248,6 +250,7 @@ protected:
   // --- Path subscription ---
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   nav_msgs::msg::Path::SharedPtr latest_global_path_;
+  std::optional<geometry_msgs::msg::TransformStamped> latest_path_transform_;
   std::mutex path_mutex_;
 };
 

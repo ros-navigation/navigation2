@@ -149,13 +149,32 @@ AsymmetricInflationLayer::deactivate()
 void
 AsymmetricInflationLayer::globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg)
 {
+  if (latest_global_path_ == msg) {return;}
+
+  // Look up the transform from path frame to costmap frame
+  std::optional<geometry_msgs::msg::TransformStamped> transform;
+  const std::string global_frame = layered_costmap_->getGlobalFrameID();
+  const std::string path_frame = msg->header.frame_id;
+  if (global_frame != path_frame && !path_frame.empty()) {
+    try {
+      transform = tf_->lookupTransform(global_frame, path_frame,
+          tf2_ros::fromMsg(msg->header.stamp));
+    } catch (const tf2::TransformException & ex) {
+      RCLCPP_WARN(
+          logger_,
+          "AsymmetricInflationLayer: TF lookup failed at path receipt (%s -> %s): %s. "
+          "Asymmetric inflation will be disabled for this plan.",
+          path_frame.c_str(), global_frame.c_str(), ex.what());
+    }
+  }
+
+  // Cache the path and transform
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   {
     std::lock_guard<std::mutex> lock(path_mutex_);
-    if (latest_global_path_ == msg) {return;}
     latest_global_path_ = msg;
+    latest_path_transform_ = transform;
   }
-  // Path change invalidates all asymmetric costs in the costmap.
   // Force a full-map reinflation on the next update cycle.
   need_reinflation_ = true;
   setCurrent(false);
@@ -198,12 +217,14 @@ AsymmetricInflationLayer::extractLocalPathSegments(
 {
   std::vector<AsymmetricPathSegment> local_path_segments;
   nav_msgs::msg::Path current_path;
+  std::optional<geometry_msgs::msg::TransformStamped> cached_transform;
   {
     std::lock_guard<std::mutex> lock(path_mutex_);
     if (!latest_global_path_ || latest_global_path_->poses.size() < 2) {
       return local_path_segments;
     }
     current_path = *latest_global_path_;
+    cached_transform = *latest_path_transform_;
   }
 
   // Check if the path is already in costmap frame
@@ -215,17 +236,15 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   // Transform the goal pose from the path frame to the costmap frame (e.g., map -> odom)
   geometry_msgs::msg::PoseStamped goal_pose = current_path.poses.back();
   if (need_transform) {
-    try {
-      transform = tf_->lookupTransform(global_frame, path_frame, tf2::TimePointZero);
-    } catch (const tf2::TransformException & ex) {
+    if (!cached_transform) {
       RCLCPP_WARN(
         logger_,
-        "AsymmetricInflationLayer: TF lookup failed (%s -> %s): %s. "
+        "AsymmetricInflationLayer: No cached transform for path frame '%s'. "
         "Falling back to symmetric inflation.",
-        path_frame.c_str(), global_frame.c_str(), ex.what());
+        path_frame.c_str());
       return local_path_segments;
     }
-    tf2::doTransform(goal_pose, goal_pose, transform);
+    tf2::doTransform(goal_pose, goal_pose, *cached_transform);
   }
 
   // Disable asymmetry near the goal to prevent target oscillations
