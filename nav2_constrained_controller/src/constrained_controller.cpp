@@ -413,6 +413,35 @@ ConstrainedController::computeVelocityCommands(
   auto u_nom = nominal_->compute(
     local_plan.poses[0].pose, target_ps.pose, dist_to_goal, &nom_dbg);
 
+  // ── 5b. Goal-aware bias: shift QP target toward a far path waypoint ──────
+  // Adds λ·g to u_nom before handing to the QP. g is the unit direction in
+  // base_link from the robot (origin) to a pose at goal_bias_lookahead_dist
+  // arc-length along the local plan. Equivalent to a linear -λ·(g·u) term
+  // in the QP objective: the projection lands further along g than a pure
+  // ‖u-u_nom‖² projection would have (rubber-band pull toward the path).
+  // Translation only (no angular bias). λ=0 reproduces original behaviour.
+  geometry_msgs::msg::Twist u_target = u_nom;
+  double bias_x = 0.0, bias_y = 0.0;
+  if (params->goal_bias_weight > 0.0 && local_plan.poses.size() >= 2) {
+    const double L_bias = params->goal_bias_lookahead_dist;
+    double cum = 0.0;
+    size_t idx = local_plan.poses.size() - 1;  // fallback: end of slice
+    for (size_t i = 1; i < local_plan.poses.size(); ++i) {
+      const auto & a = local_plan.poses[i - 1].pose.position;
+      const auto & b = local_plan.poses[i].pose.position;
+      cum += std::hypot(b.x - a.x, b.y - a.y);
+      if (cum >= L_bias) {idx = i; break;}
+    }
+    const auto & far = local_plan.poses[idx].pose.position;
+    const double norm = std::hypot(far.x, far.y);
+    if (norm > 1e-3) {
+      bias_x = params->goal_bias_weight * (far.x / norm);
+      bias_y = params->goal_bias_weight * (far.y / norm);
+      u_target.linear.x += bias_x;
+      u_target.linear.y += bias_y;
+    }
+  }
+
   // ── 6. ESDF update ────────────────────────────────────────────────────────
   {
     sensor_msgs::msg::PointCloud2::SharedPtr cloud;
@@ -448,9 +477,9 @@ ConstrainedController::computeVelocityCommands(
 
   // ── 7. CBF safety filter ──────────────────────────────────────────────────
   CbfFilterResult cbf_res;
-  cbf_res.u = u_nom;
+  cbf_res.u = u_target;
   if (esdf_grid_->hasData()) {
-    cbf_res = cbf_filter_->filter(*esdf_grid_, u_nom);
+    cbf_res = cbf_filter_->filter(*esdf_grid_, u_target);
     if (!cbf_res.qp.ok) {
       log_->event("QP box-infeasible — zeroing for safety");
       cbf_res.u.linear.x = cbf_res.u.linear.y = cbf_res.u.angular.z = 0.0;
@@ -501,11 +530,12 @@ ConstrainedController::computeVelocityCommands(
   // ── 9. Debug console + RViz + rqt_plot ────────────────────────────────────
   RCLCPP_INFO_THROTTLE(logger_, *clock_, 1000,
     "[CBF t=%lu] %s cte=%.3fm herr=%.3fr | "
-    "u_nom=(%.2f,%.2f,%.2f) u*=(%.2f,%.2f,%.2f) | "
+    "u_nom=(%.2f,%.2f,%.2f) bias=(%.2f,%.2f) u*=(%.2f,%.2f,%.2f) | "
     "h_min=%.3f cst=%zu dev=%.3f slack=%.4f | dist=%.2fm",
     tick, nom_dbg.is_forward ? "FWD" : "BWD",
     nom_dbg.cte_y, nom_dbg.heading_err,
     u_nom.linear.x, u_nom.linear.y, u_nom.angular.z,
+    bias_x, bias_y,
     out.twist.linear.x, out.twist.linear.y, out.twist.angular.z,
     cbf_res.min_h, cbf_res.constraints.size(),
     cbf_res.qp.deviation, cbf_res.qp.max_slack, dist_to_goal);

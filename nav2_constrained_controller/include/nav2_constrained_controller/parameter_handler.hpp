@@ -73,6 +73,24 @@ struct Parameters
   // vs deviation cost of (0.01)²/2 = 0.00005 → slack is 100× more expensive.
   double cbf_slack_weight{100.0};
 
+  // ---------- goal-aware QP bias ----------
+  // Adds a linear term -λ·(g·u) to the QP objective so the projection picks
+  // the feasible u that makes most progress toward the path, not just the
+  // L2-closest u to u_nom. Mathematically equivalent to pre-shifting the QP
+  // target: u_target = u_nom + λ·g, then solving min ½‖u - u_target‖² s.t.
+  // Au ≤ b. When constraints are inactive u* ≈ u_nom + λ·g (slight pull); when
+  // constraints bind, the projection lands further along g than pure u_nom
+  // projection would have.
+  //
+  // g is the unit direction (in base_link, translation only — gw=0) from the
+  // robot to a path pose `goal_bias_lookahead_dist` ahead along the local
+  // plan. We use a far waypoint (not the immediate motion-target lookahead)
+  // so that when the path bends, g carries information u_nom does not.
+  //
+  // λ=0 (default) reproduces the original min-deviation QP.
+  double goal_bias_weight{0.0};            // λ, m/s — bias magnitude
+  double goal_bias_lookahead_dist{1.5};    // arc length along path for g (m)
+
   // ---------- PointCloud2 / ESDF ----------
   // Use horizontal beams from the raw 3D LiDAR.
   // z filter in base_link must be centred on the lidar mounting height

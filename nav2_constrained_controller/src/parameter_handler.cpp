@@ -65,6 +65,9 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(wall_consideration_range, 2.5);
   DECL_DOUBLE(cbf_slack_weight, 100.0);
 
+  DECL_DOUBLE(goal_bias_weight, 0.0);
+  DECL_DOUBLE(goal_bias_lookahead_dist, 1.5);
+
   DECL_STRING(pointcloud_topic, "/livox/amr/lidar");
   DECL_DOUBLE(esdf_z_min, 1.247);
   DECL_DOUBLE(esdf_z_max, 1.447);
@@ -136,6 +139,10 @@ ParameterHandler::dynamicParametersCallback(
         params_.wall_consideration_range = v;
       } else if (name == plugin_name_ + ".cbf_slack_weight") {
         params_.cbf_slack_weight = v;
+      } else if (name == plugin_name_ + ".goal_bias_weight") {
+        params_.goal_bias_weight = v;
+      } else if (name == plugin_name_ + ".goal_bias_lookahead_dist") {
+        params_.goal_bias_lookahead_dist = v;
       } else if (name == plugin_name_ + ".cbf_retreat_h_enter") {
         params_.cbf_retreat_h_enter = v;
       } else if (name == plugin_name_ + ".cbf_retreat_h_exit") {

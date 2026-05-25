@@ -50,15 +50,19 @@ geometry_msgs::msg::Twist NominalController::compute(
   const double vy = params_->k_lat * cte_y * s;
 
   // ----- wz: heading correction -----
-  // Use the PATH TANGENT at the closest point (not the bearing to the
-  // lookahead position). The closest-point tangent moves monotonically as the
-  // robot advances — it never oscillates when the robot spins in place or
-  // when the path end is approached.
+  // Use the path tangent at the LOOKAHEAD pose (not the closest point).
+  // The closest-point tangent matches the path directly under the robot —
+  // safe on straight segments but blind to upcoming curvature. Using the
+  // lookahead pose's tangent makes heading_err reflect where the path is
+  // heading ~motion_target_dist ahead, so the rotation controller starts
+  // turning into a curve before the curve reaches the robot body. This
+  // prevents Stanley from saturating wz only AFTER entering the bend
+  // (the run-7 alley-turn overshoot mode).
   //
   // For backward motion add π: validateOrientations() stores atan2(dy,dx)
   // which points "forward along the path" (= backward for the robot rear).
   // Adding π converts it to the rear-facing reference frame.
-  const double path_yaw = tf2::getYaw(closest.orientation);
+  const double path_yaw = tf2::getYaw(lookahead.orientation);
   const double heading_err = forward
     ? path_yaw
     : angles::shortest_angular_distance(0.0, path_yaw + M_PI);

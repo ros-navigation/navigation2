@@ -16,12 +16,13 @@
 //
 //   vx  = sign(lookahead.x) · v_linear_max · s
 //   vy  = k_lat · cte · s           where cte = closest.position.y
-//   wz  = k_yaw · heading_err       where heading_err = tf2::getYaw(closest.orientation)
+//   wz  = k_yaw · heading_err       where heading_err = tf2::getYaw(lookahead.orientation)
 //                                   (sign-flipped for backward motion)
 //
-// Heading reference is the path tangent at the CLOSEST point, not the lookahead
-// bearing. The closest point moves monotonically along the path, so heading_err
-// never oscillates when the robot spins or the path end is reached.
+// Heading reference is the path tangent at the LOOKAHEAD point, so the
+// rotation controller anticipates upcoming curvature instead of only reacting
+// to the path tangent directly under the robot. Cross-track (vy) still uses
+// the closest point, which is the right local reference for lateral correction.
 
 #ifndef NAV2_CONSTRAINED_CONTROLLER__NOMINAL_CONTROLLER_HPP_
 #define NAV2_CONSTRAINED_CONTROLLER__NOMINAL_CONTROLLER_HPP_
