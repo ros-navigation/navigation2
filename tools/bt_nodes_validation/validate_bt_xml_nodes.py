@@ -368,6 +368,8 @@ def extract_xml_nodes_data(content: ET.ElementTree[Any]) -> BTNodes:
         node_id = node.get('ID')
         if not node_id:
             raise ValueError('Each BT node must have an "ID" attribute.')
+        if node_id in bt_node_ids_xml:
+            raise ValueError(f'Duplicate node ID found in XML: {node_id}')
 
         ports: NodePorts = {}
         for port in node:
@@ -375,6 +377,10 @@ def extract_xml_nodes_data(content: ET.ElementTree[Any]) -> BTNodes:
             if not port_name:
                 raise ValueError(
                     f'Each port in {node_id} node must have a "name" attribute.'
+                )
+            if port_name in ports:
+                raise ValueError(
+                    f'Duplicate port name {port_name} found in {node_id} node.'
                 )
             port_type = port.get('type')
             if not port_type:

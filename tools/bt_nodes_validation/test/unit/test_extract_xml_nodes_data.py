@@ -66,6 +66,25 @@ class TestMissingXMLNodeData:
         ):
             extract_xml_nodes_data(tree)
 
+    def test_duplicate_node_id(self):
+        """Test duplicate node ID."""
+        xml = """
+            <root>
+                <TreeNodesModel>
+                    <Action ID="TestNodeID">
+                    </Action>
+                    <Action ID="TestNodeID">
+                    </Action>
+                </TreeNodesModel>
+            </root>
+        """
+        tree = _create_elementtree(xml)
+        with pytest.raises(
+                ValueError,
+                match='Duplicate node ID found in XML: TestNodeID'
+        ):
+            extract_xml_nodes_data(tree)
+
     def test_missing_name_attribute(self):
         """Test missing "name" attribute."""
         xml = """
@@ -99,6 +118,25 @@ class TestMissingXMLNodeData:
         with pytest.raises(
                 ValueError,
                 match='test port in TestNodeID node is missing a "type" attribute.'
+        ):
+            extract_xml_nodes_data(tree)
+
+    def test_duplicate_port_definition(self):
+        """Test duplicate port definition."""
+        xml = """
+            <root>
+                <TreeNodesModel>
+                    <Action ID="TestNodeID">
+                        <input_port name="test" type="bool"></input_port>
+                        <input_port name="test" type="bool"></input_port>
+                    </Action>
+                </TreeNodesModel>
+            </root>
+        """
+        tree = _create_elementtree(xml)
+        with pytest.raises(
+                ValueError,
+                match='Duplicate port name test found in TestNodeID node.'
         ):
             extract_xml_nodes_data(tree)
 
