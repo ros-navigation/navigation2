@@ -93,24 +93,16 @@ CbfFilterResult CBFSafetyFilter::filter(
 
   // ── Retreat overlay: scan body for min_h_react ─────────────────────────
   // Walk all body samples once up-front to find the worst (smallest h). This
-  // drives the RETREAT state-machine and identifies the gradient at the worst
-  // sample for candidate construction. The reactive loop below also queries
+  // drives the RETREAT state-machine. The reactive loop below also queries
   // these samples but range-gates by wall_consideration_range — the overlay
   // needs the true min_h regardless of range gating.
   double min_h_react = std::numeric_limits<double>::infinity();
-  Point2D worst_pc{0.0, 0.0};
-  double worst_gx = 0.0, worst_gy = 0.0;
   for (int si = 0; si < ns; ++si) {
     const Point2D & pc = samples[si].p;
     const auto q = esdf.query(pc.x, pc.y);
     if (!q.valid) {continue;}
     const double h = q.d - params_->esdf_d_safe;
-    if (h < min_h_react) {
-      min_h_react = h;
-      worst_pc = pc;
-      worst_gx = q.gx;
-      worst_gy = q.gy;
-    }
+    if (h < min_h_react) {min_h_react = h;}
   }
   res.min_h_react = std::isfinite(min_h_react) ? min_h_react : 0.0;
 
@@ -145,105 +137,85 @@ CbfFilterResult CBFSafetyFilter::filter(
   }
   res.retreat_state = retreat_state_;
 
-  // ── Retreat overlay: candidate selection ──────────────────────────────
-  // In RETREAT state, build 9 candidate velocities and score each by ESDF
-  // lookahead at all 16 body samples. The candidate with the highest predicted
-  // min_h wins. Blend with u_nom by how critical min_h is (linear in
-  // [h_enter, 0]) and feed the blended result to the QP as the target.
+  // ── Retreat overlay: smart single-direction escape ────────────────────
+  // Replaces the previous 9-candidate scoring with a single principled
+  // retreat velocity built from the body's tight samples:
   //
-  // Candidates (all in base_link, body velocity):
-  //   1: u_nom                                — status quo
-  //   2: 0.5·u_nom                            — slow follow
-  //   3: +∇d_center · v_retreat               — move along centre ESDF gradient
-  //   4: +∇d_worst  · v_retreat               — move along worst-sample gradient
-  //   5: (−vx_nom, −vy_nom, +wz_nom)          — reverse translation, keep rotation
-  //   6: (0, 0, +w_retreat)                   — pure CCW yaw
-  //   7: (0, 0, −w_retreat)                   — pure CW yaw
-  //   8: (0, +v_retreat, 0)                   — pure left strafe
-  //   9: (0, −v_retreat, 0)                   — pure right strafe
+  //   Translation = WEIGHTED AVERAGE of ESDF gradients across all tight
+  //                  samples, weighted by tightness (threshold − h_i).
+  //                  Multiple samples pressing different walls contribute
+  //                  in proportion to how critical each is.
+  //
+  //   Rotation    = sign of the worst single sample's lever (gy·px − gx·py),
+  //                  scaled by w_retreat. This rotates to lift the most
+  //                  critical sample off its wall. Worst-only because levers
+  //                  from opposite-quadrant samples can cancel under
+  //                  averaging — we commit to whichever rotation helps the
+  //                  worst case.
+  //
+  // Tightness threshold uses cbf_retreat_h_exit so any sample contributing to
+  // the retreat state (h below h_exit) gets a say in the escape direction.
   Eigen::Vector3d u_qp_target_e = u_nom_e;
   int picked_idx_1based = 0;
   double picked_score   = 0.0;
 
   if (params_->cbf_retreat_enabled && retreat_state_ == RetreatState::RETREAT) {
-    const double v_ret  = params_->cbf_retreat_speed;
-    const double w_ret  = params_->cbf_retreat_rotation_speed;
-    const double tau_l  = params_->cbf_retreat_lookahead_s;
-    const double d_safe = params_->esdf_d_safe;
-    const double h_enter = params_->cbf_retreat_h_enter;
+    const double v_ret    = params_->cbf_retreat_speed;
+    const double w_ret    = params_->cbf_retreat_rotation_speed;
+    const double h_enter  = params_->cbf_retreat_h_enter;
+    const double h_thresh = params_->cbf_retreat_h_exit;
 
-    // Candidate 3 ingredients: ESDF gradient at robot centre (base_link origin).
-    // Falls through to zero if the centre cell is outside the grid or has a
-    // degenerate gradient (e.g., uniform-field cell).
-    Eigen::Vector3d retreat_center = Eigen::Vector3d::Zero();
-    {
-      const auto qc = esdf.query(0.0, 0.0);
-      if (qc.valid) {
-        const double nc = std::hypot(qc.gx, qc.gy);
-        if (nc > 1e-6) {
-          retreat_center.x() = (qc.gx / nc) * v_ret;
-          retreat_center.y() = (qc.gy / nc) * v_ret;
-        }
-      }
-    }
-    // Candidate 4 ingredients: gradient at the worst body sample. Already in
-    // hand from the scan above.
-    Eigen::Vector3d retreat_worst = Eigen::Vector3d::Zero();
-    {
-      const double nw = std::hypot(worst_gx, worst_gy);
-      if (nw > 1e-6) {
-        retreat_worst.x() = (worst_gx / nw) * v_ret;
-        retreat_worst.y() = (worst_gy / nw) * v_ret;
-      }
-    }
+    double sum_w     = 0.0;
+    double sum_gx_w  = 0.0;
+    double sum_gy_w  = 0.0;
+    double worst_h_local = std::numeric_limits<double>::infinity();
+    double worst_lever   = 0.0;
 
-    const std::array<Eigen::Vector3d, 9> candidates = {
-      u_nom_e,                                                          // 1
-      0.5 * u_nom_e,                                                    // 2
-      retreat_center,                                                   // 3
-      retreat_worst,                                                    // 4
-      Eigen::Vector3d(-u_nom_e.x(), -u_nom_e.y(), u_nom_e.z()),         // 5
-      Eigen::Vector3d(0.0, 0.0,  w_ret),                                // 6
-      Eigen::Vector3d(0.0, 0.0, -w_ret),                                // 7
-      Eigen::Vector3d(0.0,  v_ret, 0.0),                                // 8
-      Eigen::Vector3d(0.0, -v_ret, 0.0),                                // 9
-    };
+    for (int si = 0; si < ns; ++si) {
+      const Point2D & pc = samples[si].p;
+      const auto q = esdf.query(pc.x, pc.y);
+      if (!q.valid) {continue;}
+      const double h_i = q.d - params_->esdf_d_safe;
+      if (h_i > h_thresh) {continue;}                  // not tight — ignore
 
-    // Score = min h_pred over all 16 body samples after τ_l of motion with u_c.
-    // Pick the candidate with the highest score (largest body clearance).
-    double best_score = -std::numeric_limits<double>::infinity();
-    int best_idx = 0;
-    for (size_t ci = 0; ci < candidates.size(); ++ci) {
-      const auto & u_c = candidates[ci];
-      const double vx_c = u_c.x();
-      const double vy_c = u_c.y();
-      const double wz_c = u_c.z();
+      const double weight = std::max(0.0, h_thresh - h_i);
+      sum_w    += weight;
+      sum_gx_w += weight * q.gx;
+      sum_gy_w += weight * q.gy;
 
-      double score = std::numeric_limits<double>::infinity();
-      for (int si = 0; si < ns; ++si) {
-        const Point2D & pc = samples[si].p;
-        const double pred_x = pc.x + tau_l * (vx_c - wz_c * pc.y);
-        const double pred_y = pc.y + tau_l * (vy_c + wz_c * pc.x);
-        const auto q = esdf.query(pred_x, pred_y);
-        if (!q.valid) {continue;}
-        const double h_pred = q.d - d_safe;
-        if (h_pred < score) {score = h_pred;}
-      }
-      if (score > best_score) {
-        best_score = score;
-        best_idx   = static_cast<int>(ci);
+      if (h_i < worst_h_local) {
+        worst_h_local = h_i;
+        // Lever for THIS sample's contribution to h_dot via wz:
+        //   h_dot_i = gx·vx + gy·vy + (gy·px − gx·py)·wz
+        worst_lever = q.gy * pc.x - q.gx * pc.y;
       }
     }
 
-    // Smooth blend: at min_h_react = h_enter, blend = 0 (pure u_nom); at
-    // min_h_react = 0, blend = 1 (pure candidate). Negative min_h saturates
-    // to blend = 1 (we want full override when already inside the buffer).
+    Eigen::Vector3d retreat_target = Eigen::Vector3d::Zero();
+    if (sum_w > 1e-6) {
+      const double avg_gx = sum_gx_w / sum_w;
+      const double avg_gy = sum_gy_w / sum_w;
+      const double n_grad = std::hypot(avg_gx, avg_gy);
+      if (n_grad > 1e-6) {
+        retreat_target.x() = (avg_gx / n_grad) * v_ret;
+        retreat_target.y() = (avg_gy / n_grad) * v_ret;
+      }
+      if (std::abs(worst_lever) > 1e-6) {
+        retreat_target.z() = std::copysign(w_ret, worst_lever);
+      }
+    }
+
+    // Smooth blend: same shape as before — pure u_nom at h_enter,
+    // pure retreat at h ≤ 0. Negative h saturates to full retreat.
     const double blend = std::clamp(
       (h_enter - min_h_react) / std::max(1e-6, h_enter), 0.0, 1.0);
-    u_qp_target_e = (1.0 - blend) * u_nom_e + blend * candidates[best_idx];
+    u_qp_target_e = (1.0 - blend) * u_nom_e + blend * retreat_target;
 
-    picked_idx_1based      = best_idx + 1;
-    picked_score           = best_score;
+    // Logging-compat shims. With the single-direction retreat we no longer
+    // have 9 candidates; picked_candidate becomes a binary indicator of
+    // whether retreat was synthesized this tick (1) or fell back to u_nom (0).
+    picked_idx_1based      = (sum_w > 1e-6) ? 1 : 0;
+    picked_score           = -worst_h_local;  // positive = imminent (h<0)
     last_picked_candidate_ = picked_idx_1based;
   }
   res.picked_candidate = picked_idx_1based;

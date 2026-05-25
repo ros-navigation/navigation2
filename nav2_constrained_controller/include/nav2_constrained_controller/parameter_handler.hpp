@@ -123,20 +123,31 @@ struct Parameters
   double esdf_grid_size_m{3.0};       // half-size (so 6m x 6m total)
 
   // ---------- retreat overlay ----------
-  // ESDF-lookahead candidate-evaluation overlay that activates when any body
-  // sample's h drops below h_enter. Inside RETREAT it scores 9 candidate
-  // velocities by predicting all 16 body samples τ_look seconds ahead and
-  // taking min_h_pred. Picks the best, blends with u_nom by how critical h
-  // is, hands the blended target to the CBF QP. Exits when min_h ≥ h_exit
-  // (hysteresis). When the overlay can't make progress, controller-level
-  // stuck detection and Nav2 BT recovery handle the failure — the filter
-  // does not emit zero or transition to a separate give-up state.
+  // Smart single-direction retreat overlay that activates when any body
+  // sample's h drops below h_enter. Inside RETREAT it builds ONE retreat
+  // velocity from the body's tight samples:
+  //   - Translation = weighted average of ESDF gradients across all samples
+  //     with h < h_exit, weighted by tightness (h_exit − h_i). Tighter
+  //     samples dominate the direction.
+  //   - Rotation    = sign of the WORST (single tightest) sample's lever
+  //     (gy·px − gx·py), scaled by w_retreat. Rotates to lift the most
+  //     critical sample off its wall.
+  // The retreat velocity is blended with u_nom by how critical min_h is
+  // (linear in [h_enter, 0]) and handed to the CBF QP as the target.
+  // Exits when min_h ≥ h_exit (hysteresis). When the overlay can't make
+  // progress, controller-level stuck detection and Nav2 BT recovery handle
+  // the failure — the filter does not emit zero or transition to a
+  // separate give-up state.
+  //
+  // cbf_retreat_lookahead_s is no longer used by the active code (the new
+  // single-direction retreat doesn't need a candidate-scoring lookahead).
+  // Kept as a parameter so existing YAMLs don't error on unknown params.
   bool   cbf_retreat_enabled{true};
   double cbf_retreat_h_enter{0.02};         // enter when min_h < this (m)
   double cbf_retreat_h_exit{0.05};          // exit when min_h ≥ this (m, hysteresis)
   double cbf_retreat_speed{0.10};           // linear retreat magnitude (m/s)
-  double cbf_retreat_rotation_speed{0.30};  // pure-rotation candidate magnitude (rad/s)
-  double cbf_retreat_lookahead_s{0.30};     // candidate scoring lookahead (s)
+  double cbf_retreat_rotation_speed{0.30};  // pure-rotation retreat magnitude (rad/s)
+  double cbf_retreat_lookahead_s{0.30};     // (vestigial — unused by new retreat)
 
   // ---------- logging ----------
   std::string log_dir{"/root/navigation_log"};

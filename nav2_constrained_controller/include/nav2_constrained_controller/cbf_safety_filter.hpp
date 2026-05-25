@@ -58,7 +58,7 @@ struct Parameters;
 enum class RetreatState : int
 {
   NORMAL = 0,    // path-following, no overlay influence
-  RETREAT = 1    // overlay active: blend u_nom toward best candidate
+  RETREAT = 1    // overlay active: blend u_nom toward weighted-gradient retreat
 };
 
 struct CbfFilterResult
@@ -70,12 +70,14 @@ struct CbfFilterResult
   double min_h{0.0};                    // smallest h across all constraints
   double solve_time_us{0.0};
 
-  // Retreat overlay diagnostics. picked_candidate is the index (1..9) of the
-  // candidate the overlay chose this tick; 0 when overlay was NORMAL.
+  // Retreat overlay diagnostics. picked_candidate is now a binary indicator
+  // (1 = retreat direction was synthesized, 0 = no tight samples or NORMAL
+  // state). picked_score is the negated worst-sample h (positive = imminent
+  // collision).
   RetreatState retreat_state{RetreatState::NORMAL};
   int picked_candidate{0};
   double min_h_react{0.0};              // worst body-sample h pre-QP, used by overlay decision
-  double picked_score{0.0};             // predicted min_h of the picked candidate
+  double picked_score{0.0};             // -worst_h: positive means inside d_safe buffer
 };
 
 class CBFSafetyFilter
