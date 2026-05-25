@@ -292,6 +292,8 @@ def extract_code_port_data(content: str) -> NodePorts:
         port_type = convert_with_regex(port_type, TYPE_REGEX_TRANSFORMS)
 
         args_start = content.find('(', port_type_end)
+        if args_start == -1:
+            raise ValueError('Failed to extract port arguments: opening parenthesis not found.')
         port_args = extract_arguments(content, args_start)
         args_number = len(port_args)
         if not args_number:
@@ -414,6 +416,10 @@ def extract_node_registration_data(content: str) -> dict[str, str]:
         class_name = class_name_match.group(1)
 
         args_start = content.find('(', register_type_end)
+        if args_start == -1:
+            raise ValueError(
+                'Failed to extract node registration arguments: opening parenthesis not found.'
+            )
         register_args = extract_arguments(content, args_start)
         if not register_args:
             raise ValueError(
@@ -481,6 +487,10 @@ def extract_class_definitions(
 
         class_name_end = class_match.end()
         class_brace = content.find('{', class_name_end)
+        if class_brace == -1:
+            raise ValueError(
+                'Failed to extract class definition: opening brace not found.'
+            )
         base_class_area = content[class_name_end:class_brace]
         base_class_matches = base_class_pattern.findall(base_class_area)
         base_class_name = base_class_matches[0] if base_class_matches else ''
