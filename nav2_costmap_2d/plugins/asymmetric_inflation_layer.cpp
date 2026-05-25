@@ -234,7 +234,6 @@ AsymmetricInflationLayer::extractLocalPathSegments(
     goal_pose.pose.position.y - current_robot_y_);
 
   if (dist_to_goal <= goal_distance_threshold_) {
-    // Empty vector causes algorithm to use standard symmetry
     return local_path_segments;
   }
 
