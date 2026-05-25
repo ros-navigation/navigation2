@@ -349,8 +349,8 @@ AsymmetricInflationLayer::updateCosts(
   std::vector<std::pair<double, double>> local_path_pts = extractLocalPath(master_grid);
 
   // Abort if we don't have a valid path or if the scaling rates are equal (no asymmetry).
-  if (!((local_path_pts.size() >= 2) &&
-    (cost_scaling_factor_left_ != cost_scaling_factor_right_)))
+  if (local_path_pts.size() < 2 ||
+    cost_scaling_factor_left_ == cost_scaling_factor_right_)
   {
     setCurrent(true);
     return;
