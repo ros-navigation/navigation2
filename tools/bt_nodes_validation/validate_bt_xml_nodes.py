@@ -256,7 +256,8 @@ def extract_arguments(content: str, args_start_pos: int) -> list[str]:
                 parens_count -= 1
                 if parens_count == 0:
                     arg = content[new_arg_start:pos].strip()
-                    args.append(arg)
+                    if arg:
+                        args.append(arg)
                     break
             case '<':
                 angle_brackets_count += 1
@@ -273,7 +274,8 @@ def extract_arguments(content: str, args_start_pos: int) -> list[str]:
 
         if char == ',':
             arg = content[new_arg_start:pos].strip()
-            args.append(arg)
+            if arg:
+                args.append(arg)
             pos += 1
             new_arg_start = pos
             continue
