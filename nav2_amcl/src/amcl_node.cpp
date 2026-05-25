@@ -491,8 +491,8 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 
   pf_matrix_t pf_init_pose_cov = pf_matrix_zero();
   // Copy in the covariance, converting from 6-D to 3-D
-  for (int i = 0; i < 2; i++) {
-    for (int j = 0; j < 2; j++) {
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t j = 0; j < 2; j++) {
       pf_init_pose_cov.m[i][j] = msg.pose.covariance[6 * i + j];
     }
   }
@@ -548,6 +548,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
   pf_vector_t delta = pf_vector_zero();
   bool force_publication = false;
+  const size_t laser_idx = static_cast<size_t>(laser_index);
   if (!pf_init_) {
     // Pose at last filter update
     pf_odom_pose_ = pose;
@@ -566,7 +567,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         lasers_update_[i] = true;
       }
     }
-    if (lasers_update_[laser_index]) {
+    if (lasers_update_[laser_idx]) {
       motion_model_->odometryUpdate(pf_, pose, delta);
     }
     force_update_ = false;
@@ -575,7 +576,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   bool resampled = false;
 
   // If the robot has moved, update the filter
-  if (lasers_update_[laser_index]) {
+  if (lasers_update_[laser_idx]) {
     updateFilter(laser_index, laser_scan, pose);
 
     // Resample the particles
@@ -651,7 +652,7 @@ bool AmclNode::addNewScanner(
   laser_pose_v.v[1] = laser_pose.pose.position.y;
   // laser mounting angle gets computed later -> set to 0 here!
   laser_pose_v.v[2] = 0;
-  lasers_[laser_index]->SetLaserPose(laser_pose_v);
+  lasers_[static_cast<size_t>(laser_index)]->SetLaserPose(laser_pose_v);
   frame_to_laser_[laser_scan->header.frame_id] = laser_index;
   return true;
 }
@@ -675,9 +676,10 @@ bool AmclNode::updateFilter(
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
   const pf_vector_t & pose)
 {
+  const size_t idx = static_cast<size_t>(laser_index);
   nav2_amcl::LaserData ldata;
-  ldata.laser = lasers_[laser_index].get();
-  ldata.range_count = laser_scan->ranges.size();
+  ldata.laser = lasers_[idx].get();
+  ldata.range_count = static_cast<int>(laser_scan->ranges.size());
   // To account for lasers that are mounted upside-down, we determine the
   // min, max, and increment angles of the laser in the base frame.
   //
@@ -733,7 +735,7 @@ bool AmclNode::updateFilter(
 
   // The LaserData destructor will free this memory
   ldata.ranges = new double[ldata.range_count][2];
-  for (int i = 0; i < ldata.range_count; i++) {
+  for (size_t i = 0; i < static_cast<size_t>(ldata.range_count); i++) {
     // amcl doesn't (yet) have a concept of min range.  So we'll map short
     // readings to max range.
     if (laser_scan->ranges[i] <= range_min) {
@@ -745,8 +747,8 @@ bool AmclNode::updateFilter(
     ldata.ranges[i][1] = angle_min +
       (i * angle_increment);
   }
-  lasers_[laser_index]->sensorUpdate(pf_, reinterpret_cast<nav2_amcl::LaserData *>(&ldata));
-  lasers_update_[laser_index] = false;
+  lasers_[idx]->sensorUpdate(pf_, reinterpret_cast<nav2_amcl::LaserData *>(&ldata));
+  lasers_update_[idx] = false;
   pf_odom_pose_ = pose;
   return true;
 }
@@ -759,9 +761,10 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
   auto cloud_with_weights_msg = std::make_unique<nav2_msgs::msg::ParticleCloud>();
   cloud_with_weights_msg->header.stamp = this->now();
   cloud_with_weights_msg->header.frame_id = global_frame_id_;
-  cloud_with_weights_msg->particles.resize(set->sample_count);
+  const size_t sample_count = static_cast<size_t>(set->sample_count);
+  cloud_with_weights_msg->particles.resize(sample_count);
 
-  for (int i = 0; i < set->sample_count; i++) {
+  for (size_t i = 0; i < sample_count; i++) {
     cloud_with_weights_msg->particles[i].pose.position.x = set->samples[i].pose.v[0];
     cloud_with_weights_msg->particles[i].pose.position.y = set->samples[i].pose.v[1];
     cloud_with_weights_msg->particles[i].pose.position.z = 0;
@@ -780,15 +783,15 @@ AmclNode::getMaxWeightHyp(
 {
   // Read out the current hypotheses
   double max_weight = 0.0;
-  hyps.resize(pf_->sets[pf_->current_set].cluster_count);
-  for (int hyp_count = 0;
-    hyp_count < pf_->sets[pf_->current_set].cluster_count; hyp_count++)
-  {
+  const size_t cluster_count = static_cast<size_t>(pf_->sets[pf_->current_set].cluster_count);
+  hyps.resize(cluster_count);
+  for (size_t hyp_count = 0; hyp_count < cluster_count; hyp_count++) {
+    const int ihyp = static_cast<int>(hyp_count);
     double weight;
     pf_vector_t pose_mean;
     pf_matrix_t pose_cov;
-    if (!pf_get_cluster_stats(pf_, hyp_count, &weight, &pose_mean, &pose_cov)) {
-      RCLCPP_ERROR(get_logger(), "Couldn't get stats on cluster %d", hyp_count);
+    if (!pf_get_cluster_stats(pf_, ihyp, &weight, &pose_mean, &pose_cov)) {
+      RCLCPP_ERROR(get_logger(), "Couldn't get stats on cluster %d", ihyp);
       return false;
     }
 
@@ -798,18 +801,19 @@ AmclNode::getMaxWeightHyp(
 
     if (hyps[hyp_count].weight > max_weight) {
       max_weight = hyps[hyp_count].weight;
-      max_weight_hyp = hyp_count;
+      max_weight_hyp = ihyp;
     }
   }
 
   if (max_weight > 0.0) {
+    const size_t hmw = static_cast<size_t>(max_weight_hyp);
     RCLCPP_DEBUG(
       get_logger(), "Max weight pose: %.3f %.3f %.3f",
-      hyps[max_weight_hyp].pf_pose_mean.v[0],
-      hyps[max_weight_hyp].pf_pose_mean.v[1],
-      hyps[max_weight_hyp].pf_pose_mean.v[2]);
+      hyps[hmw].pf_pose_mean.v[0],
+      hyps[hmw].pf_pose_mean.v[1],
+      hyps[hmw].pf_pose_mean.v[2]);
 
-    max_weight_hyps = hyps[max_weight_hyp];
+    max_weight_hyps = hyps[hmw];
     return true;
   }
   return false;
@@ -836,13 +840,14 @@ AmclNode::publishAmclPose(
   p->header.frame_id = global_frame_id_;
   p->header.stamp = laser_scan->header.stamp;
   // Copy in the pose
-  p->pose.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
-  p->pose.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
-  p->pose.pose.orientation = orientationAroundZAxis(hyps[max_weight_hyp].pf_pose_mean.v[2]);
+  const size_t hmw = static_cast<size_t>(max_weight_hyp);
+  p->pose.pose.position.x = hyps[hmw].pf_pose_mean.v[0];
+  p->pose.pose.position.y = hyps[hmw].pf_pose_mean.v[1];
+  p->pose.pose.orientation = orientationAroundZAxis(hyps[hmw].pf_pose_mean.v[2]);
   // Copy in the covariance, converting from 3-D to 6-D
   pf_sample_set_t * set = pf_->sets + pf_->current_set;
-  for (int i = 0; i < 2; i++) {
-    for (int j = 0; j < 2; j++) {
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t j = 0; j < 2; j++) {
       // Report the overall filter covariance, rather than the
       // covariance for the highest-weight cluster
       // p->covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
@@ -868,9 +873,9 @@ AmclNode::publishAmclPose(
 
   RCLCPP_DEBUG(
     get_logger(), "New pose: %6.3f %6.3f %6.3f",
-    hyps[max_weight_hyp].pf_pose_mean.v[0],
-    hyps[max_weight_hyp].pf_pose_mean.v[1],
-    hyps[max_weight_hyp].pf_pose_mean.v[2]);
+    hyps[hmw].pf_pose_mean.v[0],
+    hyps[hmw].pf_pose_mean.v[1],
+    hyps[hmw].pf_pose_mean.v[2]);
 }
 
 void
@@ -880,14 +885,14 @@ AmclNode::calculateMaptoOdomTransform(
 {
   // subtracting base to odom from map to base and send map to odom instead
   geometry_msgs::msg::PoseStamped odom_to_map;
+  const size_t hmw = static_cast<size_t>(max_weight_hyp);
   try {
     tf2::Quaternion q;
-    q.setRPY(0, 0, hyps[max_weight_hyp].pf_pose_mean.v[2]);
+    q.setRPY(0, 0, hyps[hmw].pf_pose_mean.v[2]);
     tf2::Transform tmp_tf(q, tf2::Vector3(
-        hyps[max_weight_hyp].pf_pose_mean.v[0],
-        hyps[max_weight_hyp].pf_pose_mean.v[1],
+        hyps[hmw].pf_pose_mean.v[0],
+        hyps[hmw].pf_pose_mean.v[1],
         0.0));
-
     geometry_msgs::msg::PoseStamped tmp_tf_stamped;
     tmp_tf_stamped.header.frame_id = base_frame_id_;
     tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
@@ -1353,17 +1358,18 @@ AmclNode::convertMap(const nav_msgs::msg::OccupancyGrid & map_msg)
 {
   map_t * map = map_alloc();
 
-  map->size_x = map_msg.info.width;
-  map->size_y = map_msg.info.height;
+  map->size_x = static_cast<int>(map_msg.info.width);
+  map->size_y = static_cast<int>(map_msg.info.height);
   map->scale = map_msg.info.resolution;
   map->origin_x = map_msg.info.origin.position.x + (map->size_x / 2) * map->scale;
   map->origin_y = map_msg.info.origin.position.y + (map->size_y / 2) * map->scale;
 
-  map->cells =
-    reinterpret_cast<map_cell_t *>(malloc(sizeof(map_cell_t) * map->size_x * map->size_y));
-
   // Convert to player format
-  for (int i = 0; i < map->size_x * map->size_y; i++) {
+  const size_t total_cells =
+    static_cast<size_t>(map->size_x) * static_cast<size_t>(map->size_y);
+  map->cells =
+    reinterpret_cast<map_cell_t *>(malloc(sizeof(map_cell_t) * total_cells));
+  for (size_t i = 0; i < total_cells; i++) {
     if (map_msg.data[i] == 0) {
       map->cells[i].occ_state = -1;
     } else if (map_msg.data[i] == 100) {

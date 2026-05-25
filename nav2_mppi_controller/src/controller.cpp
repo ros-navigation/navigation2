@@ -144,7 +144,7 @@ void MPPIController::visualize(
     (critic_index_to_visualize_ <= 0 ||
     critic_index_to_visualize_ > static_cast<int>(critic_costs.size())) ?
     optimizer_.getCosts() :
-    critic_costs[critic_index_to_visualize_ - 1].second;
+    critic_costs[static_cast<size_t>(critic_index_to_visualize_ - 1)].second;
 
   trajectory_visualizer_.add(
     optimizer_.getGeneratedTrajectories(),

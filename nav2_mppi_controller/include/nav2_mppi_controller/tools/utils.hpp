@@ -179,10 +179,10 @@ inline std::unique_ptr<nav_msgs::msg::Trajectory> toTrajectoryMsg(
 {
   auto trajectory_msg = std::make_unique<nav_msgs::msg::Trajectory>();
   trajectory_msg->header = header;
-  trajectory_msg->points.resize(trajectory.rows());
+  trajectory_msg->points.resize(static_cast<size_t>(trajectory.rows()));
 
   for (int i = 0; i < trajectory.rows(); ++i) {
-    auto & curr_pt = trajectory_msg->points[i];
+    auto & curr_pt = trajectory_msg->points[static_cast<size_t>(i)];
     curr_pt.header.frame_id = header.frame_id;
     curr_pt.header.stamp = header.stamp + rclcpp::Duration::from_seconds(i * model_dt);
     curr_pt.pose.position.x = trajectory(i, 0);
@@ -211,9 +211,10 @@ inline models::Path toTensor(const nav_msgs::msg::Path & path)
   result.reset(path.poses.size());
 
   for (size_t i = 0; i < path.poses.size(); ++i) {
-    result.x(i) = path.poses[i].pose.position.x;
-    result.y(i) = path.poses[i].pose.position.y;
-    result.yaws(i) = tf2::getYaw(path.poses[i].pose.orientation);
+    const Eigen::Index ei = static_cast<Eigen::Index>(i);
+    result.x(ei) = path.poses[i].pose.position.x;
+    result.y(ei) = path.poses[i].pose.position.y;
+    result.yaws(ei) = tf2::getYaw(path.poses[i].pose.orientation);
   }
 
   return result;
@@ -296,11 +297,12 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
   const int n_cols = static_cast<int>(data.path.x.size());
 
   // Cumulative arc-lengths along the reference path
-  std::vector<float> path_integrated_dists(n_cols, 0.0f);
+  std::vector<float> path_integrated_dists(static_cast<size_t>(n_cols), 0.0f);
   for (int i = 1; i < n_cols; ++i) {
     const float dx = data.path.x(i) - data.path.x(i - 1);
     const float dy = data.path.y(i) - data.path.y(i - 1);
-    path_integrated_dists[i] = path_integrated_dists[i - 1] + sqrtf(dx * dx + dy * dy);
+    const size_t si = static_cast<size_t>(i);
+    path_integrated_dists[si] = path_integrated_dists[si - 1] + sqrtf(dx * dx + dy * dy);
   }
 
   // Arc-length of all candidate trajectories
@@ -359,7 +361,7 @@ inline void findPathCosts(
 {
   auto * costmap = costmap_ros->getCostmap();
   unsigned int map_x, map_y;
-  const size_t path_segments_count = data.path.x.size() - 1;
+  const size_t path_segments_count = static_cast<size_t>(data.path.x.size()) - 1;
   data.path_pts_valid = std::vector<bool>(path_segments_count, false);
   const bool tracking_unknown = costmap_ros->getLayeredCostmap()->isTrackingUnknown();
   for (unsigned int idx = 0; idx < path_segments_count; idx++) {

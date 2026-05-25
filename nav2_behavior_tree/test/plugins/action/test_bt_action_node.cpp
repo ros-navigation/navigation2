@@ -111,7 +111,7 @@ protected:
         }
 
         RCLCPP_INFO(this->get_logger(), "Goal is feedbacking.");
-        sequence.push_back(sequence[i] + sequence[i - 1]);
+        sequence.push_back(sequence[static_cast<size_t>(i)] + sequence[static_cast<size_t>(i - 1)]);
         rate.sleep();
       }
 

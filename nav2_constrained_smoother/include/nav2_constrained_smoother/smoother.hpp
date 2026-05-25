@@ -174,7 +174,7 @@ private:
         if (!is_cusp &&
           i > (params.keep_start_orientation ? 1 : 0) &&
           i < path_optim.size() - (params.keep_goal_orientation ? 2 : 1) &&
-          static_cast<int>(i - last_i) < params.path_downsampling_factor)
+          static_cast<int>(i) - last_i < params.path_downsampling_factor)
         {
           continue;
         }
@@ -182,7 +182,8 @@ private:
 
       // keep distance inequalities between poses
       // (some might have been downsampled while others might not)
-      double current_segment_len = (path_optim[i] - path_optim[last_i]).block<2, 1>(0, 0).norm();
+      double current_segment_len =
+        (path_optim[i] - path_optim[static_cast<size_t>(last_i)]).block<2, 1>(0, 0).norm();
 
       // forget cost functions which don't have chance to be part of a cusp zone
       potential_cusp_funcs_len += current_segment_len;
@@ -195,7 +196,7 @@ private:
       if (is_cusp) {
         double len_to_cusp = current_segment_len;
         for (int i_cusp = potential_cusp_funcs.size() - 1; i_cusp >= 0; i_cusp--) {
-          auto & f = potential_cusp_funcs[i_cusp];
+          auto & f = potential_cusp_funcs[static_cast<size_t>(i_cusp)];
           double new_weight =
             params.cusp_costmap_weight_sqrt * (1.0 - len_to_cusp / cusp_half_length) +
             params.costmap_weight_sqrt * len_to_cusp / cusp_half_length;
@@ -221,7 +222,7 @@ private:
             params.costmap_weight_sqrt * len_since_cusp / cusp_half_length;
         }
         SmootherCostFunction * cost_function = new SmootherCostFunction(
-          path[last_i].template block<2, 1>(
+          path[static_cast<size_t>(last_i)].template block<2, 1>(
             0,
             0),
           (last_was_cusp ? -1 : 1) * last_segment_len / current_segment_len,
@@ -233,7 +234,8 @@ private:
         );
         problem.AddResidualBlock(
           cost_function->AutoDiff(), loss_function,
-          path_optim[last_i].data(), pt.data(), path_optim[prelast_i].data());
+          path_optim[static_cast<size_t>(last_i)].data(), pt.data(),
+            path_optim[static_cast<size_t>(prelast_i)].data());
 
         potential_cusp_funcs.emplace_back(current_segment_len, cost_function);
       }
@@ -289,21 +291,24 @@ private:
     // Populate path, assign orientations, interpolate skipped/upsampled poses
     path.clear();
     if (params.path_upsampling_factor > 1) {
-      path.reserve(params.path_upsampling_factor * (path_optim.size() - 1) + 1);
+      path.reserve(static_cast<size_t>(params.path_upsampling_factor) * (path_optim.size() - 1) +
+          1);
     }
     int last_i = 0;
     int prelast_i = -1;
     Eigen::Vector2d prelast_dir = {0, 0};
-    for (int i = 1; i <= static_cast<int>(path_optim.size()); i++) {
-      if (i == static_cast<int>(path_optim.size()) || optimized[i]) {
+    const int posiz = static_cast<int>(path_optim.size());
+    for (int i = 1; i <= posiz; i++) {
+      const size_t si = static_cast<size_t>(i);
+      if (i == posiz || optimized[si]) {
         if (prelast_i != -1) {
           Eigen::Vector2d last_dir;
-          auto & prelast = path_optim[prelast_i];
-          auto & last = path_optim[last_i];
+          auto & prelast = path_optim[static_cast<size_t>(prelast_i)];
+          auto & last = path_optim[static_cast<size_t>(last_i)];
 
           // Compute orientation of last
-          if (i < static_cast<int>(path_optim.size())) {
-            auto & current = path_optim[i];
+          if (i < posiz) {
+            auto & current = path_optim[si];
             Eigen::Vector2d tangent_dir = tangentDir<double>(
               prelast.block<2, 1>(0, 0),
               last.block<2, 1>(0, 0),
@@ -340,7 +345,9 @@ private:
           path.emplace_back(last[0], last[1], last_angle);
 
           // Assign orientations to interpolated points
-          for (size_t j = path.size() - 1 - interp_cnt; j < path.size() - 1; j++) {
+          for (size_t j = path.size() - 1 - static_cast<size_t>(interp_cnt); j < path.size() - 1;
+            j++)
+          {
             Eigen::Vector2d tangent_dir = tangentDir<double>(
               path[j - 1].block<2, 1>(0, 0),
               path[j].block<2, 1>(0, 0),
@@ -358,7 +365,8 @@ private:
           auto & start = path_optim[0];
           Eigen::Vector2d dir = params.keep_start_orientation ?
             start_dir :
-            ((path_optim[i] - start).block<2, 1>(0, 0) * start[2]).normalized();
+            ((path_optim[si] - start).block<2, 1>(0,
+              0) * start[2]).normalized();
           path.emplace_back(start[0], start[1], atan2(dir[1], dir[0]));
           prelast_dir = dir;
         }

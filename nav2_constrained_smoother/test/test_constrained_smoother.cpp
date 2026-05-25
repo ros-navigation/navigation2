@@ -74,7 +74,8 @@ public:
           cost =
             static_cast<unsigned char>((nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
         }
-        costmap->data[i * costmap->metadata.size_x + j] = cost;
+        costmap->data[static_cast<unsigned int>(i) * costmap->metadata.size_x +
+          static_cast<unsigned int>(j)] = cost;
       }
     }
 
@@ -513,7 +514,7 @@ TEST_F(SmootherTest, testingAnchoringToOriginalPath)
 
   auto origin_similarity_criterion =
     [&sharp_turn_90](int i, const Eigen::Vector3d & p) {
-      return (p.block<2, 1>(0, 0) - sharp_turn_90[i].block<2, 1>(0, 0)).norm();
+      return (p.block<2, 1>(0, 0) - sharp_turn_90[static_cast<size_t>(i)].block<2, 1>(0, 0)).norm();
     };
   double origin_similarity_improvement =
     assessPathImprovement(smoothed_path, smoothed_path_anchored, origin_similarity_criterion);

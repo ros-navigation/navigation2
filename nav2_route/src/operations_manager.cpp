@@ -134,7 +134,8 @@ OperationsResult OperationsManager::process(
   NodePtr node = state.last_node;
   EdgePtr edge_entered = state.current_edge;
   EdgePtr edge_exited =
-    state.route_edges_idx > 0 ? route.edges[state.route_edges_idx - 1] : nullptr;
+    state.route_edges_idx >
+    0 ? route.edges[static_cast<size_t>(state.route_edges_idx - 1)] : nullptr;
 
   // If we have rerouting_info.curr_edge, then after the first node is achieved,
   // the robot is exiting the partial previous edge.

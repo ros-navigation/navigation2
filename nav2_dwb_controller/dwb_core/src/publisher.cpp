@@ -163,8 +163,8 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
     denominator = 1.0;
   }
 
-  unsigned currentValidId = 0;
-  unsigned currentInvalidId = 0;
+  int currentValidId = 0;
+  int currentInvalidId = 0;
   string validNamespace("ValidTrajectories");
   string invalidNamespace("InvalidTrajectories");
   for (unsigned int i = 0; i < results.twists.size(); i++) {
@@ -259,8 +259,8 @@ DWBPublisher::publishCostGrid(
   cost_grid_pc->is_dense = true;
   cost_grid_pc->is_bigendian = false;
 
-  int offset = 0;
-  for (size_t i = 0; i < cost_grid_pc->fields.size(); ++i, offset += 4) {
+  uint32_t offset = 0u;
+  for (size_t i = 0; i < cost_grid_pc->fields.size(); ++i, offset += 4u) {
     cost_grid_pc->fields[i].offset = offset;
     cost_grid_pc->fields[i].count = 1;
     cost_grid_pc->fields[i].datatype = sensor_msgs::msg::PointField::FLOAT32;

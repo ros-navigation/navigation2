@@ -333,7 +333,7 @@ void Costmap2D::worldToMapEnforceBounds(double wx, double wy, int & mx, int & my
   if (wx < origin_x_) {
     mx = 0;
   } else if (wx > resolution_ * size_x_ + origin_x_) {
-    mx = size_x_ - 1;
+    mx = static_cast<int>(size_x_) - 1;
   } else {
     mx = static_cast<int>((wx - origin_x_) / resolution_);
   }
@@ -341,7 +341,7 @@ void Costmap2D::worldToMapEnforceBounds(double wx, double wy, int & mx, int & my
   if (wy < origin_y_) {
     my = 0;
   } else if (wy > resolution_ * size_y_ + origin_y_) {
-    my = size_y_ - 1;
+    my = static_cast<int>(size_y_) - 1;
   } else {
     my = static_cast<int>((wy - origin_y_) / resolution_);
   }
@@ -361,8 +361,8 @@ void Costmap2D::updateOrigin(double new_origin_x, double new_origin_y)
   new_grid_oy = origin_y_ + cell_oy * resolution_;
 
   // To save casting from unsigned int to int a bunch of times
-  int size_x = size_x_;
-  int size_y = size_y_;
+  int size_x = static_cast<int>(size_x_);
+  int size_y = static_cast<int>(size_y_);
 
   // we need to compute the overlap of the new and existing windows
   int lower_left_x, lower_left_y, upper_right_x, upper_right_y;
@@ -371,15 +371,16 @@ void Costmap2D::updateOrigin(double new_origin_x, double new_origin_y)
   upper_right_x = std::min(std::max(cell_ox + size_x, 0), size_x);
   upper_right_y = std::min(std::max(cell_oy + size_y, 0), size_y);
 
-  unsigned int cell_size_x = upper_right_x - lower_left_x;
-  unsigned int cell_size_y = upper_right_y - lower_left_y;
+  unsigned int cell_size_x = static_cast<unsigned int>(upper_right_x - lower_left_x);
+  unsigned int cell_size_y = static_cast<unsigned int>(upper_right_y - lower_left_y);
 
   // we need a map to store the obstacles in the window temporarily
   unsigned char * local_map = new unsigned char[cell_size_x * cell_size_y];
 
   // copy the local window in the costmap to the local map
   copyMapRegion(
-    costmap_, lower_left_x, lower_left_y, size_x_, local_map, 0, 0, cell_size_x,
+    costmap_, static_cast<unsigned int>(lower_left_x), static_cast<unsigned int>(lower_left_y),
+    size_x_, local_map, 0, 0, cell_size_x,
     cell_size_x,
     cell_size_y);
 
@@ -396,7 +397,9 @@ void Costmap2D::updateOrigin(double new_origin_x, double new_origin_y)
 
   // now we want to copy the overlapping information back into the map, but in its new location
   copyMapRegion(
-    local_map, 0, 0, cell_size_x, costmap_, start_x, start_y, size_x_, cell_size_x,
+    local_map, 0, 0, cell_size_x, costmap_,
+    static_cast<unsigned int>(start_x), static_cast<unsigned int>(start_y),
+    size_x_, cell_size_x,
     cell_size_y);
 
   // make sure to clean up

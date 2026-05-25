@@ -63,7 +63,7 @@ void PathAlignCritic::score(CriticData & data)
     }
   }
 
-  const size_t batch_size = data.trajectories.x.rows();
+  const Eigen::Index batch_size = data.trajectories.x.rows();
   Eigen::ArrayXf cost(data.costs.rows());
   cost.setZero();
 
@@ -84,9 +84,10 @@ void PathAlignCritic::score(CriticData & data)
 
   // Finish populating the path vector
   auto & final_pose = path[path_segments_count - 1];
-  final_pose.x = data.path.x(path_segments_count - 1);
-  final_pose.y = data.path.y(path_segments_count - 1);
-  final_pose.theta = data.path.yaws(path_segments_count - 1);
+  const Eigen::Index final_path_idx = static_cast<Eigen::Index>(path_segments_count - 1);
+  final_pose.x = data.path.x(final_path_idx);
+  final_pose.y = data.path.y(final_path_idx);
+  final_pose.theta = data.path.yaws(final_path_idx);
 
   float summed_path_dist = 0.0f, dyaw = 0.0f;
   unsigned int num_samples = 0u;
@@ -95,7 +96,7 @@ void PathAlignCritic::score(CriticData & data)
 
   int strided_traj_rows = data.trajectories.x.rows();
   int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
-  int outer_stride = strided_traj_rows * trajectory_point_step_;
+  int outer_stride = strided_traj_rows * static_cast<int>(trajectory_point_step_);
   // Get strided trajectory information
   const auto T_x = Eigen::Map<const Eigen::ArrayXXf, 0,
       Eigen::Stride<-1, -1>>(
@@ -111,7 +112,7 @@ void PathAlignCritic::score(CriticData & data)
     Eigen::Stride<-1, -1>(outer_stride, 1));
   const auto traj_sampled_size = T_x.cols();
 
-  for (size_t t = 0; t < batch_size; ++t) {
+  for (Eigen::Index t = 0; t < batch_size; ++t) {
     summed_path_dist = 0.0f;
     num_samples = 0u;
     traj_integrated_distance = 0.0f;

@@ -449,8 +449,8 @@ void TestNode::testFullMask(
 {
   const int min_i = 0;
   const int min_j = 0;
-  const int max_i = width_ + 4;
-  const int max_j = height_ + 4;
+  const int max_i = static_cast<int>(width_) + 4;
+  const int max_j = static_cast<int>(height_) + 4;
 
   geometry_msgs::msg::Pose pose;
   nav2_msgs::msg::SpeedLimit::ConstSharedPtr speed_limit;
@@ -503,8 +503,8 @@ void TestNode::testSimpleMask(
 {
   const int min_i = 0;
   const int min_j = 0;
-  const int max_i = width_ + 4;
-  const int max_j = height_ + 4;
+  const int max_i = static_cast<int>(width_) + 4;
+  const int max_j = static_cast<int>(height_) + 4;
 
   geometry_msgs::msg::Pose pose;
   nav2_msgs::msg::SpeedLimit::ConstSharedPtr speed_limit;
@@ -562,8 +562,8 @@ void TestNode::testOutOfMask(uint8_t type, double base, double multiplier)
 {
   const int min_i = 0;
   const int min_j = 0;
-  const int max_i = width_ + 4;
-  const int max_j = height_ + 4;
+  const int max_i = static_cast<int>(width_) + 4;
+  const int max_j = static_cast<int>(height_) + 4;
 
   geometry_msgs::msg::Pose pose;
   nav2_msgs::msg::SpeedLimit::ConstSharedPtr old_speed_limit, speed_limit;
@@ -594,8 +594,8 @@ void TestNode::testIncorrectLimits(uint8_t type, double base, double multiplier)
 {
   const int min_i = 0;
   const int min_j = 0;
-  const int max_i = width_ + 4;
-  const int max_j = height_ + 4;
+  const int max_i = static_cast<int>(width_) + 4;
+  const int max_j = static_cast<int>(height_) + 4;
 
   geometry_msgs::msg::Pose pose;
   nav2_msgs::msg::SpeedLimit::ConstSharedPtr speed_limit;

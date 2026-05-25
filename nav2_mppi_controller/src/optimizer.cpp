@@ -491,13 +491,13 @@ void Optimizer::integrateStateVelocities(
   auto traj_y = trajectory.col(1);
   auto traj_yaws = trajectory.col(2);
 
-  const size_t n_size = traj_yaws.size();
+  const Eigen::Index n_size = traj_yaws.size();
   if (n_size == 0) {
     return;
   }
 
   float last_yaw = initial_yaw;
-  for (size_t i = 0; i != n_size; i++) {
+  for (Eigen::Index i = 0; i != n_size; i++) {
     last_yaw += wz(i) * settings_.model_dt;
     traj_yaws(i) = last_yaw;
   }
@@ -520,7 +520,7 @@ void Optimizer::integrateStateVelocities(
 
   float last_x = state_.pose.pose.position.x;
   float last_y = state_.pose.pose.position.y;
-  for (size_t i = 0; i != n_size; i++) {
+  for (Eigen::Index i = 0; i != n_size; i++) {
     last_x += dx(i) * settings_.model_dt;
     last_y += dy(i) * settings_.model_dt;
     traj_x(i) = last_x;
@@ -533,10 +533,10 @@ void Optimizer::integrateStateVelocities(
   const models::State & state) const
 {
   auto initial_yaw = static_cast<float>(tf2::getYaw(state.pose.pose.orientation));
-  const size_t n_cols = trajectories.yaws.cols();
+  const Eigen::Index n_cols = trajectories.yaws.cols();
 
   Eigen::ArrayXf last_yaws = Eigen::ArrayXf::Constant(trajectories.yaws.rows(), initial_yaw);
-  for (size_t i = 0; i != n_cols; i++) {
+  for (Eigen::Index i = 0; i != n_cols; i++) {
     last_yaws += state.wz.col(i) * settings_.model_dt;
     trajectories.yaws.col(i) = last_yaws;
   }
@@ -563,7 +563,7 @@ void Optimizer::integrateStateVelocities(
     trajectories.y.rows(),
     state.pose.pose.position.y);
 
-  for (size_t i = 0; i != n_cols; i++) {
+  for (Eigen::Index i = 0; i != n_cols; i++) {
     last_x += dx.col(i) * settings_.model_dt;
     last_y += dy.col(i) * settings_.model_dt;
     trajectories.x.col(i) = last_x;

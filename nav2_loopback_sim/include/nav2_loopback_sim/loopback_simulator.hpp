@@ -159,7 +159,7 @@ protected:
    * @param num_samples Number of ray samples
    * @param scan_msg Output scan message to populate
    */
-  void getLaserScan(int num_samples, sensor_msgs::msg::LaserScan & scan_msg);
+  void getLaserScan(size_t num_samples, sensor_msgs::msg::LaserScan & scan_msg);
 
   /**
    * @brief Add a yaw rotation to a quaternion

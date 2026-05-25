@@ -93,7 +93,7 @@ bool CostmapSource::getData(
 
   for (unsigned int y = 0; y < meta.size_y; ++y) {
     for (unsigned int x = 0; x < meta.size_x; ++x) {
-      const int idx = y * meta.size_x + x;
+      const unsigned int idx = y * meta.size_x + x;
       const uint8_t cell_cost = cm.data[idx];
       const bool is_obstacle =
         (cell_cost >= cost_threshold_ && cell_cost < nav2_costmap_2d::NO_INFORMATION) ||

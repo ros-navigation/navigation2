@@ -57,17 +57,17 @@ inline int sign(int x)
  */
 template<class ActionType>
 inline void bresenham2D(
-  ActionType at, unsigned int abs_da, unsigned int abs_db, int error_b,
+  ActionType at, unsigned int abs_da, unsigned int abs_db, unsigned int error_b,
   int offset_a, int offset_b, unsigned int offset,
   unsigned int max_length)
 {
   unsigned int end = std::min(max_length, abs_da);
   for (unsigned int i = 0; i < end; ++i) {
     at(offset);
-    offset += offset_a;
+    offset += static_cast<unsigned int>(offset_a);
     error_b += abs_db;
-    if ((unsigned int)error_b >= abs_da) {
-      offset += offset_b;
+    if (error_b >= abs_da) {
+      offset += static_cast<unsigned int>(offset_b);
       error_b -= abs_da;
     }
   }
@@ -92,8 +92,8 @@ inline void raytraceLine(
   unsigned int y1, unsigned int step_x,
   unsigned int max_length = UINT_MAX, unsigned int min_length = 0)
 {
-  int dx_full = x1 - x0;
-  int dy_full = y1 - y0;
+  int dx_full = static_cast<int>(x1 - x0);
+  int dy_full = static_cast<int>(y1 - y0);
 
   // we need to chose how much to scale our dominant dimension,
   // based on the maximum length of the line
@@ -115,19 +115,19 @@ inline void raytraceLine(
   }
   unsigned int offset = min_y0 * step_x + min_x0;
 
-  int dx = x1 - min_x0;
-  int dy = y1 - min_y0;
+  int dx = static_cast<int>(x1 - min_x0);
+  int dy = static_cast<int>(y1 - min_y0);
 
-  unsigned int abs_dx = abs(dx);
-  unsigned int abs_dy = abs(dy);
+  unsigned int abs_dx = static_cast<unsigned int>(abs(dx));
+  unsigned int abs_dy = static_cast<unsigned int>(abs(dy));
 
   int offset_dx = sign(dx);
-  int offset_dy = sign(dy) * step_x;
+  int offset_dy = sign(dy) * static_cast<int>(step_x);
 
   double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
   // if x is dominant
   if (abs_dx >= abs_dy) {
-    int error_y = abs_dx / 2;
+    unsigned int error_y = abs_dx / 2;
 
     bresenham2D(
       at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset, (unsigned int)(scale * abs_dx));
@@ -135,7 +135,7 @@ inline void raytraceLine(
   }
 
   // otherwise y is dominant
-  int error_x = abs_dy / 2;
+  unsigned int error_x = abs_dy / 2;
 
   bresenham2D(
     at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset, (unsigned int)(scale * abs_dy));

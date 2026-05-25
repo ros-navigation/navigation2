@@ -72,7 +72,8 @@ float ObstaclesCritic::findCircumscribedCost(
 {
   double result = -1.0;
   const double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
-  if (static_cast<float>(circum_radius) == circumscribed_radius_) {
+  const float f_circum = static_cast<float>(circum_radius);
+  if (f_circum == circumscribed_radius_) {
     // early return if footprint size is unchanged
     return circumscribed_cost_;
   }
@@ -96,7 +97,7 @@ float ObstaclesCritic::findCircumscribedCost(
       "significantly slow down planning times and not avoid anything but absolute collisions!");
   }
 
-  circumscribed_radius_ = static_cast<float>(circum_radius);
+  circumscribed_radius_ = f_circum;
   circumscribed_cost_ = static_cast<float>(result);
 
   return circumscribed_cost_;
@@ -231,7 +232,7 @@ CollisionCost ObstaclesCritic::costAtPose(float x, float y, float theta)
     cost = nav2_costmap_2d::NO_INFORMATION;
     return collision_cost;
   }
-  cost = collision_checker_.pointCost(x_i, y_i);
+  cost = collision_checker_.pointCost(static_cast<int>(x_i), static_cast<int>(y_i));
 
   if (consider_footprint_ &&
     (cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))

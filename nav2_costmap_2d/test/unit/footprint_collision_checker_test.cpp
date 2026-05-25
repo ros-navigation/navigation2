@@ -73,14 +73,14 @@ TEST(collision_footprint, test_world_to_map)
 
   collision_checker.worldToMap(1.0, 1.0, x, y);
 
-  auto value = collision_checker.pointCost(x, y);
+  auto value = collision_checker.pointCost(static_cast<int>(x), static_cast<int>(y));
 
   EXPECT_NEAR(value, 0.0, 0.001);
 
   costmap_->setCost(50, 50, 200);
   collision_checker.worldToMap(5.0, 5.0, x, y);
 
-  EXPECT_NEAR(collision_checker.pointCost(x, y), 200.0, 0.001);
+  EXPECT_NEAR(collision_checker.pointCost(static_cast<int>(x), static_cast<int>(y)), 200.0, 0.001);
 }
 
 TEST(collision_footprint, test_footprint_at_pose_with_movement)

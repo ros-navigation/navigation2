@@ -73,8 +73,8 @@ void CostmapLayer::clearArea(int start_x, int start_y, int end_x, int end_y, boo
   setCurrent(false);
   unsigned char * grid = getCharMap();
 
-  int size_x = getSizeInCellsX();
-  int size_y = getSizeInCellsY();
+  int size_x = static_cast<int>(getSizeInCellsX());
+  int size_y = static_cast<int>(getSizeInCellsY());
 
   start_x = std::clamp(start_x, 0, size_x);
   start_y = std::clamp(start_y, 0, size_y);
@@ -88,7 +88,7 @@ void CostmapLayer::clearArea(int start_x, int start_y, int end_x, int end_y, boo
       if ((xrange && y > start_y && y < end_y) == invert) {
         continue;
       }
-      int index = getIndex(x, y);
+      unsigned int index = getIndex(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
       if (grid[index] != NO_INFORMATION) {
         grid[index] = NO_INFORMATION;
       }
@@ -135,7 +135,7 @@ void CostmapLayer::updateWithMax(
   unsigned int span = master_grid.getSizeInCellsX();
 
   for (int j = min_j; j < max_j; j++) {
-    unsigned int it = j * span + min_i;
+    unsigned int it = static_cast<unsigned int>(j) * span + static_cast<unsigned int>(min_i);
     for (int i = min_i; i < max_i; i++) {
       if (costmap_[it] == NO_INFORMATION) {
         it++;
@@ -164,7 +164,7 @@ void CostmapLayer::updateWithMaxWithoutUnknownOverwrite(
   unsigned int span = master_grid.getSizeInCellsX();
 
   for (int j = min_j; j < max_j; j++) {
-    unsigned int it = j * span + min_i;
+    unsigned int it = static_cast<unsigned int>(j) * span + static_cast<unsigned int>(min_i);
     for (int i = min_i; i < max_i; i++) {
       if (costmap_[it] == NO_INFORMATION) {
         it++;
@@ -198,7 +198,7 @@ void CostmapLayer::updateWithTrueOverwrite(
   unsigned int span = master_grid.getSizeInCellsX();
 
   for (int j = min_j; j < max_j; j++) {
-    unsigned int it = span * j + min_i;
+    unsigned int it = span * static_cast<unsigned int>(j) + static_cast<unsigned int>(min_i);
     for (int i = min_i; i < max_i; i++) {
       master[it] = costmap_[it];
       it++;
@@ -217,7 +217,7 @@ void CostmapLayer::updateWithOverwrite(
   unsigned int span = master_grid.getSizeInCellsX();
 
   for (int j = min_j; j < max_j; j++) {
-    unsigned int it = span * j + min_i;
+    unsigned int it = span * static_cast<unsigned int>(j) + static_cast<unsigned int>(min_i);
     for (int i = min_i; i < max_i; i++) {
       if (costmap_[it] != NO_INFORMATION) {
         master[it] = costmap_[it];
@@ -238,7 +238,7 @@ void CostmapLayer::updateWithAddition(
   unsigned int span = master_grid.getSizeInCellsX();
 
   for (int j = min_j; j < max_j; j++) {
-    unsigned int it = j * span + min_i;
+    unsigned int it = static_cast<unsigned int>(j) * span + static_cast<unsigned int>(min_i);
     for (int i = min_i; i < max_i; i++) {
       if (costmap_[it] == NO_INFORMATION) {
         it++;

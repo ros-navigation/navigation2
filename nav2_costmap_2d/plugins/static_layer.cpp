@@ -249,7 +249,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   // initialize the costmap with static data
   for (unsigned int i = 0; i < size_y; ++i) {
     for (unsigned int j = 0; j < size_x; ++j) {
-      unsigned char value = new_map.data[index];
+      unsigned char value = static_cast<unsigned char>(new_map.data[index]);
       costmap_[index] = interpretValue(value);
       ++index;
     }
@@ -320,9 +320,9 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (update->y < static_cast<int32_t>(y_) ||
-    y_ + height_ < update->y + update->height ||
+    y_ + height_ < static_cast<unsigned int>(update->y) + update->height ||
     update->x < static_cast<int32_t>(x_) ||
-    x_ + width_ < update->x + update->width)
+    x_ + width_ < static_cast<unsigned int>(update->x) + update->width)
   {
     RCLCPP_WARN(
       logger_,
@@ -345,10 +345,10 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
 
   unsigned int di = 0;
   for (unsigned int y = 0; y < update->height; y++) {
-    unsigned int index_base = (update->y + y) * size_x_;
+    unsigned int index_base = (static_cast<unsigned int>(update->y) + y) * size_x_;
     for (unsigned int x = 0; x < update->width; x++) {
-      unsigned int index = index_base + x + update->x;
-      costmap_[index] = interpretValue(update->data[di++]);
+      unsigned int index = index_base + x + static_cast<unsigned int>(update->x);
+      costmap_[index] = interpretValue(static_cast<unsigned char>(update->data[di++]));
     }
   }
 
@@ -486,16 +486,20 @@ StaticLayer::updateCosts(
     for (int i = min_i; i < max_i; ++i) {
       for (int j = min_j; j < max_j; ++j) {
         // Convert master_grid coordinates (i,j) into global_frame_(wx,wy) coordinates
-        layered_costmap_->getCostmap()->mapToWorld(i, j, wx, wy);
+        const unsigned int ui = static_cast<unsigned int>(i);
+        const unsigned int uj = static_cast<unsigned int>(j);
+        layered_costmap_->getCostmap()->mapToWorld(ui, uj, wx, wy);
         // Transform from global_frame_ to map_frame_
         tf2::Vector3 p(wx, wy, 0);
         p = tf2_transform * p;
         // Set master_grid with cell from map
         if (worldToMap(p.x(), p.y(), mx, my)) {
           if (!use_maximum_) {
-            master_grid.setCost(i, j, getCost(mx, my));
+            master_grid.setCost(ui, uj, getCost(mx, my));
           } else {
-            master_grid.setCost(i, j, std::max(getCost(mx, my), master_grid.getCost(i, j)));
+            master_grid.setCost(
+              ui, uj,
+              std::max(getCost(mx, my), master_grid.getCost(ui, uj)));
           }
         }
       }

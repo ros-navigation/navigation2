@@ -35,7 +35,7 @@ public:
    * @param depth The history depth for the QoS profile, default is 10
    */
   explicit
-  StandardTopicQoS(const int depth = 10)  // NOLINT
+  StandardTopicQoS(const size_t depth = 10)  // NOLINT
   : rclcpp::QoS(rclcpp::KeepLast(depth))
   {
     this->reliable();
@@ -55,7 +55,7 @@ public:
    * @param depth The history depth for the QoS profile, default is 1
    */
   explicit
-  LatchedPublisherQoS(const int depth = 1)  // NOLINT
+  LatchedPublisherQoS(const size_t depth = 1)  // NOLINT
   : rclcpp::QoS(rclcpp::KeepLast(depth))
   {
     this->reliable();
@@ -75,7 +75,7 @@ public:
    * @param depth The history depth for the QoS profile, default is 10
    */
   explicit
-  LatchedSubscriptionQoS(const int depth = 10)  // NOLINT
+  LatchedSubscriptionQoS(const size_t depth = 10)  // NOLINT
   : rclcpp::QoS(rclcpp::KeepLast(depth))
   {
     this->reliable();
@@ -95,7 +95,7 @@ public:
    * @param depth The history depth for the QoS profile, default is 10
    */
   explicit
-  SensorDataQoS(const int depth = 10)  // NOLINT
+  SensorDataQoS(const size_t depth = 10)  // NOLINT
   : rclcpp::QoS(rclcpp::KeepLast(depth))
   {
     this->best_effort();

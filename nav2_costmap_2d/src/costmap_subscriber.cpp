@@ -78,7 +78,7 @@ void CostmapSubscriber::costmapUpdateCallback(
         update_msg->x;
 
       std::copy_n(
-        update_msg->data.begin() + (y * update_msg->size_x),
+        update_msg->data.begin() + static_cast<std::ptrdiff_t>(y * update_msg->size_x),
         update_msg->size_x, &master_array[starting_index_of_row_update_in_costmap]);
     }
   } else {

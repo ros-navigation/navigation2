@@ -384,9 +384,9 @@ TEST_F(TestNode, testRaytracing) {
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
   // printMap(*(layers.getCostmap()));
 
-  int lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
+  unsigned int lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
 
-  ASSERT_EQ(lethal_count, 1);
+  ASSERT_EQ(lethal_count, 1u);
 
   addObservation(olayer, 1.0, 1.0, MAX_Z / 2, 0, 0, MAX_Z / 2, true, true, 100.0, 5.0, 100.0, 5.0);
 
@@ -397,7 +397,7 @@ TEST_F(TestNode, testRaytracing) {
   // New observation should not be recorded as min_range is higher than obstacle range
   lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
 
-  ASSERT_EQ(lethal_count, 1);
+  ASSERT_EQ(lethal_count, 1u);
 }
 
 /**
@@ -603,9 +603,9 @@ TEST_F(TestNode, testMaxCombinationMethod) {
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
   // printMap(*(layers.getCostmap()));
 
-  int unknown_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::NO_INFORMATION);
+  unsigned int unknown_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::NO_INFORMATION);
 
-  ASSERT_EQ(unknown_count, 99);
+  ASSERT_EQ(unknown_count, 99u);
 }
 
 class TestNodeWithoutUnknownOverwrite : public ::testing::Test
@@ -650,9 +650,9 @@ TEST_F(TestNodeWithoutUnknownOverwrite, testMaxWithoutUnknownOverwriteCombinatio
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
   // printMap(*(layers.getCostmap()));
 
-  int unknown_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::NO_INFORMATION);
+  unsigned int unknown_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::NO_INFORMATION);
 
-  ASSERT_EQ(unknown_count, 100);
+  ASSERT_EQ(unknown_count, 100u);
 }
 
 int main(int argc, char ** argv)

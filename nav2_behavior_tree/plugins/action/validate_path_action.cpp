@@ -79,8 +79,11 @@ BT::NodeStatus ValidatePath::on_completion(
         ss << ", ";
       }
       // Add the collision pose if index is valid
-      if (idx >= 0 && static_cast<size_t>(idx) < path_.poses.size()) {
-        collision_poses.push_back(path_.poses[idx]);
+      if (idx >= 0) {
+        const size_t sidx = static_cast<size_t>(idx);
+        if (sidx < path_.poses.size()) {
+          collision_poses.push_back(path_.poses[sidx]);
+        }
       }
     }
     ss << "]";

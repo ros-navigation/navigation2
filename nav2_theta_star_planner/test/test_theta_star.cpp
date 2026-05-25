@@ -43,7 +43,7 @@ public:
 
   void uinitializePosn(int size_inc = 0)
   {
-    node_position_.reserve(size_x_ * size_y_); initializePosn(size_inc);
+    node_position_.reserve(static_cast<unsigned int>(size_x_ * size_y_)); initializePosn(size_inc);
   }
 
   void uaddIndex(const int & cx, const int & cy) {addIndex(cx, cy, &nodes_data_[0]);}
@@ -52,7 +52,7 @@ public:
 
   tree_node * test_getIndex() {return &nodes_data_[0];}
 
-  void uaddToNodesData(const int & id) {addToNodesData(id);}
+  void uaddToNodesData(const unsigned int & id) {addToNodesData(id);}
 
   void uresetContainers() {nodes_data_.clear(); resetContainers();}
 
@@ -77,8 +77,8 @@ TEST(ThetaStarTest, test_theta_star) {
   auto params = param_handler->getParams();
   auto planner_ = std::make_unique<test_theta_star>(params);
   planner_->costmap_ = new nav2_costmap_2d::Costmap2D(50, 50, 1.0, 0.0, 0.0, 0);
-  for (int i = 7; i <= 14; i++) {
-    for (int j = 7; j <= 14; j++) {
+  for (unsigned int i = 7; i <= 14; i++) {
+    for (unsigned int j = 7; j <= 14; j++) {
       planner_->costmap_->setCost(i, j, 253);
     }
   }
@@ -175,8 +175,8 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
   EXPECT_GT(static_cast<int>(path.poses.size()), 0);
 
   // test if the goal is unsafe
-  for (int i = 7; i <= 14; i++) {
-    for (int j = 7; j <= 14; j++) {
+  for (unsigned int i = 7; i <= 14; i++) {
+    for (unsigned int j = 7; j <= 14; j++) {
       costmap_ros->getCostmap()->setCost(i, j, 254);
     }
   }

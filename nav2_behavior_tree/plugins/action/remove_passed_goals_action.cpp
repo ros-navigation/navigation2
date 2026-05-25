@@ -90,7 +90,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
         RCLCPP_ERROR_ONCE(node_->get_logger(), "Failed to find matching goal in waypoint_statuses");
         return BT::NodeStatus::FAILURE;
       }
-      waypoint_statuses[cur_waypoint_index].waypoint_status =
+      waypoint_statuses[static_cast<size_t>(cur_waypoint_index)].waypoint_status =
         nav2_msgs::msg::WaypointStatus::COMPLETED;
     }
 

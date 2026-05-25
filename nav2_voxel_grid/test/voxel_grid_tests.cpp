@@ -38,19 +38,19 @@
 #include <gtest/gtest.h>
 
 TEST(voxel_grid, basicMarkingAndClearing) {
-  int size_x = 50, size_y = 10, size_z = 16;
+  unsigned int size_x = 50, size_y = 10, size_z = 16;
   nav2_voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
 
   // Put a "tabletop" into the scene.  A flat rectangle of set voxels at z = 12.
-  int table_z = 12;
-  int table_x_min = 5, table_x_max = 15;
-  int table_y_min = 0, table_y_max = 3;
-  for (int x = table_x_min; x <= table_x_max; x++) {
+  unsigned int table_z = 12;
+  unsigned int table_x_min = 5, table_x_max = 15;
+  unsigned int table_y_min = 0, table_y_max = 3;
+  for (unsigned int x = table_x_min; x <= table_x_max; x++) {
     vg.markVoxelLine(x, table_y_min, table_z, x, table_y_max, table_z);
   }
 
-  for (int i = table_x_min; i <= table_x_max; ++i) {
-    for (int j = table_y_min; j <= table_y_max; ++j) {
+  for (unsigned int i = table_x_min; i <= table_x_max; ++i) {
+    for (unsigned int j = table_y_min; j <= table_y_max; ++j) {
       // check that each cell of the table is marked
       ASSERT_EQ(nav2_voxel_grid::MARKED, vg.getVoxel(i, j, table_z));
     }
@@ -138,8 +138,8 @@ TEST(voxel_grid, basicMarkingAndClearing) {
 }
 
 TEST(voxel_grid, InvalidSize) {
-  int size_x = 50, size_y = 10, size_z = 17;
-  int test_z = 16;
+  unsigned int size_x = 50, size_y = 10, size_z = 17;
+  unsigned int test_z = 16;
   nav2_voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
   vg.resize(size_x, size_y, test_z);
   vg.resize(size_x, size_y, size_z);
@@ -148,7 +148,7 @@ TEST(voxel_grid, InvalidSize) {
 }
 
 TEST(voxel_grid, MarkAndClear) {
-  int size_x = 10, size_y = 10, size_z = 10;
+  unsigned int size_x = 10, size_y = 10, size_z = 10;
   nav2_voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
   vg.markVoxelInMap(5, 5, 5, 0);
   EXPECT_EQ(vg.getVoxel(5, 5, 5), nav2_voxel_grid::MARKED);
@@ -157,7 +157,7 @@ TEST(voxel_grid, MarkAndClear) {
 }
 
 TEST(voxel_grid, clearVoxelLineInMap) {
-  int size_x = 10, size_y = 10, size_z = 10;
+  unsigned int size_x = 10, size_y = 10, size_z = 10;
   nav2_voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
   vg.markVoxelInMap(0, 0, 5, 0);
   EXPECT_EQ(vg.getVoxel(0, 0, 5), nav2_voxel_grid::MARKED);

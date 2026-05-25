@@ -1341,8 +1341,8 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 
   // Send the goal poses
   waypoint_follower_goal_.poses = poses;
-  waypoint_follower_goal_.goal_index = goal_index_;
-  waypoint_follower_goal_.number_of_loops = stoi(loop_no_);
+  waypoint_follower_goal_.goal_index = static_cast<unsigned int>(goal_index_);
+  waypoint_follower_goal_.number_of_loops = static_cast<unsigned int>(stoi(loop_no_));
 
   RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",
@@ -1363,7 +1363,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   send_goal_options.feedback_callback = [this](
     WaypointFollowerGoalHandle::SharedPtr /*goal_handle*/,
     const std::shared_ptr<const nav2_msgs::action::FollowWaypoints::Feedback> feedback) {
-      goal_index_ = feedback->current_waypoint;
+      goal_index_ = static_cast<int>(feedback->current_waypoint);
     };
 
   auto future_goal_handle =

@@ -297,8 +297,10 @@ bool PlannerTester::defaultPlannerRandomTests(
   std::mt19937 generator(random_device());
 
   // Obtain random positions within map
-  std::uniform_int_distribution<> distribution_x(1, costmap_->get_properties().size_x - 1);
-  std::uniform_int_distribution<> distribution_y(1, costmap_->get_properties().size_y - 1);
+  std::uniform_int_distribution<> distribution_x(1,
+    static_cast<int>(costmap_->get_properties().size_x - 1));
+  std::uniform_int_distribution<> distribution_y(1,
+    static_cast<int>(costmap_->get_properties().size_y - 1));
 
   auto generate_random = [&]() mutable -> std::pair<int, int> {
       bool point_is_free = false;
@@ -306,7 +308,8 @@ bool PlannerTester::defaultPlannerRandomTests(
       while (!point_is_free) {
         x = distribution_x(generator);
         y = distribution_y(generator);
-        point_is_free = costmap_->is_free(x, y);
+        point_is_free = costmap_->is_free(static_cast<unsigned int>(x),
+          static_cast<unsigned int>(y));
       }
       return std::make_pair(x, y);
     };

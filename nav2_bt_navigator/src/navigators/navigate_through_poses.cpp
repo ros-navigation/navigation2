@@ -58,7 +58,7 @@ NavigateThroughPosesNavigator::configure(
 
   bt_action_server_->setGrootMonitoring(
     enable_groot_monitoring,
-    groot_server_port);
+    static_cast<unsigned>(groot_server_port));
 
   return true;
 }

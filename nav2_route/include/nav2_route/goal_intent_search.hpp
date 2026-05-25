@@ -246,9 +246,11 @@ public:
   */
   bool isInCollision()
   {
-    nav2_util::LineIterator iter(x0_, y0_, x1_, y1_);
+    nav2_util::LineIterator iter(
+      static_cast<int>(x0_), static_cast<int>(y0_), static_cast<int>(x1_), static_cast<int>(y1_));
     for (; iter.isValid(); iter.advance()) {
-      float cost = static_cast<float>(costmap_->getCost(iter.getX(), iter.getY()));
+      float cost = static_cast<float>(costmap_->getCost(
+        static_cast<unsigned int>(iter.getX()), static_cast<unsigned int>(iter.getY())));
       if (cost >= 253.0f && cost != 255.0 /*unknown*/) {
         return true;
       }

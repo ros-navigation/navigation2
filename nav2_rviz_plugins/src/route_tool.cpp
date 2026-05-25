@@ -122,8 +122,8 @@ void RouteTool::on_create_button_clicked(void)
     RCLCPP_INFO(node_->get_logger(), "Adding node at: (%f, %f)", longitude, latitude);
     update_route_graph();
   } else if (ui_->add_edge_button->isChecked()) {
-    auto start_node = ui_->add_field_1->toPlainText().toInt();
-    auto end_node = ui_->add_field_2->toPlainText().toInt();
+    unsigned int start_node = static_cast<unsigned int>(ui_->add_field_1->toPlainText().toInt());
+    unsigned int end_node = static_cast<unsigned int>(ui_->add_field_2->toPlainText().toInt());
     nav2_route::EdgeCost edge_cost;
     graph_[graph_to_id_map_[start_node]].addEdge(
       edge_cost, &(graph_[graph_to_id_map_[end_node]]),
@@ -146,7 +146,7 @@ void RouteTool::on_confirm_button_clicked(void)
   if (ui_->edit_id->toPlainText() == "" || ui_->edit_field_1->toPlainText() == "" ||
     ui_->edit_field_2->toPlainText() == "") {return;}
   if (ui_->edit_node_button->isChecked()) {
-    auto node_id = ui_->edit_id->toPlainText().toInt();
+    unsigned int node_id = static_cast<unsigned int>(ui_->edit_id->toPlainText().toInt());
     auto new_longitude = ui_->edit_field_1->toPlainText().toFloat();
     auto new_latitude = ui_->edit_field_2->toPlainText().toFloat();
     if (graph_to_id_map_.find(node_id) != graph_to_id_map_.end()) {
@@ -156,8 +156,8 @@ void RouteTool::on_confirm_button_clicked(void)
     }
   } else if (ui_->edit_edge_button->isChecked()) {
     auto edge_id = (unsigned int) ui_->edit_id->toPlainText().toInt();
-    auto new_start = ui_->edit_field_1->toPlainText().toInt();
-    auto new_end = ui_->edit_field_2->toPlainText().toInt();
+    unsigned int new_start = static_cast<unsigned int>(ui_->edit_field_1->toPlainText().toInt());
+    unsigned int new_end = static_cast<unsigned int>(ui_->edit_field_2->toPlainText().toInt());
     // Find and remove current edge
     auto current_start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
     for (auto itr = current_start_node->neighbors.begin();
@@ -190,7 +190,7 @@ void RouteTool::on_delete_button_clicked(void)
 {
   if (ui_->remove_id->toPlainText() == "") {return;}
   if (ui_->remove_node_button->isChecked()) {
-    unsigned int node_id = ui_->remove_id->toPlainText().toInt();
+    unsigned int node_id = static_cast<unsigned int>(ui_->remove_id->toPlainText().toInt());
     // Remove edges pointing to the removed node
     for (auto edge_id : graph_to_incoming_edges_map_[node_id]) {
       auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];

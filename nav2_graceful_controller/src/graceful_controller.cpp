@@ -221,8 +221,9 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       //  * Be as far away as possible from the robot (for smoothness)
       //  * But no further than the max_lookahed_ distance
       //  * Be feasible to reach in a collision free manner
-      dist_to_target = target_distances[i];
-      target_pose = transformed_plan.poses[i];
+      const size_t si = static_cast<size_t>(i);
+      dist_to_target = target_distances[si];
+      target_pose = transformed_plan.poses[si];
     }
 
     // Compute velocity at this moment if valid target pose is found
@@ -462,7 +463,8 @@ double GracefulController::getMaxCost(
     if (costmap_ros_->getCostmap()->worldToMap(costmap_pose.pose.position.x,
         costmap_pose.pose.position.y, mx, my))
     {
-      max_cost = std::max(max_cost, collision_checker_->pointCost(mx, my));
+      max_cost = std::max(max_cost,
+          collision_checker_->pointCost(static_cast<int>(mx), static_cast<int>(my)));
     }
   }
 
@@ -503,7 +505,7 @@ bool GracefulController::inCollision(
     }
     footprint_cost = collision_checker_->footprintCostAtPose(x, y, theta, spec);
   } else {
-    footprint_cost = collision_checker_->pointCost(mx, my);
+    footprint_cost = collision_checker_->pointCost(static_cast<int>(mx), static_cast<int>(my));
   }
 
   switch (static_cast<unsigned char>(footprint_cost)) {

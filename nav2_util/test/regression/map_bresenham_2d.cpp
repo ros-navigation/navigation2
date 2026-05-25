@@ -56,7 +56,7 @@ public:
     map_[off] = mark_val_;
   }
 
-  inline unsigned int get(unsigned int off)
+  inline char get(unsigned int off)
   {
     return map_[off];
   }

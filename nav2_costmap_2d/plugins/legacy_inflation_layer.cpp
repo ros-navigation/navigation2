@@ -223,10 +223,11 @@ LegacyInflationLayer::updateCosts(
   const int base_min_j = min_j;
   const int base_max_i = max_i;
   const int base_max_j = max_j;
-  min_i -= static_cast<int>(cell_inflation_radius_);
-  min_j -= static_cast<int>(cell_inflation_radius_);
-  max_i += static_cast<int>(cell_inflation_radius_);
-  max_j += static_cast<int>(cell_inflation_radius_);
+  const int ir = static_cast<int>(cell_inflation_radius_);
+  min_i -= ir;
+  min_j -= ir;
+  max_i += ir;
+  max_j += ir;
 
   min_i = std::max(0, min_i);
   min_j = std::max(0, min_j);
@@ -243,7 +244,8 @@ LegacyInflationLayer::updateCosts(
   obs_bin.reserve(200);
   for (int j = min_j; j < max_j; j++) {
     for (int i = min_i; i < max_i; i++) {
-      int index = static_cast<int>(master_grid.getIndex(i, j));
+      int index = static_cast<int>(master_grid.getIndex(static_cast<unsigned int>(i),
+          static_cast<unsigned int>(j)));
       unsigned char cost = master_array[index];
       if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
         obs_bin.emplace_back(i, j, i, j);
@@ -280,10 +282,12 @@ LegacyInflationLayer::updateCosts(
       // In order to avoid artifacts appeared out of boundary areas
       // when some layer is going after inflation_layer,
       // we need to apply inflation_layer only to inside of given bounds
-      if (static_cast<int>(mx) >= base_min_i &&
-        static_cast<int>(my) >= base_min_j &&
-        static_cast<int>(mx) < base_max_i &&
-        static_cast<int>(my) < base_max_j)
+      const int imx = static_cast<int>(mx);
+      const int imy = static_cast<int>(my);
+      if (imx >= base_min_i &&
+        imy >= base_min_j &&
+        imx < base_max_i &&
+        imy < base_max_j)
       {
         if (old_cost == NO_INFORMATION &&
           (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
@@ -345,7 +349,7 @@ LegacyInflationLayer::enqueue(
 
     // push the cell data onto the inflation list and mark
     const auto dist = distance_matrix_[mx - src_x + r][my - src_y + r];
-    inflation_cells_[dist].emplace_back(mx, my, src_x, src_y);
+    inflation_cells_[static_cast<size_t>(dist)].emplace_back(mx, my, src_x, src_y);
   }
 }
 
@@ -381,13 +385,13 @@ LegacyInflationLayer::computeCaches()
 
   int max_dist = generateIntegerDistances();
   inflation_cells_.clear();
-  inflation_cells_.resize(max_dist + 1);
+  inflation_cells_.resize(static_cast<size_t>(max_dist + 1));
 }
 
 int
 LegacyInflationLayer::generateIntegerDistances()
 {
-  const int r = cell_inflation_radius_ + 2;
+  const int r = static_cast<int>(cell_inflation_radius_) + 2;
   const int size = r * 2 + 1;
 
   std::vector<std::pair<int, int>> points;
@@ -407,7 +411,9 @@ LegacyInflationLayer::generateIntegerDistances()
     }
   );
 
-  std::vector<std::vector<int>> distance_matrix(size, std::vector<int>(size, 0));
+  const size_t usize = static_cast<size_t>(size);
+  std::vector<std::vector<int>> distance_matrix(
+    usize, std::vector<int>(usize, 0));
   std::pair<int, int> last = {0, 0};
   int level = 0;
   for (auto const & p : points) {
@@ -416,7 +422,7 @@ LegacyInflationLayer::generateIntegerDistances()
     {
       level++;
     }
-    distance_matrix[p.first + r][p.second + r] = level;
+    distance_matrix[static_cast<size_t>(p.first + r)][static_cast<size_t>(p.second + r)] = level;
     last = p;
   }
 

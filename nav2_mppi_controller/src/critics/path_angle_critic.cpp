@@ -70,9 +70,10 @@ void PathAngleCritic::score(CriticData & data)
     *data.furthest_reached_path_point + offset_from_furthest_,
     static_cast<size_t>(data.path.x.size()) - 1);
 
-  const float goal_x = data.path.x(offsetted_idx);
-  const float goal_y = data.path.y(offsetted_idx);
-  const float goal_yaw = data.path.yaws(offsetted_idx);
+  const Eigen::Index path_idx = static_cast<Eigen::Index>(offsetted_idx);
+  const float goal_x = data.path.x(path_idx);
+  const float goal_y = data.path.y(path_idx);
+  const float goal_yaw = data.path.yaws(path_idx);
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
 
   switch (mode_) {

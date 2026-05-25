@@ -95,7 +95,7 @@ bool RouteTracker::nodeAchieved(
     const double ny = state.next_node->coords.y - last_node->coords.y;
     const double n_mag = std::sqrt(nx * nx + ny * ny);
 
-    NodePtr future_next_node = route.edges[state.route_edges_idx + 1]->end;
+    NodePtr future_next_node = route.edges[static_cast<size_t>(state.route_edges_idx + 1)]->end;
     const double mx = future_next_node->coords.x - state.next_node->coords.x;
     const double my = future_next_node->coords.y - state.next_node->coords.y;
     const double m_mag = std::sqrt(mx * mx + my * my);
@@ -189,7 +189,7 @@ TrackerResult RouteTracker::trackRoute(
       state.within_radius = false;
       state.last_node = state.next_node;
       if (++state.route_edges_idx < static_cast<int>(route.edges.size())) {
-        state.current_edge = route.edges[state.route_edges_idx];
+        state.current_edge = route.edges[static_cast<size_t>(state.route_edges_idx)];
         state.next_node = state.current_edge->end;
       } else {  // At achieved the last node in the route
         state.current_edge = nullptr;

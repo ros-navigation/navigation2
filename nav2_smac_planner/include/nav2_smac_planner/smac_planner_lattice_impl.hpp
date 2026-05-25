@@ -167,7 +167,7 @@ void SmacPlannerLatticeT<NodeT>::configure(
     _coarse_search_resolution = 1;
   }
 
-  if (_metadata.number_of_headings % _coarse_search_resolution != 0) {
+  if (_metadata.number_of_headings % static_cast<unsigned int>(_coarse_search_resolution) != 0) {
     std::string error_msg = "coarse iteration should be an increment of"
       " the number of angular bins configured";
     throw nav2_core::PlannerException(error_msg);
@@ -439,9 +439,10 @@ nav_msgs::msg::Path SmacPlannerLatticeT<NodeT>::createPlan(
   // Convert to world coordinates
   plan.poses.reserve(path.size());
   geometry_msgs::msg::PoseStamped last_pose = pose;
-  for (int i = path.size() - 1; i >= 0; --i) {
-    pose.pose = getWorldCoords(path[i].x, path[i].y, _costmap);
-    pose.pose.orientation = getWorldOrientation(path[i].theta);
+  for (int i = static_cast<int>(path.size()) - 1; i >= 0; --i) {
+    const auto & p = path[static_cast<size_t>(i)];
+    pose.pose = getWorldCoords(p.x, p.y, _costmap);
+    pose.pose.orientation = getWorldOrientation(p.theta);
     if (fabs(pose.pose.position.x - last_pose.pose.position.x) < 1e-4 &&
       fabs(pose.pose.position.y - last_pose.pose.position.y) < 1e-4 &&
       fabs(tf2::getYaw(pose.pose.orientation) - tf2::getYaw(last_pose.pose.orientation)) < 1e-4)
@@ -586,7 +587,9 @@ SmacPlannerLatticeT<NodeT>::validateParameterUpdatesCallback(
       if (param_name == _name + ".lattice_filepath") {
         LatticeMetadata metadata =
           LatticeMotionTable::getLatticeMetadata(parameter.as_string());
-        if (metadata.number_of_headings % _coarse_search_resolution != 0) {
+        if (metadata.number_of_headings % static_cast<unsigned int>(_coarse_search_resolution) !=
+          0)
+        {
           RCLCPP_WARN(
             _logger,
             "coarse iteration should be an increment of the number "

@@ -264,10 +264,10 @@ void Tester::addObstacleCells(
     const auto size_x_int = static_cast<int>(size_x);
     const auto size_y_int = static_cast<int>(size_y);
 
-    min_x = std::max(0, x_int - (width_int / 2));
-    max_x = std::min(size_x_int - 1, x_int + (width_int / 2));
-    min_y = std::max(0, y_int - (height_int / 2));
-    max_y = std::min(size_y_int - 1, y_int + (height_int / 2));
+    min_x = static_cast<unsigned int>(std::max(0, x_int - (width_int / 2)));
+    max_x = static_cast<unsigned int>(std::min(size_x_int - 1, x_int + (width_int / 2)));
+    min_y = static_cast<unsigned int>(std::max(0, y_int - (height_int / 2)));
+    max_y = static_cast<unsigned int>(std::min(size_y_int - 1, y_int + (height_int / 2)));
   }
 
   RCLCPP_DEBUG_STREAM(tester_node_->get_logger(), "Bounding values for reference:"

@@ -183,7 +183,9 @@ bool CollisionMonitor::backoutValidEndPoint(
   // Since worldToMap will populate the out-of-bounds (x1, y1), we can
   // iterate through the partially valid line until we hit invalid coords
   unsigned int last_end_x = line.x0, last_end_y = line.y0;
-  nav2_util::LineIterator iter(line.x0, line.y0, line.x1, line.y1);
+  nav2_util::LineIterator iter(
+    static_cast<int>(line.x0), static_cast<int>(line.y0),
+    static_cast<int>(line.x1), static_cast<int>(line.y1));
   int size_x = static_cast<int>(costmap_->getSizeInCellsX());
   int size_y = static_cast<int>(costmap_->getSizeInCellsY());
   for (; iter.isValid(); iter.advance()) {
@@ -192,8 +194,8 @@ bool CollisionMonitor::backoutValidEndPoint(
       line.y1 = last_end_y;
       return true;
     }
-    last_end_x = iter.getX();
-    last_end_y = iter.getY();
+    last_end_x = static_cast<unsigned int>(iter.getX());
+    last_end_y = static_cast<unsigned int>(iter.getY());
   }
 
   return false;
@@ -212,9 +214,12 @@ bool CollisionMonitor::lineToMap(
 
 bool CollisionMonitor::isInCollision(const LineSegment & line)
 {
-  nav2_util::LineIterator iter(line.x0, line.y0, line.x1, line.y1);
+  nav2_util::LineIterator iter(
+    static_cast<int>(line.x0), static_cast<int>(line.y0),
+    static_cast<int>(line.x1), static_cast<int>(line.y1));
   for (; iter.isValid(); ) {
-    float cost = static_cast<float>(costmap_->getCost(iter.getX(), iter.getY()));
+    float cost = static_cast<float>(costmap_->getCost(
+      static_cast<unsigned int>(iter.getX()), static_cast<unsigned int>(iter.getY())));
     if (cost >= max_cost_ && cost != 255.0 /*unknown*/) {
       return true;
     }

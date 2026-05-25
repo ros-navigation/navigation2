@@ -43,7 +43,7 @@ void PathFollowCritic::score(CriticData & data)
 
   utils::setPathFurthestPointIfNotSet(data);
   utils::setPathCostsIfNotSet(data, costmap_ros_);
-  const size_t path_size = data.path.x.size() - 1;
+  const size_t path_size = static_cast<size_t>(data.path.x.size()) - 1;
 
   auto offsetted_idx = std::min(
     *data.furthest_reached_path_point + offset_from_furthest_, path_size);
@@ -58,8 +58,9 @@ void PathFollowCritic::score(CriticData & data)
     }
   }
 
-  const auto path_x = data.path.x(offsetted_idx);
-  const auto path_y = data.path.y(offsetted_idx);
+  const Eigen::Index path_idx = static_cast<Eigen::Index>(offsetted_idx);
+  const auto path_x = data.path.x(path_idx);
+  const auto path_y = data.path.y(path_idx);
 
   const int && rightmost_idx = data.trajectories.x.cols() - 1;
   const auto last_x = data.trajectories.x.col(rightmost_idx);

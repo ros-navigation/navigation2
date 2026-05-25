@@ -114,15 +114,17 @@ CellData CostmapQueue::getNextCell()
 void CostmapQueue::computeCache()
 {
   if (max_distance_ == -1) {
-    max_distance_ = std::max(costmap_.getSizeInCellsX(), costmap_.getSizeInCellsY());
+    max_distance_ = static_cast<int>(
+      std::max(costmap_.getSizeInCellsX(), costmap_.getSizeInCellsY()));
   }
   if (max_distance_ == cached_max_distance_) {return;}
   cached_distances_.clear();
 
-  cached_distances_.resize(max_distance_ + 2);
+  const unsigned int cache_size = static_cast<unsigned int>(max_distance_) + 2u;
+  cached_distances_.resize(cache_size);
 
   for (unsigned int i = 0; i < cached_distances_.size(); ++i) {
-    cached_distances_[i].resize(max_distance_ + 2);
+    cached_distances_[i].resize(cache_size);
     for (unsigned int j = 0; j < cached_distances_[i].size(); ++j) {
       if (manhattan_) {
         cached_distances_[i][j] = i + j;

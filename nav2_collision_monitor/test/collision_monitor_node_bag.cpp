@@ -204,7 +204,7 @@ public:
               return std::fabs(s.vx) <= stop_thresh_;
             });
         };
-      const size_t clean_stopped = count_stopped(pre_seg) + count_stopped(post_seg);
+      const auto clean_stopped = count_stopped(pre_seg) + count_stopped(post_seg);
       R.false_stop_pct = static_cast<double>(clean_stopped) / static_cast<double>(clean_total);
     } else {
       R.false_stop_pct = 0.0;

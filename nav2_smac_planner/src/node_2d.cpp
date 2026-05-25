@@ -134,7 +134,7 @@ void Node2D::getNeighbors(
   Coordinates child;
 
   for (unsigned int i = 0; i != _ctx->neighbors_grid_offsets.size(); ++i) {
-    index = node_i + _ctx->neighbors_grid_offsets[i];
+    index = node_i + static_cast<uint64_t>(_ctx->neighbors_grid_offsets[i]);
 
     // Check for wrap around conditions
     child = getCoords(index);

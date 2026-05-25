@@ -470,14 +470,16 @@ void Circle::putBorders(
   // Calculation algorithm
   while (x > y) {  // Calculating only first circle octant
     // Put 8 points in each octant reflecting symmetrically
-    putPoint(mcx + x, mcy + y, map, overlay_type);
-    putPoint(mcx + y, mcy + x, map, overlay_type);
-    putPoint(mcx - x + 1, mcy + y, map, overlay_type);
-    putPoint(mcx + y, mcy - x + 1, map, overlay_type);
-    putPoint(mcx - x + 1, mcy - y + 1, map, overlay_type);
-    putPoint(mcx - y + 1, mcy - x + 1, map, overlay_type);
-    putPoint(mcx + x, mcy - y + 1, map, overlay_type);
-    putPoint(mcx - y + 1, mcy + x, map, overlay_type);
+    const unsigned int ux = static_cast<unsigned int>(x);
+    const unsigned int uy = static_cast<unsigned int>(y);
+    putPoint(mcx + ux, mcy + uy, map, overlay_type);
+    putPoint(mcx + uy, mcy + ux, map, overlay_type);
+    putPoint(mcx - ux + 1u, mcy + uy, map, overlay_type);
+    putPoint(mcx + uy, mcy - ux + 1u, map, overlay_type);
+    putPoint(mcx - ux + 1u, mcy - uy + 1u, map, overlay_type);
+    putPoint(mcx - uy + 1u, mcy - ux + 1u, map, overlay_type);
+    putPoint(mcx + ux, mcy - uy + 1u, map, overlay_type);
+    putPoint(mcx - uy + 1u, mcy + ux, map, overlay_type);
 
     s = s + 2 * y + 1;
     y++;
@@ -489,10 +491,12 @@ void Circle::putBorders(
 
   // Corner case for x == y: do not put end points twice
   if (x == y) {
-    putPoint(mcx + x, mcy + y, map, overlay_type);
-    putPoint(mcx - x + 1, mcy + y, map, overlay_type);
-    putPoint(mcx - x + 1, mcy - y + 1, map, overlay_type);
-    putPoint(mcx + x, mcy - y + 1, map, overlay_type);
+    const unsigned int ux = static_cast<unsigned int>(x);
+    const unsigned int uy = static_cast<unsigned int>(y);
+    putPoint(mcx + ux, mcy + uy, map, overlay_type);
+    putPoint(mcx - ux + 1u, mcy + uy, map, overlay_type);
+    putPoint(mcx - ux + 1u, mcy - uy + 1u, map, overlay_type);
+    putPoint(mcx + ux, mcy - uy + 1u, map, overlay_type);
   }
 }
 

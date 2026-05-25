@@ -108,7 +108,9 @@ double ObstacleFootprintCritic::scorePose(
             IllegalTrajectoryException(name_, "Footprint Goes Off Grid.");
     }
 
-    line_cost = lineCost(x0, x1, y0, y1);
+    line_cost = lineCost(
+      static_cast<int>(x0), static_cast<int>(x1),
+      static_cast<int>(y0), static_cast<int>(y1));
     footprint_cost = std::max(line_cost, footprint_cost);
   }
 
@@ -125,7 +127,9 @@ double ObstacleFootprintCritic::scorePose(
           IllegalTrajectoryException(name_, "Footprint Goes Off Grid.");
   }
 
-  line_cost = lineCost(x0, x1, y0, y1);
+  line_cost = lineCost(
+    static_cast<int>(x0), static_cast<int>(x1),
+    static_cast<int>(y0), static_cast<int>(y1));
   footprint_cost = std::max(line_cost, footprint_cost);
 
   // if all line costs are legal... then we can return that the footprint is legal
@@ -150,7 +154,8 @@ double ObstacleFootprintCritic::lineCost(int x0, int x1, int y0, int y1)
 
 double ObstacleFootprintCritic::pointCost(int x, int y)
 {
-  unsigned char cost = costmap_->getCost(x, y);
+  unsigned char cost = costmap_->getCost(static_cast<unsigned int>(x),
+      static_cast<unsigned int>(y));
   // if the cell is in an obstacle the path is invalid or unknown
   if (cost == nav2_costmap_2d::LETHAL_OBSTACLE) {
     throw dwb_core::

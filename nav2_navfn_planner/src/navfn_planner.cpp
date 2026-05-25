@@ -157,8 +157,8 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
   // Update planner based on the new costmap size
   if (isPlannerOutOfDate()) {
     planner_->setNavArr(
-      costmap_->getSizeInCellsX(),
-      costmap_->getSizeInCellsY());
+      static_cast<int>(costmap_->getSizeInCellsX()),
+      static_cast<int>(costmap_->getSizeInCellsY()));
   }
 
   nav_msgs::msg::Path path;
@@ -243,24 +243,24 @@ NavfnPlanner::makePlan(
 
   // make sure to resize the underlying array that Navfn uses
   planner_->setNavArr(
-    costmap_->getSizeInCellsX(),
-    costmap_->getSizeInCellsY());
+    static_cast<int>(costmap_->getSizeInCellsX()),
+    static_cast<int>(costmap_->getSizeInCellsY()));
 
   planner_->setCostmap(costmap_->getCharMap(), true, params_->allow_unknown);
 
   lock.unlock();
 
   int map_start[2];
-  map_start[0] = mx;
-  map_start[1] = my;
+  map_start[0] = static_cast<int>(mx);
+  map_start[1] = static_cast<int>(my);
 
   wx = goal.position.x;
   wy = goal.position.y;
 
   worldToMap(wx, wy, mx, my);
   int map_goal[2];
-  map_goal[0] = mx;
-  map_goal[1] = my;
+  map_goal[0] = static_cast<int>(mx);
+  map_goal[1] = static_cast<int>(my);
 
   planner_->setStart(map_goal);
   planner_->setGoal(map_start);
@@ -392,13 +392,14 @@ NavfnPlanner::getPlanFromPotential(
   worldToMap(wx, wy, mx, my);
 
   int map_goal[2];
-  map_goal[0] = mx;
-  map_goal[1] = my;
+  map_goal[0] = static_cast<int>(mx);
+  map_goal[1] = static_cast<int>(my);
 
   planner_->setStart(map_goal);
 
-  const int & max_cycles = (costmap_->getSizeInCellsX() >= costmap_->getSizeInCellsY()) ?
-    (costmap_->getSizeInCellsX() * 4) : (costmap_->getSizeInCellsY() * 4);
+  const int max_cycles = static_cast<int>(
+    (costmap_->getSizeInCellsX() >= costmap_->getSizeInCellsY()) ?
+    (costmap_->getSizeInCellsX() * 4) : (costmap_->getSizeInCellsY() * 4));
 
   int path_len = planner_->calcPath(max_cycles);
   if (path_len == 0) {
@@ -443,7 +444,7 @@ NavfnPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
     return std::numeric_limits<double>::max();
   }
 
-  unsigned int index = my * planner_->nx + mx;
+  unsigned int index = my * static_cast<unsigned int>(planner_->nx) + mx;
   return planner_->potarr[index];
 }
 
@@ -491,9 +492,9 @@ NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int &
     return false;
   }
 
-  mx = static_cast<int>(
+  mx = static_cast<unsigned int>(
     std::round((wx - costmap_->getOriginX()) / costmap_->getResolution()));
-  my = static_cast<int>(
+  my = static_cast<unsigned int>(
     std::round((wy - costmap_->getOriginY()) / costmap_->getResolution()));
 
   if (mx < costmap_->getSizeInCellsX() && my < costmap_->getSizeInCellsY()) {

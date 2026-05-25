@@ -130,7 +130,7 @@ void SmacPlanner2DT<NodeT>::configure(
   std::string topic_name = "downsampled_costmap";
   _costmap_downsampler = std::make_unique<CostmapDownsampler>();
   _costmap_downsampler->on_configure(
-    node, _global_frame, topic_name, _costmap, _downsampling_factor);
+    node, _global_frame, topic_name, _costmap, static_cast<unsigned int>(_downsampling_factor));
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan");
 
@@ -221,7 +221,7 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
   // Downsample costmap, if required
   nav2_costmap_2d::Costmap2D * costmap = _costmap;
   if (_downsample_costmap && _downsampling_factor > 1) {
-    costmap = _costmap_downsampler->downsample(_downsampling_factor);
+    costmap = _costmap_downsampler->downsample(static_cast<unsigned int>(_downsampling_factor));
     _collision_checker.setCostmap(costmap);
   }
 
@@ -309,8 +309,9 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
 
   // Convert to world coordinates
   plan.poses.reserve(path.size());
-  for (int i = path.size() - 1; i >= 0; --i) {
-    pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
+  for (int i = static_cast<int>(path.size()) - 1; i >= 0; --i) {
+    const auto & p = path[static_cast<size_t>(i)];
+    pose.pose = getWorldCoords(p.x, p.y, costmap);
     plan.poses.push_back(pose);
   }
 
@@ -482,7 +483,8 @@ SmacPlanner2DT<NodeT>::updateParametersCallback(const std::vector<rclcpp::Parame
         std::string topic_name = "downsampled_costmap";
         _costmap_downsampler = std::make_unique<CostmapDownsampler>();
         _costmap_downsampler->on_configure(
-          node, _global_frame, topic_name, _costmap, _downsampling_factor);
+          node, _global_frame, topic_name, _costmap,
+            static_cast<unsigned int>(_downsampling_factor));
         _costmap_downsampler->on_activate();
       }
     }

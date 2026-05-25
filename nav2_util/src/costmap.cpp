@@ -75,7 +75,7 @@ void Costmap::set_static_map(const nav_msgs::msg::OccupancyGrid & occupancy_grid
   unsigned int index = 0;
   for (unsigned int i = 0; i < size_y; ++i) {
     for (unsigned int j = 0; j < size_x; ++j) {
-      unsigned char value = static_map_cell_values[index];
+      int8_t value = static_map_cell_values[index];
       costs_[index] = interpret_value(value);
       ++index;
     }

@@ -214,7 +214,7 @@ public:
    */
   inline Coordinates getCoords(const uint64_t & index)
   {
-    const unsigned int & size_x = _ctx->neighbors_grid_offsets[3];
+    const unsigned int size_x = static_cast<unsigned int>(_ctx->neighbors_grid_offsets[3]);
     return Coordinates(index % size_x, index / size_x);
   }
 

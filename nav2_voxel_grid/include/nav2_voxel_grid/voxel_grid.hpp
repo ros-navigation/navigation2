@@ -107,7 +107,7 @@ public:
       return false;
     }
 
-    int index = y * size_x_ + x;
+    unsigned int index = y * size_x_ + x;
     uint32_t * col = &data_[index];
     uint32_t full_mask = ((uint32_t)1 << z << 16) | (1 << z);
     *col |= full_mask;  // clear unknown and mark cell
@@ -140,7 +140,7 @@ public:
       RCLCPP_DEBUG(logger, "Error, voxel out of bounds.\n");
       return;
     }
-    int index = y * size_x_ + x;
+    unsigned int index = y * size_x_ + x;
     uint32_t * col = &data_[index];
     uint32_t full_mask = ((uint32_t)1 << z << 16) | (1 << z);
     *col &= ~(full_mask);  // clear unknown and clear cell
@@ -255,12 +255,12 @@ public:
     int dy = int(y1) - int(min_y0);  // NOLINT
     int dz = int(z1) - int(min_z0);  // NOLINT
 
-    unsigned int abs_dx = abs(dx);
-    unsigned int abs_dy = abs(dy);
-    unsigned int abs_dz = abs(dz);
+    unsigned int abs_dx = static_cast<unsigned int>(abs(dx));
+    unsigned int abs_dy = static_cast<unsigned int>(abs(dy));
+    unsigned int abs_dz = static_cast<unsigned int>(abs(dz));
 
     int offset_dx = sign(dx);
-    int offset_dy = sign(dy) * size_x_;
+    int offset_dy = sign(dy) * static_cast<int>(size_x_);
     int offset_dz = sign(dz);
 
     unsigned int z_mask = ((1 << 16) | 1) << (unsigned int)min_z0;
@@ -271,33 +271,33 @@ public:
 
     // is x dominant
     if (abs_dx >= max(abs_dy, abs_dz)) {
-      int error_y = abs_dx / 2;
-      int error_z = abs_dx / 2;
+      unsigned int error_y = abs_dx / 2;
+      unsigned int error_z = abs_dx / 2;
 
       bresenham3D(
         at, grid_off, grid_off, z_off, abs_dx, abs_dy, abs_dz, error_y, error_z,
-        offset_dx, offset_dy, offset_dz, offset, z_mask, (unsigned int)(scale * abs_dx));
+        offset_dx, offset_dy, offset_dz, offset, z_mask, static_cast<unsigned int>(scale * abs_dx));
       return;
     }
 
     // y is dominant
     if (abs_dy >= abs_dz) {
-      int error_x = abs_dy / 2;
-      int error_z = abs_dy / 2;
+      unsigned int error_x = abs_dy / 2;
+      unsigned int error_z = abs_dy / 2;
 
       bresenham3D(
         at, grid_off, grid_off, z_off, abs_dy, abs_dx, abs_dz, error_x, error_z,
-        offset_dy, offset_dx, offset_dz, offset, z_mask, (unsigned int)(scale * abs_dy));
+        offset_dy, offset_dx, offset_dz, offset, z_mask, static_cast<unsigned int>(scale * abs_dy));
       return;
     }
 
     // otherwise, z is dominant
-    int error_x = abs_dz / 2;
-    int error_y = abs_dz / 2;
+    unsigned int error_x = abs_dz / 2;
+    unsigned int error_y = abs_dz / 2;
 
     bresenham3D(
       at, z_off, grid_off, grid_off, abs_dz, abs_dx, abs_dy, error_x, error_y, offset_dz,
-      offset_dx, offset_dy, offset, z_mask, (unsigned int)(scale * abs_dz));
+      offset_dx, offset_dy, offset, z_mask, static_cast<unsigned int>(scale * abs_dz));
   }
 
 private:
@@ -306,8 +306,8 @@ private:
   inline void bresenham3D(
     ActionType at, OffA off_a, OffB off_b, OffC off_c,
     unsigned int abs_da, unsigned int abs_db, unsigned int abs_dc,
-    int error_b, int error_c, int offset_a, int offset_b, int offset_c, unsigned int & offset,
-    unsigned int & z_mask, unsigned int max_length = UINT_MAX)
+    unsigned int error_b, unsigned int error_c, int offset_a, int offset_b, int offset_c,
+    unsigned int & offset, unsigned int & z_mask, unsigned int max_length = UINT_MAX)
   {
     unsigned int end = std::min(max_length, abs_da);
     for (unsigned int i = 0; i < end; ++i) {
@@ -315,11 +315,11 @@ private:
       off_a(offset_a);
       error_b += abs_db;
       error_c += abs_dc;
-      if ((unsigned int)error_b >= abs_da) {
+      if (error_b >= abs_da) {
         off_b(offset_b);
         error_b -= abs_da;
       }
-      if ((unsigned int)error_c >= abs_da) {
+      if (error_c >= abs_da) {
         off_c(offset_c);
         error_c -= abs_da;
       }
@@ -431,7 +431,7 @@ public:
     : offset_(offset) {}
     inline void operator()(int offset_val)
     {
-      offset_ += offset_val;
+      offset_ += static_cast<unsigned int>(offset_val);
     }
 
 private:

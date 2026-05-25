@@ -241,7 +241,7 @@ void loadMapFromFile(
 
   // Map the grayscale buffer to an Eigen matrix (row-major layout)
   Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-  gray_matrix(buffer.data(), height, width);
+  gray_matrix(buffer.data(), static_cast<Eigen::Index>(height), static_cast<Eigen::Index>(width));
 
   bool has_alpha = img.matte();
 
@@ -303,7 +303,7 @@ void loadMapFromFile(
       // Map alpha buffer as Eigen::Array for efficient elementwise ops
       Eigen::Map<Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic,
         Eigen::RowMajor>> alpha_array(
-        alpha_buf.data(), height, width);
+        alpha_buf.data(), static_cast<Eigen::Index>(height), static_cast<Eigen::Index>(width));
 
       // Apply mask directly with Eigen::select
       result = (alpha_array < 255).select(nav2_util::OCC_GRID_UNKNOWN, result);
@@ -590,7 +590,7 @@ void tryWriteMapToFile(
     double yaw, pitch, roll;
     mat.getEulerYPR(yaw, pitch, roll);
 
-    const int file_name_index = mapdatafile.find_last_of("/\\");
+    const auto file_name_index = mapdatafile.find_last_of("/\\");
     std::string image_name = mapdatafile.substr(file_name_index + 1);
 
     YAML::Emitter e;

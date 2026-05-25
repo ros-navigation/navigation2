@@ -161,18 +161,22 @@ void ThetaStar::backtrace(std::vector<coordsW> & raw_points, const tree_node * c
   std::vector<coordsW> path_rev;
   coordsW world{};
   do {
-    costmap_->mapToWorld(curr_n->x, curr_n->y, world.x, world.y);
+    costmap_->mapToWorld(
+      static_cast<unsigned int>(curr_n->x), static_cast<unsigned int>(curr_n->y),
+      world.x, world.y);
     path_rev.push_back(world);
     if (path_rev.size() > 1) {
       curr_n = curr_n->parent_id;
     }
   } while (curr_n->parent_id != curr_n);
-  costmap_->mapToWorld(curr_n->x, curr_n->y, world.x, world.y);
+  costmap_->mapToWorld(
+    static_cast<unsigned int>(curr_n->x), static_cast<unsigned int>(curr_n->y),
+    world.x, world.y);
   path_rev.push_back(world);
 
   raw_points.reserve(path_rev.size());
-  for (int i = static_cast<int>(path_rev.size()) - 1; i >= 0; i--) {
-    raw_points.push_back(path_rev[i]);
+  for (auto it = path_rev.rbegin(); it != path_rev.rend(); ++it) {
+    raw_points.push_back(*it);
   }
 }
 
@@ -221,7 +225,7 @@ void ThetaStar::resetContainers()
     static_cast<int>(node_position_.size()) < (curr_size_x * curr_size_y))
   {
     initializePosn(curr_size_y * curr_size_x - last_size_y * last_size_x);
-    nodes_data_.reserve(curr_size_x * curr_size_y);
+    nodes_data_.reserve(static_cast<unsigned int>(curr_size_x * curr_size_y));
   } else {
     initializePosn();
   }
@@ -232,7 +236,8 @@ void ThetaStar::resetContainers()
 void ThetaStar::initializePosn(int size_inc)
 {
   if (!node_position_.empty()) {
-    for (int i = 0; i < size_x_ * size_y_; i++) {
+    const unsigned int map_size = static_cast<unsigned int>(size_x_ * size_y_);
+    for (unsigned int i = 0; i < map_size; i++) {
       node_position_[i] = nullptr;
     }
   }
