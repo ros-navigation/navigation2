@@ -211,7 +211,8 @@ AsymmetricInflationLayer::extractLocalPath(
   geometry_msgs::msg::TransformStamped transform;
   bool need_transform = (global_frame != path_frame && !path_frame.empty());
 
-  // Find the transform from path frame to costmap frame (e.g., map -> odom)
+  // Transform the goal pose from the path frame to the costmap frame (e.g., map -> odom)
+  geometry_msgs::msg::PoseStamped goal_pose = current_path.poses.back();
   if (need_transform) {
     try {
       transform = tf_->lookupTransform(global_frame, path_frame, tf2::TimePointZero);
@@ -223,14 +224,10 @@ AsymmetricInflationLayer::extractLocalPath(
         path_frame.c_str(), global_frame.c_str(), ex.what());
       return local_path_pts;
     }
-  }
-
-  // Disable asymmetry near the goal to prevent target oscillations
-  geometry_msgs::msg::PoseStamped goal_pose = current_path.poses.back();
-  if (need_transform) {
     tf2::doTransform(goal_pose, goal_pose, transform);
   }
 
+  // Disable asymmetry near the goal to prevent target oscillations
   double dist_to_goal = std::hypot(
     goal_pose.pose.position.x - current_robot_x_,
     goal_pose.pose.position.y - current_robot_y_);
