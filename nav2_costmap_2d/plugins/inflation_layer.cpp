@@ -48,7 +48,7 @@ InflationLayer::InflationLayer()
   inflate_unknown_(false),
   inflate_around_unknown_(false),
   cell_inflation_radius_(0),
-  num_threads_(-1),
+  num_threads_(1),
   resolution_(0),
   last_min_x_(std::numeric_limits<double>::lowest()),
   last_min_y_(std::numeric_limits<double>::lowest()),
@@ -79,7 +79,7 @@ InflationLayer::onInitialize()
     inflate_around_unknown_ = node->declare_or_get_parameter(
       name_ + "." + "inflate_around_unknown", false);
     num_threads_ = node->declare_or_get_parameter(
-      name_ + "." + "num_threads", -1);
+      name_ + "." + "num_threads", 1);
   }
 
   setCurrent(true);
