@@ -106,7 +106,7 @@ AsymmetricInflationLayer::onInitialize()
       std::bind(
         &AsymmetricInflationLayer::globalPathCallback,
         this, std::placeholders::_1),
-      rclcpp::QoS(1).durability_volatile());
+      nav2::qos::StandardTopicQoS(1));
   }
 
   setCurrent(true);
