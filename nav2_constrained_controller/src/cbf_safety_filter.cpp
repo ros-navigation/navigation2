@@ -162,7 +162,6 @@ CbfFilterResult CBFSafetyFilter::filter(
   if (params_->cbf_retreat_enabled && retreat_state_ == RetreatState::RETREAT) {
     const double v_ret    = params_->cbf_retreat_speed;
     const double w_ret    = params_->cbf_retreat_rotation_speed;
-    const double h_enter  = params_->cbf_retreat_h_enter;
     const double h_thresh = params_->cbf_retreat_h_exit;
 
     double sum_w     = 0.0;
@@ -205,15 +204,14 @@ CbfFilterResult CBFSafetyFilter::filter(
       }
     }
 
-    // Smooth blend: same shape as before — pure u_nom at h_enter,
-    // pure retreat at h ≤ 0. Negative h saturates to full retreat.
-    const double blend = std::clamp(
-      (h_enter - min_h_react) / std::max(1e-6, h_enter), 0.0, 1.0);
-    u_qp_target_e = (1.0 - blend) * u_nom_e + blend * retreat_target;
+    // Full commit to retreat — no blending with u_nom. State-machine
+    // hysteresis (h_enter / h_exit) handles when to switch states; once we
+    // ARE in RETREAT, we want the escape velocity to dominate the QP target,
+    // not a fractional mix that lets u_nom keep pushing toward the wall.
+    // If no tight samples were found this tick (rare edge case — usually
+    // ESDF query failure), fall back to u_nom rather than emit zero.
+    u_qp_target_e = (sum_w > 1e-6) ? retreat_target : u_nom_e;
 
-    // Logging-compat shims. With the single-direction retreat we no longer
-    // have 9 candidates; picked_candidate becomes a binary indicator of
-    // whether retreat was synthesized this tick (1) or fell back to u_nom (0).
     picked_idx_1based      = (sum_w > 1e-6) ? 1 : 0;
     picked_score           = -worst_h_local;  // positive = imminent (h<0)
     last_picked_candidate_ = picked_idx_1based;

@@ -280,50 +280,33 @@ geometry_msgs::msg::PoseStamped ConstrainedController::pickSafeTarget(
     std::max(0.5 * params->footprint_length, params->footprint_db);
   const double d_required = half_extent + params->esdf_d_safe + params->governor_margin;
 
-  // ── Option (a): walk along the local plan for a safe pose at ≥ target_dist
-  if (esdf_grid_ && esdf_grid_->hasData()) {
-    for (size_t i = 0; i < local_plan.poses.size(); ++i) {
-      const auto & p = local_plan.poses[i].pose.position;
-      const double d_to_p = std::hypot(p.x, p.y);
-      if (d_to_p < target_dist) {continue;}
-
-      const auto q = esdf_grid_->query(p.x, p.y);
-      if (!q.valid) {
-        // Pose outside the local ESDF grid — accept as-is (CBF will handle).
-        if (sel_idx_out) {*sel_idx_out = static_cast<int>(i);}
-        if (mode_out)    {*mode_out    = 0;}
-        return local_plan.poses[i];
-      }
-      if (q.d >= d_required) {
-        // Safe path pose found. This is the natural governor target.
-        if (sel_idx_out) {*sel_idx_out = static_cast<int>(i);}
-        if (mode_out)    {*mode_out    = 1;}
-        return local_plan.poses[i];
-      }
-      // Unsafe — keep searching further along the path.
-    }
-  }
-
-  // ── Option (b): no safe path pose in range. Push the raw lookahead away
-  //                from its nearest wall via the ESDF gradient.
+  // Get the path's natural lookahead at motion_target_dist along the slice.
   int raw_idx = 0;
   auto raw = getMotionTarget(target_dist, local_plan, &raw_idx);
+  if (sel_idx_out) {*sel_idx_out = raw_idx;}
 
-  if (esdf_grid_ && esdf_grid_->hasData()) {
-    const auto q = esdf_grid_->query(raw.pose.position.x, raw.pose.position.y);
-    if (q.valid && q.d < d_required) {
-      const double step = (d_required - q.d) + 0.05;
-      raw.pose.position.x += step * q.gx;
-      raw.pose.position.y += step * q.gy;
-      if (sel_idx_out) {*sel_idx_out = raw_idx;}
-      if (mode_out)    {*mode_out    = 2;}
-      return raw;
-    }
+  // No ESDF data yet → pass lookahead through unchanged.
+  if (!esdf_grid_ || !esdf_grid_->hasData()) {
+    if (mode_out) {*mode_out = 0;}
+    return raw;
   }
 
-  // ── No ESDF available, or raw lookahead is already safe — return as-is.
-  if (sel_idx_out) {*sel_idx_out = raw_idx;}
-  if (mode_out)    {*mode_out    = 0;}
+  // Query ESDF at the raw lookahead. If safe (or query invalid), pass through.
+  const auto q = esdf_grid_->query(raw.pose.position.x, raw.pose.position.y);
+  if (!q.valid || q.d >= d_required) {
+    if (mode_out) {*mode_out = 0;}
+    return raw;
+  }
+
+  // Unsafe — push the lookahead away from the nearest wall using the ESDF
+  // gradient, just enough to clear `d_required` (plus a small buffer). The
+  // pushed pose is off the planned path but the body fits there. Once the
+  // robot moves past the tight section, the next tick's raw lookahead lands
+  // in safer territory and the push becomes zero again automatically.
+  const double step = (d_required - q.d) + 0.05;
+  raw.pose.position.x += step * q.gx;
+  raw.pose.position.y += step * q.gy;
+  if (mode_out) {*mode_out = 1;}
   return raw;
 }
 
@@ -382,7 +365,7 @@ ConstrainedController::computeVelocityCommands(
     ? pickSafeTarget(local_plan, &sel_idx, &governor_mode)
     : getMotionTarget(params->motion_target_dist, local_plan, &sel_idx);
   if (params->governor_enabled && governor_mode != last_governor_mode_) {
-    static const char * const kModeName[3] = {"RAW", "SAFE_PATH(a)", "DEVIATED(b)"};
+    static const char * const kModeName[2] = {"RAW", "DEVIATED"};
     log_->event(
       std::string("governor: ") + kModeName[last_governor_mode_] +
       " → " + kModeName[governor_mode] +

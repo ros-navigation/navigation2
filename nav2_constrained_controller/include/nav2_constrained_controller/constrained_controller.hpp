@@ -70,14 +70,17 @@ protected:
     const nav_msgs::msg::Path & local_plan,
     int * sel_idx_out) const;
 
-  // Reference-governor target picker. Walks the local plan looking for the
-  // first pose at distance ≥ motion_target_dist whose ESDF clearance is
-  // sufficient for the body footprint (option a). If none found, takes the
-  // raw lookahead and pushes it away from the nearest obstacle using the
-  // ESDF gradient (option b). Returned pose is passed to Stanley as both
-  // closest and lookahead so the controller becomes a point-tracker for
-  // the safe target. `mode_out` records which path was taken: 0=raw used
-  // unchanged, 1=safe path pose (a), 2=deviated synthetic pose (b).
+  // Reference-governor target picker. Takes the raw lookahead at distance
+  // motion_target_dist along the local plan, queries the ESDF at that
+  // position, and — if the body footprint wouldn't fit there — pushes the
+  // position away from the nearest wall along the ESDF gradient just enough
+  // to clear d_required. The returned pose is passed to Stanley as both
+  // closest and lookahead so the controller becomes a point-tracker for the
+  // safe target. The deviation is "minimum needed" — once the robot has
+  // moved past the tight section, the raw lookahead lands in safer territory
+  // and the push reverts to zero automatically. `mode_out`:
+  //   0 = lookahead used unchanged (path was clear)
+  //   1 = lookahead pushed off path (wall in the way)
   geometry_msgs::msg::PoseStamped pickSafeTarget(
     const nav_msgs::msg::Path & local_plan,
     int * sel_idx_out,
