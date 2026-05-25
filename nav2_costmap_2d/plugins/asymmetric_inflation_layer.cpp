@@ -152,6 +152,7 @@ AsymmetricInflationLayer::globalPathCallback(const nav_msgs::msg::Path::SharedPt
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   {
     std::lock_guard<std::mutex> lock(path_mutex_);
+    if (latest_global_path_ == msg) {return;}
     latest_global_path_ = msg;
   }
   // Path change invalidates all asymmetric costs in the costmap.
