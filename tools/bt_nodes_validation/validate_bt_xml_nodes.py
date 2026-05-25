@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import argparse
 from pathlib import Path
 import re
 from shutil import rmtree
 import subprocess
 import sys
-from typing import TypedDict
+from typing import Any, TypedDict
 import xml.etree.ElementTree as ET
 
 import yaml
@@ -31,6 +33,9 @@ TYPE_REGEX_TRANSFORMS = [
 DEFAULT_REGEX_TRANSFORMS = [
     (re.compile(r'std::'), ''),
 ]
+
+
+TREE_NODES_MODEL_TAG = 'TreeNodesModel'
 
 
 class PortData(TypedDict):
@@ -109,25 +114,6 @@ def clone_sparse_github_data(
     print(f'Cloned following data from {github_url} (branch: {branch}) to {repo_workdir}:')
     for path in data_to_clone:
         print(f'\t - {path}')
-
-
-def load_bt_nodes_model(file_path: Path) -> ET.Element:
-    """Load the Behavior Tree nodes model."""
-    root = ET.parse(file_path).getroot()
-
-    if not len(root):
-        raise IndexError(
-            'Invalid XML structure: '
-            'Expected <TreeNodesModel> element as the first child of the root.'
-        )
-    bt_nodes_model = root[0]
-
-    if bt_nodes_model.tag != 'TreeNodesModel':
-        raise ValueError(
-            'Invalid XML structure: '
-            'Expected <TreeNodesModel> element as the first child of the root.'
-        )
-    return bt_nodes_model
 
 
 def fetch_external_repos(github_repos: dict, clone_dir: Path) -> None:
@@ -349,20 +335,39 @@ def extract_code_port_data(content: str) -> NodePorts:
     return ports
 
 
-def extract_xml_nodes_data(nodes_model: ET.Element) -> BTNodes:
+def validate_bt_xml_structure(root: ET.Element) -> ET.Element:
+    if root is None or len(root) == 0:
+        raise ValueError(
+            'Invalid XML structure: '
+            f'Expected <{TREE_NODES_MODEL_TAG}> element as the first child of the root.'
+        )
+    bt_nodes_model = root[0]
+
+    if bt_nodes_model.tag != TREE_NODES_MODEL_TAG:
+        raise ValueError(
+            'Invalid XML structure: '
+            f'Expected <{TREE_NODES_MODEL_TAG}> element as the first child of the root.'
+        )
+    return bt_nodes_model
+
+
+def extract_xml_nodes_data(content: ET.ElementTree[Any]) -> BTNodes:
     """
-    Extract Behavior Tree nodes data from the given XML node model.
+    Extract Behavior Tree nodes data from the given XML data.
 
     Returns dictionary mapping node IDs to their port data:
     {node_id:  {port_name: {'data_type': 'x', 'default': 'y', 'has_description': bool}}}
     """
-    bt_xml: BTNodes = {}
-    for node in nodes_model:
+    root = content.getroot()
+    bt_nodes_model = validate_bt_xml_structure(root)
+
+    bt_node_ids_xml: BTNodes = {}
+    for node in bt_nodes_model:
         node_id = node.get('ID')
         if not node_id:
             raise ValueError('Each BT node must have an "ID" attribute.')
 
-        port_names: NodePorts = {}
+        ports: NodePorts = {}
         for port in node:
             port_name = port.get('name')
             if not port_name:
@@ -376,14 +381,14 @@ def extract_xml_nodes_data(nodes_model: ET.Element) -> BTNodes:
                 )
             port_default = port.get('default', '')
             port_description_exists = bool((port.text or '').strip())
-            port_names[port_name] = {
+            ports[port_name] = {
                 'data_type': port_type,
                 'default': port_default,
                 'has_description': port_description_exists
             }
 
-        bt_xml[node_id] = port_names
-    return bt_xml
+        bt_node_ids_xml[node_id] = ports
+    return bt_node_ids_xml
 
 
 def extract_node_registration_data(content: str) -> dict[str, str]:
@@ -695,14 +700,14 @@ def main():
     nav2_bt_nodes_file_path = Path(nav2_bt_nodes)
 
     try:
-        nav2_bt_nodes_model = load_bt_nodes_model(nav2_bt_nodes_file_path)
-    except (OSError, ET.ParseError, ValueError, IndexError) as exc:
-        print(f'Failed to load BT node model from {nav2_bt_nodes_file_path}: {exc}')
+        bt_nodes_content = ET.parse(nav2_bt_nodes_file_path)
+    except (OSError, ET.ParseError) as exc:
+        print(f'Failed to load BT nodes from {nav2_bt_nodes_file_path}: {exc}')
         sys.exit(1)
 
     try:
-        bt_node_ids_xml = extract_xml_nodes_data(nav2_bt_nodes_model)
-    except ValueError as exc:
+        bt_node_ids_xml = extract_xml_nodes_data(bt_nodes_content)
+    except (ValueError, IndexError) as exc:
         print(f'Failed to extract BT nodes data from XML: {exc}')
         sys.exit(1)
 
