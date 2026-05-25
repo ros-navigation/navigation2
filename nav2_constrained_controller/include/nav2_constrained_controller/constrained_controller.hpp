@@ -70,6 +70,19 @@ protected:
     const nav_msgs::msg::Path & local_plan,
     int * sel_idx_out) const;
 
+  // Reference-governor target picker. Walks the local plan looking for the
+  // first pose at distance ≥ motion_target_dist whose ESDF clearance is
+  // sufficient for the body footprint (option a). If none found, takes the
+  // raw lookahead and pushes it away from the nearest obstacle using the
+  // ESDF gradient (option b). Returned pose is passed to Stanley as both
+  // closest and lookahead so the controller becomes a point-tracker for
+  // the safe target. `mode_out` records which path was taken: 0=raw used
+  // unchanged, 1=safe path pose (a), 2=deviated synthetic pose (b).
+  geometry_msgs::msg::PoseStamped pickSafeTarget(
+    const nav_msgs::msg::Path & local_plan,
+    int * sel_idx_out,
+    int * mode_out) const;
+
   void pointcloudCallback(sensor_msgs::msg::PointCloud2::SharedPtr msg);
   bool updateEsdf(const sensor_msgs::msg::PointCloud2 & cloud);
 
@@ -134,6 +147,9 @@ protected:
   // Track retreat-overlay state across ticks so we can emit a single event on
   // each transition (NORMAL ↔ RETREAT) instead of every tick.
   int last_retreat_state_{0};   // 0=NORMAL, 1=RETREAT
+  // Track governor mode across ticks. 0=raw passthrough, 1=safe path pose
+  // (option a), 2=deviated synthetic pose (option b). Logged once per change.
+  int last_governor_mode_{0};
   double stuck_start_x_{0.0};
   double stuck_start_y_{0.0};
   double stuck_start_yaw_{0.0};

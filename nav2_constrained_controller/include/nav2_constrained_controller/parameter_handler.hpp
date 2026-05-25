@@ -91,6 +91,22 @@ struct Parameters
   double goal_bias_weight{0.0};            // λ, m/s — bias magnitude
   double goal_bias_lookahead_dist{1.5};    // arc length along path for g (m)
 
+  // ---------- reference governor ----------
+  // Reference governor: a layer that sits BEFORE Stanley. It inspects the raw
+  // path lookahead, checks if the body footprint would fit at that position
+  // (via ESDF query at the lookahead point), and produces a "safe target":
+  //   (a) the first path pose along the local plan with sufficient clearance,
+  //   (b) if no such pose exists, the raw lookahead pushed away from the
+  //       nearest wall using the ESDF gradient (synthetic off-path target).
+  // The safe target is then passed to Stanley as BOTH closest and lookahead,
+  // making Stanley a point-tracker for the governor's choice. This decouples
+  // "where the path wants the robot" from "where the body can safely go".
+  //
+  // d_required = max(L/2, db) + d_safe + governor_margin is the minimum ESDF
+  // clearance at a candidate target position for the body to fit safely.
+  bool   governor_enabled{false};   // default OFF for backward compat
+  double governor_margin{0.05};     // extra clearance beyond half-extent (m)
+
   // ---------- PointCloud2 / ESDF ----------
   // Use horizontal beams from the raw 3D LiDAR.
   // z filter in base_link must be centred on the lidar mounting height

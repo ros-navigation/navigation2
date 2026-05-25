@@ -108,6 +108,7 @@ void ConstrainedController::activate()
   near_goal_yaw_active_  = false;
   near_goal_yaw_start_   = rclcpp::Time(0, 0, RCL_ROS_TIME);
   last_retreat_state_    = 0;
+  last_governor_mode_    = 0;
 }
 
 void ConstrainedController::deactivate()
@@ -265,6 +266,67 @@ geometry_msgs::msg::PoseStamped ConstrainedController::getMotionTarget(
   return local_plan.poses.back();
 }
 
+geometry_msgs::msg::PoseStamped ConstrainedController::pickSafeTarget(
+  const nav_msgs::msg::Path & local_plan,
+  int * sel_idx_out,
+  int * mode_out) const
+{
+  const auto * params = param_handler_->getParams();
+  const double target_dist = params->motion_target_dist;
+
+  // Required ESDF clearance at the body CENTER for the body to fit safely.
+  // Body half-extent (worst axis) + d_safe (corner buffer) + extra margin.
+  const double half_extent =
+    std::max(0.5 * params->footprint_length, params->footprint_db);
+  const double d_required = half_extent + params->esdf_d_safe + params->governor_margin;
+
+  // ── Option (a): walk along the local plan for a safe pose at ≥ target_dist
+  if (esdf_grid_ && esdf_grid_->hasData()) {
+    for (size_t i = 0; i < local_plan.poses.size(); ++i) {
+      const auto & p = local_plan.poses[i].pose.position;
+      const double d_to_p = std::hypot(p.x, p.y);
+      if (d_to_p < target_dist) {continue;}
+
+      const auto q = esdf_grid_->query(p.x, p.y);
+      if (!q.valid) {
+        // Pose outside the local ESDF grid — accept as-is (CBF will handle).
+        if (sel_idx_out) {*sel_idx_out = static_cast<int>(i);}
+        if (mode_out)    {*mode_out    = 0;}
+        return local_plan.poses[i];
+      }
+      if (q.d >= d_required) {
+        // Safe path pose found. This is the natural governor target.
+        if (sel_idx_out) {*sel_idx_out = static_cast<int>(i);}
+        if (mode_out)    {*mode_out    = 1;}
+        return local_plan.poses[i];
+      }
+      // Unsafe — keep searching further along the path.
+    }
+  }
+
+  // ── Option (b): no safe path pose in range. Push the raw lookahead away
+  //                from its nearest wall via the ESDF gradient.
+  int raw_idx = 0;
+  auto raw = getMotionTarget(target_dist, local_plan, &raw_idx);
+
+  if (esdf_grid_ && esdf_grid_->hasData()) {
+    const auto q = esdf_grid_->query(raw.pose.position.x, raw.pose.position.y);
+    if (q.valid && q.d < d_required) {
+      const double step = (d_required - q.d) + 0.05;
+      raw.pose.position.x += step * q.gx;
+      raw.pose.position.y += step * q.gy;
+      if (sel_idx_out) {*sel_idx_out = raw_idx;}
+      if (mode_out)    {*mode_out    = 2;}
+      return raw;
+    }
+  }
+
+  // ── No ESDF available, or raw lookahead is already safe — return as-is.
+  if (sel_idx_out) {*sel_idx_out = raw_idx;}
+  if (mode_out)    {*mode_out    = 0;}
+  return raw;
+}
+
 geometry_msgs::msg::TwistStamped ConstrainedController::zeroTwist(
   const std::string & frame, const rclcpp::Time & stamp)
 {
@@ -308,8 +370,26 @@ ConstrainedController::computeVelocityCommands(
   }
 
   // ── 2. Lookahead target ───────────────────────────────────────────────────
+  // When the reference governor is enabled, it picks a "safe target": either
+  // the first path pose with sufficient body-footprint clearance (option a),
+  // or the raw lookahead pushed away from the nearest wall via the ESDF
+  // gradient (option b). The returned pose becomes BOTH closest and lookahead
+  // for Stanley, turning it into a point-tracker for the governor's choice.
+  // Falls back to plain pure-pursuit getMotionTarget() when disabled.
   int sel_idx = 0;
-  const auto target_ps = getMotionTarget(params->motion_target_dist, local_plan, &sel_idx);
+  int governor_mode = 0;
+  const auto target_ps = params->governor_enabled
+    ? pickSafeTarget(local_plan, &sel_idx, &governor_mode)
+    : getMotionTarget(params->motion_target_dist, local_plan, &sel_idx);
+  if (params->governor_enabled && governor_mode != last_governor_mode_) {
+    static const char * const kModeName[3] = {"RAW", "SAFE_PATH(a)", "DEVIATED(b)"};
+    log_->event(
+      std::string("governor: ") + kModeName[last_governor_mode_] +
+      " → " + kModeName[governor_mode] +
+      " | target=(" + std::to_string(target_ps.pose.position.x) +
+      "," + std::to_string(target_ps.pose.position.y) + ")");
+    last_governor_mode_ = governor_mode;
+  }
   if (motion_target_pub_ && motion_target_pub_->is_activated()) {
     geometry_msgs::msg::PointStamped pt;
     pt.header = target_ps.header;
@@ -409,9 +489,16 @@ ConstrainedController::computeVelocityCommands(
   }
 
   // ── 5. Stanley nominal controller ────────────────────────────────────────
+  // With governor ON, treat Stanley as a point-tracker for the safe target:
+  // pass target_ps as both `closest` and `lookahead` so vx/vy/wz all aim at
+  // the governor's choice instead of mixing the raw closest pose's tangent
+  // with the (possibly deviated) lookahead. With governor OFF, keep the
+  // original Stanley semantics (closest = local_plan.poses[0]).
   NominalDebug nom_dbg;
+  const auto & stanley_closest =
+    params->governor_enabled ? target_ps.pose : local_plan.poses[0].pose;
   auto u_nom = nominal_->compute(
-    local_plan.poses[0].pose, target_ps.pose, dist_to_goal, &nom_dbg);
+    stanley_closest, target_ps.pose, dist_to_goal, &nom_dbg);
 
   // ── 5b. Goal-aware bias: shift QP target toward a far path waypoint ──────
   // Adds λ·g to u_nom before handing to the QP. g is the unit direction in
@@ -529,11 +616,11 @@ ConstrainedController::computeVelocityCommands(
 
   // ── 9. Debug console + RViz + rqt_plot ────────────────────────────────────
   RCLCPP_INFO_THROTTLE(logger_, *clock_, 1000,
-    "[CBF t=%lu] %s cte=%.3fm herr=%.3fr | "
+    "[CBF t=%lu] %s cte=%.3fm herr=%.3fr gov=%d | "
     "u_nom=(%.2f,%.2f,%.2f) bias=(%.2f,%.2f) u*=(%.2f,%.2f,%.2f) | "
     "h_min=%.3f cst=%zu dev=%.3f slack=%.4f | dist=%.2fm",
     tick, nom_dbg.is_forward ? "FWD" : "BWD",
-    nom_dbg.cte_y, nom_dbg.heading_err,
+    nom_dbg.cte_y, nom_dbg.heading_err, governor_mode,
     u_nom.linear.x, u_nom.linear.y, u_nom.angular.z,
     bias_x, bias_y,
     out.twist.linear.x, out.twist.linear.y, out.twist.angular.z,

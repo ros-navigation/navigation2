@@ -68,6 +68,9 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(goal_bias_weight, 0.0);
   DECL_DOUBLE(goal_bias_lookahead_dist, 1.5);
 
+  DECL_BOOL(governor_enabled, false);
+  DECL_DOUBLE(governor_margin, 0.05);
+
   DECL_STRING(pointcloud_topic, "/livox/amr/lidar");
   DECL_DOUBLE(esdf_z_min, 1.247);
   DECL_DOUBLE(esdf_z_max, 1.447);
@@ -143,6 +146,8 @@ ParameterHandler::dynamicParametersCallback(
         params_.goal_bias_weight = v;
       } else if (name == plugin_name_ + ".goal_bias_lookahead_dist") {
         params_.goal_bias_lookahead_dist = v;
+      } else if (name == plugin_name_ + ".governor_margin") {
+        params_.governor_margin = v;
       } else if (name == plugin_name_ + ".cbf_retreat_h_enter") {
         params_.cbf_retreat_h_enter = v;
       } else if (name == plugin_name_ + ".cbf_retreat_h_exit") {
@@ -160,6 +165,8 @@ ParameterHandler::dynamicParametersCallback(
         params_.log_enabled = v;
       } else if (name == plugin_name_ + ".cbf_retreat_enabled") {
         params_.cbf_retreat_enabled = v;
+      } else if (name == plugin_name_ + ".governor_enabled") {
+        params_.governor_enabled = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_INTEGER) {
       const int v = static_cast<int>(p.as_int());
