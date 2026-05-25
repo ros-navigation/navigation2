@@ -191,16 +191,16 @@ AsymmetricInflationLayer::onFootprintChanged()
   computeAsymmetricCaches();
 }
 
-std::vector<std::pair<double, double>>
-AsymmetricInflationLayer::extractLocalPath(
+std::vector<AsymmetricPathSegment>
+AsymmetricInflationLayer::extractLocalPathSegments(
   nav2_costmap_2d::Costmap2D & master_grid)
 {
-  std::vector<std::pair<double, double>> local_path_pts;
+  std::vector<AsymmetricPathSegment> local_path_segments;
   nav_msgs::msg::Path current_path;
   {
     std::lock_guard<std::mutex> lock(path_mutex_);
-    if (!latest_global_path_ || latest_global_path_->poses.empty()) {
-      return local_path_pts;
+    if (!latest_global_path_ || latest_global_path_->poses.size() < 2) {
+      return local_path_segments;
     }
     current_path = *latest_global_path_;
   }
@@ -222,7 +222,7 @@ AsymmetricInflationLayer::extractLocalPath(
         "AsymmetricInflationLayer: TF lookup failed (%s -> %s): %s. "
         "Falling back to symmetric inflation.",
         path_frame.c_str(), global_frame.c_str(), ex.what());
-      return local_path_pts;
+      return local_path_segments;
     }
     tf2::doTransform(goal_pose, goal_pose, transform);
   }
@@ -234,33 +234,50 @@ AsymmetricInflationLayer::extractLocalPath(
 
   if (dist_to_goal <= goal_distance_threshold_) {
     // Empty vector causes algorithm to use standard symmetry
-    return local_path_pts;
+    return local_path_segments;
   }
 
-  // Extract local path
-  for (const auto & pose : current_path.poses) {
-    geometry_msgs::msg::PoseStamped transformed_pose = pose;
+  // Get local window edge coordinates
+  const double map_min_x = master_grid.getOriginX();
+  const double map_min_y = master_grid.getOriginY();
+  const double map_max_x = map_min_x +
+    static_cast<double>(master_grid.getSizeInCellsX()) * master_grid.getResolution();
+  const double map_max_y = map_min_y +
+    static_cast<double>(master_grid.getSizeInCellsY()) * master_grid.getResolution();
+
+  // Extract path segments from local window.
+  for (size_t i = 1; i < current_path.poses.size(); ++i) {
+    geometry_msgs::msg::PoseStamped transformed_start = current_path.poses[i - 1];
+    geometry_msgs::msg::PoseStamped transformed_end = current_path.poses[i];
     if (need_transform) {
-      tf2::doTransform(pose, transformed_pose, transform);
+      tf2::doTransform(current_path.poses[i - 1], transformed_start, transform);
+      tf2::doTransform(current_path.poses[i], transformed_end, transform);
     }
 
-    double px = transformed_pose.pose.position.x;
-    double py = transformed_pose.pose.position.y;
-    unsigned int mx, my;
+    const double ax = transformed_start.pose.position.x;
+    const double ay = transformed_start.pose.position.y;
+    const double bx = transformed_end.pose.position.x;
+    const double by = transformed_end.pose.position.y;
 
-    // Only process points inside our current local costmap window
-    if (master_grid.worldToMap(px, py, mx, my)) {
-      local_path_pts.push_back({px, py});
+    const double min_x = std::min(ax, bx) - inflation_radius_;
+    const double max_x = std::max(ax, bx) + inflation_radius_;
+    const double min_y = std::min(ay, by) - inflation_radius_;
+    const double max_y = std::max(ay, by) + inflation_radius_;
+
+    if (max_x < map_min_x || min_x > map_max_x || max_y < map_min_y || min_y > map_max_y) {
+      continue;
     }
+
+    local_path_segments.push_back({{ax, ay}, {bx, by}});
   }
-  return local_path_pts;
+  return local_path_segments;
 }
 
 int8_t
 AsymmetricInflationLayer::computeObstacleSide(
   double cx, double cy,
   const std::vector<size_t> & candidates,
-  const std::vector<std::pair<double, double>> & local_path_pts)
+  const std::vector<AsymmetricPathSegment> & local_path_segments)
 {
   const double inflation_radius_sq = inflation_radius_ * inflation_radius_;
 
@@ -270,10 +287,11 @@ AsymmetricInflationLayer::computeObstacleSide(
   // Evaluate candidate segments provided by the spatial hash.
   for (size_t p : candidates) {
     // Define segment endpoints A (start) and B (end).
-    double ax = local_path_pts[p].first;
-    double ay = local_path_pts[p].second;
-    double bx = local_path_pts[p + 1].first;
-    double by = local_path_pts[p + 1].second;
+    const auto & segment = local_path_segments[p];
+    double ax = segment.start.first;
+    double ay = segment.start.second;
+    double bx = segment.end.first;
+    double by = segment.end.second;
 
     // Skip cells outside of the segment bounding box expanded by the inflation radius.
     double min_x = std::min(ax, bx) - inflation_radius_;
@@ -346,11 +364,10 @@ AsymmetricInflationLayer::updateCosts(
   // Pass 1: symmetric baseline via inherited distance-transform inflation
   InflationLayer::updateCosts(master_grid, min_i, min_j, max_i, max_j);
 
-  std::vector<std::pair<double, double>> local_path_pts = extractLocalPath(master_grid);
+  std::vector<AsymmetricPathSegment> local_path_segments = extractLocalPathSegments(master_grid);
 
   // Abort if we don't have a valid path or if the scaling rates are equal (no asymmetry).
-  if (local_path_pts.size() < 2 ||
-    cost_scaling_factor_left_ == cost_scaling_factor_right_)
+  if (local_path_segments.empty() || cost_scaling_factor_left_ == cost_scaling_factor_right_)
   {
     setCurrent(true);
     return;
@@ -376,11 +393,11 @@ AsymmetricInflationLayer::updateCosts(
   const int roi_width = roi_max_i - roi_min_i;
   const int roi_height = roi_max_j - roi_min_j;
 
-  auto spatial_hash = buildPathSpatialHash(local_path_pts);
+  auto spatial_hash = buildPathSpatialHash(local_path_segments);
 
   MatrixXfRM dist_map = seedDistanceMap(
     master_grid, roi_min_i, roi_min_j, roi_width, roi_height,
-    spatial_hash, local_path_pts);
+    spatial_hash, local_path_segments);
 
   DistanceTransform::distanceTransform2D(dist_map, roi_height, roi_width);
 
@@ -394,16 +411,17 @@ AsymmetricInflationLayer::updateCosts(
 
 std::unordered_map<uint64_t, std::vector<size_t>>
 AsymmetricInflationLayer::buildPathSpatialHash(
-  const std::vector<std::pair<double, double>> & local_path_pts)
+  const std::vector<AsymmetricPathSegment> & local_path_segments)
 {
   std::unordered_map<uint64_t, std::vector<size_t>> spatial_hash;
 
-  for (size_t p = 0; p < local_path_pts.size() - 1; ++p) {
-    // Create segment AB from consecutive path points
-    double ax = local_path_pts[p].first;
-    double ay = local_path_pts[p].second;
-    double bx = local_path_pts[p + 1].first;
-    double by = local_path_pts[p + 1].second;
+  for (size_t p = 0; p < local_path_segments.size(); ++p) {
+    // Create segment AB from an original consecutive path pose pair.
+    const auto & segment = local_path_segments[p];
+    double ax = segment.start.first;
+    double ay = segment.start.second;
+    double bx = segment.end.first;
+    double by = segment.end.second;
 
     // Pad the segment's bounding box by the inflation radius.
     double min_x = std::min(ax, bx) - inflation_radius_;
@@ -436,7 +454,7 @@ AsymmetricInflationLayer::seedDistanceMap(
   nav2_costmap_2d::Costmap2D & master_grid,
   int roi_min_i, int roi_min_j, int roi_width, int roi_height,
   const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
-  const std::vector<std::pair<double, double>> & local_path_pts)
+  const std::vector<AsymmetricPathSegment> & local_path_segments)
 {
   unsigned char * master_array = master_grid.getCharMap();
   const unsigned int size_x = master_grid.getSizeInCellsX();
@@ -496,7 +514,7 @@ AsymmetricInflationLayer::seedDistanceMap(
       }
 
       // Determine which side of the path this cell is on
-      int8_t side = computeObstacleSide(cx, cy, it->second, local_path_pts);
+      int8_t side = computeObstacleSide(cx, cy, it->second, local_path_segments);
       if (side != 0 && side == disfavored_side) {
         dist_map(j - roi_min_j, i - roi_min_i) = 0.0f;
       }

@@ -31,6 +31,12 @@
 namespace nav2_costmap_2d
 {
 
+struct AsymmetricPathSegment
+{
+  std::pair<double, double> start;
+  std::pair<double, double> end;
+};
+
 /**
  * @class AsymmetricInflationLayer
  * @brief Costmap layer that inflates obstacles asymmetrically relative to the
@@ -115,15 +121,15 @@ protected:
   void globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg);
 
   /**
-   * @brief Extract the global path points that fall inside the local costmap window.
+   * @brief Extract global path segments that overlap the local costmap window.
    *
    * Transforms the path into the costmap frame via TF2. Returns an empty
    * vector when the robot is within goal_distance_threshold_ of the goal,
    * which disables asymmetry near the goal to prevent docking oscillations.
    * @param master_grid Reference costmap used to filter points to the current window.
-   * @return Path points in costmap-frame world coordinates; empty disables asymmetry.
+   * @return Path segments in costmap-frame world coordinates; empty disables asymmetry.
    */
-  std::vector<std::pair<double, double>> extractLocalPath(
+  std::vector<AsymmetricPathSegment> extractLocalPathSegments(
     nav2_costmap_2d::Costmap2D & master_grid);
 
   /**
@@ -138,13 +144,13 @@ protected:
    * @param cx             World x-coordinate of the obstacle cell (metres).
    * @param cy             World y-coordinate of the obstacle cell (metres).
    * @param candidates     Segment indices whose padded AABB may contain (cx, cy).
-   * @param local_path_pts Path points in costmap-frame order; consecutive pairs form segments.
+   * @param local_path_segments Original path segments in costmap-frame world coordinates.
    * @return +1 (left of path), -1 (right of path), or 0 (neutral / beyond inflation radius).
    */
   int8_t computeObstacleSide(
     double cx, double cy,
     const std::vector<size_t> & candidates,
-    const std::vector<std::pair<double, double>> & local_path_pts);
+    const std::vector<AsymmetricPathSegment> & local_path_segments);
 
   /**
    * @brief Build a spatial hash mapping 2D bucket keys to path segment indices.
@@ -152,12 +158,12 @@ protected:
    * Uses inflation_radius_ as the bucket size so each bucket spans exactly one
    * inflation radius. Each segment is inserted into every bucket whose padded
    * AABB it overlaps, enabling O(1) nearest-segment queries during the disfavored-cell seeding phase.
-   * @param local_path_pts Path waypoints in costmap-frame world coordinates.
+   * @param local_path_segments Original path segments in costmap-frame world coordinates.
    * @return Hash map from packed (bucket_x, bucket_y) key to segment index list.
    */
   std::unordered_map<uint64_t, std::vector<size_t>>
   buildPathSpatialHash(
-    const std::vector<std::pair<double, double>> & local_path_pts);
+    const std::vector<AsymmetricPathSegment> & local_path_segments);
 
   /**
    * @brief Build a distance map seeded from disfavored-side obstacle boundary cells.
@@ -171,14 +177,14 @@ protected:
    * @param roi_width Width of the padded ROI (cells).
    * @param roi_height Height of the padded ROI (cells).
    * @param spatial_hash Segment lookup structure from buildPathSpatialHash().
-   * @param local_path_pts Path waypoints in costmap-frame world coordinates.
+   * @param local_path_segments Original path segments in costmap-frame world coordinates.
    * @return Distance map with 0.0f at disfavored seeds and DT_INF elsewhere.
    */
   MatrixXfRM seedDistanceMap(
     nav2_costmap_2d::Costmap2D & master_grid,
     int roi_min_i, int roi_min_j, int roi_width, int roi_height,
     const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
-    const std::vector<std::pair<double, double>> & local_path_pts);
+    const std::vector<AsymmetricPathSegment> & local_path_segments);
 
   /**
    * @brief Apply disfavored-side costs from a distance map with max(old, new) semantics.
