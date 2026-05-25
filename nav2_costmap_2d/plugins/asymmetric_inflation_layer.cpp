@@ -76,17 +76,17 @@ AsymmetricInflationLayer::onInitialize()
 
     // Apply the same bound checks as dynamic reconfigure, so bad YAML values fail
     // loudly at startup instead of silently producing bad costmaps.
-    if (inflation_radius_ <= 0.0) {
+    if (inflation_radius_ < 0.0) {
       throw std::runtime_error(
-        "AsymmetricInflationLayer: inflation_radius must be > 0");
+        "AsymmetricInflationLayer: inflation_radius must be >= 0");
     }
-    if (cost_scaling_factor_left_ <= 0.0) {
+    if (cost_scaling_factor_left_ < 0.0) {
       throw std::runtime_error(
-        "AsymmetricInflationLayer: cost_scaling_factor_left must be > 0");
+        "AsymmetricInflationLayer: cost_scaling_factor_left must be >= 0");
     }
-    if (cost_scaling_factor_right_ <= 0.0) {
+    if (cost_scaling_factor_right_ < 0.0) {
       throw std::runtime_error(
-        "AsymmetricInflationLayer: cost_scaling_factor_right must be > 0");
+        "AsymmetricInflationLayer: cost_scaling_factor_right must be >= 0");
     }
     if (goal_distance_threshold_ < 0.0) {
       throw std::runtime_error(
@@ -368,8 +368,7 @@ AsymmetricInflationLayer::updateCosts(
   std::vector<AsymmetricPathSegment> local_path_segments = extractLocalPathSegments(master_grid);
 
   // Abort if we don't have a valid path or if the scaling rates are equal (no asymmetry).
-  if (local_path_segments.empty() || cost_scaling_factor_left_ == cost_scaling_factor_right_)
-  {
+  if (local_path_segments.empty() || cost_scaling_factor_left_ == cost_scaling_factor_right_) {
     setCurrent(true);
     return;
   }
@@ -604,90 +603,23 @@ rcl_interfaces::msg::SetParametersResult
 AsymmetricInflationLayer::validateParameterUpdatesCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
-  rcl_interfaces::msg::SetParametersResult result;
-  result.successful = true;
-
-  for (const auto & parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-    if (param_name.find(name_ + ".") != 0) {
-      continue;
-    }
-
-    if (param_type == ParameterType::PARAMETER_DOUBLE &&
-      param_name == name_ + ".inflation_radius")
-    {
-      if (parameter.as_double() <= 0.0) {
-        RCLCPP_WARN(
-          logger_, "inflation_radius must be > 0. Rejecting parameter update.");
-        result.successful = false;
-        result.reason = "inflation_radius must be > 0";
-        return result;
-      }
-      continue;
-    }
-
-    if (param_type == ParameterType::PARAMETER_DOUBLE &&
-      param_name == name_ + ".cost_scaling_factor_left")
-    {
-      if (parameter.as_double() <= 0.0) {
-        RCLCPP_WARN(
-          logger_, "cost_scaling_factor_left must be > 0. Rejecting parameter update.");
-        result.successful = false;
-        result.reason = "cost_scaling_factor_left must be > 0";
-        return result;
-      }
-      continue;
-    }
-
-    if (param_type == ParameterType::PARAMETER_DOUBLE &&
-      param_name == name_ + ".cost_scaling_factor_right")
-    {
-      if (parameter.as_double() <= 0.0) {
-        RCLCPP_WARN(
-          logger_, "cost_scaling_factor_right must be > 0. Rejecting parameter update.");
-        result.successful = false;
-        result.reason = "cost_scaling_factor_right must be > 0";
-        return result;
-      }
-      continue;
-    }
-
-    if (param_type == ParameterType::PARAMETER_DOUBLE &&
-      param_name == name_ + ".goal_distance_threshold")
-    {
-      if (parameter.as_double() < 0.0) {
-        RCLCPP_WARN(
-          logger_, "goal_distance_threshold must be >= 0. Rejecting parameter update.");
-        result.successful = false;
-        result.reason = "goal_distance_threshold must be >= 0";
-        return result;
-      }
-      continue;
-    }
-
-    if (param_type == ParameterType::PARAMETER_INTEGER &&
-      param_name == name_ + ".num_threads")
-    {
-      if (parameter.as_int() < -1) {
-        RCLCPP_WARN(
-          logger_, "num_threads must be -1 (auto) or > 0. Rejecting parameter update.");
-        result.successful = false;
-        result.reason = "num_threads must be -1 (auto) or > 0";
-        return result;
-      }
-    }
-  }
-
-  return result;
+  return InflationLayer::validateParameterUpdatesCallback(parameters);
 }
 
 void
 AsymmetricInflationLayer::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
+  std::vector<rclcpp::Parameter> base_parameters;
+  base_parameters.reserve(parameters.size());
+  for (const auto & parameter : parameters) {
+    if (parameter.get_name() != name_ + ".cost_scaling_factor") {
+      base_parameters.push_back(parameter);
+    }
+  }
+  InflationLayer::updateParametersCallback(base_parameters);
+
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  bool need_cache_recompute = false;
   bool side_scaling_changed = false;
 
   for (const auto & parameter : parameters) {
@@ -698,14 +630,7 @@ AsymmetricInflationLayer::updateParametersCallback(
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + ".inflation_radius" &&
-        inflation_radius_ != parameter.as_double())
-      {
-        inflation_radius_ = parameter.as_double();
-        need_reinflation_ = true;
-        need_cache_recompute = true;
-        setCurrent(false);
-      } else if (param_name == name_ + ".cost_scaling_factor_left" &&  // NOLINT
+      if (param_name == name_ + ".cost_scaling_factor_left" &&  // NOLINT
         cost_scaling_factor_left_ != parameter.as_double())
       {
         cost_scaling_factor_left_ = parameter.as_double();
@@ -722,52 +647,6 @@ AsymmetricInflationLayer::updateParametersCallback(
         need_reinflation_ = true;
         setCurrent(false);
       }
-    } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + ".enabled" && enabled_ != parameter.as_bool()) {
-        enabled_ = parameter.as_bool();
-        need_reinflation_ = true;
-        setCurrent(false);
-      } else if (param_name == name_ + ".inflate_around_unknown" &&  // NOLINT
-        inflate_around_unknown_ != parameter.as_bool())
-      {
-        inflate_around_unknown_ = parameter.as_bool();
-        need_reinflation_ = true;
-        setCurrent(false);
-      } else if (param_name == name_ + ".inflate_unknown" &&  // NOLINT
-        inflate_unknown_ != parameter.as_bool())
-      {
-        inflate_unknown_ = parameter.as_bool();
-        need_reinflation_ = true;
-        setCurrent(false);
-      }
-    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == name_ + ".num_threads" &&  // NOLINT
-        num_threads_ != parameter.as_int())
-      {
-        int new_value = parameter.as_int();
-#ifdef _OPENMP
-        int available_cores = omp_get_max_threads();
-        if (new_value > available_cores) {
-          RCLCPP_WARN(
-            logger_,
-            "num_threads=%d exceeds available cores (%d). Ignoring.",
-            new_value, available_cores);
-        } else {
-          num_threads_ = new_value;
-          RCLCPP_INFO(
-            logger_,
-            "Updated num_threads to %d %s",
-            num_threads_,
-            num_threads_ == -1 ? "(auto)" : "");
-        }
-#else
-        RCLCPP_WARN(
-          logger_,
-          "num_threads parameter ignored - OpenMP support not available. "
-          "Inflation layer will use single thread.");
-        num_threads_ = new_value;
-#endif
-      }
     }
   }
 
@@ -775,11 +654,7 @@ AsymmetricInflationLayer::updateParametersCallback(
     cost_scaling_factor_ =
       std::max(cost_scaling_factor_left_, cost_scaling_factor_right_);
     need_reinflation_ = true;
-    need_cache_recompute = true;
     setCurrent(false);
-  }
-
-  if (need_cache_recompute) {
     matchSize();
   }
 }
