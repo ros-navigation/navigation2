@@ -212,7 +212,8 @@ def extract_template_data(content: str, template_start_pos: int) -> tuple[str, i
         pos += 1
     else:
         raise ValueError('Failed to extract template data: unmatched angle brackets.')
-    return (content[template_start_pos + 1:template_end_pos].strip(), template_end_pos)
+    template_data = content[template_start_pos + 1:template_end_pos].strip()
+    return (template_data, template_end_pos)
 
 
 def extract_arguments(content: str, args_start_pos: int) -> list[str]:
