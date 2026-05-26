@@ -219,7 +219,7 @@ def extract_arguments(content: str, args_start_pos: int) -> list[str]:
     """Extract arguments from a function starting from given position."""
     args: list[str] = []
 
-    parens_count = 0
+    parentheses_count = 0
     angle_brackets_count = 0
     curly_brackets_count = 0
     inside_quote = False
@@ -237,10 +237,10 @@ def extract_arguments(content: str, args_start_pos: int) -> list[str]:
 
         match char:
             case '(':
-                parens_count += 1
+                parentheses_count += 1
             case ')':
-                parens_count -= 1
-                if parens_count == 0:
+                parentheses_count -= 1
+                if parentheses_count == 0:
                     arg = content[new_arg_start:pos].strip()
                     if arg:
                         args.append(arg)
@@ -254,7 +254,7 @@ def extract_arguments(content: str, args_start_pos: int) -> list[str]:
             case '}':
                 curly_brackets_count -= 1
 
-        if angle_brackets_count or curly_brackets_count or parens_count > 1:
+        if angle_brackets_count or curly_brackets_count or parentheses_count > 1:
             pos += 1
             continue
 
