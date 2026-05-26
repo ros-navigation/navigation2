@@ -36,6 +36,7 @@ See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/
 | `rotate_to_heading_angular_vel` | Angular rotational velocity, in rad/s, to rotate to the path heading |
 | `primary_controller` | Internal controller plugin to use for actual control behavior after rotating to heading |
 | `max_angular_accel` | Maximum angular acceleration for rotation to heading |
+| `max_cost_threshold` | Maximum footprint cost threshold to detect a collision. Defaults to 254.0 i.e., LETHAL_OBSTACLE. 
 | `simulate_ahead_time` | Time in seconds to forward simulate a rotation command to check for collisions. If a collision is found, forwards control back to the primary controller plugin. |
 | `rotate_to_goal_heading` | If true, the rotationShimController will take back control of the robot when in XY tolerance of the goal and start rotating to the goal heading |
 | `use_path_orientations` | If true, the controller will use the orientations of the path points to compute the heading of the path instead of computing the heading from the path points. If true, the controller will use the orientations of the path points to compute the heading of the path instead of computing the heading from the path points. Use for for feasible planners like the Smac Planner which generate feasible paths with orientations for forward and reverse motion. |
@@ -69,6 +70,7 @@ controller_server:
       forward_sampling_distance: 0.5
       rotate_to_heading_angular_vel: 1.8
       max_angular_accel: 3.2
+      max_cost_threshold: 254.0
       simulate_ahead_time: 1.0
       rotate_to_goal_heading: false
       use_path_orientations: false
