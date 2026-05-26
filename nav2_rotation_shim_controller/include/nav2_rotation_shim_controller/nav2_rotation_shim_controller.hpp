@@ -189,6 +189,7 @@ protected:
   double forward_sampling_distance_, angular_dist_threshold_, angular_disengage_threshold_;
   double rotate_to_heading_angular_vel_, max_angular_accel_;
   double control_duration_, simulate_ahead_time_;
+  double max_cost_threshold_;
   bool rotate_to_goal_heading_, in_rotation_, rotate_to_heading_once_;
   bool closed_loop_;
   bool use_path_orientations_;

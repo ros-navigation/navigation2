@@ -62,6 +62,9 @@ void RotationShimController::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_cost_threshold",
+    rclcpp::ParameterValue(static_cast<double>(nav2_costmap_2d::LETHAL_OBSTACLE)));
+  nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".simulate_ahead_time", rclcpp::ParameterValue(1.0));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".primary_controller", rclcpp::PARAMETER_STRING);
@@ -81,6 +84,7 @@ void RotationShimController::configure(
     plugin_name_ + ".rotate_to_heading_angular_vel",
     rotate_to_heading_angular_vel_);
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
+  node->get_parameter(plugin_name_ + ".max_cost_threshold", max_cost_threshold_);
   node->get_parameter(plugin_name_ + ".simulate_ahead_time", simulate_ahead_time_);
 
   primary_controller = node->get_parameter(plugin_name_ + ".primary_controller").as_string();
@@ -369,7 +373,7 @@ void RotationShimController::isCollisionFree(
               "RotationShimController detected a potential collision ahead!");
     }
 
-    if (footprint_cost >= static_cast<double>(LETHAL_OBSTACLE)) {
+    if (footprint_cost >= max_cost_threshold_) {
       throw nav2_core::NoValidControl("RotationShimController detected collision ahead!");
     }
   }
@@ -427,6 +431,8 @@ RotationShimController::dynamicParametersCallback(std::vector<rclcpp::Parameter>
         max_angular_accel_ = parameter.as_double();
       } else if (name == plugin_name_ + ".simulate_ahead_time") {
         simulate_ahead_time_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_cost_threshold") {
+        max_cost_threshold_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".rotate_to_goal_heading") {
