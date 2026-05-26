@@ -43,12 +43,12 @@ class FootprintCollisionChecker:
     and checking the collisions of a Footprint
     """
 
-    def __init__(self) -> None:
+    def __init__(self):
         """Initialize the FootprintCollisionChecker Object."""
         self.costmap_ = None
         pass
 
-    def footprintCost(self, footprint: Polygon) -> float:
+    def footprintCost(self, footprint: Polygon):
         """
         Iterate over all the points in a footprint and check for collision.
 
@@ -92,7 +92,7 @@ class FootprintCollisionChecker:
         return max(float(self.lineCost(xstart, x1, ystart, y1)), footprint_cost)
 
     def lineCost(self, x0: float, x1: float,
-                 y0: float, y1: float, step_size: float = 0.5) -> float:
+                 y0: float, y1: float, step_size: float = 0.5):
         """
         Iterate over all the points along a line and check for collision.
 
@@ -129,7 +129,7 @@ class FootprintCollisionChecker:
 
         return line_cost
 
-    def worldToMapValidated(self, wx: float, wy: float) -> tuple[int, int]:
+    def worldToMapValidated(self, wx: float, wy: float):
         """
         Get the map coordinate XY using world coordinate XY.
 
@@ -152,7 +152,7 @@ class FootprintCollisionChecker:
             )
         return self.costmap_.worldToMapValidated(wx, wy)
 
-    def pointCost(self, x: int, y: int) -> np.uint8:
+    def pointCost(self, x: int, y: int):
         """
         Get the cost of a point in the costmap using map coordinates XY.
 
@@ -172,7 +172,7 @@ class FootprintCollisionChecker:
             )
         return self.costmap_.getCostXY(x, y)
 
-    def setCostmap(self, costmap: PyCostmap2D) -> None:
+    def setCostmap(self, costmap: PyCostmap2D):
         """
         Specify which costmap to use.
 
@@ -189,7 +189,7 @@ class FootprintCollisionChecker:
         return None
 
     def footprintCostAtPose(self, x: float, y: float,
-                            theta: float, footprint: Polygon) -> float:
+                            theta: float, footprint: Polygon):
         """
         Get the cost of a footprint at a specific Pose in map coordinates.
 

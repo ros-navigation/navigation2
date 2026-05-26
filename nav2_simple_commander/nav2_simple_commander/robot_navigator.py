@@ -17,7 +17,7 @@
 
 from enum import Enum
 import time
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from action_msgs.msg import GoalStatus
 from builtin_interfaces.msg import Duration
@@ -75,25 +75,23 @@ class RunningTask(Enum):
 
 class BasicNavigator(Node):
 
-    def __init__(self, node_name: str = 'basic_navigator', namespace: str = '') -> None:
+    def __init__(self, node_name: str = 'basic_navigator', namespace: str = ''):
         super().__init__(node_name=node_name, namespace=namespace)
         self.initial_pose = PoseStamped()
         self.initial_pose.header.frame_id = 'map'
 
-        self.goal_handle: Optional[ClientGoalHandle[Any, Any, Any]] = None
-        self.result_future: \
-            Optional[Future[GetResultServiceResponse[Any]]] = None
-        self.feedback: Any = None
-        self.status: Optional[int] = None
+        self.goal_handle = None
+        self.result_future = None
+        self.feedback = None
+        self.status = None
 
         # Since the route server's compute and track action server is likely
         # to be running simultaneously with another (e.g. controller, WPF) server,
         # we must track its futures and feedback separately. Additionally, the
         # route tracking feedback is uniquely important to be complete and ordered
-        self.route_goal_handle: Optional[ClientGoalHandle[Any, Any, Any]] = None
-        self.route_result_future: \
-            Optional[Future[GetResultServiceResponse[Any]]] = None
-        self.route_feedback: list[Any] = []
+        self.route_goal_handle = None
+        self.route_result_future = None
+        self.route_feedback = []
 
         # Error code and messages from servers
         self.last_action_error_code = 0
@@ -107,105 +105,37 @@ class BasicNavigator(Node):
         )
 
         self.initial_pose_received = False
-        self.nav_through_poses_client: ActionClient[
-            NavigateThroughPoses.Goal,
-            NavigateThroughPoses.Result,
-            NavigateThroughPoses.Feedback
-        ] = ActionClient(
+        self.nav_through_poses_client = ActionClient(
             self, NavigateThroughPoses, 'navigate_through_poses')
-        self.nav_to_pose_client: ActionClient[
-            NavigateToPose.Goal,
-            NavigateToPose.Result,
-            NavigateToPose.Feedback
-        ] = ActionClient(self, NavigateToPose, 'navigate_to_pose')
-        self.follow_waypoints_client: ActionClient[
-            FollowWaypoints.Goal,
-            FollowWaypoints.Result,
-            FollowWaypoints.Feedback
-        ] = ActionClient(
+        self.nav_to_pose_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.follow_waypoints_client = ActionClient(
             self, FollowWaypoints, 'follow_waypoints'
         )
-        self.follow_gps_waypoints_client: ActionClient[
-            FollowGPSWaypoints.Goal,
-            FollowGPSWaypoints.Result,
-            FollowGPSWaypoints.Feedback
-        ] = ActionClient(
+        self.follow_gps_waypoints_client = ActionClient(
             self, FollowGPSWaypoints, 'follow_gps_waypoints'
         )
-        self.follow_path_client: ActionClient[
-            FollowPath.Goal,
-            FollowPath.Result,
-            FollowPath.Feedback
-        ] = ActionClient(self, FollowPath, 'follow_path')
-        self.compute_path_to_pose_client: ActionClient[
-            ComputePathToPose.Goal,
-            ComputePathToPose.Result,
-            ComputePathToPose.Feedback
-        ] = ActionClient(
+        self.follow_path_client = ActionClient(self, FollowPath, 'follow_path')
+        self.compute_path_to_pose_client = ActionClient(
             self, ComputePathToPose, 'compute_path_to_pose'
         )
-        self.compute_path_through_poses_client: ActionClient[
-            ComputePathThroughPoses.Goal,
-            ComputePathThroughPoses.Result,
-            ComputePathThroughPoses.Feedback
-        ] = ActionClient(
+        self.compute_path_through_poses_client = ActionClient(
             self, ComputePathThroughPoses, 'compute_path_through_poses'
         )
-        self.smoother_client: ActionClient[
-            SmoothPath.Goal,
-            SmoothPath.Result,
-            SmoothPath.Feedback
-        ] = ActionClient(self, SmoothPath, 'smooth_path')
-        self.compute_route_client: ActionClient[
-            ComputeRoute.Goal,
-            ComputeRoute.Result,
-            ComputeRoute.Feedback
-        ] = ActionClient(self, ComputeRoute, 'compute_route')
-        self.compute_and_track_route_client: ActionClient[
-            ComputeAndTrackRoute.Goal,
-            ComputeAndTrackRoute.Result,
-            ComputeAndTrackRoute.Feedback
-        ] = ActionClient(self, ComputeAndTrackRoute, 'compute_and_track_route')
-        self.spin_client: ActionClient[
-            Spin.Goal,
-            Spin.Result,
-            Spin.Feedback
-        ] = ActionClient(self, Spin, 'spin')
+        self.smoother_client = ActionClient(self, SmoothPath, 'smooth_path')
+        self.compute_route_client = ActionClient(self, ComputeRoute, 'compute_route')
+        self.compute_and_track_route_client = ActionClient(self, ComputeAndTrackRoute, 'compute_and_track_route')
+        self.spin_client = ActionClient(self, Spin, 'spin')
 
-        self.backup_client: ActionClient[
-            BackUp.Goal,
-            BackUp.Result,
-            BackUp.Feedback
-        ] = ActionClient(self, BackUp, 'backup')
-        self.drive_on_heading_client: ActionClient[
-            DriveOnHeading.Goal,
-            DriveOnHeading.Result,
-            DriveOnHeading.Feedback
-        ] = ActionClient(
+        self.backup_client = ActionClient(self, BackUp, 'backup')
+        self.drive_on_heading_client = ActionClient(
             self, DriveOnHeading, 'drive_on_heading'
         )
-        self.assisted_teleop_client: ActionClient[
-            AssistedTeleop.Goal,
-            AssistedTeleop.Result,
-            AssistedTeleop.Feedback
-        ] = ActionClient(
+        self.assisted_teleop_client = ActionClient(
             self, AssistedTeleop, 'assisted_teleop'
         )
-        self.docking_client: ActionClient[
-            DockRobot.Goal,
-            DockRobot.Result,
-            DockRobot.Feedback
-        ] = ActionClient(self, DockRobot, 'dock_robot')
-        self.undocking_client: ActionClient[
-            UndockRobot.Goal,
-            UndockRobot.Result,
-            UndockRobot.Feedback
-        ] = ActionClient(self, UndockRobot, 'undock_robot')
-        self.following_client: ActionClient[
-            FollowObject.Goal,
-            FollowObject.Result,
-            FollowObject.Feedback
-        ] = ActionClient(self, FollowObject, 'follow_object')
+        self.docking_client = ActionClient(self, DockRobot, 'dock_robot')
+        self.undocking_client = ActionClient(self, UndockRobot, 'undock_robot')
+        self.following_client = ActionClient(self, FollowObject, 'follow_object')
 
         self.localization_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
@@ -216,58 +146,49 @@ class BasicNavigator(Node):
         self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, 'initialpose', 10
         )
-        self.change_maps_srv: Client[LoadMap.Request, LoadMap.Response] = \
+        self.change_maps_srv = \
             self.create_client(LoadMap, 'map_server/load_map')
-        self.clear_costmap_global_srv: Client[
-            ClearEntireCostmap.Request, ClearEntireCostmap.Response] = \
+        self.clear_costmap_global_srv = \
             self.create_client(
             ClearEntireCostmap, 'global_costmap/clear_entirely_global_costmap'
         )
-        self.clear_costmap_local_srv: Client[
-            ClearEntireCostmap.Request, ClearEntireCostmap.Response] = \
+        self.clear_costmap_local_srv = \
             self.create_client(
             ClearEntireCostmap, 'local_costmap/clear_entirely_local_costmap'
         )
-        self.clear_costmap_except_region_srv: Client[
-            ClearCostmapExceptRegion.Request, ClearCostmapExceptRegion.Response] = \
+        self.clear_costmap_except_region_srv = \
             self.create_client(
             ClearCostmapExceptRegion, 'local_costmap/clear_costmap_except_region'
         )
-        self.clear_costmap_around_robot_srv: Client[
-            ClearCostmapAroundRobot.Request, ClearCostmapAroundRobot.Response] = \
+        self.clear_costmap_around_robot_srv = \
             self.create_client(
             ClearCostmapAroundRobot, 'local_costmap/clear_costmap_around_robot'
         )
-        self.clear_local_costmap_around_pose_srv: Client[
-            ClearCostmapAroundPose.Request, ClearCostmapAroundPose.Response] = \
+        self.clear_local_costmap_around_pose_srv = \
             self.create_client(
             ClearCostmapAroundPose, 'local_costmap/clear_costmap_around_pose'
         )
-        self.clear_global_costmap_around_pose_srv: Client[
-            ClearCostmapAroundPose.Request, ClearCostmapAroundPose.Response] = \
+        self.clear_global_costmap_around_pose_srv = \
             self.create_client(
             ClearCostmapAroundPose, 'global_costmap/clear_costmap_around_pose'
         )
-        self.get_costmap_global_srv: Client[
-            GetCostmap.Request, GetCostmap.Response] = \
+        self.get_costmap_global_srv = \
             self.create_client(
             GetCostmap, 'global_costmap/get_costmap'
         )
-        self.get_costmap_local_srv: Client[
-            GetCostmap.Request, GetCostmap.Response] = \
+        self.get_costmap_local_srv = \
             self.create_client(
             GetCostmap, 'local_costmap/get_costmap'
         )
-        self.toggle_collision_monitor_srv: Client[
-            Toggle.Request, Toggle.Response] = \
+        self.toggle_collision_monitor_srv = \
             self.create_client(
             Toggle, 'collision_monitor/toggle'
         )
 
-    def destroyNode(self) -> None:
+    def destroyNode(self):
         self.destroy_node()
 
-    def destroy_node(self) -> None:
+    def destroy_node(self):
         self.nav_through_poses_client.destroy()
         self.nav_to_pose_client.destroy()
         self.follow_waypoints_client.destroy()
@@ -286,13 +207,13 @@ class BasicNavigator(Node):
         self.undocking_client.destroy()
         super().destroy_node()
 
-    def setInitialPose(self, initial_pose: PoseStamped) -> None:
+    def setInitialPose(self, initial_pose: PoseStamped):
         """Set the initial pose to the localization system."""
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self._setInitialPose()
 
-    def goThroughPoses(self, poses: Goals, behavior_tree: str = '') -> Optional[RunningTask]:
+    def goThroughPoses(self, poses: Goals, behavior_tree: str = ''):
         """Send a `NavThroughPoses` action request."""
         self.clearPreviousState()
         self.debug("Waiting for 'NavigateThroughPoses' action server")
@@ -319,7 +240,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.NAVIGATE_THROUGH_POSES
 
-    def goToPose(self, pose: PoseStamped, behavior_tree: str = '') -> Optional[RunningTask]:
+    def goToPose(self, pose: PoseStamped, behavior_tree: str = ''):
         """Send a `NavToPose` action request."""
         self.clearPreviousState()
         self.debug("Waiting for 'NavigateToPose' action server")
@@ -358,7 +279,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.NAVIGATE_TO_POSE
 
-    def followWaypoints(self, poses: list[PoseStamped]) -> Optional[RunningTask]:
+    def followWaypoints(self, poses: list[PoseStamped]):
         """Send a `FollowWaypoints` action request."""
         self.clearPreviousState()
         self.debug("Waiting for 'FollowWaypoints' action server")
@@ -384,7 +305,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.FOLLOW_WAYPOINTS
 
-    def followGpsWaypoints(self, gps_poses: list[GeoPose]) -> Optional[RunningTask]:
+    def followGpsWaypoints(self, gps_poses: list[GeoPose]):
         """Send a `FollowGPSWaypoints` action request."""
         self.clearPreviousState()
         self.debug("Waiting for 'FollowWaypoints' action server")
@@ -412,7 +333,7 @@ class BasicNavigator(Node):
 
     def spin(
             self, spin_dist: float = 1.57, time_allowance: int = 10,
-            disable_collision_checks: bool = False) -> Optional[RunningTask]:
+            disable_collision_checks: bool = False):
         self.clearPreviousState()
         self.debug("Waiting for 'Spin' action server")
         while not self.spin_client.wait_for_server(timeout_sec=1.0):
@@ -441,7 +362,7 @@ class BasicNavigator(Node):
     def backup(
             self, backup_dist: float = 0.15, backup_speed: float = 0.025,
             time_allowance: int = 10,
-            disable_collision_checks: bool = False) -> Optional[RunningTask]:
+            disable_collision_checks: bool = False):
         self.clearPreviousState()
         self.debug("Waiting for 'Backup' action server")
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
@@ -471,7 +392,7 @@ class BasicNavigator(Node):
     def driveOnHeading(
             self, dist: float = 0.15, speed: float = 0.025,
             time_allowance: int = 10,
-            disable_collision_checks: bool = False) -> Optional[RunningTask]:
+            disable_collision_checks: bool = False):
         self.clearPreviousState()
         self.debug("Waiting for 'DriveOnHeading' action server")
         while not self.drive_on_heading_client.wait_for_server(timeout_sec=1.0):
@@ -498,7 +419,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.DRIVE_ON_HEADING
 
-    def assistedTeleop(self, time_allowance: int = 30) -> Optional[RunningTask]:
+    def assistedTeleop(self, time_allowance: int = 30):
 
         self.clearPreviousState()
         self.debug("Wanting for 'assisted_teleop' action server")
@@ -526,7 +447,7 @@ class BasicNavigator(Node):
 
     def followPath(self, path: Path, controller_id: str = '',
                    goal_checker_id: str = '', progress_checker_id: str = '',
-                   path_handler_id: str = '') -> Optional[RunningTask]:
+                   path_handler_id: str = ''):
         self.clearPreviousState()
         """Send a `FollowPath` action request."""
         self.debug("Waiting for 'FollowPath' action server")
@@ -557,7 +478,7 @@ class BasicNavigator(Node):
         return RunningTask.FOLLOW_PATH
 
     def dockRobotByPose(self, dock_pose: PoseStamped,
-                        dock_type: str = '', nav_to_dock: bool = True) -> Optional[RunningTask]:
+                        dock_type: str = '', nav_to_dock: bool = True):
         self.clearPreviousState()
         """Send a `DockRobot` action request."""
         self.info("Waiting for 'DockRobot' action server")
@@ -585,7 +506,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.DOCK_ROBOT
 
-    def dockRobotByID(self, dock_id: str, nav_to_dock: bool = True) -> Optional[RunningTask]:
+    def dockRobotByID(self, dock_id: str, nav_to_dock: bool = True):
         """Send a `DockRobot` action request."""
         self.clearPreviousState()
         self.info("Waiting for 'DockRobot' action server")
@@ -612,7 +533,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.DOCK_ROBOT
 
-    def undockRobot(self, dock_type: str = '') -> Optional[RunningTask]:
+    def undockRobot(self, dock_type: str = ''):
         """Send a `UndockRobot` action request."""
         self.clearPreviousState()
         self.info("Waiting for 'UndockRobot' action server")
@@ -637,7 +558,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.UNDOCK_ROBOT
 
-    def followObjectByTopic(self, topic: str, max_duration: int = 0) -> Optional[RunningTask]:
+    def followObjectByTopic(self, topic: str, max_duration: int = 0):
         """Send a `FollowObject` action request."""
         self.clearPreviousState()
         self.info("Waiting for 'FollowObject' action server")
@@ -663,7 +584,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.FOLLOW_OBJECT
 
-    def followObjectByFrame(self, frame: str, max_duration: int = 0) -> Optional[RunningTask]:
+    def followObjectByFrame(self, frame: str, max_duration: int = 0):
         """Send a `FollowObject` action request."""
         self.clearPreviousState()
         self.info("Waiting for 'FollowObject' action server")
@@ -689,7 +610,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.FOLLOW_OBJECT
 
-    def cancelTask(self) -> None:
+    def cancelTask(self):
         """Cancel pending task request of any type."""
         self.info('Canceling current task.')
         if self.result_future:
@@ -711,7 +632,7 @@ class BasicNavigator(Node):
         self.clearPreviousState()
         return
 
-    def isTaskComplete(self, task: RunningTask = RunningTask.NONE) -> bool:
+    def isTaskComplete(self, task: RunningTask = RunningTask.NONE):
         """Check if the task request of any type is complete yet."""
         # Find the result future to spin
         if task is None:
@@ -754,7 +675,7 @@ class BasicNavigator(Node):
         self.debug('Task succeeded!')
         return True
 
-    def getFeedback(self, task: RunningTask = RunningTask.NONE) -> Any:
+    def getFeedback(self, task: RunningTask = RunningTask.NONE):
         """Get the pending action feedback message."""
         if task != RunningTask.COMPUTE_AND_TRACK_ROUTE:
             return self.feedback
@@ -762,7 +683,7 @@ class BasicNavigator(Node):
             return self.route_feedback.pop(0)
         return None
 
-    def getResult(self) -> TaskResult:
+    def getResult(self):
         """Get the pending action result message."""
         if self.status == GoalStatus.STATUS_SUCCEEDED:
             return TaskResult.SUCCEEDED
@@ -773,20 +694,20 @@ class BasicNavigator(Node):
         else:
             return TaskResult.UNKNOWN
 
-    def clearPreviousState(self) -> None:
+    def clearPreviousState(self):
         self.feedback = None
         self.last_action_error_code = 0
         self.last_action_error_msg = ''
 
-    def setTaskError(self, error_code: int, error_msg: str) -> None:
+    def setTaskError(self, error_code: int, error_msg: str):
         self.last_action_error_code = error_code
         self.last_action_error_msg = error_msg
 
-    def getTaskError(self) -> tuple[int, str]:
+    def getTaskError(self):
         return (self.last_action_error_code, self.last_action_error_msg)
 
     def waitUntilNav2Active(self, navigator: str = 'bt_navigator',
-                            localizer: str = 'amcl') -> None:
+                            localizer: str = 'amcl'):
         """Block until the full navigation system is up and running."""
         if localizer != 'robot_localization':  # non-lifecycle node
             self._waitForNodeToActivate(localizer)
@@ -799,7 +720,7 @@ class BasicNavigator(Node):
     def _getPathImpl(
         self, start: PoseStamped, goal: PoseStamped,
         planner_id: str = '', use_start: bool = False
-    ) -> ComputePathToPose.Result:
+    ):
         """
         Send a `ComputePathToPose` action request.
 
@@ -836,7 +757,7 @@ class BasicNavigator(Node):
 
     def getPath(
         self, start: PoseStamped, goal: PoseStamped,
-            planner_id: str = '', use_start: bool = False) -> Optional[Path]:
+            planner_id: str = '', use_start: bool = False):
         """Send a `ComputePathToPose` action request."""
         self.clearPreviousState()
         rtn = self._getPathImpl(start, goal, planner_id, use_start)
@@ -854,7 +775,7 @@ class BasicNavigator(Node):
     def _getPathThroughPosesImpl(
         self, start: PoseStamped, goals: list[PoseStamped],
             planner_id: str = '', use_start: bool = False
-    ) -> ComputePathThroughPoses.Result:
+    ):
         """
         Send a `ComputePathThroughPoses` action request.
 
@@ -898,7 +819,7 @@ class BasicNavigator(Node):
 
     def getPathThroughPoses(
         self, start: PoseStamped, goals: list[PoseStamped],
-            planner_id: str = '', use_start: bool = False) -> Optional[Path]:
+            planner_id: str = '', use_start: bool = False):
         """Send a `ComputePathThroughPoses` action request."""
         self.clearPreviousState()
         rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
@@ -916,7 +837,7 @@ class BasicNavigator(Node):
     def _getRouteImpl(
         self, start: Union[int, PoseStamped],
         goal: Union[int, PoseStamped], use_start: bool = False
-    ) -> ComputeRoute.Result:
+    ):
         """
         Send a `ComputeRoute` action request.
 
@@ -966,7 +887,7 @@ class BasicNavigator(Node):
     def getRoute(
             self, start: Union[int, PoseStamped],
             goal: Union[int, PoseStamped],
-            use_start: bool = False) -> Optional[list[Union[Path, Route]]]:
+            use_start: bool = False):
         """Send a `ComputeRoute` action request."""
         self.clearPreviousState()
         rtn = self._getRouteImpl(start, goal, use_start=False)
@@ -985,7 +906,7 @@ class BasicNavigator(Node):
     def getAndTrackRoute(
         self, start: Union[int, PoseStamped],
         goal: Union[int, PoseStamped], use_start: bool = False
-    ) -> Optional[RunningTask]:
+    ):
         """Send a `ComputeAndTrackRoute` action request."""
         self.clearPreviousState()
         self.debug("Waiting for 'ComputeAndTrackRoute' action server")
@@ -1028,7 +949,7 @@ class BasicNavigator(Node):
     def _smoothPathImpl(
         self, path: Path, smoother_id: str = '',
         max_duration: float = 2.0, check_for_collision: bool = False
-    ) -> SmoothPath.Result:
+    ):
         """
         Send a `SmoothPath` action request.
 
@@ -1064,7 +985,7 @@ class BasicNavigator(Node):
 
     def smoothPath(
         self, path: Path, smoother_id: str = '',
-            max_duration: float = 2.0, check_for_collision: bool = False) -> Optional[Path]:
+            max_duration: float = 2.0, check_for_collision: bool = False):
         """Send a `SmoothPath` action request."""
         self.clearPreviousState()
         rtn = self._smoothPathImpl(path, smoother_id, max_duration, check_for_collision)
@@ -1079,7 +1000,7 @@ class BasicNavigator(Node):
                       f' error msg:{rtn.error_msg}')
             return None
 
-    def changeMap(self, map_filepath: str) -> bool:
+    def changeMap(self, map_filepath: str):
         """Change the current static map in the map server."""
         while not self.change_maps_srv.wait_for_service(timeout_sec=1.0):
             self.info('change map service not available, waiting...')
@@ -1112,13 +1033,13 @@ class BasicNavigator(Node):
             self.info('Change map request was successful!')
             return True
 
-    def clearAllCostmaps(self) -> None:
+    def clearAllCostmaps(self):
         """Clear all costmaps."""
         self.clearLocalCostmap()
         self.clearGlobalCostmap()
         return
 
-    def clearLocalCostmap(self) -> None:
+    def clearLocalCostmap(self):
         """Clear local costmap."""
         while not self.clear_costmap_local_srv.wait_for_service(timeout_sec=1.0):
             self.info('Clear local costmaps service not available, waiting...')
@@ -1132,7 +1053,7 @@ class BasicNavigator(Node):
 
         return
 
-    def clearGlobalCostmap(self) -> None:
+    def clearGlobalCostmap(self):
         """Clear global costmap."""
         while not self.clear_costmap_global_srv.wait_for_service(timeout_sec=1.0):
             self.info('Clear global costmaps service not available, waiting...')
@@ -1146,7 +1067,7 @@ class BasicNavigator(Node):
 
         return
 
-    def clearCostmapExceptRegion(self, reset_distance: float) -> None:
+    def clearCostmapExceptRegion(self, reset_distance: float):
         """Clear the costmap except for a specified region."""
         while not self.clear_costmap_except_region_srv.wait_for_service(timeout_sec=1.0):
             self.info('ClearCostmapExceptRegion service not available, waiting...')
@@ -1161,7 +1082,7 @@ class BasicNavigator(Node):
 
         return
 
-    def clearCostmapAroundRobot(self, reset_distance: float) -> None:
+    def clearCostmapAroundRobot(self, reset_distance: float):
         """Clear the costmap around the robot."""
         while not self.clear_costmap_around_robot_srv.wait_for_service(timeout_sec=1.0):
             self.info('ClearCostmapAroundRobot service not available, waiting...')
@@ -1176,7 +1097,7 @@ class BasicNavigator(Node):
 
         return
 
-    def clearLocalCostmapAroundPose(self, pose: PoseStamped, reset_distance: float) -> None:
+    def clearLocalCostmapAroundPose(self, pose: PoseStamped, reset_distance: float):
         """Clear the costmap around a given pose."""
         while not self.clear_local_costmap_around_pose_srv.wait_for_service(timeout_sec=1.0):
             self.info('ClearLocalCostmapAroundPose service not available, waiting...')
@@ -1192,7 +1113,7 @@ class BasicNavigator(Node):
 
         return
 
-    def clearGlobalCostmapAroundPose(self, pose: PoseStamped, reset_distance: float) -> None:
+    def clearGlobalCostmapAroundPose(self, pose: PoseStamped, reset_distance: float):
         """Clear the global costmap around a given pose."""
         while not self.clear_global_costmap_around_pose_srv.wait_for_service(timeout_sec=1.0):
             self.info('ClearGlobalCostmapAroundPose service not available, waiting...')
@@ -1208,7 +1129,7 @@ class BasicNavigator(Node):
 
         return
 
-    def getGlobalCostmap(self) -> Optional[Costmap]:
+    def getGlobalCostmap(self):
         """Get the global costmap."""
         while not self.get_costmap_global_srv.wait_for_service(timeout_sec=1.0):
             self.info('Get global costmaps service not available, waiting...')
@@ -1223,7 +1144,7 @@ class BasicNavigator(Node):
 
         return result.map
 
-    def getLocalCostmap(self) -> Optional[Costmap]:
+    def getLocalCostmap(self):
         """Get the local costmap."""
         while not self.get_costmap_local_srv.wait_for_service(timeout_sec=1.0):
             self.info('Get local costmaps service not available, waiting...')
@@ -1239,7 +1160,7 @@ class BasicNavigator(Node):
 
         return result.map
 
-    def toggleCollisionMonitor(self, enable: bool) -> None:
+    def toggleCollisionMonitor(self, enable: bool):
         """Toggle the collision monitor."""
         while not self.toggle_collision_monitor_srv.wait_for_service(timeout_sec=1.0):
             self.info('Toggle collision monitor service not available, waiting...')
@@ -1254,7 +1175,7 @@ class BasicNavigator(Node):
 
         return
 
-    def lifecycleStartup(self) -> None:
+    def lifecycleStartup(self):
         """Startup nav2 lifecycle system."""
         self.info('Starting up lifecycle nodes based on lifecycle_manager.')
         for srv_name, srv_type in self.get_service_names_and_types():
@@ -1279,7 +1200,7 @@ class BasicNavigator(Node):
         self.info('Nav2 is ready for use!')
         return
 
-    def lifecycleShutdown(self) -> None:
+    def lifecycleShutdown(self):
         """Shutdown nav2 lifecycle system."""
         self.info('Shutting down lifecycle nodes based on lifecycle_manager.')
         for srv_name, srv_type in self.get_service_names_and_types():
@@ -1296,7 +1217,7 @@ class BasicNavigator(Node):
                 future.result()
         return
 
-    def _waitForNodeToActivate(self, node_name: str) -> None:
+    def _waitForNodeToActivate(self, node_name: str):
         # Waits for the node within the tester namespace to become active
         self.debug(f'Waiting for {node_name} to become active..')
         node_service = f'{node_name}/get_state'
@@ -1319,7 +1240,7 @@ class BasicNavigator(Node):
             time.sleep(2)
         return
 
-    def _waitForInitialPose(self) -> None:
+    def _waitForInitialPose(self):
         while not self.initial_pose_received:
             self.info('Setting initial pose')
             self._setInitialPose()
@@ -1327,23 +1248,23 @@ class BasicNavigator(Node):
             rclpy.spin_once(self, timeout_sec=1.0)
         return
 
-    def _amclPoseCallback(self, msg: PoseWithCovarianceStamped) -> None:
+    def _amclPoseCallback(self, msg: PoseWithCovarianceStamped):
         self.debug('Received amcl pose')
         self.initial_pose_received = True
         return
 
-    def _feedbackCallback(self, msg: Any) -> None:
+    def _feedbackCallback(self, msg: Any):
         self.debug('Received action feedback message')
         self.feedback = msg.feedback
         return
 
     def _routeFeedbackCallback(
-            self, msg: ComputeAndTrackRoute.Impl.FeedbackMessage) -> None:
+            self, msg: ComputeAndTrackRoute.Impl.FeedbackMessage):
         self.debug('Received route action feedback message')
         self.route_feedback.append(msg.feedback)
         return
 
-    def _setInitialPose(self) -> None:
+    def _setInitialPose(self):
         msg = PoseWithCovarianceStamped()
         msg.pose.pose = self.initial_pose.pose
         msg.header.frame_id = self.initial_pose.header.frame_id
@@ -1352,18 +1273,18 @@ class BasicNavigator(Node):
         self.initial_pose_pub.publish(msg)
         return
 
-    def info(self, msg: str) -> None:
+    def info(self, msg: str):
         self.get_logger().info(msg)
         return
 
-    def warn(self, msg: str) -> None:
+    def warn(self, msg: str):
         self.get_logger().warning(msg)
         return
 
-    def error(self, msg: str) -> None:
+    def error(self, msg: str):
         self.get_logger().error(msg)
         return
 
-    def debug(self, msg: str) -> None:
+    def debug(self, msg: str):
         self.get_logger().debug(msg)
         return

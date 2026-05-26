@@ -37,7 +37,7 @@ class RobotConfig(TypedDict):
     z_pose: float
 
 
-def generate_launch_description() -> LaunchDescription:
+def generate_launch_description():
     map_yaml_file = os.getenv('TEST_MAP', '')
     world = os.getenv('TEST_WORLD', '')
     urdf = os.getenv('TEST_URDF', '')
@@ -58,7 +58,7 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     # Names and poses of the robots
-    robots: list[RobotConfig] = [
+    robots = [
         {'name': 'robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01},
         {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01},
     ]
@@ -167,7 +167,7 @@ def generate_launch_description() -> LaunchDescription:
     return ld
 
 
-def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
+def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
     # TODO(orduno) remove duplicated definition of robots on `generate_launch_description`
@@ -193,11 +193,11 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
         output='screen',
     )
 
-    lts = LaunchTestService()  # type: ignore[no-untyped-call]
-    lts.add_test_action(ld, test1_action)  # type: ignore[no-untyped-call]
+    lts = LaunchTestService()
+    lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)  # type: ignore[no-untyped-call]
+    return lts.run(ls)
 
 
 if __name__ == '__main__':

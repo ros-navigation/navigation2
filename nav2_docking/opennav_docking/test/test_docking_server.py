@@ -50,7 +50,7 @@ from tf2_ros import TransformBroadcaster
 @pytest.mark.rostest
 # @pytest.mark.flaky
 # @pytest.mark.flaky(max_runs=5, min_passes=3)
-def generate_test_description() -> LaunchDescription:
+def generate_test_description():
 
     # Use local param file
     launch_dir = os.path.dirname(os.path.realpath(__file__))
@@ -99,21 +99,21 @@ def generate_test_description() -> LaunchDescription:
             parameters=[{'autostart': True},
                         {'node_names': ['docking_server']}]
         ),
-        launch_testing.actions.ReadyToTest(),  # type: ignore[no-untyped-call]
+        launch_testing.actions.ReadyToTest(),
     ])
 
 
 class TestDockingServer(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls) -> None:
+    def setUpClass(cls):
         rclpy.init()
 
     @classmethod
-    def tearDownClass(cls) -> None:
+    def tearDownClass(cls):
         rclpy.shutdown()
 
-    def setUp(self) -> None:
+    def setUp(self):
         # Create a ROS node for tests
         # Latest odom -> base_link
         self.x = 0.0
@@ -132,9 +132,9 @@ class TestDockingServer(unittest.TestCase):
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.node)
         self.odom_pub = self.node.create_publisher(Odometry, 'odom', 10)
 
-    def wait_for_node_to_be_active(self, node_name: str, timeout_sec: float = 30.0) -> None:
+    def wait_for_node_to_be_active(self, node_name, timeout_sec=30.0):
         """Wait for a managed node to become active."""
-        client: Client[GetState.Request, GetState.Response] = \
+        client = \
             self.node.create_client(GetState, f'{node_name}/get_state')
         if not client.wait_for_service(timeout_sec=2.0):
             self.fail(f'Service get_state for {node_name} not available.')
@@ -152,14 +152,14 @@ class TestDockingServer(unittest.TestCase):
         # raises AssertionError
         self.fail(f'Node {node_name} did not become active within {timeout_sec} seconds.')
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.node.destroy_node()
 
-    def command_velocity_callback(self, msg: TwistStamped) -> None:
+    def command_velocity_callback(self, msg):
         self.node.get_logger().info(f'Command: {msg.twist.linear.x:f} {msg.twist.angular.z:f}')
         self.command = msg.twist
 
-    def timer_callback(self) -> None:
+    def timer_callback(self):
         # Propagate command
         period = 0.05
         self.x += cos(self.theta) * self.command.linear.x * period
@@ -168,7 +168,7 @@ class TestDockingServer(unittest.TestCase):
         # Need to publish updated TF
         self.publish()
 
-    def publish(self) -> None:
+    def publish(self):
         # Publish base->odom transform
         t = TransformStamped()
         t.header.stamp = self.node.get_clock().now().to_msg()
@@ -189,7 +189,7 @@ class TestDockingServer(unittest.TestCase):
                 b.current = -1.0
             self.battery_state_pub.publish(b)
 
-    def publish_odometry(self, odom_to_base_link: TransformStamped) -> None:
+    def publish_odometry(self, odom_to_base_link):
         odom = Odometry()
         odom.header.stamp = self.node.get_clock().now().to_msg()
         odom.header.frame_id = 'odom'
@@ -200,7 +200,7 @@ class TestDockingServer(unittest.TestCase):
         odom.twist.twist = self.command
         self.odom_pub.publish(odom)
 
-    def action_feedback_callback(self, msg: DockRobot.Impl.FeedbackMessage) -> None:
+    def action_feedback_callback(self, msg):
         # Force the docking action to run a full recovery loop and then
         # make contact with the dock (based on pose of robot) before
         # we report that the robot is charging
@@ -210,10 +210,8 @@ class TestDockingServer(unittest.TestCase):
 
     def nav_execute_callback(
         self,
-        goal_handle: ServerGoalHandle[NavigateToPose.Goal,
-                                      NavigateToPose.Result, NavigateToPose.Feedback,
-                                      NavigateToPose]
-    ) -> NavigateToPose.Result:
+        goal_handle
+    ):
         goal = goal_handle.request
         self.x = goal.pose.pose.position.x - 0.05
         self.y = goal.pose.pose.position.y + 0.05
@@ -227,7 +225,7 @@ class TestDockingServer(unittest.TestCase):
         result.error_msg = ''
         return result
 
-    def test_docking_server(self) -> None:
+    def test_docking_server(self):
         # Publish TF for odometry
         self.tf_broadcaster = TransformBroadcaster(self.node)
         time.sleep(0.5)
@@ -236,13 +234,9 @@ class TestDockingServer(unittest.TestCase):
         self.timer = self.node.create_timer(0.05, self.timer_callback)
 
         # Create action client
-        self.dock_action_client: ActionClient[
-            DockRobot.Goal, DockRobot.Result, DockRobot.Feedback
-        ] = ActionClient(self.node, DockRobot, 'dock_robot')
+        self.dock_action_client = ActionClient(self.node, DockRobot, 'dock_robot')
 
-        self.undock_action_client: ActionClient[
-            UndockRobot.Goal, UndockRobot.Result, UndockRobot.Feedback
-        ] = ActionClient(self.node, UndockRobot, 'undock_robot')
+        self.undock_action_client = ActionClient(self.node, UndockRobot, 'undock_robot')
 
         # Subscribe to command velocity
         self.node.create_subscription(
@@ -379,9 +373,9 @@ class TestDockingServer(unittest.TestCase):
             self.assertTrue(self.action_result[3].result.success)
 
 
-@launch_testing.post_shutdown_test()  # type: ignore[no-untyped-call]
+@launch_testing.post_shutdown_test()
 class TestProcessOutput(unittest.TestCase):
 
-    def test_exit_code(self, proc_info: launch_testing.ProcInfoHandler) -> None:
+    def test_exit_code(self, proc_info):
         # Check that all processes in the launch exit with code 0
-        launch_testing.asserts.assertExitCodes(proc_info)  # type: ignore[no-untyped-call]
+        launch_testing.asserts.assertExitCodes(proc_info)
