@@ -478,17 +478,19 @@ def extract_cpp_classes_and_ids(cpp_files: list[Path]) -> CPPData:
 
         all_classes = node_cpp_data.keys()
         file_classes = class_names_and_ids.keys()
-        if all_classes & file_classes:
+        common_classes = all_classes & file_classes
+        if common_classes:
             raise ValueError(
                 f'Duplicate class name found in {cpp_file}: '
-                f'{", ".join(all_classes & file_classes)}.'
+                f'{", ".join(common_classes)}.'
             )
         all_ids = set(node_cpp_data.values())
         file_ids = set(class_names_and_ids.values())
-        if all_ids & file_ids:
+        common_ids = all_ids & file_ids
+        if common_ids:
             raise ValueError(
                 f'Duplicate node ID found in {cpp_file}: '
-                f'{", ".join(all_ids & file_ids)}.'
+                f'{", ".join(common_ids)}.'
             )
         node_cpp_data.update(class_names_and_ids)
     return node_cpp_data
@@ -592,11 +594,12 @@ def extract_hpp_classes_and_ports_data(
                     )
                 base_port_names = base_ports.keys()
                 node_port_names = ports.keys()
-                if base_port_names & node_port_names:
+                common_port_names = base_port_names & node_port_names
+                if common_port_names:
                     raise ValueError(
                         f'Port name conflict between {class_name} class and '
                         f'its base class {base_class_name}: '
-                        f'{", ".join(base_port_names & node_port_names)}.'
+                        f'{", ".join(common_port_names)}.'
                     )
                 ports.update(base_ports)
             node_hpp_data[class_name] = ports
