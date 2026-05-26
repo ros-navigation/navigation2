@@ -412,6 +412,9 @@ def extract_node_registration_data(content: str) -> dict[str, str]:
     for register_match in register_pattern.finditer(content):
         start_pos = register_match.end()
 
+        if has_leading_comments(content, start_pos, '//'):
+            continue
+
         register_type, register_type_end = extract_template_data(content, start_pos)
         if not register_type:
             raise ValueError('Failed to extract node registration template data.')
