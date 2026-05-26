@@ -650,6 +650,7 @@ geometry_msgs::msg::TwistStamped Optimizer::getControlFromSequenceAsTwist(
   auto wz = control_sequence_.wz(offset);
   auto vy = isHolonomic() ? control_sequence_.vy(offset) : 0.0f;
 
+  // Update the command history for the motion model's latency compensation mechanism
   motion_model_->pushCommandHistory(vx, vy, wz);
 
   if (isHolonomic()) {

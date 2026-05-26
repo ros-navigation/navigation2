@@ -152,12 +152,7 @@ public:
     const unsigned int offset_wz = std::floor((model_delay_wz_ / model_dt_) + 0.5);
 
     if (offset_vx > 0u || offset_wz > 0u || (is_holo && offset_vy > 0u)) {
-      auto state_copy = state;
-      applyDelayShift(state.vx, state_copy.vx, cmd_history_vx_, offset_vx);
-      applyDelayShift(state.wz, state_copy.wz, cmd_history_wz_, offset_wz);
-      if (is_holo) {
-        applyDelayShift(state.vy, state_copy.vy, cmd_history_vy_, offset_vy);
-      }
+      applyDelayShift(state, is_holo, offset_vx, offset_vy, offset_wz);
     }
   }
 
@@ -180,26 +175,33 @@ protected:
     * For j in [1, offset) — the delay window — fill `dst` with history[j]
     */
   void applyDelayShift(
-    Eigen::ArrayXXf & dst,
-    const Eigen::ArrayXXf & src,
-    const std::vector<float> & history,
-    unsigned int offset) const
+    models::State & state, bool is_holo,
+    unsigned int offset_vx, unsigned int offset_vy, unsigned int offset_wz) const
   {
-    if (offset == 0u) {
-      return;
-    }
+    auto shift = [](Eigen::ArrayXXf & velocities, unsigned int offset,
+      const std::vector<float> & history) {
+        const unsigned int cols = static_cast<unsigned int>(velocities.cols());
+        if (offset == 0u || cols == 0u) {
+          return;
+        }
 
-    const auto cols = static_cast<unsigned int>(dst.cols());
-    const unsigned int replay_end = std::min<unsigned int>(offset, cols);
+        // Shift cols in-place right-to-left by offset
+        for (unsigned int k = (offset < cols) ? cols - offset : 0u; k > 0; --k) {
+          velocities.col(offset + k - 1) = velocities.col(k);
+        }
 
-    // Replay from command history
-    for (unsigned int j = 1; j < replay_end; j++) {
-      dst.col(j).setConstant(history[j]);
-    }
+        // Fill delay window cols with the in-flight commands from history.
+        const unsigned int end = std::min(offset, cols);
+        for (unsigned int j = 1; j < end; ++j) {
+          velocities.col(j).setConstant(history[j]);
+        }
+      };
 
-    if (offset < cols) {
-      const auto n = static_cast<Eigen::Index>(cols - offset);
-      dst.rightCols(n) = src.middleCols(1, n);
+    shift(state.vx, offset_vx, cmd_history_vx_);
+    shift(state.wz, offset_wz, cmd_history_wz_);
+
+    if (is_holo) {
+      shift(state.vy, offset_vy, cmd_history_vy_);
     }
   }
 
