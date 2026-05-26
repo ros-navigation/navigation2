@@ -642,6 +642,46 @@ TEST(SimpleChargingDockTests, SubscriptionPersistent)
   dock->cleanup();
 }
 
+
+TEST(SimpleChargingDockTests, JointStateMismatchedArrays)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto pub = node->create_publisher<sensor_msgs::msg::JointState>(
+    "joint_states", rclcpp::QoS(1));
+  pub->on_activate();
+  node->declare_parameter("my_dock.use_stall_detection", rclcpp::ParameterValue(true));
+  node->declare_parameter("my_dock.stall_joint_names", rclcpp::PARAMETER_STRING_ARRAY);
+  node->declare_parameter("my_dock.stall_velocity_threshold", rclcpp::ParameterValue(0.1));
+  node->declare_parameter("my_dock.stall_effort_threshold", rclcpp::ParameterValue(5.0));
+
+  std::vector<std::string> names = {"left_motor", "right_motor"};
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.stall_joint_names", rclcpp::ParameterValue(names)));
+
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDockShim>();
+  dock->configure(node, "my_dock", nullptr);
+  dock->activate();
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+
+  // Publish JointState with names but empty velocity/effort arrays
+  sensor_msgs::msg::JointState msg;
+  msg.name = {"left_motor", "right_motor"};
+  msg.velocity = {};
+  msg.effort = {};
+  pub->publish(msg);
+  rclcpp::Rate r(2);
+  r.sleep();
+
+  EXPECT_THROW(executor.spin_some(), std::runtime_error);
+
+  dock->deactivate();
+  dock->cleanup();
+  dock.reset();
+}
+
+
 }  // namespace opennav_docking
 
 int main(int argc, char ** argv)
