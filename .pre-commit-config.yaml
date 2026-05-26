@@ -32,13 +32,6 @@ repos:
       - id: trailing-whitespace
         exclude_types: [rst]
       - id: fix-byte-order-marker
--   repo: https://github.com/pycqa/isort
-    rev: 6.0.1
-    hooks:
-      - id: isort
-        args: ["tools/pyproject.toml"]
-        name: isort (python)
-
 -   repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
