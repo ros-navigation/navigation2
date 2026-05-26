@@ -421,11 +421,15 @@ def extract_node_registration_data(content: str) -> dict[str, str]:
             raise ValueError('Failed to extract class name from node registration.')
         class_name = class_name_match.group(1)
 
+        if class_name in register_data:
+            raise ValueError(f'Duplicate {class_name} class found.')
+
         args_start = content.find('(', register_type_end)
         if args_start == -1:
             raise ValueError(
                 'Failed to extract node registration arguments: opening parenthesis not found.'
             )
+
         register_args = extract_arguments(content, args_start)
         if not register_args:
             raise ValueError(
@@ -440,6 +444,11 @@ def extract_node_registration_data(content: str) -> dict[str, str]:
         node_id = node_id.strip('"')
         if not node_id:
             raise ValueError('Failed to extract node ID from node registration: empty string.')
+
+        if node_id in register_data.values():
+            raise ValueError(
+                f'Duplicate node ID registration for {class_name} class found: {node_id}'
+            )
 
         register_data[class_name] = node_id
 
@@ -462,6 +471,21 @@ def extract_cpp_classes_and_ids(cpp_files: list[Path]) -> CPPData:
         except ValueError as exc:
             raise ValueError(
                 f'Failed to extract node registration data from {cpp_file}: {exc}\n')
+
+        all_classes = node_cpp_data.keys()
+        file_classes = class_names_and_ids.keys()
+        if all_classes & file_classes:
+            raise ValueError(
+                f'Duplicate class name found in {cpp_file}: '
+                f'{", ".join(all_classes & file_classes)}.'
+            )
+        all_ids = set(node_cpp_data.values())
+        file_ids = set(class_names_and_ids.values())
+        if all_ids & file_ids:
+            raise ValueError(
+                f'Duplicate node ID found in {cpp_file}: '
+                f'{", ".join(all_ids & file_ids)}.'
+            )
         node_cpp_data.update(class_names_and_ids)
     return node_cpp_data
 
@@ -542,6 +566,10 @@ def extract_hpp_classes_and_ports_data(
             raise ValueError(
                 f'No class definitions found in {hpp_file}.')
         for class_name, base_class_name, class_section in class_definitions:
+            if class_name in node_hpp_data:
+                raise ValueError(
+                    f'Duplicate class name found in {hpp_file}: {class_name}.'
+                )
             try:
                 ports = extract_code_port_data(class_section)
             except ValueError as exc:
@@ -557,6 +585,14 @@ def extract_hpp_classes_and_ports_data(
                     raise ValueError(
                         f'Failed to extract port data for {class_name} class '
                         f'in {base_class_path}: {exc}'
+                    )
+                base_port_names = base_ports.keys()
+                node_port_names = ports.keys()
+                if base_port_names & node_port_names:
+                    raise ValueError(
+                        f'Port name conflict between {class_name} class and '
+                        f'its base class {base_class_name}: '
+                        f'{", ".join(base_port_names & node_port_names)}.'
                     )
                 ports.update(base_ports)
             node_hpp_data[class_name] = ports

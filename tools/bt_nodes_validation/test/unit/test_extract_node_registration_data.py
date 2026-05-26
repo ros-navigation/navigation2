@@ -44,6 +44,21 @@ class TestMissingNodeRegistrationData:
         ):
             extract_node_registration_data(content)
 
+    def test_duplicate_class_name(self):
+        """Test case when class name is duplicated."""
+        content = """
+            BT_REGISTER_NODES(factory)
+            {
+                factory.registerNodeType<TestNode1>("TestNodeID1");
+                factory.registerNodeType<TestNode1>("TestNodeID2");
+            }
+        """
+        with pytest.raises(
+            ValueError,
+            match='Duplicate TestNode1 class found.'
+        ):
+            extract_node_registration_data(content)
+
     def test_missing_arguments(self):
         """Test case when node registration arguments are missing (node ID)."""
         content = """
@@ -83,6 +98,21 @@ class TestMissingNodeRegistrationData:
         with pytest.raises(
             ValueError,
             match='Failed to extract node ID from node registration: empty string.'
+        ):
+            extract_node_registration_data(content)
+
+    def test_duplicate_node_id(self):
+        """Test case when node ID name is duplicated."""
+        content = """
+            BT_REGISTER_NODES(factory)
+            {
+                factory.registerNodeType<TestNode1>("TestNodeID");
+                factory.registerNodeType<TestNode2>("TestNodeID");
+            }
+        """
+        with pytest.raises(
+            ValueError,
+            match='Duplicate node ID registration for TestNode2 class found: TestNodeID'
         ):
             extract_node_registration_data(content)
 
