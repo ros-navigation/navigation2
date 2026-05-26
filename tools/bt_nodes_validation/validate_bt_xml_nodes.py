@@ -621,8 +621,13 @@ def extract_code_nodes_data(config: dict) -> BTNodes:
         hpp_files = get_files(hpp_dirs, '*.hpp')
 
         base_classes_config = bt.get('hpp_base_classes_paths', [])
-        for base_class in base_classes_config:
-            hpp_base_classes.update(base_class)
+        for base_class_data in base_classes_config:
+            for base_class_name, base_class_path in base_class_data.items():
+                if base_class_name in hpp_base_classes:
+                    raise ValueError(
+                        f'Duplicate base class name found in configuration: {base_class_name}.'
+                    )
+                hpp_base_classes[base_class_name] = base_class_path
 
         node_cpp_data = extract_cpp_classes_and_ids(cpp_files)
         node_hpp_data = extract_hpp_classes_and_ports_data(hpp_files, hpp_base_classes)
