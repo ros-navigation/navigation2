@@ -40,6 +40,8 @@
 
 #include <memory>
 #include <chrono>
+#include <cmath>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include <utility>
@@ -462,7 +464,8 @@ Costmap2DROS::getParameters()
     }
   }
 
-  // 4. The width and height of map cannot be negative or 0 (to avoid abnoram memory usage)
+  // 4. The width, height, and resolution of map cannot be negative or 0
+  // (to avoid abnormal memory usage)
   if (map_width_meters_ <= 0) {
     RCLCPP_ERROR(
       get_logger(), "You try to set width of map to be negative or zero,"
@@ -472,6 +475,10 @@ Costmap2DROS::getParameters()
     RCLCPP_ERROR(
       get_logger(), "You try to set height of map to be negative or zero,"
       " this isn't allowed, please give a positive value.");
+  }
+  if (resolution_ <= 0.0 || !std::isfinite(resolution_)) {
+    throw std::invalid_argument(
+            "Costmap resolution must be a positive finite value.");
   }
 }
 
@@ -755,8 +762,17 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
           publish_cycle_ = rclcpp::Duration(-1s);
         }
       } else if (name == "resolution") {
+        const double new_resolution = parameter.as_double();
+        if (new_resolution <= 0.0 || !std::isfinite(new_resolution)) {
+          RCLCPP_ERROR(
+            get_logger(),
+            "You try to set resolution of map to be negative, zero, or non-finite,"
+            " this isn't allowed, please give a positive finite value.");
+          result.successful = false;
+          return result;
+        }
         resize_map = true;
-        resolution_ = parameter.as_double();
+        resolution_ = new_resolution;
       } else if (name == "origin_x") {
         resize_map = true;
         origin_x_ = parameter.as_double();
