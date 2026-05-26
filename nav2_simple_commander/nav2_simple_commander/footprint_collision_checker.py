@@ -26,7 +26,6 @@ from math import cos, sin
 from geometry_msgs.msg import Point32, Polygon
 from nav2_simple_commander.costmap_2d import PyCostmap2D
 from nav2_simple_commander.line_iterator import LineIterator
-import numpy as np
 
 NO_INFORMATION = 255
 LETHAL_OBSTACLE = 254

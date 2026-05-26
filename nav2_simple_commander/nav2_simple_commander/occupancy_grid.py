@@ -21,10 +21,8 @@ and handling semantics found in the costmap 2d C++ API.
 """
 
 
-from builtin_interfaces.msg import Time
 from nav_msgs.msg import OccupancyGrid
 import numpy as np
-from numpy.typing import NDArray
 
 
 class PyOccupancyGrid:

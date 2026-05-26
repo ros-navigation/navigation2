@@ -17,7 +17,7 @@ import unittest
 
 from nav2_smac_planner.lattice_primitives.trajectory import Trajectory
 from nav2_smac_planner.lattice_primitives.trajectory_generator import (
-    TrajectoryGenerator, TrajectoryGeneratorConfigDict)
+    TrajectoryGenerator)
 import numpy as np
 
 TURNING_RADIUS = 1

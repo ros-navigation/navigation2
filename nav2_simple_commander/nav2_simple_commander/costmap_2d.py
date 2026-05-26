@@ -24,10 +24,8 @@ and handling semantics found in the costmap 2d C++ API.
 """
 
 
-from builtin_interfaces.msg import Time
 from nav2_msgs.msg import Costmap
 import numpy as np
-from numpy.typing import NDArray
 
 
 class PyCostmap2D:

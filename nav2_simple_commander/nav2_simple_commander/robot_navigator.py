@@ -29,20 +29,16 @@ from nav2_msgs.action import (AssistedTeleop, BackUp,  # type: ignore[attr-defin
                               ComputeRoute, DockRobot, DriveOnHeading, FollowGPSWaypoints,
                               FollowObject, FollowPath, FollowWaypoints, NavigateThroughPoses,
                               NavigateToPose, SmoothPath, Spin, UndockRobot)
-from nav2_msgs.msg import Costmap, Route
 from nav2_msgs.srv import (ClearCostmapAroundPose, ClearCostmapAroundRobot,
                            ClearCostmapExceptRegion, ClearEntireCostmap, GetCostmap, LoadMap,
                            ManageLifecycleNodes, Toggle)
 from nav_msgs.msg import Goals, Path
 import rclpy
 from rclpy.action import ActionClient
-from rclpy.action.client import ClientGoalHandle
 from rclpy.client import Client
 from rclpy.duration import Duration as rclpyDuration
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
-from rclpy.task import Future
-from rclpy.type_support import GetResultServiceResponse
 
 
 # Task Result enum for the result of the task being executed
@@ -123,7 +119,11 @@ class BasicNavigator(Node):
         )
         self.smoother_client = ActionClient(self, SmoothPath, 'smooth_path')
         self.compute_route_client = ActionClient(self, ComputeRoute, 'compute_route')
-        self.compute_and_track_route_client = ActionClient(self, ComputeAndTrackRoute, 'compute_and_track_route')
+        self.compute_and_track_route_client = ActionClient(
+            self,
+            ComputeAndTrackRoute,
+            'compute_and_track_route',
+        )
         self.spin_client = ActionClient(self, Spin, 'spin')
 
         self.backup_client = ActionClient(self, BackUp, 'backup')
@@ -148,41 +148,41 @@ class BasicNavigator(Node):
         )
         self.change_maps_srv = \
             self.create_client(LoadMap, 'map_server/load_map')
-        self.clear_costmap_global_srv = \
-            self.create_client(
-            ClearEntireCostmap, 'global_costmap/clear_entirely_global_costmap'
+        self.clear_costmap_global_srv = self.create_client(
+            ClearEntireCostmap,
+            'global_costmap/clear_entirely_global_costmap',
         )
-        self.clear_costmap_local_srv = \
-            self.create_client(
-            ClearEntireCostmap, 'local_costmap/clear_entirely_local_costmap'
+        self.clear_costmap_local_srv = self.create_client(
+            ClearEntireCostmap,
+            'local_costmap/clear_entirely_local_costmap',
         )
-        self.clear_costmap_except_region_srv = \
-            self.create_client(
-            ClearCostmapExceptRegion, 'local_costmap/clear_costmap_except_region'
+        self.clear_costmap_except_region_srv = self.create_client(
+            ClearCostmapExceptRegion,
+            'local_costmap/clear_costmap_except_region',
         )
-        self.clear_costmap_around_robot_srv = \
-            self.create_client(
-            ClearCostmapAroundRobot, 'local_costmap/clear_costmap_around_robot'
+        self.clear_costmap_around_robot_srv = self.create_client(
+            ClearCostmapAroundRobot,
+            'local_costmap/clear_costmap_around_robot',
         )
-        self.clear_local_costmap_around_pose_srv = \
-            self.create_client(
-            ClearCostmapAroundPose, 'local_costmap/clear_costmap_around_pose'
+        self.clear_local_costmap_around_pose_srv = self.create_client(
+            ClearCostmapAroundPose,
+            'local_costmap/clear_costmap_around_pose',
         )
-        self.clear_global_costmap_around_pose_srv = \
-            self.create_client(
-            ClearCostmapAroundPose, 'global_costmap/clear_costmap_around_pose'
+        self.clear_global_costmap_around_pose_srv = self.create_client(
+            ClearCostmapAroundPose,
+            'global_costmap/clear_costmap_around_pose',
         )
-        self.get_costmap_global_srv = \
-            self.create_client(
-            GetCostmap, 'global_costmap/get_costmap'
+        self.get_costmap_global_srv = self.create_client(
+            GetCostmap,
+            'global_costmap/get_costmap',
         )
-        self.get_costmap_local_srv = \
-            self.create_client(
-            GetCostmap, 'local_costmap/get_costmap'
+        self.get_costmap_local_srv = self.create_client(
+            GetCostmap,
+            'local_costmap/get_costmap',
         )
-        self.toggle_collision_monitor_srv = \
-            self.create_client(
-            Toggle, 'collision_monitor/toggle'
+        self.toggle_collision_monitor_srv = self.create_client(
+            Toggle,
+            'collision_monitor/toggle',
         )
 
     def destroyNode(self):

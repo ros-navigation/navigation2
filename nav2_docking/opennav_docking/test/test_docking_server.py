@@ -33,8 +33,7 @@ from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.action.client import ActionClient
-from rclpy.action.server import ActionServer, ServerGoalHandle
-from rclpy.client import Client
+from rclpy.action.server import ActionServer
 from sensor_msgs.msg import BatteryState
 import tf2_ros
 from tf2_ros import TransformBroadcaster

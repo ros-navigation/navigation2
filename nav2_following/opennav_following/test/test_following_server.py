@@ -31,7 +31,6 @@ from nav2_msgs.action import FollowObject
 import pytest
 import rclpy
 from rclpy.action import ActionClient
-from rclpy.client import Client
 from rclpy.duration import Duration
 from rclpy.executors import SingleThreadedExecutor
 import tf2_ros
