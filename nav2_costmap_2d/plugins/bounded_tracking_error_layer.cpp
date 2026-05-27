@@ -145,6 +145,13 @@ BoundedTrackingErrorLayer::getParameters()
 
   enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
 
+  const double new_goal_suppression_timeout_sec = node->declare_or_get_parameter(
+    name_ + "." + "new_goal_suppression_timeout", 2.0);
+  if (new_goal_suppression_timeout_sec < 0.0) {
+    throw std::runtime_error{"new_goal_suppression_timeout must be non-negative"};
+  }
+  new_goal_suppression_timeout_ = rclcpp::Duration::from_seconds(new_goal_suppression_timeout_sec);
+
   double transform_tolerance = 0.3;
   node->get_parameter("transform_tolerance", transform_tolerance);
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
@@ -201,13 +208,36 @@ BoundedTrackingErrorLayer::updateCosts(
 
   nav_msgs::msg::Path::ConstSharedPtr path_ptr;
   size_t path_index;
+  bool end_pose_changed_copy;
+  geometry_msgs::msg::Point last_end_pose_copy;
+  bool waiting_for_new_plan_copy;
   {
     std::lock_guard<std::mutex> data_lock(data_mutex_);
     path_ptr = last_path_ptr_;
     path_index = current_path_index_.load();
+    end_pose_changed_copy = end_pose_changed_;
+    last_end_pose_copy = last_end_pose_;
+    waiting_for_new_plan_copy = waiting_for_new_plan_;
+    if (waiting_for_new_plan_) {
+      if (clock_->now() - goal_change_time_ > new_goal_suppression_timeout_) {
+        waiting_for_new_plan_ = false;
+        replan_cycle_done_ = false;
+        waiting_for_new_plan_copy = false;
+        RCLCPP_DEBUG(logger_, "Suppression timeout expired, resuming corridor");
+      } else {
+        replan_cycle_done_ = true;
+      }
+    }
+    if (!waiting_for_new_plan_) {
+      end_pose_changed_ = false;
+    }
   }
 
   if (!path_ptr || path_ptr->poses.empty()) {
+    return;
+  }
+
+  if (waiting_for_new_plan_copy) {
     return;
   }
 
@@ -276,7 +306,9 @@ BoundedTrackingErrorLayer::updateCosts(
           "Corridor interior mask size mismatch, skipping fill update — call matchSize()");
       return;
     }
-    applyFillOutsideCorridor(master_grid, robot_pose, *full_transformed_ptr);
+    applyFillOutsideCorridor(
+      master_grid, robot_pose, *full_transformed_ptr,
+      end_pose_changed_copy, last_end_pose_copy);
   } else {
     getWallPolygons(segment_buffer_, walls_buffer_);
     drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
@@ -299,6 +331,15 @@ BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPt
     {
       last_end_pose_ = new_end;
       end_pose_changed_ = true;
+      waiting_for_new_plan_ = true;
+      replan_cycle_done_ = false;
+      goal_change_time_ = clock_->now();
+      RCLCPP_DEBUG(logger_, "Goal changed, suppressing corridor for up to %.2fs",
+        new_goal_suppression_timeout_.seconds());
+    } else if (waiting_for_new_plan_ && replan_cycle_done_) {
+      waiting_for_new_plan_ = false;
+      replan_cycle_done_ = false;
+      RCLCPP_DEBUG(logger_, "Replanned, suppression cleared");
     }
   }
   last_path_ptr_ = msg;
@@ -415,7 +456,9 @@ void
 BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   nav2_costmap_2d::Costmap2D & master_grid,
   const geometry_msgs::msg::PoseStamped & robot_pose,
-  const nav_msgs::msg::Path & full_path)
+  const nav_msgs::msg::Path & full_path,
+  bool end_pose_changed,
+  const geometry_msgs::msg::Point & end_pose)
 {
   const double fill_radius = look_ahead_ + corridor_width_ * 0.5 + wall_thickness_ * resolution_;
   const double rx = robot_pose.pose.position.x;
@@ -470,10 +513,10 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   // Near the goal the segment shrinks below the polygon threshold, leaving the corridor
   // tube open at the end and letting fill bleed through. A circle at the last path pose
   // closes it. Cells are pre-cached on goal change to avoid per-cycle rasterisation.
-  if (end_pose_changed_) {
+  if (end_pose_changed || end_cap_cells_.empty()) {
     end_cap_cells_.clear();
     unsigned int end_mx, end_my;
-    if (master_grid.worldToMap(last_end_pose_.x, last_end_pose_.y, end_mx, end_my)) {
+    if (master_grid.worldToMap(end_pose.x, end_pose.y, end_mx, end_my)) {
       const unsigned int size_x = master_grid.getSizeInCellsX();
       const unsigned int size_y = master_grid.getSizeInCellsY();
       const int r_sq = corridor_half_width_cells_sq;
@@ -492,11 +535,10 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
           }
         }
       }
-      RCLCPP_INFO(
+      RCLCPP_DEBUG(
         logger_, "End-cap cached: %zu cells at world (%.3f, %.3f)",
-        end_cap_cells_.size(), last_end_pose_.x, last_end_pose_.y);
+        end_cap_cells_.size(), end_pose.x, end_pose.y);
     }
-    end_pose_changed_ = false;
   }
 
   buildCorridorMask(
@@ -504,6 +546,14 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
     fill_min_i, fill_min_j,
     fill_max_i, fill_max_j,
     extra_poses);
+
+  // Apply end-cap unconditionally: must mark interior even when the path segment
+  // near the goal is too short to produce wall polygons in saveCorridorInterior.
+  for (const unsigned int flat_idx : end_cap_cells_) {
+    if (flat_idx < corridor_interior_mask_.size()) {
+      corridor_interior_mask_[flat_idx] = 1;
+    }
+  }
 
   RCLCPP_DEBUG_THROTTLE(
     logger_, *clock_, 2000,
@@ -616,11 +666,6 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
     }
   }
 
-  for (const unsigned int flat_idx : end_cap_cells_) {
-    if (flat_idx < corridor_interior_mask_.size()) {
-      corridor_interior_mask_[flat_idx] = 1;
-    }
-  }
 }
 
 void
@@ -692,6 +737,8 @@ BoundedTrackingErrorLayer::resetState()
   prev_fill_max_j_ = -1;
   end_cap_cells_.clear();
   end_pose_changed_ = false;
+  waiting_for_new_plan_ = false;
+  replan_cycle_done_ = false;
 }
 
 bool
@@ -903,11 +950,45 @@ BoundedTrackingErrorLayer::validateParameterUpdatesCallback(
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() <= 0.0) {
+      const bool is_timeout =
+        param_name == name_ + "." + "new_goal_suppression_timeout";
+      const double val = parameter.as_double();
+      if (is_timeout && val < 0.0) {
         RCLCPP_WARN(
-          logger_, "The value of parameter '%s' is incorrectly set to %f, "
-          "it should be > 0. Rejecting parameter update.",
-          param_name.c_str(), parameter.as_double());
+          logger_, "'%s' must be >= 0 (got %f). Rejecting.",
+          param_name.c_str(), val);
+        result.successful = false;
+      } else if (!is_timeout && val <= 0.0) {
+        RCLCPP_WARN(
+          logger_, "'%s' must be > 0 (got %f). Rejecting.",
+          param_name.c_str(), val);
+        result.successful = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      const int val = parameter.as_int();
+      if (param_name == name_ + "." + "step" && val <= 0) {
+        RCLCPP_WARN(
+          logger_, "'%s' must be > 0 (got %d). Rejecting.",
+          param_name.c_str(), val);
+        result.successful = false;
+      } else if (param_name == name_ + "." + "corridor_cost" &&
+        (val <= 0 || val > 254))
+      {
+        RCLCPP_WARN(
+          logger_, "'%s' must be 1-254 (got %d). Rejecting.",
+          param_name.c_str(), val);
+        result.successful = false;
+      } else if (param_name == name_ + "." + "wall_thickness" && val <= 0) {
+        RCLCPP_WARN(
+          logger_, "'%s' must be > 0 (got %d). Rejecting.",
+          param_name.c_str(), val);
+        result.successful = false;
+      } else if (param_name == name_ + "." + "cost_write_mode" &&
+        (val < 0 || val > 2))
+      {
+        RCLCPP_WARN(
+          logger_, "'%s' must be 0, 1, or 2 (got %d). Rejecting.",
+          param_name.c_str(), val);
         result.successful = false;
       }
     }
@@ -933,12 +1014,20 @@ BoundedTrackingErrorLayer::updateParametersCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       const bool is_look_ahead = param_name == name_ + "." + "look_ahead";
       const bool is_corridor_width = param_name == name_ + "." + "corridor_width";
+      const bool is_timeout = param_name == name_ + "." + "new_goal_suppression_timeout";
       if (is_look_ahead && look_ahead_ != parameter.as_double()) {
         look_ahead_ = parameter.as_double();
+        RCLCPP_INFO(logger_, "Updated look_ahead to %.3f", look_ahead_);
         current_ = false;
       } else if (is_corridor_width && corridor_width_ != parameter.as_double()) {
         corridor_width_ = parameter.as_double();
+        RCLCPP_INFO(logger_, "Updated corridor_width to %.3f", corridor_width_);
         current_ = false;
+      } else if (is_timeout) {
+        new_goal_suppression_timeout_ =
+          rclcpp::Duration::from_seconds(parameter.as_double());
+        RCLCPP_INFO(logger_, "Updated new_goal_suppression_timeout to %.2fs",
+          parameter.as_double());
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       const bool is_enabled = param_name == name_ + "." + "enabled";

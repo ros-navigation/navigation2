@@ -199,7 +199,9 @@ protected:
   void applyFillOutsideCorridor(
     nav2_costmap_2d::Costmap2D & master_grid,
     const geometry_msgs::msg::PoseStamped & robot_pose,
-    const nav_msgs::msg::Path & full_path);
+    const nav_msgs::msg::Path & full_path,
+    bool end_pose_changed,
+    const geometry_msgs::msg::Point & end_pose);
 
   /**
    * @brief Rasterize corridor wall cells between inner and outer boundary polylines.
@@ -399,6 +401,10 @@ private:
   std::vector<unsigned int> end_cap_cells_;
   geometry_msgs::msg::Point last_end_pose_;
   bool end_pose_changed_{false};
+  bool waiting_for_new_plan_{false};
+  bool replan_cycle_done_{false};
+  rclcpp::Duration new_goal_suppression_timeout_{0, 0};
+  rclcpp::Time goal_change_time_{0, 0, RCL_ROS_TIME};
 };
 
 }  // namespace nav2_costmap_2d
