@@ -33,7 +33,9 @@ void SmoothPathAction::on_tick()
 {
   std::shared_ptr<nav_msgs::msg::Path> path_ptr;
   getInput("unsmoothed_path", path_ptr);
-  goal_.path = *path_ptr;
+  if (path_ptr) {
+    goal_.path = *path_ptr;
+  }
   getInput("smoother_id", goal_.smoother_id);
   double max_smoothing_duration;
   getInput("max_smoothing_duration", max_smoothing_duration);
