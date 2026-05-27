@@ -15,13 +15,24 @@
 #include "nav2_costmap_2d/bounded_tracking_error_layer.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <mutex>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "geometry_msgs/msg/point.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
+#include "rclcpp/parameter.hpp"
+#include "tf2/time.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/line_iterator.hpp"
+#include "nav2_util/path_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::BoundedTrackingErrorLayer, nav2_costmap_2d::Layer)
 
