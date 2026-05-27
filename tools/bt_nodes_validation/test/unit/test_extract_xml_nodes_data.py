@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-import pytest
-
 from bt_nodes_validation.test.file_templates import xml_node_template, xml_template
 from bt_nodes_validation.validate_bt_xml_nodes import extract_xml_nodes_data
+
+import pytest
+
 
 TREE_NODES_MODEL_TAG = 'TreeNodesModel'
 

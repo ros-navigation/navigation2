@@ -1,6 +1,6 @@
-import pytest
-
 from bt_nodes_validation.validate_bt_xml_nodes import extract_node_registration_data
+
+import pytest
 
 
 class TestMissingNodeRegistrationData:

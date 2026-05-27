@@ -1,9 +1,9 @@
 from pathlib import Path
 import subprocess
 
-import pytest
-
 from bt_nodes_validation.test.file_templates import config_template, xml_template
+
+import pytest
 
 
 @pytest.fixture

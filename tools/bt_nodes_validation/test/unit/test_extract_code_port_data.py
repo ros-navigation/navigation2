@@ -1,6 +1,6 @@
-import pytest
-
 from bt_nodes_validation.validate_bt_xml_nodes import extract_code_port_data
+
+import pytest
 
 
 class TestMissingPortData:
