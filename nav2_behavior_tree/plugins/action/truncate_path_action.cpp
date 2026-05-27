@@ -40,14 +40,15 @@ inline BT::NodeStatus TruncatePath::tick()
   setStatus(BT::NodeStatus::RUNNING);
   getInput("distance", distance_);
 
-  nav_msgs::msg::Path input_path;
+  std::shared_ptr<nav_msgs::msg::Path> input_path_ptr;
+  getInput("input_path", input_path_ptr);
 
-  getInput("input_path", input_path);
-
-  if (input_path.poses.empty()) {
-    setOutput("output_path", input_path);
+  if (!input_path_ptr || input_path_ptr->poses.empty()) {
+    setOutput("output_path", std::make_shared<nav_msgs::msg::Path>());
     return BT::NodeStatus::SUCCESS;
   }
+
+  nav_msgs::msg::Path input_path = *input_path_ptr;  // explicit copy — needed for mutation
 
   geometry_msgs::msg::PoseStamped final_pose = input_path.poses.back();
 
@@ -75,7 +76,7 @@ inline BT::NodeStatus TruncatePath::tick()
   input_path.poses.back().pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
     final_angle);
 
-  setOutput("output_path", input_path);
+  setOutput("output_path", std::make_shared<nav_msgs::msg::Path>(std::move(input_path)));
 
   return BT::NodeStatus::SUCCESS;
 }

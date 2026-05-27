@@ -60,8 +60,8 @@ public:
     BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
 
     return {
-      BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
-      BT::OutputPort<nav_msgs::msg::Path>("output_path", "Path truncated to a certain distance"),
+      BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("input_path", "Original Path"),
+      BT::OutputPort<std::shared_ptr<nav_msgs::msg::Path>>("output_path", "Path truncated to a certain distance"),
       BT::InputPort<double>("distance", 1.0, "distance"),
     };
   }

@@ -37,11 +37,16 @@ inline BT::NodeStatus ConcatenatePaths::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
 
-  nav_msgs::msg::Path input_path1, input_path2;
-  getInput("input_path1", input_path1);
-  getInput("input_path2", input_path2);
+  std::shared_ptr<nav_msgs::msg::Path> p1, p2;
+  getInput("input_path1", p1);
+  getInput("input_path2", p2);
 
-  if (input_path1.poses.empty() && input_path2.poses.empty()) {
+  // null-guard: treat missing port as empty path
+  const nav_msgs::msg::Path empty_path;
+  const nav_msgs::msg::Path & path1 = p1 ? *p1 : empty_path;
+  const nav_msgs::msg::Path & path2 = p2 ? *p2 : empty_path;
+
+  if (path1.poses.empty() && path2.poses.empty()) {
     RCLCPP_ERROR(
       config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node")->get_logger(),
       "No input paths provided to concatenate. Both paths are empty.");
@@ -49,19 +54,19 @@ inline BT::NodeStatus ConcatenatePaths::tick()
   }
 
   nav_msgs::msg::Path output_path;
-  output_path = input_path1;
-  if (input_path1.header != std_msgs::msg::Header()) {
-    output_path.header = input_path1.header;
-  } else if (input_path2.header != std_msgs::msg::Header()) {
-    output_path.header = input_path2.header;
+  output_path = path1;  // copy for concatenation — unavoidable
+  if (path1.header != std_msgs::msg::Header()) {
+    output_path.header = path1.header;
+  } else if (path2.header != std_msgs::msg::Header()) {
+    output_path.header = path2.header;
   }
 
   output_path.poses.insert(
     output_path.poses.end(),
-    input_path2.poses.begin(),
-    input_path2.poses.end());
+    path2.poses.begin(),
+    path2.poses.end());
 
-  setOutput("output_path", output_path);
+  setOutput("output_path", std::make_shared<nav_msgs::msg::Path>(std::move(output_path)));
   return BT::NodeStatus::SUCCESS;
 }
 
