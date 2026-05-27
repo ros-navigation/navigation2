@@ -46,6 +46,19 @@ void CostmapSubscriber::costmapCallback(
   frame_id_ = msg->header.frame_id;
 }
 
+void CostmapSubscriber::costmapCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr & msg)
+{
+  auto costmap_2d = std::make_shared<Costmap2D>(
+    msg->metadata.size_x, msg->metadata.size_y,
+    msg->metadata.resolution, msg->metadata.origin.position.x,
+    msg->metadata.origin.position.y);
+  std::copy(msg->data.begin(), msg->data.end(), costmap_2d->getCharMap());
+  auto stamped = std::make_shared<Costmap2DStamped>();
+  stamped->costmap = costmap_2d;
+  stamped->header = msg->header;
+  costmapCallback(stamped);
+}
+
 void CostmapSubscriber::costmapUpdateCallback(
   const nav2_msgs::msg::CostmapUpdate::ConstSharedPtr & update_msg)
 {
