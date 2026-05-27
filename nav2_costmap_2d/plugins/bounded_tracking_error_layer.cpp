@@ -65,6 +65,7 @@ BoundedTrackingErrorLayer::activate()
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
+
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &BoundedTrackingErrorLayer::updateParametersCallback,
@@ -83,6 +84,7 @@ BoundedTrackingErrorLayer::deactivate()
     node->remove_post_set_parameters_callback(post_set_params_handler_.get());
   }
   post_set_params_handler_.reset();
+
   if (on_set_params_handler_ && node) {
     node->remove_on_set_parameters_callback(on_set_params_handler_.get());
   }
@@ -199,13 +201,6 @@ BoundedTrackingErrorLayer::updateCosts(
     return;
   }
 
-  if (resolution_ <= 0.0) {
-    RCLCPP_ERROR_THROTTLE(
-      logger_, *clock_, 1000,
-      "Resolution is not initialized (%.4f), skipping corridor update", resolution_);
-    return;
-  }
-
   nav_msgs::msg::Path::ConstSharedPtr path_ptr;
   size_t path_index;
   bool end_pose_changed_copy;
@@ -292,8 +287,8 @@ BoundedTrackingErrorLayer::updateCosts(
 
   if (segment_too_small) {
     RCLCPP_INFO_THROTTLE(
-        logger_, *clock_, 2000,
-        "Close to end, closing BoundedTrackingError layer");
+      logger_, *clock_, 2000,
+      "Close to end, closing BoundedTrackingError layer");
     return;
   }
 
@@ -302,8 +297,8 @@ BoundedTrackingErrorLayer::updateCosts(
       master_grid.getSizeInCellsX() * master_grid.getSizeInCellsY())
     {
       RCLCPP_WARN_THROTTLE(
-          logger_, *clock_, 5000,
-          "Corridor interior mask size mismatch, skipping fill update — call matchSize()");
+        logger_, *clock_, 5000,
+        "Corridor interior mask size mismatch, skipping fill update — call matchSize()");
       return;
     }
     applyFillOutsideCorridor(
@@ -323,6 +318,7 @@ BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPt
   if (!last_path_ptr_ || msg->header.stamp != last_path_ptr_->header.stamp) {
     current_path_index_.store(0);
   }
+
   if (!msg->poses.empty()) {
     const auto & new_end = msg->poses.back().pose.position;
     if (!last_path_ptr_ ||
@@ -448,6 +444,7 @@ BoundedTrackingErrorLayer::getWallPolygons(
     if (current_index >= last_index) {
       break;
     }
+
     current_index = std::min(current_index + step_size_, last_index);
   }
 }
@@ -523,9 +520,16 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
       const int r = static_cast<int>(std::ceil(std::sqrt(static_cast<double>(r_sq))));
       const int cx = static_cast<int>(end_mx);
       const int cy = static_cast<int>(end_my);
-      for (int y = std::max(cy - r, 0); y <= std::min(cy + r, static_cast<int>(size_y) - 1); ++y) {
+
+      for (
+        int y = std::max(cy - r, 0);
+        y <= std::min(cy + r, static_cast<int>(size_y) - 1);
+        ++y)
+      {
         const int dy = y - cy;
-        for (int x = std::max(cx - r, 0); x <= std::min(cx + r, static_cast<int>(size_x) - 1);
+        for (
+          int x = std::max(cx - r, 0);
+          x <= std::min(cx + r, static_cast<int>(size_x) - 1);
           ++x)
         {
           const int dx = x - cx;
@@ -587,6 +591,7 @@ BoundedTrackingErrorLayer::drawCorridorWalls(
       master_grid, inner_points[i][0], inner_points[i][1], inner0);
     const bool inner1_valid = worldToCell(
       master_grid, inner_points[i + 1][0], inner_points[i + 1][1], inner1);
+
     if (!inner0_valid && !inner1_valid) {
       continue;
     }
@@ -665,7 +670,6 @@ BoundedTrackingErrorLayer::saveCorridorInterior(
       }
     }
   }
-
 }
 
 void
@@ -716,6 +720,7 @@ BoundedTrackingErrorLayer::fillOutsideCorridor(
       if (corridor_interior_mask_[flat_idx]) {
         continue;
       }
+
       if (cost_write_mode_ == 2) {
         costmap[flat_idx] = corridor_cost_;
       } else {
@@ -748,10 +753,12 @@ BoundedTrackingErrorLayer::worldToCell(
   CellPoint & out) const
 {
   unsigned int ux, uy;
+
   if (master_grid.worldToMap(wx, wy, ux, uy)) {
     out = {static_cast<int>(ux), static_cast<int>(uy)};
     return true;
   }
+
   // Clamp to costmap boundary so quads straddling the edge are still drawn.
   int cx, cy;
   master_grid.worldToMapNoBounds(wx, wy, cx, cy);
@@ -768,17 +775,17 @@ BoundedTrackingErrorLayer::traceQuad(
   int clamped_y_min, int height)
 {
   auto trace = [&](CellPoint a, CellPoint b) {
-      nav2_util::LineIterator line(a.x, a.y, b.x, b.y);
-      for (; line.isValid(); line.advance()) {
-        const int x = line.getX();
-        const int y = line.getY();
-        const int buffer_idx = y - clamped_y_min;
-        if (buffer_idx >= 0 && buffer_idx < height) {
-          span_x_min_buffer_[buffer_idx] = std::min(span_x_min_buffer_[buffer_idx], x);
-          span_x_max_buffer_[buffer_idx] = std::max(span_x_max_buffer_[buffer_idx], x);
-        }
+    nav2_util::LineIterator line(a.x, a.y, b.x, b.y);
+    for (; line.isValid(); line.advance()) {
+      const int x = line.getX();
+      const int y = line.getY();
+      const int buffer_idx = y - clamped_y_min;
+      if (buffer_idx >= 0 && buffer_idx < height) {
+        span_x_min_buffer_[buffer_idx] = std::min(span_x_min_buffer_[buffer_idx], x);
+        span_x_max_buffer_[buffer_idx] = std::max(span_x_max_buffer_[buffer_idx], x);
       }
-    };
+    }
+  };
 
   trace(p0, p1);
   trace(p1, p2);
@@ -882,6 +889,7 @@ BoundedTrackingErrorLayer::buildCorridorMask(
         extra_poses);
     }
   }
+
   flushSubSegment(
     master_grid, sub_segment,
     fill_min_i, fill_min_j,
@@ -906,13 +914,13 @@ BoundedTrackingErrorLayer::flushSubSegment(
   margin_segment.header = sub_segment.header;
 
   auto flush_margin_segment = [&]() {
-      if (margin_segment.poses.size() >= 2) {
-        WallPolygons fill_walls;
-        getWallPolygons(margin_segment, fill_walls);
-        saveCorridorInterior(master_grid, fill_walls);
-      }
-      margin_segment.poses.clear();
-    };
+    if (margin_segment.poses.size() >= 2) {
+      WallPolygons fill_walls;
+      getWallPolygons(margin_segment, fill_walls);
+      saveCorridorInterior(master_grid, fill_walls);
+    }
+    margin_segment.poses.clear();
+  };
 
   for (const auto & p : sub_segment.poses) {
     unsigned int mx, my;
