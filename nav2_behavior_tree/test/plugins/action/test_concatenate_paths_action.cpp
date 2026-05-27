@@ -99,18 +99,19 @@ TEST_F(ConcatenatePathsTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create new goal and set it on blackboard
-  nav_msgs::msg::Path path1, path2;
-  path1.header.stamp = node_->now();
-  path2.header.stamp = node_->now();
+  auto path1 = std::make_shared<nav_msgs::msg::Path>();
+  auto path2 = std::make_shared<nav_msgs::msg::Path>();
+  path1->header.stamp = node_->now();
+  path2->header.stamp = node_->now();
 
   int i = 0;
   int j = 3;
   for (int x = 0; x != 3; x++) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = i;
-    path1.poses.push_back(pose);
+    path1->poses.push_back(pose);
     pose.pose.position.x = j;
-    path2.poses.push_back(pose);
+    path2->poses.push_back(pose);
     i++;
     j++;
   }
@@ -127,17 +128,17 @@ TEST_F(ConcatenatePathsTestFixture, test_tick)
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 
-  nav_msgs::msg::Path concat_path;
+  std::shared_ptr<nav_msgs::msg::Path> concat_path;
   EXPECT_TRUE(config_->blackboard->get("concat_path", concat_path));
 
-  EXPECT_EQ(concat_path.poses.size(), 6u);
-  for (size_t x = 0; x < concat_path.poses.size(); ++x) {
-    EXPECT_EQ(concat_path.poses[x].pose.position.x, static_cast<double>(x));
+  EXPECT_EQ(concat_path->poses.size(), 6u);
+  for (size_t x = 0; x < concat_path->poses.size(); ++x) {
+    EXPECT_EQ(concat_path->poses[x].pose.position.x, static_cast<double>(x));
   }
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  config_->blackboard->set("path1", nav_msgs::msg::Path());
-  config_->blackboard->set("path2", nav_msgs::msg::Path());
+  config_->blackboard->set("path1", std::make_shared<nav_msgs::msg::Path>());
+  config_->blackboard->set("path2", std::make_shared<nav_msgs::msg::Path>());
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
     tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
   {

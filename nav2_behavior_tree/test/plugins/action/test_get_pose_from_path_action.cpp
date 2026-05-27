@@ -96,13 +96,13 @@ TEST_F(GetPoseFromPathTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create new path and set it on blackboard
-  nav_msgs::msg::Path path;
+  auto path = std::make_shared<nav_msgs::msg::Path>();
   nav_msgs::msg::Goals goals;
   goals.goals.resize(2);
   goals.goals[0].pose.position.x = 1.0;
   goals.goals[1].pose.position.x = 2.0;
-  path.poses = goals.goals;
-  path.header.frame_id = "test_frame_1";
+  path->poses = goals.goals;
+  path->header.frame_id = "test_frame_1";
   config_->blackboard->set("path", path);
 
   config_->blackboard->set("index", 0);

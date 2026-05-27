@@ -125,8 +125,8 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create path and set it on blackboard
-  nav_msgs::msg::Path path = createLoopCrossingTestPath();
-  EXPECT_EQ(path.poses.size(), 12u);
+  auto path = std::make_shared<nav_msgs::msg::Path>(createLoopCrossingTestPath());
+  EXPECT_EQ(path->poses.size(), 12u);
 
   config_->blackboard->set("path", path);
 
@@ -137,17 +137,17 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
     tree_->rootNode()->executeTick();
   }
 
-  nav_msgs::msg::Path truncated_path;
+  std::shared_ptr<nav_msgs::msg::Path> truncated_path;
   EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_NE(path, truncated_path);
-  ASSERT_GE(truncated_path.poses.size(), 1u);
-  EXPECT_EQ(truncated_path.poses.size(), 3u);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.x, -0.5);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.y, 0.0);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.x, 1.5);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.y, 0.0);
+  EXPECT_NE(*path, *truncated_path);
+  ASSERT_GE(truncated_path->poses.size(), 1u);
+  EXPECT_EQ(truncated_path->poses.size(), 3u);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.x, -0.5);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.y, 0.0);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.x, 1.5);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.y, 0.0);
 
   /////////////////////////////////////////
   // should match the first loop crossing
@@ -163,13 +163,13 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_NE(path, truncated_path);
-  ASSERT_GE(truncated_path.poses.size(), 1u);
-  EXPECT_EQ(truncated_path.poses.size(), 2u);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.x, -0.3);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.y, 0.0);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.x, -0.5);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.y, 1.0);
+  EXPECT_NE(*path, *truncated_path);
+  ASSERT_GE(truncated_path->poses.size(), 1u);
+  EXPECT_EQ(truncated_path->poses.size(), 2u);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.x, -0.3);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.y, 0.0);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.x, -0.5);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.y, 1.0);
 
   /////////////////////////////////////////
   // should match the last loop crossing
@@ -185,13 +185,13 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_NE(path, truncated_path);
-  ASSERT_GE(truncated_path.poses.size(), 1u);
-  EXPECT_EQ(truncated_path.poses.size(), 2u);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.x, 0.3);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.y, 0.0);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.x, 0.3);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.y, -1.0);
+  EXPECT_NE(*path, *truncated_path);
+  ASSERT_GE(truncated_path->poses.size(), 1u);
+  EXPECT_EQ(truncated_path->poses.size(), 2u);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.x, 0.3);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.y, 0.0);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.x, 0.3);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.y, -1.0);
 
   SUCCEED();
 }
@@ -220,9 +220,9 @@ TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create path and set it on blackboard
-  nav_msgs::msg::Path path;
-  path.header.stamp = node_->now();
-  path.header.frame_id = "map";
+  auto path = std::make_shared<nav_msgs::msg::Path>();
+  path->header.stamp = node_->now();
+  path->header.frame_id = "map";
 
   config_->blackboard->set("path", path);
 
@@ -232,11 +232,11 @@ TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
   {
     tree_->rootNode()->executeTick();
   }
-  nav_msgs::msg::Path truncated_path;
+  std::shared_ptr<nav_msgs::msg::Path> truncated_path;
   EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(path, truncated_path);
+  EXPECT_EQ(*path, *truncated_path);
   SUCCEED();
 }
 
@@ -263,9 +263,9 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create path and set it on blackboard
-  nav_msgs::msg::Path path;
-  path.header.stamp = node_->now();
-  path.header.frame_id = "map";
+  auto path = std::make_shared<nav_msgs::msg::Path>();
+  path->header.stamp = node_->now();
+  path->header.frame_id = "map";
 
   config_->blackboard->set("path", path);
 
@@ -275,7 +275,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
   {
     tree_->rootNode()->executeTick();
   }
-  nav_msgs::msg::Path truncated_path;
+  std::shared_ptr<nav_msgs::msg::Path> truncated_path;
   EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
@@ -305,8 +305,8 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create new goal and set it on blackboard
-  nav_msgs::msg::Path path = createLoopCrossingTestPath();
-  EXPECT_EQ(path.poses.size(), 12u);
+  auto path = std::make_shared<nav_msgs::msg::Path>(createLoopCrossingTestPath());
+  EXPECT_EQ(path->poses.size(), 12u);
 
   config_->blackboard->set("path", path);
 
@@ -316,7 +316,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
   {
     tree_->rootNode()->executeTick();
   }
-  nav_msgs::msg::Path truncated_path;
+  std::shared_ptr<nav_msgs::msg::Path> truncated_path;
   EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
@@ -347,8 +347,8 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create path and set it on blackboard
-  nav_msgs::msg::Path path = createLoopCrossingTestPath();
-  nav_msgs::msg::Path truncated_path;
+  auto path = std::make_shared<nav_msgs::msg::Path>(createLoopCrossingTestPath());
+  std::shared_ptr<nav_msgs::msg::Path> truncated_path;
 
   config_->blackboard->set("path", path);
 
@@ -365,13 +365,13 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_NE(path, truncated_path);
-  ASSERT_GE(truncated_path.poses.size(), 1u);
-  EXPECT_EQ(truncated_path.poses.size(), 2u);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.x, -0.3);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.y, 0.0);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.x, -0.5);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.y, 1.0);
+  EXPECT_NE(*path, *truncated_path);
+  ASSERT_GE(truncated_path->poses.size(), 1u);
+  EXPECT_EQ(truncated_path->poses.size(), 2u);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.x, -0.3);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.y, 0.0);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.x, -0.5);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.y, 1.0);
 
   /////////////////////////////////////////
   // move along the path to leave the first loop crossing behind
@@ -398,13 +398,13 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_NE(path, truncated_path);
-  ASSERT_GE(truncated_path.poses.size(), 1u);
-  EXPECT_EQ(truncated_path.poses.size(), 3u);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.x, -0.5);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.y, 0.0);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.x, 1.5);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.y, 0.0);
+  EXPECT_NE(*path, *truncated_path);
+  ASSERT_GE(truncated_path->poses.size(), 1u);
+  EXPECT_EQ(truncated_path->poses.size(), 3u);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.x, -0.5);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.y, 0.0);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.x, 1.5);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.y, 0.0);
 
   /////////////////////////////////////////
   // move along the path to leave the second loop crossing behind
@@ -431,13 +431,13 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_NE(path, truncated_path);
-  ASSERT_GE(truncated_path.poses.size(), 1u);
-  EXPECT_EQ(truncated_path.poses.size(), 2u);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.x, 0.3);
-  EXPECT_EQ(truncated_path.poses.front().pose.position.y, 0.0);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.x, 0.3);
-  EXPECT_EQ(truncated_path.poses.back().pose.position.y, -1.0);
+  EXPECT_NE(*path, *truncated_path);
+  ASSERT_GE(truncated_path->poses.size(), 1u);
+  EXPECT_EQ(truncated_path->poses.size(), 2u);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.x, 0.3);
+  EXPECT_EQ(truncated_path->poses.front().pose.position.y, 0.0);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.x, 0.3);
+  EXPECT_EQ(truncated_path->poses.back().pose.position.y, -1.0);
 
   SUCCEED();
 }
