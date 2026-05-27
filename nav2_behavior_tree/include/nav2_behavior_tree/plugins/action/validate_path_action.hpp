@@ -106,7 +106,7 @@ public:
 
     return providedBasicPorts(
       {
-        BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
+        BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("path", "Path to Check"),
         BT::InputPort<unsigned int>("max_cost", 254, "Maximum cost of the path"),
         BT::InputPort<bool>(
         "consider_unknown_as_obstacle", false,
@@ -137,7 +137,7 @@ private:
   std::string footprint_;
   bool stop_at_first_collision_;
   double max_lookahead_distance_;
-  nav_msgs::msg::Path path_;
+  std::shared_ptr<nav_msgs::msg::Path> path_ptr_;
 };
 
 }  // namespace nav2_behavior_tree

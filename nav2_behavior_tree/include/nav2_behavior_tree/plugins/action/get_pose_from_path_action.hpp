@@ -53,7 +53,7 @@ public:
     BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
 
     return {
-      BT::InputPort<nav_msgs::msg::Path>("path", "Path to extract pose from"),
+      BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("path", "Path to extract pose from"),
       BT::OutputPort<geometry_msgs::msg::PoseStamped>("pose", "Stamped Extracted Pose"),
       BT::InputPort<int>("index", 0, "Index of pose to extract from. -1 is end of list"),
     };
