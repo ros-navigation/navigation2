@@ -83,6 +83,12 @@ public:
   void costmapCallback(const std::shared_ptr<const nav2_costmap_2d::Costmap2DStamped> & msg);
 
   /**
+   * @brief Backward-compatible callback overload accepting the legacy ROS message type.
+   * Converts the message to Costmap2DStamped and delegates to the TypeAdapter callback.
+   */
+  void costmapCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr & msg);
+
+  /**
    * @brief Callback for the costmap's update topic
    */
   void costmapUpdateCallback(const nav2_msgs::msg::CostmapUpdate::ConstSharedPtr & update_msg);
