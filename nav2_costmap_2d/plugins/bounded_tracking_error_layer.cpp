@@ -46,9 +46,9 @@ BoundedTrackingErrorLayer::onInitialize()
 {
   getParameters();
 
-  auto node = node_.lock();
+  const auto node = node_.lock();
   if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
+    throw std::runtime_error{"BoundedTrackingErrorLayer::onInitialize: Failed to lock node"};
   }
 
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
@@ -61,7 +61,7 @@ BoundedTrackingErrorLayer::onInitialize()
     costmap_frame_ = layered_costmap_->getGlobalFrameID();
   }
 
-  current_ = true;
+  setCurrent(true);
   RCLCPP_INFO(
     logger_,
     "BoundedTrackingErrorLayer initialized in %s mode",
@@ -73,10 +73,6 @@ void
 BoundedTrackingErrorLayer::activate()
 {
   auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &BoundedTrackingErrorLayer::updateParametersCallback,
@@ -90,7 +86,7 @@ BoundedTrackingErrorLayer::activate()
 void
 BoundedTrackingErrorLayer::deactivate()
 {
-  auto node = node_.lock();
+  const auto node = node_.lock();
   if (post_set_params_handler_ && node) {
     node->remove_post_set_parameters_callback(post_set_params_handler_.get());
   }
@@ -107,15 +103,15 @@ void
 BoundedTrackingErrorLayer::reset()
 {
   resetState();
-  current_ = false;
+  setCurrent(false);
 }
 
 void
 BoundedTrackingErrorLayer::getParameters()
 {
-  auto node = node_.lock();
+  const auto node = node_.lock();
   if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
+    throw std::runtime_error{"BoundedTrackingErrorLayer::getParameters: Failed to lock node"};
   }
 
   path_topic_ = node->declare_or_get_parameter(
@@ -314,12 +310,15 @@ BoundedTrackingErrorLayer::updateCosts(
     }
     applyFillOutsideCorridor(
       master_grid, robot_pose, *full_transformed_ptr,
+      search_result.closest_segment_index,
       end_pose_changed_copy, last_end_pose_copy);
   } else {
     getWallPolygons(segment_buffer_, walls_buffer_);
     drawCorridorWalls(master_grid, walls_buffer_.left_inner, walls_buffer_.left_outer);
     drawCorridorWalls(master_grid, walls_buffer_.right_inner, walls_buffer_.right_outer);
   }
+
+  setCurrent(true);
 }
 
 void
@@ -332,10 +331,10 @@ BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::ConstSharedPt
 
   if (!msg->poses.empty()) {
     const auto & new_end = msg->poses.back().pose.position;
-    if (!last_path_ptr_ ||
-      new_end.x != last_end_pose_.x ||
-      new_end.y != last_end_pose_.y)
-    {
+    if (!last_path_ptr_) {
+      last_end_pose_ = new_end;
+      end_pose_changed_ = true;
+    } else if (new_end.x != last_end_pose_.x || new_end.y != last_end_pose_.y) {
       last_end_pose_ = new_end;
       end_pose_changed_ = true;
       waiting_for_new_plan_ = true;
@@ -394,7 +393,7 @@ BoundedTrackingErrorLayer::getWallPolygons(
   const nav_msgs::msg::Path & segment,
   WallPolygons & walls)
 {
-  if (segment.poses.empty() || step_size_ == 0) {
+  if (segment.poses.empty()) {
     walls.clearAndReserve(0);
     return;
   }
@@ -465,6 +464,7 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   nav2_costmap_2d::Costmap2D & master_grid,
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const nav_msgs::msg::Path & full_path,
+  size_t closest_index,
   bool end_pose_changed,
   const geometry_msgs::msg::Point & end_pose)
 {
@@ -512,9 +512,15 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
   const size_t extra_poses = static_cast<size_t>(
     std::ceil(corridor_width_ * M_SQRT2 / resolution_)) + step_size_;
 
-  unsigned int robot_mx, robot_my;
-  if (master_grid.worldToMap(rx, ry, robot_mx, robot_my)) {
-    markCircleAsInterior(master_grid, static_cast<int>(robot_mx), static_cast<int>(robot_my),
+  unsigned int closest_mx, closest_my;
+  if (closest_index < full_path.poses.size() &&
+    master_grid.worldToMap(
+      full_path.poses[closest_index].pose.position.x,
+      full_path.poses[closest_index].pose.position.y,
+      closest_mx, closest_my))
+  {
+    markCircleAsInterior(
+      master_grid, static_cast<int>(closest_mx), static_cast<int>(closest_my),
       corridor_half_width_cells_sq);
   }
 
@@ -562,8 +568,7 @@ BoundedTrackingErrorLayer::applyFillOutsideCorridor(
     fill_max_i, fill_max_j,
     extra_poses);
 
-  // Apply end-cap unconditionally: must mark interior even when the path segment
-  // near the goal is too short to produce wall polygons in saveCorridorInterior.
+  // Apply end-cap unconditionally sake of practicallity
   for (const unsigned int flat_idx : end_cap_cells_) {
     if (flat_idx < corridor_interior_mask_.size()) {
       corridor_interior_mask_[flat_idx] = 1;

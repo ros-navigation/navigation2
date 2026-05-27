@@ -721,10 +721,10 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillMode)
   layer_->updateCosts(*costmap, 0, 0, 100, 100);
 
   unsigned int rx, ry;
-  ASSERT_TRUE(costmap->worldToMap(0.0, 0.0, rx, ry));
+  ASSERT_TRUE(costmap->worldToMap(1.0, 0.0, rx, ry));
   EXPECT_TRUE(layer_->isInterior(ry * costmap->getSizeInCellsX() + rx));
 
-  // robot at (0,0), path along y=0 — check a point off the path axis
+  // closest path pose at (1.0, 0.0), path along y=0 — check a point off the path axis
   unsigned int fx, fy;
   ASSERT_TRUE(costmap->worldToMap(2.0, 1.5, fx, fy));
   EXPECT_FALSE(layer_->isInterior(fy * costmap->getSizeInCellsX() + fx));

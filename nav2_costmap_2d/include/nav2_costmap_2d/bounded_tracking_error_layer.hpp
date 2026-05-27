@@ -191,15 +191,17 @@ protected:
 
   /**
    * @brief Apply the fill-outside-corridor mode: trace interior quads, add end-cap
-   *        circles, guarantee the robot cell is interior, then flood-fill outside.
+   *        circles, guarantee the closest path pose cell is interior, then flood-fill outside.
    * @param master_grid Costmap to write into.
-   * @param robot_pose Current robot pose in costmap frame.
+   * @param robot_pose Current robot pose in costmap frame (used for fill bbox centering).
    * @param full_path Full transformed path in costmap frame.
+   * @param closest_index Index of the closest path pose to the robot.
    */
   void applyFillOutsideCorridor(
     nav2_costmap_2d::Costmap2D & master_grid,
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const nav_msgs::msg::Path & full_path,
+    size_t closest_index,
     bool end_pose_changed,
     const geometry_msgs::msg::Point & end_pose);
 
