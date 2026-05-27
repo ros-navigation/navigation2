@@ -17,6 +17,7 @@
 #include "behaviortree_cpp/blackboard.h"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "std_msgs/msg/header.hpp"
 
 static nav_msgs::msg::Path make_path(size_t n_poses)
 {
@@ -35,16 +36,17 @@ static void BM_BlackboardGetPath_Copy(benchmark::State & state)
   auto bb = BT::Blackboard::create();
   bb->set("path", make_path(static_cast<size_t>(state.range(0))));
 
-  nav_msgs::msg::Path out;
   for (auto _ : state) {
+    nav_msgs::msg::Path out;
     bb->get("path", out);
     benchmark::DoNotOptimize(out);
   }
   state.SetItemsProcessed(state.iterations());
   state.SetBytesProcessed(
     state.iterations() *
-    static_cast<int64_t>(state.range(0)) *
-    static_cast<int64_t>(sizeof(geometry_msgs::msg::PoseStamped)));
+    static_cast<int64_t>(
+      state.range(0) * static_cast<int64_t>(sizeof(geometry_msgs::msg::PoseStamped)) +
+      static_cast<int64_t>(sizeof(std_msgs::msg::Header))));
 }
 
 // AFTER: blackboard stores shared_ptr<Path> — get copies only the pointer

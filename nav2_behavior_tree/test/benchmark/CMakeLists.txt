@@ -6,6 +6,7 @@ if(ament_cmake_google_benchmark_FOUND)
   )
   target_link_libraries(bt_path_blackboard_benchmark
     behaviortree_cpp::behaviortree_cpp
+    ${geometry_msgs_TARGETS}
     ${nav_msgs_TARGETS}
   )
 else()
