@@ -67,14 +67,14 @@ public:
 
     return {
       BT::InputPort<double>("seconds", 1.0, "Seconds"),
-      BT::InputPort<nav_msgs::msg::Path>("path")
+      BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("path")
     };
   }
 
 private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Time start_;
-  nav_msgs::msg::Path prev_path_;
+  std::shared_ptr<nav_msgs::msg::Path> prev_path_ptr_;
   double period_;
   bool first_time_;
 };
