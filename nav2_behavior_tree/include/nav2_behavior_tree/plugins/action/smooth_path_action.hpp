@@ -91,13 +91,13 @@ public:
 
     return providedBasicPorts(
       {
-        BT::InputPort<nav_msgs::msg::Path>("unsmoothed_path", "Path to be smoothed"),
+        BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("unsmoothed_path", "Path to be smoothed"),
         BT::InputPort<double>("max_smoothing_duration", 3.0, "Maximum smoothing duration"),
         BT::InputPort<bool>(
           "check_for_collisions", false,
           "If true collision check will be performed after smoothing"),
         BT::InputPort<std::string>("smoother_id", ""),
-        BT::OutputPort<nav_msgs::msg::Path>(
+        BT::OutputPort<std::shared_ptr<nav_msgs::msg::Path>>(
           "smoothed_path",
           "Path smoothed by SmootherServer node"),
         BT::OutputPort<double>("smoothing_duration", "Time taken to smooth path"),

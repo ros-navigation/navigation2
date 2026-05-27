@@ -31,7 +31,9 @@ SmoothPathAction::SmoothPathAction(
 
 void SmoothPathAction::on_tick()
 {
-  getInput("unsmoothed_path", goal_.path);
+  std::shared_ptr<nav_msgs::msg::Path> path_ptr;
+  getInput("unsmoothed_path", path_ptr);
+  goal_.path = *path_ptr;
   getInput("smoother_id", goal_.smoother_id);
   double max_smoothing_duration;
   getInput("max_smoothing_duration", max_smoothing_duration);
@@ -41,7 +43,7 @@ void SmoothPathAction::on_tick()
 
 BT::NodeStatus SmoothPathAction::on_success()
 {
-  setOutput("smoothed_path", result_.result->path);
+  setOutput("smoothed_path", std::make_shared<nav_msgs::msg::Path>(result_.result->path));
   setOutput("smoothing_duration", rclcpp::Duration(result_.result->smoothing_duration).seconds());
   setOutput("was_completed", result_.result->was_completed);
   // Set empty error code, action was successful
