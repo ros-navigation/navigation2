@@ -107,7 +107,7 @@ public:
         BT::InputPort<std::string>(
           "planner_id", "",
           "Mapped name to the planner plugin type to use"),
-        BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathThroughPoses node"),
+        BT::OutputPort<std::shared_ptr<nav_msgs::msg::Path>>("path", "Path created by ComputePathThroughPoses node"),
         BT::OutputPort<int>(
           "last_reached_index", "Index of the last reachable pose from requested list of poses"),
         BT::OutputPort<ActionResult::_error_code_type>(
