@@ -17,6 +17,7 @@
 #include <limits>
 
 #include "nav_msgs/msg/path.hpp"
+#include "std_msgs/msg/header.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "behaviortree_cpp/decorator_node.h"
