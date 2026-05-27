@@ -104,7 +104,7 @@ public:
 
     return providedBasicPorts(
       {
-        BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
+        BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("path", "Path to follow"),
         BT::InputPort<std::string>("controller_id", ""),
         BT::InputPort<std::string>("goal_checker_id", ""),
         BT::InputPort<std::string>("progress_checker_id", ""),
@@ -117,6 +117,9 @@ public:
           "error_msg", "The follow path error msg"),
       });
   }
+
+private:
+  std::shared_ptr<nav_msgs::msg::Path> last_path_ptr_;
 };
 
 }  // namespace nav2_behavior_tree
