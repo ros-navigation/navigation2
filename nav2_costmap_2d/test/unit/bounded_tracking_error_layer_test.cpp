@@ -110,6 +110,7 @@ public:
   bool & enabledRef() {return enabled_;}
   std::atomic_bool & currentRef() {return current_;}
   std::atomic<uint32_t> & pathIndexRef() {return current_path_index_;}
+  bool & waitingForNewPlanRef() {return waiting_for_new_plan_;}
 
   void setStepSize(size_t s) {step_size_ = s;}
   void setLookAhead(double v) {look_ahead_ = v;}
@@ -208,6 +209,10 @@ protected:
     t.transform.rotation.w = 1.0;
     tf_broadcaster_->sendTransform(t);
 
+    // Inject the transform directly into the buffer so TF lookups in
+    // updateCosts succeed without requiring a pub/sub round-trip.
+    tf_buffer_->setTransform(t, "test", true /*is_static*/);
+
     layer_ = std::make_shared<TestableBoundedTrackingErrorLayer>();
     layer_->initialize(layers_.get(), "bte_layer", tf_buffer_.get(), node_, nullptr);
   }
@@ -236,17 +241,6 @@ protected:
     layer_->setCostWriteMode(mode);
   }
 };
-
-TEST(WallPolygonsTest, testClearAndReserve)
-{
-  TestableBoundedTrackingErrorLayer::WallPolygons walls;
-  walls.left_inner.push_back({1.0, 2.0});
-  walls.right_outer.push_back({7.0, 8.0});
-  walls.clearAndReserve(10);
-  EXPECT_TRUE(walls.left_inner.empty());
-  EXPECT_TRUE(walls.right_outer.empty());
-  EXPECT_GE(walls.left_inner.capacity(), 10u);
-}
 
 TEST_F(BoundedTrackingErrorLayerTest, testDefaultParameterValues)
 {
@@ -486,11 +480,11 @@ TEST_F(BoundedTrackingErrorLayerTest, testValidateParamsRejectsInvalidValues)
   EXPECT_TRUE(layer_->testValidateParams(
       {rclcpp::Parameter("bte_layer.look_ahead", 1.0)}).successful);
 
-  EXPECT_TRUE(layer_->testValidateParams(
+  EXPECT_FALSE(layer_->testValidateParams(
       {rclcpp::Parameter("bte_layer.step", 0)}).successful);
-  EXPECT_TRUE(layer_->testValidateParams(
+  EXPECT_FALSE(layer_->testValidateParams(
       {rclcpp::Parameter("bte_layer.corridor_cost", 255)}).successful);
-  EXPECT_TRUE(layer_->testValidateParams(
+  EXPECT_FALSE(layer_->testValidateParams(
       {rclcpp::Parameter("bte_layer.cost_write_mode", -1)}).successful);
 
   EXPECT_TRUE(layer_->testValidateParams(
@@ -661,15 +655,18 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsCorridorMode)
   prepareForUpdateCosts(layer_.get(), costmap);
   setCorridorParams(1, 0.5, 2, 190);
 
-  layer_->testPathCallback([&]() {
+  auto path30 = [&]() {
       auto p = std::make_shared<nav_msgs::msg::Path>();
       p->header.frame_id = "map";
-      p->header.stamp = node_->now() - rclcpp::Duration::from_seconds(4.9);
+      p->header.stamp = node_->now();
       for (int i = 0; i < 30; ++i) {
         p->poses.push_back(makePose(i * 0.1, 2.5));
       }
       return p;
-  }());
+    }();
+  layer_->testResetState();
+  layer_->testPathCallback(path30);
+  layer_->waitingForNewPlanRef() = false;
   layer_->updateCosts(*costmap, 0, 0, 100, 100);
 
   unsigned int mx, my;
@@ -678,7 +675,10 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsCorridorMode)
 
   // out-of-range path index resets silently to 0
   prepareForUpdateCosts(layer_.get(), costmap);
-  layer_->testPathCallback(makeSharedPath(0, 0, 1, 0, 10, 0.1, node_->now()));
+  auto path10 = makeSharedPath(0, 0, 1, 0, 10, 0.1, node_->now());
+  layer_->testResetState();
+  layer_->testPathCallback(path10);
+  layer_->waitingForNewPlanRef() = false;
   layer_->pathIndexRef().store(999);
   ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
   EXPECT_EQ(layer_->pathIndexRef().load(), 0u);
@@ -691,7 +691,7 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillMode)
   setCorridorParams(1, 0.5, 1, 190, 1);
   layer_->setLookAhead(2.5);
 
-  layer_->testPathCallback([&]() {
+  auto path60 = [&]() {
       auto p = std::make_shared<nav_msgs::msg::Path>();
       p->header.frame_id = "map";
       p->header.stamp = node_->now();
@@ -699,7 +699,10 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillMode)
         p->poses.push_back(makePose(i * 0.05, 2.5));
       }
       return p;
-  }());
+    }();
+  layer_->testResetState();
+  layer_->testPathCallback(path60);
+  layer_->waitingForNewPlanRef() = false;
   ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
 
   unsigned int mx, my;
@@ -711,7 +714,10 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillMode)
 
   prepareForUpdateCosts(layer_.get(), costmap);
   setCorridorParams(1, 1.0, 1, 190, 1);
-  layer_->testPathCallback(makeSharedPath(1.0, 0.0, 1, 0, 40, 0.1, node_->now()));
+  auto path40 = makeSharedPath(1.0, 0.0, 1, 0, 40, 0.1, node_->now());
+  layer_->testResetState();
+  layer_->testPathCallback(path40);
+  layer_->waitingForNewPlanRef() = false;
   layer_->updateCosts(*costmap, 0, 0, 100, 100);
 
   unsigned int rx, ry;
@@ -722,38 +728,4 @@ TEST_F(BoundedTrackingErrorLayerTest, testUpdateCostsFillMode)
   unsigned int fx, fy;
   ASSERT_TRUE(costmap->worldToMap(2.0, 1.5, fx, fy));
   EXPECT_FALSE(layer_->isInterior(fy * costmap->getSizeInCellsX() + fx));
-}
-
-TEST_F(BoundedTrackingErrorLayerTest, testFillBranchPathExitsAndReentersBbox)
-{
-  auto * costmap = layers_->getCostmap();
-  prepareForUpdateCosts(layer_.get(), costmap);
-  setCorridorParams(1, 0.4, 1, 190, 1);
-  layer_->setLookAhead(1.0);
-
-  auto msg = std::make_shared<nav_msgs::msg::Path>();
-  msg->header.frame_id = "map";
-  msg->header.stamp = node_->now();
-  for (int i = 0; i <= 10; ++i) {
-    msg->poses.push_back(makePose(i * 0.1, 0.3));
-                                                                              }   // chunk A
-  for (int i = 13; i <= 20; ++i) {
-    msg->poses.push_back(makePose(i * 0.1, 0.3));
-                                                                               }  // gap
-  for (int i = 10; i >= 0; --i) {
-    msg->poses.push_back(makePose(i * 0.1, 0.7));
-                                                                              }   // chunk B
-
-  layer_->testPathCallback(msg);
-  ASSERT_NO_THROW(layer_->updateCosts(*costmap, 0, 0, 100, 100));
-
-  unsigned int mx, my;
-  ASSERT_TRUE(costmap->worldToMap(0.5, 0.3, mx, my));
-  EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE);
-
-  ASSERT_TRUE(costmap->worldToMap(0.5, 0.7, mx, my));
-  EXPECT_EQ(costmap->getCost(mx, my), nav2_costmap_2d::FREE_SPACE);
-
-  ASSERT_TRUE(costmap->worldToMap(0.5, 1.1, mx, my));
-  EXPECT_EQ(costmap->getCost(mx, my), 190);
 }

@@ -775,17 +775,17 @@ BoundedTrackingErrorLayer::traceQuad(
   int clamped_y_min, int height)
 {
   auto trace = [&](CellPoint a, CellPoint b) {
-    nav2_util::LineIterator line(a.x, a.y, b.x, b.y);
-    for (; line.isValid(); line.advance()) {
-      const int x = line.getX();
-      const int y = line.getY();
-      const int buffer_idx = y - clamped_y_min;
-      if (buffer_idx >= 0 && buffer_idx < height) {
-        span_x_min_buffer_[buffer_idx] = std::min(span_x_min_buffer_[buffer_idx], x);
-        span_x_max_buffer_[buffer_idx] = std::max(span_x_max_buffer_[buffer_idx], x);
+      nav2_util::LineIterator line(a.x, a.y, b.x, b.y);
+      for (; line.isValid(); line.advance()) {
+        const int x = line.getX();
+        const int y = line.getY();
+        const int buffer_idx = y - clamped_y_min;
+        if (buffer_idx >= 0 && buffer_idx < height) {
+          span_x_min_buffer_[buffer_idx] = std::min(span_x_min_buffer_[buffer_idx], x);
+          span_x_max_buffer_[buffer_idx] = std::max(span_x_max_buffer_[buffer_idx], x);
+        }
       }
-    }
-  };
+    };
 
   trace(p0, p1);
   trace(p1, p2);
@@ -914,13 +914,13 @@ BoundedTrackingErrorLayer::flushSubSegment(
   margin_segment.header = sub_segment.header;
 
   auto flush_margin_segment = [&]() {
-    if (margin_segment.poses.size() >= 2) {
-      WallPolygons fill_walls;
-      getWallPolygons(margin_segment, fill_walls);
-      saveCorridorInterior(master_grid, fill_walls);
-    }
-    margin_segment.poses.clear();
-  };
+      if (margin_segment.poses.size() >= 2) {
+        WallPolygons fill_walls;
+        getWallPolygons(margin_segment, fill_walls);
+        saveCorridorInterior(master_grid, fill_walls);
+      }
+      margin_segment.poses.clear();
+    };
 
   for (const auto & p : sub_segment.poses) {
     unsigned int mx, my;

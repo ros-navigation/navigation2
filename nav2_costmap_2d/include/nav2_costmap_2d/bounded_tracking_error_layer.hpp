@@ -277,6 +277,8 @@ protected:
   int prev_fill_max_i_{-1};
   int prev_fill_max_j_{-1};
 
+  bool waiting_for_new_plan_{false};
+
 private:
   /** @brief A 2D costmap cell coordinate. */
   struct CellPoint
@@ -401,7 +403,6 @@ private:
   std::vector<unsigned int> end_cap_cells_;
   geometry_msgs::msg::Point last_end_pose_;
   bool end_pose_changed_{false};
-  bool waiting_for_new_plan_{false};
   bool replan_cycle_done_{false};
   rclcpp::Duration new_goal_suppression_timeout_{0, 0};
   rclcpp::Time goal_change_time_{0, 0, RCL_ROS_TIME};
