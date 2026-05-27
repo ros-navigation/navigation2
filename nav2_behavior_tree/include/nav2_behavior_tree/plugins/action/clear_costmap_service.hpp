@@ -35,7 +35,9 @@ namespace nav2_behavior_tree
  *
  * Usage in XML:
  * @code
- * <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+ * <ClearEntireCostmap name="ClearLocalCostmap-Subtree"
+ *                     service_name="local_costmap/clear_entirely_local_costmap"
+ *                     plugins="obstacle_layer;voxel_layer"/>
  * @endcode
  */
 class ClearEntireCostmapService : public BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>
@@ -85,7 +87,10 @@ public:
  *
  * Usage in XML:
  * @code
- * <ClearCostmapExceptRegion name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_except_local_costmap"/>
+ * <ClearCostmapExceptRegion name="ClearLocalCostmap-Subtree"
+ *                           service_name="local_costmap/clear_except_local_costmap"
+ *                           reset_distance="2.0"
+ *                           plugins="obstacle_layer;voxel_layer"/>
  * @endcode
  */
 class ClearCostmapExceptRegionService
@@ -139,7 +144,10 @@ public:
  *
  * Usage in XML:
  * @code
- * <ClearCostmapAroundRobot name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_around_local_costmap"/>
+ * <ClearCostmapAroundRobot name="ClearLocalCostmap-Subtree"
+ *                          service_name="local_costmap/clear_around_local_costmap"
+ *                          reset_distance="2.0"
+ *                          plugins="obstacle_layer;voxel_layer"/>
  * @endcode
  */
 class ClearCostmapAroundRobotService : public BtServiceNode<nav2_msgs::srv::ClearCostmapAroundRobot>
@@ -195,7 +203,8 @@ public:
  * <ClearCostmapAroundPose name="ClearLocalCostmapAroundPose"
  *                         service_name="local_costmap/clear_around_pose_local_costmap"
  *                         pose="{goal_pose}"
- *                         reset_distance="2.0"/>
+ *                         reset_distance="2.0"
+ *                         plugins="obstacle_layer;voxel_layer"/>
  * @endcode
  */
 class ClearCostmapAroundPoseService : public BtServiceNode<nav2_msgs::srv::ClearCostmapAroundPose>
