@@ -27,7 +27,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS every time a specified
  * time period passes and FAILURE otherwise
- * @note It will re-initialize when haltedor on RunID change if is_global is true.
+ * @note It will re-initialize when halted or on RunID change if is_global is true.
  *
  * Usage in XML:
  * @code
