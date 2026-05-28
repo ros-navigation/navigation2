@@ -19,13 +19,14 @@
 #include <string>
 
 #include "behaviortree_cpp/decorator_node.h"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
 
 /**
  * @brief A BT::DecoratorNode that ticks its child at a specified rate
- * @note It will re-initialize when halted.
+ * @note It will re-initialize when halted or on RunID change if is_global is true.
  *
  * Usage in XML:
  * @code
@@ -58,7 +59,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("hz", 10.0, "Rate")
+      BT::InputPort<double>("hz", 10.0, "Rate"),
+      BT::InputPort<bool>("is_global", false, "Use RunID for initialization instead of IDLE check")
     };
   }
 
@@ -72,6 +74,10 @@ private:
   std::chrono::time_point<std::chrono::high_resolution_clock> start_;
   double period_;
   bool first_time_;
+
+  bool is_global_;
+  std::string current_run_id_;
+  nav2::LifecycleNode::SharedPtr node_;
 };
 
 }  // namespace nav2_behavior_tree
