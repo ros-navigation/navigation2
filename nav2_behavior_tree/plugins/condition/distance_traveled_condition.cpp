@@ -54,22 +54,6 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
-    if (!is_global_) {
-      if (!nav2_util::getCurrentPose(
-          start_pose_, *tf_, global_frame_, robot_base_frame_,
-          transform_tolerance_))
-      {
-        RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
-      }
-      return BT::NodeStatus::FAILURE;
-    } else if (start_pose_.header.frame_id.empty()) {
-      if (!nav2_util::getCurrentPose(
-          start_pose_, *tf_, global_frame_, robot_base_frame_,
-          transform_tolerance_))
-      {
-        RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
-      }
-    }
   }
 
   if (is_global_) {
@@ -83,7 +67,23 @@ BT::NodeStatus DistanceTraveledCondition::tick()
     }
     if (new_run_id != current_run_id_) {
       current_run_id_ = new_run_id;
-      // Do not reset start_pose_ to preserve distance measurement across runs
+      if (!nav2_util::getCurrentPose(
+          start_pose_, *tf_, global_frame_, robot_base_frame_,
+          transform_tolerance_))
+      {
+        RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+        return BT::NodeStatus::FAILURE;
+      }
+    }
+  } else {
+    if (!BT::isStatusActive(status())) {
+      if (!nav2_util::getCurrentPose(
+          start_pose_, *tf_, global_frame_, robot_base_frame_,
+          transform_tolerance_))
+      {
+        RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+        return BT::NodeStatus::FAILURE;
+      }
     }
   }
 

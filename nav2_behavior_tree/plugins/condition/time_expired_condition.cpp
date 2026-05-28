@@ -44,14 +44,6 @@ BT::NodeStatus TimeExpiredCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
-    if (!is_global_) {
-      // Local mode: reset timer and return FAILURE on first tick after halt
-      start_ = node_->now();
-      return BT::NodeStatus::FAILURE;
-    } else if (!start_.nanoseconds()) {
-      // Global mode: initialize start_ only on the very first tick ever
-      start_ = node_->now();
-    }
   }
 
   if (is_global_) {
@@ -65,7 +57,11 @@ BT::NodeStatus TimeExpiredCondition::tick()
     }
     if (new_run_id != current_run_id_) {
       current_run_id_ = new_run_id;
-      // Do not reset start_ to preserve time measurement across runs
+      start_ = node_->now();
+    }
+  } else {
+    if (!BT::isStatusActive(status())) {
+      start_ = node_->now();
     }
   }
 

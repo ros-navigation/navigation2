@@ -96,11 +96,15 @@ TEST_F(TimeExpiredConditionGlobalTestFixture, test_runid_global_mode)
   rclcpp::sleep_for(500ms);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
-  // New RunID: start_ must NOT reset — timer continues from where it was
+  // New RunID: start_ resets — timer restarts from now
   config_->blackboard->set<std::string>("run_id", "runid_2");
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
-  // Wait another 600ms (total ~1.1s from start_) — should now expire
+  // Only 600ms elapsed since reset — should not expire yet
+  rclcpp::sleep_for(600ms);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Now ~1.2s since reset — should expire
   rclcpp::sleep_for(600ms);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 }

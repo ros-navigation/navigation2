@@ -137,15 +137,16 @@ TEST_F(DistanceTraveledConditionGlobalTestFixture, test_runid_global_mode)
   }
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
-  // New RunID: start_pose_ must NOT reset — distance still accumulates from 0
+  // New RunID: start_pose_ resets to current position (0.6)
+  // distance from 0.6 to 0.6 = 0 — should still FAILURE
   config_->blackboard->set<std::string>("run_id", "runid_2");
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
-  // Move to 1.1 — now > 1.0 from start (position 0), should succeed
-  pose.pose.position.x = 1.1;
+  // Move to 1.7 — now > 1.0 from new start_pose_ (0.6), should succeed
+  pose.pose.position.x = 1.7;
   transform_handler_->updateRobotPose(pose.pose);
   current_x = 0;
-  while (current_x < 1.0) {
+  while (current_x < 1.6) {
     if (nav2_util::getCurrentPose(current_pose, *transform_handler_->getBuffer())) {
       current_x = current_pose.pose.position.x;
     }
