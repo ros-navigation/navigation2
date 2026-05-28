@@ -35,7 +35,9 @@ BT::NodeStatus SingleTrigger::tick()
   if (!BT::isStatusActive(status())) {
     getInput("is_global", is_global_);
     node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-    first_time_ = true;
+    if (!is_global_) {
+      first_time_ = true;
+    }
   }
 
   if (is_global_) {
