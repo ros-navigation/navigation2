@@ -30,11 +30,16 @@ SingleTrigger::SingleTrigger(
 {
 }
 
+void SingleTrigger::initialize()
+{
+  getInput("is_global", is_global_);
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+}
+
 BT::NodeStatus SingleTrigger::tick()
 {
   if (!BT::isStatusActive(status())) {
-    getInput("is_global", is_global_);
-    node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+    initialize();
     if (!is_global_) {
       first_time_ = true;
     }

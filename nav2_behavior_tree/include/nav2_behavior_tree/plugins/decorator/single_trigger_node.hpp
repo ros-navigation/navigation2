@@ -59,6 +59,8 @@ public:
     };
   }
 
+  void initialize();
+
 private:
   /**
    * @brief The main override required by a BT action

@@ -50,10 +50,15 @@ DistanceController::DistanceController(
     node_, "robot_base_frame", this);
 }
 
+void DistanceController::initialize()
+{
+  getInput("is_global", is_global_);
+}
+
 inline BT::NodeStatus DistanceController::tick()
 {
   if (!BT::isStatusActive(status())) {
-    getInput("is_global", is_global_);
+    initialize();
   }
 
   if (is_global_) {
