@@ -28,16 +28,16 @@ SingleTrigger::SingleTrigger(
   is_global_(false),
   current_run_id_("")
 {
-  getInput("is_global", is_global_);
 }
 
 BT::NodeStatus SingleTrigger::tick()
 {
   if (!BT::isStatusActive(status())) {
+    getInput("is_global", is_global_);
+    node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
     first_time_ = true;
   }
 
-  // Global mode: re-arm on RunID change instead of relying on IDLE check
   if (is_global_) {
     std::string new_run_id;
     try {

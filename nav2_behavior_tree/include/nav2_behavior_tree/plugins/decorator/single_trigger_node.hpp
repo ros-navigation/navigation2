@@ -19,6 +19,7 @@
 #include <string>
 
 #include "behaviortree_cpp/decorator_node.h"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -66,9 +67,9 @@ private:
   BT::NodeStatus tick() override;
 
   bool first_time_;
-
   bool is_global_;
   std::string current_run_id_;
+  nav2::LifecycleNode::SharedPtr node_;
 };
 
 }  // namespace nav2_behavior_tree

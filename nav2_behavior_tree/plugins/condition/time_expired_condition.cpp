@@ -54,7 +54,6 @@ BT::NodeStatus TimeExpiredCondition::tick()
     }
   }
 
-  // Global mode: on RunID change fall through without resetting start_
   if (is_global_) {
     std::string new_run_id;
     try {

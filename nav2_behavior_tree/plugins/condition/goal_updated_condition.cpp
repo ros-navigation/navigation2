@@ -24,6 +24,7 @@ GoalUpdatedCondition::GoalUpdatedCondition(
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
   is_global_(false),
+  initialized_(false),
   current_run_id_("")
 {
 }
@@ -31,6 +32,7 @@ GoalUpdatedCondition::GoalUpdatedCondition(
 void GoalUpdatedCondition::initialize()
 {
   getInput("is_global", is_global_);
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 }
 
 BT::NodeStatus GoalUpdatedCondition::tick()
@@ -49,19 +51,23 @@ BT::NodeStatus GoalUpdatedCondition::tick()
         std::string(name()));
     }
 
+    if (!initialized_) {
+      // First tick ever: snapshot current goal as reference and return FAILURE
+      initialized_ = true;
+      current_run_id_ = new_run_id;
+      BT::getInputOrBlackboard("goals", goals_);
+      BT::getInputOrBlackboard("goal", goal_);
+      return BT::NodeStatus::FAILURE;
+    }
+
     if (new_run_id != current_run_id_) {
-      if (current_run_id_.empty()) {
-        // First tick ever: snapshot and return FAILURE
-        current_run_id_ = new_run_id;
-        BT::getInputOrBlackboard("goals", goals_);
-        BT::getInputOrBlackboard("goal", goal_);
-        return BT::NodeStatus::FAILURE;
-      }
-      // RunID changed: keep old snapshot for comparison
+      // New navigation task started: update run_id and fall through
+      // so the comparison below fires SUCCESS if the goal changed
       current_run_id_ = new_run_id;
     }
   } else {
     if (!BT::isStatusActive(status())) {
+      // Local mode: snapshot on first tick after halt, return FAILURE
       BT::getInputOrBlackboard("goals", goals_);
       BT::getInputOrBlackboard("goal", goal_);
       return BT::NodeStatus::FAILURE;

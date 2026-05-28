@@ -23,6 +23,7 @@
 #include "nav_msgs/msg/goals.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 
 namespace nav2_behavior_tree
@@ -86,7 +87,9 @@ private:
   geometry_msgs::msg::PoseStamped goal_;
   nav_msgs::msg::Goals goals_;
   bool is_global_;
+  bool initialized_;
   std::string current_run_id_;
+  nav2::LifecycleNode::SharedPtr node_;
 };
 
 }  // namespace nav2_behavior_tree

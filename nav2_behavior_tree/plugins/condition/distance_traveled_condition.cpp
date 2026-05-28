@@ -72,7 +72,6 @@ BT::NodeStatus DistanceTraveledCondition::tick()
     }
   }
 
-  // Global mode: on RunID change fall through without resetting start_pose_
   if (is_global_) {
     std::string new_run_id;
     try {
