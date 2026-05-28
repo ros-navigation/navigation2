@@ -28,6 +28,8 @@ SpeedController::SpeedController(
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf),
   first_tick_(false),
+  is_global_(false),
+  current_run_id_(""),
   period_(1.0),
   min_rate_(0.1),
   max_rate_(1.0),
@@ -54,16 +56,24 @@ SpeedController::SpeedController(
     "odom_smoother");
 }
 
+void SpeedController::initialize()
+{
+  getInput("is_global", is_global_);
+}
+
 inline BT::NodeStatus SpeedController::tick()
 {
   if (!BT::isStatusActive(status())) {
-    // Reset since we're starting a new iteration of
-    // the speed controller (moving from IDLE to RUNNING)
+    initialize();
     BT::getInputOrBlackboard("goals", goals_);
     BT::getInputOrBlackboard("goal", goal_);
-    period_ = 1.0 / max_rate_;
-    start_ = node_->now();
-    first_tick_ = true;
+    if (!is_global_) {
+      // Non-global: always reset on IDLE->RUNNING
+      period_ = 1.0 / max_rate_;
+      start_ = node_->now();
+      first_tick_ = true;
+    }
+    // is_global_=true: halt re-entry is handled by the RunID block below
   }
 
   nav_msgs::msg::Goals current_goals;
@@ -82,18 +92,33 @@ inline BT::NodeStatus SpeedController::tick()
 
   setStatus(BT::NodeStatus::RUNNING);
 
+  if (is_global_) {
+    std::string new_run_id;
+    try {
+      new_run_id = config().blackboard->template get<std::string>("run_id");
+    } catch (const std::exception &) {
+      throw std::runtime_error(
+        "is_global=true requires 'run_id' on the blackboard for SpeedController: " + name());
+    }
+    if (new_run_id != current_run_id_) {
+      current_run_id_ = new_run_id;
+      period_ = 1.0 / max_rate_;
+      start_ = node_->now();
+      first_tick_ = true;
+    }
+  }
+
   auto elapsed = node_->now() - start_;
 
   // The child gets ticked the first time through and any time the period has
   // expired. In addition, once the child begins to run, it is ticked each time
   // 'til completion
-  if (first_tick_ || (child_node_->status() == BT::NodeStatus::RUNNING) ||
-    elapsed.seconds() >= period_)
-  {
+  bool period_expired = elapsed.seconds() >= period_;
+  if (first_tick_ || (child_node_->status() == BT::NodeStatus::RUNNING) || period_expired) {
     first_tick_ = false;
 
     // update period if the last period is exceeded
-    if (elapsed.seconds() >= period_) {
+    if (period_expired) {
       updatePeriod();
       start_ = node_->now();
     }
