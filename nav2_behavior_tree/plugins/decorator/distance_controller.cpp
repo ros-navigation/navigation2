@@ -35,7 +35,9 @@ DistanceController::DistanceController(
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf),
   distance_(1.0),
-  first_time_(false)
+  first_time_(false),
+  is_global_(false),
+  current_run_id_("")
 {
   getInput("distance", distance_);
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
@@ -51,16 +53,44 @@ DistanceController::DistanceController(
 inline BT::NodeStatus DistanceController::tick()
 {
   if (!BT::isStatusActive(status())) {
-    // Reset the starting position since we're starting a new iteration of
-    // the distance controller (moving from IDLE to RUNNING)
-    if (!nav2_util::getCurrentPose(
-        start_pose_, *tf_, global_frame_, robot_base_frame_,
-        transform_tolerance_))
-    {
-      RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
-      return BT::NodeStatus::FAILURE;
+    getInput("is_global", is_global_);
+  }
+
+  if (is_global_) {
+    std::string new_run_id;
+    try {
+      new_run_id = config().blackboard->template get<std::string>("run_id");
+    } catch (const std::exception &) {
+      throw std::runtime_error(
+        "is_global=true requires 'run_id' on the blackboard for DistanceController: " + name());
     }
-    first_time_ = true;
+    if (new_run_id != current_run_id_) {
+      current_run_id_ = new_run_id;
+      if (!nav2_util::getCurrentPose(
+          start_pose_, *tf_, global_frame_, robot_base_frame_,
+          transform_tolerance_))
+      {
+        RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+        return BT::NodeStatus::FAILURE;
+      }
+      first_time_ = true;
+    } else if (!BT::isStatusActive(status())) {
+      // halt ignored, start pose preserved (is_global=true)
+    }
+    // else: halt re-entry same run — start_pose_ preserved
+  } else {
+    if (!BT::isStatusActive(status())) {
+      // Reset the starting position since we're starting a new iteration of
+      // the distance controller (moving from IDLE to RUNNING)
+      if (!nav2_util::getCurrentPose(
+          start_pose_, *tf_, global_frame_, robot_base_frame_,
+          transform_tolerance_))
+      {
+        RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+        return BT::NodeStatus::FAILURE;
+      }
+      first_time_ = true;
+    }
   }
 
   setStatus(BT::NodeStatus::RUNNING);
