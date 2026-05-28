@@ -52,8 +52,7 @@ BT::NodeStatus TimeExpiredCondition::tick()
       new_run_id = config().blackboard->template get<std::string>("run_id");
     } catch (const std::exception & e) {
       throw std::runtime_error(
-        "is_global=true requires 'run_id' to be set on the blackboard for condition: " +
-        std::string(name()));
+        "is_global=true requires 'run_id' on the blackboard for TimeExpiredCondition: " + name());
     }
     if (new_run_id != current_run_id_) {
       current_run_id_ = new_run_id;
