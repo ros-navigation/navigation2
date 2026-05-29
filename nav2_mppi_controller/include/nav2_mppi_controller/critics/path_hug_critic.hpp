@@ -24,14 +24,11 @@ namespace mppi::critics
 {
 /**
  * @class mppi::critics::PathHugCritic
- * @brief Critic objective function for enforcing a hard corridor boundary
- * around the planned path. Intended as a stricter alternative to PathAlignCritic.
- * When use_soft_repulsion is false, trajectories inside the corridor pay zero cost
- * and any trajectory that exits is assigned collision_cost. When use_soft_repulsion
- * is true, a linear penalty ramp is applied between grace_distance and
- * max_allowed_distance with a hard veto at the boundary. If all trajectories
- * violate the boundary, graded fallback costs are applied to preserve optimizer
- * gradient for recovery.
+ * @brief Enforces a hard corridor boundary around the planned path.
+ * Trajectories outside max_allowed_distance receive collision_cost (hard veto).
+ * With use_soft_repulsion, a linear penalty ramps between grace_distance and
+ * max_allowed_distance. If all trajectories violate, graded fallback costs
+ * preserve optimizer gradient for recovery.
  */
 class PathHugCritic : public CriticFunction
 {
