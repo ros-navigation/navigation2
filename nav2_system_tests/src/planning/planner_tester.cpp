@@ -20,6 +20,7 @@
 #include <memory>
 #include <iostream>
 #include <chrono>
+#include <thread>
 #include <sstream>
 #include <iomanip>
 
@@ -348,7 +349,7 @@ bool PlannerTester::defaultPlannerRandomTests(
     "Tested with %u tests. Planner failed on %u. Test time %ld ms",
     number_tests, num_fail, elapsed.count());
 
-  if ((num_fail / number_tests) > acceptable_fail_ratio) {
+  if ((static_cast<float>(num_fail) / static_cast<float>(number_tests)) > acceptable_fail_ratio) {
     return false;
   }
 
@@ -364,7 +365,7 @@ bool PlannerTester::plannerTest(
 
   // First make available the current robot position for the planner to take as starting point
   updateRobotPosition(robot_position);
-  sleep(0.05);
+  std::this_thread::sleep_for(50ms);
 
   // Then request to compute a path
   TaskStatus status = createPlan(goal, path);

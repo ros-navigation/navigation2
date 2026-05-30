@@ -139,7 +139,7 @@ bool GridCollisionChecker::inCollision(
     // Use precomputed oriented footprints are done on initialization,
     // offset by translation value to collision check
     double wx, wy;
-    costmap_->mapToWorld(static_cast<double>(x), static_cast<double>(y), wx, wy);
+    costmap_->mapToWorld(static_cast<unsigned int>(x), static_cast<unsigned int>(y), wx, wy);
     geometry_msgs::msg::Point new_pt;
     const nav2_costmap_2d::Footprint & oriented_footprint = oriented_footprints_[angle_bin];
     nav2_costmap_2d::Footprint current_footprint;
