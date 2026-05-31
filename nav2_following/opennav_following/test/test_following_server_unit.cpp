@@ -121,7 +121,7 @@ TEST(FollowingServerTests, ObjectLifecycle)
 TEST(FollowingServerTests, ErrorExceptions)
 {
   auto node = std::make_shared<FollowingServerShim>();
-  auto node_thread = nav2::NodeThread(node);
+  auto node_thread = std::make_unique<nav2::NodeThread>(node);
   auto node2 = std::make_shared<rclcpp::Node>("client_node");
 
   auto pub = node2->create_publisher<geometry_msgs::msg::PoseStamped>(
@@ -176,6 +176,7 @@ TEST(FollowingServerTests, ErrorExceptions)
   // Set follow_action_called to true to simulate robot following object
   node->set_parameter(rclcpp::Parameter("follow_action_called", true));
 
+  node_thread.reset();
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
