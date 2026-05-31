@@ -15,6 +15,7 @@
 #ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__PATH_EXPIRING_TIMER_CONDITION_HPP_
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__PATH_EXPIRING_TIMER_CONDITION_HPP_
 
+#include <memory>
 #include <string>
 
 #include "nav2_ros_common/lifecycle_node.hpp"

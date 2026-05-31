@@ -16,6 +16,7 @@
 #ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__SMOOTH_PATH_ACTION_HPP_
 #define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__SMOOTH_PATH_ACTION_HPP_
 
+#include <memory>
 #include <string>
 
 #include "nav2_msgs/action/smooth_path.hpp"
