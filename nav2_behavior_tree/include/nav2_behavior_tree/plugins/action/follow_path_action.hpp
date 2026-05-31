@@ -109,7 +109,8 @@ public:
         BT::InputPort<std::string>("goal_checker_id", ""),
         BT::InputPort<std::string>("progress_checker_id", ""),
         BT::InputPort<std::string>("path_handler_id", ""),
-        BT::OutputPort<nav2_msgs::msg::TrackingFeedback>("tracking_feedback",
+        BT::OutputPort<nav2_msgs::msg::TrackingFeedback>(
+          "tracking_feedback",
           "Tracking feedback from controller server"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The follow path error code"),

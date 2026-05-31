@@ -54,8 +54,12 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("input_path1", "Input Path 1 to cancatenate"),
-      BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("input_path2", "Input Path 2 to cancatenate"),
+      BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>(
+        "input_path1",
+        "Input Path 1 to cancatenate"),
+      BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>(
+        "input_path2",
+        "Input Path 2 to cancatenate"),
       BT::OutputPort<std::shared_ptr<nav_msgs::msg::Path>>("output_path", "Paths concatenated"),
     };
   }

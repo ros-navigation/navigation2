@@ -66,7 +66,7 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   if (new_path_ptr) {
     // Pointer equality: same shared_ptr = same path — skip O(N) comparison
     if (new_path_ptr.get() != current_path_ptr_.get() ||
-        *new_path_ptr != path_)
+      *new_path_ptr != path_)
     {
       path_ = *new_path_ptr;
       current_path_ptr_ = new_path_ptr;

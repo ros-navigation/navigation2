@@ -91,7 +91,9 @@ public:
 
     return providedBasicPorts(
       {
-        BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("unsmoothed_path", "Path to be smoothed"),
+        BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>(
+          "unsmoothed_path",
+          "Path to be smoothed"),
         BT::InputPort<double>("max_smoothing_duration", 3.0, "Maximum smoothing duration"),
         BT::InputPort<bool>(
           "check_for_collisions", false,
