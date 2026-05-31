@@ -69,7 +69,7 @@ TEST(DockingServerTests, ObjectLifecycle)
 TEST(DockingServerTests, testErrorExceptions)
 {
   auto node = std::make_shared<DockingServerShim>();
-  auto node_thread = nav2::NodeThread(node);
+  auto node_thread = std::make_unique<nav2::NodeThread>(node);
   auto node2 = std::make_shared<rclcpp::Node>("client_node");
 
   // Setup 1 instance of the test failure dock & its plugin instance
@@ -181,6 +181,7 @@ TEST(DockingServerTests, testErrorExceptions)
       EXPECT_TRUE(false);
     }
   }
+  node_thread.reset();
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
@@ -334,7 +335,7 @@ TEST(DockingServerTests, testDockBackward)
 TEST(DockingServerTests, ExceptionHandlingDuringDocking)
 {
   auto node = std::make_shared<DockingServerShim>();
-  auto node_thread = nav2::NodeThread(node);
+  auto node_thread = std::make_unique<nav2::NodeThread>(node);
   auto client_node = std::make_shared<rclcpp::Node>("test_client");
 
   // Configure docking server
@@ -377,6 +378,7 @@ TEST(DockingServerTests, ExceptionHandlingDuringDocking)
     EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
   }
 
+  node_thread.reset();
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
 }
@@ -384,7 +386,7 @@ TEST(DockingServerTests, ExceptionHandlingDuringDocking)
 TEST(DockingServerTests, StopDetectionOnSuccess)
 {
   auto node = std::make_shared<DockingServerShim>();
-  auto node_thread = nav2::NodeThread(node);
+  auto node_thread = std::make_unique<nav2::NodeThread>(node);
   auto client_node = std::make_shared<rclcpp::Node>("test_client_success");
 
   // Configure the server with the test plugin
@@ -425,6 +427,7 @@ TEST(DockingServerTests, StopDetectionOnSuccess)
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
   EXPECT_TRUE(result.result->success);
 
+  node_thread.reset();
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->shutdown();
@@ -433,7 +436,7 @@ TEST(DockingServerTests, StopDetectionOnSuccess)
 TEST(DockingServerTests, HandlesPluginStartFailure)
 {
   auto node = std::make_shared<DockingServerTFShim>();
-  auto node_thread = nav2::NodeThread(node);
+  auto node_thread = std::make_unique<nav2::NodeThread>(node);
   auto client_node = std::make_shared<rclcpp::Node>("test_client_start_failure");
 
   // Configure the server with the TestFailureDock plugin.
@@ -481,6 +484,7 @@ TEST(DockingServerTests, HandlesPluginStartFailure)
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
   EXPECT_EQ(result.result->error_code, DockRobot::Result::FAILED_TO_DETECT_DOCK);
 
+  node_thread.reset();
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->shutdown();
