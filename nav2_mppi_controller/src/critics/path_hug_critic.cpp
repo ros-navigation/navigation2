@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cinttypes>
 #include "nav2_mppi_controller/critics/path_hug_critic.hpp"
 
 
@@ -207,6 +206,8 @@ void PathHugCritic::score(CriticData & data)
     return;
   }
 
+  // path_segments_count is clamped to path.x.size()-1 by findPathFurthestReachedPoint,
+  // so +1 yields a valid point count never exceeding path.x.size().
   buildDecimatedPath(data.path, path_segments_count + 1);
   const size_t num_segments = decimated_indices_.size() - 1;
   updateCumulativeDistances(data.path, num_segments);
@@ -235,6 +236,10 @@ void PathHugCritic::score(CriticData & data)
   }
   std::fill(results_.begin(), results_.end(), TrajResult{});
 
+  Eigen::Index violation_count = 0;
+
+  // Fallback cost accumulates within fallback_lookahead even for violators,
+  // preserving recovery gradient if all trajectories violate.
   for (Eigen::Index traj_idx = 0; traj_idx < batch_size; ++traj_idx) {
     TrajResult & traj = results_[traj_idx];
     Eigen::Index path_hint = robot_hint;
@@ -273,7 +278,7 @@ void PathHugCritic::score(CriticData & data)
       }
 
       if (dist_sq > max_dist_sq) {
-        traj.violates = true;
+        if (!traj.violates) {traj.violates = true; violation_count++;}
         if (accumulated_distance > fallback_lookahead) {break;}
         continue;
       }
@@ -286,11 +291,6 @@ void PathHugCritic::score(CriticData & data)
     if (traj.num_samples > 0 && !traj.violates) {
       traj.repulsion_cost /= static_cast<float>(traj.num_samples);
     }
-  }
-
-  Eigen::Index violation_count = 0;
-  for (Eigen::Index i = 0; i < batch_size; ++i) {
-    if (results_[i].violates) {violation_count++;}
   }
 
   const bool all_violate = (violation_count == batch_size);
@@ -310,12 +310,12 @@ void PathHugCritic::score(CriticData & data)
       }
     }
   } else {
-    // All trajectories violate — apply graded recovery to preserve optimizer gradient
-    RCLCPP_WARN_THROTTLE(
+    // Apply short sighted heavier weight to getin path quickly
+    RCLCPP_DEBUG_THROTTLE(
       logger_, *clock_, 5000,
-      "PathHugCritic: ALL " PRId64 " trajectories violate the corridor boundary "
+      "PathHugCritic: ALL %ld trajectories violate the corridor boundary "
       "(max_allowed_distance: %.3f m). Applying graded recovery.",
-      static_cast<int64_t>(batch_size), max_allowed_distance_);
+      static_cast<long>(batch_size), max_allowed_distance_);
 
     for (Eigen::Index traj_idx = 0; traj_idx < batch_size; ++traj_idx) {
       const TrajResult & r = results_[traj_idx];
