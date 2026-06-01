@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cinttypes>
 #include "nav2_mppi_controller/critics/path_hug_critic.hpp"
 
 
@@ -119,27 +120,27 @@ float PathHugCritic::computeMinDistToPathSq(
   path_hint = std::clamp(path_hint, Eigen::Index(0), static_cast<Eigen::Index>(num_segments - 1));
 
   auto distSqToSegment = [&](size_t seg_idx) -> float {
-    const float x0 = path.x(decimated_indices_[seg_idx]);
-    const float y0 = path.y(decimated_indices_[seg_idx]);
-    const float x1 = path.x(decimated_indices_[seg_idx + 1]);
-    const float y1 = path.y(decimated_indices_[seg_idx + 1]);
-    const float dx = x1 - x0;
-    const float dy = y1 - y0;
-    const float len_sq = dx * dx + dy * dy;
+      const float x0 = path.x(decimated_indices_[seg_idx]);
+      const float y0 = path.y(decimated_indices_[seg_idx]);
+      const float x1 = path.x(decimated_indices_[seg_idx + 1]);
+      const float y1 = path.y(decimated_indices_[seg_idx + 1]);
+      const float dx = x1 - x0;
+      const float dy = y1 - y0;
+      const float len_sq = dx * dx + dy * dy;
 
-    if (len_sq < 1e-6f) {
+      if (len_sq < 1e-6f) {
+        const float dpx = px - x0;
+        const float dpy = py - y0;
+        return dpx * dpx + dpy * dpy;
+      }
+
       const float dpx = px - x0;
       const float dpy = py - y0;
-      return dpx * dpx + dpy * dpy;
-    }
-
-    const float dpx = px - x0;
-    const float dpy = py - y0;
-    const float t = std::clamp((dpx * dx + dpy * dy) / len_sq, 0.0f, 1.0f);
-    const float dist_x = dpx - t * dx;
-    const float dist_y = dpy - t * dy;
-    return dist_x * dist_x + dist_y * dist_y;
-  };
+      const float t = std::clamp((dpx * dx + dpy * dy) / len_sq, 0.0f, 1.0f);
+      const float dist_x = dpx - t * dx;
+      const float dist_y = dpy - t * dy;
+      return dist_x * dist_x + dist_y * dist_y;
+    };
 
   float min_dist_sq = distSqToSegment(path_hint);
   Eigen::Index best_seg = path_hint;
@@ -307,9 +308,9 @@ void PathHugCritic::score(CriticData & data)
     // All trajectories violate — apply graded recovery to preserve optimizer gradient
     RCLCPP_WARN_THROTTLE(
       logger_, *clock_, 5000,
-      "PathHugCritic: ALL %ld trajectories violate the corridor boundary "
+      "PathHugCritic: ALL " PRId64 " trajectories violate the corridor boundary "
       "(max_allowed_distance: %.3f m). Applying graded recovery.",
-      static_cast<long>(batch_size), max_allowed_distance_);
+      static_cast<int64_t>(batch_size), max_allowed_distance_);
 
     for (Eigen::Index traj_idx = 0; traj_idx < batch_size; ++traj_idx) {
       const TrajResult & r = results_[traj_idx];

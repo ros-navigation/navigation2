@@ -966,7 +966,7 @@ TEST(CriticTests, PathHugCritic)
   float model_dt = 0.1f;
   CriticData data =
   {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt};
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
   data.goal_checker = &goal_checker;
@@ -1173,7 +1173,7 @@ TEST(CriticTests, PathHugCritic)
     generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
     generated_trajectories.y(0, i) = 0.0f;
     generated_trajectories.yaws(0, i) = 0.0f;
-    // traj 1: on path within lookahead_distance=2.0, violates beyond (reaches 2.0 at i=7 with step 0.3)
+    // traj 1: on path within lookahead_distance=2.0, violates beyond
     generated_trajectories.x(1, i) = static_cast<float>(i) * 0.3f;
     generated_trajectories.y(1, i) = (i >= 7) ? 0.5f : 0.0f;
     generated_trajectories.yaws(1, i) = 0.0f;

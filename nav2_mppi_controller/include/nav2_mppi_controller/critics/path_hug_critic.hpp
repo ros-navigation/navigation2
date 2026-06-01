@@ -44,6 +44,7 @@ public:
    * @param data in/out critic data containing trajectories and path
    */
   void score(CriticData & data) override;
+
 protected:
   /**
    * @brief Build a decimated index map over the path used only for this critic's
