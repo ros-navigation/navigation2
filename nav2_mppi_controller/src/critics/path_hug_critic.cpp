@@ -236,7 +236,7 @@ void PathHugCritic::score(CriticData & data)
   std::fill(results_.begin(), results_.end(), TrajResult{});
 
   for (Eigen::Index traj_idx = 0; traj_idx < batch_size; ++traj_idx) {
-    TrajResult & r = results_[traj_idx];
+    TrajResult & traj = results_[traj_idx];
     Eigen::Index path_hint = robot_hint;
 
     float accumulated_distance = 0.0f;
@@ -247,9 +247,9 @@ void PathHugCritic::score(CriticData & data)
       const float px = traj_x(traj_idx, col);
       const float py = traj_y(traj_idx, col);
 
-      const float ddx = px - prev_x;
-      const float ddy = py - prev_y;
-      accumulated_distance += std::sqrt(ddx * ddx + ddy * ddy);
+      const float step_dx = px - prev_x;
+      const float step_dy = py - prev_y;
+      accumulated_distance += std::sqrt(step_dx * step_dx + step_dy * step_dy);
       prev_x = px;
       prev_y = py;
 
@@ -264,27 +264,27 @@ void PathHugCritic::score(CriticData & data)
         decimated_indices_[safe_hint], path_pts_valid.size() - 1);
       if (!path_pts_valid[orig_idx]) {continue;}
 
-      r.num_samples++;
+      traj.num_samples++;
       const float dist = std::sqrt(dist_sq);
 
       if (accumulated_distance <= fallback_lookahead) {
-        r.fallback_cost += dist;
-        r.fallback_samples++;
+        traj.fallback_cost += dist;
+        traj.fallback_samples++;
       }
 
       if (dist_sq > max_dist_sq) {
-        r.violates = true;
+        traj.violates = true;
         if (accumulated_distance > fallback_lookahead) {break;}
         continue;
       }
 
       if (use_soft_repulsion_ && dist_sq > grace_dist_sq) {
-        r.repulsion_cost += (dist - grace_distance_) / repulsion_zone;
+        traj.repulsion_cost += (dist - grace_distance_) / repulsion_zone;
       }
     }
 
-    if (r.num_samples > 0 && !r.violates) {
-      r.repulsion_cost /= static_cast<float>(r.num_samples);
+    if (traj.num_samples > 0 && !traj.violates) {
+      traj.repulsion_cost /= static_cast<float>(traj.num_samples);
     }
   }
 
