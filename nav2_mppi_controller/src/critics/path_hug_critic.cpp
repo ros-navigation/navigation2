@@ -40,6 +40,13 @@ void PathHugCritic::initialize()
 
   clock_ = parent_.lock()->get_clock();
 
+  if (max_allowed_distance_ <= 0.0f) {
+    RCLCPP_WARN(
+      logger_,
+      "PathHugCritic: max_allowed_distance must be > 0. Clamping to 0.05 m.");
+    max_allowed_distance_ = 0.05f;
+  }
+
   if (grace_distance_ >= max_allowed_distance_) {
     RCLCPP_WARN(
       logger_,
@@ -201,6 +208,9 @@ void PathHugCritic::score(CriticData & data)
 
   utils::setPathCostsIfNotSet(data, costmap_ros_);
   const std::vector<bool> & path_pts_valid = *data.path_pts_valid;
+  if (path_pts_valid.empty()) {
+    return;
+  }
 
   buildDecimatedPath(data.path, path_segments_count + 1);
   const size_t num_segments = decimated_indices_.size() - 1;
