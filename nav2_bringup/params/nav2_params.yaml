@@ -231,17 +231,17 @@ controller_server:
       PathHugCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 8.0
+        cost_weight: 11.0
         trajectory_point_step: 2
         threshold_to_consider: 0.5
         search_window: 0.15
-        lookahead_distance: 0.35
+        lookahead_distance: 0.4
         max_allowed_distance: 0.05
         collision_cost: 100000.0
         use_soft_repulsion: true
         grace_distance: 0.02
         fallback_ratio: 0.7
-        recovery_weight: 24.0
+        recovery_weight: 28.0
         min_path_point_spacing: 0.1
       # TwirlingCritic:
       #   enabled: true
