@@ -58,13 +58,8 @@ void PathHugCritic::initialize()
 
   RCLCPP_INFO(
     logger_,
-    "PathHugCritic instantiated with %d power, %f weight, search_window: %f m, "
-    "lookahead: %f m, max_allowed: %f m, collision_cost: %f, "
-    "use_soft_repulsion: %s, grace_distance: %f m, "
-    "fallback_ratio: %f, recovery_weight: %f, min_path_point_spacing: %f m",
-    power_, weight_, search_window_, lookahead_distance_, max_allowed_distance_,
-    collision_cost_, use_soft_repulsion_ ? "true" : "false", grace_distance_,
-    fallback_ratio_, recovery_weight_, min_path_point_spacing_);
+    "PathHugCritic instantiated with %d power and %f weight",
+    power_, weight_);
 }
 
 void PathHugCritic::buildDecimatedPath(const models::Path & path, size_t num_points)
