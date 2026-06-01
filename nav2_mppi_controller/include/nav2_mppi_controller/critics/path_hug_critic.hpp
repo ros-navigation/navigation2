@@ -14,8 +14,9 @@
 
 #ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_
-
+#include <numeric>
 #include <vector>
+#include <algorithm>
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
@@ -43,13 +44,24 @@ public:
    * @param data in/out critic data containing trajectories and path
    */
   void score(CriticData & data) override;
-
 protected:
+  /**
+   * @brief Build a decimated index map over the path used only for this critic's
+   * distance scoring. When min_path_point_spacing_ <= 0 the map is the identity
+   * (behavior identical to full-resolution). Otherwise points closer than
+   * min_path_point_spacing_ (arc-length, greedy) are skipped to bound scan cost
+   * in dense regions such as corners. The first and last points are always kept.
+   * The original path is never modified.
+   *
+   * @param path The current local path
+   * @param num_points Number of path points to consider
+   */
+  void buildDecimatedPath(const models::Path & path, size_t num_points);
   /**
    * @brief Precompute cumulative arc-length distances along path segments
    *
    * @param path The current local path
-   * @param num_segments Number of path segments to process
+   * @param num_segments Number of (decimated) path segments to process
    */
   void updateCumulativeDistances(const models::Path & path, size_t num_segments);
   /**
@@ -60,7 +72,7 @@ protected:
    * @param px X coordinate of the query point
    * @param py Y coordinate of the query point
    * @param path The current local path
-   * @param num_segments Number of path segments
+   * @param num_segments Number of (decimated) path segments
    * @param path_hint [in/out] Hint segment index, updated to closest found
    * @return Squared Euclidean distance to the nearest path segment
    */
@@ -69,7 +81,7 @@ protected:
     const models::Path & path,
     size_t num_segments,
     Eigen::Index & path_hint);
-  // cost_weight and cost_power only active in soft repulsion mode
+  // cost_weight and cost_power active in soft repulsion mode and all_violate fallback
   unsigned int power_{1};
   float weight_{10.0f};
   int trajectory_point_step_{4};
@@ -79,9 +91,22 @@ protected:
   float max_allowed_distance_{0.2f};
   float collision_cost_{100000.0f};
   bool use_soft_repulsion_{false};
-  float grace_distance_{0.3f};
+  float grace_distance_{0.1f};
+  float fallback_ratio_{0.3f};
+  float recovery_weight_{5.0f};
+  float min_path_point_spacing_{0.0f};
+  struct TrajResult
+  {
+    bool violates{false};
+    int num_samples{0};
+    float repulsion_cost{0.0f};
+    float fallback_cost{0.0f};
+    int fallback_samples{0};
+  };
+  std::vector<TrajResult> results_;
   std::vector<float> cumulative_distances_;
+  std::vector<size_t> decimated_indices_;
+  rclcpp::Clock::SharedPtr clock_;
 };
 }  // namespace mppi::critics
-
 #endif  // NAV2_MPPI_CONTROLLER__CRITICS__PATH_HUG_CRITIC_HPP_
