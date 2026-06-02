@@ -37,7 +37,8 @@ AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
   coarse_xy_goal_tolerance_(0.25),
   coarse_xy_goal_tolerance_sq_(0.0625),
   xy_goal_tolerance_buffer_(0.0),
-  xy_goal_tolerance_reset_sq_(0.0625),
+  fine_xy_goal_tolerance_reset_sq_(0.01),
+  coarse_xy_goal_tolerance_reset_sq_(0.0625),
   yaw_goal_tolerance_(0.25),
   path_length_tolerance_(1.0),
   stateful_(true),
@@ -101,7 +102,9 @@ void AdaptiveToleranceGoalChecker::initialize(
 
   fine_xy_goal_tolerance_sq_ = fine_xy_goal_tolerance_ * fine_xy_goal_tolerance_;
   coarse_xy_goal_tolerance_sq_ = coarse_xy_goal_tolerance_ * coarse_xy_goal_tolerance_;
-  xy_goal_tolerance_reset_sq_ = (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+  fine_xy_goal_tolerance_reset_sq_ = (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+    (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
+  coarse_xy_goal_tolerance_reset_sq_ = (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
     (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
 
   if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
@@ -270,7 +273,11 @@ bool AdaptiveToleranceGoalChecker::isGoalXYReached(
     const double dist_sq = dx * dx + dy * dy;
     // If stateful and using xy_goal_tolerance_buffer_,
     // reset check_xy_ and tracking state when drifting outside the buffer region.
-    if (dist_sq > xy_goal_tolerance_reset_sq_) {
+    const double reset_threshold_sq =
+      (std::strcmp(xy_acceptance_reason_, "fine tolerance") == 0) ?
+      fine_xy_goal_tolerance_reset_sq_ : coarse_xy_goal_tolerance_reset_sq_;
+
+    if (dist_sq > reset_threshold_sq) {
       check_xy_ = true;
       in_tolerance_zone_ = false;
       stopped_stagnation_count_ = 0;
@@ -360,6 +367,9 @@ AdaptiveToleranceGoalChecker::updateParametersCallback(
       if (param_name == plugin_name_ + ".fine_xy_goal_tolerance") {
         fine_xy_goal_tolerance_ = parameter.as_double();
         fine_xy_goal_tolerance_sq_ = fine_xy_goal_tolerance_ * fine_xy_goal_tolerance_;
+        fine_xy_goal_tolerance_reset_sq_ =
+          (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+          (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
         if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
           RCLCPP_WARN(
             logger_, "Fine XY goal tolerance (%.3f) is greater or equal to coarse XY goal "
@@ -371,7 +381,8 @@ AdaptiveToleranceGoalChecker::updateParametersCallback(
       } else if (param_name == plugin_name_ + ".coarse_xy_goal_tolerance") {
         coarse_xy_goal_tolerance_ = parameter.as_double();
         coarse_xy_goal_tolerance_sq_ = coarse_xy_goal_tolerance_ * coarse_xy_goal_tolerance_;
-        xy_goal_tolerance_reset_sq_ = (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+        coarse_xy_goal_tolerance_reset_sq_ =
+          (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
           (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
         if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
           RCLCPP_WARN(
@@ -383,7 +394,11 @@ AdaptiveToleranceGoalChecker::updateParametersCallback(
         }
       } else if (param_name == plugin_name_ + ".xy_goal_tolerance_buffer") {
         xy_goal_tolerance_buffer_ = parameter.as_double();
-        xy_goal_tolerance_reset_sq_ = (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+        fine_xy_goal_tolerance_reset_sq_ =
+          (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+          (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
+        coarse_xy_goal_tolerance_reset_sq_ =
+          (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
           (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
       } else if (param_name == plugin_name_ + ".yaw_goal_tolerance") {
         yaw_goal_tolerance_ = parameter.as_double();

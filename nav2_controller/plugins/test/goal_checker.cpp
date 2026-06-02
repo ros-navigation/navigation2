@@ -845,22 +845,39 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
   current.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI / 2.0);
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
 
-  // Stateful: XY latches after acceptance,
-  // but leaving coarse_xy_tolerance + xy_tolerance_buffer resets latch and requires re-acceptance
-  gc.reset();
+  // Stateful: XY latches after acceptance, and the reset threshold
+  // depends on the XY acceptance path: fine + buffer for fine acceptance,
+  // and coarse + buffer for coarse acceptance.  gc.reset();
   current.orientation = geometry_msgs::msg::Quaternion();
   current.position.x = fine_xy_tol / 2.0;
   EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
+  current.position.x = fine_xy_tol + xy_tol_buffer;
+  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
+  // Still accepted within buffer
+  current.position.x = fine_xy_tol + xy_tol_buffer + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
+  // Just past buffer → rejected
+  current.position.x = fine_xy_tol + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
+  // Reset since left buffer
+  current.position.x = fine_xy_tol;
+  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
+
+  gc.reset();
+  current.position.x = coarse_xy_tol;
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // enter
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 1
+  EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));  // count 2
+  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));   // count 3 → accept
   current.position.x = coarse_xy_tol + xy_tol_buffer;
+  // Still accepted within buffer
   EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
   current.position.x = coarse_xy_tol + xy_tol_buffer + std::numeric_limits<double>::epsilon();
+  // Just past buffer → rejected
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
-  current.position.x = coarse_xy_tol + std::numeric_limits<double>::epsilon();
+  current.position.x = coarse_xy_tol;
+  // Reset since left buffer
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
-  current.position.x = fine_xy_tol / 2.0;
-  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
-  current.position.x = coarse_xy_tol + xy_tol_buffer;
-  EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
   gc.reset();
   EXPECT_FALSE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
 
