@@ -206,7 +206,7 @@ protected:
   void initPubSub();
   nav2::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
     initial_pose_sub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+  nav2::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     pose_pub_;
   nav2::Publisher<nav2_msgs::msg::ParticleCloud>::SharedPtr
     particle_cloud_pub_;
