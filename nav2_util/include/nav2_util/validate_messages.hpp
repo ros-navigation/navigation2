@@ -168,6 +168,9 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
   if (!validateMsg(msg.info)) {return false;}
 
   // check logic
+  if (msg.info.resolution <= 0.0) {
+    return false;                                                          // check map-resolution
+  }
   if (msg.data.size() != msg.info.width * msg.info.height) {
     return false;                                                          // check map-size
   }
