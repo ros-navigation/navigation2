@@ -50,6 +50,6 @@ jobs:
       image: semgrep/semgrep
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4 # v4 is the current stable standard
+        uses: actions/checkout@v4
       - name: Run Semgrep Scan
         run: semgrep scan --config .semgrep.yml --text --max-lines-per-finding 1 --error
