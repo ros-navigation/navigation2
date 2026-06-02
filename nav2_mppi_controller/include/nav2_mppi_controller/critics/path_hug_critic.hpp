@@ -86,6 +86,7 @@ protected:
   unsigned int power_{1};
   float weight_{10.0f};
   int trajectory_point_step_{4};
+  size_t offset_from_furthest_{20};
   float threshold_to_consider_{0.5f};
   float search_window_{0.15f};
   float lookahead_distance_{0.3f};
@@ -96,6 +97,7 @@ protected:
   float fallback_ratio_{0.3f};
   float recovery_weight_{5.0f};
   float min_path_point_spacing_{0.0f};
+  float min_trajectory_point_spacing_{0.01f};
   struct TrajResult
   {
     bool violates{false};

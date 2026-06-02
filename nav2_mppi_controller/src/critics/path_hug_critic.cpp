@@ -26,6 +26,7 @@ void PathHugCritic::initialize()
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 10.0f);
   getParam(trajectory_point_step_, "trajectory_point_step", 4);
+  getParam(offset_from_furthest_, "offset_from_furthest", 20);
   getParam(threshold_to_consider_, "threshold_to_consider", 0.5f);
   getParam(search_window_, "search_window", 0.15f);
   getParam(lookahead_distance_, "lookahead_distance", 0.3f);
@@ -36,6 +37,7 @@ void PathHugCritic::initialize()
   getParam(fallback_ratio_, "fallback_ratio", 0.3f);
   getParam(recovery_weight_, "recovery_weight", 5.0f);
   getParam(min_path_point_spacing_, "min_path_point_spacing", 0.0f);
+  getParam(min_trajectory_point_spacing_, "min_trajectory_point_spacing", 0.01f);
 
   clock_ = parent_.lock()->get_clock();
 
@@ -200,6 +202,10 @@ void PathHugCritic::score(CriticData & data)
     return;
   }
 
+  if (path_segments_count < static_cast<size_t>(offset_from_furthest_)) {
+    return;
+  }
+
   utils::setPathCostsIfNotSet(data, costmap_ros_);
   const std::vector<bool> & path_pts_valid = *data.path_pts_valid;
   if (path_pts_valid.empty()) {
@@ -245,8 +251,13 @@ void PathHugCritic::score(CriticData & data)
     Eigen::Index path_hint = robot_hint;
 
     float accumulated_distance = 0.0f;
+    float last_scored_x = traj_x(traj_idx, 0);
+    float last_scored_y = traj_y(traj_idx, 0);
     float prev_x = traj_x(traj_idx, 0);
     float prev_y = traj_y(traj_idx, 0);
+
+    const float min_traj_spacing_sq =
+      min_trajectory_point_spacing_ * min_trajectory_point_spacing_;
 
     for (Eigen::Index col = effective_stride; col < traj_length; col += effective_stride) {
       const float px = traj_x(traj_idx, col);
@@ -259,6 +270,14 @@ void PathHugCritic::score(CriticData & data)
       prev_y = py;
 
       if (accumulated_distance > lookahead_distance_) {break;}
+
+      if (min_trajectory_point_spacing_ > 0.0f) {
+        const float sdx = px - last_scored_x;
+        const float sdy = py - last_scored_y;
+        if (sdx * sdx + sdy * sdy < min_traj_spacing_sq) {continue;}
+      }
+      last_scored_x = px;
+      last_scored_y = py;
 
       const float dist_sq = computeMinDistToPathSq(
         px, py, data.path, num_segments, path_hint);
@@ -313,9 +332,9 @@ void PathHugCritic::score(CriticData & data)
     // Apply short sighted heavier weight to getin path quickly
     RCLCPP_DEBUG_THROTTLE(
       logger_, *clock_, 5000,
-      "PathHugCritic: ALL %ld trajectories violate the corridor boundary "
+      "PathHugCritic: ALL %d trajectories violate the corridor boundary "
       "(max_allowed_distance: %.3f m). Applying graded recovery.",
-      static_cast<long>(batch_size), max_allowed_distance_);
+      static_cast<int>(batch_size), max_allowed_distance_);
 
     for (Eigen::Index traj_idx = 0; traj_idx < batch_size; ++traj_idx) {
       const TrajResult & r = results_[traj_idx];
@@ -330,7 +349,6 @@ void PathHugCritic::score(CriticData & data)
     }
   }
 }
-
 }  // namespace mppi::critics
 
 #include <pluginlib/class_list_macros.hpp>

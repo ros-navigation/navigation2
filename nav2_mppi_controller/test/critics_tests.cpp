@@ -944,6 +944,8 @@ TEST(CriticTests, PathHugCritic)
     search_window, threshold_to_consider;
   bool use_soft_repulsion;
   getParam(trajectory_point_step, "trajectory_point_step", 1);
+  int offset_from_furthest;
+  getParam(offset_from_furthest, "offset_from_furthest", 0);
   getParam(lookahead_distance, "lookahead_distance", 2.0);
   getParam(max_allowed_distance, "max_allowed_distance", 0.2);
   getParam(collision_cost, "collision_cost", 100000.0);
@@ -978,9 +980,7 @@ TEST(CriticTests, PathHugCritic)
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   EXPECT_EQ(critic.getName(), "critic");
 
-  // Scoring testing
-
-  // Early exit: path too short (local_path_length below threshold_to_consider of 0.5)
+  // Early exit: path too short
   state.local_path_length = 0.1f;
   path.reset(5);
   for (int i = 0; i < 5; ++i) {
@@ -1000,7 +1000,7 @@ TEST(CriticTests, PathHugCritic)
   EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
   state.local_path_length = 10.0f;
 
-  // Early exit: path_segments_count < 2 (furthest_reached_path_point too small)
+  // Early exit: path_segments_count < 2
   path.reset(5);
   for (int i = 0; i < 5; ++i) {
     path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
@@ -1018,7 +1018,7 @@ TEST(CriticTests, PathHugCritic)
   critic.score(data);
   EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
 
-  // Hard mode: trajectory on path (dist=0) -> cost=0
+  // Trajectory on path
   path.reset(5);
   for (int i = 0; i < 5; ++i) {
     path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
@@ -1036,7 +1036,7 @@ TEST(CriticTests, PathHugCritic)
   critic.score(data);
   EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
 
-  // Hard mode: trajectory inside corridor (dist=0.1 < max_allowed_distance=0.2) -> cost=0
+  // Inside corridor, no cost
   path.reset(5);
   for (int i = 0; i < 5; ++i) {
     path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
@@ -1054,7 +1054,7 @@ TEST(CriticTests, PathHugCritic)
   critic.score(data);
   EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
 
-  // Hard mode: one trajectory violates, one doesn't -> violating gets collision_cost
+  // One violates, one doesn't
   path.reset(5);
   for (int i = 0; i < 5; ++i) {
     path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
@@ -1066,18 +1066,17 @@ TEST(CriticTests, PathHugCritic)
   costs.setZero();
   for (int i = 0; i < 30; ++i) {
     generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
-    generated_trajectories.y(0, i) = 0.0f;  // inside corridor
+    generated_trajectories.y(0, i) = 0.0f;
     generated_trajectories.yaws(0, i) = 0.0f;
     generated_trajectories.x(1, i) = static_cast<float>(i) * 0.1f;
-    generated_trajectories.y(1, i) = 0.5f;  // outside: dist=0.5 > max_allowed_distance=0.2
+    generated_trajectories.y(1, i) = 0.5f;
     generated_trajectories.yaws(1, i) = 0.0f;
   }
   critic.score(data);
   EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
   EXPECT_NEAR(costs(1), 100000.0f, 1e-3f);
 
-  // Hard mode: all trajectories violate -> graded fallback cost applied
-  // dist=0.5, excess=0.5-0.2=0.3, avg_excess*weight=0.3*10=3.0
+  // All violate, graded fallback
   path.reset(5);
   for (int i = 0; i < 5; ++i) {
     path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
@@ -1095,7 +1094,7 @@ TEST(CriticTests, PathHugCritic)
   critic.score(data);
   EXPECT_NEAR(costs(0), 3.0f, 0.5f);
 
-  // Soft mode: inside grace_distance -> cost=0
+  // Soft mode: inside grace_distance
   node->set_parameter(rclcpp::Parameter("critic.use_soft_repulsion", true));
   PathHugCritic soft_critic;
   soft_critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
@@ -1117,8 +1116,7 @@ TEST(CriticTests, PathHugCritic)
   soft_critic.score(data);
   EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
 
-  // Soft mode: between grace_distance and max_allowed_distance -> linear ramp cost
-  // dist=0.15, repulsion=(0.15-0.1)/(0.2-0.1)=0.5, cost=0.5*10=5.0
+  // Soft mode: linear ramp between grace and max
   path.reset(5);
   for (int i = 0; i < 5; ++i) {
     path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
@@ -1136,7 +1134,7 @@ TEST(CriticTests, PathHugCritic)
   soft_critic.score(data);
   EXPECT_NEAR(costs(0), 5.0f, 0.5f);
 
-  // Soft mode: outside max_allowed_distance -> hard veto collision_cost
+  // Soft mode: outside max, hard veto
   path.reset(5);
   for (int i = 0; i < 5; ++i) {
     path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
@@ -1148,17 +1146,17 @@ TEST(CriticTests, PathHugCritic)
   costs.setZero();
   for (int i = 0; i < 30; ++i) {
     generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
-    generated_trajectories.y(0, i) = 0.0f;  // inside corridor
+    generated_trajectories.y(0, i) = 0.0f;
     generated_trajectories.yaws(0, i) = 0.0f;
     generated_trajectories.x(1, i) = static_cast<float>(i) * 0.1f;
-    generated_trajectories.y(1, i) = 0.5f;  // outside max_allowed_distance
+    generated_trajectories.y(1, i) = 0.5f;
     generated_trajectories.yaws(1, i) = 0.0f;
   }
   soft_critic.score(data);
   EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
   EXPECT_NEAR(costs(1), 100000.0f, 1e-3f);
 
-  // Lookahead: violation only beyond lookahead_distance -> cost=0
+  // Violation beyond lookahead ignored
   path.reset(5);
   for (int i = 0; i < 5; ++i) {
     path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
@@ -1173,16 +1171,15 @@ TEST(CriticTests, PathHugCritic)
     generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
     generated_trajectories.y(0, i) = 0.0f;
     generated_trajectories.yaws(0, i) = 0.0f;
-    // traj 1: on path within lookahead_distance=2.0, violates beyond
     generated_trajectories.x(1, i) = static_cast<float>(i) * 0.3f;
     generated_trajectories.y(1, i) = (i >= 7) ? 0.5f : 0.0f;
     generated_trajectories.yaws(1, i) = 0.0f;
   }
   critic.score(data);
   EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
-  EXPECT_NEAR(costs(1), 0.0f, 1e-6f);  // violation is beyond lookahead_distance, ignored
+  EXPECT_NEAR(costs(1), 0.0f, 1e-6f);
 
-  // trajectory_point_step: larger step still produces cost for off-path trajectory
+  // trajectory_point_step: larger step still scores
   node->set_parameter(rclcpp::Parameter("critic.trajectory_point_step", 4));
   PathHugCritic step_critic;
   step_critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
@@ -1198,16 +1195,16 @@ TEST(CriticTests, PathHugCritic)
   costs.setZero();
   for (int i = 0; i < 30; ++i) {
     generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
-    generated_trajectories.y(0, i) = 0.0f;  // inside corridor
+    generated_trajectories.y(0, i) = 0.0f;
     generated_trajectories.yaws(0, i) = 0.0f;
     generated_trajectories.x(1, i) = static_cast<float>(i) * 0.1f;
-    generated_trajectories.y(1, i) = 0.5f;  // outside max_allowed_distance
+    generated_trajectories.y(1, i) = 0.5f;
     generated_trajectories.yaws(1, i) = 0.0f;
   }
   EXPECT_NO_THROW(step_critic.score(data));
   EXPECT_GT(costs(1), 0.0f);
 
-  // path_pts_valid: all segments invalid -> all points skipped, no cost
+  // All invalid path points, no cost
   node->set_parameter(rclcpp::Parameter("critic.trajectory_point_step", 1));
   node->set_parameter(rclcpp::Parameter("critic.use_soft_repulsion", false));
   PathHugCritic valid_critic;
