@@ -77,21 +77,21 @@
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <input_port name="plugins" type="vector&lt;string&gt;">List of specific plugins to clear.</input_port>
+      <input_port name="plugins" type="vector&lt;string&gt;">Optional. A list of costmap plugin names to be cleared. If specified, only these costmap plugins and the master costmap will be cleared. Otherwise, the entire costmap will be cleared.</input_port>
     </Action>
 
     <Action ID="ClearCostmapExceptRegion">
       <input_port name="reset_distance" type="double" default="1.0">Side size of the square area centered on the robot that will not be cleared on the costmap (all the rest of the costmap will).</input_port>
       <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <input_port name="plugins" type="vector&lt;string&gt;">List of specific plugins to clear.</input_port>
+      <input_port name="plugins" type="vector&lt;string&gt;">Optional. A list of costmap plugin names to be cleared. If specified, only these costmap plugins will be cleared. Otherwise, all "clearable" costmap plugins will be cleared.</input_port>
     </Action>
 
     <Action ID="ClearCostmapAroundRobot">
       <input_port name="reset_distance" type="double" default="1.0">Side size of the square area centered on the robot that will be cleared on the costmap (the rest of the costmap won't).</input_port>
       <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <input_port name="plugins" type="vector&lt;string&gt;">List of specific plugins to clear.</input_port>
+      <input_port name="plugins" type="vector&lt;string&gt;">Optional. A list of costmap plugin names to be cleared. If specified, only these costmap plugins will be cleared. Otherwise, all "clearable" costmap plugins will be cleared.</input_port>
     </Action>
 
     <Action ID="ClearCostmapAroundPose">
@@ -99,7 +99,7 @@
       <input_port name="reset_distance" type="double" default="1.0">Distance from the pose under which obstacles are cleared.</input_port>
       <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <input_port name="plugins" type="vector&lt;string&gt;">List of specific plugins to clear.</input_port>
+      <input_port name="plugins" type="vector&lt;string&gt;">Optional. A list of costmap plugin names to be cleared. If specified, only these costmap plugins will be cleared. Otherwise, all "clearable" costmap plugins will be cleared.</input_port>
     </Action>
 
     <Action ID="ComputePathToPose">
