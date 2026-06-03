@@ -216,7 +216,12 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   //        - equal to "normal" carrot_pose when curvature_lookahead_pose = false
   //        - otherwise equal to curvature_lookahead_pose (which can be interpolated after goal)
   double angle_to_heading;
-  if (shouldRotateToGoalHeading(goal_checker, pose, global_goal, speed, transformed_plan)) {
+  // Feed the goal checker the GLOBAL-frame plan (same frame as `pose` / `global_goal`), not the
+  // base_link-frame `transformed_plan` used for lookahead. The custom AxisGoalChecker derives the
+  // path-progress direction from the plan geometry, so a base-frame plan combined with global
+  // query/goal poses yields a wrong end-of-path direction and a spurious goal-reached. This keeps
+  // the check identical to controller_server::isGoalReached(), which uses the global-frame plan.
+  if (shouldRotateToGoalHeading(goal_checker, pose, global_goal, speed, transformed_global_plan)) {
     is_rotating_to_heading_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
