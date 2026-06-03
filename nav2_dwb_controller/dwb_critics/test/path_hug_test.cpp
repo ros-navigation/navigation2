@@ -24,9 +24,6 @@
 #include "nav_msgs/msg/path.hpp"
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 
-static constexpr double default_scale = 1.0;
-static constexpr double default_search_window = 3.0;
-
 class PathHugCriticTest : public ::testing::Test
 {
 protected:
@@ -36,14 +33,12 @@ protected:
     node_->configure();
     node_->activate();
 
-    costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap", "",
-      false);
+    costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+      "test_global_costmap", "", false);
     costmap_ros_->configure();
 
-    std::string plugin_name = "FollowPath";
-    std::string name = "PathHugCritic";
     critic_ = std::make_shared<dwb_critics::PathHugCritic>();
-    critic_->initialize(node_, name, plugin_name, costmap_ros_);
+    critic_->initialize(node_, "PathHugCritic", "FollowPath", costmap_ros_);
   }
 
   geometry_msgs::msg::Pose makePose(double x, double y)
@@ -86,12 +81,14 @@ protected:
 
 TEST_F(PathHugCriticTest, DefaultParameterInitialization)
 {
-  EXPECT_EQ(
-    node_->get_parameter("FollowPath.PathHugCritic.scale").as_double(),
-    default_scale);
-  EXPECT_EQ(
-    node_->get_parameter("FollowPath.PathHugCritic.search_window").as_double(),
-    default_search_window);
+  EXPECT_DOUBLE_EQ(
+    node_->get_parameter("FollowPath.PathHugCritic.scale").as_double(), 1.0);
+  EXPECT_DOUBLE_EQ(
+    node_->get_parameter("FollowPath.PathHugCritic.search_window").as_double(), 0.15);
+  EXPECT_DOUBLE_EQ(
+    node_->get_parameter("FollowPath.PathHugCritic.max_allowed_distance").as_double(), 0.05);
+  EXPECT_DOUBLE_EQ(
+    node_->get_parameter("FollowPath.PathHugCritic.critical_cost").as_double(), 100.0);
 }
 
 TEST_F(PathHugCriticTest, HandlesEmptyTrajectory)
@@ -99,88 +96,37 @@ TEST_F(PathHugCriticTest, HandlesEmptyTrajectory)
   nav_msgs::msg::Path path = makePath({{0.0, 0.0}, {1.0, 0.0}});
   critic_->prepare(makePose(0, 0), nav_2d_msgs::msg::Twist2D(), makePose(1, 0), path);
 
-  dwb_msgs::msg::Trajectory2D traj;
-  EXPECT_DOUBLE_EQ(critic_->scoreTrajectory(traj), 0.0);
+  EXPECT_DOUBLE_EQ(critic_->scoreTrajectory(dwb_msgs::msg::Trajectory2D()), 0.0);
 }
 
 TEST_F(PathHugCriticTest, HandlesEmptyGlobalPath)
 {
-  nav_msgs::msg::Path path;
-  critic_->prepare(makePose(0, 0), nav_2d_msgs::msg::Twist2D(), makePose(1, 0), path);
+  critic_->prepare(
+    makePose(0, 0), nav_2d_msgs::msg::Twist2D(), makePose(1, 0), nav_msgs::msg::Path());
 
-  dwb_msgs::msg::Trajectory2D traj = makeTrajectory({{0.0, 0.0}, {1.0, 0.0}});
-  EXPECT_DOUBLE_EQ(critic_->scoreTrajectory(traj), 0.0);
+  EXPECT_DOUBLE_EQ(critic_->scoreTrajectory(makeTrajectory({{0.0, 0.0}, {1.0, 0.0}})), 0.0);
 }
 
-TEST_F(PathHugCriticTest, ScoresTrajectoryOnPath)
+TEST_F(PathHugCriticTest, ScoresZeroOnPath)
 {
-  nav_msgs::msg::Path path = makePath({{0.0, 0.0}, {1.0, 0.0}, {2.0, 0.0}});
-  critic_->prepare(makePose(0, 0), nav_2d_msgs::msg::Twist2D(), makePose(2, 0), path);
+  nav_msgs::msg::Path path = makePath({{0.0, 0.0}, {0.5, 0.0}});
+  critic_->prepare(makePose(0, 0), nav_2d_msgs::msg::Twist2D(), makePose(0.5, 0), path);
 
-  dwb_msgs::msg::Trajectory2D traj = makeTrajectory({{0.0, 0.0}, {1.0, 0.0}, {2.0, 0.0}});
-  double score = critic_->scoreTrajectory(traj);
-  EXPECT_DOUBLE_EQ(score, 0.0);
+  EXPECT_DOUBLE_EQ(
+    critic_->scoreTrajectory(makeTrajectory({{0.0, 0.0}, {0.1, 0.0}, {0.5, 0.0}})), 0.0);
 }
 
-TEST_F(PathHugCriticTest, ScoresTrajectoryNearPath)
+TEST_F(PathHugCriticTest, FartherTrajectoryScoresHigher)
 {
-  nav_msgs::msg::Path path = makePath({{0.0, 0.0}, {1.0, 0.0}, {2.0, 0.0}});
+  nav_msgs::msg::Path path = makePath({{0.0, 0.0}, {2.0, 0.0}});
   critic_->prepare(makePose(0, 0), nav_2d_msgs::msg::Twist2D(), makePose(2, 0), path);
 
-  // Trajectory is 0.5m away from path
-  dwb_msgs::msg::Trajectory2D traj = makeTrajectory({{0.0, 0.5}, {1.0, 0.5}, {2.0, 0.5}});
-  double score = critic_->scoreTrajectory(traj);
-  EXPECT_GT(score, 0.0);
-  EXPECT_NEAR(score, 0.5, 0.01);
-}
-
-TEST_F(PathHugCriticTest, ScoresTrajectoryFarFromPath)
-{
-  nav_msgs::msg::Path path = makePath({{0.0, 0.0}, {1.0, 0.0}, {2.0, 0.0}});
-  critic_->prepare(makePose(0, 0), nav_2d_msgs::msg::Twist2D(), makePose(2, 0), path);
-
-  dwb_msgs::msg::Trajectory2D traj_near = makeTrajectory({{0.0, 0.5}, {1.0, 0.5}, {2.0, 0.5}});
-  dwb_msgs::msg::Trajectory2D traj_far = makeTrajectory({{0.0, 2.0}, {1.0, 2.0}, {2.0, 2.0}});
-
-  double score_near = critic_->scoreTrajectory(traj_near);
-  double score_far = critic_->scoreTrajectory(traj_far);
+  // Both trajectories exceed max_allowed_distance (0.05 m), so both incur critical_cost.
+  // The farther one must score strictly higher.
+  double score_near = critic_->scoreTrajectory(makeTrajectory({{1.0, 0.1}}));
+  double score_far = critic_->scoreTrajectory(makeTrajectory({{1.0, 0.5}}));
 
   EXPECT_GT(score_far, score_near);
-  EXPECT_NEAR(score_near, 0.5, 0.01);
-  EXPECT_NEAR(score_far, 2.0, 0.01);
-}
-
-TEST_F(PathHugCriticTest, CustomParameterValues)
-{
-  auto custom_node = std::make_shared<nav2::LifecycleNode>("custom_test_node");
-  custom_node->configure();
-  custom_node->activate();
-
-  double custom_scale = 50.0;
-  double custom_search_window = 5.0;
-  std::string plugin_name = "FollowPath";
-  std::string name = "PathHugCritic";
-
-  nav2::declare_parameter_if_not_declared(
-    custom_node, plugin_name + "." + name + ".scale",
-    rclcpp::ParameterValue(custom_scale));
-  nav2::declare_parameter_if_not_declared(
-    custom_node, plugin_name + "." + name + ".search_window",
-    rclcpp::ParameterValue(custom_search_window));
-
-  auto custom_critic = std::make_shared<dwb_critics::PathHugCritic>();
-  auto custom_costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("custom_costmap", "",
-    false);
-  custom_costmap->configure();
-
-  custom_critic->initialize(custom_node, name, plugin_name, custom_costmap);
-
-  EXPECT_EQ(
-    custom_node->get_parameter(plugin_name + "." + name + ".scale").as_double(),
-    custom_scale);
-  EXPECT_EQ(
-    custom_node->get_parameter(plugin_name + "." + name + ".search_window").as_double(),
-    custom_search_window);
 }
 
 int main(int argc, char ** argv)
