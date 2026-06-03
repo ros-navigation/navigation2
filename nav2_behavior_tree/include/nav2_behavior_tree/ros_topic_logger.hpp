@@ -109,7 +109,7 @@ protected:
   static constexpr size_t kStatusWidth = 7;
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("bt_navigator")};
-  nav2::Publisher<nav2_msgs::msg::BehaviorTreeLog>::SharedPtr log_pub_;  //  nosemgrep
+  nav2::Publisher<nav2_msgs::msg::BehaviorTreeLog>::SharedPtr log_pub_;
   std::vector<nav2_msgs::msg::BehaviorTreeStatusChange> event_log_;
 };
 
