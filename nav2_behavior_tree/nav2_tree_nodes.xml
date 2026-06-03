@@ -51,8 +51,18 @@
     </Action>
 
     <Action ID="CancelWait">
-      <input_port name="server_name">Server name to cancel the wait behavior</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="server_name" type="string">Action server name to cancel the wait behavior. If not specified, `wait` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+    </Action>
+
+    <Action ID="CancelComputeAndTrackRoute">
+      <input_port name="server_name" type="string">Action server name to cancel the route compute and tracker server. If not specified, `compute_and_track_route` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+    </Action>
+
+    <Action ID="CancelFollowObject">
+      <input_port name="server_name" type="string">Action server name to cancel the follow object behavior. If not specified, `follow_object` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
     <Action ID="ClearEntireCostmap">
@@ -91,13 +101,51 @@
     </Action>
 
     <Action ID="ComputePathThroughPoses">
-      <input_port name="goals">Destinations to plan through</input_port>
-      <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
-      <output_port name="path">Path created by ComputePathToPose node</output_port>
-      <output_port name="error_code_id">"Compute path through poses error code"</output_port>
+      <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Only used if not left empty. Takes in a blackboard variable, e.g. "{start}".</input_port>
+      <input_port name="goals" type="nav_msgs::msg::Goals">Goal poses. Takes in a blackboard variable, e.g. "{goals}".</input_port>
+      <input_port name="planner_id" type="string" default="&quot;&quot;">Mapped name to the planner plugin type to use, e.g. GridBased.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `compute_path_through_poses` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="path" type="nav_msgs::msg::Path">Path created by action server. Takes in a blackboard variable, e.g. "{path}".</output_port>
+      <output_port name="last_reached_index" type="int">In the case of a partial plan, index of the last reached pose from the goals list. Otherwise -1 which also corresponds to ComputePathThroughPosesResult::ALL_GOALS if a full plan through all the goals was possible.</output_port>
+      <output_port name="error_code_id" type="uint16">Compute path through poses error code. See `ComputePathThroughPoses` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Compute path through poses error message. See `ComputePathThroughPoses` action message for the enumerated set of error codes.</output_port>
+    </Action>
+
+    <Action ID="ComputeRoute">
+      <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Only used if not left empty. Takes in a blackboard variable, e.g. "{start}".</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Goal pose. Takes in a blackboard variable, e.g. "{goal}".</input_port>
+      <input_port name="start_id" type="unsigned int">Start node ID to use.</input_port>
+      <input_port name="goal_id" type="unsigned int">Goal node ID to use.</input_port>
+      <input_port name="use_start" type="bool" default="false">Whether to use the start or use TF to obtain the robot's start pose.</input_port>
+      <input_port name="use_poses" type="bool" default="false">Whether to use the start and goal poses or start and goal node IDs.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `compute_route` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="route" type="nav2_msgs::msg::Route">Route created by action server. Takes in a blackboard variable, e.g. "{route}".</output_port>
+      <output_port name="path" type="nav_msgs::msg::Path">Path created by action server. Takes in a blackboard variable, e.g. "{path}".</output_port>
+      <output_port name="planning_time" type="builtin_interfaces::msg::Duration">Time it took to compute the route.</output_port>
+      <output_port name="error_code_id" type="uint16">Compute route error code. See `ComputeRoute` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Compute route error message. See `ComputeRoute` action message for the enumerated set of error codes.</output_port>
+    </Action>
+
+    <Action ID="ComputeAndTrackRoute">
+      <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Only used if not left empty. Takes in a blackboard variable, e.g. "{start}".</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Goal pose. Takes in a blackboard variable, e.g. "{goal}".</input_port>
+      <input_port name="start_id" type="unsigned int">Start node ID to use.</input_port>
+      <input_port name="goal_id" type="unsigned int">Goal node ID to use.</input_port>
+      <input_port name="use_start" type="bool" default="false">Whether to use the start or use TF to obtain the robot's start pose.</input_port>
+      <input_port name="use_poses" type="bool" default="false">Whether to use the start and goal poses or start and goal node IDs.</input_port>
+      <input_port name="server_name" type="string">Action server name. If not specified, `compute_and_track_route` is used.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
+      <output_port name="execution_duration" type="builtin_interfaces::msg::Duration">Time it took to compute the route.</output_port>
+      <output_port name="last_node_id" type="uint16">ID of the previous node.</output_port>
+      <output_port name="next_node_id" type="uint16">ID of the next node.</output_port>
+      <output_port name="current_edge_id" type="uint16">ID of the current edge.</output_port>
+      <output_port name="route" type="nav2_msgs::msg::Route">List of RouteNodes to go from start to end.</output_port>
+      <output_port name="path" type="nav_msgs::msg::Path">Path created by ComputeAndTrackRoute node.</output_port>
+      <output_port name="rerouted" type="bool">Whether the plan has rerouted.</output_port>
+      <output_port name="error_code_id" type="uint16">Compute route error code. See `ComputeAndTrackRoute` action message for the enumerated set of error codes.</output_port>
+      <output_port name="error_msg" type="string">Compute route error message. See `ComputeAndTrackRoute` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="RemovePassedGoals">
