@@ -163,9 +163,11 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // Compute distance to goal as the path's integrated distance to account for path curvatures
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
 
-  // If we've reached the XY goal tolerance, just rotate
+  // If we've reached the XY goal tolerance, just rotate.
+  // Feed the goal checker the GLOBAL-frame plan (same frame as `pose` / `global_goal`), not the
+  // base_link-frame `transformed_plan` used for control.
   if (goal_checker->isGoalXYReached(pose.pose, global_goal.pose, velocity,
-      transformed_plan))
+      transformed_global_plan))
   {
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     // Check for collisions between our current pose and goal pose
