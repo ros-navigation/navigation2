@@ -416,6 +416,7 @@ void ControllerServer::computeControl()
         RCLCPP_WARN(
           get_logger(), "Control loop missed its desired rate of %.4fHz",
           controller_frequency_);
+        loop_rate.reset();
       }
     }
   } catch (nav2_core::PlannerException & e) {
