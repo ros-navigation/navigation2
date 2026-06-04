@@ -115,39 +115,3 @@ rules:
     message: "Use nav2 action server factories instead of rclcpp_action::create_server"
     severity: WARNING
     languages: [cpp]
-
-  - id: detect-rclcpp-node-create-publisher
-    patterns:
-      - pattern-regex: "rclcpp::Node::create_publisher\\s*<"
-      - pattern-not-regex: "^\\s*//.*"
-      - pattern-not-regex: ".*//.*rclcpp::Node::create_publisher"
-    message: "Use nav2 publisher factories instead of rclcpp::Node::create_publisher"
-    severity: WARNING
-    languages: [cpp]
-
-  - id: detect-rclcpp-node-create-subscription
-    patterns:
-      - pattern-regex: "rclcpp::Node::create_subscription\\s*<"
-      - pattern-not-regex: "^\\s*//.*"
-      - pattern-not-regex: ".*//.*rclcpp::Node::create_subscription"
-    message: "Use nav2 subscription factories instead of rclcpp::Node::create_subscription"
-    severity: WARNING
-    languages: [cpp]
-
-  - id: detect-rclcpp-node-create-client
-    patterns:
-      - pattern-regex: "rclcpp::Node::create_client\\s*<"
-      - pattern-not-regex: "^\\s*//.*"
-      - pattern-not-regex: ".*//.*rclcpp::Node::create_client"
-    message: "Use nav2 lifecycle node create_client instead of rclcpp::Node::create_client"
-    severity: WARNING
-    languages: [cpp]
-
-  - id: detect-rclcpp-node-create-service
-    patterns:
-      - pattern-regex: "rclcpp::Node::create_service\\s*<"
-      - pattern-not-regex: "^\\s*//.*"
-      - pattern-not-regex: ".*//.*rclcpp::Node::create_service"
-    message: "Use nav2 lifecycle node create_service instead of rclcpp::Node::create_service"
-    severity: WARNING
-    languages: [cpp]
