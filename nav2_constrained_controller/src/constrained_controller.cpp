@@ -230,6 +230,16 @@ bool ConstrainedController::updateEsdf(const sensor_msgs::msg::PointCloud2 & clo
   const double z_min = params->esdf_z_min;
   const double z_max = params->esdf_z_max;
 
+  // ── Near-body 3D probe (collision diagnostic) ─────────────────────────────
+  // Examine RAW cloud points (all heights) inside the body footprint (+margin)
+  // in XY. The ESDF z-slice below drops everything outside [z_min, z_max]; this
+  // probe records what the slice throws away near the body so a collision with
+  // an out-of-slice obstacle is conclusively attributable.
+  const double Lext = 0.5 * params->footprint_length + params->footprint_dl;
+  const double db   = params->footprint_db;
+  constexpr double kProbeMargin = 0.15;   // m of XY slack around the body
+  NearBodyProbe probe{};   // fresh each call
+
   std::vector<Point2D> pts;
   pts.reserve(cloud.width * cloud.height);
   sensor_msgs::PointCloud2ConstIterator<float> ix(cloud, "x");
@@ -241,9 +251,32 @@ bool ConstrainedController::updateEsdf(const sensor_msgs::msg::PointCloud2 & clo
     const double bx = tf_R00_*px + tf_R01_*py + tf_R02_*pz + tf_tx_;
     const double by = tf_R10_*px + tf_R11_*py + tf_R12_*pz + tf_ty_;
     const double bz = tf_R20_*px + tf_R21_*py + tf_R22_*pz + tf_tz_;
+
+    // Probe: is this point near the body in XY (any height)?
+    if (std::abs(bx) <= Lext + kProbeMargin && std::abs(by) <= db + kProbeMargin) {
+      if (probe.n_near == 0) {probe.min_z = bz; probe.max_z = bz;}
+      else {probe.min_z = std::min(probe.min_z, bz); probe.max_z = std::max(probe.max_z, bz);}
+      ++probe.n_near;
+      const bool below = bz < z_min;
+      const bool above = bz > z_max;
+      if (below) {++probe.n_below;}
+      else if (above) {++probe.n_above;}
+      else {++probe.n_in;}
+      if (below || above) {   // out-of-slice → invisible to the CBF/ESDF
+        const double d_edge = std::hypot(
+          std::max(0.0, std::abs(bx) - Lext), std::max(0.0, std::abs(by) - db));
+        if (d_edge < probe.nearest_oob_dist) {
+          probe.nearest_oob_dist = d_edge;
+          probe.nearest_oob_x = bx; probe.nearest_oob_y = by; probe.nearest_oob_z = bz;
+        }
+      }
+    }
+
     if (bz < z_min || bz > z_max) {continue;}
     pts.push_back({bx, by});
   }
+  probe.valid = true;
+  near_body_probe_ = probe;
   esdf_grid_->update(pts);
   return true;
 }
@@ -385,6 +418,18 @@ ConstrainedController::computeVelocityCommands(
     } else {
       log_->event("no point cloud yet — pass-through");
     }
+  }
+
+  // Near-body 3D profile (collision diagnostic). Logged every tick a cloud was
+  // processed, before any control branch returns, so the wedge/stuck ticks are
+  // captured. nearest_oob_dist = -1 when no out-of-slice point is near the body.
+  if (near_body_probe_.valid) {
+    const auto & pr = near_body_probe_;
+    log_->logEsdf3d(tick, stamp.seconds(),
+      pr.n_near, pr.n_below, pr.n_in, pr.n_above,
+      pr.n_near > 0 ? pr.min_z : 0.0, pr.n_near > 0 ? pr.max_z : 0.0,
+      pr.nearest_oob_dist > 1e8 ? -1.0 : pr.nearest_oob_dist,
+      pr.nearest_oob_x, pr.nearest_oob_y, pr.nearest_oob_z);
   }
 
   // ── 2. dist_to_goal via live AMCL TF ─────────────────────────────────────

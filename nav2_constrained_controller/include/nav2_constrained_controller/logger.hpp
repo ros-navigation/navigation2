@@ -6,8 +6,10 @@
 //
 //   ctrl_main_<ts>.csv   - one row per tick: state + nominal + final cmd
 //   ctrl_path_<ts>.csv   - one row per tick: tracking target + path bookkeeping
-//   ctrl_cbf_<ts>.csv    - one row per (tick, CBF constraint)
+//   ctrl_cbf_<ts>.csv    - one row per (tick, CBF constraint) + sample x/y/step
 //   ctrl_qp_<ts>.csv     - one row per tick: QP solve metrics
+//   ctrl_esdf3d_<ts>.csv - one row per tick: near-body LiDAR vertical profile
+//                          (collision diagnostic — out-of-z-slice returns)
 //   ctrl_events_<ts>.txt - free-form text: setPlan, errors, events
 
 #ifndef NAV2_CONSTRAINED_CONTROLLER__LOGGER_HPP_
@@ -79,6 +81,23 @@ public:
     double solve_time_us, double deviation,
     int iterations);
 
+  // One row per tick: near-body LiDAR vertical profile (collision diagnostic).
+  // Probes raw cloud points inside the body footprint (+margin) in XY, bucketed
+  // by height vs the ESDF z-slice [esdf_z_min, esdf_z_max]:
+  //   n_near                 — # cloud points near the body in XY (any height)
+  //   n_below / n_in / n_above — split by below-slice / in-slice / above-slice
+  //   min_z / max_z          — vertical span of near-body returns
+  //   nearest_oob_*          — nearest OUT-OF-SLICE point to the body: its
+  //                            distance to the body edge + (x,y,z). dist≈0 with
+  //                            an out-of-slice z = an obstacle the CBF is blind
+  //                            to. n_near≈0 = lidar returns nothing near the body.
+  void logEsdf3d(
+    uint64_t tick, double stamp,
+    int n_near, int n_below, int n_in, int n_above,
+    double min_z, double max_z,
+    double nearest_oob_dist, double nearest_oob_x,
+    double nearest_oob_y, double nearest_oob_z);
+
 private:
   bool enabled_{false};
   uint64_t tick_{0};
@@ -89,6 +108,7 @@ private:
   std::ofstream f_path_;
   std::ofstream f_cbf_;
   std::ofstream f_qp_;
+  std::ofstream f_esdf3d_;
   std::ofstream f_events_;
 
   void writeHeaders();

@@ -171,6 +171,19 @@ protected:
   bool goal_reached_{false};
   uint64_t esdf_pub_throttle_{0};
   double last_min_h_{1.0};
+
+  // Near-body LiDAR vertical profile, recomputed each updateEsdf() from the raw
+  // cloud (collision diagnostic — see Logger::logEsdf3d). Probes points inside
+  // the body footprint (+margin) in XY, bucketed vs the ESDF z-slice.
+  struct NearBodyProbe
+  {
+    int    n_near{0}, n_below{0}, n_in{0}, n_above{0};
+    double min_z{0.0}, max_z{0.0};
+    double nearest_oob_dist{1e9};                 // dist of nearest out-of-slice pt
+    double nearest_oob_x{0.0}, nearest_oob_y{0.0}, nearest_oob_z{0.0};
+    bool   valid{false};
+  } near_body_probe_;
+
   bool stuck_{false};
   double stuck_start_x_{0.0};
   double stuck_start_y_{0.0};

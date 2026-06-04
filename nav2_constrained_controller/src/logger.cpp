@@ -47,6 +47,7 @@ void Logger::open(const std::string & log_dir, bool enabled)
   f_path_.open(path("ctrl_path"), std::ios::trunc);
   f_cbf_.open(path("ctrl_cbf"),   std::ios::trunc);
   f_qp_.open(path("ctrl_qp"),     std::ios::trunc);
+  f_esdf3d_.open(path("ctrl_esdf3d"), std::ios::trunc);
   f_events_.open(
     log_dir_ + "/ctrl_events_" + ts_suffix_ + ".txt", std::ios::trunc);
 
@@ -60,6 +61,7 @@ void Logger::close()
   if (f_path_.is_open())   {f_path_.close();}
   if (f_cbf_.is_open())    {f_cbf_.close();}
   if (f_qp_.is_open())     {f_qp_.close();}
+  if (f_esdf3d_.is_open()) {f_esdf3d_.close();}
   if (f_events_.is_open()) {f_events_.close();}
 }
 
@@ -75,11 +77,15 @@ void Logger::writeHeaders()
     "mode,v_scale\n";
   f_cbf_ <<
     "tick,stamp_sec,corner_id,grad_x,grad_y,grad_w,"
-    "rhs,h,u_nom_vx,u_nom_vy,u_nom_w,u_vx,u_vy,u_w,active\n";
+    "rhs,h,u_nom_vx,u_nom_vy,u_nom_w,u_vx,u_vy,u_w,active,"
+    "sample_x,sample_y,predict_step\n";
   f_qp_ <<
     "tick,stamp_sec,ok,n_constraints,n_active,solve_time_us,"
     "deviation,iterations\n";
-  for (auto * f : {&f_main_, &f_path_, &f_cbf_, &f_qp_}) {
+  f_esdf3d_ <<
+    "tick,stamp_sec,n_near,n_below,n_in,n_above,min_z,max_z,"
+    "nearest_oob_dist,nearest_oob_x,nearest_oob_y,nearest_oob_z\n";
+  for (auto * f : {&f_main_, &f_path_, &f_cbf_, &f_qp_, &f_esdf3d_}) {
     f->flush();
   }
 }
@@ -153,7 +159,8 @@ void Logger::logCbfConstraints(
            << c.rhs << "," << c.h << ","
            << u_nom.x() << "," << u_nom.y() << "," << u_nom.z() << ","
            << u_final.x() << "," << u_final.y() << "," << u_final.z() << ","
-           << (active ? 1 : 0) << "\n";
+           << (active ? 1 : 0) << ","
+           << c.sample_x << "," << c.sample_y << "," << c.predict_step << "\n";
   }
   f_cbf_.flush();
 }
@@ -171,6 +178,23 @@ void Logger::logQp(
         << n_constraints << "," << n_active << ","
         << solve_time_us << "," << deviation << "," << iterations << "\n";
   f_qp_.flush();
+}
+
+void Logger::logEsdf3d(
+  uint64_t tick, double stamp,
+  int n_near, int n_below, int n_in, int n_above,
+  double min_z, double max_z,
+  double nearest_oob_dist, double nearest_oob_x,
+  double nearest_oob_y, double nearest_oob_z)
+{
+  if (!enabled_ || !f_esdf3d_.is_open()) {return;}
+  f_esdf3d_ << std::fixed << std::setprecision(6)
+            << tick << "," << stamp << ","
+            << n_near << "," << n_below << "," << n_in << "," << n_above << ","
+            << min_z << "," << max_z << ","
+            << nearest_oob_dist << "," << nearest_oob_x << ","
+            << nearest_oob_y << "," << nearest_oob_z << "\n";
+  f_esdf3d_.flush();
 }
 
 }  // namespace nav2_constrained_controller
