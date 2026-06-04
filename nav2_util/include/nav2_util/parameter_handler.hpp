@@ -76,7 +76,8 @@ public:
     for (const auto & name : node->list_parameters({}, 0).names) {
       rclcpp::Parameter p;
       if (node->get_parameter(name, p) &&
-        p.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET)
+        p.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET &&
+        validateParameterUpdatesCallback({p}).successful)
       {
         initialized.push_back(p);
       }
