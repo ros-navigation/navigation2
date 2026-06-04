@@ -61,7 +61,10 @@ CbfFilterResult CBFSafetyFilter::filter(
   //   3 = back-left   (x<0, y≥0)   4 = front-left  (x≥0, y≥0)
   const double Lext = 0.5 * params_->footprint_length + params_->footprint_dl;
   const double db   = params_->footprint_db;
-  const double spacing = std::max(0.02, params_->cbf_sample_spacing_m);
+  // ── TEST: forced 1 cm perimeter sampling. Bypasses the param + 0.02 floor.
+  //    Revert by deleting the hardcode line and restoring the commented line.
+  // const double spacing = std::max(0.02, params_->cbf_sample_spacing_m);
+  const double spacing = 0.01;
 
   // Samples-per-side from the target spacing (≥ 2 so the endpoints/corners exist).
   const int n_long  = std::max(2,
