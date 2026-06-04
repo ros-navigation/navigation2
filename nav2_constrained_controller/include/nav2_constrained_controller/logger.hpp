@@ -4,10 +4,10 @@
 // Multi-stream CSV logger for the constrained-space controller.
 // All files share tick_id so they can be joined offline.
 //
-//   ctrl_main_<ts>.csv  - one row per tick: state + nominal + final cmd
-//   ctrl_path_<ts>.csv  - one row per tick: lookahead + path bookkeeping
-//   ctrl_cbf_<ts>.csv   - one row per (tick, CBF constraint)
-//   ctrl_qp_<ts>.csv    - one row per tick: QP solve metrics
+//   ctrl_main_<ts>.csv   - one row per tick: state + nominal + final cmd
+//   ctrl_path_<ts>.csv   - one row per tick: tracking target + path bookkeeping
+//   ctrl_cbf_<ts>.csv    - one row per (tick, CBF constraint)
+//   ctrl_qp_<ts>.csv     - one row per tick: QP solve metrics
 //   ctrl_events_<ts>.txt - free-form text: setPlan, errors, events
 
 #ifndef NAV2_CONSTRAINED_CONTROLLER__LOGGER_HPP_
@@ -44,13 +44,28 @@ public:
     double rx, double ry, double ryaw,
     const geometry_msgs::msg::Twist & u_nom,
     const geometry_msgs::msg::Twist & u_final,
-    bool reversing, double dist_to_goal);
+    bool reversing, double dist_to_goal,
+    // T_odom_from_map components — the per-tick AMCL transform. Pass NaN
+    // if no plan / TF lookup failed. Lets us quantify AMCL drift relative
+    // to setPlan instant in post-hoc analysis.
+    double tx_odom_from_map, double ty_odom_from_map, double ryaw_odom_from_map);
 
+  // One row per tick: PD tracker state.
+  //   target_x/y/yaw  — lookahead target pose in odom (lattice yaw verbatim)
+  //   v_ref           — |u_nom| linear magnitude before CBF (post-taper)
+  //   dist_to_target  — euclidean robot → lookahead target
+  //   cross_track     — euclidean robot → closest path pose (tracking quality)
+  //   yaw_err         — shortest angular distance robot yaw → lattice yaw
+  //   target_idx / n_remaining — path bookkeeping (pruned path)
+  //   mode            — TrackMode: 0 NORMAL, 1 APPROACH_ROTATION,
+  //                     2 ROTATE_IN_PLACE
+  //   v_scale         — cos taper applied to (vx, vy); 1 = no taper
   void logPath(
     uint64_t tick, double stamp,
-    double xt, double yt, double yawt,
-    double r, double s, double ramp,
-    double yaw_err, int sel_idx, int n_poses);
+    double target_x, double target_y, double target_yaw,
+    double v_ref, double dist_to_target, double cross_track,
+    double yaw_err, int target_idx, int n_remaining,
+    int mode, double v_scale);
 
   void logCbfConstraints(
     uint64_t tick, double stamp,

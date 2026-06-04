@@ -3,10 +3,11 @@
          type="nav2_constrained_controller::ConstrainedController"
          base_class_type="nav2_core::Controller">
     <description>
-      CBF-based holonomic constrained-space controller for narrow alleys
-      and door-to-door transitions. Pairs a sign-symmetric decoupled P
-      nominal with a 4-corner CBF QP safety filter fed by a LiDAR scene
-      parser.
+      Holonomic constrained-space controller for narrow alleys and door-to-door
+      transitions. Each tick: A* on a thresholded local ESDF, EGO-Planner
+      cubic B-spline optimisation (Zhou et al. 2020) with L-BFGS + strong
+      Wolfe line search, FF+P sampling of the spline at lookahead, then a
+      body-aware CBF QP safety filter (Saradagi 2024) as the u* projection.
     </description>
   </class>
 </library>

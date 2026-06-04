@@ -47,31 +47,34 @@ void ConstrainedController::configure(
 
   const tf2::Duration transform_tol = tf2::durationFromSec(0.1);
   path_handler_ = std::make_unique<PathHandler>(transform_tol, tf_buffer_, costmap_ros_);
-  nominal_      = std::make_unique<NominalController>(params);
   esdf_grid_    = std::make_unique<EsdfGrid>(params);
   cbf_filter_   = std::make_unique<CBFSafetyFilter>(params);
   log_          = std::make_unique<Logger>();
 
-  transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>(
-    "constrained_controller/transformed_local_plan", 1);
-  motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
-    "constrained_controller/motion_target", 1);
   esdf_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     "constrained_controller/esdf_grid", rclcpp::SystemDefaultsQoS());
   corners_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
     "constrained_controller/body_corners", rclcpp::SystemDefaultsQoS());
+  velocity_arrow_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+    "constrained_controller/velocity_arrows", rclcpp::SystemDefaultsQoS());
   debug_pub_ = node->create_publisher<std_msgs::msg::Float32MultiArray>(
     "constrained_controller/debug", rclcpp::SystemDefaultsQoS());
   cbf_constraints_pub_ = node->create_publisher<std_msgs::msg::Float32MultiArray>(
     "constrained_controller/cbf_constraints", rclcpp::SystemDefaultsQoS());
   cbf_gradients_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
     "constrained_controller/cbf_gradients", rclcpp::SystemDefaultsQoS());
+  tracking_target_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
+    "constrained_controller/tracking_target", 1);
 
   RCLCPP_INFO(logger_,
-    "ConstrainedController '%s' configured (Stanley+CBF). cloud=%s log=%s",
+    "ConstrainedController '%s' configured (PD lattice tracker + CBF). cloud=%s log=%s "
+    "lookahead=%.2fm kp_pos=%.2f kp_yaw=%.2f",
     plugin_name_.c_str(),
     params->pointcloud_topic.c_str(),
-    params->log_dir.c_str());
+    params->log_dir.c_str(),
+    params->lookahead_dist,
+    params->kp_pos,
+    params->kp_yaw);
 }
 
 void ConstrainedController::activate()
@@ -87,13 +90,13 @@ void ConstrainedController::activate()
     params->pointcloud_topic, rclcpp::SensorDataQoS(),
     std::bind(&ConstrainedController::pointcloudCallback, this, std::placeholders::_1));
 
-  transformed_plan_pub_->on_activate();
-  motion_target_pub_->on_activate();
   esdf_pub_->on_activate();
   corners_pub_->on_activate();
+  velocity_arrow_pub_->on_activate();
   debug_pub_->on_activate();
   cbf_constraints_pub_->on_activate();
   cbf_gradients_pub_->on_activate();
+  tracking_target_pub_->on_activate();
 
   goal_reached_          = false;
   esdf_pub_throttle_     = 0;
@@ -107,38 +110,36 @@ void ConstrainedController::activate()
   has_plan_              = false;
   near_goal_yaw_active_  = false;
   near_goal_yaw_start_   = rclcpp::Time(0, 0, RCL_ROS_TIME);
-  last_retreat_state_    = 0;
-  last_governor_mode_    = 0;
+  resetTrackerState();
 }
 
 void ConstrainedController::deactivate()
 {
   if (log_) {log_->event("deactivate"); log_->close();}
   cloud_sub_.reset();
-  if (transformed_plan_pub_) {transformed_plan_pub_->on_deactivate();}
-  if (motion_target_pub_)    {motion_target_pub_->on_deactivate();}
-  if (esdf_pub_)             {esdf_pub_->on_deactivate();}
-  if (corners_pub_)          {corners_pub_->on_deactivate();}
-  if (debug_pub_)            {debug_pub_->on_deactivate();}
-  if (cbf_constraints_pub_)  {cbf_constraints_pub_->on_deactivate();}
-  if (cbf_gradients_pub_)    {cbf_gradients_pub_->on_deactivate();}
+  if (esdf_pub_)            {esdf_pub_->on_deactivate();}
+  if (corners_pub_)         {corners_pub_->on_deactivate();}
+  if (velocity_arrow_pub_)  {velocity_arrow_pub_->on_deactivate();}
+  if (debug_pub_)           {debug_pub_->on_deactivate();}
+  if (cbf_constraints_pub_) {cbf_constraints_pub_->on_deactivate();}
+  if (cbf_gradients_pub_)   {cbf_gradients_pub_->on_deactivate();}
+  if (tracking_target_pub_) {tracking_target_pub_->on_deactivate();}
 }
 
 void ConstrainedController::cleanup()
 {
   param_handler_.reset();
   path_handler_.reset();
-  nominal_.reset();
   esdf_grid_.reset();
   cbf_filter_.reset();
   log_.reset();
-  transformed_plan_pub_.reset();
-  motion_target_pub_.reset();
   esdf_pub_.reset();
   corners_pub_.reset();
+  velocity_arrow_pub_.reset();
   debug_pub_.reset();
   cbf_constraints_pub_.reset();
   cbf_gradients_pub_.reset();
+  tracking_target_pub_.reset();
 }
 
 void ConstrainedController::setPlan(const nav_msgs::msg::Path & path)
@@ -152,9 +153,9 @@ void ConstrainedController::setPlan(const nav_msgs::msg::Path & path)
   stuck_start_time_     = rclcpp::Time(0, 0, RCL_ROS_TIME);
   has_plan_             = false;
   near_goal_yaw_active_ = false;
-  last_retreat_state_   = 0;
   esdf_grid_->reset();
-  cbf_filter_->reset();
+  // Fresh plan → fresh PD memory (the target may jump; a stale D would spike).
+  resetTrackerState();
 
   if (!path.poses.empty()) {
     goal_in_map_ = path.poses.back();
@@ -247,69 +248,6 @@ bool ConstrainedController::updateEsdf(const sensor_msgs::msg::PointCloud2 & clo
   return true;
 }
 
-geometry_msgs::msg::PoseStamped ConstrainedController::getMotionTarget(
-  double motion_target_dist,
-  const nav_msgs::msg::Path & local_plan,
-  int * sel_idx_out) const
-{
-  int idx = 0;
-  for (size_t i = 0; i < local_plan.poses.size(); ++i) {
-    const auto & p = local_plan.poses[i].pose.position;
-    if (std::hypot(p.x, p.y) >= motion_target_dist) {
-      idx = static_cast<int>(i);
-      if (sel_idx_out) {*sel_idx_out = idx;}
-      return local_plan.poses[i];
-    }
-  }
-  idx = static_cast<int>(local_plan.poses.size()) - 1;
-  if (sel_idx_out) {*sel_idx_out = idx;}
-  return local_plan.poses.back();
-}
-
-geometry_msgs::msg::PoseStamped ConstrainedController::pickSafeTarget(
-  const nav_msgs::msg::Path & local_plan,
-  int * sel_idx_out,
-  int * mode_out) const
-{
-  const auto * params = param_handler_->getParams();
-  const double target_dist = params->motion_target_dist;
-
-  // Required ESDF clearance at the body CENTER for the body to fit safely.
-  // Body half-extent (worst axis) + d_safe (corner buffer) + extra margin.
-  const double half_extent =
-    std::max(0.5 * params->footprint_length, params->footprint_db);
-  const double d_required = half_extent + params->esdf_d_safe + params->governor_margin;
-
-  // Get the path's natural lookahead at motion_target_dist along the slice.
-  int raw_idx = 0;
-  auto raw = getMotionTarget(target_dist, local_plan, &raw_idx);
-  if (sel_idx_out) {*sel_idx_out = raw_idx;}
-
-  // No ESDF data yet → pass lookahead through unchanged.
-  if (!esdf_grid_ || !esdf_grid_->hasData()) {
-    if (mode_out) {*mode_out = 0;}
-    return raw;
-  }
-
-  // Query ESDF at the raw lookahead. If safe (or query invalid), pass through.
-  const auto q = esdf_grid_->query(raw.pose.position.x, raw.pose.position.y);
-  if (!q.valid || q.d >= d_required) {
-    if (mode_out) {*mode_out = 0;}
-    return raw;
-  }
-
-  // Unsafe — push the lookahead away from the nearest wall using the ESDF
-  // gradient, just enough to clear `d_required` (plus a small buffer). The
-  // pushed pose is off the planned path but the body fits there. Once the
-  // robot moves past the tight section, the next tick's raw lookahead lands
-  // in safer territory and the push becomes zero again automatically.
-  const double step = (d_required - q.d) + 0.05;
-  raw.pose.position.x += step * q.gx;
-  raw.pose.position.y += step * q.gy;
-  if (mode_out) {*mode_out = 1;}
-  return raw;
-}
-
 geometry_msgs::msg::TwistStamped ConstrainedController::zeroTwist(
   const std::string & frame, const rclcpp::Time & stamp)
 {
@@ -317,6 +255,107 @@ geometry_msgs::msg::TwistStamped ConstrainedController::zeroTwist(
   t.header.frame_id = frame;
   t.header.stamp    = stamp;
   return t;
+}
+
+// ---------------------------------------------------------------------------
+// PD path tracker
+// ---------------------------------------------------------------------------
+
+void ConstrainedController::resetTrackerState()
+{
+  prev_err_ox_       = 0.0;
+  prev_err_oy_       = 0.0;
+  have_prev_err_pos_ = false;
+  prev_pos_stamp_    = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  prev_yaw_err_      = 0.0;
+  have_prev_yaw_err_ = false;
+  prev_yaw_stamp_    = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  prev_track_mode_   = PathHandler::TRACK_NORMAL;
+}
+
+bool ConstrainedController::trackPath(
+  const geometry_msgs::msg::PoseStamped & robot_in_odom,
+  const rclcpp::Time & stamp,
+  geometry_msgs::msg::Twist & u_nom,
+  PathHandler::TrackingTarget & target_out,
+  double & yaw_err_out,
+  double & v_scale_out)
+{
+  const auto * params = param_handler_->getParams();
+
+  if (!path_handler_->getTrackingTarget(
+      robot_in_odom, params->lookahead_dist,
+      params->max_robot_pose_search_dist, target_out))
+  {
+    return false;
+  }
+
+  const double rx   = robot_in_odom.pose.position.x;
+  const double ry   = robot_in_odom.pose.position.y;
+  const double ryaw = tf2::getYaw(robot_in_odom.pose.orientation);
+
+  // ── Position PD (odom frame) ──────────────────────────────────────────────
+  const double ex_o = target_out.pose.pose.position.x - rx;
+  const double ey_o = target_out.pose.pose.position.y - ry;
+
+  double dex_o = 0.0, dey_o = 0.0;
+  if (have_prev_err_pos_) {
+    const double dt = (stamp - prev_pos_stamp_).seconds();
+    if (dt > 1e-3) {
+      dex_o = (ex_o - prev_err_ox_) / dt;
+      dey_o = (ey_o - prev_err_oy_) / dt;
+    }
+  }
+  prev_err_ox_       = ex_o;
+  prev_err_oy_       = ey_o;
+  prev_pos_stamp_    = stamp;
+  have_prev_err_pos_ = true;
+
+  const double ux_o = params->kp_pos * ex_o + params->kd_pos * dex_o;
+  const double uy_o = params->kp_pos * ey_o + params->kd_pos * dey_o;
+
+  // Rotate odom-frame command into base_link and clamp per axis.
+  const double c = std::cos(-ryaw), s = std::sin(-ryaw);
+  u_nom.linear.x = std::clamp(
+    c * ux_o - s * uy_o, -params->v_linear_max, params->v_linear_max);
+  u_nom.linear.y = std::clamp(
+    s * ux_o + c * uy_o, -params->v_lateral_max, params->v_lateral_max);
+
+  // ── Yaw PD — track the LATTICE's planned yaw at the target pose ──────────
+  // The OMNI lattice plans yaw as a search dimension; the path orientations
+  // are footprint-validated intent (alley-axis hold, pre-rotations at doors).
+  const double yaw_target = tf2::getYaw(target_out.pose.pose.orientation);
+  const double yaw_err    = angles::shortest_angular_distance(ryaw, yaw_target);
+
+  double dyaw_err = 0.0;
+  if (have_prev_yaw_err_) {
+    const double dt = (stamp - prev_yaw_stamp_).seconds();
+    if (dt > 1e-3) {
+      dyaw_err = angles::shortest_angular_distance(prev_yaw_err_, yaw_err) / dt;
+    }
+  }
+  prev_yaw_err_      = yaw_err;
+  prev_yaw_stamp_    = stamp;
+  have_prev_yaw_err_ = true;
+
+  u_nom.angular.z = std::clamp(
+    params->kp_yaw * yaw_err + params->kd_yaw * dyaw_err,
+    -params->v_angular_max, params->v_angular_max);
+
+  // ── Yaw–translation coupling (cos taper) ──────────────────────────────────
+  // Scale the WHOLE translation vector (both axes — direction preserved) by
+  // how well the body is aligned: full speed at yaw_err = 0, standstill at
+  // ≥ 90°. wz keeps full authority — it is what shrinks the error that is
+  // causing the slowdown, so the taper self-releases. During APPROACH_ROTATION
+  // the clamped target carries the pre-rotation yaw, so yaw_err ≈ 0 and the
+  // taper stays inactive until the robot is standing on the validated spot.
+  const double v_scale = std::max(0.0, std::cos(yaw_err));
+  u_nom.linear.x *= v_scale;
+  u_nom.linear.y *= v_scale;
+
+  yaw_err_out = yaw_err;
+  v_scale_out = v_scale;
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -337,51 +376,23 @@ ConstrainedController::computeVelocityCommands(
   const rclcpp::Time stamp     = pose.header.stamp;
   const uint64_t tick          = log_->newTick(stamp.seconds());
 
-  // ── 1. Local plan in base_link (AMCL-free via PathHandler) ───────────────
-  nav_msgs::msg::Path local_plan;
-  try {
-    local_plan = path_handler_->getLocalPlan(pose, params->max_robot_pose_search_dist);
-  } catch (const std::exception & e) {
-    log_->event(std::string("getLocalPlan failed: ") + e.what());
-    RCLCPP_WARN_THROTTLE(logger_, *clock_, 1000,
-      "computeVelocityCommands: %s", e.what());
-    return zeroTwist(base_frame, stamp);
+  // ── 1. ESDF update (tracker viz + CBF need fresh data) ──────────────────
+  {
+    sensor_msgs::msg::PointCloud2::SharedPtr cloud;
+    {std::lock_guard<std::mutex> lock(cloud_mutex_); cloud = last_cloud_;}
+    if (cloud) {
+      if (!updateEsdf(*cloud)) {log_->event("updateEsdf failed (TF)");}
+    } else {
+      log_->event("no point cloud yet — pass-through");
+    }
   }
 
-  if (transformed_plan_pub_ && transformed_plan_pub_->is_activated()) {
-    transformed_plan_pub_->publish(local_plan);
-  }
-
-  // ── 2. Lookahead target ───────────────────────────────────────────────────
-  // When the reference governor is enabled, it picks a "safe target": either
-  // the first path pose with sufficient body-footprint clearance (option a),
-  // or the raw lookahead pushed away from the nearest wall via the ESDF
-  // gradient (option b). The returned pose becomes BOTH closest and lookahead
-  // for Stanley, turning it into a point-tracker for the governor's choice.
-  // Falls back to plain pure-pursuit getMotionTarget() when disabled.
-  int sel_idx = 0;
-  int governor_mode = 0;
-  const auto target_ps = params->governor_enabled
-    ? pickSafeTarget(local_plan, &sel_idx, &governor_mode)
-    : getMotionTarget(params->motion_target_dist, local_plan, &sel_idx);
-  if (params->governor_enabled && governor_mode != last_governor_mode_) {
-    static const char * const kModeName[2] = {"RAW", "DEVIATED"};
-    log_->event(
-      std::string("governor: ") + kModeName[last_governor_mode_] +
-      " → " + kModeName[governor_mode] +
-      " | target=(" + std::to_string(target_ps.pose.position.x) +
-      "," + std::to_string(target_ps.pose.position.y) + ")");
-    last_governor_mode_ = governor_mode;
-  }
-  if (motion_target_pub_ && motion_target_pub_->is_activated()) {
-    geometry_msgs::msg::PointStamped pt;
-    pt.header = target_ps.header;
-    pt.point  = target_ps.pose.position;
-    motion_target_pub_->publish(pt);
-  }
-
-  // ── 3. dist_to_goal via live AMCL TF ─────────────────────────────────────
+  // ── 2. dist_to_goal via live AMCL TF ─────────────────────────────────────
   double dist_to_goal = std::numeric_limits<double>::infinity();
+  // T_odom_from_map per-tick snapshot for drift analysis. Default to NaN —
+  // gets filled in below if the TF lookup succeeds.
+  constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
+  double tx_o_m = NaN, ty_o_m = NaN, ryaw_o_m = NaN;
   geometry_msgs::msg::PoseStamped robot_in_odom;
   const auto & odom_path = path_handler_->getPathInOdom();
   if (!odom_path.poses.empty()) {
@@ -397,6 +408,14 @@ ConstrainedController::computeVelocityCommands(
         odom_frame, goal_map.header.frame_id, tf2::TimePointZero);
       tf2::doTransform(goal_map, goal_in_odom, tf_m2o);
 
+      // Snapshot T_odom_from_map at this tick. Variation over time of
+      // (tx_o_m, ty_o_m, ryaw_o_m) reveals AMCL drift / relocalize events.
+      // Difference vs setplan-time T_odom_from_map = how far the path-in-odom
+      // is geometrically off relative to the real-world walls.
+      tx_o_m   = tf_m2o.transform.translation.x;
+      ty_o_m   = tf_m2o.transform.translation.y;
+      ryaw_o_m = tf2::getYaw(tf_m2o.transform.rotation);
+
       dist_to_goal = std::hypot(
         robot_in_odom.pose.position.x - goal_in_odom.pose.position.x,
         robot_in_odom.pose.position.y - goal_in_odom.pose.position.y);
@@ -405,7 +424,7 @@ ConstrainedController::computeVelocityCommands(
     }
   }
 
-  // ── 4. Near-goal: yaw alignment then stop ────────────────────────────────
+  // ── 3. Near-goal: yaw alignment then stop ────────────────────────────────
   static constexpr double kNearGoalYawTol = 0.07;
   static constexpr double kYawTimeoutS    = 5.0;
   if (dist_to_goal < params->goal_dist_tolerance) {
@@ -444,7 +463,8 @@ ConstrainedController::computeVelocityCommands(
     if (yaw_ok) {
       if (!goal_reached_) {log_->event("goal reached"); goal_reached_ = true;}
       auto stop = zeroTwist(base_frame, stamp);
-      log_->logState(tick, stamp.seconds(), 0, 0, 0, stop.twist, stop.twist, false, dist_to_goal);
+      log_->logState(tick, stamp.seconds(), 0, 0, 0, stop.twist, stop.twist, false,
+                     dist_to_goal, tx_o_m, ty_o_m, ryaw_o_m);
       return stop;
     }
 
@@ -471,56 +491,42 @@ ConstrainedController::computeVelocityCommands(
     return yaw_cmd;
   }
 
-  // ── 5. Stanley nominal controller ────────────────────────────────────────
-  // With governor ON, treat Stanley as a point-tracker for the safe target:
-  // pass target_ps as both `closest` and `lookahead` so vx/vy/wz all aim at
-  // the governor's choice instead of mixing the raw closest pose's tangent
-  // with the (possibly deviated) lookahead. With governor OFF, keep the
-  // original Stanley semantics (closest = local_plan.poses[0]).
-  NominalDebug nom_dbg;
-  const auto & stanley_closest =
-    params->governor_enabled ? target_ps.pose : local_plan.poses[0].pose;
-  auto u_nom = nominal_->compute(
-    stanley_closest, target_ps.pose, dist_to_goal, &nom_dbg);
-
-  // ── 5b. Goal-aware bias: shift QP target toward a far path waypoint ──────
-  // Adds λ·g to u_nom before handing to the QP. g is the unit direction in
-  // base_link from the robot (origin) to a pose at goal_bias_lookahead_dist
-  // arc-length along the local plan. Equivalent to a linear -λ·(g·u) term
-  // in the QP objective: the projection lands further along g than a pure
-  // ‖u-u_nom‖² projection would have (rubber-band pull toward the path).
-  // Translation only (no angular bias). λ=0 reproduces original behaviour.
-  geometry_msgs::msg::Twist u_target = u_nom;
-  double bias_x = 0.0, bias_y = 0.0;
-  if (params->goal_bias_weight > 0.0 && local_plan.poses.size() >= 2) {
-    const double L_bias = params->goal_bias_lookahead_dist;
-    double cum = 0.0;
-    size_t idx = local_plan.poses.size() - 1;  // fallback: end of slice
-    for (size_t i = 1; i < local_plan.poses.size(); ++i) {
-      const auto & a = local_plan.poses[i - 1].pose.position;
-      const auto & b = local_plan.poses[i].pose.position;
-      cum += std::hypot(b.x - a.x, b.y - a.y);
-      if (cum >= L_bias) {idx = i; break;}
-    }
-    const auto & far = local_plan.poses[idx].pose.position;
-    const double norm = std::hypot(far.x, far.y);
-    if (norm > 1e-3) {
-      bias_x = params->goal_bias_weight * (far.x / norm);
-      bias_y = params->goal_bias_weight * (far.y / norm);
-      u_target.linear.x += bias_x;
-      u_target.linear.y += bias_y;
-    }
+  // ── 4. PD tracker on the lattice path → u_nom ────────────────────────────
+  geometry_msgs::msg::Twist u_nom;
+  PathHandler::TrackingTarget target;
+  double yaw_err = 0.0;
+  double v_scale = 1.0;
+  bool track_ok = false;
+  if (!odom_path.poses.empty()) {
+    track_ok = trackPath(robot_in_odom, stamp, u_nom, target, yaw_err, v_scale);
+  }
+  if (!track_ok) {
+    // No plan or no target — refuse to move.
+    log_->event("trackPath returned false — zero output");
+    auto stop = zeroTwist(base_frame, stamp);
+    log_->logState(tick, stamp.seconds(), 0, 0, 0, stop.twist, stop.twist, false,
+                   dist_to_goal, tx_o_m, ty_o_m, ryaw_o_m);
+    return stop;
   }
 
-  // ── 6. ESDF update ────────────────────────────────────────────────────────
-  {
-    sensor_msgs::msg::PointCloud2::SharedPtr cloud;
-    {std::lock_guard<std::mutex> lock(cloud_mutex_); cloud = last_cloud_;}
-    if (cloud) {
-      if (!updateEsdf(*cloud)) {log_->event("updateEsdf failed (TF)");}
-    } else {
-      log_->event("no point cloud yet — CBF pass-through");
-    }
+  // One event per tracker-mode transition so the rotation phases are
+  // reconstructible from ctrl_events alone.
+  if (target.mode != prev_track_mode_) {
+    static const char * const kModeNames[3] =
+    {"NORMAL", "APPROACH_ROTATION", "ROTATE_IN_PLACE"};
+    char ev[160];
+    std::snprintf(ev, sizeof(ev),
+      "tracker mode %s -> %s | target=(%.2f,%.2f) target_yaw=%.2f "
+      "robot_yaw=%.2f yaw_err=%.2f dist=%.3f",
+      kModeNames[std::clamp(prev_track_mode_, 0, 2)],
+      kModeNames[std::clamp(target.mode, 0, 2)],
+      target.pose.pose.position.x, target.pose.pose.position.y,
+      tf2::getYaw(target.pose.pose.orientation),
+      tf2::getYaw(robot_in_odom.pose.orientation),
+      yaw_err, target.dist_to_target);
+    log_->event(ev);
+    RCLCPP_INFO(logger_, "[PD t=%lu] %s", tick, ev);
+    prev_track_mode_ = target.mode;
   }
 
   // Publish ESDF OccupancyGrid at ~2 Hz.
@@ -545,11 +551,11 @@ ConstrainedController::computeVelocityCommands(
     }
   }
 
-  // ── 7. CBF safety filter ──────────────────────────────────────────────────
+  // ── 5. CBF safety filter ──────────────────────────────────────────────────
   CbfFilterResult cbf_res;
-  cbf_res.u = u_target;
+  cbf_res.u = u_nom;
   if (esdf_grid_->hasData()) {
-    cbf_res = cbf_filter_->filter(*esdf_grid_, u_target);
+    cbf_res = cbf_filter_->filter(*esdf_grid_, u_nom);
     if (!cbf_res.qp.ok) {
       log_->event("QP box-infeasible — zeroing for safety");
       cbf_res.u.linear.x = cbf_res.u.linear.y = cbf_res.u.angular.z = 0.0;
@@ -557,37 +563,71 @@ ConstrainedController::computeVelocityCommands(
     if (cbf_res.qp.max_slack > 0.01) {
       log_->event("CBF slack: " + std::to_string(cbf_res.qp.max_slack) + " m/s");
     }
-    // Log retreat-overlay state transitions exactly once each. picked_candidate
-    // is 1..9 inside RETREAT, 0 elsewhere. picked_score is the predicted min_h
-    // of the chosen candidate; runner-up info isn't carried but the QP log's
-    // deviation will reflect how much we deviated from u_nom toward retreat.
-    const int rs_now = static_cast<int>(cbf_res.retreat_state);
-    if (rs_now != last_retreat_state_) {
-      static const char * const kNames[2] = {"NORMAL", "RETREAT"};
-      log_->event(
-        std::string("retreat: ") + kNames[last_retreat_state_] + " → " +
-        kNames[rs_now] +
-        " | min_h_react=" + std::to_string(cbf_res.min_h_react) +
-        " | candidate=" + std::to_string(cbf_res.picked_candidate) +
-        " | pred_min_h=" + std::to_string(cbf_res.picked_score));
-      last_retreat_state_ = rs_now;
-    }
     last_min_h_ = cbf_res.min_h;
   }
 
-  // ── 8. Assemble output ────────────────────────────────────────────────────
+  // ── 6. Assemble output ────────────────────────────────────────────────────
   geometry_msgs::msg::TwistStamped out;
   out.header.frame_id = base_frame;
   out.header.stamp    = stamp;
   out.twist           = cbf_res.u;
 
-  log_->logState(tick, stamp.seconds(), 0, 0, 0,
-    u_nom, out.twist, !nom_dbg.is_forward, dist_to_goal);
+  // Publish velocity vectors at base_link origin: u_nom (blue, before CBF) and
+  // u* (green, after CBF).  Length scaled to 0.5 m / (m/s) for visibility;
+  // angular component drawn as a small purple arc at robot centre.
+  if (velocity_arrow_pub_ && velocity_arrow_pub_->is_activated()) {
+    visualization_msgs::msg::MarkerArray ma;
+    constexpr double kVelScale = 0.5;
+    auto makeArrow = [&](const char * ns, int id,
+                          double vx, double vy,
+                          float r, float g, float b) {
+      visualization_msgs::msg::Marker arr;
+      arr.header.frame_id = base_frame; arr.header.stamp = stamp;
+      arr.ns = ns; arr.id = id;
+      arr.type = visualization_msgs::msg::Marker::ARROW;
+      arr.action = visualization_msgs::msg::Marker::ADD;
+      geometry_msgs::msg::Point ps, pe;
+      ps.x = 0.0; ps.y = 0.0; ps.z = 0.10;
+      pe.x = kVelScale * vx; pe.y = kVelScale * vy; pe.z = 0.10;
+      arr.points = {ps, pe};
+      arr.scale.x = 0.025; arr.scale.y = 0.05; arr.scale.z = 0.0;
+      arr.color.r = r; arr.color.g = g; arr.color.b = b; arr.color.a = 0.9f;
+      arr.lifetime = rclcpp::Duration::from_seconds(0.3);
+      return arr;
+    };
+    ma.markers.push_back(makeArrow("u_nom", 0,
+      u_nom.linear.x, u_nom.linear.y, 0.1f, 0.4f, 1.0f));   // blue
+    ma.markers.push_back(makeArrow("u_star", 0,
+      out.twist.linear.x, out.twist.linear.y, 0.1f, 1.0f, 0.4f));   // green
+    velocity_arrow_pub_->publish(ma);
+  }
+
+  // ── 7. Tracking-target viz (odom → base_link) ────────────────────────────
+  const double rx_o   = robot_in_odom.pose.position.x;
+  const double ry_o   = robot_in_odom.pose.position.y;
+  const double ryaw_o = tf2::getYaw(robot_in_odom.pose.orientation);
+  if (tracking_target_pub_ && tracking_target_pub_->is_activated()) {
+    const double cR = std::cos(-ryaw_o), sR = std::sin(-ryaw_o);
+    const double dx = target.pose.pose.position.x - rx_o;
+    const double dy = target.pose.pose.position.y - ry_o;
+    geometry_msgs::msg::PointStamped pt;
+    pt.header.frame_id = base_frame; pt.header.stamp = stamp;
+    pt.point.x = cR * dx - sR * dy;
+    pt.point.y = sR * dx + cR * dy;
+    tracking_target_pub_->publish(pt);
+  }
+
+  // ── 8. Logging ────────────────────────────────────────────────────────────
+  const double v_ref_mag = std::hypot(u_nom.linear.x, u_nom.linear.y);
+  log_->logState(tick, stamp.seconds(), rx_o, ry_o, ryaw_o,
+    u_nom, out.twist, false, dist_to_goal, tx_o_m, ty_o_m, ryaw_o_m);
   log_->logPath(tick, stamp.seconds(),
-    target_ps.pose.position.x, target_ps.pose.position.y,
-    tf2::getYaw(target_ps.pose.orientation),
-    nom_dbg.r, nom_dbg.s, nom_dbg.ramp, nom_dbg.heading_err,
-    sel_idx, static_cast<int>(local_plan.poses.size()));
+    target.pose.pose.position.x, target.pose.pose.position.y,
+    tf2::getYaw(target.pose.pose.orientation),
+    v_ref_mag, target.dist_to_target, target.cross_track,
+    yaw_err, static_cast<int>(target.target_idx),
+    static_cast<int>(target.n_remaining),
+    target.mode, v_scale);
   if (!cbf_res.constraints.empty()) {
     const Eigen::Vector3d un(u_nom.linear.x, u_nom.linear.y, u_nom.angular.z);
     const Eigen::Vector3d uf(out.twist.linear.x, out.twist.linear.y, out.twist.angular.z);
@@ -599,16 +639,15 @@ ConstrainedController::computeVelocityCommands(
 
   // ── 9. Debug console + RViz + rqt_plot ────────────────────────────────────
   RCLCPP_INFO_THROTTLE(logger_, *clock_, 1000,
-    "[CBF t=%lu] %s cte=%.3fm herr=%.3fr gov=%d | "
-    "u_nom=(%.2f,%.2f,%.2f) bias=(%.2f,%.2f) u*=(%.2f,%.2f,%.2f) | "
-    "h_min=%.3f cst=%zu dev=%.3f slack=%.4f | dist=%.2fm",
-    tick, nom_dbg.is_forward ? "FWD" : "BWD",
-    nom_dbg.cte_y, nom_dbg.heading_err, governor_mode,
+    "[PD t=%lu] m=%d tgt=(%.2f,%.2f) xtrack=%.3f yaw_err=%.2f vscale=%.2f "
+    "v_ref=%.2f | u_nom=(%.2f,%.2f,%.2f) u*=(%.2f,%.2f,%.2f) | "
+    "h_min=%.3f cst=%zu dev=%.3f | dist=%.2fm remain=%zu",
+    tick, target.mode, target.pose.pose.position.x, target.pose.pose.position.y,
+    target.cross_track, yaw_err, v_scale, v_ref_mag,
     u_nom.linear.x, u_nom.linear.y, u_nom.angular.z,
-    bias_x, bias_y,
     out.twist.linear.x, out.twist.linear.y, out.twist.angular.z,
     cbf_res.min_h, cbf_res.constraints.size(),
-    cbf_res.qp.deviation, cbf_res.qp.max_slack, dist_to_goal);
+    cbf_res.qp.deviation, dist_to_goal, target.n_remaining);
 
   const double out_norm = std::hypot(out.twist.linear.x, out.twist.linear.y, out.twist.angular.z);
   const double nom_norm = std::hypot(u_nom.linear.x, u_nom.linear.y, u_nom.angular.z);
@@ -759,7 +798,8 @@ ConstrainedController::computeVelocityCommands(
       static_cast<float>(out.twist.linear.x), static_cast<float>(out.twist.linear.y),
       static_cast<float>(out.twist.angular.z),
       static_cast<float>(cbf_res.qp.ok ? 0.0f : 1.0f),
-      static_cast<float>(nom_dbg.is_forward ? 0.0f : 1.0f)};
+      static_cast<float>(yaw_err),
+      static_cast<float>(target.dist_to_target)};
     debug_pub_->publish(dbg);
   }
 

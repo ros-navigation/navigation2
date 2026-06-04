@@ -5,9 +5,10 @@
   <version>1.0.0</version>
   <description>
     Constrained-space local controller for a holonomic AMR.
-    Sign-symmetric decoupled P nominal + body-aware CBF safety filter
-    over a LiDAR scene parser. Replaces nav2_graceful_controller in
-    constrained-segment slots (narrow alleys, door entry/exit).
+    EGO-Planner B-spline (Zhou et al. 2020) on a thresholded local ESDF
+    produces u_nom via FF+P spline tracking; downstream CBF QP safety
+    filter (Saradagi 2024) projects to u*. Replaces nav2_graceful_controller
+    in constrained-segment slots (narrow alleys, door entry/exit).
   </description>
   <maintainer email="akshat@origin.tech">Origin Autonomy</maintainer>
   <license>Apache-2.0</license>

@@ -67,16 +67,21 @@ void Logger::writeHeaders()
 {
   f_main_ <<
     "tick,stamp_sec,rx,ry,ryaw,"
-    "vx_nom,vy_nom,wz_nom,vx,vy,wz,reversing,dist_to_goal\n";
+    "vx_nom,vy_nom,wz_nom,vx,vy,wz,reversing,dist_to_goal,"
+    "tx_odom_from_map,ty_odom_from_map,ryaw_odom_from_map\n";
   f_path_ <<
-    "tick,stamp_sec,xt,yt,yawt,r,s,ramp,yaw_err,sel_idx,n_poses\n";
+    "tick,stamp_sec,target_x,target_y,target_yaw,"
+    "v_ref,dist_to_target,cross_track,yaw_err,target_idx,n_remaining,"
+    "mode,v_scale\n";
   f_cbf_ <<
     "tick,stamp_sec,corner_id,grad_x,grad_y,grad_w,"
     "rhs,h,u_nom_vx,u_nom_vy,u_nom_w,u_vx,u_vy,u_w,active\n";
   f_qp_ <<
     "tick,stamp_sec,ok,n_constraints,n_active,solve_time_us,"
     "deviation,iterations\n";
-  for (auto * f : {&f_main_, &f_path_, &f_cbf_, &f_qp_}) {f->flush();}
+  for (auto * f : {&f_main_, &f_path_, &f_cbf_, &f_qp_}) {
+    f->flush();
+  }
 }
 
 uint64_t Logger::newTick(double /*stamp_sec*/)
@@ -100,7 +105,8 @@ void Logger::logState(
   double rx, double ry, double ryaw,
   const geometry_msgs::msg::Twist & u_nom,
   const geometry_msgs::msg::Twist & u_final,
-  bool reversing, double dist_to_goal)
+  bool reversing, double dist_to_goal,
+  double tx_odom_from_map, double ty_odom_from_map, double ryaw_odom_from_map)
 {
   if (!enabled_ || !f_main_.is_open()) {return;}
   f_main_ << std::fixed << std::setprecision(6)
@@ -108,22 +114,25 @@ void Logger::logState(
           << rx << "," << ry << "," << ryaw << ","
           << u_nom.linear.x << "," << u_nom.linear.y << "," << u_nom.angular.z << ","
           << u_final.linear.x << "," << u_final.linear.y << "," << u_final.angular.z << ","
-          << (reversing ? 1 : 0) << "," << dist_to_goal << "\n";
+          << (reversing ? 1 : 0) << "," << dist_to_goal << ","
+          << tx_odom_from_map << "," << ty_odom_from_map << "," << ryaw_odom_from_map << "\n";
   f_main_.flush();
 }
 
 void Logger::logPath(
   uint64_t tick, double stamp,
-  double xt, double yt, double yawt,
-  double r, double s, double ramp,
-  double yaw_err, int sel_idx, int n_poses)
+  double target_x, double target_y, double target_yaw,
+  double v_ref, double dist_to_target, double cross_track,
+  double yaw_err, int target_idx, int n_remaining,
+  int mode, double v_scale)
 {
   if (!enabled_ || !f_path_.is_open()) {return;}
   f_path_ << std::fixed << std::setprecision(6)
           << tick << "," << stamp << ","
-          << xt << "," << yt << "," << yawt << ","
-          << r << "," << s << "," << ramp << "," << yaw_err << ","
-          << sel_idx << "," << n_poses << "\n";
+          << target_x << "," << target_y << "," << target_yaw << ","
+          << v_ref << "," << dist_to_target << "," << cross_track << ","
+          << yaw_err << "," << target_idx << "," << n_remaining << ","
+          << mode << "," << v_scale << "\n";
   f_path_.flush();
 }
 

@@ -27,13 +27,28 @@ struct Parameters
   double v_linear_max_initial{0.4};
   double v_angular_max_initial{1.5};
 
-  // ---------- Stanley path-follower gains ----------
-  double slowdown_radius{0.20};
+  // ---------- PD path tracker ----------
+  // u_nom comes from a PD tracker on the global lattice path (odom frame):
+  //   1. Find the closest path pose to the robot (window-limited search,
+  //      passed poses pruned).
+  //   2. Walk lookahead_dist metres of arc-length ahead → target pose.
+  //   3. vx,vy = R(-yaw) · (kp_pos · e_pos + kd_pos · de_pos/dt)   (odom-frame
+  //      error, rotated into base_link), clamped per axis.
+  //   4. wz = kp_yaw · yaw_err + kd_yaw · d(yaw_err)/dt where yaw_err is the
+  //      shortest angular distance to the LATTICE's planned yaw at the target
+  //      pose (OMNI motion model — path yaws carry intent, never retangented).
+  // Body-aware safety is handled exclusively by the downstream CBF filter.
+  double lookahead_dist{0.5};   // arc-length ahead of closest pose → target
+  double kp_pos{1.0};           // P gain on odom-frame position error
+  double kd_pos{0.0};           // D gain on d(position_err)/dt (odom frame —
+                                // base-frame D would pick up rotation artifacts)
+  double kp_yaw{0.8};           // P gain on lattice-yaw error
+  double kd_yaw{0.0};           // D gain on d(yaw_err)/dt
+  // k_yaw is used by the near-goal yaw-alignment branch in
+  // computeVelocityCommands (the small-distance, snap-to-goal-heading mode).
   double k_yaw{1.5};
-  double k_lat{0.8};
 
-  // ---------- lookahead / path slicing ----------
-  double motion_target_dist{0.30};
+  // ---------- path slicing / goal tolerance ----------
   double max_robot_pose_search_dist{2.0};
   double goal_dist_tolerance{0.05};
 
@@ -49,10 +64,6 @@ struct Parameters
 
   // ---------- CBF / QP ----------
   double cbf_gamma{1.5};
-  // Proximity speed scaling — disabled (set to 0). MPPI output passes through
-  // at full speed; the predictive CBF QP is the correct speed controller.
-  // Kept as a parameter so existing YAML files do not cause unknown-param errors.
-  double wall_slow_h_thresh{0.0};
   // Predictive CBF: evaluate constraints at t+dt, t+2dt, ... using u_nom to
   // predict future perimeter positions. Catches Lie-derivative-degenerate cases
   // where the robot moves parallel to a wall that narrows ahead — the reactive
@@ -72,40 +83,12 @@ struct Parameters
   // At w=100: violating a constraint by 0.01 m/s costs 100×(0.01)²/2 = 0.005,
   // vs deviation cost of (0.01)²/2 = 0.00005 → slack is 100× more expensive.
   double cbf_slack_weight{100.0};
-
-  // ---------- goal-aware QP bias ----------
-  // Adds a linear term -λ·(g·u) to the QP objective so the projection picks
-  // the feasible u that makes most progress toward the path, not just the
-  // L2-closest u to u_nom. Mathematically equivalent to pre-shifting the QP
-  // target: u_target = u_nom + λ·g, then solving min ½‖u - u_target‖² s.t.
-  // Au ≤ b. When constraints are inactive u* ≈ u_nom + λ·g (slight pull); when
-  // constraints bind, the projection lands further along g than pure u_nom
-  // projection would have.
-  //
-  // g is the unit direction (in base_link, translation only — gw=0) from the
-  // robot to a path pose `goal_bias_lookahead_dist` ahead along the local
-  // plan. We use a far waypoint (not the immediate motion-target lookahead)
-  // so that when the path bends, g carries information u_nom does not.
-  //
-  // λ=0 (default) reproduces the original min-deviation QP.
-  double goal_bias_weight{0.0};            // λ, m/s — bias magnitude
-  double goal_bias_lookahead_dist{1.5};    // arc length along path for g (m)
-
-  // ---------- reference governor ----------
-  // Reference governor: a layer that sits BEFORE Stanley. It inspects the raw
-  // path lookahead, checks if the body footprint would fit at that position
-  // (via ESDF query at the lookahead point), and produces a "safe target":
-  //   (a) the first path pose along the local plan with sufficient clearance,
-  //   (b) if no such pose exists, the raw lookahead pushed away from the
-  //       nearest wall using the ESDF gradient (synthetic off-path target).
-  // The safe target is then passed to Stanley as BOTH closest and lookahead,
-  // making Stanley a point-tracker for the governor's choice. This decouples
-  // "where the path wants the robot" from "where the body can safely go".
-  //
-  // d_required = max(L/2, db) + d_safe + governor_margin is the minimum ESDF
-  // clearance at a candidate target position for the body to fit safely.
-  bool   governor_enabled{false};   // default OFF for backward compat
-  double governor_margin{0.05};     // extra clearance beyond half-extent (m)
+  // Perimeter-sample spacing (m) for the CBF body polygon. Each rectangle side
+  // gets ceil(side_len / spacing) + 1 samples (long sides incl. corners, short
+  // sides interior-only). Smaller = finer polygon = more constraints. At 0.10
+  // with the 1.00 x 0.75 m rectangle → 11 long + 9 short = 36 distinct points.
+  // Dynamically reconfigurable for density sweeps.
+  double cbf_sample_spacing_m{0.10};
 
   // ---------- PointCloud2 / ESDF ----------
   // Use horizontal beams from the raw 3D LiDAR.
@@ -121,33 +104,6 @@ struct Parameters
   // Total grid extent = 2 * esdf_grid_size_m in each axis.
   double esdf_grid_resolution{0.01};  // metres per cell (1cm for ~50mm clearance)
   double esdf_grid_size_m{3.0};       // half-size (so 6m x 6m total)
-
-  // ---------- retreat overlay ----------
-  // Smart single-direction retreat overlay that activates when any body
-  // sample's h drops below h_enter. Inside RETREAT it builds ONE retreat
-  // velocity from the body's tight samples:
-  //   - Translation = weighted average of ESDF gradients across all samples
-  //     with h < h_exit, weighted by tightness (h_exit − h_i). Tighter
-  //     samples dominate the direction.
-  //   - Rotation    = sign of the WORST (single tightest) sample's lever
-  //     (gy·px − gx·py), scaled by w_retreat. Rotates to lift the most
-  //     critical sample off its wall.
-  // The retreat velocity is blended with u_nom by how critical min_h is
-  // (linear in [h_enter, 0]) and handed to the CBF QP as the target.
-  // Exits when min_h ≥ h_exit (hysteresis). When the overlay can't make
-  // progress, controller-level stuck detection and Nav2 BT recovery handle
-  // the failure — the filter does not emit zero or transition to a
-  // separate give-up state.
-  //
-  // cbf_retreat_lookahead_s is no longer used by the active code (the new
-  // single-direction retreat doesn't need a candidate-scoring lookahead).
-  // Kept as a parameter so existing YAMLs don't error on unknown params.
-  bool   cbf_retreat_enabled{true};
-  double cbf_retreat_h_enter{0.02};         // enter when min_h < this (m)
-  double cbf_retreat_h_exit{0.05};          // exit when min_h ≥ this (m, hysteresis)
-  double cbf_retreat_speed{0.10};           // linear retreat magnitude (m/s)
-  double cbf_retreat_rotation_speed{0.30};  // pure-rotation retreat magnitude (rad/s)
-  double cbf_retreat_lookahead_s{0.30};     // (vestigial — unused by new retreat)
 
   // ---------- logging ----------
   std::string log_dir{"/root/navigation_log"};

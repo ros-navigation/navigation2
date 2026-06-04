@@ -45,12 +45,14 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(v_lateral_max, 0.3);
   DECL_DOUBLE(v_angular_max, 1.5);
 
-  DECL_DOUBLE(slowdown_radius, 0.20);
+  DECL_DOUBLE(lookahead_dist, 0.5);
+  DECL_DOUBLE(kp_pos, 1.0);
+  DECL_DOUBLE(kd_pos, 0.0);
+  DECL_DOUBLE(kp_yaw, 0.8);
+  DECL_DOUBLE(kd_yaw, 0.0);
   DECL_DOUBLE(k_yaw, 1.5);
-  DECL_DOUBLE(k_lat, 0.8);
-  DECL_DOUBLE(motion_target_dist, 0.30);
-  DECL_DOUBLE(max_robot_pose_search_dist, 2.0);
 
+  DECL_DOUBLE(max_robot_pose_search_dist, 2.0);
   DECL_DOUBLE(goal_dist_tolerance, 0.05);
 
   DECL_DOUBLE(footprint_length, 0.90);
@@ -58,31 +60,18 @@ ParameterHandler::ParameterHandler(
   DECL_DOUBLE(footprint_db, 0.375);
 
   DECL_DOUBLE(cbf_gamma, 1.5);
-  DECL_DOUBLE(wall_slow_h_thresh, 0.25);
   DECL_INT(cbf_n_predict_steps, 2);
   DECL_DOUBLE(cbf_predict_dt, 0.10);
   DECL_DOUBLE(esdf_d_safe, 0.03);
   DECL_DOUBLE(wall_consideration_range, 2.5);
   DECL_DOUBLE(cbf_slack_weight, 100.0);
-
-  DECL_DOUBLE(goal_bias_weight, 0.0);
-  DECL_DOUBLE(goal_bias_lookahead_dist, 1.5);
-
-  DECL_BOOL(governor_enabled, false);
-  DECL_DOUBLE(governor_margin, 0.05);
+  DECL_DOUBLE(cbf_sample_spacing_m, 0.10);
 
   DECL_STRING(pointcloud_topic, "/livox/amr/lidar");
   DECL_DOUBLE(esdf_z_min, 1.247);
   DECL_DOUBLE(esdf_z_max, 1.447);
   DECL_DOUBLE(esdf_grid_resolution, 0.01);
   DECL_DOUBLE(esdf_grid_size_m, 3.0);
-
-  DECL_BOOL(cbf_retreat_enabled, true);
-  DECL_DOUBLE(cbf_retreat_h_enter, 0.02);
-  DECL_DOUBLE(cbf_retreat_h_exit, 0.05);
-  DECL_DOUBLE(cbf_retreat_speed, 0.10);
-  DECL_DOUBLE(cbf_retreat_rotation_speed, 0.30);
-  DECL_DOUBLE(cbf_retreat_lookahead_s, 0.30);
 
   DECL_STRING(log_dir, "/root/navigation_log");
   DECL_BOOL(log_enabled, true);
@@ -121,14 +110,14 @@ ParameterHandler::dynamicParametersCallback(
         params_.v_lateral_max = v;
       } else if (name == plugin_name_ + ".v_angular_max") {
         params_.v_angular_max = v; params_.v_angular_max_initial = v;
-      } else if (name == plugin_name_ + ".slowdown_radius") {params_.slowdown_radius = v;}
+      } else if (name == plugin_name_ + ".lookahead_dist") {params_.lookahead_dist = v;}
+      else if (name == plugin_name_ + ".kp_pos") {params_.kp_pos = v;}
+      else if (name == plugin_name_ + ".kd_pos") {params_.kd_pos = v;}
+      else if (name == plugin_name_ + ".kp_yaw") {params_.kp_yaw = v;}
+      else if (name == plugin_name_ + ".kd_yaw") {params_.kd_yaw = v;}
       else if (name == plugin_name_ + ".k_yaw") {params_.k_yaw = v;}
-      else if (name == plugin_name_ + ".k_lat") {params_.k_lat = v;}
-      else if (name == plugin_name_ + ".motion_target_dist") {params_.motion_target_dist = v;}
       else if (name == plugin_name_ + ".cbf_gamma") {params_.cbf_gamma = v;}
-      else if (name == plugin_name_ + ".wall_slow_h_thresh") {
-        params_.wall_slow_h_thresh = v;
-      } else if (name == plugin_name_ + ".cbf_predict_dt") {
+      else if (name == plugin_name_ + ".cbf_predict_dt") {
         params_.cbf_predict_dt = v;
       } else if (name == plugin_name_ + ".footprint_length") {
         params_.footprint_length = v;
@@ -136,37 +125,18 @@ ParameterHandler::dynamicParametersCallback(
         params_.footprint_dl = v;
       } else if (name == plugin_name_ + ".footprint_db") {
         params_.footprint_db = v;
-      } else if (name == plugin_name_ + ".cbf_gamma") {params_.cbf_gamma = v;}
-      else if (name == plugin_name_ + ".esdf_d_safe") {params_.esdf_d_safe = v;}
+      } else if (name == plugin_name_ + ".esdf_d_safe") {params_.esdf_d_safe = v;}
       else if (name == plugin_name_ + ".wall_consideration_range") {
         params_.wall_consideration_range = v;
       } else if (name == plugin_name_ + ".cbf_slack_weight") {
         params_.cbf_slack_weight = v;
-      } else if (name == plugin_name_ + ".goal_bias_weight") {
-        params_.goal_bias_weight = v;
-      } else if (name == plugin_name_ + ".goal_bias_lookahead_dist") {
-        params_.goal_bias_lookahead_dist = v;
-      } else if (name == plugin_name_ + ".governor_margin") {
-        params_.governor_margin = v;
-      } else if (name == plugin_name_ + ".cbf_retreat_h_enter") {
-        params_.cbf_retreat_h_enter = v;
-      } else if (name == plugin_name_ + ".cbf_retreat_h_exit") {
-        params_.cbf_retreat_h_exit = v;
-      } else if (name == plugin_name_ + ".cbf_retreat_speed") {
-        params_.cbf_retreat_speed = v;
-      } else if (name == plugin_name_ + ".cbf_retreat_rotation_speed") {
-        params_.cbf_retreat_rotation_speed = v;
-      } else if (name == plugin_name_ + ".cbf_retreat_lookahead_s") {
-        params_.cbf_retreat_lookahead_s = v;
+      } else if (name == plugin_name_ + ".cbf_sample_spacing_m") {
+        params_.cbf_sample_spacing_m = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_BOOL) {
       const bool v = p.as_bool();
       if (name == plugin_name_ + ".log_enabled") {
         params_.log_enabled = v;
-      } else if (name == plugin_name_ + ".cbf_retreat_enabled") {
-        params_.cbf_retreat_enabled = v;
-      } else if (name == plugin_name_ + ".governor_enabled") {
-        params_.governor_enabled = v;
       }
     } else if (type == rclcpp::ParameterType::PARAMETER_INTEGER) {
       const int v = static_cast<int>(p.as_int());
