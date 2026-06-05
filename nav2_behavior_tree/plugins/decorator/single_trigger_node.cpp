@@ -33,7 +33,6 @@ SingleTrigger::SingleTrigger(
 void SingleTrigger::initialize()
 {
   getInput("is_global", is_global_);
-  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 }
 
 BT::NodeStatus SingleTrigger::tick()
@@ -50,8 +49,9 @@ BT::NodeStatus SingleTrigger::tick()
     try {
       new_run_id = config().blackboard->template get<std::string>("run_id");
     } catch (const std::exception & e) {
-      throw std::runtime_error(
-        "is_global=true requires 'run_id' on the blackboard for SingleTrigger: " + name());
+      throw BT::RuntimeError(
+        "is_global=true requires 'run_id' on the blackboard for SingleTrigger '" +
+          name() + "': " + e.what());
     }
     if (new_run_id != current_run_id_) {
       current_run_id_ = new_run_id;

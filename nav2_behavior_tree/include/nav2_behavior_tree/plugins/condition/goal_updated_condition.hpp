@@ -23,7 +23,6 @@
 #include "nav_msgs/msg/goals.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
-#include "nav2_ros_common/lifecycle_node.hpp"
 
 
 namespace nav2_behavior_tree
@@ -32,7 +31,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS when goal is
  * updated on the blackboard and FAILURE otherwise
- * @note It will re-initialize when halted or on RunID change if is_global is true.
+ * @note Re-initializes (snapshots the current goal) on transition from IDLE to RUNNING.
  *
  * Usage in XML:
  * @code
@@ -60,11 +59,6 @@ public:
   BT::NodeStatus tick() override;
 
   /**
-   * @brief Function to read parameters and initialize class variables
-   */
-  void initialize();
-
-  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -75,7 +69,6 @@ public:
     BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
 
     return {
-      BT::InputPort<bool>("is_global", false, "Use RunID for initialization instead of IDLE check"),
       BT::InputPort<nav_msgs::msg::Goals>(
         "goals", "Vector of navigation goals"),
       BT::InputPort<geometry_msgs::msg::PoseStamped>(
@@ -86,10 +79,6 @@ public:
 private:
   geometry_msgs::msg::PoseStamped goal_;
   nav_msgs::msg::Goals goals_;
-  bool is_global_;
-  bool initialized_;
-  std::string current_run_id_;
-  nav2::LifecycleNode::SharedPtr node_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -49,16 +49,15 @@ BT::NodeStatus RateController::tick()
     std::string new_run_id;
     try {
       new_run_id = config().blackboard->template get<std::string>("run_id");
-    } catch (const std::exception &) {
-      throw std::runtime_error(
-        "is_global=true requires 'run_id' on the blackboard for RateController: " + name());
+    } catch (const std::exception & e) {
+      throw BT::RuntimeError(
+        "is_global=true requires 'run_id' on the blackboard for RateController '" +
+          name() + "': " + e.what());
     }
     if (new_run_id != current_run_id_) {
       current_run_id_ = new_run_id;
       start_ = std::chrono::high_resolution_clock::now();
       first_time_ = true;
-    } else if (!BT::isStatusActive(status())) {
-      // halt ignored, timer preserved (is_global=true)
     }
   } else {
     if (!BT::isStatusActive(status())) {

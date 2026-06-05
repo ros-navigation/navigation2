@@ -22,55 +22,16 @@ namespace nav2_behavior_tree
 GoalUpdatedCondition::GoalUpdatedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf),
-  is_global_(false),
-  initialized_(false),
-  current_run_id_("")
+: BT::ConditionNode(condition_name, conf)
 {
-}
-
-void GoalUpdatedCondition::initialize()
-{
-  getInput("is_global", is_global_);
-  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 }
 
 BT::NodeStatus GoalUpdatedCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
-    initialize();
-  }
-
-  if (is_global_) {
-    std::string new_run_id;
-    try {
-      new_run_id = config().blackboard->template get<std::string>("run_id");
-    } catch (const std::exception & e) {
-      throw std::runtime_error(
-        "is_global=true requires 'run_id' on the blackboard for GoalUpdatedCondition: " + name());
-    }
-
-    if (!initialized_) {
-      // First tick ever: snapshot current goal as reference and return FAILURE
-      initialized_ = true;
-      current_run_id_ = new_run_id;
-      BT::getInputOrBlackboard("goals", goals_);
-      BT::getInputOrBlackboard("goal", goal_);
-      return BT::NodeStatus::FAILURE;
-    }
-
-    if (new_run_id != current_run_id_) {
-      // New navigation task started: update run_id and fall through
-      // so the comparison below fires SUCCESS if the goal changed
-      current_run_id_ = new_run_id;
-    }
-  } else {
-    if (!BT::isStatusActive(status())) {
-      // Local mode: snapshot on first tick after halt, return FAILURE
-      BT::getInputOrBlackboard("goals", goals_);
-      BT::getInputOrBlackboard("goal", goal_);
-      return BT::NodeStatus::FAILURE;
-    }
+    BT::getInputOrBlackboard("goals", goals_);
+    BT::getInputOrBlackboard("goal", goal_);
+    return BT::NodeStatus::FAILURE;
   }
 
   nav_msgs::msg::Goals current_goals;

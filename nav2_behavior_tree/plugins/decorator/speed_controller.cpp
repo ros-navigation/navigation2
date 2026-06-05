@@ -46,7 +46,7 @@ SpeedController::SpeedController(
   if (min_rate_ <= 0.0 || max_rate_ <= 0.0) {
     std::string err_msg = "SpeedController node cannot have rate <= 0.0";
     RCLCPP_FATAL(node_->get_logger(), "%s", err_msg.c_str());
-    throw BT::BehaviorTreeException(err_msg);
+    throw BT::RuntimeError(err_msg);
   }
 
   d_rate_ = max_rate_ - min_rate_;
@@ -96,9 +96,10 @@ inline BT::NodeStatus SpeedController::tick()
     std::string new_run_id;
     try {
       new_run_id = config().blackboard->template get<std::string>("run_id");
-    } catch (const std::exception &) {
-      throw std::runtime_error(
-        "is_global=true requires 'run_id' on the blackboard for SpeedController: " + name());
+    } catch (const std::exception & e) {
+      throw BT::RuntimeError(
+        "is_global=true requires 'run_id' on the blackboard for SpeedController '" +
+          name() + "': " + e.what());
     }
     if (new_run_id != current_run_id_) {
       current_run_id_ = new_run_id;
