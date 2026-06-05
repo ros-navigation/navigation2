@@ -31,7 +31,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS when goal is
  * updated on the blackboard and FAILURE otherwise
- * @note Re-initializes (snapshots the current goal) on transition from IDLE to RUNNING.
+ *  @note It will re-initialize when halted.
  *
  * Usage in XML:
  * @code
