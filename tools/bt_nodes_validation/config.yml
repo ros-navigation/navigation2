@@ -1,0 +1,34 @@
+nav2_bt_nodes_file_path: "nav2_behavior_tree/nav2_tree_nodes.xml"
+
+local_repositories:
+  navigation2:
+    behavior_trees:
+      cpp_dir_paths:
+        - "nav2_behavior_tree/plugins"
+        - "nav2_docking/opennav_docking_bt/src"
+      hpp_dir_paths:
+        - "nav2_behavior_tree/include/nav2_behavior_tree/plugins"
+        - "nav2_docking/opennav_docking_bt/include/opennav_docking_bt"
+      hpp_base_classes_paths:
+        - BtActionNode: "nav2_behavior_tree/include/nav2_behavior_tree/bt_action_node.hpp"
+        - BtServiceNode: "nav2_behavior_tree/include/nav2_behavior_tree/bt_service_node.hpp"
+        - BtCancelActionNode: "nav2_behavior_tree/include/nav2_behavior_tree/bt_cancel_action_node.hpp"
+        - AreErrorCodesPresent: "nav2_behavior_tree/include/nav2_behavior_tree/plugins/condition/are_error_codes_present_condition.hpp"
+
+# The validation script is able to clone and process external GitHub projects
+# that contain Behavior Tree nodes.
+# Below is a configuration example for such repository:
+
+# github_repositories:
+#   opennav_coverage:
+#     owner: "open-navigation"
+#     branch: "main" # Rolling
+#     behavior_trees:
+#       cpp_dir_paths:
+#         - "opennav_coverage_bt/src"
+#       hpp_dir_paths:
+#         - "opennav_coverage_bt/include/opennav_coverage_bt"
+#       # hpp_base_classes_paths:
+#       # If adding paths to base class files, be sure to include the leading '/'.
+#       # This is required for the correct execution of sparse git clone.
+#       #  - ExampleClass: "/path/to/base/class/file.hpp"
