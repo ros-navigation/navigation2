@@ -1042,6 +1042,10 @@ AmclNode::initParameters()
       get_logger(), "You've set min_particles to be greater than max particles,"
       " this isn't allowed so max_particles will be set to min_particles.");
     max_particles_ = min_particles_;
+    
+    // Mirror to value in store to avoid ambiguity AND avoid detecting
+    // a changed when activating
+    set_parameter(rclcpp::Parameter("max_particles", max_particles_));
   }
 
   if (resample_interval_ <= 0) {
@@ -1126,127 +1130,164 @@ AmclNode::updateParametersCallback(
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == "alpha1") {
+      if (param_name == "alpha1" && alpha1_ != parameter.as_double()) {
         alpha1_ = parameter.as_double();
         reinit_odom = true;
-      } else if (param_name == "alpha2") {
+      } else if (param_name == "alpha2" && alpha2_ != parameter.as_double()) {
         alpha2_ = parameter.as_double();
         reinit_odom = true;
-      } else if (param_name == "alpha3") {
+      } else if (param_name == "alpha3" && alpha3_ != parameter.as_double()) {
         alpha3_ = parameter.as_double();
         reinit_odom = true;
-      } else if (param_name == "alpha4") {
+      } else if (param_name == "alpha4" && alpha4_ != parameter.as_double()) {
         alpha4_ = parameter.as_double();
         reinit_odom = true;
-      } else if (param_name == "alpha5") {
+      } else if (param_name == "alpha5" && alpha5_ != parameter.as_double()) {
         alpha5_ = parameter.as_double();
         reinit_odom = true;
-      } else if (param_name == "beam_skip_distance") {
+      } else if (param_name == "beam_skip_distance" &&  // NOLINT(readability/braces)
+        beam_skip_distance_ != parameter.as_double())
+      {
         beam_skip_distance_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "beam_skip_error_threshold") {
+      } else if (param_name == "beam_skip_error_threshold" &&  // NOLINT(readability/braces)
+        beam_skip_error_threshold_ != parameter.as_double())
+      {
         beam_skip_error_threshold_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "beam_skip_threshold") {
+      } else if (param_name == "beam_skip_threshold" &&  // NOLINT(readability/braces)
+        beam_skip_threshold_ != parameter.as_double())
+      {
         beam_skip_threshold_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "lambda_short") {
+      } else if (param_name == "lambda_short" && lambda_short_ != parameter.as_double()) {
         lambda_short_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "laser_likelihood_max_dist") {
+      } else if (param_name == "laser_likelihood_max_dist" &&  // NOLINT(readability/braces)
+        laser_likelihood_max_dist_ != parameter.as_double())
+      {
         laser_likelihood_max_dist_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "laser_max_range") {
+      } else if (param_name == "laser_max_range" &&  // NOLINT(readability/braces)
+        laser_max_range_ != parameter.as_double())
+      {
         laser_max_range_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "laser_min_range") {
+      } else if (param_name == "laser_min_range" &&  // NOLINT(readability/braces)
+        laser_min_range_ != parameter.as_double())
+      {
         laser_min_range_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "pf_err") {
+      } else if (param_name == "pf_err" && pf_err_ != parameter.as_double()) {
         pf_err_ = parameter.as_double();
         reinit_pf = true;
-      } else if (param_name == "pf_z") {
+      } else if (param_name == "pf_z" && pf_z_ != parameter.as_double()) {
         pf_z_ = parameter.as_double();
         reinit_pf = true;
-      } else if (param_name == "recovery_alpha_fast") {
+      } else if (param_name == "recovery_alpha_fast" &&  // NOLINT(readability/braces)
+        alpha_fast_ != parameter.as_double())
+      {
         alpha_fast_ = parameter.as_double();
         reinit_pf = true;
-      } else if (param_name == "recovery_alpha_slow") {
+      } else if (param_name == "recovery_alpha_slow" &&  // NOLINT(readability/braces)
+        alpha_slow_ != parameter.as_double())
+      {
         alpha_slow_ = parameter.as_double();
         reinit_pf = true;
-      } else if (param_name == "save_pose_rate") {
+      } else if (param_name == "save_pose_rate" &&  // NOLINT(readability/braces)
+        save_pose_rate_ != parameter.as_double())
+      {
         save_pose_rate_ = parameter.as_double();
-      } else if (param_name == "sigma_hit") {
+      } else if (param_name == "sigma_hit" && sigma_hit_ != parameter.as_double()) {
         sigma_hit_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "transform_tolerance") {
-        double tmp_tol = parameter.as_double();
-        transform_tolerance_ = tf2::durationFromSec(tmp_tol);
+      } else if (param_name == "transform_tolerance" &&  // NOLINT(readability/braces)
+        transform_tolerance_ != tf2::durationFromSec(parameter.as_double()))
+      {
+        transform_tolerance_ = tf2::durationFromSec(parameter.as_double());
         reinit_laser = true;
-      } else if (param_name == "update_min_a") {
+      } else if (param_name == "update_min_a" && a_thresh_ != parameter.as_double()) {
         a_thresh_ = parameter.as_double();
-      } else if (param_name == "update_min_d") {
+      } else if (param_name == "update_min_d" && d_thresh_ != parameter.as_double()) {
         d_thresh_ = parameter.as_double();
-      } else if (param_name == "z_hit") {
+      } else if (param_name == "z_hit" && z_hit_ != parameter.as_double()) {
         z_hit_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "z_max") {
+      } else if (param_name == "z_max" && z_max_ != parameter.as_double()) {
         z_max_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "z_rand") {
+      } else if (param_name == "z_rand" && z_rand_ != parameter.as_double()) {
         z_rand_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "z_short") {
+      } else if (param_name == "z_short" && z_short_ != parameter.as_double()) {
         z_short_ = parameter.as_double();
         reinit_laser = true;
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {
-      if (param_name == "base_frame_id") {
+      if (param_name == "base_frame_id" && base_frame_id_ != parameter.as_string()) {
         base_frame_id_ = parameter.as_string();
-      } else if (param_name == "global_frame_id") {
+      } else if (param_name == "global_frame_id" &&  // NOLINT(readability/braces)
+        global_frame_id_ != parameter.as_string())
+      {
         global_frame_id_ = parameter.as_string();
-      } else if (param_name == "map_topic") {
+      } else if (param_name == "map_topic" && map_topic_ != parameter.as_string()) {
         map_topic_ = parameter.as_string();
         reinit_map = true;
-      } else if (param_name == "laser_model_type") {
+      } else if (param_name == "laser_model_type" &&  // NOLINT(readability/braces)
+        sensor_model_type_ != parameter.as_string())
+      {
         sensor_model_type_ = parameter.as_string();
         reinit_laser = true;
-      } else if (param_name == "odom_frame_id") {
+      } else if (param_name == "odom_frame_id" &&  // NOLINT(readability/braces)
+        odom_frame_id_ != parameter.as_string())
+      {
         odom_frame_id_ = parameter.as_string();
         reinit_laser = true;
-      } else if (param_name == "scan_topic") {
+      } else if (param_name == "scan_topic" && scan_topic_ != parameter.as_string()) {
         scan_topic_ = parameter.as_string();
         reinit_laser = true;
-      } else if (param_name == "robot_model_type") {
+      } else if (param_name == "robot_model_type" &&  // NOLINT(readability/braces)
+        robot_model_type_ != parameter.as_string())
+      {
         robot_model_type_ = parameter.as_string();
         reinit_odom = true;
-      } else if (param_name == "saved_pose_filepath") {
+      } else if (param_name == "saved_pose_filepath" &&  // NOLINT(readability/braces)
+        saved_pose_filepath_ != parameter.as_string())
+      {
         saved_pose_filepath_ = parameter.as_string();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == "do_beamskip") {
+      if (param_name == "do_beamskip" && do_beamskip_ != parameter.as_bool()) {
         do_beamskip_ = parameter.as_bool();
         reinit_laser = true;
-      } else if (param_name == "tf_broadcast") {
+      } else if (param_name == "tf_broadcast" && tf_broadcast_ != parameter.as_bool()) {
         tf_broadcast_ = parameter.as_bool();
-      } else if (param_name == "set_initial_pose") {
+      } else if (param_name == "set_initial_pose" &&  // NOLINT(readability/braces)
+        set_initial_pose_ != parameter.as_bool())
+      {
         set_initial_pose_ = parameter.as_bool();
-      } else if (param_name == "first_map_only") {
+      } else if (param_name == "first_map_only" &&  // NOLINT(readability/braces)
+        first_map_only_ != parameter.as_bool())
+      {
         first_map_only_ = parameter.as_bool();
-      } else if (param_name == "initialize_at_saved_pose") {
+      } else if (param_name == "initialize_at_saved_pose" &&  // NOLINT(readability/braces)
+        initialize_at_saved_pose_ != parameter.as_bool())
+      {
         initialize_at_saved_pose_ = parameter.as_bool();
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == "max_beams") {
+      if (param_name == "max_beams" && max_beams_ != parameter.as_int()) {
         max_beams_ = parameter.as_int();
         reinit_laser = true;
-      } else if (param_name == "max_particles") {
+      } else if (param_name == "max_particles" && max_particles_ != parameter.as_int()) {
         max_particles_ = parameter.as_int();
         reinit_pf = true;
-      } else if (param_name == "min_particles") {
+      } else if (param_name == "min_particles" && min_particles_ != parameter.as_int()) {
         min_particles_ = parameter.as_int();
         reinit_pf = true;
-      } else if (param_name == "resample_interval") {
+      } else if (param_name == "resample_interval" &&  // NOLINT(readability/braces)
+        resample_interval_ != parameter.as_int())
+      {
         resample_interval_ = parameter.as_int();
       }
     }
