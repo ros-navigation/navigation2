@@ -54,6 +54,16 @@ public:
     const std::string & name) override;
 
   /**
+   * @brief Activate
+   */
+  void on_activate();
+
+  /**
+   * @brief Deactivate
+   */
+  void on_deactivate();
+
+  /**
    * @brief Get name of the plugin for parameter scope mapping
    * @return Name
    */

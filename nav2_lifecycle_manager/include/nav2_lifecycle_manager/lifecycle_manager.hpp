@@ -176,6 +176,10 @@ protected:
   /**
    * @brief Destroy all the lifecycle service clients.
    */
+  void destroyLifecycleServiceServers();
+  /**
+   * @brief Destroy all the lifecycle service servers.
+   */
   void destroyLifecycleServiceClients();
   /**
    * @brief Destroy all the lifecycle publishers.

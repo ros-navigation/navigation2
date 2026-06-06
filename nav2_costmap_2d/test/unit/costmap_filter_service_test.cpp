@@ -104,6 +104,7 @@ protected:
 TEST_F(TestNode, testEnableService)
 {
   costmap_filter_->onInitialize();
+  costmap_filter_->activate();
 
   RCLCPP_INFO(node_->get_logger(), "Testing enabling service");
   auto req = std::make_shared<std_srvs::srv::SetBool::Request>();

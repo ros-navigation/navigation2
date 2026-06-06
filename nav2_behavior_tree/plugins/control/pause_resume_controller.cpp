@@ -56,6 +56,18 @@ PauseResumeController::PauseResumeController(
     resume_service_name,
     std::bind(&PauseResumeController::resumeServiceCallback, this, _1, _2, _3),
     cb_group_);
+
+  pause_srv_->on_activate();
+  resume_srv_->on_activate();
+}
+
+PauseResumeController::~PauseResumeController()
+{
+  pause_srv_->on_deactivate();
+  resume_srv_->on_deactivate();
+
+  pause_srv_.reset();
+  resume_srv_.reset();
 }
 
 BT::NodeStatus PauseResumeController::tick()

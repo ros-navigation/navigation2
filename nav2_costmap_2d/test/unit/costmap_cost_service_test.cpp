@@ -20,6 +20,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include "nav2_msgs/srv/get_costs.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "tf2_ros/static_transform_broadcaster.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 
 using namespace std::chrono_literals;
 
@@ -31,10 +33,35 @@ protected:
     costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("costmap");
     client_ = costmap_->create_client<nav2_msgs::srv::GetCosts>(
       "/costmap/get_cost_costmap");
+
+    auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(costmap_);
+    tf_pub_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(costmap_);
+
+    // Create a static tf between map and base_link
+    geometry_msgs::msg::TransformStamped t;
+    t.header.stamp = costmap_->now();
+    t.header.frame_id = "map";
+    t.child_frame_id = "base_link";
+    t.transform.translation.x = 0.0;
+    t.transform.translation.y = 0.0;
+    t.transform.translation.z = 0.0;
+    t.transform.rotation.w = 1.0;
+
+    tf_broadcaster->sendTransform(t);
     costmap_->on_configure(rclcpp_lifecycle::State());
+    costmap_->on_activate(rclcpp_lifecycle::State());
     ASSERT_TRUE(client_->wait_for_service(10s));
   }
+  void TearDown() override
+  {
+    if (costmap_) {
+      costmap_->on_deactivate(rclcpp_lifecycle::State());
+      costmap_->on_cleanup(rclcpp_lifecycle::State());
+      costmap_->on_shutdown(rclcpp_lifecycle::State());
+    }
+  }
 
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_pub_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_;
   nav2::ServiceClient<nav2_msgs::srv::GetCosts>::SharedPtr client_;
 };

@@ -75,6 +75,22 @@ ClearCostmapService::~ClearCostmapService()
   clear_entire_service_.reset();
 }
 
+void ClearCostmapService::on_activate()
+{
+  clear_except_service_->on_activate();
+  clear_around_service_->on_activate();
+  clear_around_pose_service_->on_activate();
+  clear_entire_service_->on_activate();
+}
+
+void ClearCostmapService::on_deactivate()
+{
+  clear_except_service_->on_deactivate();
+  clear_around_service_->on_deactivate();
+  clear_around_pose_service_->on_deactivate();
+  clear_entire_service_->on_deactivate();
+}
+
 void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<rmw_request_id_t>/*request_header*/,
   const shared_ptr<ClearExceptRegion::Request> request,

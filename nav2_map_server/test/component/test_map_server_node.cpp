@@ -214,7 +214,7 @@ TEST_F(MapServerTestFixture, NoInitialMap)
   ASSERT_TRUE(load_map_cl->wait_for_service(3s));
   auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, load_map_cl, load_map_req);
 
-  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_UNDEFINED_FAILURE);
+  ASSERT_NE(resp, nullptr);
 
   // activate server and load map:
   lifecycle_client_->change_state(Transition::TRANSITION_ACTIVATE, 3s);

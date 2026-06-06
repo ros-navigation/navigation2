@@ -111,6 +111,9 @@ public:
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
 
+  //! @brief Destructor
+  ~PauseResumeController() override;
+
   //! @brief Reset state and go to Idle
   void halt() override;
 
