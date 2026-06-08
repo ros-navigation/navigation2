@@ -115,6 +115,10 @@ protected:
   // Coarse (fallback) tolerance
   double coarse_xy_goal_tolerance_;
   double coarse_xy_goal_tolerance_sq_;
+  // Hysteresis buffer used when stateful to reset the
+  // check_xy_ when the robot drifts outside the accepted region.
+  double xy_goal_tolerance_buffer_;
+  double fine_xy_goal_tolerance_reset_sq_, coarse_xy_goal_tolerance_reset_sq_;
 
   double yaw_goal_tolerance_;
   double path_length_tolerance_;
