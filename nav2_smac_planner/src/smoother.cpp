@@ -195,7 +195,7 @@ bool Smoother::smoothImpl(
         return false;
       }
 
-      if (collision_checker && cost >= INSCRIBED_INFLATED_OBSTACLE) {
+      if (collision_checker && cost >= INSCRIBED_COST) {
         nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
         double theta = tf2::getYaw(new_path.poses[i].pose.orientation);
         double footprint_cost = collision_checker->footprintCostAtPose(
@@ -203,7 +203,7 @@ bool Smoother::smoothImpl(
           getFieldByDim(new_path.poses[i], 1),
           theta, footprint);
 
-        if (footprint_cost >= INSCRIBED_INFLATED_OBSTACLE && footprint_cost != UNKNOWN_COST) {
+        if (footprint_cost >= INSCRIBED_COST && footprint_cost != UNKNOWN_COST) {
           RCLCPP_DEBUG(
             rclcpp::get_logger("SmacPlannerSmoother"),
             "Smoothing process resulted in an infeasible footprint collision. "
