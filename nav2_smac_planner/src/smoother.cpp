@@ -171,7 +171,7 @@ bool Smoother::smoothImpl(
         // Smooth based on local 3 point neighborhood and original data locations
         y_i += data_w_ * (x_i - y_i) + smooth_w_ * (y_ip1 + y_m1 - (2.0 * y_i));
         setFieldByDim(new_path.poses[i], j, y_i);
-        change += abs(y_i - y_i_org);
+        change += std::abs(y_i - y_i_org);
       }
 
       // validate update is admissible, only checks cost if a valid costmap pointer is provided

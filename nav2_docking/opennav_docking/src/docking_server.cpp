@@ -600,7 +600,7 @@ bool DockingServer::getCommandToPose(
     robot_pose.pose.position.y - pose.pose.position.y);
   const double yaw = angles::shortest_angular_distance(
     tf2::getYaw(robot_pose.pose.orientation), tf2::getYaw(pose.pose.orientation));
-  if (dist < linear_tolerance && abs(yaw) < angular_tolerance) {
+  if (dist < linear_tolerance && std::abs(yaw) < angular_tolerance) {
     return true;
   }
 

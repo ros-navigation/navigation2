@@ -285,8 +285,12 @@ void SimpleNonChargingDock::jointStateCallback(
     for (auto & name : stall_joint_names_) {
       if (state->name[i] == name) {
         // Tracking this joint
-        velocity += abs(state->velocity[i]);
-        effort += abs(state->effort[i]);
+        if (i < state->velocity.size()) {
+          velocity += std::abs(state->velocity[i]);
+        }
+        if (i < state->effort.size()) {
+          effort += std::abs(state->effort[i]);
+        }
       }
     }
   }

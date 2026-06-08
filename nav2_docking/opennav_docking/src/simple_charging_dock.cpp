@@ -329,10 +329,10 @@ void SimpleChargingDock::jointStateCallback(
         // Tracking this joint. Ensure we do not access out of bounds
         // if the velocity or effort arrays are empty or shorter than names.
         if (i < state->velocity.size()) {
-          velocity += abs(state->velocity[i]);
+          velocity += std::abs(state->velocity[i]);
         }
         if (i < state->effort.size()) {
-          effort += abs(state->effort[i]);
+          effort += std::abs(state->effort[i]);
         }
       }
     }
