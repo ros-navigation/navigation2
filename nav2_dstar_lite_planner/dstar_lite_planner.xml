@@ -1,0 +1,6 @@
+<library path="nav2_dstar_lite_planner">
+    <class type="nav2_dstar_lite_planner::DStarLitePlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>An implementation of the D* Lite Algorithm for incremental replanning</description>
+    </class>
+</library>
