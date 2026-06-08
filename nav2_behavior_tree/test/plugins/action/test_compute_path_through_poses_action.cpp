@@ -155,11 +155,11 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
 
   // check if returned path is correct
-  nav_msgs::msg::Path path;
-  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
-  EXPECT_EQ(path.poses.size(), 2u);
-  EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
-  EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
+  std::shared_ptr<nav_msgs::msg::Path> path;
+  EXPECT_TRUE(config_->blackboard->get<std::shared_ptr<nav_msgs::msg::Path>>("path", path));
+  EXPECT_EQ(path->poses.size(), 2u);
+  EXPECT_EQ(path->poses[0].pose.position.x, 0.0);
+  EXPECT_EQ(path->poses[1].pose.position.x, 1.0);
 
   // halt node so another goal can be sent
   tree_->haltTree();
@@ -176,10 +176,10 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->goals.goals[0].pose.position.x, -2.5);
 
-  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
-  EXPECT_EQ(path.poses.size(), 2u);
-  EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
-  EXPECT_EQ(path.poses[1].pose.position.x, -2.5);
+  EXPECT_TRUE(config_->blackboard->get<std::shared_ptr<nav_msgs::msg::Path>>("path", path));
+  EXPECT_EQ(path->poses.size(), 2u);
+  EXPECT_EQ(path->poses[0].pose.position.x, 0.0);
+  EXPECT_EQ(path->poses[1].pose.position.x, -2.5);
 }
 
 TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
@@ -221,11 +221,11 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
 
   // check if returned path is correct
-  nav_msgs::msg::Path path;
-  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
-  EXPECT_EQ(path.poses.size(), 2u);
-  EXPECT_EQ(path.poses[0].pose.position.x, 2.0);
-  EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
+  std::shared_ptr<nav_msgs::msg::Path> path;
+  EXPECT_TRUE(config_->blackboard->get<std::shared_ptr<nav_msgs::msg::Path>>("path", path));
+  EXPECT_EQ(path->poses.size(), 2u);
+  EXPECT_EQ(path->poses[0].pose.position.x, 2.0);
+  EXPECT_EQ(path->poses[1].pose.position.x, 1.0);
 
   // halt node so another goal can be sent
   tree_->haltTree();
@@ -244,10 +244,10 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->goals.goals[0].pose.position.x, -2.5);
 
-  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
-  EXPECT_EQ(path.poses.size(), 2u);
-  EXPECT_EQ(path.poses[0].pose.position.x, -1.5);
-  EXPECT_EQ(path.poses[1].pose.position.x, -2.5);
+  EXPECT_TRUE(config_->blackboard->get<std::shared_ptr<nav_msgs::msg::Path>>("path", path));
+  EXPECT_EQ(path->poses.size(), 2u);
+  EXPECT_EQ(path->poses[0].pose.position.x, -1.5);
+  EXPECT_EQ(path->poses[1].pose.position.x, -2.5);
 }
 
 int main(int argc, char ** argv)

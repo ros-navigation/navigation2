@@ -102,28 +102,28 @@ TEST_F(TruncatePathTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create new goal and set it on blackboard
-  nav_msgs::msg::Path path;
-  path.header.stamp = node_->now();
+  auto path = std::make_shared<nav_msgs::msg::Path>();
+  path->header.stamp = node_->now();
 
   geometry_msgs::msg::PoseStamped pose;
   pose.pose.position.x = 0;
   pose.pose.position.y = 0;
   pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
-  path.poses.push_back(pose);
+  path->poses.push_back(pose);
 
   pose.pose.position.x = 0.5;
   pose.pose.position.y = 0.0;
-  path.poses.push_back(pose);
+  path->poses.push_back(pose);
 
   pose.pose.position.x = 0.9;
   pose.pose.position.y = 0.0;
-  path.poses.push_back(pose);
+  path->poses.push_back(pose);
 
   pose.pose.position.x = 1.5;
   pose.pose.position.y = 0.5;
-  path.poses.push_back(pose);
+  path->poses.push_back(pose);
 
-  EXPECT_EQ(path.poses.size(), 4u);
+  EXPECT_EQ(path->poses.size(), 4u);
 
   config_->blackboard->set("path", path);
 
@@ -132,15 +132,15 @@ TEST_F(TruncatePathTestFixture, test_tick)
     tree_->rootNode()->executeTick();
   }
 
-  nav_msgs::msg::Path truncated_path;
+  std::shared_ptr<nav_msgs::msg::Path> truncated_path;
   EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
-  EXPECT_NE(path, truncated_path);
-  EXPECT_EQ(truncated_path.poses.size(), 2u);
+  EXPECT_NE(*path, *truncated_path);
+  EXPECT_EQ(truncated_path->poses.size(), 2u);
 
   double r, p, y;
   tf2::Quaternion q;
-  tf2::fromMsg(truncated_path.poses.back().pose.orientation, q);
+  tf2::fromMsg(truncated_path->poses.back().pose.orientation, q);
   tf2::Matrix3x3(q).getRPY(r, p, y);
 
   EXPECT_NEAR(y, 0.463, 0.001);

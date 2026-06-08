@@ -63,7 +63,7 @@ public:
     BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
 
     return {
-      BT::InputPort<nav_msgs::msg::Path>("path", "Planned Path"),
+      BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("path", "Planned Path"),
       BT::InputPort<double>(
         "prox_len", 3.0,
         "Proximity length (m) for the path to be longer on approach"),
@@ -87,7 +87,7 @@ private:
    * @return whether the robot is in the goal proximity
    */
   bool isRobotInGoalProximity(
-    nav_msgs::msg::Path & old_path,
+    const nav_msgs::msg::Path & old_path,
     double & prox_leng);
 
   /**
@@ -98,13 +98,13 @@ private:
    * @return whether the new path is longer
    */
   bool isNewPathLonger(
-    nav_msgs::msg::Path & new_path,
-    nav_msgs::msg::Path & old_path,
+    const nav_msgs::msg::Path & new_path,
+    const nav_msgs::msg::Path & old_path,
     double & length_factor);
 
 private:
-  nav_msgs::msg::Path new_path_;
-  nav_msgs::msg::Path old_path_;
+  std::shared_ptr<nav_msgs::msg::Path> new_path_ptr_;
+  std::shared_ptr<nav_msgs::msg::Path> old_path_ptr_;
   double prox_len_ = std::numeric_limits<double>::max();
   double length_factor_ = std::numeric_limits<double>::max();
   nav2::LifecycleNode::SharedPtr node_;

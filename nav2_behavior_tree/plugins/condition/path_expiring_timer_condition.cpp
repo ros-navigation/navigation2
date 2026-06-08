@@ -36,19 +36,26 @@ BT::NodeStatus PathExpiringTimerCondition::tick()
 {
   if (first_time_) {
     getInput("seconds", period_);
-    getInput("path", prev_path_);
+    getInput("path", prev_path_ptr_);
     first_time_ = false;
     start_ = node_->now();
     return BT::NodeStatus::FAILURE;
   }
 
   // Grab the new path
-  nav_msgs::msg::Path path;
-  getInput("path", path);
+  std::shared_ptr<nav_msgs::msg::Path> path_ptr;
+  getInput("path", path_ptr);
 
-  // Reset timer if the path has been updated
-  if (prev_path_ != path) {
-    prev_path_ = path;
+  // Reset timer if the path has been updated.
+  // Pointer equality: same shared_ptr = same path object — skip O(N) value comparison
+  if (path_ptr && prev_path_ptr_ &&
+    path_ptr.get() != prev_path_ptr_.get() &&
+    *path_ptr != *prev_path_ptr_)
+  {
+    prev_path_ptr_ = path_ptr;
+    start_ = node_->now();
+  } else if (path_ptr && !prev_path_ptr_) {
+    prev_path_ptr_ = path_ptr;
     start_ = node_->now();
   }
 

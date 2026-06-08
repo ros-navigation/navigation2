@@ -77,10 +77,10 @@ TEST_F(PathExpiringTimerConditionTestFixture, test_behavior)
   }
 
   // place a new path on the blackboard to reset the timer
-  nav_msgs::msg::Path path;
+  auto path = std::make_shared<nav_msgs::msg::Path>();
   geometry_msgs::msg::PoseStamped pose;
   pose.pose.position.x = 1.0;
-  path.poses.push_back(pose);
+  path->poses.push_back(pose);
 
   config_->blackboard->set("path", path);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);

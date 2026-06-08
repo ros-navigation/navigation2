@@ -64,8 +64,8 @@ public:
     BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
 
     return {
-      BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
-      BT::OutputPort<nav_msgs::msg::Path>(
+      BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("input_path", "Original Path"),
+      BT::OutputPort<std::shared_ptr<nav_msgs::msg::Path>>(
         "output_path", "Path truncated to a certain distance around robot"),
       BT::InputPort<double>(
         "distance_forward", 8.0,
@@ -131,6 +131,7 @@ private:
 
   nav_msgs::msg::Path path_;
   nav_msgs::msg::Path::_poses_type::iterator closest_pose_detection_begin_;
+  std::shared_ptr<nav_msgs::msg::Path> current_path_ptr_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -32,15 +32,15 @@ PathLongerOnApproach::PathLongerOnApproach(
 }
 
 bool PathLongerOnApproach::isRobotInGoalProximity(
-  nav_msgs::msg::Path & old_path,
+  const nav_msgs::msg::Path & old_path,
   double & prox_leng)
 {
   return nav2_util::geometry_utils::calculate_path_length(old_path, 0) < prox_leng;
 }
 
 bool PathLongerOnApproach::isNewPathLonger(
-  nav_msgs::msg::Path & new_path,
-  nav_msgs::msg::Path & old_path,
+  const nav_msgs::msg::Path & new_path,
+  const nav_msgs::msg::Path & old_path,
   double & length_factor)
 {
   return nav2_util::geometry_utils::calculate_path_length(new_path, 0) >
@@ -50,13 +50,17 @@ bool PathLongerOnApproach::isNewPathLonger(
 
 inline BT::NodeStatus PathLongerOnApproach::tick()
 {
-  getInput("path", new_path_);
+  getInput("path", new_path_ptr_);
   getInput("prox_len", prox_len_);
   getInput("length_factor", length_factor_);
 
+  if (!new_path_ptr_) {
+    return BT::NodeStatus::SUCCESS;
+  }
+
   if (first_time_ == false) {
-    if (old_path_.poses.empty() || new_path_.poses.empty() ||
-      old_path_.poses.back().pose != new_path_.poses.back().pose)
+    if (!old_path_ptr_ || old_path_ptr_->poses.empty() || new_path_ptr_->poses.empty() ||
+      old_path_ptr_->poses.back().pose != new_path_ptr_->poses.back().pose)
     {
       first_time_ = true;
     }
@@ -65,9 +69,10 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
 
   // Check if the path is updated and valid, compare the old and the new path length,
   // given the goal proximity and check if the new path is longer
-  if (nav2_util::isPathUpdated(new_path_, old_path_) && isRobotInGoalProximity(old_path_,
-    prox_len_) &&
-    isNewPathLonger(new_path_, old_path_, length_factor_) && !first_time_)
+  if (old_path_ptr_ &&
+    nav2_util::isPathUpdated(*new_path_ptr_, *old_path_ptr_) &&
+    isRobotInGoalProximity(*old_path_ptr_, prox_len_) &&
+    isNewPathLonger(*new_path_ptr_, *old_path_ptr_, length_factor_) && !first_time_)
   {
     const BT::NodeStatus child_state = child_node_->executeTick();
     switch (child_state) {
@@ -76,15 +81,15 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
         return child_state;
       case BT::NodeStatus::SUCCESS:
       case BT::NodeStatus::FAILURE:
-        old_path_ = new_path_;
+        old_path_ptr_ = new_path_ptr_;  // shared_ptr copy — no path data copied
         resetChild();
         return child_state;
       default:
-        old_path_ = new_path_;
+        old_path_ptr_ = new_path_ptr_;  // shared_ptr copy — no path data copied
         return BT::NodeStatus::FAILURE;
     }
   }
-  old_path_ = new_path_;
+  old_path_ptr_ = new_path_ptr_;  // shared_ptr copy — no path data copied
   first_time_ = false;
   return BT::NodeStatus::SUCCESS;
 }

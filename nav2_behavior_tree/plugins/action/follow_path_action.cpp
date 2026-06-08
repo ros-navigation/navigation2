@@ -30,7 +30,12 @@ FollowPathAction::FollowPathAction(
 
 void FollowPathAction::on_tick()
 {
-  getInput("path", goal_.path);
+  std::shared_ptr<nav_msgs::msg::Path> path_ptr;
+  getInput("path", path_ptr);
+  if (path_ptr) {
+    goal_.path = *path_ptr;
+    last_path_ptr_ = path_ptr;
+  }
   getInput("controller_id", goal_.controller_id);
   getInput("goal_checker_id", goal_.goal_checker_id);
   getInput("progress_checker_id", goal_.progress_checker_id);
@@ -72,13 +77,15 @@ void FollowPathAction::on_wait_for_result(
   std::shared_ptr<const Action::Feedback> feedback)
 {
   // Grab the new path
-  nav_msgs::msg::Path new_path;
-  getInput("path", new_path);
+  std::shared_ptr<nav_msgs::msg::Path> new_path_ptr;
+  getInput("path", new_path_ptr);
 
-  // Check if it is not same with the current one
-  if (goal_.path != new_path && new_path != nav_msgs::msg::Path()) {
-    // the action server on the next loop iteration
-    goal_.path = new_path;
+  // Use pointer equality to skip O(N) comparison when path object is unchanged
+  if (new_path_ptr && new_path_ptr.get() != last_path_ptr_.get() &&
+    !new_path_ptr->poses.empty() && goal_.path != *new_path_ptr)
+  {
+    goal_.path = *new_path_ptr;
+    last_path_ptr_ = new_path_ptr;
     goal_updated_ = true;
   }
 

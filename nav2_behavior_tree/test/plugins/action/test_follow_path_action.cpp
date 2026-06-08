@@ -129,9 +129,9 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // set new path on blackboard
-  nav_msgs::msg::Path path;
-  path.poses.resize(1);
-  path.poses[0].pose.position.x = 1.0;
+  auto path = std::make_shared<nav_msgs::msg::Path>();
+  path->poses.resize(1);
+  path->poses[0].pose.position.x = 1.0;
   config_->blackboard->set("path", path);
 
   // tick until node succeeds
@@ -151,7 +151,7 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 
   // set new goal
-  path.poses[0].pose.position.x = -2.5;
+  path->poses[0].pose.position.x = -2.5;
   config_->blackboard->set("path", path);
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {

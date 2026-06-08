@@ -15,6 +15,7 @@
 #ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__PATH_EXPIRING_TIMER_CONDITION_HPP_
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__PATH_EXPIRING_TIMER_CONDITION_HPP_
 
+#include <memory>
 #include <string>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -67,14 +68,14 @@ public:
 
     return {
       BT::InputPort<double>("seconds", 1.0, "Seconds"),
-      BT::InputPort<nav_msgs::msg::Path>("path")
+      BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("path")
     };
   }
 
 private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Time start_;
-  nav_msgs::msg::Path prev_path_;
+  std::shared_ptr<nav_msgs::msg::Path> prev_path_ptr_;
   double period_;
   bool first_time_;
 };

@@ -100,11 +100,11 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // set new path on blackboard
-  nav_msgs::msg::Path new_path;
-  new_path.poses.resize(10);
-  for (unsigned int i = 0; i < new_path.poses.size(); i++) {
+  auto new_path = std::make_shared<nav_msgs::msg::Path>();
+  new_path->poses.resize(10);
+  for (unsigned int i = 0; i < new_path->poses.size(); i++) {
     // Assuming distance between waypoints to be 1.5m
-    new_path.poses[i].pose.position.x = 1.5 * i;
+    new_path->poses[i].pose.position.x = 1.5 * i;
   }
   config_->blackboard->set("path", new_path);
 
@@ -126,20 +126,20 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // set old path on blackboard
-  nav_msgs::msg::Path old_path;
-  old_path.poses.resize(5);
-  for (unsigned int i = 1; i <= old_path.poses.size(); i++) {
+  auto old_path = std::make_shared<nav_msgs::msg::Path>();
+  old_path->poses.resize(5);
+  for (unsigned int i = 1; i <= old_path->poses.size(); i++) {
     // Assuming distance between waypoints to be 3.0m
-    old_path.poses[i - 1].pose.position.x = 3.0 * i;
+    old_path->poses[i - 1].pose.position.x = 3.0 * i;
   }
   config_->blackboard->set("path", old_path);
   tree_->rootNode()->executeTick();
 
   // set new path on blackboard
-  new_path.poses.resize(11);
-  for (unsigned int i = 0; i <= new_path.poses.size(); i++) {
+  new_path->poses.resize(11);
+  for (unsigned int i = 0; i <= new_path->poses.size(); i++) {
     // Assuming distance between waypoints to be 1.5m
-    new_path.poses[i].pose.position.x = 1.5 * i;
+    new_path->poses[i].pose.position.x = 1.5 * i;
   }
   config_->blackboard->set("path", new_path);
   tree_->rootNode()->executeTick();

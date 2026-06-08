@@ -106,28 +106,28 @@ public:
 
     return providedBasicPorts(
       {
-        BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
+        BT::InputPort<std::shared_ptr<nav_msgs::msg::Path>>("path", "Path to Check"),
         BT::InputPort<unsigned int>("max_cost", 254, "Maximum cost of the path"),
         BT::InputPort<bool>(
-        "consider_unknown_as_obstacle", false,
-        "Whether to consider unknown cost as obstacle"),
+          "consider_unknown_as_obstacle", false,
+          "Whether to consider unknown cost as obstacle"),
         BT::InputPort<std::string>(
-        "layer_name", "",
-        "Name of the costmap layer to check against (empty = full costmap)"),
+          "layer_name", "",
+          "Name of the costmap layer to check against (empty = full costmap)"),
         BT::InputPort<std::string>(
-        "footprint", "",
-        "Custom footprint specification as bracketed array of arrays, e.g., "
-        "[[x1,y1],[x2,y2],...] (empty = use robot footprint)"),
+          "footprint", "",
+          "Custom footprint specification as bracketed array of arrays, e.g., "
+          "[[x1,y1],[x2,y2],...] (empty = use robot footprint)"),
         BT::InputPort<bool>(
-        "stop_at_first_collision", true,
-        "Whether to stop validation at first collision (true) or check all poses (false)"),
+          "stop_at_first_collision", true,
+          "Whether to stop validation at first collision (true) or check all poses (false)"),
         BT::InputPort<double>(
-        "max_lookahead_distance", -1.0,
-        "Maximum distance ahead of the robot to validate (-1 = full path)"),
+          "max_lookahead_distance", -1.0,
+          "Maximum distance ahead of the robot to validate (-1 = full path)"),
         BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
-        "collision_poses",
-        "Poses in the path that are in collision")
-    });
+          "collision_poses",
+          "Poses in the path that are in collision")
+      });
   }
 
 private:
@@ -137,7 +137,7 @@ private:
   std::string footprint_;
   bool stop_at_first_collision_;
   double max_lookahead_distance_;
-  nav_msgs::msg::Path path_;
+  std::shared_ptr<nav_msgs::msg::Path> path_ptr_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -35,33 +35,33 @@ inline BT::NodeStatus GetPoseFromPath::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
 
-  nav_msgs::msg::Path input_path;
-  getInput("path", input_path);
+  std::shared_ptr<nav_msgs::msg::Path> input_path_ptr;
+  getInput("path", input_path_ptr);
 
   int pose_index;
   getInput("index", pose_index);
 
-  if (input_path.poses.empty()) {
+  if (!input_path_ptr || input_path_ptr->poses.empty()) {
     return BT::NodeStatus::FAILURE;
   }
 
   // Account for negative indices
   if (pose_index < 0) {
-    pose_index = input_path.poses.size() + pose_index;
+    pose_index = input_path_ptr->poses.size() + pose_index;
   }
 
   // out of bounds index
-  if (pose_index < 0 || static_cast<unsigned>(pose_index) >= input_path.poses.size()) {
+  if (pose_index < 0 || static_cast<unsigned>(pose_index) >= input_path_ptr->poses.size()) {
     return BT::NodeStatus::FAILURE;
   }
 
   // extract pose
   geometry_msgs::msg::PoseStamped output_pose;
-  output_pose = input_path.poses[pose_index];
+  output_pose = input_path_ptr->poses[pose_index];
 
   // populate pose frame from path if necessary
   if (output_pose.header.frame_id.empty()) {
-    output_pose.header.frame_id = input_path.header.frame_id;
+    output_pose.header.frame_id = input_path_ptr->header.frame_id;
   }
 
 

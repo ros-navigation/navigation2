@@ -61,11 +61,17 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   if (distance_forward < 0.0) {
     distance_forward = std::numeric_limits<double>::max();
   }
-  nav_msgs::msg::Path new_path;
-  getInput("input_path", new_path);
-  if (!path_pruning || new_path != path_) {
-    path_ = new_path;
-    closest_pose_detection_begin_ = path_.poses.begin();
+  std::shared_ptr<nav_msgs::msg::Path> new_path_ptr;
+  getInput("input_path", new_path_ptr);
+  if (new_path_ptr) {
+    // Pointer equality: same shared_ptr = same path — skip O(N) comparison
+    if (new_path_ptr.get() != current_path_ptr_.get() ||
+      *new_path_ptr != path_)
+    {
+      path_ = *new_path_ptr;
+      current_path_ptr_ = new_path_ptr;
+      closest_pose_detection_begin_ = path_.poses.begin();
+    }
   }
 
   if (!getRobotPose(path_.header.frame_id, pose)) {
@@ -73,7 +79,7 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   }
 
   if (path_.poses.empty()) {
-    setOutput("output_path", path_);
+    setOutput("output_path", std::make_shared<nav_msgs::msg::Path>(path_));
     return BT::NodeStatus::SUCCESS;
   }
 
@@ -107,7 +113,7 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   output_path.header = path_.header;
   output_path.poses = std::vector<geometry_msgs::msg::PoseStamped>(
     backward_pose_it.base(), forward_pose_it);
-  setOutput("output_path", output_path);
+  setOutput("output_path", std::make_shared<nav_msgs::msg::Path>(std::move(output_path)));
 
   return BT::NodeStatus::SUCCESS;
 }

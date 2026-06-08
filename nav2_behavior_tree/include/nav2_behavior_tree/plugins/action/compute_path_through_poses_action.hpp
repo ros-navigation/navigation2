@@ -15,6 +15,7 @@
 #ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__COMPUTE_PATH_THROUGH_POSES_ACTION_HPP_
 #define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__COMPUTE_PATH_THROUGH_POSES_ACTION_HPP_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -107,7 +108,9 @@ public:
         BT::InputPort<std::string>(
           "planner_id", "",
           "Mapped name to the planner plugin type to use"),
-        BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathThroughPoses node"),
+        BT::OutputPort<std::shared_ptr<nav_msgs::msg::Path>>(
+          "path",
+          "Path created by ComputePathThroughPoses node"),
         BT::OutputPort<int>(
           "last_reached_index", "Index of the last reachable pose from requested list of poses"),
         BT::OutputPort<ActionResult::_error_code_type>(

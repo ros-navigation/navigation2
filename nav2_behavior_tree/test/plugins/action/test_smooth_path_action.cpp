@@ -126,7 +126,7 @@ TEST_F(SmoothPathActionTestFixture, test_tick)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
-  nav_msgs::msg::Path path;
+  auto path = std::make_shared<nav_msgs::msg::Path>();
 
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
@@ -135,7 +135,7 @@ TEST_F(SmoothPathActionTestFixture, test_tick)
 
   // goal should have reached our server
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(action_server_->getCurrentGoal()->path, path);
+  EXPECT_EQ(action_server_->getCurrentGoal()->path, *path);
 
   // halt node so another goal can be sent
   tree_->haltTree();
@@ -145,7 +145,7 @@ TEST_F(SmoothPathActionTestFixture, test_tick)
   geometry_msgs::msg::PoseStamped pose;
   pose.pose.position.x = -2.5;
   pose.pose.orientation.x = 1.0;
-  path.poses.push_back(pose);
+  path->poses.push_back(pose);
   config_->blackboard->set("unsmoothed_path", path);
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
@@ -153,8 +153,8 @@ TEST_F(SmoothPathActionTestFixture, test_tick)
   }
 
   nav_msgs::msg::Path path_empty;
-  EXPECT_NE(path_empty, path);
-  EXPECT_EQ(action_server_->getCurrentGoal()->path, path);
+  EXPECT_NE(path_empty, *path);
+  EXPECT_EQ(action_server_->getCurrentGoal()->path, *path);
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 }
 

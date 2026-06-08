@@ -37,10 +37,12 @@ void ValidatePath::on_tick()
   getInput<std::string>("footprint", footprint_);
   getInput<bool>("stop_at_first_collision", stop_at_first_collision_);
   getInput<double>("max_lookahead_distance", max_lookahead_distance_);
-  getInput("path", path_);
+  getInput("path", path_ptr_);
 
   request_ = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
-  request_->path = path_;
+  if (path_ptr_) {
+    request_->path = *path_ptr_;
+  }
   request_->max_cost = max_cost_;
   request_->consider_unknown_as_obstacle = consider_unknown_as_obstacle_;
   request_->layer_name = layer_name_;
@@ -79,8 +81,8 @@ BT::NodeStatus ValidatePath::on_completion(
         ss << ", ";
       }
       // Add the collision pose if index is valid
-      if (idx >= 0 && static_cast<size_t>(idx) < path_.poses.size()) {
-        collision_poses.push_back(path_.poses[idx]);
+      if (path_ptr_ && idx >= 0 && static_cast<size_t>(idx) < path_ptr_->poses.size()) {
+        collision_poses.push_back(path_ptr_->poses[idx]);
       }
     }
     ss << "]";
