@@ -232,7 +232,7 @@ unsigned int Smoother::findShortestBoundaryExpansionIdx(
   // shorter end-points away that are infeasible to achieve without
   // a loop-de-loop are punished
   double min_length = 1e9;
-  int shortest_boundary_expansion_idx = 1e9;
+  unsigned int shortest_boundary_expansion_idx = static_cast<unsigned int>(1e9);
   for (unsigned int idx = 0; idx != boundary_expansions.size(); idx++) {
     if (boundary_expansions[idx].expansion_path_length<min_length &&
       !boundary_expansions[idx].in_collision &&

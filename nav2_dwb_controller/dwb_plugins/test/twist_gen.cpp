@@ -342,7 +342,7 @@ TEST(TrajectoryGenerator, basic)
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 1], DEFAULT_SIM_TIME * forward.x, 0, 0);
+  matchPose(res.poses[static_cast<size_t>(n - 1)], DEFAULT_SIM_TIME * forward.x, 0, 0);
 }
 
 TEST(TrajectoryGenerator, basic_no_last_point)
@@ -361,7 +361,7 @@ TEST(TrajectoryGenerator, basic_no_last_point)
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 2], 0.255, 0, 0);
+  matchPose(res.poses[static_cast<size_t>(n - 2)], 0.255, 0, 0);
 }
 
 TEST(TrajectoryGenerator, too_slow)
@@ -397,7 +397,8 @@ TEST(TrajectoryGenerator, holonomic)
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 1], cmd.x * DEFAULT_SIM_TIME, cmd.y * DEFAULT_SIM_TIME, 0);
+  matchPose(res.poses[static_cast<size_t>(n - 1)], cmd.x * DEFAULT_SIM_TIME,
+    cmd.y * DEFAULT_SIM_TIME, 0);
 }
 
 TEST(TrajectoryGenerator, twisty)
@@ -421,7 +422,7 @@ TEST(TrajectoryGenerator, twisty)
 
   matchPose(res.poses[0], origin);
   matchPose(
-    res.poses[n - 1], 0.5355173615993063, -0.29635287789821596,
+    res.poses[static_cast<size_t>(n - 1)], 0.5355173615993063, -0.29635287789821596,
     cmd.theta * DEFAULT_SIM_TIME);
 }
 
@@ -442,7 +443,7 @@ TEST(TrajectoryGenerator, sim_time)
   ASSERT_GT(n, 0);
 
   matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 2], sim_time * forward.x, 0, 0);
+  matchPose(res.poses[static_cast<size_t>(n - 2)], sim_time * forward.x, 0, 0);
 }
 
 TEST(TrajectoryGenerator, accel)

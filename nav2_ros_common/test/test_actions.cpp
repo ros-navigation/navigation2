@@ -105,7 +105,7 @@ preempted:
     sequence.push_back(0);
     sequence.push_back(1);
 
-    for (int i = 1; (i < goal->order) && rclcpp::ok(); ++i) {
+    for (size_t i = 1; (i < static_cast<size_t>(goal->order)) && rclcpp::ok(); ++i) {
       // Should be check periodically if this action has been canceled
       // or if the server has been deactivated.
       if (action_server_->is_cancel_requested() || !action_server_->is_server_active()) {

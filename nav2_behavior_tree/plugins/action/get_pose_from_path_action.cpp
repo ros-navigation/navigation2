@@ -47,7 +47,7 @@ inline BT::NodeStatus GetPoseFromPath::tick()
 
   // Account for negative indices
   if (pose_index < 0) {
-    pose_index = input_path.poses.size() + pose_index;
+    pose_index = static_cast<int>(input_path.poses.size()) + pose_index;
   }
 
   // out of bounds index
@@ -57,7 +57,7 @@ inline BT::NodeStatus GetPoseFromPath::tick()
 
   // extract pose
   geometry_msgs::msg::PoseStamped output_pose;
-  output_pose = input_path.poses[pose_index];
+  output_pose = input_path.poses[static_cast<size_t>(pose_index)];
 
   // populate pose frame from path if necessary
   if (output_pose.header.frame_id.empty()) {

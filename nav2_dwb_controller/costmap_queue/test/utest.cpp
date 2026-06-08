@@ -92,8 +92,8 @@ TEST(CostmapQueue, crossQueue)
 {
   costmap_queue::CostmapQueue q(costmap);
   int count = 0;
-  int xs[] = {1, 2, 2, 3};
-  int ys[] = {2, 1, 3, 2};
+  unsigned int xs[] = {1, 2, 2, 3};
+  unsigned int ys[] = {2, 1, 3, 2};
   int N = 4;
   for (int i = 0; i < N; i++) {
     q.enqueueCell(xs[i], ys[i]);

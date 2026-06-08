@@ -118,13 +118,14 @@ TEST(SmootherTest, test_full_smoother)
   double initial_length = 0.0;
   double x_m = path[path.size() - 1].x, y_m = path[path.size() - 1].y;
   plan.poses.reserve(path.size());
-  for (int i = path.size() - 1; i >= 0; --i) {
-    pose.pose = nav2_smac_planner::getWorldCoords(path[i].x, path[i].y, costmap);
-    pose.pose.orientation = nav2_smac_planner::getWorldOrientation(path[i].theta);
+  for (int i = static_cast<int>(path.size()) - 1; i >= 0; --i) {
+    const auto & p = path[static_cast<size_t>(i)];
+    pose.pose = nav2_smac_planner::getWorldCoords(p.x, p.y, costmap);
+    pose.pose.orientation = nav2_smac_planner::getWorldOrientation(p.theta);
     plan.poses.push_back(pose);
-    initial_length += hypot(path[i].x - x_m, path[i].y - y_m);
-    x_m = path[i].x;
-    y_m = path[i].y;
+    initial_length += hypot(p.x - x_m, p.y - y_m);
+    x_m = p.x;
+    y_m = p.y;
   }
 
   // Test smoother, should succeed with same number of points

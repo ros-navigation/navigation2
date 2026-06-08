@@ -38,7 +38,7 @@ BT::NodeStatus PersistentSequenceNode::tick()
   setStatus(BT::NodeStatus::RUNNING);
 
   while (current_child_idx < children_count) {
-    TreeNode * current_child_node = children_nodes_[current_child_idx];
+    TreeNode * current_child_node = children_nodes_[static_cast<size_t>(current_child_idx)];
     const BT::NodeStatus child_status = current_child_node->executeTick();
 
     switch (child_status) {

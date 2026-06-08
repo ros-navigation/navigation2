@@ -113,8 +113,8 @@ bool AxisGoalChecker::isGoalXYReached(
     double dx = 0.0;
     double dy = 0.0;
 
-    for (int i = transformed_global_plan.poses.size() - 2; i >= 0; --i) {
-      const auto & candidate_pose = transformed_global_plan.poses[i].pose;
+    for (int i = static_cast<int>(transformed_global_plan.poses.size()) - 2; i >= 0; --i) {
+      const auto & candidate_pose = transformed_global_plan.poses[static_cast<size_t>(i)].pose;
       dx = goal_pose.position.x - candidate_pose.position.x;
       dy = goal_pose.position.y - candidate_pose.position.y;
       double pose_distance = std::hypot(dx, dy);

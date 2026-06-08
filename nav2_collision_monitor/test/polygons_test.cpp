@@ -1094,7 +1094,7 @@ TEST_F(Tester, testPolygonDebounceDefaultBehavior)
 
   auto makePoints = [](int count) {
       std::vector<nav2_collision_monitor::Point> points;
-      points.reserve(count);
+      points.reserve(static_cast<size_t>(count));
       for (int i = 0; i < count; ++i) {
         points.push_back(nav2_collision_monitor::Point{0.0, 0.0});
       }
@@ -1122,7 +1122,7 @@ TEST_F(Tester, testPolygonDebounceConsecutiveTriggerRelease)
 
   auto makePoints = [](int count) {
       std::vector<nav2_collision_monitor::Point> points;
-      points.reserve(count);
+      points.reserve(static_cast<size_t>(count));
       for (int i = 0; i < count; ++i) {
         points.push_back(nav2_collision_monitor::Point{0.0, 0.0});
       }

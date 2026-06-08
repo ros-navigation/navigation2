@@ -152,7 +152,8 @@ void generateClusteredObstacles(
     x = std::max(0, std::min(static_cast<int>(size_x - 1), x));
     y = std::max(0, std::min(static_cast<int>(size_y - 1), y));
 
-    costmap.setCost(x, y, nav2_costmap_2d::LETHAL_OBSTACLE);
+    costmap.setCost(static_cast<unsigned int>(x), static_cast<unsigned int>(y),
+        nav2_costmap_2d::LETHAL_OBSTACLE);
   }
 }
 
@@ -308,7 +309,7 @@ bool saveCostmapAsPGM(
     for (unsigned int x = 0; x < width; ++x) {
       unsigned char cost = data[y * width + x];
       unsigned char pixel = 255 - cost;  // Invert so obstacles are dark
-      file.put(pixel);
+      file.put(static_cast<char>(pixel));
     }
   }
 
@@ -369,9 +370,9 @@ bool saveCostmapAsColorPPM(
         }
       }
 
-      file.put(r);
-      file.put(g);
-      file.put(b);
+      file.put(static_cast<char>(r));
+      file.put(static_cast<char>(g));
+      file.put(static_cast<char>(b));
     }
   }
 
@@ -480,8 +481,8 @@ BENCHMARK_DEFINE_F(InflationLayerFixture, UpdateCosts)(benchmark::State & state)
 {
   const int min_i = 0;
   const int min_j = 0;
-  const int max_i = width_;
-  const int max_j = height_;
+  const int max_i = static_cast<int>(width_);
+  const int max_j = static_cast<int>(height_);
 
   for (auto _ : state) {
     // Benchmark the updateCosts function
@@ -602,7 +603,8 @@ public:
     generateRectangularObstacles(*master_costmap, occupancy);
 
     // Warm-up run
-    inflation_layer->benchmarkUpdateCosts(*master_costmap, 0, 0, width, height);
+    inflation_layer->benchmarkUpdateCosts(*master_costmap, 0, 0, static_cast<int>(width),
+      static_cast<int>(height));
 
     // Timed runs
     const int num_iterations = 5;
@@ -611,7 +613,8 @@ public:
 
     for (int i = 0; i < num_iterations; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
-      inflation_layer->benchmarkUpdateCosts(*master_costmap, 0, 0, width, height);
+      inflation_layer->benchmarkUpdateCosts(*master_costmap, 0, 0, static_cast<int>(width),
+        static_cast<int>(height));
       auto end = std::chrono::high_resolution_clock::now();
 
       std::chrono::duration<double, std::milli> duration = end - start;

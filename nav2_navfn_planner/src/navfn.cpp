@@ -225,11 +225,12 @@ NavFn::setNavArr(int xs, int ys)
     delete[] grady;
   }
 
+  const size_t uns = static_cast<size_t>(ns);
   costarr = new COSTTYPE[ns];  // cost array, 2d config space
-  memset(costarr, 0, ns * sizeof(COSTTYPE));
+  memset(costarr, 0, uns * sizeof(COSTTYPE));
   potarr = new float[ns];  // navigation potential array
   pending = new bool[ns];
-  memset(pending, 0, ns * sizeof(bool));
+  memset(pending, 0, uns * sizeof(bool));
   gradx = new float[ns];
   grady = new float[ns];
 }
@@ -373,7 +374,7 @@ NavFn::setupNavFn(bool keepit)
   nextPe = 0;
   overP = pb3;
   overPe = 0;
-  memset(pending, 0, ns * sizeof(bool));
+  memset(pending, 0, static_cast<size_t>(ns) * sizeof(bool));
 
   // set goal
   int k = goal[0] + goal[1] * nx;

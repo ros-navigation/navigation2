@@ -503,7 +503,7 @@ TEST(AStarTest, test_goal_heading_mode)
   a_star.setStart(10u, 10u, 0u);
   a_star.setGoal(
     80u, 80u, 40u, nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION,
-    coarse_search_resolution);
+    static_cast<int>(coarse_search_resolution));
   EXPECT_TRUE(a_star.getCoarseSearchResolution() == coarse_search_resolution);
 
   unsigned int num_bins = ctx->motion_table.num_angle_quantization;

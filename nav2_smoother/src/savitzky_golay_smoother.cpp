@@ -88,7 +88,7 @@ bool SavitzkyGolaySmoother::smooth(
   }
 
   // Minimum point size to smooth is SG filter size + start + end
-  unsigned int minimum_points = window_size_ + 2;
+  unsigned int minimum_points = static_cast<unsigned int>(window_size_) + 2u;
   for (unsigned int i = 0; i != path_segments.size(); i++) {
     if (path_segments[i].end - path_segments[i].start > minimum_points) {
       // Populate path segment
@@ -143,8 +143,9 @@ bool SavitzkyGolaySmoother::smoothImpl(
         Eigen::Vector2d accum(0.0, 0.0);
 
         for (int j = -half_window_size_; j <= half_window_size_; j++) {
-          int path_idx = std::clamp<int>(idx + j, 0, path_size - 1);
-          accum += sg_coeffs_(j + half_window_size_) * init_plan_pts[path_idx];
+          int path_idx = std::clamp<int>(static_cast<int>(idx) + j, 0,
+            static_cast<int>(path_size) - 1);
+          accum += sg_coeffs_(j + half_window_size_) * init_plan_pts[static_cast<size_t>(path_idx)];
         }
         plan_pts[idx].pose.position.x = accum.x();
         plan_pts[idx].pose.position.y = accum.y();

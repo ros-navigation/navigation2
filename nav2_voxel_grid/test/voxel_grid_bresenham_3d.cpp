@@ -39,7 +39,7 @@
 class TestVoxel
 {
 public:
-  explicit TestVoxel(uint32_t * data, int sz_x, int sz_y)
+  explicit TestVoxel(uint32_t * data, unsigned int sz_x, unsigned int sz_y)
   : data_(data)
   {
     size_ = sz_x * sz_y;
@@ -61,9 +61,9 @@ private:
 
 TEST(voxel_grid, bresenham3DBoundariesCheck)
 {
-  const int sz_x = 60;
-  const int sz_y = 60;
-  const int sz_z = 2;
+  const unsigned int sz_x = 60;
+  const unsigned int sz_y = 60;
+  const unsigned int sz_z = 2;
   const unsigned int max_length = 60;
   const unsigned int min_length = 6;
   nav2_voxel_grid::VoxelGrid vg(sz_x, sz_y, sz_z);
@@ -83,7 +83,7 @@ TEST(voxel_grid, bresenham3DBoundariesCheck)
 
   // Running on (x, 0) edge
   y1 = 0.0;
-  for (int i = 0; i <= sz_x; i++) {
+  for (unsigned int i = 0; i <= sz_x; i++) {
     if (i != sz_x) {
       x1 = i;
     } else {
@@ -94,7 +94,7 @@ TEST(voxel_grid, bresenham3DBoundariesCheck)
 
   // Running on (x, sz_y) edge
   y1 = sz_y - epsilon;
-  for (int i = 0; i <= sz_x; i++) {
+  for (unsigned int i = 0; i <= sz_x; i++) {
     if (i != sz_x) {
       x1 = i;
     } else {
@@ -105,7 +105,7 @@ TEST(voxel_grid, bresenham3DBoundariesCheck)
 
   // Running on (0, y) edge
   x1 = 0.0;
-  for (int j = 0; j <= sz_y; j++) {
+  for (unsigned int j = 0; j <= sz_y; j++) {
     if (j != sz_y) {
       y1 = j;
     } else {
@@ -116,7 +116,7 @@ TEST(voxel_grid, bresenham3DBoundariesCheck)
 
   // Running on (sz_x, y) edge
   x1 = sz_x - epsilon;
-  for (int j = 0; j <= sz_y; j++) {
+  for (unsigned int j = 0; j <= sz_y; j++) {
     if (j != sz_y) {
       y1 = j;
     } else {
@@ -128,9 +128,9 @@ TEST(voxel_grid, bresenham3DBoundariesCheck)
 
 TEST(voxel_grid, bresenham3DSamePoint)
 {
-  const int sz_x = 60;
-  const int sz_y = 60;
-  const int sz_z = 2;
+  const unsigned int sz_x = 60;
+  const unsigned int sz_y = 60;
+  const unsigned int sz_z = 2;
   const unsigned int max_length = 60;
   const unsigned int min_length = 0;
   nav2_voxel_grid::VoxelGrid vg(sz_x, sz_y, sz_z);
@@ -141,7 +141,7 @@ TEST(voxel_grid, bresenham3DSamePoint)
   const double y0 = 3.8;
   const double z0 = 0.4;
 
-  unsigned int offset = static_cast<int>(y0) * sz_x + static_cast<int>(x0);
+  unsigned int offset = static_cast<unsigned int>(y0) * sz_x + static_cast<unsigned int>(x0);
   unsigned int val_before = tv(offset);
   // Same point to check
   vg.raytraceLine(tv, x0, y0, z0, x0, y0, z0, max_length, min_length);

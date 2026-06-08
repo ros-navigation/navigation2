@@ -274,7 +274,7 @@ void AStarAlgorithm<NodeT>::setGoal(
       case GoalHeadingMode::ALL_DIRECTION:
         {
           // Set the coarse search resolution only for all direction
-          _coarse_search_resolution = coarse_search_resolution;
+          _coarse_search_resolution = static_cast<unsigned int>(coarse_search_resolution);
 
           // Add goal nodes for all headings
           for (unsigned int i = 0; i < num_bins; ++i) {

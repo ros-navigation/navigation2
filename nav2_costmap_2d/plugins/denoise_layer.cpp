@@ -104,9 +104,10 @@ DenoiseLayer::updateCosts(
   unsigned char * master_array = master_grid.getCharMap();
   const int step = static_cast<int>(master_grid.getSizeInCellsX());
 
-  const size_t width = max_x - min_x;
-  const size_t height = max_y - min_y;
-  Image<uint8_t> roi_image(height, width, master_array + min_y * step + min_x, step);
+  const size_t width = static_cast<size_t>(max_x - min_x);
+  const size_t height = static_cast<size_t>(max_y - min_y);
+  Image<uint8_t> roi_image(height, width, master_array + min_y * step + min_x,
+    static_cast<size_t>(step));
 
   try {
     denoise(roi_image);

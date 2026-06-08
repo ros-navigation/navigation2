@@ -458,8 +458,8 @@ void TestNode::testFullMask(
 {
   const int min_i = 0;
   const int min_j = 0;
-  const int max_i = width_ + 4;
-  const int max_j = height_ + 4;
+  const int max_i = static_cast<int>(width_) + 4;
+  const int max_j = static_cast<int>(height_) + 4;
 
   geometry_msgs::msg::Pose pose;
   std_msgs::msg::Bool binary_state;
@@ -528,8 +528,8 @@ void TestNode::testSimpleMask(
 {
   const int min_i = 0;
   const int min_j = 0;
-  const int max_i = width_ + 4;
-  const int max_j = height_ + 4;
+  const int max_i = static_cast<int>(width_) + 4;
+  const int max_j = static_cast<int>(height_) + 4;
 
   geometry_msgs::msg::Pose pose;
   std_msgs::msg::Bool binary_state;
@@ -621,8 +621,8 @@ void TestNode::testOutOfMask()
 
   const int min_i = 0;
   const int min_j = 0;
-  const int max_i = width_ + 4;
-  const int max_j = height_ + 4;
+  const int max_i = static_cast<int>(width_) + 4;
+  const int max_j = static_cast<int>(height_) + 4;
 
   geometry_msgs::msg::Pose pose;
   std_msgs::msg::Bool binary_state;
@@ -660,8 +660,8 @@ void TestNode::testIncorrectTF()
 {
   const int min_i = 0;
   const int min_j = 0;
-  const int max_i = width_ + 4;
-  const int max_j = height_ + 4;
+  const int max_i = static_cast<int>(width_) + 4;
+  const int max_j = static_cast<int>(height_) + 4;
 
   geometry_msgs::msg::Pose pose;
   std_msgs::msg::Bool binary_state;
@@ -686,8 +686,8 @@ void TestNode::testResetFilter()
 
   const int min_i = 0;
   const int min_j = 0;
-  const int max_i = width_ + 4;
-  const int max_j = height_ + 4;
+  const int max_i = static_cast<int>(width_) + 4;
+  const int max_j = static_cast<int>(height_) + 4;
 
   geometry_msgs::msg::Pose pose;
   std_msgs::msg::Bool binary_state;

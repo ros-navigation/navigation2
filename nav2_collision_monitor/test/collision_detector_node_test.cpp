@@ -562,9 +562,9 @@ void Tester::publishCostmap(const double dist, const rclcpp::Time & stamp)
   msg->data.assign(msg->metadata.size_x * msg->metadata.size_y, 0);
 
   // Put one lethal obstacle at cell (0,0)
-  const int obstacle_x = 0;
-  const int obstacle_y = 0;
-  const int obstacle_idx = obstacle_y * msg->metadata.size_x + obstacle_x;
+  const unsigned int obstacle_x = 0;
+  const unsigned int obstacle_y = 0;
+  const unsigned int obstacle_idx = obstacle_y * msg->metadata.size_x + obstacle_x;
   msg->data[obstacle_idx] = nav2_costmap_2d::LETHAL_OBSTACLE;
 
   costmap_pub_->publish(std::move(msg));

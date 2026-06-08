@@ -101,8 +101,12 @@ bool CostmapScorer::score(
     return true;
   }
 
-  for (nav2_util::LineIterator iter(x0, y0, x1, y1); iter.isValid(); ) {
-    point_cost = static_cast<float>(costmap_->getCost(iter.getX(), iter.getY()));
+  for (nav2_util::LineIterator iter(
+    static_cast<int>(x0), static_cast<int>(y0), static_cast<int>(x1), static_cast<int>(y1));
+    iter.isValid(); )
+  {
+    point_cost = static_cast<float>(costmap_->getCost(
+      static_cast<unsigned int>(iter.getX()), static_cast<unsigned int>(iter.getY())));
     if (point_cost >= max_cost_ && max_cost_ != 255.0f /*Unknown*/ && invalid_on_collision_) {
       // Edge is invalid if it is in collision or higher than max allowed cost
       return false;

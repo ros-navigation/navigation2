@@ -111,7 +111,7 @@ public:
    */
   void prepareGoalsForAnalyticExpansion(
     NodeVector & coarse_check_goals, NodeVector & fine_check_goals,
-    int coarse_search_resolution)
+    unsigned int coarse_search_resolution)
   {
     for (unsigned int i = 0; i < _goals_state.size(); i++) {
       if (_goals_state[i].is_valid) {

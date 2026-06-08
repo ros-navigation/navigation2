@@ -132,7 +132,7 @@ std::vector<double> StandardTrajectoryGenerator::getTimeSteps(
       std::max(
         projected_linear_distance / linear_granularity_,
         projected_angular_distance / angular_granularity_));
-    steps.resize(num_steps);
+    steps.resize(static_cast<size_t>(num_steps));
   }
   if (steps.size() == 0) {
     steps.resize(1);

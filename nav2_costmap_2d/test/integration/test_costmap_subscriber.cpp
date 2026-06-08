@@ -84,7 +84,7 @@ public:
     this->fullCostmapMsgCount++;
     std::vector<uint8_t> data;
     for (unsigned int i = 0; i < msg->data.size(); i++) {
-      data.push_back(msg->data[i]);
+      data.push_back(static_cast<uint8_t>(msg->data[i]));
     }
     receivedGrids.push_back(data);
   }
@@ -97,7 +97,7 @@ public:
     this->updateCostmapMsgCount++;
     std::vector<uint8_t> data;
     for (unsigned int i = 0; i < update_msg->data.size(); i++) {
-      data.push_back(update_msg->data[i]);
+      data.push_back(static_cast<uint8_t>(update_msg->data[i]));
     }
     receivedGrids.push_back(data);
   }
@@ -217,7 +217,7 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
     // Grid is expected to be translated from cost translation table
     std::vector<std::uint8_t> grid;
     for (unsigned int i = 0; i < data.size(); i++) {
-      grid.push_back(cost_translation_table_[data[i]]);
+      grid.push_back(static_cast<uint8_t>(cost_translation_table_[data[i]]));
     }
     expectedGrids.emplace_back(grid);
     costmapPublisher->updateBounds(mapChange.x0, mapChange.xn, mapChange.y0, mapChange.yn);
@@ -272,7 +272,7 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
     expectedCostmaps.emplace_back(data);
     std::vector<std::uint8_t> grid;
     for (unsigned int i = 0; i < data.size(); i++) {
-      grid.push_back(cost_translation_table_[data[i]]);
+      grid.push_back(static_cast<uint8_t>(cost_translation_table_[data[i]]));
     }
     expectedGrids.emplace_back(grid);
     costmapPublisher->updateBounds(mapChange.x0, mapChange.xn, mapChange.y0, mapChange.yn);

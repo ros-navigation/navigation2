@@ -76,7 +76,7 @@ pf_t * pf_alloc(
     set = pf->sets + j;
 
     set->sample_count = max_samples;
-    set->samples = calloc(max_samples, sizeof(pf_sample_t));
+    set->samples = calloc((size_t)max_samples, sizeof(pf_sample_t));
 
     for (i = 0; i < set->sample_count; i++) {
       sample = set->samples + i;
@@ -91,7 +91,7 @@ pf_t * pf_alloc(
 
     set->cluster_count = 0;
     set->cluster_max_count = max_samples;
-    set->clusters = calloc(set->cluster_max_count, sizeof(pf_cluster_t));
+    set->clusters = calloc((size_t)set->cluster_max_count, sizeof(pf_cluster_t));
 
     set->mean = pf_vector_zero();
     set->cov = pf_matrix_zero();
@@ -309,7 +309,7 @@ void pf_update_resample(pf_t * pf, void * random_pose_data)
   // Build up cumulative probability table for resampling.
   // TODO(?): Replace this with a more efficient procedure
   // (e.g., http://www.network-theory.co.uk/docs/gslref/GeneralDiscreteDistributions.html)
-  c = (double *)malloc(sizeof(double) * (set_a->sample_count + 1));
+  c = (double *)malloc(sizeof(double) * (size_t)(set_a->sample_count + 1));
   c[0] = 0.0;
   for (i = 0; i < set_a->sample_count; i++) {
     c[i + 1] = c[i] + set_a->samples[i].weight;

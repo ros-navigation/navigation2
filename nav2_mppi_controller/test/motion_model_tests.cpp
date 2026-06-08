@@ -30,8 +30,8 @@ TEST(MotionModelTests, DiffDriveTest)
 {
   models::ControlSequence control_sequence;
   models::State state;
-  int batches = 1000;
-  int timesteps = 50;
+  unsigned int batches = 1000u;
+  unsigned int timesteps = 50u;
   control_sequence.reset(timesteps);  // populates with zeros
   state.reset(batches, timesteps);  // populates with zeros
   std::unique_ptr<DiffDriveMotionModel> model =
@@ -75,8 +75,8 @@ TEST(MotionModelTests, OmniTest)
 {
   models::ControlSequence control_sequence;
   models::State state;
-  int batches = 1000;
-  int timesteps = 50;
+  unsigned int batches = 1000u;
+  unsigned int timesteps = 50u;
   control_sequence.reset(timesteps);  // populates with zeros
   state.reset(batches, timesteps);  // populates with zeros
   std::unique_ptr<OmniMotionModel> model =
@@ -122,8 +122,8 @@ TEST(MotionModelTests, AckermannTest)
 {
   models::ControlSequence control_sequence;
   models::State state;
-  int batches = 1000;
-  int timesteps = 50;
+  unsigned int batches = 1000u;
+  unsigned int timesteps = 50u;
   control_sequence.reset(timesteps);  // populates with zeros
   state.reset(batches, timesteps);  // populates with zeros
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
@@ -182,8 +182,8 @@ TEST(MotionModelTests, AckermannReversingTest)
   models::ControlSequence control_sequence;
   models::ControlSequence control_sequence2;
   models::State state;
-  int batches = 1000;
-  int timesteps = 50;
+  unsigned int batches = 1000u;
+  unsigned int timesteps = 50u;
   control_sequence.reset(timesteps);  // populates with zeros
   control_sequence2.reset(timesteps);  // populates with zeros
   state.reset(batches, timesteps);  // populates with zeros

@@ -289,7 +289,7 @@ auto ParametersHandler::as(const rclcpp::Parameter & parameter)
   if constexpr (std::is_same_v<T, bool>) {
     return parameter.as_bool();
   } else if constexpr (std::is_integral_v<T>) {
-    return parameter.as_int();
+    return static_cast<T>(parameter.as_int());
   } else if constexpr (std::is_floating_point_v<T>) {
     return parameter.as_double();
   } else if constexpr (std::is_same_v<T, std::string>) {

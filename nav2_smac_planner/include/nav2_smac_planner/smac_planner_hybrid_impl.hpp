@@ -178,7 +178,7 @@ void SmacPlannerHybridT<NodeT>::configure(
     _coarse_search_resolution = 1;
   }
 
-  if (_angle_quantizations % _coarse_search_resolution != 0) {
+  if (_angle_quantizations % static_cast<unsigned int>(_coarse_search_resolution) != 0) {
     std::string error_msg = "coarse iteration should be an increment"
       " of the number of angular bins configured";
     throw nav2_core::PlannerException(error_msg);
@@ -242,7 +242,7 @@ void SmacPlannerHybridT<NodeT>::configure(
   _costmap_downsampler = std::make_unique<CostmapDownsampler>();
   std::string topic_name = "downsampled_costmap";
   _costmap_downsampler->on_configure(
-    node, _global_frame, topic_name, _costmap, _downsampling_factor);
+    node, _global_frame, topic_name, _costmap, static_cast<unsigned int>(_downsampling_factor));
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan");
 
@@ -367,7 +367,7 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
   // Downsample costmap, if required
   nav2_costmap_2d::Costmap2D * costmap = _costmap;
   if (_downsample_costmap && _downsampling_factor > 1) {
-    costmap = _costmap_downsampler->downsample(_downsampling_factor);
+    costmap = _costmap_downsampler->downsample(static_cast<unsigned int>(_downsampling_factor));
     _collision_checker.setCostmap(costmap);
   }
 
@@ -391,13 +391,14 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
             std::to_string(start.pose.position.y) + ") was outside bounds");
   }
 
+  const float f_ang_quant = static_cast<float>(_angle_quantizations);
   double start_orientation_bin = std::round(tf2::getYaw(start.pose.orientation) / _angle_bin_size);
   while (start_orientation_bin < 0.0) {
-    start_orientation_bin += static_cast<float>(_angle_quantizations);
+    start_orientation_bin += f_ang_quant;
   }
   // This is needed to handle precision issues
-  if (start_orientation_bin >= static_cast<float>(_angle_quantizations)) {
-    start_orientation_bin -= static_cast<float>(_angle_quantizations);
+  if (start_orientation_bin >= f_ang_quant) {
+    start_orientation_bin -= f_ang_quant;
   }
   unsigned int start_orientation_bin_int =
     static_cast<unsigned int>(start_orientation_bin);
@@ -416,11 +417,11 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
   }
   double goal_orientation_bin = std::round(tf2::getYaw(goal.pose.orientation) / _angle_bin_size);
   while (goal_orientation_bin < 0.0) {
-    goal_orientation_bin += static_cast<float>(_angle_quantizations);
+    goal_orientation_bin += f_ang_quant;
   }
   // This is needed to handle precision issues
-  if (goal_orientation_bin >= static_cast<float>(_angle_quantizations)) {
-    goal_orientation_bin -= static_cast<float>(_angle_quantizations);
+  if (goal_orientation_bin >= f_ang_quant) {
+    goal_orientation_bin -= f_ang_quant;
   }
   unsigned int goal_orientation_bin_int =
     static_cast<unsigned int>(goal_orientation_bin);
@@ -499,9 +500,10 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
 
   // Convert to world coordinates
   plan.poses.reserve(path.size());
-  for (int i = path.size() - 1; i >= 0; --i) {
-    pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
-    pose.pose.orientation = getWorldOrientation(path[i].theta);
+  for (int i = static_cast<int>(path.size()) - 1; i >= 0; --i) {
+    const auto & p = path[static_cast<size_t>(i)];
+    pose.pose = getWorldCoords(p.x, p.y, costmap);
+    pose.pose.orientation = getWorldOrientation(p.theta);
     plan.poses.push_back(pose);
   }
 
@@ -633,7 +635,7 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
         result.successful = false;
       } else if (param_name == _name + ".angle_quantization_bins") {
         unsigned int angle_quantizations = static_cast<unsigned int>(parameter.as_int());
-        if (angle_quantizations % _coarse_search_resolution != 0) {
+        if (angle_quantizations % static_cast<unsigned int>(_coarse_search_resolution) != 0) {
           RCLCPP_WARN(
             _logger,
             "The value of parameter angle_quantization_bins is incorrectly set to %u, "
@@ -877,7 +879,8 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
         std::string topic_name = "downsampled_costmap";
         _costmap_downsampler = std::make_unique<CostmapDownsampler>();
         _costmap_downsampler->on_configure(
-          node, _global_frame, topic_name, _costmap, _downsampling_factor);
+          node, _global_frame, topic_name, _costmap,
+            static_cast<unsigned int>(_downsampling_factor));
         _costmap_downsampler->on_activate();
       }
     }

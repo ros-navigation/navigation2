@@ -214,9 +214,13 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
       "nav2_costmap_2d"), "Updating area x: [%d, %d] y: [%d, %d]", x0, xn, y0, yn);
 
   if (xn >= x0 && yn >= y0) {
+    const unsigned int ux0 = static_cast<unsigned int>(x0);
+    const unsigned int uy0 = static_cast<unsigned int>(y0);
+    const unsigned int uxn = static_cast<unsigned int>(xn);
+    const unsigned int uyn = static_cast<unsigned int>(yn);
     if (filters_.size() == 0) {
       // If there are no filters enabled just update costmap sequentially by each plugin
-      combined_costmap_.resetMap(x0, y0, xn, yn);
+      combined_costmap_.resetMap(ux0, uy0, uxn, uyn);
       for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
         plugin != plugins_.end(); ++plugin)
       {
@@ -225,7 +229,7 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
     } else {
       // Costmap Filters enabled
       // 1. Update costmap by plugins
-      primary_costmap_.resetMap(x0, y0, xn, yn);
+      primary_costmap_.resetMap(ux0, uy0, uxn, uyn);
       for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
         plugin != plugins_.end(); ++plugin)
       {
@@ -234,7 +238,10 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
 
       // 2. Copy processed costmap window to a final costmap.
       // primary_costmap_ remain to be untouched for further usage by plugins.
-      if (!combined_costmap_.copyWindow(primary_costmap_, x0, y0, xn, yn, x0, y0)) {
+      if (!combined_costmap_.copyWindow(
+          primary_costmap_,
+          ux0, uy0, uxn, uyn, ux0, uy0))
+      {
         RCLCPP_ERROR(
           rclcpp::get_logger("nav2_costmap_2d"),
           "Can not copy costmap (%i,%i)..(%i,%i) window",
@@ -251,10 +258,10 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
       }
     }
 
-    bx0_ = x0;
-    bxn_ = xn;
-    by0_ = y0;
-    byn_ = yn;
+    bx0_ = ux0;
+    bxn_ = uxn;
+    by0_ = uy0;
+    byn_ = uyn;
 
     initialized_ = true;
   }

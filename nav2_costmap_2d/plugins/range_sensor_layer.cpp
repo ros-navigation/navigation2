@@ -363,8 +363,8 @@ void RangeSensorLayer::updateCostmap(
   bx1 = std::min(static_cast<int>(size_x_), bx1);
   by1 = std::min(static_cast<int>(size_y_), by1);
 
-  for (unsigned int x = bx0; x <= (unsigned int)bx1; x++) {
-    for (unsigned int y = by0; y <= (unsigned int)by1; y++) {
+  for (int x = bx0; x <= bx1; x++) {
+    for (int y = by0; y <= by1; y++) {
       bool update_xy_cell = true;
 
       // Unless inflate_cone_ is set to 100 %, we update cells only within the
@@ -386,7 +386,7 @@ void RangeSensorLayer::updateCostmap(
 
       if (update_xy_cell) {
         double wx, wy;
-        mapToWorld(x, y, wx, wy);
+        mapToWorld(static_cast<unsigned int>(x), static_cast<unsigned int>(y), wx, wy);
         update_cell(ox, oy, theta, range_message.range, wx, wy, clear_sensor_cone);
       }
     }
@@ -484,7 +484,7 @@ void RangeSensorLayer::updateCosts(
   unsigned char clear = to_cost(clear_threshold_), mark = to_cost(mark_threshold_);
 
   for (int j = min_j; j < max_j; j++) {
-    unsigned int it = j * span + min_i;
+    unsigned int it = static_cast<unsigned int>(j) * span + static_cast<unsigned int>(min_i);
     for (int i = min_i; i < max_i; i++) {
       unsigned char prob = costmap_[it];
       unsigned char current;

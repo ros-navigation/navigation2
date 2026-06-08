@@ -123,16 +123,17 @@ public:
 #ifdef _OPENMP
     #pragma omp parallel for schedule(dynamic, 16)
 #endif
+    const size_t uheight = static_cast<size_t>(height);
     for (int x = 0; x < width; x++) {
       // Thread-local buffers
-      std::vector<float> f(height);
-      std::vector<float> d(height);
-      std::vector<int> v(height);
-      std::vector<float> z(height + 1);
+      std::vector<float> f(uheight);
+      std::vector<float> d(uheight);
+      std::vector<int> v(uheight);
+      std::vector<float> z(uheight + 1);
 
       // Extract column
       for (int y = 0; y < height; y++) {
-        f[y] = img(y, x);
+        f[static_cast<size_t>(y)] = img(y, x);
       }
 
       // 1D transform
@@ -140,7 +141,7 @@ public:
 
       // Write back
       for (int y = 0; y < height; y++) {
-        img(y, x) = d[y];
+        img(y, x) = d[static_cast<size_t>(y)];
       }
     }
 
@@ -148,16 +149,17 @@ public:
 #ifdef _OPENMP
     #pragma omp parallel for schedule(dynamic, 16)
 #endif
+    const size_t uwidth = static_cast<size_t>(width);
     for (int y = 0; y < height; y++) {
       // Thread-local buffers
-      std::vector<float> f(width);
-      std::vector<float> d(width);
-      std::vector<int> v(width);
-      std::vector<float> z(width + 1);
+      std::vector<float> f(uwidth);
+      std::vector<float> d(uwidth);
+      std::vector<int> v(uwidth);
+      std::vector<float> z(uwidth + 1);
 
       // Extract row (already contiguous in row-major)
       for (int x = 0; x < width; x++) {
-        f[x] = img(y, x);
+        f[static_cast<size_t>(x)] = img(y, x);
       }
 
       // 1D transform
@@ -165,7 +167,7 @@ public:
 
       // Write back
       for (int x = 0; x < width; x++) {
-        img(y, x) = d[x];
+        img(y, x) = d[static_cast<size_t>(x)];
       }
     }
 

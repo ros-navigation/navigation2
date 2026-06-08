@@ -130,8 +130,8 @@ int main(int argc, char const * argv[])
   for (unsigned int i = 0; i != NUM_TESTS; i++) {
     std::vector<unsigned int> kd_tree_idxs;
     geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = static_cast<float>(rand_r(&seed) % DIM);
-    pose.pose.position.y = static_cast<float>(rand_r(&seed) % DIM);
+    pose.pose.position.x = static_cast<float>(static_cast<unsigned int>(rand_r(&seed)) % DIM);
+    pose.pose.position.y = static_cast<float>(static_cast<unsigned int>(rand_r(&seed)) % DIM);
     kd_tree->findNearestGraphNodesToPose(pose, kd_tree_idxs);
   }
   auto end = node->now();

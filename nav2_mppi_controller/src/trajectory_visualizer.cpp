@@ -70,7 +70,7 @@ void TrajectoryVisualizer::add(
     return;
   }
 
-  size_t size = trajectory.rows();
+  const Eigen::Index size = trajectory.rows();
   if (!size) {
     return;
   }
@@ -102,7 +102,7 @@ void TrajectoryVisualizer::add(
 
   optimal_path_->header.stamp = cmd_stamp;
   optimal_path_->header.frame_id = frame_id_;
-  for (size_t i = 0; i < size; i++) {
+  for (Eigen::Index i = 0; i < size; i++) {
     add_marker(i);
   }
 }
@@ -117,7 +117,7 @@ void TrajectoryVisualizer::add(
     return;
   }
 
-  const size_t n_rows = trajectories.x.rows();
+  const size_t n_rows = static_cast<size_t>(trajectories.x.rows());
   if (n_rows == 0 || costs.size() == 0 ||
     static_cast<size_t>(costs.size()) < n_rows)
   {
@@ -128,7 +128,10 @@ void TrajectoryVisualizer::add(
   float min_val = std::numeric_limits<float>::max();
   float max_val = std::numeric_limits<float>::lowest();
   for (Eigen::Index k = 0; k < costs.size(); ++k) {
-    if (!collisions.empty() && static_cast<size_t>(k) < collisions.size() && collisions[k]) {
+    const size_t sk = static_cast<size_t>(k);
+    if (!collisions.empty() && sk < collisions.size() &&
+      collisions[sk])
+    {
       continue;
     }
     auto curr_cost = costs(k);
@@ -143,7 +146,7 @@ void TrajectoryVisualizer::add(
 
   for (size_t i = 0; i < n_rows; i += trajectory_step_) {
     float norm = (range > 0.0f) ?
-      (costs(i) - min_val) / range : 0.0f;
+      (costs(static_cast<Eigen::Index>(i)) - min_val) / range : 0.0f;
     bool in_collision =
       !collisions.empty() && i < collisions.size() && collisions[i];
     addCostColoredTrajectory(i, trajectories, norm, in_collision, stamp);
@@ -158,7 +161,7 @@ void TrajectoryVisualizer::addCostColoredTrajectory(
   const builtin_interfaces::msg::Time & stamp)
 {
   using visualization_msgs::msg::Marker;
-  const size_t n_cols = trajectories.x.cols();
+  const size_t n_cols = static_cast<size_t>(trajectories.x.cols());
 
   Marker marker;
   marker.header.frame_id = frame_id_;
@@ -173,11 +176,13 @@ void TrajectoryVisualizer::addCostColoredTrajectory(
     utils::createColor(1.0f, 0.0f, 1.0f, 0.6f) :  // magenta for collisions
     costToColor(normalized_cost);
 
+  const Eigen::Index ti = static_cast<Eigen::Index>(trajectory_idx);
   marker.points.reserve(n_cols / time_step_ + 1);
   for (size_t j = 0; j < n_cols; j += time_step_) {
     geometry_msgs::msg::Point pt;
-    pt.x = trajectories.x(trajectory_idx, j);
-    pt.y = trajectories.y(trajectory_idx, j);
+    const Eigen::Index tj = static_cast<Eigen::Index>(j);
+    pt.x = trajectories.x(ti, tj);
+    pt.y = trajectories.y(ti, tj);
     pt.z = 0.03;
     marker.points.push_back(pt);
   }

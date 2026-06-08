@@ -85,13 +85,13 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
   double interpolation_dist = 0.0;
 
   bool pose_found = false;
-  for (size_t i = 1; i < poses.size(); i++) {
-    const auto & prev_pose = poses[i - 1].pose.position;
-    const auto & curr_pose = poses[i].pose.position;
+  for (auto it = std::next(poses.begin()); it != poses.end(); ++it) {
+    const auto & prev_pose = std::prev(it)->pose.position;
+    const auto & curr_pose = it->pose.position;
 
     const double d = std::hypot(curr_pose.x - prev_pose.x, curr_pose.y - prev_pose.y);
     if (path_dist + d >= lookahead_dist) {
-      goal_pose_it = poses.begin() + i;
+      goal_pose_it = it;
       pose_found = true;
       break;
     }

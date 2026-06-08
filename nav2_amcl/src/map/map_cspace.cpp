@@ -151,7 +151,8 @@ void map_update_cspace(map_t * map, double max_occ_dist)
   std::priority_queue<CellData> Q;
 
   marked = new unsigned char[map->size_x * map->size_y];
-  memset(marked, 0, sizeof(unsigned char) * map->size_x * map->size_y);
+  memset(marked, 0,
+    sizeof(unsigned char) * static_cast<size_t>(map->size_x) * static_cast<size_t>(map->size_y));
 
   map->max_occ_dist = max_occ_dist;
 
@@ -162,12 +163,12 @@ void map_update_cspace(map_t * map, double max_occ_dist)
   cell.map_ = map;
   int loop_map_index;
   for (int i = 0; i < map->size_x; i++) {
-    cell.src_i_ = cell.i_ = i;
+    cell.src_i_ = cell.i_ = static_cast<unsigned int>(i);
     for (int j = 0; j < map->size_y; j++) {
       loop_map_index = MAP_INDEX(map, i, j);
       if (map->cells[loop_map_index].occ_state == +1) {
         map->cells[loop_map_index].occ_dist = 0.0;
-        cell.src_j_ = cell.j_ = j;
+        cell.src_j_ = cell.j_ = static_cast<unsigned int>(j);
         marked[loop_map_index] = 1;
         Q.push(cell);
       } else {
@@ -178,29 +179,33 @@ void map_update_cspace(map_t * map, double max_occ_dist)
 
   while (!Q.empty()) {
     CellData current_cell = Q.top();
+    const int ci = static_cast<int>(current_cell.i_);
+    const int cj = static_cast<int>(current_cell.j_);
+    const int csrc_i = static_cast<int>(current_cell.src_i_);
+    const int csrc_j = static_cast<int>(current_cell.src_j_);
     if (current_cell.i_ > 0) {
       enqueue(
-        map, current_cell.i_ - 1, current_cell.j_,
-        current_cell.src_i_, current_cell.src_j_,
-        Q, cdm, marked);
+          map, ci - 1, cj,
+          csrc_i, csrc_j,
+          Q, cdm, marked);
     }
     if (current_cell.j_ > 0) {
       enqueue(
-        map, current_cell.i_, current_cell.j_ - 1,
-        current_cell.src_i_, current_cell.src_j_,
-        Q, cdm, marked);
+          map, ci, cj - 1,
+          csrc_i, csrc_j,
+          Q, cdm, marked);
     }
-    if (static_cast<int>(current_cell.i_) < map->size_x - 1) {
+    if (ci < map->size_x - 1) {
       enqueue(
-        map, current_cell.i_ + 1, current_cell.j_,
-        current_cell.src_i_, current_cell.src_j_,
-        Q, cdm, marked);
+          map, ci + 1, cj,
+          csrc_i, csrc_j,
+          Q, cdm, marked);
     }
-    if (static_cast<int>(current_cell.j_) < map->size_y - 1) {
+    if (cj < map->size_y - 1) {
       enqueue(
-        map, current_cell.i_, current_cell.j_ + 1,
-        current_cell.src_i_, current_cell.src_j_,
-        Q, cdm, marked);
+          map, ci, cj + 1,
+          csrc_i, csrc_j,
+          Q, cdm, marked);
     }
 
     Q.pop();

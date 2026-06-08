@@ -378,7 +378,7 @@ void LoopbackSimulator::publishLaserScan()
   scan_msg->range_min = static_cast<float>(scan_range_min_);
   scan_msg->range_max = static_cast<float>(scan_range_max_);
 
-  int num_samples = static_cast<int>(
+  size_t num_samples = static_cast<size_t>(
     (scan_angle_max_ - scan_angle_min_) / scan_angle_increment_);
   scan_msg->ranges.assign(num_samples, 0.0f);
   if (!has_map_) {
@@ -450,7 +450,7 @@ std::tuple<double, double, double> LoopbackSimulator::getLaserPose()
 }
 
 void LoopbackSimulator::getLaserScan(
-  int num_samples, sensor_msgs::msg::LaserScan & scan_msg)
+  size_t num_samples, sensor_msgs::msg::LaserScan & scan_msg)
 {
   float no_hit_range = use_inf_ ? std::numeric_limits<float>::infinity() :
     scan_msg.range_max - 0.1f;
@@ -482,8 +482,8 @@ void LoopbackSimulator::getLaserScan(
   double angle_increment = scan_msg.angle_increment;
   double step = resolution * 0.5;
 
-  for (int i = 0; i < num_samples; ++i) {
-    double angle = theta + angle_min + i * angle_increment;
+  for (size_t i = 0; i < num_samples; ++i) {
+    double angle = theta + angle_min + static_cast<double>(i) * angle_increment;
     double cos_a = std::cos(angle);
     double sin_a = std::sin(angle);
     scan_msg.ranges[i] = no_hit_range;
@@ -494,7 +494,7 @@ void LoopbackSimulator::getLaserScan(
       if (mx <= 0 || mx >= width || my <= 0 || my >= height) {
         break;
       }
-      if (map_data[my * width + mx] >= 60) {
+      if (map_data[static_cast<size_t>(my * width + mx)] >= 60) {
         scan_msg.ranges[i] = static_cast<float>(d);
         break;
       }
@@ -504,7 +504,7 @@ void LoopbackSimulator::getLaserScan(
   // Add Gaussian noise to valid range measurements
   if (scan_noise_std_ > 0.0) {
     std::normal_distribution<float> noise(0.0f, static_cast<float>(scan_noise_std_));
-    for (int i = 0; i < num_samples; ++i) {
+    for (size_t i = 0; i < num_samples; ++i) {
       float & r = scan_msg.ranges[i];
       if (std::isfinite(r) && r > 0.0f) {
         r = std::max(0.0f, r + noise(rng_));

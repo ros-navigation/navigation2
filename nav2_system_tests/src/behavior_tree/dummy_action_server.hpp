@@ -75,7 +75,7 @@ public:
     updateResultForSuccess(result_);
   }
 
-  int getGoalCount() const
+  unsigned int getGoalCount() const
   {
     return goal_count_;
   }

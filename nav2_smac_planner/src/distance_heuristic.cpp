@@ -124,7 +124,7 @@ void DistanceHeuristic<NodeLattice>::precomputeDistanceHeuristic(
       for (int heading = 0; heading != dim_3_size_int; heading++) {
         from[0] = x;
         from[1] = y;
-        from[2] = motion_table.getAngleFromBin(heading);
+        from[2] = motion_table.getAngleFromBin(static_cast<unsigned int>(heading));
         motion_heuristic = motion_table.state_space->distance(from(), to());
         dist_heuristic_lookup_table_[index] = motion_heuristic;
         index++;
@@ -184,11 +184,12 @@ float DistanceHeuristic<NodeT>::getDistanceHeuristic(
     }
     const int x_pos = node_coords_relative.x + floored_size;
     const int y_pos = static_cast<int>(mirrored_relative_y);
+    const int num_angle_q = static_cast<int>(motion_table.num_angle_quantization);
     const int index =
-      x_pos * ceiling_size * motion_table.num_angle_quantization +
-      y_pos * motion_table.num_angle_quantization +
+      x_pos * ceiling_size * num_angle_q +
+      y_pos * num_angle_q +
       theta_pos;
-    motion_heuristic = dist_heuristic_lookup_table_[index];
+    motion_heuristic = dist_heuristic_lookup_table_[static_cast<size_t>(index)];
   } else if (obstacle_heuristic <= 0.0) {
     ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
     to[0] = goal_coords.x;

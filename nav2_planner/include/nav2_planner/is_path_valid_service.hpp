@@ -276,18 +276,19 @@ private:
         cost = nav2_costmap_2d::FREE_SPACE;
       }
 
+      const int32_t ii = static_cast<int32_t>(i);
       if (use_radius &&
         (cost >= request->max_cost || cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
         cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE))
       {
         response->is_valid = false;
-        response->invalid_pose_indices.push_back(i);
+        response->invalid_pose_indices.push_back(ii);
         if (request->stop_at_first_collision) {
           break;
         }
       } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost >= request->max_cost) {
         response->is_valid = false;
-        response->invalid_pose_indices.push_back(i);
+        response->invalid_pose_indices.push_back(ii);
         if (request->stop_at_first_collision) {
           break;
         }

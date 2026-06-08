@@ -130,11 +130,12 @@ public:
     // optimized trajectory is very near obstacles and the dynamic constraints cause invalidity.
     auto costmap = costmap_ros_->getCostmap();
     for (size_t i = 0; i < traj_samples_to_evaluate_; ++i) {
-      const double x = static_cast<double>(optimal_trajectory(i, 0));
-      const double y = static_cast<double>(optimal_trajectory(i, 1));
+      const Eigen::Index ei = static_cast<Eigen::Index>(i);
+      const double x = static_cast<double>(optimal_trajectory(ei, 0));
+      const double y = static_cast<double>(optimal_trajectory(ei, 1));
 
       if (consider_footprint_) {
-        const double theta = static_cast<double>(optimal_trajectory(i, 2));
+        const double theta = static_cast<double>(optimal_trajectory(ei, 2));
         double footprint_cost = collision_checker_->footprintCostAtPose(
           x, y, theta, costmap_ros_->getRobotFootprint());
         if (footprint_cost == static_cast<double>(nav2_costmap_2d::LETHAL_OBSTACLE)) {

@@ -85,8 +85,10 @@ public:
    */
   inline bool isSafe(const int & cx, const int & cy) const
   {
-    return (costmap_->getCost(cx, cy) == UNKNOWN_COST && params_->allow_unknown) ||
-           costmap_->getCost(cx, cy) <= MAX_NON_OBSTACLE_COST;
+    const auto ucx = static_cast<unsigned int>(cx);
+    const auto ucy = static_cast<unsigned int>(cy);
+    return (costmap_->getCost(ucx, ucy) == UNKNOWN_COST && params_->allow_unknown) ||
+           costmap_->getCost(ucx, ucy) <= MAX_NON_OBSTACLE_COST;
   }
 
   /**
@@ -131,7 +133,7 @@ protected:
   /// it is a counter like variable used to generate consecutive indices
   /// such that the data for all the nodes (in open and closed lists) could be stored
   /// consecutively in nodes_data_
-  int index_generated_;
+  unsigned int index_generated_;
 
   Parameters * params_;
 
@@ -186,11 +188,13 @@ protected:
    */
   bool isSafe(const int & cx, const int & cy, double & cost) const
   {
+    const auto ucx = static_cast<unsigned int>(cx);
+    const auto ucy = static_cast<unsigned int>(cy);
     double curr_cost = getCost(cx, cy);
-    if ((costmap_->getCost(cx, cy) == UNKNOWN_COST && params_->allow_unknown) ||
+    if ((costmap_->getCost(ucx, ucy) == UNKNOWN_COST && params_->allow_unknown) ||
       curr_cost <= MAX_NON_OBSTACLE_COST)
     {
-      if (costmap_->getCost(cx, cy) == UNKNOWN_COST) {
+      if (costmap_->getCost(ucx, ucy) == UNKNOWN_COST) {
         curr_cost = OCCUPIED_COST - 1;
       }
       cost += params_->w_traversal_cost * curr_cost * curr_cost / MAX_NON_OBSTACLE_COST /
@@ -207,7 +211,8 @@ protected:
    */
   inline double getCost(const int & cx, const int & cy) const
   {
-    return 26 + 0.9 * costmap_->getCost(cx, cy);
+    return 26 + 0.9 * costmap_->getCost(
+      static_cast<unsigned int>(cx), static_cast<unsigned int>(cy));
   }
 
   /**
@@ -272,7 +277,7 @@ protected:
    */
   inline void addIndex(const int & cx, const int & cy, tree_node * node_this)
   {
-    node_position_[size_x_ * cy + cx] = node_this;
+    node_position_[static_cast<unsigned int>(size_x_ * cy + cx)] = node_this;
   }
 
   /**
@@ -281,16 +286,16 @@ protected:
    */
   inline tree_node * getIndex(const int & cx, const int & cy)
   {
-    return node_position_[size_x_ * cy + cx];
+    return node_position_[static_cast<unsigned int>(size_x_ * cy + cx)];
   }
 
   /**
    * @brief this function depending on the size of the nodes_data_ vector allots space to store the data for a node(x, y)
    * @param id_this is the index at which the data is stored/has to be stored for that node
    */
-  void addToNodesData(const int & id_this)
+  void addToNodesData(const unsigned int & id_this)
   {
-    if (static_cast<int>(nodes_data_.size()) <= id_this) {
+    if (nodes_data_.size() <= id_this) {
       nodes_data_.push_back({});
     } else {
       nodes_data_[id_this] = {};

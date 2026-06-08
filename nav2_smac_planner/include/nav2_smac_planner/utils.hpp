@@ -212,7 +212,7 @@ inline visualization_msgs::msg::Marker createMarker(
   marker.type = visualization_msgs::msg::Marker::LINE_LIST;
   marker.lifetime = rclcpp::Duration(0, 0);
 
-  marker.id = i;
+  marker.id = static_cast<int32_t>(i);
   for (auto & point : edge) {
     marker.points.push_back(point);
   }

@@ -391,7 +391,8 @@ void DockingPanel::onDockingButtonPressed()
         docking_result_indicator_->setText("");
       } else {
         docking_result_indicator_->setText(
-          QString(std::string("(" + dockErrorToString(result.result->error_code) + ")").c_str()));
+          QString(std::string("(" +
+          dockErrorToString(static_cast<int16_t>(result.result->error_code)) + ")").c_str()));
       }
     };
 
@@ -449,7 +450,8 @@ void DockingPanel::onUndockingButtonPressed()
         docking_result_indicator_->setText("");
       } else {
         docking_result_indicator_->setText(
-          QString(std::string("(" + dockErrorToString(result.result->error_code) + ")").c_str()));
+          QString(std::string("(" +
+          dockErrorToString(static_cast<int16_t>(result.result->error_code)) + ")").c_str()));
       }
     };
 
@@ -578,7 +580,7 @@ inline std::string DockingPanel::toLabel(T & msg)
 {
   return std::string(
     "</td></tr><tr><td width=150>State:</td><td>" +
-    dockStateToString(msg.state) +
+    dockStateToString(static_cast<int16_t>(msg.state)) +
     "</td></tr><tr><td width=150>Time taken:</td><td>" +
     toString(rclcpp::Duration(msg.docking_time).seconds(), 0) + " s"
     "</td></tr><tr><td width=150>Retries:</td><td>" +

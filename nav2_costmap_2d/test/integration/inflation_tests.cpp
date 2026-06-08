@@ -138,7 +138,8 @@ void TestNode::validatePointInflation(
       const double dist = std::hypot(dx, dy);
 
       // Get actual cost from costmap
-      const unsigned char actual_cost = costmap->getCost(x, y);
+      const unsigned char actual_cost = costmap->getCost(static_cast<unsigned int>(x),
+        static_cast<unsigned int>(y));
 
       if (dist <= inflation_radius / costmap->getResolution()) {
         // Within inflation radius - should have inflation cost
@@ -448,7 +449,7 @@ TEST_F(TestNode, testLargeScaleInflation)
     for (int offset = 1; offset <= inflation_cells; ++offset) {
       const int test_y = static_cast<int>(square_start) - offset;
       if (test_y >= 0) {
-        const unsigned char actual_cost = costmap->getCost(x, test_y);
+        const unsigned char actual_cost = costmap->getCost(x, static_cast<unsigned int>(test_y));
         const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
         ASSERT_EQ(actual_cost, expected_cost)
             << "Top edge: at (" << x << ", " << test_y << ") " << offset << " cells away";
@@ -459,7 +460,7 @@ TEST_F(TestNode, testLargeScaleInflation)
     // Bottom edge: all cells below the square within inflation radius
     for (unsigned int x = square_start; x <= square_end; ++x) {
     for (int offset = 1; offset <= inflation_cells; ++offset) {
-      const unsigned int test_y = square_end + offset;
+      const unsigned int test_y = square_end + static_cast<unsigned int>(offset);
       if (test_y < costmap->getSizeInCellsY()) {
         const unsigned char actual_cost = costmap->getCost(x, test_y);
         const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
@@ -474,7 +475,7 @@ TEST_F(TestNode, testLargeScaleInflation)
     for (int offset = 1; offset <= inflation_cells; ++offset) {
       const int test_x = static_cast<int>(square_start) - offset;
       if (test_x >= 0) {
-        const unsigned char actual_cost = costmap->getCost(test_x, y);
+        const unsigned char actual_cost = costmap->getCost(static_cast<unsigned int>(test_x), y);
         const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
         ASSERT_EQ(actual_cost, expected_cost)
             << "Left edge: at (" << test_x << ", " << y << ") " << offset << " cells away";
@@ -485,7 +486,7 @@ TEST_F(TestNode, testLargeScaleInflation)
     // Right edge: all cells to the right of the square within inflation radius
     for (unsigned int y = square_start; y <= square_end; ++y) {
     for (int offset = 1; offset <= inflation_cells; ++offset) {
-      const unsigned int test_x = square_end + offset;
+      const unsigned int test_x = square_end + static_cast<unsigned int>(offset);
       if (test_x < costmap->getSizeInCellsX()) {
         const unsigned char actual_cost = costmap->getCost(test_x, y);
         const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));

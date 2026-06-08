@@ -87,7 +87,7 @@ void GeoJsonGraphFileLoader::getGraphElements(
 void GeoJsonGraphFileLoader::addNodesToGraph(
   Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & nodes)
 {
-  int idx = 0;
+  unsigned int idx = 0u;
   for (const auto & node : nodes) {
     const auto properties = node["properties"];
     graph[idx].nodeid = properties["id"];

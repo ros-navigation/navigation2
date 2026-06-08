@@ -682,8 +682,8 @@ void Tester::checkRange(const std::vector<nav2_collision_monitor::Point> & data)
 
   const double angle_increment = M_PI / 199;
   double angle = -M_PI / (10 * 2);
-  int i;
-  for (i = 0; i < 199 / 10 + 1; i++) {
+  size_t i;
+  for (i = 0; i < 20u; i++) {
     ASSERT_NEAR(data[i].x, 1.0 * std::cos(angle) + 0.1, EPSILON);
     ASSERT_NEAR(data[i].y, 1.0 * std::sin(angle) + 0.1, EPSILON);
     angle += angle_increment;

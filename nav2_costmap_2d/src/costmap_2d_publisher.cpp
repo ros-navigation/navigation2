@@ -192,8 +192,8 @@ std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGr
 
   update->header.stamp = clock_->now();
   update->header.frame_id = global_frame_;
-  update->x = x0_;
-  update->y = y0_;
+  update->x = static_cast<int>(x0_);
+  update->y = static_cast<int>(y0_);
   update->width = xn_ - x0_;
   update->height = yn_ - y0_;
   update->data.resize(update->width * update->height);

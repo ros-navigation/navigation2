@@ -289,17 +289,21 @@ void VectorObjectServer::updateMap(
     map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>();
   }
 
+  const unsigned int u_size_x = static_cast<unsigned int>(size_x);
+  const unsigned int u_size_y = static_cast<unsigned int>(size_y);
+  const size_t sz_size_x = static_cast<size_t>(size_x);
+  const size_t sz_size_y = static_cast<size_t>(size_y);
   if (
-    map_->info.width != static_cast<unsigned int>(size_x) ||
-    map_->info.height != static_cast<unsigned int>(size_y))
+    map_->info.width != u_size_x ||
+    map_->info.height != u_size_y)
   {
     // Map size was changed
-    map_->data = std::vector<int8_t>(size_x * size_y, default_value_);
-    map_->info.width = size_x;
-    map_->info.height = size_y;
+    map_->data = std::vector<int8_t>(sz_size_x * sz_size_y, default_value_);
+    map_->info.width = u_size_x;
+    map_->info.height = u_size_y;
   } else if (size_x > 0 && size_y > 0) {
     // Map size was not changed
-    memset(map_->data.data(), default_value_, size_x * size_y * sizeof(int8_t));
+    memset(map_->data.data(), default_value_, sz_size_x * sz_size_y * sizeof(int8_t));
   }
 
   map_->header.frame_id = global_frame_id_;

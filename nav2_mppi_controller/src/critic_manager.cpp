@@ -78,7 +78,7 @@ void CriticManager::evalTrajectoriesScores(
 {
   std::unique_ptr<nav2_msgs::msg::CriticsStats> stats_msg;
   if (visualize_) {
-    data.trajectories_in_collision.assign(data.costs.size(), false);
+    data.trajectories_in_collision.assign(static_cast<size_t>(data.costs.size()), false);
     critic_costs_.clear();
     critic_costs_.reserve(critics_.size());
     stats_msg = std::make_unique<nav2_msgs::msg::CriticsStats>();

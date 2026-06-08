@@ -87,7 +87,8 @@ float CostCritic::findCircumscribedCost(
 {
   double result = -1.0;
   const double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
-  if (static_cast<float>(circum_radius) == circumscribed_radius_) {
+  const float f_circum = static_cast<float>(circum_radius);
+  if (f_circum == circumscribed_radius_) {
     // early return if footprint size is unchanged
     return circumscribed_cost_;
   }
@@ -122,7 +123,7 @@ float CostCritic::findCircumscribedCost(
       "significantly slow down planning times and not avoid anything but absolute collisions!");
   }
 
-  circumscribed_radius_ = static_cast<float>(circum_radius);
+  circumscribed_radius_ = f_circum;
   circumscribed_cost_ = static_cast<float>(result);
 
   return circumscribed_cost_;
@@ -163,7 +164,7 @@ void CostCritic::score(CriticData & data)
 
   int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
   int strided_traj_rows = data.trajectories.x.rows();
-  int outer_stride = strided_traj_rows * trajectory_point_step_;
+  int outer_stride = strided_traj_rows * static_cast<int>(trajectory_point_step_);
 
   const auto traj_x = Eigen::Map<const Eigen::ArrayXXf, 0,
       Eigen::Stride<-1, -1>>(
@@ -203,7 +204,7 @@ void CostCritic::score(CriticData & data)
       if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
         traj_cost = collision_cost_;
         trajectory_collide = true;
-        if (track_collisions) {collisions[i] = true;}
+        if (track_collisions) {collisions[static_cast<size_t>(i)] = true;}
         break;
       }
 
@@ -220,11 +221,11 @@ void CostCritic::score(CriticData & data)
     all_trajectories_collide &= trajectory_collide;
   }
 
+  const float f_cols = static_cast<float>(strided_traj_cols);
   if (power_ > 1u) {
-    data.costs += (repulsive_cost *
-      (weight_ / static_cast<float>(strided_traj_cols))).pow(power_);
+    data.costs += (repulsive_cost * (weight_ / f_cols)).pow(power_);
   } else {
-    data.costs += repulsive_cost * (weight_ / static_cast<float>(strided_traj_cols));
+    data.costs += repulsive_cost * (weight_ / f_cols);
   }
 
   data.fail_flag = all_trajectories_collide;

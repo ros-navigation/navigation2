@@ -239,7 +239,7 @@ InflationLayer::applyInflation(
         continue;
       }
 
-      const unsigned int index = row_offset + i;
+      const unsigned int index = static_cast<unsigned int>(row_offset + i);
       const unsigned char old_cost = master_array[index];
       const unsigned int d_scaled = std::min(
         static_cast<unsigned int>(lut_max),
@@ -271,18 +271,20 @@ InflationLayer::updateCosts(
   unsigned char * master_array = master_grid.getCharMap();
   const unsigned int size_x = master_grid.getSizeInCellsX();
   const unsigned int size_y = master_grid.getSizeInCellsY();
+  const int isize_x = static_cast<int>(size_x);
+  const int isize_y = static_cast<int>(size_y);
 
   min_i = std::max(0, min_i);
   min_j = std::max(0, min_j);
-  max_i = std::min(static_cast<int>(size_x), max_i);
-  max_j = std::min(static_cast<int>(size_y), max_j);
+  max_i = std::min(isize_x, max_i);
+  max_j = std::min(isize_y, max_j);
 
   // Compute padded ROI bounds for distance transform
   const int padding = static_cast<int>(cell_inflation_radius_);
   int roi_min_i = std::max(0, min_i - padding);
   int roi_min_j = std::max(0, min_j - padding);
-  int roi_max_i = std::min(static_cast<int>(size_x), max_i + padding);
-  int roi_max_j = std::min(static_cast<int>(size_y), max_j + padding);
+  int roi_max_i = std::min(isize_x, max_i + padding);
+  int roi_max_j = std::min(isize_y, max_j + padding);
 
   const int roi_width = roi_max_i - roi_min_i;
   const int roi_height = roi_max_j - roi_min_j;
@@ -299,7 +301,8 @@ InflationLayer::updateCosts(
     const int src_y = y + roi_min_j;
     for (int x = 0; x < roi_width; x++) {
       const int src_x = x + roi_min_i;
-      const unsigned char cell = master_array[src_y * size_x + src_x];
+      const unsigned char cell = master_array[static_cast<unsigned int>(src_y) * size_x +
+          static_cast<unsigned int>(src_x)];
 
       if (inflate_around_unknown_) {
         // Treat both LETHAL_OBSTACLE and NO_INFORMATION as obstacles
