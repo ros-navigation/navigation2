@@ -56,6 +56,39 @@ DistanceControllerTestFixture::bt_node_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::DummyNode>
 DistanceControllerTestFixture::dummy_node_ = nullptr;
 
+class DistanceControllerGlobalTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+{
+public:
+  void SetUp()
+  {
+    node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue{0.1});
+    config_->blackboard->set<std::string>("run_id", "run_1");
+    config_->input_ports["distance"] = 1.0;
+    config_->input_ports["global_frame"] = "map";
+    config_->input_ports["robot_base_frame"] = "base_link";
+    config_->input_ports["is_global"] = "true";
+    bt_node_ = std::make_shared<nav2_behavior_tree::DistanceController>(
+      "distance_controller", *config_);
+    dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();
+    bt_node_->setChild(dummy_node_.get());
+  }
+
+  void TearDown()
+  {
+    dummy_node_.reset();
+    bt_node_.reset();
+  }
+
+protected:
+  static std::shared_ptr<nav2_behavior_tree::DistanceController> bt_node_;
+  static std::shared_ptr<nav2_behavior_tree::DummyNode> dummy_node_;
+};
+
+std::shared_ptr<nav2_behavior_tree::DistanceController>
+DistanceControllerGlobalTestFixture::bt_node_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::DummyNode>
+DistanceControllerGlobalTestFixture::dummy_node_ = nullptr;
+
 TEST_F(DistanceControllerTestFixture, test_behavior)
 {
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
@@ -95,6 +128,43 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
       EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
     }
   }
+}
+
+TEST_F(DistanceControllerGlobalTestFixture, test_global_runid_mode)
+{
+  // Move robot to origin
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 0.0;
+  pose.pose.position.y = 0.0;
+  pose.pose.orientation.w = 1.0;
+  transform_handler_->updateRobotPose(pose.pose);
+
+  // First tick: child gets ticked immediately (first_time_)
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // Distance not yet crossed: child should not tick
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+
+  // Simulate halt by reactive parent — same run_id, start_pose_ must be preserved
+  bt_node_->halt();
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);  // NOT ticked immediately
+
+  // New RunID: start_pose_ resets to current position, move robot 1.1m to cross threshold
+  config_->blackboard->set<std::string>("run_id", "run_2");
+  pose.pose.position.x = 1.1;
+  transform_handler_->updateRobotPose(pose.pose);
+  double traveled = 0.0;
+  while (traveled < 1.0) {
+    geometry_msgs::msg::PoseStamped p;
+    if (nav2_util::getCurrentPose(p, *transform_handler_->getBuffer())) {
+      traveled = std::abs(p.pose.position.x);
+    }
+  }
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)

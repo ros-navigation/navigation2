@@ -36,7 +36,7 @@ namespace nav2_behavior_tree
  * @brief A BT::DecoratorNode that ticks its child every at a rate proportional to
  * the speed of the robot. If the robot travels faster, this node will tick its child at a
  * higher frequency and reduce the tick frequency if the robot slows down
- * @note It will re-initialize when halted.
+ * @note It will re-initialize when halted or on RunID change if is_global is true.
  *
  * Usage in XML:
  * @code
@@ -58,6 +58,11 @@ public:
     const BT::NodeConfiguration & conf);
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -76,6 +81,7 @@ public:
         "goals", "Vector of navigation goals"),
       BT::InputPort<geometry_msgs::msg::PoseStamped>(
         "goal", "Navigation goal"),
+      BT::InputPort<bool>("is_global", false, "Use RunID for initialization instead of IDLE check")
     };
   }
 
@@ -118,6 +124,8 @@ private:
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 
   bool first_tick_;
+  bool is_global_;
+  std::string current_run_id_;
 
   // Time period after which child node should be ticked
   double period_;

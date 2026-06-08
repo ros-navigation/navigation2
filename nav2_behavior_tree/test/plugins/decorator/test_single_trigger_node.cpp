@@ -63,6 +63,33 @@ SingleTriggerTestFixture::bt_node_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::DummyNode>
 SingleTriggerTestFixture::dummy_node_ = nullptr;
 
+class SingleTriggerGlobalTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+{
+public:
+  void SetUp()
+  {
+    config_->input_ports["is_global"] = "true";
+    bt_node_ = std::make_shared<ShimNode>("single_trigger", *config_);
+    dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();
+    bt_node_->setChild(dummy_node_.get());
+  }
+
+  void TearDown()
+  {
+    dummy_node_.reset();
+    bt_node_.reset();
+  }
+
+protected:
+  static std::shared_ptr<ShimNode> bt_node_;
+  static std::shared_ptr<nav2_behavior_tree::DummyNode> dummy_node_;
+};
+
+std::shared_ptr<ShimNode>
+SingleTriggerGlobalTestFixture::bt_node_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::DummyNode>
+SingleTriggerGlobalTestFixture::dummy_node_ = nullptr;
+
 TEST_F(SingleTriggerTestFixture, test_behavior)
 {
   // starting in idle
@@ -88,6 +115,26 @@ TEST_F(SingleTriggerTestFixture, test_behavior)
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
   dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+}
+
+TEST_F(SingleTriggerGlobalTestFixture, test_runid_global_mode)
+{
+  config_->blackboard->set<std::string>("run_id", "runid_1");
+
+  // First tick with runid_1: should trigger child
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // Same RunID: should not trigger again
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // New RunID: should re-arm and trigger child
+  config_->blackboard->set<std::string>("run_id", "runid_2");
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // Same RunID again: should not trigger
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 }
 
