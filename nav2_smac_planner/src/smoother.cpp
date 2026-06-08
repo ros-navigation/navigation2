@@ -25,6 +25,7 @@
 
 #include "nav2_smac_planner/smoother.hpp"
 #include "nav2_util/smoother_utils.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
 namespace nav2_smac_planner
 {
@@ -52,7 +53,8 @@ void Smoother::initialize(const double & min_turning_radius)
 bool Smoother::smooth(
   nav_msgs::msg::Path & path,
   const nav2_costmap_2d::Costmap2D * costmap,
-  const double & max_time)
+  const double & max_time,
+  const nav2_costmap_2d::Footprint & footprint)
 {
   // by-pass path orientations approximation when skipping smac smoother
   if (max_its_ == 0) {
@@ -86,7 +88,7 @@ bool Smoother::smooth(
       const geometry_msgs::msg::Pose start_pose = curr_path_segment.poses.front().pose;
       const geometry_msgs::msg::Pose goal_pose = curr_path_segment.poses.back().pose;
       bool local_success =
-        smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining);
+        smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining, footprint);
       success = success && local_success;
 
       // Enforce boundary conditions
@@ -110,7 +112,8 @@ bool Smoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment,
   const nav2_costmap_2d::Costmap2D * costmap,
-  const double & max_time)
+  const double & max_time,
+  const nav2_costmap_2d::Footprint & footprint)
 {
   steady_clock::time_point a = steady_clock::now();
   rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);
@@ -123,6 +126,13 @@ bool Smoother::smoothImpl(
 
   nav_msgs::msg::Path new_path = path;
   nav_msgs::msg::Path last_path = path;
+
+  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<const nav2_costmap_2d::Costmap2D *>>
+    collision_checker = nullptr;
+  if (costmap && !footprint.empty()) {
+    collision_checker = std::make_unique<
+      nav2_costmap_2d::FootprintCollisionChecker<const nav2_costmap_2d::Costmap2D *>>(costmap);
+  }
 
   while (change >= tolerance_) {
     its += 1;
@@ -183,6 +193,25 @@ bool Smoother::smoothImpl(
         nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
         return false;
       }
+
+      if (collision_checker && cost >= INSCRIBED_INFLATED_OBSTACLE) {
+        nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
+        double theta = tf2::getYaw(new_path.poses[i].pose.orientation);
+        double footprint_cost = collision_checker->footprintCostAtPose(
+          getFieldByDim(new_path.poses[i], 0),
+          getFieldByDim(new_path.poses[i], 1),
+          theta, footprint);
+        
+        if (footprint_cost >= INSCRIBED_INFLATED_OBSTACLE && footprint_cost != UNKNOWN_COST) {
+          RCLCPP_DEBUG(
+            rclcpp::get_logger("SmacPlannerSmoother"),
+            "Smoothing process resulted in an infeasible footprint collision. "
+            "Returning the last path before the infeasibility was introduced.");
+          path = last_path;
+          nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
+          return false;
+        }
+      }
     }
 
     last_path = new_path;
@@ -192,7 +221,7 @@ bool Smoother::smoothImpl(
   // but really puts the path quality over the top.
   if (do_refinement_ && refinement_ctr_ < refinement_num_) {
     refinement_ctr_++;
-    smoothImpl(new_path, reversing_segment, costmap, max_time);
+    smoothImpl(new_path, reversing_segment, costmap, max_time, footprint);
   }
 
   nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);

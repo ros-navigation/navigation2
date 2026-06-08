@@ -97,7 +97,8 @@ public:
   bool smooth(
     nav_msgs::msg::Path & path,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time);
+    const double & max_time,
+    const nav2_costmap_2d::Footprint & footprint = nav2_costmap_2d::Footprint());
 
 protected:
   /**
@@ -112,7 +113,8 @@ protected:
     nav_msgs::msg::Path & path,
     bool & reversing_segment,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time);
+    const double & max_time,
+    const nav2_costmap_2d::Footprint & footprint);
 
   /**
    * @brief Get the field value for a given dimension

@@ -330,8 +330,9 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
     " milliseconds with " << num_iterations << " iterations." << std::endl;
 #endif
 
-  // Smooth plan
-  _smoother->smooth(plan, costmap, time_remaining);
+  if (_smoother && num_iterations > 1) {
+    _smoother->smooth(plan, costmap, time_remaining, _costmap_ros->getRobotFootprint());
+  }
 
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
