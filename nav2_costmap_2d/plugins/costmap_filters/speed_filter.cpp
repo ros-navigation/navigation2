@@ -70,6 +70,45 @@ void SpeedFilter::initializeFilter(
     std::string("speed_limit"));
   speed_limit_topic = joinWithParentNamespace(speed_limit_topic);
 
+  // Path lookahead parameters
+  enable_path_lookahead_ = node->declare_or_get_parameter(
+    name_ + "." + "enable_path_lookahead", false);
+  max_decel_ = node->declare_or_get_parameter(
+    name_ + "." + "max_decel", -0.5);
+  min_lookahead_ = node->declare_or_get_parameter(
+    name_ + "." + "min_lookahead", 0.3);
+  max_lookahead_ = node->declare_or_get_parameter(
+    name_ + "." + "max_lookahead", 5.0);
+  std::string path_topic = node->declare_or_get_parameter(
+    name_ + "." + "path_topic", std::string("plan"));
+  std::string odom_topic = node->declare_or_get_parameter(
+    name_ + "." + "odom_topic", std::string("odom"));
+
+  // Check params
+  if (enable_path_lookahead_) {
+    if (max_decel_ >= 0.0) {
+      RCLCPP_WARN(
+        logger_,
+        "SpeedFilter: max_decel should be negative,"
+        "lookahead distance will be set to max_lookahead instead");
+    }
+    if (min_lookahead_ < 0.0) {
+      RCLCPP_WARN(
+        logger_,
+        "SpeedFilter: min_lookahead = %f is negative,"
+        "clamping to 0.0m", min_lookahead_);
+      min_lookahead_ = 0.0;
+    }
+    if (max_lookahead_ < min_lookahead_) {
+      RCLCPP_WARN(
+        logger_,
+        "SpeedFilter: max_lookahead = %f is less than min_lookahead = %f,"
+        "clamping to min_lookahead.",
+        max_lookahead_, min_lookahead_);
+      max_lookahead_ = min_lookahead_;
+    }
+  }
+
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   // Setting new costmap filter info subscriber
   RCLCPP_INFO(
@@ -89,10 +128,34 @@ void SpeedFilter::initializeFilter(
     speed_limit_topic);
   speed_limit_pub_->on_activate();
 
+  // Path subscriptions and odom smoother if lookahead enabled
+  if (enable_path_lookahead_) {
+    std::string resolved_path_topic = joinWithParentNamespace(path_topic);
+    RCLCPP_INFO(
+      logger_,
+      "SpeedFilter: Path lookahead enabled. Subscribing to \"%s\" topic for path...",
+      resolved_path_topic.c_str());
+    path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
+      resolved_path_topic,
+      std::bind(&SpeedFilter::pathCallback, this, std::placeholders::_1));
+
+    odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(
+      node, 0.3, odom_topic);
+
+    lookahead_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
+      name_ + "/lookahead_point");
+    lookahead_pub_->on_activate();
+  }
+
   // Reset speed conversion states
   base_ = BASE_DEFAULT;
   multiplier_ = MULTIPLIER_DEFAULT;
   percentage_ = false;
+
+  // Reset path lookahead states
+  held_lookahead_dist_ = 0.0;
+  cached_lookahead_start_idx_ = 0;
+  limit_at_robot_pose_ = NO_SPEED_LIMIT;
 }
 
 void SpeedFilter::filterInfoCallback(
@@ -174,6 +237,175 @@ void SpeedFilter::maskCallback(
   filter_mask_ = msg;
 }
 
+void SpeedFilter::pathCallback(
+  const nav_msgs::msg::Path::ConstSharedPtr & msg)
+{
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
+
+  current_path_ = msg;
+
+  // Reset cached start index when new path is received
+  cached_lookahead_start_idx_ = 0;
+}
+
+bool SpeedFilter::getSpeedLimitAtPose(
+  const geometry_msgs::msg::Pose & pose,
+  double & speed_limit)
+{
+  geometry_msgs::msg::Pose mask_pose;  // robot coordinates in mask frame
+
+  // Transforming robot pose from current layer frame to mask frame
+  if (!transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
+    return false;
+  }
+
+  // Converting mask_pose robot position to filter_mask_ indexes (mask_robot_i, mask_robot_j)
+  unsigned int mask_robot_i, mask_robot_j;
+  if (!nav2_util::worldToMap(
+      filter_mask_, mask_pose.position.x, mask_pose.position.y,
+      mask_robot_i, mask_robot_j))
+  {
+    return false;
+  }
+
+  // Getting filter_mask data from cell where the robot placed and
+  // calculating speed limit value
+  int8_t speed_mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
+  if (speed_mask_data == SPEED_MASK_NO_LIMIT) {
+    // Corresponding filter mask cell is free.
+    // Setting no speed limit there.
+    speed_limit = NO_SPEED_LIMIT;
+  } else if (speed_mask_data == SPEED_MASK_UNKNOWN) {
+    // Corresponding filter mask cell is unknown.
+    // Do nothing.
+    RCLCPP_ERROR(
+      logger_,
+      "SpeedFilter: Found unknown cell in filter_mask[%i, %i], "
+      "which is invalid for this kind of filter",
+      mask_robot_i, mask_robot_j);
+    return false;
+  } else {
+    // Normal case: speed_mask_data in range of [1..100]
+    speed_limit = speed_mask_data * multiplier_ + base_;
+    if (percentage_) {
+      if (speed_limit < 0.0 || speed_limit > 100.0) {
+        RCLCPP_WARN(
+          logger_,
+          "SpeedFilter: Speed limit in filter_mask[%i, %i] is %f%%, "
+          "out of bounds of [0, 100]. Setting it to no-limit value.",
+          mask_robot_i, mask_robot_j, speed_limit);
+        speed_limit = NO_SPEED_LIMIT;
+      }
+    } else {
+      if (speed_limit < 0.0) {
+        RCLCPP_WARN(
+          logger_,
+          "SpeedFilter: Speed limit in filter_mask[%i, %i] is less than 0 m/s, "
+          "which can not be true. Setting it to no-limit value.",
+          mask_robot_i, mask_robot_j);
+        speed_limit = NO_SPEED_LIMIT;
+      }
+    }
+  }
+  return true;
+}
+
+double SpeedFilter::getSpeedLimitFromLookahead(
+  const geometry_msgs::msg::Pose & robot_pose,
+  double lookahead_dist)
+{
+  // Transform path if not in the global frame
+  nav_msgs::msg::Path transformed_path;
+  if(current_path_->header.frame_id != global_frame_) {
+    if(!nav2_util::transformPathInTargetFrame(*current_path_, transformed_path, *tf_,
+        global_frame_))
+    {
+      RCLCPP_ERROR_THROTTLE(logger_, *(clock_), 5000,
+          "SpeedFilter: Failed to transform path to global frame, "
+          "no speed limit will be published");
+      return NO_SPEED_LIMIT;
+    }
+  } else {
+    transformed_path = *current_path_;
+  }
+
+  const auto & poses = transformed_path.poses;
+
+  const size_t pose_search_start =
+    (cached_lookahead_start_idx_ < poses.size()) ? cached_lookahead_start_idx_ : 0;
+
+  // Find the closest segment to the robot
+  auto path_search_result = nav2_util::distance_from_path(
+    transformed_path, robot_pose, pose_search_start);
+
+  size_t lookahead_start_idx = path_search_result.closest_segment_index;
+
+  // Update cached start index
+  cached_lookahead_start_idx_ = lookahead_start_idx;
+
+  double min_speed_limit = NO_SPEED_LIMIT;
+  bool found_any_limit = false;
+
+  // Lookahead endpoint for visualization
+  auto lookahead_point_msg = std::make_unique<geometry_msgs::msg::PointStamped>();
+  lookahead_point_msg->header.frame_id = global_frame_;
+  lookahead_point_msg->header.stamp = clock_->now();
+  lookahead_point_msg->point = robot_pose.position;
+
+  // Check robot's current pose
+  double speed_limit_at_robot_pose = NO_SPEED_LIMIT;
+  if (!getSpeedLimitAtPose(robot_pose, speed_limit_at_robot_pose)) {
+    // Pose mapped outside mask or transform failed
+    return NO_SPEED_LIMIT;
+  }
+  limit_at_robot_pose_ = speed_limit_at_robot_pose;
+
+  if (speed_limit_at_robot_pose != NO_SPEED_LIMIT) {
+    min_speed_limit = speed_limit_at_robot_pose;
+    found_any_limit = true;
+  }
+
+  // Walk poses from lookahead_start_idx forward, sampling the speed limit at each pose.
+  double dist_along_path = 0.0;
+  for (size_t i = lookahead_start_idx; i < poses.size(); ++i) {
+    if (i > lookahead_start_idx) {
+      dist_along_path += nav2_util::geometry_utils::euclidean_distance(
+        poses[i - 1].pose.position, poses[i].pose.position);
+    }
+
+    if (dist_along_path > lookahead_dist) {
+      break;
+    }
+
+    // Update lookahead endpoint for visualization
+    lookahead_point_msg->point = poses[i].pose.position;
+
+    double sampled_speed_limit = NO_SPEED_LIMIT;
+    if (!getSpeedLimitAtPose(poses[i].pose, sampled_speed_limit)) {
+      // Pose mapped outside mask or transform failed
+      continue;
+    }
+    if (sampled_speed_limit == NO_SPEED_LIMIT) {
+      continue;
+    }
+
+    // Update strictest speed limit
+    if (!found_any_limit) {
+      // First limit found on the lookahead path, set it as the strictest
+      min_speed_limit = sampled_speed_limit;
+      found_any_limit = true;
+    } else {
+      min_speed_limit = std::min(min_speed_limit, sampled_speed_limit);
+    }
+  }
+
+  if (lookahead_pub_ && lookahead_pub_->get_subscription_count() > 0) {
+    lookahead_pub_->publish(std::move(lookahead_point_msg));
+  }
+
+  return min_speed_limit;
+}
+
 void SpeedFilter::process(
   nav2_costmap_2d::Costmap2D & /*master_grid*/,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/,
@@ -189,59 +421,41 @@ void SpeedFilter::process(
     return;
   }
 
-  geometry_msgs::msg::Pose mask_pose;  // robot coordinates in mask frame
+  // Decide path lookahead vs just checking at robot pose.
+  // Path lookahead requires a non-empty path received
+  const bool use_path_lookahead =
+    enable_path_lookahead_ &&
+    current_path_ && !current_path_->poses.empty();
 
-  // Transforming robot pose from current layer frame to mask frame
-  if (!transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
-    return;
-  }
+  if (use_path_lookahead) {
+    const auto twist = odom_smoother_->getTwist();
+    const double linear_vel = std::abs(twist.linear.x);
 
-  // Converting mask_pose robot position to filter_mask_ indexes (mask_robot_i, mask_robot_j)
-  unsigned int mask_robot_i, mask_robot_j;
-  if (!nav2_util::worldToMap(
-      filter_mask_, mask_pose.position.x, mask_pose.position.y,
-      mask_robot_i, mask_robot_j))
-  {
-    return;
-  }
+    // Calculate lookahead distance at current velocity
+    double d_lookahead;
+    if (max_decel_ < 0.0) {
+      d_lookahead = (linear_vel * linear_vel) / (2.0 * std::abs(max_decel_));
+      d_lookahead = std::clamp(d_lookahead, min_lookahead_, max_lookahead_);
 
-  // Getting filter_mask data from cell where the robot placed and
-  // calculating speed limit value
-  int8_t speed_mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
-  if (speed_mask_data == SPEED_MASK_NO_LIMIT) {
-    // Corresponding filter mask cell is free.
-    // Setting no speed limit there.
-    speed_limit_ = NO_SPEED_LIMIT;
-  } else if (speed_mask_data == SPEED_MASK_UNKNOWN) {
-    // Corresponding filter mask cell is unknown.
-    // Do nothing.
-    RCLCPP_ERROR(
-      logger_,
-      "SpeedFilter: Found unknown cell in filter_mask[%i, %i], "
-      "which is invalid for this kind of filter",
-      mask_robot_i, mask_robot_j);
-    return;
-  } else {
-    // Normal case: speed_mask_data in range of [1..100]
-    speed_limit_ = speed_mask_data * multiplier_ + base_;
-    if (percentage_) {
-      if (speed_limit_ < 0.0 || speed_limit_ > 100.0) {
-        RCLCPP_WARN(
-          logger_,
-          "SpeedFilter: Speed limit in filter_mask[%i, %i] is %f%%, "
-          "out of bounds of [0, 100]. Setting it to no-limit value.",
-          mask_robot_i, mask_robot_j, speed_limit_);
-        speed_limit_ = NO_SPEED_LIMIT;
-      }
+      // If lookahead distance is being held, don't let it shrink below the held value
+      d_lookahead = std::max(d_lookahead, held_lookahead_dist_);
     } else {
-      if (speed_limit_ < 0.0) {
-        RCLCPP_WARN(
-          logger_,
-          "SpeedFilter: Speed limit in filter_mask[%i, %i] is less than 0 m/s, "
-          "which can not be true. Setting it to no-limit value.",
-          mask_robot_i, mask_robot_j);
-        speed_limit_ = NO_SPEED_LIMIT;
-      }
+      d_lookahead = max_lookahead_;
+    }
+
+    speed_limit_ = getSpeedLimitFromLookahead(pose, d_lookahead);
+
+    // If the speed limit at robot pose is same as the strictest speed limit along path,
+    // release the lookahead hold
+    if (limit_at_robot_pose_ == speed_limit_) {
+      held_lookahead_dist_ = 0.0;
+    } else {
+      held_lookahead_dist_ = d_lookahead;
+    }
+  } else {
+    if (!getSpeedLimitAtPose(pose, speed_limit_)) {
+      RCLCPP_ERROR(logger_, "SpeedFilter: Failed to get speed limit at pose");
+      return;
     }
   }
 
@@ -274,6 +488,10 @@ void SpeedFilter::resetFilter()
   if (speed_limit_pub_) {
     speed_limit_pub_->on_deactivate();
     speed_limit_pub_.reset();
+  }
+  if (lookahead_pub_) {
+    lookahead_pub_->on_deactivate();
+    lookahead_pub_.reset();
   }
 }
 
