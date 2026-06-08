@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_waypoint_follower)
 
 find_package(ament_cmake REQUIRED)

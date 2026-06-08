@@ -73,7 +73,7 @@ ObstacleLayer::~ObstacleLayer()
 
 void ObstacleLayer::onInitialize()
 {
-  bool track_unknown_space;
+  bool track_unknown_space = false;
   double transform_tolerance = 0.1;
 
   // The topics that we'll subscribe to from the parameter server
