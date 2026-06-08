@@ -23,9 +23,9 @@
 
 #include "tf2/utils.hpp"
 
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_smac_planner/smoother.hpp"
 #include "nav2_util/smoother_utils.hpp"
-#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
 namespace nav2_smac_planner
 {
@@ -201,7 +201,7 @@ bool Smoother::smoothImpl(
           getFieldByDim(new_path.poses[i], 0),
           getFieldByDim(new_path.poses[i], 1),
           theta, footprint);
-        
+
         if (footprint_cost >= INSCRIBED_INFLATED_OBSTACLE && footprint_cost != UNKNOWN_COST) {
           RCLCPP_DEBUG(
             rclcpp::get_logger("SmacPlannerSmoother"),
