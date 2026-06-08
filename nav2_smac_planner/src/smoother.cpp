@@ -127,11 +127,11 @@ bool Smoother::smoothImpl(
   nav_msgs::msg::Path new_path = path;
   nav_msgs::msg::Path last_path = path;
 
-  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<const nav2_costmap_2d::Costmap2D *>>
-    collision_checker = nullptr;
+  using CollisionChecker =
+    nav2_costmap_2d::FootprintCollisionChecker<const nav2_costmap_2d::Costmap2D *>;
+  std::unique_ptr<CollisionChecker> collision_checker = nullptr;
   if (costmap && !footprint.empty()) {
-    collision_checker = std::make_unique<
-      nav2_costmap_2d::FootprintCollisionChecker<const nav2_costmap_2d::Costmap2D *>>(costmap);
+    collision_checker = std::make_unique<CollisionChecker>(costmap);
   }
 
   while (change >= tolerance_) {
