@@ -326,9 +326,14 @@ void SimpleChargingDock::jointStateCallback(
   for (size_t i = 0; i < state->name.size(); ++i) {
     for (auto & name : stall_joint_names_) {
       if (state->name[i] == name) {
-        // Tracking this joint
-        velocity += abs(state->velocity[i]);
-        effort += abs(state->effort[i]);
+        // Tracking this joint. Ensure we do not access out of bounds
+        // if the velocity or effort arrays are empty or shorter than names.
+        if (i < state->velocity.size()) {
+          velocity += abs(state->velocity[i]);
+        }
+        if (i < state->effort.size()) {
+          effort += abs(state->effort[i]);
+        }
       }
     }
   }
