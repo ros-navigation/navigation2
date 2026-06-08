@@ -129,6 +129,15 @@ void Optimizer::getParams()
     RCLCPP_WARN(logger_, "sgf_order must be 1 or 2, defaulting to 2");
     s.sgf_order = 2;
   }
+  getParam(
+    s.sampling_std_reduction_factor, "sampling_std.reduction_factor", 1.0f,
+    ParameterType::Static);
+  if (s.sampling_std_reduction_factor <= 0.0f || s.sampling_std_reduction_factor > 1.0f) {
+    RCLCPP_WARN(
+      logger_,
+      "sampling_std.reduction_factor must be in (0.0, 1.0]. Defaulting to 1.0.");
+    s.sampling_std_reduction_factor = 1.0f;
+  }
 
   s.base_constraints.ax_max = fabs(s.base_constraints.ax_max);
   if (s.base_constraints.ax_min > 0.0) {
@@ -268,10 +277,26 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
 
 void Optimizer::optimize()
 {
+  const auto original_sampling_std = settings_.sampling_std;
   for (size_t i = 0; i < settings_.iteration_count; ++i) {
+    costs_.setZero(settings_.batch_size);
+    critics_data_.fail_flag = false;
+    if (i > 0 && settings_.sampling_std_reduction_factor < 1.0f) {
+      const float factor = std::pow(
+        settings_.sampling_std_reduction_factor, static_cast<float>(i));
+      settings_.sampling_std.vx = original_sampling_std.vx * factor;
+      settings_.sampling_std.vy = original_sampling_std.vy * factor;
+      settings_.sampling_std.wz = original_sampling_std.wz * factor;
+      noise_generator_.reset(settings_, isHolonomic());
+    }
+
     generateNoisedTrajectories();
     critic_manager_.evalTrajectoriesScores(critics_data_);
     updateControlSequence();
+  }
+  if (settings_.sampling_std_reduction_factor < 1.0f) {
+    settings_.sampling_std = original_sampling_std;
+    noise_generator_.reset(settings_, isHolonomic());
   }
 }
 

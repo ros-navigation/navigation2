@@ -65,6 +65,24 @@ void setUpOptimizerParams(
   params_.emplace_back(rclcpp::Parameter(node_name + ".lookahead_dist", s.lookahead_distance));
   params_.emplace_back(rclcpp::Parameter(node_name + ".motion_model", s.motion_model));
   params_.emplace_back(rclcpp::Parameter(node_name + ".critics", critics));
+  params_.emplace_back(
+    rclcpp::Parameter(node_name + ".colored_noise.enabled", s.colored_noise_enabled));
+  if (s.colored_noise_enabled) {
+    params_.emplace_back(
+      rclcpp::Parameter(node_name + ".colored_noise.exponent", s.colored_noise_exponent));
+    params_.emplace_back(
+      rclcpp::Parameter(node_name + ".colored_noise.offset_t", s.colored_noise_offset_t));
+    params_.emplace_back(
+      rclcpp::Parameter(
+        node_name + ".colored_noise.offset_decay_rate",
+        s.colored_noise_offset_decay_rate));
+    params_.emplace_back(
+      rclcpp::Parameter(node_name + ".colored_noise.fmin", s.colored_noise_fmin));
+  }
+  params_.emplace_back(
+    rclcpp::Parameter(
+      node_name + ".sampling_std.reduction_factor",
+      s.sampling_std_reduction_factor));
   params_.emplace_back(rclcpp::Parameter("controller_frequency", dummy_freq));
   // Inject plugin type for the chosen motion model so tests don't need an installed plugin
   params_.emplace_back(

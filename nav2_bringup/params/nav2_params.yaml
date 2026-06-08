@@ -147,6 +147,14 @@ controller_server:
       vx_std: 0.2
       vy_std: 0.2
       wz_std: 0.4
+      sampling_std:
+        reduction_factor: 1.0
+      colored_noise:
+        enabled: false
+        exponent: 2.0
+        offset_t: 1
+        offset_decay_rate: 0.97
+        fmin: 0.0
       vx_max: 0.5
       vx_min: -0.35
       vy_max: 0.5

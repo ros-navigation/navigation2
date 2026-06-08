@@ -44,6 +44,7 @@ struct OptimizerSettings
   size_t retry_attempt_limit{0};
   bool open_loop{false};
   unsigned int sgf_order{2u};
+  float sampling_std_reduction_factor{1.0f};
 };
 
 }  // namespace mppi::models

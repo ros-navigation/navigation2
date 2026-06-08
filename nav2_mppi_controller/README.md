@@ -49,6 +49,12 @@ This process is then repeated a number of times and returns a converged solution
  | vx_std                     | double | Default 0.2. Sampling standard deviation for VX                                                          |
  | vy_std                     | double | Default 0.2. Sampling standard deviation for VY                                                          |
  | wz_std                     | double | Default 0.4. Sampling standard deviation for Wz                                                          |
+ | sampling_std.reduction_factor | double | Default 1.0. Multiplier applied to sampling standard deviations on each additional MPPI iteration. Values in `(0.0, 1.0]` are accepted; `1.0` disables per-iteration reduction. |
+ | colored_noise.enabled      | bool   | Default false. When true, samples MPPI perturbations from a low-frequency colored-noise distribution instead of independent white Gaussian noise. |
+ | colored_noise.exponent     | double | Default 2.0. Power-law exponent for colored-noise sampling. `0.0` is white noise; larger values put more energy in lower frequencies for smoother candidate controls. Only read when `colored_noise.enabled` is true. |
+ | colored_noise.offset_t     | int    | Default 1. Offset used when cropping the doubled-horizon colored-noise sequence. Only read when `colored_noise.enabled` is true. |
+ | colored_noise.offset_decay_rate | double | Default 0.97. Decay factor applied to the cropped offset correction. Only read when `colored_noise.enabled` is true. |
+ | colored_noise.fmin         | double | Default 0.0. Relative low-frequency cutoff in `[0.0, 0.5]`; values below `1 / (2 * time_steps)` are mapped to the lowest finite frequency. Only read when `colored_noise.enabled` is true. |
  | vx_max                     | double | Default 0.5. Max VX (m/s)                                                                                |
  | vy_max                     | double | Default 0.5. Max VY in either direction, if holonomic. (m/s)                                             |
  | vx_min                     | double | Default -0.35. Min VX (m/s)                                                                              |
@@ -204,6 +210,14 @@ controller_server:
       vx_std: 0.2
       vy_std: 0.2
       wz_std: 0.4
+      sampling_std:
+        reduction_factor: 1.0
+      colored_noise:
+        enabled: false
+        exponent: 2.0
+        offset_t: 1
+        offset_decay_rate: 0.97
+        fmin: 0.0
       vx_max: 0.5
       vx_min: -0.35
       vy_max: 0.5
