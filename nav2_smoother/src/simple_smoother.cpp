@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <vector>
+#include <cmath>
 #include <memory>
+#include <vector>
 #include "nav2_smoother/simple_smoother.hpp"
 #include "nav2_core/smoother_exceptions.hpp"
 

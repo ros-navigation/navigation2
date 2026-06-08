@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
+
 #include "angles/angles.h"
 #include "nav2_ros_common/rate.hpp"
 #include "opennav_docking/docking_server.hpp"

@@ -16,6 +16,7 @@
 #include <ompl/base/spaces/DubinsStateSpace.h>
 
 #include <chrono>
+#include <cmath>
 #include <memory>
 #include <vector>
 
