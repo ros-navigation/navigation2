@@ -26,7 +26,7 @@ import pytest
 
 
 @pytest.mark.launch_test
-def generate_test_description() -> tuple[LaunchDescription, dict[str, Any]]:
+def generate_test_description():
     # Where our package keeps test assets (bags + YAML)
     pkg_share = get_package_share_directory('nav2_collision_monitor')
 
@@ -100,7 +100,7 @@ def generate_test_description() -> tuple[LaunchDescription, dict[str, Any]]:
         collision_monitor,
         bag_play,
         cm_gtest,
-        ReadyToTest(),  # type: ignore[no-untyped-call]
+        ReadyToTest(),
     ])
     # The dict here exposes cm_gtest to the test class below
     return ld, {'cm_gtest': cm_gtest}
@@ -109,7 +109,7 @@ def generate_test_description() -> tuple[LaunchDescription, dict[str, Any]]:
 @pytest.mark.launch_test
 class TestWaitForGTest(unittest.TestCase):
     # This part just waits until the gtest process finished (or times out)
-    def test_gtest_completed(self, proc_info: Any, cm_gtest: Any) -> None:
+    def test_gtest_completed(self, proc_info, cm_gtest):
         proc_info.assertWaitForShutdown(process=cm_gtest, timeout=40.0)
 
 
@@ -121,7 +121,7 @@ post_shutdown_test = cast(Any, launch_testing.post_shutdown_test)
 @post_shutdown_test()
 class TestGTestExitCode(unittest.TestCase):
     # And this part says: the gtest must have *passed*
-    def test_gtest_passed(self, proc_info: Any, cm_gtest: Any) -> None:
+    def test_gtest_passed(self, proc_info, cm_gtest):
         from launch_testing.asserts import assertExitCodes
 
         # assertExitCodes is also untyped, tell mypy that we know it

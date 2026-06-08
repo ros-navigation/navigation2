@@ -17,7 +17,7 @@ from math import cos, sin
 import os
 import threading
 import time
-from typing import Callable
+
 import unittest
 
 from action_msgs.msg import GoalStatus
@@ -31,7 +31,6 @@ from nav2_msgs.action import FollowObject
 import pytest
 import rclpy
 from rclpy.action import ActionClient
-from rclpy.client import Client
 from rclpy.duration import Duration
 from rclpy.executors import SingleThreadedExecutor
 import tf2_ros
@@ -48,7 +47,7 @@ from tf2_ros import TransformBroadcaster
 @pytest.mark.rostest
 # @pytest.mark.flaky
 # @pytest.mark.flaky(max_runs=5, min_passes=3)
-def generate_test_description() -> LaunchDescription:
+def generate_test_description():
 
     return LaunchDescription([
         # SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
@@ -79,7 +78,7 @@ def generate_test_description() -> LaunchDescription:
             parameters=[{'autostart': True},
                         {'node_names': ['following_server']}]
         ),
-        launch_testing.actions.ReadyToTest(),  # type: ignore[no-untyped-call]
+        launch_testing.actions.ReadyToTest(),
     ])
 
 
@@ -93,11 +92,11 @@ class ObjectPublisher:
 
     def __init__(
         self,
-        topic_name: str,
-        frame_name: str,
-        rate_hz: float,
-        at_distance_getter: Callable[[], bool],
-        mode: str = 'topic',
+        topic_name,
+        frame_name,
+        rate_hz,
+        at_distance_getter,
+        mode='topic',
     ):
         # Create a dedicated node and executor so timers and clocks behave correctly
         self._node = rclpy.create_node('test_object_pose_publisher')
@@ -114,7 +113,7 @@ class ObjectPublisher:
         self._executor.add_node(self._node)
 
         # If in frame mode, create a TransformBroadcaster for publishing TF
-        self._tf_broadcaster: TransformBroadcaster | None = None
+        self._tf_broadcaster = None
         if self._mode == 'frame':
             self._tf_broadcaster = TransformBroadcaster(self._node)
 
@@ -122,7 +121,7 @@ class ObjectPublisher:
         self._thread = threading.Thread(target=self._spin, daemon=True)
         self._thread.start()
 
-    def _timer_cb(self) -> None:
+    def _timer_cb(self):
         # Called in executor context at the configured rate
         if self._at_distance_getter():
             return
@@ -149,7 +148,7 @@ class ObjectPublisher:
             if self._tf_broadcaster is not None:
                 self._tf_broadcaster.sendTransform(t)
 
-    def _spin(self) -> None:
+    def _spin(self):
         # Spin until stop event is set
         try:
             while not self._stop_event.is_set():
@@ -158,7 +157,7 @@ class ObjectPublisher:
             # Ensure we don't crash the main test thread
             pass
 
-    def shutdown(self) -> None:
+    def shutdown(self):
         self._stop_event.set()
         # Allow the executor loop to finish
         self._thread.join(timeout=1.0)
@@ -175,24 +174,24 @@ class ObjectPublisher:
 class TestFollowingServer(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls) -> None:
+    def setUpClass(cls):
         rclpy.init()
 
     @classmethod
-    def tearDownClass(cls) -> None:
+    def tearDownClass(cls):
         rclpy.shutdown()
 
-    def setUp(self) -> None:
+    def setUp(self):
         # Create a ROS node for tests
         # Latest odom -> base_link
-        self.x: float = 0.0
-        self.y: float = 0.0
-        self.theta: float = 0.0
+        self.x = 0.0
+        self.y = 0.0
+        self.theta = 0.0
         # Track states
-        self.at_distance: bool = False
-        self.retry_state: bool = False
+        self.at_distance = False
+        self.retry_state = False
         # Latest command velocity
-        self.command: Twist = Twist()
+        self.command = Twist()
         self.node = rclpy.create_node('test_following_server')
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.node)
@@ -201,11 +200,11 @@ class TestFollowingServer(unittest.TestCase):
         # In 'search' mode stop publishing once the robot reaches 0.75m so the server must
         # perform its recovery behavior (object lost)
         if mode_env == 'search':
-            def at_distance_getter() -> bool:
+            def at_distance_getter():
                 return bool(((self.x ** 2 + self.y ** 2) ** 0.5) >= 0.75)
             pub_mode = 'topic'
         else:
-            def at_distance_getter() -> bool:
+            def at_distance_getter():
                 return self.at_distance
             pub_mode = mode_env
 
@@ -217,10 +216,10 @@ class TestFollowingServer(unittest.TestCase):
             pub_mode,
         )
 
-    def wait_for_node_to_be_active(self, node_name: str, timeout_sec: float = 10.0) -> None:
+    def wait_for_node_to_be_active(self, node_name, timeout_sec=10.0):
         """Wait for a managed node to become active."""
-        client: Client[GetState.Request, GetState.Response] = (  # type: ignore[name-defined]
-            self.node.create_client(GetState, f'{node_name}/get_state')  # type: ignore[arg-type]
+        client = (
+            self.node.create_client(GetState, f'{node_name}/get_state')
         )
         if not client.wait_for_service(timeout_sec=2.0):
             self.fail(f'Service get_state for {node_name} not available.')
@@ -238,15 +237,15 @@ class TestFollowingServer(unittest.TestCase):
         # raises AssertionError
         self.fail(f'Node {node_name} did not become active within {timeout_sec} seconds.')
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.object_publisher.shutdown()
         self.node.destroy_node()
 
-    def command_velocity_callback(self, msg: TwistStamped) -> None:
+    def command_velocity_callback(self, msg):
         self.node.get_logger().info(f'Command: {msg.twist.linear.x:f} {msg.twist.angular.z:f}')
         self.command = msg.twist
 
-    def timer_callback(self) -> None:
+    def timer_callback(self):
         # Propagate command
         period = 0.05
         self.x += cos(self.theta) * self.command.linear.x * period
@@ -255,7 +254,7 @@ class TestFollowingServer(unittest.TestCase):
         # Need to publish updated TF
         self.publish()
 
-    def publish(self) -> None:
+    def publish(self):
         # Publish base->odom transform
         t = TransformStamped()
         t.header.stamp = self.node.get_clock().now().to_msg()
@@ -281,8 +280,8 @@ class TestFollowingServer(unittest.TestCase):
 
     def action_feedback_callback(
         self,
-        msg: FollowObject.Feedback  # type: ignore[name-defined]
-    ) -> None:
+        msg
+    ):
         # Force the following action to run a full recovery loop when
         # the robot is at distance
         if msg.feedback.state == msg.feedback.STOPPING:
@@ -291,7 +290,7 @@ class TestFollowingServer(unittest.TestCase):
             self.at_distance = False
             self.retry_state = True
 
-    def test_following_server(self) -> None:
+    def test_following_server(self):
         # Publish TF for odometry
         self.tf_broadcaster = TransformBroadcaster(self.node)
         time.sleep(0.5)
@@ -300,9 +299,7 @@ class TestFollowingServer(unittest.TestCase):
         self.timer = self.node.create_timer(0.05, self.timer_callback)
 
         # Create action client
-        self.follow_action_client: ActionClient[  # type: ignore[name-defined]
-            FollowObject.Goal, FollowObject.Result, FollowObject.Feedback
-        ] = ActionClient(self.node, FollowObject, 'follow_object')  # type: ignore[arg-type]
+        self.follow_action_client = ActionClient(self.node, FollowObject, 'follow_object')
 
         # Subscribe to command velocity
         self.node.create_subscription(
@@ -415,9 +412,9 @@ class TestFollowingServer(unittest.TestCase):
                 self.assertTrue(self.at_distance)
 
 
-@launch_testing.post_shutdown_test()  # type: ignore[no-untyped-call]
+@launch_testing.post_shutdown_test()
 class TestProcessOutput(unittest.TestCase):
 
-    def test_exit_code(self, proc_info: launch_testing.ProcInfoHandler) -> None:
+    def test_exit_code(self, proc_info):
         # Check that all processes in the launch exit with code 0
-        launch_testing.asserts.assertExitCodes(proc_info)  # type: ignore[no-untyped-call]
+        launch_testing.asserts.assertExitCodes(proc_info)

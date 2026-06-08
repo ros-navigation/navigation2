@@ -14,7 +14,7 @@
 
 import os
 import tempfile
-from typing import Generator
+
 
 import launch
 from launch.substitutions import LaunchConfiguration
@@ -27,7 +27,7 @@ class TestRewrittenYamlValueRewrites:
     """Test that value rewrites work correctly in RewrittenYaml."""
 
     @pytest.fixture(autouse=True)
-    def setup_teardown(self) -> Generator[None, None, None]:
+    def setup_teardown(self):
         # Create a temporary YAML file for testing
         self.test_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
         self.test_yaml.write("""\
@@ -58,7 +58,7 @@ class TestRewrittenYamlValueRewrites:
         yield
         os.unlink(self.test_yaml.name)
 
-    def test_value_rewrites(self) -> None:
+    def test_value_rewrites(self):
         """Test that value rewrites work for various types."""
         # Set up launch configurations for our test values
         launch_configurations = {

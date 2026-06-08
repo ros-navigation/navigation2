@@ -20,12 +20,9 @@ It provides the basic conversion, get/set,
 and handling semantics found in the costmap 2d C++ API.
 """
 
-from typing import Optional
 
-from builtin_interfaces.msg import Time
 from nav_msgs.msg import OccupancyGrid
 import numpy as np
-from numpy.typing import NDArray
 
 
 class PyOccupancyGrid:
@@ -35,7 +32,7 @@ class PyOccupancyGrid:
     Occupancy grid Python3 API for OccupancyGrids to populate from published messages
     """
 
-    def __init__(self, occupancy_map: OccupancyGrid) -> None:
+    def __init__(self, occupancy_map: OccupancyGrid):
         """
         Initialize costmap2D.
 
@@ -48,53 +45,53 @@ class PyOccupancyGrid:
             None
 
         """
-        self.size_x: int = occupancy_map.info.width
-        self.size_y: int = occupancy_map.info.height
-        self.resolution: float = occupancy_map.info.resolution
-        self.origin_x: float = occupancy_map.info.origin.position.x
-        self.origin_y: float = occupancy_map.info.origin.position.y
-        self.global_frame_id: str = occupancy_map.header.frame_id
-        self.costmap_timestamp: Time = occupancy_map.header.stamp
+        self.size_x = occupancy_map.info.width
+        self.size_y = occupancy_map.info.height
+        self.resolution = occupancy_map.info.resolution
+        self.origin_x = occupancy_map.info.origin.position.x
+        self.origin_y = occupancy_map.info.origin.position.y
+        self.global_frame_id = occupancy_map.header.frame_id
+        self.costmap_timestamp = occupancy_map.header.stamp
         # Extract costmap
-        self.costmap: NDArray[np.int8] = np.array(occupancy_map.data, dtype=np.int8)
+        self.costmap = np.array(occupancy_map.data, dtype=np.int8)
 
-    def getSizeInCellsX(self) -> int:
+    def getSizeInCellsX(self):
         """Get map width in cells."""
         return self.size_x
 
-    def getSizeInCellsY(self) -> int:
+    def getSizeInCellsY(self):
         """Get map height in cells."""
         return self.size_y
 
-    def getSizeInMetersX(self) -> float:
+    def getSizeInMetersX(self):
         """Get x axis map size in meters."""
         return self.size_x * self.resolution
 
-    def getSizeInMetersY(self) -> float:
+    def getSizeInMetersY(self):
         """Get y axis map size in meters."""
         return self.size_y * self.resolution
 
-    def getOriginX(self) -> float:
+    def getOriginX(self):
         """Get the origin x axis of the map [m]."""
         return self.origin_x
 
-    def getOriginY(self) -> float:
+    def getOriginY(self):
         """Get the origin y axis of the map [m]."""
         return self.origin_y
 
-    def getResolution(self) -> float:
+    def getResolution(self):
         """Get map resolution [m/cell]."""
         return self.resolution
 
-    def getGlobalFrameID(self) -> str:
+    def getGlobalFrameID(self):
         """Get global frame_id."""
         return self.global_frame_id
 
-    def getCostmapTimestamp(self) -> Time:
+    def getCostmapTimestamp(self):
         """Get costmap timestamp."""
         return self.costmap_timestamp
 
-    def getCostXY(self, mx: int, my: int) -> np.int8:
+    def getCostXY(self, mx: int, my: int):
         """
         Get the cost of a cell in the costmap using map coordinate XY.
 
@@ -110,7 +107,7 @@ class PyOccupancyGrid:
         """
         return np.int8(self.costmap[self.getIndex(mx, my)])
 
-    def getCostIdx(self, index: int) -> np.int8:
+    def getCostIdx(self, index: int):
         """
         Get the cost of a cell in the costmap using Index.
 
@@ -125,7 +122,7 @@ class PyOccupancyGrid:
         """
         return np.int8(self.costmap[index])
 
-    def setCost(self, mx: int, my: int, cost: np.int8) -> None:
+    def setCost(self, mx: int, my: int, cost: np.int8):
         """
         Set the cost of a cell in the costmap using map coordinate XY.
 
@@ -142,7 +139,7 @@ class PyOccupancyGrid:
         """
         self.costmap[self.getIndex(mx, my)] = cost
 
-    def mapToWorld(self, mx: int, my: int) -> tuple[float, float]:
+    def mapToWorld(self, mx: int, my: int):
         """
         Get the world coordinate XY using map coordinate XY.
 
@@ -162,7 +159,7 @@ class PyOccupancyGrid:
         wy = self.origin_y + (my + 0.5) * self.resolution
         return (wx, wy)
 
-    def worldToMapValidated(self, wx: float, wy: float) -> tuple[Optional[int], Optional[int]]:
+    def worldToMapValidated(self, wx: float, wy: float):
         """
         Get the map coordinate XY using world coordinate XY.
 
@@ -187,7 +184,7 @@ class PyOccupancyGrid:
             return (mx, my)
         return (None, None)
 
-    def getIndex(self, mx: int, my: int) -> int:
+    def getIndex(self, mx: int, my: int):
         """
         Get the index of the cell using map coordinate XY.
 

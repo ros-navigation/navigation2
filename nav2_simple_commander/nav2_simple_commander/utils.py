@@ -24,7 +24,7 @@ import subprocess
 from geometry_msgs.msg import Quaternion
 
 
-def find_os_processes(name: str) -> list[tuple[str, str]]:
+def find_os_processes(name: str):
     """Find all the processes that are running gz sim."""
     ps_output = subprocess.check_output(['ps', 'aux'], text=True)
     ps_lines = ps_output.split('\n')
@@ -39,7 +39,7 @@ def find_os_processes(name: str) -> list[tuple[str, str]]:
     return gz_sim_processes
 
 
-def kill_process(pid: str) -> None:
+def kill_process(pid: str):
     """Kill a process with a given PID."""
     try:
         os.kill(int(pid), signal.SIGKILL)
@@ -48,7 +48,7 @@ def kill_process(pid: str) -> None:
         print(f'Failed to kill process with PID: {pid}. Error: {e}')
 
 
-def kill_os_processes(name: str) -> None:
+def kill_os_processes(name: str):
     """Kill all processes that are running with name."""
     processes = find_os_processes(name)
     if processes:
@@ -60,7 +60,7 @@ def kill_os_processes(name: str) -> None:
 
 def euler_to_quaternion(
     roll: float = 0.0, pitch: float = 0.0,
-        yaw: float = 0.0) -> Quaternion:
+        yaw: float = 0.0):
     """Convert euler angles to quaternion."""
     cy = math.cos(yaw * 0.5)
     sy = math.sin(yaw * 0.5)
