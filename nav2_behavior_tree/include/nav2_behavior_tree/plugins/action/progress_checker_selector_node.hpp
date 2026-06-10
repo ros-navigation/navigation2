@@ -33,6 +33,13 @@ namespace nav2_behavior_tree
  * to get the decision about what progress_checker must be used. It is usually used before of
  * the FollowPath. The selected_progress_checker output port is passed to progress_checker_id
  * input port of the FollowPath
+ *
+ * Usage in XML:
+ * @code
+ * <ProgressCheckerSelector selected_progress_checker="{selected_progress_checker}"
+ *                          default_progress_checker="precise_progress_checker"
+ *                          topic_name="progress_checker_selector"/>
+ * @endcode
  */
 class ProgressCheckerSelector : public BT::SyncActionNode
 {

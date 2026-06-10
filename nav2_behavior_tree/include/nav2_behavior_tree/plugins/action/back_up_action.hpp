@@ -25,6 +25,13 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::BackUp
+ *
+ * Usage in XML:
+ * @code
+ * <BackUp backup_dist="-0.2" backup_speed="0.05"
+ *         server_name="backup_server" server_timeout="10"
+ *         error_code_id="{backup_error_code}"/>
+ * @endcode
  */
 class BackUpAction : public BtActionNode<nav2_msgs::action::BackUp>
 {

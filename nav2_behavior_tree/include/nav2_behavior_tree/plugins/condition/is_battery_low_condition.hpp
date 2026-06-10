@@ -30,6 +30,11 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that listens to a battery topic and
  * returns SUCCESS when battery is low and FAILURE otherwise
+ *
+ * Usage in XML:
+ * @code
+ * <IsBatteryLow min_battery="0.5" battery_topic="/battery_status" is_voltage="false"/>
+ * @endcode
  */
 class IsBatteryLowCondition : public BT::ConditionNode
 {

@@ -29,6 +29,13 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::ComputePathThroughPoses
+ *
+ * Usage in XML:
+ * @code
+ * <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"
+ *                          server_name="ComputePathThroughPoses" server_timeout="10"
+ *                          error_code_id="{compute_path_error_code}"/>
+ * @endcode
  */
 class ComputePathThroughPosesAction
   : public BtActionNode<nav2_msgs::action::ComputePathThroughPoses>

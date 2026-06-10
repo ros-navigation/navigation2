@@ -34,6 +34,12 @@ namespace nav2_behavior_tree
  * to get the decision about what smoother must be used. It is usually used before of
  * the FollowPath. The selected_smoother output port is passed to smoother_id
  * input port of the FollowPath
+ *
+ * Usage in XML:
+ * @code
+ * <SmootherSelector selected_smoother="{selected_smoother}" default_smoother="SimpleSmoother"
+ *                   topic_name="smoother_selector"/>
+ * @endcode
  */
 class SmootherSelector : public BT::SyncActionNode
 {

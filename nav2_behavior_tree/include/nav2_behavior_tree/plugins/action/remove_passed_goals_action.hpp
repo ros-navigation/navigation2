@@ -30,6 +30,12 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * Usage in XML:
+ * @code
+ * <RemovePassedGoals radius="0.6" input_goals="{goals}" output_goals="{goals}"/>
+ * @endcode
+ */
 class RemovePassedGoals : public BT::ActionNodeBase
 {
 public:

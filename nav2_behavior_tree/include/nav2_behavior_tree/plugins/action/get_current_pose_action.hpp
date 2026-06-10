@@ -32,6 +32,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief Action Node to get the current robot pose from TF
+ *
+ * Usage in XML:
+ * @code
+ * <GetCurrentPose current_pose="{current_pose}"/>
+ * @endcode
  */
 class GetCurrentPoseAction : public BT::ActionNodeBase
 {

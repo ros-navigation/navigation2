@@ -29,6 +29,13 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::NavigateThroughPoses
+ *
+ * Usage in XML:
+ * @code
+ * <NavigateThroughPoses goals="{goals}" server_name="NavigateThroughPoses" server_timeout="10"
+ *                       error_code_id="{navigate_through_poses_error_code}"
+ *                       behavior_tree="<some-path>/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml"/>
+ * @endcode
  */
 class NavigateThroughPosesAction : public BtActionNode<nav2_msgs::action::NavigateThroughPoses>
 {

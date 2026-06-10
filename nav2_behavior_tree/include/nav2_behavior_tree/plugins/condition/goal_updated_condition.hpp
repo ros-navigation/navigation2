@@ -30,6 +30,11 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS when goal is
  * updated on the blackboard and FAILURE otherwise
+ *
+ * Usage in XML:
+ * @code
+ * <GoalUpdated/>
+ * @endcode
  */
 class GoalUpdatedCondition : public BT::ConditionNode
 {

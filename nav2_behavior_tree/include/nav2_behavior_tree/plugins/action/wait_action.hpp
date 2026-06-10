@@ -25,6 +25,11 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::Wait
+ *
+ * Usage in XML:
+ * @code
+ * <Wait wait_duration="1.0" server_name="wait_server" server_timeout="10"/>
+ * @endcode
  */
 class WaitAction : public BtActionNode<nav2_msgs::action::Wait>
 {
