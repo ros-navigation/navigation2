@@ -25,6 +25,13 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::Spin
+ *
+ * Usage in XML:
+ * @code
+ * <Spin spin_dist="1.57" server_name="spin"
+ *       server_timeout="10" is_recovery="true"
+ *       error_code_id="{spin_error_code}"/>
+ * @endcode
  */
 class SpinAction : public BtActionNode<nav2_msgs::action::Spin>
 {

@@ -34,6 +34,12 @@ namespace nav2_behavior_tree
  * to get the decision about what planner must be used. It is usually used before of
  * the ComputePathToPoseAction. The selected_planner output port is passed to planner_id
  * input port of the ComputePathToPoseAction
+ *
+ * Usage in XML:
+ * @code
+ * <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased"
+ *                  topic_name="planner_selector"/>
+ * @endcode
  */
 class PlannerSelector : public BT::SyncActionNode
 {

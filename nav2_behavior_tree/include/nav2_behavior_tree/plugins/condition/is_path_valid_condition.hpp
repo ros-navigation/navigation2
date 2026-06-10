@@ -31,6 +31,11 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS when the IsPathValid
  * service returns true and FAILURE otherwise
+ *
+ * Usage in XML:
+ * @code
+ * <IsPathValid server_timeout="10" path="{path}"/>
+ * @endcode
  */
 class IsPathValidCondition : public BT::ConditionNode
 {
