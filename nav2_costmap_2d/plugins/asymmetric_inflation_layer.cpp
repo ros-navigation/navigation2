@@ -224,7 +224,7 @@ AsymmetricInflationLayer::extractLocalPathSegments(
       return local_path_segments;
     }
     current_path = *latest_global_path_;
-    cached_transform = *latest_path_transform_;
+    cached_transform = latest_path_transform_;
   }
 
   // Check if the path is already in costmap frame
@@ -269,8 +269,8 @@ AsymmetricInflationLayer::extractLocalPathSegments(
     geometry_msgs::msg::PoseStamped transformed_start = current_path.poses[i - 1];
     geometry_msgs::msg::PoseStamped transformed_end = current_path.poses[i];
     if (need_transform) {
-      tf2::doTransform(current_path.poses[i - 1], transformed_start, transform);
-      tf2::doTransform(current_path.poses[i], transformed_end, transform);
+      tf2::doTransform(current_path.poses[i - 1], transformed_start, *cached_transform);
+      tf2::doTransform(current_path.poses[i], transformed_end, *cached_transform);
     }
 
     const double ax = transformed_start.pose.position.x;
