@@ -21,6 +21,8 @@ find_package(nav2_msgs REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(nav2_ros_common REQUIRED)
+find_package(tinyxml2_vendor REQUIRED)
+find_package(tinyxml2 REQUIRED)
 
 nav2_package()
 
@@ -164,6 +166,7 @@ target_link_libraries(route_operations PRIVATE
 # Graph Parser plugins
 add_library(graph_file_loaders SHARED
     src/plugins/graph_file_loaders/geojson_graph_file_loader.cpp
+    src/plugins/graph_file_loaders/osm_graph_file_loader.cpp
 )
 target_include_directories(graph_file_loaders
   PUBLIC
@@ -187,6 +190,7 @@ target_link_libraries(graph_file_loaders PUBLIC
   ${nav_msgs_TARGETS}
   tf2_ros::tf2_ros
   nlohmann_json::nlohmann_json
+  tinyxml2::tinyxml2
 )
 target_link_libraries(graph_file_loaders PRIVATE
   ${lifecycle_msgs_TARGETS}
