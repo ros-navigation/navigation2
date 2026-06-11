@@ -222,8 +222,8 @@
       <input_port name="behavior_tree" type="string">Behavior tree absolute path or ID. If none is specified, NavigateToPose action server uses a default behavior tree.</input_port>
       <input_port name="server_name" type="string">Action server name. If not specified, `navigate_to_pose` is used.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <output_port name="error_code_id" type="uint16">The lowest error code in the list of the `error_code_names_prefixes` + `_error_code` suffix parameter.</output_port>
-      <output_port name="error_msg" type="string">The error messages associated with the lowest error code in the list of the `error_code_name_prefixes` + `_error_code` parameter.</output_port>
+      <output_port name="error_code_id" type="uint16">The lowest error code in the list of the `error_code_name_prefixes` + `_error_code` suffix parameter.</output_port>
+      <output_port name="error_msg" type="string">The error messages associated with the lowest error code in the list of the `error_code_name_prefixes` + `_error_code` suffix parameter.</output_port>
     </Action>
 
     <Action ID="NavigateThroughPoses">
@@ -231,8 +231,8 @@
       <input_port name="behavior_tree" type="string">Behavior tree absolute path or ID. If none is specified, NavigateThroughPoses action server uses a default behavior tree.</input_port>
       <input_port name="server_name" type="string">Action server name. If not specified, `navigate_through_poses` is used.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <output_port name="error_code_id" type="uint16">The lowest error code in the list of the `error_code_name_prefixes` parameter.</output_port>
-      <output_port name="error_msg" type="string">The error message associated with the lowest error code in the list of the `error_code_name_prefixes` parameter.</output_port>
+      <output_port name="error_code_id" type="uint16">The lowest error code in the list of the `error_code_name_prefixes` + `_error_code` suffix parameter.</output_port>
+      <output_port name="error_msg" type="string">The error message associated with the lowest error code in the list of the `error_code_name_prefixes` + `_error_code` suffix parameter.</output_port>
     </Action>
 
     <Action ID="ReinitializeGlobalLocalization">
