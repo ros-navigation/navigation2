@@ -58,7 +58,7 @@ public:
   {
     return {
       BT::InputPort<std::string>(
-        "battery_topic", std::string("/battery_status"), "Battery topic")
+        "battery_topic", "/battery_status", "Battery topic")
     };
   }
 

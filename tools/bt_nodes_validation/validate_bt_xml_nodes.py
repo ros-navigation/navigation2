@@ -22,6 +22,7 @@ TYPE_DIRECT_MAPPINGS = {
     'ActionResult::_success_type': 'bool',
     'ActionResult::_route_type': 'nav2_msgs::msg::Route',
     'ActionResult::_total_elapsed_time_type': 'builtin_interfaces::msg::Duration',
+    'Goals': 'std::vector<geometry_msgs::msg::PoseStamped>',
 }
 
 
