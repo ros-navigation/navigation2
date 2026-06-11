@@ -14,7 +14,11 @@
 
 #include <tinyxml2.h>
 
+#include <chrono>
+#include <cinttypes>
 #include <filesystem>
+#include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -35,23 +39,24 @@ void OsmGraphFileLoader::configure(const nav2::LifecycleNode::SharedPtr node)
     node->declare_or_get_parameter(prefix + "highway_filter", std::vector<std::string>{});
   highway_filter_ = std::unordered_set<std::string>(highways.begin(), highways.end());
 
-  use_datum_override_ = node->declare_or_get_parameter(prefix + "use_datum_override", false);
-  datum_lat_ = node->declare_or_get_parameter(prefix + "datum_latitude", 0.0);
-  datum_lon_ = node->declare_or_get_parameter(prefix + "datum_longitude", 0.0);
-  bearing_threshold_deg_ =
-    node->declare_or_get_parameter(prefix + "bearing_threshold_deg", 0.0);
+  // Convert OSM lat/lon through robot_localization's navsat_transform, so the
+  // datum (and the resulting map frame) is shared with the robot's localization
+  // rather than introducing a second, independent datum here. The client owns
+  // its own internal executor so it can be invoked synchronously at load time.
+  from_ll_client_ = node->create_client<robot_localization::srv::FromLLArray>(
+    "/fromLLArray", true /* creates and spins an internal executor */);
 }
 
 bool OsmGraphFileLoader::loadGraphFromFile(
-  Graph & /*graph*/, GraphToIDMap & /*graph_to_id_map*/, std::string filepath)
+  Graph & graph, GraphToIDMap & graph_to_id_map, std::string filepath)
 {
   if (!doesFileExist(filepath)) {
     RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
     return false;
   }
 
-  // Stage 1 (this milestone): turn the XML text into two in-memory tables and
-  // stop. Interpreting the topology happens in later milestones.
+  // Parse the XML into two in-memory tables: node id -> lat/lon, and the
+  // highway-filtered ways.
   std::unordered_map<int64_t, std::pair<double, double>> osm_nodes;
   std::vector<OsmWay> kept_ways;
   if (!parseOsm(filepath, osm_nodes, kept_ways)) {
@@ -66,13 +71,34 @@ bool OsmGraphFileLoader::loadGraphFromFile(
     return false;
   }
 
-  // M2 stops at parsing. Topology resolution (M3), coordinate conversion (M4)
-  // and edge construction (M5) still populate the graph, so report failure for
-  // now to signal the graph is not yet built.
+  osm_to_nodeid_.clear();
+  next_edge_id_ = 0;
+
+  // Resolve the implicit topology: ways connect only where they share a node
+  // id, so shared nodes (junctions) split ways into sections, and each section
+  // becomes one edge between two junction vertices.
+  const auto ref_count = countNodeReferences(kept_ways);
+  const auto sections = splitWaysIntoSections(kept_ways, ref_count);
+
+  // Project the junction coordinates into the robot's map frame and make them
+  // graph vertices, then wire the sections between them as directed edges.
+  const auto vertex_ids = collectVertexIds(sections);
+  std::unordered_map<int64_t, Coordinates> coords;
+  if (!convertCoordinates(osm_nodes, vertex_ids, coords)) {
+    return false;
+  }
+  addNodesToGraph(graph, graph_to_id_map, vertex_ids, coords);
+  addEdgesFromSections(graph, sections);
+
+  if (graph.empty()) {
+    RCLCPP_ERROR(logger_, "OSM graph has no usable vertices after loading %s", filepath.c_str());
+    return false;
+  }
+
   RCLCPP_INFO(
-    logger_, "Parsed %zu OSM nodes and %zu kept ways from %s",
-    osm_nodes.size(), kept_ways.size(), filepath.c_str());
-  return false;
+    logger_, "Loaded OSM graph: %zu vertices from %zu sections (%s)",
+    graph.size(), sections.size(), filepath.c_str());
+  return true;
 }
 
 bool OsmGraphFileLoader::doesFileExist(const std::string & filepath)
@@ -155,6 +181,229 @@ bool OsmGraphFileLoader::parseOsm(
   }
 
   return true;
+}
+
+std::unordered_map<int64_t, size_t> OsmGraphFileLoader::countNodeReferences(
+  const std::vector<OsmWay> & ways)
+{
+  std::unordered_map<int64_t, size_t> ref_count;
+  for (const auto & way : ways) {
+    for (const int64_t node_id : way.refs) {
+      ref_count[node_id]++;
+    }
+  }
+  return ref_count;
+}
+
+std::vector<OsmGraphFileLoader::Section> OsmGraphFileLoader::splitWaysIntoSections(
+  const std::vector<OsmWay> & ways,
+  const std::unordered_map<int64_t, size_t> & ref_count)
+{
+  std::vector<Section> sections;
+  for (const auto & way : ways) {
+    Section current_section;
+    current_section.tags = way.tags;
+
+    for (size_t i = 0; i < way.refs.size(); ++i) {
+      const int64_t node_id = way.refs[i];
+
+      // Consecutive duplicate refs would create zero-length segments
+      if (!current_section.node_chain.empty() &&
+        current_section.node_chain.back() == node_id)
+      {
+        continue;
+      }
+
+      current_section.node_chain.push_back(node_id);
+
+      // A junction interior to the way closes the current section and opens
+      // the next one. The junction id ends one chain AND begins the other:
+      // sharing that boundary node is what stitches the network together.
+      const bool is_junction = ref_count.at(node_id) > 1;
+      const bool is_interior = i + 1 < way.refs.size();
+      if (is_junction && is_interior && current_section.node_chain.size() > 1) {
+        sections.push_back(current_section);
+        current_section = Section();
+        current_section.tags = way.tags;
+        current_section.node_chain.push_back(node_id);
+      }
+    }
+
+    // Flush the final run of the way; a single-node chain has no extent
+    if (current_section.node_chain.size() > 1) {
+      sections.push_back(current_section);
+    }
+  }
+  return sections;
+}
+
+std::vector<int64_t> OsmGraphFileLoader::collectVertexIds(
+  const std::vector<Section> & sections)
+{
+  std::set<int64_t> unique;  // ordered + deduped -> deterministic graph indices
+  for (const auto & section : sections) {
+    if (section.node_chain.empty()) {
+      continue;
+    }
+    unique.insert(section.node_chain.front());
+    unique.insert(section.node_chain.back());
+  }
+  return std::vector<int64_t>(unique.begin(), unique.end());
+}
+
+bool OsmGraphFileLoader::convertCoordinates(
+  const std::unordered_map<int64_t, std::pair<double, double>> & osm_nodes,
+  const std::vector<int64_t> & ids,
+  std::unordered_map<int64_t, Coordinates> & coords_out)
+{
+  if (!from_ll_client_) {
+    RCLCPP_ERROR(logger_, "fromLLArray client is not configured; was configure() called?");
+    return false;
+  }
+
+  // Build the batch request, tracking which id each entry corresponds to so the
+  // response can be mapped back. Ids missing from the file (clipped extracts)
+  // are skipped here, so they simply never gain coordinates.
+  auto request = std::make_shared<robot_localization::srv::FromLLArray::Request>();
+  std::vector<int64_t> request_ids;
+  request_ids.reserve(ids.size());
+  for (const int64_t id : ids) {
+    const auto it = osm_nodes.find(id);
+    if (it == osm_nodes.end()) {
+      RCLCPP_WARN(
+        logger_, "OSM node %" PRId64 " referenced by a way is missing; skipping it", id);
+      continue;
+    }
+    geographic_msgs::msg::GeoPoint point;
+    point.latitude = it->second.first;
+    point.longitude = it->second.second;
+    point.altitude = 0.0;
+    request->ll_points.push_back(point);
+    request_ids.push_back(id);
+  }
+
+  if (request->ll_points.empty()) {
+    RCLCPP_ERROR(logger_, "No OSM nodes had usable coordinates to convert");
+    return false;
+  }
+
+  auto response = std::make_shared<robot_localization::srv::FromLLArray::Response>();
+  from_ll_client_->wait_for_service(std::chrono::seconds(1));
+  if (!from_ll_client_->invoke(request, response)) {
+    RCLCPP_ERROR(
+      logger_,
+      "fromLLArray service call failed - is navsat_transform_node running?");
+    return false;
+  }
+
+  if (response->map_points.size() != request_ids.size()) {
+    RCLCPP_ERROR(
+      logger_, "fromLLArray returned %zu points for %zu requested",
+      response->map_points.size(), request_ids.size());
+    return false;
+  }
+
+  for (size_t i = 0; i < request_ids.size(); ++i) {
+    Coordinates coords;
+    coords.frame_id = "map";  // LocalCartesian-style output from navsat_transform
+    coords.x = static_cast<float>(response->map_points[i].x);
+    coords.y = static_cast<float>(response->map_points[i].y);
+    coords_out[request_ids[i]] = coords;
+  }
+  return true;
+}
+
+void OsmGraphFileLoader::addNodesToGraph(
+  Graph & graph,
+  GraphToIDMap & graph_to_id_map,
+  const std::vector<int64_t> & vertex_ids,
+  const std::unordered_map<int64_t, Coordinates> & coords)
+{
+  // Only junctions that actually have coordinates can become vertices.
+  std::vector<int64_t> usable;
+  usable.reserve(vertex_ids.size());
+  for (const int64_t id : vertex_ids) {
+    if (coords.count(id) > 0) {
+      usable.push_back(id);
+    }
+  }
+
+  graph.resize(usable.size());
+  for (size_t idx = 0; idx < usable.size(); ++idx) {
+    const int64_t osm_id = usable[idx];
+    const auto nav2_id = static_cast<unsigned int>(idx);
+    graph[idx].nodeid = nav2_id;
+    // graph_to_id_map translates an external node id to a graph index. Our
+    // external ids are the sequential ids we just assigned, so this is the
+    // identity map (the OSM int64 ids live separately in osm_to_nodeid_).
+    graph_to_id_map[nav2_id] = nav2_id;
+    osm_to_nodeid_[osm_id] = nav2_id;
+    graph[idx].coords = coords.at(osm_id);
+  }
+}
+
+OsmGraphFileLoader::OneWay OsmGraphFileLoader::parseOneway(
+  const std::unordered_map<std::string, std::string> & tags)
+{
+  const auto it = tags.find("oneway");
+  if (it == tags.end()) {
+    return OneWay::BOTH;
+  }
+
+  const std::string & value = it->second;
+  if (value == "yes" || value == "true" || value == "1") {
+    return OneWay::FORWARD;
+  }
+  if (value == "-1" || value == "reverse") {
+    return OneWay::REVERSE;
+  }
+  if (value == "no" || value == "false" || value == "0") {
+    return OneWay::BOTH;
+  }
+
+  RCLCPP_WARN(
+    logger_, "Unrecognized oneway value '%s'; treating the way as bidirectional",
+    value.c_str());
+  return OneWay::BOTH;
+}
+
+void OsmGraphFileLoader::addEdgesFromSections(
+  Graph & graph, const std::vector<Section> & sections)
+{
+  for (const auto & section : sections) {
+    if (section.node_chain.size() < 2) {
+      continue;
+    }
+
+    const auto start_it = osm_to_nodeid_.find(section.node_chain.front());
+    const auto end_it = osm_to_nodeid_.find(section.node_chain.back());
+    if (start_it == osm_to_nodeid_.end() || end_it == osm_to_nodeid_.end()) {
+      // A boundary junction had no coordinates (e.g. clipped extract) and so
+      // never became a vertex; this section cannot be connected.
+      RCLCPP_WARN(logger_, "Skipping a section with an unresolved boundary node");
+      continue;
+    }
+
+    const unsigned int start_id = start_it->second;
+    const unsigned int end_id = end_it->second;
+    if (start_id == end_id) {
+      // Section that loops back to its own start (e.g. a spur); a self edge is
+      // useless for routing.
+      continue;
+    }
+
+    // Default cost: the edge scorers (DistanceScorer) compute the traversal
+    // cost from the vertex coordinates at query time, exactly as for a
+    // GeoJSON edge with no explicit cost.
+    EdgeCost cost;
+    const OneWay direction = parseOneway(section.tags);
+    if (direction == OneWay::FORWARD || direction == OneWay::BOTH) {
+      graph[start_id].addEdge(cost, &graph[end_id], next_edge_id_++);
+    }
+    if (direction == OneWay::REVERSE || direction == OneWay::BOTH) {
+      graph[end_id].addEdge(cost, &graph[start_id], next_edge_id_++);
+    }
+  }
 }
 
 }  // namespace nav2_route

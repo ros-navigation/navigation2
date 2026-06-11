@@ -345,6 +345,34 @@ Edge1:                     // <-- If provided by format, stored as name in metad
         service_name "open-door"  // <-- metadata for operation (Recommended)
 ```
 
+### OpenStreetMap (`.osm`)
+
+A parser is also provided for OpenStreetMap `.osm` XML files (`OsmGraphFileLoader`), so that widely
+available OSM data can be used directly for off-road, agricultural, campus, and other outdoor
+navigation without first converting it to GeoJSON.
+
+Unlike GeoJSON, OSM does not list edges explicitly: a `<way>` is a polyline of ordered `<nd ref>`
+node references, and two ways are connected only where they share a node id. The loader resolves
+this implicit topology by treating shared nodes (and way endpoints) as junctions, splitting each way
+at its junctions, and emitting one directed edge per inter-junction section. The intermediate shape
+nodes are not turned into graph vertices, keeping the graph sparse. Edge direction is taken from the
+`oneway` tag (`yes`/`true`/`1` → forward, `-1`/`reverse` → reverse, absent/`no` → both directions).
+
+Coordinates are converted from WGS84 latitude/longitude into the map frame using
+robot_localization's `FromLLArray` service, so the graph shares a single datum with the robot's
+localization rather than introducing a second one. **This requires `navsat_transform_node` to be
+running when the graph is loaded.**
+
+Parameters (under the `osm_graph_file_loader.` namespace):
+
+| Parameter | Type | Default | Description |
+| --------- | ---- | ------- | ----------- |
+| `highway_filter` | string[] | `[]` (keep all `highway=*` ways) | Allowlist of OSM `highway` values to keep, e.g. `["track", "path", "service", "unclassified", "residential"]` |
+
+A small example is provided in `graphs/sample_graph.osm`. Node and edge **metadata** (e.g. speed
+limits from OSM `maxspeed`) is intentionally out of scope for this initial loader and is planned for
+a follow-on contribution.
+
 ### Metadata Conventions for Convenience
 
 While other metadata fields are not required nor necessarily needed, there are some useful standards which may make your life easier within in the Route Server framework.

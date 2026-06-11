@@ -23,6 +23,8 @@ find_package(nlohmann_json REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(tinyxml2_vendor REQUIRED)
 find_package(tinyxml2 REQUIRED)
+find_package(geographic_msgs REQUIRED)
+find_package(robot_localization REQUIRED)
 
 nav2_package()
 
@@ -191,7 +193,9 @@ target_link_libraries(graph_file_loaders PUBLIC
   tf2_ros::tf2_ros
   nlohmann_json::nlohmann_json
   tinyxml2::tinyxml2
+  ${geographic_msgs_TARGETS}
 )
+ament_target_dependencies(graph_file_loaders PUBLIC robot_localization)
 target_link_libraries(graph_file_loaders PRIVATE
   ${lifecycle_msgs_TARGETS}
   rclcpp_components::component
