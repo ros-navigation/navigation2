@@ -156,6 +156,13 @@ bool validateMsg(const nav_msgs::msg::MapMetaData & msg)
   // logic check
   // 1> we don't need an empty map
   if (msg.height == 0 || msg.width == 0) {return false;}
+
+  // avoid overflow by multiplying width and height
+  if (msg.width > INT16_MAX || msg.height > INT16_MAX) {return false;}
+  uint32_t num_cells;
+  if (__builtin_mul_overflow(msg.width, msg.height, &num_cells)) {
+    return false;
+  }
   return true;
 }
 
