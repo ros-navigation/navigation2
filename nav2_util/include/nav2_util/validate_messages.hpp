@@ -176,7 +176,10 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
   }
 
   // avoid overflow by multiplying width and height
-  if (msg.info.width > INT16_MAX || msg.info.height > INT16_MAX) {return false;}
+  if (msg.info.width > INT16_MAX || msg.info.height > INT16_MAX) {
+    return false;
+  }
+
   uint32_t num_cells;
   if (__builtin_mul_overflow(msg.info.width, msg.info.height, &num_cells)) {
     return false;
