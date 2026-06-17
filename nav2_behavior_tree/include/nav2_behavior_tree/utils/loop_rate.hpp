@@ -61,15 +61,22 @@ public:
       return false;
     }
     // Sleep until the target time, preemptible by emitWakeUpSignal().
-    auto wake_up = tree_->wakeUpSignal();
+    // Tree::sleep() blocks on the tree's WakeUpSignal and returns true if the
+    // signal was received (i.e. the sleep was interrupted) rather than timing
+    // out. It is the portable interruptible-sleep entry point: the
+    // tree_->wakeUpSignal() accessor is not part of the public API in
+    // BehaviorTree.CPP 4.8/4.9, whereas Tree::sleep() is available across 4.x.
     const bool is_sim_time =
       clock_->get_clock_type() == RCL_ROS_TIME &&
       clock_->ros_time_is_active();
     if (is_sim_time) {
       // Sim time diverges from wall time — poll the target clock in short
       // intervals while remaining interruptible by emitWakeUpSignal().
+      // Tree::sleep() truncates its timeout to whole milliseconds, so poll at
+      // 1ms granularity: a sub-millisecond value would round to zero and busy
+      // spin.
       while (clock_->now() < next_interval) {
-        if (wake_up->waitFor(std::chrono::microseconds(500))) {
+        if (tree_->sleep(std::chrono::milliseconds(1))) {
           return true;  // preempted
         }
       }
@@ -77,7 +84,7 @@ public:
       // Steady/system clock agrees with wall time — sleep for the exact
       // remaining duration, still interruptible by emitWakeUpSignal().
       auto remaining = next_interval - clock_->now();
-      wake_up->waitFor(
+      tree_->sleep(
         std::chrono::duration_cast<std::chrono::microseconds>(
           std::chrono::nanoseconds(remaining.nanoseconds())));
     }
