@@ -478,6 +478,12 @@ Costmap2DROS::getParameters()
 void
 Costmap2DROS::setRobotFootprint(const std::vector<geometry_msgs::msg::Point> & points)
 {
+  if (points.empty()) {
+    RCLCPP_ERROR(
+      get_logger(), "You try to set an empty footprint"
+      " this isn't allowed, a footprint must contain at least one point.");
+    return;
+  }
   unpadded_footprint_ = points;
   padded_footprint_ = points;
   padFootprint(padded_footprint_, footprint_padding_);
