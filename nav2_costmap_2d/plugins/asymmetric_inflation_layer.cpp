@@ -333,8 +333,11 @@ AsymmetricInflationLayer::computeObstacleSide(
     double dist_sq;
     double cross;
 
+    // Smallest expected squared segment length
+    double min_segment_length_sq = 1e-10;
+
     // Prevent division by zero for zero-length segments
-    if (len_sq < 1e-10) {
+    if (len_sq < min_segment_length_sq) {
       dist_sq = acx * acx + acy * acy;
       cross = 0.0;
     } else {
