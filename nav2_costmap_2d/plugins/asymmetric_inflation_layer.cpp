@@ -292,7 +292,7 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   return local_path_segments;
 }
 
-int8_t
+Side
 AsymmetricInflationLayer::computeObstacleSide(
   double cx, double cy,
   const std::vector<size_t> & candidates,
@@ -362,14 +362,14 @@ AsymmetricInflationLayer::computeObstacleSide(
 
   // Check if the cell is outside the inflation radius.
   if (min_dist_sq > inflation_radius_sq) {
-    return 0;
+    return Side::Neutral;
   }
 
   // Return the orientation based on the cross product of the closest segment.
-  if (best_cross > 0.0) {return 1;}    // Left
-  if (best_cross < 0.0) {return -1;}   // Right
+  if (best_cross > 0.0) {return Side::Left;}
+  if (best_cross < 0.0) {return Side::Right;}
 
-  return 0;  // Neutral/On the line
+  return Side::Neutral;
 }
 
 void
@@ -484,7 +484,8 @@ AsymmetricInflationLayer::seedDistanceMap(
   MatrixXfRM dist_map(roi_height, roi_width);
   dist_map.setConstant(DistanceTransform::DT_INF);
 
-  int8_t disfavored_side = (cost_scaling_factor_left_ < cost_scaling_factor_right_) ? 1 : -1;
+  Side disfavored_side = (cost_scaling_factor_left_ < cost_scaling_factor_right_) ?
+    Side::Left : Side::Right;
   const int roi_max_i = roi_min_i + roi_width;
   const int roi_max_j = roi_min_j + roi_height;
 
@@ -535,8 +536,8 @@ AsymmetricInflationLayer::seedDistanceMap(
       }
 
       // Determine which side of the path this cell is on
-      int8_t side = computeObstacleSide(cx, cy, it->second, local_path_segments);
-      if (side != 0 && side == disfavored_side) {
+      Side side = computeObstacleSide(cx, cy, it->second, local_path_segments);
+      if (side != Side::Neutral && side == disfavored_side) {
         dist_map(j - roi_min_j, i - roi_min_i) = 0.0f;
       }
     }

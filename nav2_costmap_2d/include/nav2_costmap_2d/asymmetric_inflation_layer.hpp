@@ -39,6 +39,13 @@ struct AsymmetricPathSegment
   std::pair<double, double> end;
 };
 
+enum class Side : int8_t
+{
+  Right   = -1,
+  Neutral =  0,
+  Left    =  1,
+};
+
 /**
  * @class AsymmetricInflationLayer
  * @brief Costmap layer that inflates obstacles asymmetrically relative to the
@@ -149,7 +156,7 @@ protected:
    * @param local_path_segments Original path segments in costmap-frame world coordinates.
    * @return +1 (left of path), -1 (right of path), or 0 (neutral / beyond inflation radius).
    */
-  int8_t computeObstacleSide(
+  Side computeObstacleSide(
     double cx, double cy,
     const std::vector<size_t> & candidates,
     const std::vector<AsymmetricPathSegment> & local_path_segments);

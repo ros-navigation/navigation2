@@ -61,6 +61,7 @@ public:
 }  // namespace nav2_costmap_2d
 
 using nav2_costmap_2d::TestableAsymmetricInflationLayer;
+using nav2_costmap_2d::Side;
 
 // ============================================================
 // DisfavoredLutTest — LUT mathematical correctness
@@ -281,7 +282,7 @@ protected:
   }
 
   // Replicates the broad-phase + narrow pipeline used in updateCosts Phase 2.
-  int8_t classifyObstacleSide(
+  Side classifyObstacleSide(
     unsigned int mx, unsigned int my,
     const std::vector<nav2_costmap_2d::AsymmetricPathSegment> & path_segments,
     const std::unordered_map<uint64_t, std::vector<size_t>> & spatial_hash,
@@ -295,7 +296,7 @@ protected:
       static_cast<uint32_t>(b_y);
     auto it = spatial_hash.find(key);
     if (it == spatial_hash.end()) {
-      return 0;
+      return Side::Neutral;
     }
     return layer_->computeObstacleSide(cx, cy, it->second, path_segments);
   }
@@ -318,16 +319,18 @@ TEST_F(ObstacleSideTest, computeObstacleSide_classification)
 
   unsigned int mx_n, my_n;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 2.5, mx_n, my_n));
-  EXPECT_EQ(classifyObstacleSide(mx_n, my_n, path_segments, spatial_hash, bucket_size), 1);
+  EXPECT_EQ(classifyObstacleSide(mx_n, my_n, path_segments, spatial_hash, bucket_size), Side::Left);
 
   unsigned int mx_s, my_s;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 1.5, mx_s, my_s));
-  EXPECT_EQ(classifyObstacleSide(mx_s, my_s, path_segments, spatial_hash, bucket_size), -1);
+  EXPECT_EQ(classifyObstacleSide(mx_s, my_s, path_segments, spatial_hash, bucket_size),
+    Side::Right);
 
   // 1.5 m from path — beyond inflation_radius 1.0 m → neutral.
   unsigned int mx_far, my_far;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 3.5, mx_far, my_far));
-  EXPECT_EQ(classifyObstacleSide(mx_far, my_far, path_segments, spatial_hash, bucket_size), 0);
+  EXPECT_EQ(classifyObstacleSide(mx_far, my_far, path_segments, spatial_hash, bucket_size),
+    Side::Neutral);
 }
 
 // L-shaped path: a cell near the corner must be assigned to the nearest segment.
@@ -346,7 +349,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_closest_segment_selection)
   ASSERT_TRUE(costmap_->worldToMap(2.3, 1.7, mx, my));
   // Nearest segment is the vertical leg going south; (2.3, 1.7) is to its east,
   // which is LEFT of southbound travel → +1.
-  EXPECT_EQ(classifyObstacleSide(mx, my, path_segments, spatial_hash, bucket_size), 1);
+  EXPECT_EQ(classifyObstacleSide(mx, my, path_segments, spatial_hash, bucket_size), Side::Left);
 }
 
 // Separated path islands must not be bridged: a cell in the gap returns 0.
@@ -362,7 +365,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_does_not_bridge_filtered_path_gaps)
 
   unsigned int mx, my;
   ASSERT_TRUE(costmap_->worldToMap(2.0, 2.5, mx, my));
-  EXPECT_EQ(classifyObstacleSide(mx, my, path_segments, spatial_hash, bucket_size), 0);
+  EXPECT_EQ(classifyObstacleSide(mx, my, path_segments, spatial_hash, bucket_size), Side::Neutral);
 }
 
 // A zero-length segment always produces cross = 0 → neutral, even when the
@@ -373,7 +376,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_zero_length_segment_is_neutral)
     {{2.0, 2.0}, {2.0, 2.0}}
   };
   std::vector<size_t> candidates = {0};
-  EXPECT_EQ(layer_->computeObstacleSide(2.0, 2.0, candidates, segs), 0);
+  EXPECT_EQ(layer_->computeObstacleSide(2.0, 2.0, candidates, segs), Side::Neutral);
 }
 
 // All candidates rejected by AABB: min_dist_sq stays at max → beyond
@@ -386,7 +389,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_all_aabb_rejected_is_neutral)
     {{3.0, 3.0}, {3.5, 3.0}}
   };
   std::vector<size_t> candidates = {0};
-  EXPECT_EQ(layer_->computeObstacleSide(1.5, 2.0, candidates, segs), 0);
+  EXPECT_EQ(layer_->computeObstacleSide(1.5, 2.0, candidates, segs), Side::Neutral);
 }
 
 // A cell that passes the AABB check but whose exact Euclidean distance to the
@@ -399,7 +402,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_corner_of_aabb_beyond_radius_is_neu
     {{0.0, 0.0}, {2.0, 0.0}}
   };
   std::vector<size_t> candidates = {0};
-  EXPECT_EQ(layer_->computeObstacleSide(3.0, 1.0, candidates, segs), 0);
+  EXPECT_EQ(layer_->computeObstacleSide(3.0, 1.0, candidates, segs), Side::Neutral);
 }
 
 // A cell that projects onto the segment with cross product = 0 returns 0 (neutral).
@@ -410,7 +413,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_cell_on_segment_is_neutral)
   };
   std::vector<size_t> candidates = {0};
   // (1.5, 2.0) lies on the segment; cross product = 0.
-  EXPECT_EQ(layer_->computeObstacleSide(1.5, 2.0, candidates, segs), 0);
+  EXPECT_EQ(layer_->computeObstacleSide(1.5, 2.0, candidates, segs), Side::Neutral);
 }
 
 // When two segments have opposite cross products, the nearest one determines
@@ -427,7 +430,7 @@ TEST_F(ObstacleSideTest, computeObstacleSide_closest_segment_wins)
   };
   std::vector<size_t> candidates = {0, 1};
   // Segment 0 is closer → best_cross > 0 → LEFT (+1).
-  EXPECT_EQ(layer_->computeObstacleSide(2.0, 2.0, candidates, segs), 1);
+  EXPECT_EQ(layer_->computeObstacleSide(2.0, 2.0, candidates, segs), Side::Left);
 }
 
 int main(int argc, char ** argv)
