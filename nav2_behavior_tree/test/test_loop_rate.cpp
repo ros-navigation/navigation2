@@ -293,3 +293,35 @@ TEST_F(LoopRateTest, test_consecutive_sleeps_maintain_cadence_sim_time)
   // Wall time should be much less than 250ms (running at ~10x)
   EXPECT_LE(wall_elapsed, 100ms);
 }
+
+// Verify that emitWakeUpSignal() preempts an in-progress sleep() in sim time
+TEST_F(LoopRateTest, test_wake_up_signal_preempts_sleep_sim_time)
+{
+  auto clock = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+  auto * rcl_clock = clock->get_clock_handle();
+  ASSERT_EQ(RCL_RET_OK, rcl_enable_ros_time_override(rcl_clock));
+
+  // Freeze sim time so the poll loop never reaches its deadline; the only way
+  // sleep() can return is via wake-up preemption.
+  const rcl_time_point_value_t t0 = RCL_S_TO_NS(1);
+  ASSERT_EQ(RCL_RET_OK, rcl_set_ros_time_override(rcl_clock, t0));
+
+  const auto period = 100ms;
+  nav2_behavior_tree::LoopRate rate(period, tree_.get(), clock);
+
+  // Fire the wake-up signal after a short wall delay
+  std::thread waker([this]() {
+      std::this_thread::sleep_for(10ms);
+      tree_->rootNode()->emitWakeUpSignal();
+    });
+
+  auto before = std::chrono::steady_clock::now();
+  bool result = rate.sleep();
+  auto elapsed = std::chrono::steady_clock::now() - before;
+
+  waker.join();
+
+  // Should have been preempted and returned early (well under the 100ms period)
+  EXPECT_TRUE(result);
+  EXPECT_LE(elapsed, 50ms);
+}
