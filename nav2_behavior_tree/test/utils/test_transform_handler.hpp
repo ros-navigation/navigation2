@@ -51,7 +51,7 @@ public:
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   }
 
-  ~TransformHandler()
+  virtual ~TransformHandler()
   {
     if (is_active_) {
       deactivate();
@@ -59,7 +59,7 @@ public:
   }
 
   // Activate the tester before running tests
-  void activate()
+  virtual void activate(std::chrono::milliseconds tf_broadcast_period = 100ms)
   {
     if (is_active_) {
       throw std::runtime_error("Trying to activate while already active");
@@ -69,39 +69,47 @@ public:
     // Launch a thread to process the messages for this node
     spin_thread_ = std::make_unique<nav2::NodeThread>(node_->get_node_base_interface());
 
-    startRobotTransform();
+    if (tf_broadcast_period.count() > 0) {
+      startRobotTransform(tf_broadcast_period);
+    }
   }
 
-  void deactivate()
+  virtual void deactivate()
   {
     if (!is_active_) {
       throw std::runtime_error("Trying to deactivate while already inactive");
     }
     is_active_ = false;
+
+    if (transform_timer_) {
+      transform_timer_->cancel();
+      transform_timer_.reset();
+    }
+
     spin_thread_.reset();
     tf_broadcaster_.reset();
     tf_buffer_.reset();
     tf_listener_.reset();
   }
 
-  std::shared_ptr<tf2_ros::Buffer> getBuffer()
+  std::shared_ptr<tf2_ros::Buffer> getBuffer() const
   {
     return tf_buffer_;
   }
 
-  void waitForTransform()
+  virtual void waitForTransform() const
   {
     if (is_active_) {
       while (!tf_buffer_->canTransform("map", "base_link", rclcpp::Time(0))) {
         std::this_thread::sleep_for(100ms);
       }
       RCLCPP_INFO(node_->get_logger(), "Transforms are available now!");
-      return;
+    } else {
+      throw std::runtime_error("Trying to wait for transform while inactive!");
     }
-    throw std::runtime_error("Trying to deactivate while already inactive");
   }
 
-  void updateRobotPose(const geometry_msgs::msg::Pose & pose)
+  virtual void updateRobotPose(const geometry_msgs::msg::Pose & pose)
   {
     // Update base transform to publish
     base_transform_->transform.translation.x = pose.position.x;
@@ -114,14 +122,16 @@ public:
     publishRobotTransform();
   }
 
-private:
+  bool isActive() const {return is_active_;}
+
+protected:
   void publishRobotTransform()
   {
     base_transform_->header.stamp = node_->now();
     tf_broadcaster_->sendTransform(*base_transform_);
   }
 
-  void startRobotTransform()
+  virtual void startRobotTransform(std::chrono::milliseconds tf_broadcast_period)
   {
     // Provide the robot pose transform
     tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
@@ -141,7 +151,7 @@ private:
 
     // Publish the transform periodically
     transform_timer_ = node_->create_wall_timer(
-      100ms, std::bind(&TransformHandler::publishRobotTransform, this));
+      tf_broadcast_period, std::bind(&TransformHandler::publishRobotTransform, this));
   }
 
   nav2::LifecycleNode::SharedPtr node_;
