@@ -56,6 +56,8 @@ public:
     if (is_active_) {
       deactivate();
     }
+    tf_listener_.reset();
+    tf_buffer_.reset();
   }
 
   // Activate the tester before running tests
@@ -88,8 +90,6 @@ public:
 
     spin_thread_.reset();
     tf_broadcaster_.reset();
-    tf_buffer_.reset();
-    tf_listener_.reset();
   }
 
   std::shared_ptr<tf2_ros::Buffer> getBuffer() const
