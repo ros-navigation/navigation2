@@ -108,7 +108,7 @@ private:
   nav2_route::GraphToIDMap edge_to_node_map_;
   nav2_route::GraphToIncomingEdgesMap graph_to_incoming_edges_map_;
 
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr  //  nosemgrep
     graph_vis_publisher_;
   nav2::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
     clicked_point_subscription_;

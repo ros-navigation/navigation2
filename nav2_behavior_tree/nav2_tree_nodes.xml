@@ -69,29 +69,24 @@
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
     </Action>
 
-    <Action ID="CancelCoverage">
-      <input_port name="server_name" type="string">Action server name. If not specified, `compute_coverage_path` is used.</input_port>
-      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-    </Action>
-
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <input_port name="plugins" type="vector&lt;string&gt;">List of specific plugins to clear.</input_port>
+      <input_port name="plugins" type="vector&lt;string&gt;">Optional. A list of costmap plugin names to be cleared. If specified, only these costmap plugins and the master costmap will be cleared. Otherwise, the entire costmap will be cleared.</input_port>
     </Action>
 
     <Action ID="ClearCostmapExceptRegion">
       <input_port name="reset_distance" type="double" default="1.0">Side size of the square area centered on the robot that will not be cleared on the costmap (all the rest of the costmap will).</input_port>
       <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <input_port name="plugins" type="vector&lt;string&gt;">List of specific plugins to clear.</input_port>
+      <input_port name="plugins" type="vector&lt;string&gt;">Optional. A list of costmap plugin names to be cleared. If specified, only these costmap plugins will be cleared. Otherwise, all "clearable" costmap plugins will be cleared.</input_port>
     </Action>
 
     <Action ID="ClearCostmapAroundRobot">
       <input_port name="reset_distance" type="double" default="1.0">Side size of the square area centered on the robot that will be cleared on the costmap (the rest of the costmap won't).</input_port>
       <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <input_port name="plugins" type="vector&lt;string&gt;">List of specific plugins to clear.</input_port>
+      <input_port name="plugins" type="vector&lt;string&gt;">Optional. A list of costmap plugin names to be cleared. If specified, only these costmap plugins will be cleared. Otherwise, all "clearable" costmap plugins will be cleared.</input_port>
     </Action>
 
     <Action ID="ClearCostmapAroundPose">
@@ -99,7 +94,7 @@
       <input_port name="reset_distance" type="double" default="1.0">Distance from the pose under which obstacles are cleared.</input_port>
       <input_port name="service_name" type="string">Costmap service name responsible for clearing the costmap.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Service server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <input_port name="plugins" type="vector&lt;string&gt;">List of specific plugins to clear.</input_port>
+      <input_port name="plugins" type="vector&lt;string&gt;">Optional. A list of costmap plugin names to be cleared. If specified, only these costmap plugins will be cleared. Otherwise, all "clearable" costmap plugins will be cleared.</input_port>
     </Action>
 
     <Action ID="ComputePathToPose">
@@ -161,22 +156,6 @@
       <output_port name="rerouted" type="bool">Whether the plan has rerouted.</output_port>
       <output_port name="error_code_id" type="uint16">Compute route error code. See `ComputeAndTrackRoute` action message for the enumerated set of error codes.</output_port>
       <output_port name="error_msg" type="string">Compute route error message. See `ComputeAndTrackRoute` action message for the enumerated set of error codes.</output_port>
-    </Action>
-
-    <Action ID="ComputeCoveragePath">
-      <input_port name="generate_headland" type="bool" default="true">Whether or not to generate a headland of the field or polygon to compute coverage of.</input_port>
-      <input_port name="generate_route" type="bool" default="true">Whether or not to generate a route, e.g. an ordered set of swaths.</input_port>
-      <input_port name="generate_path" type="bool" default="true">Whether or not to generate a path, e.g. adding path connectors to the ordered route.</input_port>
-      <input_port name="file_field" type="string">The filepath to the field's GML file to use, if not specifying the field via `polygons`.</input_port>
-      <input_port name="file_field_id" type="int" default="0">The ID of the field in the GML File to use, if multiple exist in the same file. This is the ordered number of the fields in the file.</input_port>
-      <input_port name="polygons" type="vector&lt;geometry_msgs::msg::Polygon&gt;">The polygons of the field, if not specifying via a GML file. The first polygon should be the outermost region, whereas additional polygons are voids.</input_port>
-      <input_port name="polygons_frame_id" type="string" default="&quot;map&quot;">The polygon's frame ID, since the GML file provides the frame ID for its format, this is the frame ID for user-defined input `polygons`.</input_port>
-      <input_port name="server_name" type="string">Action server name. If not specified, `compute_coverage_path` is used.</input_port>
-      <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
-      <output_port name="nav_path" type="nav_msgs::msg::Path">Path created by action server in the form of a navigation path. Takes in a blackboard variable, e.g. "{path}".</output_port>
-      <output_port name="coverage_path" type="opennav_coverage_msgs::msg::PathComponents">An ordered set of swaths and turns corresponding to the coverage path when its important to distinguish between turns and swaths for applications. A `opennav_coverage::utils::PathComponentsIterator` object is provided to help make this easy to use by iterating through the outputs's path components to return you the next swath and turn one at a time.</output_port>
-      <output_port name="planning_time" type="builtin_interfaces::msg::Duration">The time to compute coverage plan.</output_port>
-      <output_port name="error_code_id" type="uint16">Compute coverage error code. See `ComputeCoveragePath` action message for the enumerated set of error codes.</output_port>
     </Action>
 
     <Action ID="RemovePassedGoals">

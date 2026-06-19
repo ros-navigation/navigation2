@@ -20,20 +20,20 @@ from nav2_common.launch import LaunchConfigAsBool
 
 class TestLaunchConfigAsBool(unittest.TestCase):
 
-    def setUp(self) -> None:
+    def setUp(self):
         self.context = LaunchContext()
 
-    def evaluate(self, val: str) -> str:
+    def evaluate(self, val):
         self.context.launch_configurations['test_key'] = val
-        return LaunchConfigAsBool('test_key').perform(self.context)  # type: ignore[no-any-return]
+        return LaunchConfigAsBool('test_key').perform(self.context)
 
-    def test_truth_values(self) -> None:
+    def test_truth_values(self):
         truth = ['true', 'True', 'TRUE', '1', ' yes ', 'YeS', 'ON', 'on']
         for val in truth:
             with self.subTest(val=val):
                 self.assertEqual(self.evaluate(val), 'True')
 
-    def test_false_values(self) -> None:
+    def test_false_values(self):
         false = ['false', 'False', '0', 'no', '', 'off', 'OFF', 'nonsense']
         for val in false:
             with self.subTest(val=val):

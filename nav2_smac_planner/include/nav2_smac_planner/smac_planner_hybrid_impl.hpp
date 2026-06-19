@@ -95,7 +95,7 @@ void SmacPlannerHybridT<NodeT>::configure(
   _minimum_turning_radius_global_coords =
     node->declare_or_get_parameter(name + ".minimum_turning_radius", 0.4);
   _search_info.allow_primitive_interpolation =
-    node->declare_or_get_parameter(name + ".allow_primitive_interpolation", false);
+    node->declare_or_get_parameter(name + ".allow_primitive_interpolation", true);
   _search_info.cache_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".cache_obstacle_heuristic", false);
   _search_info.reverse_penalty =

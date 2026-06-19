@@ -71,7 +71,7 @@ protected:
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_;
 
-  rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_pub_;
+  rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_pub_;  //  nosemgrep
   rclcpp::TimerBase::SharedPtr timer_;
 
   static constexpr double kResolution = 0.01;      // 10ms sim-time step

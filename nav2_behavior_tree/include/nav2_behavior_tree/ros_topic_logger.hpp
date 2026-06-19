@@ -26,6 +26,7 @@
 #include "nav2_msgs/msg/behavior_tree_status_change.hpp"
 #include "tf2/time.hpp"
 #include "tf2_ros/buffer_interface.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -51,8 +52,8 @@ public:
     auto node = ros_node.lock();
     clock_ = node->get_clock();
     logger_ = node->get_logger().get_child("ros_topic_logger");
-    log_pub_ = node->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
-      "behavior_tree_log");
+    log_pub_ = nav2::interfaces::create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
+      node, "behavior_tree_log");
     enableTransitionToIdle(log_idle);
   }
 
@@ -109,7 +110,7 @@ protected:
   static constexpr size_t kStatusWidth = 7;
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("bt_navigator")};
-  rclcpp::Publisher<nav2_msgs::msg::BehaviorTreeLog>::SharedPtr log_pub_;
+  nav2::Publisher<nav2_msgs::msg::BehaviorTreeLog>::SharedPtr log_pub_;
   std::vector<nav2_msgs::msg::BehaviorTreeStatusChange> event_log_;
 };
 
