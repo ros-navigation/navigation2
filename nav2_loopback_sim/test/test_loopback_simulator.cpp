@@ -174,7 +174,7 @@ TEST_F(LoopbackSimulatorTest, InitialPoseSetsMapToOdom)
   std::vector<geometry_msgs::msg::TransformStamped> received_tfs;
   auto tf_sub = helper_node_->create_subscription<tf2_msgs::msg::TFMessage>(
     "/tf", 10,
-    [&](const tf2_msgs::msg::TFMessage::SharedPtr msg) {
+    [&](const tf2_msgs::msg::TFMessage::ConstSharedPtr msg) {
       for (const auto & t : msg->transforms) {
         received_tfs.push_back(t);
       }
@@ -203,7 +203,7 @@ TEST_F(LoopbackSimulatorTest, CmdVelMovesRobot)
   std::vector<nav_msgs::msg::Odometry> odom_msgs;
   auto odom_sub = helper_node_->create_subscription<nav_msgs::msg::Odometry>(
     "odom", 10,
-    [&](const nav_msgs::msg::Odometry::SharedPtr msg) {
+    [&](const nav_msgs::msg::Odometry::ConstSharedPtr msg) {
       odom_msgs.push_back(*msg);
     });
 
@@ -229,7 +229,7 @@ TEST_F(LoopbackSimulatorTest, OdometryContainsTwist)
   bool got_odom = false;
   auto odom_sub = helper_node_->create_subscription<nav_msgs::msg::Odometry>(
     "odom", 10,
-    [&](const nav_msgs::msg::Odometry::SharedPtr msg) {
+    [&](const nav_msgs::msg::Odometry::ConstSharedPtr msg) {
       latest_odom = *msg;
       got_odom = true;
     });
@@ -256,7 +256,7 @@ TEST_F(LoopbackSimulatorTest, RotationUpdatesYaw)
   bool got_base_tf = false;
   auto tf_sub = helper_node_->create_subscription<tf2_msgs::msg::TFMessage>(
     "/tf", 10,
-    [&](const tf2_msgs::msg::TFMessage::SharedPtr msg) {
+    [&](const tf2_msgs::msg::TFMessage::ConstSharedPtr msg) {
       for (const auto & t : msg->transforms) {
         if (t.child_frame_id == "base_footprint") {
           latest_base_tf = t;
@@ -301,7 +301,7 @@ TEST_F(LoopbackSimulatorTest, DeactivateStopsPublishing)
   int msg_count = 0;
   auto odom_sub = helper_node_->create_subscription<nav_msgs::msg::Odometry>(
     "odom", 10,
-    [&](const nav_msgs::msg::Odometry::SharedPtr) {
+    [&](const nav_msgs::msg::Odometry::ConstSharedPtr) {
       msg_count++;
     });
 
