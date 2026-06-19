@@ -26,7 +26,7 @@ target_include_directories(${library_name}
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp

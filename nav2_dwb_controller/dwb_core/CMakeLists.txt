@@ -36,23 +36,23 @@ target_include_directories(dwb_core PUBLIC
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(dwb_core PUBLIC
-  ${builtin_interfaces_TARGETS}
-  ${dwb_msgs_TARGETS}
-  ${geometry_msgs_TARGETS}
+  builtin_interfaces::builtin_interfaces
+  dwb_msgs::dwb_msgs
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core
-  ${nav_2d_msgs_TARGETS}
+  nav_2d_msgs::nav_2d_msgs
   nav_2d_utils::conversions
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
   tf2_ros::tf2_ros
   tf2_geometry_msgs::tf2_geometry_msgs
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
 )
 
 install(TARGETS dwb_core

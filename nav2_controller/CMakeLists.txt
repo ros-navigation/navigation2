@@ -35,21 +35,21 @@ target_include_directories(${library_name}
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
   tf2_ros::tf2_ros
   angles::angles
 )
 target_link_libraries(${library_name} PRIVATE
-  ${lifecycle_msgs_TARGETS}
+  lifecycle_msgs::lifecycle_msgs
   rclcpp_components::component
 )
 
@@ -74,12 +74,12 @@ target_include_directories(simple_progress_checker
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(simple_progress_checker PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
 )
 target_link_libraries(simple_progress_checker PRIVATE
   nav2_util::nav2_util_core
@@ -93,10 +93,10 @@ target_include_directories(pose_progress_checker
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(pose_progress_checker PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
   nav2_ros_common::nav2_ros_common
   simple_progress_checker
 )
@@ -113,13 +113,13 @@ target_include_directories(simple_goal_checker
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(simple_goal_checker PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
 )
 target_link_libraries(simple_goal_checker PRIVATE
   angles::angles
@@ -135,12 +135,12 @@ target_include_directories(stopped_goal_checker
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(stopped_goal_checker PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
   simple_goal_checker
 )
 target_link_libraries(stopped_goal_checker PRIVATE
@@ -155,13 +155,13 @@ target_include_directories(position_goal_checker
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(position_goal_checker PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
 )
 target_link_libraries(position_goal_checker PRIVATE
   angles::angles
@@ -176,13 +176,13 @@ target_include_directories(axis_goal_checker
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(axis_goal_checker PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
 )
 target_link_libraries(axis_goal_checker PRIVATE
   angles::angles
@@ -197,13 +197,13 @@ target_include_directories(adaptive_tolerance_goal_checker
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(adaptive_tolerance_goal_checker PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
 )
 target_link_libraries(adaptive_tolerance_goal_checker PRIVATE
   angles::angles
@@ -219,13 +219,13 @@ target_include_directories(feasible_path_handler
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(feasible_path_handler PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   angles::angles
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
 )
 target_link_libraries(feasible_path_handler PRIVATE
   nav2_util::nav2_util_core

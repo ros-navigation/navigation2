@@ -104,9 +104,9 @@ target_include_directories(${library_name} PUBLIC
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_lifecycle_manager::nav2_lifecycle_manager_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   nav2_route::route_server_core
@@ -115,9 +115,9 @@ target_link_libraries(${library_name} PUBLIC
   rviz_common::rviz_common
   rviz_default_plugins::rviz_default_plugins
   rviz_rendering::rviz_rendering
-  ${std_msgs_TARGETS}
+  std_msgs::std_msgs
   tf2_geometry_msgs::tf2_geometry_msgs
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
   ${QT_LIBRARIES}
 )
 target_link_libraries(${library_name} PRIVATE

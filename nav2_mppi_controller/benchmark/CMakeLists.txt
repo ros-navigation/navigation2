@@ -11,12 +11,12 @@ foreach(name IN LISTS BENCHMARK_NAMES)
   )
   target_link_libraries(${name}
     benchmark
-    ${geometry_msgs_TARGETS}
+    geometry_msgs::geometry_msgs
     mppi_controller
     mppi_critics
     nav2_core::nav2_core
     nav2_costmap_2d::nav2_costmap_2d_core
-    ${nav_msgs_TARGETS}
+    nav_msgs::nav_msgs
   )
 
   target_include_directories(${name} PRIVATE

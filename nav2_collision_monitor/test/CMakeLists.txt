@@ -11,8 +11,8 @@ target_link_libraries(sources_test
   ${monitor_library_name}
   rclcpp::rclcpp
   nav2_util::nav2_util_core
-  ${sensor_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
+  nav2_msgs::nav2_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   tf2_ros::tf2_ros
 )
@@ -21,7 +21,7 @@ target_link_libraries(sources_test
 nav2_add_gtest(polygons_test polygons_test.cpp)
 target_link_libraries(polygons_test
   ${monitor_library_name}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   tf2_ros::tf2_ros
@@ -31,7 +31,7 @@ target_link_libraries(polygons_test
 nav2_add_gtest(velocity_polygons_test velocity_polygons_test.cpp)
 target_link_libraries(velocity_polygons_test
   ${monitor_library_name}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   tf2_ros::tf2_ros
@@ -41,26 +41,26 @@ target_link_libraries(velocity_polygons_test
 nav2_add_gtest(collision_monitor_node_test collision_monitor_node_test.cpp)
 target_link_libraries(collision_monitor_node_test
   ${monitor_library_name}
-  ${geometry_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   rclcpp::rclcpp
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
 )
 # Collision Detector node test
 nav2_add_gtest(collision_detector_node_test collision_detector_node_test.cpp)
 target_link_libraries(collision_detector_node_test
   ${detector_library_name}
-  ${geometry_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
+  nav2_msgs::nav2_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core
   rclcpp::rclcpp
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
 )
 
 
@@ -78,7 +78,7 @@ target_link_libraries(collision_monitor_node_bag_exec
   rclcpp::rclcpp
   tf2_ros::tf2_ros
   nav2_util::nav2_util_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
 )
 
 nav2_add_pytest_test(test_collision_monitor_node_bag test_collision_monitor_node_bag.py

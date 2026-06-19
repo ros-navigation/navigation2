@@ -14,17 +14,17 @@ target_include_directories(${library_name}
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${library_name} PUBLIC
   bondcpp::bondcpp
-  ${geometry_msgs_TARGETS}
-  ${lifecycle_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${rcl_interfaces_TARGETS}
+  geometry_msgs::geometry_msgs
+  lifecycle_msgs::lifecycle_msgs
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
+  rcl_interfaces::rcl_interfaces
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
+  tf2_geometry_msgs::tf2_geometry_msgs
   pluginlib::pluginlib
   nav2_ros_common::nav2_ros_common
   angles::angles
@@ -44,7 +44,7 @@ target_link_libraries(lifecycle_bringup PRIVATE ${library_name} rclcpp::rclcpp)
 add_executable(base_footprint_publisher
   base_footprint_publisher.cpp
 )
-target_link_libraries(base_footprint_publisher PRIVATE ${library_name} rclcpp::rclcpp ${tf2_msgs_TARGETS})
+target_link_libraries(base_footprint_publisher PRIVATE ${library_name} rclcpp::rclcpp tf2_msgs::tf2_msgs)
 
 install(TARGETS
   ${library_name}

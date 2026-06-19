@@ -39,12 +39,12 @@ target_include_directories(${library_name} PUBLIC
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(${library_name} PUBLIC
-  ${geographic_msgs_TARGETS}
+  geographic_msgs::geographic_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
@@ -85,7 +85,7 @@ target_include_directories(wait_at_waypoint PUBLIC
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(wait_at_waypoint PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   nav2_core::nav2_core
@@ -103,14 +103,14 @@ target_include_directories(photo_at_waypoint PUBLIC
 )
 target_link_libraries(photo_at_waypoint PUBLIC
   cv_bridge::cv_bridge
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   image_transport::image_transport
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   opencv_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
 )
 target_link_libraries(photo_at_waypoint PRIVATE
   nav2_util::nav2_util_core
@@ -123,12 +123,12 @@ target_include_directories(input_at_waypoint PUBLIC
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(input_at_waypoint PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${std_msgs_TARGETS}
+  std_msgs::std_msgs
 )
 target_link_libraries(input_at_waypoint PRIVATE
   pluginlib::pluginlib

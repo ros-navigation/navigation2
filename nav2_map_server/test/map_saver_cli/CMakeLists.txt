@@ -5,6 +5,6 @@ nav2_add_gtest(test_map_saver_cli
 )
 target_link_libraries(test_map_saver_cli
   rclcpp::rclcpp
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   nav2_ros_common::nav2_ros_common
 )

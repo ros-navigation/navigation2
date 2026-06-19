@@ -50,18 +50,18 @@ target_include_directories(${library_name}_common
     ${OMPL_INCLUDE_DIRS}
 )
 target_link_libraries(${library_name}_common PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::layers
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   nlohmann_json::nlohmann_json
   ${OMPL_LIBRARIES}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
 )
 target_link_libraries(${library_name}_common PRIVATE
   angles::angles
@@ -79,19 +79,19 @@ target_include_directories(${library_name}
 )
 target_link_libraries(${library_name} PUBLIC
   ${library_name}_common
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   nlohmann_json::nlohmann_json
   ${OMPL_LIBRARIES}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
   tf2::tf2
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
 )
 target_link_libraries(${library_name} PRIVATE
   pluginlib::pluginlib
@@ -109,19 +109,19 @@ target_include_directories(${library_name}_2d
 )
 target_link_libraries(${library_name}_2d PUBLIC
   ${library_name}_common
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   nlohmann_json::nlohmann_json
   ${OMPL_LIBRARIES}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
   tf2::tf2
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
 )
 target_link_libraries(${library_name}_2d PRIVATE
   pluginlib::pluginlib
@@ -139,19 +139,19 @@ target_include_directories(${library_name}_lattice
 )
 target_link_libraries(${library_name}_lattice PUBLIC
   ${library_name}_common
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   nlohmann_json::nlohmann_json
   ${OMPL_LIBRARIES}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
   tf2::tf2
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
 )
 target_link_libraries(${library_name}_lattice PRIVATE
   ament_index_cpp::ament_index_cpp

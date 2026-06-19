@@ -5,9 +5,9 @@ nav2_add_gtest(test_behavior_tree_node
 target_link_libraries(test_behavior_tree_node
   ament_index_cpp::ament_index_cpp
   behaviortree_cpp::behaviortree_cpp
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_behavior_tree::nav2_behavior_tree
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp

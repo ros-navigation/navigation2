@@ -7,17 +7,17 @@ target_include_directories(test_node_utils PRIVATE
 )
 target_link_libraries(test_node_utils
   bondcpp::bondcpp
-  ${geometry_msgs_TARGETS}
-  ${lifecycle_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${rcl_interfaces_TARGETS}
+  geometry_msgs::geometry_msgs
+  lifecycle_msgs::lifecycle_msgs
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
+  rcl_interfaces::rcl_interfaces
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
+  tf2_geometry_msgs::tf2_geometry_msgs
   pluginlib::pluginlib
 )
 
@@ -27,19 +27,19 @@ target_include_directories(test_service_client PRIVATE
 )
 target_link_libraries(test_service_client
   bondcpp::bondcpp
-  ${geometry_msgs_TARGETS}
-  ${lifecycle_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${rcl_interfaces_TARGETS}
+  geometry_msgs::geometry_msgs
+  lifecycle_msgs::lifecycle_msgs
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
+  rcl_interfaces::rcl_interfaces
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
+  tf2_geometry_msgs::tf2_geometry_msgs
   pluginlib::pluginlib
-  ${std_srvs_TARGETS}
+  std_srvs::std_srvs
 )
 
 nav2_add_gtest(test_service_server test_service_server.cpp)
@@ -48,19 +48,19 @@ target_include_directories(test_service_server PRIVATE
 )
 target_link_libraries(test_service_server
   bondcpp::bondcpp
-  ${geometry_msgs_TARGETS}
-  ${lifecycle_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${rcl_interfaces_TARGETS}
+  geometry_msgs::geometry_msgs
+  lifecycle_msgs::lifecycle_msgs
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
+  rcl_interfaces::rcl_interfaces
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
+  tf2_geometry_msgs::tf2_geometry_msgs
   pluginlib::pluginlib
-  ${std_srvs_TARGETS}
+  std_srvs::std_srvs
 )
 
 nav2_add_gtest(test_actions test_actions.cpp)
@@ -69,19 +69,19 @@ target_include_directories(test_actions PRIVATE
 )
 target_link_libraries(test_actions
   bondcpp::bondcpp
-  ${geometry_msgs_TARGETS}
-  ${lifecycle_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${rcl_interfaces_TARGETS}
+  geometry_msgs::geometry_msgs
+  lifecycle_msgs::lifecycle_msgs
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
+  rcl_interfaces::rcl_interfaces
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
+  tf2_geometry_msgs::tf2_geometry_msgs
   pluginlib::pluginlib
-  ${test_msgs_TARGETS}
+  test_msgs::test_msgs
 )
 
 nav2_add_gtest(test_lifecycle_node test_lifecycle_node.cpp)
@@ -90,17 +90,17 @@ target_include_directories(test_lifecycle_node PRIVATE
 )
 target_link_libraries(test_lifecycle_node
   bondcpp::bondcpp
-  ${geometry_msgs_TARGETS}
-  ${lifecycle_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${rcl_interfaces_TARGETS}
+  geometry_msgs::geometry_msgs
+  lifecycle_msgs::lifecycle_msgs
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
+  rcl_interfaces::rcl_interfaces
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
+  tf2_geometry_msgs::tf2_geometry_msgs
   pluginlib::pluginlib
 )
 
@@ -110,18 +110,18 @@ target_include_directories(test_validation_messages PRIVATE
 )
 target_link_libraries(test_validation_messages
   bondcpp::bondcpp
-  ${geometry_msgs_TARGETS}
-  ${lifecycle_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${rcl_interfaces_TARGETS}
+  geometry_msgs::geometry_msgs
+  lifecycle_msgs::lifecycle_msgs
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
+  rcl_interfaces::rcl_interfaces
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
+  tf2_geometry_msgs::tf2_geometry_msgs
   pluginlib::pluginlib
-  ${builtin_interfaces_TARGETS}
-  ${std_msgs_TARGETS}
+  builtin_interfaces::builtin_interfaces
+  std_msgs::std_msgs
 )

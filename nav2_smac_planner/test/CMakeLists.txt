@@ -4,7 +4,7 @@ nav2_add_gtest(test_utils
 )
 target_link_libraries(test_utils
   ${library_name}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core
 )
@@ -57,7 +57,7 @@ nav2_add_gtest(test_collision_checker
 )
 target_link_libraries(test_collision_checker
   ${library_name}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -81,7 +81,7 @@ nav2_add_gtest(test_smac_hybrid
 )
 target_link_libraries(test_smac_hybrid
   ${library_name}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -93,7 +93,7 @@ nav2_add_gtest(test_smac_2d
 )
 target_link_libraries(test_smac_2d
   ${library_name}_2d
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -105,7 +105,7 @@ nav2_add_gtest(test_smac_lattice
 )
 target_link_libraries(test_smac_lattice
   ${library_name}_lattice
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -120,7 +120,7 @@ target_link_libraries(test_smoother
   ${library_name}
   ${library_name}_2d
   ament_index_cpp::ament_index_cpp
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle

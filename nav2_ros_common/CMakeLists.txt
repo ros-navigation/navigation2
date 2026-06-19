@@ -31,10 +31,10 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME} INTERFACE
-  ${geometry_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
+  nav_msgs::nav_msgs
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle

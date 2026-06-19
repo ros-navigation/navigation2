@@ -5,17 +5,17 @@ ament_add_gtest_executable(${test_planner_costmaps_exec}
   planner_tester.cpp
 )
 target_link_libraries(${test_planner_costmaps_exec}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_map_server::map_io
   nav2_map_server::map_server_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_planner::planner_server_core
   nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
   nav2_ros_common::nav2_ros_common
 )
 target_include_directories(${test_planner_costmaps_exec}
@@ -31,17 +31,17 @@ ament_add_gtest_executable(${test_planner_random_exec}
   planner_tester.cpp
 )
 target_link_libraries(${test_planner_random_exec}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_map_server::map_io
   nav2_map_server::map_server_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_planner::planner_server_core
   nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
   nav2_ros_common::nav2_ros_common
 )
 target_include_directories(${test_planner_random_exec}
@@ -76,14 +76,14 @@ nav2_add_gtest(test_planner_plugins
   TIMEOUT 30
 )
 target_link_libraries(test_planner_plugins
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_map_server::map_io
   nav2_map_server::map_server_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_planner::planner_server_core
   nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
@@ -100,10 +100,10 @@ nav2_add_gtest(test_planner_is_path_valid
   test_planner_is_path_valid.cpp
 )
 target_link_libraries(test_planner_is_path_valid
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_map_server::map_io
   nav2_map_server::map_server_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_planner::planner_server_core
   nav2_util::nav2_util_core
   rclcpp::rclcpp

@@ -28,13 +28,13 @@ target_include_directories(standard_traj_generator PUBLIC
 )
 target_link_libraries(standard_traj_generator PUBLIC
   dwb_core::dwb_core
-  ${dwb_msgs_TARGETS}
-  ${geometry_msgs_TARGETS}
+  dwb_msgs::dwb_msgs
+  geometry_msgs::geometry_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
-  ${nav_2d_msgs_TARGETS}
+  nav_2d_msgs::nav_2d_msgs
   rclcpp::rclcpp
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
 )
 target_link_libraries(standard_traj_generator PRIVATE
   nav_2d_utils::conversions

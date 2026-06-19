@@ -32,7 +32,7 @@ target_include_directories(${library_name}
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_controller::position_goal_checker
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
@@ -40,7 +40,7 @@ target_link_libraries(${library_name} PUBLIC
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
   tf2_ros::tf2_ros
 )
 target_link_libraries(${library_name} PRIVATE

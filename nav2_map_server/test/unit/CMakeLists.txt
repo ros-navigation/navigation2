@@ -5,7 +5,7 @@ target_include_directories(test_map_io
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/test>")
 target_link_libraries(test_map_io
   rclcpp::rclcpp
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   ${map_io_library_name}
 )
 

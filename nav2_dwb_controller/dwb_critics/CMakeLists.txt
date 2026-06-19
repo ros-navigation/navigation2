@@ -42,11 +42,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 target_link_libraries(${PROJECT_NAME} PUBLIC
   costmap_queue::costmap_queue
   dwb_core::dwb_core
-  ${dwb_msgs_TARGETS}
-  ${geometry_msgs_TARGETS}
+  dwb_msgs::dwb_msgs
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_ros_common::nav2_ros_common
-  ${nav_2d_msgs_TARGETS}
+  nav_2d_msgs::nav_2d_msgs
   rclcpp::rclcpp
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
