@@ -154,7 +154,7 @@ TEST_F(LoopbackSimulatorTest, PublishesTfOnActivation)
   bool received_tf = false;
   auto tf_sub = helper_node_->create_subscription<tf2_msgs::msg::TFMessage>(
     "/tf", 10,
-    [&](const tf2_msgs::msg::TFMessage::SharedPtr msg) {
+    [&](const tf2_msgs::msg::TFMessage::ConstSharedPtr msg) {
       for (const auto & t : msg->transforms) {
         if (t.header.frame_id == "odom" && t.child_frame_id == "base_footprint") {
           received_tf = true;
