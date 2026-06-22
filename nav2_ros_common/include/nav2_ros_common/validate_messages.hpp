@@ -23,6 +23,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "map_msgs/msg/occupancy_grid_update.hpp"
 
 
 // @brief Validation Check
@@ -194,6 +195,35 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
     return false;
   }
 
+
+  return true;
+}
+
+// for partial map updates as `OccupancyGridUpdate`
+bool validateMsg(const map_msgs::msg::OccupancyGridUpdate & msg)
+{
+  // check sub-type
+  if (!validateMsg(msg.header)) {return false;}
+
+  // check logic
+  if (msg.data.size() != static_cast<size_t>(msg.width) * msg.height) {
+    return false;                                                          // check update-size
+  }
+
+  // value check: x/y are int32, negative origin is invalid
+  if (msg.x < 0 || msg.y < 0) {return false;}
+
+  if (msg.x > INT16_MAX || msg.y > INT16_MAX ||
+      msg.width > INT16_MAX || msg.height > INT16_MAX) {
+    // avoid integer overflow in StaticLayer::incomingUpdate() 
+    return false;
+  }
+
+  uint32_t num_cells;
+  if (__builtin_mul_overflow(msg.width, msg.height, &num_cells)) {
+    // avoid overflow msg.width * msg.height in StaticLayer::incomingUpdate()
+    return false;
+  }
 
   return true;
 }
