@@ -20,7 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "geographic_msgs/msg/geo_point.hpp"
 #include "nav2_route/interfaces/graph_file_loader.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/service_client.hpp"
@@ -200,6 +199,8 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("OsmGraphFileLoader")};
 
   nav2::ServiceClient<robot_localization::srv::FromLLArray>::SharedPtr from_ll_client_;
+  std::string from_ll_service_name_{"/fromLLArray"};
+  double from_ll_service_timeout_{5.0};
 
   std::unordered_set<std::string> highway_filter_;
 

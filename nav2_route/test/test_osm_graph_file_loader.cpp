@@ -37,14 +37,20 @@ class OsmLoaderTestPeer : public OsmGraphFileLoader
 public:
   using OsmGraphFileLoader::OsmWay;
   using OsmGraphFileLoader::Section;
+  using OsmGraphFileLoader::OneWay;
   using OsmGraphFileLoader::doesFileExist;
   using OsmGraphFileLoader::parseOsm;
+  using OsmGraphFileLoader::shouldKeepWay;
   using OsmGraphFileLoader::countNodeReferences;
   using OsmGraphFileLoader::splitWaysIntoSections;
   using OsmGraphFileLoader::collectVertexIds;
+  using OsmGraphFileLoader::convertCoordinates;
   using OsmGraphFileLoader::addNodesToGraph;
+  using OsmGraphFileLoader::parseOneway;
   using OsmGraphFileLoader::addEdgesFromSections;
   using OsmGraphFileLoader::osm_to_nodeid_;
+  using OsmGraphFileLoader::next_edge_id_;
+  using OsmGraphFileLoader::highway_filter_;
 };
 
 void writeOsmToFile(const std::string & xml, const std::string & file_path)
@@ -325,4 +331,120 @@ TEST(OsmGraphFileLoader, sample_graph_resolves_to_expected_topology)
 
   const auto vertices = peer.collectVertexIds(sections);
   EXPECT_EQ(vertices, (std::vector<int64_t>{1001, 1003, 1005, 1006, 1007}));
+}
+
+// parseOneway covers every recognized value, plus unknown/absent -> bidirectional.
+TEST(OsmGraphFileLoader, parse_oneway_recognizes_all_values)
+{
+  OsmLoaderTestPeer peer;
+  using OneWay = OsmLoaderTestPeer::OneWay;
+  EXPECT_EQ(peer.parseOneway({{"oneway", "yes"}}), OneWay::FORWARD);
+  EXPECT_EQ(peer.parseOneway({{"oneway", "true"}}), OneWay::FORWARD);
+  EXPECT_EQ(peer.parseOneway({{"oneway", "1"}}), OneWay::FORWARD);
+  EXPECT_EQ(peer.parseOneway({{"oneway", "-1"}}), OneWay::REVERSE);
+  EXPECT_EQ(peer.parseOneway({{"oneway", "reverse"}}), OneWay::REVERSE);
+  EXPECT_EQ(peer.parseOneway({{"oneway", "no"}}), OneWay::BOTH);
+  EXPECT_EQ(peer.parseOneway({{"oneway", "false"}}), OneWay::BOTH);
+  EXPECT_EQ(peer.parseOneway({{"oneway", "0"}}), OneWay::BOTH);
+  EXPECT_EQ(peer.parseOneway({{"oneway", "backwards"}}), OneWay::BOTH);  // unknown -> permissive
+  EXPECT_EQ(peer.parseOneway({}), OneWay::BOTH);                          // absent -> bidirectional
+}
+
+// A non-empty highway_filter_ keeps only allowlisted highway values; a way with
+// no highway tag is always dropped.
+TEST(OsmGraphFileLoader, should_keep_way_respects_highway_allowlist)
+{
+  OsmLoaderTestPeer peer;
+  peer.highway_filter_ = {"track", "path"};
+  EXPECT_TRUE(peer.shouldKeepWay({{"highway", "track"}}));
+  EXPECT_TRUE(peer.shouldKeepWay({{"highway", "path"}}));
+  EXPECT_FALSE(peer.shouldKeepWay({{"highway", "motorway"}}));  // not allowlisted
+  EXPECT_FALSE(peer.shouldKeepWay({{"name", "x"}}));            // no highway tag
+}
+
+// An empty filter keeps every highway=* way but still drops non-highway ways.
+TEST(OsmGraphFileLoader, should_keep_way_empty_filter_keeps_all_highways)
+{
+  OsmLoaderTestPeer peer;  // highway_filter_ empty by default
+  EXPECT_TRUE(peer.shouldKeepWay({{"highway", "motorway"}}));
+  EXPECT_FALSE(peer.shouldKeepWay({{"building", "yes"}}));
+}
+
+// A way with fewer than two refs has no extent and yields no section.
+TEST(OsmGraphFileLoader, single_ref_way_produces_no_section)
+{
+  OsmLoaderTestPeer peer;
+  std::vector<OsmLoaderTestPeer::OsmWay> ways;
+  ways.push_back({{42}, {{"highway", "track"}}});
+  const auto ref = peer.countNodeReferences(ways);
+  EXPECT_TRUE(peer.splitWaysIntoSections(ways, ref).empty());
+}
+
+// A <node> missing a coordinate is skipped during parsing, not stored as (0,0).
+TEST(OsmGraphFileLoader, parse_skips_node_missing_coordinate)
+{
+  const std::string file_path = "missing_coord.osm";
+  writeOsmToFile(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<osm version=\"0.6\">\n"
+    "  <node id=\"1\" lat=\"40.0\" lon=\"-75.0\"/>\n"
+    "  <node id=\"2\" lat=\"40.0\"/>\n"  // missing lon -> skipped
+    "</osm>", file_path);
+  OsmLoaderTestPeer peer;
+  std::unordered_map<int64_t, std::pair<double, double>> nodes;
+  std::vector<OsmLoaderTestPeer::OsmWay> ways;
+  ASSERT_TRUE(peer.parseOsm(file_path, nodes, ways));
+  EXPECT_EQ(nodes.size(), 1u);
+  EXPECT_EQ(nodes.count(2), 0u);
+  std::filesystem::remove(file_path);
+}
+
+// A self-loop section (both boundaries the same junction) adds no edge.
+TEST(OsmGraphFileLoader, edges_skip_self_loop_section)
+{
+  OsmLoaderTestPeer peer;
+  Graph graph;
+  GraphToIDMap map;
+  buildTwoVertexGraph(peer, graph, map);  // vertices 10, 14
+
+  std::vector<OsmLoaderTestPeer::Section> sections;
+  sections.push_back({{10, 11, 10}, {{"highway", "track"}}});  // closes back on 10
+  peer.addEdgesFromSections(graph, sections);
+
+  EXPECT_EQ(graph[0].neighbors.size(), 0u);
+}
+
+// Edges point at the correct destination node and get sequential ids.
+TEST(OsmGraphFileLoader, edges_point_to_correct_nodes_and_assign_sequential_ids)
+{
+  OsmLoaderTestPeer peer;
+  Graph graph;
+  GraphToIDMap map;
+  buildTwoVertexGraph(peer, graph, map);  // 10 -> idx 0, 14 -> idx 1
+
+  std::vector<OsmLoaderTestPeer::Section> sections;
+  sections.push_back({{10, 14}, {{"highway", "track"}}});  // bidirectional
+  peer.addEdgesFromSections(graph, sections);
+
+  ASSERT_EQ(graph[0].neighbors.size(), 1u);
+  ASSERT_EQ(graph[1].neighbors.size(), 1u);
+  EXPECT_EQ(graph[0].neighbors[0].end, &graph[1]);
+  EXPECT_EQ(graph[1].neighbors[0].end, &graph[0]);
+  EXPECT_EQ(peer.next_edge_id_, 2u);  // two directed edges -> ids 0 and 1
+}
+
+// Two ways between the same junctions produce two parallel edges (no dedup in v1).
+TEST(OsmGraphFileLoader, parallel_ways_produce_parallel_edges)
+{
+  OsmLoaderTestPeer peer;
+  Graph graph;
+  GraphToIDMap map;
+  buildTwoVertexGraph(peer, graph, map);
+
+  std::vector<OsmLoaderTestPeer::Section> sections;
+  sections.push_back({{10, 14}, {{"highway", "track"}, {"oneway", "yes"}}});
+  sections.push_back({{10, 14}, {{"highway", "path"}, {"oneway", "yes"}}});
+  peer.addEdgesFromSections(graph, sections);
+
+  EXPECT_EQ(graph[0].neighbors.size(), 2u);
 }

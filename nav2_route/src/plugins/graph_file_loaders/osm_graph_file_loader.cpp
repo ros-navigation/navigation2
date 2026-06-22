@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "geographic_msgs/msg/geo_point.hpp"
 #include "nav2_route/plugins/graph_file_loaders/osm_graph_file_loader.hpp"
 
 namespace nav2_route
@@ -39,12 +40,17 @@ void OsmGraphFileLoader::configure(const nav2::LifecycleNode::SharedPtr node)
     node->declare_or_get_parameter(prefix + "highway_filter", std::vector<std::string>{});
   highway_filter_ = std::unordered_set<std::string>(highways.begin(), highways.end());
 
+  from_ll_service_name_ = node->declare_or_get_parameter(
+    prefix + "from_ll_service", std::string("/fromLLArray"));
+  from_ll_service_timeout_ = node->declare_or_get_parameter(
+    prefix + "from_ll_service_timeout", 5.0);
+
   // Convert OSM lat/lon through robot_localization's navsat_transform, so the
   // datum (and the resulting map frame) is shared with the robot's localization
   // rather than introducing a second, independent datum here. The client owns
   // its own internal executor so it can be invoked synchronously at load time.
   from_ll_client_ = node->create_client<robot_localization::srv::FromLLArray>(
-    "/fromLLArray", true /* creates and spins an internal executor */);
+    from_ll_service_name_, true /* creates and spins an internal executor */);
 }
 
 bool OsmGraphFileLoader::loadGraphFromFile(
@@ -142,13 +148,23 @@ bool OsmGraphFileLoader::parseOsm(
 
   // Every <node> becomes an entry in the id -> (lat, lon) table. OSM ids are
   // 64-bit, so we always read them with Int64Attribute - never an unsigned
-  // accessor, which would silently truncate.
+  // accessor, which would silently truncate. The Query* accessors report a
+  // missing/unparseable attribute instead of silently returning 0, so a
+  // malformed node is skipped rather than corrupting the table (e.g. several
+  // id-less nodes colliding at id 0).
   for (const tinyxml2::XMLElement * node = osm->FirstChildElement("node");
     node != nullptr; node = node->NextSiblingElement("node"))
   {
-    const int64_t id = node->Int64Attribute("id");
-    const double lat = node->DoubleAttribute("lat");
-    const double lon = node->DoubleAttribute("lon");
+    int64_t id = 0;
+    double lat = 0.0;
+    double lon = 0.0;
+    if (node->QueryInt64Attribute("id", &id) != tinyxml2::XML_SUCCESS ||
+      node->QueryDoubleAttribute("lat", &lat) != tinyxml2::XML_SUCCESS ||
+      node->QueryDoubleAttribute("lon", &lon) != tinyxml2::XML_SUCCESS)
+    {
+      RCLCPP_WARN(logger_, "Skipping an OSM <node> with a missing or invalid id/lat/lon");
+      continue;
+    }
     osm_nodes[id] = std::make_pair(lat, lon);
   }
 
@@ -160,7 +176,12 @@ bool OsmGraphFileLoader::parseOsm(
     for (const tinyxml2::XMLElement * nd = way->FirstChildElement("nd");
       nd != nullptr; nd = nd->NextSiblingElement("nd"))
     {
-      osm_way.refs.push_back(nd->Int64Attribute("ref"));
+      int64_t ref = 0;
+      if (nd->QueryInt64Attribute("ref", &ref) != tinyxml2::XML_SUCCESS) {
+        RCLCPP_WARN(logger_, "Skipping a <nd> with a missing or invalid ref in a way");
+        continue;
+      }
+      osm_way.refs.push_back(ref);
     }
 
     for (const tinyxml2::XMLElement * tag = way->FirstChildElement("tag");
@@ -288,11 +309,18 @@ bool OsmGraphFileLoader::convertCoordinates(
   }
 
   auto response = std::make_shared<robot_localization::srv::FromLLArray::Response>();
-  from_ll_client_->wait_for_service(std::chrono::seconds(1));
-  if (!from_ll_client_->invoke(request, response)) {
+  const auto timeout = std::chrono::duration_cast<std::chrono::nanoseconds>(
+    std::chrono::duration<double>(from_ll_service_timeout_));
+  if (!from_ll_client_->wait_for_service(timeout)) {
     RCLCPP_ERROR(
       logger_,
-      "fromLLArray service call failed - is navsat_transform_node running?");
+      "FromLLArray service '%s' unavailable after %.1fs - is navsat_transform_node running?",
+      from_ll_service_name_.c_str(), from_ll_service_timeout_);
+    return false;
+  }
+  if (!from_ll_client_->invoke(request, response)) {
+    RCLCPP_ERROR(
+      logger_, "FromLLArray service '%s' call failed", from_ll_service_name_.c_str());
     return false;
   }
 
@@ -387,8 +415,12 @@ void OsmGraphFileLoader::addEdgesFromSections(
     const unsigned int start_id = start_it->second;
     const unsigned int end_id = end_it->second;
     if (start_id == end_id) {
-      // Section that loops back to its own start (e.g. a spur); a self edge is
-      // useless for routing.
+      // Section that loops back to its own start (e.g. a closed spur attached
+      // to the network at a single junction). A self edge is useless for
+      // routing, so it is dropped - which also drops the spur's interior.
+      RCLCPP_WARN(
+        logger_, "Dropping self-loop section at junction %u (closed spur with no second junction)",
+        start_id);
       continue;
     }
 

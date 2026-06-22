@@ -361,17 +361,26 @@ nodes are not turned into graph vertices, keeping the graph sparse. Edge directi
 Coordinates are converted from WGS84 latitude/longitude into the map frame using
 robot_localization's `FromLLArray` service, so the graph shares a single datum with the robot's
 localization rather than introducing a second one. **This requires `navsat_transform_node` to be
-running when the graph is loaded.**
+running when the graph is loaded** — the graph is loaded during the Route Server's lifecycle
+`configure` (or on a `set_route_graph` request), and that load blocks on the service, so if it is
+unavailable the transition fails.
 
 Parameters (under the `osm_graph_file_loader.` namespace):
 
 | Parameter | Type | Default | Description |
 | --------- | ---- | ------- | ----------- |
 | `highway_filter` | string[] | `[]` (keep all `highway=*` ways) | Allowlist of OSM `highway` values to keep, e.g. `["track", "path", "service", "unclassified", "residential"]` |
+| `from_ll_service` | string | `/fromLLArray` | Name of the robot_localization `FromLLArray` service (override for namespaced setups) |
+| `from_ll_service_timeout` | double | `5.0` | Seconds to wait for the conversion service before failing the load |
 
-A small example is provided in `graphs/sample_graph.osm`. Node and edge **metadata** (e.g. speed
-limits from OSM `maxspeed`) is intentionally out of scope for this initial loader and is planned for
-a follow-on contribution.
+A small example is provided in `graphs/sample_graph.osm`.
+
+Note: OSM node ids are 64-bit and cannot be the Route Server's 32-bit node id, so unlike the GeoJSON
+loader (which preserves the file's `id`), this loader assigns **sequential** node ids and the
+`graph_to_id_map` is an identity map. Routes therefore cannot be requested by original OSM node id.
+
+Node and edge **metadata** (e.g. speed limits from OSM `maxspeed`) is intentionally out of scope for
+this initial loader and is planned for a follow-on contribution.
 
 ### Metadata Conventions for Convenience
 
