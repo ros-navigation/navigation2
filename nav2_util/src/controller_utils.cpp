@@ -128,6 +128,8 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
       geometry_msgs::msg::PoseStamped interpolated_pose;
       interpolated_pose.header = last_pose_it->header;
       interpolated_pose.pose.position = interpolated_position;
+      interpolated_pose.pose.orientation =
+        geometry_utils::orientationAroundZAxis(end_path_orientation);
 
       return interpolated_pose;
     } else {
