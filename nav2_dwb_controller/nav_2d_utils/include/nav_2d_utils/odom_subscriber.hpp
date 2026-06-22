@@ -82,7 +82,8 @@ public:
     std::lock_guard<std::mutex> lock(odom_mutex_);
     return odom_vel_.velocity;
   }
-  inline nav_2d_msgs::msg::Twist2DStamped getTwistStamped() {
+  inline nav_2d_msgs::msg::Twist2DStamped getTwistStamped()
+  {
     std::lock_guard<std::mutex> lock(odom_mutex_);
     return odom_vel_;
   }
