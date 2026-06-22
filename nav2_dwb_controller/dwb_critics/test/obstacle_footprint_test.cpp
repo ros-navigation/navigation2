@@ -55,6 +55,20 @@ public:
   }
 };
 
+// Test-only Costmap2DROS that allows forcing an empty footprint directly,
+// bypassing setRobotFootprint() which now rejects empty footprints.
+class OpenCostmap2DROS : public nav2_costmap_2d::Costmap2DROS
+{
+public:
+  using nav2_costmap_2d::Costmap2DROS::Costmap2DROS;
+
+  void clearRobotFootprint()
+  {
+    unpadded_footprint_.clear();
+    padded_footprint_.clear();
+  }
+};
+
 // Rotate the given point for angle radians around the origin.
 geometry_msgs::msg::Point rotate_origin(geometry_msgs::msg::Point p, double angle)
 {
@@ -125,7 +139,7 @@ TEST(ObstacleFootprint, Prepare)
 
   auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
 
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  auto costmap_ros = std::make_shared<OpenCostmap2DROS>("test_global_costmap");
   costmap_ros->configure();
 
   std::string name = "name";
@@ -137,9 +151,9 @@ TEST(ObstacleFootprint, Prepare)
   geometry_msgs::msg::Pose2D goal;
   nav_2d_msgs::msg::Path2D global_plan;
 
-  // no footprint set in the costmap. Prepare should return false;
-  std::vector<geometry_msgs::msg::Point> footprint;
-  costmap_ros->setRobotFootprint(footprint);
+  // Empty footprint in the costmap. Prepare should return false.
+  // setRobotFootprint() now rejects empty footprints, so clear it directly.
+  costmap_ros->clearRobotFootprint();
   ASSERT_FALSE(critic->prepare(pose, vel, goal, global_plan));
 
   costmap_ros->setRobotFootprint(getFootprint());
