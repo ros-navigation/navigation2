@@ -40,7 +40,7 @@ namespace nav2_behavior_tree
  *
  * Usage in XML:
  * @code
- * <SpeedController min_rate="0.1" max_rate="1.0" min_speed="0.0" max_speed="0.5" filter_duration="0.3">
+ * <SpeedController min_rate="0.1" max_rate="1.0" min_speed="0.0" max_speed="0.5">
  *     <!--Add tree components here-->
  * </SpeedController>
  * @endcode
