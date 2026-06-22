@@ -77,7 +77,8 @@ public:
       std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
   }
 
-  inline nav_2d_msgs::msg::Twist2D getTwist() {
+  inline nav_2d_msgs::msg::Twist2D getTwist()
+  {
     std::lock_guard<std::mutex> lock(odom_mutex_);
     return odom_vel_.velocity;
   }
