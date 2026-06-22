@@ -34,6 +34,12 @@ namespace nav2_behavior_tree
  * to get the decision about what goal_checker must be used. It is usually used before of
  * the FollowPath. The selected_goal_checker output port is passed to goal_checker_id
  * input port of the FollowPath
+ *
+ * Usage in XML:
+ * @code
+ * <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}"
+ *                      default_goal_checker="precise_goal_checker" topic_name="goal_checker_selector"/>
+ * @endcode
  */
 class GoalCheckerSelector : public BT::SyncActionNode
 {

@@ -25,6 +25,13 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A BT::DecoratorNode that ticks its child at a specified rate
+ *
+ * Usage in XML:
+ * @code
+ * <RateController hz="1.0">
+ *     <!--Add tree components here-->
+ * </RateController>
+ * @endcode
  */
 class RateController : public BT::DecoratorNode
 {

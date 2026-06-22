@@ -34,6 +34,12 @@ namespace nav2_behavior_tree
  * to get the decision about what controller must be used. It is usually used before of
  * the FollowPath. The selected_controller output port is passed to controller_id
  * input port of the FollowPath
+ *
+ * Usage in XML:
+ * @code
+ * <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath"
+ *                     topic_name="controller_selector"/>
+ * @endcode
  */
 class ControllerSelector : public BT::SyncActionNode
 {
