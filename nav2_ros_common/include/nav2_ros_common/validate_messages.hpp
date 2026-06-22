@@ -214,8 +214,9 @@ bool validateMsg(const map_msgs::msg::OccupancyGridUpdate & msg)
   if (msg.x < 0 || msg.y < 0) {return false;}
 
   if (msg.x > INT16_MAX || msg.y > INT16_MAX ||
-      msg.width > INT16_MAX || msg.height > INT16_MAX) {
-    // avoid integer overflow in StaticLayer::incomingUpdate() 
+    msg.width > INT16_MAX || msg.height > INT16_MAX)
+  {
+    // avoid integer overflow in StaticLayer::incomingUpdate()
     return false;
   }
 
