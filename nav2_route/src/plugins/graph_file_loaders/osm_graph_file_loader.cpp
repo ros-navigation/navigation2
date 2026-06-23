@@ -149,7 +149,7 @@ bool OsmGraphFileLoader::parseOsm(
   // Every <node> becomes an entry in the id -> (lat, lon) table. OSM ids are
   // 64-bit, so we always read them with Int64Attribute - never an unsigned
   // accessor, which would silently truncate. The Query* accessors report a
-  // missing/unparseable attribute instead of silently returning 0, so a
+  // missing/unparsable attribute instead of silently returning 0, so a
   // malformed node is skipped rather than corrupting the table (e.g. several
   // id-less nodes colliding at id 0).
   for (const tinyxml2::XMLElement * node = osm->FirstChildElement("node");
