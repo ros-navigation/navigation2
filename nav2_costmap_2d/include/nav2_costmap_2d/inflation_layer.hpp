@@ -215,7 +215,7 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
-  double inflation_radius_, inscribed_radius_, cost_scaling_factor_;
+  double inflation_radius_, inscribed_radius_, custom_inscribed_radius_, cost_scaling_factor_;
   bool inflate_unknown_, inflate_around_unknown_;
   unsigned int cell_inflation_radius_;
   int num_threads_;  // Number of OpenMP threads (-1 = auto)
