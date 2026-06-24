@@ -184,7 +184,6 @@ TEST(DockingServerTests, testErrorExceptions)
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
-  node.reset();
 }
 
 TEST(DockingServerTests, getateGoalDock)

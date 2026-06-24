@@ -324,14 +324,14 @@ void SimpleChargingDock::jointStateCallback(
   double velocity = 0.0;
   double effort = 0.0;
   if (state->velocity.size() < state->name.size() ||
-        state->effort.size() < state->name.size())
-    {
-      throw std::runtime_error(
+    state->effort.size() < state->name.size())
+  {
+    throw std::runtime_error(
         "JointState message has mismatched array sizes: name=" +
         std::to_string(state->name.size()) + ", velocity=" +
         std::to_string(state->velocity.size()) + ", effort=" +
         std::to_string(state->effort.size()));
-    }
+  }
   for (size_t i = 0; i < state->name.size(); ++i) {
     for (auto & name : stall_joint_names_) {
       if (state->name[i] == name) {
