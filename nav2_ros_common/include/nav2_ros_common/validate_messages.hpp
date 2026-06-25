@@ -207,7 +207,7 @@ bool validateMsg(const map_msgs::msg::OccupancyGridUpdate & msg)
 
   // check logic
   if (msg.data.size() != static_cast<size_t>(msg.width) * msg.height) {
-    return false;                                                          // check update-size
+    return false;  // check update-size
   }
 
   // value check: x/y are int32, negative origin is invalid
