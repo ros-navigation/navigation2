@@ -54,6 +54,7 @@ public:
     logger_ = node->get_logger().get_child("ros_topic_logger");
     log_pub_ = nav2::interfaces::create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
       node, "behavior_tree_log");
+    log_pub_->on_activate();
     enableTransitionToIdle(log_idle);
   }
 
