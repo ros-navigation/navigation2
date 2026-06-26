@@ -56,6 +56,18 @@ public:
   }
 };
 
+class OpenCostmap2DROS : public nav2_costmap_2d::Costmap2DROS
+{
+public:
+  using nav2_costmap_2d::Costmap2DROS::Costmap2DROS;
+
+  void clearRobotFootprint()
+  {
+    unpadded_footprint_.clear();
+    padded_footprint_.clear();
+  }
+};
+
 // Rotate the given point for angle radians around the origin.
 geometry_msgs::msg::Point rotate_origin(geometry_msgs::msg::Point p, double angle)
 {
@@ -134,7 +146,7 @@ TEST(ObstacleFootprint, Prepare)
   std::string ns = "/ns";
   std::string costmap_name = "test_global_costmap";
   auto costmap_ros =
-    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, false);
+    std::make_shared<OpenCostmap2DROS>(costmap_name, ns, false);
   costmap_ros->configure();
 
   std::string name = "name";
@@ -146,8 +158,7 @@ TEST(ObstacleFootprint, Prepare)
   nav_msgs::msg::Path global_plan;
 
   // no footprint set in the costmap. Prepare should return false;
-  std::vector<geometry_msgs::msg::Point> footprint;
-  costmap_ros->setRobotFootprint(footprint);
+  costmap_ros->clearRobotFootprint();
   ASSERT_FALSE(critic->prepare(pose, vel, goal, global_plan));
 
   costmap_ros->setRobotFootprint(getFootprint());
