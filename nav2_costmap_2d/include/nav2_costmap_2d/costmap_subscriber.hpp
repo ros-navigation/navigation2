@@ -36,13 +36,6 @@ namespace nav2_costmap_2d
 class CostmapSubscriber
 {
 public:
-  /**
-   * @brief A constructor
-   */
-  CostmapSubscriber(
-    const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & topic_name);
-
   template<typename NodeT>
   CostmapSubscriber(
     const NodeT & parent,
@@ -105,10 +98,17 @@ protected:
     return costmap_ != nullptr;
   }
 
+  // Process the most recent legacy nav2_msgs::msg::Costmap message into costmap_.
+  // Used only by the backward-compatible Costmap overload; defers the resize+copy
+  // until the consumer actually calls getCostmap() so intermediate messages that
+  // are never requested cost nothing.
+  void processCurrentCostmapMsg();
+
   nav2::Subscription<nav2_costmap_2d::Costmap2DStamped>::SharedPtr costmap_sub_;
   nav2::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr costmap_update_sub_;
 
   std::shared_ptr<Costmap2D> costmap_;
+  nav2_msgs::msg::Costmap::ConstSharedPtr costmap_msg_;
   std::string topic_name_;
   std::string frame_id_;
   std::mutex costmap_msg_mutex_;
