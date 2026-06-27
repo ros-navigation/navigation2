@@ -21,10 +21,13 @@
 #include "tf2/transform_datatypes.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/validate_messages.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
 {
+
+constexpr size_t MAX_RANGE_DATA_POINTS = 720;
 
 Range::Range(
   const nav2::LifecycleNode::WeakPtr & node,
@@ -89,6 +92,24 @@ bool Range::getData(
     return false;
   }
 
+  if (!std::isfinite(obstacles_angle_) || obstacles_angle_ <= 0.0) {
+    RCLCPP_ERROR(
+      logger_,
+      "[%s]: Invalid obstacles_angle %f. Ignoring range data...",
+      source_name_.c_str(), obstacles_angle_);
+    return false;
+  }
+
+  const size_t point_count = static_cast<size_t>(
+    std::ceil(static_cast<double>(data_->field_of_view) / obstacles_angle_)) + 1;
+  if (point_count > MAX_RANGE_DATA_POINTS) {
+    RCLCPP_ERROR(
+      logger_,
+      "[%s]: Range data would generate %zu points, exceeding the limit of %zu. Ignoring...",
+      source_name_.c_str(), point_count, MAX_RANGE_DATA_POINTS);
+    return false;
+  }
+
   tf2::Transform tf_transform;
   if (!getTransform(curr_time, data_->header, tf_transform)) {
     return false;
@@ -139,10 +160,24 @@ void Range::getParameters(std::string & source_topic)
 
   obstacles_angle_ = node->declare_or_get_parameter(
     source_name_ + ".obstacles_angle", M_PI / 180);
+
+  if (!std::isfinite(obstacles_angle_) || obstacles_angle_ <= 0.0) {
+    throw std::runtime_error{
+            "Range source " + source_name_ + " has invalid obstacles_angle parameter"};
+  }
 }
 
 void Range::dataCallback(sensor_msgs::msg::Range::ConstSharedPtr msg)
 {
+  if (!nav2::validateMsg(*msg)) {
+    RCLCPP_ERROR(
+      logger_,
+      "[%s]: Malformed range message. Rejecting...",
+      source_name_.c_str());
+    data_.reset();
+    return;
+  }
+
   data_ = msg;
 }
 

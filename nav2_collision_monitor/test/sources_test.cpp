@@ -368,6 +368,16 @@ public:
   {
     return data_ != nullptr;
   }
+
+  void setData(sensor_msgs::msg::Range::ConstSharedPtr msg)
+  {
+    data_ = msg;
+  }
+
+  void setObstaclesAngle(const double obstacles_angle)
+  {
+    obstacles_angle_ = obstacles_angle;
+  }
 };  // RangeWrapper
 
 class PolygonWrapper : public nav2_collision_monitor::PolygonSource
@@ -884,6 +894,29 @@ TEST_F(Tester, testIgnoreTimeShift)
   data.clear();
   polygon_->getData(curr_time, data);
   checkPolygon(data);
+}
+
+TEST_F(Tester, testRangeGeneratedPointLimit)
+{
+  rclcpp::Time curr_time = test_node_->now();
+
+  createSources();
+
+  auto msg = std::make_shared<sensor_msgs::msg::Range>();
+  msg->header.frame_id = SOURCE_FRAME_ID;
+  msg->header.stamp = curr_time;
+  msg->radiation_type = sensor_msgs::msg::Range::ULTRASOUND;
+  msg->field_of_view = M_PI;
+  msg->min_range = 0.1;
+  msg->max_range = 1.1;
+  msg->range = 1.0;
+
+  range_->setData(msg);
+  range_->setObstaclesAngle(M_PI / 1000.0);
+
+  std::vector<nav2_collision_monitor::Point> data;
+  EXPECT_FALSE(range_->getData(curr_time, data));
+  EXPECT_TRUE(data.empty());
 }
 
 TEST_F(Tester, testPointCloudMinRange)

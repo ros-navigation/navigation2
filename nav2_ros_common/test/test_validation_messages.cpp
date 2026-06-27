@@ -18,6 +18,7 @@
 #include <limits>
 
 #include "nav2_ros_common/validate_messages.hpp"
+#include "sensor_msgs/msg/range.hpp"
 
 TEST(ValidateMessagesTest, DoubleValueCheck) {
   // Test valid double value
@@ -479,6 +480,56 @@ TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
   invalidate_msg2.pose.pose.orientation.w = -0.32979028309372299;
 
   EXPECT_FALSE(nav2::validateMsg(invalidate_msg2));
+}
+
+TEST(ValidateMessagesTest, RangeCheck)
+{
+  sensor_msgs::msg::Range valid_range;
+  valid_range.header.frame_id = "range_sensor";
+  valid_range.header.stamp.sec = 123;
+  valid_range.header.stamp.nanosec = 456789;
+  valid_range.radiation_type = sensor_msgs::msg::Range::ULTRASOUND;
+  valid_range.field_of_view = M_PI / 2;
+  valid_range.min_range = 0.1;
+  valid_range.max_range = 2.0;
+  valid_range.range = 1.0;
+  EXPECT_TRUE(nav2::validateMsg(valid_range));
+
+  auto invalid_range = valid_range;
+  invalid_range.field_of_view = std::numeric_limits<float>::quiet_NaN();
+  EXPECT_FALSE(nav2::validateMsg(invalid_range));
+
+  invalid_range = valid_range;
+  invalid_range.field_of_view = std::numeric_limits<float>::infinity();
+  EXPECT_FALSE(nav2::validateMsg(invalid_range));
+
+  invalid_range = valid_range;
+  invalid_range.field_of_view = 0.0;
+  EXPECT_FALSE(nav2::validateMsg(invalid_range));
+
+  invalid_range = valid_range;
+  invalid_range.field_of_view = -0.1;
+  EXPECT_FALSE(nav2::validateMsg(invalid_range));
+
+  invalid_range = valid_range;
+  invalid_range.field_of_view = static_cast<float>(M_PI + 0.1);
+  EXPECT_FALSE(nav2::validateMsg(invalid_range));
+
+  invalid_range = valid_range;
+  invalid_range.range = std::numeric_limits<float>::quiet_NaN();
+  EXPECT_FALSE(nav2::validateMsg(invalid_range));
+
+  invalid_range = valid_range;
+  invalid_range.min_range = -0.1;
+  EXPECT_FALSE(nav2::validateMsg(invalid_range));
+
+  invalid_range = valid_range;
+  invalid_range.max_range = invalid_range.min_range;
+  EXPECT_FALSE(nav2::validateMsg(invalid_range));
+
+  invalid_range = valid_range;
+  invalid_range.radiation_type = 42;
+  EXPECT_FALSE(nav2::validateMsg(invalid_range));
 }
 
 
