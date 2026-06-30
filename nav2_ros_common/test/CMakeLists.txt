@@ -114,6 +114,7 @@ target_link_libraries(test_validation_messages
   lifecycle_msgs::lifecycle_msgs
   nav2_msgs::nav2_msgs
   nav_msgs::nav_msgs
+  map_msgs::map_msgs
   rcl_interfaces::rcl_interfaces
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action

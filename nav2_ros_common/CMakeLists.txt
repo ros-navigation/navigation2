@@ -10,6 +10,7 @@ find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(map_msgs REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
@@ -34,7 +35,7 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
   geometry_msgs::geometry_msgs
   nav2_msgs::nav2_msgs
   nav_msgs::nav_msgs
-  nav_msgs::nav_msgs
+  map_msgs::map_msgs
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -75,6 +76,7 @@ ament_export_dependencies(
   geometry_msgs
   nav2_msgs
   nav_msgs
+  map_msgs
   rclcpp
   rclcpp_action
   rclcpp_lifecycle

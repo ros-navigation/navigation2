@@ -318,6 +318,11 @@ StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & ne
 void
 StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update)
 {
+  if (!nav2::validateMsg(*update)) {
+    RCLCPP_ERROR(logger_, "Received map update is malformed. Rejecting.");
+    return;
+  }
+
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (update->y < static_cast<int32_t>(y_) ||
     y_ + height_ < update->y + update->height ||

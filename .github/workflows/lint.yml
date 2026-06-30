@@ -13,7 +13,7 @@ jobs:
       matrix:
           linter: [xmllint, cpplint, uncrustify, pep257, flake8]
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - uses: ros-tooling/action-ros-lint@0.1.4
       with:
@@ -25,7 +25,7 @@ jobs:
     name: pre-commit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
       - uses: pre-commit/action@v3.0.1
         env:
@@ -44,6 +44,6 @@ jobs:
       image: semgrep/semgrep
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Run Semgrep Scan
         run: semgrep scan --config .semgrep.yml --text --max-lines-per-finding 1 --error
