@@ -526,10 +526,6 @@ TEST(ValidateMessagesTest, RangeCheck)
   invalid_range = valid_range;
   invalid_range.max_range = invalid_range.min_range;
   EXPECT_FALSE(nav2::validateMsg(invalid_range));
-
-  invalid_range = valid_range;
-  invalid_range.radiation_type = 42;
-  EXPECT_FALSE(nav2::validateMsg(invalid_range));
 }
 
 

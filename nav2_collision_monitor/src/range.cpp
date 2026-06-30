@@ -27,7 +27,7 @@
 namespace nav2_collision_monitor
 {
 
-constexpr size_t MAX_RANGE_DATA_POINTS = 720;
+constexpr size_t MAX_RANGE_DATA_POINTS = 1e4;
 
 Range::Range(
   const nav2::LifecycleNode::WeakPtr & node,
@@ -89,14 +89,6 @@ bool Range::getData(
       logger_,
       "[%s]: Data range %fm is out of {%f..%f} sensor span. Ignoring...",
       source_name_.c_str(), data_->range, data_->min_range, data_->max_range);
-    return false;
-  }
-
-  if (!std::isfinite(obstacles_angle_) || obstacles_angle_ <= 0.0) {
-    RCLCPP_ERROR(
-      logger_,
-      "[%s]: Invalid obstacles_angle %f. Ignoring range data...",
-      source_name_.c_str(), obstacles_angle_);
     return false;
   }
 
@@ -174,7 +166,6 @@ void Range::dataCallback(sensor_msgs::msg::Range::ConstSharedPtr msg)
       logger_,
       "[%s]: Malformed range message. Rejecting...",
       source_name_.c_str());
-    data_.reset();
     return;
   }
 

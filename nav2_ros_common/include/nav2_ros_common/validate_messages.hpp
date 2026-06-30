@@ -62,7 +62,7 @@ bool validateMsg(const double & num)
 const double MAX_COVARIANCE = 1e9;
 const double MIN_COVARIANCE = 0;
 const double MIN_MAP_RESOLUTION = 1e-6;
-const double MAX_RANGE_FIELD_OF_VIEW = 3.14159265358979323846;
+const double MAX_RANGE_FIELD_OF_VIEW = M_PI;
 
 template<size_t N>
 bool validateMsg(const std::array<double, N> & msg)
@@ -238,12 +238,6 @@ bool validateMsg(const sensor_msgs::msg::Range & msg)
   if (!validateMsg(static_cast<double>(msg.min_range))) {return false;}
   if (!validateMsg(static_cast<double>(msg.max_range))) {return false;}
   if (!validateMsg(static_cast<double>(msg.range))) {return false;}
-
-  if (msg.radiation_type != sensor_msgs::msg::Range::ULTRASOUND &&
-    msg.radiation_type != sensor_msgs::msg::Range::INFRARED)
-  {
-    return false;
-  }
 
   if (msg.field_of_view <= 0.0 || msg.field_of_view > MAX_RANGE_FIELD_OF_VIEW) {
     return false;
