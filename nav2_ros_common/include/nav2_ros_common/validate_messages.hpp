@@ -24,6 +24,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
+#include "sensor_msgs/msg/range.hpp"
 
 
 // @brief Validation Check
@@ -61,6 +62,7 @@ bool validateMsg(const double & num)
 const double MAX_COVARIANCE = 1e9;
 const double MIN_COVARIANCE = 0;
 const double MIN_MAP_RESOLUTION = 1e-6;
+const double MAX_RANGE_FIELD_OF_VIEW = M_PI;
 
 template<size_t N>
 bool validateMsg(const std::array<double, N> & msg)
@@ -223,6 +225,25 @@ bool validateMsg(const map_msgs::msg::OccupancyGridUpdate & msg)
   uint32_t num_cells;
   if (__builtin_mul_overflow(msg.width, msg.height, &num_cells)) {
     // avoid overflow msg.width * msg.height in StaticLayer::incomingUpdate()
+    return false;
+  }
+
+  return true;
+}
+
+bool validateMsg(const sensor_msgs::msg::Range & msg)
+{
+  if (!validateMsg(msg.header)) {return false;}
+  if (!validateMsg(static_cast<double>(msg.field_of_view))) {return false;}
+  if (!validateMsg(static_cast<double>(msg.min_range))) {return false;}
+  if (!validateMsg(static_cast<double>(msg.max_range))) {return false;}
+  if (!validateMsg(static_cast<double>(msg.range))) {return false;}
+
+  if (msg.field_of_view <= 0.0 || msg.field_of_view > MAX_RANGE_FIELD_OF_VIEW) {
+    return false;
+  }
+
+  if (msg.min_range < 0.0 || msg.max_range <= msg.min_range) {
     return false;
   }
 
