@@ -66,7 +66,7 @@ void Scan::configure()
     nav2::qos::SensorDataQoS());
 }
 
-bool Scan::getData(
+bool Scan::getDataImpl(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {

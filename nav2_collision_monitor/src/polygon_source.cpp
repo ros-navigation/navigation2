@@ -65,7 +65,7 @@ void PolygonSource::configure()
     nav2::qos::SensorDataQoS());
 }
 
-bool PolygonSource::getData(
+bool PolygonSource::getDataImpl(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {

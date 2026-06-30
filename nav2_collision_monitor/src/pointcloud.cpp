@@ -99,7 +99,7 @@ void PointCloud::configure()
       this, std::placeholders::_1));
 }
 
-bool PointCloud::getData(
+bool PointCloud::getDataImpl(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {

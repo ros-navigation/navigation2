@@ -133,6 +133,11 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
     polygon->activate();
   }
 
+  // Activating exclusion zone visualization publishers
+  for (std::shared_ptr<Source> source : sources_) {
+    source->activate();
+  }
+
   // Since polygons are being published when cmd_vel_in appears,
   // we need to publish polygons first time to display them at startup
   publishPolygons();
@@ -160,6 +165,11 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->deactivate();
+  }
+
+  // Deactivating exclusion zone visualization publishers
+  for (std::shared_ptr<Source> source : sources_) {
+    source->deactivate();
   }
 
   // Deactivating lifecycle publishers
@@ -523,6 +533,11 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
 
   // Publish polygons for better visualization
   publishPolygons();
+
+  // Publish exclusion zones for better visualization
+  for (std::shared_ptr<Source> source : sources_) {
+    source->publishExclusionZones();
+  }
 
   robot_action_prev_ = robot_action;
 }

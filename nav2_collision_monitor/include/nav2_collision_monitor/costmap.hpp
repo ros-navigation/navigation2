@@ -91,7 +91,7 @@ public:
    * - Transforms points from costmap frame to @ref base_frame_id using @ref tf_buffer_.
    * - Applies @ref cost_threshold_ and @ref treat_unknown_as_obstacle_.
    */
-  bool getData(
+  bool getDataImpl(
     const rclcpp::Time & curr_time,
     std::vector<Point> & data) override;
 

@@ -67,7 +67,81 @@ bool Source::configure()
       &Source::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
 
+  if (!configureExclusionZones()) {
+    return false;
+  }
+
   return true;
+}
+
+bool Source::getData(
+  const rclcpp::Time & curr_time,
+  std::vector<Point> & data)
+{
+  const std::size_t size_before = data.size();
+  if (!getDataImpl(curr_time, data)) {
+    return false;
+  }
+
+  // Mask out points from this source that fall inside any enabled exclusion zone.
+  // Only the points newly added by this source are considered.
+  if (!exclusion_zones_.empty() && data.size() > size_before) {
+    std::vector<Point> new_points(data.begin() + size_before, data.end());
+    for (const auto & zone : exclusion_zones_) {
+      zone->apply(curr_time, new_points);
+    }
+    data.resize(size_before);
+    data.insert(data.end(), new_points.begin(), new_points.end());
+  }
+
+  return true;
+}
+
+bool Source::configureExclusionZones()
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  const std::vector<std::string> zone_names =
+    node->declare_or_get_parameter<std::vector<std::string>>(
+    source_name_ + ".exclusion_zones", std::vector<std::string>());
+
+  for (const std::string & zone_name : zone_names) {
+    auto zone = std::make_shared<ExclusionZone>(
+      node, zone_name, tf_buffer_, base_frame_id_, transform_tolerance_);
+    if (!zone->configure()) {
+      RCLCPP_ERROR(
+        logger_, "[%s]: Failed to configure exclusion zone '%s'",
+        source_name_.c_str(), zone_name.c_str());
+      return false;
+    }
+    exclusion_zones_.push_back(zone);
+  }
+
+  return true;
+}
+
+void Source::activate()
+{
+  for (const auto & zone : exclusion_zones_) {
+    zone->activate();
+  }
+}
+
+void Source::deactivate()
+{
+  for (const auto & zone : exclusion_zones_) {
+    zone->deactivate();
+  }
+}
+
+void Source::publishExclusionZones() const
+{
+  for (const auto & zone : exclusion_zones_) {
+    zone->publish();
+  }
 }
 
 void Source::getCommonParameters(std::string & source_topic)

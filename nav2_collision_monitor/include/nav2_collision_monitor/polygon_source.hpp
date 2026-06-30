@@ -72,9 +72,9 @@ public:
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
    * @return false if an invalid source should block the robot
    */
-  bool getData(
+  bool getDataImpl(
     const rclcpp::Time & curr_time,
-    std::vector<Point> & data);
+    std::vector<Point> & data) override;
 
   /**
    * @brief Converts a PolygonInstanceStamped to a std::vector<Point>
