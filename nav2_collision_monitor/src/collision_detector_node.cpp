@@ -85,6 +85,11 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
     polygon->activate();
   }
 
+  // Activating sources (exclusion zone visualization publishers)
+  for (std::shared_ptr<Source> source : sources_) {
+    source->activate();
+  }
+
   // Creating timer
   timer_ = this->create_timer(
     std::chrono::duration<double>{1.0 / frequency_},
@@ -112,6 +117,11 @@ CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->deactivate();
+  }
+
+  // Deactivating sources (exclusion zone visualization publishers)
+  for (std::shared_ptr<Source> source : sources_) {
+    source->deactivate();
   }
 
   // Destroying bond connection
@@ -392,6 +402,11 @@ void CollisionDetector::process()
 
   // Publish polygons for better visualization
   publishPolygons();
+
+  // Publish exclusion zones for better visualization
+  for (std::shared_ptr<Source> source : sources_) {
+    source->publishExclusionZones();
+  }
 }
 
 void CollisionDetector::publishTriggeringPoints(
