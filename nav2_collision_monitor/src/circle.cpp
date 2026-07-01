@@ -20,6 +20,8 @@
 
 #include "nav2_ros_common/node_utils.hpp"
 
+#include "nav2_collision_monitor/polygon_utils.hpp"
+
 namespace nav2_collision_monitor
 {
 
@@ -42,20 +44,8 @@ Circle::~Circle()
 void Circle::getPolygon(std::vector<Point> & poly) const
 {
   // Number of polygon points. More edges means better approximation.
-  const double polygon_edges = 16;
-  // Increment of angle during points position calculation
-  double angle_increment = 2 * M_PI / polygon_edges;
-
-  // Clear polygon before filling
-  poly.clear();
-
-  // Making new polygon looks like a circle
-  Point p;
-  for (double angle = 0.0; angle < 2 * M_PI; angle += angle_increment) {
-    p.x = radius_ * std::cos(angle);
-    p.y = radius_ * std::sin(angle);
-    poly.push_back(p);
-  }
+  constexpr int polygon_edges = 16;
+  poly = circleToPolygon(radius_, polygon_edges);
 }
 
 int Circle::getPointsInside(

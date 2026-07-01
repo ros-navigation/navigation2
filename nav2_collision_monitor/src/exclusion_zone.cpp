@@ -22,9 +22,10 @@
 #include "tf2/transform_datatypes.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/array_parser.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
+
+#include "nav2_collision_monitor/polygon_utils.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -129,30 +130,10 @@ bool ExclusionZone::getParameters()
     const std::string points_str = node->declare_or_get_parameter(
       zone_name_ + ".points", std::string());
     std::string error;
-    const std::vector<std::vector<float>> vvf = nav2_util::parseVVF(points_str, error);
-    if (!error.empty()) {
+    if (!parsePolygonPoints(points_str, 3, poly_, error)) {
       RCLCPP_ERROR(
-        logger_, "[%s]: error parsing exclusion zone 'points' '%s': %s",
-        zone_name_.c_str(), points_str.c_str(), error.c_str());
+        logger_, "[%s]: %s", zone_name_.c_str(), error.c_str());
       return false;
-    }
-    if (vvf.size() < 3) {
-      RCLCPP_ERROR(
-        logger_,
-        "[%s]: polygon exclusion zone 'points' must describe at least 3 vertices",
-        zone_name_.c_str());
-      return false;
-    }
-    poly_.clear();
-    poly_.reserve(vvf.size());
-    for (const std::vector<float> & v : vvf) {
-      if (v.size() != 2) {
-        RCLCPP_ERROR(
-          logger_, "[%s]: each exclusion zone point must be an [x, y] pair",
-          zone_name_.c_str());
-        return false;
-      }
-      poly_.push_back({v[0], v[1], 0.0, ""});
     }
   } else {
     RCLCPP_ERROR(
@@ -206,11 +187,7 @@ void ExclusionZone::apply(const rclcpp::Time & /*curr_time*/, std::vector<Point>
   } else {
     // Transform the polygon vertices into the base frame once.
     std::vector<Point> poly_base;
-    poly_base.reserve(poly_.size());
-    for (const Point & v : poly_) {
-      const tf2::Vector3 vb = tf_zone_to_base * tf2::Vector3(v.x, v.y, 0.0);
-      poly_base.push_back({vb.x(), vb.y(), 0.0, ""});
-    }
+    transformPolygonPoints(tf_zone_to_base, poly_, poly_base);
     data.erase(
       std::remove_if(
         data.begin(), data.end(),
@@ -260,23 +237,12 @@ void ExclusionZone::publish() const
   msg.header.frame_id = frame_id_;
   msg.header.stamp = node_clock_->now();
 
-  if (is_circle_) {
-    // Approximate the circle with a polygon for visualization.
-    constexpr int kSteps = 16;
-    for (int i = 0; i < kSteps; ++i) {
-      const double angle = 2.0 * M_PI * i / kSteps;
-      geometry_msgs::msg::Point32 p;
-      p.x = static_cast<float>(radius_ * std::cos(angle));
-      p.y = static_cast<float>(radius_ * std::sin(angle));
-      msg.polygon.points.push_back(p);
-    }
-  } else {
-    for (const Point & v : poly_) {
-      geometry_msgs::msg::Point32 p;
-      p.x = static_cast<float>(v.x);
-      p.y = static_cast<float>(v.y);
-      msg.polygon.points.push_back(p);
-    }
+  const std::vector<Point> & vertices = is_circle_ ? circleToPolygon(radius_) : poly_;
+  for (const Point & v : vertices) {
+    geometry_msgs::msg::Point32 p;
+    p.x = static_cast<float>(v.x);
+    p.y = static_cast<float>(v.y);
+    msg.polygon.points.push_back(p);
   }
 
   zone_pub_->publish(msg);
