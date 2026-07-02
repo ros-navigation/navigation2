@@ -180,11 +180,6 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
   // msg.data :  @todo any check for it ?
   if (!validateMsg(msg.info)) {return false;}
 
-  // check logic
-  if (msg.data.size() != msg.info.width * msg.info.height) {
-    return false;                                                          // check map-size
-  }
-
   if (msg.info.width > INT16_MAX || msg.info.height > INT16_MAX) {
     // avoid overflow in nav2_amcl::convertMap()
     // because map_t size_x and size_y are int
@@ -197,6 +192,10 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
     return false;
   }
 
+  // check logic
+  if (msg.data.size() != static_cast<size_t>(num_cells)) {
+    return false;                                                          // check map-size
+  }
 
   return true;
 }
