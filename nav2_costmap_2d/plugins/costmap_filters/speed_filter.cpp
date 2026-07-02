@@ -154,7 +154,7 @@ void SpeedFilter::initializeFilter(
 
   // Reset path lookahead states
   held_lookahead_dist_ = 0.0;
-  cached_lookahead_start_idx_ = 0;
+  lookahead_start_idx_ = 0;
   limit_at_robot_pose_ = NO_SPEED_LIMIT;
 }
 
@@ -245,7 +245,7 @@ void SpeedFilter::pathCallback(
   current_path_ = msg;
 
   // Reset cached start index when new path is received
-  cached_lookahead_start_idx_ = 0;
+  lookahead_start_idx_ = 0;
 }
 
 bool SpeedFilter::getSpeedLimitAtPose(
@@ -315,7 +315,7 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   double lookahead_dist)
 {
   // Transform path if not in the global frame
-  nav_msgs::msg::Path transformed_path;
+  nav_msgs::msg::Path transformed_path = *current_path_;
   if(current_path_->header.frame_id != global_frame_) {
     if(!nav2_util::transformPathInTargetFrame(*current_path_, transformed_path, *tf_,
         global_frame_))
@@ -325,23 +325,19 @@ double SpeedFilter::getSpeedLimitFromLookahead(
           "no speed limit will be published");
       return NO_SPEED_LIMIT;
     }
-  } else {
-    transformed_path = *current_path_;
   }
 
   const auto & poses = transformed_path.poses;
 
   const size_t pose_search_start =
-    (cached_lookahead_start_idx_ < poses.size()) ? cached_lookahead_start_idx_ : 0;
+    (lookahead_start_idx_ < poses.size()) ? lookahead_start_idx_ : 0;
 
   // Find the closest segment to the robot
   auto path_search_result = nav2_util::distance_from_path(
     transformed_path, robot_pose, pose_search_start);
 
-  size_t lookahead_start_idx = path_search_result.closest_segment_index;
-
   // Update cached start index
-  cached_lookahead_start_idx_ = lookahead_start_idx;
+  lookahead_start_idx_ = path_search_result.closest_segment_index;
 
   double min_speed_limit = NO_SPEED_LIMIT;
   bool found_any_limit = false;
@@ -365,10 +361,10 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     found_any_limit = true;
   }
 
-  // Walk poses from lookahead_start_idx forward, sampling the speed limit at each pose.
+  // Walk poses from the lookahead start index forward, sampling the speed limit at each pose.
   double dist_along_path = 0.0;
-  for (size_t i = lookahead_start_idx; i < poses.size(); ++i) {
-    if (i > lookahead_start_idx) {
+  for (size_t i = lookahead_start_idx_; i < poses.size(); ++i) {
+    if (i > lookahead_start_idx_) {
       dist_along_path += nav2_util::geometry_utils::euclidean_distance(
         poses[i - 1].pose.position, poses[i].pose.position);
     }

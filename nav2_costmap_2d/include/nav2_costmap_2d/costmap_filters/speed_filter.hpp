@@ -144,7 +144,7 @@ private:
 
   // Lookahead distance held when entering a speed zone to avoid oscillations
   double held_lookahead_dist_;
-  size_t cached_lookahead_start_idx_;  // Cached start index for closest pose search
+  size_t lookahead_start_idx_;  // Start index for closest pose search, cached for efficiency
   double limit_at_robot_pose_;  // Speed limit at robot pose, used to release the lookahead hold
   bool enable_path_lookahead_;  // Whether to enable path lookahead
   double max_decel_;       // Deceleration (m/s^2) used to size lookahead
