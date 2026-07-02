@@ -67,7 +67,7 @@ void Range::configure()
     nav2::qos::SensorDataQoS());
 }
 
-bool Range::getDataImpl(
+bool Range::getSourceData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {

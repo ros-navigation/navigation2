@@ -120,7 +120,7 @@ protected:
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
    * @return false if an invalid source should block the robot
    */
-  virtual bool getDataImpl(
+  virtual bool getSourceData(
     const rclcpp::Time & curr_time,
     std::vector<Point> & data) = 0;
 
@@ -129,12 +129,6 @@ protected:
    * @return True in case of everything is configured correctly, or false otherwise
    */
   bool configure();
-
-  /**
-   * @brief Reads the `<source>.exclusion_zones` parameter and configures the zones.
-   * @return True if the zones were configured correctly, false otherwise
-   */
-  bool configureExclusionZones();
 
   /**
    * @brief Supporting routine obtaining ROS-parameters common for all data sources

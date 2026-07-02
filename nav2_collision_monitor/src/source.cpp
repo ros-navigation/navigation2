@@ -15,6 +15,7 @@
 #include "nav2_collision_monitor/source.hpp"
 
 #include <exception>
+#include <iterator>
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
@@ -56,54 +57,11 @@ Source::~Source()
 bool Source::configure()
 {
   auto node = node_.lock();
-
-  // Add callback for dynamic parameters
-  post_set_params_handler_ = node->add_post_set_parameters_callback(
-    std::bind(
-      &Source::updateParametersCallback,
-      this, std::placeholders::_1));
-  on_set_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &Source::validateParameterUpdatesCallback,
-      this, std::placeholders::_1));
-
-  if (!configureExclusionZones()) {
-    return false;
-  }
-
-  return true;
-}
-
-bool Source::getData(
-  const rclcpp::Time & curr_time,
-  std::vector<Point> & data)
-{
-  const std::size_t size_before = data.size();
-  if (!getDataImpl(curr_time, data)) {
-    return false;
-  }
-
-  // Mask out points from this source that fall inside any enabled exclusion zone.
-  // Only the points newly added by this source are considered.
-  if (!exclusion_zones_.empty() && data.size() > size_before) {
-    std::vector<Point> new_points(data.begin() + size_before, data.end());
-    for (const auto & zone : exclusion_zones_) {
-      zone->apply(curr_time, new_points);
-    }
-    data.resize(size_before);
-    data.insert(data.end(), new_points.begin(), new_points.end());
-  }
-
-  return true;
-}
-
-bool Source::configureExclusionZones()
-{
-  auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
+  // Configure the exclusion zones (if any) declared for this source
   const std::vector<std::string> zone_names =
     node->declare_or_get_parameter<std::vector<std::string>>(
     source_name_ + ".exclusion_zones", std::vector<std::string>());
@@ -119,6 +77,43 @@ bool Source::configureExclusionZones()
     }
     exclusion_zones_.push_back(zone);
   }
+
+  // Add callback for dynamic parameters
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &Source::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &Source::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+
+  return true;
+}
+
+bool Source::getData(
+  const rclcpp::Time & curr_time,
+  std::vector<Point> & data)
+{
+  // Collect this source's points into a private buffer so exclusion-zone
+  // masking only ever considers data produced by this source.
+  std::vector<Point> source_data;
+  if (!getSourceData(curr_time, source_data)) {
+    return false;
+  }
+
+  // Mask out points that fall inside any enabled exclusion zone.
+  if (!exclusion_zones_.empty() && !source_data.empty()) {
+    for (const auto & zone : exclusion_zones_) {
+      zone->apply(curr_time, source_data);
+    }
+  }
+
+  // Append the surviving points to the caller's array.
+  data.insert(
+    data.end(),
+    std::make_move_iterator(source_data.begin()),
+    std::make_move_iterator(source_data.end()));
 
   return true;
 }

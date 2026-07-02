@@ -531,13 +531,8 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   // Publish required robot velocity
   publishVelocity(robot_action, header);
 
-  // Publish polygons for better visualization
-  publishPolygons();
-
-  // Publish exclusion zones for better visualization
-  for (std::shared_ptr<Source> source : sources_) {
-    source->publishExclusionZones();
-  }
+  // Publish polygons and exclusion zones for better visualization
+  publishVisualizations();
 
   robot_action_prev_ = robot_action;
 }
@@ -744,6 +739,14 @@ void CollisionMonitor::publishPolygons() const
     if (polygon->getEnabled() || !enabled_) {
       polygon->publish();
     }
+  }
+}
+
+void CollisionMonitor::publishVisualizations() const
+{
+  publishPolygons();
+  for (std::shared_ptr<Source> source : sources_) {
+    source->publishExclusionZones();
   }
 }
 

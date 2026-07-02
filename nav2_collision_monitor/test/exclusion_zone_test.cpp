@@ -169,14 +169,14 @@ public:
   // Expose the protected zone configuration for testing.
   bool setupExclusionZones()
   {
-    return configureExclusionZones();
+    return configure();
   }
 
   // Points appended by the next getData() call.
   std::vector<nav2_collision_monitor::Point> points_to_add;
 
 protected:
-  bool getDataImpl(
+  bool getSourceData(
     const rclcpp::Time & /*curr_time*/,
     std::vector<nav2_collision_monitor::Point> & data) override
   {
@@ -381,6 +381,57 @@ TEST_F(ExclusionZoneTester, DynamicEnableToggle)
   node_->set_parameter(rclcpp::Parameter(std::string(ZONE_NAME) + ".enabled", true));
   EXPECT_TRUE(zone->getEnabled());
 
+  std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
+  zone->apply(node_->now(), data);
+  ASSERT_EQ(data.size(), 1u);
+  EXPECT_NEAR(data[0].x, 5.0, EPSILON);
+}
+
+TEST_F(ExclusionZoneTester, DynamicPointsUpdateChangesMask)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  // A point at (2, 2) is outside the unit square.
+  {
+    std::vector<nav2_collision_monitor::Point> data{{2.0, 2.0, 0.0, ""}};
+    zone->apply(node_->now(), data);
+    EXPECT_EQ(data.size(), 1u);
+  }
+
+  // Grow the polygon to span [-3, 3]: (2, 2) now falls inside and is masked.
+  const auto result = node_->set_parameter(
+    rclcpp::Parameter(
+      std::string(ZONE_NAME) + ".points",
+      "[[3.0, 3.0], [3.0, -3.0], [-3.0, -3.0], [-3.0, 3.0]]"));
+  EXPECT_TRUE(result.successful);
+
+  {
+    std::vector<nav2_collision_monitor::Point> data{{2.0, 2.0, 0.0, ""}};
+    zone->apply(node_->now(), data);
+    EXPECT_EQ(data.size(), 0u);
+  }
+}
+
+TEST_F(ExclusionZoneTester, DynamicPointsUpdateRejectsInvalidPolygon)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  // Fewer than three vertices -> rejected, live polygon left unchanged.
+  const auto result = node_->set_parameter(
+    rclcpp::Parameter(std::string(ZONE_NAME) + ".points", "[[0.0, 0.0], [1.0, 1.0]]"));
+  EXPECT_FALSE(result.successful);
+
+  // Original unit square still masks the origin.
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
   zone->apply(node_->now(), data);
   ASSERT_EQ(data.size(), 1u);

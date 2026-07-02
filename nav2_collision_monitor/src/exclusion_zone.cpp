@@ -168,10 +168,10 @@ void ExclusionZone::apply(const rclcpp::Time & /*curr_time*/, std::vector<Point>
   }
 
   if (is_circle_) {
-    // Circle centre is the origin of the zone frame, expressed in base frame.
-    const tf2::Vector3 centre = tf_zone_to_base * tf2::Vector3(0.0, 0.0, 0.0);
-    const double cx = centre.x();
-    const double cy = centre.y();
+    // Circle center is the origin of the zone frame, expressed in base frame.
+    const tf2::Vector3 center = tf_zone_to_base.getOrigin();
+    const double cx = center.x();
+    const double cy = center.y();
     data.erase(
       std::remove_if(
         data.begin(), data.end(),
@@ -233,19 +233,18 @@ void ExclusionZone::publish() const
     return;
   }
 
-  geometry_msgs::msg::PolygonStamped msg;
-  msg.header.frame_id = frame_id_;
-  msg.header.stamp = node_clock_->now();
-
+  auto msg = std::make_unique<geometry_msgs::msg::PolygonStamped>();
+  msg->header.frame_id = frame_id_;
+  msg->header.stamp = node_clock_->now();
   const std::vector<Point> & vertices = is_circle_ ? circleToPolygon(radius_) : poly_;
   for (const Point & v : vertices) {
     geometry_msgs::msg::Point32 p;
     p.x = static_cast<float>(v.x);
     p.y = static_cast<float>(v.y);
-    msg.polygon.points.push_back(p);
+    msg->polygon.points.push_back(p);
   }
 
-  zone_pub_->publish(msg);
+  zone_pub_->publish(std::move(msg));
 }
 
 rcl_interfaces::msg::SetParametersResult ExclusionZone::validateParameterUpdatesCallback(
@@ -264,6 +263,17 @@ rcl_interfaces::msg::SetParametersResult ExclusionZone::validateParameterUpdates
     {
       result.successful = false;
       result.reason = "radius must be > 0";
+    } else if (param_name == zone_name_ + ".points" &&  // NOLINT
+      parameter.get_type() == rclcpp::ParameterType::PARAMETER_STRING)
+    {
+      // Reject a live polygon update that cannot be parsed into a valid polygon
+      // so the running zone is never left with a malformed shape.
+      std::vector<Point> parsed;
+      std::string error;
+      if (!parsePolygonPoints(parameter.as_string(), 3, parsed, error)) {
+        result.successful = false;
+        result.reason = error;
+      }
     }
   }
   return result;
@@ -295,6 +305,16 @@ void ExclusionZone::updateParametersCallback(
       parameter.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE)
     {
       max_height_ = parameter.as_double();
+    } else if (param_name == zone_name_ + ".points" && !is_circle_ &&  // NOLINT
+      parameter.get_type() == rclcpp::ParameterType::PARAMETER_STRING)
+    {
+      // The update callback runs only after validation succeeded, so the string
+      // is guaranteed to parse into a valid polygon here.
+      std::vector<Point> parsed;
+      std::string error;
+      if (parsePolygonPoints(parameter.as_string(), 3, parsed, error)) {
+        poly_ = parsed;
+      }
     }
   }
 }

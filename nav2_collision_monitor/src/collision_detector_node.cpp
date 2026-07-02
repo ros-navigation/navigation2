@@ -400,13 +400,8 @@ void CollisionDetector::process()
     publishTriggeringPoints(all_triggering_points);
   }
 
-  // Publish polygons for better visualization
-  publishPolygons();
-
-  // Publish exclusion zones for better visualization
-  for (std::shared_ptr<Source> source : sources_) {
-    source->publishExclusionZones();
-  }
+  // Publish polygons and exclusion zones for better visualization
+  publishVisualizations();
 }
 
 void CollisionDetector::publishTriggeringPoints(
@@ -461,6 +456,14 @@ void CollisionDetector::publishPolygons() const
     if (polygon->getEnabled()) {
       polygon->publish();
     }
+  }
+}
+
+void CollisionDetector::publishVisualizations() const
+{
+  publishPolygons();
+  for (std::shared_ptr<Source> source : sources_) {
+    source->publishExclusionZones();
   }
 }
 

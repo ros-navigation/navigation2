@@ -64,7 +64,7 @@ void CostmapSource::configure()
     nav2::qos::StandardTopicQoS());
 }
 
-bool CostmapSource::getDataImpl(
+bool CostmapSource::getSourceData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {
