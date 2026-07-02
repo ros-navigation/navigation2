@@ -38,6 +38,7 @@
 #include "nav2_costmap_2d/costmap_filters/speed_filter.hpp"
 
 #include <cmath>
+#include <limits>
 #include <utility>
 #include <memory>
 #include <string>
@@ -155,7 +156,6 @@ void SpeedFilter::initializeFilter(
   // Reset path lookahead states
   held_lookahead_dist_ = 0.0;
   lookahead_start_idx_ = 0;
-  limit_at_robot_pose_ = NO_SPEED_LIMIT;
 }
 
 void SpeedFilter::filterInfoCallback(
@@ -314,6 +314,16 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   const geometry_msgs::msg::Pose & robot_pose,
   double lookahead_dist)
 {
+  double min_speed_limit = std::numeric_limits<double>::infinity();
+
+  // Release the hold by default, a stricter limit ahead re-arms it
+  held_lookahead_dist_ = 0.0;
+
+  // Lookahead endpoint for visualization
+  auto lookahead_point_msg = std::make_unique<geometry_msgs::msg::PointStamped>();
+  lookahead_point_msg->header.frame_id = global_frame_;
+  lookahead_point_msg->header.stamp = clock_->now();
+
   // Transform path if not in the global frame
   nav_msgs::msg::Path transformed_path = *current_path_;
   if(current_path_->header.frame_id != global_frame_) {
@@ -332,33 +342,21 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   const size_t pose_search_start =
     (lookahead_start_idx_ < poses.size()) ? lookahead_start_idx_ : 0;
 
-  // Find the closest segment to the robot
-  auto path_search_result = nav2_util::distance_from_path(
-    transformed_path, robot_pose, pose_search_start);
-
   // Update cached start index
-  lookahead_start_idx_ = path_search_result.closest_segment_index;
+  lookahead_start_idx_ = nav2_util::distance_from_path(
+    transformed_path, robot_pose, pose_search_start).closest_segment_index;
 
-  double min_speed_limit = NO_SPEED_LIMIT;
-  bool found_any_limit = false;
-
-  // Lookahead endpoint for visualization
-  auto lookahead_point_msg = std::make_unique<geometry_msgs::msg::PointStamped>();
-  lookahead_point_msg->header.frame_id = global_frame_;
-  lookahead_point_msg->header.stamp = clock_->now();
   lookahead_point_msg->point = robot_pose.position;
 
   // Check robot's current pose
-  double speed_limit_at_robot_pose = NO_SPEED_LIMIT;
-  if (!getSpeedLimitAtPose(robot_pose, speed_limit_at_robot_pose)) {
+  double limit_at_robot_pose = NO_SPEED_LIMIT;
+  if (!getSpeedLimitAtPose(robot_pose, limit_at_robot_pose)) {
     // Pose mapped outside mask or transform failed
     return NO_SPEED_LIMIT;
   }
-  limit_at_robot_pose_ = speed_limit_at_robot_pose;
 
-  if (speed_limit_at_robot_pose != NO_SPEED_LIMIT) {
-    min_speed_limit = speed_limit_at_robot_pose;
-    found_any_limit = true;
+  if (limit_at_robot_pose != NO_SPEED_LIMIT) {
+    min_speed_limit = std::min(min_speed_limit, limit_at_robot_pose);
   }
 
   // Walk poses from the lookahead start index forward, sampling the speed limit at each pose.
@@ -381,16 +379,7 @@ double SpeedFilter::getSpeedLimitFromLookahead(
       // Pose mapped outside mask or transform failed
       continue;
     }
-    if (sampled_speed_limit == NO_SPEED_LIMIT) {
-      continue;
-    }
-
-    // Update strictest speed limit
-    if (!found_any_limit) {
-      // First limit found on the lookahead path, set it as the strictest
-      min_speed_limit = sampled_speed_limit;
-      found_any_limit = true;
-    } else {
+    if (sampled_speed_limit != NO_SPEED_LIMIT) {
       min_speed_limit = std::min(min_speed_limit, sampled_speed_limit);
     }
   }
@@ -399,6 +388,15 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     lookahead_pub_->publish(std::move(lookahead_point_msg));
   }
 
+  // No limit found anywhere along the lookahead, fall back to no-limit
+  if (std::isinf(min_speed_limit)) {
+    min_speed_limit = NO_SPEED_LIMIT;
+  }
+
+  // Hold the lookahead distance if upcoming speed limit is different from the current one
+  if (limit_at_robot_pose != min_speed_limit) {
+    held_lookahead_dist_ = lookahead_dist;
+  }
   return min_speed_limit;
 }
 
@@ -428,26 +426,16 @@ void SpeedFilter::process(
     const double linear_vel = std::abs(twist.linear.x);
 
     // Calculate lookahead distance at current velocity
-    double d_lookahead;
+    double d_lookahead = max_lookahead_;
     if (max_decel_ < 0.0) {
       d_lookahead = (linear_vel * linear_vel) / (2.0 * std::abs(max_decel_));
       d_lookahead = std::clamp(d_lookahead, min_lookahead_, max_lookahead_);
 
       // If lookahead distance is being held, don't let it shrink below the held value
       d_lookahead = std::max(d_lookahead, held_lookahead_dist_);
-    } else {
-      d_lookahead = max_lookahead_;
     }
 
     speed_limit_ = getSpeedLimitFromLookahead(pose, d_lookahead);
-
-    // If the speed limit at robot pose is same as the strictest speed limit along path,
-    // release the lookahead hold
-    if (limit_at_robot_pose_ == speed_limit_) {
-      held_lookahead_dist_ = 0.0;
-    } else {
-      held_lookahead_dist_ = d_lookahead;
-    }
   } else {
     if (!getSpeedLimitAtPose(pose, speed_limit_)) {
       RCLCPP_ERROR(logger_, "SpeedFilter: Failed to get speed limit at pose");
