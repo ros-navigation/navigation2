@@ -38,6 +38,7 @@ using namespace std::chrono_literals;
 static constexpr double EPSILON = 1e-5;
 
 static const char BASE_FRAME_ID[]{"base_link"};
+static const char GLOBAL_FRAME_ID[]{"odom"};
 static const char ZONE_FRAME_ID[]{"zone_frame"};
 static const char MISSING_FRAME_ID[]{"missing_frame"};
 static const char ZONE_NAME[]{"dock"};
@@ -233,6 +234,31 @@ protected:
     FAIL() << "Transform " << BASE_FRAME_ID << " -> " << child_frame << " never became available";
   }
 
+  // Broadcast an arbitrary parent -> child transform and wait for it to be available.
+  void broadcastFrame(
+    const std::string & parent_frame, const std::string & child_frame, double tx, double ty,
+    const rclcpp::Time & stamp)
+  {
+    geometry_msgs::msg::TransformStamped tf_msg;
+    tf_msg.header.frame_id = parent_frame;
+    tf_msg.child_frame_id = child_frame;
+    tf_msg.header.stamp = stamp;
+    tf_msg.transform.translation.x = tx;
+    tf_msg.transform.translation.y = ty;
+    tf_msg.transform.rotation.w = 1.0;
+    tf_broadcaster_->sendTransform(tf_msg);
+
+    rclcpp::Time start = node_->now();
+    while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
+      if (tf_buffer_->canTransform(child_frame, parent_frame, tf2::TimePointZero)) {
+        return;
+      }
+      executor_->spin_some();
+      std::this_thread::sleep_for(10ms);
+    }
+    FAIL() << "Transform " << parent_frame << " -> " << child_frame << " never became available";
+  }
+
   // Declare the parameters describing a zone before it is configured.
   void declareZoneParams(
     const std::string & name, const std::string & type, bool enabled,
@@ -243,10 +269,12 @@ protected:
     node_->declare_parameter(name + ".frame_id", rclcpp::ParameterValue(frame_id));
   }
 
-  std::shared_ptr<nav2_collision_monitor::ExclusionZone> makeZone()
+  std::shared_ptr<nav2_collision_monitor::ExclusionZone> makeZone(
+    bool base_shift_correction = false)
   {
     return std::make_shared<nav2_collision_monitor::ExclusionZone>(
-      node_, ZONE_NAME, tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+      node_, ZONE_NAME, tf_buffer_, BASE_FRAME_ID, GLOBAL_FRAME_ID,
+      TRANSFORM_TOLERANCE, base_shift_correction);
   }
 
   std::shared_ptr<TestNode> node_;
@@ -312,6 +340,29 @@ TEST_F(ExclusionZoneTester, MaskTracksZoneFrameTranslation)
   ASSERT_EQ(data.size(), 1u);
   EXPECT_NEAR(data[0].x, 0.0, EPSILON);
 }
+
+TEST_F(ExclusionZoneTester, BaseShiftCorrectionMasksViaGlobalFrame)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  // With base-shift correction the zone lookup is bridged through the global
+  // frame, so the TF tree must connect zone_frame and base_link via odom.
+  // Broadcast and evaluate at a single stamp so the time-aware lookup matches exactly.
+  const rclcpp::Time stamp = node_->now();
+  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp);
+  broadcastFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp);
+
+  auto zone = makeZone(/*base_shift_correction=*/true);
+  ASSERT_TRUE(zone->configure());
+
+  std::vector<nav2_collision_monitor::Point> data{
+    {0.0, 0.0, 0.0, ""},    // inside -> removed
+    {2.0, 2.0, 0.0, ""}};   // outside -> kept
+  zone->apply(stamp, data);
+  ASSERT_EQ(data.size(), 1u);
+  EXPECT_NEAR(data[0].x, 2.0, EPSILON);
+}
+
 
 TEST_F(ExclusionZoneTester, HeightBandLimitsMasking)
 {

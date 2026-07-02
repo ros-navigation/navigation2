@@ -54,14 +54,18 @@ public:
    * @param zone_name Name of the exclusion zone
    * @param tf_buffer Shared pointer to a TF buffer
    * @param base_frame_id Robot base frame ID (source points are expressed in this frame)
+   * @param global_frame_id Global (fixed) frame ID used to bridge the zone lookup in time
    * @param transform_tolerance Transform tolerance
+   * @param base_shift_correction Whether to correct the zone transform for base movement in time
    */
   ExclusionZone(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & zone_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance);
+    const std::string & global_frame_id,
+    const tf2::Duration & transform_tolerance,
+    const bool base_shift_correction);
 
   /**
    * @brief ExclusionZone destructor
@@ -151,8 +155,12 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   /// @brief Robot base frame ID
   std::string base_frame_id_;
+  /// @brief Global (fixed) frame ID, used to bridge the zone lookup in time
+  std::string global_frame_id_;
   /// @brief Transform tolerance
   tf2::Duration transform_tolerance_;
+  /// @brief Whether to correct the zone transform for base movement between data and current time
+  bool base_shift_correction_;
 
   /// @brief Frame the zone shape is anchored to (tracked via TF). Defaults to base_frame_id_.
   std::string frame_id_;

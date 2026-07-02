@@ -35,9 +35,12 @@ ExclusionZone::ExclusionZone(
   const std::string & zone_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::string & base_frame_id,
-  const tf2::Duration & transform_tolerance)
+  const std::string & global_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const bool base_shift_correction)
 : node_(node), zone_name_(zone_name), tf_buffer_(tf_buffer),
-  base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance),
+  base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
+  transform_tolerance_(transform_tolerance), base_shift_correction_(base_shift_correction),
   min_height_(-std::numeric_limits<double>::max()),
   max_height_(std::numeric_limits<double>::max())
 {
@@ -145,7 +148,7 @@ bool ExclusionZone::getParameters()
   return true;
 }
 
-void ExclusionZone::apply(const rclcpp::Time & /*curr_time*/, std::vector<Point> & data) const
+void ExclusionZone::apply(const rclcpp::Time & curr_time, std::vector<Point> & data) const
 {
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -153,11 +156,21 @@ void ExclusionZone::apply(const rclcpp::Time & /*curr_time*/, std::vector<Point>
     return;
   }
 
-  // Obtain the zone-frame -> base-frame transform for this cycle.
+  // Obtain the zone-frame -> base-frame transform for this cycle. When the owning
+  // source applies base-shift correction, evaluate the zone at curr_time bridged
+  // through the global frame so the zone and the source points share one time
+  // basis; otherwise use the latest available transform to match the source.
   tf2::Transform tf_zone_to_base;
-  if (!nav2_util::getTransform(
-      frame_id_, base_frame_id_, transform_tolerance_, tf_buffer_, tf_zone_to_base))
-  {
+  bool got_transform;
+  if (base_shift_correction_) {
+    got_transform = nav2_util::getTransform(
+      frame_id_, curr_time, base_frame_id_, curr_time, global_frame_id_,
+      transform_tolerance_, tf_buffer_, tf_zone_to_base);
+  } else {
+    got_transform = nav2_util::getTransform(
+      frame_id_, base_frame_id_, transform_tolerance_, tf_buffer_, tf_zone_to_base);
+  }
+  if (!got_transform) {
     // Fail-safe: without a valid transform we cannot localise the zone, so we
     // must not blind the monitor. Keep all points.
     RCLCPP_WARN_THROTTLE(
