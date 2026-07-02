@@ -313,8 +313,7 @@ protected:
   std::string internal_error_msg_;
 
   std::atomic_bool muxer_preemption_requested_{false};
-  // File-modification cache: used by always_reload_bt_xml mode to skip
-  // a full tree rebuild when no XML file has been touched on disk.
+  // File-modification times cache
   std::unordered_map<std::string, std::filesystem::file_time_type> bt_xml_mtimes_;
 };
 

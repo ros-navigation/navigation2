@@ -132,9 +132,8 @@ public:
   void registerTreeFromFile(const std::string & file_path);
 
   /**
-   * @brief Clear all previously registered behavior trees from the factory's
-   * internal XML parser state.  This prevents the parser's opened_documents
-   * list from growing unboundedly when trees are re-registered (memory leak).
+   * @brief Clear all registered behavior trees
+   * This prevents the parser's list from growing unboundedly when trees are re-registered
    */
   void clearRegisteredBehaviorTrees();
 
