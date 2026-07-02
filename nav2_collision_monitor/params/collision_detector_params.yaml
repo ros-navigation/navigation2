@@ -27,6 +27,15 @@ collision_detector:
       min_height: 0.1
       max_height: 0.5
       enabled: true
+      # dock:
+      #   enabled: true
+      #   type: "polygon"          # "polygon" or "circle"
+      #   frame_id: "dock_link"    # frame the zone is anchored to; empty -> robot base frame (static)
+      #   points: "[[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5]]"  # polygon type only (VVF format)
+      #   # radius: 0.5            # circle type only (must be > 0)
+      #   min_height: -1.0         # base-frame z band a point must be within to be masked
+      #   max_height: 1.0
+      #   visualize: true          # publish the zone footprint as a PolygonStamped
     # costmap:
     #   type: "costmap"
     #   topic: "local_costmap/costmap"
