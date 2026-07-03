@@ -362,11 +362,6 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   // Walk poses from the lookahead start index forward, sampling the speed limit at each pose.
   double dist_along_path = 0.0;
   for (size_t i = lookahead_start_idx_; i < poses.size(); ++i) {
-    if (i > lookahead_start_idx_) {
-      dist_along_path += nav2_util::geometry_utils::euclidean_distance(
-        poses[i - 1].pose.position, poses[i].pose.position);
-    }
-
     if (dist_along_path > lookahead_dist) {
       break;
     }
@@ -375,12 +370,16 @@ double SpeedFilter::getSpeedLimitFromLookahead(
     lookahead_point_msg->point = poses[i].pose.position;
 
     double sampled_speed_limit = NO_SPEED_LIMIT;
-    if (!getSpeedLimitAtPose(poses[i].pose, sampled_speed_limit)) {
-      // Pose mapped outside mask or transform failed
-      continue;
-    }
-    if (sampled_speed_limit != NO_SPEED_LIMIT) {
+    if (getSpeedLimitAtPose(poses[i].pose, sampled_speed_limit) &&
+      sampled_speed_limit != NO_SPEED_LIMIT)
+    {
       min_speed_limit = std::min(min_speed_limit, sampled_speed_limit);
+    }
+
+    // Accumulate distance to the next pose for the following iteration's check
+    if (i + 1 < poses.size()) {
+      dist_along_path += nav2_util::geometry_utils::euclidean_distance(
+        poses[i].pose.position, poses[i + 1].pose.position);
     }
   }
 
