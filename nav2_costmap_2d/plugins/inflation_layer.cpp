@@ -65,6 +65,25 @@ InflationLayer::~InflationLayer()
 }
 
 void
+InflationLayer::updateInscribedRadius()
+{
+  if (custom_inscribed_radius_ >= 0.0) {
+    RCLCPP_WARN(
+      logger_,
+      "POTENTIAL SAFETY ISSUE!!! Make sure you fully understand the consequences of changing the "
+      "inscribed radius! Inflation layer is set to use a custom inscribed radius of %.3f m instead "
+      "of the footprint's inscribed radius of %.3f m. This can have serious implications on the "
+      "robot's safety and is not recommended unless specifically needed. This practice is intended "
+      "only for controllers that are customized explicitly to feed on such data. It is NOT "
+      "intended for global path planners or setups that depend on the footprint inscribed radius!",
+      custom_inscribed_radius_, layered_costmap_->getInscribedRadius());
+    inscribed_radius_ = custom_inscribed_radius_;
+  } else {
+    inscribed_radius_ = layered_costmap_->getInscribedRadius();
+  }
+}
+
+void
 InflationLayer::onInitialize()
 {
   {
@@ -84,8 +103,7 @@ InflationLayer::onInitialize()
     num_threads_ = node->declare_or_get_parameter(
       name_ + "." + "num_threads", -1);
   }
-  inscribed_radius_ = custom_inscribed_radius_ >= 0.0 ?
-    custom_inscribed_radius_ : layered_costmap_->getInscribedRadius();
+  updateInscribedRadius();
   setCurrent(true);
   need_reinflation_ = false;
   matchSize();
@@ -194,8 +212,7 @@ void
 InflationLayer::onFootprintChanged()
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  inscribed_radius_ = custom_inscribed_radius_ >= 0.0 ?
-    custom_inscribed_radius_ : layered_costmap_->getInscribedRadius();
+  updateInscribedRadius();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
   need_reinflation_ = true;
@@ -402,8 +419,7 @@ InflationLayer::updateParametersCallback(
         custom_inscribed_radius_ != parameter.as_double())
       {
         custom_inscribed_radius_ = parameter.as_double();
-        inscribed_radius_ = custom_inscribed_radius_ >= 0.0 ?
-          custom_inscribed_radius_ : layered_costmap_->getInscribedRadius();
+        updateInscribedRadius();
         need_reinflation_ = true;
         need_cache_recompute = true;
       } else if (param_name == name_ + "." + "cost_scaling_factor" && // NOLINT
