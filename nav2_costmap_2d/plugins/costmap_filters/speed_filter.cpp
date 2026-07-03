@@ -323,6 +323,7 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   auto lookahead_point_msg = std::make_unique<geometry_msgs::msg::PointStamped>();
   lookahead_point_msg->header.frame_id = global_frame_;
   lookahead_point_msg->header.stamp = clock_->now();
+  lookahead_point_msg->point = robot_pose.position;
 
   // Transform path if not in the global frame
   nav_msgs::msg::Path transformed_path;
@@ -346,8 +347,6 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   // Update cached start index
   lookahead_start_idx_ = nav2_util::distance_from_path(
     transformed_path, robot_pose, pose_search_start).closest_segment_index;
-
-  lookahead_point_msg->point = robot_pose.position;
 
   // Check robot's current pose
   double limit_at_robot_pose = NO_SPEED_LIMIT;
