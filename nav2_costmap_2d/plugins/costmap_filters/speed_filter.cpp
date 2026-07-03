@@ -325,7 +325,7 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   lookahead_point_msg->header.stamp = clock_->now();
 
   // Transform path if not in the global frame
-  nav_msgs::msg::Path transformed_path = *current_path_;
+  nav_msgs::msg::Path transformed_path;
   if(current_path_->header.frame_id != global_frame_) {
     if(!nav2_util::transformPathInTargetFrame(*current_path_, transformed_path, *tf_,
         global_frame_))
@@ -335,6 +335,8 @@ double SpeedFilter::getSpeedLimitFromLookahead(
           "no speed limit will be published");
       return NO_SPEED_LIMIT;
     }
+  } else {
+    transformed_path = *current_path_;
   }
 
   const auto & poses = transformed_path.poses;
