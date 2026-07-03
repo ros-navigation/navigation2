@@ -338,7 +338,6 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   }
 
   const auto & poses = transformed_path.poses;
-
   const size_t pose_search_start =
     (lookahead_start_idx_ < poses.size()) ? lookahead_start_idx_ : 0;
 
