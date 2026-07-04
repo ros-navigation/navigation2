@@ -192,7 +192,7 @@ void ZoneParameterFilter::loadStateConfig()
         return std::nullopt;
       }
       return StateParamEntry{
-        target_node, rclcpp::Parameter(param_name, value_param.get_parameter_value())};
+      target_node, rclcpp::Parameter(param_name, value_param.get_parameter_value())};
     };
 
   // `states`: the configured zone-state names; each maps to an id + overrides.
