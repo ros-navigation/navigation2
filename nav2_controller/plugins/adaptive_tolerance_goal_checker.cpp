@@ -53,7 +53,7 @@ AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
   best_distance_sq_(std::numeric_limits<double>::max()),
   approach_dx_(0.0),
   approach_dy_(0.0),
-  xy_acceptance_reason_("")
+  xy_acceptance_reason_(XyAcceptanceReason::NONE)
 {
 }
 
@@ -135,7 +135,7 @@ void AdaptiveToleranceGoalChecker::reset()
   best_distance_sq_ = std::numeric_limits<double>::max();
   approach_dx_ = 0.0;
   approach_dy_ = 0.0;
-  xy_acceptance_reason_ = "";
+  xy_acceptance_reason_ = XyAcceptanceReason::NONE;
 }
 
 bool AdaptiveToleranceGoalChecker::isGoalReached(
@@ -166,12 +166,32 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
     yaw_reached = std::fabs(dyaw) <= yaw_goal_tolerance_;
   }
 
+  std::string xy_acceptance_reason;
+  switch (xy_acceptance_reason_) {
+    case XyAcceptanceReason::FINE_TOLERANCE:
+      xy_acceptance_reason = "fine tolerance";
+      break;
+    case XyAcceptanceReason::COARSE_TOLERANCE_FINISH_LINE:
+      xy_acceptance_reason = "coarse tolerance / finish line";
+      break;
+    case XyAcceptanceReason::COARSE_TOLERANCE_STOPPED_STAGNATION:
+      xy_acceptance_reason = "coarse tolerance / stopped stagnation";
+      break;
+    case XyAcceptanceReason::COARSE_TOLERANCE_DISTANCE_STAGNATION:
+      xy_acceptance_reason = "coarse tolerance / distance stagnation";
+      break;
+    case XyAcceptanceReason::NONE:
+    default:
+      xy_acceptance_reason = "unknown";
+  }
+
   if (yaw_reached) {
     RCLCPP_INFO(
       logger_,
       "AdaptiveToleranceGoalChecker: goal reached via %s "
       "(fine: %.3f m, coarse: %.3f m)",
-      xy_acceptance_reason_, fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+      xy_acceptance_reason.c_str(),
+      fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
   }
 
   return yaw_reached;
@@ -199,7 +219,7 @@ bool AdaptiveToleranceGoalChecker::isGoalXYReached(
 
     // Tier 1: Tight (desired) tolerance — immediate acceptance
     if (dist_sq <= fine_xy_goal_tolerance_sq_) {
-      xy_acceptance_reason_ = "fine tolerance";
+      xy_acceptance_reason_ = XyAcceptanceReason::FINE_TOLERANCE;
       if (stateful_) {
         check_xy_ = false;
       }
@@ -250,11 +270,11 @@ bool AdaptiveToleranceGoalChecker::isGoalXYReached(
 
       // Accepted at coarse: record which trigger fired
       if (crossed_finish_line) {
-        xy_acceptance_reason_ = "coarse tolerance / finish line";
+        xy_acceptance_reason_ = XyAcceptanceReason::COARSE_TOLERANCE_FINISH_LINE;
       } else if (stopped_stagnation_count_ >= required_stagnation_cycles_) {
-        xy_acceptance_reason_ = "coarse tolerance / stopped stagnation";
+        xy_acceptance_reason_ = XyAcceptanceReason::COARSE_TOLERANCE_STOPPED_STAGNATION;
       } else {
-        xy_acceptance_reason_ = "coarse tolerance / distance stagnation";
+        xy_acceptance_reason_ = XyAcceptanceReason::COARSE_TOLERANCE_DISTANCE_STAGNATION;
       }
 
       if (stateful_) {
@@ -274,7 +294,7 @@ bool AdaptiveToleranceGoalChecker::isGoalXYReached(
     // If stateful and using xy_goal_tolerance_buffer_,
     // reset check_xy_ and tracking state when drifting outside the buffer region.
     const double reset_threshold_sq =
-      (std::strcmp(xy_acceptance_reason_, "fine tolerance") == 0) ?
+      xy_acceptance_reason_ == XyAcceptanceReason::FINE_TOLERANCE ?
       fine_xy_goal_tolerance_reset_sq_ : coarse_xy_goal_tolerance_reset_sq_;
 
     if (dist_sq > reset_threshold_sq) {

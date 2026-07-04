@@ -106,6 +106,16 @@ public:
     double & path_length_tolerance) override;
 
 protected:
+  /// @brief Reason that the XY component of the goal was accepted.
+  enum class XyAcceptanceReason
+  {
+    NONE,
+    FINE_TOLERANCE,
+    COARSE_TOLERANCE_FINISH_LINE,
+    COARSE_TOLERANCE_STOPPED_STAGNATION,
+    COARSE_TOLERANCE_DISTANCE_STAGNATION
+  };
+
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_{rclcpp::get_logger("adaptive_tolerance_goal_checker")};
 
@@ -140,7 +150,7 @@ protected:
   double best_distance_sq_;
   double approach_dx_;
   double approach_dy_;
-  const char * xy_acceptance_reason_;
+  XyAcceptanceReason xy_acceptance_reason_;
 
   // Dynamic parameters
   std::mutex mutex_;
