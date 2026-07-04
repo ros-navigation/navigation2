@@ -847,7 +847,8 @@ TEST(AdaptiveToleranceGoalChecker, goal_reached)
 
   // Stateful: XY latches after acceptance, and the reset threshold
   // depends on the XY acceptance path: fine + buffer for fine acceptance,
-  // and coarse + buffer for coarse acceptance.  gc.reset();
+  // and coarse + buffer for coarse acceptance.
+  gc.reset();
   current.orientation = geometry_msgs::msg::Quaternion();
   current.position.x = fine_xy_tol / 2.0;
   EXPECT_TRUE(gc.isGoalReached(current, goal, zero_vel, empty_plan));
