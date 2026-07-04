@@ -112,8 +112,8 @@ protected:
 
   /**
    * @brief Process completed set_parameters results non-blockingly. Called
-   *        at the start of every process(); surfaces failures per the
-   *        configured param_set_failure_policy.
+   *        at the start of every process(); a failed set on any target
+   *        throws (a failed set on a safety parameter is a stop condition).
    */
   void checkPendingParameterUpdates();
 
@@ -142,9 +142,6 @@ protected:
       std::vector<rcl_interfaces::msg::SetParametersResult>>> pending_futures_;
 
   std::string state_event_topic_;
-
-  enum class ParamSetFailurePolicy { kWarn, kThrow };
-  ParamSetFailurePolicy param_set_failure_policy_{ParamSetFailurePolicy::kThrow};
 
   bool filter_info_received_{false};
 };

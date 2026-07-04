@@ -42,6 +42,25 @@ namespace
 constexpr char kFilterName[] = "zone_parameter_filter";
 constexpr char kInfoTopic[] = "costmap_filter_info";
 constexpr char kMaskTopic[] = "mask";
+
+// Full parameter name under the filter's namespace.
+std::string fp(const std::string & suffix)
+{
+  return std::string(kFilterName) + "." + suffix;
+}
+
+// Appends the declared-config overrides for one explicit
+// {node, parameter, value} entry rooted at fp(prefix). Used both for
+// `<state>.<override_name>` entries and `nominal_defaults.<name>` entries.
+void addEntry(
+  std::vector<rclcpp::Parameter> & cfg, const std::string & prefix,
+  const std::string & target_node, const std::string & parameter,
+  const rclcpp::ParameterValue & value)
+{
+  cfg.emplace_back(fp(prefix + ".node"), target_node);
+  cfg.emplace_back(fp(prefix + ".parameter"), parameter);
+  cfg.push_back(rclcpp::Parameter(fp(prefix + ".value"), value));
+}
 }  // namespace
 
 class InfoPublisher : public rclcpp::Node
@@ -135,6 +154,21 @@ public:
   double getInflation() {return get_parameter("inflation").as_double();}
 };
 
+// A second explicit target: the declared config routes overrides by explicit
+// `node` + `parameter` fields, so two overrides in one state can address two
+// different nodes without any name disambiguation.
+class SecondTargetNode : public rclcpp::Node
+{
+public:
+  SecondTargetNode()
+  : rclcpp::Node("zpf_second_target")
+  {
+    declare_parameter("speed", 1.0);
+  }
+
+  double getSpeed() {return get_parameter("speed").as_double();}
+};
+
 class TestZpf : public ::testing::Test
 {
 protected:
@@ -158,40 +192,41 @@ protected:
       node_executor_.remove_node(node_->get_node_base_interface());
     }
     node_.reset();
+    if (second_target_node_) {
+      target_executor_.remove_node(second_target_node_);
+      second_target_node_.reset();
+    }
     target_executor_.remove_node(target_node_);
     target_node_.reset();
   }
 
-  // Builds a ZPF host node + filter + info/mask publishers. Spins until
-  // the filter becomes active or 2s pass. Optional info_type allows the
-  // wrong-type test to inject a non-ZPF info publisher.
+  // Builds a ZPF host node + filter + info/mask publishers. The filter's
+  // state machine is injected as DECLARED configuration through
+  // NodeOptions::parameter_overrides:
+  //   <filter>.states                       : string array of state names
+  //   <filter>.<state>.id                   : int64 mask value for the state
+  //   <filter>.<state>.overrides            : string array of override names
+  //   <filter>.<state>.<override>.node      : explicit target node
+  //   <filter>.<state>.<override>.parameter : parameter on that node
+  //   <filter>.<state>.<override>.value     : dynamically typed value
+  //   <filter>.nominal_defaults             : string array; entries as above
+  // Spins until the filter becomes active or 2s pass. Optional info_type
+  // allows the wrong-type test to inject a non-ZPF info publisher.
   bool createFilter(
-    const std::vector<int64_t> & state_ids,
-    const std::vector<rclcpp::Parameter> & state_overrides,
+    const std::vector<rclcpp::Parameter> & filter_config,
     int8_t mask_fill_value,
     const std::string & state_event_topic = "",
-    const std::vector<std::string> & target_nodes = {"zpf_target_node"},
-    const std::string & on_param_set_failure = "",
     uint8_t info_type = nav2_costmap_2d::ZONE_PARAMETER_FILTER)
   {
     rclcpp::NodeOptions opts;
     std::vector<rclcpp::Parameter> all_overrides = {
-      rclcpp::Parameter(std::string(kFilterName) + ".state_ids", state_ids),
-      rclcpp::Parameter(std::string(kFilterName) + ".target_nodes", target_nodes),
-      rclcpp::Parameter(
-        std::string(kFilterName) + ".filter_info_topic",
-        std::string(kInfoTopic)),
-      rclcpp::Parameter(std::string(kFilterName) + ".transform_tolerance", 0.5),
+      rclcpp::Parameter(fp("filter_info_topic"), std::string(kInfoTopic)),
+      rclcpp::Parameter(fp("transform_tolerance"), 0.5),
     };
     if (!state_event_topic.empty()) {
-      all_overrides.emplace_back(
-        std::string(kFilterName) + ".state_event_topic", state_event_topic);
+      all_overrides.emplace_back(fp("state_event_topic"), state_event_topic);
     }
-    if (!on_param_set_failure.empty()) {
-      all_overrides.emplace_back(
-        std::string(kFilterName) + ".on_param_set_failure", on_param_set_failure);
-    }
-    for (const auto & p : state_overrides) {
+    for (const auto & p : filter_config) {
       all_overrides.push_back(p);
     }
     opts.parameter_overrides(all_overrides);
@@ -289,6 +324,7 @@ protected:
   }
 
   std::shared_ptr<TargetNode> target_node_;
+  std::shared_ptr<SecondTargetNode> second_target_node_;
   std::shared_ptr<StateEventSubscriber> state_event_sub_;
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
@@ -318,29 +354,28 @@ TEST_F(TestZpf, WrongFilterInfoTypeIsRejected)
   // CostmapFilterInfo with a non-ZPF type must be rejected by
   // filterInfoCallback; the mask subscription is never built and
   // isActive() never flips. createFilter() returns false on 2s timeout.
-  EXPECT_FALSE(
-    createFilter(
-      {1},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
-      },
-      1,
-      "",
-      {"zpf_target_node"},
-      "",
-      nav2_costmap_2d::BINARY_FILTER));
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.5));
+
+  EXPECT_FALSE(createFilter(cfg, 1, "", nav2_costmap_2d::BINARY_FILTER));
 }
 
 TEST_F(TestZpf, State1AppliesParameterAndResetFilterDeactivates)
 {
-  ASSERT_TRUE(createFilter(
-      {1},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
-      },
-      1)) << "Filter did not become active within 2s";
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.5));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active within 2s";
 
   EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0);
 
@@ -357,15 +392,18 @@ TEST_F(TestZpf, State1AppliesParameterAndResetFilterDeactivates)
 
 TEST_F(TestZpf, State0ResetsToNominalDefaults)
 {
-  ASSERT_TRUE(createFilter(
-      {1},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
-      },
-      1)) << "Filter did not become active";
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("nominal_defaults"), std::vector<std::string>{"speed_nominal"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.3));
+  addEntry(cfg, "nominal_defaults.speed_nominal", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(1.0));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
   runProcess();
   ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.3;}));
@@ -378,13 +416,17 @@ TEST_F(TestZpf, State0ResetsToNominalDefaults)
 
 TEST_F(TestZpf, UnknownStateThrows)
 {
-  ASSERT_TRUE(createFilter(
-      {1},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
-      },
-      2)) << "Filter did not become active";
+  // Mask carries state 2, but only state id 1 is configured — applyState
+  // must throw and no parameter may change.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.3));
+
+  ASSERT_TRUE(createFilter(cfg, 2)) << "Filter did not become active";
 
   EXPECT_THROW(runProcess(), std::runtime_error);
   EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0)
@@ -393,14 +435,15 @@ TEST_F(TestZpf, UnknownStateThrows)
 
 TEST_F(TestZpf, StateEventPublishedOnTransition)
 {
-  ASSERT_TRUE(createFilter(
-      {1},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
-      },
-      1,
-      "/zpf_state")) << "Filter did not become active";
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.3));
+
+  ASSERT_TRUE(createFilter(cfg, 1, "/zpf_state")) << "Filter did not become active";
 
   ASSERT_FALSE(state_event_sub_->received());
 
@@ -411,15 +454,18 @@ TEST_F(TestZpf, StateEventPublishedOnTransition)
 
 TEST_F(TestZpf, ProcessHotPathReturnsPromptlyEvenWithUnreachableTargets)
 {
-  ASSERT_TRUE(createFilter(
-      {1},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.nonexistent_node.foo", 0.5),
-      },
-      1,
-      "",
-      {"nonexistent_node"})) << "Filter did not become active";
+  // The override explicitly names a node that does not exist. The async
+  // parameter client is built at config-load; its set_parameters future
+  // simply never completes. process() must neither block nor throw.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"remote_zone"}),
+    rclcpp::Parameter(fp("remote_zone.id"), 1),
+    rclcpp::Parameter(fp("remote_zone.overrides"), std::vector<std::string>{"remote_speed"}),
+  };
+  addEntry(cfg, "remote_zone.remote_speed", "nonexistent_node", "foo",
+    rclcpp::ParameterValue(0.5));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
   auto t0 = std::chrono::steady_clock::now();
   EXPECT_NO_THROW(runProcess());
@@ -433,13 +479,15 @@ TEST_F(TestZpf, ProcessHotPathReturnsPromptlyEvenWithUnreachableTargets)
 TEST_F(TestZpf, UnknownMaskCellLeavesStateUnchanged)
 {
   // Mask filled with OCC_GRID_UNKNOWN (-1) — process() must not transition.
-  ASSERT_TRUE(createFilter(
-      {1},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
-      },
-      static_cast<int8_t>(-1))) << "Filter did not become active";
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.5));
+
+  ASSERT_TRUE(createFilter(cfg, static_cast<int8_t>(-1))) << "Filter did not become active";
 
   runProcess();
   spinFor(250ms);
@@ -448,15 +496,18 @@ TEST_F(TestZpf, UnknownMaskCellLeavesStateUnchanged)
 
 TEST_F(TestZpf, RobotOutsideMaskResetsToState0)
 {
-  ASSERT_TRUE(createFilter(
-      {1},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.4),
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
-      },
-      1)) << "Filter did not become active";
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("nominal_defaults"), std::vector<std::string>{"speed_nominal"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.4));
+  addEntry(cfg, "nominal_defaults.speed_nominal", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(1.0));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
   runProcess();
   ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.4;}));
@@ -466,36 +517,51 @@ TEST_F(TestZpf, RobotOutsideMaskResetsToState0)
     << "speed never restored to nominal after out-of-mask pose";
 }
 
-TEST_F(TestZpf, LongestPrefixMatchForOverlappingTargetNodes)
+TEST_F(TestZpf, ExplicitNodeRoutingAppliesOverridesToBothTargets)
 {
-  // target_nodes contains both "zpf" (shorter) and "zpf_target_node" (longer).
-  // The state_1.zpf_target_node.speed key must route to the longer match.
-  ASSERT_TRUE(createFilter(
-      {1},
-  {
+  // The declared config carries an explicit `node` + `parameter` per
+  // override, so nothing is inferred from key names (the old longest-prefix
+  // target_nodes matching is gone by design). Two overrides in one state
+  // addressing two different nodes must BOTH be routed and applied.
+  second_target_node_ = std::make_shared<SecondTargetNode>();
+  target_executor_.add_node(second_target_node_);
+
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
     rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.7),
-      },
-      1,
-      "",
-      {"zpf", "zpf_target_node"})) << "Filter did not become active";
+      fp("slow_zone.overrides"),
+      std::vector<std::string>{"host_speed", "second_speed"}),
+  };
+  addEntry(cfg, "slow_zone.host_speed", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.7));
+  addEntry(cfg, "slow_zone.second_speed", "zpf_second_target", "speed",
+    rclcpp::ParameterValue(0.25));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
   runProcess();
   ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.7;}))
-    << "speed never became 0.7 — longest-prefix-match likely broken";
+    << "first explicit target never received speed 0.7";
+  ASSERT_TRUE(waitForCond([this]() {return second_target_node_->getSpeed() == 0.25;}))
+    << "second explicit target never received speed 0.25";
 }
 
 TEST_F(TestZpf, InfoAndMaskRePublishUpdateSubscriptions)
 {
-  ASSERT_TRUE(createFilter(
-      {1, 2},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_2.zpf_target_node.speed", 0.2),
-      },
-      1)) << "Filter did not become active";
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone", "crawl_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("crawl_zone.id"), 2),
+    rclcpp::Parameter(fp("crawl_zone.overrides"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.5));
+  addEntry(cfg, "crawl_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.2));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
   runProcess();
   ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.5;}));
@@ -518,121 +584,133 @@ TEST_F(TestZpf, InfoAndMaskRePublishUpdateSubscriptions)
 
 TEST_F(TestZpf, EmptyAndInvalidConfigEdgesDoNotCrash)
 {
-  // Empty state_ids + empty target_nodes + invalid state_id in list +
-  // unmatched override entry — all should load and operate without crashing.
-  ASSERT_TRUE(createFilter(
-      {0, 256, 1},  // 0 reserved, 256 > 255, 1 valid
-  {
-    // bogus_node not in target_nodes — warn + skip.
+  // Declared-config edge cases must be rejected entry-by-entry at
+  // config-load without breaking the valid remainder:
+  //  - state id 0 (reserved for reset) and id 256 (> 255) — state skipped;
+  //  - an override missing its `node` field — entry skipped;
+  //  - an override whose `value` is never provided — entry skipped;
+  //  - entry params present but NOT listed in `overrides` — never read.
+  std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.bogus_node.speed", 9.9),
-    // valid entry — should apply.
+      fp("states"),
+      std::vector<std::string>{"reserved_zone", "big_zone", "slow_zone"}),
+    rclcpp::Parameter(fp("reserved_zone.id"), 0),
+    rclcpp::Parameter(fp("big_zone.id"), 256),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
     rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
-      },
-      1)) << "Filter did not become active";
+      fp("slow_zone.overrides"),
+      std::vector<std::string>{"bad_entry", "no_value", "good"}),
+    // bad_entry: `node` never provided (defaults empty) -> skipped.
+    rclcpp::Parameter(fp("slow_zone.bad_entry.parameter"), std::string("speed")),
+    rclcpp::Parameter(fp("slow_zone.bad_entry.value"), 9.9),
+    // no_value: named target but `.value` missing -> skipped.
+    rclcpp::Parameter(fp("slow_zone.no_value.node"), std::string("zpf_target_node")),
+    rclcpp::Parameter(fp("slow_zone.no_value.parameter"), std::string("inflation")),
+    // ghost: fully formed but absent from `overrides` -> never read.
+    rclcpp::Parameter(fp("slow_zone.ghost.node"), std::string("zpf_target_node")),
+    rclcpp::Parameter(fp("slow_zone.ghost.parameter"), std::string("inflation")),
+    rclcpp::Parameter(fp("slow_zone.ghost.value"), 9.9),
+  };
+  addEntry(cfg, "slow_zone.good", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.5));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
   runProcess();
   ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.5;}))
-    << "valid override did not apply alongside invalid state_ids + unmatched node";
+    << "valid override did not apply alongside invalid states + malformed entries";
+  EXPECT_DOUBLE_EQ(target_node_->getInflation(), 0.5)
+    << "skipped/unlisted entries must not touch 'inflation'";
 }
 
-TEST_F(TestZpf, OnParamSetFailurePolicyParsing)
+TEST_F(TestZpf, RemovedFailurePolicyParameterIsIgnored)
 {
-  // "warn" parses cleanly; an unrecognised value defaults to "throw" with
-  // a config-load warning. Both must initializeFilter without raising.
-  for (const auto & policy : std::vector<std::string>{"warn", "bogus"}) {
-    rclcpp::NodeOptions opts;
-    opts.parameter_overrides({
-      rclcpp::Parameter(std::string(kFilterName) + ".state_ids", std::vector<int64_t>{1}),
-      rclcpp::Parameter(
-        std::string(kFilterName) + ".target_nodes",
-        std::vector<std::string>{"zpf_target_node"}),
-      rclcpp::Parameter(
-        std::string(kFilterName) + ".filter_info_topic", std::string(kInfoTopic)),
-      rclcpp::Parameter(std::string(kFilterName) + ".transform_tolerance", 0.5),
-      rclcpp::Parameter(
-        std::string(kFilterName) + ".on_param_set_failure", policy),
-      rclcpp::Parameter(
-        std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.5),
-    });
-    auto node = std::make_shared<nav2::LifecycleNode>("zpf_policy_test_host", opts);
-    auto layers = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, false);
-    auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-    tf_buffer->setUsingDedicatedThread(true);
-    auto filter = std::make_shared<nav2_costmap_2d::ZoneParameterFilter>();
-    filter->initialize(layers.get(), kFilterName, tf_buffer.get(), node, nullptr);
-    EXPECT_NO_THROW(filter->initializeFilter(kInfoTopic)) << "policy=" << policy;
-  }
-}
+  // The rework removed the on_param_set_failure policy: a set failure on a
+  // safety zone always throws (stop-the-robot), never warn-and-continue.
+  // A leftover `on_param_set_failure: warn` in YAML is simply an undeclared,
+  // unused override — config-load must not raise, and the failure must
+  // STILL throw despite the requested "warn".
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("on_param_set_failure"), std::string("warn")),
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"danger_zone"}),
+    rclcpp::Parameter(fp("danger_zone.id"), 1),
+    rclcpp::Parameter(fp("danger_zone.overrides"), std::vector<std::string>{"ro_speed"}),
+  };
+  addEntry(cfg, "danger_zone.ro_speed", "zpf_target_node", "readonly_speed",
+    rclcpp::ParameterValue(0.5));
 
-TEST_F(TestZpf, OnParamSetFailureThrowsByDefaultAndWarnSwallows)
-{
-  // Routes state_1 to TargetNode's read-only parameter; set_parameters
-  // returns successful=false; checkPendingParameterUpdates applies the
-  // policy. Default (throw) propagates; "warn" swallows.
-  ASSERT_TRUE(createFilter(
-      {1},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.readonly_speed", 0.5),
-      },
-      1)) << "Filter did not become active under default policy";
+  ASSERT_TRUE(createFilter(cfg, 1))
+    << "Filter did not become active (leftover policy param must not break config-load)";
 
   auto drive_and_drain = [this]() {
       runProcess();
-      spinFor(300ms);  // drain pending futures; failure surfaces here under kThrow
+      spinFor(300ms);  // drain: failed result becomes ready
+      runProcess();    // checkPendingParameterUpdates surfaces it here
+    };
+  EXPECT_THROW(drive_and_drain(), std::runtime_error)
+    << "always-throw semantics must hold even when YAML requests 'warn'";
+}
+
+TEST_F(TestZpf, ParamSetFailureAlwaysThrows)
+{
+  // Routes state 1 to TargetNode's read-only parameter; set_parameters
+  // returns successful=false; checkPendingParameterUpdates must rethrow it
+  // (always-throw; there is no swallow policy). The failed future is erased
+  // before throwing, so a subsequent process() must not re-throw.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"danger_zone"}),
+    rclcpp::Parameter(fp("danger_zone.id"), 1),
+    rclcpp::Parameter(fp("danger_zone.overrides"), std::vector<std::string>{"ro_speed"}),
+  };
+  addEntry(cfg, "danger_zone.ro_speed", "zpf_target_node", "readonly_speed",
+    rclcpp::ParameterValue(0.5));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  auto drive_and_drain = [this]() {
+      runProcess();
+      spinFor(300ms);  // drain pending futures; failure surfaces on next process
       runProcess();
     };
   EXPECT_THROW(drive_and_drain(), std::runtime_error);
 
-  // Tear down and rebuild with "warn" policy.
-  filter_.reset();
-  info_pub_.reset();
-  mask_pub_.reset();
-  layers_.reset();
-  node_executor_.remove_node(node_->get_node_base_interface());
-  node_.reset();
+  EXPECT_DOUBLE_EQ(
+    target_node_->get_parameter("readonly_speed").as_double(), 1.0)
+    << "read-only parameter must be untouched by the failed set";
 
-  ASSERT_TRUE(createFilter(
-      {1},
-  {
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.readonly_speed", 0.5),
-      },
-      1,
-      "",
-      {"zpf_target_node"},
-      "warn")) << "Filter did not become active under warn policy";
-
-  auto drive_and_drain_warn = [this]() {
-      runProcess();
-      spinFor(300ms);
-      runProcess();
-    };
-  EXPECT_NO_THROW(drive_and_drain_warn());
+  EXPECT_NO_THROW(runProcess())
+    << "failed future must be consumed by the throw, not re-surfaced";
 }
 
 TEST_F(TestZpf, CrossStateTransitionResetsParamTouchedByNOnly)
 {
-  // state_1 sets both speed AND inflation; state_2 sets speed only.
+  // state 1 sets both speed AND inflation; state 2 sets speed only.
   // Transition 1→2 must restore inflation to its nominal_defaults value.
-  // The in-both param (speed) must land at state_2's value, not the nominal.
-  ASSERT_TRUE(createFilter(
-      {1, 2},
-  {
+  // The in-both param (speed) must land at state-2's value, not the nominal.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone", "fast_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
     rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
+      fp("slow_zone.overrides"),
+      std::vector<std::string>{"speed_override", "inflation_override"}),
+    rclcpp::Parameter(fp("fast_zone.id"), 2),
+    rclcpp::Parameter(fp("fast_zone.overrides"), std::vector<std::string>{"speed_override"}),
     rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.inflation", 0.8),
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_2.zpf_target_node.speed", 0.5),
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.inflation", 2.0),
-      },
-      1)) << "Filter did not become active";
+      fp("nominal_defaults"),
+      std::vector<std::string>{"speed_nominal", "inflation_nominal"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.3));
+  addEntry(cfg, "slow_zone.inflation_override", "zpf_target_node", "inflation",
+    rclcpp::ParameterValue(0.8));
+  addEntry(cfg, "fast_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.5));
+  addEntry(cfg, "nominal_defaults.speed_nominal", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(1.0));
+  addEntry(cfg, "nominal_defaults.inflation_nominal", "zpf_target_node", "inflation",
+    rclcpp::ParameterValue(2.0));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
   runProcess();
   ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.3;}));
@@ -648,23 +726,30 @@ TEST_F(TestZpf, CrossStateTransitionResetsParamTouchedByNOnly)
 
 TEST_F(TestZpf, ParamWithoutNominalDefaultsPersistsAcrossTransitions)
 {
-  // state_1 sets inflation; no nominal_defaults entry for inflation. The
-  // cross-state reset cannot restore (gap warned at config-load); inflation
-  // legitimately retains state_1's value across 1→2.
-  ASSERT_TRUE(createFilter(
-      {1, 2},
-  {
+  // state 1 sets inflation; no nominal_defaults entry for inflation. The
+  // cross-state reset cannot restore it (gap warned at config-load);
+  // inflation legitimately retains state-1's value across 1→2.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone", "fast_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
     rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.speed", 0.3),
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_1.zpf_target_node.inflation", 0.8),
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".state_2.zpf_target_node.speed", 0.5),
-    rclcpp::Parameter(
-          std::string(kFilterName) + ".nominal_defaults.zpf_target_node.speed", 1.0),
+      fp("slow_zone.overrides"),
+      std::vector<std::string>{"speed_override", "inflation_override"}),
+    rclcpp::Parameter(fp("fast_zone.id"), 2),
+    rclcpp::Parameter(fp("fast_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("nominal_defaults"), std::vector<std::string>{"speed_nominal"}),
     // No nominal_defaults entry for inflation — gap warned at config-load.
-      },
-      1)) << "Filter did not become active";
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.3));
+  addEntry(cfg, "slow_zone.inflation_override", "zpf_target_node", "inflation",
+    rclcpp::ParameterValue(0.8));
+  addEntry(cfg, "fast_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.5));
+  addEntry(cfg, "nominal_defaults.speed_nominal", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(1.0));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
   runProcess();
   ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.3;}));

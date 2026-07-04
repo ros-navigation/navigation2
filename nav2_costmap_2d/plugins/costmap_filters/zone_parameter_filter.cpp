@@ -29,24 +29,6 @@
 namespace nav2_costmap_2d
 {
 
-namespace
-{
-// Longest-prefix match against `sorted_nodes` (sorted by length descending),
-// so nested-namespace targets resolve unambiguously.
-// Returns (target_node, param_path) on hit, or std::nullopt on miss.
-std::optional<std::pair<std::string, std::string>>
-matchTargetNode(
-  const std::string & suffix, const std::vector<std::string> & sorted_nodes)
-{
-  for (const auto & node : sorted_nodes) {
-    if (suffix.starts_with(node + ".") && suffix.size() > node.size() + 1) {
-      return std::make_pair(node, suffix.substr(node.size() + 1));
-    }
-  }
-  return std::nullopt;
-}
-}  // namespace
-
 ZoneParameterFilter::ZoneParameterFilter()
 : filter_info_sub_(nullptr),
   mask_sub_(nullptr),
@@ -69,21 +51,6 @@ void ZoneParameterFilter::initializeFilter(
   state_event_topic_ =
     node->declare_or_get_parameter<std::string>(
     name_ + "." + "state_event_topic", std::string("zone_filter_state"));
-
-  std::string param_set_failure_str =
-    node->declare_or_get_parameter<std::string>(
-    name_ + "." + "on_param_set_failure", std::string("throw"));
-  if (param_set_failure_str == "warn") {
-    param_set_failure_policy_ = ParamSetFailurePolicy::kWarn;
-  } else {
-    param_set_failure_policy_ = ParamSetFailurePolicy::kThrow;
-    if (param_set_failure_str != "throw") {
-      RCLCPP_WARN(
-        logger_,
-        "ZoneParameterFilter: on_param_set_failure=%s not recognised; defaulting to 'throw'.",
-        param_set_failure_str.c_str());
-    }
-  }
 
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   RCLCPP_INFO(
@@ -185,126 +152,124 @@ void ZoneParameterFilter::loadStateConfig()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // state_ids: required parameter listing the configured states.
-  // Each value is a uint8 in [1, 255] (0 is reserved for reset).
-  std::vector<int64_t> state_ids =
-    node->declare_or_get_parameter<std::vector<int64_t>>(
-    name_ + "." + "state_ids", std::vector<int64_t>{});
+  // Every zone state and every parameter it applies is DECLARED configuration,
+  // rather than scraped from undeclared YAML overrides. This keeps the whole
+  // filter introspectable via `ros2 param get`, and a malformed entry surfaces
+  // at configuration-load time instead of when the robot first enters the zone.
+  // The tree is read top-down: `states` -> each `<state>.{id, overrides}` ->
+  // each override's explicit `{node, parameter, value}`. Because the target
+  // node and parameter are explicit fields, nothing needs disambiguating: there
+  // is no target-node prefix matching and no length-sorting.
 
-  if (state_ids.empty()) {
-    RCLCPP_WARN(
-      logger_,
-      "ZoneParameterFilter: state_ids is empty; this filter will only handle "
-      "state 0 (reset). Configure state_ids: [1, 2, ...] in YAML.");
-    return;
-  }
+  // Reads one explicit {node, parameter, value} entry declared under `prefix`.
+  // The value is dynamically typed so any parameter type (double / int / bool /
+  // string / list) can be expressed, and is applied to the target as-is; a type
+  // mismatch with the target parameter therefore surfaces as a set failure,
+  // which — under the always-throw policy — stops the robot rather than
+  // silently taking no effect.
+  auto read_entry =
+    [&](const std::string & prefix) -> std::optional<StateParamEntry> {
+      const std::string target_node =
+        node->declare_or_get_parameter<std::string>(prefix + ".node", std::string(""));
+      const std::string param_name =
+        node->declare_or_get_parameter<std::string>(prefix + ".parameter", std::string(""));
+      if (target_node.empty() || param_name.empty()) {
+        RCLCPP_ERROR(
+          logger_,
+          "ZoneParameterFilter: '%s' must declare non-empty 'node' and 'parameter'.",
+          prefix.c_str());
+        return std::nullopt;
+      }
+      const std::string value_key = prefix + ".value";
+      if (!node->has_parameter(value_key)) {
+        rcl_interfaces::msg::ParameterDescriptor descriptor;
+        descriptor.dynamic_typing = true;
+        node->declare_parameter(value_key, rclcpp::ParameterValue{}, descriptor);
+      }
+      const rclcpp::Parameter value_param = node->get_parameter(value_key);
+      if (value_param.get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET) {
+        RCLCPP_ERROR(logger_, "ZoneParameterFilter: '%s' is not set.", value_key.c_str());
+        return std::nullopt;
+      }
+      return StateParamEntry{
+        target_node, rclcpp::Parameter(param_name, value_param.get_parameter_value())};
+    };
 
-  std::vector<std::string> target_nodes_input =
+  // `states`: the configured zone-state names; each maps to an id + overrides.
+  const std::vector<std::string> state_names =
     node->declare_or_get_parameter<std::vector<std::string>>(
-    name_ + ".target_nodes", std::vector<std::string>{});
+    name_ + ".states", std::vector<std::string>{});
 
-  if (target_nodes_input.empty()) {
+  if (state_names.empty()) {
     RCLCPP_WARN(
       logger_,
-      "ZoneParameterFilter: target_nodes is empty; cannot parse state overrides. "
-      "Set `target_nodes: [node_a, node_b]` in YAML.");
-    return;
+      "ZoneParameterFilter: 'states' is empty; this filter will only handle "
+      "state 0 (reset). Configure `states: [name_a, ...]` in YAML.");
   }
 
-  // Length-descending so longest-prefix wins (nested namespaces).
-  std::vector<std::string> sorted_target_nodes = target_nodes_input;
-  std::sort(
-    sorted_target_nodes.begin(), sorted_target_nodes.end(),
-    [](const std::string & a, const std::string & b) {return a.size() > b.size();});
+  for (const auto & state_name : state_names) {
+    const std::string state_prefix = name_ + "." + state_name;
 
-  // Pull this filter's YAML overrides; the loops below route the
-  // `state_N.<target>.<param>` keys to the configured target nodes.
-  auto overrides = node->get_node_parameters_interface()->get_parameter_overrides();
-
-  for (int64_t id_i64 : state_ids) {
+    const int64_t id_i64 =
+      node->declare_or_get_parameter<int64_t>(state_prefix + ".id", 0);
     if (id_i64 <= 0 || id_i64 > 255) {
       RCLCPP_ERROR(
         logger_,
-        "ZoneParameterFilter: state_id %ld is outside valid range [1, 255]; skipping.",
-        id_i64);
+        "ZoneParameterFilter: state '%s' has id %ld outside the valid range "
+        "[1, 255] (0 is reserved for reset); skipping.",
+        state_name.c_str(), id_i64);
       continue;
     }
     const uint8_t state_id = static_cast<uint8_t>(id_i64);
-    const std::string state_prefix = name_ + ".state_" + std::to_string(state_id) + ".";
+
+    const std::vector<std::string> override_names =
+      node->declare_or_get_parameter<std::vector<std::string>>(
+      state_prefix + ".overrides", std::vector<std::string>{});
 
     std::vector<StateParamEntry> params_for_state;
-    for (const auto & [override_name, override_value] : overrides) {
-      if (override_name.rfind(state_prefix, 0) != 0) {
-        continue;  // not for this state
+    for (const auto & override_name : override_names) {
+      if (auto entry = read_entry(state_prefix + "." + override_name)) {
+        params_for_state.push_back(std::move(*entry));
       }
-      // We resolve only the (target_node, param_path) split so the
-      // override can be routed; we do not query the target node for the
-      // param's existence or type — set_parameters surfaces those at
-      // apply-time.
-      const std::string suffix = override_name.substr(state_prefix.size());
-      const auto match = matchTargetNode(suffix, sorted_target_nodes);
-      if (!match) {
-        RCLCPP_WARN(
-          logger_,
-          "ZoneParameterFilter: state_%u entry '%s' did not match any registered "
-          "target_node. Add the node to `target_nodes` in YAML.",
-          state_id, override_name.c_str());
-        continue;
-      }
-      params_for_state.push_back(
-        StateParamEntry{match->first, rclcpp::Parameter(match->second, override_value)});
     }
 
     if (params_for_state.empty()) {
       RCLCPP_WARN(
         logger_,
-        "ZoneParameterFilter: state_id %u declared but no parameters found "
-        "under prefix '%s'.",
-        state_id, state_prefix.c_str());
+        "ZoneParameterFilter: state '%s' (id %u) declares no valid overrides.",
+        state_name.c_str(), state_id);
     }
 
     state_param_map_[state_id] = std::move(params_for_state);
     RCLCPP_INFO(
       logger_,
-      "ZoneParameterFilter: state_%u → %zu parameter override(s).",
-      state_id, state_param_map_[state_id].size());
+      "ZoneParameterFilter: state '%s' (id %u) -> %zu override(s).",
+      state_name.c_str(), state_id, state_param_map_[state_id].size());
   }
 
-  // Declarative YAML nominals — auto-capture races on separate underlying
-  // services::Client instances for get/set on the target.
-  const std::string nominal_prefix = name_ + ".nominal_defaults.";
-  size_t nominal_count = 0;
-  for (const auto & [override_name, override_value] : overrides) {
-    if (override_name.rfind(nominal_prefix, 0) != 0) {
-      continue;
+  // `nominal_defaults`: the baseline values restored on the state-0 reset.
+  const std::vector<std::string> nominal_names =
+    node->declare_or_get_parameter<std::vector<std::string>>(
+    name_ + ".nominal_defaults", std::vector<std::string>{});
+  for (const auto & nominal_name : nominal_names) {
+    if (auto entry = read_entry(name_ + ".nominal_defaults." + nominal_name)) {
+      nominal_defaults_[entry->target_node].push_back(entry->param);
     }
-    const std::string suffix = override_name.substr(nominal_prefix.size());
-    const auto match = matchTargetNode(suffix, sorted_target_nodes);
-    if (!match) {
-      RCLCPP_WARN(
-        logger_,
-        "ZoneParameterFilter: nominal_defaults entry '%s' did not match any "
-        "registered target_node. Add the node to `target_nodes` in YAML.",
-        override_name.c_str());
-      continue;
-    }
-    nominal_defaults_[match->first].emplace_back(match->second, override_value);
-    ++nominal_count;
   }
   RCLCPP_INFO(
     logger_,
     "ZoneParameterFilter: %zu nominal default(s) loaded for state-0 reset.",
-    nominal_count);
+    nominal_names.size());
 
-  // Warn on state-N override without matching nominal (state-0 reset gap).
+  // Warn on a state override with no matching nominal_default: the state-0
+  // reset would not be able to restore that parameter.
   auto has_nominal = [this](const StateParamEntry & e) -> bool {
       const auto node_it = nominal_defaults_.find(e.target_node);
       if (node_it == nominal_defaults_.end()) {
         return false;
       }
-      const auto & param_name = e.param.get_name();
       for (const auto & nominal : node_it->second) {
-        if (nominal.get_name() == param_name) {
+        if (nominal.get_name() == e.param.get_name()) {
           return true;
         }
       }
@@ -315,9 +280,9 @@ void ZoneParameterFilter::loadStateConfig()
       if (!has_nominal(entry)) {
         RCLCPP_WARN(
           logger_,
-          "ZoneParameterFilter: state_%u sets '%s:%s' but no matching nominal_defaults "
-          "entry exists; state-0 reset will NOT restore this parameter.",
-          state_id, entry.target_node.c_str(), entry.param.get_name().c_str());
+          "ZoneParameterFilter: state id %u sets '%s' on '%s' but no matching "
+          "nominal_defaults entry exists; state-0 reset will NOT restore it.",
+          state_id, entry.param.get_name().c_str(), entry.target_node.c_str());
       }
     }
   }
@@ -430,8 +395,8 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
     throw std::runtime_error(
             std::string("ZoneParameterFilter: unknown state ") +
             std::to_string(new_state) +
-            " encountered; add to state_ids + state_" +
-            std::to_string(new_state) + " map.");
+            " encountered; declare a state with id " +
+            std::to_string(new_state) + " under the filter's `states` list.");
   }
 
   // Build (target_node, param_name) keys for the destination state M.
@@ -521,9 +486,10 @@ void ZoneParameterFilter::issueAsyncSetParameters(
 
 void ZoneParameterFilter::checkPendingParameterUpdates()
 {
-  // wait_for(0s) does not throw; future::get() may rethrow a stored
-  // exception from the rclcpp parameter-client side. On policy=kThrow we
-  // surface either path; on policy=kWarn we log and continue.
+  // wait_for(0s) does not block; future::get() may rethrow a stored exception
+  // from the rclcpp parameter-client side. A failed parameter set on a safety
+  // zone is a stop-the-robot condition, so any failure — a thrown exception or
+  // an unsuccessful result — is surfaced by rethrowing, never logged-and-ignored.
   auto it = pending_futures_.begin();
   while (it != pending_futures_.end()) {
     if (it->wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
@@ -534,29 +500,17 @@ void ZoneParameterFilter::checkPendingParameterUpdates()
     std::vector<rcl_interfaces::msg::SetParametersResult> results;
     try {
       results = it->get();
-    } catch (const std::exception & ex) {
+    } catch (...) {
       it = pending_futures_.erase(it);
-      if (param_set_failure_policy_ == ParamSetFailurePolicy::kThrow) {
-        throw;
-      }
-      RCLCPP_WARN(
-        logger_, "ZoneParameterFilter: future.get() threw: %s", ex.what());
-      continue;
+      throw;
     }
 
     it = pending_futures_.erase(it);
     for (const auto & r : results) {
-      if (r.successful) {
-        continue;
-      }
-      if (param_set_failure_policy_ == ParamSetFailurePolicy::kThrow) {
+      if (!r.successful) {
         throw std::runtime_error(
                 "ZoneParameterFilter: set_parameters failed: " + r.reason);
       }
-      RCLCPP_WARN(
-        logger_,
-        "ZoneParameterFilter: set_parameters returned unsuccessful: %s",
-        r.reason.c_str());
     }
   }
 }
