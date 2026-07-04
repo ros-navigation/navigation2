@@ -26,7 +26,7 @@ import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
 
 
-def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
+def main(argv=sys.argv[1:]):
     testExecutable = os.getenv('TEST_EXECUTABLE', '')
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
@@ -111,11 +111,11 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
         cmd=[testExecutable], name='test_localization_node', output='screen'
     )
 
-    lts = LaunchTestService()  # type: ignore[no-untyped-call]
-    lts.add_test_action(ld, test1_action)  # type: ignore[no-untyped-call]
+    lts = LaunchTestService()
+    lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return_code = lts.run(ls)  # type: ignore[no-untyped-call]
+    return_code = lts.run(ls)
     return return_code
 
 

@@ -23,6 +23,8 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "map_msgs/msg/occupancy_grid_update.hpp"
+#include "sensor_msgs/msg/range.hpp"
 
 
 // @brief Validation Check
@@ -60,6 +62,7 @@ bool validateMsg(const double & num)
 const double MAX_COVARIANCE = 1e9;
 const double MIN_COVARIANCE = 0;
 const double MIN_MAP_RESOLUTION = 1e-6;
+const double MAX_RANGE_FIELD_OF_VIEW = M_PI;
 
 template<size_t N>
 bool validateMsg(const std::array<double, N> & msg)
@@ -177,11 +180,6 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
   // msg.data :  @todo any check for it ?
   if (!validateMsg(msg.info)) {return false;}
 
-  // check logic
-  if (msg.data.size() != msg.info.width * msg.info.height) {
-    return false;                                                          // check map-size
-  }
-
   if (msg.info.width > INT16_MAX || msg.info.height > INT16_MAX) {
     // avoid overflow in nav2_amcl::convertMap()
     // because map_t size_x and size_y are int
@@ -194,6 +192,59 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
     return false;
   }
 
+  // check logic
+  if (msg.data.size() != static_cast<size_t>(num_cells)) {
+    return false;                                                          // check map-size
+  }
+
+  return true;
+}
+
+// for partial map updates as `OccupancyGridUpdate`
+bool validateMsg(const map_msgs::msg::OccupancyGridUpdate & msg)
+{
+  // check sub-type
+  if (!validateMsg(msg.header)) {return false;}
+
+  // check logic
+  if (msg.data.size() != static_cast<size_t>(msg.width) * msg.height) {
+    return false;  // check update-size
+  }
+
+  // value check: x/y are int32, negative origin is invalid
+  if (msg.x < 0 || msg.y < 0) {return false;}
+
+  if (msg.x > INT16_MAX || msg.y > INT16_MAX ||
+    msg.width > INT16_MAX || msg.height > INT16_MAX)
+  {
+    // avoid integer overflow in StaticLayer::incomingUpdate()
+    return false;
+  }
+
+  uint32_t num_cells;
+  if (__builtin_mul_overflow(msg.width, msg.height, &num_cells)) {
+    // avoid overflow msg.width * msg.height in StaticLayer::incomingUpdate()
+    return false;
+  }
+
+  return true;
+}
+
+bool validateMsg(const sensor_msgs::msg::Range & msg)
+{
+  if (!validateMsg(msg.header)) {return false;}
+  if (!validateMsg(static_cast<double>(msg.field_of_view))) {return false;}
+  if (!validateMsg(static_cast<double>(msg.min_range))) {return false;}
+  if (!validateMsg(static_cast<double>(msg.max_range))) {return false;}
+  if (!validateMsg(static_cast<double>(msg.range))) {return false;}
+
+  if (msg.field_of_view <= 0.0 || msg.field_of_view > MAX_RANGE_FIELD_OF_VIEW) {
+    return false;
+  }
+
+  if (msg.min_range < 0.0 || msg.max_range <= msg.min_range) {
+    return false;
+  }
 
   return true;
 }

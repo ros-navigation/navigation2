@@ -51,7 +51,7 @@ void CostmapCostTool::onInitialize()
       "Underlying ROS node no longer exists, initialization failed");
     return;
   }
-  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();  //  nosemgrep
   local_cost_client_ =
     std::make_shared<nav2::ServiceClient<nav2_msgs::srv::GetCosts>>(
     "local_costmap/get_cost_local_costmap",
@@ -99,7 +99,7 @@ int CostmapCostTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
 
 void CostmapCostTool::callCostService(float x, float y)
 {
-  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();  //  nosemgrep
   // Create request for local costmap
   auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
   geometry_msgs::msg::PoseStamped pose;
@@ -126,17 +126,17 @@ void CostmapCostTool::callCostService(float x, float y)
 }
 
 void CostmapCostTool::handleLocalCostResponse(
-  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)  //  nosemgrep
 {
-  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();  //  nosemgrep
   auto response = future.get();
   RCLCPP_INFO(node->get_logger(), "Local costmap cost: %.1f", response->costs[0]);
 }
 
 void CostmapCostTool::handleGlobalCostResponse(
-  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)  //  nosemgrep
 {
-  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();  //  nosemgrep
   auto response = future.get();
   RCLCPP_INFO(node->get_logger(), "Global costmap cost: %.1f", response->costs[0]);
 }

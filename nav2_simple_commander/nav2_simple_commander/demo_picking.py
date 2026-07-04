@@ -41,7 +41,7 @@ shipping_destinations = {
 }
 
 
-def main() -> None:
+def main():
     # Received virtual request for picking item at Shelf A and bring to
     # worker at the pallet jack 7 for shipping. This request would
     # contain the shelf ID ('shelf_A') and shipping destination ('frieght_bay_3')
