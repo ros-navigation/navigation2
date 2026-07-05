@@ -18,6 +18,7 @@
   <depend>nav_2d_utils</depend>
   <depend>nav_2d_msgs</depend>
   <depend>nav2_core</depend>
+  <depend>nav2_costmap_2d</depend>
   <depend>pluginlib</depend>
 
   <test_depend>ament_lint_common</test_depend>

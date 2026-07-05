@@ -3,6 +3,7 @@ project(nav2_controller)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_core REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -44,6 +45,7 @@ set(dependencies
   nav_2d_msgs
   nav2_util
   nav2_core
+  nav2_costmap_2d
   pluginlib
 )
 
