@@ -25,13 +25,6 @@
 #include "nav2_route/graph_saver.hpp"
 #include "tf2_ros/static_transform_broadcaster.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route; //NOLINT
 
@@ -165,4 +158,13 @@ TEST(GraphSaver, test_transformation_api)
   EXPECT_FALSE(graph_saver.saveGraphToFile(graph, file_path));
   EXPECT_EQ(graph[0].coords.frame_id, "map_test2");
   EXPECT_EQ(graph[0].coords.x, or_coord);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

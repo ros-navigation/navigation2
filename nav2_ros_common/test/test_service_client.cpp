@@ -23,14 +23,6 @@
 using nav2::ServiceClient;
 using std::string;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class TestServiceClient : public ServiceClient<std_srvs::srv::Empty>
 {
 public:
@@ -140,4 +132,11 @@ TEST(ServiceClient, can_ServiceClient_async_call) {
   srv_thread.join();
   ASSERT_EQ(a, 1);
   ASSERT_TRUE(callback_called);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  return RUN_ALL_TESTS();
 }

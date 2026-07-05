@@ -22,13 +22,6 @@
 #include "nav2_route/plugins/graph_file_loaders/geojson_graph_file_loader.hpp"
 #include "nav2_route/plugins/graph_file_savers/geojson_graph_file_saver.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route; // NOLINT
 using Json = nlohmann::json;
@@ -351,4 +344,13 @@ TEST(GeoJsonGraphFileSaver, sample_graph)
   std::string type;
   type = operations[1].metadata.getValue("type", type);
   EXPECT_EQ(type, "jpg");
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }
