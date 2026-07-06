@@ -27,7 +27,7 @@ watched live by security staff.
 """
 
 
-def main() -> None:
+def main():
     rclpy.init()
 
     navigator = BasicNavigator()

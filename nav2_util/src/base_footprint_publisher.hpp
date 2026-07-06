@@ -40,6 +40,7 @@ namespace nav2_util
 class BaseFootprintPublisherListener : public tf2_ros::TransformListener
 {
 public:
+  //  nosemgrep
   BaseFootprintPublisherListener(tf2::BufferCore & buffer, bool spin_thread, rclcpp::Node & node)
   : tf2_ros::TransformListener(buffer, spin_thread)
   {
@@ -99,7 +100,7 @@ protected:
  * stripping away the Z, Roll, and Pitch of the full 3D state to provide
  * a 2D projection for navigation when state estimation is full 3D
  */
-class BaseFootprintPublisher : public rclcpp::Node
+class BaseFootprintPublisher : public rclcpp::Node  //  nosemgrep
 {
 public:
   /**

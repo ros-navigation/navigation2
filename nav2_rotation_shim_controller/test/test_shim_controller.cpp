@@ -21,6 +21,7 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "nav2_controller/plugins/feasible_path_handler.hpp"
@@ -622,6 +623,8 @@ TEST(RotationShimControllerTest, testDynamicParameter)
       rclcpp::Parameter("test.forward_sampling_distance", 7.0),
       rclcpp::Parameter("test.rotate_to_heading_angular_vel", 7.0),
       rclcpp::Parameter("test.max_angular_accel", 7.0),
+      rclcpp::Parameter("test.max_cost_threshold",
+      static_cast<double>(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)),
       rclcpp::Parameter("test.simulate_ahead_time", 7.0),
       rclcpp::Parameter("test.primary_controller.plugin", std::string("HI")),
       rclcpp::Parameter("test.rotate_to_goal_heading", true),
@@ -637,6 +640,8 @@ TEST(RotationShimControllerTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.forward_sampling_distance").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_angular_vel").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 7.0);
+  EXPECT_EQ(node->get_parameter("test.max_cost_threshold").as_double(),
+    static_cast<double>(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE));
   EXPECT_EQ(node->get_parameter("test.simulate_ahead_time").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.rotate_to_goal_heading").as_bool(), true);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_once").as_bool(), true);
@@ -662,6 +667,38 @@ TEST(RotationShimControllerTest, testDynamicParameter)
     results);
 
   EXPECT_EQ(node->get_parameter("test.simulate_ahead_time").as_double(), 7.0);
+}
+
+TEST(RotationShimControllerTest, maxCostThresholdTest)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
+  std::string name = "test";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  costmap->configure();
+  // set a valid primary controller so we can do lifecycle
+  node->declare_parameter(
+    "test.primary_controller.plugin",
+    std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
+  node->declare_parameter("controller_frequency", 20.0);
+  node->declare_parameter("test.max_cost_threshold",
+    static_cast<double>(nav2_costmap_2d::FREE_SPACE));
+  auto controller = std::make_shared<RotationShimShim>();
+  controller->configure(node, name, tf, costmap);
+  controller->activate();
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "base_link";
+  path.poses.resize(4);
+  path.poses[1].pose.position.x = 0.15;
+  path.poses[1].pose.position.y = 0.15;
+  path.poses[2].pose.position.x = 1.0;
+  path.poses[2].pose.position.y = 1.0;
+  controller->newPathReceived(path);
+  const geometry_msgs::msg::Twist velocity;
+  // With max_cost_threshold=0, even FREE_SPACE cells should trigger collision
+  EXPECT_THROW(
+    controller->computeRotateToHeadingCommandWrapper(1.5, path.poses[1], velocity),
+    nav2_core::NoValidControl);
 }
 
 int main(int argc, char ** argv)

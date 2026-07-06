@@ -134,6 +134,9 @@ controller_server:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56
       model_dt: 0.05
+      model_delay_vx: 0.0
+      model_delay_vy: 0.0
+      model_delay_wz: 0.0
       batch_size: 2000
       open_loop: false
       ax_max: 3.0

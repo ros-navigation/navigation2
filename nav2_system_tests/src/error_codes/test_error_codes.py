@@ -24,7 +24,7 @@ from nav_msgs.msg import Path
 import rclpy
 
 
-def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
+def main(argv=sys.argv[1:]):
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -114,7 +114,7 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
             result.error_msg != ''
         ), 'Compute path to pose error_msg empty'
 
-    def cancel_task() -> None:
+    def cancel_task():
         time.sleep(1)
         navigator.goal_handle.cancel_goal_async()
 
