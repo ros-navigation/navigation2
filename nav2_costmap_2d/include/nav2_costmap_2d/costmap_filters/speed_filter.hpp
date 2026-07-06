@@ -117,11 +117,13 @@ private:
    * @brief Get the speed limit from the path lookahead
    * @param robot_pose robot pose
    * @param lookahead_dist lookahead distance
-   * @return strictest speed limit found along the lookahead
+   * @param speed_limit output: strictest speed limit found along the lookahead
+   * @return true if the lookahead could be evaluated, false otherwise
    */
-  double getSpeedLimitFromLookahead(
+  bool getSpeedLimitFromLookahead(
     const geometry_msgs::msg::Pose & robot_pose,
-    double lookahead_dist);
+    double lookahead_dist,
+    double & speed_limit);
 
   nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;

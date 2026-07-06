@@ -310,11 +310,12 @@ bool SpeedFilter::getSpeedLimitAtPose(
   return true;
 }
 
-double SpeedFilter::getSpeedLimitFromLookahead(
+bool SpeedFilter::getSpeedLimitFromLookahead(
   const geometry_msgs::msg::Pose & robot_pose,
-  double lookahead_dist)
+  double lookahead_dist,
+  double & speed_limit)
 {
-  double min_speed_limit = std::numeric_limits<double>::infinity();
+  double min_speed_limit = std::numeric_limits<double>::max();
 
   // Release the hold by default, a stricter limit ahead re-arms it
   held_lookahead_dist_ = 0.0;
@@ -334,7 +335,7 @@ double SpeedFilter::getSpeedLimitFromLookahead(
       RCLCPP_ERROR_THROTTLE(logger_, *(clock_), 5000,
           "SpeedFilter: Failed to transform path to global frame, "
           "no speed limit will be published");
-      return NO_SPEED_LIMIT;
+      return false;
     }
   } else {
     transformed_path = *current_path_;
@@ -352,11 +353,13 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   double limit_at_robot_pose = NO_SPEED_LIMIT;
   if (!getSpeedLimitAtPose(robot_pose, limit_at_robot_pose)) {
     // Pose mapped outside mask or transform failed
-    return NO_SPEED_LIMIT;
+    RCLCPP_ERROR_THROTTLE(logger_, *(clock_), 5000,
+        "SpeedFilter: Failed to get speed limit at robot pose");
+    return false;
   }
 
   if (limit_at_robot_pose != NO_SPEED_LIMIT) {
-    min_speed_limit = std::min(min_speed_limit, limit_at_robot_pose);
+    min_speed_limit = limit_at_robot_pose;
   }
 
   // Walk poses from the lookahead start index forward, sampling the speed limit at each pose.
@@ -388,7 +391,7 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   }
 
   // No limit found anywhere along the lookahead, fall back to no-limit
-  if (std::isinf(min_speed_limit)) {
+  if (min_speed_limit == std::numeric_limits<double>::max()) {
     min_speed_limit = NO_SPEED_LIMIT;
   }
 
@@ -396,7 +399,9 @@ double SpeedFilter::getSpeedLimitFromLookahead(
   if (limit_at_robot_pose != min_speed_limit) {
     held_lookahead_dist_ = lookahead_dist;
   }
-  return min_speed_limit;
+
+  speed_limit = min_speed_limit;
+  return true;
 }
 
 void SpeedFilter::process(
@@ -434,7 +439,10 @@ void SpeedFilter::process(
       d_lookahead = std::max(d_lookahead, held_lookahead_dist_);
     }
 
-    speed_limit_ = getSpeedLimitFromLookahead(pose, d_lookahead);
+    if (!getSpeedLimitFromLookahead(pose, d_lookahead, speed_limit_)) {
+      RCLCPP_ERROR(logger_, "SpeedFilter: Failed to get speed limit from lookahead");
+      return;
+    }
   } else {
     if (!getSpeedLimitAtPose(pose, speed_limit_)) {
       RCLCPP_ERROR(logger_, "SpeedFilter: Failed to get speed limit at pose");
