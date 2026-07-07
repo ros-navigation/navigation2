@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// [AI-generated] This test file was implemented with AI assistance (Claude) and
+// reviewed by the author.
+
 #include <gtest/gtest.h>
 #include <chrono>
 #include <cmath>

@@ -235,6 +235,8 @@ void AStarAlgorithm<NodeT>::setGoal(
   _goal_manager.clear();
   Coordinates ref_goal_coord(mx, my, static_cast<float>(dim_3));
 
+  // [AI-generated] This incremental reset/update decision block was added with AI
+  // assistance (Claude) and reviewed by the author.
   // Select which obstacle-heuristic field getObstacleHeuristic() reads. Done every
   // request so a runtime parameter toggle can never leave a stale field selected.
   _shared_ctx->obstacle_heuristic->setIncrementalMode(

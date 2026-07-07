@@ -41,6 +41,7 @@ void ObstacleHeuristic::resetObstacleHeuristic(
   // the planner considerably to search through 75% less cells with no detectable
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
+  // [AI-generated] Line added with AI assistance (Claude), reviewed by the author.
   // Lazy path selected; getObstacleHeuristic() must not read the incremental field.
   inc_mode_ = false;
   costmap_ros = costmap_ros_i;
@@ -96,6 +97,7 @@ float ObstacleHeuristic::getObstacleHeuristic(
   const bool use_quadratic_cost_penalty,
   const bool downsample_obstacle_heuristic)
 {
+  // [AI-generated] Incremental-mode routing added with AI assistance (Claude).
   // Incremental (LPA*) mode maintains the full goal-rooted field between planning
   // requests and repairs it locally; read straight from it. Unreachable cells are
   // +inf in the raw field -> return 0.0f so the node falls back to its distance
@@ -254,6 +256,11 @@ float ObstacleHeuristic::getObstacleHeuristic(
 }
 
 // ---------------- Incremental (LPA*) obstacle heuristic ----------------
+// [AI-generated] The six incremental functions below — incrementalEnterCost,
+// incrementalUpdateVertex, incrementalComputeShortestPath,
+// resetIncrementalObstacleHeuristic, updateIncrementalObstacleHeuristic and
+// getIncrementalObstacleHeuristic — were implemented with AI assistance (Claude)
+// and reviewed by the author.
 
 float ObstacleHeuristic::incrementalEnterCost(
   const unsigned int idx, const bool diagonal,

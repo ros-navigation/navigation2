@@ -86,6 +86,9 @@ public:
   }
 
   // ---- Incremental (LPA*) obstacle heuristic (opt-in) ----
+  // [AI-generated] This entire incremental block (the methods declared and defined
+  // below and the inc_* members) was implemented with AI assistance (Claude) and
+  // reviewed by the author.
   // An alternative to the lazy recompute that maintains a full goal-rooted cost
   // field and repairs it locally when the costmap changes, instead of wiping and
   // recomputing from scratch. Preserves the exact heuristic (bit-identical to a
