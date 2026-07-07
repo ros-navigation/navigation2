@@ -200,6 +200,84 @@ class NavTester(Node):
         self.info_msg('Goal succeeded!')
         return True
 
+    def runBadTFReplacementPreemptionAction(self) -> bool:
+        # Sends a valid NavigateThroughPoses goal then preempts it with a bad-TF goal.
+        # The replacement goal should be terminated while the original goal is not aborted.
+        self.info_msg("Waiting for 'NavigateThroughPoses' action server")
+        while not self.action_client.wait_for_server(timeout_sec=1.0):
+            self.info_msg(
+                "'NavigateThroughPoses' action server not available, waiting..."
+            )
+
+        first_goal_msg = NavigateThroughPoses.Goal()
+        first_goal_msg.poses.header.frame_id = 'map'
+        first_goal_msg.poses.header.stamp = self.get_clock().now().to_msg()
+        first_goal_msg.poses.goals = [
+            self.getStampedPoseMsg(self.goal_pose),
+            self.getStampedPoseMsg(self.goal_pose),
+        ]
+
+        self.info_msg('Sending initial valid goal request...')
+        send_first_goal_future = self.action_client.send_goal_async(first_goal_msg)
+        rclpy.spin_until_future_complete(self, send_first_goal_future)
+        first_goal_handle = send_first_goal_future.result()
+
+        if not first_goal_handle or not first_goal_handle.accepted:
+            self.error_msg('Initial goal rejected')
+            return False
+
+        replacement_goal_msg = NavigateThroughPoses.Goal()
+        replacement_goal_msg.poses.header.frame_id = 'map'
+        replacement_goal_msg.poses.header.stamp = self.get_clock().now().to_msg()
+        bad_pose = self.getStampedPoseMsg(self.initial_pose)
+        bad_pose.header.frame_id = 'bad_tf_frame'
+        replacement_goal_msg.poses.goals = [bad_pose]
+
+        self.info_msg('Sending replacement goal request with bad TF frame...')
+        send_replacement_goal_future = self.action_client.send_goal_async(
+            replacement_goal_msg
+        )
+        rclpy.spin_until_future_complete(self, send_replacement_goal_future)
+        replacement_goal_handle = send_replacement_goal_future.result()
+
+        if not replacement_goal_handle or not replacement_goal_handle.accepted:
+            self.error_msg('Replacement goal rejected unexpectedly')
+            return False
+
+        replacement_result_future = replacement_goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self, replacement_result_future, timeout_sec=30.0)
+        if not replacement_result_future.done():
+            self.error_msg('Timed out waiting for replacement goal result')
+            return False
+
+        replacement_status = replacement_result_future.result().status  # type: ignore[union-attr]
+        if replacement_status == GoalStatus.STATUS_SUCCEEDED:
+            self.error_msg('Replacement bad-TF goal unexpectedly succeeded')
+            return False
+
+        cancel_first_goal_future = first_goal_handle.cancel_goal_async()
+        rclpy.spin_until_future_complete(self, cancel_first_goal_future, timeout_sec=15.0)
+
+        first_result_future = first_goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self, first_result_future, timeout_sec=45.0)
+        if not first_result_future.done():
+            self.error_msg('Timed out waiting for initial goal result')
+            return False
+
+        first_status = first_result_future.result().status  # type: ignore[union-attr]
+        if first_status == GoalStatus.STATUS_ABORTED:
+            first_result = first_result_future.result().result  # type: ignore[union-attr]
+            self.error_msg(
+                f'Initial goal was aborted after bad preempt. '
+                f'status:{first_status} '
+                f'error_code:{first_result.error_code} '
+                f'error_msg:{first_result.error_msg}'
+            )
+            return False
+
+        self.info_msg('Bad-TF replacement preempt was rejected and original goal was not aborted')
+        return True
+
     def poseCallback(self, msg: PoseWithCovarianceStamped) -> None:
         self.info_msg('Received amcl_pose')
         self.current_pose = msg.pose.pose
@@ -286,6 +364,8 @@ def run_all_tests(robot_tester: NavTester) -> bool:
         # Test preempting NHP with the same goal
         result = result and robot_tester.runNavigatePreemptionAction(False)
         result = result and robot_tester.runNavigatePreemptionAction(True)
+        # Test preempting NHP with replacement goal that cannot be transformed
+        result = result and robot_tester.runBadTFReplacementPreemptionAction()
 
     # Add more tests here if desired
 

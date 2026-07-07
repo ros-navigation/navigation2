@@ -14,9 +14,13 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <atomic>
+#include <chrono>
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
+#include <thread>
 
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -31,9 +35,25 @@ using namespace std::chrono_literals;
 class FollowPathActionServer : public TestActionServer<nav2_msgs::action::FollowPath>
 {
 public:
+  enum class ResultMode : uint8_t
+  {
+    SUCCEED,
+    ABORT
+  };
+
   FollowPathActionServer()
   : TestActionServer("follow_path")
   {}
+
+  void setResultMode(const ResultMode mode)
+  {
+    result_mode_ = mode;
+  }
+
+  void setExecutionDelay(const std::chrono::milliseconds delay)
+  {
+    execution_delay_ms_ = delay.count();
+  }
 
 protected:
   void execute(
@@ -41,10 +61,37 @@ protected:
       rclcpp_action::ServerGoalHandle<nav2_msgs::action::FollowPath>> goal_handle)
   override
   {
-    const auto goal = goal_handle->get_goal();
     auto result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
+
+    const auto execution_delay = std::chrono::milliseconds(execution_delay_ms_.load());
+    if (execution_delay > 0ms) {
+      const auto end_time = std::chrono::steady_clock::now() + execution_delay;
+      while (rclcpp::ok() && std::chrono::steady_clock::now() < end_time) {
+        if (goal_handle->is_canceling()) {
+          goal_handle->canceled(result);
+          return;
+        }
+        std::this_thread::sleep_for(5ms);
+      }
+    }
+
+    if (goal_handle->is_canceling()) {
+      goal_handle->canceled(result);
+      return;
+    }
+
+    if (result_mode_.load() == ResultMode::ABORT) {
+      result->error_code = nav2_msgs::action::FollowPath::Result::NO_VALID_CONTROL;
+      result->error_msg = "Controller failed to produce a valid control command";
+      goal_handle->abort(result);
+      return;
+    }
+
     goal_handle->succeed(result);
   }
+
+  std::atomic<ResultMode> result_mode_{ResultMode::SUCCEED};
+  std::atomic<int64_t> execution_delay_ms_{0};
 };
 
 class FollowPathActionTestFixture : public ::testing::Test
@@ -97,6 +144,8 @@ public:
   void TearDown() override
   {
     tree_.reset();
+    action_server_->setResultMode(FollowPathActionServer::ResultMode::SUCCEED);
+    action_server_->setExecutionDelay(0ms);
   }
 
   static std::shared_ptr<FollowPathActionServer> action_server_;
@@ -161,6 +210,80 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->path.poses.size(), 1u);
   EXPECT_EQ(action_server_->getCurrentGoal()->path.poses[0].pose.position.x, -2.5);
+}
+
+TEST_F(FollowPathActionTestFixture, test_controller_failure_propagates_error)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <FollowPath path="{path}" controller_id="FollowPath"
+                        error_code_id="{follow_path_error_code}"
+                        error_msg="{follow_path_error_msg}"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(
+    factory_->createTreeFromText(xml_txt, config_->blackboard));
+  action_server_->setResultMode(FollowPathActionServer::ResultMode::ABORT);
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(1);
+  path.poses[0].pose.position.x = 2.0;
+  config_->blackboard->set("path", path);
+
+  BT::NodeStatus status = BT::NodeStatus::RUNNING;
+  while (rclcpp::ok() && status == BT::NodeStatus::RUNNING) {
+    status = tree_->rootNode()->executeTick();
+  }
+
+  EXPECT_EQ(status, BT::NodeStatus::FAILURE);
+
+  uint16_t error_code = nav2_msgs::action::FollowPath::Result::NONE;
+  std::string error_msg;
+  EXPECT_TRUE(config_->blackboard->get("follow_path_error_code", error_code));
+  EXPECT_TRUE(config_->blackboard->get("follow_path_error_msg", error_msg));
+  EXPECT_EQ(error_code, nav2_msgs::action::FollowPath::Result::NO_VALID_CONTROL);
+  EXPECT_EQ(error_msg, "Controller failed to produce a valid control command");
+}
+
+TEST_F(FollowPathActionTestFixture, test_goal_replacement_while_active)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <FollowPath path="{path}" controller_id="FollowPath"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  action_server_->setExecutionDelay(150ms);
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(1);
+  path.poses[0].pose.position.x = 1.0;
+  config_->blackboard->set("path", path);
+
+  BT::NodeStatus status = tree_->rootNode()->executeTick();
+  ASSERT_EQ(status, BT::NodeStatus::RUNNING);
+
+  path.poses[0].pose.position.x = -3.0;
+  config_->blackboard->set("path", path);
+
+  rclcpp::WallRate loop_rate(10ms);
+  int iterations = 0;
+  while (rclcpp::ok() && status == BT::NodeStatus::RUNNING && iterations < 300) {
+    status = tree_->rootNode()->executeTick();
+    iterations++;
+    loop_rate.sleep();
+  }
+
+  EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
+  ASSERT_NE(action_server_->getCurrentGoal(), nullptr);
+  ASSERT_EQ(action_server_->getCurrentGoal()->path.poses.size(), 1u);
+  EXPECT_EQ(action_server_->getCurrentGoal()->path.poses[0].pose.position.x, -3.0);
 }
 
 TEST(FollowPathAction, testProgressCheckerIdUpdate)
