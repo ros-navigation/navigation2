@@ -28,6 +28,8 @@ if(BUILD_TESTING)
 
   nav2_add_pytest_test(test_rewritten_yaml test/test_rewritten_yaml.py
   )
+  nav2_add_pytest_test(test_has_node_params test/test_has_node_params.py
+  )
   nav2_add_pytest_test(test_launch_config_as_bool test/test_launch_config_as_bool.py
   )
 endif()
