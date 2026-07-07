@@ -81,10 +81,10 @@ static std::vector<float> dijkstraReference(
       float cost = static_cast<float>(cm->getCost(v));
       if (cost >= 253.0f) {continue;}
       float ec = (DG[i] ? SQRT2 : 1.0f) * (1.0f + penalty * cost / 252.0f);
-      float nd = top.first + ec;
-      if (nd < dist[v]) {
-        dist[v] = nd;
-        pq.push({nd, v});
+      float ndist = top.first + ec;
+      if (ndist < dist[v]) {
+        dist[v] = ndist;
+        pq.push({ndist, v});
       }
     }
   }

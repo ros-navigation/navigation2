@@ -328,7 +328,8 @@ nav_msgs::msg::Path SmacPlannerLatticeT<NodeT>::createPlan(
   std::function<bool()> cancel_checker)
 {
   if (!viapoints.empty()) {
-    RCLCPP_WARN(_logger, "Received %zu viapoints, but this planner ignores them",
+    RCLCPP_WARN(
+      _logger, "Received %zu viapoints, but this planner ignores them",
       viapoints.size());
   }
 
@@ -570,9 +571,9 @@ SmacPlannerLatticeT<NodeT>::validateParameterUpdatesCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (parameter.as_double() < 0.0) {
         RCLCPP_WARN(
-        _logger, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          _logger, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
@@ -589,9 +590,9 @@ SmacPlannerLatticeT<NodeT>::validateParameterUpdatesCallback(
         param_name != _name + ".max_on_approach_iterations"))
       {
         RCLCPP_WARN(
-        _logger, "The value of parameter '%s' is incorrectly set to %ld, "
-        "it should be >0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_int());
+          _logger, "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
         result.successful = false;
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {

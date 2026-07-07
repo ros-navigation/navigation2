@@ -367,7 +367,8 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
   std::function<bool()> cancel_checker)
 {
   if (!viapoints.empty()) {
-    RCLCPP_WARN(_logger, "Received %zu viapoints, but this planner ignores them",
+    RCLCPP_WARN(
+      _logger, "Received %zu viapoints, but this planner ignores them",
       viapoints.size());
   }
 
@@ -619,9 +620,9 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (parameter.as_double() < 0.0) {
         RCLCPP_WARN(
-        _logger, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          _logger, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       } else if (param_name == _name + ".minimum_turning_radius" && // NOLINT
         parameter.as_double() < _costmap->getResolution() * _downsampling_factor)
@@ -639,9 +640,9 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
         param_name != _name + ".max_iterations"))
       {
         RCLCPP_WARN(
-        _logger, "The value of parameter '%s' is incorrectly set to %ld, "
-        "it should be >0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_int());
+          _logger, "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
         result.successful = false;
       } else if (param_name == _name + ".angle_quantization_bins") {
         unsigned int angle_quantizations = static_cast<unsigned int>(parameter.as_int());
