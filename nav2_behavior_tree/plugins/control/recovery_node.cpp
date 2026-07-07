@@ -14,6 +14,7 @@
 
 #include <string>
 #include "nav2_behavior_tree/plugins/control/recovery_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -63,11 +64,26 @@ BT::NodeStatus RecoveryNode::tick()
         case BT::NodeStatus::FAILURE:
           {
             if (retry_count_ < number_of_retries_) {
+              RCLCPP_DEBUG(
+                logger_,
+                "RecoveryNode '%s': primary child '%s' failed. "
+                "Running recovery child '%s' (%u/%u).",
+                name().c_str(),
+                children_nodes_[0]->name().c_str(),
+                children_nodes_[1]->name().c_str(),
+                retry_count_ + 1,
+                number_of_retries_);
               // halt first child and tick second child in next iteration
               ControlNode::haltChild(0);
               current_child_idx_++;
               break;
             } else {
+              RCLCPP_ERROR(
+                logger_,
+                "RecoveryNode '%s': primary child '%s' failed and max retries (%u) reached.",
+                name().c_str(),
+                children_nodes_[0]->name().c_str(),
+                number_of_retries_);
               // reset node and return failure when max retries has been exceeded
               halt();
               return BT::NodeStatus::FAILURE;
@@ -95,6 +111,12 @@ BT::NodeStatus RecoveryNode::tick()
 
         case BT::NodeStatus::SUCCESS:
           {
+            RCLCPP_DEBUG(
+              logger_,
+              "RecoveryNode '%s': recovery child '%s' succeeded. Retrying primary child '%s'.",
+              name().c_str(),
+              children_nodes_[1]->name().c_str(),
+              children_nodes_[0]->name().c_str());
             // halt second child, increment recovery count, and tick first child in next iteration
             ControlNode::haltChild(1);
             retry_count_++;
@@ -103,6 +125,12 @@ BT::NodeStatus RecoveryNode::tick()
           break;
 
         case BT::NodeStatus::FAILURE:
+          RCLCPP_ERROR(
+            logger_,
+            "RecoveryNode '%s': recovery child '%s' failed after primary child '%s' failure.",
+            name().c_str(),
+            children_nodes_[1]->name().c_str(),
+            children_nodes_[0]->name().c_str());
           // reset node and return failure if second child fails
           halt();
           return BT::NodeStatus::FAILURE;

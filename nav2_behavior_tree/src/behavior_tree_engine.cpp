@@ -86,7 +86,23 @@ BehaviorTreeEngine::run(
     return BtStatus::FAILED;
   }
 
-  return (result == BT::NodeStatus::SUCCESS) ? BtStatus::SUCCEEDED : BtStatus::FAILED;
+  if (result == BT::NodeStatus::SUCCESS) {
+    return BtStatus::SUCCEEDED;
+  }
+
+  if (result == BT::NodeStatus::FAILURE) {
+    RCLCPP_WARN(
+      rclcpp::get_logger("BehaviorTreeEngine"),
+      "Behavior Tree completed with FAILURE status at root node '%s'.",
+      tree->rootNode() ? tree->rootNode()->name().c_str() : "<unknown>");
+  } else if (result == BT::NodeStatus::IDLE) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("BehaviorTreeEngine"),
+      "Behavior Tree returned unexpected IDLE status at root node '%s'. Treating as failure.",
+      tree->rootNode() ? tree->rootNode()->name().c_str() : "<unknown>");
+  }
+
+  return BtStatus::FAILED;
 }
 
 BT::Tree

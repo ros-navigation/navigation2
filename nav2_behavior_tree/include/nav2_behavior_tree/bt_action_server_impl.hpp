@@ -406,7 +406,15 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
 
   auto on_loop = [&]() {
       if (action_server_->is_preempt_requested() && on_preempt_callback_) {
-        on_preempt_callback_(action_server_->get_pending_goal());
+        auto pending_goal = action_server_->get_pending_goal();
+        if (!pending_goal) {
+          RCLCPP_WARN_THROTTLE(
+            logger_, *clock_, 2000,
+            "Preempt requested for %s, but no pending goal is available. Ignoring preempt.",
+            action_name_.c_str());
+        } else {
+          on_preempt_callback_(pending_goal);
+        }
       }
       topic_logger_->flush();
       on_loop_callback_();
@@ -414,6 +422,11 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
 
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_duration_);
+
+  // Flush final status transitions after tree completion to avoid dropping terminal events.
+  if (topic_logger_) {
+    topic_logger_->flush();
+  }
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.

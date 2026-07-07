@@ -30,6 +30,9 @@ NavigateToPoseAction::NavigateToPoseAction(
 void NavigateToPoseAction::on_tick()
 {
   if (!getInput("goal", goal_.pose)) {
+    should_send_goal_ = false;
+    setOutput("error_code_id", ActionResult::UNKNOWN);
+    setOutput("error_msg", "NavigateToPoseAction missing required input port: goal");
     RCLCPP_ERROR(
       node_->get_logger(),
       "NavigateToPoseAction: goal not provided");
