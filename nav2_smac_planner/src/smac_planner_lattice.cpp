@@ -105,6 +105,17 @@ void SmacPlannerLattice::configure(
     node->declare_or_get_parameter(name + ".use_quadratic_cost_penalty", false);
   _search_info.downsample_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
+  _search_info.incremental_obstacle_heuristic =
+    node->declare_or_get_parameter(name + ".incremental_obstacle_heuristic", false);
+  if (_search_info.incremental_obstacle_heuristic &&
+    _search_info.downsample_obstacle_heuristic)
+  {
+    RCLCPP_WARN(
+      _logger,
+      "incremental_obstacle_heuristic is enabled; forcing downsample_obstacle_heuristic off "
+      "(the incremental field is maintained at full resolution).");
+    _search_info.downsample_obstacle_heuristic = false;
+  }
 
   _max_planning_time = node->declare_or_get_parameter(name + ".max_planning_time", 5.0);
   _lookup_table_size = node->declare_or_get_parameter(name + ".lookup_table_size", 20.0);
@@ -654,6 +665,18 @@ SmacPlannerLattice::updateParametersCallback(const std::vector<rclcpp::Parameter
       } else if (param_name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      } else if (param_name == _name + ".incremental_obstacle_heuristic") {
+        reinit_a_star = true;
+        _search_info.incremental_obstacle_heuristic = parameter.as_bool();
+        if (_search_info.incremental_obstacle_heuristic &&
+          _search_info.downsample_obstacle_heuristic)
+        {
+          RCLCPP_WARN(
+            _logger,
+            "incremental_obstacle_heuristic is enabled; forcing downsample_obstacle_heuristic "
+            "off (the incremental field is maintained at full resolution).");
+          _search_info.downsample_obstacle_heuristic = false;
+        }
       } else if (param_name == _name + ".allow_reverse_expansion") {
         reinit_a_star = true;
         reinit_lookup_table = true;

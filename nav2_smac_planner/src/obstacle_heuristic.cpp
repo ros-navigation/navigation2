@@ -12,10 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
 #include "nav2_smac_planner/obstacle_heuristic.hpp"
 
 namespace nav2_smac_planner
 {
+
+namespace
+{
+constexpr float INC_INF = std::numeric_limits<float>::infinity();
+const float INC_SQRT2 = std::sqrt(2.0f);
+// 8-neighborhood: first 4 cardinal, last 4 diagonal
+const int INC_DX[8] = {1, -1, 0, 0, 1, 1, -1, -1};
+const int INC_DY[8] = {0, 0, 1, -1, 1, -1, 1, -1};
+const bool INC_DIAG[8] = {false, false, false, false, true, true, true, true};
+}  // namespace
 
 void ObstacleHeuristic::resetObstacleHeuristic(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_i,
@@ -27,6 +41,8 @@ void ObstacleHeuristic::resetObstacleHeuristic(
   // the planner considerably to search through 75% less cells with no detectable
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
+  // Lazy path selected; getObstacleHeuristic() must not read the incremental field.
+  inc_mode_ = false;
   costmap_ros = costmap_ros_i;
   auto costmap = costmap_ros->getCostmap();
 
@@ -80,6 +96,16 @@ float ObstacleHeuristic::getObstacleHeuristic(
   const bool use_quadratic_cost_penalty,
   const bool downsample_obstacle_heuristic)
 {
+  // Incremental (LPA*) mode maintains the full goal-rooted field between planning
+  // requests and repairs it locally; read straight from it. Unreachable cells are
+  // +inf in the raw field -> return 0.0f so the node falls back to its distance
+  // heuristic, exactly as the lazy path does for cells it never expands to. The
+  // incremental field is always full-resolution, so the downsample flag is unused.
+  if (inc_mode_) {
+    const float h = getIncrementalObstacleHeuristic(node_coords);
+    return std::isinf(h) ? 0.0f : h;
+  }
+
   // If already expanded, return the cost
   auto costmap = costmap_ros->getCostmap();
   unsigned int size_x = 0u;
@@ -225,6 +251,160 @@ float ObstacleHeuristic::getObstacleHeuristic(
     }
   }
   return downsample_obstacle_heuristic ? 2.0f * requested_node_cost : requested_node_cost;
+}
+
+// ---------------- Incremental (LPA*) obstacle heuristic ----------------
+
+float ObstacleHeuristic::incrementalEnterCost(
+  const unsigned int idx, const bool diagonal,
+  const float & cost_penalty, const bool use_quadratic_cost_penalty) const
+{
+  const float cost = static_cast<float>(costmap_ros->getCostmap()->getCost(idx));
+  if (cost >= INSCRIBED_COST) {
+    return INC_INF;
+  }
+  const float penalty_term = use_quadratic_cost_penalty ?
+    (cost_penalty * cost * cost / 63504.0f) :   // 252^2
+    (cost_penalty * cost / 252.0f);
+  return (diagonal ? INC_SQRT2 : 1.0f) * (1.0f + penalty_term);
+}
+
+void ObstacleHeuristic::incrementalUpdateVertex(
+  const unsigned int idx, const float & cost_penalty,
+  const bool use_quadratic_cost_penalty)
+{
+  if (idx != inc_goal_index_) {
+    float best = INC_INF;
+    const int x = static_cast<int>(idx % inc_size_x_);
+    const int y = static_cast<int>(idx / inc_size_x_);
+    for (unsigned int i = 0; i < 8u; ++i) {
+      const int nx = x + INC_DX[i];
+      const int ny = y + INC_DY[i];
+      if (nx < 0 || ny < 0 ||
+        nx >= static_cast<int>(inc_size_x_) || ny >= static_cast<int>(inc_size_y_))
+      {
+        continue;
+      }
+      const unsigned int n = static_cast<unsigned int>(ny) * inc_size_x_ +
+        static_cast<unsigned int>(nx);
+      // cost to enter `idx` moving from neighbor `n`
+      const float ec = incrementalEnterCost(
+        idx, INC_DIAG[i], cost_penalty, use_quadratic_cost_penalty);
+      if (ec == INC_INF || inc_g_[n] == INC_INF) {
+        continue;
+      }
+      best = std::min(best, inc_g_[n] + ec);
+    }
+    inc_rhs_[idx] = best;
+  }
+  if (inc_g_[idx] != inc_rhs_[idx]) {
+    inc_queue_.emplace_back(std::min(inc_g_[idx], inc_rhs_[idx]), idx);
+    std::push_heap(inc_queue_.begin(), inc_queue_.end(), ObstacleHeuristicComparator{});
+  }
+}
+
+void ObstacleHeuristic::incrementalComputeShortestPath(
+  const float & cost_penalty, const bool use_quadratic_cost_penalty)
+{
+  while (!inc_queue_.empty()) {
+    const float k = inc_queue_.front().first;
+    const unsigned int u = static_cast<unsigned int>(inc_queue_.front().second);
+    std::pop_heap(inc_queue_.begin(), inc_queue_.end(), ObstacleHeuristicComparator{});
+    inc_queue_.pop_back();
+
+    const float ku = std::min(inc_g_[u], inc_rhs_[u]);
+    if (k > ku + 1e-6f) {
+      continue;                          // stale queue entry (lazy deletion)
+    }
+    if (inc_g_[u] == inc_rhs_[u]) {
+      continue;                          // already locally consistent
+    }
+    if (inc_g_[u] > inc_rhs_[u]) {
+      inc_g_[u] = inc_rhs_[u];           // overconsistent -> relax
+    } else {
+      inc_g_[u] = INC_INF;               // underconsistent -> raise
+      incrementalUpdateVertex(u, cost_penalty, use_quadratic_cost_penalty);
+    }
+    const int x = static_cast<int>(u % inc_size_x_);
+    const int y = static_cast<int>(u / inc_size_x_);
+    for (unsigned int i = 0; i < 8u; ++i) {
+      const int nx = x + INC_DX[i];
+      const int ny = y + INC_DY[i];
+      if (nx < 0 || ny < 0 ||
+        nx >= static_cast<int>(inc_size_x_) || ny >= static_cast<int>(inc_size_y_))
+      {
+        continue;
+      }
+      incrementalUpdateVertex(
+        static_cast<unsigned int>(ny) * inc_size_x_ + static_cast<unsigned int>(nx),
+        cost_penalty, use_quadratic_cost_penalty);
+    }
+  }
+}
+
+void ObstacleHeuristic::resetIncrementalObstacleHeuristic(
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_i,
+  const unsigned int & goal_x, const unsigned int & goal_y,
+  const float & cost_penalty, const bool use_quadratic_cost_penalty)
+{
+  // Incremental path selected; getObstacleHeuristic() reads the incremental field.
+  inc_mode_ = true;
+  costmap_ros = costmap_ros_i;
+  auto costmap = costmap_ros->getCostmap();
+  inc_size_x_ = costmap->getSizeInCellsX();
+  inc_size_y_ = costmap->getSizeInCellsY();
+  const unsigned int size = inc_size_x_ * inc_size_y_;
+
+  inc_g_.assign(size, INC_INF);
+  inc_rhs_.assign(size, INC_INF);
+  inc_queue_.clear();
+  inc_queue_.reserve(size);
+
+  inc_goal_index_ = goal_y * inc_size_x_ + goal_x;
+  inc_rhs_[inc_goal_index_] = 0.0f;
+  inc_queue_.emplace_back(0.0f, inc_goal_index_);
+  std::push_heap(inc_queue_.begin(), inc_queue_.end(), ObstacleHeuristicComparator{});
+
+  incrementalComputeShortestPath(cost_penalty, use_quadratic_cost_penalty);
+
+  // snapshot the costmap so updates can diff against it
+  inc_prev_cost_.resize(size);
+  for (unsigned int i = 0; i < size; ++i) {
+    inc_prev_cost_[i] = costmap->getCost(i);
+  }
+}
+
+unsigned int ObstacleHeuristic::updateIncrementalObstacleHeuristic(
+  const float & cost_penalty, const bool use_quadratic_cost_penalty)
+{
+  auto costmap = costmap_ros->getCostmap();
+  const unsigned int size = inc_size_x_ * inc_size_y_;
+  if (inc_prev_cost_.size() != size) {
+    // costmap was resized underneath us; caller must reset instead
+    return size;
+  }
+
+  unsigned int changed = 0;
+  for (unsigned int i = 0; i < size; ++i) {
+    const unsigned char c = costmap->getCost(i);
+    if (c != inc_prev_cost_[i]) {
+      inc_prev_cost_[i] = c;
+      ++changed;
+      // edges entering cell i changed -> its rhs may change
+      incrementalUpdateVertex(i, cost_penalty, use_quadratic_cost_penalty);
+    }
+  }
+  if (changed > 0u) {
+    incrementalComputeShortestPath(cost_penalty, use_quadratic_cost_penalty);
+  }
+  return changed;
+}
+
+float ObstacleHeuristic::getIncrementalObstacleHeuristic(const Coordinates & node_coords)
+{
+  const unsigned int mx = static_cast<unsigned int>(node_coords.x);
+  const unsigned int my = static_cast<unsigned int>(node_coords.y);
+  return inc_g_[my * inc_size_x_ + mx];
 }
 
 }  // namespace nav2_smac_planner
