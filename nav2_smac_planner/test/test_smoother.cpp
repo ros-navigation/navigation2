@@ -17,7 +17,11 @@
 #include <string>
 #include <vector>
 #include <limits>
+#include <utility>
 
+#include "tf2/utils.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -178,6 +182,89 @@ TEST(SmootherTest, test_full_smoother)
   EXPECT_NEAR(plan.poses.end()[-2].pose.orientation.w, 0.0, 1e-3);
 
   delete costmap;
+}
+
+TEST(SmootherTest, rejects_non_circular_footprint_collision)
+{
+  nav2_smac_planner::SmootherParams params;
+  params.tolerance_ = 2.0;
+  params.max_its_ = 1000;
+  params.w_data_ = 0.2;
+  params.w_smooth_ = 0.3;
+  params.do_refinement_ = false;
+  params.refinement_num_ = 0;
+  params.holonomic_ = false;
+
+  SmootherWrapper smoother(params);
+  smoother.initialize(0.4);
+
+  nav2_costmap_2d::Costmap2D costmap(
+    200, 200, 0.1, 0.0, 0.0, nav2_costmap_2d::FREE_SPACE);
+
+  nav2_costmap_2d::Footprint footprint;
+  for (const auto & coordinates : std::vector<std::pair<double, double>>{
+      {-0.6, -0.2}, {0.6, -0.2}, {0.6, 0.2}, {-0.6, 0.2}})
+  {
+    geometry_msgs::msg::Point point;
+    point.x = coordinates.first;
+    point.y = coordinates.second;
+    footprint.push_back(point);
+  }
+
+  // This obstacle is outside the original footprint, but intersects the
+  // rotated footprint after the corner is pulled inward by smoothing.
+  costmap.setCost(31, 117, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  nav_msgs::msg::Path path;
+  geometry_msgs::msg::PoseStamped pose;
+
+  for (unsigned int i = 0; i <= 5; ++i) {
+    pose.pose.position.x = 2.0;
+    pose.pose.position.y = 2.0 + 2.0 * i;
+    pose.pose.orientation =
+      nav2_util::geometry_utils::orientationAroundZAxis(
+      i == 5 ? 0.0 : M_PI_2);
+    path.poses.push_back(pose);
+  }
+
+  for (unsigned int i = 1; i <= 6; ++i) {
+    pose.pose.position.x = 2.0 + 2.0 * i;
+    pose.pose.position.y = 12.0;
+    pose.pose.orientation =
+      nav2_util::geometry_utils::orientationAroundZAxis(0.0);
+    path.poses.push_back(pose);
+  }
+
+  nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
+  footprint_checker(&costmap);
+
+  // Prove the test starts from a collision-free path.
+  for (const auto & path_pose : path.poses) {
+    const double footprint_cost = footprint_checker.footprintCostAtPose(
+      path_pose.pose.position.x,
+      path_pose.pose.position.y,
+      tf2::getYaw(path_pose.pose.orientation),
+      footprint);
+    ASSERT_LT(footprint_cost, nav2_costmap_2d::LETHAL_OBSTACLE);
+  }
+
+  const bool success = smoother.smooth(path, &costmap, 1.0);
+
+  bool footprint_collision = false;
+  for (const auto & path_pose : path.poses) {
+    const double footprint_cost = footprint_checker.footprintCostAtPose(
+      path_pose.pose.position.x,
+      path_pose.pose.position.y,
+      tf2::getYaw(path_pose.pose.orientation),
+      footprint);
+    footprint_collision =
+      footprint_collision ||
+      footprint_cost >= nav2_costmap_2d::LETHAL_OBSTACLE;
+  }
+
+  // A smoother must reject and roll back an update that creates a collision.
+  EXPECT_FALSE(success);
+  EXPECT_FALSE(footprint_collision);
 }
 
 int main(int argc, char ** argv)
