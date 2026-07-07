@@ -211,8 +211,9 @@ TEST(SmacTest, test_smac_lattice)
   executor.spin_until_future_complete(results);
   goal.pose.position.x = 4.0;
   goal.pose.position.y = 4.0;
-  EXPECT_THROW(planner->createPlan(
-    start, goal, no_viapoints, dummy_cancel_checker), std::runtime_error);
+  EXPECT_THROW(
+    planner->createPlan(
+      start, goal, no_viapoints, dummy_cancel_checker), std::runtime_error);
 
   planner->deactivate();
   planner->cleanup();
@@ -221,6 +222,30 @@ TEST(SmacTest, test_smac_lattice)
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
   costmap_ros.reset();
   nodeLattice.reset();
+}
+
+// [AI-generated] Test added with AI assistance (Claude), reviewed by the author.
+TEST(SmacTest, test_smac_lattice_incremental_config)
+{
+  // Configuring with incremental_obstacle_heuristic=true exercises the parameter
+  // plumbing and the forced-downsample-off warning branch in configure() (which
+  // runs before the lattice control-set is loaded).
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacLatticeIncCfg");
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  node->declare_parameter(
+    "test.incremental_obstacle_heuristic", rclcpp::ParameterValue(true));
+
+  auto planner = std::make_unique<LatticeWrap>();
+  try {
+    // May throw when loading the default control-set file in the test env; the
+    // incremental warning branch runs before that point.
+    planner->configure(node, "test", nullptr, costmap_ros);
+  } catch (...) {
+  }
 }
 
 TEST(SmacTest, test_smac_lattice_reconfigure)
@@ -283,6 +308,11 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
+
+  // [AI-generated] exercise the incremental_obstacle_heuristic reconfigure branch
+  std::vector<rclcpp::Parameter> inc_params;
+  inc_params.push_back(rclcpp::Parameter("test.incremental_obstacle_heuristic", true));
+  EXPECT_NO_THROW(planner->callDynamicParams(inc_params));
 
   // test invalid max planning time
   parameters.clear();

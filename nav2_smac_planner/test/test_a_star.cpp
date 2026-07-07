@@ -233,6 +233,77 @@ TEST(AStarTest, test_a_star_se2)
   delete costmapA;
 }
 
+// [AI-generated] Test added with AI assistance (Claude), reviewed by the author.
+TEST(AStarTest, test_a_star_se2_incremental)
+{
+  // Drives the incremental (LPA*) obstacle heuristic through a full SE2 search:
+  // covers setGoal's reset/update decision, setIncrementalMode/isIncrementalFieldValid,
+  // and getObstacleHeuristic's incremental routing.
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test_inc");
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.1;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = 2.0;
+  info.minimum_turning_radius = 8;  // in grid coordinates
+  info.retrospective_penalty = 0.015;
+  info.analytic_expansion_max_length = 20.0;  // in grid coordinates
+  info.analytic_expansion_ratio = 3.5;
+  info.cost_penalty = 1.7;
+  info.incremental_obstacle_heuristic = true;  // feature under test
+  unsigned int size_theta = 72;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+  int max_iterations = 10000;
+  float tolerance = 10.0;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+  int num_it = 0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+
+  nav2_costmap_2d::Costmap2D * costmapA =
+    new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
+  for (unsigned int i = 40; i <= 60; ++i) {
+    for (unsigned int j = 40; j <= 60; ++j) {
+      costmapA->setCost(i, j, 254);
+    }
+  }
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
+  // First plan to a new goal builds the incremental field from scratch (reset path).
+  a_star.setCollisionChecker(checker.get());
+  a_star.setStart(10u, 10u, 0u);
+  a_star.setGoal(80u, 80u, 40u);
+  nav2_smac_planner::NodeHybrid::CoordinateVector path;
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
+  EXPECT_GT(path.size(), 0u);
+
+  // Second plan to the SAME goal repairs the field incrementally (update path).
+  a_star.setCollisionChecker(checker.get());
+  a_star.setStart(10u, 10u, 0u);
+  a_star.setGoal(80u, 80u, 40u);
+  nav2_smac_planner::NodeHybrid::CoordinateVector path2;
+  EXPECT_TRUE(a_star.createPath(path2, num_it, tolerance, dummy_cancel_checker));
+  EXPECT_GT(path2.size(), 0u);
+
+  delete costmapA;
+}
+
 TEST(AStarTest, test_a_star_analytic_expansion)
 {
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
