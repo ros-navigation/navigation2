@@ -112,7 +112,7 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
           <TruncatePathLocal
             distance_forward="2.0"
             distance_backward="1.0"
-            robot_frame="base_link"
+            robot_base_frame="base_link"
             transform_tolerance="0.2"
             angular_distance_weight="0.2"
             pose="{pose}"
@@ -206,7 +206,7 @@ TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
           <TruncatePathLocal
             distance_forward="2.0"
             distance_backward="1.0"
-            robot_frame="base_link"
+            robot_base_frame="base_link"
             transform_tolerance="0.2"
             angular_distance_weight="0.2"
             pose="{pose}"
@@ -252,7 +252,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
             distance_backward="1.0"
             transform_tolerance="0.2"
             angular_distance_weight="0.2"
-            robot_frame="{robot_frame}"
+            robot_base_frame="{robot_base_frame}"
             input_path="{path}"
             output_path="{truncated_path}"
             max_robot_pose_search_dist="infinity"
@@ -282,7 +282,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
   SUCCEED();
 }
 
-TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
+TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_base_frame)
 {
   // create tree
   std::string xml_txt =
@@ -293,7 +293,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
             distance_forward="2.0"
             distance_backward="1.0"
             transform_tolerance="0.2"
-            robot_frame="invalid_frame"
+            robot_base_frame="invalid_frame"
             angular_distance_weight="0.2"
             input_path="{path}"
             output_path="{truncated_path}"
@@ -333,7 +333,7 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
           <TruncatePathLocal
             distance_forward="2.0"
             distance_backward="1.0"
-            robot_frame="base_link"
+            robot_base_frame="base_link"
             transform_tolerance="0.2"
             angular_distance_weight="0.0"
             pose="{pose}"
@@ -439,6 +439,42 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   EXPECT_EQ(truncated_path.poses.back().pose.position.x, 0.3);
   EXPECT_EQ(truncated_path.poses.back().pose.position.y, -1.0);
 
+  SUCCEED();
+}
+
+TEST_F(TruncatePathLocalTestFixture, test_param_fallback_without_port)
+{
+  // create tree without robot_base_frame port
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <TruncatePathLocal
+            distance_forward="2.0"
+            distance_backward="1.0"
+            transform_tolerance="0.2"
+            angular_distance_weight="0.2"
+            input_path="{path}"
+            output_path="{truncated_path}"
+          />
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create path and set it on blackboard
+  nav_msgs::msg::Path path = createLoopCrossingTestPath();
+  config_->blackboard->set("path", path);
+
+  // tick until node succeeds or fails
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
+    tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
+  {
+    tree_->rootNode()->executeTick();
+  }
+
+  // should fail since no robot_base_frame port or parameter is set
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
   SUCCEED();
 }
 
