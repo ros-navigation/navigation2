@@ -322,4 +322,6 @@ protected:
 
 }  // namespace nav2_smac_planner
 
+#include "nav2_smac_planner/a_star_impl.hpp"  // NOLINT
+
 #endif  // NAV2_SMAC_PLANNER__A_STAR_HPP_

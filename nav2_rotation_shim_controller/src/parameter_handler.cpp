@@ -21,6 +21,7 @@
 
 #include "nav2_rotation_shim_controller/parameter_handler.hpp"
 #include "nav2_core/controller_exceptions.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 
 namespace nav2_rotation_shim_controller
 {
@@ -45,6 +46,8 @@ ParameterHandler::ParameterHandler(
     ".rotate_to_heading_angular_vel", 1.8);
   params_.max_angular_accel = node->declare_or_get_parameter(plugin_name_ + ".max_angular_accel",
     3.2);
+  params_.max_cost_threshold = node->declare_or_get_parameter(plugin_name_ + ".max_cost_threshold",
+      static_cast<double>(nav2_costmap_2d::LETHAL_OBSTACLE));
   params_.simulate_ahead_time = node->declare_or_get_parameter(plugin_name_ +
     ".simulate_ahead_time", 1.0);
   try {
@@ -126,6 +129,8 @@ ParameterHandler::updateParametersCallback(
         params_.rotate_to_heading_angular_vel = parameter.as_double();
       } else if (param_name == plugin_name_ + ".max_angular_accel") {
         params_.max_angular_accel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_cost_threshold") {
+        params_.max_cost_threshold = parameter.as_double();
       } else if (param_name == plugin_name_ + ".simulate_ahead_time") {
         params_.simulate_ahead_time = parameter.as_double();
       }

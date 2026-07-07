@@ -16,6 +16,8 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__CLEAR_COSTMAP_SERVICE_HPP_
 
 #include <string>
+#include <vector>
+#include <memory>
 
 #include "nav2_behavior_tree/bt_service_node.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
@@ -33,7 +35,9 @@ namespace nav2_behavior_tree
  *
  * Usage in XML:
  * @code
- * <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+ * <ClearEntireCostmap name="ClearLocalCostmap-Subtree"
+ *                     service_name="local_costmap/clear_entirely_local_costmap"
+ *                     plugins="obstacle_layer;voxel_layer"/>
  * @endcode
  */
 class ClearEntireCostmapService : public BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>
@@ -53,6 +57,27 @@ public:
    * @return BT::NodeStatus Status of tick execution
    */
   void on_tick() override;
+
+  /**
+   * @brief Check the service response and return appropriate BT status
+   * @param response Service response containing success status
+   * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
+   */
+  BT::NodeStatus on_completion(
+    std::shared_ptr<typename nav2_msgs::srv::ClearEntireCostmap::Response> response) override;
+
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts(
+      {
+        BT::InputPort<std::vector<std::string>>("plugins",
+          "List of costmap plugin names to clear. If empty, all plugins will be cleared")
+      });
+  }
 };
 
 /**
@@ -62,7 +87,10 @@ public:
  *
  * Usage in XML:
  * @code
- * <ClearCostmapExceptRegion name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_except_local_costmap"/>
+ * <ClearCostmapExceptRegion name="ClearLocalCostmap-Subtree"
+ *                           service_name="local_costmap/clear_except_local_costmap"
+ *                           reset_distance="2.0"
+ *                           plugins="obstacle_layer;voxel_layer"/>
  * @endcode
  */
 class ClearCostmapExceptRegionService
@@ -85,6 +113,14 @@ public:
   void on_tick() override;
 
   /**
+   * @brief Check the service response and return appropriate BT status
+   * @param response Service response containing success status
+   * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
+   */
+  BT::NodeStatus on_completion(
+    std::shared_ptr<typename nav2_msgs::srv::ClearCostmapExceptRegion::Response> response) override;
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -93,8 +129,10 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<double>(
-          "reset_distance", 1,
-          "Distance from the robot above which obstacles are cleared")
+          "reset_distance", 1.0,
+          "Distance from the robot above which obstacles are cleared"),
+        BT::InputPort<std::vector<std::string>>("plugins",
+          "List of costmap plugin names to clear. If empty, all plugins will be cleared")
       });
   }
 };
@@ -106,7 +144,10 @@ public:
  *
  * Usage in XML:
  * @code
- * <ClearCostmapAroundRobot name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_around_local_costmap"/>
+ * <ClearCostmapAroundRobot name="ClearLocalCostmap-Subtree"
+ *                          service_name="local_costmap/clear_around_local_costmap"
+ *                          reset_distance="2.0"
+ *                          plugins="obstacle_layer;voxel_layer"/>
  * @endcode
  */
 class ClearCostmapAroundRobotService : public BtServiceNode<nav2_msgs::srv::ClearCostmapAroundRobot>
@@ -128,6 +169,14 @@ public:
   void on_tick() override;
 
   /**
+   * @brief Check the service response and return appropriate BT status
+   * @param response Service response containing success status
+   * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
+   */
+  BT::NodeStatus on_completion(
+    std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundRobot::Response> response) override;
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -136,8 +185,10 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<double>(
-          "reset_distance", 1,
-          "Distance from the robot under which obstacles are cleared")
+          "reset_distance", 1.0,
+          "Distance from the robot under which obstacles are cleared"),
+        BT::InputPort<std::vector<std::string>>("plugins",
+          "List of costmap plugin names to clear. If empty, all plugins will be cleared")
       });
   }
 };
@@ -152,7 +203,8 @@ public:
  * <ClearCostmapAroundPose name="ClearLocalCostmapAroundPose"
  *                         service_name="local_costmap/clear_around_pose_local_costmap"
  *                         pose="{goal_pose}"
- *                         reset_distance="2.0"/>
+ *                         reset_distance="2.0"
+ *                         plugins="obstacle_layer;voxel_layer"/>
  * @endcode
  */
 class ClearCostmapAroundPoseService : public BtServiceNode<nav2_msgs::srv::ClearCostmapAroundPose>
@@ -174,6 +226,14 @@ public:
   void on_tick() override;
 
   /**
+   * @brief Check the service response and return appropriate BT status
+   * @param response Service response containing success status
+   * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
+   */
+  BT::NodeStatus on_completion(
+    std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundPose::Response> response) override;
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -185,7 +245,9 @@ public:
           "pose", "Pose around which to clear the costmap"),
         BT::InputPort<double>(
           "reset_distance", 1.0,
-          "Distance from the pose under which obstacles are cleared")
+          "Distance from the pose under which obstacles are cleared"),
+        BT::InputPort<std::vector<std::string>>("plugins",
+          "List of costmap plugin names to clear. If empty, all plugins will be cleared")
       });
   }
 };

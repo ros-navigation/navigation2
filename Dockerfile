@@ -62,7 +62,7 @@ RUN apt-get update && \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
       git+https://github.com/ruffsl/colcon-clean.git@a7f1074d1ebc1a54a6508625b117974f2672f2a9 \
-    && rosdep update \
+    # && rosdep update \
     && colcon mixin update \
     && colcon metadata update \
     && rm -rf /var/lib/apt/lists/*
@@ -171,7 +171,7 @@ RUN mkdir -p $ROOT_SRV
 RUN apt-get update && apt-get install -y \
       ros-$ROS_DISTRO-rviz2
 
-# install gzweb dependacies
+# install gzweb dependencies
 RUN apt-get install -y --no-install-recommends \
       imagemagick \
       libboost-all-dev \
@@ -197,14 +197,14 @@ RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
     ln -s $GZWEB_WS/http/client/assets http/client/assets/models && \
     ln -s $GZWEB_WS/http/client $ROOT_SRV/gzweb
 
-# patch gzsever
+# patch gzserver
 RUN GZSERVER=$(which gzserver) && \
     mv $GZSERVER $GZSERVER.orig && \
     echo '#!/bin/bash' > $GZSERVER && \
     echo 'exec xvfb-run -s "-screen 0 1280x1024x24" gzserver.orig "$@"' >> $GZSERVER && \
     chmod +x $GZSERVER
 
-# install foxglove dependacies
+# install foxglove dependencies
 RUN apt-get install -y --no-install-recommends \
       ros-$ROS_DISTRO-foxglove-bridge
 

@@ -184,6 +184,6 @@ ament_export_dependencies(
   tf2_ros
 )
 ament_export_targets(${PROJECT_NAME})
-pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)
+pluginlib_export_plugin_description_file(nav2_core plugins.xml)
 
 ament_package()

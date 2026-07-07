@@ -1,0 +1,31 @@
+name: XML BT Nodes validation
+on:
+  pull_request:
+    branches:
+      - main
+      - jazzy
+
+permissions:
+  contents: read
+
+jobs:
+  bt_nodes_validation_against_code:
+    name: XML BT Nodes validation against Nav2 code
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: tools/bt_nodes_validation/requirements.txt
+
+    - name: Install dependencies
+      run: pip install -r tools/bt_nodes_validation/requirements.txt
+
+    - name: Compare XML BT Nodes with Nav2 code
+      run: |
+        python3 tools/bt_nodes_validation/validate_bt_xml_nodes.py \
+          --config "tools/bt_nodes_validation/config.yml"

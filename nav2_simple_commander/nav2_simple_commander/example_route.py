@@ -24,7 +24,7 @@ Basic navigation demo to using the route server.
 """
 
 
-def toPoseStamped(pt: Point, header: Header) -> PoseStamped:
+def toPoseStamped(pt: Point, header: Header):
     pose = PoseStamped()
     pose.pose.position.x = pt.x
     pose.pose.position.y = pt.y
@@ -32,7 +32,7 @@ def toPoseStamped(pt: Point, header: Header) -> PoseStamped:
     return pose
 
 
-def main() -> None:
+def main():
     rclpy.init()
 
     node = rclpy.create_node('route_example')

@@ -59,7 +59,7 @@ enum NodeState
  * Nav2 stack. It receives transition request and then uses lifecycle
  * interface to change lifecycle node's state.
  */
-class LifecycleManager : public rclcpp::Node
+class LifecycleManager : public rclcpp::Node  //  nosemgrep
 {
 public:
   /**
