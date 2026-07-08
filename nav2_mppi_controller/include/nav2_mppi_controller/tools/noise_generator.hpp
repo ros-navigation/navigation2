@@ -74,6 +74,21 @@ public:
   void setNoisedControls(models::State & state, const models::ControlSequence & control_sequence);
 
   /**
+   * Computes adaptive values of the SamplingStd parameters and updates adaptive counterparts
+   * See also wz_std_decay_strength, wz_std_decay_to parameters for more information on how wz => wz_std_adaptive is computed
+   * @param state Current state of the robot
+   */
+  void computeAdaptiveStds(const models::State & state);
+
+  /**
+   * Validates decay constraints and returns true if constraints are valid
+   * @return true if decay constraints are valid
+   */
+  bool validateWzStdDecayConstraints() const;
+
+  float getWzStdAdaptive() const;
+
+  /**
    * @brief Reset noise generator with settings and model types
    * @param settings Settings of controller
    * @param is_holonomic If base is holonomic
@@ -111,6 +126,12 @@ protected:
   std::condition_variable noise_cond_;
   std::mutex noise_lock_;
   bool active_{false}, ready_{false}, regenerate_noises_{false};
+
+  /**
+   * @brief Internal variable that holds wz_std after decay is applied.
+   * If decay is disabled, SamplingStd.wz == wz_std_adaptive
+  */
+  float wz_std_adaptive;
 };
 
 }  // namespace mppi
