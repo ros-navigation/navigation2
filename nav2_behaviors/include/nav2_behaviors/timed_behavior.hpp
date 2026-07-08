@@ -279,7 +279,7 @@ protected:
         case Status::FAILED:
           result->error_code = on_cycle_update_result.error_code;
           result->error_msg = behavior_name_ + " failed:" + on_cycle_update_result.error_msg;
-          RCLCPP_WARN(logger_, result->error_msg.c_str());
+          RCLCPP_WARN(logger_, "%s", result->error_msg.c_str());
           result->total_elapsed_time = clock_->now() - start_time;
           onActionCompletion(result);
           action_server_->terminate_current(result);
