@@ -22,6 +22,8 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+include(cmake/nav2_package.cmake)
+
 if(BUILD_TESTING)
   find_package(ament_cmake_test REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
