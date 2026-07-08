@@ -118,7 +118,6 @@ void SmacPlannerHybridT<NodeT>::configure(
     node->declare_or_get_parameter(name + ".use_quadratic_cost_penalty", false);
   _search_info.downsample_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
-  // [AI-generated] Parameter plumbing below added with AI assistance (Claude).
   _search_info.incremental_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".incremental_obstacle_heuristic", false);
   if (_search_info.incremental_obstacle_heuristic &&
@@ -775,7 +774,6 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
       } else if (param_name == _name + ".incremental_obstacle_heuristic") {
-        // [AI-generated] Added with AI assistance (Claude), reviewed by the author.
         reinit_a_star = true;
         _search_info.incremental_obstacle_heuristic = parameter.as_bool();
         if (_search_info.incremental_obstacle_heuristic &&

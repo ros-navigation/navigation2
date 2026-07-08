@@ -224,7 +224,6 @@ TEST(SmacTest, test_smac_lattice)
   nodeLattice.reset();
 }
 
-// [AI-generated] Test added with AI assistance (Claude), reviewed by the author.
 TEST(SmacTest, test_smac_lattice_incremental_config)
 {
   // Configuring with incremental_obstacle_heuristic=true exercises the parameter
@@ -309,7 +308,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
 
-  // [AI-generated] exercise the incremental_obstacle_heuristic reconfigure branch
+  // exercise the incremental_obstacle_heuristic reconfigure branch
   std::vector<rclcpp::Parameter> inc_params;
   inc_params.push_back(rclcpp::Parameter("test.incremental_obstacle_heuristic", true));
   EXPECT_NO_THROW(planner->callDynamicParams(inc_params));

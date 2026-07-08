@@ -53,7 +53,8 @@ static void fillRandom(
 
 // Independent plain-Dijkstra oracle using the same cost model as the heuristic.
 static std::vector<float> dijkstraReference(
-  nav2_costmap_2d::Costmap2D * cm, unsigned int gx, unsigned int gy, float penalty)
+  nav2_costmap_2d::Costmap2D * cm, unsigned int gx, unsigned int gy, float penalty,
+  bool quad = false)
 {
   const unsigned int W = cm->getSizeInCellsX(), H = cm->getSizeInCellsY();
   const float SQRT2 = std::sqrt(2.0f);
@@ -80,7 +81,9 @@ static std::vector<float> dijkstraReference(
       unsigned int v = ny * W + nx;
       float cost = static_cast<float>(cm->getCost(v));
       if (cost >= 253.0f) {continue;}
-      float ec = (DG[i] ? SQRT2 : 1.0f) * (1.0f + penalty * cost / 252.0f);
+      const float pen = quad ?
+        (penalty * cost * cost / 63504.0f) : (penalty * cost / 252.0f);
+      float ec = (DG[i] ? SQRT2 : 1.0f) * (1.0f + pen);
       float ndist = top.first + ec;
       if (ndist < dist[v]) {
         dist[v] = ndist;
@@ -176,6 +179,30 @@ TEST(ObstacleHeuristicIncremental, matches_full_recompute_and_dijkstra)
   EXPECT_GT(changed, 0u);
   EXPECT_EQ(mism_inc, 0) << "incremental update != Dijkstra ground truth";
   EXPECT_EQ(mism_full, 0) << "full recompute != Dijkstra ground truth";
+}
+
+// The quadratic cost-penalty path must also match an independent Dijkstra using
+// the quadratic model (covers incrementalEnterCost's quadratic branch).
+TEST(ObstacleHeuristicIncremental, quadratic_penalty_matches_dijkstra)
+{
+  const unsigned int W = 80, H = 80;
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  nav2_costmap_2d::Costmap2D raw(W, H, 0.05, 0.0, 0.0, 0);
+  fillRandom(raw, W, H, 7);
+  *costmap = raw;
+  const unsigned int gx = W / 2, gy = H / 2;
+  costmap->setCost(gx, gy, 0);
+
+  const float penalty = 2.0f;
+  ObstacleHeuristic inc;
+  inc.resetIncrementalObstacleHeuristic(costmap_ros, gx, gy, penalty, /*quad=*/true);
+
+  auto ref = dijkstraReference(costmap, gx, gy, penalty, /*quad=*/true);
+  double md = 0.0;
+  EXPECT_EQ(compareFields(inc, ref, W, H, md), 0)
+    << "quadratic incremental field != quadratic Dijkstra (maxdiff=" << md << ")";
 }
 
 int main(int argc, char ** argv)

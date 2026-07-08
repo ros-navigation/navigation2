@@ -233,7 +233,6 @@ TEST(AStarTest, test_a_star_se2)
   delete costmapA;
 }
 
-// [AI-generated] Test added with AI assistance (Claude), reviewed by the author.
 TEST(AStarTest, test_a_star_se2_incremental)
 {
   // Drives the incremental (LPA*) obstacle heuristic through a full SE2 search:
@@ -302,6 +301,37 @@ TEST(AStarTest, test_a_star_se2_incremental)
   EXPECT_GT(path2.size(), 0u);
 
   delete costmapA;
+}
+
+TEST(AStarTest, test_a_star_se2_incremental_requires_start)
+{
+  // Covers the incremental-mode guard in setGoal: a goal set before any start
+  // must be rejected (the field is rooted per-request and needs the start).
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test_inc_nostart");
+  nav2_smac_planner::SearchInfo info;
+  info.minimum_turning_radius = 8;  // in grid coordinates
+  info.cost_penalty = 1.7;
+  info.incremental_obstacle_heuristic = true;
+  unsigned int size_theta = 72;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+
+  // No setStart(): the incremental branch must throw.
+  EXPECT_THROW(a_star.setGoal(80u, 80u, 40u), std::runtime_error);
 }
 
 TEST(AStarTest, test_a_star_analytic_expansion)

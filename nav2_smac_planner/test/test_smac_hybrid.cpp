@@ -221,7 +221,6 @@ TEST(SmacTest, test_smac_se2)
   nodeSE2.reset();
 }
 
-// [AI-generated] Test added with AI assistance (Claude), reviewed by the author.
 TEST(SmacTest, test_smac_se2_incremental_config)
 {
   // Configuring with incremental_obstacle_heuristic=true exercises the parameter
