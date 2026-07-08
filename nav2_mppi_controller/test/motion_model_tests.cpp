@@ -270,7 +270,7 @@ TEST(MotionModelTests, DelayReplayAllAxes)
   OmniMotionModel model;
 
   // Set model_dt, model_delay_vx, model_delay_vy, model_delay_wz = 0.05f, 0.10f, 0.10f, 0.15f;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.10f, 0.10f, 0.15f);
+  model.setConstraints(unboundedConstraints(), 0.05f, 0.10f, 0.10f, 0.15f, false);
 
   // Ring-buffer size of vx/vy/wz = 2/2/3 steps
   // After 3 pushes per axis the rings hold the most-recent 2/2/3 values.
@@ -307,7 +307,7 @@ TEST(MotionModelTests, DelayVyIgnoredOnDiffDrive)
   state.reset(8, 20);
 
   DiffDriveMotionModel model;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.10f, 0.0f);
+  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.10f, 0.0f, false);
   model.pushCommandHistory(0.0f, 99.0f, 0.0f);
   model.pushCommandHistory(0.0f, 99.0f, 0.0f);
 
@@ -321,7 +321,7 @@ TEST(MotionModelTests, DelayClearCommandHistory)
   state.reset(8, 20);
 
   DiffDriveMotionModel model;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.10f, 0.0f, 0.15f);
+  model.setConstraints(unboundedConstraints(), 0.05f, 0.10f, 0.0f, 0.15f, false);
   model.pushCommandHistory(7.0f, 0.0f, 7.0f);
   model.clearCommandHistory();
   model.predict(state);
@@ -341,7 +341,7 @@ TEST(MotionModelTests, DelayZeroSkipsShift)
   state.cvx.setConstant(2.0f);
 
   DiffDriveMotionModel model;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.0f, 0.0f);
+  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.0f, 0.0f, false);
   EXPECT_NO_THROW(model.pushCommandHistory(123.0f, 0.0f, 0.0f));
   model.predict(state);
 
