@@ -248,7 +248,7 @@ TEST(SmootherTest, rejects_non_circular_footprint_collision)
     ASSERT_LT(footprint_cost, nav2_costmap_2d::LETHAL_OBSTACLE);
   }
 
-  const bool success = smoother.smooth(path, &costmap, 1.0);
+  const bool success = smoother.smooth(path, &costmap, 1.0, footprint, false);
 
   bool footprint_collision = false;
   for (const auto & path_pose : path.poses) {
