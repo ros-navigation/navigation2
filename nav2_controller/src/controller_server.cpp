@@ -731,16 +731,6 @@ void ControllerServer::computeAndPublishVelocity()
 
   nav2_msgs::msg::TrackingFeedback current_tracking_feedback;
 
-  // Use the current robot pose's timestamp for the transformation
-  end_pose_.header.stamp = pose.header.stamp;
-
-  if (!nav2_util::transformPoseInTargetFrame(
-      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
-      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
-  {
-    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
-  }
-
   if (current_path_.poses.size() >= 2) {
     double current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
       pose, transformed_end_pose_);
@@ -911,6 +901,14 @@ bool ControllerServer::isGoalReached()
 
   if (!getRobotPose(pose)) {
     return false;
+  }
+
+  end_pose_.header.stamp = pose.header.stamp;
+  if (!nav2_util::transformPoseInTargetFrame(
+      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
+      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
+  {
+    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
   }
 
   geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());
