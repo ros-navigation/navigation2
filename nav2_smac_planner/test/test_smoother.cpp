@@ -95,7 +95,7 @@ TEST(SmootherTest, test_full_smoother)
 
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, node);
-  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  checker->setFootprint(std::vector<geometry_msgs::msg::Point>(), true, 0.0);
 
   auto dummy_cancel_checker = []() {
       return false;
@@ -201,9 +201,9 @@ TEST(SmootherTest, rejects_non_circular_footprint_collision)
   nav2_costmap_2d::Costmap2D costmap(
     200, 200, 0.1, 0.0, 0.0, nav2_costmap_2d::FREE_SPACE);
 
-  nav2_costmap_2d::Footprint footprint;
+  std::vector<geometry_msgs::msg::Point> footprint;
   for (const auto & coordinates : std::vector<std::pair<double, double>>{
-      {-0.6, -0.2}, {0.6, -0.2}, {0.6, 0.2}, {-0.6, 0.2}})
+    {-0.6, -0.2}, {0.6, -0.2}, {0.6, 0.2}, {-0.6, 0.2}})
   {
     geometry_msgs::msg::Point point;
     point.x = coordinates.first;

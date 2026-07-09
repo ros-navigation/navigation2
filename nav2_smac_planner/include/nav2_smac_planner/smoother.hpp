@@ -23,6 +23,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "ompl/base/StateSpace.h"
+#include "geometry_msgs/msg/point.hpp"
 
 namespace nav2_smac_planner
 {
@@ -97,8 +98,9 @@ public:
   bool smooth(
     nav_msgs::msg::Path & path,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time，
-    const nav2_costmap_2d::Footprint & footprint = nav2_costmap_2d::Footprint(),
+    const double & max_time,
+    const std::vector<geometry_msgs::msg::Point> & footprint =
+    std::vector<geometry_msgs::msg::Point>(),
     const bool & use_radius = true);
 
 protected:
@@ -115,7 +117,7 @@ protected:
     bool & reversing_segment,
     const nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time,
-    const nav2_costmap_2d::Footprint & footprint,
+    const std::vector<geometry_msgs::msg::Point> & footprint,
     const bool & use_radius);
 
   /**

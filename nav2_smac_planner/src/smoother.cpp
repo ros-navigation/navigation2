@@ -54,9 +54,8 @@ bool Smoother::smooth(
   nav_msgs::msg::Path & path,
   const nav2_costmap_2d::Costmap2D * costmap,
   const double & max_time,
-  const double & max_time,
-  const nav2_costmap_2d::Footprint & footprint = nav2_costmap_2d::Footprint(),
-  const bool & use_radius = true)
+  const std::vector<geometry_msgs::msg::Point> & footprint,
+  const bool & use_radius)
 {
   // by-pass path orientations approximation when skipping smac smoother
   if (max_its_ == 0) {
@@ -90,7 +89,8 @@ bool Smoother::smooth(
       const geometry_msgs::msg::Pose start_pose = curr_path_segment.poses.front().pose;
       const geometry_msgs::msg::Pose goal_pose = curr_path_segment.poses.back().pose;
       bool local_success =
-        smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining, 
+        smoothImpl(
+        curr_path_segment, reversing_segment, costmap, time_remaining,
         footprint, use_radius);
       success = success && local_success;
 
@@ -115,9 +115,8 @@ bool Smoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment,
   const nav2_costmap_2d::Costmap2D * costmap,
-  const double & max_time，
   const double & max_time,
-  const nav2_costmap_2d::Footprint & footprint,
+  const std::vector<geometry_msgs::msg::Point> & footprint,
   const bool & use_radius)
 {
   steady_clock::time_point a = steady_clock::now();
@@ -192,21 +191,21 @@ bool Smoother::smoothImpl(
         return false;
       }
     }
-    
+
     if (costmap && !use_radius) {
       nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
 
-      nav2_costmap_2d::FootprintCollisionChecker<const nav2_costmap_2d::Costmap2D *>
-      footprint_checker(costmap);
+      nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
+      footprint_checker(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
 
       for (const auto & pose : new_path.poses) {
         const double footprint_cost = footprint_checker.footprintCostAtPose(
-          pose.pose.position.x, 
-          pose.pose.position.y, 
-          f2f::getYaw(pose.pose.orientation), 
+          pose.pose.position.x,
+          pose.pose.position.y,
+          tf2::getYaw(pose.pose.orientation),
           footprint);
-        
-        if (footprint_cost >= nav2_costmap_2d::LETHAL_OBSTACLE) {
+
+        if (footprint_cost > MAX_NON_OBSTACLE_COST && footprint_cost != UNKNOWN_COST) {
           RCLCPP_DEBUG(
             rclcpp::get_logger("SmacPlannerSmoother"),
             "Smoothing process resulted in an infeasible footprint collision. "
