@@ -19,9 +19,52 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/controller_server.hpp"
 #include "rclcpp/rclcpp.hpp"
+
+class ControllerServerShim : public nav2_controller::ControllerServer
+{
+public:
+  using nav2_controller::ControllerServer::ControllerServer;
+
+  void setEndPoseFrame(const std::string & frame) {end_pose_.header.frame_id = frame;}
+  bool callIsGoalReached() {return isGoalReached();}
+  tf2_ros::Buffer & getTfBuffer() {return *costmap_ros_->getTfBuffer();}
+};
+
+TEST(ControllerServerTest, IsGoalReachedThrowsOnTfFailure)
+{
+  // aa
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({
+    rclcpp::Parameter("progress_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("goal_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("controller_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("path_handler_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("filters", std::vector<std::string>{}),
+  });
+
+  auto server = std::make_shared<ControllerServerShim>(options);
+  ASSERT_EQ(
+    server->configure().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+
+  geometry_msgs::msg::TransformStamped tf_msg;
+  tf_msg.header.stamp = server->now();
+  tf_msg.header.frame_id = "map";
+  tf_msg.child_frame_id = "base_link";
+  tf_msg.transform.rotation.w = 1.0;
+  server->getTfBuffer().setTransform(tf_msg, "test", true);
+
+  server->setEndPoseFrame("nonexistent_frame_xyz");
+  EXPECT_THROW(server->callIsGoalReached(), nav2_core::ControllerTFError);
+  server->cleanup();
+}
 
 TEST(ControllerServerTest, GoalCheckerPluginTypeException)
 {
