@@ -174,6 +174,16 @@ TEST(DatabaseTests, reloadDbService)
     rclcpp::spin_until_future_complete(node, result2, 2s),
     rclcpp::FutureReturnCode::SUCCESS);
   EXPECT_FALSE(result2.get()->success);
+
+  auto request3 = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
+  request3->filepath = nav2::get_package_share_directory("opennav_docking") +
+    "/dock_files/test_dock_bad_conversion_file.yaml";
+  EXPECT_TRUE(client->wait_for_service(1s));
+  auto result3 = client->async_call(request3);
+  EXPECT_EQ(
+    rclcpp::spin_until_future_complete(node, result3, 2s),
+    rclcpp::FutureReturnCode::SUCCESS);
+  EXPECT_FALSE(result3.get()->success);
 }
 
 TEST(DatabaseTests, reloadDbMutexLocked)

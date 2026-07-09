@@ -189,21 +189,18 @@ bool DockDatabase::getDockInstances(const nav2::LifecycleNode::SharedPtr & node)
 {
   // Attempt to obtain docks from separate file
   std::string dock_filepath;
+  bool dock_filepath_given = false;
   try {
     dock_filepath = node->declare_or_get_parameter<std::string>("dock_database");
-    RCLCPP_INFO(
-      node->get_logger(), "Loading dock from database file  %s.", dock_filepath.c_str());
-    try {
-      return utils::parseDockFile(dock_filepath, node, dock_instances_);
-    } catch (YAML::BadConversion & e) {
-      RCLCPP_ERROR(
-        node->get_logger(),
-        "Dock database (%s) is malformed: %s.", dock_filepath.c_str(), e.what());
-      return false;
-    }
-    return true;
+    dock_filepath_given = true;
   } catch (...) {
     // pass
+  }
+
+  if (dock_filepath_given) {
+    RCLCPP_INFO(
+      node->get_logger(), "Loading dock from database file  %s.", dock_filepath.c_str());
+    return utils::parseDockFile(dock_filepath, node, dock_instances_);
   }
 
   // Attempt to obtain docks from parameter file

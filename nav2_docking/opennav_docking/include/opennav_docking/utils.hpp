@@ -61,48 +61,55 @@ inline bool parseDockFile(
     return false;
   }
 
-  auto yaml_docks = yaml_file["docks"];
-  Dock curr_dock;
-  for (const auto & yaml_dock : yaml_docks) {
-    std::string dock_name = yaml_dock.first.as<std::string>();
-    const YAML::Node & dock_attribs = yaml_dock.second;
+  try {
+    auto yaml_docks = yaml_file["docks"];
+    for (const auto & yaml_dock : yaml_docks) {
+      std::string dock_name = yaml_dock.first.as<std::string>();
+      const YAML::Node & dock_attribs = yaml_dock.second;
+      Dock curr_dock;
 
-    curr_dock.frame = "map";
-    if (dock_attribs["frame"]) {
-      curr_dock.frame = dock_attribs["frame"].as<std::string>();
-    }
+      curr_dock.frame = "map";
+      if (dock_attribs["frame"]) {
+        curr_dock.frame = dock_attribs["frame"].as<std::string>();
+      }
 
-    if (!dock_attribs["type"]) {
-      RCLCPP_ERROR(
-        node->get_logger(),
-        "Dock database (%s) entries do not contain 'type'.", yaml_filepath.c_str());
-      return false;
-    }
-    curr_dock.type = dock_attribs["type"].as<std::string>();
+      if (!dock_attribs["type"]) {
+        RCLCPP_ERROR(
+          node->get_logger(),
+          "Dock database (%s) entries do not contain 'type'.", yaml_filepath.c_str());
+        return false;
+      }
+      curr_dock.type = dock_attribs["type"].as<std::string>();
 
-    if (!dock_attribs["pose"]) {
-      RCLCPP_ERROR(
-        node->get_logger(),
-        "Dock database (%s) entries do not contain 'pose'.", yaml_filepath.c_str());
-      return false;
-    }
-    std::vector<double> pose_arr = dock_attribs["pose"].as<std::vector<double>>();
-    if (pose_arr.size() != 3u) {
-      RCLCPP_ERROR(
-        node->get_logger(),
-        "Dock database (%s) entries do not contain pose of size 3.", yaml_filepath.c_str());
-      return false;
-    }
-    curr_dock.pose.position.x = pose_arr[0];
-    curr_dock.pose.position.y = pose_arr[1];
-    curr_dock.pose.orientation = orientationAroundZAxis(pose_arr[2]);
+      if (!dock_attribs["pose"]) {
+        RCLCPP_ERROR(
+          node->get_logger(),
+          "Dock database (%s) entries do not contain 'pose'.", yaml_filepath.c_str());
+        return false;
+      }
+      std::vector<double> pose_arr = dock_attribs["pose"].as<std::vector<double>>();
+      if (pose_arr.size() != 3u) {
+        RCLCPP_ERROR(
+          node->get_logger(),
+          "Dock database (%s) entries do not contain pose of size 3.", yaml_filepath.c_str());
+        return false;
+      }
+      curr_dock.pose.position.x = pose_arr[0];
+      curr_dock.pose.position.y = pose_arr[1];
+      curr_dock.pose.orientation = orientationAroundZAxis(pose_arr[2]);
 
-    if (dock_attribs["id"]) {
-      curr_dock.id = dock_attribs["id"].as<std::string>();
-    }
+      if (dock_attribs["id"]) {
+        curr_dock.id = dock_attribs["id"].as<std::string>();
+      }
 
-    // Insert into dock instance database
-    dock_db.emplace(dock_name, curr_dock);
+      // Insert into dock instance database
+      dock_db.emplace(dock_name, curr_dock);
+    }
+  } catch (const YAML::Exception & e) {
+    RCLCPP_ERROR(
+      node->get_logger(),
+      "Dock database (%s) is malformed: %s.", yaml_filepath.c_str(), e.what());
+    return false;
   }
 
   return true;

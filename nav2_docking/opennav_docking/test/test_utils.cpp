@@ -106,8 +106,8 @@ TEST(UtilsTests, parseDockFile)
   EXPECT_EQ(db["dock2"].pose.position.x, 0.0);
   EXPECT_EQ(db["dock2"].pose.position.y, 0.0);
   EXPECT_NE(db["dock2"].pose.orientation.w, 1.0);
-  EXPECT_EQ(db["dock1"].id, std::string(""));
-  EXPECT_EQ(db["dock2"].id, std::string("2"));
+  EXPECT_EQ(db["dock1"].id, std::string("1"));
+  EXPECT_EQ(db["dock2"].id, std::string(""));
 }
 
 TEST(UtilsTests, parseDockFile2)
@@ -133,6 +133,10 @@ TEST(UtilsTests, parseDockFile2)
   // Test with a file that has wring pose array size
   filepath = nav2::get_package_share_directory("opennav_docking") +
     "/dock_files/test_dock_bad_pose_file.yaml";
+  EXPECT_FALSE(utils::parseDockFile(filepath, node, db));
+
+  filepath = nav2::get_package_share_directory("opennav_docking") +
+    "/dock_files/test_dock_bad_conversion_file.yaml";
   EXPECT_FALSE(utils::parseDockFile(filepath, node, db));
 }
 
