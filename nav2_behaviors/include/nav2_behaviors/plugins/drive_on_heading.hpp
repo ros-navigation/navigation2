@@ -66,14 +66,14 @@ public:
     std::string error_msg;
     if (command->target.y != 0.0 || command->target.z != 0.0) {
       error_msg = "DrivingOnHeading in Y and Z not supported, will only move in X.";
-      RCLCPP_INFO(this->logger_, error_msg.c_str());
+      RCLCPP_INFO(this->logger_, "%s", error_msg.c_str());
       return ResultStatus{Status::FAILED, ActionT::Result::INVALID_INPUT, error_msg};
     }
 
     // Ensure that both the speed and direction have the same sign
     if (!((command->target.x > 0.0) == (command->speed > 0.0)) ) {
       error_msg = "Speed and command sign did not match";
-      RCLCPP_ERROR(this->logger_, error_msg.c_str());
+      RCLCPP_ERROR(this->logger_, "%s", error_msg.c_str());
       return ResultStatus{Status::FAILED, ActionT::Result::INVALID_INPUT, error_msg};
     }
 
@@ -89,7 +89,7 @@ public:
         this->transform_tolerance_))
     {
       error_msg = "Initial robot pose is not available.";
-      RCLCPP_ERROR(this->logger_, error_msg.c_str());
+      RCLCPP_ERROR(this->logger_, "%s", error_msg.c_str());
       return ResultStatus{Status::FAILED, ActionT::Result::TF_ERROR, error_msg};
     }
 
@@ -107,7 +107,7 @@ public:
       this->stopRobot();
       std::string error_msg =
         "Exceeded time allowance before reaching the DriveOnHeading goal - Exiting DriveOnHeading";
-      RCLCPP_WARN(this->logger_, error_msg.c_str());
+      RCLCPP_WARN(this->logger_, "%s", error_msg.c_str());
       return ResultStatus{Status::FAILED, ActionT::Result::TIMEOUT, error_msg};
     }
 
@@ -117,7 +117,7 @@ public:
         this->transform_tolerance_))
     {
       std::string error_msg = "Current robot pose is not available.";
-      RCLCPP_ERROR(this->logger_, error_msg.c_str());
+      RCLCPP_ERROR(this->logger_, "%s", error_msg.c_str());
       return ResultStatus{Status::FAILED, ActionT::Result::TF_ERROR, error_msg};
     }
 
@@ -168,7 +168,7 @@ public:
     if (!isCollisionFree(distance, cmd_vel->twist, pose2d)) {
       this->stopRobot();
       std::string error_msg = "Collision Ahead - Exiting DriveOnHeading";
-      RCLCPP_WARN(this->logger_, error_msg.c_str());
+      RCLCPP_WARN(this->logger_, "%s", error_msg.c_str());
       return ResultStatus{Status::FAILED, ActionT::Result::COLLISION_AHEAD, error_msg};
     }
 

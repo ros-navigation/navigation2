@@ -21,7 +21,7 @@ ResultStatus BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> comma
 {
   if (command->target.y != 0.0 || command->target.z != 0.0) {
     std::string error_msg = "Backing up in Y and Z not supported, will only move in X.";
-    RCLCPP_INFO(logger_, error_msg.c_str());
+    RCLCPP_INFO(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, BackUpActionResult::INVALID_INPUT, error_msg};
   }
 
@@ -38,7 +38,7 @@ ResultStatus BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> comma
       transform_tolerance_))
   {
     std::string error_msg = "Initial robot pose is not available.";
-    RCLCPP_ERROR(logger_, error_msg.c_str());
+    RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, BackUpActionResult::TF_ERROR, error_msg};
   }
 
