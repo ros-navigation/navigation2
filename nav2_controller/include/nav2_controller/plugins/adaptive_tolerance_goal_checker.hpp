@@ -159,6 +159,13 @@ protected:
   std::string plugin_name_;
 
   /**
+    * @brief Convert XY acceptance reason to string
+    * @param reason The XY acceptance reason
+    * @return String representation of the XY acceptance reason
+    */
+  static std::string toString(XyAcceptanceReason reason);
+
+  /**
    * @brief Validate incoming parameter updates before applying them.
    * This callback is triggered when one or more parameters are about to be updated.
    * It checks the validity of parameter values and rejects updates that would lead

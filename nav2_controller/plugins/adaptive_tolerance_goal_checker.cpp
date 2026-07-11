@@ -166,24 +166,7 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
     yaw_reached = std::fabs(dyaw) <= yaw_goal_tolerance_;
   }
 
-  std::string xy_acceptance_reason;
-  switch (xy_acceptance_reason_) {
-    case XyAcceptanceReason::FINE_TOLERANCE:
-      xy_acceptance_reason = "fine tolerance";
-      break;
-    case XyAcceptanceReason::COARSE_TOLERANCE_FINISH_LINE:
-      xy_acceptance_reason = "coarse tolerance / finish line";
-      break;
-    case XyAcceptanceReason::COARSE_TOLERANCE_STOPPED_STAGNATION:
-      xy_acceptance_reason = "coarse tolerance / stopped stagnation";
-      break;
-    case XyAcceptanceReason::COARSE_TOLERANCE_DISTANCE_STAGNATION:
-      xy_acceptance_reason = "coarse tolerance / distance stagnation";
-      break;
-    case XyAcceptanceReason::NONE:
-    default:
-      xy_acceptance_reason = "unknown";
-  }
+  std::string xy_acceptance_reason = toString(xy_acceptance_reason_);
 
   if (yaw_reached) {
     RCLCPP_INFO(
@@ -335,6 +318,23 @@ bool AdaptiveToleranceGoalChecker::getTolerances(
   path_length_tolerance = path_length_tolerance_;
 
   return true;
+}
+
+std::string AdaptiveToleranceGoalChecker::toString(XyAcceptanceReason reason)
+{
+  switch (reason) {
+    case XyAcceptanceReason::FINE_TOLERANCE:
+      return "fine tolerance";
+    case XyAcceptanceReason::COARSE_TOLERANCE_FINISH_LINE:
+      return "coarse tolerance / finish line";
+    case XyAcceptanceReason::COARSE_TOLERANCE_STOPPED_STAGNATION:
+      return "coarse tolerance / stopped stagnation";
+    case XyAcceptanceReason::COARSE_TOLERANCE_DISTANCE_STAGNATION:
+      return "coarse tolerance / distance stagnation";
+    case XyAcceptanceReason::NONE:
+    default:
+      return "unknown";
+  }
 }
 
 rcl_interfaces::msg::SetParametersResult
