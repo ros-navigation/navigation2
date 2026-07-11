@@ -106,7 +106,7 @@ AsymmetricInflationLayer::onInitialize()
       std::bind(
         &AsymmetricInflationLayer::globalPathCallback,
         this, std::placeholders::_1),
-      nav2::qos::StandardTopicQoS(1));
+      nav2::qos::StandardTopicQoS());
   }
 
   setCurrent(true);
