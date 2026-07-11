@@ -579,34 +579,45 @@ TEST_F(AsymmetricInflationIntegrationTest, extract_path_segments_no_cached_trans
     << "No cached transform must force symmetric fallback";
 }
 
-// With a valid static TF transform available, extractLocalPathSegments must
-// apply tf2::doTransform to each segment endpoint.
-TEST_F(AsymmetricInflationIntegrationTest, transform_path_segments_with_valid_tf)
+// With a valid static TF that extractLocalPathSegments must map the local window back into the
+// path frame to cull, then tf2::doTransform the surviving segment endpoints into the costmap frame.
+TEST_F(AsymmetricInflationIntegrationTest, transform_path_segments_with_rotated_tf)
 {
-  // Register an identity static transform: map ← odom.
-  geometry_msgs::msg::TransformStamped identity_tf;
-  identity_tf.header.frame_id = "map";
-  identity_tf.child_frame_id = "odom";
-  identity_tf.header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
-  identity_tf.transform.rotation.w = 1.0;
-  tf_->setTransform(identity_tf, "test", true);  // static=true → available at all times
+  // map ← odom transform: yaw rotation about z plus a translation. A non-90°
+  // yaw makes the inverse-mapped costmap window a rotated (non-axis-aligned)
+  // box, exercising the conservative-superset path-frame cull.
+  const double yaw = 0.6;  // ~34.4°
+  const double tx = 0.3, ty = -0.2;
+  const double cos_y = std::cos(yaw);
+  const double sin_y = std::sin(yaw);
 
-  // Inject 4-pose path in "odom" frame.  TF lookup will succeed and
-  // latest_path_transform_ is set to the identity transform.
+  geometry_msgs::msg::TransformStamped rotated_tf;
+  rotated_tf.header.frame_id = "map";
+  rotated_tf.child_frame_id = "odom";
+  rotated_tf.header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  rotated_tf.transform.translation.x = tx;
+  rotated_tf.transform.translation.y = ty;
+  rotated_tf.transform.rotation.z = std::sin(yaw / 2.0);
+  rotated_tf.transform.rotation.w = std::cos(yaw / 2.0);
+  tf_->setTransform(rotated_tf, "test", true);  // static=true → available at all times
+
+  // Inject 4-pose path in "odom" frame.
   auto path = std::make_shared<nav_msgs::msg::Path>();
   path->header.frame_id = "odom";
   path->header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
   for (double x : {0.5, 1.5, 2.5, 3.5}) {
+    const double dx = x - tx;
+    const double dy = 2.0 - ty;
     geometry_msgs::msg::PoseStamped pose;
     pose.header.frame_id = "odom";
-    pose.pose.position.x = x;
-    pose.pose.position.y = 2.0;
+    pose.pose.position.x = cos_y * dx + sin_y * dy;
+    pose.pose.position.y = -sin_y * dx + cos_y * dy;
     path->poses.push_back(pose);
   }
   layer_->injectPath(path);
 
-  // With left disfavored and the identity transform, the inflated layout must
-  // match the same-frame case.
+  // With left disfavored, the obstacle north of the (map-frame) path is on the
+  // disfavored side and must receive higher costs than the favored south side.
   layer_->setSideFactors(1.0, 10.0);
   seedLethalObstacle(20, 24);  // north side — disfavored
 
@@ -616,7 +627,7 @@ TEST_F(AsymmetricInflationIntegrationTest, transform_path_segments_with_valid_tf
   unsigned char left_cost = costmap->getCost(20, 28);
   unsigned char right_cost = costmap->getCost(20, 12);
   EXPECT_GT(left_cost, right_cost)
-    << "TF-transformed path must still produce asymmetric costs";
+    << "A rotated + translated TF path must still produce asymmetric costs";
 }
 
 // ============================================================

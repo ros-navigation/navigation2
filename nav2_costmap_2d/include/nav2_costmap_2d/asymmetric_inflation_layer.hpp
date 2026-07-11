@@ -132,8 +132,8 @@ protected:
   /**
    * @brief Extract global path segments that overlap the local costmap window.
    *
-   * Transforms the path into the costmap frame via TF2. Returns an empty
-   * vector when the robot is within goal_distance_threshold_ of the goal,
+   * Transforms the path inside the local costmap window into the costmap frame via TF2.
+   * Returns an empty vector when the robot is within goal_distance_threshold_ of the goal,
    * which disables asymmetry near the goal to prevent docking oscillations.
    * @param master_grid Reference costmap used to filter points to the current window.
    * @return Path segments in costmap-frame world coordinates; empty disables asymmetry.

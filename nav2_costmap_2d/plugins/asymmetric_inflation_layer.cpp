@@ -264,27 +264,64 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   const double map_max_y = map_min_y +
     static_cast<double>(master_grid.getSizeInCellsY()) * master_grid.getResolution();
 
+  // Calculate the AABB of the local window in path frame
+  double win_min_x = map_min_x, win_max_x = map_max_x;
+  double win_min_y = map_min_y, win_max_y = map_max_y;
+  if (need_transform) {
+    tf2::Transform tf;
+    tf2::fromMsg(cached_transform->transform, tf);   // path_frame -> global_frame
+    const tf2::Transform inv = tf.inverse();         // global_frame -> path_frame
+
+    win_min_x = win_min_y = std::numeric_limits<double>::max();
+    win_max_x = win_max_y = std::numeric_limits<double>::lowest();
+
+    const double cxs[4] = {map_min_x, map_max_x, map_max_x, map_min_x};
+    const double cys[4] = {map_min_y, map_min_y, map_max_y, map_max_y};
+    for (int c = 0; c < 4; ++c) {
+      const tf2::Vector3 p = inv * tf2::Vector3(cxs[c], cys[c], 0.0);
+      win_min_x = std::min(win_min_x, p.x());
+      win_max_x = std::max(win_max_x, p.x());
+      win_min_y = std::min(win_min_y, p.y());
+      win_max_y = std::max(win_max_y, p.y());
+    }
+  }
+
   // Extract path segments from local window.
   for (size_t i = 1; i < current_path.poses.size(); ++i) {
-    geometry_msgs::msg::PoseStamped transformed_start = current_path.poses[i - 1];
-    geometry_msgs::msg::PoseStamped transformed_end = current_path.poses[i];
-    if (need_transform) {
-      tf2::doTransform(current_path.poses[i - 1], transformed_start, *cached_transform);
-      tf2::doTransform(current_path.poses[i], transformed_end, *cached_transform);
+    const auto & pa = current_path.poses[i - 1].pose.position;
+    const auto & pb = current_path.poses[i].pose.position;
+
+    // Cull in the path frame, before transforming.
+    const double seg_min_x = std::min(pa.x, pb.x) - inflation_radius_;
+    const double seg_max_x = std::max(pa.x, pb.x) + inflation_radius_;
+    const double seg_min_y = std::min(pa.y, pb.y) - inflation_radius_;
+    const double seg_max_y = std::max(pa.y, pb.y) + inflation_radius_;
+    if (seg_max_x < win_min_x || seg_min_x > win_max_x ||
+      seg_max_y < win_min_y || seg_min_y > win_max_y)
+    {
+      continue;
     }
 
-    const double ax = transformed_start.pose.position.x;
-    const double ay = transformed_start.pose.position.y;
-    const double bx = transformed_end.pose.position.x;
-    const double by = transformed_end.pose.position.y;
+    // Calculate transform for path segments that are within the transformed local window.
+    double ax = pa.x, ay = pa.y, bx = pb.x, by = pb.y;
+    if (need_transform) {
+      geometry_msgs::msg::PoseStamped transformed_start;
+      geometry_msgs::msg::PoseStamped transformed_end;
+      tf2::doTransform(current_path.poses[i - 1], transformed_start, *cached_transform);
+      tf2::doTransform(current_path.poses[i], transformed_end, *cached_transform);
+      ax = transformed_start.pose.position.x;
+      ay = transformed_start.pose.position.y;
+      bx = transformed_end.pose.position.x;
+      by = transformed_end.pose.position.y;
 
-    const double min_x = std::min(ax, bx) - inflation_radius_;
-    const double max_x = std::max(ax, bx) + inflation_radius_;
-    const double min_y = std::min(ay, by) - inflation_radius_;
-    const double max_y = std::max(ay, by) + inflation_radius_;
-
-    if (max_x < map_min_x || min_x > map_max_x || max_y < map_min_y || min_y > map_max_y) {
-      continue;
+      // Re-cull in the costmap frame to ensure that only segments that touch the costmap are kept.
+      const double min_x = std::min(ax, bx) - inflation_radius_;
+      const double max_x = std::max(ax, bx) + inflation_radius_;
+      const double min_y = std::min(ay, by) - inflation_radius_;
+      const double max_y = std::max(ay, by) + inflation_radius_;
+      if (max_x < map_min_x || min_x > map_max_x || max_y < map_min_y || min_y > map_max_y) {
+        continue;
+      }
     }
 
     local_path_segments.push_back({{ax, ay}, {bx, by}});
