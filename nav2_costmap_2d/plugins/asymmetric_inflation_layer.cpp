@@ -670,6 +670,8 @@ rcl_interfaces::msg::SetParametersResult
 AsymmetricInflationLayer::validateParameterUpdatesCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
+  // The parent callback is name-agnostic: it rejects any negative double.
+  // Since every parameter this layer adds requires >= 0, delegating validates them all.
   return InflationLayer::validateParameterUpdatesCallback(parameters);
 }
 
