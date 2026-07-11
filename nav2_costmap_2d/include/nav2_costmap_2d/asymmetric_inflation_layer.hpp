@@ -245,6 +245,8 @@ protected:
   /// Distance to goal where asymmetry disables to prevent docking oscillations
   double goal_distance_threshold_;
   std::string plan_topic_;
+  /// Timeout for path-frame TF lookups
+  tf2::Duration transform_tolerance_;
 
   // --- State ---
   double current_robot_x_{0.0};

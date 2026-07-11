@@ -52,6 +52,8 @@ void
 AsymmetricInflationLayer::onInitialize()
 {
   {
+    double temp_tf_tol = 0.0;
+
     auto node = node_.lock();
     if (!node) {
       throw std::runtime_error{"Failed to lock node"};
@@ -74,8 +76,10 @@ AsymmetricInflationLayer::onInitialize()
     goal_distance_threshold_ = node->declare_or_get_parameter(
       name_ + "." + "goal_distance_threshold", 1.5);
 
-    // Apply the same bound checks as dynamic reconfigure, so bad YAML values fail
-    // loudly at startup instead of silently producing bad costmaps.
+    // Get costmap2d-level parameter
+    node->get_parameter("transform_tolerance", temp_tf_tol);
+    transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+
     if (inflation_radius_ < 0.0) {
       throw std::runtime_error(
         "AsymmetricInflationLayer: inflation_radius must be >= 0");
@@ -95,6 +99,10 @@ AsymmetricInflationLayer::onInitialize()
     if (num_threads_ < -1) {
       throw std::runtime_error(
         "AsymmetricInflationLayer: num_threads must be -1 (auto) or > 0");
+    }
+    if (temp_tf_tol < 0.0) {
+      throw std::runtime_error(
+        "AsymmetricInflationLayer: transform_tolerance must be >= 0");
     }
 
     cost_scaling_factor_ =
@@ -158,7 +166,7 @@ AsymmetricInflationLayer::globalPathCallback(const nav_msgs::msg::Path::SharedPt
   if (global_frame != path_frame && !path_frame.empty()) {
     try {
       transform = tf_->lookupTransform(global_frame, path_frame,
-          tf2_ros::fromMsg(msg->header.stamp));
+          tf2_ros::fromMsg(msg->header.stamp), transform_tolerance_);
     } catch (const tf2::TransformException & ex) {
       RCLCPP_WARN(
           logger_,
