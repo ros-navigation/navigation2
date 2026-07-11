@@ -100,8 +100,7 @@ public:
     const nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time,
     const std::vector<geometry_msgs::msg::Point> & footprint =
-    std::vector<geometry_msgs::msg::Point>(),
-    const bool & use_radius = true);
+    std::vector<geometry_msgs::msg::Point>());
 
 protected:
   /**
@@ -117,8 +116,7 @@ protected:
     bool & reversing_segment,
     const nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time,
-    const std::vector<geometry_msgs::msg::Point> & footprint,
-    const bool & use_radius);
+    const std::vector<geometry_msgs::msg::Point> & footprint);
 
   /**
    * @brief Get the field value for a given dimension
