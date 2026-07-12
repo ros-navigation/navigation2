@@ -425,7 +425,7 @@ AsymmetricInflationLayer::updateCosts(
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
-  if (!enabled_) {
+  if (!enabled_ || cell_inflation_radius_ == 0) {
     return;
   }
 
