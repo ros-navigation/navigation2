@@ -251,6 +251,7 @@ protected:
   // --- State ---
   double current_robot_x_{0.0};
   double current_robot_y_{0.0};
+  bool asymmetry_active_{false};
 
   // --- Asymmetric Lookup Table ---
   /// Cost LUT for the disfavored side, built with c_side (the smaller per-side scaling factor)

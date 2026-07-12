@@ -119,6 +119,7 @@ AsymmetricInflationLayer::onInitialize()
 
   setCurrent(true);
   need_reinflation_ = false;
+  asymmetry_active_ = false;
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
 }
@@ -433,8 +434,19 @@ AsymmetricInflationLayer::updateCosts(
 
   std::vector<AsymmetricPathSegment> local_path_segments = extractLocalPathSegments(master_grid);
 
+  // Whether the disfavored-side overlay applies this cycle.
+  const bool asymmetry_active =
+    !local_path_segments.empty() && cost_scaling_factor_left_ != cost_scaling_factor_right_;
+
+  // Force full-map reinflation if the asymmetry state has changed since the last cycle.
+  if (asymmetry_active != asymmetry_active_) {
+    asymmetry_active_ = asymmetry_active;
+    need_reinflation_ = true;
+    setCurrent(false);
+  }
+
   // Abort if we don't have a valid path or if the scaling rates are equal (no asymmetry).
-  if (local_path_segments.empty() || cost_scaling_factor_left_ == cost_scaling_factor_right_) {
+  if (!asymmetry_active) {
     setCurrent(true);
     return;
   }
