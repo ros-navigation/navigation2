@@ -25,7 +25,6 @@
 
 #include "nav2_smac_planner/smoother.hpp"
 #include "nav2_util/smoother_utils.hpp"
-#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
 namespace nav2_smac_planner
 {
@@ -168,45 +167,39 @@ bool Smoother::smoothImpl(
         setFieldByDim(new_path.poses[i], j, y_i);
         change += abs(y_i - y_i_org);
       }
-
-      // validate update is admissible, only checks cost if a valid costmap pointer is provided
-      float cost = 0.0;
-      if (costmap && footprint.empty()) {
-        costmap->worldToMap(
-          getFieldByDim(new_path.poses[i], 0),
-          getFieldByDim(new_path.poses[i], 1),
-          mx, my);
-        cost = static_cast<float>(costmap->getCost(mx, my));
-      }
-
-      if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
-        RCLCPP_DEBUG(
-          rclcpp::get_logger("SmacPlannerSmoother"),
-          "Smoothing process resulted in an infeasible collision. "
-          "Returning the last path before the infeasibility was introduced.");
-        path = last_path;
-        nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
-        return false;
-      }
     }
 
-    if (costmap && !footprint.empty()) {
-      nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
+    // validate update is admissible, only checks cost if a valid costmap pointer is provided
+    if (costmap) {
+      nav2_util::updateApproximatePathOrientations(
+        new_path, reversing_segment, is_holonomic_);
 
-      nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
-      footprint_checker(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
+      if (!footprint.empty()) {
+        footprint_checker_.setCostmap(
+          const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
+      }
 
-      for (const auto & pose : new_path.poses) {
-        const double footprint_cost = footprint_checker.footprintCostAtPose(
-          pose.pose.position.x,
-          pose.pose.position.y,
-          tf2::getYaw(pose.pose.orientation),
-          footprint);
+      for (unsigned int i = 1; i != path_size - 1; i++) {
+        float cost = 0.0;
 
-        if (footprint_cost > MAX_NON_OBSTACLE_COST && footprint_cost != UNKNOWN_COST) {
+        if (footprint.empty()) {
+          costmap->worldToMap(
+            getFieldByDim(new_path.poses[i], 0),
+            getFieldByDim(new_path.poses[i], 1),
+            mx, my);
+          cost = static_cast<float>(costmap->getCost(mx, my));
+        } else {
+          cost = static_cast<float>(footprint_checker_.footprintCostAtPose(
+            new_path.poses[i].pose.position.x,
+            new_path.poses[i].pose.position.y,
+            tf2::getYaw(new_path.poses[i].pose.orientation),
+            footprint));
+        }
+
+        if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
           RCLCPP_DEBUG(
             rclcpp::get_logger("SmacPlannerSmoother"),
-            "Smoothing process resulted in an infeasible footprint collision. "
+            "Smoothing process resulted in an infeasible collision. "
             "Returning the last path before the infeasibility was introduced.");
           path = last_path;
           nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);

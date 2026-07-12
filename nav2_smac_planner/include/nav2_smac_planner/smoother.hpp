@@ -24,6 +24,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "ompl/base/StateSpace.h"
 #include "geometry_msgs/msg/point.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
 namespace nav2_smac_planner
 {
@@ -205,6 +206,8 @@ protected:
   bool is_holonomic_, do_refinement_;
   MotionModel motion_model_;
   ompl::base::StateSpacePtr state_space_;
+  nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
+  footprint_checker_;
 };
 
 }  // namespace nav2_smac_planner
