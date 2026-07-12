@@ -42,6 +42,7 @@ public:
     tree_.reset();
     pause_client_.reset();
     resume_client_.reset();
+    nav2_behavior_tree::BehaviorTreeTestFixture::TearDownTestCase();
   }
 
   static void CheckServiceResult(
