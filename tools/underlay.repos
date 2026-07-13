@@ -1,8 +1,8 @@
 repositories:
-  # BehaviorTree/BehaviorTree.CPP:
-  #   type: git
-  #   url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
-  #   version: 7119df95a17086f55e3690cf8d7b7663b59319d0
+  BehaviorTree/BehaviorTree.CPP:
+    type: git
+    url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
+    version: 4.9.1
   # Pin to 15.2.1 until we switch to Ubuntu Resolute to avoid Qt5 Qt6 mismatch between Rviz and Gazebo
   # ros2/rviz:
   #   type: git
