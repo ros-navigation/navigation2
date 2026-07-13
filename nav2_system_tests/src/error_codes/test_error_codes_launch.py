@@ -22,7 +22,7 @@ from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
 
-def generate_launch_description() -> LaunchDescription:
+def generate_launch_description():
     params_file = os.path.join(os.getenv('TEST_DIR', ''), 'error_code_param.yaml')
 
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
@@ -103,7 +103,7 @@ def generate_launch_description() -> LaunchDescription:
     return ld
 
 
-def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
+def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
     test_error_codes_action = ExecuteProcess(
@@ -112,11 +112,11 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
         output='screen',
     )
 
-    lts = LaunchTestService()  # type: ignore[no-untyped-call]
-    lts.add_test_action(ld, test_error_codes_action)  # type: ignore[no-untyped-call]
+    lts = LaunchTestService()
+    lts.add_test_action(ld, test_error_codes_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)  # type: ignore[no-untyped-call]
+    return lts.run(ls)
 
 
 if __name__ == '__main__':

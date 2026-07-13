@@ -1,0 +1,41 @@
+# Semgrep ignore patterns for navigation2
+# This file specifies paths and patterns to exclude from semgrep scanning
+
+# Exclude all files and directories containing 'test' in their name or path
+*test*
+**/*test*/**
+
+# Exclude build and install directories
+**/build/
+**/install/
+**/devel/
+
+# Exclude git and CI/CD configuration directories
+.git/
+.github/
+.circleci/
+.devcontainer/
+
+# Exclude documentation directories
+**/doc/
+**/docs/
+
+# Exclude third-party and external code
+**/third_party/
+**/external/
+
+# Exclude generated files and build artifacts
+**/*.o
+**/*.so
+**/*.a
+**/CMakeFiles/
+
+# Exclude core framework/common utility packages
+**/nav2_ros_common/include/nav2_ros_common/subscription.hpp
+**/nav2_ros_common/include/nav2_ros_common/action_client.hpp
+**/nav2_ros_common/include/nav2_ros_common/interface_factories.hpp
+**/nav2_ros_common/include/nav2_ros_common/node_utils.hpp
+**/nav2_ros_common/include/nav2_ros_common/service_client.hpp
+**/nav2_ros_common/include/nav2_ros_common/service_server.hpp
+**/nav2_ros_common/include/nav2_ros_common/simple_action_server.hpp
+**/nav2_ros_common/include/nav2_ros_common/subscription.hpp

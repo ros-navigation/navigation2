@@ -212,6 +212,34 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   ASSERT_EQ(resp->result, false);
 }
 
+// Send map saving service request with malformed OccupancyGrid.
+// Verify the request fails and the map_saver node remains available.
+TEST_F(MapSaverTestFixture, SaveMalformedMap)
+{
+  RCLCPP_INFO(node_->get_logger(), "Testing SaveMap service with malformed map");
+  auto req = std::make_shared<nav2_msgs::srv::SaveMap::Request>();
+  auto client = node_->create_client<nav2_msgs::srv::SaveMap>(
+    "/map_saver/save_map");
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for save_map service");
+  ASSERT_TRUE(client->wait_for_service());
+
+  req->map_topic = "malformed_map";
+  req->map_url = path(g_tmp_dir) / path(g_valid_map_name);
+  req->image_format = "png";
+  req->map_mode = "trinary";
+  req->free_thresh = g_default_free_thresh;
+  req->occupied_thresh = g_default_occupied_thresh;
+  auto resp = send_request<nav2_msgs::srv::SaveMap>(node_, client, req);
+  ASSERT_NE(resp, nullptr);
+  ASSERT_EQ(resp->result, false);
+
+  req->map_topic = "map";
+  resp = send_request<nav2_msgs::srv::SaveMap>(node_, client, req);
+  ASSERT_NE(resp, nullptr);
+  ASSERT_EQ(resp->result, true);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

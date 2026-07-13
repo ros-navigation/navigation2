@@ -22,11 +22,15 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+include(cmake/nav2_package.cmake)
+
 if(BUILD_TESTING)
   find_package(ament_cmake_test REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
 
   nav2_add_pytest_test(test_rewritten_yaml test/test_rewritten_yaml.py
+  )
+  nav2_add_pytest_test(test_has_node_params test/test_has_node_params.py
   )
   nav2_add_pytest_test(test_launch_config_as_bool test/test_launch_config_as_bool.py
   )

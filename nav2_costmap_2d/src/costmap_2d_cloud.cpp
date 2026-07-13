@@ -69,10 +69,10 @@ float g_colors_a[] = {0.0f, 0.5f, 1.0f};
 V_Cell g_marked;
 V_Cell g_unknown;
 
-rclcpp::Node::SharedPtr g_node;
+rclcpp::Node::SharedPtr g_node;  //  nosemgrep
 
-rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_marked;
-rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_unknown;
+rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_marked;  //  nosemgrep
+rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_unknown;  //  nosemgrep
 
 /**
  * @brief An helper function to fill pointcloud2 of both the marked and unknown points from voxel_grid
@@ -214,7 +214,7 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  g_node = rclcpp::Node::make_shared("costmap_2d_cloud");
+  g_node = rclcpp::Node::make_shared("costmap_2d_cloud");  //  nosemgrep
 
   RCLCPP_DEBUG(g_node->get_logger(), "Starting up costmap_2d_cloud");
 

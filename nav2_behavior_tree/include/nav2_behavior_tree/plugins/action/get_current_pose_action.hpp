@@ -78,7 +78,7 @@ private:
 
   std::string global_frame_, robot_base_frame_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
-  double transform_tolerance_;
+  double transform_tolerance_{0.1};
 };
 
 }  // namespace nav2_behavior_tree

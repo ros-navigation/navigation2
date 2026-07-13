@@ -85,12 +85,12 @@ public:
   /**
   * @brief Registers callbacks for dynamic parameter handling.
   */
-  void activate();
+  void activate() override;
 
   /**
   * @brief Resets callbacks for dynamic parameter handling.
   */
-  void deactivate();
+  void deactivate() override;
 
 protected:
   /**

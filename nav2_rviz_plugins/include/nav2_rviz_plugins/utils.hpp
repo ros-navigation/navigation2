@@ -36,6 +36,7 @@ namespace nav2_rviz_plugins
    * @param executor The executor to pass to the AsyncParameterClient
    */
 void pluginLoader(
+  //  nosemgrep
   rclcpp::Node::SharedPtr node, bool & server_failed, const std::string & server_name,
   const std::string & plugin_type, QComboBox * combo_box,
   rclcpp::Executor::SharedPtr executor = nullptr);

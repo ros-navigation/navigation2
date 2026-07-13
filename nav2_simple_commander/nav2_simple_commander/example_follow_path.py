@@ -22,7 +22,7 @@ Basic navigation demo to follow a given path after smoothing
 """
 
 
-def main() -> None:
+def main():
     rclpy.init()
 
     navigator = BasicNavigator()
