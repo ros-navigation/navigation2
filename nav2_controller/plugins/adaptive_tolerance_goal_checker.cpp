@@ -167,7 +167,6 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
   }
 
   std::string xy_acceptance_reason = toString(xy_acceptance_reason_);
-
   if (yaw_reached) {
     RCLCPP_INFO(
       logger_,
