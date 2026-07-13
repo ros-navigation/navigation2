@@ -527,36 +527,17 @@ TEST_F(AsymmetricInflationIntegrationTest, footprint_change_recomputes_caches)
 }
 
 // ============================================================
-// TF branch in globalPathCallback
+// TF lookup in extractLocalPathSegments (per-cycle, live)
 // ============================================================
 
-// When the path frame differs from the costmap frame and the TF buffer has no
-// matching transform, globalPathCallback must catch the exception and leave
-// latest_path_transform_ as nullopt.  Covers lines 160-163.
-TEST_F(AsymmetricInflationIntegrationTest, global_path_callback_tf_failure_sets_nullopt_transform)
-{
-  auto path = std::make_shared<nav_msgs::msg::Path>();
-  path->header.frame_id = "odom";  // costmap global frame is "map" → triggers TF lookup
-  path->header.stamp = node_->now();
-  geometry_msgs::msg::PoseStamped p1, p2;
-  p1.header.frame_id = "odom";
-  p1.pose.position.x = 1.0;
-  p1.pose.position.y = 2.0;
-  p2 = p1;
-  p2.pose.position.x = 2.0;
-  path->poses = {p1, p2};
-
-  // tf_ has no "odom"→"map" transform → lookupTransform throws tf2::TransformException.
-  EXPECT_NO_THROW(layer_->injectPath(path));
-}
-
-// After a TF-failure injection, latest_path_transform_ is nullopt.
-// extractLocalPathSegments hits the !cached_transform guard and falls back to symmetric.
-TEST_F(AsymmetricInflationIntegrationTest, extract_path_segments_no_cached_transform_falls_back)
+// When the path frame differs from the costmap frame and the TF buffer has no matching
+// transform, extractLocalPathSegments must catch the exception every cycle.
+TEST_F(AsymmetricInflationIntegrationTest, extract_path_segments_tf_failure_falls_back_to_symmetric)
 {
   layer_->setSideFactors(1.0, 10.0);
 
-  // Inject cross-frame path without any TF set up → latest_path_transform_ = nullopt.
+  // Inject cross-frame path without any TF set up → the per-cycle lookup in
+  // extractLocalPathSegments() throws and the layer falls back to symmetric.
   auto path = std::make_shared<nav_msgs::msg::Path>();
   path->header.frame_id = "odom";
   path->header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
@@ -576,7 +557,7 @@ TEST_F(AsymmetricInflationIntegrationTest, extract_path_segments_no_cached_trans
   unsigned char left_cost = costmap->getCost(20, 28);
   unsigned char right_cost = costmap->getCost(20, 12);
   EXPECT_EQ(left_cost, right_cost)
-    << "No cached transform must force symmetric fallback";
+    << "TF lookup failure must force symmetric fallback";
 }
 
 // With a valid static TF that extractLocalPathSegments must map the local window back into the
@@ -628,6 +609,130 @@ TEST_F(AsymmetricInflationIntegrationTest, transform_path_segments_with_rotated_
   unsigned char right_cost = costmap->getCost(20, 12);
   EXPECT_GT(left_cost, right_cost)
     << "A rotated + translated TF path must still produce asymmetric costs";
+}
+
+// ============================================================
+// Live per-cycle transform tracks map->odom drift
+// ============================================================
+
+// The path-frame -> costmap-frame transform must be looked up fresh every
+// cycle so the asymmetric overlay follows map->odom drift that accrues between cycles.
+// Publish the path once in "odom", then move the map->odom transform *between* two update cycles
+// and confirm the disfavored-side overlay follows the new transform.
+TEST_F(AsymmetricInflationIntegrationTest, live_transform_tracks_map_odom_drift)
+{
+  layer_->setSideFactors(1.0, 10.0);  // left (north) disfavored
+  layer_->setGoalDistanceThreshold(0.0);  // never disable asymmetry near goal
+
+  // Path published once, in "odom" frame, along y = 2.0. Never re-published.
+  auto path = std::make_shared<nav_msgs::msg::Path>();
+  path->header.frame_id = "odom";
+  path->header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  for (double x : {0.5, 1.5, 2.5, 3.5}) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = "odom";
+    pose.pose.position.x = x;
+    pose.pose.position.y = 2.0;
+    path->poses.push_back(pose);
+  }
+  layer_->injectPath(path);
+
+  auto * costmap = layers_->getCostmap();
+  const unsigned int w = costmap->getSizeInCellsX();
+  const unsigned int h = costmap->getSizeInCellsY();
+
+  auto publishMapOdomTransform = [this](double ty, int stamp_sec) {
+      geometry_msgs::msg::TransformStamped tf_msg;
+      tf_msg.header.frame_id = "map";
+      tf_msg.child_frame_id = "odom";
+      tf_msg.header.stamp = rclcpp::Time(stamp_sec, 0, RCL_ROS_TIME);
+      tf_msg.transform.translation.y = ty;
+      tf_msg.transform.rotation.w = 1.0;
+      tf_->setTransform(tf_msg, "test", false /* dynamic, not static */);
+    };
+
+  // --- Cycle 1: map == odom (no drift yet). The north obstacle sits 0.45 m
+  // north of the map-frame path (y=2.0) → disfavored side. The south obstacle
+  // sits 0.35 m south → favored side.
+  publishMapOdomTransform(0.0, 1);
+  seedLethalObstacle(20, 24);  // world (2.05, 2.45) — 0.45 m north of path
+  seedLethalObstacle(20, 16);  // world (2.05, 1.65) — 0.35 m south of path
+  runInflation();
+
+  unsigned char north_cost_cycle1 = costmap->getCost(20, 28);  // 0.4 m from north obstacle
+  unsigned char south_cost_cycle1 = costmap->getCost(20, 12);  // 0.4 m from south obstacle
+  EXPECT_GT(north_cost_cycle1, south_cost_cycle1)
+    << "North obstacle must be on the disfavored side while map==odom";
+
+  // --- Cycle 2: map->odom drifts by +0.9 m in y with a newer TF stamp.
+  // The path is NOT republished, only the live transform changes.
+  // The map-frame path is now at y=2.9, which flips the north obstacle to the favored side
+  // and pushes the south obstacle outside the path's inflation radius entirely (neutral).
+  // Reset + re-seed so cycle 1's overlay can't linger via max(old,new) of the second pass.
+  costmap->resetMap(0, 0, w, h);
+  seedLethalObstacle(20, 24);
+  seedLethalObstacle(20, 16);
+  publishMapOdomTransform(0.9, 2);
+  runInflation();
+
+  unsigned char north_cost_cycle2 = costmap->getCost(20, 28);
+  unsigned char south_cost_cycle2 = costmap->getCost(20, 12);
+  EXPECT_EQ(north_cost_cycle2, south_cost_cycle2)
+    << "Live transform must track drift: the north obstacle is no longer "
+       "disfavored once the path has effectively moved north of it";
+  EXPECT_LT(north_cost_cycle2, north_cost_cycle1)
+    << "The (formerly disfavored) north cell's cost must drop once drift "
+       "moves it off the disfavored side";
+}
+
+// The per-cycle lookup means asymmetry can recover as soon as a transform becomes available for
+// the first time, no need to re-publish the path.
+TEST_F(AsymmetricInflationIntegrationTest, live_lookup_recovers_once_transform_becomes_available)
+{
+  layer_->setSideFactors(1.0, 10.0);
+  layer_->setGoalDistanceThreshold(0.0);
+
+  auto path = std::make_shared<nav_msgs::msg::Path>();
+  path->header.frame_id = "odom";
+  path->header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  for (double x : {0.5, 1.5, 2.5, 3.5}) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = "odom";
+    pose.pose.position.x = x;
+    pose.pose.position.y = 2.0;
+    path->poses.push_back(pose);
+  }
+  layer_->injectPath(path);  // no TF published yet
+
+  auto * costmap = layers_->getCostmap();
+  const unsigned int w = costmap->getSizeInCellsX();
+  const unsigned int h = costmap->getSizeInCellsY();
+  seedLethalObstacle(20, 24);  // north of path
+  seedLethalObstacle(20, 16);  // south of path
+  runInflation();
+
+  unsigned char north_before = costmap->getCost(20, 28);
+  unsigned char south_before = costmap->getCost(20, 12);
+  EXPECT_EQ(north_before, south_before)
+    << "No transform available yet must force symmetric fallback";
+
+  // Now publish an identity map->odom transform.
+  geometry_msgs::msg::TransformStamped tf_msg;
+  tf_msg.header.frame_id = "map";
+  tf_msg.child_frame_id = "odom";
+  tf_msg.header.stamp = rclcpp::Time(1, 0, RCL_ROS_TIME);
+  tf_msg.transform.rotation.w = 1.0;
+  tf_->setTransform(tf_msg, "test", false /* dynamic, not static */);
+
+  costmap->resetMap(0, 0, w, h);
+  seedLethalObstacle(20, 24);
+  seedLethalObstacle(20, 16);
+  runInflation();
+
+  unsigned char north_after = costmap->getCost(20, 28);
+  unsigned char south_after = costmap->getCost(20, 12);
+  EXPECT_GT(north_after, south_after)
+    << "Per-cycle lookup must pick up the transform without re-publishing the path";
 }
 
 // ============================================================

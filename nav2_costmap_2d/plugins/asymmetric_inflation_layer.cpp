@@ -160,29 +160,11 @@ AsymmetricInflationLayer::globalPathCallback(const nav_msgs::msg::Path::SharedPt
 {
   if (latest_global_path_ == msg) {return;}
 
-  // Look up the transform from path frame to costmap frame
-  std::optional<geometry_msgs::msg::TransformStamped> transform;
-  const std::string global_frame = layered_costmap_->getGlobalFrameID();
-  const std::string path_frame = msg->header.frame_id;
-  if (global_frame != path_frame && !path_frame.empty()) {
-    try {
-      transform = tf_->lookupTransform(global_frame, path_frame,
-          tf2_ros::fromMsg(msg->header.stamp), transform_tolerance_);
-    } catch (const tf2::TransformException & ex) {
-      RCLCPP_WARN(
-          logger_,
-          "AsymmetricInflationLayer: TF lookup failed at path receipt (%s -> %s): %s. "
-          "Asymmetric inflation will be disabled for this plan.",
-          path_frame.c_str(), global_frame.c_str(), ex.what());
-    }
-  }
-
-  // Cache the path and transform
+  // Cache the path
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   {
     std::lock_guard<std::mutex> lock(path_mutex_);
     latest_global_path_ = msg;
-    latest_path_transform_ = transform;
   }
   // Force a full-map reinflation on the next update cycle.
   need_reinflation_ = true;
@@ -226,34 +208,39 @@ AsymmetricInflationLayer::extractLocalPathSegments(
 {
   std::vector<AsymmetricPathSegment> local_path_segments;
   nav_msgs::msg::Path current_path;
-  std::optional<geometry_msgs::msg::TransformStamped> cached_transform;
   {
     std::lock_guard<std::mutex> lock(path_mutex_);
     if (!latest_global_path_ || latest_global_path_->poses.size() < 2) {
       return local_path_segments;
     }
     current_path = *latest_global_path_;
-    cached_transform = latest_path_transform_;
   }
 
   // Check if the path is already in costmap frame
   std::string global_frame = layered_costmap_->getGlobalFrameID();
   std::string path_frame = current_path.header.frame_id;
-  geometry_msgs::msg::TransformStamped transform;
   bool need_transform = (global_frame != path_frame && !path_frame.empty());
+
+  // Look up the current path frame -> costmap frame transform
+  geometry_msgs::msg::TransformStamped transform;
+  if (need_transform) {
+    try {
+      transform = tf_->lookupTransform(
+        global_frame, path_frame, tf2::TimePointZero, transform_tolerance_);
+    } catch (const tf2::TransformException & ex) {
+      RCLCPP_WARN_THROTTLE(
+        logger_, *clock_, 1000,
+        "AsymmetricInflationLayer: TF lookup failed (%s -> %s): %s. "
+        "Falling back to symmetric inflation.",
+        path_frame.c_str(), global_frame.c_str(), ex.what());
+      return local_path_segments;
+    }
+  }
 
   // Transform the goal pose from the path frame to the costmap frame (e.g., map -> odom)
   geometry_msgs::msg::PoseStamped goal_pose = current_path.poses.back();
   if (need_transform) {
-    if (!cached_transform) {
-      RCLCPP_WARN(
-        logger_,
-        "AsymmetricInflationLayer: No cached transform for path frame '%s'. "
-        "Falling back to symmetric inflation.",
-        path_frame.c_str());
-      return local_path_segments;
-    }
-    tf2::doTransform(goal_pose, goal_pose, *cached_transform);
+    tf2::doTransform(goal_pose, goal_pose, transform);
   }
 
   // Disable asymmetry near the goal to prevent target oscillations
@@ -278,7 +265,7 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   double win_min_y = map_min_y, win_max_y = map_max_y;
   if (need_transform) {
     tf2::Transform tf;
-    tf2::fromMsg(cached_transform->transform, tf);   // path_frame -> global_frame
+    tf2::fromMsg(transform.transform, tf);           // path_frame -> global_frame
     const tf2::Transform inv = tf.inverse();         // global_frame -> path_frame
 
     win_min_x = win_min_y = std::numeric_limits<double>::max();
@@ -316,8 +303,8 @@ AsymmetricInflationLayer::extractLocalPathSegments(
     if (need_transform) {
       geometry_msgs::msg::PoseStamped transformed_start;
       geometry_msgs::msg::PoseStamped transformed_end;
-      tf2::doTransform(current_path.poses[i - 1], transformed_start, *cached_transform);
-      tf2::doTransform(current_path.poses[i], transformed_end, *cached_transform);
+      tf2::doTransform(current_path.poses[i - 1], transformed_start, transform);
+      tf2::doTransform(current_path.poses[i], transformed_end, transform);
       ax = transformed_start.pose.position.x;
       ay = transformed_start.pose.position.y;
       bx = transformed_end.pose.position.x;
