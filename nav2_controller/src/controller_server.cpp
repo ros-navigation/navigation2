@@ -533,12 +533,12 @@ void ControllerServer::computeControl()
 
       updateGlobalPath();
 
-      computeAndPublishVelocity();
-
       if (isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
         break;
       }
+
+      computeAndPublishVelocity();
 
       auto cycle_duration = this->now() - start_time;
       if (!loop_rate.sleep()) {
