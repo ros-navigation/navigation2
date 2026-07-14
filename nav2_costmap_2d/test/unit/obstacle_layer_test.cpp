@@ -25,14 +25,6 @@
 #include "tf2_ros/buffer.hpp"
 
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class TestLifecycleNode : public nav2::LifecycleNode
 {
 public:
@@ -392,4 +384,13 @@ TEST_F(ObstacleLayerTest, testClearDiagonalDistance) {
   ASSERT_EQ(countValues(*obstacle_layer_, nav2_costmap_2d::FREE_SPACE), 8);
   ASSERT_EQ(countValues(*obstacle_layer_, nav2_costmap_2d::LETHAL_OBSTACLE),
             20 * 20 - 8);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

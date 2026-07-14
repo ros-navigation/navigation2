@@ -27,13 +27,6 @@
 #include "nav2_route/route_tracker.hpp"
 #include "nav2_route/route_server.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route;  // NOLINT
 
@@ -353,4 +346,13 @@ TEST(RouteTrackerTest, test_node_achievement)
   pose.pose.position.x = -9.5;
   pose.pose.position.y = 10.5;
   EXPECT_TRUE(tracker.nodeAchieved(pose, state, route));
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

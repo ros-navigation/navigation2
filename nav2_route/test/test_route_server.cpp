@@ -30,13 +30,6 @@
 #include "nav2_route/route_server.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route;  // NOLINT
 
@@ -399,4 +392,13 @@ TEST(RouteServerTest, test_error_codes)
   server->shutdown();
   node_thread.reset();
   server.reset();
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

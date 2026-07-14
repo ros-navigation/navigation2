@@ -30,13 +30,6 @@
 #include "tf2_ros/static_transform_broadcaster.hpp"
 #include "tf2_ros/transform_listener.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route;  // NOLINT
 
@@ -956,4 +949,13 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
     scorer.score(
       &edge, route_request, edge_type,
       traversal_cost), nav2_core::InvalidEdgeScorerUse);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }
