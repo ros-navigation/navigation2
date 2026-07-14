@@ -26,7 +26,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::DecoratorNode that triggers its child only once and returns FAILURE
  * for every succeeding tick (reset when halted)
- * @note It will re-initialize when halted.
+ * @note It will re-initialize when halted or on RunID change if is_global is true.
  *
  * Usage in XML:
  * @code
@@ -53,8 +53,12 @@ public:
    */
   static BT::PortsList providedPorts()
   {
-    return {};
+    return {
+      BT::InputPort<bool>("is_global", false, "Use RunID for initialization instead of IDLE check")
+    };
   }
+
+  void initialize();
 
 private:
   /**
@@ -64,6 +68,8 @@ private:
   BT::NodeStatus tick() override;
 
   bool first_time_;
+  bool is_global_;
+  std::string current_run_id_;
 };
 
 }  // namespace nav2_behavior_tree

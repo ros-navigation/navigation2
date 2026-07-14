@@ -35,7 +35,9 @@ DistanceController::DistanceController(
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf),
   distance_(1.0),
-  first_time_(false)
+  first_time_(false),
+  is_global_(false),
+  current_run_id_("")
 {
   getInput("distance", distance_);
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
@@ -48,19 +50,53 @@ DistanceController::DistanceController(
     node_, "robot_base_frame", this);
 }
 
+void DistanceController::initialize()
+{
+  getInput("is_global", is_global_);
+}
+
 inline BT::NodeStatus DistanceController::tick()
 {
   if (!BT::isStatusActive(status())) {
-    // Reset the starting position since we're starting a new iteration of
-    // the distance controller (moving from IDLE to RUNNING)
+    initialize();
+  }
+
+  auto resetStartPose = [&]() -> bool {
     if (!nav2_util::getCurrentPose(
         start_pose_, *tf_, global_frame_, robot_base_frame_,
         transform_tolerance_))
     {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
-      return BT::NodeStatus::FAILURE;
+      return false;
     }
-    first_time_ = true;
+    return true;
+  };
+
+  if (is_global_) {
+    std::string new_run_id;
+    try {
+      new_run_id = config().blackboard->template get<std::string>("run_id");
+    } catch (const std::exception & e) {
+      throw BT::RuntimeError(
+        "is_global=true requires 'run_id' on the blackboard for DistanceController '" +
+          name() + "': " + e.what());
+    }
+    if (new_run_id != current_run_id_) {
+      current_run_id_ = new_run_id;
+      if (!resetStartPose()) {
+        return BT::NodeStatus::FAILURE;
+      }
+      first_time_ = true;
+    }
+  } else {
+    if (!BT::isStatusActive(status())) {
+      // Reset the starting position since we're starting a new iteration of
+      // the distance controller (moving from IDLE to RUNNING)
+      if (!resetStartPose()) {
+        return BT::NodeStatus::FAILURE;
+      }
+      first_time_ = true;
+    }
   }
 
   setStatus(BT::NodeStatus::RUNNING);

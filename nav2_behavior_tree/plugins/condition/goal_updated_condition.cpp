@@ -23,7 +23,8 @@ GoalUpdatedCondition::GoalUpdatedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf)
-{}
+{
+}
 
 BT::NodeStatus GoalUpdatedCondition::tick()
 {
@@ -37,7 +38,6 @@ BT::NodeStatus GoalUpdatedCondition::tick()
   geometry_msgs::msg::PoseStamped current_goal;
   BT::getInputOrBlackboard("goals", current_goals);
   BT::getInputOrBlackboard("goal", current_goal);
-
   if (goal_ != current_goal || goals_ != current_goals) {
     goal_ = current_goal;
     goals_ = current_goals;

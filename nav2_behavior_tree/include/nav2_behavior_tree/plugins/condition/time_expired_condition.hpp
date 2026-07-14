@@ -27,7 +27,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS every time a specified
  * time period passes and FAILURE otherwise
- * @note It will re-initialize when halted.
+ * @note It will re-initialize when halted or on RunID change if is_global is true.
  *
  * Usage in XML:
  * @code
@@ -66,6 +66,7 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
+      BT::InputPort<bool>("is_global", false, "Use RunID for initialization instead of IDLE check"),
       BT::InputPort<double>("seconds", 1.0, "Seconds")
     };
   }
@@ -74,6 +75,9 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Time start_;
   double period_;
+
+  bool is_global_;
+  std::string current_run_id_;
 };
 
 }  // namespace nav2_behavior_tree

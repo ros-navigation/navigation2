@@ -29,7 +29,9 @@ DistanceTraveledCondition::DistanceTraveledCondition(
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
   distance_(1.0),
-  transform_tolerance_(0.1)
+  transform_tolerance_(0.1),
+  is_global_(false),
+  current_run_id_("")
 {
 }
 
@@ -45,19 +47,47 @@ void DistanceTraveledCondition::initialize()
     node_, "global_frame", this);
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "robot_base_frame", this);
+  getInput("is_global", is_global_);
 }
 
 BT::NodeStatus DistanceTraveledCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
+  }
+
+  auto resetStartPose = [&]() -> bool {
     if (!nav2_util::getCurrentPose(
         start_pose_, *tf_, global_frame_, robot_base_frame_,
         transform_tolerance_))
     {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+      return false;
     }
-    return BT::NodeStatus::FAILURE;
+    return true;
+  };
+
+  if (is_global_) {
+    std::string new_run_id;
+    try {
+      new_run_id = config().blackboard->template get<std::string>("run_id");
+    } catch (const std::exception & e) {
+      throw BT::RuntimeError(
+        "is_global=true requires 'run_id' on the blackboard for DistanceTraveledCondition '" +
+          name() + "': " + e.what());
+    }
+    if (new_run_id != current_run_id_) {
+      current_run_id_ = new_run_id;
+      if (!resetStartPose()) {
+        return BT::NodeStatus::FAILURE;
+      }
+    }
+  } else {
+    if (!BT::isStatusActive(status())) {
+      if (!resetStartPose()) {
+        return BT::NodeStatus::FAILURE;
+      }
+    }
   }
 
   // Determine distance travelled since we've started this iteration

@@ -452,10 +452,12 @@
       <input_port name="distance" type="double" default="1.0">The distance that must travel before returning success (m).</input_port>
       <input_port name="global_frame" type="string">Reference frame. If not provided, uses the BT Navigator's `global_frame` parameter value (`map` by default).</input_port>
       <input_port name="robot_base_frame" type="string">Robot base frame. If not provided, uses the BT Navigator's `robot_base_frame` parameter value (`base_link` by default).</input_port>
+      <input_port name="is_global" type="bool" default="false">Use RunID for initialization instead of IDLE check.</input_port>
     </Condition>
 
     <Condition ID="TimeExpired">
       <input_port name="seconds" type="double" default="1.0">The time passed to return success (s).</input_port>
+      <input_port name="is_global" type="bool" default="false">Use RunID for initialization instead of IDLE check.</input_port>
     </Condition>
 
     <Condition ID="PathExpiringTimer">
@@ -539,15 +541,19 @@
     <!-- ############################### DECORATOR NODES ############################## -->
     <Decorator ID="RateController">
       <input_port name="hz" type="double" default="10.0">Rate to throttle an action or a group of actions.</input_port>
+      <input_port name="is_global" type="bool" default="false">Use RunID for initialization instead of IDLE check.</input_port>
     </Decorator>
 
     <Decorator ID="DistanceController">
       <input_port name="distance" type="double" default="1.0">The distance travelled to trigger an action such as planning a path (m).</input_port>
       <input_port name="global_frame" type="string">Reference frame. If not provided, uses the BT Navigator's `global_frame` parameter value (`map` by default).</input_port>
       <input_port name="robot_base_frame" type="string">Robot base frame. If not provided, uses the BT Navigator's `robot_base_frame` parameter value (`base_link` by default).</input_port>
+      <input_port name="is_global" type="bool" default="false">Use RunID for initialization instead of IDLE check.</input_port>
     </Decorator>
 
-    <Decorator ID="SingleTrigger"/>
+    <Decorator ID="SingleTrigger">
+      <input_port name="is_global" type="bool" default="false">Use RunID for initialization instead of IDLE check.</input_port>
+    </Decorator>
 
     <Decorator ID="GoalUpdater">
       <input_port name="input_goal" type="geometry_msgs::msg::PoseStamped">The original goal pose.</input_port>
@@ -563,6 +569,7 @@
       <input_port name="max_speed" type="double" default="0.5">The maximum robot speed above which the child node is ticked at maximum rate (m/s).</input_port>
       <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Destination to check. Takes in a blackboard variable, "{goal}" if not specified.</input_port>
       <input_port name="goals" type="nav_msgs::msg::Goals">Vector of goals to check. Takes in a blackboard variable, "{goals}" if not specified.</input_port>
+      <input_port name="is_global" type="bool" default="false">Use RunID for initialization instead of IDLE check.</input_port>
     </Decorator>
 
     <Decorator ID="PathLongerOnApproach">

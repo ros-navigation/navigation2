@@ -24,7 +24,9 @@ RateController::RateController(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf),
-  first_time_(false)
+  first_time_(false),
+  is_global_(false),
+  current_run_id_("")
 {
 }
 
@@ -33,16 +35,35 @@ void RateController::initialize()
   double hz = 1.0;
   getInput("hz", hz);
   period_ = 1.0 / hz;
+  getInput("is_global", is_global_);
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 }
 
 BT::NodeStatus RateController::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
-    // Reset the starting point since we're starting a new iteration of
-    // the rate controller (moving from IDLE to RUNNING)
-    start_ = std::chrono::high_resolution_clock::now();
-    first_time_ = true;
+  }
+
+  if (is_global_) {
+    std::string new_run_id;
+    try {
+      new_run_id = config().blackboard->template get<std::string>("run_id");
+    } catch (const std::exception & e) {
+      throw BT::RuntimeError(
+        "is_global=true requires 'run_id' on the blackboard for RateController '" +
+          name() + "': " + e.what());
+    }
+    if (new_run_id != current_run_id_) {
+      current_run_id_ = new_run_id;
+      start_ = std::chrono::high_resolution_clock::now();
+      first_time_ = true;
+    }
+  } else {
+    if (!BT::isStatusActive(status())) {
+      start_ = std::chrono::high_resolution_clock::now();
+      first_time_ = true;
+    }
   }
 
   setStatus(BT::NodeStatus::RUNNING);

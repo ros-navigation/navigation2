@@ -46,6 +46,32 @@ protected:
 std::shared_ptr<nav2_behavior_tree::DistanceTraveledCondition>
 DistanceTraveledConditionTestFixture::bt_node_ = nullptr;
 
+class DistanceTraveledConditionGlobalTestFixture
+  : public nav2_behavior_tree::BehaviorTreeTestFixture
+{
+public:
+  void SetUp()
+  {
+    config_->input_ports["global_frame"] = "map";
+    config_->input_ports["robot_base_frame"] = "base_link";
+    config_->input_ports["distance"] = 1.0;
+    config_->input_ports["is_global"] = "true";
+    bt_node_ = std::make_shared<nav2_behavior_tree::DistanceTraveledCondition>(
+      "distance_traveled", *config_);
+  }
+
+  void TearDown()
+  {
+    bt_node_.reset();
+  }
+
+protected:
+  static std::shared_ptr<nav2_behavior_tree::DistanceTraveledCondition> bt_node_;
+};
+
+std::shared_ptr<nav2_behavior_tree::DistanceTraveledCondition>
+DistanceTraveledConditionGlobalTestFixture::bt_node_ = nullptr;
+
 TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
 {
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
@@ -77,6 +103,55 @@ TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
       EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
     }
   }
+}
+
+TEST_F(DistanceTraveledConditionGlobalTestFixture, test_runid_global_mode)
+{
+  // Reset robot to origin so we don't inherit stale position from test_behavior
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 0.0;
+  pose.pose.position.y = 0.0;
+  pose.pose.orientation.w = 1.0;
+  transform_handler_->updateRobotPose(pose.pose);
+  geometry_msgs::msg::PoseStamped current_pose;
+  double current_x = 1.0;
+  while (current_x > 0.05) {
+    if (nav2_util::getCurrentPose(current_pose, *transform_handler_->getBuffer())) {
+      current_x = current_pose.pose.position.x;
+    }
+  }
+
+  config_->blackboard->set<std::string>("run_id", "runid_1");
+
+  // First tick: initialize start_pose_ at position 0
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Move robot to 0.6 — not enough distance yet
+  pose.pose.position.x = 0.6;
+  transform_handler_->updateRobotPose(pose.pose);
+  current_x = 0;
+  while (current_x < 0.5) {
+    if (nav2_util::getCurrentPose(current_pose, *transform_handler_->getBuffer())) {
+      current_x = current_pose.pose.position.x;
+    }
+  }
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // New RunID: start_pose_ resets to current position (0.6)
+  // distance from 0.6 to 0.6 = 0 — should still FAILURE
+  config_->blackboard->set<std::string>("run_id", "runid_2");
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Move to 1.7 — now > 1.0 from new start_pose_ (0.6), should succeed
+  pose.pose.position.x = 1.7;
+  transform_handler_->updateRobotPose(pose.pose);
+  current_x = 0;
+  while (current_x < 1.6) {
+    if (nav2_util::getCurrentPose(current_pose, *transform_handler_->getBuffer())) {
+      current_x = current_pose.pose.position.x;
+    }
+  }
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)

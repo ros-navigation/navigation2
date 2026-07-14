@@ -31,7 +31,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::DecoratorNode that ticks its child every time the robot
  * travels a specified distance
- * @note It will re-initialize when halted.
+ * @note It will re-initialize when halted or on RunID change if is_global is true.
  *
  * Usage in XML:
  * @code
@@ -53,6 +53,11 @@ public:
     const BT::NodeConfiguration & conf);
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -61,7 +66,8 @@ public:
     return {
       BT::InputPort<double>("distance", 1.0, "Distance"),
       BT::InputPort<std::string>("global_frame", "Global frame"),
-      BT::InputPort<std::string>("robot_base_frame", "Robot base frame")
+      BT::InputPort<std::string>("robot_base_frame", "Robot base frame"),
+      BT::InputPort<bool>("is_global", false, "Use RunID for initialization instead of IDLE check")
     };
   }
 
@@ -82,6 +88,8 @@ private:
   std::string global_frame_, robot_base_frame_;
 
   bool first_time_;
+  bool is_global_;
+  std::string current_run_id_;
 };
 
 }  // namespace nav2_behavior_tree

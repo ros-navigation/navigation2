@@ -52,6 +52,44 @@ RateControllerTestFixture::bt_node_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::DummyNode>
 RateControllerTestFixture::dummy_node_ = nullptr;
 
+// Shim to expose resetStatus for halt simulation
+class RateControllerShim : public nav2_behavior_tree::RateController
+{
+public:
+  RateControllerShim(const std::string & name, const BT::NodeConfiguration & conf)
+  : RateController(name, conf) {}
+  void changeStatus() {resetStatus();}
+};
+
+class RateControllerGlobalTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+{
+public:
+  void SetUp()
+  {
+    config_->blackboard->set<std::string>("run_id", "run_1");
+    config_->input_ports["hz"] = "1.0";
+    config_->input_ports["is_global"] = "true";
+    bt_node_ = std::make_shared<RateControllerShim>("rate_controller", *config_);
+    dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();
+    bt_node_->setChild(dummy_node_.get());
+  }
+
+  void TearDown()
+  {
+    dummy_node_.reset();
+    bt_node_.reset();
+  }
+
+protected:
+  static std::shared_ptr<RateControllerShim> bt_node_;
+  static std::shared_ptr<nav2_behavior_tree::DummyNode> dummy_node_;
+};
+
+std::shared_ptr<RateControllerShim>
+RateControllerGlobalTestFixture::bt_node_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::DummyNode>
+RateControllerGlobalTestFixture::dummy_node_ = nullptr;
+
 TEST_F(RateControllerTestFixture, test_behavior)
 {
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
@@ -70,6 +108,32 @@ TEST_F(RateControllerTestFixture, test_behavior)
       EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
     }
   }
+}
+
+TEST_F(RateControllerGlobalTestFixture, test_global_runid_mode)
+{
+  // First tick: child gets ticked immediately (first_time_)
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // Period not elapsed: child should not tick
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+
+  // Simulate halt by reactive parent — same run_id, timer must be preserved
+  bt_node_->halt();
+  bt_node_->changeStatus();
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);  // NOT ticked immediately
+
+  // New RunID: timer resets, child should tick immediately
+  config_->blackboard->set<std::string>("run_id", "run_2");
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // Period not elapsed again: child should not tick
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
 }
 
 int main(int argc, char ** argv)

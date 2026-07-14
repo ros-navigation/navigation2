@@ -77,6 +77,55 @@ SpeedControllerTestFixture::bt_node_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::DummyNode>
 SpeedControllerTestFixture::dummy_node_ = nullptr;
 
+class SpeedControllerGlobalTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+{
+public:
+  void SetUp()
+  {
+    odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
+    config_->blackboard->set("odom_smoother", odom_smoother_);
+    config_->blackboard->set<std::string>("run_id", "run_1");
+
+    geometry_msgs::msg::PoseStamped goal;
+    goal.header.stamp = node_->now();
+    config_->blackboard->set("goal", goal);
+
+    nav_msgs::msg::Goals fake_poses;
+    config_->blackboard->set("goals", fake_poses);
+
+    config_->input_ports["min_rate"] = "1.0";
+    config_->input_ports["max_rate"] = "1.0";
+    config_->input_ports["min_speed"] = "0.0";
+    config_->input_ports["max_speed"] = "0.5";
+    config_->input_ports["goals"] = "";
+    config_->input_ports["goal"] = "";
+    config_->input_ports["is_global"] = "true";
+
+    bt_node_ = std::make_shared<nav2_behavior_tree::SpeedController>("speed_controller", *config_);
+    dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();
+    bt_node_->setChild(dummy_node_.get());
+  }
+
+  void TearDown()
+  {
+    dummy_node_.reset();
+    bt_node_.reset();
+    odom_smoother_.reset();
+  }
+
+protected:
+  static std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
+  static std::shared_ptr<nav2_behavior_tree::SpeedController> bt_node_;
+  static std::shared_ptr<nav2_behavior_tree::DummyNode> dummy_node_;
+};
+
+std::shared_ptr<nav2_util::OdomSmoother>
+SpeedControllerGlobalTestFixture::odom_smoother_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::SpeedController>
+SpeedControllerGlobalTestFixture::bt_node_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::DummyNode>
+SpeedControllerGlobalTestFixture::dummy_node_ = nullptr;
+
 /*
  * Test for speed controller behavior
  * Speed controller calculates the period after which it should succeed
@@ -138,6 +187,38 @@ TEST_F(SpeedControllerTestFixture, test_behavior)
 
   // should return success since period has exceeded
   rclcpp::sleep_for(1s);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+}
+
+TEST_F(SpeedControllerGlobalTestFixture, test_global_runid_mode)
+{
+  // First tick: child gets ticked immediately (RunID change from empty -> run_1)
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // Period not elapsed: child should not tick
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+
+  // Simulate halt by reactive parent — same run_id, timer must be preserved
+  bt_node_->halt();
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);  // NOT ticked immediately
+
+  // New RunID alone (goal unchanged): RunID block resets timer, child ticks immediately
+  config_->blackboard->set<std::string>("run_id", "run_2");
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // Period not elapsed on new run: child should not tick
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+
+  // Goal change on same run: goal-change detection resets, child ticks immediately
+  geometry_msgs::msg::PoseStamped new_goal;
+  new_goal.pose.position.x = 1.0;
+  config_->blackboard->set("goal", new_goal);
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
