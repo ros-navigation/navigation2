@@ -40,7 +40,7 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
   tf2_ros::tf2_ros
   rclcpp_action::rclcpp_action
   tf2_geometry_msgs::tf2_geometry_msgs
