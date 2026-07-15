@@ -25,6 +25,7 @@
   <exec_depend>nav2_dwb_controller</exec_depend>
   <exec_depend>nav2_graceful_controller</exec_depend>
   <exec_depend>nav2_lifecycle_manager</exec_depend>
+  <exec_depend>nav2_loopback_sim</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_mppi_controller</exec_depend>
