@@ -51,6 +51,17 @@ static const uint8_t INCORRECT_TYPE = 200;
 
 static constexpr double EPSILON = 1e-5;
 
+struct PathLookaheadParams
+{
+  bool enable_path_lookahead = false;
+  double max_decel = -0.5;
+  double min_lookahead = 0.0;
+  double max_lookahead = 5.0;
+  std::string path_topic = "plan";
+  std::string odom_topic = "odom";
+  bool publish_lookahead = false;
+};
+
 class InfoPublisher : public rclcpp::Node
 {
 public:
@@ -100,6 +111,54 @@ public:
 private:
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr publisher_;
 };  // MaskPublisher
+
+class PathPublisher : public rclcpp::Node
+{
+public:
+  explicit PathPublisher(const nav_msgs::msg::Path & path)
+  : Node("path_pub")
+  {
+    publisher_ = this->create_publisher<nav_msgs::msg::Path>(
+      "plan", rclcpp::QoS(10));
+    publisher_->publish(path);
+  }
+
+  ~PathPublisher()
+  {
+    publisher_.reset();
+  }
+
+private:
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr publisher_;
+};  // PathPublisher
+
+class OdomPublisher : public rclcpp::Node
+{
+public:
+  OdomPublisher()
+  : Node("odom_pub")
+  {
+    publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", rclcpp::QoS(1));
+  }
+
+  ~OdomPublisher()
+  {
+    publisher_.reset();
+  }
+
+  void publishVelocity(double vx)
+  {
+    nav_msgs::msg::Odometry msg;
+    msg.header.frame_id = "odom";
+    msg.child_frame_id = "base_link";
+    msg.header.stamp = this->now();
+    msg.twist.twist.linear.x = vx;
+    publisher_->publish(msg);
+  }
+
+private:
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr publisher_;
+};  // OdomPublisher
 
 class SpeedLimitSubscriber : public rclcpp::Node
 {
@@ -211,9 +270,14 @@ protected:
   void publishMaps(uint8_t type, double base, double multiplier);
   void rePublishInfo(uint8_t type, double base, double multiplier);
   void rePublishMask();
-  bool createSpeedFilter(const std::string & global_frame);
+  bool createSpeedFilter(const std::string & global_frame, const PathLookaheadParams & params = {});
   void createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame);
   void publishTransform();
+  void publishPath(const nav_msgs::msg::Path & path);
+  void publishOdom(double vx);
+  nav_msgs::msg::Path createPath(
+    double x0, double y0, double x1, double y1, double spacing,
+    const std::string & frame_id);
 
   // Test methods
   void testFullMask(
@@ -224,6 +288,9 @@ protected:
     double tr_x, double tr_y);
   void testOutOfMask(uint8_t type, double base, double multiplier);
   void testIncorrectLimits(uint8_t type, double base, double multiplier);
+  void testPathLookaheadDetection(
+    uint8_t type, double base, double multiplier, double linear_vel,
+    double tr_x, double tr_y);
 
   void reset();
 
@@ -255,6 +322,8 @@ private:
 
   std::shared_ptr<InfoPublisher> info_publisher_;
   std::shared_ptr<MaskPublisher> mask_publisher_;
+  std::shared_ptr<PathPublisher> path_publisher_;
+  std::shared_ptr<OdomPublisher> odom_publisher_;
   std::shared_ptr<SpeedLimitSubscriber> speed_limit_subscriber_;
   rclcpp::executors::SingleThreadedExecutor speed_limit_subscriber_executor_;
 };
@@ -307,6 +376,21 @@ void TestNode::rePublishMask()
   waitSome(100ms);
 }
 
+void TestNode::publishPath(const nav_msgs::msg::Path & path)
+{
+  path_publisher_ = std::make_shared<PathPublisher>(path);
+  // Allow path subscriber to receive a new message
+  waitSome(100ms);
+}
+
+void TestNode::publishOdom(double vx)
+{
+  odom_publisher_ = std::make_shared<OdomPublisher>();
+  odom_publisher_->publishVelocity(vx);
+  // Allow odom subscriber to receive a new message
+  waitSome(100ms);
+}
+
 nav2_msgs::msg::SpeedLimit::ConstSharedPtr TestNode::getSpeedLimit()
 {
   std::this_thread::sleep_for(100ms);
@@ -341,7 +425,9 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
   }
 }
 
-bool TestNode::createSpeedFilter(const std::string & global_frame)
+bool TestNode::createSpeedFilter(
+  const std::string & global_frame,
+  const PathLookaheadParams & params)
 {
   node_ = std::make_shared<nav2::LifecycleNode>("test_node");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
@@ -362,6 +448,40 @@ bool TestNode::createSpeedFilter(const std::string & global_frame)
     std::string(FILTER_NAME) + ".speed_limit_topic", rclcpp::ParameterValue(SPEED_LIMIT_TOPIC));
   node_->set_parameter(
     rclcpp::Parameter(std::string(FILTER_NAME) + ".speed_limit_topic", SPEED_LIMIT_TOPIC));
+
+  if (params.enable_path_lookahead) {
+    node_->declare_parameter(
+      std::string(FILTER_NAME) + ".enable_path_lookahead",
+      rclcpp::ParameterValue(params.enable_path_lookahead));
+    node_->set_parameter(
+      rclcpp::Parameter(std::string(FILTER_NAME) + ".enable_path_lookahead",
+      params.enable_path_lookahead));
+    node_->declare_parameter(
+      std::string(FILTER_NAME) + ".max_decel", rclcpp::ParameterValue(params.max_decel));
+    node_->set_parameter(
+      rclcpp::Parameter(std::string(FILTER_NAME) + ".max_decel", params.max_decel));
+    node_->declare_parameter(
+      std::string(FILTER_NAME) + ".min_lookahead", rclcpp::ParameterValue(params.min_lookahead));
+    node_->set_parameter(
+      rclcpp::Parameter(std::string(FILTER_NAME) + ".min_lookahead", params.min_lookahead));
+    node_->declare_parameter(
+      std::string(FILTER_NAME) + ".max_lookahead", rclcpp::ParameterValue(params.max_lookahead));
+    node_->set_parameter(
+      rclcpp::Parameter(std::string(FILTER_NAME) + ".max_lookahead", params.max_lookahead));
+    node_->declare_parameter(
+      std::string(FILTER_NAME) + ".path_topic", rclcpp::ParameterValue(params.path_topic));
+    node_->set_parameter(
+      rclcpp::Parameter(std::string(FILTER_NAME) + ".path_topic", params.path_topic));
+    node_->declare_parameter(
+      std::string(FILTER_NAME) + ".odom_topic", rclcpp::ParameterValue(params.odom_topic));
+    node_->set_parameter(
+      rclcpp::Parameter(std::string(FILTER_NAME) + ".odom_topic", params.odom_topic));
+    node_->declare_parameter(
+      std::string(FILTER_NAME) + ".publish_lookahead",
+      rclcpp::ParameterValue(params.publish_lookahead));
+    node_->set_parameter(
+      rclcpp::Parameter(std::string(FILTER_NAME) + ".publish_lookahead", params.publish_lookahead));
+  }
 
   speed_filter_ = std::make_shared<nav2_costmap_2d::SpeedFilter>();
   speed_filter_->initialize(&layers, FILTER_NAME, tf_buffer_.get(), node_, nullptr);
@@ -441,6 +561,28 @@ void TestNode::verifySpeedLimit(
   } else {
     FAIL() << "The type of costmap filter is unknown";
   }
+}
+
+nav_msgs::msg::Path TestNode::createPath(
+  double x0, double y0, double x1, double y1, double spacing = 0.1,
+  const std::string & frame_id = "map")
+{
+  nav_msgs::msg::Path path;
+  path.header.frame_id = frame_id;
+  path.header.stamp = node_->now();
+  const double dx = x1 - x0;
+  const double dy = y1 - y0;
+  const double len = std::hypot(dx, dy);
+  const size_t n = static_cast<size_t>(len / spacing) + 1;
+  for (size_t i = 0; i <= n; ++i) {
+    geometry_msgs::msg::PoseStamped p;
+    p.header.frame_id = frame_id;
+    const double t = (n == 0) ? 0.0 : static_cast<double>(i) / n;
+    p.pose.position.x = x0 + t * dx;
+    p.pose.position.y = y0 + t * dy;
+    path.poses.push_back(p);
+  }
+  return path;
 }
 
 void TestNode::testFullMask(
@@ -622,6 +764,36 @@ void TestNode::testIncorrectLimits(uint8_t type, double base, double multiplier)
   }
 }
 
+void TestNode::testPathLookaheadDetection(
+  uint8_t type, double base, double multiplier,
+  double linear_vel, double tr_x, double tr_y)
+{
+  const int min_i = 0;
+  const int min_j = 0;
+  const int max_i = width_ + 4;
+  const int max_j = height_ + 4;
+
+  // Robot at (2, 0): a free cell (mask data = 0 in the bottom row).
+  // Path runs (2, 0) -> (2, 5), entering the speed-restricted region (y >= 1).
+  // First in-zone cell along the path is (2, 1) with data = 3
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 2.0;
+  pose.position.y = 0.0;
+
+  publishOdom(linear_vel);
+  publishTransform();
+
+  const std::string path_frame = (tr_x == 0.0 || tr_y == 0.0) ? "map" : "odom";
+  publishPath(createPath(2.0 - tr_x, 0.0 - tr_y, 2.0 - tr_x, 5.0 - tr_y, 0.5, path_frame));
+  waitSome(100ms);
+
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  auto speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+
+  verifySpeedLimit(type, base, multiplier, 2, 1, speed_limit);
+}
+
 void TestNode::reset()
 {
   mask_.reset();
@@ -774,6 +946,128 @@ TEST_F(TestNode, testDifferentFrame)
   testFullMask(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, TRANSLATION_X, TRANSLATION_Y);
 
   // Clean-up
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadDetectsZoneAhead)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.2;
+  params.min_lookahead = 0.0;
+  params.max_lookahead = 5.0;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadDetection(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0, NO_TRANSLATION,
+    NO_TRANSLATION);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadFallBackToRobotPose)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.2;
+  params.min_lookahead = 0.0;
+  params.max_lookahead = 5.0;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  // No path or odom published, filter should fall back to just checking at robot pose
+  testSimpleMask(
+    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, NO_TRANSLATION, NO_TRANSLATION);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadWithDifferentFrame)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.2;
+  params.min_lookahead = 0.0;
+  params.max_lookahead = 5.0;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+  createTFBroadcaster("map", "odom");
+
+  // Path is published in odom frame, but filter is in map frame
+  testPathLookaheadDetection(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0, TRANSLATION_X,
+    TRANSLATION_Y);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadInvalidDecel)
+{
+  // Covers the max_decel >= 0 fallback and warning.
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = 0.0;  // invalid
+  params.min_lookahead = 0.3;
+  params.max_lookahead = 5.0;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadDetection(
+    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0,
+    1.0, NO_TRANSLATION, NO_TRANSLATION);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadInvalidMinLookahead)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.25;
+  params.min_lookahead = -1.0;  // invalid: gets clamped to 0
+  params.max_lookahead = 5.0;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  // Filter still works, min_lookahead was reset to 0.0
+  testPathLookaheadDetection(
+    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0,
+    NO_TRANSLATION, NO_TRANSLATION);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadInvalidMaxLookahead)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.5;
+  params.min_lookahead = 2.0;
+  params.max_lookahead = 0.5;  // invalid: less than min, gets clamped up to min
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadDetection(
+    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0,
+    NO_TRANSLATION, NO_TRANSLATION);
+
   speed_filter_->resetFilter();
   reset();
 }

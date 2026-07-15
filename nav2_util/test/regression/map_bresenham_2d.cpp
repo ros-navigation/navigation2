@@ -148,7 +148,7 @@ TEST(map_2d, bresenham2DSamePoint)
   const unsigned int sz_y = 60;
   const unsigned int max_length = 60;
   const unsigned int min_length = 0;
-  MapTest mt(sz_x, sz_y, 0.1);
+  MapTest mt(sz_x, sz_y, 0);
   MapAction ma(mt.getMap(), mt.getSize());
 
   // Initial point

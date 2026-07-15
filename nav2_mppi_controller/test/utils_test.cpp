@@ -310,8 +310,8 @@ TEST(UtilsTests, findPathCosts)
     }
   }
 
-  path.x(1) = 999999999;  // OFF COSTMAP
-  path.y(1) = 999999999;
+  path.x(1) = 9999999;  // OFF COSTMAP
+  path.y(1) = 9999999;
   path.x(10) = 1.5;  // IN LETHAL
   path.y(10) = 1.5;
   path.x(20) = 4.2;  // IN INFLATED

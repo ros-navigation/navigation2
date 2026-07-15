@@ -124,5 +124,6 @@ target_link_libraries(test_validation_messages
   tf2_geometry_msgs::tf2_geometry_msgs
   pluginlib::pluginlib
   builtin_interfaces::builtin_interfaces
+  sensor_msgs::sensor_msgs
   std_msgs::std_msgs
 )

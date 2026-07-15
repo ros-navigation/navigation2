@@ -266,7 +266,7 @@ void ParametersHandler::setParamCallback(
     };
 
   auto static_callback =
-    [this, &setting, name](
+    [name](
     const rclcpp::Parameter & param, rcl_interfaces::msg::SetParametersResult & result) {
       std::string reason = "Rejected change to static parameter: " + std::to_string(param);
       result.successful = false;
