@@ -414,11 +414,19 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     &QLineEdit::editingFinished,
     this,
     &Nav2Panel::loophandler);
+  #if QT_VERSION >= QT_VERSION_CHECK(6, 10, 2)
+  QObject::connect(
+    store_initial_pose_checkbox_,
+    &QCheckBox::checkStateChanged,
+    this,
+    &Nav2Panel::initialStateHandler);
+  #else
   QObject::connect(
     store_initial_pose_checkbox_,
     &QCheckBox::stateChanged,
     this,
     &Nav2Panel::initialStateHandler);
+  #endif
 
   // Start/Reset button click transitions
   initial_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);

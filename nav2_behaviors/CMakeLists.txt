@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_behaviors)
 
 find_package(ament_cmake REQUIRED)
@@ -34,11 +34,11 @@ target_include_directories(nav2_spin_behavior
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(nav2_spin_behavior PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
@@ -60,10 +60,10 @@ target_include_directories(nav2_wait_behavior
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(nav2_wait_behavior PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
@@ -81,10 +81,10 @@ target_include_directories(nav2_drive_on_heading_behavior
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(nav2_drive_on_heading_behavior PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
@@ -105,10 +105,10 @@ target_include_directories(nav2_back_up_behavior
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(nav2_back_up_behavior PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
@@ -129,15 +129,15 @@ target_include_directories(nav2_assisted_teleop_behavior
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(nav2_assisted_teleop_behavior PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${std_msgs_TARGETS}
+  std_msgs::std_msgs
   tf2::tf2
   tf2_ros::tf2_ros
 )

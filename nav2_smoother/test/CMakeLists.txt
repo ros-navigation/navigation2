@@ -21,11 +21,11 @@ nav2_add_gtest(test_smoother_server
 )
 target_link_libraries(test_smoother_server
   ${library_name}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
@@ -45,9 +45,9 @@ target_link_libraries(test_simple_smoother
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
@@ -66,9 +66,9 @@ target_link_libraries(test_savitzky_golay_smoother
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros

@@ -16,7 +16,6 @@
 #include <fstream>
 #include <string>
 #include <nlohmann/json.hpp>
-#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_route/plugins/graph_file_loaders/geojson_graph_file_loader.hpp"

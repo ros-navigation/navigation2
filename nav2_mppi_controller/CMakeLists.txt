@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_mppi_controller)
 
 find_package(ament_cmake REQUIRED)
@@ -54,21 +54,21 @@ target_include_directories(mppi_controller
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_controller PUBLIC
   angles::angles
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::layers
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${std_msgs_TARGETS}
+  std_msgs::std_msgs
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
 )
 
 target_link_libraries(mppi_controller PRIVATE
@@ -115,19 +115,19 @@ target_include_directories(mppi_critics
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_critics PUBLIC
   angles::angles
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::layers
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${std_msgs_TARGETS}
+  std_msgs::std_msgs
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
 )
 target_link_libraries(mppi_critics PRIVATE
   pluginlib::pluginlib
@@ -144,18 +144,18 @@ target_include_directories(mppi_trajectory_validators
     "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(mppi_trajectory_validators PUBLIC
   angles::angles
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
   nav2_costmap_2d::layers
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${std_msgs_TARGETS}
+  std_msgs::std_msgs
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
 )
 target_link_libraries(mppi_trajectory_validators PRIVATE
   pluginlib::pluginlib

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_system_tests)
 
 find_package(ament_cmake REQUIRED)
@@ -43,11 +43,11 @@ if(BUILD_TESTING)
 
   add_library(${local_controller_plugin_lib} SHARED src/error_codes/controller/controller_error_plugins.cpp)
   target_link_libraries(${local_controller_plugin_lib} PRIVATE
-    ${geometry_msgs_TARGETS}
+    geometry_msgs::geometry_msgs
     nav2_core::nav2_core
     nav2_ros_common::nav2_ros_common
     nav2_costmap_2d::nav2_costmap_2d_core
-    ${nav_msgs_TARGETS}
+    nav_msgs::nav_msgs
     pluginlib::pluginlib
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/controller_plugins.xml)
@@ -71,8 +71,8 @@ if(BUILD_TESTING)
 
   add_library(${global_planner_plugin_lib} SHARED src/error_codes/planner/planner_error_plugin.cpp)
   target_link_libraries(${global_planner_plugin_lib} PRIVATE
-    ${geometry_msgs_TARGETS}
-    nav2_core::nav2_core ${nav_msgs_TARGETS}
+    geometry_msgs::geometry_msgs
+    nav2_core::nav2_core nav_msgs::nav_msgs
     nav2_ros_common::nav2_ros_common
     nav2_costmap_2d::nav2_costmap_2d_core
     rclcpp::rclcpp
@@ -103,7 +103,7 @@ if(BUILD_TESTING)
     nav2_core::nav2_core
     nav2_costmap_2d::nav2_costmap_2d_core
     nav2_ros_common::nav2_ros_common
-    ${nav_msgs_TARGETS}
+    nav_msgs::nav_msgs
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
     tf2_ros::tf2_ros

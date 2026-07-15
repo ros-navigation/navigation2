@@ -10,36 +10,36 @@ nav2_add_gtest(test_lifecycle_cli_node test_lifecycle_cli_node.cpp)
 target_link_libraries(test_lifecycle_cli_node ${library_name} rclcpp_lifecycle::rclcpp_lifecycle)
 
 nav2_add_gtest(test_geometry_utils test_geometry_utils.cpp)
-target_link_libraries(test_geometry_utils ${library_name} ${geometry_msgs_TARGETS})
+target_link_libraries(test_geometry_utils ${library_name} geometry_msgs::geometry_msgs)
 
 nav2_add_gtest(test_odometry_utils test_odometry_utils.cpp)
-target_link_libraries(test_odometry_utils ${library_name} ${nav_msgs_TARGETS} ${geometry_msgs_TARGETS})
+target_link_libraries(test_odometry_utils ${library_name} nav_msgs::nav_msgs geometry_msgs::geometry_msgs)
 
 nav2_add_gtest(test_robot_utils test_robot_utils.cpp)
-target_link_libraries(test_robot_utils ${library_name} ${geometry_msgs_TARGETS})
+target_link_libraries(test_robot_utils ${library_name} geometry_msgs::geometry_msgs)
 
 nav2_add_gtest(test_controller_utils test_controller_utils.cpp)
-target_link_libraries(test_controller_utils ${library_name} ${nav_msgs_TARGETS} ${geometry_msgs_TARGETS})
+target_link_libraries(test_controller_utils ${library_name} nav_msgs::nav_msgs geometry_msgs::geometry_msgs)
 
 nav2_add_gtest(test_smoother_utils test_smoother_utils.cpp)
-target_link_libraries(test_smoother_utils ${library_name} ${nav_msgs_TARGETS} ${geometry_msgs_TARGETS} angles::angles)
+target_link_libraries(test_smoother_utils ${library_name} nav_msgs::nav_msgs geometry_msgs::geometry_msgs angles::angles)
 
 nav2_add_gtest(test_base_footprint_publisher test_base_footprint_publisher.cpp)
 target_include_directories(test_base_footprint_publisher PRIVATE "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>")
 
-target_link_libraries(test_base_footprint_publisher ${library_name} tf2_ros::tf2_ros rclcpp::rclcpp ${geometry_msgs_TARGETS})
+target_link_libraries(test_base_footprint_publisher ${library_name} tf2_ros::tf2_ros rclcpp::rclcpp geometry_msgs::geometry_msgs)
 
 nav2_add_gtest(test_array_parser test_array_parser.cpp)
 target_link_libraries(test_array_parser ${library_name})
 
 nav2_add_gtest(test_twist_publisher test_twist_publisher.cpp)
-target_link_libraries(test_twist_publisher ${library_name} rclcpp::rclcpp ${geometry_msgs_TARGETS})
+target_link_libraries(test_twist_publisher ${library_name} rclcpp::rclcpp geometry_msgs::geometry_msgs)
 
 nav2_add_gtest(test_twist_subscriber test_twist_subscriber.cpp)
-target_link_libraries(test_twist_subscriber ${library_name} rclcpp::rclcpp ${geometry_msgs_TARGETS})
+target_link_libraries(test_twist_subscriber ${library_name} rclcpp::rclcpp geometry_msgs::geometry_msgs)
 
 nav2_add_gtest(test_path_utils test_path_utils.cpp)
-target_link_libraries(test_path_utils ${library_name} rclcpp::rclcpp ${geometry_msgs_TARGETS})
+target_link_libraries(test_path_utils ${library_name} rclcpp::rclcpp geometry_msgs::geometry_msgs)
 
 ament_add_gtest(test_parameter_handler test_parameter_handler.cpp)
 target_link_libraries(test_parameter_handler ${library_name} rclcpp::rclcpp)

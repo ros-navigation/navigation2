@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_ros_common)
 
 find_package(ament_cmake REQUIRED)
@@ -33,14 +33,14 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME} INTERFACE
-  ${geometry_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${map_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
+  map_msgs::map_msgs
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
   tf2_ros::tf2_ros
   rclcpp_action::rclcpp_action
   tf2_geometry_msgs::tf2_geometry_msgs

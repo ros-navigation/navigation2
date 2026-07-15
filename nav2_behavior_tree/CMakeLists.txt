@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_behavior_tree CXX)
 
 find_package(ament_cmake REQUIRED)
@@ -32,17 +32,17 @@ target_include_directories(${library_name}
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${library_name} PUBLIC
-  ${action_msgs_TARGETS}
+  action_msgs::action_msgs
   behaviortree_cpp::behaviortree_cpp
-  ${geometry_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
+  nav_msgs::nav_msgs
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
   tf2::tf2
   tf2_ros::tf2_ros
   nav2_ros_common::nav2_ros_common
@@ -283,18 +283,18 @@ foreach(bt_plugin ${plugin_libs})
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
   target_link_libraries(${bt_plugin} PUBLIC
     behaviortree_cpp::behaviortree_cpp
-    ${geometry_msgs_TARGETS}
-    ${nav_msgs_TARGETS}
-    ${nav2_msgs_TARGETS}
+    geometry_msgs::geometry_msgs
+    nav_msgs::nav_msgs
+    nav2_msgs::nav2_msgs
     nav2_util::nav2_util_core
     rclcpp::rclcpp
     rclcpp_action::rclcpp_action
     rclcpp_lifecycle::rclcpp_lifecycle
-    ${sensor_msgs_TARGETS}
+    sensor_msgs::sensor_msgs
     tf2::tf2
     tf2_ros::tf2_ros
-    ${std_msgs_TARGETS}
-    ${std_srvs_TARGETS}
+    std_msgs::std_msgs
+    std_srvs::std_srvs
     nav2_ros_common::nav2_ros_common
   )
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)

@@ -17,8 +17,8 @@ foreach(name IN LISTS TEST_NAMES)
   )
   target_link_libraries(${name}
     mppi_controller
-    ${geometry_msgs_TARGETS}
-    ${nav_msgs_TARGETS}
+    geometry_msgs::geometry_msgs
+    nav_msgs::nav_msgs
     nav2_core::nav2_core
     nav2_costmap_2d::nav2_costmap_2d_core
     rclcpp::rclcpp

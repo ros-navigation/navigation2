@@ -2,7 +2,7 @@ add_executable(test_updown
   test_updown.cpp
 )
 target_link_libraries(test_updown PRIVATE
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_lifecycle_manager::nav2_lifecycle_manager_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp

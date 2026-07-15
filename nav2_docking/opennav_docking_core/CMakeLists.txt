@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(opennav_docking_core)
 
 find_package(ament_cmake REQUIRED)
@@ -18,7 +18,7 @@ target_include_directories(opennav_docking_core
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(opennav_docking_core INTERFACE
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   nav2_ros_common::nav2_ros_common

@@ -309,23 +309,23 @@ void FollowingServer::followObject()
     }
   } catch (const tf2::TransformException & e) {
     result->error_msg = std::string("Transform error: ") + e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = FollowObject::Result::TF_ERROR;
   } catch (opennav_docking_core::FailedToDetectDock & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = FollowObject::Result::FAILED_TO_DETECT_OBJECT;
   } catch (opennav_docking_core::FailedToControl & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = FollowObject::Result::FAILED_TO_CONTROL;
   } catch (opennav_docking_core::DockingException & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = FollowObject::Result::UNKNOWN;
   } catch (std::exception & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = FollowObject::Result::UNKNOWN;
   }
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_costmap_2d)
 
 find_package(ament_cmake REQUIRED)
@@ -57,14 +57,14 @@ target_include_directories(nav2_costmap_2d_core
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(nav2_costmap_2d_core PUBLIC
-  ${geometry_msgs_TARGETS}
-  ${map_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
+  map_msgs::map_msgs
+  nav_msgs::nav_msgs
+  nav2_msgs::nav2_msgs
   nav2_ros_common::nav2_ros_common
   nav2_util::nav2_util_core
   pluginlib::pluginlib
-  ${std_srvs_TARGETS}
+  std_srvs::std_srvs
   tf2::tf2
   tf2_ros::tf2_ros
   tf2_sensor_msgs::tf2_sensor_msgs
@@ -128,7 +128,7 @@ target_include_directories(filters
 )
 target_link_libraries(filters PUBLIC
   nav2_costmap_2d_core
-  ${std_msgs_TARGETS}
+  std_msgs::std_msgs
   tf2::tf2
   nav2_ros_common::nav2_ros_common
 )
@@ -145,18 +145,18 @@ target_include_directories(nav2_costmap_2d_client
 )
 target_link_libraries(nav2_costmap_2d_client PUBLIC
   nav2_costmap_2d_core
-  ${std_msgs_TARGETS}
+  std_msgs::std_msgs
   tf2::tf2
   nav2_ros_common::nav2_ros_common
 )
 
 add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
 target_link_libraries(nav2_costmap_2d_markers PRIVATE
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_voxel_grid::voxel_grid
   nav2_util::nav2_util_core
   rclcpp::rclcpp
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
   nav2_ros_common::nav2_ros_common
 )
 target_include_directories(nav2_costmap_2d_markers
@@ -168,11 +168,11 @@ target_include_directories(nav2_costmap_2d_markers
 add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
 target_link_libraries(nav2_costmap_2d_cloud PRIVATE
   nav2_voxel_grid::voxel_grid
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   rclcpp::rclcpp
-  ${sensor_msgs_TARGETS}
-  ${std_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
+  std_msgs::std_msgs
   nav2_ros_common::nav2_ros_common
 )
 target_include_directories(nav2_costmap_2d_cloud

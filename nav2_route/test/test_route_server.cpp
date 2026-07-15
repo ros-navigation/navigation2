@@ -28,7 +28,6 @@
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/route_tracker.hpp"
 #include "nav2_route/route_server.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 
 
 using namespace nav2_route;  // NOLINT

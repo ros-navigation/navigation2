@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_amcl)
 
 find_package(ament_cmake REQUIRED)
@@ -104,20 +104,20 @@ target_include_directories(${library_name}
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   message_filters::message_filters
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
-  ${sensor_msgs_TARGETS}
-  ${std_srvs_TARGETS}
+  sensor_msgs::sensor_msgs
+  std_srvs::std_srvs
   pluginlib::pluginlib
   sensors_lib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   tf2_ros::tf2_ros
   tf2::tf2
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
 )
 target_link_libraries(${library_name} PRIVATE
   rclcpp_components::component

@@ -4,9 +4,9 @@ nav2_add_gtest(velocity_smoother_tests
 )
 target_link_libraries(velocity_smoother_tests
   ${library_name}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )

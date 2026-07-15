@@ -4,7 +4,7 @@ nav2_add_gtest(test_constrained_smoother
 target_link_libraries(test_constrained_smoother
   ${library_name}
   angles::angles
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core

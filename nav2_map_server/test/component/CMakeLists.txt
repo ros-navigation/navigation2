@@ -8,7 +8,7 @@ target_include_directories(test_map_server_node
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/test>")
 target_link_libraries(test_map_server_node
   rclcpp::rclcpp
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   ${library_name}
 )
 
@@ -32,7 +32,7 @@ target_include_directories(test_map_saver_node
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/test>")
 target_link_libraries(test_map_saver_node
   rclcpp::rclcpp
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   ${library_name}
   ${map_io_library_name}
 )

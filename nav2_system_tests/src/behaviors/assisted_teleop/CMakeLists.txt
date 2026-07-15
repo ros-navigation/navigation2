@@ -5,15 +5,15 @@ ament_add_gtest_executable(${test_assisted_teleop_behavior}
   assisted_teleop_behavior_tester.cpp
 )
 target_link_libraries(${test_assisted_teleop_behavior}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
-  ${std_msgs_TARGETS}
+  std_msgs::std_msgs
   tf2::tf2
   tf2_ros::tf2_ros
   nav2_ros_common::nav2_ros_common
