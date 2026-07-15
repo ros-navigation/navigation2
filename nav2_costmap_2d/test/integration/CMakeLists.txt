@@ -23,6 +23,14 @@ target_link_libraries(inflation_tests_exec
   layers
 )
 
+ament_add_gtest_executable(asymmetric_inflation_tests_exec
+  asymmetric_inflation_tests.cpp
+)
+target_link_libraries(asymmetric_inflation_tests_exec
+  nav2_costmap_2d_core
+  layers
+)
+
 ament_add_gtest_executable(obstacle_tests_exec
   obstacle_tests.cpp
 )
@@ -100,6 +108,16 @@ ament_add_test(inflation_tests
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:inflation_tests_exec>
+)
+
+ament_add_test(asymmetric_inflation_tests
+  GENERATE_RESULT_FOR_RETURN_CODE_ZERO
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+  ENV
+    TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
+    TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
+    TEST_EXECUTABLE=$<TARGET_FILE:asymmetric_inflation_tests_exec>
 )
 
 ament_add_test(obstacle_tests

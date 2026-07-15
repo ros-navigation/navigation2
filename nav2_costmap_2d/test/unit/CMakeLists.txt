@@ -67,3 +67,9 @@ ament_add_gtest(coordinate_transform_test coordinate_transform_test.cpp)
 target_link_libraries(coordinate_transform_test
   nav2_costmap_2d_core
 )
+
+ament_add_gtest(asymmetric_inflation_layer_test asymmetric_inflation_layer_test.cpp)
+target_link_libraries(asymmetric_inflation_layer_test
+  nav2_costmap_2d_core
+  layers
+)
