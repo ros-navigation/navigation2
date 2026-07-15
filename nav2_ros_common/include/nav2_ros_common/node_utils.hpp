@@ -25,9 +25,10 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
 #include "pluginlib/exceptions.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 #if RCLCPP_VERSION_GTE(30, 1, 4)
 #include "ament_index_cpp/get_package_share_path.hpp"
+#else
+#include "ament_index_cpp/get_package_share_directory.hpp"
 #endif
 
 #ifdef __APPLE__

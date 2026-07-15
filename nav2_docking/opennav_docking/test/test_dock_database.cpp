@@ -16,7 +16,6 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "opennav_docking/dock_database.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
 // These sets of tests are admittedly incomplete without a dummy docking plugin.

@@ -28,7 +28,6 @@
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 
 TEST(AStarTest, test_a_star_2d)
 {

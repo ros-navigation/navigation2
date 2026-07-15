@@ -28,7 +28,6 @@
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smoother/savitzky_golay_smoother.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
