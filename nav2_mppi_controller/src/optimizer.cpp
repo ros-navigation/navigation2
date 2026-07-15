@@ -305,6 +305,7 @@ void Optimizer::prepare(
 {
   if (settings_.open_loop) {
     state_.speed = last_command_vel_;
+    state_.pose = robot_pose;
   } else {
     // Predict state one controller_period forward toward the last command to compensate
     // for the latency between measurement and when this command will take effect.
@@ -319,19 +320,19 @@ void Optimizer::prepare(
     state_.speed = robot_speed;
     auto robot_last_speed = state_.speed;
     state_.speed.linear.x = utils::clampVelocityByAccel(
-      robot_speed.linear.x, last_command_vel_.linear.x,  min_delta_vx, max_delta_vx);
+      robot_speed.linear.x, last_command_vel_.linear.x, min_delta_vx, max_delta_vx);
     state_.speed.angular.z = utils::clampVelocityByAccel(
-      robot_speed.angular.z, last_command_vel_.angular.z,  -max_delta_wz, max_delta_wz);
+      robot_speed.angular.z, last_command_vel_.angular.z, -max_delta_wz, max_delta_wz);
     if (isHolonomic()) {
       state_.speed.linear.y = utils::clampVelocityByAccel(
-      robot_speed.linear.y, last_command_vel_.linear.y,  min_delta_vy, max_delta_vy);
+      robot_speed.linear.y, last_command_vel_.linear.y, min_delta_vy, max_delta_vy);
     }
+    state_.pose = robot_pose;
+    // Predict the robot pose at 1*dt in future
+    // assuming robot is executing current observed speed until dt in future,
+    motion_model_->predictFuture(state_.pose, robot_last_speed, dt);
   }
 
-  state_.pose = robot_pose;
-  // Predict the robot pose at 1*dt in future
-  // assuming robot is executing current observed speed until dt in future,
-  motion_model_->predictFuture(state_.pose,robot_last_speed,dt);
 
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
