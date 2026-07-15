@@ -197,24 +197,30 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   // initialize service and spin on new thread
-  CheckPoseOccupancyTestFixture::success_server_ =
-    std::make_shared<CheckPoseOccupancySuccessService>();
-  std::thread success_server_thread([]() {
-      rclcpp::spin(CheckPoseOccupancyTestFixture::success_server_);
-    });
+  auto success_server = std::make_shared<CheckPoseOccupancySuccessService>();
+  CheckPoseOccupancyTestFixture::success_server_ = success_server;
 
-  CheckPoseOccupancyTestFixture::failure_server_ =
-    std::make_shared<CheckPoseOccupancyFailureService>();
-  std::thread failure_server_thread([]() {
-      rclcpp::spin(CheckPoseOccupancyTestFixture::failure_server_);
+  auto failure_server = std::make_shared<CheckPoseOccupancyFailureService>();
+  CheckPoseOccupancyTestFixture::failure_server_ = failure_server;
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(success_server);
+  executor.add_node(failure_server);
+  std::thread server_thread([&executor]() {
+      executor.spin();
     });
 
   int all_successful = RUN_ALL_TESTS();
 
+  executor.cancel();
+  server_thread.join();
+  executor.remove_node(success_server);
+  executor.remove_node(failure_server);
+  success_server.reset();
+  failure_server.reset();
+
   // shutdown ROS
   rclcpp::shutdown();
-  success_server_thread.join();
-  failure_server_thread.join();
 
   return all_successful;
 }

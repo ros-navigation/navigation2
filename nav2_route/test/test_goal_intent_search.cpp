@@ -27,13 +27,6 @@
 #include "nav2_ros_common/node_thread.hpp"
 #include "nav2_route/goal_intent_extractor.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route;  // NOLINT
 
@@ -167,4 +160,13 @@ TEST(GoalIntentSearchTest, test_breadth_first_search)
   // Test empty candidates
   candidate_nodes.clear();
   EXPECT_FALSE(bfs.search(target_node, candidate_nodes));
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

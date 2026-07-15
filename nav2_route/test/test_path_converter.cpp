@@ -22,13 +22,6 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_route/path_converter.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route;  // NOLINT
 
@@ -174,4 +167,13 @@ TEST(PathConverterTest, test_path_converter_zero_length_edge)
   std::vector<geometry_msgs::msg::PoseStamped> poses;
   converter.interpolateEdge(x0, y0, x1, y1, poses);
   ASSERT_TRUE(poses.empty());
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

@@ -29,14 +29,6 @@
 
 using namespace std::chrono_literals;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class LoopbackSimulatorTest : public ::testing::Test
 {
 protected:
@@ -330,4 +322,13 @@ TEST_F(LoopbackSimulatorTest, SpeedFactorDynamicReconfigure)
 
   // Should still be last valid value
   EXPECT_DOUBLE_EQ(sim_node_->get_parameter("speed_factor").as_double(), 5.0);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

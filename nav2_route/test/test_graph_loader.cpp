@@ -23,13 +23,6 @@
 #include "nav2_route/graph_loader.hpp"
 #include "tf2_ros/static_transform_broadcaster.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route; //NOLINT
 
@@ -150,4 +143,13 @@ TEST(GraphLoader, test_transformation_api2)
   std::string filepath = nav2::get_package_share_directory("nav2_route") +
     "/test/test_graphs/no_frame.json";
   EXPECT_FALSE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath));
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }
