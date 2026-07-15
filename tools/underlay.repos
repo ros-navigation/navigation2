@@ -1,8 +1,8 @@
 repositories:
   BehaviorTree/BehaviorTree.CPP:
     type: git
-    url: https://github.com/mini-1235/BehaviorTree.CPP.git
-    version: fix/ament-index-package-share-api
+    url: https://github.com/BehaviorTree/BehaviorTree.CPP
+    version: edf12f109c92c9ac509ce71973cd4b18268a885a
   # Pin to 15.2.1 until we switch to Ubuntu Resolute to avoid Qt5 Qt6 mismatch between Rviz and Gazebo
   # ros2/rviz:
   #   type: git
