@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <cmath>
 #include "nav2_mppi_controller/critics/cost_critic.hpp"
 #include "nav2_costmap_2d/inflation_layer_interface.hpp"
@@ -33,6 +34,7 @@ void CostCritic::initialize()
   getParam(collision_cost_, "collision_cost", 1000000.0f);
   getParam(near_goal_distance_, "near_goal_distance", 0.5f);
   getParam(inflation_layer_name_, "inflation_layer_name", std::string(""));
+  getParam(num_threads_, "num_threads", -1);
   getParam(trajectory_point_step_, "trajectory_point_step", 2);
 
   // Normalized by cost value to put in same regime as other weights
@@ -128,6 +130,32 @@ float CostCritic::findCircumscribedCost(
   return circumscribed_cost_;
 }
 
+int CostCritic::getOptimalThreadCount()
+{
+#ifdef _OPENMP
+  if (num_threads_ > 0) {
+    RCLCPP_INFO_ONCE(
+      logger_,
+      "OpenMP: Using configured num_threads: %d",
+      num_threads_);
+    return num_threads_;
+  }
+  // Auto (-1): use half of available cores — costmap lookups are memory-bound,
+  // so more threads hit diminishing returns and increase cache contention.
+  // omp_get_max_threads() respects OMP_NUM_THREADS if set.
+  const int cpu_cores = omp_get_max_threads();
+  const int optimal = std::max(1, cpu_cores / 2);
+  RCLCPP_INFO_ONCE(
+    logger_,
+    "OpenMP: %d cores available, using %d threads (auto)",
+    cpu_cores, optimal);
+
+  return std::max(1, optimal);
+#else
+  return 1;
+#endif
+}
+
 void CostCritic::score(CriticData & data)
 {
   if (!enabled_) {
@@ -143,9 +171,11 @@ void CostCritic::score(CriticData & data)
   size_x_ = costmap->getSizeInCellsX();
   size_y_ = costmap->getSizeInCellsY();
 
+  nav2_costmap_2d::Footprint footprint;
   if (consider_footprint_) {
     // footprint may have changed since initialization if user has dynamic footprints
     possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
+    footprint = costmap_ros_->getRobotFootprint();
   }
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
@@ -178,12 +208,23 @@ void CostCritic::score(CriticData & data)
     data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
     Eigen::Stride<-1, -1>(outer_stride, 1));
 
+#ifdef _OPENMP
+  #pragma omp parallel for \
+  default(none) \
+  shared(repulsive_cost, costmap, near_goal, footprint, \
+  strided_traj_rows, strided_traj_cols, traj_x, traj_y, traj_yaw) \
+  reduction(&&:all_trajectories_collide) \
+  schedule(dynamic) \
+  num_threads(getOptimalThreadCount())
+#endif
   for (int i = 0; i < strided_traj_rows; ++i) {
     bool trajectory_collide = false;
     float pose_cost = 0.0f;
     float & traj_cost = repulsive_cost(i);
 
-    for (int j = 0; j < strided_traj_cols; j++) {
+    // iterate over the trajectory backwards, as collisions are more likely towards the end of
+    // the trajectory
+    for (int j = strided_traj_cols - 1; j >= 0; j--) {
       float Tx = traj_x(i, j);
       float Ty = traj_y(i, j);
       unsigned int x_i = 0u, y_i = 0u;
@@ -200,7 +241,7 @@ void CostCritic::score(CriticData & data)
         }
       }
 
-      if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
+      if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j), footprint)) {
         traj_cost = collision_cost_;
         trajectory_collide = true;
         if (track_collisions) {collisions[i] = true;}
