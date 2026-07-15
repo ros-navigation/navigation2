@@ -171,12 +171,8 @@ def generate_launch_description() -> LaunchDescription:
                 package='rclcpp_components',
                 executable='component_container',
                 parameters=[configured_params, {'autostart': autostart}],
-                # event executor + isolated + thread num = 1
-                arguments=['--isolated', '--executor-type', 'events-cbg',
-                           '--ros-args', '--log-level', log_level, '-p', 'thread_num:=1'],
-                # single threaded + isolated
-                # arguments=['--isolated', '--executor-type', 'single-threaded',
-                #            '--ros-args', '--log-level', log_level],
+                arguments=['--isolated', '--executor-type', 'single-threaded',
+                           '--ros-args', '--log-level', log_level],
                 remappings=remappings,
                 output='screen',
             ),
