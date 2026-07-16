@@ -248,8 +248,8 @@ void Costmap2DPublisher::publishCostmap()
     saved_origin_x_ != costmap_->getOriginX() ||
     saved_origin_y_ != costmap_->getOriginY())
   {
-    updateGridParams();
     if (costmap_pub_->get_subscription_count() > 0) {
+      updateGridParams();
       prepareGrid();
       costmap_pub_->publish(std::move(grid_));
     }
