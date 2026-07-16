@@ -30,7 +30,6 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/point.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "tf2/utils.hpp"
@@ -122,7 +121,7 @@ protected:
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
   nav2_costmap_2d::Costmap2D * _costmap;
-  std::vector<geometry_msgs::msg::Point> _smoother_footprint;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> _costmap_ros;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
   rclcpp::Clock::SharedPtr _clock;
   rclcpp::Logger _logger{rclcpp::get_logger("SmacPlanner2D")};

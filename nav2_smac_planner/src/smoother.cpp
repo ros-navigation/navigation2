@@ -169,11 +169,11 @@ bool Smoother::smoothImpl(
       }
     }
 
+    nav2_util::updateApproximatePathOrientations(
+      new_path, reversing_segment, is_holonomic_);
+
     // validate update is admissible, only checks cost if a valid costmap pointer is provided
     if (costmap) {
-      nav2_util::updateApproximatePathOrientations(
-        new_path, reversing_segment, is_holonomic_);
-
       if (!footprint.empty()) {
         footprint_checker_.setCostmap(
           const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
@@ -202,7 +202,6 @@ bool Smoother::smoothImpl(
             "Smoothing process resulted in an infeasible collision. "
             "Returning the last path before the infeasibility was introduced.");
           path = last_path;
-          nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
           return false;
         }
       }
@@ -218,7 +217,6 @@ bool Smoother::smoothImpl(
     smoothImpl(new_path, reversing_segment, costmap, max_time, footprint);
   }
 
-  nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
   path = new_path;
   return true;
 }
