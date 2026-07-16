@@ -156,9 +156,11 @@ AsymmetricInflationLayer::deactivate()
 }
 
 void
-AsymmetricInflationLayer::globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg)
+AsymmetricInflationLayer::globalPathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg)
 {
-  if (*latest_global_path_ == *msg) {return;}
+  if (latest_global_path_ && *latest_global_path_ == *msg) {
+    return;
+  }
 
   // Cache the path
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());

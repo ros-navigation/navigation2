@@ -226,10 +226,7 @@ std::vector<std::string> Polygon::getSourcesNames() const
 
 void Polygon::getPolygon(std::vector<Point> & poly) const
 {
-  if (poly.empty()) {
-    return;
-  }
-  poly = poly_;
+  poly.assign(poly_.begin(), poly_.end());
 }
 
 bool Polygon::isShapeSet()

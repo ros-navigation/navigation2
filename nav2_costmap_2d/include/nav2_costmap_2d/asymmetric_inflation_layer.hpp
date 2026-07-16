@@ -125,7 +125,7 @@ protected:
   /**
    * @brief Callback for incoming global path messages
    */
-  void globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg);
+  void globalPathCallback(const nav_msgs::msg::Path::ConstSharedPtr msg);
 
   /**
    * @brief Extract global path segments that overlap the local costmap window.
@@ -257,7 +257,7 @@ protected:
 
   // --- Path subscription ---
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
-  nav_msgs::msg::Path::SharedPtr latest_global_path_;
+  nav_msgs::msg::Path::ConstSharedPtr latest_global_path_;
   std::mutex path_mutex_;
 };
 

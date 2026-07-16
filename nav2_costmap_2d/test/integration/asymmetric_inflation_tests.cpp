@@ -45,7 +45,7 @@ using geometry_msgs::msg::Point;
 class TestableAsymmetricInflationLayer : public nav2_costmap_2d::AsymmetricInflationLayer
 {
 public:
-  void injectPath(const nav_msgs::msg::Path::SharedPtr msg)
+  void injectPath(const nav_msgs::msg::Path::ConstSharedPtr msg)
   {
     globalPathCallback(msg);
   }
