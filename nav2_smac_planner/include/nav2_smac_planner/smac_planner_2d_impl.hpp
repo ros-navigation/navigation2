@@ -271,12 +271,12 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
 
   // Corner case of start and goal being on the same cell
   if (std::floor(mx_start) == std::floor(mx_goal) && std::floor(my_start) == std::floor(my_goal)) {
-    pose.pose = start.pose;
+    pose.pose = goal.pose;
     // if we have a different start and goal orientation, set the unique path pose to the goal
     // orientation, unless use_final_approach_orientation=true where we need it to be the start
     // orientation to avoid movement from the local planner
-    if (start.pose.orientation != goal.pose.orientation && !_use_final_approach_orientation) {
-      pose.pose.orientation = goal.pose.orientation;
+    if (start.pose.orientation != goal.pose.orientation && _use_final_approach_orientation) {
+      pose.pose.orientation = start.pose.orientation;
     }
     plan.poses.push_back(pose);
 
@@ -308,6 +308,9 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
       throw nav2_core::PlannerTimedOut("exceeded maximum iterations");
     }
   }
+
+  const bool reached_goal_cell = std::floor(path.front().x) == std::floor(mx_goal) &&
+                                  std::floor(path.front().y) == std::floor(my_goal);
 
   // Convert to world coordinates
   plan.poses.reserve(path.size());
@@ -346,6 +349,10 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
   // And deal with corner case of plan of length 1
   // If use_final_approach_orientation=false (default), override last pose orientation to match goal
   size_t plan_size = plan.poses.size();
+  if (reached_goal_cell && plan_size > 0) {
+    plan.poses.back().pose.position = goal.pose.position;
+  }
+  
   if (_use_final_approach_orientation) {
     if (plan_size == 1) {
       plan.poses.back().pose.orientation = start.pose.orientation;
