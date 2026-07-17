@@ -337,7 +337,7 @@ void Tester::setCircleParams(const std::string & uuid)
 void Tester::sendTransform(const double frame_shift)
 {
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(vo_server_);
+    std::make_shared<tf2_ros::TransformBroadcaster>(*vo_server_);
 
   geometry_msgs::msg::TransformStamped transform;
 

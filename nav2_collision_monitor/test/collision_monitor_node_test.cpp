@@ -509,7 +509,7 @@ void Tester::setGlobalHeightParams(const std::string & source_name, const double
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(cm_);
+    std::make_shared<tf2_ros::TransformBroadcaster>(*cm_);
 
   geometry_msgs::msg::TransformStamped transform;
   transform.transform.rotation.x = 0.0;

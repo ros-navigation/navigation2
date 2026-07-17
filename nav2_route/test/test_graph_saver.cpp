@@ -109,7 +109,7 @@ TEST(GraphSaver, test_transformation_api)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   tf->setUsingDedicatedThread(true);
   auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
-  auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
+  auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*node);
 
   std::string frame = "map";
 

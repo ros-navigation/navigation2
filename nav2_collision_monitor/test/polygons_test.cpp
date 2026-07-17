@@ -416,7 +416,7 @@ void Tester::createCircle(const std::string & action_type, const bool is_static)
 void Tester::sendTransforms(double shift)
 {
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(test_node_);
+    std::make_shared<tf2_ros::TransformBroadcaster>(*test_node_);
 
   geometry_msgs::msg::TransformStamped transform;
 

@@ -57,12 +57,10 @@ TEST(RouteTrackerTest, test_get_robot_pose)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("router_test");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    node->get_node_base_interface(),
-    node->get_node_timers_interface());
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(*node);
   tf->setCreateTimerInterface(timer_interface);
   auto transform_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
-  auto broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+  auto broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
 
   RouteTracker tracker;

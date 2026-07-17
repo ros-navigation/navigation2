@@ -691,8 +691,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   // Setting up tf for initial pose
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(client_node_->get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    client_node_->get_node_base_interface(),
-    client_node_->get_node_timers_interface());
+    *client_node_);
   tf2_buffer_->setCreateTimerInterface(timer_interface);
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
 

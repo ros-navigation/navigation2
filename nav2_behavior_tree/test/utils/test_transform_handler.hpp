@@ -134,7 +134,7 @@ protected:
   virtual void startRobotTransform(std::chrono::milliseconds tf_broadcast_period)
   {
     // Provide the robot pose transform
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*node_);
 
     if (!base_transform_) {
       base_transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();

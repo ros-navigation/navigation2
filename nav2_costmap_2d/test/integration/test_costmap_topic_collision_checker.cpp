@@ -108,12 +108,10 @@ public:
       rclcpp::CallbackGroupType::MutuallyExclusive, false);
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      get_node_base_interface(),
-      get_node_timers_interface(),
-      callback_group_);
+      *shared_from_this(), callback_group_);
     tf_buffer_->setCreateTimerInterface(timer_interface);
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*shared_from_this());
 
     std::string costmap_topic = "costmap_raw";
     std::string footprint_topic = "published_footprint";

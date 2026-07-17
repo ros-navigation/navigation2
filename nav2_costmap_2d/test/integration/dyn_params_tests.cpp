@@ -40,7 +40,7 @@ TEST(DynParamTestNode, testDynParamsSet)
 
   // Set tf between default global_frame and robot_base_frame in order not to block in on_activate
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
-    std::make_unique<tf2_ros::TransformBroadcaster>(node);
+    std::make_unique<tf2_ros::TransformBroadcaster>(*node);
   geometry_msgs::msg::TransformStamped t;
   t.header.stamp = node->get_clock()->now();
   t.header.frame_id = "map";

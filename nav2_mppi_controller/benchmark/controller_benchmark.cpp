@@ -88,7 +88,7 @@ void prepareAndRunBenchmark(
   tf_buffer->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   auto broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(node);
+    std::make_shared<tf2_ros::TransformBroadcaster>(*node);
   auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
 
   auto map_odom_broadcaster = std::async(

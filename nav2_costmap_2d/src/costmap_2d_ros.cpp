@@ -153,9 +153,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Create the transform-related objects
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    get_node_base_interface(),
-    get_node_timers_interface(),
-    callback_group_);
+    *this, callback_group_);
   tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 

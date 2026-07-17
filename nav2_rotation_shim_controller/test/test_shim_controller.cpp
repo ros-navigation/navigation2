@@ -218,12 +218,12 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
+  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, *node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   costmap->declare_parameter("origin_x", 0.0);
   costmap->declare_parameter("origin_y", 0.0);
   costmap->configure();
-  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*node);
 
   geometry_msgs::msg::TransformStamped transform;
   transform.header.frame_id = "base_link";
@@ -283,11 +283,11 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
+  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, *node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
-  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*node);
 
   geometry_msgs::msg::TransformStamped transform;
   transform.header.frame_id = "base_link";
@@ -370,11 +370,11 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
+  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, *node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
-  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*node);
 
   geometry_msgs::msg::TransformStamped transform;
   transform.header.frame_id = "base_link";
@@ -453,11 +453,11 @@ TEST(RotationShimControllerTest, accelerationTests) {
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
+  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, *node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
-  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*node);
 
   geometry_msgs::msg::TransformStamped transform;
   transform.header.frame_id = "base_link";
@@ -541,11 +541,11 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
+  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, *node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
-  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*node);
   geometry_msgs::msg::PoseStamped robot_pose;
   nav2_controller::SimpleGoalChecker checker;
   geometry_msgs::msg::Twist velocity;

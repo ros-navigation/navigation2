@@ -48,7 +48,7 @@ protected:
     costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("costmap");
 
     // Send identity transform to ensure costmap can transform robot poses during service calls
-    auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(costmap_);
+    auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*costmap_);
     geometry_msgs::msg::TransformStamped transform;
     transform.header.frame_id = "map";
     transform.child_frame_id = "base_link";

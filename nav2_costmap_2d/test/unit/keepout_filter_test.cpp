@@ -241,7 +241,7 @@ void TestNode::createKeepoutFilter(const std::string & global_frame)
 
 void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame)
 {
-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*node_);
 
   transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();
   transform_->header.frame_id = mask_frame;

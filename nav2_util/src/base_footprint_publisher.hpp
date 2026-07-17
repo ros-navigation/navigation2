@@ -111,9 +111,7 @@ public:
   {
     RCLCPP_INFO(get_logger(), "Creating base footprint publisher");
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      get_node_base_interface(),
-      get_node_timers_interface());
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(*this);
     tf_buffer_->setCreateTimerInterface(timer_interface);
     listener_publisher_ = std::make_shared<BaseFootprintPublisherListener>(
       *tf_buffer_, true, *this);

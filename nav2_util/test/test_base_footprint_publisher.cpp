@@ -26,11 +26,9 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   executor.add_node(node->get_node_base_interface());
   executor.spin_some();
 
-  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*node);
   auto buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    node->get_node_base_interface(),
-    node->get_node_timers_interface());
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(*node);
   buffer->setCreateTimerInterface(timer_interface);
   auto listener = std::make_shared<tf2_ros::TransformListener>(*buffer, true);
 

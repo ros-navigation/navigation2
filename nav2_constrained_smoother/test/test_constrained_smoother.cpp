@@ -114,8 +114,7 @@ protected:
 
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_lifecycle_->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      node_lifecycle_->get_node_base_interface(),
-      node_lifecycle_->get_node_timers_interface());
+      *node_lifecycle_);
     tf_buffer_->setCreateTimerInterface(timer_interface);
 
     costmap_sub_ =

@@ -413,7 +413,7 @@ void Tester::setVectors(
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(cd_);
+    std::make_shared<tf2_ros::TransformBroadcaster>(*cd_);
 
   geometry_msgs::msg::TransformStamped transform;
   transform.transform.rotation.x = 0.0;

@@ -62,11 +62,10 @@ public:
     node_ = std::make_shared<nav2::LifecycleNode>("behavior_tree_handler");
 
     tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      node_->get_node_base_interface(), node_->get_node_timers_interface());
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(*node_);
     tf_->setCreateTimerInterface(timer_interface);
     tf_->setUsingDedicatedThread(true);
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, node_, false);
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, *node_, false);
 
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
 

@@ -113,7 +113,7 @@ PlannerTester::~PlannerTester()
 void PlannerTester::startRobotTransform()
 {
   // Provide the robot pose transform
-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
 
   // Set an initial pose
   geometry_msgs::msg::Point robot_position;

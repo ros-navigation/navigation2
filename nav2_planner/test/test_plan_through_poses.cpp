@@ -127,7 +127,7 @@ Tester::Tester()
   executor_->add_node(tester_node_->get_node_base_interface());
   executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
 
-  robot_pose_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(tester_node_);
+  robot_pose_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*tester_node_);
   action_client_ = tester_node_->create_action_client<Action>("compute_path_through_poses");
 
   map_publisher_ = tester_node_->create_publisher<nav_msgs::msg::OccupancyGrid>(

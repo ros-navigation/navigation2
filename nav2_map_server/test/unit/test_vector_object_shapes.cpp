@@ -264,7 +264,7 @@ nav2_msgs::msg::CircleObject::SharedPtr Tester::makeCircleObject(
 void Tester::sendTransform()
 {
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+    std::make_shared<tf2_ros::TransformBroadcaster>(*node_);
 
   geometry_msgs::msg::TransformStamped transform;
 

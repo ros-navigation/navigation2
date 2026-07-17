@@ -49,9 +49,7 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   if (!enforce_global_frame_id_) {
     // Transform buffer and listener initialization
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      this->get_node_base_interface(),
-      this->get_node_timers_interface());
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(*this);
     tf_buffer_->setCreateTimerInterface(timer_interface);
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   } else {

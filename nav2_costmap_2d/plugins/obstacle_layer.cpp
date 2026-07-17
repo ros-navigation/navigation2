@@ -247,9 +247,7 @@ void ObstacleLayer::onInitialize()
 
       auto filter = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
         *sub, *tf_, global_frame_, 50,
-        node->get_node_logging_interface(),
-        node->get_node_clock_interface(),
-        tf2::durationFromSec(transform_tolerance));
+        *node, tf2::durationFromSec(transform_tolerance));
 
       if (inf_is_valid) {
         filter->registerCallback(
@@ -318,9 +316,7 @@ void ObstacleLayer::onInitialize()
 
       auto filter = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>>(
         *sub, *tf_, global_frame_, 50,
-        node->get_node_logging_interface(),
-        node->get_node_clock_interface(),
-        tf2::durationFromSec(transform_tolerance));
+        *node, tf2::durationFromSec(transform_tolerance));
 
       filter->registerCallback(
         std::bind(

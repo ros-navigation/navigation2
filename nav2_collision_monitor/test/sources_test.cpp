@@ -561,7 +561,7 @@ void Tester::createSources(const bool base_shift_correction)
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(test_node_);
+    std::make_shared<tf2_ros::TransformBroadcaster>(*test_node_);
 
   geometry_msgs::msg::TransformStamped transform;
 
