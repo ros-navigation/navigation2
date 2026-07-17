@@ -141,14 +141,14 @@ public:
 
   BT::NodeStatus on_success() override
   {
-    config().blackboard->set("sequence", result_.result->sequence);
+    config().blackboard->set("sequence", BT::toStr(result_.result->sequence));
     return BT::NodeStatus::SUCCESS;
   }
 
   BT::NodeStatus on_cancelled() override
   {
     if (result_.result) {
-      config().blackboard->set("sequence", result_.result->sequence);
+      config().blackboard->set("sequence", BT::toStr(result_.result->sequence));
     }
     config().blackboard->set("on_cancelled_triggered", true);
     return BT::NodeStatus::SUCCESS;
@@ -278,7 +278,8 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
   }
 
   // get calculated fibonacci sequence from blackboard
-  auto sequence = config_->blackboard->get<std::vector<int>>("sequence");
+  auto sequence_str = config_->blackboard->get<std::string>("sequence");
+  auto sequence = BT::convertFromString<std::vector<int>>(sequence_str);
 
   // expected fibonacci sequence for order 5
   std::vector<int> expected = {0, 1, 1, 2, 3, 5};

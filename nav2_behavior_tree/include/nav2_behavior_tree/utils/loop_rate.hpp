@@ -60,8 +60,7 @@ public:
       // Either way do not sleep and return false
       return false;
     }
-    // Sleep until the target time, preemptible by emitWakeUpSignal().
-    auto wake_up = tree_->wakeUpSignal();
+
     const bool is_sim_time =
       clock_->get_clock_type() == RCL_ROS_TIME &&
       clock_->ros_time_is_active();
@@ -69,7 +68,7 @@ public:
       // Sim time diverges from wall time — poll the target clock in short
       // intervals while remaining interruptible by emitWakeUpSignal().
       while (clock_->now() < next_interval) {
-        if (wake_up->waitFor(std::chrono::microseconds(500))) {
+        if (tree_->sleep(std::chrono::microseconds(500))) {
           return true;  // preempted
         }
       }
@@ -77,7 +76,7 @@ public:
       // Steady/system clock agrees with wall time — sleep for the exact
       // remaining duration, still interruptible by emitWakeUpSignal().
       auto remaining = next_interval - clock_->now();
-      wake_up->waitFor(
+      tree_->sleep(
         std::chrono::duration_cast<std::chrono::microseconds>(
           std::chrono::nanoseconds(remaining.nanoseconds())));
     }

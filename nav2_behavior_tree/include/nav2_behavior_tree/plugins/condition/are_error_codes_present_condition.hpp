@@ -44,12 +44,23 @@ public:
     const BT::NodeConfiguration & conf)
   : BT::ConditionNode(condition_name, conf)
   {
-    std::vector<int> error_codes_to_check_vector;
-    getInput("error_codes_to_check", error_codes_to_check_vector); //NOLINT
+    std::string error_codes_to_check_str;
+    if (getInput("error_codes_to_check", error_codes_to_check_str)) {
+      try {
+        std::vector<int> error_codes_to_check_vector =
+          BT::convertFromString<std::vector<int>>(error_codes_to_check_str);
 
-    error_codes_to_check_ = std::set<uint16_t>(
-      error_codes_to_check_vector.begin(),
-      error_codes_to_check_vector.end());
+        error_codes_to_check_ = std::set<uint16_t>(
+          error_codes_to_check_vector.begin(),
+          error_codes_to_check_vector.end());
+      } catch (const std::exception & ex) {
+        throw std::runtime_error(
+          "AreErrorCodesPresent node '" + condition_name + 
+          "' failed to parse 'error_codes_to_check' string \"" + 
+          error_codes_to_check_str + "\". Details: " + ex.what()
+        );
+      }
+    }
   }
 
   AreErrorCodesPresent() = delete;

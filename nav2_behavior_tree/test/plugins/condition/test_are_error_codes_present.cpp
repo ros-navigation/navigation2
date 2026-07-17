@@ -28,7 +28,8 @@ public:
   void SetUp()
   {
     uint16_t error_code = ActionResult::NONE;
-    std::vector<int> error_codes_to_check = {ActionResult::UNKNOWN}; //NOLINT
+    std::vector<int> error_codes_to_check_vec = {ActionResult::UNKNOWN}; //NOLINT
+    std::string error_codes_to_check = BT::toStr(error_codes_to_check_vec);
     config_->blackboard->set("error_code", error_code);
     config_->blackboard->set("error_codes_to_check", error_codes_to_check);
 
