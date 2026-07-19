@@ -40,7 +40,6 @@ public:
   using OsmGraphFileLoader::OneWay;
   using OsmGraphFileLoader::doesFileExist;
   using OsmGraphFileLoader::parseOsm;
-  using OsmGraphFileLoader::shouldKeepWay;
   using OsmGraphFileLoader::countNodeReferences;
   using OsmGraphFileLoader::splitWaysIntoSections;
   using OsmGraphFileLoader::collectVertexIds;
@@ -50,7 +49,6 @@ public:
   using OsmGraphFileLoader::addEdgesFromSections;
   using OsmGraphFileLoader::osm_to_nodeid_;
   using OsmGraphFileLoader::next_edge_id_;
-  using OsmGraphFileLoader::highway_filter_;
 };
 
 void writeOsmToFile(const std::string & xml, const std::string & file_path)
@@ -323,7 +321,7 @@ TEST(OsmGraphFileLoader, sample_graph_resolves_to_expected_topology)
   std::vector<OsmLoaderTestPeer::OsmWay> ways;
   ASSERT_TRUE(peer.parseOsm(path, nodes, ways));
   EXPECT_EQ(nodes.size(), 7u);
-  EXPECT_EQ(ways.size(), 2u);  // both ways are highways and kept
+  EXPECT_EQ(ways.size(), 2u);  // both ways are kept
 
   const auto ref = peer.countNodeReferences(ways);
   const auto sections = peer.splitWaysIntoSections(ways, ref);
@@ -350,24 +348,28 @@ TEST(OsmGraphFileLoader, parse_oneway_recognizes_all_values)
   EXPECT_EQ(peer.parseOneway({}), OneWay::BOTH);                          // absent -> bidirectional
 }
 
-// A non-empty highway_filter_ keeps only allowlisted highway values; a way with
-// no highway tag is always dropped.
-TEST(OsmGraphFileLoader, should_keep_way_respects_highway_allowlist)
+// The loader applies no filtering, tags are preserved for scoring
+TEST(OsmGraphFileLoader, parse_keeps_way_without_highway_tag)
 {
+  const std::string file_path = "no_highway_way.osm";
+  writeOsmToFile(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<osm version=\"0.6\">\n"
+    "  <node id=\"1\" lat=\"40.0\" lon=\"-75.0\"/>\n"
+    "  <node id=\"2\" lat=\"40.001\" lon=\"-75.0\"/>\n"
+    "  <way id=\"5\">\n"
+    "    <nd ref=\"1\"/>\n"
+    "    <nd ref=\"2\"/>\n"
+    "    <tag k=\"barrier\" v=\"gate\"/>\n"  // deliberately not a highway tag
+    "  </way>\n"
+    "</osm>", file_path);
   OsmLoaderTestPeer peer;
-  peer.highway_filter_ = {"track", "path"};
-  EXPECT_TRUE(peer.shouldKeepWay({{"highway", "track"}}));
-  EXPECT_TRUE(peer.shouldKeepWay({{"highway", "path"}}));
-  EXPECT_FALSE(peer.shouldKeepWay({{"highway", "motorway"}}));  // not allowlisted
-  EXPECT_FALSE(peer.shouldKeepWay({{"name", "x"}}));            // no highway tag
-}
-
-// An empty filter keeps every highway=* way but still drops non-highway ways.
-TEST(OsmGraphFileLoader, should_keep_way_empty_filter_keeps_all_highways)
-{
-  OsmLoaderTestPeer peer;  // highway_filter_ empty by default
-  EXPECT_TRUE(peer.shouldKeepWay({{"highway", "motorway"}}));
-  EXPECT_FALSE(peer.shouldKeepWay({{"building", "yes"}}));
+  std::unordered_map<int64_t, std::pair<double, double>> nodes;
+  std::vector<OsmLoaderTestPeer::OsmWay> ways;
+  ASSERT_TRUE(peer.parseOsm(file_path, nodes, ways));
+  ASSERT_EQ(ways.size(), 1u);                     // kept despite no highway tag
+  EXPECT_EQ(ways[0].tags.at("barrier"), "gate");  // tags preserved for scoring
+  std::filesystem::remove(file_path);
 }
 
 // A way with fewer than two refs has no extent and yields no section.

@@ -36,9 +36,6 @@ void OsmGraphFileLoader::configure(const nav2::LifecycleNode::SharedPtr node)
   logger_ = node->get_logger();
 
   const std::string prefix = "osm_graph_file_loader.";
-  std::vector<std::string> highways =
-    node->declare_or_get_parameter(prefix + "highway_filter", std::vector<std::string>{});
-  highway_filter_ = std::unordered_set<std::string>(highways.begin(), highways.end());
 
   from_ll_service_name_ = node->declare_or_get_parameter(
     prefix + "from_ll_service", std::string("/fromLLArray"));
@@ -61,8 +58,7 @@ bool OsmGraphFileLoader::loadGraphFromFile(
     return false;
   }
 
-  // Parse the XML into two in-memory tables: node id -> lat/lon, and the
-  // highway-filtered ways.
+  // Parse the XML into two in-memory tables: node id -> lat/lon, and the ways.
   std::unordered_map<int64_t, std::pair<double, double>> osm_nodes;
   std::vector<OsmWay> kept_ways;
   if (!parseOsm(filepath, osm_nodes, kept_ways)) {
@@ -72,7 +68,7 @@ bool OsmGraphFileLoader::loadGraphFromFile(
   if (osm_nodes.empty() || kept_ways.empty()) {
     RCLCPP_ERROR(
       logger_,
-      "The OSM graph is malformed: it contains no nodes or no usable highway ways. "
+      "The OSM graph is malformed: it contains no nodes or no ways. "
       "Please check %s", filepath.c_str());
     return false;
   }
@@ -110,23 +106,6 @@ bool OsmGraphFileLoader::loadGraphFromFile(
 bool OsmGraphFileLoader::doesFileExist(const std::string & filepath)
 {
   return std::filesystem::exists(filepath);
-}
-
-bool OsmGraphFileLoader::shouldKeepWay(
-  const std::unordered_map<std::string, std::string> & tags)
-{
-  auto it = tags.find("highway");
-  if (it == tags.end()) {
-    // Not a highway way (e.g. a building outline or area) - drop it.
-    return false;
-  }
-
-  if (highway_filter_.empty()) {
-    // No allowlist configured: keep every highway=* way.
-    return true;
-  }
-
-  return highway_filter_.count(it->second) > 0;
 }
 
 bool OsmGraphFileLoader::parseOsm(
@@ -196,9 +175,7 @@ bool OsmGraphFileLoader::parseOsm(
       }
     }
 
-    if (shouldKeepWay(osm_way.tags)) {
-      kept_ways.push_back(osm_way);
-    }
+    kept_ways.push_back(osm_way);
   }
 
   return true;

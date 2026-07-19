@@ -16,7 +16,6 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -81,9 +80,7 @@ protected:
 
   /**
    * @brief A run of a way between two junctions. The full ordered id list is
-   * held in node_chain [start junction, ...shape nodes..., end junction] so
-   * the true polyline length can be computed later; only the two endpoints
-   * become graph vertices.
+   * held in node_chain [start junction, ...shape nodes..., end junction]
    */
   struct Section
   {
@@ -102,7 +99,7 @@ protected:
    * @brief Parse the OSM XML file into in-memory tables
    * @param[in] filepath The path of the .osm file to parse
    * @param[out] osm_nodes Map of OSM node id to its (latitude, longitude)
-   * @param[out] kept_ways The ways retained after highway filtering
+   * @param[out] kept_ways The parsed ways
    * @return True if the file was parsed successfully
    */
   bool parseOsm(
@@ -111,24 +108,17 @@ protected:
     std::vector<OsmWay> & kept_ways);
 
   /**
-   * @brief Decide whether a way should be retained based on its highway tag
-   * @param tags The way's key/value tags
-   * @return True if the way has a highway tag allowed by the filter
-   */
-  bool shouldKeepWay(const std::unordered_map<std::string, std::string> & tags);
-
-  /**
-   * @brief Count how many times each node id is referenced across all kept
-   * ways, including repeat visits within a single way
-   * @param ways The ways retained after highway filtering
-   * @return A map of node id to its reference count across kept ways
+   * @brief Count how many times each node id is referenced across all ways,
+   * including repeat visits within a single way
+   * @param ways The parsed ways
+   * @return A map of node id to its reference count across all ways
    */
   std::unordered_map<int64_t, size_t> countNodeReferences(const std::vector<OsmWay> & ways);
 
   /**
    * @brief Split each way at its junction nodes (nodes with reference count
    * > 1) into sections running junction to junction
-   * @param ways The ways retained after highway filtering
+   * @param ways The parsed ways
    * @param ref_count Reference count from countNodeReferences
    * @return A vector of sections, each a run of a way between two junctions
    */
@@ -201,8 +191,6 @@ protected:
   nav2::ServiceClient<robot_localization::srv::FromLLArray>::SharedPtr from_ll_client_;
   std::string from_ll_service_name_{"/fromLLArray"};
   double from_ll_service_timeout_{5.0};
-
-  std::unordered_set<std::string> highway_filter_;
 
   // OSM node id (int64) -> assigned nav2 node id (uint); never cast int64
   // directly into the 32-bit nav2 id, which would truncate.

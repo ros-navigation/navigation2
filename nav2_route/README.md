@@ -354,9 +354,13 @@ navigation without first converting it to GeoJSON.
 Unlike GeoJSON, OSM does not list edges explicitly: a `<way>` is a polyline of ordered `<nd ref>`
 node references, and two ways are connected only where they share a node id. The loader resolves
 this implicit topology by treating shared nodes (and way endpoints) as junctions, splitting each way
-at its junctions, and emitting one directed edge per inter-junction section. The intermediate shape
-nodes are not turned into graph vertices, keeping the graph sparse. Edge direction is taken from the
-`oneway` tag (`yes`/`true`/`1` → forward, `-1`/`reverse` → reverse, absent/`no` → both directions).
+at those junctions, and emitting one directed edge per inter-junction section. The intermediate shape
+nodes are not turned into graph vertices, which keeps the graph sparse. Edge direction is taken from
+the `oneway` tag (`yes`/`true`/`1` → forward, `-1`/`reverse` → reverse, absent/`no` → both directions).
+
+The loader keeps every `<way>` in the file; it does not require a `highway` tag or apply any
+allowlist. A `.osm` here is treated as a purpose-built route graph, so the choice of which edges are
+preferable is left to the edge scoring plugins, which can read each way's tags.
 
 Coordinates are converted from WGS84 latitude/longitude into the map frame using
 robot_localization's `FromLLArray` service, so the graph shares a single datum with the robot's
@@ -369,7 +373,6 @@ Parameters (under the `osm_graph_file_loader.` namespace):
 
 | Parameter | Type | Default | Description |
 | --------- | ---- | ------- | ----------- |
-| `highway_filter` | string[] | `[]` (keep all `highway=*` ways) | Allowlist of OSM `highway` values to keep, e.g. `["track", "path", "service", "unclassified", "residential"]` |
 | `from_ll_service` | string | `/fromLLArray` | Name of the robot_localization `FromLLArray` service (override for namespaced setups) |
 | `from_ll_service_timeout` | double | `5.0` | Seconds to wait for the conversion service before failing the load |
 
