@@ -555,6 +555,7 @@ protected:
   std::string action_name_;
 
   ExecuteCallback execute_callback_;
+  GoalReceivedCallback goal_received_callback_;
   CompletionCallback completion_callback_;
   std::future<void> execution_future_;
   bool stop_execution_{false};
