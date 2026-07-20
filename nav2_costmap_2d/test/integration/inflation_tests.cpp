@@ -795,9 +795,98 @@ TEST_F(TestNode, testDynParamsSet)
 
   EXPECT_EQ(costmap->get_parameter("inflation_layer.inflation_radius").as_double(), 0.0);
 
+  auto result_custom_inscribed_radius = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("inflation_layer.custom_inscribed_radius", 0.3)
+  });
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    result_custom_inscribed_radius);
+  EXPECT_TRUE(result_custom_inscribed_radius.get().successful);
+  EXPECT_EQ(
+    costmap->get_parameter("inflation_layer.custom_inscribed_radius").as_double(), 0.3);
+
+  // Setting custom_inscribed_radius to -1.0 should be accepted
+  auto result_custom_inscribed_radius_neg = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("inflation_layer.custom_inscribed_radius", -1.0)
+  });
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    result_custom_inscribed_radius_neg);
+  EXPECT_TRUE(result_custom_inscribed_radius_neg.get().successful);
+  EXPECT_EQ(
+    costmap->get_parameter("inflation_layer.custom_inscribed_radius").as_double(), -1.0);
+
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
   costmap->on_shutdown(rclcpp_lifecycle::State());
+}
+
+/**
+ * Test that custom_inscribed_radius overrides the footprint-derived inscribed radius,
+ * and that resetting it to -1.0 restores the footprint-derived behavior.
+ *
+ * A footprint with inscribed_radius=5.0 is used. With custom_inscribed_radius=2.0,
+ * cells at distance 3-5 should NOT be INSCRIBED_INFLATED_OBSTACLE. After resetting
+ * custom_inscribed_radius to -1.0, the footprint radius takes effect again and those
+ * cells should become INSCRIBED_INFLATED_OBSTACLE.
+ */
+TEST_F(TestNode, testCustomInscribedRadius)
+{
+  std::vector<rclcpp::Parameter> parameters;
+  parameters.push_back(rclcpp::Parameter("inflation.cost_scaling_factor", 1.0));
+  parameters.push_back(rclcpp::Parameter("inflation.inflation_radius", 10.5));
+  parameters.push_back(rclcpp::Parameter("inflation.custom_inscribed_radius", 2.0));
+  initNode(parameters);
+
+  tf2_ros::Buffer tf(node_->get_clock());
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  layers.resizeMap(100, 100, 1, 0, 0);
+
+  // Footprint with inscribed_radius = 5.0; without the custom param this would
+  // mark cells up to 5 cells away as INSCRIBED_INFLATED_OBSTACLE.
+  std::vector<Point> polygon = setRadii(layers, 5.0, 6.25);
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
+  addObstacleLayer(layers, tf, node_, olayer);
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer = nullptr;
+  addInflationLayer(layers, tf, node_, ilayer);
+  layers.setFootprint(polygon);
+
+  addObservation(olayer, 50, 50, MAX_Z);
+  layers.updateMap(0, 0, 0);
+  nav2_costmap_2d::Costmap2D * map = layers.getCostmap();
+
+  // Cells within 2 cells should be INSCRIBED_INFLATED_OBSTACLE
+  for (int i = 1; i <= 2; i++) {
+    EXPECT_EQ(map->getCost(50 + i, 50), nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+      << "Cell at distance " << i << " should be INSCRIBED_INFLATED_OBSTACLE";
+  }
+
+  // Cells between 3 and 5 cells away should have intermediate cost, NOT INSCRIBED,
+  // because custom_inscribed_radius=2.0 overrides the footprint's inscribed_radius=5.0
+  for (int i = 3; i <= 5; i++) {
+    EXPECT_LT(map->getCost(50 + i, 50), nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+      << "Cell at distance " << i << " should NOT be INSCRIBED_INFLATED_OBSTACLE "
+      "(custom_inscribed_radius=2.0 < footprint inscribed_radius=5.0)";
+    EXPECT_GT(map->getCost(50 + i, 50), nav2_costmap_2d::FREE_SPACE)
+      << "Cell at distance " << i << " should still have inflated cost";
+  }
+
+  // Set custom_inscribed_radius to -1.0 to restore the footprint-derived inscribed_radius=5.0.
+  ilayer->activate();
+  node_->set_parameter(rclcpp::Parameter("inflation.custom_inscribed_radius", -1.0));
+  layers.updateMap(0, 0, 0);
+
+  // All cells within 5 cells should now be INSCRIBED_INFLATED_OBSTACLE
+  for (int i = 1; i <= 5; i++) {
+    EXPECT_EQ(map->getCost(50 + i, 50), nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+      << "After reset to -1.0, cell at distance " << i
+      << " should be INSCRIBED_INFLATED_OBSTACLE";
+  }
+
+  ilayer->deactivate();
 }
 
 int main(int argc, char ** argv)
