@@ -130,12 +130,14 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     "compute_path_to_pose",
     std::bind(&PlannerServer::computePlan, this),
     nullptr,
+    nullptr,
     std::chrono::milliseconds(500),
     true);
 
   action_server_poses_ = create_action_server<ActionThroughPoses>(
     "compute_path_through_poses",
     std::bind(&PlannerServer::computePlanThroughPoses, this),
+    nullptr,
     nullptr,
     std::chrono::milliseconds(500),
     true);

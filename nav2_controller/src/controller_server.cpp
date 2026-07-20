@@ -200,6 +200,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       "follow_path",
       std::bind(&ControllerServer::computeControl, this),
       nullptr,
+      nullptr,
       std::chrono::milliseconds(500),
       true /*spin thread*/, params_->use_realtime_priority /*soft realtime*/);
   } catch (const std::runtime_error & e) {

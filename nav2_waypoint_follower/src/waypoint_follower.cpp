@@ -63,7 +63,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
   xyz_action_server_ = create_action_server<ActionT>(
     "follow_waypoints", std::bind(
       &WaypointFollower::followWaypointsCallback,
-      this), nullptr, std::chrono::milliseconds(
+      this), nullptr, nullptr, std::chrono::milliseconds(
       500), false);
 
   from_ll_to_map_client_ = node->create_client<robot_localization::srv::FromLL>(
@@ -74,7 +74,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
     "follow_gps_waypoints",
     std::bind(
       &WaypointFollower::followGPSWaypointsCallback,
-      this), nullptr, std::chrono::milliseconds(
+      this), nullptr, nullptr, std::chrono::milliseconds(
       500), false);
 
   try {
