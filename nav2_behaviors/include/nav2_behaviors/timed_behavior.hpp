@@ -137,7 +137,7 @@ public:
 
     action_server_ = node->create_action_server<ActionT>(
       behavior_name_,
-      std::bind(&TimedBehavior::execute, this), nullptr, std::chrono::milliseconds(
+      std::bind(&TimedBehavior::execute, this), nullptr, nullptr, std::chrono::milliseconds(
         500), false);
 
     local_collision_checker_ = local_collision_checker;
