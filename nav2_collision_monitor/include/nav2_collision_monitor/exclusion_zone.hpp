@@ -24,6 +24,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
 #include "tf2/time.hpp"
+#include "tf2/LinearMath/Transform.hpp"
 #include "tf2_ros/buffer.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -135,6 +136,22 @@ protected:
   rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
     const std::vector<rclcpp::Parameter> & parameters);
 
+  /**
+   * @brief Resolve the zone-frame -> base-frame transform for this cycle.
+   *
+   * The zone frame is looked up at the latest available time (never curr_time),
+   * so a slowly published or flaky frame is not extrapolated into the future.
+   * The pose is accepted only while its age stays within the hold window
+   * (transform tolerance, extended by frame_hold_timeout_); it is then evaluated
+   * at its own stamp and bridged to the base frame at curr_time through the
+   * smooth global frame, so the zone stays put in the world as the robot moves.
+   * @param curr_time Current node time
+   * @param tf_zone_to_base Output zone-frame -> base-frame transform on success
+   * @return True if the zone can be localised (within the hold window), false otherwise
+   */
+  bool getZoneToBaseTransform(
+    const rclcpp::Time & curr_time, tf2::Transform & tf_zone_to_base) const;
+
   // ----- Variables -----
 
   /// @brief Collision Monitor node
@@ -161,6 +178,10 @@ protected:
   tf2::Duration transform_tolerance_;
   /// @brief Whether to correct the zone transform for base movement between data and current time
   bool base_shift_correction_;
+
+  /// @brief Extra time (s) beyond the transform tolerance that a stale zone-frame
+  /// pose may keep being used before the zone fails safe. 0 -> only the tolerance.
+  double frame_hold_timeout_{0.0};
 
   /// @brief Frame the zone shape is anchored to (tracked via TF). Defaults to base_frame_id_.
   std::string frame_id_;

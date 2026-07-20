@@ -23,6 +23,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
+#include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
@@ -210,28 +211,61 @@ public:
 
 protected:
   // Broadcast a base_frame -> child transform and wait for it to be available.
+  // Also publishes an identity odom -> base_link leg, because the zone resolves
+  // its (possibly held) pose through the global frame, so that leg must exist.
   void broadcastTransform(
     const std::string & child_frame, double tx, double ty)
   {
+    const rclcpp::Time stamp = node_->now();
+
+    geometry_msgs::msg::TransformStamped odom_msg;
+    odom_msg.header.frame_id = GLOBAL_FRAME_ID;
+    odom_msg.child_frame_id = BASE_FRAME_ID;
+    odom_msg.header.stamp = stamp;
+    odom_msg.transform.rotation.w = 1.0;
+    tf_broadcaster_->sendTransform(odom_msg);
+
     geometry_msgs::msg::TransformStamped tf_msg;
     tf_msg.header.frame_id = BASE_FRAME_ID;
     tf_msg.child_frame_id = child_frame;
-    tf_msg.header.stamp = node_->now();
+    tf_msg.header.stamp = stamp;
     tf_msg.transform.translation.x = tx;
     tf_msg.transform.translation.y = ty;
     tf_msg.transform.rotation.w = 1.0;
     tf_broadcaster_->sendTransform(tf_msg);
 
-    // Wait for the transform to propagate into the buffer.
+    // Wait for both legs to propagate into the buffer.
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_buffer_->canTransform(child_frame, BASE_FRAME_ID, tf2::TimePointZero)) {
+      if (tf_buffer_->canTransform(child_frame, BASE_FRAME_ID, tf2::TimePointZero) &&
+        tf_buffer_->canTransform(BASE_FRAME_ID, GLOBAL_FRAME_ID, tf2::TimePointZero))
+      {
         return;
       }
       executor_->spin_some();
       std::this_thread::sleep_for(10ms);
     }
-    FAIL() << "Transform " << BASE_FRAME_ID << " -> " << child_frame << " never became available";
+    FAIL() << "Transforms for " << child_frame << " never became available";
+  }
+
+  // Spin until the latest odom -> base_link transform reports the expected x of
+  // base_link expressed in odom (used when a moved pose is broadcast at a newer
+  // stamp and we must wait for it to become the latest available transform).
+  void waitForLatestBaseInOdomX(double expected_x)
+  {
+    rclcpp::Time start = node_->now();
+    while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
+      try {
+        const auto t =
+          tf_buffer_->lookupTransform(GLOBAL_FRAME_ID, BASE_FRAME_ID, tf2::TimePointZero);
+        if (std::abs(t.transform.translation.x - expected_x) < 1e-6) {
+          return;
+        }
+      } catch (const tf2::TransformException &) {}
+      executor_->spin_some();
+      std::this_thread::sleep_for(10ms);
+    }
+    FAIL() << "Latest odom -> base_link never reached x = " << expected_x;
   }
 
   // Broadcast an arbitrary parent -> child transform and wait for it to be available.
@@ -516,6 +550,124 @@ TEST_F(ExclusionZoneTester, ConfigureFailsOnUnknownType)
 
   auto zone = makeZone();
   EXPECT_FALSE(zone->configure());
+}
+
+// ---------------------------------------------------------------------------
+// Flaky-frame hold behaviour
+// ---------------------------------------------------------------------------
+
+TEST_F(ExclusionZoneTester, HeldZoneKeepsMaskingWithinWindow)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  node_->declare_parameter(
+    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(5.0));
+
+  // Detection at stamp0; robot at the odom origin, zone at the origin.
+  const rclcpp::Time stamp0 = node_->now();
+  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
+  broadcastFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  // 2 s later the frame has not refreshed, but that is within the 5 s hold
+  // window, so the zone must keep masking at its last known pose.
+  const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(2.0);
+  std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
+  zone->apply(later, data);
+  ASSERT_EQ(data.size(), 1u);
+  EXPECT_NEAR(data[0].x, 5.0, EPSILON);
+}
+
+TEST_F(ExclusionZoneTester, HeldZoneFailsSafeAfterWindowExpires)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  node_->declare_parameter(
+    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(1.0));
+
+  const rclcpp::Time stamp0 = node_->now();
+  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
+  broadcastFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  // 3 s later exceeds the 1 s hold window -> fail safe, keep all points.
+  const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(3.0);
+  std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
+  zone->apply(later, data);
+  EXPECT_EQ(data.size(), 2u);
+}
+
+TEST_F(ExclusionZoneTester, HeldZoneStaysFixedInWorldAsRobotMoves)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  node_->declare_parameter(
+    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(5.0));
+
+  // Robot at the odom origin; charger detected 10 m ahead -> world pose (10, 0).
+  const rclcpp::Time stamp0 = node_->now();
+  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
+  broadcastFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 10.0, 0.0, stamp0);
+
+  // Robot drives +5 m in x; the detection is NOT refreshed (zone frozen at stamp0).
+  const rclcpp::Time stamp1 = stamp0 + rclcpp::Duration::from_seconds(0.5);
+  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 5.0, 0.0, stamp1);
+  waitForLatestBaseInOdomX(5.0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  // The held pose stays at world (10, 0); re-projected into the base moved to
+  // (5, 0) it now sits at base-frame x = 5. A buggy robot-attached hold would
+  // instead keep the mask at base-frame x = 10.
+  std::vector<nav2_collision_monitor::Point> data{
+    {5.0, 0.0, 0.0, ""},     // charger's world spot in the current base -> removed
+    {10.0, 0.0, 0.0, ""}};   // where a robot-attached hold would sit -> kept
+  zone->apply(stamp1, data);
+  ASSERT_EQ(data.size(), 1u);
+  EXPECT_NEAR(data[0].x, 10.0, EPSILON);
+}
+
+// ---------------------------------------------------------------------------
+// Visualization
+// ---------------------------------------------------------------------------
+
+TEST_F(ExclusionZoneTester, VisualizationPublishesMaskInBaseFrame)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  node_->declare_parameter(std::string(ZONE_NAME) + ".visualize", rclcpp::ParameterValue(true));
+  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+
+  geometry_msgs::msg::PolygonStamped::ConstSharedPtr received;
+  auto sub = node_->create_subscription<geometry_msgs::msg::PolygonStamped>(
+    std::string("~/") + ZONE_NAME,
+    [&](geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg) {received = msg;},
+    nav2::qos::StandardTopicQoS());
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+  zone->activate();
+
+  // Publishing is decoupled from the flaky zone frame: the polygon must be
+  // emitted in the smooth base frame so a consumer never depends on that frame.
+  rclcpp::Time start = node_->now();
+  while (rclcpp::ok() && !received &&
+    (node_->now() - start) < rclcpp::Duration::from_seconds(5.0))
+  {
+    zone->publish();
+    executor_->spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  zone->deactivate();
+
+  ASSERT_NE(received, nullptr);
+  EXPECT_EQ(received->header.frame_id, std::string(BASE_FRAME_ID));
+  EXPECT_EQ(received->polygon.points.size(), 4u);
 }
 
 // ---------------------------------------------------------------------------

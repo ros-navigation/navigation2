@@ -19,7 +19,9 @@
 #include <limits>
 
 #include "geometry_msgs/msg/point32.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/transform_datatypes.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -107,6 +109,8 @@ bool ExclusionZone::getParameters()
     frame_id_ = base_frame_id_;
   }
 
+  frame_hold_timeout_ = node->declare_or_get_parameter(
+    zone_name_ + ".frame_hold_timeout", 0.0);
   // Optional height band (in base frame). Unbounded by default so 2D sources are covered.
   min_height_ = node->declare_or_get_parameter(
     zone_name_ + ".min_height", -std::numeric_limits<double>::max());
@@ -156,27 +160,11 @@ void ExclusionZone::apply(const rclcpp::Time & curr_time, std::vector<Point> & d
     return;
   }
 
-  // Obtain the zone-frame -> base-frame transform for this cycle. When the owning
-  // source applies base-shift correction, evaluate the zone at curr_time bridged
-  // through the global frame so the zone and the source points share one time
-  // basis; otherwise use the latest available transform to match the source.
+  // Resolve the zone-frame -> base-frame transform for this cycle. A flaky zone
+  // frame is held at its last known world pose until the hold timeout expires,
+  // after which we fail safe and keep all points.
   tf2::Transform tf_zone_to_base;
-  bool got_transform;
-  if (base_shift_correction_) {
-    got_transform = nav2_util::getTransform(
-      frame_id_, curr_time, base_frame_id_, curr_time, global_frame_id_,
-      transform_tolerance_, tf_buffer_, tf_zone_to_base);
-  } else {
-    got_transform = nav2_util::getTransform(
-      frame_id_, base_frame_id_, transform_tolerance_, tf_buffer_, tf_zone_to_base);
-  }
-  if (!got_transform) {
-    // Fail-safe: without a valid transform we cannot localise the zone, so we
-    // must not blind the monitor. Keep all points.
-    RCLCPP_WARN_THROTTLE(
-      logger_, *node_clock_, 2000,
-      "[%s]: cannot transform exclusion zone from '%s' to '%s'; not excluding any points",
-      zone_name_.c_str(), frame_id_.c_str(), base_frame_id_.c_str());
+  if (!getZoneToBaseTransform(curr_time, tf_zone_to_base)) {
     return;
   }
 
@@ -214,6 +202,88 @@ void ExclusionZone::apply(const rclcpp::Time & curr_time, std::vector<Point> & d
   }
 }
 
+bool ExclusionZone::getZoneToBaseTransform(
+  const rclcpp::Time & curr_time, tf2::Transform & tf_zone_to_base) const
+{
+  // Zone anchored to the robot base: it rides with the robot, nothing to bridge.
+  if (frame_id_ == base_frame_id_) {
+    tf_zone_to_base.setIdentity();
+    return true;
+  }
+
+  // Runs on the safety thread, so all lookups are NON-BLOCKING (zero timeout):
+  // they read the cached TF buffer and fail immediately. A blocking lookup on a
+  // flaky zone frame would stall the monitor loop, make healthy sources look
+  // stale and trip the source_timeout watchdog. transform_tolerance_ is used only
+  // as the staleness allowance below, never as a wait.
+  const tf2::Duration non_blocking = tf2::Duration::zero();
+
+  // Look up the zone frame at the *latest* available time (never curr_time) so a
+  // slowly published frame is not extrapolated; its stamp tells us how stale it is.
+  rclcpp::Time zone_stamp = curr_time;
+  tf2::Transform tf_zone_to_global;
+  tf_zone_to_global.setIdentity();
+  if (frame_id_ != global_frame_id_) {
+    geometry_msgs::msg::TransformStamped zone_to_global_msg;
+    if (!nav2_util::getTransform(
+        frame_id_, global_frame_id_, non_blocking, tf_buffer_, zone_to_global_msg))
+    {
+      RCLCPP_WARN_THROTTLE(
+        logger_, *node_clock_, 2000,
+        "[%s]: no transform available for exclusion zone frame '%s'; not excluding any points",
+        zone_name_.c_str(), frame_id_.c_str());
+      return false;
+    }
+    zone_stamp = rclcpp::Time(zone_to_global_msg.header.stamp, curr_time.get_clock_type());
+
+    // Accept the pose only within the hold window: at least the transform tolerance
+    // (so a healthy frame always passes), extended by frame_hold_timeout_ to ride
+    // out brief dropouts. Anything older is dropped so we are never blinded by a
+    // frame that may have moved.
+    const double age = (curr_time - zone_stamp).seconds();
+    const double max_age =
+      std::max(frame_hold_timeout_, tf2::durationToSec(transform_tolerance_));
+    if (age > max_age) {
+      RCLCPP_WARN_THROTTLE(
+        logger_, *node_clock_, 2000,
+        "[%s]: exclusion zone frame '%s' stale for %.2fs (> %.2fs hold window); "
+        "not excluding any points",
+        zone_name_.c_str(), frame_id_.c_str(), age, max_age);
+      return false;
+    }
+
+    // Freeze the pose in the smooth global (odom) frame -- where the last valid
+    // detection placed the zone in the WORLD. The charger frame is a child of a
+    // robot lidar frame, so a held zone-to-base transform would otherwise ride
+    // with the robot and sweep the mask off the world-fixed charger.
+    tf2::fromMsg(zone_to_global_msg.transform, tf_zone_to_global);
+  }
+
+  // Re-project the (possibly held) world pose into the current base frame by
+  // advancing only the global -> base leg. base_shift_correction samples the base
+  // at curr_time; otherwise the latest base pose is used. Both stay non-blocking.
+  tf2::Transform tf_global_to_base;
+  bool got_base;
+  if (base_shift_correction_) {
+    got_base = nav2_util::getTransform(
+      global_frame_id_, curr_time, base_frame_id_, curr_time, global_frame_id_,
+      non_blocking, tf_buffer_, tf_global_to_base);
+  } else {
+    got_base = nav2_util::getTransform(
+      global_frame_id_, base_frame_id_, non_blocking, tf_buffer_, tf_global_to_base);
+  }
+  if (!got_base) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *node_clock_, 2000,
+      "[%s]: cannot transform '%s' -> '%s'; not excluding any points",
+      zone_name_.c_str(), global_frame_id_.c_str(), base_frame_id_.c_str());
+    return false;
+  }
+
+  tf_zone_to_base = tf_global_to_base * tf_zone_to_global;
+  return true;
+}
+
 std::string ExclusionZone::getName() const
 {
   return zone_name_;
@@ -246,11 +316,23 @@ void ExclusionZone::publish() const
     return;
   }
 
-  auto msg = std::make_unique<geometry_msgs::msg::PolygonStamped>();
-  msg->header.frame_id = frame_id_;
-  msg->header.stamp = node_clock_->now();
+  // Resolve the same (possibly held) zone -> base transform the mask uses and
+  // publish the polygon in the smooth base frame. Publishing in the raw zone
+  // frame_id_ is unreliable during a dropout (it rides with the robot while
+  // frozen); failing here also mirrors the mask going inactive.
+  tf2::Transform tf_zone_to_base;
+  if (!getZoneToBaseTransform(node_clock_->now(), tf_zone_to_base)) {
+    return;
+  }
+
   const std::vector<Point> & vertices = is_circle_ ? circleToPolygon(radius_) : poly_;
-  for (const Point & v : vertices) {
+  std::vector<Point> vertices_base;
+  transformPolygonPoints(tf_zone_to_base, vertices, vertices_base);
+
+  auto msg = std::make_unique<geometry_msgs::msg::PolygonStamped>();
+  msg->header.frame_id = base_frame_id_;
+  msg->header.stamp = node_clock_->now();
+  for (const Point & v : vertices_base) {
     geometry_msgs::msg::Point32 p;
     p.x = static_cast<float>(v.x);
     p.y = static_cast<float>(v.y);
@@ -276,6 +358,12 @@ rcl_interfaces::msg::SetParametersResult ExclusionZone::validateParameterUpdates
     {
       result.successful = false;
       result.reason = "radius must be > 0";
+    } else if (param_name == zone_name_ + ".frame_hold_timeout" &&  // NOLINT
+      parameter.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE &&
+      parameter.as_double() < 0.0)
+    {
+      result.successful = false;
+      result.reason = "frame_hold_timeout must be >= 0";
     } else if (param_name == zone_name_ + ".points" &&  // NOLINT
       parameter.get_type() == rclcpp::ParameterType::PARAMETER_STRING)
     {
@@ -318,6 +406,10 @@ void ExclusionZone::updateParametersCallback(
       parameter.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE)
     {
       max_height_ = parameter.as_double();
+    } else if (param_name == zone_name_ + ".frame_hold_timeout" &&  // NOLINT
+      parameter.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE)
+    {
+      frame_hold_timeout_ = parameter.as_double();
     } else if (param_name == zone_name_ + ".points" && !is_circle_ &&  // NOLINT
       parameter.get_type() == rclcpp::ParameterType::PARAMETER_STRING)
     {
