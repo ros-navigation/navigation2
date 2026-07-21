@@ -47,9 +47,11 @@ Scan::~Scan()
   data_sub_.reset();
 }
 
-void Scan::configure()
+bool Scan::configure()
 {
-  Source::configure();
+  if (!Source::configure()) {
+    return false;
+  }
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -64,6 +66,8 @@ void Scan::configure()
     source_topic,
     std::bind(&Scan::dataCallback, this, std::placeholders::_1),
     nav2::qos::SensorDataQoS());
+
+  return true;
 }
 
 bool Scan::getSourceData(

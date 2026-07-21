@@ -47,9 +47,11 @@ PolygonSource::~PolygonSource()
   data_sub_.reset();
 }
 
-void PolygonSource::configure()
+bool PolygonSource::configure()
 {
-  Source::configure();
+  if (!Source::configure()) {
+    return false;
+  }
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -63,6 +65,8 @@ void PolygonSource::configure()
     source_topic,
     std::bind(&PolygonSource::dataCallback, this, std::placeholders::_1),
     nav2::qos::SensorDataQoS());
+
+  return true;
 }
 
 bool PolygonSource::getSourceData(

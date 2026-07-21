@@ -77,8 +77,9 @@ public:
    *
    * Must be called during the node’s configuration phase (after construction, before use).
    * Reads `topic`, `cost_threshold`, and `treat_unknown_as_obstacle`.
+   * @return True in case of everything is configured correctly, or false otherwise
    */
-  void configure();
+  bool configure();
 
   /**
    * @brief Produce current obstacle points from the latest costmap.

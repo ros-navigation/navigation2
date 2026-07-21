@@ -62,8 +62,9 @@ public:
   /**
    * @brief Data source configuration routine. Obtains pointcloud related ROS-parameters
    * and creates pointcloud subscriber.
+   * @return True in case of everything is configured correctly, or false otherwise
    */
-  void configure();
+  bool configure();
 
   /**
    * @brief Adds latest data from pointcloud source to the data array.

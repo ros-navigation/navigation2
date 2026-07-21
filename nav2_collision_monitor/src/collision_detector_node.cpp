@@ -268,7 +268,9 @@ bool CollisionDetector::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        s->configure();
+        if (!s->configure()) {
+          return false;
+        }
 
         sources_.push_back(s);
       } else if (source_type == "pointcloud") {
@@ -276,7 +278,9 @@ bool CollisionDetector::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        p->configure();
+        if (!p->configure()) {
+          return false;
+        }
 
         sources_.push_back(p);
       } else if (source_type == "range") {
@@ -284,14 +288,18 @@ bool CollisionDetector::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        r->configure();
+        if (!r->configure()) {
+          return false;
+        }
 
         sources_.push_back(r);
       } else if (source_type == "polygon") {
         std::shared_ptr<PolygonSource> ps = std::make_shared<PolygonSource>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
-        ps->configure();
+        if (!ps->configure()) {
+          return false;
+        }
 
         sources_.push_back(ps);
       } else if (source_type == "costmap") {
@@ -299,7 +307,9 @@ bool CollisionDetector::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        src->configure();
+        if (!src->configure()) {
+          return false;
+        }
 
         sources_.push_back(src);
       } else {  // Error if something else

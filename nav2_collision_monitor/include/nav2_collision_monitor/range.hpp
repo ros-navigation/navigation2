@@ -61,8 +61,9 @@ public:
   /**
    * @brief Data source configuration routine. Obtains ROS-parameters
    * and creates range sensor subscriber.
+   * @return True in case of everything is configured correctly, or false otherwise
    */
-  void configure();
+  bool configure();
 
   /**
    * @brief Adds latest data from range sensor to the data array.

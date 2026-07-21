@@ -61,9 +61,11 @@ PointCloud::~PointCloud()
   on_set_params_handler_.reset();
 }
 
-void PointCloud::configure()
+bool PointCloud::configure()
 {
-  Source::configure();
+  if (!Source::configure()) {
+    return false;
+  }
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -97,6 +99,8 @@ void PointCloud::configure()
     std::bind(
       &PointCloud::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
+
+  return true;
 }
 
 bool PointCloud::getSourceData(
