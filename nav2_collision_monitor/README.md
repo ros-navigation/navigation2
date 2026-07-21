@@ -53,7 +53,7 @@ The data may be obtained from different data sources:
 
 #### Exclusion Zones
 
-Any data source can optionally define one or more **exclusion zones**. An exclusion zone is a region that **removes (masks out) that source's points which fall inside it**, before the action/detection polygons are evaluated. Unlike the polygons above, an exclusion zone does **not** trigger a behavior — it is a per-source pre-filter, and works for both the Collision Monitor and the Collision Detector.
+Any data source can optionally define one or more **exclusion zones**. An exclusion zone is a region that **removes (masks out) that source's points which fall inside it**, before the action/detection polygons are evaluated. Unlike the polygons above, an exclusion zone does **not** trigger a behavior. It is a per-source pre-filter, and works for both the Collision Monitor and the Collision Detector.
 
 A typical use case is ignoring known structure the robot deliberately approaches, such as a charging dock or a conveyor: the returns from that structure would otherwise trip the stop/slowdown zones.
 Another common use case is self-filtering: masking out returns from parts of the robot itself (e.g. arms, mast, bumpers, or trailers) that fall within a sensor's field of view, which would otherwise be mistaken for obstacles. Anchoring the zone to the relevant robot frame keeps the mask aligned with that structure as it moves.
