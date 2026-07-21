@@ -148,7 +148,11 @@ template<typename NodeT>
 inline nav2::TransformListener::SharedPtr create_transform_listener(
   nav2::TransformBuffer & buffer, const NodeT & node, bool spin_thread = true)
 {
+#if RCLCPP_VERSION_GTE(30, 0, 0)
+  return std::make_shared<nav2::TransformListener>(buffer, *node, spin_thread);
+#else
   return std::make_shared<nav2::TransformListener>(buffer, node, spin_thread);
+#endif
 }
 
 /**
