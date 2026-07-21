@@ -28,7 +28,7 @@ namespace opennav_docking
 {
 
 Controller::Controller(
-  const nav2::LifecycleNode::SharedPtr & node, std::shared_ptr<nav2::TransformBuffer> tf,
+  const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
   std::string fixed_frame, std::string base_frame)
 : tf2_buffer_(tf), fixed_frame_(fixed_frame), base_frame_(base_frame)
 {

@@ -34,7 +34,7 @@ TransformAvailableCondition::TransformAvailableCondition(
   was_found_(false)
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  tf_ = config().blackboard->get<std::shared_ptr<nav2::TransformBuffer>>("tf_buffer");
+  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
 }
 
 TransformAvailableCondition::~TransformAvailableCondition()

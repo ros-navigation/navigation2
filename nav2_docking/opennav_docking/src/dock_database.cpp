@@ -32,7 +32,7 @@ DockDatabase::~DockDatabase()
 
 bool DockDatabase::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::shared_ptr<nav2::TransformBuffer> tf)
+  nav2::TransformBuffer::SharedPtr tf)
 {
   node_ = parent;
   auto node = node_.lock();
@@ -149,7 +149,7 @@ ChargingDock::Ptr DockDatabase::findDockPlugin(const std::string & type)
 
 bool DockDatabase::getDockPlugins(
   const nav2::LifecycleNode::SharedPtr & node,
-  std::shared_ptr<nav2::TransformBuffer> tf)
+  nav2::TransformBuffer::SharedPtr tf)
 {
   std::vector<std::string> docks_plugins;
   try {

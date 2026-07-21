@@ -223,8 +223,8 @@ protected:
   std::shared_ptr<DummyBehavior> behavior_;
   std::shared_ptr<nav2::ActionClient<BehaviorAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<BehaviorAction>> goal_handle_;
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 };
 
 // Define the tests

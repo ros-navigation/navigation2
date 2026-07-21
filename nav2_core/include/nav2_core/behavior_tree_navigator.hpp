@@ -42,7 +42,7 @@ struct FeedbackUtils
   std::string robot_frame;
   std::string global_frame;
   double transform_tolerance;
-  std::shared_ptr<nav2::TransformBuffer> tf;
+  nav2::TransformBuffer::SharedPtr tf;
 };
 
 /**

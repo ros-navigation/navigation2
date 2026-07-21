@@ -48,7 +48,7 @@ public:
    */
   explicit GraphSaver(
     nav2::LifecycleNode::SharedPtr node,
-    std::shared_ptr<nav2::TransformBuffer> tf,
+    nav2::TransformBuffer::SharedPtr tf,
     const std::string frame);
 
   /**
@@ -75,7 +75,7 @@ public:
 
 protected:
   std::string route_frame_, graph_filepath_;
-  std::shared_ptr<nav2::TransformBuffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
   rclcpp::Logger logger_{rclcpp::get_logger("GraphSaver")};
 
   // Graph Parser

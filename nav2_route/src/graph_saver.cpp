@@ -22,7 +22,7 @@ namespace nav2_route
 
 GraphSaver::GraphSaver(
   nav2::LifecycleNode::SharedPtr node,
-  std::shared_ptr<nav2::TransformBuffer> tf,
+  nav2::TransformBuffer::SharedPtr tf,
   const std::string frame)
 : plugin_loader_("nav2_route", "nav2_route::GraphFileSaver"),
   default_plugin_id_("GeoJsonGraphFileSaver")

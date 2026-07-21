@@ -79,7 +79,7 @@ public:
 
 private:
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<nav2::TransformBuffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
 
   geometry_msgs::msg::PoseStamped start_pose_;
 

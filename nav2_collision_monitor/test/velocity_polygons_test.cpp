@@ -101,7 +101,7 @@ public:
   VelocityPolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance)
   : nav2_collision_monitor::VelocityPolygon(
@@ -155,8 +155,8 @@ protected:
 
   std::shared_ptr<VelocityPolygonWrapper> velocity_polygon_;
 
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 };  // Tester
 
 Tester::Tester()

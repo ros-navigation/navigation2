@@ -109,7 +109,7 @@ protected:
   nav_msgs::msg::OccupancyGrid map_;
   nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_publisher_;
 
-  std::shared_ptr<nav2::TransformBroadcaster> robot_pose_broadcaster_;
+  nav2::TransformBroadcaster::SharedPtr robot_pose_broadcaster_;
   rclcpp::TimerBase::SharedPtr broadcast_timer_;
 
   ActionClient::SharedPtr action_client_;

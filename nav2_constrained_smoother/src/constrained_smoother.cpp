@@ -41,7 +41,7 @@ namespace nav2_constrained_smoother
 
 void ConstrainedSmoother::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, std::shared_ptr<nav2::TransformBuffer> tf,
+  std::string name, nav2::TransformBuffer::SharedPtr tf,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>)
 {

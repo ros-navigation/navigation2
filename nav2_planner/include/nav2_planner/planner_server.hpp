@@ -228,7 +228,7 @@ protected:
   std::string planner_ids_concat_;
 
   // TF buffer
-  std::shared_ptr<nav2::TransformBuffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
 
   // Global Costmap
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;

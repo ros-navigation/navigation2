@@ -311,9 +311,9 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::executors::SingleThreadedExecutor node_executor_;
 
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   std::unique_ptr<geometry_msgs::msg::TransformStamped> transform_;
 
   std::shared_ptr<TestMask> mask_;

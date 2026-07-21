@@ -75,7 +75,7 @@ bool getTransform(
   const std::string & source_frame_id,
   const std::string & target_frame_id,
   const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   tf2::Transform & tf2_transform);
 
 /**
@@ -98,7 +98,7 @@ bool getTransform(
   const rclcpp::Time & target_time,
   const std::string & fixed_frame_id,
   const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   tf2::Transform & tf2_transform);
 
 /**
@@ -114,7 +114,7 @@ bool getTransform(
   const std::string & source_frame_id,
   const std::string & target_frame_id,
   const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   geometry_msgs::msg::TransformStamped & transform_msg);
 
 /**
@@ -137,7 +137,7 @@ bool getTransform(
   const rclcpp::Time & target_time,
   const std::string & fixed_frame_id,
   const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   geometry_msgs::msg::TransformStamped & transform_msg);
 
 /**

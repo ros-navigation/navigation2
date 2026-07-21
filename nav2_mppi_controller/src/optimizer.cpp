@@ -34,7 +34,7 @@ namespace mppi
 void Optimizer::initialize(
   nav2::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+  nav2::TransformBuffer::SharedPtr tf_buffer,
   ParametersHandler * param_handler)
 {
   parent_ = parent;

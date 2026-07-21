@@ -49,7 +49,7 @@ void FeasiblePathHandler::initialize(
   const rclcpp::Logger & logger,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-  std::shared_ptr<nav2::TransformBuffer> tf)
+  nav2::TransformBuffer::SharedPtr tf)
 {
   logger_ = logger;
   plugin_name_ = plugin_name;

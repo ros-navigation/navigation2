@@ -26,7 +26,7 @@ namespace opennav_docking
 
 void SimpleChargingDock::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  const std::string & name, std::shared_ptr<nav2::TransformBuffer> tf)
+  const std::string & name, nav2::TransformBuffer::SharedPtr tf)
 {
   name_ = name;
   tf2_buffer_ = tf;

@@ -138,8 +138,8 @@ public:
     nav2_msgs::msg::CircleObject::SharedPtr c2);
 
 protected:
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   // Service clients for calling AddShapes.srv, GetShapes.srv, RemoveShapes.srv
   nav2::ServiceClient<nav2_msgs::srv::AddShapes>::SharedPtr add_shapes_client_;
@@ -334,7 +334,7 @@ void Tester::setCircleParams(const std::string & uuid)
 
 void Tester::sendTransform(const double frame_shift)
 {
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster =
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
     nav2::create_transform_broadcaster(vo_server_);
 
   geometry_msgs::msg::TransformStamped transform;

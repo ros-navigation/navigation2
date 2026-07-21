@@ -58,7 +58,7 @@ public:
    */
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, std::shared_ptr<nav2::TransformBuffer> tf,
+    std::string name, nav2::TransformBuffer::SharedPtr tf,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub) override;
 
@@ -89,7 +89,7 @@ public:
     const rclcpp::Duration & max_time) override;
 
 protected:
-  std::shared_ptr<nav2::TransformBuffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   rclcpp::Logger logger_ {rclcpp::get_logger("ConstrainedSmoother")};

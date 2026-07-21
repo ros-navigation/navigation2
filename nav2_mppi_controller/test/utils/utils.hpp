@@ -46,7 +46,7 @@ void waitSome(const std::chrono::nanoseconds & duration, TNode & node)
 
 void sendTf(
   std::string_view source, std::string_view dest,
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster,
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster,
   nav2::LifecycleNode::SharedPtr node, size_t n)
 {
   while (--n != 0u) {

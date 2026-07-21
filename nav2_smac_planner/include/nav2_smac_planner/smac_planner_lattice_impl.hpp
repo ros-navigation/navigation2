@@ -55,7 +55,7 @@ SmacPlannerLatticeT<NodeT>::~SmacPlannerLatticeT()
 template<typename NodeT>
 void SmacPlannerLatticeT<NodeT>::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, std::shared_ptr<nav2::TransformBuffer>/*tf*/,
+  std::string name, nav2::TransformBuffer::SharedPtr/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   _node = parent;

@@ -508,7 +508,7 @@ void Tester::setGlobalHeightParams(const std::string & source_name, const double
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster =
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
     nav2::create_transform_broadcaster(cm_);
 
   geometry_msgs::msg::TransformStamped transform;

@@ -298,7 +298,7 @@ protected:
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<nav2::TransformBuffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
   std::shared_ptr<TestableAsymmetricInflationLayer> layer_;
 };

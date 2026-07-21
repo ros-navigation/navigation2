@@ -87,7 +87,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   std::string base_link_frame_, base_footprint_frame_;
 };
 
@@ -113,7 +113,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   std::shared_ptr<BaseFootprintPublisherListener> listener_publisher_;
 };
 

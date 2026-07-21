@@ -412,7 +412,7 @@ void Tester::setVectors(
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster =
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
     nav2::create_transform_broadcaster(cd_);
 
   geometry_msgs::msg::TransformStamped transform;

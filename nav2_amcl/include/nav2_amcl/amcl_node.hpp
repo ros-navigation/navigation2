@@ -173,9 +173,9 @@ protected:
    * @brief Initialize required ROS transformations
    */
   void initTransforms();
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   bool sent_first_transform_{false};
   bool latest_tf_valid_{false};
   tf2::Transform latest_tf_;
@@ -194,7 +194,7 @@ protected:
     rclcpp_lifecycle::LifecycleNode>> laser_scan_sub_;
   #endif
 
-  std::shared_ptr<nav2::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
+  nav2::MessageFilter<sensor_msgs::msg::LaserScan>::SharedPtr laser_scan_filter_;
   message_filters::Connection laser_scan_connection_;
 
   // Publishers and subscribers

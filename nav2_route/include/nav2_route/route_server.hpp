@@ -217,8 +217,8 @@ protected:
   typename ComputeAndTrackRouteServer::SharedPtr compute_and_track_route_server_;
 
   // TF
-  std::shared_ptr<nav2::TransformBuffer> tf_;
-  std::shared_ptr<nav2::TransformListener> transform_listener_;
+  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformListener::SharedPtr transform_listener_;
 
   // Publish the route graph for visualization
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr

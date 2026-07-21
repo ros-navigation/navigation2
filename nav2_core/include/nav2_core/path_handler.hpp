@@ -60,7 +60,7 @@ public:
     const rclcpp::Logger & logger,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    std::shared_ptr<nav2::TransformBuffer> tf) = 0;
+    nav2::TransformBuffer::SharedPtr tf) = 0;
 
   /**
    * @brief Set new reference plan

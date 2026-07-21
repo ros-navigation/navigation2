@@ -53,7 +53,7 @@ public:
    * @return If successful
    */
   bool initialize(
-    const nav2::LifecycleNode::WeakPtr & parent, std::shared_ptr<nav2::TransformBuffer> tf);
+    const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformBuffer::SharedPtr tf);
 
   /**
    * @brief A destructor for opennav_docking::DockDatabase
@@ -104,7 +104,7 @@ protected:
    * @return bool If successful
    */
   bool getDockPlugins(
-    const nav2::LifecycleNode::SharedPtr & node, std::shared_ptr<nav2::TransformBuffer> tf);
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf);
 
   /**
    * @brief Populate database of dock instances

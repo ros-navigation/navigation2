@@ -48,7 +48,7 @@ public:
    * @param base_frame Robot base frame
    */
   Controller(
-    const nav2::LifecycleNode::SharedPtr & node, std::shared_ptr<nav2::TransformBuffer> tf,
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
     std::string fixed_frame, std::string base_frame);
 
   /**
@@ -146,7 +146,7 @@ protected:
   double simulation_time_step_;
   double dock_collision_threshold_;
   double transform_tolerance_;
-  std::shared_ptr<nav2::TransformBuffer> tf2_buffer_;
+  nav2::TransformBuffer::SharedPtr tf2_buffer_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;

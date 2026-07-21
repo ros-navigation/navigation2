@@ -321,7 +321,7 @@ public:
    * getUnpaddedRobotFootprint(). */
   void setRobotFootprintPolygon(const geometry_msgs::msg::Polygon & footprint);
 
-  std::shared_ptr<nav2::TransformBuffer> getTfBuffer() {return tf_buffer_;}
+  nav2::TransformBuffer::SharedPtr getTfBuffer() {return tf_buffer_;}
 
   /**
    * @brief  Get the costmap's use_radius_ parameter, corresponding to
@@ -366,8 +366,8 @@ protected:
   std::unique_ptr<nav2::NodeThread> executor_thread_;
 
   // Transform listener
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   std::unique_ptr<LayeredCostmap> layered_costmap_{nullptr};
   std::string name_;

@@ -39,7 +39,7 @@ TEST(DynParamTestNode, testDynParamsSet)
   costmap->on_configure(rclcpp_lifecycle::State());
 
   // Set tf between default global_frame and robot_base_frame in order not to block in on_activate
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster_ =
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_ =
     nav2::create_transform_broadcaster(node);
   geometry_msgs::msg::TransformStamped t;
   t.header.stamp = node->get_clock()->now();

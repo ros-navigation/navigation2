@@ -124,7 +124,7 @@ public:
    */
   virtual bool toFrame(
     const std::string & to_frame,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const double transform_tolerance) = 0;
 
   /**
@@ -233,7 +233,7 @@ public:
    */
   bool toFrame(
     const std::string & to_frame,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const double transform_tolerance);
 
   /**
@@ -343,7 +343,7 @@ public:
    */
   bool toFrame(
     const std::string & to_frame,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const double transform_tolerance);
 
   /**

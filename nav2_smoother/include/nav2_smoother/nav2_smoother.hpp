@@ -148,8 +148,8 @@ protected:
   typename ActionServer::SharedPtr action_server_;
 
   // Transforms
-  std::shared_ptr<nav2::TransformBuffer> tf_;
-  std::shared_ptr<nav2::TransformListener> transform_listener_;
+  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformListener::SharedPtr transform_listener_;
 
   // Publishers and subscribers
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;

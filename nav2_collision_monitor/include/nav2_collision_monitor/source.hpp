@@ -54,7 +54,7 @@ public:
   Source(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -169,7 +169,7 @@ protected:
 
   // Global variables
   /// @brief TF buffer
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   /// @brief Robot base frame ID
   std::string base_frame_id_;
   /// @brief Global frame ID for correct transform calculation

@@ -199,7 +199,7 @@ bool Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
 
 bool Polygon::toFrame(
   const std::string & to_frame,
-  const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const double transform_tolerance)
 {
   geometry_msgs::msg::PoseStamped from_pose, to_pose;
@@ -412,7 +412,7 @@ bool Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
 
 bool Circle::toFrame(
   const std::string & to_frame,
-  const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const double transform_tolerance)
 {
   geometry_msgs::msg::PoseStamped from_pose, to_pose;

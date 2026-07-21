@@ -45,7 +45,7 @@ public:
 
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr &,
-    std::string name, std::shared_ptr<nav2::TransformBuffer>,
+    std::string name, nav2::TransformBuffer::SharedPtr,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>) = 0;
 

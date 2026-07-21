@@ -202,9 +202,9 @@ protected:
   geometry_msgs::msg::TransformStamped t_odom_to_base_link_;
 
   // ROS interfaces
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster_;
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   nav2::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     initial_pose_sub_;

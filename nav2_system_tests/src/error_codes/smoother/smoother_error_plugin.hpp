@@ -30,7 +30,7 @@ class UnknownErrorSmoother : public nav2_core::Smoother
 public:
   void configure(
     const nav2::LifecycleNode::WeakPtr &,
-    std::string, std::shared_ptr<nav2::TransformBuffer>,
+    std::string, nav2::TransformBuffer::SharedPtr,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>) override {}
 

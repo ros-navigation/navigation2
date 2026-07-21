@@ -85,7 +85,7 @@ public:
 
 private:
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   nav_msgs::msg::Path path_;
   std::vector<geometry_msgs::msg::PoseStamped>::iterator closest_pose_detection_begin_;
   double transform_tolerance_;

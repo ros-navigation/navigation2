@@ -73,7 +73,7 @@ public:
     const std::string & name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap,
     ParametersHandler * param_handler,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const models::OptimizerSettings & settings)
   {
     param_handler_ = param_handler;
@@ -162,7 +162,7 @@ protected:
   std::string name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   ParametersHandler * param_handler_;
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   float collision_lookahead_time_{1.0f};
   unsigned int traj_samples_to_evaluate_{0u};
   bool consider_footprint_{false};

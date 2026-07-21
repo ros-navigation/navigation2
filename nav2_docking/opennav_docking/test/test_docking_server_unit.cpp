@@ -53,7 +53,7 @@ class DockingServerTFShim : public DockingServerShim
 public:
   DockingServerTFShim()
   : DockingServerShim() {}
-  std::shared_ptr<nav2::TransformBuffer> getTfBuffer() {return tf2_buffer_;}
+  nav2::TransformBuffer::SharedPtr getTfBuffer() {return tf2_buffer_;}
 };
 
 TEST(DockingServerTests, ObjectLifecycle)

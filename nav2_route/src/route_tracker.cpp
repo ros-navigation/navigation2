@@ -22,7 +22,7 @@ namespace nav2_route
 
 void RouteTracker::configure(
   nav2::LifecycleNode::SharedPtr node,
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+  nav2::TransformBuffer::SharedPtr tf_buffer,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
   std::shared_ptr<ActionServerTrack> action_server,
   const std::string & route_frame,

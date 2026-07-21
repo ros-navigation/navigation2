@@ -35,6 +35,14 @@ pull_request_rules:
         branches:
           - kilted
 
+  - name: backport to lyrical at reviewers discretion
+    conditions:
+      - base=main
+      - "label=backport-lyrical"
+    actions:
+      backport:
+        branches:
+          - lyrical
 
   - name: ask to resolve conflict
     conditions:

@@ -220,8 +220,8 @@ public:
 private:
   nav2::LifecycleNode::SharedPtr node_;
 
-  std::shared_ptr<nav2::TransformBuffer> tf_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 

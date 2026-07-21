@@ -46,7 +46,7 @@ public:
    */
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, std::shared_ptr<nav2::TransformBuffer> tf) = 0;
+    const std::string & name, nav2::TransformBuffer::SharedPtr tf) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.

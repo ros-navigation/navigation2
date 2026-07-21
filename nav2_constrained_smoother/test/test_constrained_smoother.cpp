@@ -387,7 +387,7 @@ protected:
 
   nav2::LifecycleNode::SharedPtr node_lifecycle_;
   std::shared_ptr<nav2_constrained_smoother::ConstrainedSmoother> smoother_;
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 

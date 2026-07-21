@@ -51,7 +51,7 @@ public:
    */
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, std::shared_ptr<nav2::TransformBuffer> tf);
+    const std::string & name, nav2::TransformBuffer::SharedPtr tf);
 
   /**
    * @brief Method to cleanup resources used on shutdown.
@@ -139,7 +139,7 @@ protected:
   double staging_yaw_offset_;
 
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<nav2::TransformBuffer> tf2_buffer_;
+  nav2::TransformBuffer::SharedPtr tf2_buffer_;
 
   // Detector control parameters
   std::string detector_service_name_;

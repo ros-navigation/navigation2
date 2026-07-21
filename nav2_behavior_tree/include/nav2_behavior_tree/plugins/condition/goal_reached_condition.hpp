@@ -99,7 +99,7 @@ protected:
 
 private:
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<nav2::TransformBuffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
 
   double goal_reached_tol_;
   double transform_tolerance_;

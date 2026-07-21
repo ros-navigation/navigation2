@@ -90,7 +90,7 @@ public:
     tf_broadcaster_.reset();
   }
 
-  std::shared_ptr<nav2::TransformBuffer> getBuffer() const
+  nav2::TransformBuffer::SharedPtr getBuffer() const
   {
     return tf_buffer_;
   }
@@ -163,9 +163,9 @@ protected:
 
   // The tester must provide the robot pose through a transform
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster_;
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
   rclcpp::TimerBase::SharedPtr transform_timer_;
 };
 

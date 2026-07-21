@@ -38,7 +38,7 @@ TruncatePathLocal::TruncatePathLocal(
 : BT::ActionNodeBase(name, conf)
 {
   tf_buffer_ =
-    config().blackboard->template get<std::shared_ptr<nav2::TransformBuffer>>(
+    config().blackboard->template get<nav2::TransformBuffer::SharedPtr>(
     "tf_buffer");
 }
 

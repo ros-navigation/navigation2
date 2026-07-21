@@ -68,7 +68,7 @@ TEST(SmootherTest, test_simple_smoother)
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
-  std::shared_ptr<nav2::TransformBuffer> dummy_tf;
+  nav2::TransformBuffer::SharedPtr dummy_tf;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   auto smoother = std::make_unique<SmootherWrapper>();
   smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);

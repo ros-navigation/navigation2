@@ -58,7 +58,7 @@ public:
    */
   void configure(
     nav2::LifecycleNode::SharedPtr node,
-    std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    nav2::TransformBuffer::SharedPtr tf_buffer,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     typename ActionServerTrack::SharedPtr action_server,
     const std::string & route_frame,
@@ -127,7 +127,7 @@ protected:
   nav2::LifecycleNode::WeakPtr node_;
   typename ActionServerTrack::SharedPtr action_server_;
   std::unique_ptr<OperationsManager> operations_manager_;
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
 };
 
 }  // namespace nav2_route

@@ -203,7 +203,7 @@ private:
 
   // The tester must provide the robot pose through a transform
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   rclcpp::TimerBase::SharedPtr transform_timer_;
   void publishRobotTransform();
   void startRobotTransform();

@@ -103,7 +103,7 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_route::GraphLoader> graph_loader_;
   std::shared_ptr<nav2_route::GraphSaver> graph_saver_;
-  std::shared_ptr<nav2::TransformBuffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
   nav2_route::Graph graph_;
   nav2_route::GraphToIDMap graph_to_id_map_;
   nav2_route::GraphToIDMap edge_to_node_map_;

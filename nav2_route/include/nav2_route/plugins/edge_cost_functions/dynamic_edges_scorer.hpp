@@ -53,7 +53,7 @@ public:
    */
   void configure(
     const nav2::LifecycleNode::SharedPtr node,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) override;
 

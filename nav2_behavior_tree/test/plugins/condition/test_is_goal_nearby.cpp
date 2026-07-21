@@ -47,7 +47,7 @@ public:
       factory_->registerBuilder<nav2_behavior_tree::IsGoalNearbyCondition>("IsGoalNearby", builder);
     } catch (BT::BehaviorTreeException const &) {
     }
-    tf_buffer_ = config_->blackboard->get<std::shared_ptr<nav2::TransformBuffer>>("tf_buffer");
+    tf_buffer_ = config_->blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
   }
 
   void TearDown() override {tree_.reset();}
@@ -96,7 +96,7 @@ protected:
   }
 
 protected:
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 

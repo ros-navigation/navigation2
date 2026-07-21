@@ -180,9 +180,9 @@ protected:
 
 protected:
   /// @brief TF buffer
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   /// @brief TF listener
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   /// @brief All shapes vector
   std::vector<std::shared_ptr<Shape>> shapes_;

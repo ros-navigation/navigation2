@@ -274,9 +274,9 @@ protected:
     return costmap_msg;
   }
 
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
 
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;

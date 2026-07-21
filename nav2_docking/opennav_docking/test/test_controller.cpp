@@ -33,7 +33,7 @@ class ControllerFixture : public opennav_docking::Controller
 {
 public:
   ControllerFixture(
-    const nav2::LifecycleNode::SharedPtr & node, std::shared_ptr<nav2::TransformBuffer> tf,
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
     std::string fixed_frame, std::string base_frame)
   : Controller(node, tf, fixed_frame, base_frame)
   {

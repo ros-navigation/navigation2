@@ -305,7 +305,7 @@ public:
   ScanWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -328,7 +328,7 @@ public:
   PointCloudWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -351,7 +351,7 @@ public:
   RangeWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -389,7 +389,7 @@ public:
   PolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -412,7 +412,7 @@ public:
   CostmapWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -434,8 +434,8 @@ class Tester : public ::testing::Test
 public:
   Tester();
   ~Tester();
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
 protected:
   // Data sources creation routine
@@ -558,7 +558,7 @@ void Tester::createSources(const bool base_shift_correction)
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster =
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
     nav2::create_transform_broadcaster(test_node_);
 
   geometry_msgs::msg::TransformStamped transform;

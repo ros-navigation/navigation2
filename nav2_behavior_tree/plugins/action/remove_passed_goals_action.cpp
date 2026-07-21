@@ -36,7 +36,7 @@ void RemovePassedGoals::initialize()
 {
   getInput("radius", viapoint_achieved_radius_);
 
-  tf_ = config().blackboard->get<std::shared_ptr<nav2::TransformBuffer>>("tf_buffer");
+  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 

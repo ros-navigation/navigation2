@@ -55,7 +55,7 @@ public:
   Polygon(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance);
   /**
@@ -350,7 +350,7 @@ protected:
 
   // Global variables
   /// @brief TF buffer
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   /// @brief Base frame ID
   std::string base_frame_id_;
   /// @brief Transform tolerance

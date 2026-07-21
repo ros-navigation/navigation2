@@ -46,7 +46,7 @@ void GoalReachedCondition::initialize()
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 
   goal_reached_tol_ = node_->declare_or_get_parameter("goal_reached_tol", 0.25);
-  tf_ = config().blackboard->get<std::shared_ptr<nav2::TransformBuffer>>("tf_buffer");
+  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
 
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 }

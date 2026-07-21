@@ -70,8 +70,8 @@ private:
   bool is_active_;
   bool initial_pose_received_;
 
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   rclcpp::Node::SharedPtr node_;
 

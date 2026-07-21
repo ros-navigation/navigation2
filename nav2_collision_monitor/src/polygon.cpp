@@ -36,7 +36,7 @@ namespace nav2_collision_monitor
 Polygon::Polygon(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
-  const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),

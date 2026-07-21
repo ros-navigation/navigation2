@@ -70,7 +70,7 @@ int main(int argc, char const * argv[])
 {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<nav2::LifecycleNode>("route_benchmarking2");
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer;
+  nav2::TransformBuffer::SharedPtr tf_buffer;
 
   Graph graph = createGraph();
 

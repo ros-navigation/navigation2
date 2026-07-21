@@ -47,25 +47,41 @@ namespace nav2
 using TransformBuffer = tf2_ros::Buffer;
 
 /**
- * @brief Nav2 type alias for tf2_ros::TransformListener
+ * @brief Nav2 type wrapper for tf2_ros::TransformListener
  */
-using TransformListener = tf2_ros::TransformListener;
+struct TransformListener : tf2_ros::TransformListener
+{
+  using tf2_ros::TransformListener::TransformListener;
+  using SharedPtr = std::shared_ptr<TransformListener>;
+};
 
 /**
- * @brief Nav2 type alias for tf2_ros::TransformBroadcaster
+ * @brief Nav2 type wrapper for tf2_ros::TransformBroadcaster
  */
-using TransformBroadcaster = tf2_ros::TransformBroadcaster;
+struct TransformBroadcaster : tf2_ros::TransformBroadcaster
+{
+  using tf2_ros::TransformBroadcaster::TransformBroadcaster;
+  using SharedPtr = std::shared_ptr<TransformBroadcaster>;
+};
 
 /**
- * @brief Nav2 type alias for tf2_ros::StaticTransformBroadcaster
+ * @brief Nav2 type wrapper for tf2_ros::StaticTransformBroadcaster
  */
-using StaticTransformBroadcaster = tf2_ros::StaticTransformBroadcaster;
+struct StaticTransformBroadcaster : tf2_ros::StaticTransformBroadcaster
+{
+  using tf2_ros::StaticTransformBroadcaster::StaticTransformBroadcaster;
+  using SharedPtr = std::shared_ptr<StaticTransformBroadcaster>;
+};
 
 /**
- * @brief Nav2 type alias for tf2_ros::MessageFilter
+ * @brief Nav2 type wrapper for tf2_ros::MessageFilter
  */
 template<typename MessageT>
-using MessageFilter = tf2_ros::MessageFilter<MessageT>;
+struct MessageFilter : tf2_ros::MessageFilter<MessageT>
+{
+  using tf2_ros::MessageFilter<MessageT>::MessageFilter;
+  using SharedPtr = std::shared_ptr<MessageFilter<MessageT>>;
+};
 
 /**
  * @brief Create a transform buffer with timer interface configured
@@ -74,7 +90,7 @@ using MessageFilter = tf2_ros::MessageFilter<MessageT>;
  * @return Shared pointer to the configured TransformBuffer
  */
 template<typename NodeT>
-inline std::shared_ptr<nav2::TransformBuffer> create_transform_buffer(
+inline nav2::TransformBuffer::SharedPtr create_transform_buffer(
   const NodeT & node,
   rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
 {
@@ -95,7 +111,7 @@ inline std::shared_ptr<nav2::TransformBuffer> create_transform_buffer(
  * @return Shared pointer to the TransformBroadcaster
  */
 template<typename NodeT>
-inline std::shared_ptr<nav2::TransformBroadcaster> create_transform_broadcaster(
+inline nav2::TransformBroadcaster::SharedPtr create_transform_broadcaster(
   const NodeT & node)
 {
 #if RCLCPP_VERSION_GTE(30, 0, 0)
@@ -111,7 +127,7 @@ inline std::shared_ptr<nav2::TransformBroadcaster> create_transform_broadcaster(
  * @return Shared pointer to the StaticTransformBroadcaster
  */
 template<typename NodeT>
-inline std::shared_ptr<nav2::StaticTransformBroadcaster> create_static_transform_broadcaster(
+inline nav2::StaticTransformBroadcaster::SharedPtr create_static_transform_broadcaster(
   const NodeT & node)
 {
 #if RCLCPP_VERSION_GTE(30, 0, 0)
@@ -129,7 +145,7 @@ inline std::shared_ptr<nav2::StaticTransformBroadcaster> create_static_transform
  * @return Shared pointer to the TransformListener
  */
 template<typename NodeT>
-inline std::shared_ptr<nav2::TransformListener> create_transform_listener(
+inline nav2::TransformListener::SharedPtr create_transform_listener(
   nav2::TransformBuffer & buffer, const NodeT & node, bool spin_thread = true)
 {
   return std::make_shared<nav2::TransformListener>(buffer, node, spin_thread);
@@ -146,7 +162,7 @@ inline std::shared_ptr<nav2::TransformListener> create_transform_listener(
  * @return Shared pointer to the MessageFilter
  */
 template<typename MessageT, typename SubscriberT, typename NodeT>
-inline std::shared_ptr<nav2::MessageFilter<MessageT>> create_message_filter(
+inline typename nav2::MessageFilter<MessageT>::SharedPtr create_message_filter(
   SubscriberT & sub, nav2::TransformBuffer & buffer,
   const std::string & target_frame, uint32_t queue_size,
   const NodeT & node, tf2::Duration tolerance)

@@ -127,7 +127,7 @@ private:
     const geometry_msgs::msg::PoseStamped & pose2,
     const double angular_distance_weight);
 
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
 
   nav_msgs::msg::Path path_;
   nav_msgs::msg::Path::_poses_type::iterator closest_pose_detection_begin_;

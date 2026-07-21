@@ -181,7 +181,7 @@ public:
   PolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance)
   : nav2_collision_monitor::Polygon(
@@ -206,7 +206,7 @@ public:
   CircleWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance)
   : nav2_collision_monitor::Circle(
@@ -271,8 +271,8 @@ protected:
   std::shared_ptr<PolygonWrapper> polygon_;
   std::shared_ptr<CircleWrapper> circle_;
 
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 };  // Tester
 
 Tester::Tester()
@@ -413,7 +413,7 @@ void Tester::createCircle(const std::string & action_type, const bool is_static)
 
 void Tester::sendTransforms(double shift)
 {
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster =
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
     nav2::create_transform_broadcaster(test_node_);
 
   geometry_msgs::msg::TransformStamped transform;

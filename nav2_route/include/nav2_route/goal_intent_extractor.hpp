@@ -68,7 +68,7 @@ public:
     nav2::LifecycleNode::SharedPtr node,
     Graph & graph,
     GraphToIDMap * id_to_graph_map,
-    std::shared_ptr<nav2::TransformBuffer> tf,
+    nav2::TransformBuffer::SharedPtr tf,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & route_frame,
     const std::string & base_frame);
@@ -129,7 +129,7 @@ protected:
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   GraphToIDMap * id_to_graph_map_;
   Graph * graph_;
-  std::shared_ptr<nav2::TransformBuffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::string route_frame_;
   std::string base_frame_;

@@ -33,7 +33,7 @@ public:
 
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string &, std::shared_ptr<nav2::TransformBuffer>)
+    const std::string &, nav2::TransformBuffer::SharedPtr)
   {
     node_ = parent.lock();
     if (!node_) {

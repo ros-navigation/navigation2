@@ -242,8 +242,8 @@ protected:
   std::unique_ptr<Controller> controller_;
   std::string curr_dock_type_;
 
-  std::shared_ptr<nav2::TransformBuffer> tf2_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf2_listener_;
+  nav2::TransformBuffer::SharedPtr tf2_buffer_;
+  nav2::TransformListener::SharedPtr tf2_listener_;
 };
 
 }  // namespace opennav_docking

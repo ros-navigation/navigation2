@@ -125,7 +125,7 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   RouteRequest route_request;
 
   auto node = std::make_shared<nav2::LifecycleNode>("router_test");
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer;
+  nav2::TransformBuffer::SharedPtr tf_buffer;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
   RoutePlanner planner;
   planner.configure(node, tf_buffer, collision_checker);
@@ -184,7 +184,7 @@ TEST(RoutePlannerTest, test_route_planner_negative)
   RouteRequest route_request;
 
   auto node = std::make_shared<nav2::LifecycleNode>("router_test");
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer;
+  nav2::TransformBuffer::SharedPtr tf_buffer;
   node->declare_parameter("max_iterations", rclcpp::ParameterValue(5));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
   RoutePlanner planner;

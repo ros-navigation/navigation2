@@ -99,8 +99,8 @@ protected:
     nav2_msgs::msg::CircleObject::SharedPtr c1,
     nav2_msgs::msg::CircleObject::SharedPtr c2);
 
-  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
-  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   std::shared_ptr<PolygonWrapper> polygon_;
   std::shared_ptr<CircleWrapper> circle_;
@@ -261,7 +261,7 @@ nav2_msgs::msg::CircleObject::SharedPtr Tester::makeCircleObject(
 
 void Tester::sendTransform()
 {
-  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster =
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
     nav2::create_transform_broadcaster(node_);
 
   geometry_msgs::msg::TransformStamped transform;

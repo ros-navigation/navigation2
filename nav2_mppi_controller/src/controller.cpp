@@ -24,7 +24,7 @@ namespace nav2_mppi_controller
 
 void MPPIController::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, const std::shared_ptr<nav2::TransformBuffer> tf,
+  std::string name, const nav2::TransformBuffer::SharedPtr tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   parent_ = parent;
