@@ -21,22 +21,12 @@
 #include "rclcpp/version.h"
 #include "rclcpp/rclcpp.hpp"
 
-// Lyrical and newer deprecate the .h headers in favor of .hpp
-#if RCLCPP_VERSION_GTE(30, 0, 0)
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/create_timer_ros.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 #include "tf2_ros/static_transform_broadcaster.hpp"
 #include "tf2_ros/message_filter.hpp"
-#else
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/create_timer_ros.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
-#include "tf2_ros/static_transform_broadcaster.h"
-#include "tf2_ros/message_filter.h"
-#endif
 
 namespace nav2
 {
