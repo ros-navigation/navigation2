@@ -39,3 +39,4 @@
 **/nav2_ros_common/include/nav2_ros_common/service_server.hpp
 **/nav2_ros_common/include/nav2_ros_common/simple_action_server.hpp
 **/nav2_ros_common/include/nav2_ros_common/subscription.hpp
+**/nav2_ros_common/include/nav2_ros_common/tf2_factories.hpp
