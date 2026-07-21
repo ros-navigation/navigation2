@@ -119,7 +119,7 @@ CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     polygon->deactivate();
   }
 
-  // Deactivating sources (exclusion zone visualization publishers)
+  // Deactivating sources
   for (std::shared_ptr<Source> source : sources_) {
     source->deactivate();
   }
