@@ -158,11 +158,8 @@ inline nav2::TransformListener::SharedPtr create_transform_listener(
 /**
  * @brief Create a transform listener with a new temp hidden node
  * @param buffer Transform buffer reference
- * @param node Pointer-like node (shared_ptr or raw pointer)
- * @param spin_thread Whether to spin a dedicated thread
  * @return Shared pointer to the TransformListener
  */
-template<typename NodeT>
 inline nav2::TransformListener::SharedPtr create_transform_listener(
   nav2::TransformBuffer & buffer)
 {
