@@ -92,7 +92,7 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   if (publish_scan_) {
     map_client_ = create_client<nav_msgs::srv::GetMap>("/map_server/map");
     tf_buffer_ = nav2::create_transform_buffer(this);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, this);
+    tf_listener_ = nav2::create_transform_listener(*tf_buffer_);
   }
 
   if (publish_clock_) {

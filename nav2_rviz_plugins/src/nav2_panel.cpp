@@ -690,7 +690,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   // Setting up tf for initial pose
   tf2_buffer_ = nav2::create_transform_buffer(client_node_);
-  transform_listener_ = nav2::create_transform_listener(*tf2_buffer_, client_node_);
+  transform_listener_ = nav2::create_transform_listener(*tf2_buffer_);
 
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
