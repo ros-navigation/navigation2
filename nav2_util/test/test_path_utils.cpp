@@ -382,7 +382,7 @@ TEST(TransformPathTest, SuccessfulTransform)
   rclcpp::init(0, nullptr);
   rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
   nav2::TransformBuffer::SharedPtr tf_buffer_ =
-    std::make_shared<nav2::TransformBuffer>(node_->get_clock());
+    nav2::create_transform_buffer(node_);
   nav2::TransformListener::SharedPtr tf_listener_ =
     nav2::create_transform_listener(*tf_buffer_, node_);
 
@@ -421,7 +421,7 @@ TEST(TransformPathTest, PathAlreadyInTargetFrame)
   rclcpp::init(0, nullptr);
   rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
   nav2::TransformBuffer::SharedPtr tf_buffer_ =
-    std::make_shared<nav2::TransformBuffer>(node_->get_clock());
+    nav2::create_transform_buffer(node_);
   nav2::TransformListener::SharedPtr tf_listener_ =
     nav2::create_transform_listener(*tf_buffer_, node_);
   nav_msgs::msg::Path input_path, transformed_path;
@@ -446,7 +446,7 @@ TEST(TransformPathTest, MissingTransform)
   rclcpp::init(0, nullptr);
   rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
   nav2::TransformBuffer::SharedPtr tf_buffer_ =
-    std::make_shared<nav2::TransformBuffer>(node_->get_clock());
+    nav2::create_transform_buffer(node_);
   nav2::TransformListener::SharedPtr tf_listener_ =
     nav2::create_transform_listener(*tf_buffer_, node_);
   nav_msgs::msg::Path input_path, transformed_path;

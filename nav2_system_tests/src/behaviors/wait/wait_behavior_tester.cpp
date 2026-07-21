@@ -41,7 +41,7 @@ WaitBehaviorTester::WaitBehaviorTester()
     rclcpp::NodeOptions().parameter_overrides(
       {rclcpp::Parameter("use_sim_time", true)}));
 
-  tf_buffer_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
+  tf_buffer_ = nav2::create_transform_buffer(node_);
   tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
 
   client_ptr_ = rclcpp_action::create_client<Wait>(

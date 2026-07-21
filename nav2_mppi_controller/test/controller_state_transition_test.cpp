@@ -40,7 +40,7 @@ TEST(ControllerStateTransitionTest, ControllerNotFail)
 
   auto node = getDummyNode(options);
   node->declare_parameter("publish_optimal_trajectory", true);
-  auto tf_buffer = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf_buffer = nav2::create_transform_buffer(node);
   auto costmap_ros = getDummyCostmapRos(costmap_settings);
   costmap_ros->setRobotFootprint(getDummySquareFootprint(0.01));
 

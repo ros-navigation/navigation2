@@ -247,7 +247,7 @@ TEST(SimpleNonChargingDockTests, RefinedPoseNotTransform)
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
 
   // Create the TF
-  auto tf_buffer = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf_buffer = nav2::create_transform_buffer(node);
   tf_buffer->setUsingDedicatedThread(true);
 
   dock->configure(node, "my_dock", tf_buffer);
@@ -286,7 +286,7 @@ TEST(SimpleNonChargingDockTests, IsDockedTransformException)
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
 
   // Create the TF
-  auto tf_buffer = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf_buffer = nav2::create_transform_buffer(node);
   tf_buffer->setUsingDedicatedThread(true);
 
   dock->configure(node, "my_dock", tf_buffer);

@@ -31,7 +31,7 @@ using namespace nav2_route; //NOLINT
 TEST(GraphSaver, test_invalid_plugin)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -50,7 +50,7 @@ TEST(GraphSaver, test_invalid_plugin)
 TEST(GraphSaver, test_empty_filename)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -71,7 +71,7 @@ TEST(GraphSaver, test_empty_filename)
 TEST(GraphSaver, test_api)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -106,7 +106,7 @@ TEST(GraphSaver, test_transformation_api)
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);
   auto tf_listener = nav2::create_transform_listener(*tf, node);
   auto tf_broadcaster = nav2::create_static_transform_broadcaster(node);

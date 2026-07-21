@@ -31,7 +31,7 @@ TEST(NavfnTest, testDynamicParameter)
   costmap->on_configure(rclcpp_lifecycle::State());
   auto planner =
     std::make_unique<nav2_navfn_planner::NavfnPlanner>();
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   planner->configure(node, "test", tf, costmap);
   planner->activate();
 

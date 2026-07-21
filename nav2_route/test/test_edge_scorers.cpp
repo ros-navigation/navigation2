@@ -777,7 +777,7 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
   nav2::TransformBuffer::SharedPtr tf_buffer =
-    std::make_shared<nav2::TransformBuffer>(node->get_clock());
+    nav2::create_transform_buffer(node);
   nav2::TransformListener::SharedPtr tf_listener =
     nav2::create_transform_listener(*tf_buffer, node);
 
@@ -864,7 +864,7 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
   nav2::TransformBuffer::SharedPtr tf_buffer =
-    std::make_shared<nav2::TransformBuffer>(node->get_clock());
+    nav2::create_transform_buffer(node);
   nav2::TransformListener::SharedPtr tf_listener =
     nav2::create_transform_listener(*tf_buffer, node);
 

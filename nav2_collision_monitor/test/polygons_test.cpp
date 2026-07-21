@@ -283,7 +283,7 @@ Tester::Tester()
   test_node_->configure();
   test_node_->activate();
 
-  tf_buffer_ = std::make_shared<nav2::TransformBuffer>(test_node_->get_clock());
+  tf_buffer_ = nav2::create_transform_buffer(test_node_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = nav2::create_transform_listener(*tf_buffer_, test_node_);
 }

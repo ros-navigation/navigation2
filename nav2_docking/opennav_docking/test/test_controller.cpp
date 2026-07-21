@@ -192,7 +192,7 @@ private:
 TEST(ControllerTests, ObjectLifecycle)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   // Skip collision detection
@@ -266,7 +266,7 @@ TEST(ControllerTests, DynamicParameters) {
 TEST(ControllerTests, TFException)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   auto controller = std::make_unique<opennav_docking::ControllerFixture>(
@@ -280,7 +280,7 @@ TEST(ControllerTests, TFException)
 TEST(ControllerTests, CollisionCheckerDockForward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
@@ -346,7 +346,7 @@ TEST(ControllerTests, CollisionCheckerDockForward) {
 TEST(ControllerTests, CollisionCheckerDockBackward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
@@ -412,7 +412,7 @@ TEST(ControllerTests, CollisionCheckerDockBackward) {
 TEST(ControllerTests, CollisionCheckerUndockBackward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
@@ -486,7 +486,7 @@ TEST(ControllerTests, CollisionCheckerUndockBackward) {
 TEST(ControllerTests, CollisionCheckerUndockForward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(

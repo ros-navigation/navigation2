@@ -117,7 +117,7 @@ Tester::Tester()
   circle_ = std::make_shared<CircleWrapper>(node_);
 
   // Transform buffer and listener initialization
-  tf_buffer_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
+  tf_buffer_ = nav2::create_transform_buffer(node_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
 }

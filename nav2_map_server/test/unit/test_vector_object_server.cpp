@@ -175,7 +175,7 @@ Tester::Tester()
     nav2::qos::LatchedSubscriptionQoS());
 
   // Transform buffer and listener initialization
-  tf_buffer_ = std::make_shared<nav2::TransformBuffer>(vo_server_->get_clock());
+  tf_buffer_ = nav2::create_transform_buffer(vo_server_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = nav2::create_transform_listener(*tf_buffer_, vo_server_);
   executor_.add_node(vo_server_->get_node_base_interface());

@@ -29,7 +29,7 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
 
   auto tf_broadcaster = nav2::create_transform_broadcaster(node);
   auto buffer = nav2::create_transform_buffer(node);
-  auto listener = nav2::create_transform_listener(*buffer, true);
+  auto listener = nav2::create_transform_listener(*buffer, node);
 
   std::string base_link = "base_link";
   std::string base_footprint = "base_footprint";

@@ -54,7 +54,7 @@ public:
   {
     node_ = std::make_shared<nav2::LifecycleNode>(
         "observation_buffer_test_node");
-    tf_buffer_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
+    tf_buffer_ = nav2::create_transform_buffer(node_);
     buffer_ =
       std::make_shared<nav2_costmap_2d::ObservationBuffer>(node_, "/observations", 10.0,
       0.1, 0.0, std::numeric_limits<double>::max(), 10.0, 1.0, 5.0, 2.0, *tf_buffer_, global_frame,

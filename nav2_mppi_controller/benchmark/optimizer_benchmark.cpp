@@ -82,7 +82,7 @@ void prepareAndRunBenchmark(
   auto node = getDummyNode(optimizer_settings, critics);
   std::string name = "test";
   auto parameters_handler = std::make_unique<mppi::ParametersHandler>(node, name);
-  auto tf_buffer = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf_buffer = nav2::create_transform_buffer(node);
   auto optimizer = getDummyOptimizer(node, costmap_ros, tf_buffer, parameters_handler.get());
 
   // evalControl args
