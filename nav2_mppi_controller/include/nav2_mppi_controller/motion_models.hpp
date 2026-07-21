@@ -28,9 +28,8 @@
 #include "nav2_mppi_controller/models/constraints.hpp"
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "tf2/utils.hpp"
-
 namespace mppi
 {
 
@@ -191,9 +190,7 @@ public:
     pose.pose.position.x += dx * pred_dt;
     pose.pose.position.y += dy * pred_dt;
     initial_yaw += speed.angular.z * pred_dt;
-    tf2::Quaternion quat;
-    quat.setRPY(0.0, 0.0, initial_yaw);
-    pose.pose.orientation = tf2::toMsg(quat);
+    pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(initial_yaw);
   }
   /**
    * @brief Whether the motion model is holonomic, using Y axis
