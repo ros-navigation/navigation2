@@ -85,7 +85,7 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
     polygon->activate();
   }
 
-  // Activating sources (exclusion zone visualization publishers)
+  // Activating sources
   for (std::shared_ptr<Source> source : sources_) {
     source->activate();
   }
