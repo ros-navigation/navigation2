@@ -16,6 +16,7 @@
 #include <chrono>
 #include "nav2_mppi_controller/controller.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -168,5 +169,4 @@ void MPPIController::setSpeedLimit(const double & speed_limit, const bool & perc
 }  // namespace nav2_mppi_controller
 
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_mppi_controller::MPPIController, nav2_core::Controller)

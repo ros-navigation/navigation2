@@ -16,6 +16,7 @@
 #include <string>
 
 #include "nav2_route/plugins/edge_cost_functions/dynamic_edges_scorer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
@@ -93,5 +94,4 @@ std::string DynamicEdgesScorer::getName()
 }  // namespace nav2_route
 
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_route::DynamicEdgesScorer, nav2_route::EdgeCostFunction)

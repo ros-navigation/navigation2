@@ -18,6 +18,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "opennav_docking/simple_charging_dock.hpp"
 #include "opennav_docking/utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 
@@ -457,5 +458,4 @@ void SimpleChargingDock::cleanup()
 }  // namespace opennav_docking
 
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(opennav_docking::SimpleChargingDock, opennav_docking_core::ChargingDock)

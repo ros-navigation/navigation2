@@ -19,6 +19,7 @@
 #include "opennav_docking_core/charging_dock.hpp"
 #include "opennav_docking_core/docking_exceptions.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace opennav_docking
 {
@@ -121,5 +122,4 @@ protected:
 }  // namespace opennav_docking
 
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(opennav_docking::TestFailureDock, opennav_docking_core::ChargingDock)

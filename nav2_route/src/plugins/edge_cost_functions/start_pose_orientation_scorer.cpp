@@ -16,6 +16,7 @@
 #include <string>
 
 #include "nav2_route/plugins/edge_cost_functions/start_pose_orientation_scorer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
@@ -76,5 +77,4 @@ std::string StartPoseOrientationScorer::getName()
 }  // namespace nav2_route
 
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_route::StartPoseOrientationScorer, nav2_route::EdgeCostFunction)

@@ -37,6 +37,7 @@
 #include "nav2_util/costmap.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
@@ -526,5 +527,4 @@ NavfnPlanner::clearRobotCell(unsigned int mx, unsigned int my)
 }  // namespace nav2_navfn_planner
 
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_navfn_planner::NavfnPlanner, nav2_core::GlobalPlanner)

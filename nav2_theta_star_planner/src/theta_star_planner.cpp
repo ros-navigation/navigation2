@@ -18,6 +18,7 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_theta_star_planner/theta_star_planner.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
@@ -213,5 +214,4 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
 }  // namespace nav2_theta_star_planner
 
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_theta_star_planner::ThetaStarPlanner, nav2_core::GlobalPlanner)
