@@ -309,8 +309,9 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
     }
   }
 
-  const bool reached_goal_cell = std::floor(path.front().x) == std::floor(mx_goal) &&
-                                  std::floor(path.front().y) == std::floor(my_goal);
+  const bool reached_goal_cell =
+    std::floor(path.front().x) == std::floor(mx_goal) &&
+    std::floor(path.front().y) == std::floor(my_goal);
 
   // Convert to world coordinates
   plan.poses.reserve(path.size());
@@ -352,7 +353,7 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
   if (reached_goal_cell && plan_size > 0) {
     plan.poses.back().pose.position = goal.pose.position;
   }
-  
+
   if (_use_final_approach_orientation) {
     if (plan_size == 1) {
       plan.poses.back().pose.orientation = start.pose.orientation;
