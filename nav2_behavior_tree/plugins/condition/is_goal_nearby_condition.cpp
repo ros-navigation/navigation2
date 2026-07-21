@@ -15,6 +15,7 @@
 #include "nav2_behavior_tree/plugins/condition/is_goal_nearby_condition.hpp"
 
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_behavior_tree
@@ -102,7 +103,6 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
-#include "nav2_ros_common/tf2_factories.hpp"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::IsGoalNearbyCondition>("IsGoalNearby");

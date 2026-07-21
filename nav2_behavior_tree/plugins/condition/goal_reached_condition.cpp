@@ -18,6 +18,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/goal_reached_condition.hpp"
 
@@ -84,7 +85,6 @@ bool GoalReachedCondition::isGoalReached()
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
-#include "nav2_ros_common/tf2_factories.hpp"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::GoalReachedCondition>("GoalReached");

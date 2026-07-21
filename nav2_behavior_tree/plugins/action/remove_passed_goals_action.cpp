@@ -18,6 +18,7 @@
 
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/action/remove_passed_goals_action.hpp"
 
@@ -107,7 +108,6 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
-#include "nav2_ros_common/tf2_factories.hpp"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::RemovePassedGoals>("RemovePassedGoals");

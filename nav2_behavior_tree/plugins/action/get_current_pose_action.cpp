@@ -21,6 +21,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "behaviortree_cpp/decorator_node.h"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/action/get_current_pose_action.hpp"
 
@@ -62,7 +63,6 @@ inline BT::NodeStatus GetCurrentPoseAction::tick()
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
-#include "nav2_ros_common/tf2_factories.hpp"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::GetCurrentPoseAction>("GetCurrentPose");
