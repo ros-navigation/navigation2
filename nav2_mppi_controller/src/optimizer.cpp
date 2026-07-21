@@ -330,13 +330,10 @@ void Optimizer::prepare(
     // Predict the robot pose at 1*dt in future
     motion_model_->predictFuture(state_.pose, robot_last_speed, dt);
   }
-
-
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
   costs_.setZero(settings_.batch_size);
   goal_ = goal;
-
   critics_data_.fail_flag = false;
   critics_data_.goal_checker = goal_checker;
   critics_data_.motion_model = motion_model_;
