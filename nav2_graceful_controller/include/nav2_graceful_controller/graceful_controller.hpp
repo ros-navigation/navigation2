@@ -30,6 +30,7 @@
 #include "nav2_graceful_controller/parameter_handler.hpp"
 #include "nav2_graceful_controller/smooth_control_law.hpp"
 #include "nav2_graceful_controller/utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_graceful_controller
 {
@@ -60,7 +61,7 @@ public:
    */
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::string name, std::shared_ptr<nav2::TransformBuffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
@@ -225,7 +226,7 @@ protected:
    */
   void validateOrientations(std::vector<geometry_msgs::msg::PoseStamped> & path);
 
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>

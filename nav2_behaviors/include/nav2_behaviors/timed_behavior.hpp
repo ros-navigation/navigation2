@@ -26,8 +26,7 @@
 #include <utility>
 
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/twist_publisher.hpp"
@@ -115,7 +114,7 @@ public:
   // configure the server on lifecycle setup
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
+    const std::string & name, std::shared_ptr<nav2::TransformBuffer> tf,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker)
   override
@@ -183,7 +182,7 @@ protected:
   typename ActionServer::SharedPtr action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformBuffer> tf_;
 
   double cycle_frequency_;
   double enabled_;

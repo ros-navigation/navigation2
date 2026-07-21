@@ -24,7 +24,7 @@ namespace nav2_mppi_controller
 
 void MPPIController::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, const std::shared_ptr<tf2_ros::Buffer> tf,
+  std::string name, const std::shared_ptr<nav2::TransformBuffer> tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   parent_ = parent;
@@ -168,4 +168,5 @@ void MPPIController::setSpeedLimit(const double & speed_limit, const bool & perc
 }  // namespace nav2_mppi_controller
 
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_mppi_controller::MPPIController, nav2_core::Controller)

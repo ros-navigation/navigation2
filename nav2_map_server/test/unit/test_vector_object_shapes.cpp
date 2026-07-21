@@ -25,9 +25,7 @@
 #include "geometry_msgs/msg/point32.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_msgs/msg/polygon_object.hpp"
 #include "nav2_msgs/msg/circle_object.hpp"
@@ -101,8 +99,8 @@ protected:
     nav2_msgs::msg::CircleObject::SharedPtr c1,
     nav2_msgs::msg::CircleObject::SharedPtr c2);
 
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  std::shared_ptr<nav2::TransformListener> tf_listener_;
 
   std::shared_ptr<PolygonWrapper> polygon_;
   std::shared_ptr<CircleWrapper> circle_;
@@ -119,9 +117,9 @@ Tester::Tester()
   circle_ = std::make_shared<CircleWrapper>(node_);
 
   // Transform buffer and listener initialization
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  tf_buffer_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
 }
 
 Tester::~Tester()
@@ -263,8 +261,8 @@ nav2_msgs::msg::CircleObject::SharedPtr Tester::makeCircleObject(
 
 void Tester::sendTransform()
 {
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster =
+    nav2::create_transform_broadcaster(node_);
 
   geometry_msgs::msg::TransformStamped transform;
 

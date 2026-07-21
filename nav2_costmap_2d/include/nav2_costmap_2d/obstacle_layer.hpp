@@ -45,7 +45,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/version.h"
 #include "laser_geometry/laser_geometry.hpp"
-#include "tf2_ros/message_filter.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "message_filters/subscriber.hpp"
 #include "point_cloud_transport/subscriber_filter.hpp"

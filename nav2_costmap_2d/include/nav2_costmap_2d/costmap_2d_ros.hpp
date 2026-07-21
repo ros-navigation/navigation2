@@ -56,8 +56,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "tf2/convert.hpp"
 #include "tf2/LinearMath/Transform.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "tf2/time.hpp"
 #include "tf2/transform_datatypes.hpp"
 #include "nav2_ros_common/service_server.hpp"
@@ -322,7 +321,7 @@ public:
    * getUnpaddedRobotFootprint(). */
   void setRobotFootprintPolygon(const geometry_msgs::msg::Polygon & footprint);
 
-  std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf_buffer_;}
+  std::shared_ptr<nav2::TransformBuffer> getTfBuffer() {return tf_buffer_;}
 
   /**
    * @brief  Get the costmap's use_radius_ parameter, corresponding to
@@ -367,8 +366,8 @@ protected:
   std::unique_ptr<nav2::NodeThread> executor_thread_;
 
   // Transform listener
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  std::shared_ptr<nav2::TransformListener> tf_listener_;
 
   std::unique_ptr<LayeredCostmap> layered_costmap_{nullptr};
   std::string name_;

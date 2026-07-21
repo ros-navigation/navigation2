@@ -25,7 +25,7 @@ using nav2_util::PathSegment;
 
 void SavitzkyGolaySmoother::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
+  std::string name, std::shared_ptr<nav2::TransformBuffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/*costmap_sub*/,
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>/*footprint_sub*/)
 {
@@ -175,4 +175,5 @@ bool SavitzkyGolaySmoother::smoothImpl(
 }  // namespace nav2_smoother
 
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_smoother::SavitzkyGolaySmoother, nav2_core::Smoother)

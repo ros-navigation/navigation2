@@ -28,6 +28,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/raytrace_line_2d.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_map_server
 {
@@ -198,7 +199,7 @@ bool Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
 
 bool Polygon::toFrame(
   const std::string & to_frame,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
   const double transform_tolerance)
 {
   geometry_msgs::msg::PoseStamped from_pose, to_pose;
@@ -411,7 +412,7 @@ bool Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
 
 bool Circle::toFrame(
   const std::string & to_frame,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
   const double transform_tolerance)
 {
   geometry_msgs::msg::PoseStamped from_pose, to_pose;

@@ -21,7 +21,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_route/graph_loader.hpp"
-#include "tf2_ros/static_transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 
 using namespace nav2_route; //NOLINT
@@ -29,7 +29,7 @@ using namespace nav2_route; //NOLINT
 TEST(GraphLoader, test_invalid_plugin)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -48,7 +48,7 @@ TEST(GraphLoader, test_invalid_plugin)
 TEST(GraphLoader, test_api)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -70,10 +70,10 @@ TEST(GraphLoader, test_transformation_api)
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   tf->setUsingDedicatedThread(true);
-  auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
-  auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
+  auto tf_listener = nav2::create_transform_listener(*tf, node);
+  auto tf_broadcaster = nav2::create_static_transform_broadcaster(node);
 
   std::string frame = "map";
 
@@ -124,7 +124,7 @@ TEST(GraphLoader, test_transformation_api)
 TEST(GraphLoader, test_transformation_api2)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   tf->setUsingDedicatedThread(true);
 
   std::string frame = "map";

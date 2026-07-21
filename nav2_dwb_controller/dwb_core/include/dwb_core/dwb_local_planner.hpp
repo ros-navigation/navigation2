@@ -50,6 +50,7 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace dwb_core
 {
@@ -68,7 +69,7 @@ public:
 
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::string name, std::shared_ptr<nav2::TransformBuffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   virtual ~DWBLocalPlanner() {}
@@ -195,7 +196,7 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("DWBLocalPlanner")};
 
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformBuffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 
   std::unique_ptr<DWBPublisher> pub_;

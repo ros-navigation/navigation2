@@ -25,6 +25,7 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "opennav_docking_core/non_charging_dock.hpp"
@@ -50,7 +51,7 @@ public:
    */
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf);
+    const std::string & name, std::shared_ptr<nav2::TransformBuffer> tf);
 
   /**
    * @brief Method to cleanup resources used on shutdown.
@@ -138,7 +139,7 @@ protected:
   double staging_yaw_offset_;
 
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
+  std::shared_ptr<nav2::TransformBuffer> tf2_buffer_;
 
   // Detector control parameters
   std::string detector_service_name_;

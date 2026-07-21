@@ -19,7 +19,7 @@
 #include <memory>
 #include <vector>
 
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -68,7 +68,7 @@ public:
     nav2::LifecycleNode::SharedPtr node,
     Graph & graph,
     GraphToIDMap * id_to_graph_map,
-    std::shared_ptr<tf2_ros::Buffer> tf,
+    std::shared_ptr<nav2::TransformBuffer> tf,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & route_frame,
     const std::string & base_frame);
@@ -129,7 +129,7 @@ protected:
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   GraphToIDMap * id_to_graph_map_;
   Graph * graph_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformBuffer> tf_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::string route_frame_;
   std::string base_frame_;

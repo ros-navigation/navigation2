@@ -25,7 +25,7 @@ IsGoalNearbyCondition::IsGoalNearbyCondition(
 : BT::ConditionNode(condition_name, conf), transform_tolerance_(0.1)
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  tf_buffer_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  tf_buffer_ = config().blackboard->get<std::shared_ptr<nav2::TransformBuffer>>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(node_, "global_frame", this);
@@ -102,6 +102,7 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
+#include "nav2_ros_common/tf2_factories.hpp"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::IsGoalNearbyCondition>("IsGoalNearby");

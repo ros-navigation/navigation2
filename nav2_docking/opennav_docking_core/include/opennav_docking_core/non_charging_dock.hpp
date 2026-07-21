@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "opennav_docking_core/charging_dock.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 
 namespace opennav_docking_core
@@ -45,7 +46,7 @@ public:
    */
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) = 0;
+    const std::string & name, std::shared_ptr<nav2::TransformBuffer> tf) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.

@@ -27,7 +27,7 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -45,7 +45,7 @@ using geometry_msgs::msg::Point;
 class TestableAsymmetricInflationLayer : public nav2_costmap_2d::AsymmetricInflationLayer
 {
 public:
-  void injectPath(const nav_msgs::msg::Path::SharedPtr msg)
+  void injectPath(const nav_msgs::msg::Path::ConstSharedPtr msg)
   {
     globalPathCallback(msg);
   }
@@ -150,7 +150,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_inflation_radius)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.inflation_radius", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_infl", "", options);
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -165,7 +165,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_left_scaling)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.cost_scaling_factor_left", -1.0)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_left", "", options);
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -180,7 +180,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_right_scaling)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.cost_scaling_factor_right", -1.0)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_right", "", options);
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -195,7 +195,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_goal_distance_thr
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.goal_distance_threshold", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_goal", "", options);
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -210,7 +210,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_invalid_num_threads)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.num_threads", -2)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_threads", "", options);
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -231,7 +231,7 @@ protected:
     node_ = std::make_shared<nav2::LifecycleNode>(
       "asymmetric_inflation_test_node", "", makeNodeOptions());
 
-    tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
 
     // 40x40 cells, 0.1 m resolution, origin at (0,0) — world range [0, 4] m.
     layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, false);
@@ -298,7 +298,7 @@ protected:
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformBuffer> tf_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
   std::shared_ptr<TestableAsymmetricInflationLayer> layer_;
 };

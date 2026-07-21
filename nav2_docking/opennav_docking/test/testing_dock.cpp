@@ -33,7 +33,7 @@ public:
 
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string &, std::shared_ptr<tf2_ros::Buffer>)
+    const std::string &, std::shared_ptr<nav2::TransformBuffer>)
   {
     node_ = parent.lock();
     if (!node_) {
@@ -121,4 +121,5 @@ protected:
 }  // namespace opennav_docking
 
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(opennav_docking::TestFailureDock, opennav_docking_core::ChargingDock)

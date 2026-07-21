@@ -22,6 +22,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_navfn_planner/navfn_planner.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 TEST(NavfnTest, testDynamicParameter)
 {
@@ -30,7 +31,7 @@ TEST(NavfnTest, testDynamicParameter)
   costmap->on_configure(rclcpp_lifecycle::State());
   auto planner =
     std::make_unique<nav2_navfn_planner::NavfnPlanner>();
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   planner->configure(node, "test", tf, costmap);
   planner->activate();
 

@@ -45,7 +45,7 @@ void GoalReachedCondition::initialize()
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 
   goal_reached_tol_ = node_->declare_or_get_parameter("goal_reached_tol", 0.25);
-  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  tf_ = config().blackboard->get<std::shared_ptr<nav2::TransformBuffer>>("tf_buffer");
 
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 }
@@ -84,6 +84,7 @@ bool GoalReachedCondition::isGoalReached()
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
+#include "nav2_ros_common/tf2_factories.hpp"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::GoalReachedCondition>("GoalReached");

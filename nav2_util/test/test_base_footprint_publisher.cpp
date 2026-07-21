@@ -18,6 +18,7 @@
 #include "base_footprint_publisher.hpp"
 #include "gtest/gtest.h"
 #include "tf2/exceptions.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
 {
@@ -26,13 +27,9 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   executor.add_node(node->get_node_base_interface());
   executor.spin_some();
 
-  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
-  auto buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    node->get_node_base_interface(),
-    node->get_node_timers_interface());
-  buffer->setCreateTimerInterface(timer_interface);
-  auto listener = std::make_shared<tf2_ros::TransformListener>(*buffer, true);
+  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
+  auto buffer = nav2::create_transform_buffer(node);
+  auto listener = nav2::create_transform_listener(*buffer, true);
 
   std::string base_link = "base_link";
   std::string base_footprint = "base_footprint";

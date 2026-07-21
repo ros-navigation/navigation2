@@ -26,7 +26,7 @@ namespace opennav_docking
 
 void SimpleNonChargingDock::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf)
+  const std::string & name, std::shared_ptr<nav2::TransformBuffer> tf)
 {
   name_ = name;
   tf2_buffer_ = tf;
@@ -415,4 +415,5 @@ void SimpleNonChargingDock::cleanup()
 }  // namespace opennav_docking
 
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(opennav_docking::SimpleNonChargingDock, opennav_docking_core::ChargingDock)

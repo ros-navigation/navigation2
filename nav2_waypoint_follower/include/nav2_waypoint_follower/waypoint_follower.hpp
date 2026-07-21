@@ -38,9 +38,8 @@
 #include "nav2_waypoint_follower/parameter_handler.hpp"
 
 #include "robot_localization/srv/from_ll.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_ros/transform_listener.hpp"
 
 namespace nav2_waypoint_follower
 {

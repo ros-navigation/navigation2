@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_route/types.hpp"
@@ -56,7 +56,7 @@ public:
    */
   virtual void configure(
     const nav2::LifecycleNode::SharedPtr node,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::shared_ptr<nav2::TransformBuffer> tf_buffer,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) = 0;
 

@@ -22,6 +22,7 @@
 #include "opennav_docking/simple_charging_dock.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 // Testing the simple charging dock plugin
 
@@ -287,7 +288,7 @@ TEST(SimpleChargingDockTests, RefinedPoseNotTransform)
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
 
   // Create the TF
-  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf_buffer = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   tf_buffer->setUsingDedicatedThread(true);
 
   dock->configure(node, "my_dock", tf_buffer);
@@ -326,7 +327,7 @@ TEST(SimpleChargingDockTests, IsDockedTransformException)
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
 
   // Create the TF
-  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf_buffer = std::make_shared<nav2::TransformBuffer>(node->get_clock());
   tf_buffer->setUsingDedicatedThread(true);
 
   dock->configure(node, "my_dock", tf_buffer);

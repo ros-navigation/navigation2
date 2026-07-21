@@ -32,6 +32,7 @@
 #include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulation_functions.hpp"
 #include "nav2_regulated_pure_pursuit_controller/dynamic_window_pure_pursuit_functions.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {
@@ -62,7 +63,7 @@ public:
    */
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::string name, std::shared_ptr<nav2::TransformBuffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
@@ -183,7 +184,7 @@ protected:
     double & linear_vel, double & sign);
 
   nav2::LifecycleNode::WeakPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformBuffer> tf_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;

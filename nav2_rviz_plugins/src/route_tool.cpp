@@ -33,7 +33,7 @@ RouteTool::RouteTool(QWidget * parent)
   graph_vis_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
     "route_graph", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   node_->activate();
-  tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  tf_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
   graph_loader_ = std::make_shared<nav2_route::GraphLoader>(node_, tf_, "map");
   graph_saver_ = std::make_shared<nav2_route::GraphSaver>(node_, tf_, "map");
   ui_->add_node_button->setChecked(true);

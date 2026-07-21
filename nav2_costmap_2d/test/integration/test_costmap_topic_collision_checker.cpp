@@ -29,10 +29,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.hpp"
@@ -70,7 +67,7 @@ public:
   DummyFootprintSubscriber(
     nav2::LifecycleNode::SharedPtr node,
     std::string & topic_name,
-    tf2_ros::Buffer & tf)
+    nav2::TransformBuffer & tf)
   : FootprintSubscriber(node, topic_name, tf)
   {}
 
@@ -106,14 +103,9 @@ public:
     RCLCPP_INFO(get_logger(), "Configuring");
     callback_group_ = create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive, false);
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      get_node_base_interface(),
-      get_node_timers_interface(),
-      callback_group_);
-    tf_buffer_->setCreateTimerInterface(timer_interface);
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
+    tf_buffer_ = nav2::create_transform_buffer(shared_from_this());
+    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, shared_from_this());
+    tf_broadcaster_ = nav2::create_transform_broadcaster(shared_from_this());
 
     std::string costmap_topic = "costmap_raw";
     std::string footprint_topic = "published_footprint";
@@ -282,9 +274,9 @@ protected:
     return costmap_msg;
   }
 
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  std::shared_ptr<nav2::TransformListener> tf_listener_;
+  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster_;
 
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;

@@ -25,8 +25,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/action/truncate_path_local_action.hpp"
 
@@ -39,7 +38,7 @@ TruncatePathLocal::TruncatePathLocal(
 : BT::ActionNodeBase(name, conf)
 {
   tf_buffer_ =
-    config().blackboard->template get<std::shared_ptr<tf2_ros::Buffer>>(
+    config().blackboard->template get<std::shared_ptr<nav2::TransformBuffer>>(
     "tf_buffer");
 }
 

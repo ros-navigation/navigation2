@@ -24,6 +24,7 @@
 
 #include "assisted_teleop_behavior_tester.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
@@ -40,8 +41,8 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
     rclcpp::NodeOptions().parameter_overrides(
       {rclcpp::Parameter("use_sim_time", true)}));
 
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_buffer_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
+  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
 
   client_ptr_ = rclcpp_action::create_client<AssistedTeleop>(
     node_->get_node_base_interface(),

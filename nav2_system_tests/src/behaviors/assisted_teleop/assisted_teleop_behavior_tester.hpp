@@ -35,8 +35,7 @@
 #include "std_msgs/msg/empty.hpp"
 
 #include "tf2/utils.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_system_tests
 {
@@ -75,8 +74,8 @@ private:
   bool initial_pose_received_;
   rclcpp::Time stamp_;
 
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  std::shared_ptr<nav2::TransformListener> tf_listener_;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::executors::SingleThreadedExecutor executor_;

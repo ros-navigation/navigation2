@@ -28,7 +28,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "nav2_core/controller_exceptions.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "pluginlib/class_loader.hpp"
 
 #include "geometry_msgs/msg/accel_stamped.hpp"
@@ -81,7 +81,7 @@ public:
   void initialize(
     nav2::LifecycleNode::WeakPtr parent, const std::string & name,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    std::shared_ptr<nav2::TransformBuffer> tf_buffer,
     ParametersHandler * dynamic_parameters_handler);
 
   /**
@@ -300,7 +300,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::string name_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
 
   std::shared_ptr<MotionModel> motion_model_;
 

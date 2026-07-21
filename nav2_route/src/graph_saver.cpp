@@ -15,13 +15,14 @@
 #include <memory>
 
 #include "nav2_route/graph_saver.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
 
 GraphSaver::GraphSaver(
   nav2::LifecycleNode::SharedPtr node,
-  std::shared_ptr<tf2_ros::Buffer> tf,
+  std::shared_ptr<nav2::TransformBuffer> tf,
   const std::string frame)
 : plugin_loader_("nav2_route", "nav2_route::GraphFileSaver"),
   default_plugin_id_("GeoJsonGraphFileSaver")

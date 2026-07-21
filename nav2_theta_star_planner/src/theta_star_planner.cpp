@@ -26,7 +26,7 @@ namespace nav2_theta_star_planner
 {
 void ThetaStarPlanner::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+  std::string name, std::shared_ptr<nav2::TransformBuffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   parent_node_ = parent;
@@ -213,4 +213,5 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
 }  // namespace nav2_theta_star_planner
 
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_theta_star_planner::ThetaStarPlanner, nav2_core::GlobalPlanner)

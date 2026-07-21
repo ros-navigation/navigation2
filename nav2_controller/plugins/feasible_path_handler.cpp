@@ -21,6 +21,7 @@
 #include "nav2_util/path_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_core/controller_exceptions.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 
 using rcl_interfaces::msg::ParameterType;
@@ -48,7 +49,7 @@ void FeasiblePathHandler::initialize(
   const rclcpp::Logger & logger,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-  std::shared_ptr<tf2_ros::Buffer> tf)
+  std::shared_ptr<nav2::TransformBuffer> tf)
 {
   logger_ = logger;
   plugin_name_ = plugin_name;

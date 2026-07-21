@@ -24,6 +24,7 @@
 
 #include "nav2_smac_planner/smac_planner_2d.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -54,7 +55,7 @@ SmacPlanner2DT<NodeT>::~SmacPlanner2DT()
 template<typename NodeT>
 void SmacPlanner2DT<NodeT>::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
+  std::string name, std::shared_ptr<nav2::TransformBuffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   _node = parent;

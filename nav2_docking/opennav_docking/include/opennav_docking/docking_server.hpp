@@ -35,7 +35,7 @@
 #include "opennav_docking/navigator.hpp"
 #include "opennav_docking/parameter_handler.hpp"
 #include "opennav_docking_core/charging_dock.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace opennav_docking
 {
@@ -242,8 +242,8 @@ protected:
   std::unique_ptr<Controller> controller_;
   std::string curr_dock_type_;
 
-  std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
-  std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
+  std::shared_ptr<nav2::TransformBuffer> tf2_buffer_;
+  std::shared_ptr<nav2::TransformListener> tf2_listener_;
 };
 
 }  // namespace opennav_docking

@@ -23,6 +23,7 @@
 #include <utility>
 #include "nav2_core/path_handler.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_controller
 {
@@ -59,7 +60,7 @@ public:
     const rclcpp::Logger & logger,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    std::shared_ptr<tf2_ros::Buffer> tf) override;
+    std::shared_ptr<nav2::TransformBuffer> tf) override;
 
   /**
    * @brief Set new reference plan
@@ -138,7 +139,7 @@ protected:
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_ {rclcpp::get_logger("FeasiblePathHandler")};
   std::string plugin_name_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformBuffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav_msgs::msg::Path global_plan_;
   nav_msgs::msg::Path global_plan_up_to_constraint_;

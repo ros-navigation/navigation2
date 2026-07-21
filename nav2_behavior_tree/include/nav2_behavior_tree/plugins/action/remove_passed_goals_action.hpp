@@ -28,6 +28,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -87,7 +88,7 @@ private:
   double viapoint_achieved_radius_;
   double transform_tolerance_;
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformBuffer> tf_;
   std::string robot_base_frame_;
 };
 

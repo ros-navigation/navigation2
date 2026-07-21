@@ -20,6 +20,7 @@
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "opennav_docking/docking_server.hpp"
 #include "nav2_ros_common/node_thread.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 // Testing unit functions in docking server, smoke/system tests in python file
 
@@ -52,7 +53,7 @@ class DockingServerTFShim : public DockingServerShim
 public:
   DockingServerTFShim()
   : DockingServerShim() {}
-  std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf2_buffer_;}
+  std::shared_ptr<nav2::TransformBuffer> getTfBuffer() {return tf2_buffer_;}
 };
 
 TEST(DockingServerTests, ObjectLifecycle)

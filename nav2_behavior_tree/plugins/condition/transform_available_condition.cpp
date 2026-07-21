@@ -18,7 +18,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/time.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/transform_available_condition.hpp"
 
@@ -34,7 +34,7 @@ TransformAvailableCondition::TransformAvailableCondition(
   was_found_(false)
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  tf_ = config().blackboard->get<std::shared_ptr<nav2::TransformBuffer>>("tf_buffer");
 }
 
 TransformAvailableCondition::~TransformAvailableCondition()

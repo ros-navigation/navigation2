@@ -24,7 +24,7 @@
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -44,7 +44,7 @@ public:
    */
   VelocityPolygon(
     const nav2::LifecycleNode::WeakPtr & node, const std::string & polygon_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer, const std::string & base_frame_id,
+    const std::shared_ptr<nav2::TransformBuffer> tf_buffer, const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance);
   /**
    * @brief VelocityPolygon destructor

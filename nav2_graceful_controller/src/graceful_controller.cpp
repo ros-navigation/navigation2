@@ -22,13 +22,14 @@
 #include "nav2_util/path_utils.hpp"
 #include "nav2_graceful_controller/graceful_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_graceful_controller
 {
 
 void GracefulController::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, const std::shared_ptr<tf2_ros::Buffer> tf,
+  std::string name, const std::shared_ptr<nav2::TransformBuffer> tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   nav2::LifecycleNode::SharedPtr node = parent.lock();

@@ -41,9 +41,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "tf2/LinearMath/Transform.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
 #include "tf2/LinearMath/Matrix3x3.hpp"
@@ -204,9 +202,9 @@ protected:
   geometry_msgs::msg::TransformStamped t_odom_to_base_link_;
 
   // ROS interfaces
-  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<nav2::TransformBroadcaster> tf_broadcaster_;
+  std::shared_ptr<nav2::TransformBuffer> tf_buffer_;
+  std::shared_ptr<nav2::TransformListener> tf_listener_;
 
   nav2::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     initial_pose_sub_;

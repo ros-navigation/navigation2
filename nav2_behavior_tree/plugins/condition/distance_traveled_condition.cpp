@@ -38,7 +38,7 @@ void DistanceTraveledCondition::initialize()
   getInput("distance", distance_);
 
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  tf_ = config().blackboard->get<std::shared_ptr<nav2::TransformBuffer>>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
@@ -87,6 +87,7 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
+#include "nav2_ros_common/tf2_factories.hpp"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::DistanceTraveledCondition>("DistanceTraveled");
