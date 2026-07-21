@@ -173,7 +173,7 @@ public:
     }
 
     if (goal_received_callback_ && !goal_received_callback_(goal)) {
-      debug_msg("Goal validation callback rejected goal");
+      debug_msg("Goal received callback rejected goal");
       return rclcpp_action::GoalResponse::REJECT;
     }
 
