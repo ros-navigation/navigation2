@@ -303,9 +303,9 @@ void Optimizer::prepare(
   const geometry_msgs::msg::Pose & goal,
   nav2_core::GoalChecker * goal_checker)
 {
+  state_.pose = robot_pose;
   if (settings_.open_loop) {
     state_.speed = last_command_vel_;
-    state_.pose = robot_pose;
   } else {
     // Predict state one controller_period forward toward the last command to compensate
     // for the latency between measurement and when this command will take effect.
@@ -314,8 +314,6 @@ void Optimizer::prepare(
     const double dt = settings_.controller_period;
     float max_delta_vx = dt * c.ax_max;
     float min_delta_vx = dt * c.ax_min;
-    float max_delta_vy = dt * c.ay_max;
-    float min_delta_vy = dt * c.ay_min;
     float max_delta_wz = dt * c.az_max;
     state_.speed = robot_speed;
     auto robot_last_speed = state_.speed;
@@ -324,12 +322,12 @@ void Optimizer::prepare(
     state_.speed.angular.z = utils::clampVelocityByAccel(
       robot_speed.angular.z, last_command_vel_.angular.z, -max_delta_wz, max_delta_wz);
     if (isHolonomic()) {
+      float max_delta_vy = dt * c.ay_max;
+      float min_delta_vy = dt * c.ay_min;
       state_.speed.linear.y = utils::clampVelocityByAccel(
       robot_speed.linear.y, last_command_vel_.linear.y, min_delta_vy, max_delta_vy);
     }
-    state_.pose = robot_pose;
     // Predict the robot pose at 1*dt in future
-    // assuming robot is executing current observed speed until dt in future,
     motion_model_->predictFuture(state_.pose, robot_last_speed, dt);
   }
 
