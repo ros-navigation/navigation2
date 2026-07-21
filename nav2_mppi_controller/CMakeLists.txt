@@ -39,7 +39,7 @@ endif()
 
 # If building one the same hardware to be deployed on, try `-march=native`!
 
-add_library(mppi_controller SHARED
+add_library(mppi_controller
   src/controller.cpp
   src/critic_manager.cpp
   src/noise_generator.cpp
@@ -75,7 +75,7 @@ target_link_libraries(mppi_controller PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(mppi_motion_models SHARED)
+add_library(mppi_motion_models)
 target_sources(mppi_motion_models PRIVATE
   src/motion_models.cpp
 )
@@ -89,7 +89,7 @@ target_link_libraries(mppi_motion_models PUBLIC
   pluginlib::pluginlib
 )
 
-add_library(mppi_critics SHARED
+add_library(mppi_critics
   src/critics/constraint_critic.cpp
   src/critics/cost_critic.cpp
   src/critics/goal_critic.cpp
@@ -133,7 +133,7 @@ target_link_libraries(mppi_critics PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(mppi_trajectory_validators SHARED
+add_library(mppi_trajectory_validators
   src/trajectory_validators/optimal_trajectory_validator.cpp
 )
 target_compile_options(mppi_trajectory_validators PUBLIC -O3)

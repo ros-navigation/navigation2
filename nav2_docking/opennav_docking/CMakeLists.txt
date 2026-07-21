@@ -32,7 +32,7 @@ nav2_package()
 set(executable_name opennav_docking)
 set(library_name ${executable_name}_core)
 
-add_library(controller SHARED
+add_library(controller
   src/controller.cpp
 )
 target_include_directories(controller
@@ -49,7 +49,7 @@ target_link_libraries(controller PUBLIC
   rcl_interfaces::rcl_interfaces
 )
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/docking_server.cpp
   src/dock_database.cpp
   src/navigator.cpp
@@ -81,7 +81,7 @@ target_link_libraries(${library_name} PRIVATE
   tf2_geometry_msgs::tf2_geometry_msgs
 )
 
-add_library(pose_filter SHARED
+add_library(pose_filter
   src/pose_filter.cpp
 )
 target_include_directories(pose_filter
@@ -113,7 +113,7 @@ target_link_libraries(${executable_name} PRIVATE ${library_name}
 
 rclcpp_components_register_nodes(${library_name} "opennav_docking::DockingServer")
 
-add_library(simple_charging_dock SHARED
+add_library(simple_charging_dock
   src/simple_charging_dock.cpp
 )
 target_include_directories(simple_charging_dock
@@ -142,7 +142,7 @@ target_link_libraries(simple_charging_dock PRIVATE
   tf2::tf2
 )
 
-add_library(simple_non_charging_dock SHARED
+add_library(simple_non_charging_dock
   src/simple_non_charging_dock.cpp
 )
 target_include_directories(simple_non_charging_dock

@@ -33,7 +33,7 @@ endif()
 set(library_name nav2_smac_planner)
 
 # Common library
-add_library(${library_name}_common SHARED
+add_library(${library_name}_common
   src/collision_checker.cpp
   src/costmap_downsampler.cpp
   src/node_2d.cpp
@@ -68,7 +68,7 @@ target_link_libraries(${library_name}_common PRIVATE
 )
 
 # Hybrid plugin
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/smac_planner_hybrid.cpp
 )
 target_include_directories(${library_name}
@@ -98,7 +98,7 @@ target_link_libraries(${library_name} PRIVATE
 )
 
 # 2D plugin
-add_library(${library_name}_2d SHARED
+add_library(${library_name}_2d
   src/smac_planner_2d.cpp
 )
 target_include_directories(${library_name}_2d
@@ -128,7 +128,7 @@ target_link_libraries(${library_name}_2d PRIVATE
 )
 
 # Lattice plugin
-add_library(${library_name}_lattice SHARED
+add_library(${library_name}_lattice
   src/smac_planner_lattice.cpp
 )
 target_include_directories(${library_name}_lattice

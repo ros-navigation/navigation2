@@ -20,7 +20,7 @@ nav2_package()
 
 set(library_name ${PROJECT_NAME}_core)
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/lifecycle_manager.cpp
   src/lifecycle_manager_client.cpp
 )

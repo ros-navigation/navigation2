@@ -128,7 +128,7 @@ target_include_directories(test_pose_filter
 )
 
 # Test dock pluing for server tests
-add_library(test_dock SHARED testing_dock.cpp)
+add_library(test_dock testing_dock.cpp)
 target_link_libraries(test_dock PUBLIC
   geometry_msgs::geometry_msgs
   ${bond_TARGETS}

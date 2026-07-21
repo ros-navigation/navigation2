@@ -23,7 +23,7 @@ nav2_package()
 
 set(library_name nav2_rotation_shim_controller)
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/nav2_rotation_shim_controller.cpp
   src/parameter_handler.cpp)
 target_include_directories(${library_name}

@@ -41,7 +41,7 @@ if(BUILD_TESTING)
 
   set(local_controller_plugin_lib local_controller)
 
-  add_library(${local_controller_plugin_lib} SHARED src/error_codes/controller/controller_error_plugins.cpp)
+  add_library(${local_controller_plugin_lib} src/error_codes/controller/controller_error_plugins.cpp)
   target_link_libraries(${local_controller_plugin_lib} PRIVATE
     geometry_msgs::geometry_msgs
     nav2_core::nav2_core
@@ -69,7 +69,7 @@ if(BUILD_TESTING)
 
   set(global_planner_plugin_lib global_planner)
 
-  add_library(${global_planner_plugin_lib} SHARED src/error_codes/planner/planner_error_plugin.cpp)
+  add_library(${global_planner_plugin_lib} src/error_codes/planner/planner_error_plugin.cpp)
   target_link_libraries(${global_planner_plugin_lib} PRIVATE
     geometry_msgs::geometry_msgs
     nav2_core::nav2_core nav_msgs::nav_msgs
@@ -98,7 +98,7 @@ if(BUILD_TESTING)
 
   set(smoother_plugin_lib smoother)
 
-  add_library(${smoother_plugin_lib} SHARED src/error_codes/smoother/smoother_error_plugin.cpp)
+  add_library(${smoother_plugin_lib} src/error_codes/smoother/smoother_error_plugin.cpp)
   target_link_libraries(${smoother_plugin_lib} PRIVATE
     nav2_core::nav2_core
     nav2_costmap_2d::nav2_costmap_2d_core

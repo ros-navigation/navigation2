@@ -64,6 +64,14 @@ endmacro()
 # The ros_isolated functions only exist in Kilted and newer releases
 option(USE_ISOLATED_TESTS "Enable ros_isolated_test" OFF)
 
+option(
+  BUILD_SHARED_LIBS
+  "Global flag to cause add_library() to create shared libraries if on. \
+If set to true, this will cause all libraries to be built shared \
+unless the library was explicitly added as a static library."
+  ON
+)
+
 function(nav2_add_test target)
   if(COMMAND ament_add_ros_isolated_test AND USE_ISOLATED_TESTS)
     ament_add_ros_isolated_test(${target} ${ARGN})

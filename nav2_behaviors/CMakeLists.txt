@@ -25,7 +25,7 @@ set(library_name behavior_server_core)
 set(executable_name behavior_server)
 
 # plugins
-add_library(nav2_spin_behavior SHARED
+add_library(nav2_spin_behavior
   plugins/spin.cpp
 )
 target_include_directories(nav2_spin_behavior
@@ -51,7 +51,7 @@ target_link_libraries(nav2_spin_behavior PRIVATE
   tf2_geometry_msgs::tf2_geometry_msgs
 )
 
-add_library(nav2_wait_behavior SHARED
+add_library(nav2_wait_behavior
   plugins/wait.cpp
 )
 target_include_directories(nav2_wait_behavior
@@ -72,7 +72,7 @@ target_link_libraries(nav2_wait_behavior PUBLIC
   tf2_ros::tf2_ros
 )
 
-add_library(nav2_drive_on_heading_behavior SHARED
+add_library(nav2_drive_on_heading_behavior
   plugins/drive_on_heading.cpp
 )
 target_include_directories(nav2_drive_on_heading_behavior
@@ -96,7 +96,7 @@ target_link_libraries(nav2_drive_on_heading_behavior PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(nav2_back_up_behavior SHARED
+add_library(nav2_back_up_behavior
   plugins/back_up.cpp
 )
 target_include_directories(nav2_back_up_behavior
@@ -120,7 +120,7 @@ target_link_libraries(nav2_back_up_behavior PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(nav2_assisted_teleop_behavior SHARED
+add_library(nav2_assisted_teleop_behavior
   plugins/assisted_teleop.cpp
 )
 target_include_directories(nav2_assisted_teleop_behavior
@@ -148,7 +148,7 @@ target_link_libraries(nav2_assisted_teleop_behavior PRIVATE
 pluginlib_export_plugin_description_file(nav2_core behavior_plugin.xml)
 
 # Library
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/behavior_server.cpp
 )
 target_include_directories(${library_name}

@@ -29,7 +29,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wno-gnu-folding-constant)
 endif()
 
-add_library(pf_lib SHARED
+add_library(pf_lib
   src/pf/pf.c
   src/pf/pf_kdtree.c
   src/pf/pf_pdf.c
@@ -46,7 +46,7 @@ if(HAVE_DRAND48)
   target_compile_definitions(pf_lib PRIVATE "HAVE_DRAND48")
 endif()
 
-add_library(map_lib SHARED
+add_library(map_lib
   src/map/map.c
   src/map/map_range.c
   src/map/map_draw.c
@@ -58,7 +58,7 @@ target_include_directories(map_lib
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
   "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 
-add_library(motions_lib SHARED
+add_library(motions_lib
   src/motion_model/omni_motion_model.cpp
   src/motion_model/differential_motion_model.cpp
 )
@@ -73,7 +73,7 @@ target_link_libraries(motions_lib PUBLIC
   nav2_ros_common::nav2_ros_common
 )
 
-add_library(sensors_lib SHARED
+add_library(sensors_lib
   src/sensors/laser/laser.cpp
   src/sensors/laser/beam_model.cpp
   src/sensors/laser/likelihood_field_model.cpp
@@ -93,7 +93,7 @@ set(executable_name amcl)
 
 set(library_name ${executable_name}_core)
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/amcl_node.cpp
 )
 if(HAVE_DRAND48)

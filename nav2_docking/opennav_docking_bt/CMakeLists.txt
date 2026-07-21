@@ -17,7 +17,7 @@ find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
-add_library(opennav_dock_action_bt_node SHARED src/dock_robot.cpp)
+add_library(opennav_dock_action_bt_node src/dock_robot.cpp)
 target_include_directories(opennav_dock_action_bt_node
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -32,7 +32,7 @@ target_link_libraries(opennav_dock_action_bt_node PUBLIC
   nav2_msgs::nav2_msgs
 )
 
-add_library(opennav_undock_action_bt_node SHARED src/undock_robot.cpp)
+add_library(opennav_undock_action_bt_node src/undock_robot.cpp)
 target_include_directories(opennav_undock_action_bt_node
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"

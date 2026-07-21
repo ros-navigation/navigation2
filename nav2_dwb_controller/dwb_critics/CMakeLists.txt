@@ -21,7 +21,7 @@ find_package(tf2 REQUIRED)
 
 nav2_package()
 
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME}
   src/alignment_util.cpp
   src/map_grid.cpp
   src/goal_dist.cpp

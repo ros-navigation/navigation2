@@ -25,7 +25,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 
 nav2_package()
 
-add_library(dwb_core SHARED
+add_library(dwb_core
   src/dwb_local_planner.cpp
   src/publisher.cpp
   src/illegal_trajectory_tracker.cpp

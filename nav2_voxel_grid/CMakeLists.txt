@@ -8,7 +8,7 @@ find_package(rclcpp REQUIRED)
 
 nav2_package()
 
-add_library(voxel_grid SHARED
+add_library(voxel_grid
   src/voxel_grid.cpp
 )
 target_include_directories(voxel_grid

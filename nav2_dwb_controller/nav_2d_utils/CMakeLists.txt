@@ -19,7 +19,7 @@ find_package(bondcpp REQUIRED)
 
 nav2_package()
 
-add_library(conversions SHARED
+add_library(conversions
   src/conversions.cpp)
 target_include_directories(conversions
   PUBLIC
@@ -39,7 +39,7 @@ target_link_libraries(conversions PRIVATE
   tf2_geometry_msgs::tf2_geometry_msgs
 )
 
-add_library(path_ops SHARED
+add_library(path_ops
   src/path_ops.cpp)
 target_include_directories(path_ops
   PUBLIC

@@ -85,7 +85,7 @@ set(CMAKE_AUTORCC ON)
 
 set(library_name ${PROJECT_NAME})
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/costmap_cost_tool.cpp
   src/docking_panel.cpp
   src/goal_tool.cpp

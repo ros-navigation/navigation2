@@ -32,7 +32,7 @@ include_directories(
 )
 
 # Main library
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/route_server.cpp
   src/route_planner.cpp
   src/route_tracker.cpp
@@ -84,7 +84,7 @@ target_link_libraries(${executable_name} PRIVATE ${library_name} rclcpp::rclcpp)
 rclcpp_components_register_nodes(${library_name} "nav2_route::RouteServer")
 
 # Edge scoring plugins
-add_library(edge_scorers SHARED
+add_library(edge_scorers
   src/plugins/edge_cost_functions/distance_scorer.cpp
   src/plugins/edge_cost_functions/time_scorer.cpp
   src/plugins/edge_cost_functions/dynamic_edges_scorer.cpp
@@ -125,7 +125,7 @@ target_link_libraries(edge_scorers PRIVATE
 )
 
 # Route operations plugins
-add_library(route_operations SHARED
+add_library(route_operations
   src/plugins/route_operations/adjust_speed_limit.cpp
   src/plugins/route_operations/trigger_event.cpp
   src/plugins/route_operations/rerouting_service.cpp
@@ -162,7 +162,7 @@ target_link_libraries(route_operations PRIVATE
 )
 
 # Graph Parser plugins
-add_library(graph_file_loaders SHARED
+add_library(graph_file_loaders
     src/plugins/graph_file_loaders/geojson_graph_file_loader.cpp
 )
 target_include_directories(graph_file_loaders
@@ -194,7 +194,7 @@ target_link_libraries(graph_file_loaders PRIVATE
   tf2::tf2
 )
 
-add_library(graph_file_savers SHARED
+add_library(graph_file_savers
     src/plugins/graph_file_savers/geojson_graph_file_saver.cpp
 )
 target_include_directories(graph_file_savers

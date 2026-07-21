@@ -37,7 +37,7 @@ endif()
 
 nav2_package()
 
-add_library(nav2_costmap_2d_core SHARED
+add_library(nav2_costmap_2d_core
   src/costmap_2d.cpp
   src/layer.cpp
   src/layered_costmap.cpp
@@ -71,7 +71,7 @@ target_link_libraries(nav2_costmap_2d_core PUBLIC
   nav2_ros_common::nav2_ros_common
 )
 
-add_library(layers SHARED
+add_library(layers
   plugins/inflation_layer.cpp
   plugins/legacy_inflation_layer.cpp
   plugins/asymmetric_inflation_layer.cpp
@@ -116,7 +116,7 @@ target_link_libraries(layers PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(filters SHARED
+add_library(filters
   plugins/costmap_filters/keepout_filter.cpp
   plugins/costmap_filters/speed_filter.cpp
   plugins/costmap_filters/binary_filter.cpp
@@ -133,7 +133,7 @@ target_link_libraries(filters PUBLIC
   nav2_ros_common::nav2_ros_common
 )
 
-add_library(nav2_costmap_2d_client SHARED
+add_library(nav2_costmap_2d_client
   src/footprint_subscriber.cpp
   src/costmap_subscriber.cpp
   src/costmap_topic_collision_checker.cpp

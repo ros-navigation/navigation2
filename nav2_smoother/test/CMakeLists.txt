@@ -1,6 +1,6 @@
 
 # Build dummy smoother plugin for testing
-add_library(dummy_smoother SHARED dummy_smoother.cpp)
+add_library(dummy_smoother dummy_smoother.cpp)
 target_link_libraries(dummy_smoother
   nav2_core::nav2_core
   rclcpp::rclcpp

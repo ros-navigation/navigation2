@@ -26,7 +26,7 @@ set(detector_executable_name collision_detector)
 set(monitor_library_name ${monitor_executable_name}_core)
 set(detector_library_name ${detector_executable_name}_core)
 
-add_library(${monitor_library_name} SHARED
+add_library(${monitor_library_name}
   src/collision_monitor_node.cpp
   src/polygon.cpp
   src/velocity_polygon.cpp
@@ -63,7 +63,7 @@ target_link_libraries(${monitor_library_name} PRIVATE
   rclcpp_components::component
 )
 
-add_library(${detector_library_name} SHARED
+add_library(${detector_library_name}
   src/collision_detector_node.cpp
   src/polygon.cpp
   src/velocity_polygon.cpp

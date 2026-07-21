@@ -1,4 +1,4 @@
-add_library(${library_name} SHARED
+add_library(${library_name}
   costmap.cpp
   lifecycle_service_client.cpp
   string_utils.cpp

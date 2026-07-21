@@ -20,7 +20,7 @@ nav2_package()
 
 set(library_name ${PROJECT_NAME})
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/theta_star.cpp
   src/theta_star_planner.cpp
   src/parameter_handler.cpp

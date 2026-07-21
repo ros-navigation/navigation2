@@ -23,7 +23,7 @@ nav2_package()
 
 set(library_name nav2_constrained_smoother)
 
-add_library(${library_name} SHARED src/constrained_smoother.cpp)
+add_library(${library_name} src/constrained_smoother.cpp)
 if(${CERES_VERSION} VERSION_LESS_EQUAL 2.0.0)
   target_compile_definitions(${library_name} PUBLIC -DUSE_OLD_CERES_API)
 endif()

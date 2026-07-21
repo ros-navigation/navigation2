@@ -17,7 +17,7 @@ set(executable_name velocity_smoother)
 set(library_name ${executable_name}_core)
 
 # Main library
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/velocity_smoother.cpp
 )
 target_include_directories(${library_name}

@@ -24,7 +24,7 @@ nav2_package()
 set(executable_name planner_server)
 set(library_name ${executable_name}_core)
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/parameter_handler.cpp
   src/planner_server.cpp
 )

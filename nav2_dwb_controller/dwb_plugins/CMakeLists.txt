@@ -17,7 +17,7 @@ find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
-add_library(standard_traj_generator SHARED
+add_library(standard_traj_generator
   src/standard_traj_generator.cpp
   src/limited_accel_generator.cpp
   src/kinematic_parameters.cpp

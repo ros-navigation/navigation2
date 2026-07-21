@@ -25,7 +25,7 @@ set(executable_name loopback_simulator)
 set(library_name ${executable_name}_core)
 
 # Main library
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/loopback_simulator.cpp
   src/clock_publisher.cpp
 )

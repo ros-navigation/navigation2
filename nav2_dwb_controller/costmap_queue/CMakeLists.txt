@@ -8,7 +8,7 @@ find_package(nav2_costmap_2d REQUIRED)
 
 nav2_package()
 
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME}
   src/costmap_queue.cpp
   src/limited_costmap_queue.cpp
 )

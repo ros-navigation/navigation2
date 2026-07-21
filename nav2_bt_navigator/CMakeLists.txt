@@ -25,7 +25,7 @@ set(executable_name bt_navigator)
 
 set(library_name ${executable_name}_core)
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/bt_navigator.cpp
 )
 target_include_directories(${library_name}
@@ -62,7 +62,7 @@ target_link_libraries(${executable_name} PRIVATE
   nav2_ros_common::nav2_ros_common
 )
 
-add_library(nav2_navigate_to_pose_navigator SHARED src/navigators/navigate_to_pose.cpp)
+add_library(nav2_navigate_to_pose_navigator src/navigators/navigate_to_pose.cpp)
 target_include_directories(nav2_navigate_to_pose_navigator
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -85,7 +85,7 @@ target_link_libraries(nav2_navigate_to_pose_navigator PRIVATE
   rclcpp_lifecycle::rclcpp_lifecycle
 )
 
-add_library(nav2_navigate_through_poses SHARED src/navigators/navigate_through_poses.cpp)
+add_library(nav2_navigate_through_poses src/navigators/navigate_through_poses.cpp)
 target_include_directories(nav2_navigate_through_poses
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"

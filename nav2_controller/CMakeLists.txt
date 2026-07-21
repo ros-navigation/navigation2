@@ -25,7 +25,7 @@ set(executable_name controller_server)
 
 set(library_name ${executable_name}_core)
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/parameter_handler.cpp
   src/controller_server.cpp
 )
@@ -67,7 +67,7 @@ target_link_libraries(${executable_name} PRIVATE
   ${library_name}
 )
 
-add_library(simple_progress_checker SHARED plugins/simple_progress_checker.cpp)
+add_library(simple_progress_checker plugins/simple_progress_checker.cpp)
 target_include_directories(simple_progress_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -86,7 +86,7 @@ target_link_libraries(simple_progress_checker PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(pose_progress_checker SHARED plugins/pose_progress_checker.cpp)
+add_library(pose_progress_checker plugins/pose_progress_checker.cpp)
 target_include_directories(pose_progress_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -106,7 +106,7 @@ target_link_libraries(pose_progress_checker PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(simple_goal_checker SHARED plugins/simple_goal_checker.cpp)
+add_library(simple_goal_checker plugins/simple_goal_checker.cpp)
 target_include_directories(simple_goal_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -128,7 +128,7 @@ target_link_libraries(simple_goal_checker PRIVATE
   tf2::tf2
 )
 
-add_library(stopped_goal_checker SHARED plugins/stopped_goal_checker.cpp)
+add_library(stopped_goal_checker plugins/stopped_goal_checker.cpp)
 target_include_directories(stopped_goal_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -148,7 +148,7 @@ target_link_libraries(stopped_goal_checker PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(position_goal_checker SHARED plugins/position_goal_checker.cpp)
+add_library(position_goal_checker plugins/position_goal_checker.cpp)
 target_include_directories(position_goal_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -169,7 +169,7 @@ target_link_libraries(position_goal_checker PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(axis_goal_checker SHARED plugins/axis_goal_checker.cpp)
+add_library(axis_goal_checker plugins/axis_goal_checker.cpp)
 target_include_directories(axis_goal_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -190,7 +190,7 @@ target_link_libraries(axis_goal_checker PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(adaptive_tolerance_goal_checker SHARED plugins/adaptive_tolerance_goal_checker.cpp)
+add_library(adaptive_tolerance_goal_checker plugins/adaptive_tolerance_goal_checker.cpp)
 target_include_directories(adaptive_tolerance_goal_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -212,7 +212,7 @@ target_link_libraries(adaptive_tolerance_goal_checker PRIVATE
   tf2::tf2
 )
 
-add_library(feasible_path_handler SHARED plugins/feasible_path_handler.cpp)
+add_library(feasible_path_handler plugins/feasible_path_handler.cpp)
 target_include_directories(feasible_path_handler
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"

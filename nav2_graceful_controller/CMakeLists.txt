@@ -23,7 +23,7 @@ find_package(nav2_ros_common REQUIRED)
 nav2_package()
 
 # Add Smooth Control Law as library
-add_library(smooth_control_law SHARED src/smooth_control_law.cpp)
+add_library(smooth_control_law src/smooth_control_law.cpp)
 target_include_directories(smooth_control_law
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -40,7 +40,7 @@ target_link_libraries(smooth_control_law PUBLIC
 # Add Graceful Controller
 set(library_name nav2_graceful_controller)
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/graceful_controller.cpp
   src/parameter_handler.cpp
   src/utils.cpp

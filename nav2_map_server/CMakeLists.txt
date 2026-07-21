@@ -44,7 +44,7 @@ set(costmap_filter_info_server_executable costmap_filter_info_server)
 
 set(vo_server_executable vector_object_server)
 
-add_library(${map_io_library_name} SHARED
+add_library(${map_io_library_name}
   src/map_mode.cpp
   src/map_io.cpp)
 target_include_directories(${map_io_library_name}
@@ -68,7 +68,7 @@ target_link_libraries(${map_io_library_name} PRIVATE
   Eigen3::Eigen
 )
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/map_server/map_server.cpp
   src/map_saver/map_saver.cpp
   src/costmap_filter_info/costmap_filter_info_server.cpp)
@@ -91,7 +91,7 @@ target_link_libraries(${library_name} PRIVATE
   yaml-cpp::yaml-cpp
 )
 
-add_library(${vo_library_name} SHARED
+add_library(${vo_library_name}
   src/vo_server/vector_object_shapes.cpp
   src/vo_server/vector_object_server.cpp)
 target_include_directories(${vo_library_name}

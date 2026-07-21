@@ -30,7 +30,7 @@ set(executable_name waypoint_follower)
 
 set(library_name ${executable_name}_core)
 
-add_library(${library_name} SHARED
+add_library(${library_name}
   src/waypoint_follower.cpp
   src/parameter_handler.cpp
 )
@@ -79,7 +79,7 @@ target_link_libraries(${executable_name} PRIVATE
   nav2_ros_common::nav2_ros_common
 )
 
-add_library(wait_at_waypoint SHARED plugins/wait_at_waypoint.cpp)
+add_library(wait_at_waypoint plugins/wait_at_waypoint.cpp)
 target_include_directories(wait_at_waypoint PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
@@ -96,7 +96,7 @@ target_link_libraries(wait_at_waypoint PRIVATE
   nav2_util::nav2_util_core
 )
 
-add_library(photo_at_waypoint SHARED plugins/photo_at_waypoint.cpp)
+add_library(photo_at_waypoint plugins/photo_at_waypoint.cpp)
 target_include_directories(photo_at_waypoint PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
@@ -117,7 +117,7 @@ target_link_libraries(photo_at_waypoint PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(input_at_waypoint SHARED plugins/input_at_waypoint.cpp)
+add_library(input_at_waypoint plugins/input_at_waypoint.cpp)
 target_include_directories(input_at_waypoint PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"

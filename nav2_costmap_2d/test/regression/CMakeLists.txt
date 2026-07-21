@@ -1,5 +1,5 @@
 # OrderLayer for checking Costmap2D plugins API calling order
-add_library(order_layer SHARED order_layer.cpp)
+add_library(order_layer order_layer.cpp)
 target_link_libraries(order_layer PUBLIC
   nav2_costmap_2d_core
 )
