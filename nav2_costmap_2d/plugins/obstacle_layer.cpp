@@ -245,11 +245,9 @@ void ObstacleLayer::onInitialize()
 
       sub->unsubscribe();
 
-      auto filter = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
+      auto filter = nav2::create_message_filter<sensor_msgs::msg::LaserScan>(
         *sub, *tf_, global_frame_, 50,
-        node->get_node_logging_interface(),
-        node->get_node_clock_interface(),
-        tf2::durationFromSec(transform_tolerance));
+        node, tf2::durationFromSec(transform_tolerance));
 
       if (inf_is_valid) {
         filter->registerCallback(
@@ -316,11 +314,9 @@ void ObstacleLayer::onInitialize()
           "obstacle_layer: inf_is_valid option is not applicable to PointCloud observations.");
       }
 
-      auto filter = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>>(
+      auto filter = nav2::create_message_filter<sensor_msgs::msg::PointCloud2>(
         *sub, *tf_, global_frame_, 50,
-        node->get_node_logging_interface(),
-        node->get_node_clock_interface(),
-        tf2::durationFromSec(transform_tolerance));
+        node, tf2::durationFromSec(transform_tolerance));
 
       filter->registerCallback(
         std::bind(

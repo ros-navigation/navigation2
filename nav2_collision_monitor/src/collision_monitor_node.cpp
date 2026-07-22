@@ -19,8 +19,6 @@
 #include <utility>
 #include <functional>
 
-#include "tf2_ros/create_timer_ros.hpp"
-
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 
@@ -51,12 +49,8 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   // Transform buffer and listener initialization
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    this->get_node_base_interface(),
-    this->get_node_timers_interface());
-  tf_buffer_->setCreateTimerInterface(timer_interface);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this, true);
+  tf_buffer_ = nav2::create_transform_buffer(this);
+  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, this, true);
 
   std::string cmd_vel_in_topic;
   std::string cmd_vel_out_topic;

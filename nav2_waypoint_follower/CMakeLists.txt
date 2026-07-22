@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 project(nav2_waypoint_follower)
 
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
 find_package(cv_bridge REQUIRED)

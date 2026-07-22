@@ -18,6 +18,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "opennav_docking/simple_non_charging_dock.hpp"
 #include "opennav_docking/utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 
@@ -26,7 +27,7 @@ namespace opennav_docking
 
 void SimpleNonChargingDock::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf)
+  const std::string & name, nav2::TransformBuffer::SharedPtr tf)
 {
   name_ = name;
   tf2_buffer_ = tf;

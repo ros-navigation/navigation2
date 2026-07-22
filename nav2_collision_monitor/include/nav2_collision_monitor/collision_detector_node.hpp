@@ -24,10 +24,9 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "tf2/time.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_msgs/msg/collision_detector_state.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
@@ -148,9 +147,9 @@ protected:
   // ----- Variables -----
 
   /// @brief TF buffer
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   /// @brief TF listener
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   /// @brief Polygons array
   std::vector<std::shared_ptr<Polygon>> polygons_;

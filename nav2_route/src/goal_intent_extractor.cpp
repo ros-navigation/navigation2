@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "nav2_route/goal_intent_extractor.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
@@ -27,7 +28,7 @@ void GoalIntentExtractor::configure(
   nav2::LifecycleNode::SharedPtr node,
   Graph & graph,
   GraphToIDMap * id_to_graph_map,
-  std::shared_ptr<tf2_ros::Buffer> tf,
+  nav2::TransformBuffer::SharedPtr tf,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
   const std::string & route_frame,
   const std::string & base_frame)

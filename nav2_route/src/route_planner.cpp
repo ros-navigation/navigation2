@@ -20,13 +20,14 @@
 #include <algorithm>
 
 #include "nav2_route/route_planner.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
 
 void RoutePlanner::configure(
   nav2::LifecycleNode::SharedPtr node,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber)
 {
   max_iterations_ = node->declare_or_get_parameter("max_iterations", 0);

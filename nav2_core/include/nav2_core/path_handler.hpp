@@ -24,6 +24,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_core
 {
@@ -59,7 +60,7 @@ public:
     const rclcpp::Logger & logger,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    std::shared_ptr<tf2_ros::Buffer> tf) = 0;
+    nav2::TransformBuffer::SharedPtr tf) = 0;
 
   /**
    * @brief Set new reference plan

@@ -35,6 +35,7 @@
 #include "nav2_theta_star_planner/theta_star.hpp"
 #include "nav2_theta_star_planner/parameter_handler.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 
@@ -46,7 +47,7 @@ class ThetaStarPlanner : public nav2_core::GlobalPlanner
 public:
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::string name, nav2::TransformBuffer::SharedPtr tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   void cleanup() override;
@@ -69,7 +70,7 @@ public:
     std::function<bool()> cancel_checker) override;
 
 protected:
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("ThetaStarPlanner")};
   std::string global_frame_, name_;

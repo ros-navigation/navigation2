@@ -23,7 +23,7 @@
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 // Some parameters for planner server
 static const double EXPECTED_PLANNER_FREQ{20.0};
@@ -109,7 +109,7 @@ protected:
   nav_msgs::msg::OccupancyGrid map_;
   nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_publisher_;
 
-  std::unique_ptr<tf2_ros::TransformBroadcaster> robot_pose_broadcaster_;
+  nav2::TransformBroadcaster::SharedPtr robot_pose_broadcaster_;
   rclcpp::TimerBase::SharedPtr broadcast_timer_;
 
   ActionClient::SharedPtr action_client_;
@@ -127,7 +127,7 @@ Tester::Tester()
   executor_->add_node(tester_node_->get_node_base_interface());
   executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
 
-  robot_pose_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(tester_node_);
+  robot_pose_broadcaster_ = nav2::create_transform_broadcaster(tester_node_);
   action_client_ = tester_node_->create_action_client<Action>("compute_path_through_poses");
 
   map_publisher_ = tester_node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
