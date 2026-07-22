@@ -19,6 +19,7 @@
 
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "tf2/transform_datatypes.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -30,7 +31,7 @@ namespace nav2_collision_monitor
 PolygonSource::PolygonSource(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,

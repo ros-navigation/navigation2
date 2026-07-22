@@ -25,6 +25,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/controller_server.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 class ControllerServerShim : public nav2_controller::ControllerServer
 {
@@ -33,7 +34,7 @@ public:
 
   void setEndPoseFrame(const std::string & frame) {end_pose_.header.frame_id = frame;}
   bool callIsGoalReached() {return isGoalReached();}
-  tf2_ros::Buffer & getTfBuffer() {return *costmap_ros_->getTfBuffer();}
+  nav2::TransformBuffer & getTfBuffer() {return *costmap_ros_->getTfBuffer();}
 };
 
 TEST(ControllerServerTest, IsGoalReachedThrowsOnTfFailure)

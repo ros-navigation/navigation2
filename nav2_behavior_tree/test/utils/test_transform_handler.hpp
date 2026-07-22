@@ -29,9 +29,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals; // NOLINT
 using namespace std::chrono;  // NOLINT
@@ -47,8 +45,8 @@ public:
     base_transform_(nullptr),
     tf_broadcaster_(nullptr)
   {
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_buffer_ = nav2::create_transform_buffer(node_);
+    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
   }
 
   virtual ~TransformHandler()
@@ -92,7 +90,7 @@ public:
     tf_broadcaster_.reset();
   }
 
-  std::shared_ptr<tf2_ros::Buffer> getBuffer() const
+  nav2::TransformBuffer::SharedPtr getBuffer() const
   {
     return tf_buffer_;
   }
@@ -134,7 +132,7 @@ protected:
   virtual void startRobotTransform(std::chrono::milliseconds tf_broadcast_period)
   {
     // Provide the robot pose transform
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+    tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
 
     if (!base_transform_) {
       base_transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();
@@ -165,9 +163,9 @@ protected:
 
   // The tester must provide the robot pose through a transform
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
   rclcpp::TimerBase::SharedPtr transform_timer_;
 };
 

@@ -50,6 +50,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using nav2_util::geometry_utils::euclidean_distance;
 
@@ -64,7 +65,7 @@ DWBLocalPlanner::DWBLocalPlanner()
 
 void DWBLocalPlanner::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+  std::string name, nav2::TransformBuffer::SharedPtr tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   node_ = parent;

@@ -30,6 +30,7 @@
 #include "opennav_docking/utils.hpp"
 #include "opennav_docking/types.hpp"
 #include "nav2_msgs/srv/reload_dock_database.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace opennav_docking
 {
@@ -52,7 +53,7 @@ public:
    * @return If successful
    */
   bool initialize(
-    const nav2::LifecycleNode::WeakPtr & parent, std::shared_ptr<tf2_ros::Buffer> tf);
+    const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformBuffer::SharedPtr tf);
 
   /**
    * @brief A destructor for opennav_docking::DockDatabase
@@ -103,7 +104,7 @@ protected:
    * @return bool If successful
    */
   bool getDockPlugins(
-    const nav2::LifecycleNode::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf);
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf);
 
   /**
    * @brief Populate database of dock instances

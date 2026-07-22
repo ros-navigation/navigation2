@@ -29,6 +29,7 @@
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -147,8 +148,8 @@ protected:
   typename ActionServer::SharedPtr action_server_;
 
   // Transforms
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
+  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformListener::SharedPtr transform_listener_;
 
   // Publishers and subscribers
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;

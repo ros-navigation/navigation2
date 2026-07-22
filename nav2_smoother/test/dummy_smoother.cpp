@@ -22,7 +22,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 
@@ -37,7 +37,7 @@ public:
 
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr &,
-    std::string, std::shared_ptr<tf2_ros::Buffer>,
+    std::string, nav2::TransformBuffer::SharedPtr,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>) {}
 

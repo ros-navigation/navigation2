@@ -43,6 +43,7 @@
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "../testing_helper.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using std::begin;
 using std::end;
@@ -147,7 +148,7 @@ protected:
  * Test for ray tracing free space
  */
 TEST_F(TestNode, testRaytracing) {
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
@@ -170,7 +171,7 @@ TEST_F(TestNode, testRaytracing) {
  * Test for ray tracing free space
  */
 TEST_F(TestNode, testRaytracing2) {
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
   auto olayer = addObstacleLayer(layers, tf, node_);
@@ -225,7 +226,7 @@ TEST_F(TestNode, testRaytracing2) {
  * Test for wave interference
  */
 TEST_F(TestNode, testWaveInterference) {
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   node_->set_parameter(rclcpp::Parameter("track_unknown_space", true));
   // Start with an empty map, no rolling window, tracking unknown
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
@@ -254,7 +255,7 @@ TEST_F(TestNode, testWaveInterference) {
  * Make sure we ignore points outside of our z threshold
  */
 TEST_F(TestNode, testZThreshold) {
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   // Start with an empty map
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -275,7 +276,7 @@ TEST_F(TestNode, testZThreshold) {
  * Verify that dynamic obstacles are added
  */
 TEST_F(TestNode, testDynamicObstacles) {
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
 
@@ -300,7 +301,7 @@ TEST_F(TestNode, testDynamicObstacles) {
  * Verify that if we add a point that is already a static obstacle we do not end up with a new ostacle
  */
 TEST_F(TestNode, testMultipleAdditions) {
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
 
@@ -319,7 +320,7 @@ TEST_F(TestNode, testMultipleAdditions) {
  * Verify correct init/reset cycling of layer
  */
 TEST_F(TestNode, testRepeatedResets) {
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = nullptr;
@@ -368,7 +369,7 @@ TEST_F(TestNode, testRepeatedResets) {
  * Test for ray tracing free space
  */
 TEST_F(TestNode, testRaytracing) {
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -588,7 +589,7 @@ TEST_F(TestNode, testDynParamsSetStatic)
  * Test CombinationMethod::Max overwrites unknown value in ObstacleLayer.
  */
 TEST_F(TestNode, testMaxCombinationMethod) {
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
 
   // Create a costmap with full unknown space
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
@@ -634,7 +635,7 @@ protected:
  * Test CombinationMethod::MaxWithoutUnknownOverwrite in ObstacleLayer.
  */
 TEST_F(TestNodeWithoutUnknownOverwrite, testMaxWithoutUnknownOverwriteCombinationMethod) {
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
 
   // Create a costmap with full unknown space
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);

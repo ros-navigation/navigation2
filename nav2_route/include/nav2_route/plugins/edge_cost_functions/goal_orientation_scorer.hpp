@@ -26,6 +26,7 @@
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "angles/angles.h"
 
 namespace nav2_route
@@ -57,7 +58,7 @@ public:
    */
   void configure(
     const nav2::LifecycleNode::SharedPtr node,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) override;
 

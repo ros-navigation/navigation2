@@ -42,7 +42,7 @@
 #include <vector>
 #include <unordered_set>
 
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
@@ -74,7 +74,7 @@ public:
   void initialize(
     LayeredCostmap * parent,
     std::string name,
-    tf2_ros::Buffer * tf,
+    nav2::TransformBuffer * tf,
     const nav2::LifecycleNode::WeakPtr & node,
     rclcpp::CallbackGroup::SharedPtr callback_group);
   /** @brief Stop publishers. */
@@ -181,7 +181,7 @@ public:
 protected:
   LayeredCostmap * layered_costmap_;
   std::string name_;
-  tf2_ros::Buffer * tf_;
+  nav2::TransformBuffer * tf_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Clock::SharedPtr clock_;

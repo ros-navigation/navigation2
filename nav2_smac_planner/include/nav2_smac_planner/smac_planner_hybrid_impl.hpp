@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "nav2_smac_planner/smac_planner_hybrid.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -57,7 +58,7 @@ SmacPlannerHybridT<NodeT>::~SmacPlannerHybridT()
 template<typename NodeT>
 void SmacPlannerHybridT<NodeT>::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
+  std::string name, nav2::TransformBuffer::SharedPtr/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   _node = parent;

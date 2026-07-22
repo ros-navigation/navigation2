@@ -115,3 +115,57 @@ rules:
     message: "Use nav2 action server factories instead of rclcpp_action::create_server"
     severity: WARNING
     languages: [cpp]
+
+  - id: detect-tf2-buffer
+    patterns:
+      - pattern-regex: "tf2_ros::Buffer\\b"
+      - pattern-not-regex: "^\\s*//.*"
+      - pattern-not-regex: ".*//.*tf2_ros::Buffer"
+    message: "Use nav2::TransformBuffer instead of tf2_ros::Buffer"
+    severity: WARNING
+    languages: [cpp]
+
+  - id: detect-tf2-transform-listener
+    patterns:
+      - pattern-regex: "tf2_ros::TransformListener\\b"
+      - pattern-not-regex: "^\\s*//.*"
+      - pattern-not-regex: ".*//.*tf2_ros::TransformListener"
+    message: "Use nav2::TransformListener instead of tf2_ros::TransformListener"
+    severity: WARNING
+    languages: [cpp]
+
+  - id: detect-tf2-transform-broadcaster
+    patterns:
+      - pattern-regex: "tf2_ros::TransformBroadcaster\\b"
+      - pattern-not-regex: "^\\s*//.*"
+      - pattern-not-regex: ".*//.*tf2_ros::TransformBroadcaster"
+    message: "Use nav2::TransformBroadcaster instead of tf2_ros::TransformBroadcaster"
+    severity: WARNING
+    languages: [cpp]
+
+  - id: detect-tf2-static-transform-broadcaster
+    patterns:
+      - pattern-regex: "tf2_ros::StaticTransformBroadcaster\\b"
+      - pattern-not-regex: "^\\s*//.*"
+      - pattern-not-regex: ".*//.*tf2_ros::StaticTransformBroadcaster"
+    message: "Use nav2::StaticTransformBroadcaster instead of tf2_ros::StaticTransformBroadcaster"
+    severity: WARNING
+    languages: [cpp]
+
+  - id: detect-tf2-message-filter
+    patterns:
+      - pattern-regex: "tf2_ros::MessageFilter\\s*<"
+      - pattern-not-regex: "^\\s*//.*"
+      - pattern-not-regex: ".*//.*tf2_ros::MessageFilter"
+    message: "Use nav2::MessageFilter<T> instead of tf2_ros::MessageFilter<T>"
+    severity: WARNING
+    languages: [cpp]
+
+  - id: detect-tf2-create-timer-ros
+    patterns:
+      - pattern-regex: "tf2_ros::CreateTimerROS\\b"
+      - pattern-not-regex: "^\\s*//.*"
+      - pattern-not-regex: ".*//.*tf2_ros::CreateTimerROS"
+    message: "Use nav2::create_transform_buffer() instead of tf2_ros::CreateTimerROS"
+    severity: WARNING
+    languages: [cpp]

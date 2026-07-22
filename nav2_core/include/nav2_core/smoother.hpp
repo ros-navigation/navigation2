@@ -20,8 +20,7 @@
 
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -46,7 +45,7 @@ public:
 
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr &,
-    std::string name, std::shared_ptr<tf2_ros::Buffer>,
+    std::string name, nav2::TransformBuffer::SharedPtr,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>) = 0;
 

@@ -22,6 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_costmap_2d
@@ -41,7 +42,7 @@ public:
   explicit FootprintSubscriber(
     const NodeT & parent,
     const std::string & topic_name,
-    tf2_ros::Buffer & tf,
+    nav2::TransformBuffer & tf,
     std::string robot_base_frame = "base_link",
     double transform_tolerance = 0.1)
   : tf_(tf),
@@ -88,7 +89,7 @@ protected:
    */
   void footprint_callback(const geometry_msgs::msg::PolygonStamped::ConstSharedPtr & msg);
 
-  tf2_ros::Buffer & tf_;
+  nav2::TransformBuffer & tf_;
   std::string robot_base_frame_;
   double transform_tolerance_;
   std::atomic_bool footprint_received_{false};
