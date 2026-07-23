@@ -137,6 +137,11 @@ protected:
   void publishPolygons() const;
 
   /**
+   * @brief Publishes all visualization topics (polygons and exclusion zones).
+   */
+  void publishVisualizations() const;
+
+  /**
    * @brief Publishes the points inside each detected polygon as markers,
    * bucketed by polygon name and per-point source.
    * @param all_triggering_points Map from polygon name to its triggering points.

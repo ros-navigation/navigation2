@@ -79,6 +79,11 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
     polygon->activate();
   }
 
+  // Activating sources
+  for (std::shared_ptr<Source> source : sources_) {
+    source->activate();
+  }
+
   // Creating timer
   timer_ = this->create_timer(
     std::chrono::duration<double>{1.0 / frequency_},
@@ -106,6 +111,11 @@ CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->deactivate();
+  }
+
+  // Deactivating sources
+  for (std::shared_ptr<Source> source : sources_) {
+    source->deactivate();
   }
 
   // Destroying bond connection
@@ -252,7 +262,9 @@ bool CollisionDetector::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        s->configure();
+        if (!s->configure()) {
+          return false;
+        }
 
         sources_.push_back(s);
       } else if (source_type == "pointcloud") {
@@ -260,7 +272,9 @@ bool CollisionDetector::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        p->configure();
+        if (!p->configure()) {
+          return false;
+        }
 
         sources_.push_back(p);
       } else if (source_type == "range") {
@@ -268,14 +282,18 @@ bool CollisionDetector::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        r->configure();
+        if (!r->configure()) {
+          return false;
+        }
 
         sources_.push_back(r);
       } else if (source_type == "polygon") {
         std::shared_ptr<PolygonSource> ps = std::make_shared<PolygonSource>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
-        ps->configure();
+        if (!ps->configure()) {
+          return false;
+        }
 
         sources_.push_back(ps);
       } else if (source_type == "costmap") {
@@ -283,7 +301,9 @@ bool CollisionDetector::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        src->configure();
+        if (!src->configure()) {
+          return false;
+        }
 
         sources_.push_back(src);
       } else {  // Error if something else
@@ -384,8 +404,8 @@ void CollisionDetector::process()
     publishTriggeringPoints(all_triggering_points);
   }
 
-  // Publish polygons for better visualization
-  publishPolygons();
+  // Publish polygons and exclusion zones for better visualization
+  publishVisualizations();
 }
 
 void CollisionDetector::publishTriggeringPoints(
@@ -440,6 +460,14 @@ void CollisionDetector::publishPolygons() const
     if (polygon->getEnabled()) {
       polygon->publish();
     }
+  }
+}
+
+void CollisionDetector::publishVisualizations() const
+{
+  publishPolygons();
+  for (std::shared_ptr<Source> source : sources_) {
+    source->publishExclusionZones();
   }
 }
 

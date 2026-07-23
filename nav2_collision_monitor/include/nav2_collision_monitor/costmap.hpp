@@ -78,8 +78,9 @@ public:
    *
    * Must be called during the node’s configuration phase (after construction, before use).
    * Reads `topic`, `cost_threshold`, and `treat_unknown_as_obstacle`.
+   * @return True in case of everything is configured correctly, or false otherwise
    */
-  void configure();
+  bool configure();
 
   /**
    * @brief Produce current obstacle points from the latest costmap.
@@ -92,7 +93,7 @@ public:
    * - Transforms points from costmap frame to @ref base_frame_id using @ref tf_buffer_.
    * - Applies @ref cost_threshold_ and @ref treat_unknown_as_obstacle_.
    */
-  bool getData(
+  bool getSourceData(
     const rclcpp::Time & curr_time,
     std::vector<Point> & data) override;
 

@@ -32,6 +32,7 @@ add_library(${monitor_library_name} SHARED
   src/velocity_polygon.cpp
   src/circle.cpp
   src/source.cpp
+  src/exclusion_zone.cpp
   src/scan.cpp
   src/pointcloud.cpp
   src/polygon_source.cpp
@@ -69,6 +70,7 @@ add_library(${detector_library_name} SHARED
   src/velocity_polygon.cpp
   src/circle.cpp
   src/source.cpp
+  src/exclusion_zone.cpp
   src/scan.cpp
   src/pointcloud.cpp
   src/polygon_source.cpp

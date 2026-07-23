@@ -50,9 +50,11 @@ CostmapSource::~CostmapSource()
   data_sub_.reset();
 }
 
-void CostmapSource::configure()
+bool CostmapSource::configure()
 {
-  Source::configure();
+  if (!Source::configure()) {
+    return false;
+  }
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -63,9 +65,11 @@ void CostmapSource::configure()
     source_topic,
     std::bind(&CostmapSource::dataCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS());
+
+  return true;
 }
 
-bool CostmapSource::getData(
+bool CostmapSource::getSourceData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {

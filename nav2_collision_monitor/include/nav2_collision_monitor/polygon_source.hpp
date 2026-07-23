@@ -63,8 +63,9 @@ public:
   /**
    * @brief Data source configuration routine. Obtains ROS-parameters
    * and creates subscriber.
+   * @return True in case of everything is configured correctly, or false otherwise
    */
-  void configure();
+  bool configure();
 
   /**
    * @brief Adds latest data from polygon source to the data array.
@@ -73,9 +74,9 @@ public:
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
    * @return false if an invalid source should block the robot
    */
-  bool getData(
+  bool getSourceData(
     const rclcpp::Time & curr_time,
-    std::vector<Point> & data);
+    std::vector<Point> & data) override;
 
   /**
    * @brief Converts a PolygonInstanceStamped to a std::vector<Point>

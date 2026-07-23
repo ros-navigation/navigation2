@@ -15,6 +15,7 @@
 #include "nav2_collision_monitor/source.hpp"
 
 #include <exception>
+#include <iterator>
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
@@ -57,6 +58,27 @@ Source::~Source()
 bool Source::configure()
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  // Configure the exclusion zones (if any) declared for this source
+  const std::vector<std::string> zone_names =
+    node->declare_or_get_parameter<std::vector<std::string>>(
+    source_name_ + ".exclusion_zones", std::vector<std::string>());
+
+  for (const std::string & zone_name : zone_names) {
+    auto zone = std::make_shared<ExclusionZone>(
+      node, zone_name, tf_buffer_, base_frame_id_, global_frame_id_,
+      transform_tolerance_, base_shift_correction_);
+    if (!zone->configure()) {
+      RCLCPP_ERROR(
+        logger_, "[%s]: Failed to configure exclusion zone '%s'",
+        source_name_.c_str(), zone_name.c_str());
+      return false;
+    }
+    exclusion_zones_.push_back(zone);
+  }
 
   // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -69,6 +91,54 @@ bool Source::configure()
       this, std::placeholders::_1));
 
   return true;
+}
+
+bool Source::getData(
+  const rclcpp::Time & curr_time,
+  std::vector<Point> & data)
+{
+  // Collect this source's points into a private buffer so exclusion-zone
+  // masking only ever considers data produced by this source.
+  std::vector<Point> source_data;
+  if (!getSourceData(curr_time, source_data)) {
+    return false;
+  }
+
+  // Mask out points that fall inside any enabled exclusion zone.
+  if (!exclusion_zones_.empty() && !source_data.empty()) {
+    for (const auto & zone : exclusion_zones_) {
+      zone->apply(curr_time, source_data);
+    }
+  }
+
+  // Append the surviving points to the caller's array.
+  data.insert(
+    data.end(),
+    std::make_move_iterator(source_data.begin()),
+    std::make_move_iterator(source_data.end()));
+
+  return true;
+}
+
+void Source::activate()
+{
+  for (const auto & zone : exclusion_zones_) {
+    zone->activate();
+  }
+}
+
+void Source::deactivate()
+{
+  for (const auto & zone : exclusion_zones_) {
+    zone->deactivate();
+  }
+}
+
+void Source::publishExclusionZones() const
+{
+  for (const auto & zone : exclusion_zones_) {
+    zone->publish();
+  }
 }
 
 void Source::getCommonParameters(std::string & source_topic)

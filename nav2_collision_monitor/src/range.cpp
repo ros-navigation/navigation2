@@ -53,9 +53,11 @@ Range::~Range()
   data_sub_.reset();
 }
 
-void Range::configure()
+bool Range::configure()
 {
-  Source::configure();
+  if (!Source::configure()) {
+    return false;
+  }
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -69,9 +71,11 @@ void Range::configure()
     source_topic,
     std::bind(&Range::dataCallback, this, std::placeholders::_1),
     nav2::qos::SensorDataQoS());
+
+  return true;
 }
 
-bool Range::getData(
+bool Range::getSourceData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {

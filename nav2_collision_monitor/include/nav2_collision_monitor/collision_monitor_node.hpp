@@ -202,6 +202,11 @@ protected:
   void publishPolygons() const;
 
   /**
+   * @brief Publishes all visualization topics (polygons and exclusion zones).
+   */
+  void publishVisualizations() const;
+
+  /**
    * @brief Publishes action.triggering_points as markers, colour-coded by action type.
    * @param action Current robot action
    */
