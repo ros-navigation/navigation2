@@ -32,6 +32,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "nav2_map_server/vector_object_shapes.hpp"
+#include "nav2_map_server/vector_object_utils.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
 
 static constexpr double EPSILON = std::numeric_limits<float>::epsilon();

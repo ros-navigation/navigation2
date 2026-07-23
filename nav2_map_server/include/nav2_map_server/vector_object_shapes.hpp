@@ -29,6 +29,8 @@
 #include "nav2_msgs/msg/circle_object.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
+#include "nav2_map_server/vector_object_utils.hpp"
+
 
 namespace nav2_map_server
 {
