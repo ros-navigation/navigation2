@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+// [AI-generated] The incremental (LPA*) obstacle-heuristic additions in this file
+// were written with AI assistance and reviewed by the author.
+
 #ifndef NAV2_SMAC_PLANNER__OBSTACLE_HEURISTIC_HPP_
 #define NAV2_SMAC_PLANNER__OBSTACLE_HEURISTIC_HPP_
 
@@ -85,10 +88,81 @@ public:
     return std::sqrt(dx * dx + dy * dy);
   }
 
+  // ---- Incremental (LPA*) obstacle heuristic (opt-in) ----
+  // An alternative to the lazy recompute that maintains a full goal-rooted cost
+  // field and repairs it locally when the costmap changes, instead of wiping and
+  // recomputing from scratch. Preserves the exact heuristic (bit-identical to a
+  // full recompute) while being orders of magnitude cheaper for small changes —
+  // the regime of high-frequency dynamic replanning. Uses its own tables and
+  // does not touch the default lazy path above.
+
+  /**
+   * @brief Build the full incremental heuristic field from the goal.
+   */
+  void resetIncrementalObstacleHeuristic(
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_i,
+    const unsigned int & goal_x, const unsigned int & goal_y,
+    const float & cost_penalty, const bool use_quadratic_cost_penalty);
+
+  /**
+   * @brief Repair the field for cells that changed since the last reset/update.
+   * @return number of costmap cells that changed (0 == no work done)
+   */
+  unsigned int updateIncrementalObstacleHeuristic(
+    const float & cost_penalty, const bool use_quadratic_cost_penalty);
+
+  /**
+   * @brief Look up the incremental heuristic value at a cell (raw field: +inf
+   * for unreachable cells). getObstacleHeuristic() applies the inf->0 fallback
+   * that keeps parity with the lazy path; this raw accessor is for the engine
+   * and its tests.
+   */
+  float getIncrementalObstacleHeuristic(const Coordinates & node_coords);
+
+  /**
+   * @brief Select which field getObstacleHeuristic() reads from. Set once per
+   * planning request from SearchInfo::incremental_obstacle_heuristic so a
+   * runtime toggle can never leave a stale field selected.
+   */
+  void setIncrementalMode(const bool enabled) {inc_mode_ = enabled;}
+
+  /**
+   * @brief Whether an incremental field has already been built for a costmap of
+   * the current size. When false the caller must reset (build) before updating.
+   */
+  bool isIncrementalFieldValid(
+    const unsigned int & size_x, const unsigned int & size_y) const
+  {
+    return inc_size_x_ == size_x && inc_size_y_ == size_y &&
+           inc_prev_cost_.size() == static_cast<std::size_t>(size_x) * size_y;
+  }
+
 protected:
+  // Edge cost to ENTER cell `idx` (matches the lazy path's travel_cost model).
+  float incrementalEnterCost(
+    const unsigned int idx, const bool diagonal,
+    const float & cost_penalty, const bool use_quadratic_cost_penalty) const;
+  void incrementalUpdateVertex(
+    const unsigned int idx, const float & cost_penalty,
+    const bool use_quadratic_cost_penalty);
+  void incrementalComputeShortestPath(
+    const float & cost_penalty, const bool use_quadratic_cost_penalty);
+
   LookupTable obstacle_heuristic_lookup_table_;
   ObstacleHeuristicQueue obstacle_heuristic_queue_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
+
+  // Incremental-path state (separate from the lazy path above)
+  std::vector<float> inc_g_;
+  std::vector<float> inc_rhs_;
+  std::vector<unsigned char> inc_prev_cost_;
+  ObstacleHeuristicQueue inc_queue_;
+  unsigned int inc_goal_index_{0};
+  unsigned int inc_size_x_{0};
+  unsigned int inc_size_y_{0};
+  // When true, getObstacleHeuristic() reads the incremental field instead of
+  // running the lazy dynamic-programming expansion.
+  bool inc_mode_{false};
 };
 
 }  // namespace nav2_smac_planner
