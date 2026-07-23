@@ -214,6 +214,14 @@ public:
   }
 
   /**
+   * @brief Function to perform work in a BT Node when the service call times out.
+   */
+  virtual void on_timeout()
+  {
+    return;
+  }
+
+  /**
    * @brief Check the future and decide the status of BT
    * @return BT::NodeStatus SUCCESS if future complete before timeout, FAILURE otherwise
    */
@@ -245,6 +253,7 @@ public:
     RCLCPP_WARN(
       node_->get_logger(),
       "Node timed out while executing service call to %s.", service_name_.c_str());
+    on_timeout();
     request_sent_ = false;
     return BT::NodeStatus::FAILURE;
   }
