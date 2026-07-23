@@ -43,7 +43,7 @@ void ZoneParameterFilter::initializeFilter(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  nav2::LifecycleNode::SharedPtr node = node_.lock();
+  auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -77,7 +77,7 @@ void ZoneParameterFilter::filterInfoCallback(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  nav2::LifecycleNode::SharedPtr node = node_.lock();
+  auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -147,7 +147,7 @@ void ZoneParameterFilter::maskCallback(
 
 void ZoneParameterFilter::loadStateConfig()
 {
-  nav2::LifecycleNode::SharedPtr node = node_.lock();
+  auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -222,13 +222,13 @@ void ZoneParameterFilter::loadStateConfig()
     }
     const uint8_t state_id = static_cast<uint8_t>(id_i64);
 
-    const std::vector<std::string> override_names =
+    const std::vector<std::string> setpoint_names =
       node->declare_or_get_parameter<std::vector<std::string>>(
-      state_prefix + ".overrides", std::vector<std::string>{});
+      state_prefix + ".setpoints", std::vector<std::string>{});
 
     std::vector<StateParamEntry> params_for_state;
-    for (const auto & override_name : override_names) {
-      if (auto entry = read_entry(state_prefix + "." + override_name)) {
+    for (const auto & setpoint_name : setpoint_names) {
+      if (auto entry = read_entry(state_prefix + "." + setpoint_name)) {
         params_for_state.push_back(std::move(*entry));
       }
     }
@@ -236,14 +236,14 @@ void ZoneParameterFilter::loadStateConfig()
     if (params_for_state.empty()) {
       RCLCPP_WARN(
         logger_,
-        "ZoneParameterFilter: state '%s' (id %u) declares no valid overrides.",
+        "ZoneParameterFilter: state '%s' (id %u) declares no valid setpoints.",
         state_name.c_str(), state_id);
     }
 
     state_param_map_[state_id] = std::move(params_for_state);
     RCLCPP_INFO(
       logger_,
-      "ZoneParameterFilter: state '%s' (id %u) -> %zu override(s).",
+      "ZoneParameterFilter: state '%s' (id %u) -> %zu setpoint(s).",
       state_name.c_str(), state_id, state_param_map_[state_id].size());
   }
 
@@ -422,15 +422,12 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
         if (node_it == nominal_defaults_.end()) {
           continue;  // Gap warned at config-load (Test 24); param keeps N's value.
         }
-        bool found = false;
         for (const auto & nominal : node_it->second) {
           if (nominal.get_name() == entry.param.get_name()) {
             reset_per_node[entry.target_node].push_back(nominal);
-            found = true;
             break;
           }
         }
-        (void)found;  // Gap is structural; warn substrate fired at config-load.
       }
     }
   }

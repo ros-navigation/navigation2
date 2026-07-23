@@ -357,7 +357,7 @@ TEST_F(TestZpf, WrongFilterInfoTypeIsRejected)
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
-    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
   };
   addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
     rclcpp::ParameterValue(0.5));
@@ -370,7 +370,7 @@ TEST_F(TestZpf, State1AppliesParameterAndResetFilterDeactivates)
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
-    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
   };
   addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
     rclcpp::ParameterValue(0.5));
@@ -395,7 +395,7 @@ TEST_F(TestZpf, State0ResetsToNominalDefaults)
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
-    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
     rclcpp::Parameter(fp("nominal_defaults"), std::vector<std::string>{"speed_nominal"}),
   };
   addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
@@ -421,7 +421,7 @@ TEST_F(TestZpf, UnknownStateThrows)
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
-    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
   };
   addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
     rclcpp::ParameterValue(0.3));
@@ -438,7 +438,7 @@ TEST_F(TestZpf, StateEventPublishedOnTransition)
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
-    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
   };
   addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
     rclcpp::ParameterValue(0.3));
@@ -460,7 +460,7 @@ TEST_F(TestZpf, ProcessHotPathReturnsPromptlyEvenWithUnreachableTargets)
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"remote_zone"}),
     rclcpp::Parameter(fp("remote_zone.id"), 1),
-    rclcpp::Parameter(fp("remote_zone.overrides"), std::vector<std::string>{"remote_speed"}),
+    rclcpp::Parameter(fp("remote_zone.setpoints"), std::vector<std::string>{"remote_speed"}),
   };
   addEntry(cfg, "remote_zone.remote_speed", "nonexistent_node", "foo",
     rclcpp::ParameterValue(0.5));
@@ -482,7 +482,7 @@ TEST_F(TestZpf, UnknownMaskCellLeavesStateUnchanged)
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
-    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
   };
   addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
     rclcpp::ParameterValue(0.5));
@@ -499,7 +499,7 @@ TEST_F(TestZpf, RobotOutsideMaskResetsToState0)
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
-    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
     rclcpp::Parameter(fp("nominal_defaults"), std::vector<std::string>{"speed_nominal"}),
   };
   addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
@@ -530,7 +530,7 @@ TEST_F(TestZpf, ExplicitNodeRoutingAppliesOverridesToBothTargets)
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
     rclcpp::Parameter(
-      fp("slow_zone.overrides"),
+      fp("slow_zone.setpoints"),
       std::vector<std::string>{"host_speed", "second_speed"}),
   };
   addEntry(cfg, "slow_zone.host_speed", "zpf_target_node", "speed",
@@ -552,9 +552,9 @@ TEST_F(TestZpf, InfoAndMaskRePublishUpdateSubscriptions)
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone", "crawl_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
-    rclcpp::Parameter(fp("slow_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
     rclcpp::Parameter(fp("crawl_zone.id"), 2),
-    rclcpp::Parameter(fp("crawl_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("crawl_zone.setpoints"), std::vector<std::string>{"speed_override"}),
   };
   addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
     rclcpp::ParameterValue(0.5));
@@ -598,7 +598,7 @@ TEST_F(TestZpf, EmptyAndInvalidConfigEdgesDoNotCrash)
     rclcpp::Parameter(fp("big_zone.id"), 256),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
     rclcpp::Parameter(
-      fp("slow_zone.overrides"),
+      fp("slow_zone.setpoints"),
       std::vector<std::string>{"bad_entry", "no_value", "good"}),
     // bad_entry: `node` never provided (defaults empty) -> skipped.
     rclcpp::Parameter(fp("slow_zone.bad_entry.parameter"), std::string("speed")),
@@ -634,7 +634,7 @@ TEST_F(TestZpf, RemovedFailurePolicyParameterIsIgnored)
     rclcpp::Parameter(fp("on_param_set_failure"), std::string("warn")),
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"danger_zone"}),
     rclcpp::Parameter(fp("danger_zone.id"), 1),
-    rclcpp::Parameter(fp("danger_zone.overrides"), std::vector<std::string>{"ro_speed"}),
+    rclcpp::Parameter(fp("danger_zone.setpoints"), std::vector<std::string>{"ro_speed"}),
   };
   addEntry(cfg, "danger_zone.ro_speed", "zpf_target_node", "readonly_speed",
     rclcpp::ParameterValue(0.5));
@@ -660,7 +660,7 @@ TEST_F(TestZpf, ParamSetFailureAlwaysThrows)
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"danger_zone"}),
     rclcpp::Parameter(fp("danger_zone.id"), 1),
-    rclcpp::Parameter(fp("danger_zone.overrides"), std::vector<std::string>{"ro_speed"}),
+    rclcpp::Parameter(fp("danger_zone.setpoints"), std::vector<std::string>{"ro_speed"}),
   };
   addEntry(cfg, "danger_zone.ro_speed", "zpf_target_node", "readonly_speed",
     rclcpp::ParameterValue(0.5));
@@ -691,10 +691,10 @@ TEST_F(TestZpf, CrossStateTransitionResetsParamTouchedByNOnly)
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone", "fast_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
     rclcpp::Parameter(
-      fp("slow_zone.overrides"),
+      fp("slow_zone.setpoints"),
       std::vector<std::string>{"speed_override", "inflation_override"}),
     rclcpp::Parameter(fp("fast_zone.id"), 2),
-    rclcpp::Parameter(fp("fast_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("fast_zone.setpoints"), std::vector<std::string>{"speed_override"}),
     rclcpp::Parameter(
       fp("nominal_defaults"),
       std::vector<std::string>{"speed_nominal", "inflation_nominal"}),
@@ -733,10 +733,10 @@ TEST_F(TestZpf, ParamWithoutNominalDefaultsPersistsAcrossTransitions)
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone", "fast_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
     rclcpp::Parameter(
-      fp("slow_zone.overrides"),
+      fp("slow_zone.setpoints"),
       std::vector<std::string>{"speed_override", "inflation_override"}),
     rclcpp::Parameter(fp("fast_zone.id"), 2),
-    rclcpp::Parameter(fp("fast_zone.overrides"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("fast_zone.setpoints"), std::vector<std::string>{"speed_override"}),
     rclcpp::Parameter(fp("nominal_defaults"), std::vector<std::string>{"speed_nominal"}),
     // No nominal_defaults entry for inflation — gap warned at config-load.
   };
