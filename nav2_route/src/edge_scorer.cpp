@@ -18,13 +18,14 @@
 #include <vector>
 
 #include "nav2_route/edge_scorer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
 
 EdgeScorer::EdgeScorer(
   nav2::LifecycleNode::SharedPtr node,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber)
 : plugin_loader_("nav2_route", "nav2_route::EdgeCostFunction")
 {

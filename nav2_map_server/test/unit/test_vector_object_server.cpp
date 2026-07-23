@@ -25,9 +25,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "unique_identifier_msgs/msg/uuid.hpp"
 
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_msgs/srv/add_shapes.hpp"
 #include "nav2_msgs/srv/get_shapes.hpp"
@@ -35,7 +33,7 @@
 #include "nav2_msgs/msg/polygon_object.hpp"
 #include "nav2_msgs/msg/circle_object.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_map_server/vector_object_utils.hpp"
+#include "nav2_util/occ_grid_utils.hpp"
 
 #include "nav2_map_server/vector_object_server.hpp"
 
@@ -141,8 +139,8 @@ public:
     nav2_msgs::msg::CircleObject::SharedPtr c2);
 
 protected:
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   // Service clients for calling AddShapes.srv, GetShapes.srv, RemoveShapes.srv
   nav2::ServiceClient<nav2_msgs::srv::AddShapes>::SharedPtr add_shapes_client_;
@@ -178,9 +176,9 @@ Tester::Tester()
     nav2::qos::LatchedSubscriptionQoS());
 
   // Transform buffer and listener initialization
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(vo_server_->get_clock());
+  tf_buffer_ = nav2::create_transform_buffer(vo_server_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, vo_server_);
   executor_.add_node(vo_server_->get_node_base_interface());
 }
 
@@ -337,8 +335,8 @@ void Tester::setCircleParams(const std::string & uuid)
 
 void Tester::sendTransform(const double frame_shift)
 {
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(vo_server_);
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
+    nav2::create_transform_broadcaster(vo_server_);
 
   geometry_msgs::msg::TransformStamped transform;
 

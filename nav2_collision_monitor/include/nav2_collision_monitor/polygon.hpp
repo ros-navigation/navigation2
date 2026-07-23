@@ -24,7 +24,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
 #include "tf2/time.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
@@ -55,7 +55,7 @@ public:
   Polygon(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance);
   /**
@@ -350,7 +350,7 @@ protected:
 
   // Global variables
   /// @brief TF buffer
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   /// @brief Base frame ID
   std::string base_frame_id_;
   /// @brief Transform tolerance

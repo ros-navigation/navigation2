@@ -25,10 +25,65 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
+#include "nav2_util/occ_grid_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_map_server/vector_object_utils.hpp"
+#include "nav2_util/raytrace_line_2d.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
+
+namespace
+{
+/**
+ * @brief Boundary-safe world-to-map coordinate conversion for polygon/circle rasterisation.
+ *
+ * nav2_util::worldToMap() (nav2_util/occ_grid_utils.hpp) uses a strict
+ * out-of-bounds check: if the computed mx or my equals size_x / size_y it
+ * returns false.  Polygon vertices that sit exactly on the upper map edge
+ * (e.g. world_x == origin_x + width * resolution) legitimately map to the
+ * last valid cell (size_x-1), but the strict check rejects them, causing
+ * putBorders() to abort the entire shape mid-draw.
+ *
+ * This helper applies a 1-ULP-safe epsilon on the outer boundary and clamps
+ * mx/my to size-1 instead of returning false, matching the semantics we need
+ * for border and outline rasterisation.  It does NOT modify the global
+ * nav2_util::worldToMap() behaviour.  The helper is in an anonymous namespace
+ * and therefore has no external linkage.
+ *
+ * See: https://github.com/ros-navigation/navigation2/issues/6278
+ */
+inline bool safeWorldToMap(
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr map,
+  const double wx, const double wy, unsigned int & mx, unsigned int & my)
+{
+  const double origin_x = map->info.origin.position.x;
+  const double origin_y = map->info.origin.position.y;
+  const double resolution = map->info.resolution;
+  const unsigned int size_x = map->info.width;
+  const unsigned int size_y = map->info.height;
+
+  // Compute the world-space upper boundary of the map.
+  // We tolerate a small multiple of the resolution (not a hard-coded 1e-9)
+  // so the epsilon scales with map coarseness and stays well below one cell.
+  const double eps = resolution * 1e-6;
+  const double max_x = origin_x + size_x * resolution;
+  const double max_y = origin_y + size_y * resolution;
+
+  if (wx < origin_x || wy < origin_y || wx > max_x + eps || wy > max_y + eps) {
+    return false;
+  }
+
+  mx = static_cast<unsigned int>((wx - origin_x) / resolution);
+  my = static_cast<unsigned int>((wy - origin_y) / resolution);
+
+  // Clamp upper-boundary cells that floating-point arithmetic pushed one past
+  // the legal index range.
+  if (mx >= size_x) {mx = size_x - 1;}
+  if (my >= size_y) {my = size_y - 1;}
+
+  return true;
+}
+}  // anonymous namespace
 
 namespace nav2_map_server
 {
@@ -199,7 +254,7 @@ bool Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
 
 bool Polygon::toFrame(
   const std::string & to_frame,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const double transform_tolerance)
 {
   geometry_msgs::msg::PoseStamped from_pose, to_pose;
@@ -253,7 +308,7 @@ void Polygon::putBorders(
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (!nav2_util::worldToMap(map, polygon_->points[0].x, polygon_->points[0].y, mx1, my1)) {
+  if (!safeWorldToMap(map, polygon_->points[0].x, polygon_->points[0].y, mx1, my1)) {
     RCLCPP_ERROR(
       node->get_logger(),
       "[UUID: %s] Can not convert (%f, %f) point to map",
@@ -265,7 +320,7 @@ void Polygon::putBorders(
   for (unsigned int i = 1; i < polygon_->points.size(); i++) {
     mx0 = mx1;
     my0 = my1;
-    if (!nav2_util::worldToMap(map, polygon_->points[i].x, polygon_->points[i].y, mx1, my1)) {
+    if (!safeWorldToMap(map, polygon_->points[i].x, polygon_->points[i].y, mx1, my1)) {
       RCLCPP_ERROR(
         node->get_logger(),
         "[UUID: %s] Can not convert (%f, %f) point to map",
@@ -489,7 +544,7 @@ bool Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
 
 bool Circle::toFrame(
   const std::string & to_frame,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const double transform_tolerance)
 {
   geometry_msgs::msg::PoseStamped from_pose, to_pose;
@@ -638,7 +693,7 @@ void Circle::putFilled(
   nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
 {
   unsigned int mcx, mcy;
-  if (!nav2_util::worldToMap(map, center_->x, center_->y, mcx, mcy)) {
+  if (!safeWorldToMap(map, center_->x, center_->y, mcx, mcy)) {
     return;
   }
 

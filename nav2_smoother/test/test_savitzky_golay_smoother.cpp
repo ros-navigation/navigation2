@@ -28,6 +28,7 @@
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smoother/savitzky_golay_smoother.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
@@ -51,7 +52,7 @@ TEST(SmootherTest, test_sg_smoother_basics)
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
-  std::shared_ptr<tf2_ros::Buffer> dummy_tf;
+  nav2::TransformBuffer::SharedPtr dummy_tf;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
@@ -124,7 +125,7 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
-  std::shared_ptr<tf2_ros::Buffer> dummy_tf;
+  nav2::TransformBuffer::SharedPtr dummy_tf;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
@@ -224,7 +225,7 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
-  std::shared_ptr<tf2_ros::Buffer> dummy_tf;
+  nav2::TransformBuffer::SharedPtr dummy_tf;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();

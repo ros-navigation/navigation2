@@ -30,9 +30,7 @@
 #include "sensor_msgs/msg/range.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/scan.hpp"
@@ -307,7 +305,7 @@ public:
   ScanWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -330,7 +328,7 @@ public:
   PointCloudWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -353,7 +351,7 @@ public:
   RangeWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -391,7 +389,7 @@ public:
   PolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -414,7 +412,7 @@ public:
   CostmapWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -436,8 +434,8 @@ class Tester : public ::testing::Test
 public:
   Tester();
   ~Tester();
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
 protected:
   // Data sources creation routine
@@ -472,9 +470,9 @@ Tester::Tester()
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_node(test_node_->get_node_base_interface());
 
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(test_node_->get_clock());
+  tf_buffer_ = nav2::create_transform_buffer(test_node_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, test_node_);
 }
 
 Tester::~Tester()
@@ -560,8 +558,8 @@ void Tester::createSources(const bool base_shift_correction)
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(test_node_);
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
+    nav2::create_transform_broadcaster(test_node_);
 
   geometry_msgs::msg::TransformStamped transform;
 

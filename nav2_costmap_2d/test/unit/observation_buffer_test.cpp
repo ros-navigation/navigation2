@@ -15,7 +15,7 @@
 #include <random>
 #include "gtest/gtest.h"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
@@ -103,7 +103,7 @@ protected:
 
   nav2::LifecycleNode::SharedPtr node_{std::make_shared<nav2::LifecycleNode>(
       "observation_buffer_test_node")};
-  tf2_ros::Buffer tf_buffer_{node_->get_clock()};
+  nav2::TransformBuffer tf_buffer_{node_->get_clock()};
   nav2_costmap_2d::ObservationBuffer buffer_{node_, "/observations", 10.0, 0.1, 0.0,
     std::numeric_limits<double>::max(), 10.0, 1.0, 5.0, 2.0, tf_buffer_, global_frame_,
     sensor_frame_, tf2::Duration{0}};

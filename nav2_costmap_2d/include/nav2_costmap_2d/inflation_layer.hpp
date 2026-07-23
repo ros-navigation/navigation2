@@ -215,7 +215,13 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
-  double inflation_radius_, inscribed_radius_, cost_scaling_factor_;
+  /**
+   * @brief Update inscribed_radius_ from custom_inscribed_radius_ or the footprint,
+   * logging a warning when the custom value is in use.
+   */
+  void updateInscribedRadius();
+
+  double inflation_radius_, inscribed_radius_, custom_inscribed_radius_, cost_scaling_factor_;
   bool inflate_unknown_, inflate_around_unknown_;
   unsigned int cell_inflation_radius_;
   int num_threads_;  // Number of OpenMP threads (-1 = auto)

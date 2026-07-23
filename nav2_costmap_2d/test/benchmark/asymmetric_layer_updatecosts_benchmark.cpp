@@ -79,7 +79,7 @@ class BenchmarkAsymmetricInflationLayer : public nav2_costmap_2d::AsymmetricInfl
 {
 public:
   /** @brief Deliver @p msg as if it arrived on the plan topic. */
-  void injectPath(nav_msgs::msg::Path::SharedPtr msg) {globalPathCallback(msg);}
+  void injectPath(nav_msgs::msg::Path::ConstSharedPtr msg) {globalPathCallback(msg);}
 };
 
 /**

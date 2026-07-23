@@ -23,8 +23,7 @@
 #include <pluginlib/class_loader.hpp>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_route/types.hpp"
@@ -49,7 +48,7 @@ public:
    */
   explicit GraphSaver(
     nav2::LifecycleNode::SharedPtr node,
-    std::shared_ptr<tf2_ros::Buffer> tf,
+    nav2::TransformBuffer::SharedPtr tf,
     const std::string frame);
 
   /**
@@ -76,7 +75,7 @@ public:
 
 protected:
   std::string route_frame_, graph_filepath_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
   rclcpp::Logger logger_{rclcpp::get_logger("GraphSaver")};
 
   // Graph Parser
