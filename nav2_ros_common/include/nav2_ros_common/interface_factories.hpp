@@ -30,6 +30,15 @@
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
+#if RCLCPP_VERSION_MAJOR < 20
+namespace rclcpp
+{
+using SubscriptionMatchedCallbackType = std::nullptr_t;
+using PublisherMatchedCallbackType = std::nullptr_t;
+using IncompatibleTypeCallbackType = std::nullptr_t;
+}  // namespace rclcpp
+#endif
+
 namespace nav2
 {
 
@@ -60,6 +69,10 @@ inline rclcpp::SubscriptionOptions createSubscriptionOptions(
   rclcpp::QOSDeadlineRequestedCallbackType qos_deadline_requested_callback = nullptr,
   rclcpp::QOSLivelinessChangedCallbackType qos_liveliness_changed_callback = nullptr)
 {
+#if RCLCPP_VERSION_MAJOR < 20
+  (void)subscription_matched_callback;
+  (void)incompatible_qos_type_callback;
+#endif
   rclcpp::SubscriptionOptions options;
   // Allow for all topics to have QoS overrides
   if (allow_parameter_qos_overrides) {
@@ -73,7 +86,9 @@ inline rclcpp::SubscriptionOptions createSubscriptionOptions(
 
   // ROS 2 default logs this already
   options.event_callbacks.incompatible_qos_callback = requested_incompatible_qos_callback;
+#if RCLCPP_VERSION_MAJOR >= 20
   options.event_callbacks.incompatible_type_callback = incompatible_qos_type_callback;
+#endif
 
   // Set the event callbacks if given, else log
   if (qos_message_lost_callback) {
@@ -90,6 +105,7 @@ inline rclcpp::SubscriptionOptions createSubscriptionOptions(
       };
   }
 
+#if RCLCPP_VERSION_MAJOR >= 20
   if (subscription_matched_callback) {
     options.event_callbacks.matched_callback = subscription_matched_callback;
   } else {
@@ -112,6 +128,7 @@ inline rclcpp::SubscriptionOptions createSubscriptionOptions(
         }
       };
   }
+#endif
 
   options.event_callbacks.deadline_callback = qos_deadline_requested_callback;
   options.event_callbacks.liveliness_callback = qos_liveliness_changed_callback;
@@ -140,6 +157,11 @@ inline rclcpp::PublisherOptions createPublisherOptions(
   rclcpp::QOSDeadlineOfferedCallbackType qos_deadline_offered_callback = nullptr,
   rclcpp::QOSLivelinessLostCallbackType qos_liveliness_lost_callback = nullptr)
 {
+#if RCLCPP_VERSION_MAJOR < 20
+  (void)topic_name;
+  (void)publisher_matched_callback;
+  (void)incompatible_qos_type_callback;
+#endif
   rclcpp::PublisherOptions options;
   // Allow for all topics to have QoS overrides
   if (allow_parameter_qos_overrides) {
@@ -153,9 +175,12 @@ inline rclcpp::PublisherOptions createPublisherOptions(
 
   // ROS 2 default logs this already
   options.event_callbacks.incompatible_qos_callback = offered_incompatible_qos_cb;
+#if RCLCPP_VERSION_MAJOR >= 20
   options.event_callbacks.incompatible_type_callback = incompatible_qos_type_callback;
+#endif
 
   // Set the event callbacks, else log
+#if RCLCPP_VERSION_MAJOR >= 20
   if (publisher_matched_callback) {
     options.event_callbacks.matched_callback = publisher_matched_callback;
   } else {
@@ -178,6 +203,7 @@ inline rclcpp::PublisherOptions createPublisherOptions(
         }
       };
   }
+#endif
 
   options.event_callbacks.deadline_callback = qos_deadline_offered_callback;
   options.event_callbacks.liveliness_callback = qos_liveliness_lost_callback;
@@ -349,6 +375,7 @@ rclcpp::TimerBase::SharedPtr create_timer(
   CallbackT callback,
   rclcpp::CallbackGroup::SharedPtr group = nullptr)
 {
+#if RCLCPP_VERSION_MAJOR >= 20
   return rclcpp::create_timer(
     selectSteadyOrSimClock(node),
     period,
@@ -356,6 +383,15 @@ rclcpp::TimerBase::SharedPtr create_timer(
     group,
     node->get_node_base_interface().get(),
     node->get_node_timers_interface().get());
+#else
+  return rclcpp::create_timer(
+    node->get_node_base_interface(),
+    node->get_node_timers_interface(),
+    selectSteadyOrSimClock(node),
+    period,
+    std::move(callback),
+    group);
+#endif
 }
 
 }  // namespace nav2

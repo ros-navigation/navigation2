@@ -31,6 +31,7 @@
 
 #include "nav2_map_server/vector_object_utils.hpp"
 
+
 namespace nav2_map_server
 {
 
@@ -155,6 +156,17 @@ public:
   virtual void putBorders(
     nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type) = 0;
 
+  /**
+   * @brief Fills the shape interior on the map using an optimized scanline algorithm.
+   * Replaces the naive bounding-box + point-in-polygon loop previously performed
+   * inside VectorObjectServer::putVectorObjectsOnMap().
+   * Empty virtual method intended to be used in child implementations.
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   */
+  virtual void putFilled(
+    nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type) = 0;
+
 protected:
   /// @brief Type of shape
   ShapeType type_;
@@ -259,6 +271,16 @@ public:
    * @param overlay_type Overlay type
    */
   void putBorders(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
+
+  /**
+   * @brief Fills the polygon interior on the map using a scanline algorithm
+   * (equivalent to OpenCV's cv::fillPoly) without an external OpenCV dependency.
+   * This is significantly faster than the previous approach of testing each
+   * bounding-box cell individually with isPointInside().
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   */
+  void putFilled(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
 
 protected:
   /**
@@ -369,6 +391,15 @@ public:
    * @param overlay_type Overlay type
    */
   void putBorders(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
+
+  /**
+   * @brief Fills the circle interior on the map using the midpoint circle scanline
+   * algorithm. Iterates one octant of the circle boundary and fills horizontal
+   * spans, yielding O(r) work instead of O(r^2) bounding-box iteration.
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   */
+  void putFilled(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
 
 protected:
   /**

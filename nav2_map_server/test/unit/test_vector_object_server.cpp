@@ -18,6 +18,7 @@
 #include <array>
 #include <chrono>
 #include <memory>
+#include <limits>
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"

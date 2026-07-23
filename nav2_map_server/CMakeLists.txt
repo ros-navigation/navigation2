@@ -24,6 +24,77 @@ find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 
+# ROS Humble compatibility shims
+if(NOT TARGET geometry_msgs::geometry_msgs)
+  add_library(geometry_msgs::geometry_msgs INTERFACE IMPORTED)
+  target_link_libraries(geometry_msgs::geometry_msgs INTERFACE
+    geometry_msgs::geometry_msgs__rosidl_generator_cpp
+    geometry_msgs::geometry_msgs__rosidl_typesupport_cpp)
+endif()
+
+if(NOT TARGET nav_msgs::nav_msgs)
+  add_library(nav_msgs::nav_msgs INTERFACE IMPORTED)
+  target_link_libraries(nav_msgs::nav_msgs INTERFACE
+    nav_msgs::nav_msgs__rosidl_generator_cpp
+    nav_msgs::nav_msgs__rosidl_typesupport_cpp)
+endif()
+
+if(NOT TARGET nav2_msgs::nav2_msgs)
+  add_library(nav2_msgs::nav2_msgs INTERFACE IMPORTED)
+  target_link_libraries(nav2_msgs::nav2_msgs INTERFACE
+    nav2_msgs::nav2_msgs__rosidl_generator_cpp
+    nav2_msgs::nav2_msgs__rosidl_typesupport_cpp)
+endif()
+
+if(NOT TARGET lifecycle_msgs::lifecycle_msgs)
+  add_library(lifecycle_msgs::lifecycle_msgs INTERFACE IMPORTED)
+  target_link_libraries(lifecycle_msgs::lifecycle_msgs INTERFACE
+    lifecycle_msgs::lifecycle_msgs__rosidl_generator_cpp
+    lifecycle_msgs::lifecycle_msgs__rosidl_typesupport_cpp)
+endif()
+
+if(NOT TARGET map_msgs::map_msgs)
+  add_library(map_msgs::map_msgs INTERFACE IMPORTED)
+  target_link_libraries(map_msgs::map_msgs INTERFACE
+    map_msgs::map_msgs__rosidl_generator_cpp
+    map_msgs::map_msgs__rosidl_typesupport_cpp)
+endif()
+
+if(NOT TARGET sensor_msgs::sensor_msgs)
+  add_library(sensor_msgs::sensor_msgs INTERFACE IMPORTED)
+  target_link_libraries(sensor_msgs::sensor_msgs INTERFACE
+    sensor_msgs::sensor_msgs__rosidl_generator_cpp
+    sensor_msgs::sensor_msgs__rosidl_typesupport_cpp)
+endif()
+
+if(NOT TARGET tf2_msgs::tf2_msgs)
+  add_library(tf2_msgs::tf2_msgs INTERFACE IMPORTED)
+  target_link_libraries(tf2_msgs::tf2_msgs INTERFACE
+    tf2_msgs::tf2_msgs__rosidl_generator_cpp
+    tf2_msgs::tf2_msgs__rosidl_typesupport_cpp)
+endif()
+
+if(NOT TARGET nav2_util::nav2_util_core)
+  message(STATUS "DEBUG: nav2_util_INCLUDE_DIRS = ${nav2_util_INCLUDE_DIRS}")
+  message(STATUS "DEBUG: nav2_util_LIBRARIES = ${nav2_util_LIBRARIES}")
+  add_library(nav2_util::nav2_util_core INTERFACE IMPORTED)
+  target_link_libraries(nav2_util::nav2_util_core INTERFACE ${nav2_util_LIBRARIES})
+  target_include_directories(nav2_util::nav2_util_core INTERFACE ${nav2_util_INCLUDE_DIRS})
+endif()
+
+if(NOT TARGET yaml-cpp::yaml-cpp)
+  add_library(yaml-cpp::yaml-cpp INTERFACE IMPORTED)
+  if(TARGET yaml-cpp)
+    target_link_libraries(yaml-cpp::yaml-cpp INTERFACE yaml-cpp)
+  elseif(YAML_CPP_LIBRARIES)
+    target_link_libraries(yaml-cpp::yaml-cpp INTERFACE ${YAML_CPP_LIBRARIES})
+  else()
+    target_link_libraries(yaml-cpp::yaml-cpp INTERFACE yaml-cpp)
+  endif()
+endif()
+
+
+
 pkg_search_module(UUID REQUIRED uuid)
 
 nav2_package()

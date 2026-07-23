@@ -29,8 +29,8 @@
 #include "nav2_msgs/srv/get_shapes.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
-#include "nav2_map_server/vector_object_utils.hpp"
 #include "nav2_map_server/vector_object_shapes.hpp"
+#include "nav2_map_server/vector_object_utils.hpp"
 
 namespace nav2_map_server
 {

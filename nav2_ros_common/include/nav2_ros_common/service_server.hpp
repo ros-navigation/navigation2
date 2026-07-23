@@ -55,7 +55,7 @@ public:
       const std::shared_ptr<RequestType> request, std::shared_ptr<ResponseType> response) {
         this->callback_(request_header, request, response);
       },
-      rclcpp::ServicesQoS(),  // Use consistent QoS settings
+      rclcpp::ServicesQoS(),
       callback_group);
 
     nav2::setIntrospectionMode(
