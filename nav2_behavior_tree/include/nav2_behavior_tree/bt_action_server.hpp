@@ -16,9 +16,11 @@
 #define NAV2_BEHAVIOR_TREE__BT_ACTION_SERVER_HPP_
 
 #include <chrono>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -311,6 +313,8 @@ protected:
   std::string internal_error_msg_;
 
   std::atomic_bool muxer_preemption_requested_{false};
+  // File-modification times cache
+  std::unordered_map<std::string, std::filesystem::file_time_type> bt_xml_mtimes_;
 };
 
 }  // namespace nav2_behavior_tree
