@@ -127,12 +127,7 @@ template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
   const uint64_t & index)
 {
-  auto iter = _graph.find(index);
-  if (iter != _graph.end()) {
-    return &(iter->second);
-  }
-
-  return &(_graph.emplace(index, NodeT(index, _shared_ctx.get())).first->second);
+  return &_graph.try_emplace(index, index, _shared_ctx.get()).first->second;
 }
 
 template<typename NodeT>
