@@ -28,7 +28,8 @@
 #include "nav2_mppi_controller/models/constraints.hpp"
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
-
+#include "nav2_util/geometry_utils.hpp"
+#include "tf2/utils.hpp"
 namespace mppi
 {
 
@@ -166,6 +167,31 @@ public:
     }
   }
 
+  /**
+   * @brief With input pose, speed find the vehicle's output pose at pred_dt in future
+   * @param pose pose of the robot
+   * @param speed speed
+   * @param pred_dt time in future to predict the pose
+  */
+  virtual void predictFuture(
+    geometry_msgs::msg::PoseStamped & pose,
+    geometry_msgs::msg::Twist & speed, float pred_dt)
+  {
+    const bool is_holo = isHolonomic();
+    auto initial_yaw = static_cast<float>(tf2::getYaw(pose.pose.orientation));
+    auto yaw_cos = cosf(initial_yaw);
+    auto yaw_sin = sinf(initial_yaw);
+    auto dx = static_cast<float>(speed.linear.x) * yaw_cos;
+    auto dy = static_cast<float>(speed.linear.x) * yaw_sin;
+    if (is_holo) {
+      dx -= speed.linear.y * yaw_sin;
+      dy += speed.linear.y * yaw_cos;
+    }
+    pose.pose.position.x += dx * pred_dt;
+    pose.pose.position.y += dy * pred_dt;
+    initial_yaw += speed.angular.z * pred_dt;
+    pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(initial_yaw);
+  }
   /**
    * @brief Whether the motion model is holonomic, using Y axis
    * @return Bool If holonomic

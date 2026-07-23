@@ -304,6 +304,7 @@ void Optimizer::prepare(
   const geometry_msgs::msg::Pose & goal,
   nav2_core::GoalChecker * goal_checker)
 {
+  state_.pose = robot_pose;
   if (settings_.open_loop) {
     state_.speed = last_command_vel_;
   } else {
@@ -312,29 +313,28 @@ void Optimizer::prepare(
     // Clamp to physically achievable range so prediction never exceeds dynamics.
     const auto & c = settings_.constraints;
     const double dt = settings_.controller_period;
+    float max_delta_vx = dt * c.ax_max;
+    float min_delta_vx = dt * c.ax_min;
+    float max_delta_wz = dt * c.az_max;
     state_.speed = robot_speed;
-    state_.speed.linear.x = std::clamp(
-      last_command_vel_.linear.x,
-      robot_speed.linear.x + dt * c.ax_min,
-      robot_speed.linear.x + dt * c.ax_max);
-    state_.speed.angular.z = std::clamp(
-      last_command_vel_.angular.z,
-      robot_speed.angular.z - dt * c.az_max,
-      robot_speed.angular.z + dt * c.az_max);
+    auto robot_last_speed = state_.speed;
+    state_.speed.linear.x = utils::clampVelocityByAccel(
+      robot_speed.linear.x, last_command_vel_.linear.x, min_delta_vx, max_delta_vx);
+    state_.speed.angular.z = utils::clampVelocityByAccel(
+      robot_speed.angular.z, last_command_vel_.angular.z, -max_delta_wz, max_delta_wz);
     if (isHolonomic()) {
-      state_.speed.linear.y = std::clamp(
-        last_command_vel_.linear.y,
-        robot_speed.linear.y + dt * c.ay_min,
-        robot_speed.linear.y + dt * c.ay_max);
+      float max_delta_vy = dt * c.ay_max;
+      float min_delta_vy = dt * c.ay_min;
+      state_.speed.linear.y = utils::clampVelocityByAccel(
+      robot_speed.linear.y, last_command_vel_.linear.y, min_delta_vy, max_delta_vy);
     }
+    // Predict the robot pose at 1*dt in future
+    motion_model_->predictFuture(state_.pose, robot_last_speed, dt);
   }
-
-  state_.pose = robot_pose;
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
   costs_.setZero(settings_.batch_size);
   goal_ = goal;
-
   critics_data_.fail_flag = false;
   critics_data_.goal_checker = goal_checker;
   critics_data_.motion_model = motion_model_;
