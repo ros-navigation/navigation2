@@ -17,6 +17,7 @@
 
 #include <string>
 #include "behaviortree_cpp/control_node.h"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -70,6 +71,7 @@ private:
   unsigned int current_child_idx_;
   unsigned int number_of_retries_;
   unsigned int retry_count_;
+  rclcpp::Logger logger_{rclcpp::get_logger("RecoveryNode")};
 
   /**
    * @brief The main override required by a BT action

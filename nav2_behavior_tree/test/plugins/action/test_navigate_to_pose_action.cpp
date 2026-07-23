@@ -155,6 +155,30 @@ TEST_F(NavigateToPoseActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 }
 
+TEST_F(NavigateToPoseActionTestFixture, test_missing_goal_input_fails_fast)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <NavigateToPose goal="{goal}" error_code_id="{error_code}" error_msg="{error_msg}"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  const auto status = tree_->rootNode()->executeTick();
+  EXPECT_EQ(status, BT::NodeStatus::FAILURE);
+  EXPECT_EQ(action_server_->getCurrentGoal(), nullptr);
+
+  uint16_t error_code = nav2_msgs::action::NavigateToPose::Result::NONE;
+  std::string error_msg;
+  EXPECT_TRUE(config_->blackboard->get("error_code", error_code));
+  EXPECT_TRUE(config_->blackboard->get("error_msg", error_msg));
+  EXPECT_EQ(error_code, nav2_msgs::action::NavigateToPose::Result::UNKNOWN);
+  EXPECT_EQ(error_msg, "NavigateToPoseAction missing required input port: goal");
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

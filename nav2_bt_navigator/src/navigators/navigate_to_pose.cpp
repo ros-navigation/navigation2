@@ -136,7 +136,10 @@ NavigateToPoseNavigator::onLoop()
       feedback_utils_.global_frame, feedback_utils_.robot_frame,
       feedback_utils_.transform_tolerance))
   {
-    RCLCPP_ERROR(logger_, "Robot pose is not available.");
+    RCLCPP_WARN_THROTTLE(
+      logger_, *clock_, 2000,
+      "Robot pose is not available for NavigateToPose feedback. "
+      "This is often caused by delayed TF or intermittent localization.");
     return;
   }
 

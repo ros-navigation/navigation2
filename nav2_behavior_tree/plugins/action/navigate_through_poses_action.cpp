@@ -31,6 +31,9 @@ NavigateThroughPosesAction::NavigateThroughPosesAction(
 void NavigateThroughPosesAction::on_tick()
 {
   if (!getInput("goals", goal_.poses)) {
+    should_send_goal_ = false;
+    setOutput("error_code_id", ActionResult::UNKNOWN);
+    setOutput("error_msg", "NavigateThroughPosesAction missing required input port: goals");
     RCLCPP_ERROR(
       node_->get_logger(),
       "NavigateThroughPosesAction: goal not provided");
