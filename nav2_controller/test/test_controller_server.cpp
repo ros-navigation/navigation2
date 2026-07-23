@@ -18,10 +18,14 @@
 #include <string>
 #include <vector>
 
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "gtest/gtest.h"
-#include "nav2_util/lifecycle_node.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_controller/controller_server.hpp"
+#include "nav2_core/controller_exceptions.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/buffer.hpp"
 
 class ControllerShim : public nav2_controller::ControllerServer
 {
@@ -59,7 +63,7 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
-TEST(WPTest, test_dynamic_parameters)
+TEST(ControllerServerTest, test_dynamic_parameters)
 {
   auto controller = std::make_shared<ControllerShim>();
   controller->setDynamicCallback();
@@ -85,4 +89,40 @@ TEST(WPTest, test_dynamic_parameters)
   EXPECT_EQ(controller->get_parameter("min_y_velocity_threshold").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("min_theta_velocity_threshold").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("failure_tolerance").as_double(), 5.0);
+}
+
+class GoalReachTestController : public nav2_controller::ControllerServer
+{
+public:
+  using nav2_controller::ControllerServer::ControllerServer;
+
+  void setEndPoseFrame(const std::string & frame) {end_pose_.header.frame_id = frame;}
+  bool callIsGoalReached() {return isGoalReached();}
+  tf2_ros::Buffer & getTfBuffer() {return *costmap_ros_->getTfBuffer();}
+};
+
+TEST(ControllerServerTest, IsGoalReachedThrowsOnTfFailure)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({
+    rclcpp::Parameter("progress_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("goal_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("controller_plugins", std::vector<std::string>{}),
+  });
+
+  auto server = std::make_shared<GoalReachTestController>(options);
+  ASSERT_EQ(
+    server->configure().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+
+  geometry_msgs::msg::TransformStamped tf_msg;
+  tf_msg.header.stamp = server->now();
+  tf_msg.header.frame_id = "map";
+  tf_msg.child_frame_id = "base_link";
+  tf_msg.transform.rotation.w = 1.0;
+  server->getTfBuffer().setTransform(tf_msg, "test", true);
+
+  server->setEndPoseFrame("nonexistent_frame_xyz");
+  EXPECT_THROW(server->callIsGoalReached(), nav2_core::ControllerTFError);
+  server->cleanup();
 }
