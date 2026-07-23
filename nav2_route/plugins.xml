@@ -60,6 +60,9 @@
     <class type="nav2_route::GeoJsonGraphFileLoader" base_class_type="nav2_route::GraphFileLoader">
       <description>Parse the geojson graph file into the graph data type</description>
     </class>
+    <class type="nav2_route::OsmGraphFileLoader" base_class_type="nav2_route::GraphFileLoader">
+      <description>Parse an OpenStreetMap .osm XML file into the graph data type</description>
+    </class>
   </library>
   <library path="graph_file_savers">
     <class type="nav2_route::GeoJsonGraphFileSaver" base_class_type="nav2_route::GraphFileSaver">

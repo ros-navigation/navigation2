@@ -28,6 +28,9 @@
   <depend>nav2_util</depend>
   <depend>nav2_core</depend>
   <depend>nav2_ros_common</depend>
+  <depend>tinyxml2_vendor</depend>
+  <depend>geographic_msgs</depend>
+  <depend>robot_localization</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

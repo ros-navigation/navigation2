@@ -345,6 +345,46 @@ Edge1:                     // <-- If provided by format, stored as name in metad
         service_name "open-door"  // <-- metadata for operation (Recommended)
 ```
 
+### OpenStreetMap (`.osm`)
+
+A parser is also provided for OpenStreetMap `.osm` XML files (`OsmGraphFileLoader`), so that widely
+available OSM data can be used directly for off-road, agricultural, campus, and other outdoor
+navigation without first converting it to GeoJSON.
+
+Unlike GeoJSON, OSM does not list edges explicitly: a `<way>` is a polyline of ordered `<nd ref>`
+node references, and two ways are connected only where they share a node id. The loader resolves
+this implicit topology by treating shared nodes (and way endpoints) as junctions, splitting each way
+at those junctions, and emitting one directed edge per inter-junction section. The intermediate shape
+nodes are not turned into graph vertices, which keeps the graph sparse. Edge direction is taken from
+the `oneway` tag (`yes`/`true`/`1` → forward, `-1`/`reverse` → reverse, absent/`no` → both directions).
+
+The loader keeps every `<way>` in the file; it does not require a `highway` tag or apply any
+allowlist. A `.osm` here is treated as a purpose-built route graph, so the choice of which edges are
+preferable is left to the edge scoring plugins, which can read each way's tags.
+
+Coordinates are converted from WGS84 latitude/longitude into the map frame using
+robot_localization's `FromLLArray` service, so the graph shares a single datum with the robot's
+localization rather than introducing a second one. **This requires `navsat_transform_node` to be
+running when the graph is loaded** — the graph is loaded during the Route Server's lifecycle
+`configure` (or on a `set_route_graph` request), and that load blocks on the service, so if it is
+unavailable the transition fails.
+
+Parameters (under the `osm_graph_file_loader.` namespace):
+
+| Parameter | Type | Default | Description |
+| --------- | ---- | ------- | ----------- |
+| `from_ll_service` | string | `/fromLLArray` | Name of the robot_localization `FromLLArray` service (override for namespaced setups) |
+| `from_ll_service_timeout` | double | `5.0` | Seconds to wait for the conversion service before failing the load |
+
+A small example is provided in `graphs/sample_graph.osm`.
+
+Note: OSM node ids are 64-bit and cannot be the Route Server's 32-bit node id, so unlike the GeoJSON
+loader (which preserves the file's `id`), this loader assigns **sequential** node ids and the
+`graph_to_id_map` is an identity map. Routes therefore cannot be requested by original OSM node id.
+
+Node and edge **metadata** (e.g. speed limits from OSM `maxspeed`) is intentionally out of scope for
+this initial loader and is planned for a follow-on contribution.
+
 ### Metadata Conventions for Convenience
 
 While other metadata fields are not required nor necessarily needed, there are some useful standards which may make your life easier within in the Route Server framework.

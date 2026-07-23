@@ -21,6 +21,10 @@ find_package(nav2_msgs REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(nav2_ros_common REQUIRED)
+find_package(tinyxml2_vendor REQUIRED)
+find_package(tinyxml2 REQUIRED)
+find_package(geographic_msgs REQUIRED)
+find_package(robot_localization REQUIRED)
 
 nav2_package()
 
@@ -164,6 +168,7 @@ target_link_libraries(route_operations PRIVATE
 # Graph Parser plugins
 add_library(graph_file_loaders SHARED
     src/plugins/graph_file_loaders/geojson_graph_file_loader.cpp
+    src/plugins/graph_file_loaders/osm_graph_file_loader.cpp
 )
 target_include_directories(graph_file_loaders
   PUBLIC
@@ -187,7 +192,10 @@ target_link_libraries(graph_file_loaders PUBLIC
   nav_msgs::nav_msgs
   tf2_ros::tf2_ros
   nlohmann_json::nlohmann_json
+  tinyxml2::tinyxml2
+  ${geographic_msgs_TARGETS}
 )
+ament_target_dependencies(graph_file_loaders PUBLIC robot_localization)
 target_link_libraries(graph_file_loaders PRIVATE
   lifecycle_msgs::lifecycle_msgs
   rclcpp_components::component
@@ -271,6 +279,7 @@ ament_export_dependencies(
   nanoflann
   nlohmann_json
   nav2_ros_common
+  robot_localization
 )
 ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
