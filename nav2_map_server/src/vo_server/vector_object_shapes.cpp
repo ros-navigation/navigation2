@@ -15,18 +15,19 @@
 #include "nav2_map_server/vector_object_shapes.hpp"
 
 #include <uuid/uuid.h>
+#include <algorithm>
 #include <cmath>
 #include <exception>
 #include <limits>
 #include <stdexcept>
 #include <vector>
 
+
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "nav2_util/occ_grid_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/raytrace_line_2d.hpp"
+#include "nav2_map_server/vector_object_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_map_server
@@ -293,6 +294,83 @@ bool Polygon::checkConsistency()
   return true;
 }
 
+void Polygon::putFilled(
+  nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  const auto & pts = polygon_->points;
+  const std::size_t n = pts.size();
+  if (n < 3) {
+    return;
+  }
+
+  // Convert all polygon vertices to continuous map-cell coordinates.
+  // Using continuous coordinates perfectly matches isPointInside() math.
+  std::vector<double> vx(n), vy(n);
+  const double origin_x = map->info.origin.position.x;
+  const double origin_y = map->info.origin.position.y;
+  const double res = map->info.resolution;
+
+  for (std::size_t i = 0; i < n; i++) {
+    vx[i] = (pts[i].x - origin_x) / res - 0.5;
+    vy[i] = (pts[i].y - origin_y) / res - 0.5;
+  }
+
+  // Find the Y extent of the polygon in map coordinates.
+  int y_min = static_cast<int>(std::ceil(*std::min_element(vy.begin(), vy.end())));
+  int y_max = static_cast<int>(std::floor(*std::max_element(vy.begin(), vy.end())));
+  y_min = std::max(y_min, 0);
+  y_max = std::min(y_max, static_cast<int>(map->info.height) - 1);
+
+  const int map_width = static_cast<int>(map->info.width);
+  for (int y = y_min; y <= y_max; y++) {
+    std::vector<double> xs;
+    xs.reserve(n);
+
+    for (std::size_t i = 0; i < n; i++) {
+      std::size_t j = (i + 1) % n;
+
+      double y0 = vy[i], y1 = vy[j];
+      double x0 = vx[i], x1 = vx[j];
+
+      if (y0 == y1) {
+        continue;
+      }
+
+      // Check if scanline crosses the edge (half-open interval)
+      if (y < std::min(y0, y1) || y >= std::max(y0, y1)) {
+        continue;
+      }
+
+      double x_intersect = x0 + (y - y0) * (x1 - x0) / (y1 - y0);
+      xs.push_back(x_intersect);
+    }
+
+    std::sort(xs.begin(), xs.end());
+
+    for (std::size_t k = 0; k + 1 < xs.size(); k += 2) {
+      // To match ray-casting, x must be: xs[k] <= x < xs[k+1]
+      int x_start = static_cast<int>(std::ceil(xs[k]));
+      int x_end = static_cast<int>(std::ceil(xs[k + 1])) - 1;
+
+      x_start = std::max(x_start, 0);
+      x_end = std::min(x_end, map_width - 1);
+
+      for (int x = x_start; x <= x_end; x++) {
+        processCell(
+          map,
+          static_cast<unsigned int>(y) * map->info.width + static_cast<unsigned int>(x),
+          params_->value,
+          overlay_type);
+      }
+    }
+  }
+}
+
 // ---------- Circle ----------
 
 Circle::Circle(
@@ -554,6 +632,48 @@ inline void Circle::putPoint(
   const OverlayType overlay_type)
 {
   processCell(map, my * map->info.width + mx, params_->value, overlay_type);
+}
+
+void Circle::putFilled(
+  nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
+{
+  unsigned int mcx, mcy;
+  if (!nav2_util::worldToMap(map, center_->x, center_->y, mcx, mcy)) {
+    return;
+  }
+
+  const double res = map->info.resolution;
+  const double r = params_->radius / res;
+  const double r2 = r * r;
+  const int r_int = static_cast<int>(std::ceil(r));
+  const int map_w = static_cast<int>(map->info.width);
+  const int map_h = static_cast<int>(map->info.height);
+  const int cx = static_cast<int>(mcx);
+  const int cy = static_cast<int>(mcy);
+
+  auto fill_hspan = [&](int y, int x0, int x1) {
+      if (y < 0 || y >= map_h) {return;}
+      x0 = std::max(x0, 0);
+      x1 = std::min(x1, map_w - 1);
+      for (int x = x0; x <= x1; x++) {
+        processCell(
+          map,
+          static_cast<unsigned int>(y) * map->info.width + static_cast<unsigned int>(x),
+          params_->value,
+          overlay_type);
+      }
+    };
+
+  for (int dy = -r_int; dy <= r_int + 1; dy++) {
+    double term = r2 - (dy - 0.5) * (dy - 0.5);
+    if (term < 0.0) {
+      continue;
+    }
+    double r_rem = std::sqrt(term);
+    int x0 = cx + static_cast<int>(std::ceil(-r_rem + 0.5));
+    int x1 = cx + static_cast<int>(std::floor(r_rem + 0.5));
+    fill_hspan(cy + dy, x0, x1);
+  }
 }
 
 }  // namespace nav2_map_server

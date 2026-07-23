@@ -18,6 +18,7 @@
 #include <array>
 #include <chrono>
 #include <memory>
+#include <limits>
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
@@ -34,7 +35,7 @@
 #include "nav2_msgs/msg/polygon_object.hpp"
 #include "nav2_msgs/msg/circle_object.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_util/occ_grid_utils.hpp"
+#include "nav2_map_server/vector_object_utils.hpp"
 
 #include "nav2_map_server/vector_object_server.hpp"
 

@@ -66,7 +66,7 @@ public:
       provided_node->get_node_graph_interface(),
       provided_node->get_node_services_interface(),
       service_name,
-      rclcpp::ServicesQoS(),  // Use consistent QoS settings
+      rclcpp::ServicesQoS().get_rmw_qos_profile(),  // Use consistent QoS settings
       callback_group_);
 
     nav2::setIntrospectionMode(

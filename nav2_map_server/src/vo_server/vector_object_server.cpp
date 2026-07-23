@@ -25,7 +25,6 @@
 
 #include "tf2_ros/create_timer_ros.hpp"
 
-#include "nav2_util/occ_grid_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 
 using namespace std::placeholders;
@@ -310,43 +309,15 @@ void VectorObjectServer::updateMap(
 
 void VectorObjectServer::putVectorObjectsOnMap()
 {
-  // Filling the shapes
+  // Rasterize each shape onto the map.
+  // Filled shapes use the per-shape optimized scanline algorithm (putFilled):
+  //   - Polygon: scanline fill identical to OpenCV's cv::fillPoly, O(height * edges)
+  //   - Circle:  midpoint-circle span fill, O(radius)
+  // Both avoid the previous O(W*H) bounding-box + isPointInside() approach.
   for (auto shape : shapes_) {
     if (shape->isFill()) {
-      // Put filled shape on map
-      double wx1 = std::numeric_limits<double>::max();
-      double wy1 = std::numeric_limits<double>::max();
-      double wx2 = std::numeric_limits<double>::lowest();
-      double wy2 = std::numeric_limits<double>::lowest();
-      unsigned int mx1 = 0;
-      unsigned int my1 = 0;
-      unsigned int mx2 = 0;
-      unsigned int my2 = 0;
-
-      shape->getBoundaries(wx1, wy1, wx2, wy2);
-      if (
-        !nav2_util::worldToMap(map_, wx1, wy1, mx1, my1) ||
-        !nav2_util::worldToMap(map_, wx2, wy2, mx2, my2))
-      {
-        RCLCPP_ERROR(
-          get_logger(),
-          "Error to get shape boundaries on map (UUID: %s)", shape->getUUID().c_str());
-        return;
-      }
-
-      unsigned int it;
-      for (unsigned int my = my1; my <= my2; my++) {
-        for (unsigned int mx = mx1; mx <= mx2; mx++) {
-          it = my * map_->info.width + mx;
-          double wx, wy;
-          nav2_util::mapToWorld(map_, mx, my, wx, wy);
-          if (shape->isPointInside(wx, wy)) {
-            processVal(map_->data[it], shape->getValue(), overlay_type_);
-          }
-        }
-      }
+      shape->putFilled(map_, overlay_type_);
     } else {
-      // Put shape borders on map
       shape->putBorders(map_, overlay_type_);
     }
   }
@@ -426,10 +397,10 @@ void VectorObjectServer::addShapesCallback(
         for (const auto & shape : shapes) {
           if (!shape.header.frame_id.empty() && shape.header.frame_id != global_frame_id_) {
             RCLCPP_ERROR(
-            get_logger(),
-            "%s frame_id '%s' must be empty or equal to global_frame_id '%s' "
-            "when enforce_global_frame_id is true. Rejecting request.",
-            shape_type_name.c_str(), shape.header.frame_id.c_str(), global_frame_id_.c_str());
+              get_logger(),
+              "%s frame_id '%s' must be empty or equal to global_frame_id '%s' "
+              "when enforce_global_frame_id is true. Rejecting request.",
+              shape_type_name.c_str(), shape.header.frame_id.c_str(), global_frame_id_.c_str());
             return false;
           }
         }

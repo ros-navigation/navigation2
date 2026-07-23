@@ -239,6 +239,7 @@ public:
     CallbackT callback,
     rclcpp::CallbackGroup::SharedPtr group = nullptr)
   {
+#if RCLCPP_VERSION_MAJOR >= 20
     return rclcpp::create_timer(
       nav2::selectSteadyOrSimClock(this),
       period,
@@ -246,6 +247,16 @@ public:
       group,
       this->get_node_base_interface().get(),
       this->get_node_timers_interface().get());
+#else
+    return std::dynamic_pointer_cast<rclcpp::GenericTimer<CallbackT>>(
+      rclcpp::create_timer(
+        this->get_node_base_interface(),
+        this->get_node_timers_interface(),
+        nav2::selectSteadyOrSimClock(this),
+        period,
+        std::move(callback),
+        group));
+#endif
   }
 
   /**
