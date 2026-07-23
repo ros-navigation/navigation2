@@ -55,7 +55,7 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   following_action_server_ = node->create_action_server<FollowObject>(
     "follow_object",
     std::bind(&FollowingServer::followObject, this),
-    nullptr, std::chrono::milliseconds(500),
+    nullptr, nullptr, std::chrono::milliseconds(500),
     true);
 
   // Create the controller

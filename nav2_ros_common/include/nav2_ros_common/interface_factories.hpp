@@ -302,13 +302,15 @@ typename nav2::SimpleActionServer<ActionT>::SharedPtr create_action_server(
   const NodeT & node,
   const std::string & action_name,
   typename nav2::SimpleActionServer<ActionT>::ExecuteCallback execute_callback,
+  typename nav2::SimpleActionServer<ActionT>::GoalReceivedCallback goal_received_callback = nullptr,
   typename nav2::SimpleActionServer<ActionT>::CompletionCallback complete_cb = nullptr,
   std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
   bool spin_thread = false,
   const bool realtime = false)
 {
   return std::make_shared<nav2::SimpleActionServer<ActionT>>(
-    node, action_name, execute_callback, complete_cb, server_timeout, spin_thread, realtime);
+    node, action_name, execute_callback, goal_received_callback, complete_cb,
+    server_timeout, spin_thread, realtime);
 }
 
 /**

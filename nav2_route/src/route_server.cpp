@@ -42,12 +42,12 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   compute_route_server_ = create_action_server<ComputeRoute>(
     "compute_route",
     std::bind(&RouteServer::computeRoute, this),
-    nullptr, std::chrono::milliseconds(500), true);
+    nullptr, nullptr, std::chrono::milliseconds(500), true);
 
   compute_and_track_route_server_ = create_action_server<ComputeAndTrackRoute>(
     "compute_and_track_route",
     std::bind(&RouteServer::computeAndTrackRoute, this),
-    nullptr, std::chrono::milliseconds(500), true);
+    nullptr, nullptr, std::chrono::milliseconds(500), true);
 
   set_graph_service_ = node->create_service<nav2_msgs::srv::SetRouteGraph>(
     std::string(node->get_name()) + "/set_route_graph",
