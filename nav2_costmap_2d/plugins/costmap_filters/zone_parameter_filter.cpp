@@ -355,7 +355,7 @@ void ZoneParameterFilter::process(
 
   const int8_t mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
   if (mask_data < 0) {
-    // OCC_GRID_UNKNOWN (-1) — leave state alone, log throttled warning.
+    // OCC_GRID_UNKNOWN (-1): leave state alone, log throttled warning.
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 2000,
       "ZoneParameterFilter: Filter mask cell [%u, %u] is unknown; not changing state.",
