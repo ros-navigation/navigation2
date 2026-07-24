@@ -22,6 +22,13 @@ def generate_launch_description() -> LaunchDescription:
     launch_dir = os.path.dirname(os.path.realpath(__file__))
     params_file = os.path.join(launch_dir, 'dual_ekf_navsat_params.yaml')
     os.environ['FILE_PATH'] = str(launch_dir)
+
+    lifecycle_nodes = [
+        'ekf_filter_node_odom',
+        'ekf_filter_node_map',
+        'navsat_transform',
+    ]
+
     return LaunchDescription(
         [
             launch.actions.DeclareLaunchArgument(
@@ -58,6 +65,17 @@ def generate_launch_description() -> LaunchDescription:
                     ('gps/filtered', 'gps/filtered'),
                     ('odometry/gps', 'odometry/gps'),
                     ('odometry/filtered', 'odometry/global'),
+                ],
+            ),
+            launch_ros.actions.Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_localization',
+                output='screen',
+                parameters=[
+                    {'use_sim_time': True},
+                    {'autostart': True},
+                    {'node_names': lifecycle_nodes},
                 ],
             ),
         ]
