@@ -48,21 +48,20 @@ void ZoneParameterFilter::initializeFilter(
     throw std::runtime_error{"Failed to lock node"};
   }
 
+  global_frame_ = layered_costmap_->getGlobalFrameID();
   state_event_topic_ =
     node->declare_or_get_parameter<std::string>(
     name_ + "." + "state_event_topic", std::string("zone_filter_state"));
-
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   RCLCPP_INFO(
     logger_,
     "ZoneParameterFilter: Subscribing to \"%s\" topic for filter info...",
     filter_info_topic_.c_str());
+
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
     filter_info_topic_,
     std::bind(&ZoneParameterFilter::filterInfoCallback, this, std::placeholders::_1),
     nav2::qos::LatchedSubscriptionQoS());
-
-  global_frame_ = layered_costmap_->getGlobalFrameID();
 
   state_event_pub_ =
     node->create_publisher<std_msgs::msg::UInt8>(joinWithParentNamespace(state_event_topic_));
