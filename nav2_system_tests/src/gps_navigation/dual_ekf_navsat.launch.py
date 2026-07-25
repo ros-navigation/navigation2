@@ -30,7 +30,6 @@ def generate_launch_description() -> LaunchDescription:
     lifecycle_nodes = [
         'ekf_filter_node_odom',
         'ekf_filter_node_map',
-        'navsat_transform',
     ]
 
     nodes = [
