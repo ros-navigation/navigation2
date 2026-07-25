@@ -43,13 +43,15 @@ void GoalAngleCritic::score(CriticData & data)
 
   double goal_yaw = tf2::getYaw(goal.orientation);
 
-  auto angular_distances = utils::shortest_angular_distance(data.trajectories.yaws,
-    goal_yaw).abs().eval();
+  using RowMajorArrayXXf = Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+  RowMajorArrayXXf angular_distances = utils::shortest_angular_distance(
+    data.trajectories.yaws, goal_yaw).abs();
 
   if (symmetric_yaw_tolerance_) {
     double symmetric_goal_yaw = angles::normalize_angle(goal_yaw + M_PI);
-    auto symmetric_distances = utils::shortest_angular_distance(data.trajectories.yaws,
-      symmetric_goal_yaw).abs().eval();
+    const RowMajorArrayXXf symmetric_distances = utils::shortest_angular_distance(
+      data.trajectories.yaws, symmetric_goal_yaw).abs();
     angular_distances = angular_distances.min(symmetric_distances);
   }
 
