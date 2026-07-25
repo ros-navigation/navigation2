@@ -314,6 +314,8 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
   const auto & traj_x_end = data.trajectories.x.col(traj_cols - 1);
   const auto & traj_y_end = data.trajectories.y.col(traj_cols - 1);
 
+  Eigen::ArrayXf distances(n_cols);
+
   int max_idx = 0;
   for (int i = 0; i < n_rows; ++i) {
     int max_reachable_idx = static_cast<int>(
@@ -323,9 +325,13 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
     max_reachable_idx = std::min(max_reachable_idx, n_cols - 1);
 
     // Bounded Euclidean search: closest path point within [0..max_reachable_idx]
+    const int search_size = max_reachable_idx + 1;
+    distances.head(search_size) =
+      (data.path.x.head(search_size) - traj_x_end(i)).square() +
+      (data.path.y.head(search_size) - traj_y_end(i)).square();
+
     Eigen::Index eucl_idx;
-    ((data.path.x.head(max_reachable_idx + 1) - traj_x_end(i)).square() +
-    (data.path.y.head(max_reachable_idx + 1) - traj_y_end(i)).square()).minCoeff(&eucl_idx);
+    distances.head(search_size).minCoeff(&eucl_idx);
 
     max_idx = std::max(max_idx, static_cast<int>(eucl_idx));
 
