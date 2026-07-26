@@ -67,7 +67,6 @@ void ZoneParameterFilter::initializeFilter(
     node->create_publisher<std_msgs::msg::UInt8>(joinWithParentNamespace(state_event_topic_));
   state_event_pub_->on_activate();
 
-  // Load the per-state parameter map from YAML overrides.
   loadStateConfig();
 }
 
@@ -102,7 +101,6 @@ void ZoneParameterFilter::filterInfoCallback(
     return;
   }
 
-  // base/multiplier unused (config-driven).
   if (msg->base != BASE_DEFAULT || msg->multiplier != MULTIPLIER_DEFAULT) {
     RCLCPP_WARN(
       logger_,
@@ -151,21 +149,10 @@ void ZoneParameterFilter::loadStateConfig()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // Every zone state and every parameter it applies is DECLARED configuration,
-  // rather than scraped from undeclared YAML overrides. This keeps the whole
-  // filter introspectable via `ros2 param get`, and a malformed entry surfaces
-  // at configuration-load time instead of when the robot first enters the zone.
-  // The tree is read top-down: `states` -> each `<state>.{id, overrides}` ->
-  // each override's explicit `{node, parameter, value}`. Because the target
-  // node and parameter are explicit fields, nothing needs disambiguating: there
-  // is no target-node prefix matching and no length-sorting.
-
-  // read_entry: read one {node, parameter, value} override declared under `prefix`.
-  // `value` is declared with dynamic_typing so a single override mechanism can set
-  // a target parameter of any type (double / int / bool / string / list); the node
-  // and parameter are always plain names, so only the value needs it. An empty
-  // node/parameter, or an unset value, is a config-time error: log it and skip this
-  // entry, so one malformed override doesn't take down the rest of the load.
+  // Declared config (not undeclared-override scraping) so the filter stays
+  // introspectable via `ros2 param get` and a bad entry surfaces at config-load,
+  // not when the robot enters the zone. `value` is dynamic_typing so a zone can
+  // override a parameter of any type.
   auto read_entry =
     [&](const std::string & prefix) -> std::optional<StateParamEntry> {
       const std::string target_node =
@@ -194,7 +181,6 @@ void ZoneParameterFilter::loadStateConfig()
       target_node, rclcpp::Parameter(param_name, value_param.get_parameter_value())};
     };
 
-  // `states`: the configured zone-state names; each maps to an id + overrides.
   const std::vector<std::string> state_names =
     node->declare_or_get_parameter<std::vector<std::string>>(
     name_ + ".states", std::vector<std::string>{});
@@ -286,10 +272,9 @@ void ZoneParameterFilter::loadStateConfig()
     }
   }
 
-  // Build one AsyncParametersClient per unique target node (init-time;
-  // not lazy). Client construction registers locally; the remote service
-  // need not be reachable yet — set_parameters failures surface via
-  // checkPendingParameterUpdates.
+  // Eager (not lazy) per-node client construction: registers locally, so the
+  // remote need not be reachable yet; set_parameters failures surface later
+  // via checkPendingParameterUpdates.
   std::set<std::string> all_target_nodes;
   for (const auto & [_state_id, entries] : state_param_map_) {
     for (const auto & e : entries) {
@@ -331,13 +316,11 @@ void ZoneParameterFilter::process(
     return;
   }
 
-  // Transform pose into mask frame.
   geometry_msgs::msg::Pose mask_pose;
   if (!transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
     return;
   }
 
-  // Sample mask at robot pose.
   unsigned int mask_robot_i, mask_robot_j;
   if (!nav2_util::worldToMap(
       filter_mask_, mask_pose.position.x, mask_pose.position.y,
@@ -355,7 +338,7 @@ void ZoneParameterFilter::process(
 
   const int8_t mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
   if (mask_data < 0) {
-    // OCC_GRID_UNKNOWN (-1): leave state alone, log throttled warning.
+    // mask_data < 0 is OCC_GRID_UNKNOWN; don't change state on an unknown cell.
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 2000,
       "ZoneParameterFilter: Filter mask cell [%u, %u] is unknown; not changing state.",
@@ -398,7 +381,6 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
             std::to_string(new_state) + " under the filter's `states` list.");
   }
 
-  // Build (target_node, param_name) keys for the destination state M.
   std::set<std::pair<std::string, std::string>> m_keys;
   for (const auto & entry : it->second) {
     m_keys.emplace(entry.target_node, entry.param.get_name());
@@ -449,8 +431,7 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
     per_node_params[entry.target_node].push_back(entry.param);
   }
 
-  // Reset first, then apply M. issueAsyncSetParameters preserves submission
-  // order on the per-node future queue.
+  // Submit the N-only resets before M's overrides.
   size_t reset_count = 0;
   for (const auto & [target_node, params] : reset_per_node) {
     issueAsyncSetParameters(target_node, params);
@@ -494,12 +475,10 @@ void ZoneParameterFilter::issueAsyncSetParameters(
 
 void ZoneParameterFilter::checkPendingParameterUpdates()
 {
-  // A parameter set that silently fails would leave the robot running on the value
-  // the safety zone was trying to change — worse than surfacing the failure. So a
-  // failed set is never logged and swallowed: an exception from the parameter
-  // client is rethrown as-is, and an unsuccessful result raises a runtime_error
-  // instead of being ignored.
-  // wait_for(0s) only polls the futures; it must not block the costmap update loop.
+  // A silently-swallowed set failure would leave the robot on the value the
+  // safety zone tried to change (worse than surfacing it), so failures throw
+  // rather than get logged-and-ignored.
+  // wait_for(0s) polls without blocking the costmap update loop.
   auto it = pending_futures_.begin();
   while (it != pending_futures_.end()) {
     if (it->wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
@@ -540,7 +519,8 @@ void ZoneParameterFilter::resetFilter()
   filter_info_received_ = false;
   state_initialized_ = false;
   current_state_ = 0;
-  // Retain nominal_defaults_ + param_clients_ across resets.
+  // nominal_defaults_, param_clients_ and state_param_map_ persist across resets;
+  // only the subscriptions/publisher and live state are torn down above.
 }
 
 bool ZoneParameterFilter::isActive()
