@@ -160,12 +160,12 @@ void ZoneParameterFilter::loadStateConfig()
   // node and parameter are explicit fields, nothing needs disambiguating: there
   // is no target-node prefix matching and no length-sorting.
 
-  // Reads one explicit {node, parameter, value} entry declared under `prefix`.
-  // The value is dynamically typed so any parameter type (double / int / bool /
-  // string / list) can be expressed, and is applied to the target as-is; a type
-  // mismatch with the target parameter therefore surfaces as a set failure,
-  // which — under the always-throw policy — stops the robot rather than
-  // silently taking no effect.
+  // read_entry: read one {node, parameter, value} override declared under `prefix`.
+  // `value` is declared with dynamic_typing so a single override mechanism can set
+  // a target parameter of any type (double / int / bool / string / list); the node
+  // and parameter are always plain names, so only the value needs it. An empty
+  // node/parameter, or an unset value, is a config-time error: log it and skip this
+  // entry, so one malformed override doesn't take down the rest of the load.
   auto read_entry =
     [&](const std::string & prefix) -> std::optional<StateParamEntry> {
       const std::string target_node =
@@ -419,7 +419,9 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
         }
         const auto node_it = nominal_defaults_.find(entry.target_node);
         if (node_it == nominal_defaults_.end()) {
-          continue;  // Gap warned at config-load (Test 24); param keeps N's value.
+          // No nominal_defaults were declared for this node, so this param has
+          // nothing to reset to; it keeps state N's value. Warned at config-load.
+          continue;
         }
         for (const auto & nominal : node_it->second) {
           if (nominal.get_name() == entry.param.get_name()) {
@@ -428,6 +430,16 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
           }
         }
       }
+    } else {
+      // current_state_ is non-zero but not in state_param_map_. It is only set
+      // after applyState() matched it (unknown states throw), so this means the
+      // tracked state and the map have diverged. Log, don't reset: state N's
+      // params keep their values this transition.
+      RCLCPP_ERROR(
+        logger_,
+        "ZoneParameterFilter: current state %u is not in state_param_map_ "
+        "(should have been recorded when the state was applied).",
+        current_state_);
     }
   }
 
@@ -482,10 +494,12 @@ void ZoneParameterFilter::issueAsyncSetParameters(
 
 void ZoneParameterFilter::checkPendingParameterUpdates()
 {
-  // wait_for(0s) does not block; future::get() may rethrow a stored exception
-  // from the rclcpp parameter-client side. A failed parameter set on a safety
-  // zone is a stop-the-robot condition, so any failure — a thrown exception or
-  // an unsuccessful result — is surfaced by rethrowing, never logged-and-ignored.
+  // A parameter set that silently fails would leave the robot running on the value
+  // the safety zone was trying to change — worse than surfacing the failure. So a
+  // failed set is never logged and swallowed: an exception from the parameter
+  // client is rethrown as-is, and an unsuccessful result raises a runtime_error
+  // instead of being ignored.
+  // wait_for(0s) only polls the futures; it must not block the costmap update loop.
   auto it = pending_futures_.begin();
   while (it != pending_futures_.end()) {
     if (it->wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
