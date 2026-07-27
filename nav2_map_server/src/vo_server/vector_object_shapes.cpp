@@ -345,7 +345,12 @@ void Polygon::putFilled(
     return;
   }
 
-  // Convert all polygon vertices to continuous map-cell coordinates.
+ // Rasterize the polygon using a classic scanline fill algorithm.
+//
+// This follows the same general scanline rasterization approach used by
+// graphics libraries such as OpenCV, but is implemented locally to avoid
+// introducing an OpenCV dependency while preserving the existing polygon
+// filling semantics. // Convert all polygon vertices to continuous map-cell coordinates.
   // Using continuous coordinates perfectly matches isPointInside() math.
   std::vector<double> vx(n), vy(n);
   const double origin_x = map->info.origin.position.x;
