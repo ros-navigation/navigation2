@@ -33,10 +33,11 @@ jobs:
         COPY ws /root/ws
 
         # Uncomment to add a testing repo for unreleased binary packages
-        # RUN echo "deb [trusted=yes] http://repo.ros2.org/ubuntu/testing $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-testing.list
+        RUN echo "deb [trusted=yes] http://repo.ros2.org/ubuntu/testing $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-testing.list
 
         RUN apt-get update && rosdep update && \
-          rosdep install --from-paths src --ignore-src -r -y
+          rosdep install --from-paths src --ignore-src -r -y \
+          --skip-keys=slam_toolbox
 
         RUN . /opt/ros/lyrical/setup.sh && \
           colcon build --packages-skip nav2_system_tests && \
