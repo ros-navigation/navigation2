@@ -149,10 +149,7 @@ void ZoneParameterFilter::loadStateConfig()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // Declared config (not undeclared-override scraping) so the filter stays
-  // introspectable via `ros2 param get` and a bad entry surfaces at config-load,
-  // not when the robot enters the zone. `value` is dynamic_typing so a zone can
-  // override a parameter of any type.
+  // Obtain the node, parameter, and value for state entries
   auto read_entry =
     [&](const std::string & prefix) -> std::optional<StateParamEntry> {
       const std::string target_node =
