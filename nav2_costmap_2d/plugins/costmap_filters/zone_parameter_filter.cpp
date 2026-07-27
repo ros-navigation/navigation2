@@ -269,9 +269,7 @@ void ZoneParameterFilter::loadStateConfig()
     }
   }
 
-  // Eager (not lazy) per-node client construction: registers locally, so the
-  // remote need not be reachable yet; set_parameters failures surface later
-  // via checkPendingParameterUpdates.
+  // Per-node client construction
   std::set<std::string> all_target_nodes;
   for (const auto & [_state_id, entries] : state_param_map_) {
     for (const auto & e : entries) {
