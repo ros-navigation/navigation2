@@ -39,7 +39,9 @@ jobs:
           rosdep install --from-paths src --ignore-src -r -y
 
         RUN . /opt/ros/lyrical/setup.sh && \
-          colcon build --packages-skip nav2_system_tests' > /tmp/docker_context/Dockerfile
+          colcon build --packages-skip nav2_system_tests && \
+          colcon test --packages-skip nav2_system_tests && \
+          colcon test-result --verbose' > /tmp/docker_context/Dockerfile
 
     - name: Build Docker image
       run: |
