@@ -511,8 +511,6 @@ void ZoneParameterFilter::resetFilter()
   filter_info_received_ = false;
   state_initialized_ = false;
   current_state_ = 0;
-  // nominal_defaults_, param_clients_ and state_param_map_ persist across resets;
-  // only the subscriptions/publisher and live state are torn down above.
 }
 
 bool ZoneParameterFilter::isActive()
