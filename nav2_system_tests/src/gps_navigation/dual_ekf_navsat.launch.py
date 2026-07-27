@@ -81,6 +81,7 @@ def generate_launch_description() -> LaunchDescription:
                 parameters=[
                     {'use_sim_time': True},
                     {'autostart': True},
+                    {'bond_timeout': 0.0},
                     {'node_names': lifecycle_nodes},
                 ],
             ),
