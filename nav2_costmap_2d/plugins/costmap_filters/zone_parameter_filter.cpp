@@ -408,10 +408,6 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
         }
       }
     } else {
-      // current_state_ is non-zero but not in state_param_map_. It is only set
-      // after applyState() matched it (unknown states throw), so this means the
-      // tracked state and the map have diverged. Log, don't reset: state N's
-      // params keep their values this transition.
       RCLCPP_ERROR(
         logger_,
         "ZoneParameterFilter: current state %u is not in state_param_map_ "
