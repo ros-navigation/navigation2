@@ -7,6 +7,8 @@
   <img height="300" src="doc/nav2_logo.png" />
 </p>
 
+hi
+
 For detailed instructions on how to:
 - [Concepts](https://docs.nav2.org/concepts/index.html) and [Getting Started](https://docs.nav2.org/getting_started/index.html)
 - [First Time Setup Guide](https://docs.nav2.org/setup_guides/index.html)
