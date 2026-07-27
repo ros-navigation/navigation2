@@ -470,7 +470,7 @@ void ZoneParameterFilter::checkPendingParameterUpdates()
   // A silently-swallowed set failure would leave the robot on the value the
   // safety zone tried to change (worse than surfacing it), so failures throw
   // rather than get logged-and-ignored.
-  // wait_for(0s) polls without blocking the costmap update loop.
+  // wait_for(0s) polls without blocking the costmap update loop
   auto it = pending_futures_.begin();
   while (it != pending_futures_.end()) {
     if (it->wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
