@@ -28,6 +28,7 @@
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
+#include "nav2_util/raytrace_line_2d.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -345,6 +346,13 @@ void Polygon::putFilled(
     return;
   }
 
+  // Rasterize the polygon using a classic scanline fill algorithm.
+  //
+  // This follows the same general scanline rasterization approach used by
+  // graphics libraries such as OpenCV, but is implemented locally to avoid
+  // introducing an OpenCV dependency while preserving the existing polygon
+  // filling semantics.
+  //
   // Convert all polygon vertices to continuous map-cell coordinates.
   // Using continuous coordinates perfectly matches isPointInside() math.
   std::vector<double> vx(n), vy(n);
