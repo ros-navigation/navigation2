@@ -25,9 +25,9 @@
 
 #include "tf2/time.hpp"
 #include "tf2/LinearMath/Transform.hpp"
-#include "tf2_ros/buffer.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 
@@ -62,7 +62,7 @@ public:
   ExclusionZone(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & zone_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -169,7 +169,7 @@ protected:
   std::string zone_name_;
 
   /// @brief TF buffer
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   /// @brief Robot base frame ID
   std::string base_frame_id_;
   /// @brief Global (fixed) frame ID, used to bridge the zone lookup in time

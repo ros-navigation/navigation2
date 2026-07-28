@@ -35,7 +35,7 @@ namespace nav2_collision_monitor
 ExclusionZone::ExclusionZone(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & zone_name,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
