@@ -368,6 +368,21 @@ public:
   {
     return data_ != nullptr;
   }
+
+  void setData(sensor_msgs::msg::Range::ConstSharedPtr msg)
+  {
+    data_ = msg;
+  }
+
+  void setObstaclesAngle(const double obstacles_angle)
+  {
+    obstacles_angle_ = obstacles_angle;
+  }
+
+  void processData(sensor_msgs::msg::Range::ConstSharedPtr msg)
+  {
+    dataCallback(msg);
+  }
 };  // RangeWrapper
 
 class PolygonWrapper : public nav2_collision_monitor::PolygonSource
@@ -884,6 +899,94 @@ TEST_F(Tester, testIgnoreTimeShift)
   data.clear();
   polygon_->getData(curr_time, data);
   checkPolygon(data);
+}
+
+TEST_F(Tester, testRangeGeneratedPointLimit)
+{
+  rclcpp::Time curr_time = test_node_->now();
+
+  createSources(false);
+
+  auto msg = std::make_shared<sensor_msgs::msg::Range>();
+  msg->header.frame_id = BASE_FRAME_ID;
+  msg->header.stamp = curr_time;
+  msg->radiation_type = sensor_msgs::msg::Range::ULTRASOUND;
+  msg->field_of_view = M_PI;
+  msg->min_range = 0.1;
+  msg->max_range = 1.1;
+  msg->range = 1.0;
+
+  range_->setData(msg);
+  range_->setObstaclesAngle(M_PI / 1e5);
+
+  std::vector<nav2_collision_monitor::Point> data;
+  EXPECT_FALSE(range_->getData(curr_time, data));
+  EXPECT_TRUE(data.empty());
+
+  range_->setData(msg);
+  range_->setObstaclesAngle(M_PI / 999.0);
+
+  data.clear();
+  EXPECT_TRUE(range_->getData(curr_time, data));
+  EXPECT_EQ(data.size(), 1000u);
+}
+
+TEST_F(Tester, testRangeObstaclesAngleValidation)
+{
+  const std::string valid_range_name = "ValidRange";
+
+  test_node_->declare_parameter(
+    std::string(RANGE_NAME) + ".topic", rclcpp::ParameterValue(RANGE_TOPIC));
+  test_node_->declare_parameter(
+    std::string(RANGE_NAME) + ".obstacles_angle", rclcpp::ParameterValue(0.0));
+
+  range_ = std::make_shared<RangeWrapper>(
+    test_node_, RANGE_NAME, tf_buffer_,
+    BASE_FRAME_ID, GLOBAL_FRAME_ID,
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, true);
+
+  EXPECT_THROW(range_->configure(), std::runtime_error);
+
+  test_node_->declare_parameter(
+    valid_range_name + ".topic", rclcpp::ParameterValue(RANGE_TOPIC));
+  test_node_->declare_parameter(
+    valid_range_name + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 180.0));
+  range_ = std::make_shared<RangeWrapper>(
+    test_node_, valid_range_name, tf_buffer_,
+    BASE_FRAME_ID, GLOBAL_FRAME_ID,
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, true);
+
+  EXPECT_NO_THROW(range_->configure());
+}
+
+TEST_F(Tester, testRangeMessageValidation)
+{
+  createSources();
+
+  auto msg = std::make_shared<sensor_msgs::msg::Range>();
+  msg->header.frame_id = SOURCE_FRAME_ID;
+  msg->header.stamp = test_node_->now();
+  msg->radiation_type = sensor_msgs::msg::Range::ULTRASOUND;
+  msg->field_of_view = 0.0;
+  msg->min_range = 0.1;
+  msg->max_range = 1.1;
+  msg->range = 1.0;
+
+  range_->processData(msg);
+
+  EXPECT_FALSE(range_->dataReceived());
+
+  msg->header.frame_id = SOURCE_FRAME_ID;
+  msg->header.stamp = test_node_->now();
+  msg->radiation_type = sensor_msgs::msg::Range::ULTRASOUND;
+  msg->field_of_view = M_PI / 10;
+  msg->min_range = 0.1;
+  msg->max_range = 1.1;
+  msg->range = 1.0;
+
+  range_->processData(msg);
+
+  EXPECT_TRUE(range_->dataReceived());
 }
 
 TEST_F(Tester, testPointCloudMinRange)

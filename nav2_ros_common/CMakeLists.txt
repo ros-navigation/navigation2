@@ -10,10 +10,12 @@ find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(map_msgs REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
@@ -34,10 +36,11 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
   ${geometry_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   ${nav_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
+  ${map_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
+  ${sensor_msgs_TARGETS}
   tf2_ros::tf2_ros
   rclcpp_action::rclcpp_action
   tf2_geometry_msgs::tf2_geometry_msgs
@@ -75,9 +78,11 @@ ament_export_dependencies(
   geometry_msgs
   nav2_msgs
   nav_msgs
+  map_msgs
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
+  sensor_msgs
   tf2
   tf2_geometry_msgs
   tf2_ros
