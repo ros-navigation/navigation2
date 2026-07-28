@@ -25,9 +25,7 @@
 
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/exclusion_zone.hpp"
@@ -160,7 +158,7 @@ public:
   FakeSource(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id)
   : nav2_collision_monitor::Source(
       node, source_name, tf_buffer, base_frame_id, base_frame_id,
@@ -193,10 +191,10 @@ public:
   ExclusionZoneTester()
   {
     node_ = std::make_shared<TestNode>();
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_buffer_ = nav2::create_transform_buffer(node_);
     tf_buffer_->setUsingDedicatedThread(true);
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
+    tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_node(node_->get_node_base_interface());
   }
@@ -312,9 +310,9 @@ protected:
   }
 
   std::shared_ptr<TestNode> node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 };  // ExclusionZoneTester
 
