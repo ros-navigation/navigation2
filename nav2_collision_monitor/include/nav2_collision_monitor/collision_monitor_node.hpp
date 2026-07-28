@@ -197,11 +197,6 @@ protected:
     const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const;
 
   /**
-   * @brief Polygons publishing routine. Made for visualization.
-   */
-  void publishPolygons() const;
-
-  /**
    * @brief Publishes all visualization topics (polygons and exclusion zones).
    */
   void publishVisualizations() const;

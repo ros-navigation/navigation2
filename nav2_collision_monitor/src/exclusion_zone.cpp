@@ -211,9 +211,9 @@ bool ExclusionZone::getZoneToBaseTransform(
     return true;
   }
 
-  // Runs on the safety thread, so all lookups are NON-BLOCKING (zero timeout):
-  // they read the cached TF buffer and fail immediately. A blocking lookup on a
-  // flaky zone frame would stall the monitor loop, make healthy sources look
+  // Runs on the collision monitor thread, so all lookups are NON-BLOCKING (zero
+  // timeout): they read the cached TF buffer and fail immediately. A blocking
+  // lookup on a flaky zone frame would stall the monitor loop, make healthy sources look
   // stale and trip the source_timeout watchdog. transform_tolerance_ is used only
   // as the staleness allowance below, never as a wait.
   const tf2::Duration non_blocking = tf2::Duration::zero();
@@ -352,7 +352,7 @@ rcl_interfaces::msg::SetParametersResult ExclusionZone::validateParameterUpdates
     if (param_name.find(zone_name_ + ".") != 0) {
       continue;
     }
-    if (param_name == zone_name_ + ".radius" &&
+    if (param_name == zone_name_ + ".radius" && is_circle_ &&
       parameter.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE &&
       parameter.as_double() <= 0.0)
     {
@@ -364,7 +364,7 @@ rcl_interfaces::msg::SetParametersResult ExclusionZone::validateParameterUpdates
     {
       result.successful = false;
       result.reason = "frame_hold_timeout must be >= 0";
-    } else if (param_name == zone_name_ + ".points" &&  // NOLINT
+    } else if (param_name == zone_name_ + ".points" && !is_circle_ &&  // NOLINT
       parameter.get_type() == rclcpp::ParameterType::PARAMETER_STRING)
     {
       // Reject a live polygon update that cannot be parsed into a valid polygon
@@ -393,7 +393,7 @@ void ExclusionZone::updateParametersCallback(
       parameter.get_type() == rclcpp::ParameterType::PARAMETER_BOOL)
     {
       enabled_ = parameter.as_bool();
-    } else if (param_name == zone_name_ + ".radius" &&  // NOLINT
+    } else if (param_name == zone_name_ + ".radius" && is_circle_ &&  // NOLINT
       parameter.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE)
     {
       radius_ = parameter.as_double();

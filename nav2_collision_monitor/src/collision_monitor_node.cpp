@@ -133,8 +133,8 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Since polygons are being published when cmd_vel_in appears,
-  // we need to publish polygons first time to display them at startup
-  publishPolygons();
+  // we need to publish polygons and exclusion zones first time to display them at startup
+  publishVisualizations();
 
   // Activating main worker
   process_active_ = true;
@@ -737,18 +737,14 @@ void CollisionMonitor::publishTriggeringPoints(const Action & action)
   triggering_points_pub_->publish(std::move(marker_array));
 }
 
-void CollisionMonitor::publishPolygons() const
+void CollisionMonitor::publishVisualizations() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (polygon->getEnabled() || !enabled_) {
       polygon->publish();
     }
   }
-}
 
-void CollisionMonitor::publishVisualizations() const
-{
-  publishPolygons();
   for (std::shared_ptr<Source> source : sources_) {
     source->publishExclusionZones();
   }

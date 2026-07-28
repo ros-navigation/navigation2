@@ -454,18 +454,14 @@ void CollisionDetector::publishTriggeringPoints(
   triggering_points_pub_->publish(std::move(marker_array));
 }
 
-void CollisionDetector::publishPolygons() const
+void CollisionDetector::publishVisualizations() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (polygon->getEnabled()) {
       polygon->publish();
     }
   }
-}
 
-void CollisionDetector::publishVisualizations() const
-{
-  publishPolygons();
   for (std::shared_ptr<Source> source : sources_) {
     source->publishExclusionZones();
   }
