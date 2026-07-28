@@ -250,7 +250,7 @@
       <input_port name="input_path" type="nav_msgs::msg::Path">The original path to be truncated.</input_port>
       <input_port name="distance_forward" type="double" default="8.0">The trimming distance in forward direction. Set to -1 to search full path forward.</input_port>
       <input_port name="distance_backward" type="double" default="4.0">The trimming distance in backward direction.</input_port>
-      <input_port name="robot_frame" type="string" default="&quot;base_link&quot;">Robot base frame id.</input_port>
+      <input_port name="robot_base_frame" type="string">Robot base frame id. If not provided, uses the BT Navigator's `robot_base_frame` parameter value (`base_link` by default).</input_port>
       <input_port name="transform_tolerance" type="double" default="0.2">Robot pose lookup tolerance.</input_port>
       <input_port name="pose" type="geometry_msgs::msg::PoseStamped">Manually specified pose to be used alternatively to current robot pose.</input_port>
       <input_port name="angular_distance_weight" type="double" default="0.0">Weight of angular distance relative to positional distance when finding which path pose is closest to robot. Not applicable on paths without orientations assigned.</input_port>

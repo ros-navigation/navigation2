@@ -270,7 +270,7 @@ TEST(MotionModelTests, DelayReplayAllAxes)
   OmniMotionModel model;
 
   // Set model_dt, model_delay_vx, model_delay_vy, model_delay_wz = 0.05f, 0.10f, 0.10f, 0.15f;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.10f, 0.10f, 0.15f);
+  model.setConstraints(unboundedConstraints(), 0.05f, 0.10f, 0.10f, 0.15f, false);
 
   // Ring-buffer size of vx/vy/wz = 2/2/3 steps
   // After 3 pushes per axis the rings hold the most-recent 2/2/3 values.
@@ -307,7 +307,7 @@ TEST(MotionModelTests, DelayVyIgnoredOnDiffDrive)
   state.reset(8, 20);
 
   DiffDriveMotionModel model;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.10f, 0.0f);
+  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.10f, 0.0f, false);
   model.pushCommandHistory(0.0f, 99.0f, 0.0f);
   model.pushCommandHistory(0.0f, 99.0f, 0.0f);
 
@@ -321,7 +321,7 @@ TEST(MotionModelTests, DelayClearCommandHistory)
   state.reset(8, 20);
 
   DiffDriveMotionModel model;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.10f, 0.0f, 0.15f);
+  model.setConstraints(unboundedConstraints(), 0.05f, 0.10f, 0.0f, 0.15f, false);
   model.pushCommandHistory(7.0f, 0.0f, 7.0f);
   model.clearCommandHistory();
   model.predict(state);
@@ -341,11 +341,43 @@ TEST(MotionModelTests, DelayZeroSkipsShift)
   state.cvx.setConstant(2.0f);
 
   DiffDriveMotionModel model;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.0f, 0.0f);
+  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.0f, 0.0f, false);
   EXPECT_NO_THROW(model.pushCommandHistory(123.0f, 0.0f, 0.0f));
   model.predict(state);
 
   EXPECT_TRUE(state.vx.isApproxToConstant(2.0f));
+}
+
+TEST(MotionModelTests, ClampRawControlsRewritesRawCommand)
+{
+  models::State state;
+  state.reset(1, 3);
+
+  // ax_max/ax_min/az_max = 1.0, so each step can only change velocity by
+  // model_dt * 1.0 = 1.0, well below the 5.0 raw commands set below
+  models::ControlConstraints tight_constraints{
+    100.0f, -100.0f, 100.0f, 100.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f};
+
+  OmniMotionModel model;
+  model.setConstraints(tight_constraints, 1.0f, 0.0f, 0.0f, 0.0f, true);
+
+  state.cvx.col(0).setConstant(5.0f);
+  state.cvx.col(1).setConstant(5.0f);
+  state.cwz.col(0).setConstant(5.0f);
+  state.cwz.col(1).setConstant(5.0f);
+
+  model.predict(state);
+
+  EXPECT_TRUE(state.vx.col(1).isApproxToConstant(1.0f));
+  EXPECT_TRUE(state.vx.col(2).isApproxToConstant(2.0f));
+  EXPECT_TRUE(state.wz.col(1).isApproxToConstant(1.0f));
+  EXPECT_TRUE(state.wz.col(2).isApproxToConstant(2.0f));
+
+  // clamp_raw_controls=true applies acceleration limits on the raw commands as well
+  EXPECT_TRUE(state.cvx.col(0).isApproxToConstant(1.0f));
+  EXPECT_TRUE(state.cvx.col(1).isApproxToConstant(2.0f));
+  EXPECT_TRUE(state.cwz.col(0).isApproxToConstant(1.0f));
+  EXPECT_TRUE(state.cwz.col(1).isApproxToConstant(2.0f));
 }
 
 int main(int argc, char ** argv)

@@ -33,6 +33,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_navfn_planner
 {
@@ -59,7 +60,7 @@ public:
    */
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::string name, nav2::TransformBuffer::SharedPtr tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
@@ -198,7 +199,7 @@ protected:
   std::unique_ptr<NavFn> planner_;
 
   // TF buffer
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
 
   // Clock
   rclcpp::Clock::SharedPtr clock_;

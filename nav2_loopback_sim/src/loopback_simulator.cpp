@@ -68,7 +68,7 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   t_odom_to_base_link_.header.frame_id = odom_frame_id_;
   t_odom_to_base_link_.child_frame_id = base_frame_id_;
 
-  tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+  tf_broadcaster_ = nav2::create_transform_broadcaster(this);
 
   // Subscriptions
   initial_pose_sub_ =
@@ -91,8 +91,8 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   if (publish_scan_) {
     map_client_ = create_client<nav_msgs::srv::GetMap>("/map_server/map");
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_buffer_ = nav2::create_transform_buffer(this);
+    tf_listener_ = nav2::create_transform_listener(*tf_buffer_);
   }
 
   if (publish_clock_) {

@@ -15,6 +15,8 @@
 #ifndef NAV2_SMAC_PLANNER__ANALYTIC_EXPANSION_IMPL_HPP_
 #define NAV2_SMAC_PLANNER__ANALYTIC_EXPANSION_IMPL_HPP_
 
+#include <ompl/config.h>
+
 #include <algorithm>
 #include <limits>
 #include <memory>
@@ -160,7 +162,11 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
 
 template<typename NodeT>
 int AnalyticExpansion<NodeT>::countDirectionChanges(
+#if OMPL_VERSION_VALUE >= 2000000  // 2.0.0
+  const ompl::base::ReedsSheppStateSpace::PathType & path)
+#else
   const ompl::base::ReedsSheppStateSpace::ReedsSheppPath & path)
+#endif
 {
   const double * lengths = path.length_;
   int changes = 0;
@@ -204,7 +210,11 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     auto rs_state_space = dynamic_cast<ompl::base::ReedsSheppStateSpace *>(state_space.get());
     int direction_changes = 0;
     if (rs_state_space) {
+      #if OMPL_VERSION_VALUE >= 2000000  // 2.0.0
+      direction_changes = countDirectionChanges(rs_state_space->getPath(from.get(), to.get()));
+      #else
       direction_changes = countDirectionChanges(rs_state_space->reedsShepp(from.get(), to.get()));
+      #endif
     }
 
     // A move of sqrt(2) is guaranteed to be in a new cell

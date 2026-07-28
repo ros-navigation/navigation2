@@ -23,7 +23,7 @@
 #include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 
@@ -70,11 +70,8 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    get_node_base_interface(), get_node_timers_interface());
-  tf_->setCreateTimerInterface(timer_interface);
-  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, true);
+  tf_ = nav2::create_transform_buffer(this);
+  transform_listener_ = nav2::create_transform_listener(*tf_, this, true);
 
   costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), costmap_topic);
@@ -311,43 +308,43 @@ void SmootherServer::smoothPlan()
     action_server_->succeeded_current(result);
   } catch (nav2_core::InvalidSmoother & ex) {
     result->error_msg = ex.what();
-    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(this->get_logger(), "%s", result->error_msg.c_str());
     result->error_code = ActionResult::INVALID_SMOOTHER;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmootherTimedOut & ex) {
     result->error_msg = ex.what();
-    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(this->get_logger(), "%s", result->error_msg.c_str());
     result->error_code = ActionResult::TIMEOUT;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmoothedPathInCollision & ex) {
     result->error_msg = ex.what();
-    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(this->get_logger(), "%s", result->error_msg.c_str());
     result->error_code = ActionResult::SMOOTHED_PATH_IN_COLLISION;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToSmoothPath & ex) {
     result->error_msg = ex.what();
-    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(this->get_logger(), "%s", result->error_msg.c_str());
     result->error_code = ActionResult::FAILED_TO_SMOOTH_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & ex) {
     result->error_msg = ex.what();
-    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(this->get_logger(), "%s", result->error_msg.c_str());
     result->error_code = ActionResult::INVALID_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmootherException & ex) {
     result->error_msg = ex.what();
-    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(this->get_logger(), "%s", result->error_msg.c_str());
     result->error_code = ActionResult::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & ex) {
     result->error_msg = ex.what();
-    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(this->get_logger(), "%s", result->error_msg.c_str());
     result->error_code = ActionResult::UNKNOWN;
     action_server_->terminate_current(result);
     return;

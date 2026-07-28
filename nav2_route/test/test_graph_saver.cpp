@@ -23,22 +23,15 @@
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_route/graph_loader.hpp"
 #include "nav2_route/graph_saver.hpp"
-#include "tf2_ros/static_transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route; //NOLINT
 
 TEST(GraphSaver, test_invalid_plugin)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -57,7 +50,7 @@ TEST(GraphSaver, test_invalid_plugin)
 TEST(GraphSaver, test_empty_filename)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -78,7 +71,7 @@ TEST(GraphSaver, test_empty_filename)
 TEST(GraphSaver, test_api)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -113,10 +106,10 @@ TEST(GraphSaver, test_transformation_api)
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);
-  auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
-  auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
+  auto tf_listener = nav2::create_transform_listener(*tf, node);
+  auto tf_broadcaster = nav2::create_static_transform_broadcaster(node);
 
   std::string frame = "map";
 
@@ -165,4 +158,13 @@ TEST(GraphSaver, test_transformation_api)
   EXPECT_FALSE(graph_saver.saveGraphToFile(graph, file_path));
   EXPECT_EQ(graph[0].coords.frame_id, "map_test2");
   EXPECT_EQ(graph[0].coords.x, or_coord);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

@@ -171,7 +171,7 @@ TEST_F(LoopRateTest, test_ros_time_with_sim_time)
   nav2_behavior_tree::LoopRate rate(period, tree_.get(), clock);
 
   // Advance sim time past the period from a separate thread
-  std::thread advancer([rcl_clock, t0]() {
+  std::thread advancer([rcl_clock]() {
       std::this_thread::sleep_for(10ms);
       auto ret = rcl_set_ros_time_override(rcl_clock, t0 + RCL_MS_TO_NS(60));
       EXPECT_EQ(RCL_RET_OK, ret);
@@ -202,7 +202,7 @@ TEST_F(LoopRateTest, test_ros_time_sim_time_does_not_overshoot)
   nav2_behavior_tree::LoopRate rate(period, tree_.get(), clock);
 
   // Advance sim time by exactly the period after a short wall delay
-  std::thread advancer([rcl_clock, t0]() {
+  std::thread advancer([rcl_clock]() {
       std::this_thread::sleep_for(5ms);
       auto ret = rcl_set_ros_time_override(rcl_clock, t0 + RCL_MS_TO_NS(100));
       EXPECT_EQ(RCL_RET_OK, ret);
@@ -269,7 +269,7 @@ TEST_F(LoopRateTest, test_consecutive_sleeps_maintain_cadence_sim_time)
 
   // Advance sim time in a background thread at 10x real time:
   // each iteration advances 50ms sim time every 5ms wall time
-  std::thread advancer([rcl_clock, t0, iterations]() {
+  std::thread advancer([rcl_clock]() {
       for (int i = 1; i <= iterations; ++i) {
         std::this_thread::sleep_for(5ms);
         auto ret = rcl_set_ros_time_override(

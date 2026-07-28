@@ -18,6 +18,7 @@
 #include <ompl/base/ScopedState.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
+#include <ompl/config.h>
 
 #include <functional>
 #include <list>
@@ -178,7 +179,11 @@ public:
     * @param path The Reeds-Shepp path to count direction changes in
     * @return The number of direction changes in the path
     */
+  #if OMPL_VERSION_VALUE >= 2000000  // 2.0.0
+  int countDirectionChanges(const ompl::base::ReedsSheppStateSpace::PathType & path);
+  #else
   int countDirectionChanges(const ompl::base::ReedsSheppStateSpace::ReedsSheppPath & path);
+  #endif
 
   /**
    * @brief Takes an expanded nodes to clean up, if necessary, of any state

@@ -23,14 +23,6 @@
 using nav2::ServiceServer;
 using std::string;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class TestServiceServer : public ServiceServer<std_srvs::srv::Empty>
 {
 public:
@@ -81,5 +73,8 @@ TEST(ServiceServer, can_handle_all_introspection_modes)
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

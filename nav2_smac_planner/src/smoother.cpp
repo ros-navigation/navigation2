@@ -52,7 +52,8 @@ void Smoother::initialize(const double & min_turning_radius)
 bool Smoother::smooth(
   nav_msgs::msg::Path & path,
   const nav2_costmap_2d::Costmap2D * costmap,
-  const double & max_time)
+  const double & max_time,
+  const std::vector<geometry_msgs::msg::Point> & footprint)
 {
   // by-pass path orientations approximation when skipping smac smoother
   if (max_its_ == 0) {
@@ -86,7 +87,9 @@ bool Smoother::smooth(
       const geometry_msgs::msg::Pose start_pose = curr_path_segment.poses.front().pose;
       const geometry_msgs::msg::Pose goal_pose = curr_path_segment.poses.back().pose;
       bool local_success =
-        smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining);
+        smoothImpl(
+        curr_path_segment, reversing_segment, costmap, time_remaining,
+        footprint);
       success = success && local_success;
 
       // Enforce boundary conditions
@@ -110,7 +113,8 @@ bool Smoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment,
   const nav2_costmap_2d::Costmap2D * costmap,
-  const double & max_time)
+  const double & max_time,
+  const std::vector<geometry_msgs::msg::Point> & footprint)
 {
   steady_clock::time_point a = steady_clock::now();
   rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);
@@ -163,25 +167,43 @@ bool Smoother::smoothImpl(
         setFieldByDim(new_path.poses[i], j, y_i);
         change += abs(y_i - y_i_org);
       }
+    }
 
-      // validate update is admissible, only checks cost if a valid costmap pointer is provided
-      float cost = 0.0;
-      if (costmap) {
-        costmap->worldToMap(
-          getFieldByDim(new_path.poses[i], 0),
-          getFieldByDim(new_path.poses[i], 1),
-          mx, my);
-        cost = static_cast<float>(costmap->getCost(mx, my));
+    nav2_util::updateApproximatePathOrientations(
+      new_path, reversing_segment, is_holonomic_);
+
+    // validate update is admissible, only checks cost if a valid costmap pointer is provided
+    if (costmap) {
+      if (!footprint.empty()) {
+        footprint_checker_.setCostmap(
+          const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
       }
 
-      if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
-        RCLCPP_DEBUG(
-          rclcpp::get_logger("SmacPlannerSmoother"),
-          "Smoothing process resulted in an infeasible collision. "
-          "Returning the last path before the infeasibility was introduced.");
-        path = last_path;
-        nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
-        return false;
+      for (unsigned int i = 1; i != path_size - 1; i++) {
+        float cost = 0.0;
+
+        if (footprint.empty()) {
+          costmap->worldToMap(
+            getFieldByDim(new_path.poses[i], 0),
+            getFieldByDim(new_path.poses[i], 1),
+            mx, my);
+          cost = static_cast<float>(costmap->getCost(mx, my));
+        } else {
+          cost = static_cast<float>(footprint_checker_.footprintCostAtPose(
+            new_path.poses[i].pose.position.x,
+            new_path.poses[i].pose.position.y,
+            tf2::getYaw(new_path.poses[i].pose.orientation),
+            footprint));
+        }
+
+        if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
+          RCLCPP_DEBUG(
+            rclcpp::get_logger("SmacPlannerSmoother"),
+            "Smoothing process resulted in an infeasible collision. "
+            "Returning the last path before the infeasibility was introduced.");
+          path = last_path;
+          return false;
+        }
       }
     }
 
@@ -192,10 +214,9 @@ bool Smoother::smoothImpl(
   // but really puts the path quality over the top.
   if (do_refinement_ && refinement_ctr_ < refinement_num_) {
     refinement_ctr_++;
-    smoothImpl(new_path, reversing_segment, costmap, max_time);
+    smoothImpl(new_path, reversing_segment, costmap, max_time, footprint);
   }
 
-  nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
   path = new_path;
   return true;
 }

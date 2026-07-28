@@ -20,7 +20,9 @@ setup(
     maintainer_email='stevenmacenski@gmail.com',
     description='An importable library for writing mobile robot applications in python3',
     license='Apache-2.0',
-    tests_require=['pytest'],
+    extras_require={
+        'test': ['pytest'],
+    },
     entry_points={
         'console_scripts': [
             'example_nav_to_pose = nav2_simple_commander.example_nav_to_pose:main',

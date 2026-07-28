@@ -44,6 +44,7 @@ namespace nav2_costmap_2d
 InflationLayer::InflationLayer()
 : inflation_radius_(0),
   inscribed_radius_(0),
+  custom_inscribed_radius_(-1.0),
   cost_scaling_factor_(0),
   inflate_unknown_(false),
   inflate_around_unknown_(false),
@@ -64,6 +65,25 @@ InflationLayer::~InflationLayer()
 }
 
 void
+InflationLayer::updateInscribedRadius()
+{
+  if (custom_inscribed_radius_ >= 0.0) {
+    RCLCPP_WARN(
+      logger_,
+      "POTENTIAL SAFETY ISSUE!!! Make sure you fully understand the consequences of changing the "
+      "inscribed radius! Inflation layer is set to use a custom inscribed radius of %.3f m instead "
+      "of the footprint's inscribed radius of %.3f m. This can have serious implications on the "
+      "robot's safety and is not recommended unless specifically needed. This practice is intended "
+      "only for controllers that are customized explicitly to feed on such data. It is NOT "
+      "intended for global path planners or setups that depend on the footprint inscribed radius!",
+      custom_inscribed_radius_, layered_costmap_->getInscribedRadius());
+    inscribed_radius_ = custom_inscribed_radius_;
+  } else {
+    inscribed_radius_ = layered_costmap_->getInscribedRadius();
+  }
+}
+
+void
 InflationLayer::onInitialize()
 {
   {
@@ -73,6 +93,8 @@ InflationLayer::onInitialize()
     }
     enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
     inflation_radius_ = node->declare_or_get_parameter(name_ + "." + "inflation_radius", 0.55);
+    custom_inscribed_radius_ = node->declare_or_get_parameter(
+      name_ + "." + "custom_inscribed_radius", -1.0);
     cost_scaling_factor_ = node->declare_or_get_parameter(
       name_ + "." + "cost_scaling_factor", 10.0);
     inflate_unknown_ = node->declare_or_get_parameter(name_ + "." + "inflate_unknown", false);
@@ -81,7 +103,7 @@ InflationLayer::onInitialize()
     num_threads_ = node->declare_or_get_parameter(
       name_ + "." + "num_threads", -1);
   }
-
+  updateInscribedRadius();
   setCurrent(true);
   need_reinflation_ = false;
   matchSize();
@@ -190,16 +212,16 @@ void
 InflationLayer::onFootprintChanged()
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  inscribed_radius_ = layered_costmap_->getInscribedRadius();
+  updateInscribedRadius();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
   need_reinflation_ = true;
 
   if (inflation_radius_ < inscribed_radius_) {
-    RCLCPP_ERROR(
+    RCLCPP_WARN(
       logger_,
       "The configured inflation radius (%.3f) is smaller than "
-      "the computed inscribed radius (%.3f) of your footprint, "
+      "the computed/custom inscribed radius (%.3f) of your footprint, "
       "it is highly recommended to set inflation radius to be at "
       "least as big as the inscribed radius to avoid collisions",
       inflation_radius_, inscribed_radius_);
@@ -356,7 +378,9 @@ rcl_interfaces::msg::SetParametersResult InflationLayer::validateParameterUpdate
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0) {
+      if (param_name != name_ + "." + "custom_inscribed_radius" &&
+        parameter.as_double() < 0.0)
+      {
         RCLCPP_WARN(
         logger_, "The value of parameter '%s' is incorrectly set to %f, "
         "it should be >=0. Ignoring parameter update.",
@@ -391,6 +415,13 @@ InflationLayer::updateParametersCallback(
         need_reinflation_ = true;
         need_cache_recompute = true;
         setCurrent(false);
+      } else if (param_name == name_ + "." + "custom_inscribed_radius" && // NOLINT
+        custom_inscribed_radius_ != parameter.as_double())
+      {
+        custom_inscribed_radius_ = parameter.as_double();
+        updateInscribedRadius();
+        need_reinflation_ = true;
+        need_cache_recompute = true;
       } else if (param_name == name_ + "." + "cost_scaling_factor" && // NOLINT
         getCostScalingFactor() != parameter.as_double())
       {
