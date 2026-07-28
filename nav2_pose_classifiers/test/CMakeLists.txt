@@ -1,0 +1,10 @@
+ament_add_gtest(test_constraint_classifier_helpers
+  test_constraint_classifier_helpers.cpp
+)
+target_link_libraries(test_constraint_classifier_helpers
+  ${library_name}
+  ${POLYCLIPPING_LIBRARIES}
+)
+ament_target_dependencies(test_constraint_classifier_helpers
+  ${dependencies}
+)
