@@ -137,6 +137,15 @@ protected:
   void followWaypointsHandler(const T & action_server, const V & feedback, const Z & result);
 
   /**
+   * @brief Goal received callbacks to validate a new goal before acceptance.
+   *        Rejects goals with empty waypoint lists.
+   * @param goal The incoming goal to validate
+   * @return true if goal should be accepted, false to reject
+   */
+  bool goalReceivedXyz(std::shared_ptr<const ActionT::Goal> goal);
+  bool goalReceivedGPS(std::shared_ptr<const ActionTGPS::Goal> goal);
+
+  /**
    * @brief Action server callbacks
    */
   void followWaypointsCallback();
