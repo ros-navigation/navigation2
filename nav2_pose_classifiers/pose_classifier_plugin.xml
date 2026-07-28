@@ -1,0 +1,7 @@
+<library path="nav2_pose_classifiers">
+  <class name="nav2_pose_classifiers/ConstraintClassifier"
+         type="nav2_pose_classifiers::ConstraintClassifier"
+         base_class_type="nav2_pose_classifiers::ClassifierBase">
+    <description>Classifies poses as CONSTRAINT_SPACE based on costmap cost threshold</description>
+  </class>
+</library>
