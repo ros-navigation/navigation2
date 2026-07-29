@@ -610,6 +610,25 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
   }
 }
 
+std_msgs::msg::ColorRGBA PlannerServer::colorForClass(uint16_t class_type)
+{
+  constexpr float kShadeStep = 0.25f;
+  constexpr float kShadeFloor = 0.40f;
+  const size_t hue = class_type % kClassPalette.size();
+  const size_t cycle = class_type / kClassPalette.size();
+  float factor = 1.0f - kShadeStep * static_cast<float>(cycle);
+  if (factor < kShadeFloor) {
+    factor = kShadeFloor;
+  }
+  const auto & c = kClassPalette[hue];
+  std_msgs::msg::ColorRGBA color;
+  color.r = c[0] * factor;
+  color.g = c[1] * factor;
+  color.b = c[2] * factor;
+  color.a = 1.0f;
+  return color;
+}
+
 visualization_msgs::msg::MarkerArray
 PlannerServer::buildSegmentMarkers(
   const nav2_msgs::msg::ClassifiedPathArray & paths,
@@ -633,12 +652,8 @@ PlannerServer::buildSegmentMarkers(
     m.type = visualization_msgs::msg::Marker::LINE_STRIP;
     m.action = visualization_msgs::msg::Marker::ADD;
     m.scale.x = kSegmentLineWidth;
+    m.color = colorForClass(seg.class_type);
     m.color.a = 0.9;
-    if (seg.class_type == nav2_msgs::msg::PathClasses::CONSTRAINT_SPACE) {
-      m.color.b = 1.0;  // blue
-    } else {
-      m.color.g = 1.0;  // green
-    }
     m.pose.orientation.w = 1.0;
     for (const auto & pose : seg.path.poses) {
       m.points.push_back(pose.pose.position);
@@ -673,12 +688,8 @@ PlannerServer::buildRawPoseMarkers(
     m.scale.x = kRawPoseSize;
     m.scale.y = kRawPoseSize;
     m.scale.z = kRawPoseSize;
+    m.color = colorForClass(poses[i].class_type);
     m.color.a = 0.8;
-    if (poses[i].class_type == nav2_msgs::msg::PathClasses::CONSTRAINT_SPACE) {
-      m.color.b = 1.0;  // blue
-    } else {
-      m.color.g = 1.0;  // green
-    }
     m.pose = poses[i].pose.pose;
     markers.markers.push_back(m);
   }
