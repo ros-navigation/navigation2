@@ -15,6 +15,7 @@
 #ifndef NAV2_PLANNER__PLANNER_SERVER_HPP_
 #define NAV2_PLANNER__PLANNER_SERVER_HPP_
 
+#include <array>
 #include <chrono>
 #include <string>
 #include <memory>
@@ -273,6 +274,18 @@ protected:
   static constexpr const char * kRawPoseMarkerNs = "raw_classified_poses";
   static constexpr double kSegmentLineWidth = 0.05;
   static constexpr double kRawPoseSize = 0.06;
+
+  // Colors for path-class visualization markers.
+  static constexpr std::array<std::array<float, 3>, 5> kClassPalette = {{
+    {{0.2f, 0.8f, 0.2f}},   // green
+    {{0.2f, 0.4f, 1.0f}},   // blue
+    {{1.0f, 0.6f, 0.0f}},   // orange
+    {{0.8f, 0.2f, 0.8f}},   // magenta
+    {{0.2f, 0.8f, 0.8f}}    // cyan
+  }};
+
+  // Marker color for a given path class_type.
+  static std_msgs::msg::ColorRGBA colorForClass(uint16_t class_type);
 
   // MarkerArray publishers for classified path visualization (enabled by publish_classified_paths)
   bool publish_classified_paths_{false};
