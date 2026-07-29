@@ -19,8 +19,7 @@
   <depend>nav2_costmap_2d</depend>
   <depend>tf2_ros</depend>
   <depend>pluginlib</depend>
-  <build_depend>libpolyclipping-dev</build_depend>
-  <exec_depend>libpolyclipping22</exec_depend>
+  <depend>polyclipping-dev</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
