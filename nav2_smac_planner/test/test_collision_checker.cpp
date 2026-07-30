@@ -215,6 +215,56 @@ TEST(collision_footprint, test_point_and_line_cost)
   delete costmap_;
 }
 
+// AI-assisted regression test for issue #5996.
+TEST(collision_footprint, test_fractional_pose_coordinates)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("testF");
+  nav2_costmap_2d::Costmap2D * costmap_ = new nav2_costmap_2d::Costmap2D(
+    10, 10, 1.0, 0.0, 0.0, 0);
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmap_;
+
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
+
+  // A fractional pose belongs to the cell obtained by truncating its map coordinates.
+  nav2_costmap_2d::Footprint empty_footprint;
+  collision_checker.setFootprint(empty_footprint, true, 0.0);
+  costmap->setCost(4, 5, 254);
+  EXPECT_TRUE(collision_checker.inCollision(4.6, 5.1, 0.0, false));
+  EXPECT_NEAR(collision_checker.getCost(), 254.0, 0.001);
+
+  // A non-circular footprint must be translated to the exact continuous pose.
+  costmap->setCost(4, 5, 0);
+  costmap->setCost(3, 5, 254);
+  geometry_msgs::msg::Point p1;
+  p1.x = -0.4;
+  p1.y = 0.4;
+  geometry_msgs::msg::Point p2;
+  p2.x = 0.4;
+  p2.y = 0.4;
+  geometry_msgs::msg::Point p3;
+  p3.x = 0.4;
+  p3.y = -0.4;
+  geometry_msgs::msg::Point p4;
+  p4.x = -0.4;
+  p4.y = -0.4;
+  nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
+  collision_checker.setFootprint(footprint, false, 0.0);
+  EXPECT_TRUE(collision_checker.inCollision(4.01, 4.99, 0.0, false));
+
+  // The containing-cell cost must prevent an early exit before footprint checking.
+  costmap->setCost(3, 5, 0);
+  costmap->setCost(4, 5, 254);
+  costmap->setCost(5, 5, 0);
+  collision_checker.setFootprint(footprint, false, 128.0);
+  EXPECT_TRUE(collision_checker.inCollision(4.6, 5.1, 0.0, false));
+
+  delete costmap_;
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
