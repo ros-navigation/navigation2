@@ -25,6 +25,7 @@
 #include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
+#include "nav2_collision_monitor/exclusion_zone.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "std_msgs/msg/header.hpp"
 
@@ -66,16 +67,31 @@ public:
   virtual ~Source();
 
   /**
-   * @brief Adds latest data from source to the data array.
-   * Empty virtual method intended to be used in child implementations.
+   * @brief Adds latest data from source to the data array, then removes any
+   * points falling inside an enabled exclusion zone.
    * @param curr_time Current node time for data interpolation
    * @param data Array where the data from source to be added.
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
    * @return false if an invalid source should block the robot
    */
-  virtual bool getData(
+  bool getData(
     const rclcpp::Time & curr_time,
-    std::vector<Point> & data) = 0;
+    std::vector<Point> & data);
+
+  /**
+   * @brief Activates the exclusion zone visualization publishers (if any)
+   */
+  void activate();
+
+  /**
+   * @brief Deactivates the exclusion zone visualization publishers (if any)
+   */
+  void deactivate();
+
+  /**
+   * @brief Publishes the source's exclusion zones for visualization
+   */
+  void publishExclusionZones() const;
 
   /**
    * @brief Obtains source enabled state
@@ -96,6 +112,18 @@ public:
   rclcpp::Duration getSourceTimeout() const;
 
 protected:
+  /**
+   * @brief Adds latest data from source to the data array.
+   * Pure virtual method implemented by each concrete source type.
+   * @param curr_time Current node time for data interpolation
+   * @param data Array where the data from source to be added.
+   * Added data is transformed to base_frame_id_ coordinate system at curr_time.
+   * @return false if an invalid source should block the robot
+   */
+  virtual bool getSourceData(
+    const rclcpp::Time & curr_time,
+    std::vector<Point> & data) = 0;
+
   /**
    * @brief Source configuration routine.
    * @return True in case of everything is configured correctly, or false otherwise
@@ -183,6 +211,8 @@ protected:
   bool base_shift_correction_;
   /// @brief Whether source is enabled
   bool enabled_;
+  /// @brief Exclusion zones masking out points from this source
+  std::vector<std::shared_ptr<ExclusionZone>> exclusion_zones_;
 };  // class Source
 
 }  // namespace nav2_collision_monitor

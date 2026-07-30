@@ -132,9 +132,9 @@ protected:
   void process();
 
   /**
-   * @brief Polygons publishing routine. Made for visualization.
+   * @brief Publishes all visualization topics (polygons and exclusion zones).
    */
-  void publishPolygons() const;
+  void publishVisualizations() const;
 
   /**
    * @brief Publishes the points inside each detected polygon as markers,
