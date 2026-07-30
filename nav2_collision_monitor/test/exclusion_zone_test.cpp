@@ -521,6 +521,148 @@ TEST_F(ExclusionZoneTester, DynamicPointsUpdateRejectsInvalidPolygon)
   EXPECT_NEAR(data[0].x, 5.0, EPSILON);
 }
 
+TEST_F(ExclusionZoneTester, DynamicRadiusUpdateChangesMask)
+{
+  declareZoneParams(ZONE_NAME, "circle", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".radius", rclcpp::ParameterValue(1.0));
+  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  // A point at (1.5, 0) is outside the radius-1 circle.
+  {
+    std::vector<nav2_collision_monitor::Point> data{{1.5, 0.0, 0.0, ""}};
+    zone->apply(node_->now(), data);
+    EXPECT_EQ(data.size(), 1u);
+  }
+
+  // Grow the radius to 2: (1.5, 0) now falls inside and is masked.
+  const auto result = node_->set_parameter(
+    rclcpp::Parameter(std::string(ZONE_NAME) + ".radius", 2.0));
+  EXPECT_TRUE(result.successful);
+
+  {
+    std::vector<nav2_collision_monitor::Point> data{{1.5, 0.0, 0.0, ""}};
+    zone->apply(node_->now(), data);
+    EXPECT_EQ(data.size(), 0u);
+  }
+}
+
+TEST_F(ExclusionZoneTester, DynamicRadiusUpdateRejectsNonPositive)
+{
+  declareZoneParams(ZONE_NAME, "circle", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".radius", rclcpp::ParameterValue(1.0));
+  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  // A non-positive radius must be rejected and the live radius left unchanged.
+  const auto result = node_->set_parameter(
+    rclcpp::Parameter(std::string(ZONE_NAME) + ".radius", 0.0));
+  EXPECT_FALSE(result.successful);
+
+  // Original radius-1 circle still masks the centre but not a point at (1.5, 0).
+  std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {1.5, 0.0, 0.0, ""}};
+  zone->apply(node_->now(), data);
+  ASSERT_EQ(data.size(), 1u);
+  EXPECT_NEAR(data[0].x, 1.5, EPSILON);
+}
+
+TEST_F(ExclusionZoneTester, DynamicHeightBandUpdateChangesMask)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  node_->declare_parameter(std::string(ZONE_NAME) + ".min_height", rclcpp::ParameterValue(0.0));
+  node_->declare_parameter(std::string(ZONE_NAME) + ".max_height", rclcpp::ParameterValue(0.5));
+  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  // With the band [0, 0.5], a point at z = 0.9 is inside the polygon but above
+  // the band, so it is kept.
+  {
+    std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.9, ""}};
+    zone->apply(node_->now(), data);
+    EXPECT_EQ(data.size(), 1u);
+  }
+
+  // Raise max_height to 1.0: z = 0.9 now falls within the band and is masked.
+  const auto max_result = node_->set_parameter(
+    rclcpp::Parameter(std::string(ZONE_NAME) + ".max_height", 1.0));
+  EXPECT_TRUE(max_result.successful);
+  {
+    std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.9, ""}};
+    zone->apply(node_->now(), data);
+    EXPECT_EQ(data.size(), 0u);
+  }
+
+  // Lower min_height below a negative z, then confirm a point at z = -0.2 is
+  // masked once it lies within the band.
+  const auto min_result = node_->set_parameter(
+    rclcpp::Parameter(std::string(ZONE_NAME) + ".min_height", -0.5));
+  EXPECT_TRUE(min_result.successful);
+  {
+    std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, -0.2, ""}};
+    zone->apply(node_->now(), data);
+    EXPECT_EQ(data.size(), 0u);
+  }
+}
+
+TEST_F(ExclusionZoneTester, DynamicFrameHoldTimeoutUpdateExtendsWindow)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  node_->declare_parameter(
+    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(1.0));
+
+  const rclcpp::Time stamp0 = node_->now();
+  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
+  broadcastFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  // 3 s after the last detection exceeds the 1 s hold window -> fail safe.
+  const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(3.0);
+  {
+    std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
+    zone->apply(later, data);
+    EXPECT_EQ(data.size(), 2u);
+  }
+
+  // Extend the hold window to 5 s: the same stale pose is now within the window
+  // and the zone keeps masking at its last known pose.
+  const auto result = node_->set_parameter(
+    rclcpp::Parameter(std::string(ZONE_NAME) + ".frame_hold_timeout", 5.0));
+  EXPECT_TRUE(result.successful);
+  {
+    std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
+    zone->apply(later, data);
+    ASSERT_EQ(data.size(), 1u);
+    EXPECT_NEAR(data[0].x, 5.0, EPSILON);
+  }
+}
+
+TEST_F(ExclusionZoneTester, DynamicFrameHoldTimeoutUpdateRejectsNegative)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  node_->declare_parameter(
+    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(1.0));
+  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  // A negative hold timeout must be rejected.
+  const auto result = node_->set_parameter(
+    rclcpp::Parameter(std::string(ZONE_NAME) + ".frame_hold_timeout", -1.0));
+  EXPECT_FALSE(result.successful);
+}
+
 TEST_F(ExclusionZoneTester, ConfigureFailsOnInvalidPolygon)
 {
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
