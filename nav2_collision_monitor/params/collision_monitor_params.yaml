@@ -102,6 +102,25 @@ collision_monitor:
       max_height: 0.5
       use_global_height: false
       enabled: true
+      # exclusion_zones: ["dock", "robot_body"]  # names of zone blocks masking out this source's points
+    # dock:
+    #   enabled: true
+    #   type: "polygon"          # "polygon" or "circle"
+    #   frame_id: "dock_link"    # frame the zone is anchored to; empty -> robot base frame (static)
+    #   points: "[[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5]]"  # polygon type only (VVF format)
+    #   # radius: 0.5            # circle type only (must be > 0)
+    #   min_height: -1.0         # base-frame z band a point must be within to be masked
+    #   max_height: 1.0
+    #   visualize: true          # publish the zone footprint as a PolygonStamped
+    # robot_body:
+    #   enabled: true
+    #   type: "polygon"          # "polygon" or "circle"
+    #   frame_id: "base_link"    # robot frame the structure is rigidly attached to
+    #   points: "[[0.12, 0.15], [0.12, -0.15], [-0.12, -0.15], [-0.12, 0.15]]"  # footprint of the part, in frame_id
+    #   # radius: 0.15           # circle type only (must be > 0)
+    #   min_height: 0.0          # base-frame z band the masked structure spans
+    #   max_height: 1.5
+    #   visualize: true          # publish the zone footprint as a PolygonStamped
     # costmap:
     #   type: "costmap"
     #   topic: "local_costmap/costmap"

@@ -51,6 +51,16 @@ The data may be obtained from different data sources:
 > Use at your own caution or when using external costmap sources from derived sources.
 
 
+#### Exclusion Zones
+
+Any data source can optionally define one or more **exclusion zones**. An exclusion zone is a region that **removes (masks out) that source's points which fall inside it**, before the action/detection polygons are evaluated. Unlike the polygons above, an exclusion zone does **not** trigger a behavior. It is a per-source pre-filter, and works for both the Collision Monitor and the Collision Detector.
+
+A typical use case is ignoring known structure the robot deliberately approaches, such as a charging dock or a conveyor: the returns from that structure would otherwise trip the stop/slowdown zones.
+Another common use case is self-filtering: masking out returns from parts of the robot itself (e.g. arms, mast, bumpers, or trailers) that fall within a sensor's field of view, which would otherwise be mistaken for obstacles. Anchoring the zone to the relevant robot frame keeps the mask aligned with that structure as it moves.
+
+A zone can be a polygon or a circle anchored to an arbitrary `frame_id` (e.g. `dock_link`), so it tracks that frame as the robot moves, with an optional height band for 3D sources. Two safety-relevant behaviors are worth noting: the filter is **fail-safe** (if the zone transform is unavailable, no points are removed, so protection is never silently lost), and each zone **inherits its source's `base_shift_correction` policy** so the mask and the points are always transformed under the same assumptions.
+
+
 ### Design
 
 The Collision Monitor is designed to operate below Nav2 as an independent safety node.
