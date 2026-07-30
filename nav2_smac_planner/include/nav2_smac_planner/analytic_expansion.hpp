@@ -91,8 +91,14 @@ public:
       direction_changes = changes;
     }
 
+    void setReverseDistance(float distance)
+    {
+      reverse_distance = distance;
+    }
+
     std::vector<AnalyticExpansionNode> nodes;
     int direction_changes{0};
+    float reverse_distance{0.0f};
   };
 
   /**
@@ -183,6 +189,22 @@ public:
   int countDirectionChanges(const ompl::base::ReedsSheppStateSpace::PathType & path);
   #else
   int countDirectionChanges(const ompl::base::ReedsSheppStateSpace::ReedsSheppPath & path);
+  #endif
+
+  /**
+    * @brief Computes the distance traveled in reverse in a Reeds-Shepp path
+    * @param path The Reeds-Shepp path to inspect
+    * @param path_distance The total path distance in grid coordinates
+    * @return The reverse distance in grid coordinates
+    */
+  #if OMPL_VERSION_VALUE >= 2000000  // 2.0.0
+  float getReverseDistance(
+    const ompl::base::ReedsSheppStateSpace::PathType & path,
+    const float path_distance);
+  #else
+  float getReverseDistance(
+    const ompl::base::ReedsSheppStateSpace::ReedsSheppPath & path,
+    const float path_distance);
   #endif
 
   /**

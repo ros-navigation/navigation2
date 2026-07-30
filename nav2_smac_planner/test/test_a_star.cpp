@@ -238,7 +238,7 @@ TEST(AStarTest, test_a_star_analytic_expansion)
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.0;
   info.non_straight_penalty = 1.1;
-  info.reverse_penalty = 0.0;
+  info.reverse_penalty = 1000.0;
   info.minimum_turning_radius = 8;  // in grid coordinates
   info.retrospective_penalty = 0.015;
   info.analytic_expansion_max_length = 2000.0;  // in grid coordinates
@@ -291,6 +291,77 @@ TEST(AStarTest, test_a_star_analytic_expansion)
   }
 
   delete costmapA;
+}
+
+namespace
+{
+
+nav2_smac_planner::NodeHybrid::CoordinateVector createReversePenaltyPath(
+  const float reverse_penalty)
+{
+  auto lnode = std::make_shared<nav2::LifecycleNode>("reverse_penalty_test");
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.0;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = reverse_penalty;
+  info.minimum_turning_radius = 8.0;
+  info.retrospective_penalty = 0.0;
+  info.analytic_expansion_max_length = 2000.0;
+  info.analytic_expansion_ratio = 3.5;
+  info.cost_penalty = 1.7;
+
+  constexpr unsigned int size_theta = 72;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
+  int max_iterations = 10000;
+  a_star.initialize(false, max_iterations, 1000, 5000, 120.0, 401, size_theta);
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = nav2_costmap_2d::Costmap2D(120, 120, 0.1, 0.0, 0.0, 0);
+
+  auto checker = std::make_unique<nav2_smac_planner::GridCollisionChecker>(
+    costmap_ros, size_theta, lnode);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  a_star.setCollisionChecker(checker.get());
+  a_star.setStart(80u, 60u, 0u);
+  a_star.setGoal(40u, 60u, 0u);
+
+  nav2_smac_planner::NodeHybrid::CoordinateVector path;
+  int num_iterations = 0;
+  auto cancel_checker = []() {return false;};
+  EXPECT_TRUE(a_star.createPath(path, num_iterations, 0.0, cancel_checker));
+  return path;
+}
+
+float reverseDistance(const nav2_smac_planner::NodeHybrid::CoordinateVector & path)
+{
+  float distance = 0.0;
+  for (size_t i = path.size(); i > 1; --i) {
+    const auto & from = path[i - 1];
+    const auto & to = path[i - 2];
+    const float dx = to.x - from.x;
+    const float dy = to.y - from.y;
+    if (dx * std::cos(from.theta) + dy * std::sin(from.theta) < 0.0) {
+      distance += std::hypot(dx, dy);
+    }
+  }
+  return distance;
+}
+
+}  // namespace
+
+TEST(AStarTest, test_analytic_expansion_reverse_penalty)
+{
+  const auto baseline_penalty_path = createReversePenaltyPath(1.0);
+  const auto high_penalty_path = createReversePenaltyPath(1000.0);
+  const float baseline_penalty_reverse_distance = reverseDistance(baseline_penalty_path);
+  const float high_penalty_reverse_distance = reverseDistance(high_penalty_path);
+
+  EXPECT_NEAR(baseline_penalty_reverse_distance, 40.0, 1e-3);
+  EXPECT_NEAR(high_penalty_reverse_distance, 0.0, 1e-3);
 }
 
 TEST(AStarTest, test_a_star_lattice)

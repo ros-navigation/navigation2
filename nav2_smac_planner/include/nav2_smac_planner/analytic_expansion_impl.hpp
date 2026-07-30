@@ -187,6 +187,31 @@ int AnalyticExpansion<NodeT>::countDirectionChanges(
 }
 
 template<typename NodeT>
+float AnalyticExpansion<NodeT>::getReverseDistance(
+#if OMPL_VERSION_VALUE >= 2000000  // 2.0.0
+  const ompl::base::ReedsSheppStateSpace::PathType & path,
+#else
+  const ompl::base::ReedsSheppStateSpace::ReedsSheppPath & path,
+#endif
+  const float path_distance)
+{
+  float normalized_distance = 0.0f;
+  float normalized_reverse_distance = 0.0f;
+  for (int i = 0; i < 5; ++i) {
+    const float segment_distance = static_cast<float>(path.length_[i]);
+    normalized_distance += std::abs(segment_distance);
+    if (segment_distance < 0.0f) {
+      normalized_reverse_distance -= segment_distance;
+    }
+  }
+
+  if (normalized_distance == 0.0f) {
+    return 0.0f;
+  }
+  return path_distance * normalized_reverse_distance / normalized_distance;
+}
+
+template<typename NodeT>
 typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<NodeT>::getAnalyticPath(
   const NodePtr & node,
   const NodePtr & goal,
@@ -209,12 +234,15 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
 
     auto rs_state_space = dynamic_cast<ompl::base::ReedsSheppStateSpace *>(state_space.get());
     int direction_changes = 0;
+    float reverse_distance = 0.0f;
     if (rs_state_space) {
       #if OMPL_VERSION_VALUE >= 2000000  // 2.0.0
-      direction_changes = countDirectionChanges(rs_state_space->getPath(from.get(), to.get()));
+      const auto path = rs_state_space->getPath(from.get(), to.get());
       #else
-      direction_changes = countDirectionChanges(rs_state_space->reedsShepp(from.get(), to.get()));
+      const auto path = rs_state_space->reedsShepp(from.get(), to.get());
       #endif
+      direction_changes = countDirectionChanges(path);
+      reverse_distance = getReverseDistance(path, d);
     }
 
     // A move of sqrt(2) is guaranteed to be in a new cell
@@ -330,6 +358,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     }
 
     possible_nodes.setDirectionChanges(direction_changes);
+    possible_nodes.setReverseDistance(reverse_distance);
     return possible_nodes;
   }
 }
@@ -396,12 +425,12 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
           // Search's Traversal Cost Function
           score += distance * (1.0 + weight * normalized_cost);
         }
+        score += expansion.reverse_distance * (_ctx->motion_table.reverse_penalty - 1.0f);
         return score;
       };
 
     float original_score = scoringFn(analytic_nodes);
     float best_score = original_score;
-    float score = std::numeric_limits<float>::max();
     float min_turn_rad = _ctx->motion_table.min_turning_radius;
     const float max_min_turn_rad = 4.0 * min_turn_rad;  // Up to 4x the turning radius
 
@@ -409,6 +438,43 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
     if (_ctx->motion_table.motion_model == MotionModel::OMNI) {
       return best_score;
     }
+
+    auto considerCandidate = [&](AnalyticExpansionNodes & candidate) {
+        const float candidate_score = scoringFn(candidate);
+        // Normal scoring: prioritize lower cost as long as not more directional changes
+        if (candidate_score <= best_score &&
+          candidate.direction_changes <= analytic_nodes.direction_changes)
+        {
+          analytic_nodes = candidate;
+          best_score = candidate_score;
+          return;
+        }
+
+        // Special case: If we have a better score than original (only) and less directional changes
+        // the path quality is still better than the original and is less operationally complex
+        if (candidate_score <= original_score &&
+          candidate.direction_changes < analytic_nodes.direction_changes)
+        {
+          analytic_nodes = candidate;
+          best_score = candidate_score;
+        }
+      };
+
+    auto considerForwardCandidate =
+      [&](const AnalyticExpansionNodes & reversible_candidate, const float turning_radius) {
+        if (_ctx->motion_table.motion_model != MotionModel::REEDS_SHEPP ||
+          _ctx->motion_table.reverse_penalty <= 1.0f ||
+          reversible_candidate.reverse_distance <= 0.0f)
+        {
+          return;
+        }
+
+        auto state_space = std::make_shared<ompl::base::DubinsStateSpace>(turning_radius);
+        refined_analytic_nodes = getAnalyticPath(node, goal_node, getter, state_space);
+        considerCandidate(refined_analytic_nodes);
+      };
+
+    considerForwardCandidate(analytic_nodes, min_turn_rad);
 
     while (min_turn_rad < max_min_turn_rad) {
       min_turn_rad += 0.5;  // In Grid Coords, 1/2 cell steps
@@ -419,25 +485,8 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
         state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(min_turn_rad);
       }
       refined_analytic_nodes = getAnalyticPath(node, goal_node, getter, state_space);
-      score = scoringFn(refined_analytic_nodes);
-
-      // Normal scoring: prioritize lower cost as long as not more directional changes
-      if (score <= best_score &&
-        refined_analytic_nodes.direction_changes <= analytic_nodes.direction_changes)
-      {
-        analytic_nodes = refined_analytic_nodes;
-        best_score = score;
-        continue;
-      }
-
-      // Special case: If we have a better score than original (only) and less directional changes
-      // the path quality is still better than the original and is less operationally complex
-      if (score <= original_score &&
-        refined_analytic_nodes.direction_changes < analytic_nodes.direction_changes)
-      {
-        analytic_nodes = refined_analytic_nodes;
-        best_score = score;
-      }
+      considerCandidate(refined_analytic_nodes);
+      considerForwardCandidate(refined_analytic_nodes, min_turn_rad);
     }
 
     return best_score;
