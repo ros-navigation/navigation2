@@ -114,9 +114,13 @@ bool GridCollisionChecker::inCollision(
     return true;
   }
 
+  // AI-assisted change: evaluate the same continuous pose emitted in the path.
+  const unsigned int mx = static_cast<unsigned int>(x);
+  const unsigned int my = static_cast<unsigned int>(y);
+
   // Assumes setFootprint already set
   center_cost_ = static_cast<float>(costmap_->getCost(
-      static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
+      mx, my));
 
   if (!footprint_is_radius_) {
     // if footprint, then we check for the footprint's points, but first see
@@ -138,8 +142,8 @@ bool GridCollisionChecker::inCollision(
     // if possible inscribed, need to check actual footprint pose.
     // Use precomputed oriented footprints are done on initialization,
     // offset by translation value to collision check
-    double wx, wy;
-    costmap_->mapToWorld(static_cast<unsigned int>(x), static_cast<unsigned int>(y), wx, wy);
+    const double wx = costmap_->getOriginX() + x * costmap_->getResolution();
+    const double wy = costmap_->getOriginY() + y * costmap_->getResolution();
     geometry_msgs::msg::Point new_pt;
     const nav2_costmap_2d::Footprint & oriented_footprint = oriented_footprints_[angle_bin];
     nav2_costmap_2d::Footprint current_footprint;
