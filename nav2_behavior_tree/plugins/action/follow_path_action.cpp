@@ -64,8 +64,8 @@ BT::NodeStatus FollowPathAction::on_cancelled()
 
 void FollowPathAction::on_timeout()
 {
+  BtActionNode<Action>::on_timeout();
   setOutput("error_code_id", ActionResult::CONTROLLER_TIMED_OUT);
-  setOutput("error_msg", "Behavior Tree action client timed out waiting.");
 }
 
 void FollowPathAction::on_wait_for_result(

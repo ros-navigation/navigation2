@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <vector>
@@ -60,6 +61,11 @@ public:
     server_loop_rate_ = server_loop_rate;
   }
 
+  void setGoalResponse(rclcpp_action::GoalResponse goal_response)
+  {
+    goal_response_ = goal_response;
+  }
+
 protected:
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID &,
@@ -69,7 +75,7 @@ protected:
     if (sleep_duration_ > 0ms) {
       std::this_thread::sleep_for(sleep_duration_);
     }
-    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+    return goal_response_;
   }
 
   rclcpp_action::CancelResponse handle_cancel(
@@ -123,6 +129,7 @@ protected:
   rclcpp_action::Server<test_msgs::action::Fibonacci>::SharedPtr action_server_;
   std::chrono::milliseconds sleep_duration_;
   std::chrono::nanoseconds server_loop_rate_;
+  rclcpp_action::GoalResponse goal_response_{rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE};
 };
 
 class FibonacciAction : public nav2_behavior_tree::BtActionNode<test_msgs::action::Fibonacci>
@@ -154,9 +161,27 @@ public:
     return BT::NodeStatus::SUCCESS;
   }
 
+  void on_goal_rejected() override
+  {
+    setOutput("error_code_id", GOAL_REJECTED_ERROR_CODE);
+    config().blackboard->set("on_goal_rejected_triggered", true);
+  }
+
+  void on_send_goal_failure() override
+  {
+    setOutput("error_code_id", SEND_GOAL_FAILURE_ERROR_CODE);
+    config().blackboard->set("on_send_goal_failure_triggered", true);
+  }
+
+  static constexpr uint16_t GOAL_REJECTED_ERROR_CODE = 1;
+  static constexpr uint16_t SEND_GOAL_FAILURE_ERROR_CODE = 2;
+
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts({BT::InputPort<int>("order", "Fibonacci order")});
+    return providedBasicPorts(
+    {
+      BT::InputPort<int>("order", "Fibonacci order"),
+      });
   }
 };
 
@@ -179,6 +204,8 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout", 1000ms);
     config_->blackboard->set("initial_pose_received", false);
     config_->blackboard->set("on_cancelled_triggered", false);
+    config_->blackboard->set("on_goal_rejected_triggered", false);
+    config_->blackboard->set("on_send_goal_failure_triggered", false);
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
@@ -404,6 +431,28 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
   // since the server timeout was smaller than the action server goal handling duration
   // the BT should have failed
   EXPECT_EQ(result, BT::NodeStatus::SUCCESS);
+}
+
+TEST_F(BTActionNodeTestFixture, test_goal_rejected)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="2" error_code_id="{fibonacci_error_code}" />
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
+  config_->blackboard->set("on_goal_rejected_triggered", false);
+  action_server_->setGoalResponse(rclcpp_action::GoalResponse::REJECT);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::FAILURE);
+  EXPECT_TRUE(config_->blackboard->get<bool>("on_goal_rejected_triggered"));
+  EXPECT_EQ(config_->blackboard->get<uint16_t>("fibonacci_error_code"),
+    FibonacciAction::GOAL_REJECTED_ERROR_CODE);
 }
 
 TEST_F(BTActionNodeTestFixture, test_server_cancel)

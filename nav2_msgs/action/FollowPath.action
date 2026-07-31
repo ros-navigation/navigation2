@@ -10,6 +10,8 @@ string path_handler_id
 # Error codes
 # Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
+uint16 GOAL_REJECTED=1
+uint16 SEND_GOAL_FAILURE=2
 uint16 UNKNOWN=100
 uint16 INVALID_CONTROLLER=101
 uint16 TF_ERROR=102
@@ -18,6 +20,7 @@ uint16 PATIENCE_EXCEEDED=104
 uint16 FAILED_TO_MAKE_PROGRESS=105
 uint16 NO_VALID_CONTROL=106
 uint16 CONTROLLER_TIMED_OUT=107
+uint16 TIMEOUT=108
 
 std_msgs/Empty result
 uint16 error_code

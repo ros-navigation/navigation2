@@ -57,12 +57,6 @@ public:
   void on_tick() override;
 
   /**
-   * @brief Function to perform work in a BT Node when the action server times out
-   * Such as setting the error code ID status to timed out for action clients.
-   */
-  void on_timeout() override;
-
-  /**
    * @brief Function to read parameters and initialize class variables
    */
   void initialize();
@@ -76,10 +70,6 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<double>("wait_duration", 1.0, "Wait time"),
-        BT::OutputPort<ActionResult::_error_code_type>(
-          "error_code_id", "The wait behavior error code"),
-        BT::OutputPort<std::string>(
-          "error_msg", "The wait behavior error msg"),
       });
   }
 
