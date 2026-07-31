@@ -288,8 +288,8 @@ void Source::removeExclusionZoneCallback(
     }
     exclusion_zones_.clear();
     response->success = true;
-    response->message = "Removed all" +
-      " zone(s) from source '" + source_name_ + "'";
+    response->message = std::string("Removed all zone(s) from source '") +
+      source_name_ + "'";
     RCLCPP_INFO(logger_, "%s", response->message.c_str());
     return;
   }
