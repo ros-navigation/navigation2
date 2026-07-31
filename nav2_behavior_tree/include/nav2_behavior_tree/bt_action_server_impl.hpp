@@ -404,8 +404,9 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
   auto current_goal = action_server_->get_current_goal();
   if (!current_goal) {
     setInternalError(
-      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      ActionT::Result::UNKNOWN,
       "No current goal available when starting BT execution.");
+    // TODO(anyone): Use GOAL_REJECTED instead, once #6289 is merged
   }
 
   if (!current_goal || !loadBehaviorTree(current_goal->behavior_tree)) {
