@@ -7,6 +7,8 @@ uint16 error_code
 string error_msg
 
 uint16 NONE=0
+uint16 GOAL_REJECTED=1
+uint16 SEND_GOAL_FAILURE=2
 uint16 UNKNOWN=740
 uint16 TIMEOUT=741
 ---

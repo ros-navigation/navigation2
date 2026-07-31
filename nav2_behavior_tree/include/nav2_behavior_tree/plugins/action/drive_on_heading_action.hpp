@@ -69,10 +69,6 @@ public:
         BT::InputPort<double>("speed", 0.025, "Speed at which to travel"),
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for driving on heading"),
         BT::InputPort<bool>("disable_collision_checks", false, "Disable collision checking"),
-        BT::OutputPort<Action::Result::_error_code_type>(
-          "error_code_id", "The drive on heading behavior server error code"),
-        BT::OutputPort<std::string>(
-          "error_msg", "The drive on heading behavior server error msg"),
       });
   }
 
@@ -95,12 +91,6 @@ public:
    * @brief Function to perform some user-defined operation upon cancellation of the action
    */
   BT::NodeStatus on_cancelled() override;
-
-  /**
-   * @brief Function to perform work in a BT Node when the action server times out
-   * Such as setting the error code ID status to timed out for action clients.
-   */
-  void on_timeout() override;
 };
 
 }  // namespace nav2_behavior_tree
