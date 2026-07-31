@@ -24,6 +24,9 @@
 #include "tf2/time.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
+#include "nav2_msgs/srv/add_exclusion_zone.hpp"
+#include "nav2_msgs/srv/remove_exclusion_zone.hpp"
+
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/exclusion_zone.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -147,6 +150,22 @@ protected:
     const rclcpp::Time & curr_time) const;
 
   /**
+   * @brief Service callback to add an exclusion zone at runtime
+   */
+  void addExclusionZoneCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::AddExclusionZone::Request> request,
+    std::shared_ptr<nav2_msgs::srv::AddExclusionZone::Response> response);
+
+  /**
+   * @brief Service callback to remove an exclusion zone at runtime
+   */
+  void removeExclusionZoneCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::RemoveExclusionZone::Request> request,
+    std::shared_ptr<nav2_msgs::srv::RemoveExclusionZone::Response> response);
+
+  /**
    * @brief Validate incoming parameter updates before applying them.
    * This callback is triggered when one or more parameters are about to be updated.
    * It checks the validity of parameter values and rejects updates that would lead
@@ -213,6 +232,10 @@ protected:
   bool enabled_;
   /// @brief Exclusion zones masking out points from this source
   std::vector<std::shared_ptr<ExclusionZone>> exclusion_zones_;
+  /// @brief Service to add an exclusion zone at runtime
+  nav2::ServiceServer<nav2_msgs::srv::AddExclusionZone>::SharedPtr add_ez_service_;
+  /// @brief Service to remove an exclusion zone at runtime
+  nav2::ServiceServer<nav2_msgs::srv::RemoveExclusionZone>::SharedPtr remove_ez_service_;
 };  // class Source
 
 }  // namespace nav2_collision_monitor

@@ -29,6 +29,8 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
+#include "nav2_msgs/msg/exclusion_zone_description.hpp"
+
 #include "nav2_collision_monitor/types.hpp"
 
 namespace nav2_collision_monitor
@@ -78,6 +80,13 @@ public:
    * @return True if configured correctly, false otherwise
    */
   bool configure();
+
+  /**
+   * @brief Configures the zone from a service description
+   * @param desc Exclusion zone description message
+   * @return True if configured correctly, false otherwise
+   */
+  bool configure(const nav2_msgs::msg::ExclusionZoneDescription & desc);
 
   /**
    * @brief Activates the visualization publisher (if any)
