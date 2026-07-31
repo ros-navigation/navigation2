@@ -92,6 +92,64 @@ bool ExclusionZone::configure()
   return true;
 }
 
+bool ExclusionZone::configure(const nav2_msgs::msg::ExclusionZoneDescription & desc)
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  node_clock_ = node->get_clock();
+
+  enabled_ = desc.enabled;
+  visualize_ = desc.visualize;
+  frame_hold_timeout_ = desc.frame_hold_timeout;
+  min_height_ = desc.min_height;
+  max_height_ = desc.max_height;
+
+  frame_id_ = desc.frame_id.empty() ? base_frame_id_ : desc.frame_id;
+
+  if (desc.type == "circle") {
+    is_circle_ = true;
+    radius_ = desc.radius;
+    if (radius_ <= 0.0) {
+      RCLCPP_ERROR(
+        logger_, "[%s]: circle exclusion zone requires a positive 'radius'",
+        zone_name_.c_str());
+      return false;
+    }
+    radius_squared_ = radius_ * radius_;
+  } else if (desc.type == "polygon") {
+    is_circle_ = false;
+    if (desc.points.size() < 3) {
+      RCLCPP_ERROR(
+        logger_, "[%s]: polygon exclusion zone requires at least 3 points, got %zu",
+        zone_name_.c_str(), desc.points.size());
+      return false;
+    }
+    poly_.clear();
+    poly_.reserve(desc.points.size());
+    for (const auto & p : desc.points) {
+      Point pt;
+      pt.x = static_cast<double>(p.x);
+      pt.y = static_cast<double>(p.y);
+      poly_.push_back(pt);
+    }
+  } else {
+    RCLCPP_ERROR(
+      logger_, "[%s]: unknown exclusion zone type: %s",
+      zone_name_.c_str(), desc.type.c_str());
+    return false;
+  }
+
+  if (visualize_) {
+    zone_pub_ = node->create_publisher<geometry_msgs::msg::PolygonStamped>(
+      "~/" + zone_name_);
+  }
+
+  return true;
+}
+
 bool ExclusionZone::getParameters()
 {
   auto node = node_.lock();

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Dexory
+// Copyright (c) 2026 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+
+#include "nav2_msgs/srv/add_exclusion_zone.hpp"
+#include "nav2_msgs/srv/remove_exclusion_zone.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/exclusion_zone.hpp"
@@ -891,6 +894,188 @@ TEST_F(ExclusionZoneTester, SourceActivatePublishDeactivateForwardsToZones)
   ASSERT_NE(received, nullptr);
   EXPECT_EQ(received->header.frame_id, std::string(BASE_FRAME_ID));
   EXPECT_EQ(received->polygon.points.size(), 4u);
+}
+
+class ExclusionZoneServiceTester : public ExclusionZoneTester
+{
+protected:
+  void SetUp() override
+  {
+    node_->declare_parameter(
+      std::string(SOURCE_NAME) + ".exclusion_zones",
+      rclcpp::ParameterValue(std::vector<std::string>{}));
+
+    source_ = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_buffer_, BASE_FRAME_ID);
+    ASSERT_TRUE(source_->setupExclusionZones());
+    source_->activate();
+
+    add_client_ = node_->create_client<nav2_msgs::srv::AddExclusionZone>(
+      "~/" + std::string(SOURCE_NAME) + "/add_exclusion_zone");
+    remove_client_ = node_->create_client<nav2_msgs::srv::RemoveExclusionZone>(
+      "~/" + std::string(SOURCE_NAME) + "/remove_exclusion_zone");
+    ASSERT_TRUE(add_client_->wait_for_service(5s));
+    ASSERT_TRUE(remove_client_->wait_for_service(5s));
+  }
+
+  void TearDown() override
+  {
+    source_->deactivate();
+  }
+
+  // Send an add request and return the response.
+  nav2_msgs::srv::AddExclusionZone::Response::SharedPtr addZone(
+    nav2_msgs::srv::AddExclusionZone::Request::SharedPtr req)
+  {
+    auto f = add_client_->async_call(req);
+    executor_->spin_until_future_complete(f, 5s);
+    return f.get();
+  }
+
+  // Send a remove request and return the response.
+  nav2_msgs::srv::RemoveExclusionZone::Response::SharedPtr removeZone(
+    nav2_msgs::srv::RemoveExclusionZone::Request::SharedPtr req)
+  {
+    auto f = remove_client_->async_call(req);
+    executor_->spin_until_future_complete(f, 5s);
+    return f.get();
+  }
+
+  // Build a valid circle add-request with the given name and radius.
+  nav2_msgs::srv::AddExclusionZone::Request::SharedPtr makeCircleRequest(
+    const std::string & name, double radius, bool enabled = true)
+  {
+    auto req = std::make_shared<nav2_msgs::srv::AddExclusionZone::Request>();
+    req->zone.zone_name = name;
+    req->zone.type = "circle";
+    req->zone.radius = radius;
+    req->zone.enabled = enabled;
+    return req;
+  }
+
+  // Build a valid polygon (unit square) add-request with the given name.
+  nav2_msgs::srv::AddExclusionZone::Request::SharedPtr makePolygonRequest(
+    const std::string & name, bool enabled = true)
+  {
+    auto req = std::make_shared<nav2_msgs::srv::AddExclusionZone::Request>();
+    req->zone.zone_name = name;
+    req->zone.type = "polygon";
+    req->zone.enabled = enabled;
+    for (auto [x, y] : std::vector<std::pair<float, float>>{
+      {1, 1}, {1, -1}, {-1, -1}, {-1, 1}})
+    {
+      geometry_msgs::msg::Point32 p;
+      p.x = x; p.y = y;
+      req->zone.points.push_back(p);
+    }
+    return req;
+  }
+
+  std::shared_ptr<FakeSource> source_;
+  nav2::ServiceClient<nav2_msgs::srv::AddExclusionZone>::SharedPtr add_client_;
+  nav2::ServiceClient<nav2_msgs::srv::RemoveExclusionZone>::SharedPtr remove_client_;
+};
+
+TEST_F(ExclusionZoneServiceTester, AddPolygonAndCircleFilterPoints)
+{
+  // Add polygon zone (unit square at origin)
+  ASSERT_TRUE(addZone(makePolygonRequest("poly"))->success);
+
+  source_->points_to_add = {{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
+  std::vector<nav2_collision_monitor::Point> data;
+  ASSERT_TRUE(source_->getData(node_->now(), data));
+  ASSERT_EQ(data.size(), 1u);
+  EXPECT_NEAR(data[0].x, 5.0, EPSILON);
+
+  // Add circle zone at origin with radius 10 (covers the surviving point too)
+  ASSERT_TRUE(addZone(makeCircleRequest("circle", 10.0))->success);
+
+  data.clear();
+  source_->points_to_add = {{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
+  ASSERT_TRUE(source_->getData(node_->now(), data));
+  EXPECT_EQ(data.size(), 0u);
+}
+
+TEST_F(ExclusionZoneServiceTester, DisabledZoneDoesNotFilter)
+{
+  ASSERT_TRUE(addZone(makeCircleRequest("off_zone", 2.0, false))->success);
+
+  source_->points_to_add = {{0.0, 0.0, 0.0, ""}};
+  std::vector<nav2_collision_monitor::Point> data;
+  ASSERT_TRUE(source_->getData(node_->now(), data));
+  EXPECT_EQ(data.size(), 1u);
+}
+
+TEST_F(ExclusionZoneServiceTester, RemoveByNameRestoresPoints)
+{
+  ASSERT_TRUE(addZone(makeCircleRequest("temp", 2.0))->success);
+
+  auto rm_req = std::make_shared<nav2_msgs::srv::RemoveExclusionZone::Request>();
+  rm_req->zone_name = "temp";
+  ASSERT_TRUE(removeZone(rm_req)->success);
+
+  source_->points_to_add = {{0.5, 0.5, 0.0, ""}};
+  std::vector<nav2_collision_monitor::Point> data;
+  ASSERT_TRUE(source_->getData(node_->now(), data));
+  EXPECT_EQ(data.size(), 1u);
+}
+
+TEST_F(ExclusionZoneServiceTester, RemoveAllIncludingEmpty)
+{
+  // remove_all on empty vector succeeds
+  auto rm_req = std::make_shared<nav2_msgs::srv::RemoveExclusionZone::Request>();
+  rm_req->remove_all = true;
+  ASSERT_TRUE(removeZone(rm_req)->success);
+
+  // Add two zones, then remove_all
+  ASSERT_TRUE(addZone(makeCircleRequest("a", 1.0))->success);
+  ASSERT_TRUE(addZone(makeCircleRequest("b", 1.0))->success);
+  ASSERT_TRUE(removeZone(rm_req)->success);
+
+  source_->points_to_add = {{0.0, 0.0, 0.0, ""}};
+  std::vector<nav2_collision_monitor::Point> data;
+  ASSERT_TRUE(source_->getData(node_->now(), data));
+  EXPECT_EQ(data.size(), 1u);
+}
+
+TEST_F(ExclusionZoneServiceTester, AddRejectsInvalidDescriptions)
+{
+  // Empty name
+  auto req = makeCircleRequest("", 1.0);
+  EXPECT_FALSE(addZone(req)->success);
+
+  // Invalid type
+  req = makeCircleRequest("z", 1.0);
+  req->zone.type = "triangle";
+  EXPECT_FALSE(addZone(req)->success);
+
+  // Circle with non-positive radius
+  EXPECT_FALSE(addZone(makeCircleRequest("z", -1.0))->success);
+  EXPECT_FALSE(addZone(makeCircleRequest("z", 0.0))->success);
+
+  // Polygon with too few points
+  req = std::make_shared<nav2_msgs::srv::AddExclusionZone::Request>();
+  req->zone.zone_name = "z";
+  req->zone.type = "polygon";
+  geometry_msgs::msg::Point32 p;
+  p.x = 0; p.y = 0; req->zone.points.push_back(p);
+  p.x = 1; p.y = 0; req->zone.points.push_back(p);
+  EXPECT_FALSE(addZone(req)->success);
+
+  // Duplicate name
+  ASSERT_TRUE(addZone(makeCircleRequest("dup", 1.0))->success);
+  EXPECT_FALSE(addZone(makeCircleRequest("dup", 1.0))->success);
+}
+
+TEST_F(ExclusionZoneServiceTester, RemoveRejectsInvalidRequests)
+{
+  // Non-existent zone
+  auto rm_req = std::make_shared<nav2_msgs::srv::RemoveExclusionZone::Request>();
+  rm_req->zone_name = "nonexistent";
+  EXPECT_FALSE(removeZone(rm_req)->success);
+
+  // Empty zone name (not remove_all)
+  rm_req->zone_name = "";
+  EXPECT_FALSE(removeZone(rm_req)->success);
 }
 
 int main(int argc, char ** argv)
