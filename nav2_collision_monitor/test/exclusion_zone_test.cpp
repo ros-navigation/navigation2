@@ -924,18 +924,18 @@ protected:
 
   // Send an add request and return the response.
   nav2_msgs::srv::AddExclusionZone::Response::SharedPtr addZone(
-    const nav2_msgs::srv::AddExclusionZone::Request::SharedPtr & req)
+    nav2_msgs::srv::AddExclusionZone::Request::SharedPtr req)
   {
-    auto f = add_client_->async_send_request(req);
+    auto f = add_client_->async_call(req);
     executor_->spin_until_future_complete(f, 5s);
     return f.get();
   }
 
   // Send a remove request and return the response.
   nav2_msgs::srv::RemoveExclusionZone::Response::SharedPtr removeZone(
-    const nav2_msgs::srv::RemoveExclusionZone::Request::SharedPtr & req)
+    nav2_msgs::srv::RemoveExclusionZone::Request::SharedPtr req)
   {
-    auto f = remove_client_->async_send_request(req);
+    auto f = remove_client_->async_call(req);
     executor_->spin_until_future_complete(f, 5s);
     return f.get();
   }
@@ -961,7 +961,7 @@ protected:
     req->zone.type = "polygon";
     req->zone.enabled = enabled;
     for (auto [x, y] : std::vector<std::pair<float, float>>{
-        {1, 1}, {1, -1}, {-1, -1}, {-1, 1}})
+      {1, 1}, {1, -1}, {-1, -1}, {-1, 1}})
     {
       geometry_msgs::msg::Point32 p;
       p.x = x; p.y = y;
@@ -971,8 +971,8 @@ protected:
   }
 
   std::shared_ptr<FakeSource> source_;
-  rclcpp::Client<nav2_msgs::srv::AddExclusionZone>::SharedPtr add_client_;
-  rclcpp::Client<nav2_msgs::srv::RemoveExclusionZone>::SharedPtr remove_client_;
+  nav2::ServiceClient<nav2_msgs::srv::AddExclusionZone>::SharedPtr add_client_;
+  nav2::ServiceClient<nav2_msgs::srv::RemoveExclusionZone>::SharedPtr remove_client_;
 };
 
 TEST_F(ExclusionZoneServiceTester, AddPolygonAndCircleFilterPoints)

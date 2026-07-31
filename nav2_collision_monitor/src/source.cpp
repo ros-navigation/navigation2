@@ -239,7 +239,7 @@ void Source::updateParametersCallback(
 }
 
 void Source::addExclusionZoneCallback(
-  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::AddExclusionZone::Request> request,
   std::shared_ptr<nav2_msgs::srv::AddExclusionZone::Response> response)
 {
@@ -278,7 +278,7 @@ void Source::addExclusionZoneCallback(
 }
 
 void Source::removeExclusionZoneCallback(
-  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::RemoveExclusionZone::Request> request,
   std::shared_ptr<nav2_msgs::srv::RemoveExclusionZone::Response> response)
 {
