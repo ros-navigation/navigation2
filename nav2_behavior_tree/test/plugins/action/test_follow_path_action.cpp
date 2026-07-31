@@ -14,9 +14,12 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
+#include <thread>
 
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -35,7 +38,34 @@ public:
   : TestActionServer("follow_path")
   {}
 
+  void blockGoalResponse()
+  {
+    std::lock_guard<std::mutex> lock(goal_response_mutex_);
+    goal_response_blocked_ = true;
+  }
+
+  void releaseGoalResponse()
+  {
+    {
+      std::lock_guard<std::mutex> lock(goal_response_mutex_);
+      goal_response_blocked_ = false;
+    }
+    goal_response_cv_.notify_all();
+  }
+
 protected:
+  rclcpp_action::GoalResponse handle_goal(
+    const rclcpp_action::GoalUUID & goal_id,
+    std::shared_ptr<const nav2_msgs::action::FollowPath::Goal> goal) override
+  {
+    {
+      std::unique_lock<std::mutex> lock(goal_response_mutex_);
+      goal_response_cv_.wait(lock, [this]() {return !goal_response_blocked_;});
+    }
+
+    return TestActionServer<nav2_msgs::action::FollowPath>::handle_goal(goal_id, goal);
+  }
+
   void execute(
     const typename std::shared_ptr<
       rclcpp_action::ServerGoalHandle<nav2_msgs::action::FollowPath>> goal_handle)
@@ -45,6 +75,10 @@ protected:
     auto result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
     goal_handle->succeed(result);
   }
+
+  std::condition_variable goal_response_cv_;
+  std::mutex goal_response_mutex_;
+  bool goal_response_blocked_{false};
 };
 
 class FollowPathActionTestFixture : public ::testing::Test
@@ -161,6 +195,39 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->path.poses.size(), 1u);
   EXPECT_EQ(action_server_->getCurrentGoal()->path.poses[0].pose.position.x, -2.5);
+}
+
+TEST_F(FollowPathActionTestFixture, test_server_timeout)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <FollowPath path="{path}" controller_id="FollowPath"
+              error_code_id="{error_code}" error_msg="{error_msg}"/>
+        </BehaviorTree>
+      </root>)";
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(1);
+  config_->blackboard->set("path", path);
+  action_server_->blockGoalResponse();
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  auto result = BT::NodeStatus::RUNNING;
+  while (result == BT::NodeStatus::RUNNING) {
+    result = tree_->tickOnce();
+  }
+
+  EXPECT_EQ(result, BT::NodeStatus::FAILURE);
+  EXPECT_EQ(
+    config_->blackboard->get<uint16_t>("error_code"),
+    nav2_msgs::action::FollowPath::Result::CONTROLLER_TIMED_OUT);
+  EXPECT_EQ(
+    config_->blackboard->get<std::string>("error_msg"),
+    "Behavior Tree action client timed out waiting.");
+
+  action_server_->releaseGoalResponse();
 }
 
 TEST(FollowPathAction, testProgressCheckerIdUpdate)

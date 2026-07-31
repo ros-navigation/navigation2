@@ -9,6 +9,8 @@ bool check_for_collisions
 # Error codes
 # Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
+uint16 GOAL_REJECTED=1
+uint16 SEND_GOAL_FAILURE=2
 uint16 UNKNOWN=500
 uint16 INVALID_SMOOTHER=501
 uint16 TIMEOUT=502

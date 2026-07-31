@@ -73,12 +73,6 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
-   * @brief Function to perform work in a BT Node when the action server times out
-   * Such as setting the error code ID status to timed out for action clients.
-   */
-  void on_timeout() override;
-
-  /**
    * @brief Function to read parameters and initialize class variables
    */
   void initialize();
@@ -93,10 +87,6 @@ public:
       {
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for running assisted teleop"),
         BT::InputPort<bool>("is_recovery", false, "If true the recovery count will be incremented"),
-        BT::OutputPort<ActionResult::_error_code_type>(
-          "error_code_id", "The assisted teleop behavior server error code"),
-        BT::OutputPort<std::string>(
-          "error_msg", "The assisted teleop behavior server error msg"),
       });
   }
 
