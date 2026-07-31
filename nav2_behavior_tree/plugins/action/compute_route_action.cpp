@@ -87,12 +87,6 @@ BT::NodeStatus ComputeRouteAction::on_cancelled()
   return BT::NodeStatus::SUCCESS;
 }
 
-void ComputeRouteAction::on_timeout()
-{
-  setOutput("error_code_id", ActionResult::TIMEOUT);
-  setOutput("error_msg", "Behavior Tree action client timed out waiting.");
-}
-
 void ComputeRouteAction::halt()
 {
   resetPorts();

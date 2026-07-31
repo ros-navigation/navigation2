@@ -90,10 +90,6 @@ public:
 
         BT::OutputPort<ActionResult::_total_elapsed_time_type>(
           "total_elapsed_time", "Total elapsed time"),
-        BT::OutputPort<ActionResult::_error_code_type>(
-          "error_code_id", "Error code"),
-        BT::OutputPort<std::string>(
-          "error_msg", "Error message"),
       });
   }
 };

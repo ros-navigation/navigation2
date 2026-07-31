@@ -110,10 +110,6 @@ public:
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathThroughPoses node"),
         BT::OutputPort<int>(
           "last_reached_index", "Index of the last reachable pose from requested list of poses"),
-        BT::OutputPort<ActionResult::_error_code_type>(
-          "error_code_id", "The compute path through poses error code"),
-        BT::OutputPort<std::string>(
-          "error_msg", "The compute path through poses error msg"),
       });
   }
 };
