@@ -275,6 +275,16 @@ map_saver:
 
 planner_server:
   ros__parameters:
+    pose_classifier_plugins: ["Constraint"]
+    Constraint:
+      plugin: "nav2_pose_classifiers/ConstraintClassifier"
+      class_type: 1                                        # CONSTRAINT_SPACE
+      inflation_resolution: 0.05
+      max_constraint_clearance: 0.5
+    path_splitter:
+      hysteresis_window: 3
+      min_segment_poses: 5
+    publish_classified_paths: true
     expected_planner_frequency: 20.0
     use_sim_time: True
     planner_plugins: ["GridBased"]
