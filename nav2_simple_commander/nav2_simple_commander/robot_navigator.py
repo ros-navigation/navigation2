@@ -279,7 +279,9 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.NAVIGATE_TO_POSE
 
-    def followWaypoints(self, poses: list[PoseStamped], number_of_loops: int = 0):
+    def followWaypoints(
+        self, poses: list[PoseStamped], number_of_loops: int = 0, goal_index: int = 0
+    ):
         """Send a `FollowWaypoints` action request."""
         self.clearPreviousState()
         self.debug("Waiting for 'FollowWaypoints' action server")
@@ -289,6 +291,7 @@ class BasicNavigator(Node):
         goal_msg = FollowWaypoints.Goal()
         goal_msg.poses = poses
         goal_msg.number_of_loops = number_of_loops
+        goal_msg.goal_index = goal_index
 
         self.info(f'Following {len(goal_msg.poses)} goals....')
         send_goal_future = self.follow_waypoints_client.send_goal_async(
