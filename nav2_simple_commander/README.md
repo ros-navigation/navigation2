@@ -21,7 +21,7 @@ New as of September 2023: the simple navigator constructor will accept a `namesp
 | setInitialPose(initial_pose)      | Sets the initial pose (`PoseStamped`) of the robot to localization.        |
 | goThroughPoses(poses, behavior_tree='') | Requests the robot to drive through a set of poses (list of `PoseStamped`).|
 | goToPose(pose, behavior_tree='')  | Requests the robot to drive to a pose (`PoseStamped`).                     |
-| followWaypoints(poses)            | Requests the robot to follow a set of waypoints (list of `PoseStamped`). This will execute the specific `TaskExecutor` at each pose.   |
+| followWaypoints(poses, number_of_loops=0) | Requests the robot to follow a set of waypoints (list of `PoseStamped`), repeating the full set `number_of_loops` additional times after the first pass (0 runs it once). This will execute the specific `TaskExecutor` at each pose.   |
 | followPath(path, controller_id='', goal_checker_id='', progress_checker_id='', path_handler_id='') | Requests the robot to follow a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.     |
 | spin(spin_dist=1.57, time_allowance=10, disable_collision_checks=False)   | Requests the robot to performs an in-place rotation by a given angle.      |
 | backup(backup_dist=0.15, backup_speed=0.025, time_allowance=10, disable_collision_checks=False) | Requests the robot to back up by a given distance.         |
