@@ -142,8 +142,26 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     max_planner_duration_ = 0.0;
   }
 
+  // Configure pose classifier plugins (if any specified in params)
+  pose_classifier_.configure(shared_from_this(), tf_, costmap_ros_);
+
+  // Configure path splitter (reads hysteresis/merge parameters)
+  path_splitter_.configure(shared_from_this());
+
+  // Classified path publishing param
+  nav2_util::declare_parameter_if_not_declared(
+    shared_from_this(), "publish_classified_paths",
+    rclcpp::ParameterValue(false));
+  publish_classified_paths_ = get_parameter("publish_classified_paths").as_bool();
+
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
+  if (publish_classified_paths_) {
+    classified_segments_marker_pub_ =
+      create_publisher<visualization_msgs::msg::MarkerArray>("classified_plan_markers", 1);
+    raw_classified_poses_marker_pub_ =
+      create_publisher<visualization_msgs::msg::MarkerArray>("raw_classified_poses_markers", 1);
+  }
 
   // Create the action servers for path planning to a pose and through poses
   action_server_pose_ = std::make_unique<ActionServerToPose>(
@@ -171,6 +189,10 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   plan_publisher_->on_activate();
+  if (publish_classified_paths_) {
+    classified_segments_marker_pub_->on_activate();
+    raw_classified_poses_marker_pub_->on_activate();
+  }
   action_server_pose_->activate();
   action_server_poses_->activate();
   costmap_ros_->activate();
@@ -179,6 +201,8 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->activate();
   }
+
+  pose_classifier_.activate();
 
   auto node = shared_from_this();
 
@@ -206,6 +230,10 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   action_server_pose_->deactivate();
   action_server_poses_->deactivate();
   plan_publisher_->on_deactivate();
+  if (publish_classified_paths_) {
+    classified_segments_marker_pub_->on_deactivate();
+    raw_classified_poses_marker_pub_->on_deactivate();
+  }
 
   /*
    * The costmap is also a lifecycle node, so it may have already fired on_deactivate
@@ -220,6 +248,8 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->deactivate();
   }
+
+  pose_classifier_.deactivate();
 
   dyn_params_handler_.reset();
 
@@ -237,7 +267,12 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   action_server_pose_.reset();
   action_server_poses_.reset();
   plan_publisher_.reset();
+  classified_segments_marker_pub_.reset();
+  raw_classified_poses_marker_pub_.reset();
   tf_.reset();
+
+  pose_classifier_.cleanup();
+  path_splitter_.cleanup();
 
   costmap_ros_->cleanup();
 
@@ -485,11 +520,31 @@ PlannerServer::computePlan()
     if (!transformPosesToGlobalFrame(action_server_pose_, start, goal_pose)) {
       return;
     }
-
     result->path = getPlan(start, goal_pose, goal->planner_id);
 
     if (!validatePath(action_server_pose_, goal_pose, result->path, goal->planner_id)) {
       return;
+    }
+
+    // Split path into classified segments if requested
+    if (goal->classify_paths) {
+      if (pose_classifier_.hasClassifiers()) {
+        auto split_result = path_splitter_.splitPath(
+          result->path, pose_classifier_, publish_classified_paths_);
+        result->paths = split_result.classified_path_array;
+
+        if (publish_classified_paths_) {
+          classified_segments_marker_pub_->publish(
+            buildSegmentMarkers(split_result.classified_path_array, result->path.header));
+          raw_classified_poses_marker_pub_->publish(
+            buildRawPoseMarkers(split_result.classified_poses, result->path.header));
+        }
+      } else {
+        nav2_msgs::msg::ClassifiedPath cp;
+        cp.class_type = nav2_msgs::msg::PathClasses::FREE_SPACE;
+        cp.path = result->path;
+        result->paths.paths.push_back(cp);
+      }
     }
 
     // Publish the plan for visualization purposes
@@ -553,6 +608,93 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
   if (plan_publisher_->is_activated() && plan_publisher_->get_subscription_count() > 0) {
     plan_publisher_->publish(std::move(msg));
   }
+}
+
+std_msgs::msg::ColorRGBA PlannerServer::colorForClass(uint16_t class_type)
+{
+  constexpr float kShadeStep = 0.25f;
+  constexpr float kShadeFloor = 0.40f;
+  const size_t hue = class_type % kClassPalette.size();
+  const size_t cycle = class_type / kClassPalette.size();
+  float factor = 1.0f - kShadeStep * static_cast<float>(cycle);
+  if (factor < kShadeFloor) {
+    factor = kShadeFloor;
+  }
+  const auto & c = kClassPalette[hue];
+  std_msgs::msg::ColorRGBA color;
+  color.r = c[0] * factor;
+  color.g = c[1] * factor;
+  color.b = c[2] * factor;
+  color.a = 1.0f;
+  return color;
+}
+
+visualization_msgs::msg::MarkerArray
+PlannerServer::buildSegmentMarkers(
+  const nav2_msgs::msg::ClassifiedPathArray & paths,
+  const std_msgs::msg::Header & header)
+{
+  visualization_msgs::msg::MarkerArray markers;
+
+  // Delete previous markers
+  visualization_msgs::msg::Marker del;
+  del.action = visualization_msgs::msg::Marker::DELETEALL;
+  del.header = header;
+  del.ns = kSegmentMarkerNs;
+  markers.markers.push_back(del);
+
+  for (size_t s = 0; s < paths.paths.size(); ++s) {
+    const auto & seg = paths.paths[s];
+    visualization_msgs::msg::Marker m;
+    m.header = header;
+    m.ns = kSegmentMarkerNs;
+    m.id = static_cast<int>(s);
+    m.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    m.action = visualization_msgs::msg::Marker::ADD;
+    m.scale.x = kSegmentLineWidth;
+    m.color = colorForClass(seg.class_type);
+    m.color.a = 0.9;
+    m.pose.orientation.w = 1.0;
+    for (const auto & pose : seg.path.poses) {
+      m.points.push_back(pose.pose.position);
+    }
+    markers.markers.push_back(m);
+  }
+
+  return markers;
+}
+
+visualization_msgs::msg::MarkerArray
+PlannerServer::buildRawPoseMarkers(
+  const std::vector<nav2_msgs::msg::ClassifiedPose> & poses,
+  const std_msgs::msg::Header & header)
+{
+  visualization_msgs::msg::MarkerArray markers;
+
+  // Delete previous markers
+  visualization_msgs::msg::Marker del;
+  del.action = visualization_msgs::msg::Marker::DELETEALL;
+  del.header = header;
+  del.ns = kRawPoseMarkerNs;
+  markers.markers.push_back(del);
+
+  for (size_t i = 0; i < poses.size(); ++i) {
+    visualization_msgs::msg::Marker m;
+    m.header = header;
+    m.ns = kRawPoseMarkerNs;
+    m.id = static_cast<int>(i);
+    m.type = visualization_msgs::msg::Marker::SPHERE;
+    m.action = visualization_msgs::msg::Marker::ADD;
+    m.scale.x = kRawPoseSize;
+    m.scale.y = kRawPoseSize;
+    m.scale.z = kRawPoseSize;
+    m.color = colorForClass(poses[i].class_type);
+    m.color.a = 0.8;
+    m.pose = poses[i].pose.pose;
+    markers.markers.push_back(m);
+  }
+
+  return markers;
 }
 
 void PlannerServer::isPathValid(
