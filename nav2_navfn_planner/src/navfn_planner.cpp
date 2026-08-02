@@ -398,8 +398,26 @@ NavfnPlanner::getPlanFromPotential(
 
   planner_->setStart(map_goal);
 
-  const int & max_cycles = (costmap_->getSizeInCellsX() >= costmap_->getSizeInCellsY()) ?
-    (costmap_->getSizeInCellsX() * 4) : (costmap_->getSizeInCellsY() * 4);
+  const auto max_dimension = (costmap_->getSizeInCellsX() >= costmap_->getSizeInCellsY()) ?
+    costmap_->getSizeInCellsX() : costmap_->getSizeInCellsY();
+
+  const double request_cycles = std::ceil(
+    static_cast<double>(max_dimension) * params_->max_cycles_factor);
+
+  if (!std::isfinite(request_cycles) ||
+    request_cycles < 1.0 ||
+    request_cycles > static_cast<double>(std::numeric_limits<int>::max()))
+  {
+    RCLCPP_ERROR(
+      logger_,
+      "Invalid max_cycles_factor %.2f for costmap size (%u,%u).",
+      params_->max_cycles_factor,
+      costmap_->getSizeInCellsX(),
+      costmap_->getSizeInCellsY());
+    return false;
+  }
+
+  const int & max_cycles = static_cast<int>(request_cycles);
 
   int path_len = planner_->calcPath(max_cycles);
   if (path_len == 0) {

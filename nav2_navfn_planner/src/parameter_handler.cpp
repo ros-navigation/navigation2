@@ -37,6 +37,8 @@ ParameterHandler::ParameterHandler(
 
   params_.tolerance = node->declare_or_get_parameter(plugin_name + ".tolerance", 0.5);
   params_.use_astar = node->declare_or_get_parameter(plugin_name + ".use_astar", false);
+  params_.max_cycles_factor =
+    node->declare_or_get_parameter(plugin_name + ".max_cycles_factor", 4.0);
   params_.allow_unknown = node->declare_or_get_parameter(plugin_name + ".allow_unknown", true);
   params_.use_final_approach_orientation = node->declare_or_get_parameter(plugin_name +
     ".use_final_approach_orientation", false);
@@ -81,6 +83,8 @@ ParameterHandler::updateParametersCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".tolerance") {
         params_.tolerance = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_cycles_factor") {
+        params_.max_cycles_factor = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".use_astar") {

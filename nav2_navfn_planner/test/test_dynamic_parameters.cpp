@@ -43,6 +43,7 @@ TEST(NavfnTest, testDynamicParameter)
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.tolerance", 1.0),
       rclcpp::Parameter("test.use_astar", true),
+      rclcpp::Parameter("test.max_cycles_factor", 6.0),
       rclcpp::Parameter("test.allow_unknown", true),
       rclcpp::Parameter("test.use_final_approach_orientation", true)});
 
@@ -52,6 +53,7 @@ TEST(NavfnTest, testDynamicParameter)
 
   EXPECT_EQ(node->get_parameter("test.tolerance").as_double(), 1.0);
   EXPECT_EQ(node->get_parameter("test.use_astar").as_bool(), true);
+  EXPECT_EQ(node->get_parameter("test.max_cycles_factor").as_double(), 6.0);
   EXPECT_EQ(node->get_parameter("test.allow_unknown").as_bool(), true);
   EXPECT_EQ(node->get_parameter("test.use_final_approach_orientation").as_bool(), true);
 
@@ -64,6 +66,17 @@ TEST(NavfnTest, testDynamicParameter)
 
   // Invalid value should not be set
   EXPECT_EQ(node->get_parameter("test.tolerance").as_double(), 1.0);
+
+  // The max_cycles_factor checks in this test were generated with AI assistance.
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.max_cycles_factor", 0.0)});
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  // Invalid value should not be set
+  EXPECT_EQ(node->get_parameter("test.max_cycles_factor").as_double(), 6.0);
 }
 
 int main(int argc, char ** argv)
