@@ -387,6 +387,7 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
   // specifically set in the active state.
   // Reset params touched by the previous state N but not the destination M
   // back to nominal_defaults before applying M's overrides.
+  std::map<std::string, std::vector<rclcpp::Parameter>> reset_per_node;
   if (state_initialized_ && current_state_ != 0) {
     auto prev_it = state_param_map_.find(current_state_);
     if (prev_it != state_param_map_.end()) {
