@@ -199,7 +199,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     action_server_ = create_action_server<Action>(
       "follow_path",
       std::bind(&ControllerServer::computeControl, this),
-      nullptr,
+      std::bind(&ControllerServer::goalReceived, this, std::placeholders::_1),
       nullptr,
       std::chrono::milliseconds(500),
       true /*spin thread*/, params_->use_realtime_priority /*soft realtime*/);
@@ -441,6 +441,48 @@ bool ControllerServer::findPathHandlerId(
   } else {
     RCLCPP_DEBUG(get_logger(), "Selected path handler: %s.", c_name.c_str());
     current_path_handler = c_name;
+  }
+
+  return true;
+}
+
+bool ControllerServer::goalReceived(std::shared_ptr<const Action::Goal> goal)
+{
+  std::string current_controller;
+  if (!findControllerId(goal->controller_id, current_controller)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Requested controller %s is not available.", goal->controller_id.c_str());
+    return false;
+  }
+
+  std::string current_goal_checker;
+  if (!findGoalCheckerId(goal->goal_checker_id, current_goal_checker)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Requested goal checker %s is not available.", goal->goal_checker_id.c_str());
+    return false;
+  }
+
+  std::string current_progress_checker;
+  if (!findProgressCheckerId(goal->progress_checker_id, current_progress_checker)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Requested progress checker %s is not available.", goal->progress_checker_id.c_str());
+    return false;
+  }
+
+  std::string current_path_handler;
+  if (!findPathHandlerId(goal->path_handler_id, current_path_handler)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Requested path handler %s is not available.", goal->path_handler_id.c_str());
+    return false;
+  }
+
+  if (goal->path.poses.empty()) {
+    RCLCPP_WARN(get_logger(), "Requested path to follow is empty.");
+    return false;
   }
 
   return true;

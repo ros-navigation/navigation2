@@ -116,6 +116,13 @@ protected:
   using Action = nav2_msgs::action::FollowPath;
   using ActionServer = nav2::SimpleActionServer<Action>;
 
+  /**
+   * @brief Goal received callback to validate a new goal before acceptance
+   * @param goal The incoming goal to validate
+   * @return true if goal should be accepted, false to reject
+   */
+  bool goalReceived(std::shared_ptr<const Action::Goal> goal);
+
   // Our action server implements the FollowPath action
   typename ActionServer::SharedPtr action_server_;
 
