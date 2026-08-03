@@ -145,24 +145,21 @@ WaypointFollower::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2::CallbackReturn::SUCCESS;
 }
 
-bool WaypointFollower::goalReceivedXyz(std::shared_ptr<const ActionT::Goal> goal)
+template<typename T>
+bool WaypointFollower::goalReceived(std::shared_ptr<const typename T::Goal> goal)
 {
-  if (goal->poses.empty()) {
-    RCLCPP_ERROR(
-      get_logger(),
-      "Empty vector of waypoints passed to waypoint following action.");
-    return false;
-  }
-  return true;
-}
-
-bool WaypointFollower::goalReceivedGPS(std::shared_ptr<const ActionTGPS::Goal> goal)
-{
-  if (goal->gps_poses.empty()) {
-    RCLCPP_ERROR(
-      get_logger(),
-      "Empty vector of GPS waypoints passed to waypoint following action.");
-    return false;
+  if constexpr (std::is_same_v<T, ActionTGPS>) {
+    if (goal->gps_poses.empty()) {
+      RCLCPP_ERROR(
+        get_logger(), "Empty vector of GPS waypoints passed to waypoint following action.");
+      return false;
+    }
+  } else {
+    if (goal->poses.empty()) {
+      RCLCPP_ERROR(
+        get_logger(), "Empty vector of waypoints passed to waypoint following action.");
+      return false;
+    }
   }
   return true;
 }
