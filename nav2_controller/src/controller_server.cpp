@@ -483,8 +483,8 @@ void ControllerServer::computeControl()
 
     std::string ph_name = goal->path_handler_id;
     std::string current_path_handler;
-    if(findPathHandlerId(ph_name, current_path_handler)) {
-      current_path_handler_ = current_path_handler;
+    if (findPathHandlerId(ph_name, current_path_handler)) {
+      setCurrentPathHandler(current_path_handler);
     } else {
       throw nav2_core::ControllerException("Failed to find path handler name: " + ph_name);
     }
@@ -508,11 +508,8 @@ void ControllerServer::computeControl()
         if (controllers_[current_controller_]->cancel()) {
           RCLCPP_INFO(get_logger(), "Cancellation was successful. Stopping the robot.");
           action_server_->terminate_all();
-          onGoalExit(true);
-          // Canceled goals should not keep identical-plan prune identity for a later mission.
-          if (path_handlers_.find(current_path_handler_) != path_handlers_.end()) {
-            path_handlers_[current_path_handler_]->reset();
-          }
+          // Cancel clears prune caches on all handlers so a later mission starts fresh.
+          onGoalExit(true, true);
           return;
         } else {
           RCLCPP_INFO_THROTTLE(
@@ -546,7 +543,8 @@ void ControllerServer::computeControl()
     }
   } catch (nav2_core::InvalidController & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit(true);
+    // Keep path-handler prune caches so BT FollowPath retries retain progress.
+    onGoalExit(true, false);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_CONTROLLER;
     result->error_msg = e.what();
@@ -554,7 +552,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::ControllerTFError & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit(true);
+    onGoalExit(true, false);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::TF_ERROR;
     result->error_msg = e.what();
@@ -562,7 +560,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::NoValidControl & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit(true);
+    onGoalExit(true, false);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::NO_VALID_CONTROL;
     result->error_msg = e.what();
@@ -570,7 +568,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit(true);
+    onGoalExit(true, false);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::FAILED_TO_MAKE_PROGRESS;
     result->error_msg = e.what();
@@ -578,7 +576,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::PatienceExceeded & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit(true);
+    onGoalExit(true, false);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::PATIENCE_EXCEEDED;
     result->error_msg = e.what();
@@ -586,7 +584,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::InvalidPath & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit(true);
+    onGoalExit(true, false);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_PATH;
     result->error_msg = e.what();
@@ -594,7 +592,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::ControllerTimedOut & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit(true);
+    onGoalExit(true, false);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::CONTROLLER_TIMED_OUT;
     result->error_msg = e.what();
@@ -602,7 +600,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit(true);
+    onGoalExit(true, false);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
     result->error_msg = e.what();
@@ -610,7 +608,7 @@ void ControllerServer::computeControl()
     return;
   } catch (std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit(true);
+    onGoalExit(true, false);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
     result->error_msg = e.what();
@@ -620,7 +618,8 @@ void ControllerServer::computeControl()
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
-  onGoalExit(false);
+  // Success clears prune caches on all handlers so a later mission starts fresh.
+  onGoalExit(false, true);
 
   // TODO(orduno) #861 Handle a pending preemption and set controller name
   action_server_->succeeded_current();
@@ -847,7 +846,7 @@ void ControllerServer::updateGlobalPath()
         RCLCPP_INFO(
           get_logger(), "Change of path handler %s requested, resetting it",
           goal->path_handler_id.c_str());
-        current_path_handler_ = current_path_handler;
+        setCurrentPathHandler(current_path_handler);
       }
     } else {
       std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
@@ -887,7 +886,35 @@ void ControllerServer::publishZeroVelocity()
   publishVelocity(velocity);
 }
 
-void ControllerServer::onGoalExit(bool force_stop)
+void ControllerServer::setCurrentPathHandler(const std::string & path_handler_id)
+{
+  if (current_path_handler_ == path_handler_id) {
+    return;
+  }
+
+  // Drop prune caches on both the outgoing and incoming plugins so a later
+  // preemption back to the old handler cannot revive stale identical-plan state.
+  if (!current_path_handler_.empty()) {
+    auto outgoing = path_handlers_.find(current_path_handler_);
+    if (outgoing != path_handlers_.end()) {
+      outgoing->second->reset();
+    }
+  }
+  auto incoming = path_handlers_.find(path_handler_id);
+  if (incoming != path_handlers_.end()) {
+    incoming->second->reset();
+  }
+  current_path_handler_ = path_handler_id;
+}
+
+void ControllerServer::resetAllPathHandlers()
+{
+  for (auto & path_handler : path_handlers_) {
+    path_handler.second->reset();
+  }
+}
+
+void ControllerServer::onGoalExit(bool force_stop, bool reset_path_handler_state)
 {
   if (params_->publish_zero_velocity || force_stop) {
     publishZeroVelocity();
@@ -898,11 +925,10 @@ void ControllerServer::onGoalExit(bool force_stop)
     controller.second->reset();
   }
 
-  // On success only: drop identical-plan cache so a later Navigate that reuses the
-  // same path geometry starts pruning from the beginning. Failure exits keep the
-  // cache so BT FollowPath retries retain prune progress (navigation2#6235).
-  if (!force_stop && path_handlers_.find(current_path_handler_) != path_handlers_.end()) {
-    path_handlers_[current_path_handler_]->reset();
+  // Success and cancel clear every handler's identical-plan cache. Failure exits
+  // leave caches intact so BT FollowPath retries retain prune progress (#6235).
+  if (reset_path_handler_state) {
+    resetAllPathHandlers();
   }
 }
 
