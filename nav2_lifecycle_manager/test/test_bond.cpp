@@ -29,8 +29,13 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 class TestLifecycleNode : public nav2::LifecycleNode
 {
 public:
-  TestLifecycleNode(bool bond, std::string name)
-  : nav2::LifecycleNode(name, rclcpp::NodeOptions())
+  TestLifecycleNode(bool bond, std::string name, const std::string & ns = "")
+  : nav2::LifecycleNode(
+      name,
+      ns.empty() ?
+      rclcpp::NodeOptions() :
+      rclcpp::NodeOptions().arguments(
+        {"--ros-args", "-r", std::string("__ns:=") + ns}))
   {
     state = "";
     enable_bond = bond;
@@ -116,9 +121,9 @@ public:
 class TestFixture
 {
 public:
-  TestFixture(bool bond, std::string node_name)
+  TestFixture(bool bond, std::string node_name, const std::string & ns = "")
   {
-    lf_node_ = std::make_shared<TestLifecycleNode>(bond, node_name);
+    lf_node_ = std::make_shared<TestLifecycleNode>(bond, node_name, ns);
     lf_thread_ = std::make_unique<nav2::NodeThread>(lf_node_->get_node_base_interface());
   }
 
@@ -182,6 +187,36 @@ TEST(LifecycleBondTest, NEGATIVE)
   EXPECT_EQ(
     nav2_lifecycle_manager::SystemStatus::INACTIVE,
     client.is_active(std::chrono::nanoseconds(1000000000)));
+}
+
+TEST(LifecycleBondTest, NAMESPACED)
+{
+  // Manager and server both under /robot so bond/bond_tester_ns resolves as
+  // /robot/bond/bond_tester_ns on both sides (per-server topic contract).
+  auto node = std::make_shared<rclcpp::Node>(
+    "lifecycle_manager_test_service_client_ns", "robot");
+  nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test", node);
+
+  auto fixture = TestFixture(true, "bond_tester_ns", "/robot");
+  auto bond_tester = fixture.lf_node_;
+
+  EXPECT_EQ(bond_tester->get_namespace(), "/robot");
+  EXPECT_TRUE(client.startup());
+
+  rclcpp::WallRate(5).sleep();
+  EXPECT_TRUE(bond_tester->isBondConnected());
+  EXPECT_EQ(bond_tester->getState(), "activated");
+
+  bond_tester->breakBond();
+
+  rclcpp::WallRate(5).sleep();
+  EXPECT_EQ(
+    nav2_lifecycle_manager::SystemStatus::INACTIVE,
+    client.is_active(std::chrono::nanoseconds(1000000000)));
+  EXPECT_FALSE(bond_tester->isBondConnected());
+  EXPECT_EQ(bond_tester->getState(), "cleaned up");
+
+  EXPECT_TRUE(client.reset());
 }
 
 int main(int argc, char ** argv)

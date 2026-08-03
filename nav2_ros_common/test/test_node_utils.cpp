@@ -42,6 +42,16 @@ TEST(BondTopicName, PerServerTopic)
   ASSERT_EQ(bond_topic_name("bond_tester"), "bond/bond_tester");
 }
 
+TEST(BondTopicName, RelativeForNamespaceAndRemap)
+{
+  // Relative topics inherit the node namespace and accept remaps of bond/<name>.
+  // An absolute "/bond/..." would ignore typical launch remaps of "bond/...".
+  const auto topic = bond_topic_name("controller_server");
+  ASSERT_FALSE(topic.empty());
+  ASSERT_NE(topic.front(), '/');
+  ASSERT_EQ(topic.rfind("bond/", 0), 0u);
+}
+
 TEST(TimeToString, IsLengthCorrect)
 {
   ASSERT_EQ(time_to_string(0).length(), 0u);
