@@ -126,9 +126,47 @@ bool FeasiblePathHandler::isWithinInversionTolerances(
          fabs(angle_distance) <= inversion_yaw_tolerance_;
 }
 
+bool FeasiblePathHandler::isSamePlan(
+  const nav_msgs::msg::Path & path1,
+  const nav_msgs::msg::Path & path2) const
+{
+  if (path1.header.frame_id != path2.header.frame_id ||
+    path1.poses.size() != path2.poses.size())
+  {
+    return false;
+  }
+
+  for (size_t i = 0; i < path1.poses.size(); ++i) {
+    const auto & pose1 = path1.poses[i].pose;
+    const auto & pose2 = path2.poses[i].pose;
+    if (pose1.position.x != pose2.position.x ||
+      pose1.position.y != pose2.position.y ||
+      pose1.position.z != pose2.position.z ||
+      pose1.orientation.x != pose2.orientation.x ||
+      pose1.orientation.y != pose2.orientation.y ||
+      pose1.orientation.z != pose2.orientation.z ||
+      pose1.orientation.w != pose2.orientation.w)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
 void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
+  // When FollowPath is reissued with the same global path, keep pruning progress so
+  // max_robot_pose_search_dist still reaches the robot (see ros-navigation/navigation2#6235).
+  if (!last_set_plan_.poses.empty() && isSamePlan(path, last_set_plan_)) {
+    RCLCPP_DEBUG(
+      logger_,
+      "Received identical plan; retaining pruned path state (%zu of %zu poses remaining).",
+      global_plan_up_to_constraint_.poses.size(), path.poses.size());
+    return;
+  }
+
+  last_set_plan_ = path;
   global_plan_ = path;
   global_plan_up_to_constraint_ = global_plan_;
   if (enforce_path_inversion_ || enforce_path_rotation_) {

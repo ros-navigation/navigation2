@@ -132,6 +132,16 @@ protected:
     */
   void prunePlan(nav_msgs::msg::Path & plan, const nav2_core::PathIterator end);
 
+  /**
+    * @brief Compare two plans by frame and pose geometry, ignoring stamps
+    * @param path1 First path
+    * @param path2 Second path
+    * @return True if the plans contain the same ordered poses
+    */
+  bool isSamePlan(
+    const nav_msgs::msg::Path & path1,
+    const nav_msgs::msg::Path & path2) const;
+
   // Dynamic parameters handler
   std::mutex mutex_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
@@ -141,6 +151,8 @@ protected:
   std::string plugin_name_;
   nav2::TransformBuffer::SharedPtr tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  // Unmodified copy of the last path passed to setPlan, used to detect reissued goals
+  nav_msgs::msg::Path last_set_plan_;
   nav_msgs::msg::Path global_plan_;
   nav_msgs::msg::Path global_plan_up_to_constraint_;
   geometry_msgs::msg::PoseStamped global_pose_;
