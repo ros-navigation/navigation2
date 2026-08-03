@@ -69,6 +69,11 @@ public:
   void setPlan(const nav_msgs::msg::Path & path) override;
 
   /**
+   * @brief Clear identical-plan cache and pruned path state
+   */
+  void reset() override;
+
+  /**
    * @brief Determines the portion of the global plan to be used for local control.
    * This function locates the start and end iterators of the global plan segment
    * that is relevant for controller computation based on the robot's current pose and local costmap.

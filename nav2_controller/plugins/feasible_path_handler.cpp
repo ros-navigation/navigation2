@@ -126,6 +126,16 @@ bool FeasiblePathHandler::isWithinInversionTolerances(
          fabs(angle_distance) <= inversion_yaw_tolerance_;
 }
 
+void FeasiblePathHandler::reset()
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  // AI-assisted contribution for ros-navigation/navigation2#6235
+  last_set_plan_ = nav_msgs::msg::Path();
+  global_plan_ = nav_msgs::msg::Path();
+  global_plan_up_to_constraint_ = nav_msgs::msg::Path();
+  constraint_locale_ = 0u;
+}
+
 bool FeasiblePathHandler::isSamePlan(
   const nav_msgs::msg::Path & path1,
   const nav_msgs::msg::Path & path2) const
@@ -156,6 +166,7 @@ bool FeasiblePathHandler::isSamePlan(
 void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
+  // AI-assisted contribution for ros-navigation/navigation2#6235
   // When FollowPath is reissued with the same global path, keep pruning progress so
   // max_robot_pose_search_dist still reaches the robot (see ros-navigation/navigation2#6235).
   if (!last_set_plan_.poses.empty() && isSamePlan(path, last_set_plan_)) {

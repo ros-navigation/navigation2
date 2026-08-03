@@ -69,6 +69,14 @@ public:
   virtual void setPlan(const nav_msgs::msg::Path & path) = 0;
 
   /**
+   * @brief Clear handler state after a completed or canceled FollowPath goal.
+   *
+   * Failed goals should typically leave state intact so a BT retry that
+   * reissues the same path can retain prune progress.
+   */
+  virtual void reset() {}
+
+  /**
    * @brief Determines the portion of the global plan to be used for local control.
    * This function locates the start and end iterators of the global plan segment
    * that is relevant for controller computation based on the robot's current pose and local costmap.

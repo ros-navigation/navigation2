@@ -509,6 +509,10 @@ void ControllerServer::computeControl()
           RCLCPP_INFO(get_logger(), "Cancellation was successful. Stopping the robot.");
           action_server_->terminate_all();
           onGoalExit(true);
+          // Canceled goals should not keep identical-plan prune identity for a later mission.
+          if (path_handlers_.find(current_path_handler_) != path_handlers_.end()) {
+            path_handlers_[current_path_handler_]->reset();
+          }
           return;
         } else {
           RCLCPP_INFO_THROTTLE(
@@ -892,6 +896,13 @@ void ControllerServer::onGoalExit(bool force_stop)
   // Reset controller state
   for (auto & controller : controllers_) {
     controller.second->reset();
+  }
+
+  // On success only: drop identical-plan cache so a later Navigate that reuses the
+  // same path geometry starts pruning from the beginning. Failure exits keep the
+  // cache so BT FollowPath retries retain prune progress (navigation2#6235).
+  if (!force_stop && path_handlers_.find(current_path_handler_) != path_handlers_.end()) {
+    path_handlers_[current_path_handler_]->reset();
   }
 }
 

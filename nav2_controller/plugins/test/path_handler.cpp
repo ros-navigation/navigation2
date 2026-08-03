@@ -207,6 +207,16 @@ TEST(PathHandlerTests, RetainPruneStateOnIdenticalPlan)
   new_path.poses.back().pose.position.x = 200.0;
   handler.setPlan(new_path);
   EXPECT_EQ(handler.getInvertedPath().poses.size(), 100u);
+
+  // After an explicit reset (successful/canceled goal), identical geometry starts fresh
+  handler.setPlan(path);
+  auto [closest2, pruned2] = handler.findPlanSegmentWrapper(robot_pose);
+  (void)closest2;
+  (void)pruned2;
+  EXPECT_EQ(handler.getInvertedPath().poses.size(), 75u);
+  handler.reset();
+  handler.setPlan(path);
+  EXPECT_EQ(handler.getInvertedPath().poses.size(), 100u);
 }
 
 TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
