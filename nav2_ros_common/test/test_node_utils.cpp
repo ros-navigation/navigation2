@@ -15,7 +15,6 @@
 #include <memory>
 #include <string>
 
-#include "nav2_ros_common/bond_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -28,28 +27,11 @@ using nav2::time_to_string;
 using nav2::declare_parameter_if_not_declared;
 using nav2::declare_or_get_parameter;
 using nav2::get_plugin_type_param;
-using nav2::bond_topic_name;
 
 TEST(SanitizeNodeName, SanitizeNodeName)
 {
   ASSERT_EQ(sanitize_node_name("bar"), "bar");
   ASSERT_EQ(sanitize_node_name("/foo/bar"), "_foo_bar");
-}
-
-TEST(BondTopicName, PerServerTopic)
-{
-  ASSERT_EQ(bond_topic_name("controller_server"), "bond/controller_server");
-  ASSERT_EQ(bond_topic_name("bond_tester"), "bond/bond_tester");
-}
-
-TEST(BondTopicName, RelativeForNamespaceAndRemap)
-{
-  // Relative topics inherit the node namespace and accept remaps of bond/<name>.
-  // An absolute "/bond/..." would ignore typical launch remaps of "bond/...".
-  const auto topic = bond_topic_name("controller_server");
-  ASSERT_FALSE(topic.empty());
-  ASSERT_NE(topic.front(), '/');
-  ASSERT_EQ(topic.rfind("bond/", 0), 0u);
 }
 
 TEST(TimeToString, IsLengthCorrect)

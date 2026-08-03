@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_ros_common/bond_utils.hpp"
 #include "nav2_ros_common/interface_factories.hpp"
 
 using namespace std::chrono_literals;
@@ -273,9 +272,8 @@ LifecycleManager::createBondConnection(const std::string & node_name)
 
   if (bond_map_.find(node_name) == bond_map_.end() && bond_timeout_.count() > 0.0) {
     // Per-server topic avoids O(N^2) bondcpp fan-out on a shared "bond" topic.
-    // AI-assisted contribution for ros-navigation/navigation2#6061
-    bond_map_[node_name] =
-      std::make_shared<bond::Bond>(nav2::bond_topic_name(node_name), node_name, shared_from_this());
+    bond_map_[node_name] = std::make_shared<bond::Bond>(
+      std::string("bond/") + node_name, node_name, shared_from_this());
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
     bond_map_[node_name]->setHeartbeatPeriod(bond_heartbeat_period_);
     bond_map_[node_name]->start();

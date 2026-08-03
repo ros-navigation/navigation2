@@ -30,7 +30,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
-#include "nav2_ros_common/bond_utils.hpp"
 #include "nav2_ros_common/interface_factories.hpp"
 #include "nav2_ros_common/rate.hpp"
 
@@ -372,9 +371,8 @@ public:
       RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
 
       // Per-server topic avoids O(N^2) bondcpp fan-out on a shared "bond" topic.
-      // AI-assisted contribution for ros-navigation/navigation2#6061
       bond_ = std::make_shared<bond::Bond>(
-        bond_topic_name(this->get_name()),
+        std::string("bond/") + this->get_name(),
         this->get_name(),
         shared_from_this());
 
@@ -450,7 +448,7 @@ protected:
   // Connection to tell that server is still up
   std::unique_ptr<rclcpp::PreShutdownCallbackHandle> rcl_preshutdown_cb_handle_{nullptr};
   std::shared_ptr<bond::Bond> bond_{nullptr};
-  double bond_heartbeat_period{0.25};
+  double bond_heartbeat_period{0.1};
   rclcpp::TimerBase::SharedPtr autostart_timer_;
 
 private:
