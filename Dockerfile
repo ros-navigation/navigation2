@@ -45,9 +45,6 @@ APT::Install-Suggests "0";\n\
 ' > /etc/apt/apt.conf.d/01norecommend
 ENV PYTHONUNBUFFERED 1
 
-# Add testing repo for unreleased binary packages
-RUN echo "deb [trusted=yes] http://repo.ros2.org/ubuntu/testing $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-testing.list
-
 # install CI dependencies
 ARG RTI_NC_LICENSE_ACCEPTED=yes
 RUN apt-get update && \
