@@ -64,7 +64,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
     "follow_waypoints", std::bind(
       &WaypointFollower::followWaypointsCallback,
       this),
-    std::bind(&WaypointFollower::goalReceivedXyz, this, std::placeholders::_1),
+    std::bind(&WaypointFollower::goalReceived<ActionT>, this, std::placeholders::_1),
     nullptr, std::chrono::milliseconds(
       500), false);
 
@@ -77,7 +77,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
     std::bind(
       &WaypointFollower::followGPSWaypointsCallback,
       this),
-    std::bind(&WaypointFollower::goalReceivedGPS, this, std::placeholders::_1),
+    std::bind(&WaypointFollower::goalReceived<ActionTGPS>, this, std::placeholders::_1),
     nullptr, std::chrono::milliseconds(
       500), false);
 
