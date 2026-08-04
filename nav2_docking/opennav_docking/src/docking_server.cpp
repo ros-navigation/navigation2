@@ -51,13 +51,13 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   docking_action_server_ = node->create_action_server<DockRobot>(
     "dock_robot",
     std::bind(&DockingServer::dockRobot, this),
-    nullptr, std::chrono::milliseconds(500),
+    nullptr, nullptr, std::chrono::milliseconds(500),
     true);
 
   undocking_action_server_ = node->create_action_server<UndockRobot>(
     "undock_robot",
     std::bind(&DockingServer::undockRobot, this),
-    nullptr, std::chrono::milliseconds(500),
+    nullptr, nullptr, std::chrono::milliseconds(500),
     true);
 
   // Create composed utilities
