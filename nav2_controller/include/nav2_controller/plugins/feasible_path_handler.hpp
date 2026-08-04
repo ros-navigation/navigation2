@@ -137,16 +137,6 @@ protected:
     */
   void prunePlan(nav_msgs::msg::Path & plan, const nav2_core::PathIterator end);
 
-  /**
-    * @brief Compare two plans by frame and pose geometry, ignoring stamps
-    * @param path1 First path
-    * @param path2 Second path
-    * @return True if the plans contain the same ordered poses
-    */
-  bool isSamePlan(
-    const nav_msgs::msg::Path & path1,
-    const nav_msgs::msg::Path & path2) const;
-
   // Dynamic parameters handler
   std::mutex mutex_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;

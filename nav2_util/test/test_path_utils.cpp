@@ -639,3 +639,46 @@ TEST(UtilsTests, IsPathOrGoalUpdatedTest)
   EXPECT_FALSE(nav2_util::isPathUpdated(old_path, new_path));
   EXPECT_TRUE(nav2_util::isGoalUpdated(old_path, new_path));
 }
+
+TEST(UtilsTests, IsSamePlanTest)
+{
+  auto makePose = [](double x, double y, double yaw = 0.0) {
+      geometry_msgs::msg::PoseStamped pose;
+      pose.pose.position.x = x;
+      pose.pose.position.y = y;
+      pose.pose.position.z = 0.0;
+      pose.pose.orientation.z = std::sin(yaw * 0.5);
+      pose.pose.orientation.w = std::cos(yaw * 0.5);
+      return pose;
+    };
+
+  nav_msgs::msg::Path path_a, path_b;
+  path_a.header.frame_id = "map";
+  path_b.header.frame_id = "map";
+  path_a.poses.push_back(makePose(0.0, 0.0));
+  path_a.poses.push_back(makePose(1.0, 0.0, 0.2));
+  path_b.poses = path_a.poses;
+  path_b.poses.front().header.stamp.sec = 42;
+  EXPECT_TRUE(nav2_util::isSamePlan(path_a, path_b));
+
+  path_b.header.frame_id = "odom";
+  EXPECT_FALSE(nav2_util::isSamePlan(path_a, path_b));
+
+  path_b.header.frame_id = "map";
+  path_b.poses.push_back(makePose(2.0, 0.0));
+  EXPECT_FALSE(nav2_util::isSamePlan(path_a, path_b));
+
+  path_b.poses = path_a.poses;
+  path_b.poses.back().pose.position.x = 9.0;
+  EXPECT_FALSE(nav2_util::isSamePlan(path_a, path_b));
+
+  path_b.poses = path_a.poses;
+  path_b.poses.back().pose.orientation.z = std::sin(0.5);
+  path_b.poses.back().pose.orientation.w = std::cos(0.5);
+  EXPECT_FALSE(nav2_util::isSamePlan(path_a, path_b));
+
+  nav_msgs::msg::Path empty_a, empty_b;
+  empty_a.header.frame_id = "map";
+  empty_b.header.frame_id = "map";
+  EXPECT_TRUE(nav2_util::isSamePlan(empty_a, empty_b));
+}

@@ -135,28 +135,12 @@ void FeasiblePathHandler::reset()
   constraint_locale_ = 0u;
 }
 
-bool FeasiblePathHandler::isSamePlan(
-  const nav_msgs::msg::Path & path1,
-  const nav_msgs::msg::Path & path2) const
-{
-  if (path1.header.frame_id != path2.header.frame_id ||
-    path1.poses.size() != path2.poses.size())
-  {
-    return false;
-  }
-
-  for (size_t i = 0; i < path1.poses.size(); ++i) {
-    if (path1.poses[i].pose != path2.poses[i].pose) {
-      return false;
-    }
-  }
-  return true;
-}
-
 void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
-  if (!unpruned_global_plan_.poses.empty() && isSamePlan(path, unpruned_global_plan_)) {
+  if (!unpruned_global_plan_.poses.empty() &&
+    nav2_util::isSamePlan(path, unpruned_global_plan_))
+  {
     RCLCPP_INFO(
       logger_,
       "Received identical plan; retaining pruned path state (%zu of %zu poses remaining).",
