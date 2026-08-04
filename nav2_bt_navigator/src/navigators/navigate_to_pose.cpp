@@ -92,13 +92,6 @@ NavigateToPoseNavigator::cleanup()
 bool
 NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
-  if (!bt_action_server_->loadBehaviorTree(goal->behavior_tree)) {
-    bt_action_server_->setInternalError(
-      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      std::string("Error loading BT: ") + goal->behavior_tree + ". Navigation canceled.");
-    return false;
-  }
-
   return initializeGoalPose(goal);
 }
 

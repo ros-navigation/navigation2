@@ -119,6 +119,14 @@ protected:
   using ActionServerThroughPoses = nav2::SimpleActionServer<ActionThroughPoses>;
 
   /**
+   * @brief Goal received callback to validate a new goal before acceptance
+   * @param goal The incoming goal to validate
+   * @return true if goal should be accepted, false to reject
+   */
+  template<typename T>
+  bool goalReceived(std::shared_ptr<const typename T::Goal> goal);
+
+  /**
    * @brief Check if an action server is valid / active
    * @param action_server Action server to test
    * @return SUCCESS or FAILURE

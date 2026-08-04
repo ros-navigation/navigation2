@@ -151,7 +151,7 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   // to convert nav2::LifecycleNode, rclcpp::Node or rclcpp_lifecycle::LifecycleNode
   action_server_ = nav2::interfaces::create_action_server<ActionT>(
     node, action_name_, std::bind(&BtActionServer<ActionT, NodeT>::executeCallback, this),
-    nullptr, std::chrono::milliseconds(500), false);
+    on_goal_received_callback_, nullptr, std::chrono::milliseconds(500), false);
 
   // Get parameters for BT timeouts
   bt_loop_duration_ = std::chrono::milliseconds(
@@ -401,12 +401,25 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
 {
   muxer_preemption_requested_ = false;
 
-  if (!on_goal_received_callback_(action_server_->get_current_goal())) {
-    // Give server an opportunity to populate the result message
-    // if the goal is not accepted
+  auto current_goal = action_server_->get_current_goal();
+  if (!current_goal) {
+    setInternalError(
+      ActionT::Result::GOAL_REJECTED,
+      "No current goal available when starting BT execution.");
+  }
+
+  if (!current_goal || !loadBehaviorTree(current_goal->behavior_tree)) {
     auto result = std::make_shared<typename ActionT::Result>();
     populateErrorCode(result);
+
+    nav2_behavior_tree::BtStatus rc = nav2_behavior_tree::BtStatus::FAILED;
+    on_completion_callback_(result, rc);
+
     action_server_->terminate_current(result);
+    RCLCPP_ERROR(
+      logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
+      result->error_msg.c_str());
+
     cleanErrorCodes();
     return;
   }

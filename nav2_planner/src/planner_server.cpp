@@ -129,6 +129,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   action_server_pose_ = create_action_server<ActionToPose>(
     "compute_path_to_pose",
     std::bind(&PlannerServer::computePlan, this),
+    std::bind(&PlannerServer::goalReceived<ActionToPose>, this, std::placeholders::_1),
     nullptr,
     std::chrono::milliseconds(500),
     true);
@@ -136,6 +137,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   action_server_poses_ = create_action_server<ActionThroughPoses>(
     "compute_path_through_poses",
     std::bind(&PlannerServer::computePlanThroughPoses, this),
+    std::bind(&PlannerServer::goalReceived<ActionThroughPoses>, this, std::placeholders::_1),
     nullptr,
     std::chrono::milliseconds(500),
     true);
@@ -231,6 +233,29 @@ PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2::CallbackReturn::SUCCESS;
+}
+
+template<typename T>
+bool PlannerServer::goalReceived(std::shared_ptr<const typename T::Goal> goal)
+{
+  if (planners_.find(goal->planner_id) == planners_.end()) {
+    if (planners_.size() == 1 && goal->planner_id.empty()) {
+      RCLCPP_WARN_ONCE(
+        get_logger(), "No planner was specified in action call. "
+        "Server will use only plugin loaded %s. "
+        "This warning will appear once.", planner_ids_concat_.c_str());
+      return true;
+    }
+
+    RCLCPP_ERROR(
+      get_logger(), "Action called with planner name %s, "
+      "which does not exist. Available planners are: %s.",
+      goal->planner_id.c_str(), planner_ids_concat_.c_str());
+    return false;
+  }
+
+  RCLCPP_DEBUG(get_logger(), "Selected planner: %s.", goal->planner_id.c_str());
+  return true;
 }
 
 template<typename T>
