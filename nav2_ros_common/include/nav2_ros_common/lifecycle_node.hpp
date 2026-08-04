@@ -370,7 +370,6 @@ public:
     if (bond_heartbeat_period > 0.0) {
       RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
 
-      // Per-server topic avoids O(N^2) bondcpp fan-out on a shared "bond" topic.
       bond_ = std::make_shared<bond::Bond>(
         std::string("bond/") + this->get_name(),
         this->get_name(),

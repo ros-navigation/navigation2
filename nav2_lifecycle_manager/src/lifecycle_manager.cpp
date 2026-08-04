@@ -271,7 +271,6 @@ LifecycleManager::createBondConnection(const std::string & node_name)
   const double timeout_s = timeout_ns / 1e9;
 
   if (bond_map_.find(node_name) == bond_map_.end() && bond_timeout_.count() > 0.0) {
-    // Per-server topic avoids O(N^2) bondcpp fan-out on a shared "bond" topic.
     bond_map_[node_name] = std::make_shared<bond::Bond>(
       std::string("bond/") + node_name, node_name, shared_from_this());
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);

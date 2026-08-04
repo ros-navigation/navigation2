@@ -25,7 +25,6 @@ from launch_testing.legacy import LaunchTestService
 def generate_launch_description():
     return LaunchDescription(
         [
-            # Root-namespace manager used by POSITIVE / NEGATIVE tests.
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
@@ -37,7 +36,6 @@ def generate_launch_description():
                     {'node_names': ['bond_tester']},
                 ],
             ),
-            # Non-empty namespace: both sides should resolve bond/<name> under /robot.
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',

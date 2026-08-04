@@ -191,8 +191,6 @@ TEST(LifecycleBondTest, NEGATIVE)
 
 TEST(LifecycleBondTest, NAMESPACED)
 {
-  // Manager and server both under /robot so bond/bond_tester_ns resolves as
-  // /robot/bond/bond_tester_ns on both sides (per-server topic contract).
   auto node = std::make_shared<rclcpp::Node>(
     "lifecycle_manager_test_service_client_ns", "robot");
   nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test", node);
