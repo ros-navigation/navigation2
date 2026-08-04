@@ -119,6 +119,13 @@ protected:
   using ActionServer = nav2::SimpleActionServer<Action>;
 
   /**
+   * @brief Goal received callback to validate a new goal before acceptance
+   * @param goal The incoming goal to validate
+   * @return true if goal should be accepted, false to reject
+   */
+  bool goalReceived(std::shared_ptr<const Action::Goal> goal);
+
+  /**
    * @brief SmoothPath action server callback. Handles action server updates and
    * spins server until goal is reached
    *
