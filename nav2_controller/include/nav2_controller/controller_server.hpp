@@ -191,22 +191,18 @@ protected:
   void publishZeroVelocity();
   /**
    * @brief Called on goal exit
-   * @param force_stop If true, publish a zero-velocity command (cancel/failure)
-   * @param reset_path_handler_state If true, clear prune caches on all path handlers
-   *        (success and cancel). Leave false on control failure so BT FollowPath
-   *        retries can retain prune progress for the active handler.
+   * @param force_stop If true, publish a zero-velocity command
+   * @param reset_path_handler_state If true, reset all path handlers
    */
   void onGoalExit(bool force_stop, bool reset_path_handler_state);
 
   /**
-   * @brief Select the active path handler, resetting outgoing and incoming caches
-   *        when the plugin id changes so stale prune state cannot leak across
-   *        preemption or later missions that reuse the same geometry.
+   * @brief Select the active path handler, resetting caches when the id changes
    */
   void setCurrentPathHandler(const std::string & path_handler_id);
 
   /**
-   * @brief Clear identical-plan prune caches on every registered path handler
+   * @brief Reset every registered path handler
    */
   void resetAllPathHandlers();
   /**

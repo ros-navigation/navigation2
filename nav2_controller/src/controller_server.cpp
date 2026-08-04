@@ -508,7 +508,6 @@ void ControllerServer::computeControl()
         if (controllers_[current_controller_]->cancel()) {
           RCLCPP_INFO(get_logger(), "Cancellation was successful. Stopping the robot.");
           action_server_->terminate_all();
-          // Cancel clears prune caches on all handlers so a later mission starts fresh.
           onGoalExit(true, true);
           return;
         } else {
@@ -543,7 +542,6 @@ void ControllerServer::computeControl()
     }
   } catch (nav2_core::InvalidController & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    // Keep path-handler prune caches so BT FollowPath retries retain progress.
     onGoalExit(true, false);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_CONTROLLER;
@@ -618,7 +616,6 @@ void ControllerServer::computeControl()
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
-  // Success clears prune caches on all handlers so a later mission starts fresh.
   onGoalExit(false, true);
 
   // TODO(orduno) #861 Handle a pending preemption and set controller name
@@ -892,8 +889,6 @@ void ControllerServer::setCurrentPathHandler(const std::string & path_handler_id
     return;
   }
 
-  // Drop prune caches on both the outgoing and incoming plugins so a later
-  // preemption back to the old handler cannot revive stale identical-plan state.
   if (!current_path_handler_.empty()) {
     auto outgoing = path_handlers_.find(current_path_handler_);
     if (outgoing != path_handlers_.end()) {
@@ -925,8 +920,6 @@ void ControllerServer::onGoalExit(bool force_stop, bool reset_path_handler_state
     controller.second->reset();
   }
 
-  // Success and cancel clear every handler's identical-plan cache. Failure exits
-  // leave caches intact so BT FollowPath retries retain prune progress (#6235).
   if (reset_path_handler_state) {
     resetAllPathHandlers();
   }

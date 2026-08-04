@@ -69,7 +69,7 @@ public:
   void setPlan(const nav_msgs::msg::Path & path) override;
 
   /**
-   * @brief Clear identical-plan cache and pruned path state
+   * @brief Clear path handler state
    */
   void reset() override;
 
@@ -156,8 +156,7 @@ protected:
   std::string plugin_name_;
   nav2::TransformBuffer::SharedPtr tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  // Unmodified copy of the last path passed to setPlan, used to detect reissued goals
-  nav_msgs::msg::Path last_set_plan_;
+  nav_msgs::msg::Path unpruned_global_plan_;
   nav_msgs::msg::Path global_plan_;
   nav_msgs::msg::Path global_plan_up_to_constraint_;
   geometry_msgs::msg::PoseStamped global_pose_;

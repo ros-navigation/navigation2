@@ -193,7 +193,6 @@ TEST(PathHandlerTests, RetainPruneStateOnIdenticalPlan)
   EXPECT_THROW(handler.transformLocalPlanWrapper(closest, pruned_plan_end), std::runtime_error);
   EXPECT_EQ(handler.getInvertedPath().poses.size(), 75u);
 
-  // Reissuing the same FollowPath goal must keep pruning progress (issue #6235)
   handler.setPlan(path);
   EXPECT_EQ(handler.getInvertedPath().poses.size(), 75u);
 
@@ -202,17 +201,14 @@ TEST(PathHandlerTests, RetainPruneStateOnIdenticalPlan)
   EXPECT_EQ(pruned_after - closest_after, initial_segment_len);
   EXPECT_EQ(handler.getInvertedPath().poses.size(), 75u);
 
-  // A geometrically different path should reset pruning
   nav_msgs::msg::Path new_path = path;
   new_path.poses.back().pose.position.x = 200.0;
   handler.setPlan(new_path);
   EXPECT_EQ(handler.getInvertedPath().poses.size(), 100u);
 
-  // After an explicit reset (successful/canceled goal), identical geometry starts fresh
   handler.setPlan(path);
   auto [closest2, pruned2] = handler.findPlanSegmentWrapper(robot_pose);
-  (void)closest2;
-  (void)pruned2;
+  EXPECT_THROW(handler.transformLocalPlanWrapper(closest2, pruned2), std::runtime_error);
   EXPECT_EQ(handler.getInvertedPath().poses.size(), 75u);
   handler.reset();
   handler.setPlan(path);
@@ -221,8 +217,6 @@ TEST(PathHandlerTests, RetainPruneStateOnIdenticalPlan)
 
 TEST(PathHandlerTests, MultiHandlerSwitchClearsStalePruneState)
 {
-  // Mirrors controller_server lifecycle: prune on A, switch to B, complete/cancel
-  // (reset all), switch back to A with identical geometry → A must start fresh.
   auto node = std::make_shared<nav2::LifecycleNode>("multi_handler_node");
   node->declare_parameter("handler_a.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   node->declare_parameter("handler_b.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
@@ -263,23 +257,19 @@ TEST(PathHandlerTests, MultiHandlerSwitchClearsStalePruneState)
   robot_pose.header.frame_id = "odom";
   robot_pose.pose.position.x = 25.0;
 
-  // Handler A prunes path X and retains cache after a control failure.
   handler_a.setPlan(path);
   auto [closest_a, pruned_a] = handler_a.findPlanSegmentWrapper(robot_pose);
   EXPECT_THROW(handler_a.transformLocalPlanWrapper(closest_a, pruned_a), std::runtime_error);
   EXPECT_EQ(handler_a.getInvertedPath().poses.size(), 75u);
 
-  // Preemption switches to B: reset outgoing A and incoming B before setPlan.
   handler_a.reset();
   handler_b.reset();
   handler_b.setPlan(path);
   EXPECT_EQ(handler_b.getInvertedPath().poses.size(), 100u);
 
-  // Goal on B finishes or is canceled: reset all registered handlers.
   handler_a.reset();
   handler_b.reset();
 
-  // Later goal selects A again with identical geometry → full path, not stale prune.
   handler_a.setPlan(path);
   EXPECT_EQ(handler_a.getInvertedPath().poses.size(), 100u);
 }

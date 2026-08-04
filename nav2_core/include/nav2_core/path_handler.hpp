@@ -69,10 +69,7 @@ public:
   virtual void setPlan(const nav_msgs::msg::Path & path) = 0;
 
   /**
-   * @brief Clear handler state after a completed or canceled FollowPath goal.
-   *
-   * Failed goals should typically leave state intact so a BT retry that
-   * reissues the same path can retain prune progress.
+   * @brief Clear handler state (e.g. after a completed or canceled goal)
    */
   virtual void reset() {}
 
