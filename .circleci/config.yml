@@ -203,9 +203,7 @@ _commands:
                         # Keep only packages that are in both lists
                         BUILD_PACKAGES=$(echo "$BUILD_PACKAGES" | tr ' ' '\n' | \
                           grep -F -x -f <(echo "$SELECTED_PACKAGES" | tr ' ' '\n') | \
-                          xargs || echo "$SELECTED_PACKAGES")
-                      else
-                        BUILD_PACKAGES="$SELECTED_PACKAGES"
+                          xargs || true)
                       fi
                     fi
                     echo BUILD_PACKAGES: $BUILD_PACKAGES
@@ -368,6 +366,13 @@ _steps:
       name: Post Checkout
       command: |
         cp $OVERLAY_WS/src/navigation2/.circleci/defaults.yaml $COLCON_DEFAULTS_FILE
+
+        # Patch colcon-cache for Python 3.14 compatibility
+        # https://github.com/ruffsl/colcon-cache/issues/50
+        pip install --break-system-packages --force-reinstall --no-deps git+https://github.com/ruffsl/colcon-cache.git@master
+        DIRHASH_FILE=$(python3 -c "import colcon_cache.task.lock.dirhash as m; print(m.__file__)")
+        sed -i 's/modifier_group = parser.add_mutually_exclusive_group()/modifier_group = parser/' "$DIRHASH_FILE"
+
         if ! cmp \
           $OVERLAY_WS/src/navigation2/tools/underlay.repos \
           $UNDERLAY_WS/underlay.repos >/dev/null 2>&1
