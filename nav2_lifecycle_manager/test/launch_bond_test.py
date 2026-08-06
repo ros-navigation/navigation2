@@ -36,6 +36,18 @@ def generate_launch_description():
                     {'node_names': ['bond_tester']},
                 ],
             ),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_test',
+                namespace='robot',
+                output='screen',
+                parameters=[
+                    {'use_sim_time': False},
+                    {'autostart': False},
+                    {'node_names': ['bond_tester_ns']},
+                ],
+            ),
         ]
     )
 
