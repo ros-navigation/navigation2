@@ -552,6 +552,14 @@ jobs:
       - build_source:
           packages_skip_regex: << parameters.packages_skip_regex >>
           packages_select: << parameters.packages_select >>
+  plugin_build:
+    <<: *job_build
+    executor: release_exec
+    steps:
+      - restore_build
+      - build_source:
+          packages_skip_regex: << parameters.packages_skip_regex >>
+          packages_select: << parameters.packages_select >>
   system_build:
     <<: *job_build
     executor: release_exec
@@ -576,7 +584,10 @@ _parameters:
     packages_select: "nav2_common nav2_voxel_grid nav_2d_msgs dwb_msgs nav2_msgs nav2_ros_common nav2_simple_commander nav2_util nav2_amcl nav2_lifecycle_manager nav2_map_server nav_2d_utils nav2_velocity_smoother nav2_costmap_2d costmap_queue"
   algorithm_build_parameters: &algorithm_build_parameters
     packages_skip_regex: ""
-    packages_select: "nav2_core nav2_behavior_tree nav2_collision_monitor dwb_core dwb_critics dwb_plugins nav2_dwb_controller nav2_controller nav2_bt_navigator nav2_constrained_smoother nav2_navfn_planner nav2_planner nav2_regulated_pure_pursuit_controller nav2_theta_star_planner nav2_graceful_controller"
+    packages_select: "nav2_behavior_tree nav2_collision_monitor nav2_core nav2_bt_navigator"
+  plugin_build_parameters: &plugin_build_parameters
+    packages_skip_regex: ""
+    packages_select: "dwb_core dwb_critics dwb_plugins nav2_dwb_controller nav2_controller nav2_constrained_smoother nav2_navfn_planner nav2_planner nav2_regulated_pure_pursuit_controller nav2_theta_star_planner nav2_graceful_controller"
   system_build_parameters: &system_build_parameters
     packages_skip_regex: "'(nav2_common|nav2_voxel_grid|nav_2d_msgs|dwb_msgs|nav2_msgs|nav2_ros_common|nav2_simple_commander|nav2_util|nav2_amcl|nav2_behavior_tree|nav2_lifecycle_manager|nav2_map_server|nav_2d_utils|nav2_velocity_smoother|nav2_costmap_2d|costmap_queue|nav2_core|nav2_collision_monitor|dwb_core|dwb_critics|dwb_plugins|nav2_dwb_controller|nav2_controller|nav2_bt_navigator|nav2_constrained_smoother|nav2_navfn_planner|nav2_planner|nav2_regulated_pure_pursuit_controller|nav2_theta_star_planner|nav2_graceful_controller)'"
     packages_select: ""
@@ -593,10 +604,14 @@ workflows:
           <<: *algorithm_build_parameters
           requires:
             - core_build
+      - plugin_build:
+          <<: *plugin_build_parameters
+          requires:
+            - algorithm_build
       - system_build:
           <<: *system_build_parameters
           requires:
-            - algorithm_build
+            - plugin_build
       - release_test:
           <<: *release_test_parameters
           requires:
@@ -610,10 +625,14 @@ workflows:
           <<: *algorithm_build_parameters
           requires:
             - core_build
+      - plugin_build:
+          <<: *plugin_build_parameters
+          requires:
+            - algorithm_build
       - system_build:
           <<: *system_build_parameters
           requires:
-            - algorithm_build
+            - plugin_build
       - release_test:
           requires:
             - system_build
