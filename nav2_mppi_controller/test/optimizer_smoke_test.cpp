@@ -21,7 +21,7 @@
 #include <nav2_costmap_2d/costmap_2d.hpp>
 #include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <nav2_core/goal_checker.hpp>
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
 #include "nav2_mppi_controller/optimizer.hpp"
@@ -70,7 +70,7 @@ TEST_P(OptimizerSuite, OptimizerTest) {
   auto node = getDummyNode(optimizer_settings, critics);
   std::string name = "test";
   auto parameters_handler = std::make_unique<mppi::ParametersHandler>(node, name);
-  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf_buffer = nav2::create_transform_buffer(node);
   auto optimizer = getDummyOptimizer(node, costmap_ros, tf_buffer, parameters_handler.get());
 
   // evalControl args

@@ -8,6 +8,8 @@ bool disable_collision_checks False
 # Error codes
 # Note: The expected priority order of the error should match the message order
 uint16 NONE=0
+uint16 GOAL_REJECTED=1
+uint16 SEND_GOAL_FAILURE=2
 uint16 UNKNOWN=700
 uint16 TIMEOUT=701
 uint16 TF_ERROR=702

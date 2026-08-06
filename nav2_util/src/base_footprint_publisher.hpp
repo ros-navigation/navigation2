@@ -21,10 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -37,18 +34,18 @@ namespace nav2_util
  * to inject base footprint publisher removing Z, Pitch, and Roll for
  * 3D state estimation but desiring a 2D frame for navigation, visualization, or other reasons
  */
-class BaseFootprintPublisherListener : public tf2_ros::TransformListener
+class BaseFootprintPublisherListener : public nav2::TransformListener
 {
 public:
   //  nosemgrep
   BaseFootprintPublisherListener(tf2::BufferCore & buffer, bool spin_thread, rclcpp::Node & node)
-  : tf2_ros::TransformListener(buffer, spin_thread)
+  : nav2::TransformListener(buffer, spin_thread)
   {
     base_link_frame_ = nav2::declare_or_get_parameter(
       &node, "base_link_frame", std::string("base_link"));
     base_footprint_frame_ = nav2::declare_or_get_parameter(
       &node, "base_footprint_frame", std::string("base_footprint"));
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+    tf_broadcaster_ = nav2::create_transform_broadcaster(&node);
   }
 
   /**
@@ -90,7 +87,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   std::string base_link_frame_, base_footprint_frame_;
 };
 
@@ -110,17 +107,13 @@ public:
   : Node("base_footprint_publisher", options)
   {
     RCLCPP_INFO(get_logger(), "Creating base footprint publisher");
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      get_node_base_interface(),
-      get_node_timers_interface());
-    tf_buffer_->setCreateTimerInterface(timer_interface);
+    tf_buffer_ = nav2::create_transform_buffer(this);
     listener_publisher_ = std::make_shared<BaseFootprintPublisherListener>(
       *tf_buffer_, true, *this);
   }
 
 protected:
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   std::shared_ptr<BaseFootprintPublisherListener> listener_publisher_;
 };
 

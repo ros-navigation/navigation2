@@ -689,12 +689,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     "navigate_through_poses");
 
   // Setting up tf for initial pose
-  tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(client_node_->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    client_node_->get_node_base_interface(),
-    client_node_->get_node_timers_interface());
-  tf2_buffer_->setCreateTimerInterface(timer_interface);
-  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
+  tf2_buffer_ = nav2::create_transform_buffer(client_node_);
+  transform_listener_ = nav2::create_transform_listener(*tf2_buffer_);
 
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();

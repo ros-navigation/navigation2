@@ -41,7 +41,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   params_ = param_handler_->getParams();
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
-  tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf2_buffer_ = nav2::create_transform_buffer(node);
 
   // Create odom subscriber for backward blind docking
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
@@ -51,13 +51,13 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   docking_action_server_ = node->create_action_server<DockRobot>(
     "dock_robot",
     std::bind(&DockingServer::dockRobot, this),
-    nullptr, std::chrono::milliseconds(500),
+    nullptr, nullptr, std::chrono::milliseconds(500),
     true);
 
   undocking_action_server_ = node->create_action_server<UndockRobot>(
     "undock_robot",
     std::bind(&DockingServer::undockRobot, this),
-    nullptr, std::chrono::milliseconds(500),
+    nullptr, nullptr, std::chrono::milliseconds(500),
     true);
 
   // Create composed utilities
@@ -80,7 +80,7 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
-  tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_, this, true);
+  tf2_listener_ = nav2::create_transform_listener(*tf2_buffer_, this, true);
   dock_db_->activate();
   navigator_->activate();
   vel_publisher_->on_activate();

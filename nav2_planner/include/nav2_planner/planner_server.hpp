@@ -32,8 +32,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/service_server.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -118,6 +117,14 @@ protected:
   using ActionThroughPosesResult = ActionThroughPoses::Result;
   using ActionServerToPose = nav2::SimpleActionServer<ActionToPose>;
   using ActionServerThroughPoses = nav2::SimpleActionServer<ActionThroughPoses>;
+
+  /**
+   * @brief Goal received callback to validate a new goal before acceptance
+   * @param goal The incoming goal to validate
+   * @return true if goal should be accepted, false to reject
+   */
+  template<typename T>
+  bool goalReceived(std::shared_ptr<const typename T::Goal> goal);
 
   /**
    * @brief Check if an action server is valid / active
@@ -229,7 +236,7 @@ protected:
   std::string planner_ids_concat_;
 
   // TF buffer
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
 
   // Global Costmap
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;

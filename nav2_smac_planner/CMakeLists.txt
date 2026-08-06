@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 project(nav2_smac_planner)
 
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(angles REQUIRED)

@@ -19,9 +19,7 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/route_tracker.hpp"
@@ -56,13 +54,9 @@ TEST(RouteTrackerTest, test_lifecycle)
 TEST(RouteTrackerTest, test_get_robot_pose)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("router_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    node->get_node_base_interface(),
-    node->get_node_timers_interface());
-  tf->setCreateTimerInterface(timer_interface);
-  auto transform_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
-  auto broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+  auto tf = nav2::create_transform_buffer(node);
+  auto transform_listener = nav2::create_transform_listener(*tf, node);
+  auto broadcaster = nav2::create_transform_broadcaster(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
 
   RouteTracker tracker;

@@ -19,9 +19,7 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/service_client.hpp"
 #include "nav2_ros_common/node_thread.hpp"
@@ -70,13 +68,9 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   GoalIntentExtractor extractor;
   Graph graph;
   GraphToIDMap id_map;
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    node->get_node_base_interface(),
-    node->get_node_timers_interface());
-  tf->setCreateTimerInterface(timer_interface);
-  auto transform_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
-  auto broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+  auto tf = nav2::create_transform_buffer(node);
+  auto transform_listener = nav2::create_transform_listener(*tf, node);
+  auto broadcaster = nav2::create_transform_broadcaster(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
   extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
 
@@ -106,11 +100,7 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
   GoalIntentExtractorWrapper extractor;
   Graph graph;
   GraphToIDMap id_map;
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    node->get_node_base_interface(),
-    node->get_node_timers_interface());
-  tf->setCreateTimerInterface(timer_interface);
+  auto tf = nav2::create_transform_buffer(node);
 
   // Make a 3x3 graph of points 0,0 -> 2,2 (ROS logo)
   graph.resize(9);

@@ -23,7 +23,7 @@
 #include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 
@@ -70,11 +70,8 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    get_node_base_interface(), get_node_timers_interface());
-  tf_->setCreateTimerInterface(timer_interface);
-  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, true);
+  tf_ = nav2::create_transform_buffer(this);
+  transform_listener_ = nav2::create_transform_listener(*tf_, this, true);
 
   costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), costmap_topic);
@@ -97,6 +94,7 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
   action_server_ = create_action_server<Action>(
     "smooth_path",
     std::bind(&SmootherServer::smoothPlan, this),
+    std::bind(&SmootherServer::goalReceived, this, std::placeholders::_1),
     nullptr,
     std::chrono::milliseconds(500),
     true);
@@ -238,6 +236,22 @@ bool SmootherServer::findSmootherId(
   return true;
 }
 
+bool SmootherServer::goalReceived(std::shared_ptr<const Action::Goal> goal)
+{
+  std::string current_smoother;
+  if (!findSmootherId(goal->smoother_id, current_smoother)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Requested smoother %s is not available.", goal->smoother_id.c_str());
+    return false;
+  }
+  if (!validate(goal->path)) {
+    RCLCPP_WARN(get_logger(), "Requested path to smooth is invalid.");
+    return false;
+  }
+  return true;
+}
+
 void SmootherServer::smoothPlan()
 {
   auto start_time = this->now();
@@ -251,20 +265,12 @@ void SmootherServer::smoothPlan()
       return;  //  if action_server_ is deactivate, goal would be a nullptr
     }
 
-    std::string c_name = goal->smoother_id;
     std::string current_smoother;
-    if (findSmootherId(c_name, current_smoother)) {
-      current_smoother_ = current_smoother;
-    } else {
-      throw nav2_core::InvalidSmoother("Invalid Smoother: " + c_name);
-    }
+    findSmootherId(goal->smoother_id, current_smoother);
+    current_smoother_ = current_smoother;
 
     // Perform smoothing
     result->path = goal->path;
-
-    if (!validate(result->path)) {
-      throw nav2_core::InvalidPath("Requested path to smooth is invalid");
-    }
 
     result->was_completed = smoothers_[current_smoother_]->smooth(
       result->path, goal->max_smoothing_duration);

@@ -12,6 +12,8 @@ int16 ALL_GOALS = -1
 # Error codes
 # Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
+uint16 GOAL_REJECTED=1
+uint16 SEND_GOAL_FAILURE=2
 uint16 UNKNOWN=300
 uint16 INVALID_PLANNER=301
 uint16 TF_ERROR=302

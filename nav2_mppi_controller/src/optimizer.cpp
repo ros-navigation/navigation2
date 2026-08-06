@@ -26,6 +26,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace mppi
 {
@@ -33,7 +34,7 @@ namespace mppi
 void Optimizer::initialize(
   nav2::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  nav2::TransformBuffer::SharedPtr tf_buffer,
   ParametersHandler * param_handler)
 {
   parent_ = parent;

@@ -24,9 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -313,9 +311,9 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::executors::SingleThreadedExecutor node_executor_;
 
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   std::unique_ptr<geometry_msgs::msg::TransformStamped> transform_;
 
   std::shared_ptr<TestMask> mask_;
@@ -430,9 +428,9 @@ bool TestNode::createSpeedFilter(
   const PathLookaheadParams & params)
 {
   node_ = std::make_shared<nav2::LifecycleNode>("test_node");
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  tf_buffer_ = nav2::create_transform_buffer(node_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
 
   nav2_costmap_2d::LayeredCostmap layers(global_frame, false, false);
 
@@ -506,7 +504,7 @@ bool TestNode::createSpeedFilter(
 
 void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame)
 {
-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+  tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
 
   transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();
   transform_->header.frame_id = mask_frame;

@@ -34,7 +34,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/collision_monitor_node.hpp"
@@ -508,8 +508,8 @@ void Tester::setGlobalHeightParams(const std::string & source_name, const double
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(cm_);
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
+    nav2::create_transform_broadcaster(cm_);
 
   geometry_msgs::msg::TransformStamped transform;
   transform.transform.rotation.x = 0.0;

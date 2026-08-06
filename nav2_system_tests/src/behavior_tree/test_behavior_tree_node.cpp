@@ -31,9 +31,7 @@
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/utils/shared_library.h"
 
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/string_utils.hpp"
@@ -61,12 +59,9 @@ public:
   {
     node_ = std::make_shared<nav2::LifecycleNode>("behavior_tree_handler");
 
-    tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      node_->get_node_base_interface(), node_->get_node_timers_interface());
-    tf_->setCreateTimerInterface(timer_interface);
+    tf_ = nav2::create_transform_buffer(node_);
     tf_->setUsingDedicatedThread(true);
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, node_, false);
+    tf_listener_ = nav2::create_transform_listener(*tf_, node_, false);
 
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
 
@@ -225,8 +220,8 @@ public:
 private:
   nav2::LifecycleNode::SharedPtr node_;
 
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 

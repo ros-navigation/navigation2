@@ -58,12 +58,6 @@ BT::NodeStatus UndockRobotAction::on_cancelled()
   return BT::NodeStatus::SUCCESS;
 }
 
-void UndockRobotAction::on_timeout()
-{
-  setOutput("error_code_id", ActionResult::TIMEOUT);
-  setOutput("error_msg", "Behavior Tree action client timed out waiting.");
-}
-
 void UndockRobotAction::halt()
 {
   BtActionNode::halt();

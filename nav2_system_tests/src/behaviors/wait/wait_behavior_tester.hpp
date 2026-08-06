@@ -33,8 +33,7 @@
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 #include "tf2/utils.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_system_tests
 {
@@ -71,8 +70,8 @@ private:
   bool is_active_;
   bool initial_pose_received_;
 
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   rclcpp::Node::SharedPtr node_;
 

@@ -19,6 +19,7 @@
 #include <functional>
 
 #include "tf2/transform_datatypes.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/validate_messages.hpp"
@@ -32,7 +33,7 @@ constexpr size_t MAX_RANGE_DATA_POINTS = 1e4;
 Range::Range(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
@@ -52,9 +53,11 @@ Range::~Range()
   data_sub_.reset();
 }
 
-void Range::configure()
+bool Range::configure()
 {
-  Source::configure();
+  if (!Source::configure()) {
+    return false;
+  }
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -68,9 +71,11 @@ void Range::configure()
     source_topic,
     std::bind(&Range::dataCallback, this, std::placeholders::_1),
     nav2::qos::SensorDataQoS());
+
+  return true;
 }
 
-bool Range::getData(
+bool Range::getSourceData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {

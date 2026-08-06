@@ -36,7 +36,7 @@
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/collision_detector_node.hpp"
@@ -412,8 +412,8 @@ void Tester::setVectors(
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(cd_);
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
+    nav2::create_transform_broadcaster(cd_);
 
   geometry_msgs::msg::TransformStamped transform;
   transform.transform.rotation.x = 0.0;

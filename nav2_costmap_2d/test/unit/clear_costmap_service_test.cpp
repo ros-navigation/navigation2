@@ -25,7 +25,7 @@
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "tf2_ros/static_transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 
@@ -48,7 +48,7 @@ protected:
     costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("costmap");
 
     // Send identity transform to ensure costmap can transform robot poses during service calls
-    auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(costmap_);
+    auto tf_broadcaster = nav2::create_static_transform_broadcaster(costmap_);
     geometry_msgs::msg::TransformStamped transform;
     transform.header.frame_id = "map";
     transform.child_frame_id = "base_link";

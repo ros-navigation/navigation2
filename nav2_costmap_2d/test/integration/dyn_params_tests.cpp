@@ -19,7 +19,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 class DynParamTestNode
 {
@@ -39,8 +39,8 @@ TEST(DynParamTestNode, testDynParamsSet)
   costmap->on_configure(rclcpp_lifecycle::State());
 
   // Set tf between default global_frame and robot_base_frame in order not to block in on_activate
-  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
-    std::make_unique<tf2_ros::TransformBroadcaster>(node);
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_ =
+    nav2::create_transform_broadcaster(node);
   geometry_msgs::msg::TransformStamped t;
   t.header.stamp = node->get_clock()->now();
   t.header.frame_id = "map";

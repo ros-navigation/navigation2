@@ -1,0 +1,7 @@
+# Remove exclusion zone(s) from a collision monitor / detector source at runtime.
+
+string zone_name                    # Name of zone to remove (ignored if remove_all is true)
+bool remove_all false               # If true, remove all zones from this source
+---
+bool success
+string message

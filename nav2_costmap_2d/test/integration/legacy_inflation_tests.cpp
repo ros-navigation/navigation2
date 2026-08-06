@@ -47,6 +47,7 @@
 #include "../testing_helper.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using geometry_msgs::msg::Point;
 using nav2_costmap_2d::CellData;
@@ -203,7 +204,7 @@ void TestNode::initNode(double inflation_radius)
 TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
 {
   initNode(4.1);
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -235,7 +236,7 @@ TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
 TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
 {
   initNode(4.1);
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -271,7 +272,7 @@ TEST_F(TestNode, testInflationInUnknown)
 
   node_->set_parameter(rclcpp::Parameter("track_unknown_space", true));
 
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
   layers.resizeMap(9, 9, 1, 0, 0);
 
@@ -307,7 +308,7 @@ TEST_F(TestNode, testInflationAroundUnknown)
 
   node_->set_parameter(rclcpp::Parameter("track_unknown_space", true));
 
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -332,7 +333,7 @@ TEST_F(TestNode, testInflationAroundUnknown)
 TEST_F(TestNode, testCostFunctionCorrectness)
 {
   initNode(10.5);
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   layers.resizeMap(100, 100, 1, 0, 0);
@@ -407,7 +408,7 @@ TEST_F(TestNode, testInflationOrderCorrectness)
 {
   const double inflation_radius = 4.1;
   initNode(inflation_radius);
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -440,7 +441,7 @@ TEST_F(TestNode, testInflationOrderCorrectness)
 TEST_F(TestNode, testInflation)
 {
   initNode(1);
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   // Footprint with inscribed radius = 2.1
@@ -518,7 +519,7 @@ TEST_F(TestNode, testInflation)
 TEST_F(TestNode, testInflation2)
 {
   initNode(1);
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   // Footprint with inscribed radius = 2.1
@@ -556,7 +557,7 @@ TEST_F(TestNode, testInflation2)
 TEST_F(TestNode, testInflation3)
 {
   initNode(3);
-  tf2_ros::Buffer tf(node_->get_clock());
+  nav2::TransformBuffer tf(node_->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
