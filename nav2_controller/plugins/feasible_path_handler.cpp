@@ -126,9 +126,29 @@ bool FeasiblePathHandler::isWithinInversionTolerances(
          fabs(angle_distance) <= inversion_yaw_tolerance_;
 }
 
+void FeasiblePathHandler::reset()
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  unpruned_global_plan_ = nav_msgs::msg::Path();
+  global_plan_ = nav_msgs::msg::Path();
+  global_plan_up_to_constraint_ = nav_msgs::msg::Path();
+  constraint_locale_ = 0u;
+}
+
 void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
+  if (!unpruned_global_plan_.poses.empty() &&
+    nav2_util::isSamePlan(path, unpruned_global_plan_))
+  {
+    RCLCPP_INFO(
+      logger_,
+      "Received identical plan; retaining pruned path state (%zu of %zu poses remaining).",
+      global_plan_up_to_constraint_.poses.size(), path.poses.size());
+    return;
+  }
+
+  unpruned_global_plan_ = path;
   global_plan_ = path;
   global_plan_up_to_constraint_ = global_plan_;
   if (enforce_path_inversion_ || enforce_path_rotation_) {

@@ -69,6 +69,11 @@ public:
   void setPlan(const nav_msgs::msg::Path & path) override;
 
   /**
+   * @brief Clear path handler state
+   */
+  void reset() override;
+
+  /**
    * @brief Determines the portion of the global plan to be used for local control.
    * This function locates the start and end iterators of the global plan segment
    * that is relevant for controller computation based on the robot's current pose and local costmap.
@@ -141,6 +146,7 @@ protected:
   std::string plugin_name_;
   nav2::TransformBuffer::SharedPtr tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  nav_msgs::msg::Path unpruned_global_plan_;
   nav_msgs::msg::Path global_plan_;
   nav_msgs::msg::Path global_plan_up_to_constraint_;
   geometry_msgs::msg::PoseStamped global_pose_;

@@ -22,10 +22,79 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_core/controller_exceptions.hpp"
+#include "nav2_core/path_handler.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/controller_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+
+class CountingPathHandler : public nav2_core::PathHandler
+{
+public:
+  void initialize(
+    const nav2::LifecycleNode::WeakPtr &,
+    const rclcpp::Logger &,
+    const std::string &,
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>,
+    nav2::TransformBuffer::SharedPtr) override {}
+
+  void setPlan(const nav_msgs::msg::Path &) override {}
+
+  void reset() override {++reset_count;}
+
+  nav2_core::PathSegment findPlanSegment(
+    const geometry_msgs::msg::PoseStamped &) override
+  {
+    return {};
+  }
+
+  nav_msgs::msg::Path transformLocalPlan(
+    const nav2_core::PathIterator &,
+    const nav2_core::PathIterator &) override
+  {
+    return nav_msgs::msg::Path();
+  }
+
+  geometry_msgs::msg::PoseStamped getTransformedGoal(
+    const builtin_interfaces::msg::Time &) override
+  {
+    return geometry_msgs::msg::PoseStamped();
+  }
+
+  int reset_count{0};
+};
+
+class DefaultResetPathHandler : public nav2_core::PathHandler
+{
+public:
+  void initialize(
+    const nav2::LifecycleNode::WeakPtr &,
+    const rclcpp::Logger &,
+    const std::string &,
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>,
+    nav2::TransformBuffer::SharedPtr) override {}
+
+  void setPlan(const nav_msgs::msg::Path &) override {}
+
+  nav2_core::PathSegment findPlanSegment(
+    const geometry_msgs::msg::PoseStamped &) override
+  {
+    return {};
+  }
+
+  nav_msgs::msg::Path transformLocalPlan(
+    const nav2_core::PathIterator &,
+    const nav2_core::PathIterator &) override
+  {
+    return nav_msgs::msg::Path();
+  }
+
+  geometry_msgs::msg::PoseStamped getTransformedGoal(
+    const builtin_interfaces::msg::Time &) override
+  {
+    return geometry_msgs::msg::PoseStamped();
+  }
+};
 
 class ControllerServerShim : public nav2_controller::ControllerServer
 {
@@ -35,11 +104,28 @@ public:
   void setEndPoseFrame(const std::string & frame) {end_pose_.header.frame_id = frame;}
   bool callIsGoalReached() {return isGoalReached();}
   nav2::TransformBuffer & getTfBuffer() {return *costmap_ros_->getTfBuffer();}
+
+  void callSetCurrentPathHandler(const std::string & path_handler_id)
+  {
+    setCurrentPathHandler(path_handler_id);
+  }
+
+  void callResetAllPathHandlers()
+  {
+    resetAllPathHandlers();
+  }
+
+  void callOnGoalExit(bool force_stop, bool reset_path_handler_state)
+  {
+    onGoalExit(force_stop, reset_path_handler_state);
+  }
+
+  PathHandlerMap & pathHandlers() {return path_handlers_;}
+  std::string & currentPathHandler() {return current_path_handler_;}
 };
 
 TEST(ControllerServerTest, IsGoalReachedThrowsOnTfFailure)
 {
-  // aa
   rclcpp::NodeOptions options;
   options.parameter_overrides({
     rclcpp::Parameter("progress_checker_plugins", std::vector<std::string>{}),
@@ -65,6 +151,63 @@ TEST(ControllerServerTest, IsGoalReachedThrowsOnTfFailure)
   server->setEndPoseFrame("nonexistent_frame_xyz");
   EXPECT_THROW(server->callIsGoalReached(), nav2_core::ControllerTFError);
   server->cleanup();
+}
+
+TEST(ControllerServerTest, PathHandlerResetHelpers)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({
+    rclcpp::Parameter("progress_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("goal_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("controller_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("path_handler_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("filters", std::vector<std::string>{}),
+    rclcpp::Parameter("publish_zero_velocity", false),
+  });
+
+  auto server = std::make_shared<ControllerServerShim>(options);
+  ASSERT_EQ(
+    server->configure().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+
+  auto handler_a = std::make_shared<CountingPathHandler>();
+  auto handler_b = std::make_shared<CountingPathHandler>();
+  server->pathHandlers()["handler_a"] = handler_a;
+  server->pathHandlers()["handler_b"] = handler_b;
+
+  server->callSetCurrentPathHandler("handler_a");
+  EXPECT_EQ(server->currentPathHandler(), "handler_a");
+  EXPECT_EQ(handler_a->reset_count, 1);
+  EXPECT_EQ(handler_b->reset_count, 0);
+
+  server->callSetCurrentPathHandler("handler_a");
+  EXPECT_EQ(handler_a->reset_count, 1);
+
+  server->callSetCurrentPathHandler("handler_b");
+  EXPECT_EQ(server->currentPathHandler(), "handler_b");
+  EXPECT_EQ(handler_a->reset_count, 2);
+  EXPECT_EQ(handler_b->reset_count, 1);
+
+  server->callOnGoalExit(false, false);
+  EXPECT_EQ(handler_a->reset_count, 2);
+  EXPECT_EQ(handler_b->reset_count, 1);
+
+  server->callOnGoalExit(false, true);
+  EXPECT_EQ(handler_a->reset_count, 3);
+  EXPECT_EQ(handler_b->reset_count, 2);
+
+  server->callResetAllPathHandlers();
+  EXPECT_EQ(handler_a->reset_count, 4);
+  EXPECT_EQ(handler_b->reset_count, 3);
+
+  server->cleanup();
+}
+
+TEST(ControllerServerTest, DefaultPathHandlerReset)
+{
+  DefaultResetPathHandler handler;
+  handler.reset();
 }
 
 TEST(ControllerServerTest, GoalCheckerPluginTypeException)
