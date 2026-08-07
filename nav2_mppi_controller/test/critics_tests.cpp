@@ -29,6 +29,7 @@
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
 #include "nav2_mppi_controller/critics/path_angle_critic.hpp"
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
+#include "nav2_mppi_controller/critics/path_hug_critic.hpp"
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 #include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
@@ -927,4 +928,303 @@ TEST(CriticTests, VelocityDeadbandCritic)
   critic.score(data);
   // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
   EXPECT_NEAR(costs(1), 19.845, 0.01);
+}
+
+TEST(CriticTests, PathHugCritic)
+{
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  auto getParam = param_handler.getParamGetter("critic");
+  int trajectory_point_step;
+  double lookahead_distance, max_allowed_distance, collision_cost, grace_distance,
+    search_window, threshold_to_consider;
+  bool use_soft_repulsion;
+  getParam(trajectory_point_step, "trajectory_point_step", 1);
+  int offset_from_furthest;
+  getParam(offset_from_furthest, "offset_from_furthest", 0);
+  getParam(lookahead_distance, "lookahead_distance", 2.0);
+  getParam(max_allowed_distance, "max_allowed_distance", 0.2);
+  getParam(collision_cost, "collision_cost", 100000.0);
+  getParam(use_soft_repulsion, "use_soft_repulsion", false);
+  getParam(grace_distance, "grace_distance", 0.1);
+  getParam(search_window, "search_window", 2.0);
+  getParam(threshold_to_consider, "threshold_to_consider", 0.5);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.reset(1000, 30);
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  generated_trajectories.reset(1000, 30);
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  path.reset(5);
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1f;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+  TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
+  data.goal_checker = &goal_checker;
+
+  // Initialization testing
+
+  // Make sure initializes correctly
+  PathHugCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+
+  // Early exit: path too short
+  state.local_path_length = 0.1f;
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(1, 30);
+  costs.resize(1);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.5f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+  }
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
+  state.local_path_length = 10.0f;
+
+  // Early exit: path_segments_count < 2
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 1;
+  generated_trajectories.reset(1, 30);
+  costs.resize(1);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.5f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+  }
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
+
+  // Trajectory on path
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(1, 30);
+  costs.resize(1);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.0f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+  }
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
+
+  // Inside corridor, no cost
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(1, 30);
+  costs.resize(1);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.1f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+  }
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
+
+  // One violates, one doesn't
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(2, 30);
+  costs.resize(2);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.0f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+    generated_trajectories.x(1, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(1, i) = 0.5f;
+    generated_trajectories.yaws(1, i) = 0.0f;
+  }
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
+  EXPECT_NEAR(costs(1), 100000.0f, 1e-3f);
+
+  // All violate, graded fallback
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(1, 30);
+  costs.resize(1);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.5f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+  }
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 3.0f, 0.5f);
+
+  // Soft mode: inside grace_distance
+  node->set_parameter(rclcpp::Parameter("critic.use_soft_repulsion", true));
+  PathHugCritic soft_critic;
+  soft_critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(1, 30);
+  costs.resize(1);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.05f;  // dist=0.05 < grace_distance=0.1
+    generated_trajectories.yaws(0, i) = 0.0f;
+  }
+  soft_critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
+
+  // Soft mode: linear ramp between grace and max
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(1, 30);
+  costs.resize(1);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.15f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+  }
+  soft_critic.score(data);
+  EXPECT_NEAR(costs(0), 5.0f, 0.5f);
+
+  // Soft mode: outside max, hard veto
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(2, 30);
+  costs.resize(2);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.0f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+    generated_trajectories.x(1, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(1, i) = 0.5f;
+    generated_trajectories.yaws(1, i) = 0.0f;
+  }
+  soft_critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
+  EXPECT_NEAR(costs(1), 100000.0f, 1e-3f);
+
+  // Violation beyond lookahead ignored
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(2, 30);
+  costs.resize(2);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    // traj 0: always on path
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.0f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+    generated_trajectories.x(1, i) = static_cast<float>(i) * 0.3f;
+    generated_trajectories.y(1, i) = (i >= 7) ? 0.5f : 0.0f;
+    generated_trajectories.yaws(1, i) = 0.0f;
+  }
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
+  EXPECT_NEAR(costs(1), 0.0f, 1e-6f);
+
+  // trajectory_point_step: larger step still scores
+  node->set_parameter(rclcpp::Parameter("critic.trajectory_point_step", 4));
+  PathHugCritic step_critic;
+  step_critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  data.path_pts_valid = std::vector<bool>(5, true);
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(2, 30);
+  costs.resize(2);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.0f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+    generated_trajectories.x(1, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(1, i) = 0.5f;
+    generated_trajectories.yaws(1, i) = 0.0f;
+  }
+  EXPECT_NO_THROW(step_critic.score(data));
+  EXPECT_GT(costs(1), 0.0f);
+
+  // All invalid path points, no cost
+  node->set_parameter(rclcpp::Parameter("critic.trajectory_point_step", 1));
+  node->set_parameter(rclcpp::Parameter("critic.use_soft_repulsion", false));
+  PathHugCritic valid_critic;
+  valid_critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  path.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path.x(i) = static_cast<float>(i); path.y(i) = 0.0f; path.yaws(i) = 0.0f;
+  }
+  std::vector<bool> all_invalid(5, false);
+  data.path_pts_valid = all_invalid;
+  data.furthest_reached_path_point = 4;
+  generated_trajectories.reset(1, 30);
+  costs.resize(1);
+  costs.setZero();
+  for (int i = 0; i < 30; ++i) {
+    generated_trajectories.x(0, i) = static_cast<float>(i) * 0.1f;
+    generated_trajectories.y(0, i) = 0.5f;
+    generated_trajectories.yaws(0, i) = 0.0f;
+  }
+  valid_critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-6f);
 }
