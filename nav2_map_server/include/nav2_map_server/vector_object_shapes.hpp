@@ -15,7 +15,10 @@
 #ifndef NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
 #define NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
 
+#include <uuid/uuid.h>
+#include <cstdint>
 #include <memory>
+#include <stdexcept>
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
@@ -28,8 +31,122 @@
 #include "nav2_msgs/msg/polygon_object.hpp"
 #include "nav2_msgs/msg/circle_object.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_util/occ_grid_values.hpp"
 
-#include "nav2_map_server/vector_object_utils.hpp"
+namespace nav2_map_server
+{
+
+// ---------- Working with UUID-s ----------
+
+/**
+ * @brief Converts UUID from input array to unparsed string
+ * @param uuid Input UUID in array format
+ * @return Unparsed UUID string
+ */
+inline std::string unparseUUID(const unsigned char * uuid)
+{
+  char uuid_str[37];
+  uuid_unparse(uuid, uuid_str);
+  return std::string(uuid_str);
+}
+
+// ---------- Working with shapes' overlays ----------
+
+/// @brief Type of overlay between different vector objects and map
+enum class OverlayType : uint8_t
+{
+  OVERLAY_SEQ = 0,  // Vector objects are superimposed in the order in which they have arrived
+  OVERLAY_MAX = 1,  // Maximum value from vector objects and map is being chosen
+  OVERLAY_MIN = 2   // Minimum value from vector objects and map is being chosen
+};
+
+/**
+ * @brief Updates map value with shape's one according to the given overlay type
+ * @param map_val Map value. To be updated with new value if overlay is involved
+ * @param shape_val Vector object value to be overlaid on map
+ * @param overlay_type Type of overlay
+ * @throw std::exception in case of unknown overlay type
+ */
+inline void processVal(
+  int8_t & map_val, const int8_t shape_val,
+  const OverlayType overlay_type)
+{
+  switch (overlay_type) {
+    case OverlayType::OVERLAY_SEQ:
+      map_val = shape_val;
+      return;
+    case OverlayType::OVERLAY_MAX:
+      if (shape_val > map_val) {
+        map_val = shape_val;
+      }
+      return;
+    case OverlayType::OVERLAY_MIN:
+      if ((map_val == nav2_util::OCC_GRID_UNKNOWN || shape_val < map_val) &&
+        shape_val != nav2_util::OCC_GRID_UNKNOWN)
+      {
+        map_val = shape_val;
+      }
+      return;
+    default:
+      throw std::runtime_error{"Unknown overlay type"};
+  }
+}
+
+/**
+ * @brief Updates the cell on the map with given shape value according to the given overlay type
+ * @param map Output map to be updated with
+ * @param offset Offset to the cell to be updated
+ * @param shape_val Vector object value to be updated map with
+ * @param overlay_type Type of overlay
+ */
+inline void processCell(
+  nav_msgs::msg::OccupancyGrid::SharedPtr map,
+  const unsigned int offset,
+  const int8_t shape_val,
+  const OverlayType overlay_type)
+{
+  int8_t map_val = map->data[offset];
+  processVal(map_val, shape_val, overlay_type);
+  map->data[offset] = map_val;
+}
+
+/// @brief Functor class used in raytraceLine algorithm
+class MapAction
+{
+public:
+  /**
+   * @brief MapAction constructor
+   * @param map Pointer to output map
+   * @param value Value to put on map
+   * @param overlay_type Overlay type
+   */
+  MapAction(
+    nav_msgs::msg::OccupancyGrid::SharedPtr map,
+    int8_t value, OverlayType overlay_type)
+  : map_(map), value_(value), overlay_type_(overlay_type)
+  {}
+
+  /**
+   * @brief Map' cell updating operator
+   * @param offset Offset on the map where the cell to be changed
+   */
+  inline void operator()(unsigned int offset)
+  {
+    processCell(map_, offset, value_, overlay_type_);
+  }
+
+protected:
+  /// @brief Output map pointer
+  nav_msgs::msg::OccupancyGrid::SharedPtr map_;
+  /// @brief Value to put on map
+  int8_t value_;
+  /// @brief Overlay type
+  OverlayType overlay_type_;
+};
+
+}  // namespace nav2_map_server
+
+#include "nav2_util/occ_grid_utils.hpp"
 
 namespace nav2_map_server
 {
@@ -155,6 +272,17 @@ public:
   virtual void putBorders(
     nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type) = 0;
 
+  /**
+   * @brief Fills the shape interior on the map using an optimized scanline algorithm.
+   * Replaces the naive bounding-box + point-in-polygon loop previously performed
+   * inside VectorObjectServer::putVectorObjectsOnMap().
+   * Empty virtual method intended to be used in child implementations.
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   */
+  virtual void putFilled(
+    nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type) = 0;
+
 protected:
   /// @brief Type of shape
   ShapeType type_;
@@ -259,6 +387,16 @@ public:
    * @param overlay_type Overlay type
    */
   void putBorders(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
+
+  /**
+   * @brief Fills the polygon interior on the map using a scanline algorithm
+   * (equivalent to OpenCV's cv::fillPoly) without an external OpenCV dependency.
+   * This is significantly faster than the previous approach of testing each
+   * bounding-box cell individually with isPointInside().
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   */
+  void putFilled(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
 
 protected:
   /**
@@ -369,6 +507,15 @@ public:
    * @param overlay_type Overlay type
    */
   void putBorders(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
+
+  /**
+   * @brief Fills the circle interior on the map using the midpoint circle scanline
+   * algorithm. Iterates one octant of the circle boundary and fills horizontal
+   * spans, yielding O(r) work instead of O(r^2) bounding-box iteration.
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   */
+  void putFilled(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
 
 protected:
   /**
