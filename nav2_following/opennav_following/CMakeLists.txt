@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.20)
 project(opennav_following)
 
 find_package(ament_cmake REQUIRED)
@@ -33,9 +33,9 @@ target_include_directories(${library_name}
   "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_util::nav2_util_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   opennav_docking::controller
   opennav_docking::pose_filter
   rclcpp::rclcpp

@@ -63,7 +63,9 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
   xyz_action_server_ = create_action_server<ActionT>(
     "follow_waypoints", std::bind(
       &WaypointFollower::followWaypointsCallback,
-      this), nullptr, std::chrono::milliseconds(
+      this),
+    std::bind(&WaypointFollower::goalReceived<ActionT>, this, std::placeholders::_1),
+    nullptr, std::chrono::milliseconds(
       500), false);
 
   from_ll_to_map_client_ = node->create_client<robot_localization::srv::FromLL>(
@@ -74,7 +76,9 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
     "follow_gps_waypoints",
     std::bind(
       &WaypointFollower::followGPSWaypointsCallback,
-      this), nullptr, std::chrono::milliseconds(
+      this),
+    std::bind(&WaypointFollower::goalReceived<ActionTGPS>, this, std::placeholders::_1),
+    nullptr, std::chrono::milliseconds(
       500), false);
 
   try {
@@ -142,6 +146,25 @@ WaypointFollower::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 template<typename T>
+bool WaypointFollower::goalReceived(std::shared_ptr<const typename T::Goal> goal)
+{
+  if constexpr (std::is_same_v<T, ActionTGPS>) {
+    if (goal->gps_poses.empty()) {
+      RCLCPP_ERROR(
+        get_logger(), "Empty vector of GPS waypoints passed to waypoint following action.");
+      return false;
+    }
+  } else {
+    if (goal->poses.empty()) {
+      RCLCPP_ERROR(
+        get_logger(), "Empty vector of waypoints passed to waypoint following action.");
+      return false;
+    }
+  }
+  return true;
+}
+
+template<typename T>
 std::vector<geometry_msgs::msg::PoseStamped> WaypointFollower::getLatestGoalPoses(
   const T & action_server)
 {
@@ -189,13 +212,13 @@ void WaypointFollower::followWaypointsHandler(
     get_logger(), "Received follow waypoint request with %i waypoints.",
     static_cast<int>(poses.size()));
 
+  // Check again, GPS waypoint following the poses may still be empty if conversion failed
   if (poses.empty()) {
     result->error_code =
       nav2_msgs::action::FollowWaypoints::Result::NO_VALID_WAYPOINTS;
     result->error_msg =
-      "Empty vector of waypoints passed to waypoint following "
-      "action potentially due to conversation failure or empty request.";
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+      "Empty vector of waypoints, probably due to conversion failure.";
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     action_server->terminate_current(result);
     return;
   }
@@ -228,7 +251,7 @@ void WaypointFollower::followWaypointsHandler(
         result->error_msg =
           "Empty vector of Waypoints passed to waypoint following logic. "
           "Nothing to execute, returning with failure!";
-        RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+        RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
         action_server->terminate_current(result);
         return;
       }
@@ -278,7 +301,7 @@ void WaypointFollower::followWaypointsHandler(
           "Failed to process waypoint " + std::to_string(goal_index) +
           " in waypoint list and stop on failure is enabled."
           " Terminating action.";
-        RCLCPP_WARN(get_logger(), result->error_msg.c_str());
+        RCLCPP_WARN(get_logger(), "%s", result->error_msg.c_str());
         action_server->terminate_current(result);
         current_goal_status_.error_code = 0;
         current_goal_status_.error_msg = "";
@@ -315,7 +338,7 @@ void WaypointFollower::followWaypointsHandler(
         result->error_msg =
           "Failed to execute task at waypoint " + std::to_string(goal_index) +
           " stop on failure is enabled. Terminating action.";
-        RCLCPP_WARN(get_logger(), result->error_msg.c_str());
+        RCLCPP_WARN(get_logger(), "%s", result->error_msg.c_str());
         action_server->terminate_current(result);
         current_goal_status_.error_code = 0;
         current_goal_status_.error_msg = "";
@@ -406,7 +429,7 @@ WaypointFollower::resultCallback(
       current_goal_status_.status = ActionStatus::UNKNOWN;
       current_goal_status_.error_code = nav2_msgs::action::FollowWaypoints::Result::UNKNOWN;
       current_goal_status_.error_msg = "Received an UNKNOWN result code from navigation action!";
-      RCLCPP_ERROR(get_logger(), current_goal_status_.error_msg.c_str());
+      RCLCPP_ERROR(get_logger(), "%s", current_goal_status_.error_msg.c_str());
       return;
   }
 }
@@ -420,7 +443,7 @@ WaypointFollower::goalResponseCallback(
     current_goal_status_.error_code = nav2_msgs::action::FollowWaypoints::Result::UNKNOWN;
     current_goal_status_.error_msg =
       "navigate_to_pose action client failed to send goal to server.";
-    RCLCPP_ERROR(get_logger(), current_goal_status_.error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", current_goal_status_.error_msg.c_str());
   }
 }
 

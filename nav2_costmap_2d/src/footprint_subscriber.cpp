@@ -17,10 +17,7 @@
 #include <memory>
 
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.hpp"
-#pragma GCC diagnostic pop
 
 namespace nav2_costmap_2d
 {
@@ -30,11 +27,15 @@ FootprintSubscriber::getFootprintRaw(
   std::vector<geometry_msgs::msg::Point> & footprint,
   std_msgs::msg::Header & footprint_header)
 {
-  if (!footprint_received_) {
+  if (!footprint_received_.load()) {
     return false;
   }
 
-  auto current_footprint = std::atomic_load(&footprint_);
+  auto current_footprint = footprint_.load();
+  if (!current_footprint) {
+    return false;
+  }
+
   footprint = toPointVector(current_footprint->polygon);
   footprint_header = current_footprint->header;
 
@@ -76,9 +77,9 @@ void
 FootprintSubscriber::footprint_callback(
   const geometry_msgs::msg::PolygonStamped::ConstSharedPtr & msg)
 {
-  std::atomic_store(&footprint_, msg);
-  if (!footprint_received_) {
-    footprint_received_ = true;
+  footprint_.store(msg);
+  if (!footprint_received_.load()) {
+    footprint_received_.store(true);
   }
 }
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_loopback_sim)
 
 find_package(ament_cmake REQUIRED)
@@ -35,15 +35,15 @@ target_include_directories(${library_name}
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
+  nav_msgs::nav_msgs
   nav2_ros_common::nav2_ros_common
   nav2_util::nav2_util_core
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rosgraph_msgs_TARGETS}
-  ${sensor_msgs_TARGETS}
+  rosgraph_msgs::rosgraph_msgs
+  sensor_msgs::sensor_msgs
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
@@ -91,7 +91,7 @@ if(BUILD_TESTING)
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
     nav2_ros_common::nav2_ros_common
-    ${rosgraph_msgs_TARGETS}
+    rosgraph_msgs::rosgraph_msgs
   )
 
   nav2_add_gtest(test_loopback_simulator test/test_loopback_simulator.cpp)
@@ -99,10 +99,10 @@ if(BUILD_TESTING)
     ${library_name}
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
-    ${geometry_msgs_TARGETS}
-    ${nav_msgs_TARGETS}
+    geometry_msgs::geometry_msgs
+    nav_msgs::nav_msgs
     tf2::tf2
-    ${tf2_msgs_TARGETS}
+    tf2_msgs::tf2_msgs
   )
 endif()
 

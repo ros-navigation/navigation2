@@ -29,14 +29,6 @@
 
 using namespace std::chrono_literals;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class LoopbackSimulatorTest : public ::testing::Test
 {
 protected:
@@ -154,7 +146,7 @@ TEST_F(LoopbackSimulatorTest, PublishesTfOnActivation)
   bool received_tf = false;
   auto tf_sub = helper_node_->create_subscription<tf2_msgs::msg::TFMessage>(
     "/tf", 10,
-    [&](const tf2_msgs::msg::TFMessage::SharedPtr msg) {
+    [&](const tf2_msgs::msg::TFMessage::ConstSharedPtr msg) {
       for (const auto & t : msg->transforms) {
         if (t.header.frame_id == "odom" && t.child_frame_id == "base_footprint") {
           received_tf = true;
@@ -174,7 +166,7 @@ TEST_F(LoopbackSimulatorTest, InitialPoseSetsMapToOdom)
   std::vector<geometry_msgs::msg::TransformStamped> received_tfs;
   auto tf_sub = helper_node_->create_subscription<tf2_msgs::msg::TFMessage>(
     "/tf", 10,
-    [&](const tf2_msgs::msg::TFMessage::SharedPtr msg) {
+    [&](const tf2_msgs::msg::TFMessage::ConstSharedPtr msg) {
       for (const auto & t : msg->transforms) {
         received_tfs.push_back(t);
       }
@@ -203,7 +195,7 @@ TEST_F(LoopbackSimulatorTest, CmdVelMovesRobot)
   std::vector<nav_msgs::msg::Odometry> odom_msgs;
   auto odom_sub = helper_node_->create_subscription<nav_msgs::msg::Odometry>(
     "odom", 10,
-    [&](const nav_msgs::msg::Odometry::SharedPtr msg) {
+    [&](const nav_msgs::msg::Odometry::ConstSharedPtr msg) {
       odom_msgs.push_back(*msg);
     });
 
@@ -229,7 +221,7 @@ TEST_F(LoopbackSimulatorTest, OdometryContainsTwist)
   bool got_odom = false;
   auto odom_sub = helper_node_->create_subscription<nav_msgs::msg::Odometry>(
     "odom", 10,
-    [&](const nav_msgs::msg::Odometry::SharedPtr msg) {
+    [&](const nav_msgs::msg::Odometry::ConstSharedPtr msg) {
       latest_odom = *msg;
       got_odom = true;
     });
@@ -256,7 +248,7 @@ TEST_F(LoopbackSimulatorTest, RotationUpdatesYaw)
   bool got_base_tf = false;
   auto tf_sub = helper_node_->create_subscription<tf2_msgs::msg::TFMessage>(
     "/tf", 10,
-    [&](const tf2_msgs::msg::TFMessage::SharedPtr msg) {
+    [&](const tf2_msgs::msg::TFMessage::ConstSharedPtr msg) {
       for (const auto & t : msg->transforms) {
         if (t.child_frame_id == "base_footprint") {
           latest_base_tf = t;
@@ -301,7 +293,7 @@ TEST_F(LoopbackSimulatorTest, DeactivateStopsPublishing)
   int msg_count = 0;
   auto odom_sub = helper_node_->create_subscription<nav_msgs::msg::Odometry>(
     "odom", 10,
-    [&](const nav_msgs::msg::Odometry::SharedPtr) {
+    [&](const nav_msgs::msg::Odometry::ConstSharedPtr) {
       msg_count++;
     });
 
@@ -330,4 +322,13 @@ TEST_F(LoopbackSimulatorTest, SpeedFactorDynamicReconfigure)
 
   // Should still be last valid value
   EXPECT_DOUBLE_EQ(sim_node_->get_parameter("speed_factor").as_double(), 5.0);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

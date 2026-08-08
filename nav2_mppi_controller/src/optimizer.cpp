@@ -26,6 +26,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace mppi
 {
@@ -33,7 +34,7 @@ namespace mppi
 void Optimizer::initialize(
   nav2::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  nav2::TransformBuffer::SharedPtr tf_buffer,
   ParametersHandler * param_handler)
 {
   parent_ = parent;
@@ -105,6 +106,7 @@ void Optimizer::getParams()
   getParam(s.model_delay_vx, "model_delay_vx", 0.0f);
   getParam(s.model_delay_vy, "model_delay_vy", 0.0f);
   getParam(s.model_delay_wz, "model_delay_wz", 0.0f);
+  getParam(s.clamp_raw_controls, "clamp_raw_controls", false);
   getParam(s.time_steps, "time_steps", 56);
   getParam(s.batch_size, "batch_size", 1000);
   getParam(s.iteration_count, "iteration_count", 1);
@@ -198,7 +200,8 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
 
   noise_generator_.reset(settings_, isHolonomic());
   motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
-    settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz);
+    settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz,
+    settings_.clamp_raw_controls);
   motion_model_->clearCommandHistory();
   trajectory_validator_->initialize(
     parent_, name_ + ".TrajectoryValidator",
@@ -674,7 +677,8 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
     motion_model_ = motion_model_loader_->createSharedInstance(plugin_type);
     motion_model_->initialize(parameters_handler_, plugin_ns);
     motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
-      settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz);
+      settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz,
+      settings_.clamp_raw_controls);
   } catch (const pluginlib::PluginlibException & ex) {
     throw nav2_core::ControllerException(
             std::string("Failed to load motion model plugin '") + motion_model_name +
@@ -710,7 +714,8 @@ void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
     }
   }
   motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
-    settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz);
+    settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz,
+    settings_.clamp_raw_controls);
 }
 
 models::Trajectories & Optimizer::getGeneratedTrajectories()

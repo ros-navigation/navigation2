@@ -7,11 +7,11 @@ target_link_libraries(test_task_executors
   wait_at_waypoint
   photo_at_waypoint
   input_at_waypoint
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
 )
 
 # Test dynamic parameters

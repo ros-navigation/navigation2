@@ -24,14 +24,6 @@
 
 using namespace std::chrono_literals;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class ClockPublisherTest : public ::testing::Test
 {
 protected:
@@ -77,7 +69,7 @@ TEST_F(ClockPublisherTest, PublishesClockMessages)
   int msg_count = 0;
   auto sub = node_->create_subscription<rosgraph_msgs::msg::Clock>(
     "/clock",
-    [&](const rosgraph_msgs::msg::Clock::SharedPtr) {
+    [&](const rosgraph_msgs::msg::Clock::ConstSharedPtr) {
       msg_count++;
     },
     rclcpp::QoS(10));
@@ -96,7 +88,7 @@ TEST_F(ClockPublisherTest, ClockAdvancesMonotonically)
   std::vector<int64_t> timestamps;
   auto sub = node_->create_subscription<rosgraph_msgs::msg::Clock>(
     "/clock",
-    [&](const rosgraph_msgs::msg::Clock::SharedPtr msg) {
+    [&](const rosgraph_msgs::msg::Clock::ConstSharedPtr msg) {
       timestamps.push_back(rclcpp::Time(msg->clock).nanoseconds());
     },
     rclcpp::QoS(10));
@@ -118,7 +110,7 @@ TEST_F(ClockPublisherTest, StopStopsPublishing)
   int msg_count = 0;
   auto sub = node_->create_subscription<rosgraph_msgs::msg::Clock>(
     "/clock",
-    [&](const rosgraph_msgs::msg::Clock::SharedPtr) {
+    [&](const rosgraph_msgs::msg::Clock::ConstSharedPtr) {
       msg_count++;
     },
     rclcpp::QoS(10));
@@ -151,7 +143,7 @@ TEST_F(ClockPublisherTest, SetSpeedFactorRejectsNonPositive)
   int msg_count = 0;
   auto sub = node_->create_subscription<rosgraph_msgs::msg::Clock>(
     "/clock",
-    [&](const rosgraph_msgs::msg::Clock::SharedPtr) {
+    [&](const rosgraph_msgs::msg::Clock::ConstSharedPtr) {
       msg_count++;
     },
     rclcpp::QoS(10));
@@ -169,7 +161,7 @@ TEST_F(ClockPublisherTest, SpeedFactorAffectsRate)
   int count = 0;
   auto sub = node_->create_subscription<rosgraph_msgs::msg::Clock>(
     "/clock",
-    [&](const rosgraph_msgs::msg::Clock::SharedPtr msg) {
+    [&](const rosgraph_msgs::msg::Clock::ConstSharedPtr msg) {
       last_ns = rclcpp::Time(msg->clock).nanoseconds();
       count++;
     },
@@ -191,4 +183,13 @@ TEST_F(ClockPublisherTest, SpeedFactorAffectsRate)
   // With 0.5x, sim time should be roughly half of wall time
   EXPECT_GT(ratio, 0.45);
   EXPECT_LT(ratio, 0.55);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

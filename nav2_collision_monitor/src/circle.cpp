@@ -19,6 +19,9 @@
 #include <exception>
 
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
+
+#include "nav2_collision_monitor/polygon_utils.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -26,7 +29,7 @@ namespace nav2_collision_monitor
 Circle::Circle(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
 : Polygon::Polygon(node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
@@ -42,20 +45,8 @@ Circle::~Circle()
 void Circle::getPolygon(std::vector<Point> & poly) const
 {
   // Number of polygon points. More edges means better approximation.
-  const double polygon_edges = 16;
-  // Increment of angle during points position calculation
-  double angle_increment = 2 * M_PI / polygon_edges;
-
-  // Clear polygon before filling
-  poly.clear();
-
-  // Making new polygon looks like a circle
-  Point p;
-  for (double angle = 0.0; angle < 2 * M_PI; angle += angle_increment) {
-    p.x = radius_ * std::cos(angle);
-    p.y = radius_ * std::sin(angle);
-    poly.push_back(p);
-  }
+  constexpr int polygon_edges = 16;
+  poly = circleToPolygon(radius_, polygon_edges);
 }
 
 int Circle::getPointsInside(
@@ -165,7 +156,7 @@ void Circle::createSubscription(std::string & polygon_sub_topic)
   }
 }
 
-void Circle::updatePolygon(double radius)
+void Circle::updatePolygonFromRadius(double radius)
 {
   // Update circle radius
   radius_ = radius;
@@ -190,7 +181,7 @@ void Circle::radiusCallback(std_msgs::msg::Float32::ConstSharedPtr msg)
     logger_,
     "[%s]: Polygon circle radius update has been arrived",
     polygon_name_.c_str());
-  updatePolygon(msg->data);
+  updatePolygonFromRadius(msg->data);
 }
 
 }  // namespace nav2_collision_monitor

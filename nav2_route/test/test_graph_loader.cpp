@@ -21,22 +21,15 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_route/graph_loader.hpp"
-#include "tf2_ros/static_transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route; //NOLINT
 
 TEST(GraphLoader, test_invalid_plugin)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -55,7 +48,7 @@ TEST(GraphLoader, test_invalid_plugin)
 TEST(GraphLoader, test_api)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -77,10 +70,10 @@ TEST(GraphLoader, test_transformation_api)
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);
-  auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
-  auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
+  auto tf_listener = nav2::create_transform_listener(*tf, node);
+  auto tf_broadcaster = nav2::create_static_transform_broadcaster(node);
 
   std::string frame = "map";
 
@@ -131,7 +124,7 @@ TEST(GraphLoader, test_transformation_api)
 TEST(GraphLoader, test_transformation_api2)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);
 
   std::string frame = "map";
@@ -150,4 +143,13 @@ TEST(GraphLoader, test_transformation_api2)
   std::string filepath = nav2::get_package_share_directory("nav2_route") +
     "/test/test_graphs/no_frame.json";
   EXPECT_FALSE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath));
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

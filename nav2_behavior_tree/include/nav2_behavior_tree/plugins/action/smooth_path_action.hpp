@@ -75,12 +75,6 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
-   * @brief Function to perform work in a BT Node when the action server times out
-   * Such as setting the error code ID status to timed out for action clients.
-   */
-  void on_timeout() override;
-
-  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -103,10 +97,6 @@ public:
         BT::OutputPort<double>("smoothing_duration", "Time taken to smooth path"),
         BT::OutputPort<bool>(
           "was_completed", "True if smoothing was not interrupted by time limit"),
-        BT::OutputPort<ActionResult::_error_code_type>(
-          "error_code_id", "The smooth path error code"),
-        BT::OutputPort<std::string>(
-          "error_msg", "The smooth path error msg"),
       });
   }
 };

@@ -36,6 +36,9 @@ AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
   fine_xy_goal_tolerance_sq_(0.01),
   coarse_xy_goal_tolerance_(0.25),
   coarse_xy_goal_tolerance_sq_(0.0625),
+  xy_goal_tolerance_buffer_(0.0),
+  fine_xy_goal_tolerance_reset_sq_(0.01),
+  coarse_xy_goal_tolerance_reset_sq_(0.0625),
   yaw_goal_tolerance_(0.25),
   path_length_tolerance_(1.0),
   stateful_(true),
@@ -50,7 +53,7 @@ AdaptiveToleranceGoalChecker::AdaptiveToleranceGoalChecker()
   best_distance_sq_(std::numeric_limits<double>::max()),
   approach_dx_(0.0),
   approach_dy_(0.0),
-  xy_acceptance_reason_("")
+  xy_acceptance_reason_(XyAcceptanceReason::NONE)
 {
 }
 
@@ -81,6 +84,8 @@ void AdaptiveToleranceGoalChecker::initialize(
     plugin_name + ".fine_xy_goal_tolerance", 0.10);
   coarse_xy_goal_tolerance_ = node->declare_or_get_parameter(
     plugin_name + ".coarse_xy_goal_tolerance", 0.25);
+  xy_goal_tolerance_buffer_ = node->declare_or_get_parameter(
+    plugin_name + ".xy_goal_tolerance_buffer", 0.0);
   yaw_goal_tolerance_ = node->declare_or_get_parameter(
     plugin_name + ".yaw_goal_tolerance", 0.25);
   path_length_tolerance_ = node->declare_or_get_parameter(
@@ -97,6 +102,10 @@ void AdaptiveToleranceGoalChecker::initialize(
 
   fine_xy_goal_tolerance_sq_ = fine_xy_goal_tolerance_ * fine_xy_goal_tolerance_;
   coarse_xy_goal_tolerance_sq_ = coarse_xy_goal_tolerance_ * coarse_xy_goal_tolerance_;
+  fine_xy_goal_tolerance_reset_sq_ = (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+    (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
+  coarse_xy_goal_tolerance_reset_sq_ = (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+    (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
 
   if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
     RCLCPP_WARN(
@@ -126,7 +135,7 @@ void AdaptiveToleranceGoalChecker::reset()
   best_distance_sq_ = std::numeric_limits<double>::max();
   approach_dx_ = 0.0;
   approach_dy_ = 0.0;
-  xy_acceptance_reason_ = "";
+  xy_acceptance_reason_ = XyAcceptanceReason::NONE;
 }
 
 bool AdaptiveToleranceGoalChecker::isGoalReached(
@@ -157,12 +166,14 @@ bool AdaptiveToleranceGoalChecker::isGoalReached(
     yaw_reached = std::fabs(dyaw) <= yaw_goal_tolerance_;
   }
 
+  std::string xy_acceptance_reason = toString(xy_acceptance_reason_);
   if (yaw_reached) {
     RCLCPP_INFO(
       logger_,
       "AdaptiveToleranceGoalChecker: goal reached via %s "
       "(fine: %.3f m, coarse: %.3f m)",
-      xy_acceptance_reason_, fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
+      xy_acceptance_reason.c_str(),
+      fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
   }
 
   return yaw_reached;
@@ -190,7 +201,7 @@ bool AdaptiveToleranceGoalChecker::isGoalXYReached(
 
     // Tier 1: Tight (desired) tolerance — immediate acceptance
     if (dist_sq <= fine_xy_goal_tolerance_sq_) {
-      xy_acceptance_reason_ = "fine tolerance";
+      xy_acceptance_reason_ = XyAcceptanceReason::FINE_TOLERANCE;
       if (stateful_) {
         check_xy_ = false;
       }
@@ -241,11 +252,11 @@ bool AdaptiveToleranceGoalChecker::isGoalXYReached(
 
       // Accepted at coarse: record which trigger fired
       if (crossed_finish_line) {
-        xy_acceptance_reason_ = "coarse tolerance / finish line";
+        xy_acceptance_reason_ = XyAcceptanceReason::COARSE_TOLERANCE_FINISH_LINE;
       } else if (stopped_stagnation_count_ >= required_stagnation_cycles_) {
-        xy_acceptance_reason_ = "coarse tolerance / stopped stagnation";
+        xy_acceptance_reason_ = XyAcceptanceReason::COARSE_TOLERANCE_STOPPED_STAGNATION;
       } else {
-        xy_acceptance_reason_ = "coarse tolerance / distance stagnation";
+        xy_acceptance_reason_ = XyAcceptanceReason::COARSE_TOLERANCE_DISTANCE_STAGNATION;
       }
 
       if (stateful_) {
@@ -253,6 +264,23 @@ bool AdaptiveToleranceGoalChecker::isGoalXYReached(
       }
     } else {
       // Outside both tolerances: reset tracking state
+      in_tolerance_zone_ = false;
+      stopped_stagnation_count_ = 0;
+      distance_stagnation_count_ = 0;
+      return false;
+    }
+  } else if (stateful_ && xy_goal_tolerance_buffer_ > 0.0) {
+    const double dx = query_pose.position.x - goal_pose.position.x;
+    const double dy = query_pose.position.y - goal_pose.position.y;
+    const double dist_sq = dx * dx + dy * dy;
+    // If stateful and using xy_goal_tolerance_buffer_,
+    // reset check_xy_ and tracking state when drifting outside the buffer region.
+    const double reset_threshold_sq =
+      xy_acceptance_reason_ == XyAcceptanceReason::FINE_TOLERANCE ?
+      fine_xy_goal_tolerance_reset_sq_ : coarse_xy_goal_tolerance_reset_sq_;
+
+    if (dist_sq > reset_threshold_sq) {
+      check_xy_ = true;
       in_tolerance_zone_ = false;
       stopped_stagnation_count_ = 0;
       distance_stagnation_count_ = 0;
@@ -289,6 +317,23 @@ bool AdaptiveToleranceGoalChecker::getTolerances(
   path_length_tolerance = path_length_tolerance_;
 
   return true;
+}
+
+std::string AdaptiveToleranceGoalChecker::toString(XyAcceptanceReason reason)
+{
+  switch (reason) {
+    case XyAcceptanceReason::FINE_TOLERANCE:
+      return "fine tolerance";
+    case XyAcceptanceReason::COARSE_TOLERANCE_FINISH_LINE:
+      return "coarse tolerance / finish line";
+    case XyAcceptanceReason::COARSE_TOLERANCE_STOPPED_STAGNATION:
+      return "coarse tolerance / stopped stagnation";
+    case XyAcceptanceReason::COARSE_TOLERANCE_DISTANCE_STAGNATION:
+      return "coarse tolerance / distance stagnation";
+    case XyAcceptanceReason::NONE:
+    default:
+      return "unknown";
+  }
 }
 
 rcl_interfaces::msg::SetParametersResult
@@ -341,6 +386,9 @@ AdaptiveToleranceGoalChecker::updateParametersCallback(
       if (param_name == plugin_name_ + ".fine_xy_goal_tolerance") {
         fine_xy_goal_tolerance_ = parameter.as_double();
         fine_xy_goal_tolerance_sq_ = fine_xy_goal_tolerance_ * fine_xy_goal_tolerance_;
+        fine_xy_goal_tolerance_reset_sq_ =
+          (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+          (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
         if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
           RCLCPP_WARN(
             logger_, "Fine XY goal tolerance (%.3f) is greater or equal to coarse XY goal "
@@ -352,6 +400,9 @@ AdaptiveToleranceGoalChecker::updateParametersCallback(
       } else if (param_name == plugin_name_ + ".coarse_xy_goal_tolerance") {
         coarse_xy_goal_tolerance_ = parameter.as_double();
         coarse_xy_goal_tolerance_sq_ = coarse_xy_goal_tolerance_ * coarse_xy_goal_tolerance_;
+        coarse_xy_goal_tolerance_reset_sq_ =
+          (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+          (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
         if (fine_xy_goal_tolerance_ >= coarse_xy_goal_tolerance_) {
           RCLCPP_WARN(
             logger_, "Fine XY goal tolerance (%.3f) is greater or equal to coarse XY goal "
@@ -360,6 +411,14 @@ AdaptiveToleranceGoalChecker::updateParametersCallback(
             "fine_xy_goal_tolerance < coarse_xy_goal_tolerance.",
             fine_xy_goal_tolerance_, coarse_xy_goal_tolerance_);
         }
+      } else if (param_name == plugin_name_ + ".xy_goal_tolerance_buffer") {
+        xy_goal_tolerance_buffer_ = parameter.as_double();
+        fine_xy_goal_tolerance_reset_sq_ =
+          (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+          (fine_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
+        coarse_xy_goal_tolerance_reset_sq_ =
+          (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_) *
+          (coarse_xy_goal_tolerance_ + xy_goal_tolerance_buffer_);
       } else if (param_name == plugin_name_ + ".yaw_goal_tolerance") {
         yaw_goal_tolerance_ = parameter.as_double();
       } else if (param_name == plugin_name_ + ".path_length_tolerance") {

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_core)
 
 find_package(ament_cmake REQUIRED)
@@ -23,12 +23,12 @@ target_include_directories(nav2_core
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(nav2_core INTERFACE
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_behavior_tree::nav2_behavior_tree
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle

@@ -14,9 +14,12 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
+#include <thread>
 
 #include "behaviortree_cpp/bt_factory.h"
 
@@ -30,7 +33,56 @@ public:
   : TestActionServer("wait")
   {}
 
+  void setGoalResponse(rclcpp_action::GoalResponse goal_response)
+  {
+    goal_response_ = goal_response;
+  }
+
+  void blockGoalResponse()
+  {
+    std::lock_guard<std::mutex> lock(goal_response_mutex_);
+    goal_response_blocked_ = true;
+    goal_request_received_ = false;
+  }
+
+  void releaseGoalResponse()
+  {
+    {
+      std::lock_guard<std::mutex> lock(goal_response_mutex_);
+      goal_response_blocked_ = false;
+    }
+    goal_response_cv_.notify_all();
+  }
+
+  void waitForGoalRequest()
+  {
+    std::unique_lock<std::mutex> lock(goal_response_mutex_);
+    goal_response_cv_.wait(lock, [this]() {return goal_request_received_;});
+  }
+
 protected:
+  rclcpp_action::GoalResponse handle_goal(
+    const rclcpp_action::GoalUUID & goal_id,
+    std::shared_ptr<const nav2_msgs::action::Wait::Goal> goal) override
+  {
+    {
+      std::lock_guard<std::mutex> lock(goal_response_mutex_);
+      goal_request_received_ = true;
+    }
+    goal_response_cv_.notify_all();
+
+    {
+      std::unique_lock<std::mutex> lock(goal_response_mutex_);
+      goal_response_cv_.wait(lock, [this]() {return !goal_response_blocked_;});
+    }
+
+    if (goal_response_ == rclcpp_action::GoalResponse::REJECT) {
+      return goal_response_;
+    }
+
+    return TestActionServer<nav2_msgs::action::Wait>::handle_goal(goal_id, goal);
+  }
+
   void execute(
     const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::Wait>>
     goal_handle)
@@ -38,6 +90,23 @@ protected:
   {
     auto result = std::make_shared<nav2_msgs::action::Wait::Result>();
     goal_handle->succeed(result);
+  }
+
+  rclcpp_action::GoalResponse goal_response_{rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE};
+  std::condition_variable goal_response_cv_;
+  std::mutex goal_response_mutex_;
+  bool goal_response_blocked_{false};
+  bool goal_request_received_{false};
+};
+
+class TestableWaitAction : public nav2_behavior_tree::WaitAction
+{
+public:
+  using WaitAction::WaitAction;
+
+  void cancelExecutor()
+  {
+    callback_group_executor_.cancel();
   }
 };
 
@@ -77,6 +146,14 @@ public:
       };
 
     factory_->registerBuilder<nav2_behavior_tree::WaitAction>("Wait", builder);
+
+    BT::NodeBuilder testable_builder =
+      [](const std::string & name, const BT::NodeConfiguration & config)
+      {
+        return std::make_unique<TestableWaitAction>(name, "wait", config);
+      };
+
+    factory_->registerBuilder<TestableWaitAction>("TestableWait", testable_builder);
   }
 
   static void TearDownTestCase()
@@ -91,6 +168,7 @@ public:
   void SetUp() override
   {
     config_->blackboard->set("number_recoveries", 0);
+    action_server_->setGoalResponse(rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE);
   }
 
   void TearDown() override
@@ -158,6 +236,59 @@ TEST_F(WaitActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
   EXPECT_EQ(rclcpp::Duration(action_server_->getCurrentGoal()->time).seconds(), 5.0);
+}
+
+TEST_F(WaitActionTestFixture, test_goal_rejected_error_code)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Wait error_code_id="{wait_error_code}" error_msg="{wait_error_msg}" />
+        </BehaviorTree>
+      </root>)";
+
+  action_server_->setGoalResponse(rclcpp_action::GoalResponse::REJECT);
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(
+    config_->blackboard->get<uint16_t>("wait_error_code"),
+    nav2_msgs::action::Wait::Result::GOAL_REJECTED);
+  EXPECT_EQ(
+    config_->blackboard->get<std::string>("wait_error_msg"),
+    "Goal was rejected by the action server.");
+}
+
+TEST_F(WaitActionTestFixture, test_send_goal_failure_error_code)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <TestableWait error_code_id="{wait_error_code}" error_msg="{wait_error_msg}" />
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  auto * action = dynamic_cast<TestableWaitAction *>(tree_->rootNode());
+  ASSERT_NE(action, nullptr);
+
+  action_server_->blockGoalResponse();
+  std::thread cancel_thread([action]() {
+      WaitActionTestFixture::action_server_->waitForGoalRequest();
+      action->cancelExecutor();
+    });
+
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::FAILURE);
+  action_server_->releaseGoalResponse();
+  cancel_thread.join();
+  EXPECT_EQ(
+    config_->blackboard->get<uint16_t>("wait_error_code"),
+    nav2_msgs::action::Wait::Result::SEND_GOAL_FAILURE);
+  EXPECT_EQ(
+    config_->blackboard->get<std::string>("wait_error_msg"),
+    "Failed to send goal to the action server.");
 }
 
 int main(int argc, char ** argv)

@@ -22,9 +22,13 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "tf2/time.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
+
+#include "nav2_msgs/srv/add_exclusion_zone.hpp"
+#include "nav2_msgs/srv/remove_exclusion_zone.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
+#include "nav2_collision_monitor/exclusion_zone.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "std_msgs/msg/header.hpp"
 
@@ -54,7 +58,7 @@ public:
   Source(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -66,16 +70,31 @@ public:
   virtual ~Source();
 
   /**
-   * @brief Adds latest data from source to the data array.
-   * Empty virtual method intended to be used in child implementations.
+   * @brief Adds latest data from source to the data array, then removes any
+   * points falling inside an enabled exclusion zone.
    * @param curr_time Current node time for data interpolation
    * @param data Array where the data from source to be added.
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
    * @return false if an invalid source should block the robot
    */
-  virtual bool getData(
+  bool getData(
     const rclcpp::Time & curr_time,
-    std::vector<Point> & data) = 0;
+    std::vector<Point> & data);
+
+  /**
+   * @brief Activates the exclusion zone visualization publishers (if any)
+   */
+  void activate();
+
+  /**
+   * @brief Deactivates the exclusion zone visualization publishers (if any)
+   */
+  void deactivate();
+
+  /**
+   * @brief Publishes the source's exclusion zones for visualization
+   */
+  void publishExclusionZones() const;
 
   /**
    * @brief Obtains source enabled state
@@ -97,6 +116,18 @@ public:
 
 protected:
   /**
+   * @brief Adds latest data from source to the data array.
+   * Pure virtual method implemented by each concrete source type.
+   * @param curr_time Current node time for data interpolation
+   * @param data Array where the data from source to be added.
+   * Added data is transformed to base_frame_id_ coordinate system at curr_time.
+   * @return false if an invalid source should block the robot
+   */
+  virtual bool getSourceData(
+    const rclcpp::Time & curr_time,
+    std::vector<Point> & data) = 0;
+
+  /**
    * @brief Source configuration routine.
    * @return True in case of everything is configured correctly, or false otherwise
    */
@@ -117,6 +148,22 @@ protected:
   bool sourceValid(
     const rclcpp::Time & source_time,
     const rclcpp::Time & curr_time) const;
+
+  /**
+   * @brief Service callback to add an exclusion zone at runtime
+   */
+  void addExclusionZoneCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::AddExclusionZone::Request> request,
+    std::shared_ptr<nav2_msgs::srv::AddExclusionZone::Response> response);
+
+  /**
+   * @brief Service callback to remove an exclusion zone at runtime
+   */
+  void removeExclusionZoneCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::RemoveExclusionZone::Request> request,
+    std::shared_ptr<nav2_msgs::srv::RemoveExclusionZone::Response> response);
 
   /**
    * @brief Validate incoming parameter updates before applying them.
@@ -169,7 +216,7 @@ protected:
 
   // Global variables
   /// @brief TF buffer
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   /// @brief Robot base frame ID
   std::string base_frame_id_;
   /// @brief Global frame ID for correct transform calculation
@@ -183,6 +230,12 @@ protected:
   bool base_shift_correction_;
   /// @brief Whether source is enabled
   bool enabled_;
+  /// @brief Exclusion zones masking out points from this source
+  std::vector<std::shared_ptr<ExclusionZone>> exclusion_zones_;
+  /// @brief Service to add an exclusion zone at runtime
+  nav2::ServiceServer<nav2_msgs::srv::AddExclusionZone>::SharedPtr add_ez_service_;
+  /// @brief Service to remove an exclusion zone at runtime
+  nav2::ServiceServer<nav2_msgs::srv::RemoveExclusionZone>::SharedPtr remove_ez_service_;
 };  // class Source
 
 }  // namespace nav2_collision_monitor

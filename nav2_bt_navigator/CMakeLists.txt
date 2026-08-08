@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_bt_navigator)
 
 find_package(ament_cmake REQUIRED)
@@ -69,12 +69,12 @@ target_include_directories(nav2_navigate_to_pose_navigator
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(nav2_navigate_to_pose_navigator PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
-  ${nav_msgs_TARGETS}
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
 )
@@ -92,10 +92,10 @@ target_include_directories(nav2_navigate_through_poses
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(nav2_navigate_through_poses PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_core::nav2_core
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
+  nav_msgs::nav_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp

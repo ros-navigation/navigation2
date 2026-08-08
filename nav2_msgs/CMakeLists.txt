@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_msgs)
 
 find_package(ament_cmake REQUIRED)
@@ -43,6 +43,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetCosts.srv"
   "msg/PolygonObject.msg"
   "msg/CircleObject.msg"
+  "msg/ExclusionZoneDescription.msg"
   "srv/GetCostmap.srv"
   "srv/IsPathValid.srv"
   "srv/ClearCostmapExceptRegion.srv"
@@ -59,6 +60,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetShapes.srv"
   "srv/SetRouteGraph.srv"
   "srv/DynamicEdges.srv"
+  "srv/AddExclusionZone.srv"
+  "srv/RemoveExclusionZone.srv"
   "srv/Toggle.srv"
   "action/AssistedTeleop.action"
   "action/BackUp.action"

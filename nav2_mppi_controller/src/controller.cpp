@@ -16,6 +16,7 @@
 #include <chrono>
 #include "nav2_mppi_controller/controller.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -24,7 +25,7 @@ namespace nav2_mppi_controller
 
 void MPPIController::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, const std::shared_ptr<tf2_ros::Buffer> tf,
+  std::string name, const nav2::TransformBuffer::SharedPtr tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   parent_ = parent;

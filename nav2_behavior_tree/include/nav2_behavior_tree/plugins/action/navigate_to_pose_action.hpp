@@ -75,12 +75,6 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
-   * @brief Function to perform work in a BT Node when the action server times out
-   * Such as setting the error code ID status to timed out for action clients.
-   */
-  void on_timeout() override;
-
-  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -93,10 +87,6 @@ public:
       {
         BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
         BT::InputPort<std::string>("behavior_tree", "Behavior tree to run"),
-        BT::OutputPort<ActionResult::_error_code_type>(
-          "error_code_id", "Navigate to pose error code"),
-        BT::OutputPort<std::string>(
-          "error_msg", "Navigate to pose error msg"),
       });
   }
 };

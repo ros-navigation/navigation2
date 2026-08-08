@@ -22,6 +22,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_navfn_planner/navfn_planner.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 TEST(NavfnTest, testDynamicParameter)
 {
@@ -30,7 +31,7 @@ TEST(NavfnTest, testDynamicParameter)
   costmap->on_configure(rclcpp_lifecycle::State());
   auto planner =
     std::make_unique<nav2_navfn_planner::NavfnPlanner>();
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto tf = nav2::create_transform_buffer(node);
   planner->configure(node, "test", tf, costmap);
   planner->activate();
 
@@ -42,6 +43,7 @@ TEST(NavfnTest, testDynamicParameter)
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.tolerance", 1.0),
       rclcpp::Parameter("test.use_astar", true),
+      rclcpp::Parameter("test.max_cycles_factor", 6),
       rclcpp::Parameter("test.allow_unknown", true),
       rclcpp::Parameter("test.use_final_approach_orientation", true)});
 
@@ -51,6 +53,7 @@ TEST(NavfnTest, testDynamicParameter)
 
   EXPECT_EQ(node->get_parameter("test.tolerance").as_double(), 1.0);
   EXPECT_EQ(node->get_parameter("test.use_astar").as_bool(), true);
+  EXPECT_EQ(node->get_parameter("test.max_cycles_factor").as_int(), 6);
   EXPECT_EQ(node->get_parameter("test.allow_unknown").as_bool(), true);
   EXPECT_EQ(node->get_parameter("test.use_final_approach_orientation").as_bool(), true);
 
@@ -63,6 +66,16 @@ TEST(NavfnTest, testDynamicParameter)
 
   // Invalid value should not be set
   EXPECT_EQ(node->get_parameter("test.tolerance").as_double(), 1.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.max_cycles_factor", 0)});
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  // Invalid value should not be set
+  EXPECT_EQ(node->get_parameter("test.max_cycles_factor").as_int(), 6);
 }
 
 int main(int argc, char ** argv)

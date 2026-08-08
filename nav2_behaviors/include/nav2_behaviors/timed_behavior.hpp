@@ -26,8 +26,7 @@
 #include <utility>
 
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/twist_publisher.hpp"
@@ -115,7 +114,7 @@ public:
   // configure the server on lifecycle setup
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
+    const std::string & name, nav2::TransformBuffer::SharedPtr tf,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker)
   override
@@ -138,7 +137,7 @@ public:
 
     action_server_ = node->create_action_server<ActionT>(
       behavior_name_,
-      std::bind(&TimedBehavior::execute, this), nullptr, std::chrono::milliseconds(
+      std::bind(&TimedBehavior::execute, this), nullptr, nullptr, std::chrono::milliseconds(
         500), false);
 
     local_collision_checker_ = local_collision_checker;
@@ -183,7 +182,7 @@ protected:
   typename ActionServer::SharedPtr action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
 
   double cycle_frequency_;
   double enabled_;
@@ -279,7 +278,7 @@ protected:
         case Status::FAILED:
           result->error_code = on_cycle_update_result.error_code;
           result->error_msg = behavior_name_ + " failed:" + on_cycle_update_result.error_msg;
-          RCLCPP_WARN(logger_, result->error_msg.c_str());
+          RCLCPP_WARN(logger_, "%s", result->error_msg.c_str());
           result->total_elapsed_time = clock_->now() - start_time;
           onActionCompletion(result);
           action_server_->terminate_current(result);

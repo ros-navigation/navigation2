@@ -21,11 +21,9 @@
 #include <vector>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
 #include "nav2_core/behavior_tree_navigator.hpp"
 #include "pluginlib/class_loader.hpp"
 
@@ -101,8 +99,8 @@ protected:
   std::string odom_topic_;
 
   // Spinning transform that can be used by the node
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 };
 
 }  // namespace nav2_bt_navigator

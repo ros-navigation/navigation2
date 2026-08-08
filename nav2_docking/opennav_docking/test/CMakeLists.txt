@@ -4,7 +4,7 @@ nav2_add_gtest(test_utils
 )
 target_link_libraries(test_utils
   ament_index_cpp::ament_index_cpp
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   ${library_name}
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
@@ -40,9 +40,9 @@ nav2_add_gtest(test_navigator
 )
 target_link_libraries(test_navigator
   ament_index_cpp::ament_index_cpp
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   ${library_name}
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
@@ -59,7 +59,7 @@ nav2_add_gtest(test_controller
   test_controller.cpp
 )
 target_link_libraries(test_controller
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   ${library_name}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -77,11 +77,11 @@ nav2_add_gtest(test_simple_charging_dock
 )
 target_link_libraries(test_simple_charging_dock
   ament_index_cpp::ament_index_cpp
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
   simple_charging_dock
   tf2_geometry_msgs::tf2_geometry_msgs
 )
@@ -94,7 +94,7 @@ nav2_add_gtest(test_simple_non_charging_dock
   test_simple_non_charging_dock.cpp
 )
 target_link_libraries(test_simple_non_charging_dock
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   ${library_name}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -114,7 +114,7 @@ nav2_add_gtest(test_pose_filter
   test_pose_filter.cpp
 )
 target_link_libraries(test_pose_filter
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_ros_common::nav2_ros_common
   pose_filter
   rclcpp::rclcpp
@@ -130,7 +130,7 @@ target_include_directories(test_pose_filter
 # Test dock pluing for server tests
 add_library(test_dock SHARED testing_dock.cpp)
 target_link_libraries(test_dock PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   ${bond_TARGETS}
   opennav_docking_core::opennav_docking_core
   nav2_ros_common::nav2_ros_common
@@ -156,7 +156,7 @@ nav2_add_gtest(test_docking_server_unit
   test_docking_server_unit.cpp
 )
 target_link_libraries(test_docking_server_unit
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   ${library_name}
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common

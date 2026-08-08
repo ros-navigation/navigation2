@@ -46,9 +46,7 @@
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav2_ros_common/service_server.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include "tf2_ros/message_filter.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #define NEW_UNIFORM_SAMPLING 1
 
@@ -175,9 +173,9 @@ protected:
    * @brief Initialize required ROS transformations
    */
   void initTransforms();
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   bool sent_first_transform_{false};
   bool latest_tf_valid_{false};
   tf2::Transform latest_tf_;
@@ -196,7 +194,7 @@ protected:
     rclcpp_lifecycle::LifecycleNode>> laser_scan_sub_;
   #endif
 
-  std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
+  nav2::MessageFilter<sensor_msgs::msg::LaserScan>::SharedPtr laser_scan_filter_;
   message_filters::Connection laser_scan_connection_;
 
   // Publishers and subscribers

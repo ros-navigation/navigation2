@@ -48,7 +48,7 @@ void
 Layer::initialize(
   LayeredCostmap * parent,
   std::string name,
-  tf2_ros::Buffer * tf,
+  nav2::TransformBuffer * tf,
   const nav2::LifecycleNode::WeakPtr & node,
   rclcpp::CallbackGroup::SharedPtr callback_group)
 {

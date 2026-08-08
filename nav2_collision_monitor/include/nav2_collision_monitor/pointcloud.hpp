@@ -23,6 +23,7 @@
 #include "point_cloud_transport/point_cloud_transport.hpp"
 
 #include "nav2_collision_monitor/source.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -48,7 +49,7 @@ public:
   PointCloud(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -62,8 +63,9 @@ public:
   /**
    * @brief Data source configuration routine. Obtains pointcloud related ROS-parameters
    * and creates pointcloud subscriber.
+   * @return True in case of everything is configured correctly, or false otherwise
    */
-  void configure();
+  bool configure();
 
   /**
    * @brief Adds latest data from pointcloud source to the data array.
@@ -72,9 +74,9 @@ public:
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
    * @return false if an invalid source should block the robot
    */
-  bool getData(
+  bool getSourceData(
     const rclcpp::Time & curr_time,
-    std::vector<Point> & data);
+    std::vector<Point> & data) override;
 
 protected:
   /**

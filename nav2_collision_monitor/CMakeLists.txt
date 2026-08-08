@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_collision_monitor)
 
 find_package(ament_cmake REQUIRED)
@@ -32,6 +32,7 @@ add_library(${monitor_library_name} SHARED
   src/velocity_polygon.cpp
   src/circle.cpp
   src/source.cpp
+  src/exclusion_zone.cpp
   src/scan.cpp
   src/pointcloud.cpp
   src/polygon_source.cpp
@@ -45,18 +46,18 @@ target_include_directories(${monitor_library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${monitor_library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
   tf2::tf2
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
   point_cloud_transport::point_cloud_transport
 )
 target_link_libraries(${monitor_library_name} PRIVATE
@@ -69,6 +70,7 @@ add_library(${detector_library_name} SHARED
   src/velocity_polygon.cpp
   src/circle.cpp
   src/source.cpp
+  src/exclusion_zone.cpp
   src/scan.cpp
   src/pointcloud.cpp
   src/polygon_source.cpp
@@ -81,18 +83,18 @@ target_include_directories(${detector_library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${detector_library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
+  sensor_msgs::sensor_msgs
   tf2_ros::tf2_ros
   tf2::tf2
-  ${visualization_msgs_TARGETS}
+  visualization_msgs::visualization_msgs
   point_cloud_transport::point_cloud_transport
 )
 target_link_libraries(${detector_library_name} PRIVATE

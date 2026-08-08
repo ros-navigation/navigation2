@@ -63,10 +63,15 @@ TEST(ParameterHandlerTest, asTypeConversionTest)
   EXPECT_EQ(a.asWrapped<bool>(bool_p), false);
   EXPECT_EQ(a.asWrapped<std::string>(string_p), std::string("hello"));
 
-  EXPECT_EQ(a.asWrapped<std::vector<int64_t>>(intv_p)[0], 1);
-  EXPECT_EQ(a.asWrapped<std::vector<double>>(doublev_p)[0], 10.0);
-  EXPECT_EQ(a.asWrapped<std::vector<bool>>(boolv_p)[0], false);
-  EXPECT_EQ(a.asWrapped<std::vector<std::string>>(stringv_p)[0], std::string("hello"));
+  const auto intv = a.asWrapped<std::vector<int64_t>>(intv_p);
+  const auto doublev = a.asWrapped<std::vector<double>>(doublev_p);
+  const auto boolv = a.asWrapped<std::vector<bool>>(boolv_p);
+  const auto stringv = a.asWrapped<std::vector<std::string>>(stringv_p);
+
+  EXPECT_EQ(intv[0], 1L);
+  EXPECT_DOUBLE_EQ(doublev[0], 10.0);
+  EXPECT_EQ(boolv[0], false);
+  EXPECT_EQ(stringv[0], std::string("hello"));
 }
 
 TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)

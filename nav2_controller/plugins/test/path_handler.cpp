@@ -18,7 +18,7 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_controller/plugins/feasible_path_handler.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 
@@ -120,8 +120,7 @@ TEST(PathHandlerTests, TestBounds)
   EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.5);
 
   // Set tf between map odom and base_link
-  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
-    std::make_unique<tf2_ros::TransformBroadcaster>(node);
+  auto tf_broadcaster_ = nav2::create_transform_broadcaster(node);
   geometry_msgs::msg::TransformStamped t;
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
@@ -171,8 +170,7 @@ TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
   EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.5);
 
   // Set tf between map odom and base_link
-  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
-    std::make_unique<tf2_ros::TransformBroadcaster>(node);
+  auto tf_broadcaster_ = nav2::create_transform_broadcaster(node);
   geometry_msgs::msg::TransformStamped t;
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
@@ -222,8 +220,7 @@ TEST(PathHandlerTests, TestTransforms)
   handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
 
   // Set tf between map odom and base_link
-  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
-    std::make_unique<tf2_ros::TransformBroadcaster>(node);
+  auto tf_broadcaster_ = nav2::create_transform_broadcaster(node);
   geometry_msgs::msg::TransformStamped t;
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";

@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
@@ -131,6 +132,36 @@ TEST_F(FollowObjectActionTestFixture, test_ports)
   EXPECT_EQ(tree_->rootNode()->getInput<std::string>("pose_topic"), "test_topic");
   EXPECT_EQ(tree_->rootNode()->getInput<double>("max_duration"), 20.0);
   EXPECT_EQ(tree_->rootNode()->getInput<std::string>("tracked_frame"), "test_frame");
+}
+
+TEST_F(FollowObjectActionTestFixture, test_generic_request_error_codes)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <FollowObject error_code_id="{follow_object_error_code}" />
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  auto * node = dynamic_cast<nav2_behavior_tree::FollowObjectAction *>(tree_->rootNode());
+  ASSERT_NE(node, nullptr);
+
+  node->on_timeout();
+  EXPECT_EQ(
+    config_->blackboard->get<uint16_t>("follow_object_error_code"),
+    nav2_msgs::action::FollowObject::Result::TIMEOUT);
+
+  node->on_goal_rejected();
+  EXPECT_EQ(
+    config_->blackboard->get<uint16_t>("follow_object_error_code"),
+    nav2_msgs::action::FollowObject::Result::GOAL_REJECTED);
+
+  node->on_send_goal_failure();
+  EXPECT_EQ(
+    config_->blackboard->get<uint16_t>("follow_object_error_code"),
+    nav2_msgs::action::FollowObject::Result::SEND_GOAL_FAILURE);
 }
 
 TEST_F(FollowObjectActionTestFixture, test_tick)

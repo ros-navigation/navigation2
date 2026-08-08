@@ -22,6 +22,7 @@
 #include <nav2_ros_common/node_utils.hpp>
 #include <nav2_ros_common/qos_profiles.hpp>
 #include <nav2_costmap_2d/cost_values.hpp>
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -29,7 +30,7 @@ namespace nav2_collision_monitor
 CostmapSource::CostmapSource(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
@@ -49,9 +50,11 @@ CostmapSource::~CostmapSource()
   data_sub_.reset();
 }
 
-void CostmapSource::configure()
+bool CostmapSource::configure()
 {
-  Source::configure();
+  if (!Source::configure()) {
+    return false;
+  }
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -62,9 +65,11 @@ void CostmapSource::configure()
     source_topic,
     std::bind(&CostmapSource::dataCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS());
+
+  return true;
 }
 
-bool CostmapSource::getData(
+bool CostmapSource::getSourceData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {

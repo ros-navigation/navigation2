@@ -1,3 +1,6 @@
+merge_queue:
+  queue_controls_comment: false
+
 pull_request_rules:
   - name: backport to jazzy at reviewers discretion
     conditions:
@@ -35,6 +38,14 @@ pull_request_rules:
         branches:
           - kilted
 
+  - name: backport to lyrical at reviewers discretion
+    conditions:
+      - base=main
+      - "label=backport-lyrical"
+    actions:
+      backport:
+        branches:
+          - lyrical
 
   - name: ask to resolve conflict
     conditions:

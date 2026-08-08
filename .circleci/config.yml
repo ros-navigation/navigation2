@@ -33,12 +33,12 @@ _commands:
         - restore_cache:
             name: Restore Cache << parameters.key >>
             keys:
-              - "<< parameters.key >>-v48\
+              - "<< parameters.key >>-v49\
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
-              - "<< parameters.key >>-v48\
+              - "<< parameters.key >>-v49\
                 -{{ arch }}\
                 -main\
                 -<no value>\
@@ -58,7 +58,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v48\
+            key: "<< parameters.key >>-v49\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -97,7 +97,7 @@ _commands:
               sha256sum $PWD/lockfile.txt >> lockfile.txt
 
               apt-get update
-              # rosdep update --rosdistro $ROS_DISTRO
+              rosdep update --rosdistro $ROS_DISTRO
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
@@ -203,9 +203,7 @@ _commands:
                         # Keep only packages that are in both lists
                         BUILD_PACKAGES=$(echo "$BUILD_PACKAGES" | tr ' ' '\n' | \
                           grep -F -x -f <(echo "$SELECTED_PACKAGES" | tr ' ' '\n') | \
-                          xargs || echo "$SELECTED_PACKAGES")
-                      else
-                        BUILD_PACKAGES="$SELECTED_PACKAGES"
+                          xargs || true)
                       fi
                     fi
                     echo BUILD_PACKAGES: $BUILD_PACKAGES
@@ -368,6 +366,13 @@ _steps:
       name: Post Checkout
       command: |
         cp $OVERLAY_WS/src/navigation2/.circleci/defaults.yaml $COLCON_DEFAULTS_FILE
+
+        # Patch colcon-cache for Python 3.14 compatibility
+        # https://github.com/ruffsl/colcon-cache/issues/50
+        pip install --break-system-packages --force-reinstall --no-deps git+https://github.com/ruffsl/colcon-cache.git@master
+        DIRHASH_FILE=$(python3 -c "import colcon_cache.task.lock.dirhash as m; print(m.__file__)")
+        sed -i 's/modifier_group = parser.add_mutually_exclusive_group()/modifier_group = parser/' "$DIRHASH_FILE"
+
         if ! cmp \
           $OVERLAY_WS/src/navigation2/tools/underlay.repos \
           $UNDERLAY_WS/underlay.repos >/dev/null 2>&1
@@ -552,6 +557,14 @@ jobs:
       - build_source:
           packages_skip_regex: << parameters.packages_skip_regex >>
           packages_select: << parameters.packages_select >>
+  plugin_build:
+    <<: *job_build
+    executor: release_exec
+    steps:
+      - restore_build
+      - build_source:
+          packages_skip_regex: << parameters.packages_skip_regex >>
+          packages_select: << parameters.packages_select >>
   system_build:
     <<: *job_build
     executor: release_exec
@@ -576,7 +589,10 @@ _parameters:
     packages_select: "nav2_common nav2_voxel_grid nav_2d_msgs dwb_msgs nav2_msgs nav2_ros_common nav2_simple_commander nav2_util nav2_amcl nav2_lifecycle_manager nav2_map_server nav_2d_utils nav2_velocity_smoother nav2_costmap_2d costmap_queue"
   algorithm_build_parameters: &algorithm_build_parameters
     packages_skip_regex: ""
-    packages_select: "nav2_core nav2_behavior_tree nav2_collision_monitor dwb_core dwb_critics dwb_plugins nav2_dwb_controller nav2_controller nav2_bt_navigator nav2_constrained_smoother nav2_navfn_planner nav2_planner nav2_regulated_pure_pursuit_controller nav2_theta_star_planner nav2_graceful_controller"
+    packages_select: "nav2_behavior_tree nav2_collision_monitor"
+  plugin_build_parameters: &plugin_build_parameters
+    packages_skip_regex: ""
+    packages_select: "nav2_core nav2_bt_navigator dwb_core dwb_critics dwb_plugins nav2_dwb_controller nav2_controller nav2_constrained_smoother nav2_navfn_planner nav2_planner nav2_regulated_pure_pursuit_controller nav2_theta_star_planner nav2_graceful_controller"
   system_build_parameters: &system_build_parameters
     packages_skip_regex: "'(nav2_common|nav2_voxel_grid|nav_2d_msgs|dwb_msgs|nav2_msgs|nav2_ros_common|nav2_simple_commander|nav2_util|nav2_amcl|nav2_behavior_tree|nav2_lifecycle_manager|nav2_map_server|nav_2d_utils|nav2_velocity_smoother|nav2_costmap_2d|costmap_queue|nav2_core|nav2_collision_monitor|dwb_core|dwb_critics|dwb_plugins|nav2_dwb_controller|nav2_controller|nav2_bt_navigator|nav2_constrained_smoother|nav2_navfn_planner|nav2_planner|nav2_regulated_pure_pursuit_controller|nav2_theta_star_planner|nav2_graceful_controller)'"
     packages_select: ""
@@ -593,10 +609,14 @@ workflows:
           <<: *algorithm_build_parameters
           requires:
             - core_build
+      - plugin_build:
+          <<: *plugin_build_parameters
+          requires:
+            - algorithm_build
       - system_build:
           <<: *system_build_parameters
           requires:
-            - algorithm_build
+            - plugin_build
       - release_test:
           <<: *release_test_parameters
           requires:
@@ -610,10 +630,14 @@ workflows:
           <<: *algorithm_build_parameters
           requires:
             - core_build
+      - plugin_build:
+          <<: *plugin_build_parameters
+          requires:
+            - algorithm_build
       - system_build:
           <<: *system_build_parameters
           requires:
-            - algorithm_build
+            - plugin_build
       - release_test:
           requires:
             - system_build

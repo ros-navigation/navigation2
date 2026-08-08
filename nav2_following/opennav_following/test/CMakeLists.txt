@@ -3,7 +3,7 @@ nav2_add_gtest(test_following_server_unit
   test_following_server_unit.cpp
 )
 target_link_libraries(test_following_server_unit
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   ${library_name}
   nav2_util::nav2_util_core
   opennav_docking_core::opennav_docking_core

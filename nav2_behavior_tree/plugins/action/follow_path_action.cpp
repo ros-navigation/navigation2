@@ -64,8 +64,8 @@ BT::NodeStatus FollowPathAction::on_cancelled()
 
 void FollowPathAction::on_timeout()
 {
+  BtActionNode<Action>::on_timeout();
   setOutput("error_code_id", ActionResult::CONTROLLER_TIMED_OUT);
-  setOutput("error_msg", "Behavior Tree action client timed out waiting.");
 }
 
 void FollowPathAction::on_wait_for_result(
@@ -76,7 +76,7 @@ void FollowPathAction::on_wait_for_result(
   getInput("path", new_path);
 
   // Check if it is not same with the current one
-  if (goal_.path != new_path && new_path != nav_msgs::msg::Path()) {
+  if (goal_.path != new_path && !new_path.poses.empty()) {
     // the action server on the next loop iteration
     goal_.path = new_path;
     goal_updated_ = true;

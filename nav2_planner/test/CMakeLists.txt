@@ -6,7 +6,7 @@ target_link_libraries(test_dynamic_parameters
   ${library_name}
   nav2_util::nav2_util_core
   rclcpp::rclcpp
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
 )
 
 nav2_add_gtest(test_plan_through_poses
@@ -17,8 +17,8 @@ target_link_libraries(test_plan_through_poses
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   nav2_costmap_2d::nav2_costmap_2d_core
-  ${rcl_interfaces_TARGETS}
-  ${geometry_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
+  rcl_interfaces::rcl_interfaces
+  geometry_msgs::geometry_msgs
+  nav_msgs::nav_msgs
+  nav2_msgs::nav2_msgs
 )

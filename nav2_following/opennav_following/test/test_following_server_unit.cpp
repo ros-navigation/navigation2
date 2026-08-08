@@ -22,19 +22,11 @@
 #include "opennav_following/following_server.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "tf2/utils.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 // Testing unit functions in following server, smoke/system tests in python file
 
 using namespace std::chrono_literals;  // NOLINT
-
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
 
 namespace opennav_following
 {
@@ -85,7 +77,7 @@ public:
     return FollowingServer::getTrackingPose(pose, frame_id);
   }
 
-  virtual bool rotateToObject(geometry_msgs::msg::PoseStamped &)
+  virtual bool rotateToObject(geometry_msgs::msg::PoseStamped &, const std::string &)
   {
     return true;
   }
@@ -309,7 +301,7 @@ TEST(FollowingServerTests, GetFramePose)
   EXPECT_FALSE(node->getFramePose(pose, frame_test));
 
   // Set transform between my_frame and fixed_frame_test
-  auto tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(node);
+  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
   geometry_msgs::msg::TransformStamped frame_to_fixed;
   frame_to_fixed.header.frame_id = "fixed_frame_test";
   frame_to_fixed.header.stamp = node->get_clock()->now();
@@ -390,3 +382,12 @@ TEST(FollowingServerTests, DynamicParams)
 }
 
 }  // namespace opennav_following
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
+}

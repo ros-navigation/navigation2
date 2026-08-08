@@ -5,10 +5,10 @@ nav2_add_gtest(twist_gen_test twist_gen.cpp)
 target_link_libraries(twist_gen_test
   standard_traj_generator
   dwb_core::dwb_core
-  ${dwb_msgs_TARGETS}
-  ${geometry_msgs_TARGETS}
+  dwb_msgs::dwb_msgs
+  geometry_msgs::geometry_msgs
   nav2_util::nav2_util_core
-  ${nav_2d_msgs_TARGETS}
+  nav_2d_msgs::nav_2d_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )
@@ -17,7 +17,7 @@ nav2_add_gtest(kinematic_parameters_test kinematic_parameters_test.cpp)
 target_link_libraries(kinematic_parameters_test
   standard_traj_generator
   rclcpp::rclcpp
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
 )
 
 nav2_add_gtest(speed_limit_test speed_limit_test.cpp)

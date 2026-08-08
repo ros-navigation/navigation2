@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(opennav_docking)
 
 find_package(ament_cmake REQUIRED)
@@ -41,12 +41,12 @@ target_include_directories(controller
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(controller PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_graceful_controller::nav2_graceful_controller
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
 )
 
 add_library(${library_name} SHARED
@@ -63,8 +63,8 @@ target_include_directories(${library_name}
 target_link_libraries(${library_name} PUBLIC
   angles::angles
   controller
-  ${geometry_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   opennav_docking_core::opennav_docking_core
@@ -72,7 +72,7 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+  rcl_interfaces::rcl_interfaces
   tf2_ros::tf2_ros
   yaml-cpp::yaml-cpp
 )
@@ -90,7 +90,7 @@ target_include_directories(pose_filter
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(pose_filter PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_ros_common::nav2_ros_common
 )
 target_link_libraries(pose_filter PRIVATE
@@ -122,14 +122,14 @@ target_include_directories(simple_charging_dock
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(simple_charging_dock PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   ${bond_TARGETS}
   opennav_docking_core::opennav_docking_core
   pose_filter
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
-  ${std_srvs_TARGETS}
+  sensor_msgs::sensor_msgs
+  std_srvs::std_srvs
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
   nav2_ros_common::nav2_ros_common
@@ -151,14 +151,14 @@ target_include_directories(simple_non_charging_dock
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(simple_non_charging_dock PUBLIC
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   opennav_docking_core::opennav_docking_core
   nav2_ros_common::nav2_ros_common
   pose_filter
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
-  ${std_srvs_TARGETS}
+  sensor_msgs::sensor_msgs
+  std_srvs::std_srvs
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
 )

@@ -249,7 +249,7 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
 
     bool result = validateAndClearPlugins(
       plugins, layers,
-      [this](std::shared_ptr<CostmapLayer> & layer) {
+      [](const std::shared_ptr<CostmapLayer> & layer) {
         layer->resetMap(0, 0, layer->getSizeInCellsX(), layer->getSizeInCellsY());
       },
       "clear costmap entirely");

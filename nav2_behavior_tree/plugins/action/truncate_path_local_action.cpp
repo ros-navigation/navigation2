@@ -25,8 +25,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/create_timer_ros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/action/truncate_path_local_action.hpp"
 
@@ -39,7 +38,7 @@ TruncatePathLocal::TruncatePathLocal(
 : BT::ActionNodeBase(name, conf)
 {
   tf_buffer_ =
-    config().blackboard->template get<std::shared_ptr<tf2_ros::Buffer>>(
+    config().blackboard->template get<nav2::TransformBuffer::SharedPtr>(
     "tf_buffer");
 }
 
@@ -116,11 +115,13 @@ inline bool TruncatePathLocal::getRobotPose(
   std::string path_frame_id, geometry_msgs::msg::PoseStamped & pose)
 {
   if (!getInput("pose", pose)) {
-    std::string robot_frame;
-    if (!getInput("robot_frame", robot_frame)) {
+    auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+    std::string robot_frame = BT::deconflictPortAndParamFrame<std::string>(
+      node, "robot_base_frame", this);
+    if (robot_frame.empty()) {
       RCLCPP_ERROR(
-        config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node")->get_logger(),
-        "Neither pose nor robot_frame specified for %s", name().c_str());
+        node->get_logger(),
+        "Neither pose nor robot_base_frame specified for %s", name().c_str());
       return false;
     }
     double transform_tolerance;
@@ -129,7 +130,7 @@ inline bool TruncatePathLocal::getRobotPose(
         pose, *tf_buffer_, path_frame_id, robot_frame, transform_tolerance))
     {
       RCLCPP_WARN(
-        config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node")->get_logger(),
+        node->get_logger(),
         "Failed to lookup current robot pose for %s", name().c_str());
       return false;
     }

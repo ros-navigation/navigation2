@@ -23,7 +23,6 @@
 #include "ompl/base/spaces/ReedsSheppStateSpace.h"
 #include "nav2_smac_planner/node_lattice.hpp"
 #include "gtest/gtest.h"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smac_planner/a_star.hpp"

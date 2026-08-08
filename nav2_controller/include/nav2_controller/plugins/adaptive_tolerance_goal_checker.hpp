@@ -106,6 +106,16 @@ public:
     double & path_length_tolerance) override;
 
 protected:
+  /// @brief Reason that the XY component of the goal was accepted.
+  enum class XyAcceptanceReason
+  {
+    NONE,
+    FINE_TOLERANCE,
+    COARSE_TOLERANCE_FINISH_LINE,
+    COARSE_TOLERANCE_STOPPED_STAGNATION,
+    COARSE_TOLERANCE_DISTANCE_STAGNATION
+  };
+
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_{rclcpp::get_logger("adaptive_tolerance_goal_checker")};
 
@@ -115,6 +125,10 @@ protected:
   // Coarse (fallback) tolerance
   double coarse_xy_goal_tolerance_;
   double coarse_xy_goal_tolerance_sq_;
+  // Hysteresis buffer used when stateful to reset the
+  // check_xy_ when the robot drifts outside the accepted region.
+  double xy_goal_tolerance_buffer_;
+  double fine_xy_goal_tolerance_reset_sq_, coarse_xy_goal_tolerance_reset_sq_;
 
   double yaw_goal_tolerance_;
   double path_length_tolerance_;
@@ -136,13 +150,20 @@ protected:
   double best_distance_sq_;
   double approach_dx_;
   double approach_dy_;
-  const char * xy_acceptance_reason_;
+  XyAcceptanceReason xy_acceptance_reason_;
 
   // Dynamic parameters
   std::mutex mutex_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   std::string plugin_name_;
+
+  /**
+    * @brief Convert XY acceptance reason to string
+    * @param reason The XY acceptance reason
+    * @return String representation of the XY acceptance reason
+    */
+  static std::string toString(XyAcceptanceReason reason);
 
   /**
    * @brief Validate incoming parameter updates before applying them.

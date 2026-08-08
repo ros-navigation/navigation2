@@ -25,6 +25,7 @@
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_smac_planner/smac_planner_lattice.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -54,7 +55,7 @@ SmacPlannerLatticeT<NodeT>::~SmacPlannerLatticeT()
 template<typename NodeT>
 void SmacPlannerLatticeT<NodeT>::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
+  std::string name, nav2::TransformBuffer::SharedPtr/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   _node = parent;
@@ -508,7 +509,12 @@ nav_msgs::msg::Path SmacPlannerLatticeT<NodeT>::createPlan(
 
   // Smooth plan
   if (_smoother && num_iterations > 1) {
-    _smoother->smooth(plan, _costmap, time_remaining);
+    _smoother->smooth(
+      plan,
+      _costmap,
+      time_remaining,
+      _costmap_ros->getUseRadius() ? std::vector<geometry_msgs::msg::Point>() :
+      _costmap_ros->getRobotFootprint());
   }
 
 #ifdef BENCHMARK_TESTING
