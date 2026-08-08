@@ -82,10 +82,10 @@ bool validateMsg(const std::array<double, N> & msg)
   return true;
 }
 
-const int NSEC_PER_SEC = 1e9;  // 1 second = 1e9 nanosecond
+constexpr int NANOSECONDS_PER_SECOND = 1e9;
 bool validateMsg(const builtin_interfaces::msg::Time & msg)
 {
-  if (msg.nanosec >= NSEC_PER_SEC) {
+  if (msg.nanosec >= NANOSECONDS_PER_SECOND) {
     return false;                                      // invalid nanosec-stamp
   }
   return true;
