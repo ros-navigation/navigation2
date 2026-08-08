@@ -51,7 +51,7 @@ nav2_add_gtest(zone_parameter_filter_test zone_parameter_filter_test.cpp)
 target_link_libraries(zone_parameter_filter_test
   filters
   nav2_costmap_2d_core
-  ${std_msgs_TARGETS}
+  std_msgs::std_msgs
 )
 
 nav2_add_gtest(copy_window_test copy_window_test.cpp)
