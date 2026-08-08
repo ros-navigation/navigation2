@@ -479,15 +479,14 @@ void ZoneParameterFilter::checkPendingParameterUpdates()
       continue;
     }
 
-    std::vector<rcl_interfaces::msg::SetParametersResult> results;
-    try {
-      results = it->get();
-    } catch (...) {
-      it = pending_futures_.erase(it);
-      throw;
-    }
-
+    // Copy the shared state out before erasing: the copy keeps the value that
+    // get() returns a reference to alive for this iteration, and erasing first
+    // means a service-side exception rethrown by get() surfaces exactly once.
+    const auto ready_future = *it;
     it = pending_futures_.erase(it);
+
+    // get() returns a const reference; bind it rather than copy the vector.
+    const auto & results = ready_future.get();
     for (const auto & r : results) {
       if (!r.successful) {
         throw std::runtime_error(
