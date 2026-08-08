@@ -9,9 +9,9 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>libnanoflann-dev</build_depend>
+  <depend>libnanoflann-dev</depend>
   <build_depend>nav2_common</build_depend>
-  <build_depend>nlohmann-json-dev</build_depend>
+  <depend>nlohmann-json-dev</depend>
   <build_depend>angles</build_depend>
 
   <depend>backward_ros</depend>
