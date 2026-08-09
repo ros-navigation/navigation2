@@ -382,9 +382,14 @@ void KeepoutFilter::process(
         if (data == NO_INFORMATION) {
           continue;
         }
+        
+        // Allow overwriting an unknown cell only with restrictive pixels; otherwise a "free"
+        //  mask pixel would flatten unknown space to free and destroy map information.
+        if (data > old_data ||
+          (old_data == NO_INFORMATION && data >= INSCRIBED_INFLATED_OBSTACLE))
+        {
+          if (override_lethal_cost_ && is_pose_lethal) {
 
-        if (data > old_data || old_data == NO_INFORMATION) {
-          if (override_lethal_cost_ && is_pose_lethal_) {
             master_array[index] = lethal_override_cost_;
           } else {
             master_array[index] = data;
