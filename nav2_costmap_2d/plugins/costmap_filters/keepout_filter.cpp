@@ -388,7 +388,7 @@ void KeepoutFilter::process(
         if (data > old_data ||
           (old_data == NO_INFORMATION && data >= INSCRIBED_INFLATED_OBSTACLE))
         {
-          if (override_lethal_cost_ && is_pose_lethal) {
+          if (override_lethal_cost_ && is_pose_lethal_) {
 
             master_array[index] = lethal_override_cost_;
           } else {
