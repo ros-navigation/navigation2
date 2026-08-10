@@ -199,8 +199,6 @@ TEST_F(
 {
   ASSERT_ANY_THROW(costmapSubscriber->getCostmap());
 }
-<<<<<<< HEAD
-=======
 
 TEST(CostmapPublisherShould, publishInitialCostmapForLateSubscribers)
 {
@@ -268,4 +266,3 @@ int main(int argc, char ** argv)
 
   return result;
 }
->>>>>>> 704bcc71 (Fix costmap publication for late subscribers (#6324))
