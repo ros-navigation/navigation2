@@ -150,6 +150,48 @@ TEST(PathHandlerTests, TestBounds)
   EXPECT_EQ(path_inverted.poses.size(), 75u);
 }
 
+TEST(PathHandlerTests, SearchDistanceSmallerThanPoseSpacing)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(0.5));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
+  costmap_ros->set_parameters_atomically(
+    {rclcpp::Parameter("global_frame", "odom"),
+      rclcpp::Parameter("robot_base_frame", "base_link")});
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  auto tf_broadcaster_ = nav2::create_transform_broadcaster(node);
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster_->sendTransform(t);
+  t.child_frame_id = "odom";
+  tf_broadcaster_->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
+
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "map";
+  path.poses.resize(3);
+  for (unsigned int i = 0; i != path.poses.size(); ++i) {
+    path.poses[i].pose.position.x = i;
+    path.poses[i].header.frame_id = "map";
+  }
+
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "odom";
+  robot_pose.pose.position.x = 0.9;
+
+  handler.setPlan(path);
+  auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+  auto & bounded_path = handler.getInvertedPath();
+  EXPECT_EQ(closest, bounded_path.poses.begin());
+  EXPECT_EQ(pruned_plan_end, bounded_path.poses.end());
+}
+
 TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
 {
   PathHandlerWrapper handler;
