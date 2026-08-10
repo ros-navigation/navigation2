@@ -154,11 +154,15 @@ private:
   Costmap2D * costmap_;
   std::string global_frame_;
   std::string topic_name_;
-  unsigned int x0_, xn_, y0_, yn_;
-  double saved_origin_x_;
-  double saved_origin_y_;
-  bool always_send_full_costmap_;
-  double map_vis_z_;
+  unsigned int x0_{0};
+  unsigned int xn_{0};
+  unsigned int y0_{0};
+  unsigned int yn_{0};
+  double saved_origin_x_{0.0};
+  double saved_origin_y_{0.0};
+  bool always_send_full_costmap_{false};
+  bool costmap_published_once_{false};
+  double map_vis_z_{0.0};
 
   // Publisher for translated costmap values as msg::OccupancyGrid used in visualization
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
@@ -173,8 +177,9 @@ private:
   // Service for getting the costmaps
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;
 
-  float grid_resolution_;
-  unsigned int grid_width_, grid_height_;
+  float grid_resolution_{0.0};
+  unsigned int grid_width_{0};
+  unsigned int grid_height_{0};
   std::unique_ptr<nav_msgs::msg::OccupancyGrid> grid_;
   std::unique_ptr<nav2_msgs::msg::Costmap> costmap_raw_;
   // Translate from 0-255 values in costmap to -1 to 100 values in message.

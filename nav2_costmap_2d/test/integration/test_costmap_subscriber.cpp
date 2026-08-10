@@ -14,6 +14,9 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <future>
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
@@ -196,3 +199,73 @@ TEST_F(
 {
   ASSERT_ANY_THROW(costmapSubscriber->getCostmap());
 }
+<<<<<<< HEAD
+=======
+
+TEST(CostmapPublisherShould, publishInitialCostmapForLateSubscribers)
+{
+  constexpr unsigned int size_x = 10;
+  constexpr unsigned int size_y = 10;
+  auto node = std::make_shared<nav2::LifecycleNode>("test_late_costmap_subscriber");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(
+    size_x, size_y, 1.0, 0.0, 0.0);
+  auto costmap_publisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
+    node, costmap.get(), "map", "/late_costmap", false);
+  costmap_publisher->on_activate();
+
+  // Publish before any subscribers exist. The transient-local publishers must retain this
+  // initial full costmap for subscribers that join later.
+  costmap_publisher->publishCostmap();
+
+  std::promise<nav_msgs::msg::OccupancyGrid::ConstSharedPtr> costmap_promise;
+  auto costmap_future = costmap_promise.get_future();
+  auto costmap_subscriber = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
+    "/late_costmap",
+    [&costmap_promise](nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg) {
+      costmap_promise.set_value(msg);
+    }, nav2::qos::LatchedSubscriptionQoS());
+
+  std::promise<nav2_msgs::msg::Costmap::ConstSharedPtr> raw_costmap_promise;
+  auto raw_costmap_future = raw_costmap_promise.get_future();
+  auto raw_costmap_subscriber = node->create_subscription<nav2_msgs::msg::Costmap>(
+    "/late_costmap_raw",
+    [&raw_costmap_promise](nav2_msgs::msg::Costmap::ConstSharedPtr msg) {
+      raw_costmap_promise.set_value(msg);
+    }, nav2::qos::LatchedSubscriptionQoS());
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+
+  ASSERT_EQ(
+    executor.spin_until_future_complete(costmap_future, std::chrono::seconds(5)),
+    rclcpp::FutureReturnCode::SUCCESS);
+  ASSERT_EQ(
+    executor.spin_until_future_complete(raw_costmap_future, std::chrono::seconds(5)),
+    rclcpp::FutureReturnCode::SUCCESS);
+
+  const auto received_costmap = costmap_future.get();
+  EXPECT_EQ(received_costmap->info.width, size_x);
+  EXPECT_EQ(received_costmap->info.height, size_y);
+  EXPECT_EQ(received_costmap->data.size(), size_x * size_y);
+
+  const auto received_raw_costmap = raw_costmap_future.get();
+  EXPECT_EQ(received_raw_costmap->metadata.size_x, size_x);
+  EXPECT_EQ(received_raw_costmap->metadata.size_y, size_y);
+  EXPECT_EQ(received_raw_costmap->data.size(), size_x * size_y);
+
+  costmap_publisher->on_deactivate();
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
+}
+>>>>>>> 704bcc71 (Fix costmap publication for late subscribers (#6324))
