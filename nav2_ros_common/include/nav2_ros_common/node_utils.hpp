@@ -35,7 +35,7 @@
   #include <pthread.h>
   #include <mach/mach.h>
   #include <mach/thread_policy.h>
-#else
+#elif !defined(_WIN32)
   #include <sched.h>
   #include <errno.h>
 #endif
@@ -377,6 +377,8 @@ inline void setSoftRealTimePriority()
       std::to_string(result);
     throw std::runtime_error(errmsg);
   }
+#elif defined(_WIN32)
+  throw std::runtime_error("Soft real-time prioritization is not supported on Windows");
 #else
   // Linux: True real-time scheduling (requires privileges)
   sched_param sch;
