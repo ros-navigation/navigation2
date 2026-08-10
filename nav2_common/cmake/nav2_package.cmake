@@ -36,8 +36,14 @@ macro(nav2_package)
     endif()
   endif()
 
+  option(NAV2_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
+
   if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wdeprecated -fPIC -Wshadow -Wnull-dereference)
+    set(NAV2_COMPILE_OPTIONS -Wall -Wextra -Wpedantic -Wdeprecated -fPIC -Wshadow -Wnull-dereference)
+    if(NAV2_WARNINGS_AS_ERRORS)
+      list(APPEND NAV2_COMPILE_OPTIONS -Werror)
+    endif()
+    add_compile_options(${NAV2_COMPILE_OPTIONS})
     add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>")
   endif()
 
