@@ -14,6 +14,10 @@
   <build_depend>nlohmann-json-dev</build_depend>
   <build_depend>angles</build_depend>
 
+  <build_export_depend>libnanoflann-dev</build_export_depend>
+  <build_export_depend>nlohmann-json-dev</build_export_depend>
+  <build_export_depend>angles</build_export_depend>
+
   <depend>backward_ros</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
