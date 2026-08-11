@@ -383,8 +383,7 @@ void KeepoutFilter::process(
           continue;
         }
 
-        // Allow overwriting an unknown cell only with restrictive pixels; otherwise a "free"
-        // mask pixel would flatten unknown space to free and destroy map information.
+        // Prevent overwritng an unknown master grid cell with free.
         if (data > old_data ||
           (old_data == NO_INFORMATION && data >= INSCRIBED_INFLATED_OBSTACLE))
         {
