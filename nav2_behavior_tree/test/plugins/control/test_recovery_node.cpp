@@ -103,10 +103,10 @@ TEST_F(RecoveryNodeTestFixture, test_running)
 TEST_F(RecoveryNodeTestFixture, test_failure_on_idle_child)
 {
   first_child_->changeStatus(BT::NodeStatus::IDLE);
-  EXPECT_THROW(bt_node_->executeTick(), BT::NodeExecutionError);
+  EXPECT_THROW(bt_node_->executeTick(), BT::RuntimeError);
   first_child_->changeStatus(BT::NodeStatus::FAILURE);
   second_child_->changeStatus(BT::NodeStatus::IDLE);
-  EXPECT_THROW(bt_node_->executeTick(), BT::NodeExecutionError);
+  EXPECT_THROW(bt_node_->executeTick(), BT::RuntimeError);
 }
 
 TEST_F(RecoveryNodeTestFixture, test_success_one_retry)
