@@ -54,19 +54,19 @@ void ConstraintCritic::score(CriticData & data)
   }
 
   // Omnidirectional motion model
-  // Axis wise violation check
   auto omni = dynamic_cast<OmniMotionModel *>(data.motion_model.get());
   if (omni != nullptr) {
     auto & vx = data.state.vx;
     auto & vy = data.state.vy;
 
+    const auto scaling_factor = models::getVelocityScalingFactor(vx, vy, vx_max_, vx_min_, vy_max_);
+    const auto violation = ((vx.square() + vy.square()).sqrt() * (1.0f - scaling_factor)).eval();
+
     if(power_ > 1u) {
-      data.costs += (((((vx - vx_max_).max(0.0f) + (vx_min_ - vx).max(0.0f) +
-        (vy.abs() - vy_max_).max(0.0f)) * data.model_dt).rowwise().sum().eval()) *
+      data.costs += (((violation * data.model_dt).rowwise().sum().eval()) *
         weight_).pow(power_).eval();
     } else {
-      data.costs += (((((vx - vx_max_).max(0.0f) + (vx_min_ - vx).max(0.0f) +
-        (vy.abs() - vy_max_).max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).eval();
+      data.costs += (((violation * data.model_dt).rowwise().sum().eval()) * weight_).eval();
     }
     return;
   }

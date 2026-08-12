@@ -348,6 +348,22 @@ public:
   {
     return true;
   }
+
+  /**
+   * @brief Apply hard vehicle constraints to a control sequence
+   * @param control_sequence Control sequence to apply constraints to
+   */
+  void applyConstraints(models::ControlSequence & control_sequence) override
+  {
+    // Get scaling factor to constrain (vx, vy) onto the velocity ellipse defined by the
+    // per-axis limits
+    const Eigen::ArrayXf scaling_factor = models::getVelocityScalingFactor(
+      control_sequence.vx, control_sequence.vy, control_constraints_.vx_max,
+      control_constraints_.vx_min, control_constraints_.vy);
+
+    control_sequence.vx *= scaling_factor;
+    control_sequence.vy *= scaling_factor;
+  }
 };
 
 }  // namespace mppi

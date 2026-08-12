@@ -589,20 +589,35 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   auto & sequence = optimizer_tester.grabControlSequence();
   auto & state = optimizer_tester.grabState();
 
-  // Test boundary of limits
+  // Test boundary of limits, on the vx semi-axis of the holonomic velocity ellipse
   // Set state speed to match so acceleration constraints are satisfied
   state.speed.linear.x = 1.0;
-  state.speed.linear.y = 0.75;
+  state.speed.linear.y = 0.0;
   state.speed.angular.z = 2.0;
   sequence.vx = Eigen::ArrayXf::Ones(50);
-  sequence.vy = 0.75 * Eigen::ArrayXf::Ones(50);
+  sequence.vy = Eigen::ArrayXf::Zero(50);
   sequence.wz = 2.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
   EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f));
-  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.75f));
+  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.0f));
   EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
 
-  // Test breaking limits sets to maximum
+  // Test boundary of limits on a diagonal, where the ellipse binds before the per-axis limits
+  const float diagonal_scale = 1.0f / std::sqrt(2.0f);
+  state.speed.linear.x = 1.0 * diagonal_scale;
+  state.speed.linear.y = 0.75 * diagonal_scale;
+  state.speed.angular.z = 2.0;
+  sequence.vx = 1.0 * diagonal_scale * Eigen::ArrayXf::Ones(50);
+  sequence.vy = 0.75 * diagonal_scale * Eigen::ArrayXf::Ones(50);
+  sequence.wz = 2.0 * Eigen::ArrayXf::Ones(50);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f * diagonal_scale));
+  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.75f * diagonal_scale));
+  EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
+
+  // Test breaking limits sets to the maximum along the commanded direction of travel. Equal
+  // vx and vy demand puts that at vx = 0.6, vy = 0.6: on the ellipse, and within both
+  // per-axis limits. The sequence ramps there under the acceleration limits, so check the tail.
   state.speed.linear.x = 1.0;
   state.speed.linear.y = 0.75;
   state.speed.angular.z = 2.0;
@@ -610,9 +625,11 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   sequence.vy = 5.0 * Eigen::ArrayXf::Ones(50);
   sequence.wz = 5.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f));
-  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.75f));
-  EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
+  EXPECT_NEAR(sequence.vx(49), 0.6f, 1e-3);
+  EXPECT_NEAR(sequence.vy(49), 0.6f, 1e-3);
+  EXPECT_NEAR(sequence.wz(49), 2.0f, 1e-3);
+  EXPECT_TRUE((sequence.vx <= 1.0f + 1e-6f).all());
+  EXPECT_TRUE((sequence.vy <= 0.75f + 1e-6f).all());
 
   // Test breaking limits sets to minimum
   state.speed.linear.x = -1.0;
@@ -622,9 +639,11 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   sequence.vy = -5.0 * Eigen::ArrayXf::Ones(50);
   sequence.wz = -5.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_TRUE(sequence.vx.isApproxToConstant(-1.0f));
-  EXPECT_TRUE(sequence.vy.isApproxToConstant(-0.75f));
-  EXPECT_TRUE(sequence.wz.isApproxToConstant(-2.0f));
+  EXPECT_NEAR(sequence.vx(49), -0.6f, 1e-3);
+  EXPECT_NEAR(sequence.vy(49), -0.6f, 1e-3);
+  EXPECT_NEAR(sequence.wz(49), -2.0f, 1e-3);
+  EXPECT_TRUE((sequence.vx >= -1.0f - 1e-6f).all());
+  EXPECT_TRUE((sequence.vy >= -0.75f - 1e-6f).all());
 }
 
 TEST(OptimizerTests, updateStateVelocitiesTests)

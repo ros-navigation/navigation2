@@ -186,20 +186,37 @@ TEST(CriticTests, ConstraintsCritic)
   state.vy.row(999).setConstant(-0.5f);
   critic.score(data);
   EXPECT_GT(costs.sum(), 0);
-  // vx-violation 4.0 weight * 0.1 model_dt * 0.1 error introduced * 30 timesteps = 1.2
-  // vy-violation 4.0 weight * 0.1 model_dt * 0.2 error introduced * 30 timesteps = 2.4
-  // total-violation = 1.2 + 2.4
-  EXPECT_NEAR(costs(999), 3.6, 0.01);
+  // 4.0 weight * 0.1 model_dt * 0.401 error introduced * 30 timesteps = 4.81
+  EXPECT_NEAR(costs(999), 4.81, 0.01);
+  costs.setZero();
+
+  // A velocity within both per-axis limits but outside the ellipse is still penalized
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.vx.row(999).setConstant(0.5f);
+  state.vy.row(999).setConstant(0.3f);
+  critic.score(data);
+  // 4.0 weight * 0.1 model_dt * (0.583 * (1 - 1/sqrt(2))) * 30 timesteps = 2.05
+  EXPECT_NEAR(costs(999), 2.05, 0.01);
+  costs.setZero();
+
+  // ... and scaling that corner back onto the ellipse makes it free
+  state.vx.row(999).setConstant(0.5f / std::sqrt(2.0f));
+  state.vy.row(999).setConstant(0.3f / std::sqrt(2.0f));
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0, 1e-4);
   costs.setZero();
 
   // Test with different cost power
+  state.vx.row(999).setConstant(0.6f);
+  state.vy.row(999).setConstant(-0.5f);
   node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
   critic = ConstraintCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   critic.score(data);
   EXPECT_GT(costs.sum(), 0);
-  // 3.6^2 = 12.96
-  EXPECT_NEAR(costs(999), 12.96, 0.01);
+  // 4.81^2 = 23.12
+  EXPECT_NEAR(costs(999), 23.12, 0.02);
   costs.setZero();
 }
 
