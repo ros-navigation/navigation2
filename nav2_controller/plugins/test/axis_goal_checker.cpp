@@ -418,6 +418,53 @@ TEST(AxisGoalChecker, path_length_tolerance)
   EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, short_path));
 }
 
+TEST(AxisGoalChecker, skewed_goal_does_not_flip_path_direction)
+{
+  auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
+  AxisGoalChecker agc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  agc.initialize(node, "test", costmap);
+
+  // Enable overshoot, matching the deployed configuration
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.is_overshoot_valid", true)});
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  // Pruned plan tail heading +x into (10, 0), with a sub-mm final segment as
+  // planners commonly produce at the goal
+  nav_msgs::msg::Path path = createPath({{9.5, 0.0}, {9.9995, 0.0}, {10.0, 0.0}});
+
+  geometry_msgs::msg::Pose goal_pose;
+  goal_pose.position.y = 0.0;
+  goal_pose.orientation.w = 1.0;
+
+  geometry_msgs::msg::Pose query_pose;
+  query_pose.position.x = 9.4;  // 0.6 m short of the goal, far outside tolerance
+  query_pose.position.y = 0.0;
+  query_pose.orientation.w = 1.0;
+
+  geometry_msgs::msg::Twist velocity;
+
+  // Sanity: goal exactly on the plan end, shortfall is rejected
+  goal_pose.position.x = 10.0;
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, path));
+
+  // Goal skewed 1 cm behind the plan end (e.g. goal and plan transformed under
+  // slightly different map->odom snapshots). The derived path direction must not
+  // flip, so the same 0.6 m shortfall must still be rejected.
+  goal_pose.position.x = 9.99;
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, path));
+}
+
 TEST(AxisGoalChecker, combined_errors)
 {
   auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
