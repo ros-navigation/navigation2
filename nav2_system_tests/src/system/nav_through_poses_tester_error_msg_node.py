@@ -284,8 +284,7 @@ def run_all_tests(robot_tester: NavTester) -> bool:
             behavior_tree='behavior_tree_that_does_not_exist.xml',
             expected_error_code=NavigateThroughPoses.Result.FAILED_TO_LOAD_BEHAVIOR_TREE,
             expected_error_msg=(
-                'Error loading BT: behavior_tree_that_does_not_exist.xml. '
-                'Navigation canceled.'
+                'Failed to extract ID from behavior_tree_that_does_not_exist.xml'
             ),
         )
 
@@ -307,8 +306,8 @@ def run_all_tests(robot_tester: NavTester) -> bool:
         result = robot_tester.runNavigateAction(
             goal_pose=reasonable_pose,
             behavior_tree='',
-            expected_error_code=100,
-            expected_error_msg=('Failed to find goal checker name: junk_goal_checker'))
+            expected_error_code=1,
+            expected_error_msg=('Goal was rejected by the action server.'))
         robot_tester.setGoalChecker('general_goal_checker')
 
     if result:
@@ -317,8 +316,8 @@ def run_all_tests(robot_tester: NavTester) -> bool:
         result = robot_tester.runNavigateAction(
             goal_pose=reasonable_pose,
             behavior_tree='',
-            expected_error_code=100,
-            expected_error_msg=('Failed to find progress checker name: junk_progress_checker'))
+            expected_error_code=1,
+            expected_error_msg=('Goal was rejected by the action server.'))
         robot_tester.setProgressChecker('progress_checker')
 
     if result:
