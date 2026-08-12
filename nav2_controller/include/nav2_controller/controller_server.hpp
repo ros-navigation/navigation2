@@ -179,6 +179,11 @@ protected:
    */
   void setPlannerPath(const nav_msgs::msg::Path & path);
   /**
+   * @brief Refreshes transformed_global_plan_ for the current cycle
+   * @throw nav2_core::ControllerTFError if the robot pose cannot be obtained
+   */
+  void updateTransformedPlan();
+  /**
    * @brief Calculates velocity and publishes to "cmd_vel" topic
    */
   void computeAndPublishVelocity();

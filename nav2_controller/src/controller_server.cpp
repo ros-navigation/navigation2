@@ -564,6 +564,10 @@ void ControllerServer::computeControl()
 
       updateGlobalPath();
 
+      // Refresh the plan once per cycle before the goal check and velocity computation so both
+      // see a plan from the same TF snapshot as the goal pose (see updateTransformedPlan()).
+      updateTransformedPlan();
+
       if (isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
         break;
@@ -705,6 +709,20 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   current_path_ = path;
 }
 
+void ControllerServer::updateTransformedPlan()
+{
+  geometry_msgs::msg::PoseStamped pose;
+
+  if (!getRobotPose(pose)) {
+    throw nav2_core::ControllerTFError("Failed to obtain robot pose");
+  }
+
+  auto [closest_point, pruned_plan_end] =
+    path_handlers_[current_path_handler_]->findPlanSegment(pose);
+  transformed_global_plan_ =
+    path_handlers_[current_path_handler_]->transformLocalPlan(closest_point, pruned_plan_end);
+}
+
 void ControllerServer::computeAndPublishVelocity()
 {
   geometry_msgs::msg::PoseStamped pose;
@@ -723,11 +741,6 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::PoseStamped goal =
     path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
-  // Get the [start, end) iterators under map frame to be used for control.
-  auto [closest_point, pruned_plan_end] =
-    path_handlers_[current_path_handler_]->findPlanSegment(pose);
-  transformed_global_plan_ =
-    path_handlers_[current_path_handler_]->transformLocalPlan(closest_point, pruned_plan_end);
   auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
   if (transformed_plan_pub_->get_subscription_count() > 0) {
     transformed_plan_pub_->publish(std::move(path));
