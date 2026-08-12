@@ -179,10 +179,13 @@ protected:
    */
   void setPlannerPath(const nav_msgs::msg::Path & path);
   /**
-   * @brief Refreshes transformed_global_plan_ for the current cycle
-   * @throw nav2_core::ControllerTFError if the robot pose cannot be obtained
+   * @brief Refreshes transformed_global_plan_ and transformed_end_pose_ for the current cycle
+   *
+   * Transforms both from a single robot pose so they share one map->odom snapshot, and prunes
+   * the plan, so it must be called exactly once per cycle before isGoalReached().
+   * @throw nav2_core::ControllerTFError if the robot pose or end pose cannot be obtained
    */
-  void updateTransformedPlan();
+  void updateTransformedPlanAndGoal();
   /**
    * @brief Calculates velocity and publishes to "cmd_vel" topic
    */

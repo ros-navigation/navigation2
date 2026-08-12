@@ -564,9 +564,9 @@ void ControllerServer::computeControl()
 
       updateGlobalPath();
 
-      // Refresh the plan once per cycle before the goal check and velocity computation so both
-      // see a plan from the same TF snapshot as the goal pose (see updateTransformedPlan()).
-      updateTransformedPlan();
+      // Refresh the plan and goal once per cycle, from one robot pose, so both share a single
+      // map->odom snapshot before the goal check and velocity computation consume them.
+      updateTransformedPlanAndGoal();
 
       if (isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
@@ -709,7 +709,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   current_path_ = path;
 }
 
-void ControllerServer::updateTransformedPlan()
+void ControllerServer::updateTransformedPlanAndGoal()
 {
   geometry_msgs::msg::PoseStamped pose;
 
@@ -721,6 +721,14 @@ void ControllerServer::updateTransformedPlan()
     path_handlers_[current_path_handler_]->findPlanSegment(pose);
   transformed_global_plan_ =
     path_handlers_[current_path_handler_]->transformLocalPlan(closest_point, pruned_plan_end);
+
+  end_pose_.header.stamp = pose.header.stamp;
+  if (!nav2_util::transformPoseInTargetFrame(
+      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
+      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
+  {
+    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
+  }
 }
 
 void ControllerServer::computeAndPublishVelocity()
@@ -957,14 +965,6 @@ bool ControllerServer::isGoalReached()
 
   if (!getRobotPose(pose)) {
     return false;
-  }
-
-  end_pose_.header.stamp = pose.header.stamp;
-  if (!nav2_util::transformPoseInTargetFrame(
-      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
-      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
-  {
-    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
   }
 
   geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());
