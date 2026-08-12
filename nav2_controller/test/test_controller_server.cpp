@@ -33,13 +33,12 @@ public:
   using nav2_controller::ControllerServer::ControllerServer;
 
   void setEndPoseFrame(const std::string & frame) {end_pose_.header.frame_id = frame;}
-  bool callIsGoalReached() {return isGoalReached();}
+  void callUpdateTransformedPlanAndGoal() {updateTransformedPlanAndGoal();}
   nav2::TransformBuffer & getTfBuffer() {return *costmap_ros_->getTfBuffer();}
 };
 
-TEST(ControllerServerTest, IsGoalReachedThrowsOnTfFailure)
+TEST(ControllerServerTest, UpdateTransformedPlanAndGoalThrowsOnTfFailure)
 {
-  // aa
   rclcpp::NodeOptions options;
   options.parameter_overrides({
     rclcpp::Parameter("progress_checker_plugins", std::vector<std::string>{}),
@@ -63,7 +62,7 @@ TEST(ControllerServerTest, IsGoalReachedThrowsOnTfFailure)
   server->getTfBuffer().setTransform(tf_msg, "test", true);
 
   server->setEndPoseFrame("nonexistent_frame_xyz");
-  EXPECT_THROW(server->callIsGoalReached(), nav2_core::ControllerTFError);
+  EXPECT_THROW(server->callUpdateTransformedPlanAndGoal(), nav2_core::ControllerTFError);
   server->cleanup();
 }
 

@@ -717,11 +717,6 @@ void ControllerServer::updateTransformedPlanAndGoal()
     throw nav2_core::ControllerTFError("Failed to obtain robot pose");
   }
 
-  auto [closest_point, pruned_plan_end] =
-    path_handlers_[current_path_handler_]->findPlanSegment(pose);
-  transformed_global_plan_ =
-    path_handlers_[current_path_handler_]->transformLocalPlan(closest_point, pruned_plan_end);
-
   end_pose_.header.stamp = pose.header.stamp;
   if (!nav2_util::transformPoseInTargetFrame(
       end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
@@ -729,6 +724,11 @@ void ControllerServer::updateTransformedPlanAndGoal()
   {
     throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
   }
+
+  auto [closest_point, pruned_plan_end] =
+    path_handlers_[current_path_handler_]->findPlanSegment(pose);
+  transformed_global_plan_ =
+    path_handlers_[current_path_handler_]->transformLocalPlan(closest_point, pruned_plan_end);
 }
 
 void ControllerServer::computeAndPublishVelocity()
