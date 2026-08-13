@@ -156,7 +156,13 @@ TEST(CriticTests, ConstraintsCritic)
   critic = ConstraintCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
 
-  data.motion_model = std::make_shared<OmniMotionModel>();
+  // The omni branch takes its limits from the motion model, not from the critic's own copies,
+  // so that an active speed limit is respected. Give the model the same limits the critic reads.
+  models::ControlConstraints omni_constraints
+  {0.5f, -0.35f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
+  auto omni_model = std::make_shared<OmniMotionModel>();
+  omni_model->setConstraints(omni_constraints, model_dt, 0.0f, 0.0f, 0.0f, false);
+  data.motion_model = omni_model;
 
   // reset state
   state.vx.setConstant(0.0f);
@@ -217,6 +223,96 @@ TEST(CriticTests, ConstraintsCritic)
   EXPECT_GT(costs.sum(), 0);
   // 4.81^2 = 23.12
   EXPECT_NEAR(costs(999), 23.12, 0.02);
+  costs.setZero();
+
+  // A limit of zero means the axis cannot be commanded, so a non-zero velocity on it stays a
+  // violation rather than dropping out of the ellipse and becoming free
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
+  critic = ConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  omni_constraints.vy = 0.0f;
+  omni_model->setConstraints(omni_constraints, model_dt, 0.0f, 0.0f, 0.0f, false);
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.vy.row(999).setConstant(0.2f);
+  critic.score(data);
+  EXPECT_GT(costs(999), 0.0f);
+  costs.setZero();
+
+  // ... while a feasible longitudinal command under the same limits is not penalized
+  state.vy.setConstant(0.0f);
+  state.vx.row(999).setConstant(0.4f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0, 1e-4);
+  costs.setZero();
+
+  // Same for vx_min = 0.0, which disallows reversing
+  omni_constraints.vy = 0.3f;
+  omni_constraints.vx_min = 0.0f;
+  omni_model->setConstraints(omni_constraints, model_dt, 0.0f, 0.0f, 0.0f, false);
+  state.vx.setConstant(0.0f);
+  state.vx.row(999).setConstant(-0.2f);
+  critic.score(data);
+  EXPECT_GT(costs(999), 0.0f);
+  costs.setZero();
+}
+
+TEST(CriticTests, ConstraintsCriticPerAxisFallback)
+{
+  // With use_elliptical_velocity_limits false, the omni branch scores each axis independently,
+  // exactly as it did before the elliptical envelope was introduced.
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.vx = Eigen::ArrayXXf::Zero(1000, 30);
+  state.vy = Eigen::ArrayXXf::Zero(1000, 30);
+  state.wz = Eigen::ArrayXXf::Zero(1000, 30);
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+
+  models::ControlConstraints constraints
+  {0.5f, -0.35f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
+  auto omni_model = std::make_shared<OmniMotionModel>();
+  node->declare_parameter(
+    std::string(node->get_name()) + ".omni.use_elliptical_velocity_limits", false);
+  omni_model->initialize(&param_handler, std::string(node->get_name()) + ".omni");
+  omni_model->setConstraints(constraints, model_dt, 0.0f, 0.0f, 0.0f, false);
+  ASSERT_FALSE(omni_model->useEllipticalVelocityLimits());
+  data.motion_model = omni_model;
+
+  node->declare_parameter("mppi.vy_max", 0.3);
+  ConstraintCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  // The rectangle's corner is free under the per-axis check, which is the behavior being
+  // preserved for users who opt out
+  state.vx.row(999).setConstant(0.5f);
+  state.vy.row(999).setConstant(0.3f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0, 1e-6);
+  costs.setZero();
+
+  // Exceeding a single axis is penalized by that axis' overshoot alone
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.vy.row(999).setConstant(0.5f);
+  critic.score(data);
+  // 4.0 weight * 0.1 model_dt * 0.2 error introduced * 30 timesteps = 2.4
+  EXPECT_NEAR(costs(999), 2.4, 0.01);
   costs.setZero();
 }
 

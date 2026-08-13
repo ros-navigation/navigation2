@@ -155,6 +155,77 @@ TEST(MotionModelTests, OmniEllipticalConstraintsTest)
   model.reset();
 }
 
+TEST(MotionModelTests, OmniZeroLimitConstraintsTest)
+{
+  // The axis with limit 0 cannot be commanded at all.
+  // The other feasible axis must still reach its own limit.
+  models::ControlSequence control_sequence;
+  control_sequence.reset(3);  // populates with zeros
+  auto model = std::make_unique<OmniMotionModel>();
+
+  // vy_max = 0.0: no lateral motion allowed
+  models::ControlConstraints no_strafe{0.5f, -0.35f, 0.0f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
+  model->setConstraints(no_strafe, 0.1f, 0.0f, 0.0f, 0.0f, false);
+
+  control_sequence.vx << 0.4f, -0.3f, 0.5f;
+  control_sequence.vy << 0.2f, -0.2f, 0.0f;
+  model->applyConstraints(control_sequence);
+
+  EXPECT_NEAR(control_sequence.vy(0), 0.0f, 1e-6);
+  EXPECT_NEAR(control_sequence.vy(1), 0.0f, 1e-6);
+  EXPECT_NEAR(control_sequence.vy(2), 0.0f, 1e-6);
+  EXPECT_NEAR(control_sequence.vx(0), 0.4f, 1e-6);
+  EXPECT_NEAR(control_sequence.vx(1), -0.3f, 1e-6);
+  EXPECT_NEAR(control_sequence.vx(2), 0.5f, 1e-6);
+
+  // vx_min = 0.0: no reversing allowed
+  models::ControlConstraints no_reverse{0.5f, 0.0f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
+  model->setConstraints(no_reverse, 0.1f, 0.0f, 0.0f, 0.0f, false);
+
+  control_sequence.vx << 0.4f, -0.3f, 0.0f;
+  control_sequence.vy << 0.0f, 0.0f, 0.3f;
+  model->applyConstraints(control_sequence);
+
+  EXPECT_NEAR(control_sequence.vx(0), 0.4f, 1e-6);
+  EXPECT_NEAR(control_sequence.vx(1), 0.0f, 1e-6);
+  EXPECT_NEAR(control_sequence.vx(2), 0.0f, 1e-6);
+  EXPECT_NEAR(control_sequence.vy(2), 0.3f, 1e-6);
+
+  // Check it cleanly destructs
+  model.reset();
+}
+
+TEST(MotionModelTests, OmniPerAxisLimitsTest)
+{
+  // With use_elliptical_velocity_limits false only per-axis clamps are applied
+  models::ControlSequence control_sequence;
+  control_sequence.reset(2);  // populates with zeros
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  auto model = std::make_unique<OmniMotionModel>();
+
+  node->declare_parameter(name + ".omni.use_elliptical_velocity_limits", false);
+  model->initialize(&param_handler, name + ".omni");
+  EXPECT_FALSE(model->useEllipticalVelocityLimits());
+
+  models::ControlConstraints constraints{0.5f, -0.35f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
+  model->setConstraints(constraints, 0.1f, 0.0f, 0.0f, 0.0f, false);
+
+  // The rectangle's corner passes through untouched
+  control_sequence.vx << 0.5f, -0.35f;
+  control_sequence.vy << 0.3f, 0.3f;
+  model->applyConstraints(control_sequence);
+
+  EXPECT_NEAR(control_sequence.vx(0), 0.5f, 1e-6);
+  EXPECT_NEAR(control_sequence.vy(0), 0.3f, 1e-6);
+  EXPECT_NEAR(control_sequence.vx(1), -0.35f, 1e-6);
+  EXPECT_NEAR(control_sequence.vy(1), 0.3f, 1e-6);
+
+  // Check it cleanly destructs
+  model.reset();
+}
+
 TEST(MotionModelTests, AckermannTest)
 {
   models::ControlSequence control_sequence;
