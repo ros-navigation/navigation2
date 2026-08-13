@@ -15,11 +15,13 @@
 
 # This tool populates the README table of build status for each package
 
+import time
+
 import requests
 
 # Global information about current distributions, shouldn't need to update
-OSs = {'humble': 'jammy', 'jazzy': 'noble', 'kilted': 'noble'}
-Prefixs = {'humble': 'H', 'jazzy': 'J', 'kilted': 'K'}
+OSs = {'humble': 'jammy', 'jazzy': 'noble', 'lyrical': 'resolute'}
+Prefixs = {'humble': 'H', 'jazzy': 'J', 'lyrical': 'L'}
 
 # Set your packages here
 Packages = [
@@ -36,7 +38,10 @@ Packages = [
     'nav2_core',
     'nav2_costmap_2d',
     'opennav_docking',
+    'opennav_docking_bt',
+    'opennav_docking_core',
     'nav2_dwb_controller',  # Controller plugin for DWB packages
+    'opennav_following',
     'nav2_graceful_controller',
     'nav2_lifecycle_manager',
     'nav2_loopback_sim',
@@ -62,7 +67,7 @@ Packages = [
 ]
 
 # Set which distributions you care about
-Distros = ['humble', 'jazzy', 'kilted']
+Distros = ['humble', 'jazzy', 'lyrical']
 
 
 def getSrcPath(package: str, prefix: str, OS: str) -> str:
@@ -100,9 +105,18 @@ def main() -> None:
             OS = OSs[distro]
             srcURL = getSrcPath(package, prefix, OS)
             binURL = getBinPath(package, prefix, OS)
-            response = requests.get(srcURL)
-            # Check if package isn't in a given distribution
-            if response.status_code != 200:
+            # Check if package exists in this distribution with retries
+            status = None
+            for attempt in range(3):
+                try:
+                    response = requests.get(srcURL, timeout=10)
+                    status = response.status_code
+                    if status == 200:
+                        break
+                    time.sleep(1)
+                except requests.exceptions.RequestException:
+                    time.sleep(1)
+            if status != 200:
                 entry += 'N/A | N/A | '
             else:
                 entry += f'[![Build Status]({srcURL}badge/icon)]({srcURL}) | '
@@ -113,6 +127,10 @@ def main() -> None:
 
     # Special case for Opennav Docking for directory structure of Nav2
     body = body.replace('| opennav_docking |', '| nav2_docking |')
+    body = body.replace('| opennav_docking_bt |', '| nav2_docking_bt |')
+    body = body.replace('| opennav_docking_core |', '| nav2_docking_core |')
+    # Special case for Opennav Following for directory structure of Nav2
+    body = body.replace('| opennav_following |', '| nav2_following |')
     # Special case for reducing the label length
     body = body.replace('| nav2_regulated_pure_pursuit_controller |',
                         '| nav2_regulated_pure_pursuit |')
