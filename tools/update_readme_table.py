@@ -15,6 +15,8 @@
 
 # This tool populates the README table of build status for each package
 
+import time
+
 import requests
 
 # Global information about current distributions, shouldn't need to update
@@ -103,9 +105,18 @@ def main() -> None:
             OS = OSs[distro]
             srcURL = getSrcPath(package, prefix, OS)
             binURL = getBinPath(package, prefix, OS)
-            response = requests.get(srcURL)
-            # Check if package isn't in a given distribution
-            if response.status_code != 200:
+            # Check if package exists in this distribution with retries
+            status = None
+            for attempt in range(3):
+                try:
+                    response = requests.get(srcURL, timeout=10)
+                    status = response.status_code
+                    if status == 200:
+                        break
+                    time.sleep(1)
+                except requests.exceptions.RequestException:
+                    time.sleep(1)
+            if status != 200:
                 entry += 'N/A | N/A | '
             else:
                 entry += f'[![Build Status]({srcURL}badge/icon)]({srcURL}) | '
