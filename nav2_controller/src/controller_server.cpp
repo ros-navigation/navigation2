@@ -564,8 +564,7 @@ void ControllerServer::computeControl()
 
       updateGlobalPath();
 
-      // Refresh the plan and goal once per cycle, from one robot pose, so both share a single
-      // map->odom snapshot before the goal check and velocity computation consume them.
+      // Refresh the transformed plan and goal together so they share a single map->odom snapshot
       updateTransformedPlanAndGoal();
 
       if (isGoalReached()) {
