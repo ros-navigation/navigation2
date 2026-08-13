@@ -565,7 +565,7 @@ void ControllerServer::computeControl()
       updateGlobalPath();
 
       // Refresh the transformed plan and goal together so they share a single map->odom snapshot
-      updateTransformedPlanAndGoal();
+      transformedPlanAndGoal();
 
       if (isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
@@ -708,7 +708,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   current_path_ = path;
 }
 
-void ControllerServer::updateTransformedPlanAndGoal()
+void ControllerServer::transformedPlanAndGoal()
 {
   geometry_msgs::msg::PoseStamped pose;
 
@@ -728,6 +728,11 @@ void ControllerServer::updateTransformedPlanAndGoal()
     path_handlers_[current_path_handler_]->findPlanSegment(pose);
   transformed_global_plan_ =
     path_handlers_[current_path_handler_]->transformLocalPlan(closest_point, pruned_plan_end);
+
+  auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
+  if (transformed_plan_pub_->get_subscription_count() > 0) {
+    transformed_plan_pub_->publish(std::move(path));
+  }
 }
 
 void ControllerServer::computeAndPublishVelocity()
@@ -748,10 +753,6 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::PoseStamped goal =
     path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
-  auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
-  if (transformed_plan_pub_->get_subscription_count() > 0) {
-    transformed_plan_pub_->publish(std::move(path));
-  }
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
