@@ -76,6 +76,7 @@ public:
    * @brief Generate a dock from action goal
    * @param goal Action goal
    * @return Raw dock pointer to manage;
+   * @throw DockNotValid if the goal's dock type resolves to no plugin
    */
   Dock * generateGoalDock(std::shared_ptr<const DockRobot::Goal> goal);
 
