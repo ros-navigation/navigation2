@@ -1,0 +1,24 @@
+[workspace]
+name = "navigation2-ci"
+description = "Cross-platform Nav2 development and CI environment"
+channels = [
+  "https://prefix.dev/robostack-kilted",
+  "https://prefix.dev/conda-forge",
+]
+platforms = ["osx-64", "osx-arm64", "win-64"]
+
+[dependencies]
+ros-kilted-navigation2 = "*"
+colcon-common-extensions = "*"
+compilers = "*"
+cmake = "<4"
+ninja = "*"
+pkg-config = "*"
+
+[target.unix.tasks]
+ci-build = "colcon build --symlink-install --packages-select nav2_ros_common --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release"
+ci-test = { cmd = "colcon test --packages-select nav2_ros_common --event-handlers console_cohesion+ && colcon test-result --verbose", depends-on = ["ci-build"] }
+
+[target.win-64.tasks]
+ci-build = "colcon build --merge-install --packages-select nav2_ros_common --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release -DPython_FIND_VIRTUALENV=ONLY -DPython3_FIND_VIRTUALENV=ONLY"
+ci-test = { cmd = "colcon test --packages-select nav2_ros_common --event-handlers console_cohesion+ && colcon test-result --verbose", depends-on = ["ci-build"] }
