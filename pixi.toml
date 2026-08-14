@@ -29,8 +29,8 @@ pkg-config = "*"
 
 [target.unix.tasks]
 ci-build = "colcon build --symlink-install --packages-select nav2_common nav2_msgs nav2_ros_common --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release"
-ci-test = { cmd = "colcon test --packages-select nav2_ros_common --event-handlers console_cohesion+ && colcon test-result --verbose", depends-on = ["ci-build"] }
+ci-test = { cmd = "DYLD_INSERT_LIBRARIES=$CONDA_PREFIX/lib/libpython3.14.dylib colcon test --packages-select nav2_ros_common --event-handlers console_cohesion+ && colcon test-result --verbose", depends-on = ["ci-build"] }
 
 [target.win-64.tasks]
 ci-build = "colcon build --merge-install --packages-select nav2_common nav2_msgs nav2_ros_common --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release -DPython_FIND_VIRTUALENV=ONLY -DPython3_FIND_VIRTUALENV=ONLY"
-ci-test = { cmd = "colcon test --packages-select nav2_ros_common --event-handlers console_cohesion+ && colcon test-result --verbose", depends-on = ["ci-build"] }
+ci-test = { cmd = "colcon test --merge-install --packages-select nav2_ros_common --event-handlers console_cohesion+ && colcon test-result --verbose", depends-on = ["ci-build"] }
