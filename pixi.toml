@@ -2,21 +2,25 @@
 name = "navigation2-ci"
 description = "Cross-platform Nav2 development and CI environment"
 channels = [
-  "https://prefix.dev/robostack-kilted",
+  "https://prefix.dev/robostack-lyrical",
   "https://prefix.dev/conda-forge",
 ]
 platforms = ["osx-64", "osx-arm64", "win-64"]
 
 [dependencies]
-ros-kilted-navigation2 = "*"
-# Test dependencies are not pulled in by the binary Navigation2 package.
-ros-kilted-ament-lint-common = "*"
-ros-kilted-ament-lint-auto = "*"
-ros-kilted-ament-cmake-gtest = "*"
-ros-kilted-ament-cmake-pytest = "*"
-ros-kilted-ament-cmake-ros = "*"
-ros-kilted-std-srvs = "*"
-ros-kilted-test-msgs = "*"
+# Main targets Lyrical. Build the unavailable Nav2 packages from this checkout.
+ros-lyrical-desktop = "*"
+ros-lyrical-backward-ros = "*"
+ros-lyrical-bondcpp = "*"
+ros-lyrical-geographic-msgs = "*"
+ros-lyrical-map-msgs = "*"
+ros-lyrical-ament-lint-common = "*"
+ros-lyrical-ament-lint-auto = "*"
+ros-lyrical-ament-cmake-gtest = "*"
+ros-lyrical-ament-cmake-pytest = "*"
+ros-lyrical-ament-cmake-ros = "*"
+ros-lyrical-std-srvs = "*"
+ros-lyrical-test-msgs = "*"
 colcon-common-extensions = "*"
 compilers = "*"
 cmake = "<4"
@@ -24,9 +28,9 @@ ninja = "*"
 pkg-config = "*"
 
 [target.unix.tasks]
-ci-build = "colcon build --symlink-install --packages-select nav2_common nav2_ros_common --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release"
+ci-build = "colcon build --symlink-install --packages-select nav2_common nav2_msgs nav2_ros_common --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release"
 ci-test = { cmd = "colcon test --packages-select nav2_ros_common --event-handlers console_cohesion+ && colcon test-result --verbose", depends-on = ["ci-build"] }
 
 [target.win-64.tasks]
-ci-build = "colcon build --merge-install --packages-select nav2_common nav2_ros_common --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release -DPython_FIND_VIRTUALENV=ONLY -DPython3_FIND_VIRTUALENV=ONLY"
+ci-build = "colcon build --merge-install --packages-select nav2_common nav2_msgs nav2_ros_common --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release -DPython_FIND_VIRTUALENV=ONLY -DPython3_FIND_VIRTUALENV=ONLY"
 ci-test = { cmd = "colcon test --packages-select nav2_ros_common --event-handlers console_cohesion+ && colcon test-result --verbose", depends-on = ["ci-build"] }
