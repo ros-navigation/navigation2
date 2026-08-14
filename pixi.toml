@@ -9,6 +9,14 @@ platforms = ["osx-64", "osx-arm64", "win-64"]
 
 [dependencies]
 ros-kilted-navigation2 = "*"
+# Test dependencies are not pulled in by the binary Navigation2 package.
+ros-kilted-ament-lint-common = "*"
+ros-kilted-ament-lint-auto = "*"
+ros-kilted-ament-cmake-gtest = "*"
+ros-kilted-ament-cmake-pytest = "*"
+ros-kilted-ament-cmake-ros = "*"
+ros-kilted-std-srvs = "*"
+ros-kilted-test-msgs = "*"
 colcon-common-extensions = "*"
 compilers = "*"
 cmake = "<4"
