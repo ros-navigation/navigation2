@@ -285,20 +285,18 @@ void DockingServer::dockRobot()
             }
             result->success = true;
             result->num_retries = num_retries_;
-            ChargingDock::Ptr dock_plugin = dock->plugin;
-            stashDockData(goal->use_dock_id, dock, true);
             publishZeroVelocity();
-            dock_plugin->stopDetectionProcess();
+            dock->plugin->stopDetectionProcess();
+            stashDockData(goal->use_dock_id, dock, true);
             docking_action_server_->succeeded_current(result);
             return;
           }
         }
 
         // Cancelled, preempted, or shutting down (recoverable errors throw DockingException)
-        ChargingDock::Ptr dock_plugin = dock->plugin;
-        stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
-        dock_plugin->stopDetectionProcess();
+        dock->plugin->stopDetectionProcess();
+        stashDockData(goal->use_dock_id, dock, false);
         docking_action_server_->terminate_all(result);
         return;
       } catch (opennav_docking_core::DockingException & e) {
@@ -312,10 +310,9 @@ void DockingServer::dockRobot()
       // Reset to staging pose to try again
       if (!resetApproach(staging_pose, dock_backward)) {
         // Cancelled, preempted, or shutting down
-        ChargingDock::Ptr dock_plugin = dock->plugin;
-        stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
-        dock_plugin->stopDetectionProcess();
+        dock->plugin->stopDetectionProcess();
+        stashDockData(goal->use_dock_id, dock, false);
         docking_action_server_->terminate_all(result);
         return;
       }
@@ -359,14 +356,13 @@ void DockingServer::dockRobot()
     RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
   }
 
-  // Store dock state for later undocking and delete temp dock, if applicable
-  ChargingDock::Ptr dock_plugin = dock ? dock->plugin : nullptr;
-  stashDockData(goal->use_dock_id, dock, false);
   result->num_retries = num_retries_;
   publishZeroVelocity();
-  if (dock_plugin) {
-    dock_plugin->stopDetectionProcess();
+  if (dock) {
+    dock->plugin->stopDetectionProcess();
   }
+  // Store dock state for later undocking and delete temp dock, if applicable
+  stashDockData(goal->use_dock_id, dock, false);
   docking_action_server_->terminate_current(result);
 }
 
@@ -384,15 +380,17 @@ void DockingServer::stashDockData(bool use_dock_id, Dock * dock, bool successful
 
 Dock * DockingServer::generateGoalDock(std::shared_ptr<const DockRobot::Goal> goal)
 {
+  auto plugin = dock_db_->findDockPlugin(goal->dock_type);
+  if (!plugin) {
+    throw opennav_docking_core::DockNotValid(
+      "Dock type '" + goal->dock_type + "' has no valid plugin!");
+  }
+
   auto dock = new Dock();
   dock->frame = goal->dock_pose.header.frame_id;
   dock->pose = goal->dock_pose.pose;
   dock->type = goal->dock_type;
-  dock->plugin = dock_db_->findDockPlugin(dock->type);
-  if (!dock->plugin) {
-    delete dock;
-    throw opennav_docking_core::DockNotValid("Dock requested has no valid plugin!");
-  }
+  dock->plugin = plugin;
   return dock;
 }
 
