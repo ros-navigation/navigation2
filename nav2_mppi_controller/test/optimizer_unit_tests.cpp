@@ -644,6 +644,42 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   EXPECT_NEAR(sequence.wz(49), -2.0f, 1e-3);
   EXPECT_TRUE((sequence.vx >= -1.0f - 1e-6f).all());
   EXPECT_TRUE((sequence.vy >= -0.75f - 1e-6f).all());
+
+  // Test that acceleration limits and elliptical velocity limits are respected simultaneously
+  state.speed.linear.x = -0.2959;
+  state.speed.linear.y = -0.7164;
+  state.speed.angular.z = 0.0;
+  sequence.vx.setConstant(-0.404f);
+  sequence.vy.setConstant(-0.687f);
+  sequence.wz.setConstant(0.0f);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+
+  float prev_vx = static_cast<float>(state.speed.linear.x);
+  float prev_vy = static_cast<float>(state.speed.linear.y);
+  auto & constraints = optimizer_tester.getControlConstraints();
+  auto & settings = optimizer_tester.grabSettings();
+  for (unsigned int i = 0; i < 50; ++i) {
+    float vx = sequence.vx(i);
+    float vy = sequence.vy(i);
+    float ellipse_val = (vx * vx) / (1.0f * 1.0f) + (vy * vy) / (0.75f * 0.75f);
+    EXPECT_LE(ellipse_val, 1.0f + 1e-5f);
+
+    float dt = (i == 0) ? settings.controller_period : settings.model_dt;
+    float max_dvx = dt * constraints.ax_max;
+    float min_dvx = dt * constraints.ax_min;
+    float max_dvy = dt * constraints.ay_max;
+    float min_dvy = dt * constraints.ay_min;
+
+    float dvx = vx - prev_vx;
+    float dvy = vy - prev_vy;
+    EXPECT_LE(dvx, max_dvx + 1e-5f);
+    EXPECT_GE(dvx, min_dvx - 1e-5f);
+    EXPECT_LE(dvy, max_dvy + 1e-5f);
+    EXPECT_GE(dvy, min_dvy - 1e-5f);
+
+    prev_vx = vx;
+    prev_vy = vy;
+  }
 }
 
 TEST(OptimizerTests, updateStateVelocitiesTests)

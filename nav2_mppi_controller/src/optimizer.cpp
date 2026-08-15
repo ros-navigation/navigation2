@@ -421,6 +421,19 @@ void Optimizer::applyControlSequenceConstraints()
   float wz_last = static_cast<float>(state_.speed.angular.z);
   float vy_last = isHolonomic() ? static_cast<float>(state_.speed.linear.y) : 0.0f;
 
+  // Sanitize current speed to be within velocity limits
+  if (isHolonomic()) {
+    auto omni = dynamic_cast<OmniMotionModel *>(motion_model_.get());
+    if (omni && omni->useEllipticalVelocityLimits()) {
+      Eigen::Array<float, 1, 1> vx_arr, vy_arr;
+      vx_arr(0) = vx_last;
+      vy_arr(0) = vy_last;
+      float scaling_factor = omni->getVelocityScalingFactor(vx_arr, vy_arr)(0);
+      vx_last *= scaling_factor;
+      vy_last *= scaling_factor;
+    }
+  }
+
   // When shifting, vx(0) is "now" and not sent. Pin it so vx(1), the sent command,
   // is exactly one constraint step from current speed when shift_control_sequence
   if (s.shift_control_sequence) {
@@ -441,22 +454,48 @@ void Optimizer::applyControlSequenceConstraints()
       max_delta_wz = s.model_dt * s.constraints.az_max;
     }
 
-    float & vx_curr = control_sequence_.vx(i);
-    vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
-    vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
-    vx_last = vx_curr;
+    // Apply translational constraints to control sequence
+    if (isHolonomic()) {
+      // Clamp to elliptical velocity limits
+      float & vx_curr = control_sequence_.vx(i);
+      float & vy_curr = control_sequence_.vy(i);
+      vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
+      vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
 
+      const float dvx = vx_curr - vx_last;
+      const float dvy = vy_curr - vy_last;
+
+      // Respect acceleration limits without changing the heading
+      float alpha = 1.0f;
+      if (dvx > max_delta_vx) {
+        alpha = std::min(alpha, max_delta_vx / dvx);
+      } else if (dvx < min_delta_vx) {
+        alpha = std::min(alpha, min_delta_vx / dvx);
+      }
+
+      if (dvy > max_delta_vy) {
+        alpha = std::min(alpha, max_delta_vy / dvy);
+      } else if (dvy < min_delta_vy) {
+        alpha = std::min(alpha, min_delta_vy / dvy);
+      }
+
+      vx_curr = vx_last + alpha * dvx;
+      vy_curr = vy_last + alpha * dvy;
+      vx_last = vx_curr;
+      vy_last = vy_curr;
+    } else {
+      // Non-holonomic case -> either Ackermann or Diff Drive
+      float & vx_curr = control_sequence_.vx(i);
+      vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
+      vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
+      vx_last = vx_curr;
+    }
+
+    // Apply rotational constraints to control sequence
     float & wz_curr = control_sequence_.wz(i);
     wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
     wz_curr = utils::clampVelocityByAccel(wz_last, wz_curr, -max_delta_wz, max_delta_wz);
     wz_last = wz_curr;
-
-    if (isHolonomic()) {
-      float & vy_curr = control_sequence_.vy(i);
-      vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-      vy_curr = utils::clampVelocityByAccel(vy_last, vy_curr, min_delta_vy, max_delta_vy);
-      vy_last = vy_curr;
-    }
   }
 
   // Apply again to ensure accel constraints don't violate specialty limits
