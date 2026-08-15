@@ -13,11 +13,14 @@
 // limitations under the License.
 
 #include <chrono>
+#include <memory>
+#include <string>
 #include <thread>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_controller/plugins/feasible_path_handler.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
@@ -69,6 +72,11 @@ public:
   nav_msgs::msg::Path & getInvertedPath()
   {
     return global_plan_up_to_constraint_;
+  }
+
+  bool retainedStateNeedsValidation()
+  {
+    return retained_state_needs_validation_;
   }
 
   geometry_msgs::msg::PoseStamped getTransformedGoalWrapper(
@@ -420,6 +428,318 @@ TEST(PathHandlerTests, TestDynamicParams)
     results);
   // Value should remain unchanged
   EXPECT_EQ(node->get_parameter("dummy.inversion_xy_tolerance").as_double(), 200.0);
+}
+
+// Builds a costmap whose bounds are stated by the test, so that the poses used for retained
+// state validation are unambiguously inside or outside of it.
+std::shared_ptr<nav2_costmap_2d::Costmap2DROS> createBoundedCostmap(double origin, int size_meters)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides(
+    {rclcpp::Parameter("global_frame", "odom"),
+      rclcpp::Parameter("robot_base_frame", "base_link"),
+      rclcpp::Parameter("width", size_meters),
+      rclcpp::Parameter("height", size_meters),
+      rclcpp::Parameter("resolution", 0.1),
+      rclcpp::Parameter("origin_x", origin),
+      rclcpp::Parameter("origin_y", origin)});
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(options);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
+  return costmap_ros;
+}
+
+nav_msgs::msg::Path createStraightPath(unsigned int num_poses)
+{
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "map";
+  path.poses.resize(num_poses);
+  for (unsigned int i = 0; i != num_poses; ++i) {
+    path.poses[i].header.frame_id = "map";
+    path.poses[i].pose.position.x = i;
+    path.poses[i].pose.orientation.w = 1.0;
+  }
+  return path;
+}
+
+// Tracks the path in one metre steps, pruning the working plan on every step
+void followPathTo(PathHandlerWrapper & handler, double x_end)
+{
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "odom";
+  for (double x = 0.0; x <= x_end; x += 1.0) {
+    robot_pose.pose.position.x = x;
+    auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+    handler.transformLocalPlanWrapper(closest, pruned_plan_end);
+  }
+}
+
+TEST(PathHandlerTests, RetainPruneStateOnIdenticalPlanWithinCostmap)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(2.0));
+  auto costmap_ros = createBoundedCostmap(-10.0, 20);
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster->sendTransform(t);
+  t.child_frame_id = "odom";
+  tf_broadcaster->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
+
+  auto path = createStraightPath(31);
+  handler.setPlan(path);
+  followPathTo(handler, 5.0);
+
+  // The robot is now further along the path than a bounded search from the start could reach
+  ASSERT_EQ(handler.getInvertedPath().poses.size(), 26u);
+  ASSERT_EQ(handler.getInvertedPath().poses.front().pose.position.x, 5.0);
+
+  handler.setPlan(path);
+  EXPECT_TRUE(handler.retainedStateNeedsValidation());
+
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "odom";
+  robot_pose.pose.position.x = 5.0;
+  auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+
+  EXPECT_FALSE(handler.retainedStateNeedsValidation());
+  EXPECT_EQ(handler.getInvertedPath().poses.size(), 26u);
+  EXPECT_EQ(closest, handler.getInvertedPath().poses.begin());
+  EXPECT_EQ(closest->pose.position.x, 5.0);
+  EXPECT_NE(pruned_plan_end, closest);
+}
+
+TEST(PathHandlerTests, ResetRetainedStateWhenCandidateLeavesCostmap)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(2.0));
+  auto costmap_ros = createBoundedCostmap(-5.0, 10);
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster->sendTransform(t);
+  t.child_frame_id = "odom";
+  tf_broadcaster->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
+
+  auto path = createStraightPath(31);
+  handler.setPlan(path);
+
+  // Stands in for having tracked the path beyond the costmap before the goal was reissued
+  nav_msgs::msg::Path retained_plan = path;
+  retained_plan.poses.erase(retained_plan.poses.begin(), retained_plan.poses.begin() + 8);
+  handler.setGlobalPlanUpToInversion(retained_plan);
+
+  handler.setPlan(path);
+  EXPECT_TRUE(handler.retainedStateNeedsValidation());
+
+  // Teleoperated back to the start, the retained poses are no longer within the costmap
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "odom";
+  robot_pose.pose.position.x = 0.0;
+  auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+
+  EXPECT_FALSE(handler.retainedStateNeedsValidation());
+  EXPECT_EQ(handler.getInvertedPath().poses.size(), path.poses.size());
+  EXPECT_EQ(closest, handler.getInvertedPath().poses.begin());
+  EXPECT_EQ(closest->pose.position.x, 0.0);
+  EXPECT_NE(pruned_plan_end, closest);
+}
+
+TEST(PathHandlerTests, RetainStateAfterLocalRecoveryMotion)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(2.0));
+  auto costmap_ros = createBoundedCostmap(-10.0, 20);
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster->sendTransform(t);
+  t.child_frame_id = "odom";
+  tf_broadcaster->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
+
+  auto path = createStraightPath(31);
+  handler.setPlan(path);
+  followPathTo(handler, 5.0);
+  handler.setPlan(path);
+
+  // Backed up during a recovery, but still alongside the retained portion of the path
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "odom";
+  robot_pose.pose.position.x = 4.6;
+  auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+
+  EXPECT_EQ(handler.getInvertedPath().poses.size(), 26u);
+  EXPECT_EQ(closest->pose.position.x, 5.0);
+  EXPECT_NE(pruned_plan_end, closest);
+}
+
+TEST(PathHandlerTests, ReplaceRetainedStateWhenPlanDiffers)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(2.0));
+  auto costmap_ros = createBoundedCostmap(-10.0, 20);
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster->sendTransform(t);
+  t.child_frame_id = "odom";
+  tf_broadcaster->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
+
+  auto path = createStraightPath(31);
+  handler.setPlan(path);
+  followPathTo(handler, 5.0);
+  ASSERT_EQ(handler.getInvertedPath().poses.size(), 26u);
+
+  auto different_path = createStraightPath(31);
+  different_path.poses[10].pose.position.y = 1.0;
+  handler.setPlan(different_path);
+
+  EXPECT_FALSE(handler.retainedStateNeedsValidation());
+  EXPECT_EQ(handler.getInvertedPath().poses.size(), different_path.poses.size());
+  EXPECT_EQ(handler.getInvertedPath().poses.front().pose.position.x, 0.0);
+}
+
+TEST(PathHandlerTests, ResetClearsRetainedState)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(2.0));
+  auto costmap_ros = createBoundedCostmap(-10.0, 20);
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster->sendTransform(t);
+  t.child_frame_id = "odom";
+  tf_broadcaster->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
+
+  auto path = createStraightPath(31);
+  handler.setPlan(path);
+  followPathTo(handler, 5.0);
+  ASSERT_EQ(handler.getInvertedPath().poses.size(), 26u);
+
+  handler.reset();
+  EXPECT_TRUE(handler.getInvertedPath().poses.empty());
+
+  // The same geometry after a reset is a new navigation
+  handler.setPlan(path);
+  EXPECT_FALSE(handler.retainedStateNeedsValidation());
+  EXPECT_EQ(handler.getInvertedPath().poses.size(), path.poses.size());
+  EXPECT_EQ(handler.getInvertedPath().poses.front().pose.position.x, 0.0);
+}
+
+TEST(PathHandlerTests, RetainedStateValidationStaysPendingOnTfFailure)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(2.0));
+  auto costmap_ros = createBoundedCostmap(-10.0, 20);
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  // The plan frame is available, the costmap frame is not
+  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
+
+  auto path = createStraightPath(31);
+  handler.setPlan(path);
+  handler.setPlan(path);
+  ASSERT_TRUE(handler.retainedStateNeedsValidation());
+
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "base_link";
+  EXPECT_THROW(
+    handler.findPlanSegmentWrapper(robot_pose), nav2_core::ControllerTFError);
+  EXPECT_TRUE(handler.retainedStateNeedsValidation());
+  EXPECT_EQ(handler.getInvertedPath().poses.size(), path.poses.size());
+
+  t.child_frame_id = "odom";
+  tf_broadcaster->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
+
+  EXPECT_NO_THROW(handler.findPlanSegmentWrapper(robot_pose));
+  EXPECT_FALSE(handler.retainedStateNeedsValidation());
+}
+
+TEST(PathHandlerTests, RetainedStateValidationKeepsOrderedSearch)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(2.0));
+  auto costmap_ros = createBoundedCostmap(-10.0, 40);
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster->sendTransform(t);
+  t.child_frame_id = "odom";
+  tf_broadcaster->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
+
+  // A path that comes back alongside where it started
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "map";
+  for (unsigned int i = 0; i != 11; ++i) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = "map";
+    pose.pose.position.x = i;
+    pose.pose.orientation.w = 1.0;
+    path.poses.push_back(pose);
+  }
+  for (unsigned int i = 0; i != 11; ++i) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = "map";
+    pose.pose.position.x = 10 - i;
+    pose.pose.position.y = 0.5;
+    pose.pose.orientation.w = 1.0;
+    path.poses.push_back(pose);
+  }
+
+  handler.setPlan(path);
+  nav_msgs::msg::Path retained_plan = path;
+  retained_plan.poses.erase(retained_plan.poses.begin(), retained_plan.poses.begin() + 18);
+  handler.setGlobalPlanUpToInversion(retained_plan);
+  handler.setPlan(path);
+
+  // The outbound leg is closer to the robot, but has already been traversed
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "odom";
+  robot_pose.pose.position.x = 3.0;
+  auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+
+  EXPECT_EQ(handler.getInvertedPath().poses.size(), retained_plan.poses.size());
+  EXPECT_EQ(closest->pose.position.x, 3.0);
+  EXPECT_EQ(closest->pose.position.y, 0.5);
+  EXPECT_NE(pruned_plan_end, closest);
 }
 
 int main(int argc, char **argv)
