@@ -106,6 +106,12 @@
       <output_port name="was_completed">True if smoothing was not interrupted by time limit</output_port>
     </Action>
 
+    <Action ID="ClassifyPath">
+      <input_port name="path">Path to be classified</input_port>
+      <output_port name="classified_paths">Path segments classified by class type</output_port>
+      <output_port name="classification_time">Time taken to classify the path</output_port>
+    </Action>
+
     <Action ID="FollowPath">
       <input_port name="controller_id" default="FollowPath"/>
       <input_port name="path">Path to follow</input_port>

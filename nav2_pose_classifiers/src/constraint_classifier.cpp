@@ -22,6 +22,25 @@ namespace nav2_pose_classifiers
 // giving a coordinate range of ±4.6e12 metres — more than enough.
 static constexpr double kClipperScale = 1e6;
 
+static constexpr double kFootprintEpsilon = 1e-9;
+
+// Check if the footprint changed
+static bool footprintChanged(
+  const nav2_costmap_2d::Footprint & a, const nav2_costmap_2d::Footprint & b)
+{
+  if (a.size() != b.size()) {
+    return true;
+  }
+  for (size_t i = 0; i < a.size(); ++i) {
+    if (std::fabs(a[i].x - b[i].x) > kFootprintEpsilon ||
+      std::fabs(a[i].y - b[i].y) > kFootprintEpsilon)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // configure
 // ---------------------------------------------------------------------------
@@ -30,10 +49,12 @@ void ConstraintClassifier::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & name,
   std::shared_ptr<tf2_ros::Buffer>/*tf*/,
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub)
 {
   name_ = name;
-  costmap_ros_ = costmap_ros;
+  costmap_sub_ = costmap_sub;
+  footprint_sub_ = footprint_sub;
 
   auto node = parent.lock();
   if (!node) {
@@ -41,9 +62,9 @@ void ConstraintClassifier::configure(
   }
   logger_ = node->get_logger();
 
+  // Required — every classifier instance must declare the class id it emits
   nav2_util::declare_parameter_if_not_declared(
-    node, name_ + ".class_type",
-    rclcpp::ParameterValue(nav2_msgs::msg::PathClasses::CONSTRAINT_SPACE));  // CONSTRAINT_SPACE = 1
+    node, name_ + ".class_type", rclcpp::ParameterType::PARAMETER_INTEGER);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".inflation_resolution",
@@ -61,11 +82,6 @@ void ConstraintClassifier::configure(
             "ConstraintClassifier: 'inflation_resolution' parameter must be positive.");
   }
   max_constraint_clearance_ = node->get_parameter(name_ + ".max_constraint_clearance").as_double();
-
-  collision_checker_.setCostmap(costmap_ros_->getCostmap());
-
-  raw_fp_ = costmap_ros_->getRobotFootprint();
-  opposites_ = buildOppositePairs(raw_fp_);
 
   RCLCPP_INFO(
     logger_,
@@ -201,7 +217,8 @@ std::vector<size_t> ConstraintClassifier::buildOppositePairs(
 // matches  —  core classification
 // ---------------------------------------------------------------------------
 
-bool ConstraintClassifier::matches(const geometry_msgs::msg::PoseStamped & pose)
+bool ConstraintClassifier::matches(
+  const geometry_msgs::msg::PoseStamped & pose, bool fetch_data)
 {
   // ── 1. Pose ───────────────────────────────────────────────────────────────
   const double x = pose.pose.position.x;
@@ -211,19 +228,29 @@ bool ConstraintClassifier::matches(const geometry_msgs::msg::PoseStamped & pose)
   const double sin_th = std::sin(theta);
 
   // ── 2. Footprint + opposite pairs (recompute only on change) ──────────
-  const nav2_costmap_2d::Footprint current_fp = costmap_ros_->getRobotFootprint();
-  if (current_fp.size() < 3) {
-    return false;
+  if (fetch_data) {
+    nav2_costmap_2d::Footprint current_fp;
+    std_msgs::msg::Header fp_header;
+    if (!footprint_sub_->getFootprintInRobotFrame(current_fp, fp_header)) {
+      return false;
+    }
+    // Recompute opposite pairs only if the footprint has changed
+    if (footprintChanged(current_fp, raw_fp_)) {
+      raw_fp_ = current_fp;
+      opposites_ = buildOppositePairs(raw_fp_);
+    }
   }
-  // Recompute opposite pairs only if the footprint has changed
-  if (current_fp != raw_fp_) {
-    raw_fp_ = current_fp;
-    opposites_ = buildOppositePairs(raw_fp_);
+  if (raw_fp_.size() < 3) {
+    return false;
   }
   const size_t n = raw_fp_.size();
 
   // ── 3. Costmap + mutex ────────────────────────────────────────────────────
-  auto * costmap = costmap_ros_->getCostmap();
+  if (fetch_data) {
+    costmap_ = costmap_sub_->getCostmap();
+    collision_checker_.setCostmap(costmap_.get());
+  }
+  auto * costmap = costmap_.get();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
   // ── 4. Track which edges have hit LETHAL ──────────────────────────────────

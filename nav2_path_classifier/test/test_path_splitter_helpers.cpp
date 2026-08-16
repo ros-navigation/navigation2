@@ -19,13 +19,13 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_msgs/msg/classified_path.hpp"
 #include "nav2_msgs/msg/classified_path_array.hpp"
-#include "nav2_planner/path_splitter.hpp"
+#include "nav2_path_classifier/path_splitter.hpp"
 
 // ---------------------------------------------------------------------------
 // Test fixture — declared as friend in PathSplitter.
 // ---------------------------------------------------------------------------
 
-namespace nav2_planner
+namespace nav2_path_classifier
 {
 
 class PathSplitterHelperTest : public ::testing::Test
@@ -370,7 +370,7 @@ TEST_F(PathSplitterHelperTest, SplitEmptyPathReturnsEmpty)
   EXPECT_TRUE(result.classified_path_array.paths.empty());
 }
 
-}  // namespace nav2_planner
+}  // namespace nav2_path_classifier
 
 int main(int argc, char ** argv)
 {

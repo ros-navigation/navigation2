@@ -4,7 +4,7 @@
   <name>nav2_pose_classifiers</name>
   <version>1.0.0</version>
   <description>Pose classification plugins for nav2 path classification</description>
-  <maintainer email="tirth@origin.tech">tirth10x</maintainer>
+  <maintainer email="tirth@origin.tech">Tirth Vyas</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
