@@ -39,6 +39,8 @@ struct Parameters
   double tolerance;
   // Whether to use the astar planner or default dijkstras
   bool use_astar;
+  // Integer factor applied to the largest costmap dimension to limit path extraction cycles
+  int max_cycles_factor;
 };
 
 /**

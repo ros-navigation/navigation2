@@ -37,7 +37,7 @@ enum class PathAngleMode
 /**
  * @brief Method to convert mode enum to string for printing
  */
-std::string modeToStr(const PathAngleMode & mode)
+inline std::string modeToStr(const PathAngleMode & mode)
 {
   if (mode == PathAngleMode::FORWARD_PREFERENCE) {
     return "Forward Preference";

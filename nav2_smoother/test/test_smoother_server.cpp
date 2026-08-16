@@ -263,10 +263,9 @@ TEST_F(SmootherTest, testingSuccess)
 
 TEST_F(SmootherTest, testingFailureOnInvalidSmootherId)
 {
-  ASSERT_TRUE(sendGoal("InvalidSmoother", 0.0, 0.0, 1.0, 0.0, 500ms, true));
-  auto result = getResult();
-  EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
-  SUCCEED();
+  // Invalid smoother IDs are rejected in the goal received callback, so the
+  // goal never reaches execution and no result is produced.
+  EXPECT_FALSE(sendGoal("InvalidSmoother", 0.0, 0.0, 1.0, 0.0, 500ms, true));
 }
 
 TEST_F(SmootherTest, testingSuccessOnEmptyPlugin)

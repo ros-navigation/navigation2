@@ -915,7 +915,10 @@ NavFn::calcPath(int n, int * st)
   }
 
   //  return npath;  // out of cycles, return failure
-  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[PathCalc] No path found, path too long");
+  RCLCPP_WARN(
+    rclcpp::get_logger("rclcpp"),
+    "[PathCalc] Path extraction exhausted: npath = %d, max_cycles = %d",
+    npath, n);
   // savemap("navfn_pathlong");
   return 0;  // out of cycles, return failure
 }

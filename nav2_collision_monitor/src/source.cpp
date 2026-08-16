@@ -14,7 +14,10 @@
 
 #include "nav2_collision_monitor/source.hpp"
 
+#include <algorithm>
 #include <exception>
+#include <iterator>
+#include <string>
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
@@ -43,6 +46,8 @@ Source::Source(
 
 Source::~Source()
 {
+  add_ez_service_.reset();
+  remove_ez_service_.reset();
   auto node = node_.lock();
   if (post_set_params_handler_ && node) {
     node->remove_post_set_parameters_callback(post_set_params_handler_.get());
@@ -57,6 +62,27 @@ Source::~Source()
 bool Source::configure()
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  // Configure the exclusion zones (if any) declared for this source
+  const std::vector<std::string> zone_names =
+    node->declare_or_get_parameter<std::vector<std::string>>(
+    source_name_ + ".exclusion_zones", std::vector<std::string>());
+
+  for (const std::string & zone_name : zone_names) {
+    auto zone = std::make_shared<ExclusionZone>(
+      node, zone_name, tf_buffer_, base_frame_id_, global_frame_id_,
+      transform_tolerance_, base_shift_correction_);
+    if (!zone->configure()) {
+      RCLCPP_ERROR(
+        logger_, "[%s]: Failed to configure exclusion zone '%s'",
+        source_name_.c_str(), zone_name.c_str());
+      return false;
+    }
+    exclusion_zones_.push_back(zone);
+  }
 
   // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -68,7 +94,67 @@ bool Source::configure()
       &Source::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
 
+  // Create services for runtime add/remove of exclusion zones
+  add_ez_service_ = node->create_service<nav2_msgs::srv::AddExclusionZone>(
+    "~/" + source_name_ + "/add_exclusion_zone",
+    std::bind(
+      &Source::addExclusionZoneCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  remove_ez_service_ = node->create_service<nav2_msgs::srv::RemoveExclusionZone>(
+    "~/" + source_name_ + "/remove_exclusion_zone",
+    std::bind(
+      &Source::removeExclusionZoneCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
   return true;
+}
+
+bool Source::getData(
+  const rclcpp::Time & curr_time,
+  std::vector<Point> & data)
+{
+  // Collect this source's points into a private buffer so exclusion-zone
+  // masking only ever considers data produced by this source.
+  std::vector<Point> source_data;
+  if (!getSourceData(curr_time, source_data)) {
+    return false;
+  }
+
+  // Mask out points that fall inside any enabled exclusion zone.
+  if (!exclusion_zones_.empty() && !source_data.empty()) {
+    for (const auto & zone : exclusion_zones_) {
+      zone->apply(curr_time, source_data);
+    }
+  }
+
+  // Append the surviving points to the caller's array.
+  data.insert(
+    data.end(),
+    std::make_move_iterator(source_data.begin()),
+    std::make_move_iterator(source_data.end()));
+
+  return true;
+}
+
+void Source::activate()
+{
+  for (const auto & zone : exclusion_zones_) {
+    zone->activate();
+  }
+}
+
+void Source::deactivate()
+{
+  for (const auto & zone : exclusion_zones_) {
+    zone->deactivate();
+  }
+}
+
+void Source::publishExclusionZones() const
+{
+  for (const auto & zone : exclusion_zones_) {
+    zone->publish();
+  }
 }
 
 void Source::getCommonParameters(std::string & source_topic)
@@ -150,6 +236,90 @@ void Source::updateParametersCallback(
       }
     }
   }
+}
+
+void Source::addExclusionZoneCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::AddExclusionZone::Request> request,
+  std::shared_ptr<nav2_msgs::srv::AddExclusionZone::Response> response)
+{
+  const auto & desc = request->zone;
+
+  // Validate the description
+  bool duplicate = std::any_of(
+    exclusion_zones_.begin(), exclusion_zones_.end(),
+    [&](const auto & z) {return z->getName() == desc.zone_name;});
+  if (desc.zone_name.empty() || duplicate ||
+    (desc.type != "polygon" && desc.type != "circle") ||
+    (desc.type == "circle" && desc.radius <= 0.0) ||
+    (desc.type == "polygon" && desc.points.size() < 3))
+  {
+    response->success = false;
+    response->message = "Invalid exclusion zone description for '" + desc.zone_name +
+      "' on source '" + source_name_ + "'";
+    return;
+  }
+
+  auto node = node_.lock();
+  auto zone = std::make_shared<ExclusionZone>(
+    node, desc.zone_name, tf_buffer_, base_frame_id_, global_frame_id_,
+    transform_tolerance_, base_shift_correction_);
+  if (!zone->configure(desc)) {
+    response->success = false;
+    response->message = "Failed to configure zone '" + desc.zone_name + "'";
+    return;
+  }
+  zone->activate();
+  exclusion_zones_.push_back(zone);
+
+  response->success = true;
+  response->message = "Added zone '" + desc.zone_name + "' to source '" + source_name_ + "'";
+  RCLCPP_INFO(logger_, "%s", response->message.c_str());
+}
+
+void Source::removeExclusionZoneCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::RemoveExclusionZone::Request> request,
+  std::shared_ptr<nav2_msgs::srv::RemoveExclusionZone::Response> response)
+{
+  if (request->remove_all) {
+    for (auto & zone : exclusion_zones_) {
+      zone->deactivate();
+    }
+    exclusion_zones_.clear();
+    response->success = true;
+    response->message = std::string("Removed all zone(s) from source '") +
+      source_name_ + "'";
+    RCLCPP_INFO(logger_, "%s", response->message.c_str());
+    return;
+  }
+
+  if (request->zone_name.empty()) {
+    response->success = false;
+    response->message = "Zone name must not be empty";
+    return;
+  }
+
+  auto it = std::find_if(
+    exclusion_zones_.begin(), exclusion_zones_.end(),
+    [&](const std::shared_ptr<ExclusionZone> & z) {
+      return z->getName() == request->zone_name;
+    });
+
+  if (it == exclusion_zones_.end()) {
+    response->success = false;
+    response->message = "Zone '" + request->zone_name +
+      "' not found on source '" + source_name_ + "'";
+    return;
+  }
+
+  (*it)->deactivate();
+  exclusion_zones_.erase(it);
+
+  response->success = true;
+  response->message = "Removed zone '" + request->zone_name +
+    "' from source '" + source_name_ + "'";
+  RCLCPP_INFO(logger_, "%s", response->message.c_str());
 }
 
 bool Source::getTransform(
