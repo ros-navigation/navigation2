@@ -81,7 +81,7 @@ int main(int argc, char const * argv[])
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   RoutePlanner planner;
   planner.configure(node, tf_buffer, costmap_subscriber);
-  std::vector<unsigned int> blocked_ids;
+  std::vector<uint64_t> blocked_ids;
   Route route;
 
   // // First test: Plan clear across the maximum diagonal

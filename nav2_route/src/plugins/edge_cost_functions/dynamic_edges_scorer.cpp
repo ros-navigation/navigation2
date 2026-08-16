@@ -48,12 +48,12 @@ void DynamicEdgesScorer::closedEdgesCb(
   RCLCPP_INFO(logger_, "Edge closure and cost adjustment in progress!");
 
   // Add new closed edges
-  for (unsigned int edge : request->closed_edges) {
+  for (uint64_t edge : request->closed_edges) {
     closed_edges_.insert(edge);
   }
 
   // Removed now opened edges, if stored
-  for (unsigned int edge : request->opened_edges) {
+  for (uint64_t edge : request->opened_edges) {
     if (closed_edges_.find(edge) != closed_edges_.end()) {
       closed_edges_.erase(edge);
     }

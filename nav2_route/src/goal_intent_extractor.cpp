@@ -94,8 +94,8 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
 {
   // If not using the poses, then use the requests Node IDs to establish start and goal
   if (!goal->use_poses) {
-    unsigned int start_idx = id_to_graph_map_->at(goal->start_id);
-    unsigned int goal_idx = id_to_graph_map_->at(goal->goal_id);
+    uint64_t start_idx = id_to_graph_map_->at(goal->start_id);
+    uint64_t goal_idx = id_to_graph_map_->at(goal->goal_id);
     const Coordinates & start_coords = graph_->at(start_idx).coords;
     const Coordinates & goal_coords = graph_->at(goal_idx).coords;
     start_.pose.position.x = start_coords.x;

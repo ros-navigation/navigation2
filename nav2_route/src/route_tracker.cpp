@@ -125,9 +125,9 @@ bool RouteTracker::isStartOrEndNode(RouteTrackingState & state, const Route & ro
 
 void RouteTracker::publishFeedback(
   const bool rereouted,
-  const unsigned int next_node_id,
-  const unsigned int last_node_id,
-  const unsigned int edge_id,
+  const uint64_t next_node_id,
+  const uint64_t last_node_id,
+  const uint64_t edge_id,
   const std::vector<std::string> & operations)
 {
   auto feedback = std::make_unique<Feedback>();
@@ -229,7 +229,7 @@ TrackerResult RouteTracker::trackRoute(
         rerouting_info.rerouting_start_id = state.last_node->nodeid;
         rerouting_info.rerouting_start_pose = robot_pose;
       } else {
-        rerouting_info.rerouting_start_id = std::numeric_limits<unsigned int>::max();
+        rerouting_info.rerouting_start_id = std::numeric_limits<uint64_t>::max();
         rerouting_info.rerouting_start_pose = geometry_msgs::msg::PoseStamped();
       }
 

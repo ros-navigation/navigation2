@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <cinttypes>
+
 #include "nav2_route/route_server.hpp"
 
 using std::placeholders::_1;
@@ -218,7 +220,7 @@ Route RouteServer::findRoute(
   auto [start_route, end_route] = goal_intent_extractor_->findStartandGoal(goal);
 
   // If we're rerouting, use the rerouting start node and pose as the new start
-  if (rerouting_info.rerouting_start_id != std::numeric_limits<unsigned int>::max()) {
+  if (rerouting_info.rerouting_start_id != std::numeric_limits<uint64_t>::max()) {
     start_route = id_to_graph_map_.at(rerouting_info.rerouting_start_id);
     goal_intent_extractor_->overrideStart(rerouting_info.rerouting_start_pose);
   }
@@ -401,8 +403,9 @@ void RouteServer::exceptionWarning(
 {
   RCLCPP_WARN(
     get_logger(),
-    "Route server failed on request: Start: [(%0.2f, %0.2f) / %i] Goal: [(%0.2f, %0.2f) / %i]:"
-    " \"%s\"", goal->start.pose.position.x, goal->start.pose.position.y, goal->start_id,
+    "Route server failed on request: Start: [(%0.2f, %0.2f) / %" PRIu64 "] Goal: "
+    "[(%0.2f, %0.2f) / %" PRIu64 "]: \"%s\"",
+    goal->start.pose.position.x, goal->start.pose.position.y, goal->start_id,
     goal->goal.pose.position.x, goal->goal.pose.position.y, goal->goal_id, ex.what());
 }
 

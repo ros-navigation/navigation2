@@ -47,7 +47,6 @@ public:
   using OsmGraphFileLoader::addNodesToGraph;
   using OsmGraphFileLoader::parseOneway;
   using OsmGraphFileLoader::addEdgesFromSections;
-  using OsmGraphFileLoader::osm_to_nodeid_;
   using OsmGraphFileLoader::next_edge_id_;
 };
 
@@ -185,9 +184,9 @@ TEST(OsmGraphFileLoader, collect_vertex_ids_are_sorted_unique_boundaries)
   EXPECT_EQ(peer.collectVertexIds(sections), (std::vector<int64_t>{10, 12, 14, 20, 21}));
 }
 
-// addNodesToGraph assigns sequential nav2 ids, records the OSM->nav2 mapping,
-// and copies coordinates - without ever casting the int64 OSM id into nodeid.
-TEST(OsmGraphFileLoader, add_nodes_assigns_sequential_ids_and_coords)
+// addNodesToGraph preserves the original OSM id as the route node id, records
+// the OSM id -> graph index lookup, and copies coordinates.
+TEST(OsmGraphFileLoader, add_nodes_preserve_osm_ids_and_coords)
 {
   OsmLoaderTestPeer peer;
   const std::vector<int64_t> vertex_ids{10, 12, 14};
@@ -201,14 +200,17 @@ TEST(OsmGraphFileLoader, add_nodes_assigns_sequential_ids_and_coords)
   peer.addNodesToGraph(graph, graph_to_id_map, vertex_ids, coords);
 
   ASSERT_EQ(graph.size(), 3u);
-  EXPECT_EQ(graph[0].nodeid, 0u);
-  EXPECT_EQ(graph[1].nodeid, 1u);
+  EXPECT_EQ(graph[0].nodeid, 10u);  // original OSM id kept as the route node id
+  EXPECT_EQ(graph[1].nodeid, 12u);
+  EXPECT_EQ(graph[2].nodeid, 14u);
   EXPECT_NEAR(graph[1].coords.x, 3.0f, 1e-6);
   EXPECT_NEAR(graph[2].coords.y, 6.0f, 1e-6);
   EXPECT_EQ(graph[0].coords.frame_id, "map");
-  EXPECT_EQ(graph_to_id_map[0], 0u);
-  EXPECT_EQ(peer.osm_to_nodeid_[10], 0u);
-  EXPECT_EQ(peer.osm_to_nodeid_[14], 2u);
+  EXPECT_EQ(graph_to_id_map[10], 0u);  // OSM id -> graph index
+  EXPECT_EQ(graph_to_id_map[14], 2u);
+  // Round-trip: an OSM id resolves back to the node that carries it, which is
+  // what lets a route be requested by original OSM node id.
+  EXPECT_EQ(graph[graph_to_id_map[12]].nodeid, 12u);
 }
 
 // A junction whose node was missing from the file (no coordinates) is dropped
@@ -227,7 +229,8 @@ TEST(OsmGraphFileLoader, add_nodes_drops_vertices_without_coordinates)
   peer.addNodesToGraph(graph, graph_to_id_map, vertex_ids, coords);
 
   EXPECT_EQ(graph.size(), 2u);
-  EXPECT_EQ(peer.osm_to_nodeid_.count(99), 0u);
+  EXPECT_EQ(graph_to_id_map.count(99), 0u);  // the coordinate-less junction is not routable
+  EXPECT_EQ(graph_to_id_map.count(10), 1u);
 }
 
 // Builds a two-vertex graph (ids 10, 14) on the peer so edge wiring can be
@@ -252,7 +255,7 @@ TEST(OsmGraphFileLoader, edges_bidirectional_without_oneway)
 
   std::vector<OsmLoaderTestPeer::Section> sections;
   sections.push_back({{10, 14}, {{"highway", "track"}}});
-  peer.addEdgesFromSections(graph, sections);
+  peer.addEdgesFromSections(graph, map, sections);
 
   ASSERT_EQ(graph.size(), 2u);
   EXPECT_EQ(graph[0].neighbors.size(), 1u);  // 10 -> 14
@@ -269,7 +272,7 @@ TEST(OsmGraphFileLoader, edges_oneway_yes_is_forward_only)
 
   std::vector<OsmLoaderTestPeer::Section> sections;
   sections.push_back({{10, 14}, {{"highway", "track"}, {"oneway", "yes"}}});
-  peer.addEdgesFromSections(graph, sections);
+  peer.addEdgesFromSections(graph, map, sections);
 
   EXPECT_EQ(graph[0].neighbors.size(), 1u);  // 10 -> 14
   EXPECT_EQ(graph[1].neighbors.size(), 0u);
@@ -285,7 +288,7 @@ TEST(OsmGraphFileLoader, edges_oneway_reverse_is_backward_only)
 
   std::vector<OsmLoaderTestPeer::Section> sections;
   sections.push_back({{10, 14}, {{"highway", "track"}, {"oneway", "-1"}}});
-  peer.addEdgesFromSections(graph, sections);
+  peer.addEdgesFromSections(graph, map, sections);
 
   EXPECT_EQ(graph[0].neighbors.size(), 0u);
   EXPECT_EQ(graph[1].neighbors.size(), 1u);  // 14 -> 10
@@ -302,7 +305,7 @@ TEST(OsmGraphFileLoader, edges_skip_section_with_unresolved_boundary)
 
   std::vector<OsmLoaderTestPeer::Section> sections;
   sections.push_back({{10, 99}, {{"highway", "track"}}});  // 99 is not a vertex
-  peer.addEdgesFromSections(graph, sections);
+  peer.addEdgesFromSections(graph, map, sections);
 
   EXPECT_EQ(graph[0].neighbors.size(), 0u);
   EXPECT_EQ(graph[1].neighbors.size(), 0u);
@@ -401,6 +404,26 @@ TEST(OsmGraphFileLoader, parse_skips_node_missing_coordinate)
   std::filesystem::remove(file_path);
 }
 
+// A <node> with a negative id is skipped: the OSM id becomes the route node id
+// directly, and negative ids (e.g. JOSM temporary ids) are disallowed.
+TEST(OsmGraphFileLoader, parse_skips_node_with_negative_id)
+{
+  const std::string file_path = "negative_id.osm";
+  writeOsmToFile(
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<osm version=\"0.6\">\n"
+    "  <node id=\"1\" lat=\"40.0\" lon=\"-75.0\"/>\n"
+    "  <node id=\"-2\" lat=\"40.0\" lon=\"-75.0\"/>\n"  // negative -> skipped
+    "</osm>", file_path);
+  OsmLoaderTestPeer peer;
+  std::unordered_map<int64_t, std::pair<double, double>> nodes;
+  std::vector<OsmLoaderTestPeer::OsmWay> ways;
+  ASSERT_TRUE(peer.parseOsm(file_path, nodes, ways));
+  EXPECT_EQ(nodes.size(), 1u);
+  EXPECT_EQ(nodes.count(-2), 0u);
+  std::filesystem::remove(file_path);
+}
+
 // A self-loop section (both boundaries the same junction) adds no edge.
 TEST(OsmGraphFileLoader, edges_skip_self_loop_section)
 {
@@ -411,7 +434,7 @@ TEST(OsmGraphFileLoader, edges_skip_self_loop_section)
 
   std::vector<OsmLoaderTestPeer::Section> sections;
   sections.push_back({{10, 11, 10}, {{"highway", "track"}}});  // closes back on 10
-  peer.addEdgesFromSections(graph, sections);
+  peer.addEdgesFromSections(graph, map, sections);
 
   EXPECT_EQ(graph[0].neighbors.size(), 0u);
 }
@@ -426,7 +449,7 @@ TEST(OsmGraphFileLoader, edges_point_to_correct_nodes_and_assign_sequential_ids)
 
   std::vector<OsmLoaderTestPeer::Section> sections;
   sections.push_back({{10, 14}, {{"highway", "track"}}});  // bidirectional
-  peer.addEdgesFromSections(graph, sections);
+  peer.addEdgesFromSections(graph, map, sections);
 
   ASSERT_EQ(graph[0].neighbors.size(), 1u);
   ASSERT_EQ(graph[1].neighbors.size(), 1u);
@@ -446,7 +469,7 @@ TEST(OsmGraphFileLoader, parallel_ways_produce_parallel_edges)
   std::vector<OsmLoaderTestPeer::Section> sections;
   sections.push_back({{10, 14}, {{"highway", "track"}, {"oneway", "yes"}}});
   sections.push_back({{10, 14}, {{"highway", "path"}, {"oneway", "yes"}}});
-  peer.addEdgesFromSections(graph, sections);
+  peer.addEdgesFromSections(graph, map, sections);
 
   EXPECT_EQ(graph[0].neighbors.size(), 2u);
 }

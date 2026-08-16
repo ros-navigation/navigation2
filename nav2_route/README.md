@@ -349,25 +349,63 @@ Edge1:                     // <-- If provided by format, stored as name in metad
 
 A parser is also provided for OpenStreetMap `.osm` XML files (`OsmGraphFileLoader`), so that widely
 available OSM data can be used directly for off-road, agricultural, campus, and other outdoor
-navigation without first converting it to GeoJSON.
+navigation without converting it to GeoJSON.
+
+In most cases you would export OSM for a particular area and remove any unnecessary features first.
 
 Unlike GeoJSON, OSM does not list edges explicitly: a `<way>` is a polyline of ordered `<nd ref>`
-node references, and two ways are connected only where they share a node id. The loader resolves
-this implicit topology by treating shared nodes (and way endpoints) as junctions, splitting each way
-at those junctions, and emitting one directed edge per inter-junction section. The intermediate shape
-nodes are not turned into graph vertices, which keeps the graph sparse. Edge direction is taken from
-the `oneway` tag (`yes`/`true`/`1` → forward, `-1`/`reverse` → reverse, absent/`no` → both directions).
+node references, and two ways are connected only where they share a node id. 
+
+For example:
+
+```xml
+<osm version="0.6" generator="nav2_route sample">
+  <node id="1001" lat="40.711000" lon="-74.008000"/>
+  <node id="1002" lat="40.711000" lon="-74.007500"/>
+  <node id="1003" lat="40.711000" lon="-74.007000"/>
+  <node id="1004" lat="40.711000" lon="-74.006500"/>
+  <node id="1005" lat="40.711000" lon="-74.006000"/>
+  <node id="1006" lat="40.711500" lon="-74.007000"/>
+  <node id="1007" lat="40.710500" lon="-74.007000"/>
+  <way id="2001">
+    <nd ref="1001"/>
+    <nd ref="1002"/>
+    <nd ref="1003"/>
+    <nd ref="1004"/>
+    <nd ref="1005"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Sample Street"/>
+  </way>
+  <way id="2002">
+    <nd ref="1006"/>
+    <nd ref="1003"/>
+    <nd ref="1007"/>
+    <tag k="highway" v="service"/>
+    <tag k="oneway" v="yes"/>
+  </way>
+</osm>
+```
+
+To build the graph, the loader finds the intersections. A node that is shared by more than one way,
+or that sits at the end of a way, becomes a graph node. Each way is then split at those nodes into
+edges, one per section between two graph nodes. The nodes in between are kept only as the edge's
+shape, not as graph nodes. In the example above, ways 2001 and 2002 both reference node 1003, so 1003
+is an intersection and becomes a graph node; nodes 1002 and 1004 are only shape points along Sample
+Street. This yields 5 graph nodes (1001, 1003, 1005, 1006, 1007) and 4 edges.
+
+Edge direction comes from each way's `oneway` tag: `yes`, `true`, or `1` follows the way's node
+order, `-1` or `reverse` runs the opposite order, and `no` or a missing tag is bidirectional. Way
+2002 above is `oneway=yes`, so its edges only run in node order (1006 to 1003 to 1007).
 
 The loader keeps every `<way>` in the file; it does not require a `highway` tag or apply any
 allowlist. A `.osm` here is treated as a purpose-built route graph, so the choice of which edges are
 preferable is left to the edge scoring plugins, which can read each way's tags.
 
-Coordinates are converted from WGS84 latitude/longitude into the map frame using
-robot_localization's `FromLLArray` service, so the graph shares a single datum with the robot's
-localization rather than introducing a second one. **This requires `navsat_transform_node` to be
-running when the graph is loaded** — the graph is loaded during the Route Server's lifecycle
-`configure` (or on a `set_route_graph` request), and that load blocks on the service, so if it is
-unavailable the transition fails.
+Coordinates are converted from latitude/longitude into the map frame using robot_localization's
+`FromLLArray` service, so the graph uses the same datum as the robot's localization instead of a
+second, independent one. **This means `navsat_transform_node` has to be running when the graph is
+loaded.** The graph loads during the Route Server's `configure` transition (or on a `set_route_graph`
+request), and that load blocks on the service, so if it is unavailable the transition fails.
 
 Parameters (under the `osm_graph_file_loader.` namespace):
 
@@ -378,9 +416,9 @@ Parameters (under the `osm_graph_file_loader.` namespace):
 
 A small example is provided in `graphs/sample_graph.osm`.
 
-Note: OSM node ids are 64-bit and cannot be the Route Server's 32-bit node id, so unlike the GeoJSON
-loader (which preserves the file's `id`), this loader assigns **sequential** node ids and the
-`graph_to_id_map` is an identity map. Routes therefore cannot be requested by original OSM node id.
+Note: OSM node ids are 64-bit. The Route Server's `nodeid` and the relevant `nav2_msgs` use
+`uint64_t`, so the loader preserves the original OSM ids without truncation and routes can be
+requested by original OSM node id. Keep this width in mind if you define custom messages.
 
 Node and edge **metadata** (e.g. speed limits from OSM `maxspeed`) is intentionally out of scope for
 this initial loader and is planned for a follow-on contribution.

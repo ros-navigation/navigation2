@@ -39,8 +39,8 @@ void RoutePlanner::configure(
 }
 
 Route RoutePlanner::findRoute(
-  Graph & graph, unsigned int start_index, unsigned int goal_index,
-  const std::vector<unsigned int> & blocked_ids,
+  Graph & graph, uint64_t start_index, uint64_t goal_index,
+  const std::vector<uint64_t> & blocked_ids,
   const RouteRequest & route_request)
 {
   if (graph.empty()) {
@@ -83,7 +83,7 @@ void RoutePlanner::resetSearchStates(Graph & graph)
 
 void RoutePlanner::findShortestGraphTraversal(
   Graph & graph, const NodePtr start_node, const NodePtr goal_node,
-  const std::vector<unsigned int> & blocked_ids,
+  const std::vector<uint64_t> & blocked_ids,
   const RouteRequest & route_request)
 {
   // Setup the Dijkstra's search
@@ -144,13 +144,13 @@ void RoutePlanner::findShortestGraphTraversal(
 }
 
 bool RoutePlanner::getTraversalCost(
-  const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
+  const EdgePtr edge, float & score, const std::vector<uint64_t> & blocked_ids,
   const RouteRequest & route_request)
 {
   // If edge or node is in the blocked list, don't expand
   auto is_blocked = std::find_if(
     blocked_ids.begin(), blocked_ids.end(),
-    [&](unsigned int id) {return id == edge->edgeid || id == edge->end->nodeid;});
+    [&](uint64_t id) {return id == edge->edgeid || id == edge->end->nodeid;});
   if (is_blocked != blocked_ids.end()) {
     return false;
   }

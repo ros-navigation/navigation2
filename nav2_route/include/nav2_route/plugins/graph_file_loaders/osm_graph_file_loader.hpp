@@ -150,10 +150,10 @@ protected:
     std::unordered_map<int64_t, Coordinates> & coords_out);
 
   /**
-   * @brief Create a graph vertex for each junction that has coordinates,
-   * assigning sequential nav2 node ids and recording the OSM id mapping
+   * @brief Create a graph vertex for each junction that has coordinates, using
+   * the OSM node id directly as the route node id
    * @param[out] graph The graph to populate with nodes
-   * @param[out] graph_to_id_map Map of nav2 node id to graph index
+   * @param[out] graph_to_id_map Map of OSM node id to graph index
    * @param[in] vertex_ids The junction ids that should become vertices
    * @param[in] coords Map of node id to map-frame coordinates
    */
@@ -182,9 +182,11 @@ protected:
    * DirectionalEdges between its boundary junctions. Sections whose endpoints
    * never became vertices (clipped extracts) are skipped.
    * @param[out] graph The graph whose nodes gain outgoing edges
+   * @param[in] graph_to_id_map Map of OSM node id to graph index
    * @param[in] sections The inter-junction sections
    */
-  void addEdgesFromSections(Graph & graph, const std::vector<Section> & sections);
+  void addEdgesFromSections(
+    Graph & graph, GraphToIDMap & graph_to_id_map, const std::vector<Section> & sections);
 
   rclcpp::Logger logger_{rclcpp::get_logger("OsmGraphFileLoader")};
 
@@ -192,12 +194,8 @@ protected:
   std::string from_ll_service_name_{"/fromLLArray"};
   double from_ll_service_timeout_{5.0};
 
-  // OSM node id (int64) -> assigned nav2 node id (uint); never cast int64
-  // directly into the 32-bit nav2 id, which would truncate.
-  std::unordered_map<int64_t, unsigned int> osm_to_nodeid_;
-
   // Monotonic counter for synthesised edge ids (OSM has no per-segment id).
-  unsigned int next_edge_id_{0};
+  uint64_t next_edge_id_{0};
 };
 
 }  // namespace nav2_route

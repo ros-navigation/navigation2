@@ -73,7 +73,6 @@ bool OsmGraphFileLoader::loadGraphFromFile(
     return false;
   }
 
-  osm_to_nodeid_.clear();
   next_edge_id_ = 0;
 
   // Resolve the implicit topology: ways connect only where they share a node
@@ -90,7 +89,7 @@ bool OsmGraphFileLoader::loadGraphFromFile(
     return false;
   }
   addNodesToGraph(graph, graph_to_id_map, vertex_ids, coords);
-  addEdgesFromSections(graph, sections);
+  addEdgesFromSections(graph, graph_to_id_map, sections);
 
   if (graph.empty()) {
     RCLCPP_ERROR(logger_, "OSM graph has no usable vertices after loading %s", filepath.c_str());
@@ -142,6 +141,17 @@ bool OsmGraphFileLoader::parseOsm(
       node->QueryDoubleAttribute("lon", &lon) != tinyxml2::XML_SUCCESS)
     {
       RCLCPP_WARN(logger_, "Skipping an OSM <node> with a missing or invalid id/lat/lon");
+      continue;
+    }
+    if (id < 0) {
+      // The node id becomes the route node id directly; negative ids (e.g.
+      // JOSM's temporary ids for objects never uploaded to OSM) would map to
+      // huge unsigned values that can collide with the id sentinels, so
+      // require non-negative ids.
+      RCLCPP_WARN(
+        logger_,
+        "Skipping OSM node with negative id %" PRId64 "; ids must be non-negative "
+        "(renumber JOSM exports or upload them first)", id);
       continue;
     }
     osm_nodes[id] = std::make_pair(lat, lon);
@@ -336,13 +346,12 @@ void OsmGraphFileLoader::addNodesToGraph(
   graph.resize(usable.size());
   for (size_t idx = 0; idx < usable.size(); ++idx) {
     const int64_t osm_id = usable[idx];
-    const auto nav2_id = static_cast<unsigned int>(idx);
-    graph[idx].nodeid = nav2_id;
-    // graph_to_id_map translates an external node id to a graph index. Our
-    // external ids are the sequential ids we just assigned, so this is the
-    // identity map (the OSM int64 ids live separately in osm_to_nodeid_).
-    graph_to_id_map[nav2_id] = nav2_id;
-    osm_to_nodeid_[osm_id] = nav2_id;
+    // OSM ids are 64-bit, so use the OSM id directly as the route node id
+    // (parseOsm rejects negative ids, keeping them clear of the id sentinels).
+    const auto nodeid = static_cast<uint64_t>(osm_id);
+    graph[idx].nodeid = nodeid;
+    // graph_to_id_map translates an external node id (the OSM id) to a graph index.
+    graph_to_id_map[nodeid] = static_cast<uint64_t>(idx);
     graph[idx].coords = coords.at(osm_id);
   }
 }
@@ -373,31 +382,32 @@ OsmGraphFileLoader::OneWay OsmGraphFileLoader::parseOneway(
 }
 
 void OsmGraphFileLoader::addEdgesFromSections(
-  Graph & graph, const std::vector<Section> & sections)
+  Graph & graph, GraphToIDMap & graph_to_id_map, const std::vector<Section> & sections)
 {
   for (const auto & section : sections) {
     if (section.node_chain.size() < 2) {
       continue;
     }
 
-    const auto start_it = osm_to_nodeid_.find(section.node_chain.front());
-    const auto end_it = osm_to_nodeid_.find(section.node_chain.back());
-    if (start_it == osm_to_nodeid_.end() || end_it == osm_to_nodeid_.end()) {
+    const auto start_it = graph_to_id_map.find(static_cast<uint64_t>(section.node_chain.front()));
+    const auto end_it = graph_to_id_map.find(static_cast<uint64_t>(section.node_chain.back()));
+    if (start_it == graph_to_id_map.end() || end_it == graph_to_id_map.end()) {
       // A boundary junction had no coordinates (e.g. clipped extract) and so
       // never became a vertex; this section cannot be connected.
       RCLCPP_WARN(logger_, "Skipping a section with an unresolved boundary node");
       continue;
     }
 
-    const unsigned int start_id = start_it->second;
-    const unsigned int end_id = end_it->second;
-    if (start_id == end_id) {
+    const uint64_t start_index = start_it->second;
+    const uint64_t end_index = end_it->second;
+    if (start_index == end_index) {
       // Section that loops back to its own start (e.g. a closed spur attached
       // to the network at a single junction). A self edge is useless for
       // routing, so it is dropped - which also drops the spur's interior.
       RCLCPP_WARN(
-        logger_, "Dropping self-loop section at junction %u (closed spur with no second junction)",
-        start_id);
+        logger_,
+        "Dropping self-loop section at junction %" PRIu64 " (closed spur with no second junction)",
+        graph[start_index].nodeid);
       continue;
     }
 
@@ -407,10 +417,10 @@ void OsmGraphFileLoader::addEdgesFromSections(
     EdgeCost cost;
     const OneWay direction = parseOneway(section.tags);
     if (direction == OneWay::FORWARD || direction == OneWay::BOTH) {
-      graph[start_id].addEdge(cost, &graph[end_id], next_edge_id_++);
+      graph[start_index].addEdge(cost, &graph[end_index], next_edge_id_++);
     }
     if (direction == OneWay::REVERSE || direction == OneWay::BOTH) {
-      graph[end_id].addEdge(cost, &graph[start_id], next_edge_id_++);
+      graph[end_index].addEdge(cost, &graph[start_index], next_edge_id_++);
     }
   }
 }

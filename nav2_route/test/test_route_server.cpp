@@ -46,8 +46,8 @@ public:
   RoutePlannerErrorTester() = default;
 
   Route findRoute(
-    Graph & graph, unsigned int start_index, unsigned int goal_index,
-    const std::vector<unsigned int> & blocked_ids,
+    Graph & graph, uint64_t start_index, uint64_t goal_index,
+    const std::vector<uint64_t> & blocked_ids,
     const RouteRequest & route_request) override
   {
     const NodePtr & start_node = &graph.at(start_index);
