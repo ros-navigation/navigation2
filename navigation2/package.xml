@@ -27,7 +27,9 @@
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_mppi_controller</exec_depend>
   <exec_depend>nav2_navfn_planner</exec_depend>
+  <exec_depend>nav2_path_classifier</exec_depend>
   <exec_depend>nav2_planner</exec_depend>
+  <exec_depend>nav2_pose_classifiers</exec_depend>
   <exec_depend>nav2_behaviors</exec_depend>
   <exec_depend>nav2_smoother</exec_depend>
   <exec_depend>nav2_regulated_pure_pursuit_controller</exec_depend>

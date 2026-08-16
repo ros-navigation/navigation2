@@ -40,6 +40,7 @@ BtNavigator::BtNavigator(rclcpp::NodeOptions options)
     "nav2_compute_and_track_route_bt_node",
     "nav2_compute_route_bt_node",
     "nav2_smooth_path_action_bt_node",
+    "nav2_classify_path_action_bt_node",
     "nav2_follow_path_action_bt_node",
     "nav2_spin_action_bt_node",
     "nav2_wait_action_bt_node",

@@ -12,21 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_PLANNER__PATH_SPLITTER_HPP_
-#define NAV2_PLANNER__PATH_SPLITTER_HPP_
+#ifndef NAV2_PATH_CLASSIFIER__PATH_SPLITTER_HPP_
+#define NAV2_PATH_CLASSIFIER__PATH_SPLITTER_HPP_
 
 #include <cstdint>
 #include <vector>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_msgs/msg/classified_pose.hpp"
 #include "nav2_msgs/msg/classified_path.hpp"
 #include "nav2_msgs/msg/classified_path_array.hpp"
-#include "nav2_planner/pose_classifier.hpp"
+#include "nav2_path_classifier/pose_classifier.hpp"
 
-namespace nav2_planner
+namespace nav2_path_classifier
 {
+
+/**
+ * @struct ClassifiedPose
+ * @brief A single pose with its raw (pre-hysteresis) class, used for visualization only.
+ */
+struct ClassifiedPose
+{
+  geometry_msgs::msg::PoseStamped pose;
+  uint16_t class_type;
+};
 
 /**
  * @class PathSplitter
@@ -49,7 +59,7 @@ class PathSplitter
 public:
   struct SplitResult
   {
-    std::vector<nav2_msgs::msg::ClassifiedPose> classified_poses;
+    std::vector<ClassifiedPose> classified_poses;
     nav2_msgs::msg::ClassifiedPathArray classified_path_array;
   };
 
@@ -83,7 +93,7 @@ private:
   std::vector<Segment> classifyAndGroup(
     const nav_msgs::msg::Path & path,
     PoseClassifier & pose_classifier,
-    std::vector<nav2_msgs::msg::ClassifiedPose> * classified_poses);
+    std::vector<ClassifiedPose> * classified_poses);
 
   // Stage 4: merge short segments into neighbors
   void mergeShortSegments(std::vector<Segment> & segments);
@@ -100,6 +110,6 @@ private:
   rclcpp::Logger logger_{rclcpp::get_logger("PathSplitter")};
 };
 
-}  // namespace nav2_planner
+}  // namespace nav2_path_classifier
 
-#endif  // NAV2_PLANNER__PATH_SPLITTER_HPP_
+#endif  // NAV2_PATH_CLASSIFIER__PATH_SPLITTER_HPP_

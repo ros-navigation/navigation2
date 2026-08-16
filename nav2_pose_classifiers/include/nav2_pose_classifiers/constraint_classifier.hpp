@@ -27,7 +27,6 @@
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "nav2_msgs/msg/path_classes.hpp"
 #include "tf2/utils.h"
 #include "clipper.hpp"
 
@@ -52,7 +51,7 @@ namespace nav2_pose_classifiers
  *   5. Early exit on first opposite-pair LETHAL match.
  *
  * Parameters:
- *   - class_type (int):                 class enum value (default 1 = CONSTRAINT_SPACE)
+ *   - class_type (int):                 class enum value (required, no default)
  *   - inflation_resolution (double):    step size per iteration in metres (default 0.20)
  *   - max_constraint_clearance (double): max inflation distance from footprint edge (default 1.0)
  */
@@ -66,13 +65,16 @@ public:
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & name,
     std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
+    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub) override;
 
   void cleanup() override;
   void activate() override;
   void deactivate() override;
 
-  bool matches(const geometry_msgs::msg::PoseStamped & pose) override;
+  bool matches(
+    const geometry_msgs::msg::PoseStamped & pose,
+    bool fetch_data = true) override;
   uint16_t classType() override;
 
   friend class ConstraintClassifierHelperTest;  // For testing private helpers using gtest
@@ -107,8 +109,12 @@ private:
 
   std::string name_;
   rclcpp::Logger logger_{rclcpp::get_logger("ConstraintClassifier")};
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *> collision_checker_;
+
+  // Latest costmap pulled from the subscriber, held so !fetch_data calls can reuse it
+  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
 
   uint16_t class_type_;
   double inflation_resolution_;

@@ -1,25 +1,31 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>nav2_pose_classifiers</name>
-  <version>1.0.0</version>
-  <description>Pose classification plugins for nav2 path classification</description>
+  <name>nav2_path_classifier</name>
+  <version>1.1.20</version>
+  <description>Path classification server that splits a path into segments of uniform class</description>
   <maintainer email="tirth@origin.tech">Tirth Vyas</maintainer>
+  <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>rclcpp_components</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>visualization_msgs</depend>
+  <depend>std_msgs</depend>
   <depend>nav2_util</depend>
   <depend>nav2_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>builtin_interfaces</depend>
   <depend>nav2_common</depend>
-  <depend>nav2_costmap_2d</depend>
   <depend>tf2_ros</depend>
+  <depend>nav2_costmap_2d</depend>
   <depend>pluginlib</depend>
-  <depend>polyclipping-dev</depend>
+  <depend>nav2_pose_classifiers</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
@@ -27,6 +33,5 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <nav2_pose_classifiers plugin="${prefix}/pose_classifier_plugin.xml" />
   </export>
 </package>
