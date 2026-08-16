@@ -20,7 +20,8 @@
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "tf2_ros/buffer.h"
 
 namespace nav2_pose_classifiers
@@ -43,16 +44,18 @@ public:
 
   /**
    * @brief Configure the classifier from ROS parameters.
-   * @param parent   Weak pointer to the owning lifecycle node
-   * @param name     Parameter namespace for this classifier instance
-   * @param tf       TF buffer
-   * @param costmap_ros  Shared costmap
+   * @param parent         Weak pointer to the owning lifecycle node
+   * @param name           Parameter namespace for this classifier instance
+   * @param tf             TF buffer
+   * @param costmap_sub    Subscriber to the costmap the classifier reasons over
+   * @param footprint_sub  Subscriber to the robot footprint
    */
   virtual void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & name,
     std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) = 0;
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
+    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub) = 0;
 
   virtual void cleanup() = 0;
   virtual void activate() = 0;
@@ -61,13 +64,15 @@ public:
   /**
    * @brief Check if a pose belongs to this classifier's class.
    * @param pose  The pose to classify
+   * @param fetch_data  Pull the latest data (costmap, footprint, ...) before evaluating
    * @return true if the pose matches this class
    */
-  virtual bool matches(const geometry_msgs::msg::PoseStamped & pose) = 0;
+  virtual bool matches(
+    const geometry_msgs::msg::PoseStamped & pose,
+    bool fetch_data = true) = 0;
 
   /**
-   * @brief Return the class_type enum value for this classifier.
-   *        Must match a constant from PathClasses.msg.
+   * @brief Return the class_type value for this classifier, set via its class_type parameter.
    */
   virtual uint16_t classType() = 0;
 };

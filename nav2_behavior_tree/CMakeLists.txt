@@ -78,6 +78,9 @@ list(APPEND plugin_libs nav2_drive_on_heading_cancel_bt_node)
 add_library(nav2_smooth_path_action_bt_node SHARED plugins/action/smooth_path_action.cpp)
 list(APPEND plugin_libs nav2_smooth_path_action_bt_node)
 
+add_library(nav2_classify_path_action_bt_node SHARED plugins/action/classify_path_action.cpp)
+list(APPEND plugin_libs nav2_classify_path_action_bt_node)
+
 add_library(nav2_follow_path_action_bt_node SHARED plugins/action/follow_path_action.cpp)
 list(APPEND plugin_libs nav2_follow_path_action_bt_node)
 

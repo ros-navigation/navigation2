@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_planner/pose_classifier.hpp"
+#include "nav2_path_classifier/pose_classifier.hpp"
 
 #include <stdexcept>
 
 #include "nav2_util/node_utils.hpp"
 
-namespace nav2_planner
+namespace nav2_path_classifier
 {
 
 PoseClassifier::PoseClassifier()
@@ -29,7 +29,8 @@ PoseClassifier::PoseClassifier()
 void PoseClassifier::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::shared_ptr<tf2_ros::Buffer> tf,
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub)
 {
   auto node = parent.lock();
   if (!node) {
@@ -37,13 +38,9 @@ void PoseClassifier::configure(
   }
   logger_ = node->get_logger();
 
-  // Read the list of classifier plugin names from parameters
-  // Default: empty list (no classifiers → all poses are FREE_SPACE)
-  nav2_util::declare_parameter_if_not_declared(
-    node, "pose_classifier_plugins",
-    rclcpp::ParameterValue(std::vector<std::string>{}));
-
   classifier_ids_ = node->get_parameter("pose_classifier_plugins").as_string_array();
+  default_class_type_ = static_cast<uint16_t>(
+    node->get_parameter("default_class_type").as_int());
 
   if (classifier_ids_.empty()) {
     RCLCPP_INFO(
@@ -60,7 +57,7 @@ void PoseClassifier::configure(
 
     try {
       auto classifier = classifier_loader_.createSharedInstance(classifier_types_[i]);
-      classifier->configure(parent, classifier_ids_[i], tf, costmap_ros);
+      classifier->configure(parent, classifier_ids_[i], tf, costmap_sub, footprint_sub);
       classifiers_.push_back(classifier);
       RCLCPP_INFO(
         logger_, "PoseClassifier: loaded classifier plugin '%s' of type '%s'",
@@ -99,15 +96,16 @@ void PoseClassifier::deactivate()
   }
 }
 
-uint16_t PoseClassifier::classify(const geometry_msgs::msg::PoseStamped & pose)
+uint16_t PoseClassifier::classify(
+  const geometry_msgs::msg::PoseStamped & pose, bool fetch_data)
 {
   // Priority order: first match wins
   for (auto & classifier : classifiers_) {
-    if (classifier->matches(pose)) {
+    if (classifier->matches(pose, fetch_data)) {
       return classifier->classType();
     }
   }
-  return nav2_msgs::msg::PathClasses::FREE_SPACE;
+  return default_class_type_;
 }
 
 bool PoseClassifier::hasClassifiers() const
@@ -115,4 +113,4 @@ bool PoseClassifier::hasClassifiers() const
   return !classifiers_.empty();
 }
 
-}  // namespace nav2_planner
+}  // namespace nav2_path_classifier

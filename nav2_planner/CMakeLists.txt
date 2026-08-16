@@ -18,7 +18,6 @@ find_package(tf2_ros REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(nav2_core REQUIRED)
-find_package(nav2_pose_classifiers REQUIRED)
 
 nav2_package()
 
@@ -45,13 +44,10 @@ set(dependencies
   nav2_costmap_2d
   pluginlib
   nav2_core
-  nav2_pose_classifiers
 )
 
 add_library(${library_name} SHARED
   src/planner_server.cpp
-  src/pose_classifier.cpp
-  src/path_splitter.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -87,8 +83,6 @@ install(DIRECTORY include/
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
-  set(ament_cmake_copyright_FOUND TRUE)
-  set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
   add_subdirectory(test)
 endif()

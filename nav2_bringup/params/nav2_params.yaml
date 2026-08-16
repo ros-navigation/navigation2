@@ -52,10 +52,12 @@ bt_navigator:
     # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
     # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
     # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
+    default_nav_to_pose_bt_xml: "/home/tirth/nav2_ws/src/navigation2-origin/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_classify_and_recovery.xml"
     plugin_lib_names:
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
       - nav2_smooth_path_action_bt_node
+      - nav2_classify_path_action_bt_node
       - nav2_follow_path_action_bt_node
       - nav2_spin_action_bt_node
       - nav2_wait_action_bt_node
@@ -275,16 +277,6 @@ map_saver:
 
 planner_server:
   ros__parameters:
-    pose_classifier_plugins: ["Constraint"]
-    Constraint:
-      plugin: "nav2_pose_classifiers/ConstraintClassifier"
-      class_type: 1                                        # CONSTRAINT_SPACE
-      inflation_resolution: 0.05
-      max_constraint_clearance: 0.5
-    path_splitter:
-      hysteresis_window: 3
-      min_segment_poses: 5
-    publish_classified_paths: true
     expected_planner_frequency: 20.0
     use_sim_time: True
     planner_plugins: ["GridBased"]
@@ -293,6 +285,21 @@ planner_server:
       tolerance: 0.5
       use_astar: false
       allow_unknown: true
+
+path_classifier_server:
+  ros__parameters:
+    use_sim_time: True
+    default_class_type: 1                                  # FREE_SPACE
+    pose_classifier_plugins: ["Constraint"]
+    Constraint:
+      plugin: "nav2_pose_classifiers/ConstraintClassifier"
+      class_type: 2                                        # CONSTRAINT_SPACE
+      inflation_resolution: 0.05
+      max_constraint_clearance: 0.5
+    path_splitter:
+      hysteresis_window: 3
+      min_segment_poses: 5
+    publish_classified_paths: true
 
 smoother_server:
   ros__parameters:
