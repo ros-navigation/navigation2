@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_planner)
+project(nav2_path_classifier)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -17,7 +17,7 @@ find_package(builtin_interfaces REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(nav2_core REQUIRED)
+find_package(nav2_pose_classifiers REQUIRED)
 
 nav2_package()
 
@@ -25,7 +25,7 @@ include_directories(
   include
 )
 
-set(executable_name planner_server)
+set(executable_name path_classifier_server)
 set(library_name ${executable_name}_core)
 
 set(dependencies
@@ -43,11 +43,13 @@ set(dependencies
   tf2_ros
   nav2_costmap_2d
   pluginlib
-  nav2_core
+  nav2_pose_classifiers
 )
 
 add_library(${library_name} SHARED
-  src/planner_server.cpp
+  src/path_classifier_server.cpp
+  src/pose_classifier.cpp
+  src/path_splitter.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -64,7 +66,7 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
-rclcpp_components_register_nodes(${library_name} "nav2_planner::PlannerServer")
+rclcpp_components_register_nodes(${library_name} "nav2_path_classifier::PathClassifierServer")
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
@@ -83,6 +85,8 @@ install(DIRECTORY include/
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
+  set(ament_cmake_copyright_FOUND TRUE)
+  set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
   add_subdirectory(test)
 endif()

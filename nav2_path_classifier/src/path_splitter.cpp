@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_planner/path_splitter.hpp"
+#include "nav2_path_classifier/path_splitter.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 
 #include "nav2_util/node_utils.hpp"
-#include "nav2_msgs/msg/path_classes.hpp"
 
-namespace nav2_planner
+namespace nav2_path_classifier
 {
 
 // ---------------------------------------------------------------------------
@@ -115,7 +114,7 @@ PathSplitter::SplitResult PathSplitter::splitPath(
 std::vector<PathSplitter::Segment> PathSplitter::classifyAndGroup(
   const nav_msgs::msg::Path & path,
   PoseClassifier & pose_classifier,
-  std::vector<nav2_msgs::msg::ClassifiedPose> * classified_poses)
+  std::vector<ClassifiedPose> * classified_poses)
 {
   const size_t n = path.poses.size();
   std::vector<Segment> segments;
@@ -124,8 +123,8 @@ std::vector<PathSplitter::Segment> PathSplitter::classifyAndGroup(
     classified_poses->reserve(n);
   }
 
-  // --- Initialize with first pose ---
-  uint16_t first_raw = pose_classifier.classify(path.poses[0]);
+  // --- Initialize with first pose (fetches costmap + footprint for the whole path) ---
+  uint16_t first_raw = pose_classifier.classify(path.poses[0], true);
 
   // Hysteresis state
   uint16_t current_class = first_raw;   // accepted (post-hysteresis) class
@@ -137,7 +136,7 @@ std::vector<PathSplitter::Segment> PathSplitter::classifyAndGroup(
 
   // Build raw classified pose for first pose
   if (classified_poses) {
-    nav2_msgs::msg::ClassifiedPose cp;
+    ClassifiedPose cp;
     cp.pose = path.poses[0];
     cp.class_type = first_raw;
     classified_poses->push_back(cp);
@@ -145,12 +144,12 @@ std::vector<PathSplitter::Segment> PathSplitter::classifyAndGroup(
 
   // --- Single pass over remaining poses ---
   for (size_t i = 1; i < n; ++i) {
-    // Stage 1: classify this pose
-    uint16_t raw = pose_classifier.classify(path.poses[i]);
+    // Stage 1: classify this pose (reuses the data fetched for pose 0)
+    uint16_t raw = pose_classifier.classify(path.poses[i], false);
 
     // Build raw classified pose for visualization (pre-hysteresis)
     if (classified_poses) {
-      nav2_msgs::msg::ClassifiedPose cp;
+      ClassifiedPose cp;
       cp.pose = path.poses[i];
       cp.class_type = raw;
       classified_poses->push_back(cp);
@@ -282,4 +281,4 @@ nav2_msgs::msg::ClassifiedPathArray PathSplitter::buildResult(
   return result;
 }
 
-}  // namespace nav2_planner
+}  // namespace nav2_path_classifier

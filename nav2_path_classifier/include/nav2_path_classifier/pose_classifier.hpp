@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_PLANNER__POSE_CLASSIFIER_HPP_
-#define NAV2_PLANNER__POSE_CLASSIFIER_HPP_
+#ifndef NAV2_PATH_CLASSIFIER__POSE_CLASSIFIER_HPP_
+#define NAV2_PATH_CLASSIFIER__POSE_CLASSIFIER_HPP_
 
 #include <string>
 #include <memory>
@@ -21,13 +21,14 @@
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "tf2_ros/buffer.h"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_pose_classifiers/classifier_base.hpp"
-#include "nav2_msgs/msg/path_classes.hpp"
+#include "nav2_msgs/msg/classified_path.hpp"
 
-namespace nav2_planner
+namespace nav2_path_classifier
 {
 
 /**
@@ -50,14 +51,16 @@ public:
 
   /**
    * @brief Load and configure all classifier plugins from parameters.
-   * @param parent  Lifecycle node that owns us (planner_server)
-   * @param tf      TF buffer
-   * @param costmap_ros  Shared costmap
+   * @param parent         Lifecycle node that owns us (path_classifier_server)
+   * @param tf             TF buffer
+   * @param costmap_sub    Costmap subscriber shared with every plugin
+   * @param footprint_sub  Footprint subscriber shared with every plugin
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros);
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
+    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub);
 
   void cleanup();
   void activate();
@@ -66,9 +69,12 @@ public:
   /**
    * @brief Classify a single pose by iterating plugins in priority order.
    * @param pose  The pose to classify
+   * @param fetch_data  Pull the latest data (costmap, footprint, ...) before evaluating
    * @return class_type from the first matching plugin, or FREE_SPACE if none match
    */
-  uint16_t classify(const geometry_msgs::msg::PoseStamped & pose);
+  uint16_t classify(
+    const geometry_msgs::msg::PoseStamped & pose,
+    bool fetch_data = true);
 
   /**
    * @brief Check if any classifier plugins are loaded.
@@ -81,9 +87,10 @@ private:
   std::vector<nav2_pose_classifiers::ClassifierBase::Ptr> classifiers_;
   std::vector<std::string> classifier_ids_;
   std::vector<std::string> classifier_types_;
+  uint16_t default_class_type_{nav2_msgs::msg::ClassifiedPath::FREE_SPACE};
   rclcpp::Logger logger_{rclcpp::get_logger("PoseClassifier")};
 };
 
-}  // namespace nav2_planner
+}  // namespace nav2_path_classifier
 
-#endif  // NAV2_PLANNER__POSE_CLASSIFIER_HPP_
+#endif  // NAV2_PATH_CLASSIFIER__POSE_CLASSIFIER_HPP_

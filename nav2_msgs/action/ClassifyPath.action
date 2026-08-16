@@ -1,0 +1,8 @@
+#goal definition
+nav_msgs/Path path
+---
+#result definition
+ClassifiedPathArray classified_paths
+builtin_interfaces/Duration classification_time
+---
+#feedback definition
