@@ -15,7 +15,6 @@
 #ifndef NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
 #define NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
 
-#include <uuid/uuid.h>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
@@ -32,23 +31,10 @@
 #include "nav2_msgs/msg/circle_object.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/occ_grid_values.hpp"
+#include "nav2_map_server/vector_object_utils.hpp"
 
 namespace nav2_map_server
 {
-
-// ---------- Working with UUID-s ----------
-
-/**
- * @brief Converts UUID from input array to unparsed string
- * @param uuid Input UUID in array format
- * @return Unparsed UUID string
- */
-inline std::string unparseUUID(const unsigned char * uuid)
-{
-  char uuid_str[37];
-  uuid_unparse(uuid, uuid_str);
-  return std::string(uuid_str);
-}
 
 // ---------- Working with shapes' overlays ----------
 

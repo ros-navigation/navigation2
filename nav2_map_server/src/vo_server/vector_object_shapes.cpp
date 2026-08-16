@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "nav2_map_server/vector_object_shapes.hpp"
+#include "nav2_map_server/vector_object_utils.hpp"
 
-#include <uuid/uuid.h>
 #include <algorithm>
 #include <cmath>
 #include <exception>
@@ -355,11 +355,11 @@ void Polygon::putFilled(
   //
   // Convert all polygon vertices to continuous map-cell coordinates.
   // Using continuous coordinates perfectly matches isPointInside() math.
-  std::vector<double> vx(n), vy(n);
   const double origin_x = map->info.origin.position.x;
   const double origin_y = map->info.origin.position.y;
   const double res = map->info.resolution;
 
+  std::vector<double> vx(n), vy(n);
   for (std::size_t i = 0; i < n; i++) {
     vx[i] = (pts[i].x - origin_x) / res - 0.5;
     vy[i] = (pts[i].y - origin_y) / res - 0.5;
@@ -371,28 +371,54 @@ void Polygon::putFilled(
   y_min = std::max(y_min, 0);
   y_max = std::min(y_max, static_cast<int>(map->info.height) - 1);
 
+  // Optimization 2: Precompute per-edge information.
+  // For each edge store: y_lo, y_hi (active Y range, half-open interval),
+  // x_at_ylo (X at the lower Y endpoint), and inv_slope (dx/dy).
+  // This avoids recomputing min/max/division inside the hot inner loop.
+  struct EdgeInfo
+  {
+    double y_lo;       // inclusive lower Y bound
+    double y_hi;       // exclusive upper Y bound
+    double x_at_ylo;  // X coordinate at y == y_lo
+    double inv_slope;  // (x1 - x0) / (y1 - y0)
+  };
+  std::vector<EdgeInfo> edges;
+  edges.reserve(n);
+  for (std::size_t i = 0; i < n; i++) {
+    std::size_t j = (i + 1) % n;
+    double y0 = vy[i], y1 = vy[j];
+    double x0 = vx[i], x1 = vx[j];
+    if (y0 == y1) {
+      continue;  // horizontal edge — never contributes an intersection
+    }
+    EdgeInfo e;
+    if (y0 < y1) {
+      e.y_lo = y0;  e.y_hi = y1;  e.x_at_ylo = x0;
+    } else {
+      e.y_lo = y1;  e.y_hi = y0;  e.x_at_ylo = x1;
+    }
+    e.inv_slope = (x1 - x0) / (y1 - y0);
+    edges.push_back(e);
+  }
+
   const int map_width = static_cast<int>(map->info.width);
+  const int8_t fill_val = params_->value;
+
+  // Optimization 1: Allocate the intersection vector once outside the loop.
+  // Reserve the maximum possible intersections (one per edge) so that no
+  // heap allocation occurs during the scanline sweep.
+  std::vector<double> xs;
+  xs.reserve(edges.size());
+
   for (int y = y_min; y <= y_max; y++) {
-    std::vector<double> xs;
-    xs.reserve(n);
-
-    for (std::size_t i = 0; i < n; i++) {
-      std::size_t j = (i + 1) % n;
-
-      double y0 = vy[i], y1 = vy[j];
-      double x0 = vx[i], x1 = vx[j];
-
-      if (y0 == y1) {
+    // Collect intersections for this scanline using precomputed edge info.
+    xs.clear();
+    for (const auto & e : edges) {
+      // Half-open interval: y in [y_lo, y_hi)
+      if (static_cast<double>(y) < e.y_lo || static_cast<double>(y) >= e.y_hi) {
         continue;
       }
-
-      // Check if scanline crosses the edge (half-open interval)
-      if (y < std::min(y0, y1) || y >= std::max(y0, y1)) {
-        continue;
-      }
-
-      double x_intersect = x0 + (y - y0) * (x1 - x0) / (y1 - y0);
-      xs.push_back(x_intersect);
+      xs.push_back(e.x_at_ylo + (y - e.y_lo) * e.inv_slope);
     }
 
     std::sort(xs.begin(), xs.end());
@@ -404,13 +430,22 @@ void Polygon::putFilled(
 
       x_start = std::max(x_start, 0);
       x_end = std::min(x_end, map_width - 1);
+      if (x_start > x_end) {
+        continue;
+      }
 
-      for (int x = x_start; x <= x_end; x++) {
-        processCell(
-          map,
-          static_cast<unsigned int>(y) * map->info.width + static_cast<unsigned int>(x),
-          params_->value,
-          overlay_type);
+      // Optimization 3: For the common OVERLAY_SEQ case, fill the span
+      // with a single std::fill instead of a per-pixel processCell loop.
+      const unsigned int row_offset = static_cast<unsigned int>(y) * map->info.width;
+      if (overlay_type == OverlayType::OVERLAY_SEQ) {
+        std::fill(
+          map->data.begin() + row_offset + x_start,
+          map->data.begin() + row_offset + x_end + 1,
+          fill_val);
+      } else {
+        for (int x = x_start; x <= x_end; x++) {
+          processCell(map, row_offset + static_cast<unsigned int>(x), fill_val, overlay_type);
+        }
       }
     }
   }
