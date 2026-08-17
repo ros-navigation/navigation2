@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
+#include "nav2_msgs/action/classify_path.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_msgs/action/spin.hpp"
@@ -31,6 +32,7 @@
 #include "nav2_msgs/action/wait.hpp"
 #include "nav2_msgs/action/drive_on_heading.hpp"
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
+#include "nav2_msgs/msg/classified_path.hpp"
 
 #include "geometry_msgs/msg/point_stamped.hpp"
 
@@ -69,6 +71,39 @@ private:
   std::shared_ptr<nav2_msgs::action::ComputePathToPose::Result> result_;
 };
 
+class ClassifyPathActionServer
+  : public DummyActionServer<nav2_msgs::action::ClassifyPath>
+{
+public:
+  explicit ClassifyPathActionServer(const rclcpp::Node::SharedPtr & node)
+  : DummyActionServer(node, "classify_path")
+  {
+    result_ = std::make_shared<nav2_msgs::action::ClassifyPath::Result>();
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.orientation.w = 1.0;
+
+    // Split the six pose path from ComputePathToPoseActionServer into two segments
+    nav2_msgs::msg::ClassifiedPath free_segment;
+    free_segment.class_type = nav2_msgs::msg::ClassifiedPath::FREE_SPACE;
+    nav2_msgs::msg::ClassifiedPath constrained_segment;
+    constrained_segment.class_type = nav2_msgs::msg::ClassifiedPath::CONSTRAINT_SPACE;
+    for (int i = 0; i < 3; ++i) {
+      free_segment.path.poses.push_back(pose);
+      constrained_segment.path.poses.push_back(pose);
+    }
+    result_->classified_paths.paths.push_back(free_segment);
+    result_->classified_paths.paths.push_back(constrained_segment);
+  }
+
+  std::shared_ptr<nav2_msgs::action::ClassifyPath::Result> fillResult() override
+  {
+    return result_;
+  }
+
+private:
+  std::shared_ptr<nav2_msgs::action::ClassifyPath::Result> result_;
+};
+
 class ServerHandler
 {
 public:
@@ -90,6 +125,7 @@ public:
   std::unique_ptr<DummyService<nav2_msgs::srv::ClearEntireCostmap>> clear_local_costmap_server;
   std::unique_ptr<DummyService<nav2_msgs::srv::ClearEntireCostmap>> clear_global_costmap_server;
   std::unique_ptr<ComputePathToPoseActionServer> compute_path_to_pose_server;
+  std::unique_ptr<ClassifyPathActionServer> classify_path_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::FollowPath>> follow_path_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Spin>> spin_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Wait>> wait_server;
