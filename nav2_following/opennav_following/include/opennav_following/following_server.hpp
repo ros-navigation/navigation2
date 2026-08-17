@@ -1,0 +1,254 @@
+// Copyright (c) 2024 Open Navigation LLC
+// Copyright (c) 2024 Alberto J. Tudela Roldán
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef OPENNAV_FOLLOWING__FOLLOWING_SERVER_HPP_
+#define OPENNAV_FOLLOWING__FOLLOWING_SERVER_HPP_
+
+#include <vector>
+#include <memory>
+#include <string>
+#include <mutex>
+#include <functional>
+
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
+#include "nav2_msgs/action/follow_object.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "nav2_util/simple_action_server.hpp"
+#include "nav2_util/twist_publisher.hpp"
+#include "nav2_util/odometry_utils.hpp"
+#include "opennav_docking/controller.hpp"
+#include "opennav_docking/pose_filter.hpp"
+#include "opennav_following/parameter_handler.hpp"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+
+namespace opennav_following
+{
+/**
+ * @class opennav_following::FollowingServer
+ * @brief An action server which implements a dynamic following behavior
+ */
+class FollowingServer : public nav2_util::LifecycleNode
+{
+public:
+  using FollowObject = nav2_msgs::action::FollowObject;
+  using FollowingActionServer = nav2_util::SimpleActionServer<FollowObject>;
+
+  /**
+   * @brief A constructor for opennav_following::FollowingServer
+   * @param options Additional options to control creation of the node.
+   */
+  explicit FollowingServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+
+  /**
+   * @brief A destructor for opennav_following::FollowingServer
+   */
+  ~FollowingServer() = default;
+
+  /**
+   * @brief Publish feedback from a following action.
+   * @param state Current state - should be one of those defined in message.
+   */
+  void publishFollowingFeedback(uint16_t state);
+
+  /**
+   * @brief Use control law and perception to approach the object.
+   * @param object_pose Initial object pose, will be refined by perception.
+   * @param target_frame The frame to be tracked instead of the pose.
+   * @returns True if successfully approached, False if cancelled. For
+   *          any internal error, will throw.
+   */
+  virtual bool approachObject(
+    geometry_msgs::msg::PoseStamped & object_pose,
+    const std::string & target_frame = std::string(""));
+
+  /**
+   * @brief Rotate the robot to find the object again.
+   * @param object_pose The last known object pose.
+   * @param target_frame The frame to be tracked instead of the pose.
+   * @returns True if successful.
+   */
+  virtual bool rotateToObject(
+    geometry_msgs::msg::PoseStamped & object_pose,
+    const std::string & target_frame = std::string(""));
+
+  /**
+   * @brief Gets a preempted goal if immediately requested
+   * @param Goal goal to check or replace if required with preemption
+   * @param action_server Action server to check for preemptions on
+   * @return SUCCESS or FAILURE
+   */
+  template<typename ActionT>
+  void getPreemptedGoalIfRequested(
+    typename std::shared_ptr<const typename ActionT::Goal> goal,
+    const std::unique_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server);
+
+  /**
+   * @brief Checks and logs warning if action canceled
+   * @param action_server Action server to check for cancellation on
+   * @param name Name of action to put in warning message
+   * @return True if action has been cancelled
+   */
+  template<typename ActionT>
+  bool checkAndWarnIfCancelled(
+    std::unique_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server,
+    const std::string & name);
+
+  /**
+   * @brief Checks and logs warning if action preempted
+   * @param action_server Action server to check for preemption on
+   * @param name Name of action to put in warning message
+   * @return True if action has been preempted
+   */
+  template<typename ActionT>
+  bool checkAndWarnIfPreempted(
+    std::unique_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server,
+    const std::string & name);
+
+  /**
+   * @brief Configure member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Activate member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Deactivate member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Reset member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Called when in shutdown state
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Publish zero velocity at terminal condition
+   */
+  void publishZeroVelocity();
+
+protected:
+  /**
+   * @brief Main action callback method to complete following request
+   */
+  void followObject();
+
+  /**
+   * @brief Method to obtain the refined dynamic pose.
+   * @param pose The initial estimate of the dynamic pose
+   *        which will be updated with the refined pose.
+   * @return true if successful, false otherwise
+   */
+  virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped & pose);
+
+  /**
+   * @brief Get the pose of a specific frame in the fixed frame.
+   * @param pose The output pose.
+   * @param frame_id The frame to get the pose for.
+   * @return true if successful, false otherwise
+   */
+  virtual bool getFramePose(geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id);
+
+  /**
+   * @brief Get the tracking pose based on the current tracking mode.
+   * @param pose The output pose.
+   * @param frame_id The frame to get the pose for.
+   * @return true if successful, false otherwise.
+   */
+  virtual bool getTrackingPose(
+    geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id);
+
+  /**
+   * @brief Get the pose at a distance in front of the input pose
+   *
+   * @param pose Input pose
+   * @param distance Distance to move (in meters)
+   * @return Pose distance meters in front of the input pose
+   */
+  geometry_msgs::msg::PoseStamped getPoseAtDistance(
+    const geometry_msgs::msg::PoseStamped & pose, double distance);
+
+  /**
+   * @brief Check if the goal has been reached.
+   *
+   * @param goal_pose The goal pose to check
+   * @return true If the goal has been reached
+   */
+  bool isGoalReached(const geometry_msgs::msg::PoseStamped & goal_pose);
+
+  // Parameter handler
+  std::unique_ptr<opennav_following::ParameterHandler> param_handler_;
+  Parameters * params_;
+
+  // Time when object became static
+  rclcpp::Time static_object_start_time_;
+  // Flag to track if we've initialized the static timer
+  bool static_timer_initialized_;
+  // Maximum number of times the robot will retry to approach the object
+  int num_retries_;
+
+  // Timestamp of the last time a iteration was started
+  rclcpp::Time iteration_start_time_;
+
+  // This is a class member so it can be accessed in publish feedback
+  rclcpp::Time action_start_time_;
+
+  // Subscribe to the dynamic pose
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr dynamic_pose_sub_;
+
+  // Publish the filtered dynamic pose
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>::SharedPtr
+    filtered_dynamic_pose_pub_;
+
+  // Latest message
+  geometry_msgs::msg::PoseStamped detected_dynamic_pose_;
+
+  // Filtering of detected poses
+  std::unique_ptr<opennav_docking::PoseFilter> filter_;
+
+  std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
+  std::unique_ptr<nav2_util::OdomSmoother> odom_sub_;
+  std::unique_ptr<FollowingActionServer> following_action_server_;
+
+  std::unique_ptr<opennav_docking::Controller> controller_;
+
+  std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
+  std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
+};
+
+}  // namespace opennav_following
+
+#endif  // OPENNAV_FOLLOWING__FOLLOWING_SERVER_HPP_
