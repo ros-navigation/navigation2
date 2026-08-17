@@ -382,17 +382,6 @@ bool FollowingServer::approachObject(
       return false;
     }
 
-    // If the object is behind the robot, we reverse the control
-    geometry_msgs::msg::PoseStamped robot_pose;
-    if (!nav2_util::getCurrentPose(
-        robot_pose, *tf2_buffer_, target_pose.header.frame_id, params_->base_frame,
-        params_->transform_tolerance,
-        iteration_start_time_))
-    {
-      RCLCPP_WARN(get_logger(), "Failed to get current robot pose");
-      return false;
-    }
-
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
