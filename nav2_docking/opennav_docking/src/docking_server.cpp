@@ -373,11 +373,17 @@ void DockingServer::stashDockData(bool use_dock_id, Dock * dock, bool successful
 
 Dock * DockingServer::generateGoalDock(std::shared_ptr<const DockRobot::Goal> goal)
 {
+  auto plugin = dock_db_->findDockPlugin(goal->dock_type);
+  if (!plugin) {
+    throw opennav_docking_core::DockNotValid(
+            "Dock type '" + goal->dock_type + "' has no valid plugin!");
+  }
+
   auto dock = new Dock();
   dock->frame = goal->dock_pose.header.frame_id;
   dock->pose = goal->dock_pose.pose;
   dock->type = goal->dock_type;
-  dock->plugin = dock_db_->findDockPlugin(dock->type);
+  dock->plugin = plugin;
   return dock;
 }
 
