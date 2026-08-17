@@ -138,7 +138,7 @@ protected:
 
   // Colors for path-class visualization markers.
   static constexpr std::array<std::array<float, 3>, 6> kClassPalette = {{
-    {{0.2f, 0.4f, 1.0f}},   // blue    
+    {{0.2f, 0.4f, 1.0f}},   // blue
     {{0.2f, 0.8f, 0.2f}},   // green
     {{0.9f, 0.1f, 0.1f}},    // red
     {{1.0f, 0.6f, 0.0f}},   // orange
