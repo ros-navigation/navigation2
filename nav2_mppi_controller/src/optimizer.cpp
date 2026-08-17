@@ -317,7 +317,6 @@ void Optimizer::prepare(
     float min_delta_vx = dt * c.ax_min;
     float max_delta_wz = dt * c.az_max;
     state_.speed = robot_speed;
-    auto robot_last_speed = state_.speed;
     state_.speed.linear.x = utils::clampVelocityByAccel(
       robot_speed.linear.x, last_command_vel_.linear.x, min_delta_vx, max_delta_vx);
     state_.speed.angular.z = utils::clampVelocityByAccel(
@@ -329,7 +328,7 @@ void Optimizer::prepare(
       robot_speed.linear.y, last_command_vel_.linear.y, min_delta_vy, max_delta_vy);
     }
     // Predict the robot pose at 1*dt in future
-    motion_model_->predictFuture(state_.pose, robot_last_speed, dt);
+    motion_model_->predictFuture(state_.pose, robot_speed, dt);
   }
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);

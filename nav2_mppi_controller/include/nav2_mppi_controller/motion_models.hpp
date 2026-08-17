@@ -175,7 +175,7 @@ public:
   */
   virtual void predictFuture(
     geometry_msgs::msg::PoseStamped & pose,
-    geometry_msgs::msg::Twist & speed, float pred_dt)
+    const geometry_msgs::msg::Twist & speed, float pred_dt)
   {
     const bool is_holo = isHolonomic();
     auto initial_yaw = static_cast<float>(tf2::getYaw(pose.pose.orientation));
