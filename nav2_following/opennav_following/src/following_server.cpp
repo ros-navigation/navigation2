@@ -411,10 +411,18 @@ bool FollowingServer::rotateToObject(
 {
   const double dt = 1.0 / params_->controller_frequency;
 
+  // object_pose is still default-constructed (empty frame_id) if no detection has
+  // ever arrived for this goal, fall back to the fixed frame and let the robot search.
+  const std::string reference_frame =
+    object_pose.header.frame_id.empty() ? params_->fixed_frame : object_pose.header.frame_id;
+
+  // Refresh start time before transforming.
+  iteration_start_time_ = this->now();
+
   // Compute initial robot heading
   geometry_msgs::msg::PoseStamped robot_pose;
   if (!nav2_util::getCurrentPose(
-      robot_pose, *tf2_buffer_, object_pose.header.frame_id, params_->base_frame,
+      robot_pose, *tf2_buffer_, reference_frame, params_->base_frame,
       params_->transform_tolerance,
       iteration_start_time_))
   {
@@ -453,7 +461,7 @@ bool FollowingServer::rotateToObject(
 
       // Get current robot pose
       if (!nav2_util::getCurrentPose(
-          robot_pose, *tf2_buffer_, object_pose.header.frame_id, params_->base_frame,
+          robot_pose, *tf2_buffer_, reference_frame, params_->base_frame,
           params_->transform_tolerance,
           iteration_start_time_))
       {
