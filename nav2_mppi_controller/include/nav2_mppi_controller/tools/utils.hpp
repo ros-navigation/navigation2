@@ -322,6 +322,8 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
         traj_integrated_dists(i)) - path_integrated_dists.begin());
     max_reachable_idx = std::min(max_reachable_idx, n_cols - 1);
 
+    if (max_reachable_idx < 0) {continue;}
+
     // Bounded Euclidean search: closest path point within [0..max_reachable_idx]
     Eigen::Index eucl_idx;
     ((data.path.x.head(max_reachable_idx + 1) - traj_x_end(i)).square() +
