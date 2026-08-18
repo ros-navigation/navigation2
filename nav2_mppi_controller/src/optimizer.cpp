@@ -452,7 +452,7 @@ void Optimizer::applyControlSequenceConstraints()
       const float dvx = vx_curr - vx_last;
       const float dvy = vy_curr - vy_last;
 
-      // Respect acceleration limits without changing the heading
+      // Apply per-axis accel limits while preserving direction of requested translational velocity
       float alpha = 1.0f;
       if (dvx > max_delta_vx) {
         alpha = std::min(alpha, max_delta_vx / dvx);
