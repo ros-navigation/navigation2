@@ -48,7 +48,8 @@ void GoalAngleCritic::score(CriticData & data)
     auto symmetric_distances = utils::shortest_angular_distance(data.trajectories.yaws,
       symmetric_goal_yaw).abs().eval();
     if (power_ > 1u) {
-      data.costs += (angular_distances.min(symmetric_distances).rowwise().mean() * weight_).pow(power_);
+      data.costs += (angular_distances.min(symmetric_distances).rowwise().mean() *
+        weight_).pow(power_);
     } else {
       data.costs += angular_distances.min(symmetric_distances).rowwise().mean() * weight_;
     }
