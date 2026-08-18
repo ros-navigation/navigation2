@@ -421,19 +421,6 @@ void Optimizer::applyControlSequenceConstraints()
   float wz_last = static_cast<float>(state_.speed.angular.z);
   float vy_last = isHolonomic() ? static_cast<float>(state_.speed.linear.y) : 0.0f;
 
-  // Sanitize current speed to be within velocity limits
-  if (isHolonomic()) {
-    auto omni = dynamic_cast<OmniMotionModel *>(motion_model_.get());
-    if (omni && omni->useEllipticalVelocityLimits()) {
-      Eigen::Array<float, 1, 1> vx_arr, vy_arr;
-      vx_arr(0) = vx_last;
-      vy_arr(0) = vy_last;
-      float scaling_factor = omni->getVelocityScalingFactor(vx_arr, vy_arr)(0);
-      vx_last *= scaling_factor;
-      vy_last *= scaling_factor;
-    }
-  }
-
   // When shifting, vx(0) is "now" and not sent. Pin it so vx(1), the sent command,
   // is exactly one constraint step from current speed when shift_control_sequence
   if (s.shift_control_sequence) {
