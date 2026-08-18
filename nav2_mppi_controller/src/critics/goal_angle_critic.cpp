@@ -41,23 +41,24 @@ void GoalAngleCritic::score(CriticData & data)
 
   const geometry_msgs::msg::Pose goal = utils::getLastPathPose(data.path);
   const float goal_yaw = static_cast<float>(tf2::getYaw(goal.orientation));
-  auto dist = utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs();
+  auto angular_distances = utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs();
 
   if (symmetric_yaw_tolerance_) {
-    const float sym_yaw = angles::normalize_angle(goal_yaw + M_PIF);
-    auto sym = utils::shortest_angular_distance(data.trajectories.yaws, sym_yaw).abs();
+    const float symmetric_goal_yaw = angles::normalize_angle(goal_yaw + M_PI);
+    auto symmetric_distances = utils::shortest_angular_distance(data.trajectories.yaws,
+      symmetric_goal_yaw).abs().eval();
     if (power_ > 1u) {
-      data.costs += (dist.min(sym).rowwise().mean() * weight_).pow(power_);
+      data.costs += (dist.min(symmetric_distances).rowwise().mean() * weight_).pow(power_);
     } else {
-      data.costs += dist.min(sym).rowwise().mean() * weight_;
+      data.costs += dist.min(symmetric_distances).rowwise().mean() * weight_;
     }
     return;
   }
 
   if (power_ > 1u) {
-    data.costs += (dist.rowwise().mean() * weight_).pow(power_);
+    data.costs += (angular_distances.rowwise().mean() * weight_).pow(power_);
   } else {
-    data.costs += dist.rowwise().mean() * weight_;
+    data.costs += angular_distances.rowwise().mean() * weight_;
   }
 }
 
