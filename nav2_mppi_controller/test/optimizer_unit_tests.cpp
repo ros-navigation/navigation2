@@ -682,6 +682,68 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   }
 }
 
+TEST(OptimizerTests, applyControlSequenceConstraintsPerAxisTests)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter("mppic.vx_max", rclcpp::ParameterValue(1.0));
+  node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-1.0));
+  node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.75));
+  node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.use_elliptical_velocity_limits", rclcpp::ParameterValue(false));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  // Opting out of the elliptical envelope must keep the axes independent, both for the
+  // velocity limits and for the acceleration limits
+  optimizer_tester.resetMotionModel();
+  optimizer_tester.testSetOmniModel();
+  auto & sequence = optimizer_tester.grabControlSequence();
+  auto & state = optimizer_tester.grabState();
+
+  // Demanding more than possible on both axes saturates each at its own limit, rather than
+  // being projected back onto the ellipse (which would give vx = vy = 0.6)
+  state.speed.linear.x = 0.0;
+  state.speed.linear.y = 0.0;
+  state.speed.angular.z = 0.0;
+  sequence.vx = 5.0 * Eigen::ArrayXf::Ones(50);
+  sequence.vy = 5.0 * Eigen::ArrayXf::Ones(50);
+  sequence.wz = 5.0 * Eigen::ArrayXf::Ones(50);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  EXPECT_NEAR(sequence.vx(49), 1.0f, 1e-3);
+  EXPECT_NEAR(sequence.vy(49), 0.75f, 1e-3);
+  EXPECT_NEAR(sequence.wz(49), 2.0f, 1e-3);
+
+  // Each axis is limited by its own acceleration limit, so an axis that is already at its
+  // demand is not slowed down by the other axis needing to ramp up
+  auto & constraints = optimizer_tester.getControlConstraints();
+  auto & settings = optimizer_tester.grabSettings();
+  state.speed.linear.x = 0.5;
+  state.speed.linear.y = 0.0;
+  state.speed.angular.z = 0.0;
+  sequence.vx.setConstant(0.5f);
+  sequence.vy.setConstant(0.75f);
+  sequence.wz.setZero();
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  EXPECT_TRUE(sequence.vx.isApproxToConstant(0.5f));
+  EXPECT_NEAR(sequence.vy(0), settings.controller_period * constraints.ay_max, 1e-5);
+  EXPECT_NEAR(sequence.vy(49), 0.75f, 1e-3);
+}
+
 TEST(OptimizerTests, updateStateVelocitiesTests)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
