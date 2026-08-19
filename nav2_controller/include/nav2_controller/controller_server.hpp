@@ -198,8 +198,19 @@ protected:
   void publishZeroVelocity();
   /**
    * @brief Called on goal exit
+   * @param force_stop Whether to publish a zero velocity regardless of configuration
+   * @param reset_path_handler_state Whether to clear the path state retained for goal retries
    */
-  void onGoalExit(bool force_stop);
+  void onGoalExit(bool force_stop, bool reset_path_handler_state);
+  /**
+   * @brief Select the path handler to use, resetting state cached by the handlers involved
+   * @param path_handler_id Name of the path handler to select
+   */
+  void setCurrentPathHandler(const std::string & path_handler_id);
+  /**
+   * @brief Clear the state retained by all path handlers
+   */
+  void resetAllPathHandlers();
   /**
    * @brief Wait for costmap to become current, with timeout
    * @return Duration in seconds spent waiting for the costmap (0.0 if already current)
