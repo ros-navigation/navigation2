@@ -67,12 +67,6 @@ BT::NodeStatus DockRobotAction::on_cancelled()
   return BT::NodeStatus::SUCCESS;
 }
 
-void DockRobotAction::on_timeout()
-{
-  setOutput("error_code_id", ActionResult::TIMEOUT);
-  setOutput("error_msg", "Behavior Tree action client timed out waiting.");
-}
-
 void DockRobotAction::halt()
 {
   BtActionNode::halt();

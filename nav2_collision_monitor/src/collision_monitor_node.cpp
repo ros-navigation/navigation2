@@ -19,8 +19,6 @@
 #include <utility>
 #include <functional>
 
-#include "tf2_ros/create_timer_ros.hpp"
-
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 
@@ -51,12 +49,8 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   // Transform buffer and listener initialization
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    this->get_node_base_interface(),
-    this->get_node_timers_interface());
-  tf_buffer_->setCreateTimerInterface(timer_interface);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this, true);
+  tf_buffer_ = nav2::create_transform_buffer(this);
+  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, this, true);
 
   std::string cmd_vel_in_topic;
   std::string cmd_vel_out_topic;
@@ -133,9 +127,14 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
     polygon->activate();
   }
 
+  // Activating exclusion zone visualization publishers
+  for (std::shared_ptr<Source> source : sources_) {
+    source->activate();
+  }
+
   // Since polygons are being published when cmd_vel_in appears,
-  // we need to publish polygons first time to display them at startup
-  publishPolygons();
+  // we need to publish polygons and exclusion zones first time to display them at startup
+  publishVisualizations();
 
   // Activating main worker
   process_active_ = true;
@@ -160,6 +159,11 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->deactivate();
+  }
+
+  // Deactivating exclusion zone visualization publishers
+  for (std::shared_ptr<Source> source : sources_) {
+    source->deactivate();
   }
 
   // Deactivating lifecycle publishers
@@ -362,7 +366,9 @@ bool CollisionMonitor::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        s->configure();
+        if (!s->configure()) {
+          return false;
+        }
 
         sources_.push_back(s);
       } else if (source_type == "pointcloud") {
@@ -370,7 +376,9 @@ bool CollisionMonitor::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        p->configure();
+        if (!p->configure()) {
+          return false;
+        }
 
         sources_.push_back(p);
       } else if (source_type == "range") {
@@ -378,14 +386,18 @@ bool CollisionMonitor::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        r->configure();
+        if (!r->configure()) {
+          return false;
+        }
 
         sources_.push_back(r);
       } else if (source_type == "polygon") {
         std::shared_ptr<PolygonSource> ps = std::make_shared<PolygonSource>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
-        ps->configure();
+        if (!ps->configure()) {
+          return false;
+        }
 
         sources_.push_back(ps);
       } else if (source_type == "costmap") {
@@ -393,7 +405,9 @@ bool CollisionMonitor::configureSources(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
-        src->configure();
+        if (!src->configure()) {
+          return false;
+        }
 
         sources_.push_back(src);
       } else {  // Error if something else
@@ -521,8 +535,8 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   // Publish required robot velocity
   publishVelocity(robot_action, header);
 
-  // Publish polygons for better visualization
-  publishPolygons();
+  // Publish polygons and exclusion zones for better visualization
+  publishVisualizations();
 
   robot_action_prev_ = robot_action;
 }
@@ -723,12 +737,16 @@ void CollisionMonitor::publishTriggeringPoints(const Action & action)
   triggering_points_pub_->publish(std::move(marker_array));
 }
 
-void CollisionMonitor::publishPolygons() const
+void CollisionMonitor::publishVisualizations() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (polygon->getEnabled() || !enabled_) {
       polygon->publish();
     }
+  }
+
+  for (std::shared_ptr<Source> source : sources_) {
+    source->publishExclusionZones();
   }
 }
 

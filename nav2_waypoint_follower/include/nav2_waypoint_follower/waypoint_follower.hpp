@@ -38,9 +38,8 @@
 #include "nav2_waypoint_follower/parameter_handler.hpp"
 
 #include "robot_localization/srv/from_ll.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_ros/transform_listener.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -136,6 +135,15 @@ protected:
    */
   template<typename T, typename V, typename Z>
   void followWaypointsHandler(const T & action_server, const V & feedback, const Z & result);
+
+  /**
+   * @brief Goal received callbacks to validate a new goal before acceptance.
+   *        Rejects goals with empty waypoint lists.
+   * @param goal The incoming goal to validate
+   * @return true if goal should be accepted, false to reject
+   */
+  template<typename T>
+  bool goalReceived(std::shared_ptr<const typename T::Goal> goal);
 
   /**
    * @brief Action server callbacks

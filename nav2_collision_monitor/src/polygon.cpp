@@ -21,13 +21,14 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "tf2/transform_datatypes.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_util/array_parser.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
+#include "nav2_collision_monitor/polygon_utils.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -35,7 +36,7 @@ namespace nav2_collision_monitor
 Polygon::Polygon(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
@@ -226,6 +227,10 @@ std::vector<std::string> Polygon::getSourcesNames() const
 
 void Polygon::getPolygon(std::vector<Point> & poly) const
 {
+  poly.clear();
+  if (poly_.empty()) {
+    return;
+  }
   poly = poly_;
 }
 
@@ -701,39 +706,12 @@ bool Polygon::getPolygonFromString(
   std::vector<Point> & polygon)
 {
   std::string error;
-  std::vector<std::vector<float>> vvf = nav2_util::parseVVF(poly_string, error);
-
-  if (error != "") {
+  // Historically the collision-monitor polygon requires at least 4 vertices.
+  if (!parsePolygonPoints(poly_string, 4, polygon, error)) {
     RCLCPP_ERROR(
-      logger_, "Error parsing polygon parameter %s: '%s'",
-      poly_string.c_str(), error.c_str());
+      logger_, "[%s]: %s", polygon_name_.c_str(), error.c_str());
     return false;
   }
-
-  // Check for minimum 4 points
-  if (vvf.size() <= 3) {
-    RCLCPP_ERROR(
-      logger_,
-      "Polygon must have at least three points.");
-    return false;
-  }
-  for (unsigned int i = 0; i < vvf.size(); i++) {
-    if (vvf[i].size() == 2) {
-      Point point;
-      point.x = vvf[i][0];
-      point.y = vvf[i][1];
-      polygon.push_back(point);
-    } else {
-      RCLCPP_ERROR(
-        logger_,
-        "Points in the polygon specification must be pairs of numbers"
-        "Found a point with %d numbers.",
-        static_cast<int>(vvf[i].size()));
-      polygon.clear();
-      return false;
-    }
-  }
-
   return true;
 }
 

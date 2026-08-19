@@ -58,12 +58,6 @@ public:
   void on_tick() override;
 
   /**
-   * @brief Function to perform work in a BT Node when the action server times out
-   * Such as setting the error code ID status to timed out for action clients.
-   */
-  void on_timeout() override;
-
-  /**
    * @brief Function to read parameters and initialize class variables
    */
   void initialize();
@@ -80,10 +74,6 @@ public:
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for spinning"),
         BT::InputPort<bool>("is_recovery", true, "True if recovery"),
         BT::InputPort<bool>("disable_collision_checks", false, "Disable collision checking"),
-        BT::OutputPort<ActionResult::_error_code_type>(
-          "error_code_id", "The spin behavior error code"),
-        BT::OutputPort<std::string>(
-          "error_msg", "The spin behavior error msg"),
       });
   }
 

@@ -25,7 +25,7 @@
 #include "nav2_behavior_tree/plugins/condition/is_goal_nearby_condition.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "utils/test_behavior_tree_fixture.hpp"
 
 using namespace std::chrono_literals;
@@ -47,7 +47,7 @@ public:
       factory_->registerBuilder<nav2_behavior_tree::IsGoalNearbyCondition>("IsGoalNearby", builder);
     } catch (BT::BehaviorTreeException const &) {
     }
-    tf_buffer_ = config_->blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+    tf_buffer_ = config_->blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
   }
 
   void TearDown() override {tree_.reset();}
@@ -96,7 +96,7 @@ protected:
   }
 
 protected:
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 

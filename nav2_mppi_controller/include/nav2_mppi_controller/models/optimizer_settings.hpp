@@ -34,6 +34,7 @@ struct OptimizerSettings
   float model_delay_vx{0.0f};
   float model_delay_vy{0.0f};
   float model_delay_wz{0.0f};
+  bool clamp_raw_controls{false};
   float controller_period{0.0f};
   float temperature{0.0f};
   float gamma{0.0f};

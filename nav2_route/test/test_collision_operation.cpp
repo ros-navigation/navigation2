@@ -30,13 +30,6 @@
 #include "nav2_route/plugins/route_operations/collision_monitor.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route;  // NOLINT
 
@@ -330,4 +323,13 @@ TEST(TestCollisionMonitor, test_costmap_apis)
     &node1 /*unused*/, curr_edge, curr_edge /*unused*/, route, pose, nullptr);
   EXPECT_FALSE(result.reroute);
   EXPECT_EQ(result.blocked_ids.size(), 0u);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

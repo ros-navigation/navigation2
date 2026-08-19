@@ -26,6 +26,7 @@
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using SmoothAction = nav2_msgs::action::SmoothPath;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<SmoothAction>;
@@ -83,7 +84,7 @@ public:
   DummyFootprintSubscriber(
     nav2::LifecycleNode::SharedPtr node,
     const std::string & topic_name,
-    tf2_ros::Buffer & tf)
+    nav2::TransformBuffer & tf)
   : FootprintSubscriber(node, topic_name, tf)
   {
     auto footprint = std::make_shared<geometry_msgs::msg::PolygonStamped>();
@@ -262,10 +263,9 @@ TEST_F(SmootherTest, testingSuccess)
 
 TEST_F(SmootherTest, testingFailureOnInvalidSmootherId)
 {
-  ASSERT_TRUE(sendGoal("InvalidSmoother", 0.0, 0.0, 1.0, 0.0, 500ms, true));
-  auto result = getResult();
-  EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
-  SUCCEED();
+  // Invalid smoother IDs are rejected in the goal received callback, so the
+  // goal never reaches execution and no result is produced.
+  EXPECT_FALSE(sendGoal("InvalidSmoother", 0.0, 0.0, 1.0, 0.0, 500ms, true));
 }
 
 TEST_F(SmootherTest, testingSuccessOnEmptyPlugin)

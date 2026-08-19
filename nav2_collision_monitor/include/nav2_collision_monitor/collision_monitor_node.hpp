@@ -26,10 +26,9 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 
 #include "tf2/time.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_util/twist_subscriber.hpp"
 #include "nav2_msgs/msg/collision_monitor_state.hpp"
@@ -198,9 +197,9 @@ protected:
     const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const;
 
   /**
-   * @brief Polygons publishing routine. Made for visualization.
+   * @brief Publishes all visualization topics (polygons and exclusion zones).
    */
-  void publishPolygons() const;
+  void publishVisualizations() const;
 
   /**
    * @brief Publishes action.triggering_points as markers, colour-coded by action type.
@@ -221,9 +220,9 @@ protected:
   // ----- Variables -----
 
   /// @brief TF buffer
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   /// @brief TF listener
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
   /// @brief Polygons array
   std::vector<std::shared_ptr<Polygon>> polygons_;

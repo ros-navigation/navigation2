@@ -22,7 +22,7 @@
 #include <chrono>
 
 #include "nav2_util/odometry_utils.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -42,7 +42,7 @@ struct FeedbackUtils
   std::string robot_frame;
   std::string global_frame;
   double transform_tolerance;
-  std::shared_ptr<tf2_ros::Buffer> tf;
+  nav2::TransformBuffer::SharedPtr tf;
 };
 
 /**
@@ -153,6 +153,17 @@ public:
   {
     std::scoped_lock l(mutex_);
     current_navigator_->preempt();
+  }
+
+  /**
+   * @brief Check if the given navigator is the currently active navigator
+   * @param navigator Navigator to check
+   * @return bool If the navigator is the current active one
+   */
+  bool isCurrentNavigator(nav2_core::NavigatorBase * navigator)
+  {
+    std::scoped_lock l(mutex_);
+    return current_navigator_ == navigator;
   }
 
 protected:
@@ -317,7 +328,8 @@ protected:
    */
   bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
   {
-    if (plugin_muxer_->isNavigating()) {
+    if (plugin_muxer_->isNavigating() && !plugin_muxer_->isCurrentNavigator(this)) {
+      // A different navigator is processing; check if cross-navigator preemption is allowed
       if (!allow_navigator_preemption_) {
         RCLCPP_ERROR(
           logger_,

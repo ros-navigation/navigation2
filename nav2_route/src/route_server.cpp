@@ -31,12 +31,8 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    get_node_base_interface(),
-    get_node_timers_interface());
-  tf_->setCreateTimerInterface(timer_interface);
-  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, true);
+  tf_ = nav2::create_transform_buffer(this);
+  transform_listener_ = nav2::create_transform_listener(*tf_, this, true);
 
   auto node = shared_from_this();
   graph_vis_publisher_ =
@@ -48,12 +44,12 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   compute_route_server_ = create_action_server<ComputeRoute>(
     "compute_route",
     std::bind(&RouteServer::computeRoute, this),
-    nullptr, std::chrono::milliseconds(500), true);
+    nullptr, nullptr, std::chrono::milliseconds(500), true);
 
   compute_and_track_route_server_ = create_action_server<ComputeAndTrackRoute>(
     "compute_and_track_route",
     std::bind(&RouteServer::computeAndTrackRoute, this),
-    nullptr, std::chrono::milliseconds(500), true);
+    nullptr, nullptr, std::chrono::milliseconds(500), true);
 
   set_graph_service_ = node->create_service<nav2_msgs::srv::SetRouteGraph>(
     std::string(node->get_name()) + "/set_route_graph",

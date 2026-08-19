@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_constrained_smoother)
 
 set(CMAKE_BUILD_TYPE Release) # significant Ceres optimization speedup
@@ -45,8 +45,8 @@ target_link_libraries(${library_name} PUBLIC
   tf2_ros::tf2_ros
 )
 target_link_libraries(${library_name} PRIVATE
-  ${geometry_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
+  nav_msgs::nav_msgs
   pluginlib::pluginlib
 )
 

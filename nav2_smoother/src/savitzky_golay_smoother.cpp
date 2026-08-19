@@ -25,7 +25,7 @@ using nav2_util::PathSegment;
 
 void SavitzkyGolaySmoother::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
+  std::string name, nav2::TransformBuffer::SharedPtr/*tf*/,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/*costmap_sub*/,
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>/*footprint_sub*/)
 {
@@ -63,8 +63,11 @@ void SavitzkyGolaySmoother::calculateCoefficients()
   for (int i = 1; i <= poly_order_; i++) {
     x.col(i) = (x.col(i - 1).array() * v.array()).matrix();
   }
-  // Compute the pseudoinverse of X, (X^T * X)^-1 * X^T
-  Eigen::MatrixXd coeff_mat = (x.transpose() * x).inverse() * x.transpose();
+  // Compute the pseudoinverse of X by solving the least-squares problem X * C = I.
+  // HouseholderQR factors X into an orthogonal matrix and an upper-triangular matrix,
+  // then solves for the coefficient matrix C without explicitly inverting X.
+  Eigen::MatrixXd coeff_mat =
+    x.householderQr().solve(Eigen::MatrixXd::Identity(window_size_, window_size_));
 
   // Extract the smoothing coefficients
   sg_coeffs_ = coeff_mat.row(0).transpose();
@@ -175,4 +178,5 @@ bool SavitzkyGolaySmoother::smoothImpl(
 }  // namespace nav2_smoother
 
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_smoother::SavitzkyGolaySmoother, nav2_core::Smoother)

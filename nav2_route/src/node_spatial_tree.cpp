@@ -60,7 +60,12 @@ void NodeSpatialTree::computeTree(Graph & graph)
 bool NodeSpatialTree::findNearestGraphNodesToPose(
   const geometry_msgs::msg::PoseStamped & pose_in, std::vector<unsigned int> & node_ids)
 {
+  if (num_of_nearest_nodes_ == 0) {
+    return false;
+  }
+
   size_t num_results = static_cast<size_t>(num_of_nearest_nodes_);
+
   std::vector<unsigned int> ret_index(num_results);
   std::vector<double> out_dist_sqr(num_results);
   const double query_pt[2] = {pose_in.pose.position.x, pose_in.pose.position.y};

@@ -45,7 +45,7 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   params_ = param_handler_->getParams();
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
-  tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf2_buffer_ = nav2::create_transform_buffer(node);
 
   // Create odom subscriber for backward blind docking
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
@@ -55,7 +55,7 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   following_action_server_ = node->create_action_server<FollowObject>(
     "follow_object",
     std::bind(&FollowingServer::followObject, this),
-    nullptr, std::chrono::milliseconds(500),
+    nullptr, nullptr, std::chrono::milliseconds(500),
     true);
 
   // Create the controller
@@ -93,7 +93,7 @@ FollowingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating %s", get_name());
 
-  tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_, this, true);
+  tf2_listener_ = nav2::create_transform_listener(*tf2_buffer_, this, true);
   vel_publisher_->on_activate();
   filtered_dynamic_pose_pub_->on_activate();
   following_action_server_->activate();
@@ -309,23 +309,23 @@ void FollowingServer::followObject()
     }
   } catch (const tf2::TransformException & e) {
     result->error_msg = std::string("Transform error: ") + e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = FollowObject::Result::TF_ERROR;
   } catch (opennav_docking_core::FailedToDetectDock & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = FollowObject::Result::FAILED_TO_DETECT_OBJECT;
   } catch (opennav_docking_core::FailedToControl & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = FollowObject::Result::FAILED_TO_CONTROL;
   } catch (opennav_docking_core::DockingException & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = FollowObject::Result::UNKNOWN;
   } catch (std::exception & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = FollowObject::Result::UNKNOWN;
   }
 
@@ -382,17 +382,6 @@ bool FollowingServer::approachObject(
       return false;
     }
 
-    // If the object is behind the robot, we reverse the control
-    geometry_msgs::msg::PoseStamped robot_pose;
-    if (!nav2_util::getCurrentPose(
-        robot_pose, *tf2_buffer_, target_pose.header.frame_id, params_->base_frame,
-        params_->transform_tolerance,
-        iteration_start_time_))
-    {
-      RCLCPP_WARN(get_logger(), "Failed to get current robot pose");
-      return false;
-    }
-
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
@@ -411,10 +400,18 @@ bool FollowingServer::rotateToObject(
 {
   const double dt = 1.0 / params_->controller_frequency;
 
+  // object_pose is still default-constructed (empty frame_id) if no detection has
+  // ever arrived for this goal, fall back to the fixed frame and let the robot search.
+  const std::string reference_frame =
+    object_pose.header.frame_id.empty() ? params_->fixed_frame : object_pose.header.frame_id;
+
+  // Refresh start time before transforming.
+  iteration_start_time_ = this->now();
+
   // Compute initial robot heading
   geometry_msgs::msg::PoseStamped robot_pose;
   if (!nav2_util::getCurrentPose(
-      robot_pose, *tf2_buffer_, object_pose.header.frame_id, params_->base_frame,
+      robot_pose, *tf2_buffer_, reference_frame, params_->base_frame,
       params_->transform_tolerance,
       iteration_start_time_))
   {
@@ -453,7 +450,7 @@ bool FollowingServer::rotateToObject(
 
       // Get current robot pose
       if (!nav2_util::getCurrentPose(
-          robot_pose, *tf2_buffer_, object_pose.header.frame_id, params_->base_frame,
+          robot_pose, *tf2_buffer_, reference_frame, params_->base_frame,
           params_->transform_tolerance,
           iteration_start_time_))
       {

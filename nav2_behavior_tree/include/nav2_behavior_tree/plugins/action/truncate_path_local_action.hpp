@@ -25,7 +25,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 
@@ -38,7 +38,7 @@ namespace nav2_behavior_tree
  * Usage in XML:
  * @code
  * <TruncatePathLocal input_path="{path}" output_path="{path_local}"
- *                    distance_forward="3.5" distance_backward="2.0" robot_frame="base_link"/>
+ *                    distance_forward="3.5" distance_backward="2.0"/>
  * @endcode
  */
 class TruncatePathLocal : public BT::ActionNodeBase
@@ -74,7 +74,7 @@ public:
         "distance_backward", 4.0,
         "Distance in backward direction"),
       BT::InputPort<std::string>(
-        "robot_frame", "base_link",
+        "robot_base_frame",
         "Robot base frame id"),
       BT::InputPort<double>(
         "transform_tolerance", 0.2,
@@ -127,7 +127,7 @@ private:
     const geometry_msgs::msg::PoseStamped & pose2,
     const double angular_distance_weight);
 
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
 
   nav_msgs::msg::Path path_;
   nav_msgs::msg::Path::_poses_type::iterator closest_pose_detection_begin_;

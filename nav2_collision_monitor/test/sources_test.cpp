@@ -30,9 +30,7 @@
 #include "sensor_msgs/msg/range.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/scan.hpp"
@@ -307,7 +305,7 @@ public:
   ScanWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -330,7 +328,7 @@ public:
   PointCloudWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -353,7 +351,7 @@ public:
   RangeWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -368,6 +366,21 @@ public:
   {
     return data_ != nullptr;
   }
+
+  void setData(sensor_msgs::msg::Range::ConstSharedPtr msg)
+  {
+    data_ = msg;
+  }
+
+  void setObstaclesAngle(const double obstacles_angle)
+  {
+    obstacles_angle_ = obstacles_angle;
+  }
+
+  void processData(sensor_msgs::msg::Range::ConstSharedPtr msg)
+  {
+    dataCallback(msg);
+  }
 };  // RangeWrapper
 
 class PolygonWrapper : public nav2_collision_monitor::PolygonSource
@@ -376,7 +389,7 @@ public:
   PolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -399,7 +412,7 @@ public:
   CostmapWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -421,8 +434,8 @@ class Tester : public ::testing::Test
 public:
   Tester();
   ~Tester();
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 
 protected:
   // Data sources creation routine
@@ -457,9 +470,9 @@ Tester::Tester()
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_node(test_node_->get_node_base_interface());
 
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(test_node_->get_clock());
+  tf_buffer_ = nav2::create_transform_buffer(test_node_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, test_node_);
 }
 
 Tester::~Tester()
@@ -545,8 +558,8 @@ void Tester::createSources(const bool base_shift_correction)
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
-    std::make_shared<tf2_ros::TransformBroadcaster>(test_node_);
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
+    nav2::create_transform_broadcaster(test_node_);
 
   geometry_msgs::msg::TransformStamped transform;
 
@@ -884,6 +897,94 @@ TEST_F(Tester, testIgnoreTimeShift)
   data.clear();
   polygon_->getData(curr_time, data);
   checkPolygon(data);
+}
+
+TEST_F(Tester, testRangeGeneratedPointLimit)
+{
+  rclcpp::Time curr_time = test_node_->now();
+
+  createSources(false);
+
+  auto msg = std::make_shared<sensor_msgs::msg::Range>();
+  msg->header.frame_id = BASE_FRAME_ID;
+  msg->header.stamp = curr_time;
+  msg->radiation_type = sensor_msgs::msg::Range::ULTRASOUND;
+  msg->field_of_view = M_PI;
+  msg->min_range = 0.1;
+  msg->max_range = 1.1;
+  msg->range = 1.0;
+
+  range_->setData(msg);
+  range_->setObstaclesAngle(M_PI / 1e5);
+
+  std::vector<nav2_collision_monitor::Point> data;
+  EXPECT_FALSE(range_->getData(curr_time, data));
+  EXPECT_TRUE(data.empty());
+
+  range_->setData(msg);
+  range_->setObstaclesAngle(M_PI / 999.0);
+
+  data.clear();
+  EXPECT_TRUE(range_->getData(curr_time, data));
+  EXPECT_EQ(data.size(), 1000u);
+}
+
+TEST_F(Tester, testRangeObstaclesAngleValidation)
+{
+  const std::string valid_range_name = "ValidRange";
+
+  test_node_->declare_parameter(
+    std::string(RANGE_NAME) + ".topic", rclcpp::ParameterValue(RANGE_TOPIC));
+  test_node_->declare_parameter(
+    std::string(RANGE_NAME) + ".obstacles_angle", rclcpp::ParameterValue(0.0));
+
+  range_ = std::make_shared<RangeWrapper>(
+    test_node_, RANGE_NAME, tf_buffer_,
+    BASE_FRAME_ID, GLOBAL_FRAME_ID,
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, true);
+
+  EXPECT_THROW(range_->configure(), std::runtime_error);
+
+  test_node_->declare_parameter(
+    valid_range_name + ".topic", rclcpp::ParameterValue(RANGE_TOPIC));
+  test_node_->declare_parameter(
+    valid_range_name + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 180.0));
+  range_ = std::make_shared<RangeWrapper>(
+    test_node_, valid_range_name, tf_buffer_,
+    BASE_FRAME_ID, GLOBAL_FRAME_ID,
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, true);
+
+  EXPECT_NO_THROW(range_->configure());
+}
+
+TEST_F(Tester, testRangeMessageValidation)
+{
+  createSources();
+
+  auto msg = std::make_shared<sensor_msgs::msg::Range>();
+  msg->header.frame_id = SOURCE_FRAME_ID;
+  msg->header.stamp = test_node_->now();
+  msg->radiation_type = sensor_msgs::msg::Range::ULTRASOUND;
+  msg->field_of_view = 0.0;
+  msg->min_range = 0.1;
+  msg->max_range = 1.1;
+  msg->range = 1.0;
+
+  range_->processData(msg);
+
+  EXPECT_FALSE(range_->dataReceived());
+
+  msg->header.frame_id = SOURCE_FRAME_ID;
+  msg->header.stamp = test_node_->now();
+  msg->radiation_type = sensor_msgs::msg::Range::ULTRASOUND;
+  msg->field_of_view = M_PI / 10;
+  msg->min_range = 0.1;
+  msg->max_range = 1.1;
+  msg->range = 1.0;
+
+  range_->processData(msg);
+
+  EXPECT_TRUE(range_->dataReceived());
 }
 
 TEST_F(Tester, testPointCloudMinRange)

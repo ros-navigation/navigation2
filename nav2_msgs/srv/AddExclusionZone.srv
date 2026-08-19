@@ -1,0 +1,6 @@
+# Add an exclusion zone to a collision monitor / detector source at runtime.
+
+nav2_msgs/ExclusionZoneDescription zone
+---
+bool success
+string message

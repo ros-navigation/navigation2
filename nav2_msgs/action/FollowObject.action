@@ -10,9 +10,12 @@ builtin_interfaces/Duration max_duration
 # Error codes
 # Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
+uint16 GOAL_REJECTED=1
+uint16 SEND_GOAL_FAILURE=2
 uint16 TF_ERROR=901
 uint16 FAILED_TO_DETECT_OBJECT=902
 uint16 FAILED_TO_CONTROL=903
+uint16 TIMEOUT=904
 uint16 UNKNOWN=999
 
 builtin_interfaces/Duration total_elapsed_time

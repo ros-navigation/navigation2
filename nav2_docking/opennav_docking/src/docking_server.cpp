@@ -41,7 +41,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   params_ = param_handler_->getParams();
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
-  tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf2_buffer_ = nav2::create_transform_buffer(node);
 
   // Create odom subscriber for backward blind docking
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
@@ -51,13 +51,13 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   docking_action_server_ = node->create_action_server<DockRobot>(
     "dock_robot",
     std::bind(&DockingServer::dockRobot, this),
-    nullptr, std::chrono::milliseconds(500),
+    nullptr, nullptr, std::chrono::milliseconds(500),
     true);
 
   undocking_action_server_ = node->create_action_server<UndockRobot>(
     "undock_robot",
     std::bind(&DockingServer::undockRobot, this),
-    nullptr, std::chrono::milliseconds(500),
+    nullptr, nullptr, std::chrono::milliseconds(500),
     true);
 
   // Create composed utilities
@@ -80,7 +80,7 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
-  tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_, this, true);
+  tf2_listener_ = nav2::create_transform_listener(*tf2_buffer_, this, true);
   dock_db_->activate();
   navigator_->activate();
   vel_publisher_->on_activate();
@@ -285,18 +285,18 @@ void DockingServer::dockRobot()
             }
             result->success = true;
             result->num_retries = num_retries_;
-            stashDockData(goal->use_dock_id, dock, true);
             publishZeroVelocity();
             dock->plugin->stopDetectionProcess();
+            stashDockData(goal->use_dock_id, dock, true);
             docking_action_server_->succeeded_current(result);
             return;
           }
         }
 
         // Cancelled, preempted, or shutting down (recoverable errors throw DockingException)
-        stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
         dock->plugin->stopDetectionProcess();
+        stashDockData(goal->use_dock_id, dock, false);
         docking_action_server_->terminate_all(result);
         return;
       } catch (opennav_docking_core::DockingException & e) {
@@ -310,9 +310,9 @@ void DockingServer::dockRobot()
       // Reset to staging pose to try again
       if (!resetApproach(staging_pose, dock_backward)) {
         // Cancelled, preempted, or shutting down
-        stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
         dock->plugin->stopDetectionProcess();
+        stashDockData(goal->use_dock_id, dock, false);
         docking_action_server_->terminate_all(result);
         return;
       }
@@ -320,47 +320,49 @@ void DockingServer::dockRobot()
     }
   } catch (const tf2::TransformException & e) {
     result->error_msg = std::string("Transform error: ") + e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::UNKNOWN;
   } catch (opennav_docking_core::DockNotInDB & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::DOCK_NOT_IN_DB;
   } catch (opennav_docking_core::DockNotValid & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::DOCK_NOT_VALID;
   } catch (opennav_docking_core::FailedToStage & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::FAILED_TO_STAGE;
   } catch (opennav_docking_core::FailedToDetectDock & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::FAILED_TO_DETECT_DOCK;
   } catch (opennav_docking_core::FailedToControl & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::FAILED_TO_CONTROL;
   } catch (opennav_docking_core::FailedToCharge & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::FAILED_TO_CHARGE;
   } catch (opennav_docking_core::DockingException & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::UNKNOWN;
   } catch (std::exception & e) {
     result->error_code = DockRobot::Result::UNKNOWN;
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
   }
 
-  // Store dock state for later undocking and delete temp dock, if applicable
-  stashDockData(goal->use_dock_id, dock, false);
   result->num_retries = num_retries_;
   publishZeroVelocity();
-  dock->plugin->stopDetectionProcess();
+  if (dock) {
+    dock->plugin->stopDetectionProcess();
+  }
+  // Store dock state for later undocking and delete temp dock, if applicable
+  stashDockData(goal->use_dock_id, dock, false);
   docking_action_server_->terminate_current(result);
 }
 
@@ -378,11 +380,17 @@ void DockingServer::stashDockData(bool use_dock_id, Dock * dock, bool successful
 
 Dock * DockingServer::generateGoalDock(std::shared_ptr<const DockRobot::Goal> goal)
 {
+  auto plugin = dock_db_->findDockPlugin(goal->dock_type);
+  if (!plugin) {
+    throw opennav_docking_core::DockNotValid(
+      "Dock type '" + goal->dock_type + "' has no valid plugin!");
+  }
+
   auto dock = new Dock();
   dock->frame = goal->dock_pose.header.frame_id;
   dock->pose = goal->dock_pose.pose;
   dock->type = goal->dock_type;
-  dock->plugin = dock_db_->findDockPlugin(dock->type);
+  dock->plugin = plugin;
   return dock;
 }
 
@@ -745,23 +753,23 @@ void DockingServer::undockRobot()
     }
   } catch (const tf2::TransformException & e) {
     result->error_msg = std::string("Transform error: ") + e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::UNKNOWN;
   } catch (opennav_docking_core::DockNotValid & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::DOCK_NOT_VALID;
   } catch (opennav_docking_core::FailedToControl & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::FAILED_TO_CONTROL;
   } catch (opennav_docking_core::DockingException & e) {
     result->error_msg = e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::UNKNOWN;
   } catch (std::exception & e) {
     result->error_msg = std::string("Internal error: ") + e.what();
-    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
     result->error_code = DockRobot::Result::UNKNOWN;
   }
 

@@ -70,7 +70,9 @@ public:
 
   static void TearDownTestCase()
   {
-    transform_handler_->deactivate();
+    if (transform_handler_ && transform_handler_->isActive()) {
+      transform_handler_->deactivate();
+    }
 
     // Properly deactivate and cleanup the lifecycle node
     node_->deactivate();

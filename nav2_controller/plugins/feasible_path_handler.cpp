@@ -21,6 +21,7 @@
 #include "nav2_util/path_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_core/controller_exceptions.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 
 using rcl_interfaces::msg::ParameterType;
@@ -48,7 +49,7 @@ void FeasiblePathHandler::initialize(
   const rclcpp::Logger & logger,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-  std::shared_ptr<tf2_ros::Buffer> tf)
+  nav2::TransformBuffer::SharedPtr tf)
 {
   logger_ = logger;
   plugin_name_ = plugin_name;
@@ -181,14 +182,12 @@ nav2_core::PathSegment FeasiblePathHandler::findPlanSegment(
       return euclidean_distance(global_pose_, ps);
     });
 
-  // Make sure we always have at least 2 points on the transformed plan and that we don't prune
-  // the global plan below 2 points in order to have always enough point to interpolate the
-  // end of path direction
-  if (global_plan_up_to_constraint_.poses.begin() != closest_pose_upper_bound &&
-    global_plan_up_to_constraint_.poses.size() > 1 &&
-    closest_point == std::prev(closest_pose_upper_bound))
+  // Do not prune the global plan below 2 points, so there are enough points to interpolate the
+  // end-of-path direction.
+  if (global_plan_up_to_constraint_.poses.size() > 1 &&
+    closest_point == std::prev(global_plan_up_to_constraint_.poses.end()))
   {
-    closest_point = std::prev(std::prev(closest_pose_upper_bound));
+    closest_point = std::prev(closest_point);
   }
 
   auto pruned_plan_end =

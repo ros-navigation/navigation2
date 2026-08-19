@@ -44,6 +44,7 @@
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "../testing_helper.hpp"
 #include "sensor_msgs/msg/range.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using std::begin;
 using std::end;
@@ -128,7 +129,7 @@ public:
 
 protected:
   std::shared_ptr<TestLifecycleNode> node_;
-  tf2_ros::Buffer tf_;
+  nav2::TransformBuffer tf_;
 };
 
 // Test clearing at max range

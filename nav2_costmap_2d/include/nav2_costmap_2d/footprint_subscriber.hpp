@@ -15,12 +15,14 @@
 #ifndef NAV2_COSTMAP_2D__FOOTPRINT_SUBSCRIBER_HPP_
 #define NAV2_COSTMAP_2D__FOOTPRINT_SUBSCRIBER_HPP_
 
+#include <atomic>
 #include <string>
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_costmap_2d
@@ -40,7 +42,7 @@ public:
   explicit FootprintSubscriber(
     const NodeT & parent,
     const std::string & topic_name,
-    tf2_ros::Buffer & tf,
+    nav2::TransformBuffer & tf,
     std::string robot_base_frame = "base_link",
     double transform_tolerance = 0.1)
   : tf_(tf),
@@ -87,11 +89,15 @@ protected:
    */
   void footprint_callback(const geometry_msgs::msg::PolygonStamped::ConstSharedPtr & msg);
 
-  tf2_ros::Buffer & tf_;
+  nav2::TransformBuffer & tf_;
   std::string robot_base_frame_;
   double transform_tolerance_;
-  bool footprint_received_{false};
+  std::atomic_bool footprint_received_{false};
+#ifdef __cpp_lib_atomic_shared_ptr
+  std::atomic<geometry_msgs::msg::PolygonStamped::ConstSharedPtr> footprint_;
+#else
   geometry_msgs::msg::PolygonStamped::ConstSharedPtr footprint_;
+#endif
   nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_sub_;
 };
 

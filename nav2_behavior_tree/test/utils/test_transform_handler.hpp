@@ -29,9 +29,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals; // NOLINT
 using namespace std::chrono;  // NOLINT
@@ -47,19 +45,21 @@ public:
     base_transform_(nullptr),
     tf_broadcaster_(nullptr)
   {
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_buffer_ = nav2::create_transform_buffer(node_);
+    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
   }
 
-  ~TransformHandler()
+  virtual ~TransformHandler()
   {
     if (is_active_) {
       deactivate();
     }
+    tf_listener_.reset();
+    tf_buffer_.reset();
   }
 
   // Activate the tester before running tests
-  void activate()
+  virtual void activate(std::chrono::milliseconds tf_broadcast_period = 100ms)
   {
     if (is_active_) {
       throw std::runtime_error("Trying to activate while already active");
@@ -69,39 +69,45 @@ public:
     // Launch a thread to process the messages for this node
     spin_thread_ = std::make_unique<nav2::NodeThread>(node_->get_node_base_interface());
 
-    startRobotTransform();
+    if (tf_broadcast_period.count() > 0) {
+      startRobotTransform(tf_broadcast_period);
+    }
   }
 
-  void deactivate()
+  virtual void deactivate()
   {
     if (!is_active_) {
       throw std::runtime_error("Trying to deactivate while already inactive");
     }
     is_active_ = false;
+
+    if (transform_timer_) {
+      transform_timer_->cancel();
+      transform_timer_.reset();
+    }
+
     spin_thread_.reset();
     tf_broadcaster_.reset();
-    tf_buffer_.reset();
-    tf_listener_.reset();
   }
 
-  std::shared_ptr<tf2_ros::Buffer> getBuffer()
+  nav2::TransformBuffer::SharedPtr getBuffer() const
   {
     return tf_buffer_;
   }
 
-  void waitForTransform()
+  virtual void waitForTransform() const
   {
     if (is_active_) {
       while (!tf_buffer_->canTransform("map", "base_link", rclcpp::Time(0))) {
         std::this_thread::sleep_for(100ms);
       }
       RCLCPP_INFO(node_->get_logger(), "Transforms are available now!");
-      return;
+    } else {
+      throw std::runtime_error("Trying to wait for transform while inactive!");
     }
-    throw std::runtime_error("Trying to deactivate while already inactive");
   }
 
-  void updateRobotPose(const geometry_msgs::msg::Pose & pose)
+  virtual void updateRobotPose(const geometry_msgs::msg::Pose & pose)
   {
     // Update base transform to publish
     base_transform_->transform.translation.x = pose.position.x;
@@ -114,17 +120,19 @@ public:
     publishRobotTransform();
   }
 
-private:
+  bool isActive() const {return is_active_;}
+
+protected:
   void publishRobotTransform()
   {
     base_transform_->header.stamp = node_->now();
     tf_broadcaster_->sendTransform(*base_transform_);
   }
 
-  void startRobotTransform()
+  virtual void startRobotTransform(std::chrono::milliseconds tf_broadcast_period)
   {
     // Provide the robot pose transform
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+    tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
 
     if (!base_transform_) {
       base_transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();
@@ -141,7 +149,7 @@ private:
 
     // Publish the transform periodically
     transform_timer_ = node_->create_wall_timer(
-      100ms, std::bind(&TransformHandler::publishRobotTransform, this));
+      tf_broadcast_period, std::bind(&TransformHandler::publishRobotTransform, this));
   }
 
   nav2::LifecycleNode::SharedPtr node_;
@@ -155,9 +163,9 @@ private:
 
   // The tester must provide the robot pose through a transform
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
   rclcpp::TimerBase::SharedPtr transform_timer_;
 };
 

@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_util</name>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
   <description>Nav2 utilities</description>
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <maintainer email="mohammad.haghighipanah@intel.com">Mohammad Haghighipanah</maintainer>
@@ -13,6 +13,7 @@
 
   <build_depend>angles</build_depend>
   <build_depend>nav2_common</build_depend>
+  <build_export_depend>angles</build_export_depend>
 
   <depend>backward_ros</depend>
   <depend>bond</depend>

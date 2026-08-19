@@ -11,6 +11,8 @@ bool use_poses # Whether to use the poses or the IDs fields for request
 
 # Error codes
 uint16 NONE=0
+uint16 GOAL_REJECTED=1
+uint16 SEND_GOAL_FAILURE=2
 uint16 UNKNOWN=400
 uint16 TF_ERROR=401
 uint16 NO_VALID_GRAPH=402

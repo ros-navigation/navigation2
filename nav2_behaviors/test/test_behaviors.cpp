@@ -24,6 +24,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/dummy_behavior.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using nav2_behaviors::TimedBehavior;
 using nav2_behaviors::Status;
@@ -121,12 +122,8 @@ protected:
     std::string global_footprint_topic = node_lifecycle_->declare_or_get_parameter(
       "global_footprint_topic", std::string("global_costmap/published_footprint"));
 
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_lifecycle_->get_clock());
-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      node_lifecycle_->get_node_base_interface(),
-      node_lifecycle_->get_node_timers_interface());
-    tf_buffer_->setCreateTimerInterface(timer_interface);
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_buffer_ = nav2::create_transform_buffer(node_lifecycle_);
+    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_lifecycle_);
 
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> local_costmap_sub_ =
       std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
@@ -226,8 +223,8 @@ protected:
   std::shared_ptr<DummyBehavior> behavior_;
   std::shared_ptr<nav2::ActionClient<BehaviorAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<BehaviorAction>> goal_handle_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformListener::SharedPtr tf_listener_;
 };
 
 // Define the tests

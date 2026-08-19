@@ -2,7 +2,7 @@ ament_add_gtest_executable(test_localization_node
   test_localization_node.cpp
 )
 target_link_libraries(test_localization_node
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   rclcpp::rclcpp
   nav2_ros_common::nav2_ros_common
 )

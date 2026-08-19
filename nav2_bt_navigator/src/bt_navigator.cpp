@@ -49,12 +49,9 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    get_node_base_interface(), get_node_timers_interface());
-  tf_->setCreateTimerInterface(timer_interface);
+  tf_ = nav2::create_transform_buffer(this);
   tf_->setUsingDedicatedThread(true);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, true);
+  tf_listener_ = nav2::create_transform_listener(*tf_, this, true);
 
   global_frame_ = this->declare_or_get_parameter("global_frame", std::string("map"));
   robot_frame_ = this->declare_or_get_parameter("robot_base_frame", std::string("base_link"));

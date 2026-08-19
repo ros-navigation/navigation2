@@ -19,17 +19,21 @@
 #include <functional>
 
 #include "tf2/transform_datatypes.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/validate_messages.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
 {
 
+constexpr size_t MAX_RANGE_DATA_POINTS = 1e4;
+
 Range::Range(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const nav2::TransformBuffer::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
@@ -49,9 +53,11 @@ Range::~Range()
   data_sub_.reset();
 }
 
-void Range::configure()
+bool Range::configure()
 {
-  Source::configure();
+  if (!Source::configure()) {
+    return false;
+  }
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -65,9 +71,11 @@ void Range::configure()
     source_topic,
     std::bind(&Range::dataCallback, this, std::placeholders::_1),
     nav2::qos::SensorDataQoS());
+
+  return true;
 }
 
-bool Range::getData(
+bool Range::getSourceData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {
@@ -86,6 +94,16 @@ bool Range::getData(
       logger_,
       "[%s]: Data range %fm is out of {%f..%f} sensor span. Ignoring...",
       source_name_.c_str(), data_->range, data_->min_range, data_->max_range);
+    return false;
+  }
+
+  const size_t point_count = static_cast<size_t>(
+    std::ceil(static_cast<double>(data_->field_of_view) / obstacles_angle_)) + 1;
+  if (point_count > MAX_RANGE_DATA_POINTS) {
+    RCLCPP_ERROR(
+      logger_,
+      "[%s]: Range data would generate %zu points, exceeding the limit of %zu. Ignoring...",
+      source_name_.c_str(), point_count, MAX_RANGE_DATA_POINTS);
     return false;
   }
 
@@ -139,10 +157,23 @@ void Range::getParameters(std::string & source_topic)
 
   obstacles_angle_ = node->declare_or_get_parameter(
     source_name_ + ".obstacles_angle", M_PI / 180);
+
+  if (!std::isfinite(obstacles_angle_) || obstacles_angle_ <= 0.0) {
+    throw std::runtime_error{
+            "Range source " + source_name_ + " has invalid obstacles_angle parameter"};
+  }
 }
 
 void Range::dataCallback(sensor_msgs::msg::Range::ConstSharedPtr msg)
 {
+  if (!nav2::validateMsg(*msg)) {
+    RCLCPP_ERROR(
+      logger_,
+      "[%s]: Malformed range message. Rejecting...",
+      source_name_.c_str());
+    return;
+  }
+
   data_ = msg;
 }
 

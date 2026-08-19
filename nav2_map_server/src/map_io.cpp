@@ -30,6 +30,8 @@
  */
 
 #include "nav2_map_server/map_io.hpp"
+#include "nav2_ros_common/validate_messages.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 #ifndef _WIN32
 #include <libgen.h>
@@ -91,7 +93,7 @@ char * dirname(char * path)
     /* This assignment is ill-designed but the XPG specs require to
        return a string containing "." in any case no directory part is
        found and so a static and constant string is required.  */
-    path = reinterpret_cast<char *>(dot);
+    path = const_cast<char *>(dot);
   }
 
   return path;
@@ -636,6 +638,13 @@ bool saveMapToFile(
   const nav_msgs::msg::OccupancyGrid & map,
   const SaveParameters & save_parameters)
 {
+  if (!nav2::validateMsg(map)) {
+    RCLCPP_ERROR_STREAM(
+      rclcpp::get_logger("map_io"),
+      "Failed to write map for reason: invalid OccupancyGrid message");
+    return false;
+  }
+
   // Local copy of SaveParameters that might be modified by checkSaveParameters()
   SaveParameters save_parameters_loc = save_parameters;
 

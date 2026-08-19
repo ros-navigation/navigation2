@@ -24,6 +24,7 @@
 #include <iomanip>
 
 #include "wait_behavior_tester.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
@@ -40,8 +41,8 @@ WaitBehaviorTester::WaitBehaviorTester()
     rclcpp::NodeOptions().parameter_overrides(
       {rclcpp::Parameter("use_sim_time", true)}));
 
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_buffer_ = nav2::create_transform_buffer(node_);
+  tf_listener_ = nav2::create_transform_listener(*tf_buffer_);
 
   client_ptr_ = rclcpp_action::create_client<Wait>(
     node_->get_node_base_interface(),

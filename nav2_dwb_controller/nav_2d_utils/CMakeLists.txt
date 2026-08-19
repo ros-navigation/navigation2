@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav_2d_utils)
 
 find_package(ament_cmake REQUIRED)
@@ -27,9 +27,9 @@ target_include_directories(conversions
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(conversions PUBLIC
-  ${geometry_msgs_TARGETS}
-  ${nav_2d_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
+  nav_2d_msgs::nav_2d_msgs
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   tf2::tf2
   nav2_ros_common::nav2_ros_common
@@ -47,13 +47,13 @@ target_include_directories(path_ops
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(path_ops PUBLIC
-  ${nav_2d_msgs_TARGETS}
+  nav_2d_msgs::nav_2d_msgs
   rclcpp::rclcpp
   nav2_ros_common::nav2_ros_common
   nav2_util::nav2_util_core
 )
 target_link_libraries(path_ops PRIVATE
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
 )
 
 install(TARGETS conversions path_ops

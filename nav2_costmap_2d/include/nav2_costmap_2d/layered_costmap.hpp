@@ -190,7 +190,11 @@ public:
   /** @brief Returns the latest footprint stored with setFootprint(). */
   const std::vector<geometry_msgs::msg::Point> & getFootprint()
   {
+#ifdef __cpp_lib_atomic_shared_ptr
+    return *footprint_.load();
+#else
     return *std::atomic_load(&footprint_);
+#endif
   }
 
   /** @brief The radius of a circle centered at the origin of the
@@ -231,7 +235,11 @@ private:
   bool initialized_;
   bool size_locked_;
   std::atomic<double> circumscribed_radius_, inscribed_radius_;
+#ifdef __cpp_lib_atomic_shared_ptr
+  std::atomic<std::shared_ptr<std::vector<geometry_msgs::msg::Point>>> footprint_;
+#else
   std::shared_ptr<std::vector<geometry_msgs::msg::Point>> footprint_;
+#endif
 };
 
 }  // namespace nav2_costmap_2d

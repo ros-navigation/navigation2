@@ -19,6 +19,8 @@
 #include <stdexcept>
 
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 namespace nav2_util
 {
 
@@ -85,7 +87,7 @@ PathSearchResult distance_from_path(
 bool transformPathInTargetFrame(
   const nav_msgs::msg::Path & input_path,
   nav_msgs::msg::Path & transformed_path,
-  tf2_ros::Buffer & tf_buffer, const std::string target_frame,
+  nav2::TransformBuffer & tf_buffer, const std::string target_frame,
   const double transform_timeout)
 {
   static rclcpp::Logger logger = rclcpp::get_logger("transformPathInTargetFrame");
@@ -99,22 +101,31 @@ bool transformPathInTargetFrame(
   transformed_path.header.stamp = input_path.header.stamp;
   transformed_path.poses.reserve(input_path.poses.size());
 
+  if (input_path.poses.empty()) {
+    return true;
+  }
+
+  geometry_msgs::msg::TransformStamped transform;
+  try {
+    transform = tf_buffer.lookupTransform(
+      target_frame, input_path.header.frame_id,
+      tf2_ros::fromMsg(input_path.header.stamp),
+      tf2::durationFromSec(transform_timeout));
+  } catch (const tf2::TransformException & ex) {
+    RCLCPP_ERROR(
+      logger,
+      "Failed to transform path from '%s' to '%s': %s",
+      input_path.header.frame_id.c_str(), target_frame.c_str(), ex.what());
+    return false;
+  }
+
   for (const auto & input_pose : input_path.poses) {
     geometry_msgs::msg::PoseStamped source_pose, transformed_pose;
     source_pose.header.frame_id = input_path.header.frame_id;
     source_pose.header.stamp = input_path.header.stamp;
     source_pose.pose = input_pose.pose;
 
-    if (!nav2_util::transformPoseInTargetFrame(
-          source_pose, transformed_pose, tf_buffer, target_frame, transform_timeout))
-    {
-      RCLCPP_ERROR(
-        logger,
-        "Failed to transform path from '%s' to '%s'.",
-        input_path.header.frame_id.c_str(), target_frame.c_str());
-      return false;
-    }
-
+    tf2::doTransform(source_pose, transformed_pose, transform);
     transformed_pose.pose.position.z = 0.0;
     transformed_path.poses.push_back(std::move(transformed_pose));
   }

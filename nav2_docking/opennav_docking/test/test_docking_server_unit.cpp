@@ -20,6 +20,7 @@
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "opennav_docking/docking_server.hpp"
 #include "nav2_ros_common/node_thread.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 // Testing unit functions in docking server, smoke/system tests in python file
 
@@ -52,7 +53,7 @@ class DockingServerTFShim : public DockingServerShim
 public:
   DockingServerTFShim()
   : DockingServerShim() {}
-  std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf2_buffer_;}
+  nav2::TransformBuffer::SharedPtr getTfBuffer() {return tf2_buffer_;}
 };
 
 TEST(DockingServerTests, ObjectLifecycle)
@@ -184,7 +185,6 @@ TEST(DockingServerTests, testErrorExceptions)
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
-  node.reset();
 }
 
 TEST(DockingServerTests, getateGoalDock)
@@ -214,6 +214,47 @@ TEST(DockingServerTests, getateGoalDock)
   EXPECT_NE(dock->plugin, nullptr);
   EXPECT_EQ(dock->frame, std::string());
   node->stashDockData(false, dock, true);
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node->on_shutdown(rclcpp_lifecycle::State());
+  node.reset();
+}
+
+TEST(DockingServerTests, generateGoalDockNoPlugin)
+{
+  auto node = std::make_shared<opennav_docking::DockingServer>();
+
+  node->declare_parameter(
+    "docks",
+    rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
+  node->declare_parameter(
+    "test_dock.type",
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
+  node->declare_parameter(
+    "test_dock.pose",
+    rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  node->declare_parameter(
+    "dock_plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin", "dock_plugin2"}));
+  node->declare_parameter(
+    "dock_plugin.plugin",
+    rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+  node->declare_parameter(
+    "dock_plugin2.plugin",
+    rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+
+  node->on_configure(rclcpp_lifecycle::State());
+
+  // Empty dock_type with >1 plugin registered: findDockPlugin returns nullptr
+  auto empty_type_goal = std::make_shared<const DockRobot::Goal>();
+  EXPECT_THROW(
+    node->generateGoalDock(empty_type_goal), opennav_docking_core::DockNotValid);
+
+  // Unknown dock_type: findDockPlugin returns nullptr
+  auto unknown_goal = std::make_shared<DockRobot::Goal>();
+  unknown_goal->dock_type = "not_a_registered_dock_type";
+  EXPECT_THROW(
+    node->generateGoalDock(unknown_goal), opennav_docking_core::DockNotValid);
+
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
   node.reset();

@@ -147,7 +147,8 @@ static Counts& counts() {
 #        pragma intrinsic(ROBIN_HOOD(BITSCANFORWARD))
 #        define ROBIN_HOOD_COUNT_TRAILING_ZEROES(x)                                       \
             [](size_t mask) noexcept -> int {                                             \
-                unsigned long index;                                                      \  // NOLINT
+                /* NOLINTNEXTLINE(runtime/int) */                                        \
+                unsigned long index;                                                      \
                 return ROBIN_HOOD(BITSCANFORWARD)(&index, mask) ? static_cast<int>(index) \
                                                                 : ROBIN_HOOD(BITNESS);    \
             }(x)

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(nav2_lifecycle_manager)
 
 find_package(ament_cmake REQUIRED)
@@ -36,11 +36,11 @@ target_link_libraries(${library_name} PUBLIC
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
-  ${std_srvs_TARGETS}
+  std_srvs::std_srvs
 )
 target_link_libraries(${library_name} PRIVATE
-  ${diagnostic_msgs_TARGETS}
-  ${lifecycle_msgs_TARGETS}
+  diagnostic_msgs::diagnostic_msgs
+  lifecycle_msgs::lifecycle_msgs
   rclcpp_components::component
 )
 

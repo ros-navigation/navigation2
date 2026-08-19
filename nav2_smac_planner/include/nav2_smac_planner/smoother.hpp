@@ -23,6 +23,8 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "ompl/base/StateSpace.h"
+#include "geometry_msgs/msg/point.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
 namespace nav2_smac_planner
 {
@@ -97,7 +99,9 @@ public:
   bool smooth(
     nav_msgs::msg::Path & path,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time);
+    const double & max_time,
+    const std::vector<geometry_msgs::msg::Point> & footprint =
+    std::vector<geometry_msgs::msg::Point>());
 
 protected:
   /**
@@ -112,7 +116,8 @@ protected:
     nav_msgs::msg::Path & path,
     bool & reversing_segment,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time);
+    const double & max_time,
+    const std::vector<geometry_msgs::msg::Point> & footprint);
 
   /**
    * @brief Get the field value for a given dimension
@@ -201,6 +206,8 @@ protected:
   bool is_holonomic_, do_refinement_;
   MotionModel motion_model_;
   ompl::base::StateSpacePtr state_space_;
+  nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
+  footprint_checker_;
 };
 
 }  // namespace nav2_smac_planner

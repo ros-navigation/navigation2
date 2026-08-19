@@ -27,6 +27,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "behaviortree_cpp/action_node.h"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -77,7 +78,7 @@ private:
   BT::NodeStatus tick() override;
 
   std::string global_frame_, robot_base_frame_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  nav2::TransformBuffer::SharedPtr tf_;
   double transform_tolerance_{0.1};
 };
 

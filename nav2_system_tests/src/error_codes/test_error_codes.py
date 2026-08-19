@@ -55,9 +55,13 @@ def main(argv=sys.argv[1:]):
     path.poses.append(goal_pose1)
 
     navigator._waitForNodeToActivate('controller_server')
+
+    # Test that invalid controller name is rejected at goal acceptance
+    success = navigator.followPath(path, 'invalid_controller')
+    assert success is None, 'Follow path with invalid controller should be rejected'
+
     follow_path = {
         'unknown': FollowPath.Result().UNKNOWN,
-        'invalid_controller': FollowPath.Result().INVALID_CONTROLLER,
         'tf_error': FollowPath.Result().TF_ERROR,
         'invalid_path': FollowPath.Result().INVALID_PATH,
         'patience_exceeded': FollowPath.Result().PATIENCE_EXCEEDED,
@@ -93,9 +97,15 @@ def main(argv=sys.argv[1:]):
     goal_pose.pose.orientation.w = 1.0
 
     navigator._waitForNodeToActivate('planner_server')
+
+    # Test that invalid planner name is rejected at goal acceptance
+    result = navigator._getPathImpl(initial_pose, goal_pose, 'invalid_planner')
+    assert (
+        result.error_msg != ''
+    ), 'Compute path to pose rejection error_msg is empty'
+
     compute_path_to_pose = {
         'unknown': ComputePathToPose.Result().UNKNOWN,
-        'invalid_planner': ComputePathToPose.Result().INVALID_PLANNER,
         'tf_error': ComputePathToPose.Result().TF_ERROR,
         'start_outside_map': ComputePathToPose.Result().START_OUTSIDE_MAP,
         'goal_outside_map': ComputePathToPose.Result().GOAL_OUTSIDE_MAP,
@@ -129,9 +139,14 @@ def main(argv=sys.argv[1:]):
     goal_pose1 = goal_pose
     goal_poses = [goal_pose, goal_pose1]
 
+    # Test that invalid planner name is rejected at goal acceptance
+    result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, 'invalid_planner')
+    assert (
+        result.error_msg != ''
+    ), 'Compute path through poses rejection error_msg is empty'
+
     compute_path_through_poses = {
         'unknown': ComputePathThroughPoses.Result().UNKNOWN,
-        'invalid_planner': ComputePathThroughPoses.Result().INVALID_PLANNER,
         'tf_error': ComputePathThroughPoses.Result().TF_ERROR,
         'start_outside_map': ComputePathThroughPoses.Result().START_OUTSIDE_MAP,
         'goal_outside_map': ComputePathThroughPoses.Result().GOAL_OUTSIDE_MAP,
@@ -175,8 +190,12 @@ def main(argv=sys.argv[1:]):
     a_path.poses.append(pose1)
 
     navigator._waitForNodeToActivate('smoother_server')
+
+    # Test that invalid smoother name is rejected at goal acceptance
+    result = navigator._smoothPathImpl(a_path, 'invalid_smoother')
+    assert result.error_msg != '', 'Smoother rejection error_msg is empty'
+
     smoother_errors = {
-        'invalid_smoother': SmoothPath.Result().INVALID_SMOOTHER,
         'unknown': SmoothPath.Result().UNKNOWN,
         'timeout': SmoothPath.Result().TIMEOUT,
         'smoothed_path_in_collision': SmoothPath.Result().SMOOTHED_PATH_IN_COLLISION,

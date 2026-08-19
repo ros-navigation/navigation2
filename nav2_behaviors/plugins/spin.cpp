@@ -63,7 +63,7 @@ ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
       transform_tolerance_))
   {
     std::string error_msg = "Current robot pose is not available.";
-    RCLCPP_ERROR(logger_, error_msg.c_str());
+    RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
   }
 
@@ -88,7 +88,7 @@ ResultStatus Spin::onCycleUpdate()
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
     stopRobot();
     std::string error_msg = "Exceeded time allowance before reaching the Spin goal - Exiting Spin";
-    RCLCPP_WARN(logger_, error_msg.c_str());
+    RCLCPP_WARN(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TIMEOUT, error_msg};
   }
 
@@ -98,7 +98,7 @@ ResultStatus Spin::onCycleUpdate()
       transform_tolerance_))
   {
     std::string error_msg = "Current robot pose is not available.";
-    RCLCPP_ERROR(logger_, error_msg.c_str());
+    RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
   }
 
@@ -134,7 +134,7 @@ ResultStatus Spin::onCycleUpdate()
   if (!isCollisionFree(relative_yaw_, cmd_vel->twist, pose)) {
     stopRobot();
     std::string error_msg = "Collision Ahead - Exiting Spin";
-    RCLCPP_WARN(logger_, error_msg.c_str());
+    RCLCPP_WARN(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::COLLISION_AHEAD, error_msg};
   }
 

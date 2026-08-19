@@ -35,7 +35,7 @@
 #include "opennav_docking/navigator.hpp"
 #include "opennav_docking/parameter_handler.hpp"
 #include "opennav_docking_core/charging_dock.hpp"
-#include "tf2_ros/transform_listener.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace opennav_docking
 {
@@ -76,6 +76,7 @@ public:
    * @brief Generate a dock from action goal
    * @param goal Action goal
    * @return Raw dock pointer to manage;
+   * @throw DockNotValid if the goal's dock type resolves to no plugin
    */
   Dock * generateGoalDock(std::shared_ptr<const DockRobot::Goal> goal);
 
@@ -242,8 +243,8 @@ protected:
   std::unique_ptr<Controller> controller_;
   std::string curr_dock_type_;
 
-  std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
-  std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
+  nav2::TransformBuffer::SharedPtr tf2_buffer_;
+  nav2::TransformListener::SharedPtr tf2_listener_;
 };
 
 }  // namespace opennav_docking

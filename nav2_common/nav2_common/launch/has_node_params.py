@@ -52,8 +52,9 @@ class HasNodeParams(launch.Substitution):
 
     def perform(self, context: launch.LaunchContext) -> str:
         yaml_filename = launch.utilities.perform_substitutions(context, self.name)
-        data = yaml.safe_load(open(yaml_filename))
+        with open(yaml_filename, 'r') as yaml_file:
+            data = yaml.safe_load(yaml_file)
 
-        if self.__node_name in data.keys():
+        if isinstance(data, dict) and self.__node_name in data.keys():
             return 'True'
         return 'False'

@@ -199,6 +199,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     action_server_ = create_action_server<Action>(
       "follow_path",
       std::bind(&ControllerServer::computeControl, this),
+      std::bind(&ControllerServer::goalReceived, this, std::placeholders::_1),
       nullptr,
       std::chrono::milliseconds(500),
       true /*spin thread*/, params_->use_realtime_priority /*soft realtime*/);
@@ -445,6 +446,48 @@ bool ControllerServer::findPathHandlerId(
   return true;
 }
 
+bool ControllerServer::goalReceived(std::shared_ptr<const Action::Goal> goal)
+{
+  std::string current_controller;
+  if (!findControllerId(goal->controller_id, current_controller)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Requested controller %s is not available.", goal->controller_id.c_str());
+    return false;
+  }
+
+  std::string current_goal_checker;
+  if (!findGoalCheckerId(goal->goal_checker_id, current_goal_checker)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Requested goal checker %s is not available.", goal->goal_checker_id.c_str());
+    return false;
+  }
+
+  std::string current_progress_checker;
+  if (!findProgressCheckerId(goal->progress_checker_id, current_progress_checker)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Requested progress checker %s is not available.", goal->progress_checker_id.c_str());
+    return false;
+  }
+
+  std::string current_path_handler;
+  if (!findPathHandlerId(goal->path_handler_id, current_path_handler)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Requested path handler %s is not available.", goal->path_handler_id.c_str());
+    return false;
+  }
+
+  if (goal->path.poses.empty()) {
+    RCLCPP_WARN(get_logger(), "Requested path to follow is empty.");
+    return false;
+  }
+
+  return true;
+}
+
 void ControllerServer::computeControl()
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
@@ -521,12 +564,12 @@ void ControllerServer::computeControl()
 
       updateGlobalPath();
 
-      computeAndPublishVelocity();
-
       if (isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
         break;
       }
+
+      computeAndPublishVelocity();
 
       auto cycle_duration = this->now() - start_time;
       if (!loop_rate.sleep()) {
@@ -731,16 +774,6 @@ void ControllerServer::computeAndPublishVelocity()
 
   nav2_msgs::msg::TrackingFeedback current_tracking_feedback;
 
-  // Use the current robot pose's timestamp for the transformation
-  end_pose_.header.stamp = pose.header.stamp;
-
-  if (!nav2_util::transformPoseInTargetFrame(
-      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
-      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
-  {
-    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
-  }
-
   if (current_path_.poses.size() >= 2) {
     double current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
       pose, transformed_end_pose_);
@@ -911,6 +944,14 @@ bool ControllerServer::isGoalReached()
 
   if (!getRobotPose(pose)) {
     return false;
+  }
+
+  end_pose_.header.stamp = pose.header.stamp;
+  if (!nav2_util::transformPoseInTargetFrame(
+      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
+      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
+  {
+    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
   }
 
   geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());

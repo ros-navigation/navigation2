@@ -6,6 +6,9 @@
     <class type="nav2_costmap_2d::LegacyInflationLayer"  base_class_type="nav2_costmap_2d::Layer">
       <description>Legacy inflation layer using traditional CellData-based algorithm (original Navigation2 implementation).</description>
     </class>
+    <class type="nav2_costmap_2d::AsymmetricInflationLayer" base_class_type="nav2_costmap_2d::Layer">
+      <description>OpenMP-accelerated inflation layer creating an asymmetric costmap based on the global path.</description>
+    </class>
     <class type="nav2_costmap_2d::ObstacleLayer"   base_class_type="nav2_costmap_2d::Layer">
       <description>Listens to laser scan and point cloud messages and marks and clears grid cells.</description>
     </class>
@@ -35,6 +38,9 @@
     </class>
     <class type="nav2_costmap_2d::BinaryFilter"    base_class_type="nav2_costmap_2d::Layer">
       <description>Binary flip filter.</description>
+    </class>
+    <class type="nav2_costmap_2d::ZoneParameterFilter" base_class_type="nav2_costmap_2d::Layer">
+      <description>Applies a configured set of ROS parameters based on the mask value at the robot's pose.</description>
     </class>
   </library>
 </class_libraries>

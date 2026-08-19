@@ -16,18 +16,16 @@
 #include <cmath>
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "gtest/gtest.h"
-#include "tf2_ros/create_timer_ros.hpp"
 
 TEST(RobotUtils, LookupExceptionError)
 {
   rclcpp::init(0, nullptr);
   auto node = std::make_shared<nav2::LifecycleNode>("name");
   geometry_msgs::msg::PoseStamped global_pose;
-  tf2_ros::Buffer tf(node->get_clock());
+  nav2::TransformBuffer tf(node->get_clock());
   ASSERT_FALSE(nav2_util::getCurrentPose(global_pose, tf, "map", "base_link", 0.1));
   global_pose.header.frame_id = "base_link";
   ASSERT_FALSE(nav2_util::transformPoseInTargetFrame(global_pose, global_pose, tf, "map", 0.1));

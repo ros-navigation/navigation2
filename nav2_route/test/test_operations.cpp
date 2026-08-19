@@ -28,13 +28,6 @@
 #include "nav2_route/types.hpp"
 #include "nav2_core/route_exceptions.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route;  // NOLINT
 
@@ -136,7 +129,7 @@ TEST(OperationsManagerTest, test_processing_speed_on_status)
   nav2_msgs::msg::SpeedLimit my_msg;
   auto sub = node->create_subscription<nav2_msgs::msg::SpeedLimit>(
     "speed_limit",
-    [&, this](nav2_msgs::msg::SpeedLimit msg) {got_msg = true; my_msg = msg;});
+    [&](nav2_msgs::msg::SpeedLimit msg) {got_msg = true; my_msg = msg;});
 
   Node node2;
   DirectionalEdge enter;
@@ -567,4 +560,13 @@ TEST(OperationsTest, test_interface)
 {
   TestRouteOperations op;
   EXPECT_EQ(op.processType(), nav2_route::RouteOperationType::ON_GRAPH);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

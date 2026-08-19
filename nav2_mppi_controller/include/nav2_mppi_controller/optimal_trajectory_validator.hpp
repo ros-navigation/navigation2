@@ -21,7 +21,7 @@
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -73,7 +73,7 @@ public:
     const std::string & name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap,
     ParametersHandler * param_handler,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const nav2::TransformBuffer::SharedPtr tf_buffer,
     const models::OptimizerSettings & settings)
   {
     param_handler_ = param_handler;
@@ -162,7 +162,7 @@ protected:
   std::string name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   ParametersHandler * param_handler_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::TransformBuffer::SharedPtr tf_buffer_;
   float collision_lookahead_time_{1.0f};
   unsigned int traj_samples_to_evaluate_{0u};
   bool consider_footprint_{false};
