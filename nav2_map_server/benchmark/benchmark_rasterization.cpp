@@ -357,9 +357,9 @@ static std::vector<std::pair<double, double>> makePolygon(
     double r2 = r * 0.4;
     pts = {
       {cx - r, cy - r2},
-      {cx,     cy - r},
+      {cx, cy - r},
       {cx + r, cy},
-      {cx,     cy + r},
+      {cx, cy + r},
       {cx - r, cy + r2},
       {cx - r2, cy}
     };
@@ -422,7 +422,7 @@ int main()
 {
   const int ITER = 300;
   const std::pair<unsigned int, double> GRID_SIZES[] = {
-    {500,  0.85},
+    {500, 0.85},
     {2000, 0.85}
   };
   // shape 0=square, 1=triangle, 2=hexagon, 3=concave, 4=complex
@@ -474,8 +474,10 @@ int main()
       // OPENCV
       std::vector<cv::Point> cv_pts;
       for (auto & p : pts) {
-        cv_pts.push_back(cv::Point(static_cast<int>(p.first),
-          static_cast<int>(p.second)));
+        cv_pts.push_back(
+          cv::Point(
+            static_cast<int>(p.first),
+            static_cast<int>(p.second)));
       }
       std::vector<std::vector<cv::Point>> contours = {cv_pts};
       cv::Mat mat(sz, sz, CV_8SC1, cv::Scalar(0));
