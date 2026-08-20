@@ -46,7 +46,7 @@ public:
   {
     // Block until server is up
     rclcpp::Rate r(20);
-    while (!get_state_.wait_for_service(2s)) {
+    while (rclcpp::ok() && !get_state_.wait_for_service(2s)) {
       RCLCPP_INFO(
         parent_node->get_logger(),
         "Waiting for service %s...", get_state_.getServiceName().c_str());
