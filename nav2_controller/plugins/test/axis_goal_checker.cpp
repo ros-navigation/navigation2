@@ -124,6 +124,7 @@ TEST(AxisGoalChecker, dynamic_parameters)
     {rclcpp::Parameter("test.along_path_tolerance", 0.5),
       rclcpp::Parameter("test.cross_track_tolerance", 0.3),
       rclcpp::Parameter("test.path_length_tolerance", 2.0),
+      rclcpp::Parameter("test.direction_estimation_distance", 0.3),
       rclcpp::Parameter("test.is_overshoot_valid", true)});
 
   rclcpp::spin_until_future_complete(
@@ -133,6 +134,7 @@ TEST(AxisGoalChecker, dynamic_parameters)
   EXPECT_EQ(node->get_parameter("test.along_path_tolerance").as_double(), 0.5);
   EXPECT_EQ(node->get_parameter("test.cross_track_tolerance").as_double(), 0.3);
   EXPECT_EQ(node->get_parameter("test.path_length_tolerance").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.direction_estimation_distance").as_double(), 0.3);
   EXPECT_EQ(node->get_parameter("test.is_overshoot_valid").as_bool(), true);
 
   // Test that tolerances are updated
@@ -163,6 +165,25 @@ TEST(AxisGoalChecker, dynamic_parameters)
 
   // Value should remain unchanged
   EXPECT_EQ(node->get_parameter("test.cross_track_tolerance").as_double(), 0.3);
+
+  // direction_estimation_distance must be > 0 and < path_length_tolerance (2.0)
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.direction_estimation_distance", 5.0)});
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  // Value should remain unchanged (5.0 >= path_length_tolerance)
+  EXPECT_EQ(node->get_parameter("test.direction_estimation_distance").as_double(), 0.3);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.direction_estimation_distance", 0.0)});
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  // Value should remain unchanged (0.0 is not > 0)
+  EXPECT_EQ(node->get_parameter("test.direction_estimation_distance").as_double(), 0.3);
 }
 
 TEST(AxisGoalChecker, single_point_path)
@@ -194,7 +215,7 @@ TEST(AxisGoalChecker, single_point_path)
   query_pose.position.y = 0.0;
   EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, path));
 
-  // Robot outside combined tolerance (hypot(0.25, 0.25) ≈ 0.354)
+  // Robot outside fallback tolerance (min(0.25, 0.25) = 0.25)
   query_pose.position.x = 0.36;
   query_pose.position.y = 0.0;
   EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, path));
@@ -637,8 +658,8 @@ TEST(AxisGoalChecker, multiple_consecutive_poses_too_close_to_goal)
     {2.0, 0.0}                 // Goal position (identical)
   });
 
-  // Robot within tolerance - should use the valid pose at (2.0-0.001, 0.0)
-  // to determine path direction
+  // Robot within tolerance - should use the valid pose further back (1.8, 0.0) to determine
+  // path direction, since the near-goal poses are within direction_estimation_distance
   query_pose.position.x = 1.85;
   query_pose.position.y = 0.0;
   EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, path_with_close_poses));
@@ -659,19 +680,20 @@ TEST(AxisGoalChecker, multiple_consecutive_poses_too_close_to_goal)
     {2.0, 0.0}
   });
 
-  // Robot within combined tolerance should succeed (fallback to distance check)
-  query_pose.position.x = 2.0 + 0.2;
-  query_pose.position.y = 0.15;
-  double combined_tolerance = std::hypot(0.25, 0.25);
-  double distance = std::hypot(0.2, 0.15);
-  EXPECT_LT(distance, combined_tolerance);  // Verify we're within tolerance
+  // Robot within the fallback tolerance should succeed (fallback to distance check).
+  // The fallback uses the stricter min of the two tolerances.
+  query_pose.position.x = 2.0 + 0.1;
+  query_pose.position.y = 0.1;
+  double fallback_tolerance = std::min(0.25, 0.25);
+  double distance = std::hypot(0.1, 0.1);
+  EXPECT_LT(distance, fallback_tolerance);  // Verify we're within tolerance
   EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, path_all_close));
 
-  // Robot outside combined tolerance should fail
-  query_pose.position.x = 2.0 + 0.3;
-  query_pose.position.y = 0.3;
-  distance = std::hypot(0.3, 0.3);
-  EXPECT_GT(distance, combined_tolerance);  // Verify we're outside tolerance
+  // Robot outside the fallback tolerance should fail
+  query_pose.position.x = 2.0 + 0.2;
+  query_pose.position.y = 0.2;
+  distance = std::hypot(0.2, 0.2);
+  EXPECT_GT(distance, fallback_tolerance);  // Verify we're outside tolerance
   EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, path_all_close));
 }
 
