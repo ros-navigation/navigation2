@@ -13,11 +13,11 @@
 // limitations under the License.
 
 #include "nav2_rviz_plugins/route_tool.hpp"
-#include <cinttypes>
-#include <QDesktopServices>
-#include <QUrl>
 #include <sys/types.h>
+#include <QDesktopServices>
 #include <QFileDialog>
+#include <QUrl>
+#include <cinttypes>
 #include "rviz_common/display_context.hpp"
 
 

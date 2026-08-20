@@ -354,7 +354,7 @@ navigation without converting it to GeoJSON.
 In most cases you would export OSM for a particular area and remove any unnecessary features first.
 
 Unlike GeoJSON, OSM does not list edges explicitly: a `<way>` is a polyline of ordered `<nd ref>`
-node references, and two ways are connected only where they share a node id. 
+node references, and two ways are connected only where they share a node id.
 
 For example:
 

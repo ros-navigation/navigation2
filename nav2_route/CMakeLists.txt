@@ -194,8 +194,8 @@ target_link_libraries(graph_file_loaders PUBLIC
   nlohmann_json::nlohmann_json
   tinyxml2::tinyxml2
   ${geographic_msgs_TARGETS}
+  ${robot_localization_TARGETS}
 )
-ament_target_dependencies(graph_file_loaders PUBLIC robot_localization)
 target_link_libraries(graph_file_loaders PRIVATE
   lifecycle_msgs::lifecycle_msgs
   rclcpp_components::component

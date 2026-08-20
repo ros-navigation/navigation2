@@ -208,8 +208,8 @@ TEST(OsmGraphFileLoader, add_nodes_preserve_osm_ids_and_coords)
   EXPECT_EQ(graph[0].coords.frame_id, "map");
   EXPECT_EQ(graph_to_id_map[10], 0u);  // OSM id -> graph index
   EXPECT_EQ(graph_to_id_map[14], 2u);
-  // Round-trip: an OSM id resolves back to the node that carries it, which is
-  // what lets a route be requested by original OSM node id.
+  // Round-trip: an OSM id resolves back to the node that carries it, so a route
+  // can be requested by original OSM node id.
   EXPECT_EQ(graph[graph_to_id_map[12]].nodeid, 12u);
 }
 
