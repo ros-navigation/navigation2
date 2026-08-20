@@ -33,6 +33,12 @@
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
+class SavitzkyGolaySmootherTester : public nav2_smoother::SavitzkyGolaySmoother
+{
+public:
+  const Eigen::VectorXd & coefficients() const {return sg_coeffs_;}
+};
+
 TEST(SmootherTest, test_sg_smoother_basics)
 {
   nav2::LifecycleNode::SharedPtr node =
@@ -104,6 +110,29 @@ TEST(SmootherTest, test_sg_smoother_basics)
 
   smoother->deactivate();
   smoother->cleanup();
+}
+
+
+TEST(SmootherTest, test_sg_smoother_default_coefficients)
+{
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacSGSmootherCoeffTest");
+  nav2::TransformBuffer::SharedPtr dummy_tf;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
+
+  auto smoother = std::make_unique<SavitzkyGolaySmootherTester>();
+  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
+
+  const std::vector<double> expected_coefficients = {
+    -2.0 / 21.0, 3.0 / 21.0, 6.0 / 21.0, 7.0 / 21.0,
+    6.0 / 21.0, 3.0 / 21.0, -2.0 / 21.0};
+  const Eigen::VectorXd & coefficients = smoother->coefficients();
+
+  ASSERT_EQ(coefficients.size(), static_cast<Eigen::Index>(expected_coefficients.size()));
+  for (Eigen::Index i = 0; i != coefficients.size(); i++) {
+    EXPECT_NEAR(coefficients(i), expected_coefficients[i], 1e-12);
+  }
 }
 
 TEST(SmootherTest, test_sg_smoother_noisey_path)

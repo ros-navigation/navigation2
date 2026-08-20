@@ -246,17 +246,19 @@ void Costmap2DPublisher::publishCostmap()
     grid_width_ != costmap_->getSizeInCellsX() ||
     grid_height_ != costmap_->getSizeInCellsY() ||
     saved_origin_x_ != costmap_->getOriginX() ||
-    saved_origin_y_ != costmap_->getOriginY())
+    saved_origin_y_ != costmap_->getOriginY() ||
+    !costmap_published_once_)
   {
     updateGridParams();
-    if (costmap_pub_->get_subscription_count() > 0) {
+    if (costmap_pub_->get_subscription_count() > 0 || !costmap_published_once_) {
       prepareGrid();
       costmap_pub_->publish(std::move(grid_));
     }
-    if (costmap_raw_pub_->get_subscription_count() > 0) {
+    if (costmap_raw_pub_->get_subscription_count() > 0 || !costmap_published_once_) {
       prepareCostmap();
       costmap_raw_pub_->publish(std::move(costmap_raw_));
     }
+    costmap_published_once_ = true;
   } else if (x0_ < xn_) {
     // Publish just update msgs
     std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));

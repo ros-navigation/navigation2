@@ -649,8 +649,15 @@ TEST_F(ActionTest, test_handle_cancel)
       node_,
       cancel_response), rclcpp::FutureReturnCode::SUCCESS);
 
-  // Check cancelled
+  // Check cancelling
   EXPECT_EQ(future_goal_handle.get()->get_status(), rclcpp_action::GoalStatus::STATUS_CANCELING);
+
+  // Wait for the cancellation to fully complete
+  auto future_result = node_->action_client_->async_get_result(future_goal_handle.get());
+  EXPECT_EQ(
+    rclcpp::spin_until_future_complete(node_, future_result),
+    rclcpp::FutureReturnCode::SUCCESS);
+  EXPECT_EQ(future_result.get().code, rclcpp_action::ResultCode::CANCELED);
 
   SUCCEED();
 }
