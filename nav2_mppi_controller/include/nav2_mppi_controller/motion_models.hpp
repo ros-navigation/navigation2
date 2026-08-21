@@ -18,6 +18,7 @@
 
 #include <Eigen/Dense>
 
+#include <cmath>
 #include <cstdint>
 #include <string>
 #include <algorithm>
@@ -341,6 +342,19 @@ public:
   OmniMotionModel() = default;
 
   /**
+   * @brief Initialize motion model.
+   * @param param_handler Pointer to the shared parameters handler
+   * @param plugin_name   Namespaced name of this plugin instance
+   */
+  void initialize(
+    ParametersHandler * param_handler,
+    const std::string & plugin_name) override
+  {
+    auto getParam = param_handler->getParamGetter(plugin_name);
+    getParam(use_elliptical_velocity_limits_, "use_elliptical_velocity_limits", true);
+  }
+
+  /**
    * @brief Whether the motion model is holonomic, using Y axis
    * @return Bool If holonomic
    */
@@ -348,6 +362,79 @@ public:
   {
     return true;
   }
+
+  /**
+   * @brief Whether (vx, vy) is bounded by the ellipse spanned by the per-axis limits rather
+   *        than by each limit independently
+   * @return Bool If the elliptical velocity envelope is enforced
+   */
+  bool useEllipticalVelocityLimits() const {return use_elliptical_velocity_limits_;}
+
+  /**
+   * @brief Returns a scale factor, projecting any infeasible velocity back onto the
+   *        elliptical velocity space
+   *
+   * The envelope is the ellipse inscribed by the per-axis limits,
+   *     (vx / vx_max)² + (vy / vy_max)² <= 1     driving forward, vx >= 0
+   *     (vx / vx_min)² + (vy / vy_max)² <= 1     driving in reverse, vx < 0
+   *
+   * @param vx Longitudinal velocities
+   * @param vy Lateral velocities
+   * @return Scale factors in (0, 1]
+   */
+  template<typename Derived>
+  typename Derived::PlainObject getVelocityScalingFactor(
+    const Eigen::ArrayBase<Derived> & vx, const Eigen::ArrayBase<Derived> & vy) const
+  {
+    // Protect the inverse of v_max² against division by zero.
+    const float vx_min_abs = std::fabs(control_constraints_.vx_min);
+    const float inv_vx_max_sq = control_constraints_.vx_max > 1e-6f ?
+      1.0f / (control_constraints_.vx_max * control_constraints_.vx_max) : 1e12f;
+    const float inv_vx_min_sq = vx_min_abs > 1e-6f ?
+      1.0f / (vx_min_abs * vx_min_abs) : 1e12f;
+    const float inv_vy_max_sq = control_constraints_.vy > 1e-6f ?
+      1.0f / (control_constraints_.vy * control_constraints_.vy) : 1e12f;
+
+
+    const float inv_vx_sq_range = inv_vx_max_sq - inv_vx_min_sq;
+
+    // 1/sqrt[(vx/vx_max)² + (vy/vy_max)²] for vx >= 0
+    // 1/sqrt[(vx/vx_min)² + (vy/vy_max)²] for vx < 0
+    // clamped at 1 so that feasible velocities are left alone
+    return (
+      (inv_vx_min_sq + inv_vx_sq_range * (vx >= 0.0f).template cast<float>()) * vx.square() +
+      inv_vy_max_sq * vy.square()
+    ).max(1.0f).sqrt().inverse();
+  }
+
+  /**
+   * @brief Apply hard vehicle constraints to a control sequence
+   * @param control_sequence Control sequence to apply constraints to
+   */
+  void applyConstraints(models::ControlSequence & control_sequence) override
+  {
+    if (!use_elliptical_velocity_limits_) {
+      return;
+    }
+
+    // An axis whose limit is zero cannot be commanded at all, so zero it before scaling
+    if (control_constraints_.vy <= 1e-6f) {
+      control_sequence.vy.setZero();
+    }
+    if (std::fabs(control_constraints_.vx_min) <= 1e-6f) {
+      control_sequence.vx = control_sequence.vx.max(0.0f);
+    }
+
+    // Constrain (vx, vy) onto the velocity ellipse
+    const Eigen::ArrayXf scaling_factor =
+      getVelocityScalingFactor(control_sequence.vx, control_sequence.vy);
+
+    control_sequence.vx *= scaling_factor;
+    control_sequence.vy *= scaling_factor;
+  }
+
+private:
+  bool use_elliptical_velocity_limits_{true};
 };
 
 }  // namespace mppi
