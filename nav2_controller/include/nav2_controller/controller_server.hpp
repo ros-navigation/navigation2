@@ -178,6 +178,13 @@ protected:
    * @param path Path received from action server
    */
   void setPlannerPath(const nav_msgs::msg::Path & path);
+
+  /**
+   * @brief Refreshes transformed_global_plan_ and transformed_end_pose_ for the current cycle
+   *
+   * @throw nav2_core::ControllerTFError if the robot pose or end pose cannot be obtained
+   */
+  void transformedPlanAndGoal();
   /**
    * @brief Calculates velocity and publishes to "cmd_vel" topic
    */
