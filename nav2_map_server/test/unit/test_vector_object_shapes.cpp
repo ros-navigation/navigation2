@@ -545,6 +545,79 @@ TEST_F(Tester, testPolygonBordersOnePointInsideBoundaries)
   verifyMapEmpty(map);
 }
 
+TEST_F(Tester, testPolygonFilled)
+{
+  setPolygonParams("");
+  ASSERT_TRUE(polygon_->obtainParams(POLYGON_NAME));
+
+  nav_msgs::msg::OccupancyGrid::SharedPtr map = makeMap();
+  polygon_->putFilled(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
+
+  bool found_filled = false;
+  for (unsigned int my = 0; my < map->info.height; my++) {
+    for (unsigned int mx = 0; mx < map->info.width; mx++) {
+      double wx = -2.0 + (mx + 0.5) * 0.1;
+      double wy = -2.0 + (my + 0.5) * 0.1;
+      bool inside = (wx >= -1.0 && wx <= 1.0 && wy >= -1.0 && wy <= 1.0);
+      if (inside) {
+        ASSERT_EQ(map->data[my * map->info.width + mx], nav2_util::OCC_GRID_OCCUPIED)
+          << "Expected fill at (" << mx << "," << my << ")";
+        found_filled = true;
+      } else {
+        ASSERT_EQ(map->data[my * map->info.width + mx], nav2_util::OCC_GRID_FREE)
+          << "Expected free at (" << mx << "," << my << ")";
+      }
+    }
+  }
+  ASSERT_TRUE(found_filled);
+}
+
+TEST_F(Tester, testPolygonFilledNonSeq)
+{
+  setPolygonParams("");
+  ASSERT_TRUE(polygon_->obtainParams(POLYGON_NAME));
+
+  nav_msgs::msg::OccupancyGrid::SharedPtr map = makeMap();
+  polygon_->putFilled(map, nav2_map_server::OverlayType::OVERLAY_MAX);
+
+  bool found_filled = false;
+  for (unsigned int i = 0; i < map->data.size(); i++) {
+    if (map->data[i] == nav2_util::OCC_GRID_OCCUPIED) {
+      found_filled = true;
+      break;
+    }
+  }
+  ASSERT_TRUE(found_filled);
+}
+
+TEST_F(Tester, testPolygonFilledOutOfBounds)
+{
+  setPolygonParams("");
+  node_->set_parameter(
+    rclcpp::Parameter(
+      std::string(POLYGON_NAME) + ".points",
+      std::vector<double>{5.0, 5.0, 6.0, 5.0, 5.0, 6.0}));
+  ASSERT_TRUE(polygon_->obtainParams(POLYGON_NAME));
+
+  nav_msgs::msg::OccupancyGrid::SharedPtr map = makeMap();
+  polygon_->putFilled(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
+
+  verifyMapEmpty(map);
+}
+
+TEST_F(Tester, testPolygonFilledDegenerate)
+{
+  nav2_msgs::msg::PolygonObject::SharedPtr po = makePolygonObject(
+    std::vector<unsigned char>());
+  po->points.resize(2);
+  ASSERT_TRUE(polygon_->setParams(po));
+
+  nav_msgs::msg::OccupancyGrid::SharedPtr map = makeMap();
+  polygon_->putFilled(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
+
+  verifyMapEmpty(map);
+}
+
 TEST_F(Tester, testPolygonDifferentFrame)
 {
   setPolygonParams("");
