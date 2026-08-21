@@ -564,6 +564,9 @@ void ControllerServer::computeControl()
 
       updateGlobalPath();
 
+      // Refresh the transformed plan and goal together so they share a single map->odom snapshot
+      transformedPlanAndGoal();
+
       if (isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
         break;
@@ -705,6 +708,33 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   current_path_ = path;
 }
 
+void ControllerServer::transformedPlanAndGoal()
+{
+  geometry_msgs::msg::PoseStamped pose;
+
+  if (!getRobotPose(pose)) {
+    throw nav2_core::ControllerTFError("Failed to obtain robot pose");
+  }
+
+  end_pose_.header.stamp = pose.header.stamp;
+  if (!nav2_util::transformPoseInTargetFrame(
+      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
+      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
+  {
+    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
+  }
+
+  auto [closest_point, pruned_plan_end] =
+    path_handlers_[current_path_handler_]->findPlanSegment(pose);
+  transformed_global_plan_ =
+    path_handlers_[current_path_handler_]->transformLocalPlan(closest_point, pruned_plan_end);
+
+  auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
+  if (transformed_plan_pub_->get_subscription_count() > 0) {
+    transformed_plan_pub_->publish(std::move(path));
+  }
+}
+
 void ControllerServer::computeAndPublishVelocity()
 {
   geometry_msgs::msg::PoseStamped pose;
@@ -723,15 +753,6 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::PoseStamped goal =
     path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
-  // Get the [start, end) iterators under map frame to be used for control.
-  auto [closest_point, pruned_plan_end] =
-    path_handlers_[current_path_handler_]->findPlanSegment(pose);
-  transformed_global_plan_ =
-    path_handlers_[current_path_handler_]->transformLocalPlan(closest_point, pruned_plan_end);
-  auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
-  if (transformed_plan_pub_->get_subscription_count() > 0) {
-    transformed_plan_pub_->publish(std::move(path));
-  }
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
@@ -973,14 +994,6 @@ bool ControllerServer::isGoalReached()
 
   if (!getRobotPose(pose)) {
     return false;
-  }
-
-  end_pose_.header.stamp = pose.header.stamp;
-  if (!nav2_util::transformPoseInTargetFrame(
-      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
-      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
-  {
-    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
   }
 
   geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());
