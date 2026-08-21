@@ -35,7 +35,132 @@ public:
   void setEndPoseFrame(const std::string & frame) {end_pose_.header.frame_id = frame;}
   void callTransformedPlanAndGoal() {transformedPlanAndGoal();}
   nav2::TransformBuffer & getTfBuffer() {return *costmap_ros_->getTfBuffer();}
+
+  void addPathHandler(const std::string & id, nav2_core::PathHandler::Ptr path_handler)
+  {
+    path_handlers_[id] = path_handler;
+  }
+  void selectPathHandler(const std::string & id) {setCurrentPathHandler(id);}
+  std::string currentPathHandler() {return current_path_handler_;}
+  void callOnGoalExit(bool force_stop, bool reset_path_handler_state)
+  {
+    onGoalExit(force_stop, reset_path_handler_state);
+  }
 };
+
+// Path handler that relies on the default no-op reset of the interface
+class StubPathHandler : public nav2_core::PathHandler
+{
+public:
+  void initialize(
+    const nav2::LifecycleNode::WeakPtr &, const rclcpp::Logger &, const std::string &,
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>,
+    nav2::TransformBuffer::SharedPtr) override {}
+
+  void setPlan(const nav_msgs::msg::Path &) override {}
+
+  nav2_core::PathSegment findPlanSegment(const geometry_msgs::msg::PoseStamped &) override
+  {
+    return {plan_.poses.begin(), plan_.poses.end()};
+  }
+
+  nav_msgs::msg::Path transformLocalPlan(
+    const nav2_core::PathIterator &, const nav2_core::PathIterator &) override
+  {
+    return nav_msgs::msg::Path();
+  }
+
+  geometry_msgs::msg::PoseStamped getTransformedGoal(
+    const builtin_interfaces::msg::Time &) override
+  {
+    return geometry_msgs::msg::PoseStamped();
+  }
+
+protected:
+  nav_msgs::msg::Path plan_;
+};
+
+class CountingPathHandler : public StubPathHandler
+{
+public:
+  void reset() override {++reset_count;}
+
+  unsigned int reset_count{0};
+};
+
+std::shared_ptr<ControllerServerShim> createConfiguredServer()
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({
+    rclcpp::Parameter("progress_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("goal_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("controller_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("path_handler_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("filters", std::vector<std::string>{}),
+  });
+
+  auto server = std::make_shared<ControllerServerShim>(options);
+  server->configure();
+  return server;
+}
+
+TEST(ControllerServerTest, PathHandlerSelectionResetsState)
+{
+  auto server = createConfiguredServer();
+  auto handler_a = std::make_shared<CountingPathHandler>();
+  auto handler_b = std::make_shared<CountingPathHandler>();
+  server->addPathHandler("a", handler_a);
+  server->addPathHandler("b", handler_b);
+
+  server->selectPathHandler("a");
+  EXPECT_EQ(server->currentPathHandler(), "a");
+  EXPECT_EQ(handler_a->reset_count, 1u);
+
+  // Selecting the same handler again keeps its state
+  server->selectPathHandler("a");
+  EXPECT_EQ(handler_a->reset_count, 1u);
+
+  // Switching clears the state of both the outgoing and incoming handler
+  server->selectPathHandler("b");
+  EXPECT_EQ(server->currentPathHandler(), "b");
+  EXPECT_EQ(handler_a->reset_count, 2u);
+  EXPECT_EQ(handler_b->reset_count, 1u);
+
+  server->cleanup();
+}
+
+TEST(ControllerServerTest, GoalExitResetsPathHandlersOnlyWhenRequested)
+{
+  auto server = createConfiguredServer();
+  auto handler_a = std::make_shared<CountingPathHandler>();
+  auto handler_b = std::make_shared<CountingPathHandler>();
+  server->addPathHandler("a", handler_a);
+  server->addPathHandler("b", handler_b);
+
+  // A controller failure leaves the path state in place for a retry of the same goal
+  server->callOnGoalExit(true, false);
+  EXPECT_EQ(handler_a->reset_count, 0u);
+  EXPECT_EQ(handler_b->reset_count, 0u);
+
+  // A successful or canceled goal clears it
+  server->callOnGoalExit(false, true);
+  EXPECT_EQ(handler_a->reset_count, 1u);
+  EXPECT_EQ(handler_b->reset_count, 1u);
+
+  server->cleanup();
+}
+
+TEST(ControllerServerTest, DefaultPathHandlerResetIsCallable)
+{
+  auto server = createConfiguredServer();
+  server->addPathHandler("stub", std::make_shared<StubPathHandler>());
+
+  EXPECT_NO_THROW(server->selectPathHandler("stub"));
+  EXPECT_NO_THROW(server->callOnGoalExit(false, true));
+
+  server->cleanup();
+}
 
 TEST(ControllerServerTest, TransformedPlanAndGoalThrowsOnTfFailure)
 {

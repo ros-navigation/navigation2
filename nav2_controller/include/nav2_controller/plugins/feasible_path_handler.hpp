@@ -69,6 +69,11 @@ public:
   void setPlan(const nav_msgs::msg::Path & path) override;
 
   /**
+   * @brief Clear the retained path state
+   */
+  void reset() override;
+
+  /**
    * @brief Determines the portion of the global plan to be used for local control.
    * This function locates the start and end iterators of the global plan segment
    * that is relevant for controller computation based on the robot's current pose and local costmap.
@@ -132,6 +137,27 @@ protected:
     */
   void prunePlan(nav_msgs::msg::Path & plan, const nav2_core::PathIterator end);
 
+  /**
+    * @brief Populate the working plan from the full plan, applying any path constraints.
+    * Expects mutex_ to already be held by the caller.
+    */
+  void initializeWorkingPlan();
+
+  /**
+    * @brief Find the closest pose to the robot on the working plan, bounded by
+    * max_robot_pose_search_dist. Expects mutex_ to already be held by the caller.
+    * @return Iterator to the closest pose
+    */
+  nav2_core::PathIterator findClosestPose();
+
+  /**
+    * @brief Check whether a pose of the working plan is within the local costmap
+    * @param pose Pose in the global plan frame
+    * @return bool If the pose falls inside the costmap bounds
+    * @throw nav2_core::ControllerTFError If the pose cannot be transformed to the costmap frame
+    */
+  bool isPoseInCostmap(const geometry_msgs::msg::PoseStamped & pose);
+
   // Dynamic parameters handler
   std::mutex mutex_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
@@ -141,10 +167,12 @@ protected:
   std::string plugin_name_;
   nav2::TransformBuffer::SharedPtr tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  nav_msgs::msg::Path unpruned_global_plan_;
   nav_msgs::msg::Path global_plan_;
   nav_msgs::msg::Path global_plan_up_to_constraint_;
   geometry_msgs::msg::PoseStamped global_pose_;
   unsigned int constraint_locale_{0u};
+  bool retained_state_needs_validation_{false};
   bool reject_unit_path_, enforce_path_inversion_, enforce_path_rotation_;
   double max_robot_pose_search_dist_, transform_tolerance_, prune_distance_;
   float inversion_xy_tolerance_, inversion_yaw_tolerance_, minimum_rotation_angle_;

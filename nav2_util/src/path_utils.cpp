@@ -249,4 +249,22 @@ bool isGoalUpdated(
          new_path.poses.back().pose.position != old_path.poses.back().pose.position;
 }
 
+bool isSamePlan(
+  const nav_msgs::msg::Path & path1,
+  const nav_msgs::msg::Path & path2)
+{
+  if (path1.header.frame_id != path2.header.frame_id ||
+    path1.poses.size() != path2.poses.size())
+  {
+    return false;
+  }
+
+  for (size_t i = 0; i < path1.poses.size(); ++i) {
+    if (path1.poses[i].pose != path2.poses[i].pose) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace nav2_util
