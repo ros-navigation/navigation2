@@ -328,7 +328,7 @@ void Optimizer::prepare(
       robot_speed.linear.y, last_command_vel_.linear.y, min_delta_vy, max_delta_vy);
     }
     // Predict the robot pose at dt in future
-    motion_model_->predictFuture(state_.pose, robot_speed, dt);
+    motion_model_->predictPose(state_.pose, robot_speed, dt);
   }
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
