@@ -86,12 +86,6 @@ Three built-in motion models are provided:
  | plugin               | string | Required: `"mppi::AckermannMotionModel"`                                                                    |
  | min_turning_r        | double | Default 0.2. Minimum turning radius in metres                                                               |
 
-#### Omni Motion Model
- | Parameter                        | Type   | Definition                                                                                                  |
- | -------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
- | plugin                           | string | Required: `"mppi::OmniMotionModel"`                                                                         |
- | use_elliptical_velocity_limits   | bool   | Default true. Bound `(vx, vy)` by the ellipse spanned by the per-axis limits rather than by each limit independently.  |
-
 #### Constraint Critic
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
@@ -229,11 +223,6 @@ controller_server:
       # ackermann:
       #   plugin: "mppi::AckermannMotionModel"
       #   min_turning_r: 0.2
-      # To use holonomic steering instead:
-      # motion_model: "omni"
-      # omni:
-      #   plugin: "mppi::OmniMotionModel"
-      #   use_elliptical_velocity_limits: true
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
         enabled: true
