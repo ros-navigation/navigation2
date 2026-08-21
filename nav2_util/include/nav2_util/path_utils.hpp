@@ -119,16 +119,6 @@ bool isPathUpdated(
 bool isGoalUpdated(
   nav_msgs::msg::Path & new_path,
   nav_msgs::msg::Path & old_path);
-
-/**
- * @brief Checks if two paths contain the same frame and ordered pose geometry
- * @param path1 First path to compare
- * @param path2 Second path to compare
- * @return whether both paths hold the same ordered poses, ignoring timestamps
- */
-bool isSamePlan(
-  const nav_msgs::msg::Path & path1,
-  const nav_msgs::msg::Path & path2);
 }  // namespace nav2_util
 
 #endif  // NAV2_UTIL__PATH_UTILS_HPP_
