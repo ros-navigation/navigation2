@@ -460,7 +460,7 @@ TEST(AxisGoalChecker, skewed_goal_does_not_flip_path_direction)
     node->get_node_base_interface(),
     results);
 
-  // Pruned plan tail heading +x into (10, 0), with a sub-mm final segment as
+  // Pruned plan tail heading +x into (10, 0) with a sub-mm final segment as
   // planners commonly produce at the goal
   nav_msgs::msg::Path path = createPath({{9.5, 0.0}, {9.9995, 0.0}, {10.0, 0.0}});
 
