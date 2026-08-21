@@ -126,42 +126,15 @@ bool FeasiblePathHandler::isWithinInversionTolerances(
          fabs(angle_distance) <= inversion_yaw_tolerance_;
 }
 
-void FeasiblePathHandler::initializeWorkingPlan()
+void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
-  global_plan_ = unpruned_global_plan_;
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  global_plan_ = path;
   global_plan_up_to_constraint_ = global_plan_;
-  constraint_locale_ = 0u;
   if (enforce_path_inversion_ || enforce_path_rotation_) {
     constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_,
       enforce_path_inversion_, minimum_rotation_angle_);
   }
-}
-
-void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
-{
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
-
-  // An identical plan is only a candidate for resuming the retained state, which is validated
-  // against the local costmap on the next findPlanSegment call.
-  if (!unpruned_global_plan_.poses.empty() && nav2_util::isSamePlan(path, unpruned_global_plan_)) {
-    RCLCPP_INFO(logger_, "Received identical plan; validating retained path state.");
-    retained_state_needs_validation_ = true;
-    return;
-  }
-
-  unpruned_global_plan_ = path;
-  retained_state_needs_validation_ = false;
-  initializeWorkingPlan();
-}
-
-void FeasiblePathHandler::reset()
-{
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
-  unpruned_global_plan_ = nav_msgs::msg::Path();
-  global_plan_ = nav_msgs::msg::Path();
-  global_plan_up_to_constraint_ = nav_msgs::msg::Path();
-  constraint_locale_ = 0u;
-  retained_state_needs_validation_ = false;
 }
 
 geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
@@ -187,8 +160,12 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
   return robot_pose;
 }
 
-nav2_core::PathIterator FeasiblePathHandler::findClosestPose()
+nav2_core::PathSegment FeasiblePathHandler::findPlanSegment(
+  const geometry_msgs::msg::PoseStamped & pose)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  global_pose_ = transformToGlobalPlanFrame(pose);
+
   // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
@@ -198,52 +175,12 @@ nav2_core::PathIterator FeasiblePathHandler::findClosestPose()
   // First find the closest pose on the path to the robot
   // bounded by when the path turns around (if it does) so we don't get a pose from a later
   // portion of the path
-  return nav2_util::geometry_utils::min_by(
+  auto closest_point =
+    nav2_util::geometry_utils::min_by(
     global_plan_up_to_constraint_.poses.begin(), closest_pose_upper_bound,
     [this](const geometry_msgs::msg::PoseStamped & ps) {
       return euclidean_distance(global_pose_, ps);
     });
-}
-
-bool FeasiblePathHandler::isPoseInCostmap(const geometry_msgs::msg::PoseStamped & pose)
-{
-  geometry_msgs::msg::PoseStamped plan_pose = pose;
-  plan_pose.header.stamp = global_pose_.header.stamp;
-  plan_pose.header.frame_id = global_plan_.header.frame_id;
-
-  geometry_msgs::msg::PoseStamped costmap_pose;
-  if (!nav2_util::transformPoseInTargetFrame(plan_pose, costmap_pose, *tf_,
-      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
-  {
-    throw nav2_core::ControllerTFError("Unable to transform path pose into the costmap frame");
-  }
-
-  unsigned int mx, my;
-  return costmap_ros_->getCostmap()->worldToMap(
-    costmap_pose.pose.position.x, costmap_pose.pose.position.y, mx, my);
-}
-
-nav2_core::PathSegment FeasiblePathHandler::findPlanSegment(
-  const geometry_msgs::msg::PoseStamped & pose)
-{
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
-  global_pose_ = transformToGlobalPlanFrame(pose);
-
-  auto closest_point = findClosestPose();
-
-  // A retained plan is only resumed while its closest pose is still within the local costmap,
-  // otherwise the robot has moved away from it and the full path is restored. A transform
-  // failure leaves the state pending for a later attempt.
-  if (retained_state_needs_validation_) {
-    const bool is_retained_state_local = isPoseInCostmap(*closest_point);
-    retained_state_needs_validation_ = false;
-    if (!is_retained_state_local) {
-      RCLCPP_INFO(
-        logger_, "Retained path state is outside the local costmap; restoring the full path.");
-      initializeWorkingPlan();
-      closest_point = findClosestPose();
-    }
-  }
 
   // Do not prune the global plan below 2 points, so there are enough points to interpolate the
   // end-of-path direction.
