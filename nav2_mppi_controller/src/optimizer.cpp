@@ -327,7 +327,7 @@ void Optimizer::prepare(
       state_.speed.linear.y = utils::clampVelocityByAccel(
       robot_speed.linear.y, last_command_vel_.linear.y, min_delta_vy, max_delta_vy);
     }
-    // Predict the robot pose at 1*dt in future
+    // Predict the robot pose at dt in future
     motion_model_->predictFuture(state_.pose, robot_speed, dt);
   }
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
