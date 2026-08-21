@@ -13,22 +13,60 @@
 // limitations under the License.
 
 #include "nav2_map_server/vector_object_shapes.hpp"
+#include "nav2_map_server/vector_object_utils.hpp"
 
-#include <uuid/uuid.h>
+#include <algorithm>
 #include <cmath>
 #include <exception>
 #include <limits>
 #include <stdexcept>
 #include <vector>
 
+
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "nav2_util/occ_grid_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/occ_grid_utils.hpp"
 #include "nav2_util/raytrace_line_2d.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+
+
+/**
+ * @brief Helper to convert world coordinates to map coordinates with boundary clamping.
+ *
+ * Upstream nav2_util::worldToMap enforces a strict out-of-bounds check where
+ * boundary vertices exactly matching the map's max edge evaluate to mx >= size_x
+ * and return false. This helper wraps the standard logic and clamps floating-point
+ * boundary vertices safely to size - 1 to prevent putBorders() from aborting on
+ * valid edge coordinates.
+ * See: https://github.com/ros-navigation/navigation2/issues/6278
+ */
+namespace
+{
+inline bool safeWorldToMap(
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr map,
+  const double wx, const double wy, unsigned int & mx, unsigned int & my)
+{
+  const double origin_x = map->info.origin.position.x;
+  const double origin_y = map->info.origin.position.y;
+  const double resolution = map->info.resolution;
+  const unsigned int size_x = map->info.width;
+  const unsigned int size_y = map->info.height;
+  const double eps = resolution * 1e-6;
+  const double max_x = origin_x + size_x * resolution;
+  const double max_y = origin_y + size_y * resolution;
+  if (wx < origin_x || wy < origin_y || wx > max_x + eps || wy > max_y + eps) {
+    return false;
+  }
+  mx = static_cast<unsigned int>((wx - origin_x) / resolution);
+  my = static_cast<unsigned int>((wy - origin_y) / resolution);
+  if (mx >= size_x) {mx = size_x - 1;}
+  if (my >= size_y) {my = size_y - 1;}
+  return true;
+}
+}  // namespace
 
 namespace nav2_map_server
 {
@@ -253,7 +291,7 @@ void Polygon::putBorders(
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (!nav2_util::worldToMap(map, polygon_->points[0].x, polygon_->points[0].y, mx1, my1)) {
+  if (!safeWorldToMap(map, polygon_->points[0].x, polygon_->points[0].y, mx1, my1)) {
     RCLCPP_ERROR(
       node->get_logger(),
       "[UUID: %s] Can not convert (%f, %f) point to map",
@@ -265,7 +303,7 @@ void Polygon::putBorders(
   for (unsigned int i = 1; i < polygon_->points.size(); i++) {
     mx0 = mx1;
     my0 = my1;
-    if (!nav2_util::worldToMap(map, polygon_->points[i].x, polygon_->points[i].y, mx1, my1)) {
+    if (!safeWorldToMap(map, polygon_->points[i].x, polygon_->points[i].y, mx1, my1)) {
       RCLCPP_ERROR(
         node->get_logger(),
         "[UUID: %s] Can not convert (%f, %f) point to map",
@@ -292,6 +330,125 @@ bool Polygon::checkConsistency()
   }
 
   return true;
+}
+
+void Polygon::putFilled(
+  nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  const auto & pts = polygon_->points;
+  const std::size_t n = pts.size();
+  if (n < 3) {
+    return;
+  }
+
+  // Rasterize the polygon using a classic scanline fill algorithm.
+  //
+  // This follows the same general scanline rasterization approach used by
+  // graphics libraries such as OpenCV, but is implemented locally to avoid
+  // introducing an OpenCV dependency while preserving the existing polygon
+  // filling semantics.
+  //
+  // Convert all polygon vertices to continuous map-cell coordinates.
+  // Using continuous coordinates perfectly matches isPointInside() math.
+  const double origin_x = map->info.origin.position.x;
+  const double origin_y = map->info.origin.position.y;
+  const double res = map->info.resolution;
+
+  std::vector<double> vx(n), vy(n);
+  for (std::size_t i = 0; i < n; i++) {
+    vx[i] = (pts[i].x - origin_x) / res - 0.5;
+    vy[i] = (pts[i].y - origin_y) / res - 0.5;
+  }
+
+  // Find the Y extent of the polygon in map coordinates.
+  int y_min = static_cast<int>(std::ceil(*std::min_element(vy.begin(), vy.end())));
+  int y_max = static_cast<int>(std::floor(*std::max_element(vy.begin(), vy.end())));
+  y_min = std::max(y_min, 0);
+  y_max = std::min(y_max, static_cast<int>(map->info.height) - 1);
+
+  // Optimization 2: Precompute per-edge information.
+  // For each edge store: y_lo, y_hi (active Y range, half-open interval),
+  // x_at_ylo (X at the lower Y endpoint), and inv_slope (dx/dy).
+  // This avoids recomputing min/max/division inside the hot inner loop.
+  struct EdgeInfo
+  {
+    double y_lo;       // inclusive lower Y bound
+    double y_hi;       // exclusive upper Y bound
+    double x_at_ylo;  // X coordinate at y == y_lo
+    double inv_slope;  // (x1 - x0) / (y1 - y0)
+  };
+  std::vector<EdgeInfo> edges;
+  edges.reserve(n);
+  for (std::size_t i = 0; i < n; i++) {
+    std::size_t j = (i + 1) % n;
+    double y0 = vy[i], y1 = vy[j];
+    double x0 = vx[i], x1 = vx[j];
+    if (y0 == y1) {
+      continue;  // horizontal edge — never contributes an intersection
+    }
+    EdgeInfo e;
+    if (y0 < y1) {
+      e.y_lo = y0;  e.y_hi = y1;  e.x_at_ylo = x0;
+    } else {
+      e.y_lo = y1;  e.y_hi = y0;  e.x_at_ylo = x1;
+    }
+    e.inv_slope = (x1 - x0) / (y1 - y0);
+    edges.push_back(e);
+  }
+
+  const int map_width = static_cast<int>(map->info.width);
+  const int8_t fill_val = params_->value;
+
+  // Optimization 1: Allocate the intersection vector once outside the loop.
+  // Reserve the maximum possible intersections (one per edge) so that no
+  // heap allocation occurs during the scanline sweep.
+  std::vector<double> xs;
+  xs.reserve(edges.size());
+
+  for (int y = y_min; y <= y_max; y++) {
+    // Collect intersections for this scanline using precomputed edge info.
+    xs.clear();
+    for (const auto & e : edges) {
+      // Half-open interval: y in [y_lo, y_hi)
+      if (static_cast<double>(y) < e.y_lo || static_cast<double>(y) >= e.y_hi) {
+        continue;
+      }
+      xs.push_back(e.x_at_ylo + (y - e.y_lo) * e.inv_slope);
+    }
+
+    std::sort(xs.begin(), xs.end());
+
+    for (std::size_t k = 0; k + 1 < xs.size(); k += 2) {
+      // To match ray-casting, x must be: xs[k] <= x < xs[k+1]
+      int x_start = static_cast<int>(std::ceil(xs[k]));
+      int x_end = static_cast<int>(std::ceil(xs[k + 1])) - 1;
+
+      x_start = std::max(x_start, 0);
+      x_end = std::min(x_end, map_width - 1);
+      if (x_start > x_end) {
+        continue;
+      }
+
+      // Optimization 3: For the common OVERLAY_SEQ case, fill the span
+      // with a single std::fill instead of a per-pixel processCell loop.
+      const unsigned int row_offset = static_cast<unsigned int>(y) * map->info.width;
+      if (overlay_type == OverlayType::OVERLAY_SEQ) {
+        std::fill(
+          map->data.begin() + row_offset + x_start,
+          map->data.begin() + row_offset + x_end + 1,
+          fill_val);
+      } else {
+        for (int x = x_start; x <= x_end; x++) {
+          processCell(map, row_offset + static_cast<unsigned int>(x), fill_val, overlay_type);
+        }
+      }
+    }
+  }
 }
 
 // ---------- Circle ----------
@@ -533,7 +690,7 @@ bool Circle::centerToMap(
   }
   // We need the circle center to be always shifted one cell less its logical center
   // and to avoid any FP-accuracy losing on small values, so we are using another
-  // than nav2_util::worldToMap() approach
+  // than safeWorldToMap() approach
   mcx = static_cast<unsigned int>(
     std::round((center_->x - map->info.origin.position.x) / map->info.resolution)) - 1;
   mcy = static_cast<unsigned int>(
@@ -555,6 +712,48 @@ inline void Circle::putPoint(
   const OverlayType overlay_type)
 {
   processCell(map, my * map->info.width + mx, params_->value, overlay_type);
+}
+
+void Circle::putFilled(
+  nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
+{
+  unsigned int mcx, mcy;
+  if (!safeWorldToMap(map, center_->x, center_->y, mcx, mcy)) {
+    return;
+  }
+
+  const double res = map->info.resolution;
+  const double r = params_->radius / res;
+  const double r2 = r * r;
+  const int r_int = static_cast<int>(std::ceil(r));
+  const int map_w = static_cast<int>(map->info.width);
+  const int map_h = static_cast<int>(map->info.height);
+  const int cx = static_cast<int>(mcx);
+  const int cy = static_cast<int>(mcy);
+
+  auto fill_hspan = [&](int y, int x0, int x1) {
+      if (y < 0 || y >= map_h) {return;}
+      x0 = std::max(x0, 0);
+      x1 = std::min(x1, map_w - 1);
+      for (int x = x0; x <= x1; x++) {
+        processCell(
+          map,
+          static_cast<unsigned int>(y) * map->info.width + static_cast<unsigned int>(x),
+          params_->value,
+          overlay_type);
+      }
+    };
+
+  for (int dy = -r_int; dy <= r_int + 1; dy++) {
+    double term = r2 - (dy - 0.5) * (dy - 0.5);
+    if (term < 0.0) {
+      continue;
+    }
+    double r_rem = std::sqrt(term);
+    int x0 = cx + static_cast<int>(std::ceil(-r_rem + 0.5));
+    int x1 = cx + static_cast<int>(std::floor(r_rem + 0.5));
+    fill_hspan(cy + dy, x0, x1);
+  }
 }
 
 }  // namespace nav2_map_server
