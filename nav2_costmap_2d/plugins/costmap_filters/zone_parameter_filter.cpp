@@ -142,6 +142,26 @@ void ZoneParameterFilter::maskCallback(
   filter_mask_ = msg;
 }
 
+void ZoneParameterFilter::clearLoadedState()
+{
+  state_param_map_.clear();
+  nominal_defaults_.clear();
+  param_clients_.clear();
+
+  // Dropping the clients breaks the promises behind any futures they still
+  // own, and a broken future reports itself ready, so these have to go with
+  // them. Waiting for them instead would block the update thread on a node
+  // that may never answer, so they are abandoned and the loss is logged.
+  if (!pending_futures_.empty()) {
+    RCLCPP_WARN(
+      logger_,
+      "ZoneParameterFilter: abandoning %zu in-flight parameter set(s) on reload; "
+      "their results will not be checked.",
+      pending_futures_.size());
+  }
+  pending_futures_.clear();
+}
+
 void ZoneParameterFilter::loadStateConfig()
 {
   auto node = node_.lock();
@@ -152,10 +172,18 @@ void ZoneParameterFilter::loadStateConfig()
   // Obtain the node, parameter, and value for state entries
   auto read_entry =
     [&](const std::string & prefix) -> std::optional<StateParamEntry> {
+      // Read-only: `node` and `parameter` pick the target, and the param
+      // clients are built from them at load, so a runtime rewrite would only
+      // take effect at the next reload. `.value` stays writable -- retuning
+      // what a zone applies is field work, and does not change its target.
+      rcl_interfaces::msg::ParameterDescriptor routing_descriptor;
+      routing_descriptor.read_only = true;
       const std::string target_node =
-        node->declare_or_get_parameter<std::string>(prefix + ".node", std::string(""));
+        node->declare_or_get_parameter<std::string>(
+        prefix + ".node", std::string(""), routing_descriptor);
       const std::string param_name =
-        node->declare_or_get_parameter<std::string>(prefix + ".parameter", std::string(""));
+        node->declare_or_get_parameter<std::string>(
+        prefix + ".parameter", std::string(""), routing_descriptor);
       if (target_node.empty() || param_name.empty()) {
         RCLCPP_ERROR(
           logger_,
@@ -325,8 +353,7 @@ void ZoneParameterFilter::process(
       RCLCPP_WARN(
         logger_,
         "ZoneParameterFilter: Robot outside filter mask; resetting to nominal defaults.");
-      applyState(0);
-      current_state_ = 0;
+      enterState(0);
     }
     return;
   }
@@ -347,8 +374,14 @@ void ZoneParameterFilter::process(
     return;  // No change.
   }
 
+  enterState(new_state);
+}
+
+void ZoneParameterFilter::enterState(uint8_t new_state)
+{
   applyState(new_state);
 
+  // Every route into a state is announced, including both routes to state 0.
   if (state_event_pub_) {
     auto event_msg = std::make_unique<std_msgs::msg::UInt8>();
     event_msg->data = new_state;
@@ -511,6 +544,8 @@ void ZoneParameterFilter::resetFilter()
   filter_info_received_ = false;
   state_initialized_ = false;
   current_state_ = 0;
+
+  clearLoadedState();
 }
 
 bool ZoneParameterFilter::isActive()

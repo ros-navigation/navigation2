@@ -62,8 +62,8 @@ public:
     const geometry_msgs::msg::Pose & pose) override;
 
   /**
-   * @brief Reset filter — drop subscriptions, reset publisher, clear
-   *        nominal-defaults capture.
+   * @brief Reset filter — drop subscriptions, reset publisher, drop the
+   *        loaded configuration.
    */
   void resetFilter() override;
 
@@ -90,6 +90,22 @@ protected:
    *        YAML overrides.
    */
   void loadStateConfig();
+
+  /**
+   * @brief Drop everything derived from the declared configuration.
+   *        loadStateConfig() appends to what it finds and is re-run by the
+   *        `clear_entirely_<costmap>` service and by every deactivate /
+   *        activate cycle, both of which reach resetFilter() first.
+   */
+  void clearLoadedState();
+
+  /**
+   * @brief Apply one state transition, announce it, and record it. Every
+   *        route into a state goes through here so the state_event_topic
+   *        stream cannot diverge between routes.
+   * @param new_state Mask value of the state being entered
+   */
+  void enterState(uint8_t new_state);
 
   /**
    * @brief Apply the parameter set associated with the given state.
