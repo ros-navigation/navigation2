@@ -173,7 +173,7 @@ public:
    * @param speed speed
    * @param pred_dt time in future to predict the pose
   */
-  virtual void predictFuture(
+  virtual void predictPose(
     geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & speed, float pred_dt)
   {
