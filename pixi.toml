@@ -1,0 +1,37 @@
+[workspace]
+name = "navigation2-ci"
+description = "Cross-platform Nav2 development and CI environment"
+channels = [
+  "https://prefix.dev/robostack-lyrical",
+  "https://prefix.dev/conda-forge",
+]
+platforms = ["osx-64", "osx-arm64", "win-64"]
+
+[dependencies]
+# Main targets Lyrical. Build the unavailable Nav2 packages from this checkout.
+ros-lyrical-desktop = "*"
+ros-lyrical-backward-ros = "*"
+ros-lyrical-bondcpp = "*"
+ros-lyrical-geographic-msgs = "*"
+ros-lyrical-map-msgs = "*"
+ros-lyrical-ament-lint-common = "*"
+ros-lyrical-ament-lint-auto = "*"
+ros-lyrical-ament-cmake-gtest = "*"
+ros-lyrical-ament-cmake-pytest = "*"
+ros-lyrical-ament-cmake-ros = "*"
+ros-lyrical-std-srvs = "*"
+ros-lyrical-test-msgs = "*"
+colcon-common-extensions = "*"
+python = "3.14.*"
+compilers = "*"
+cmake = "<4"
+ninja = "*"
+pkg-config = "*"
+
+[target.unix.tasks]
+ci-build = "colcon build --symlink-install --packages-select nav2_common nav2_msgs nav2_ros_common --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release '-DCMAKE_EXE_LINKER_FLAGS=-L$CONDA_PREFIX/lib -lpython3.14'"
+ci-test = { cmd = "colcon test --packages-select nav2_ros_common --event-handlers console_cohesion+ && colcon test-result --verbose", depends-on = ["ci-build"] }
+
+[target.win-64.tasks]
+ci-build = "colcon build --merge-install --packages-select nav2_common nav2_msgs nav2_ros_common --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release -DPython_FIND_VIRTUALENV=ONLY -DPython3_FIND_VIRTUALENV=ONLY"
+ci-test = { cmd = "colcon test --merge-install --packages-select nav2_ros_common --event-handlers console_cohesion+ && colcon test-result --verbose", depends-on = ["ci-build"] }
