@@ -345,6 +345,38 @@ Edge1:                     // <-- If provided by format, stored as name in metad
         service_name "open-door"  // <-- metadata for operation (Recommended)
 ```
 
+### OpenStreetMap (`.osm`)
+
+A parser is also provided for OpenStreetMap `.osm` XML files.
+In most cases you would export OSM for a particular area and remove any unnecessary features first.
+See `graphs/sample_graph.osm` for an example file.
+
+Unlike GeoJSON, OSM does not list edges explicitly: a `<way>` is a polyline of ordered `<nd ref>`
+node references, and two ways are connected only where they share a node id.
+
+Edge direction comes from each way's `oneway` tag: `yes`, `true`, or `1` follows the way's node
+order, `-1` or `reverse` runs the opposite order, and `no` or a missing tag is bidirectional.
+
+A `.osm` here is treated as a purpose-built route graph, so the choice of which edges are preferable is left to the edge scoring plugins, which can read each way's tags.
+
+Coordinates are converted from latitude/longitude into the map frame using robot_localization's
+`FromLLArray` service, so the graph uses the same datum as the robot's localization. **This means `navsat_transform_node` has to be running when the graph is loaded.** The graph loads during the Route Server's `configure` transition (or on a `set_route_graph`
+request), and that load blocks on the service, so if it is unavailable the transition fails.
+
+Parameters (under the `osm_graph_file_loader.` namespace):
+
+| Parameter | Type | Default | Description |
+| --------- | ---- | ------- | ----------- |
+| `from_ll_service` | string | `/fromLLArray` | Name of the robot_localization `FromLLArray` service (override for namespaced setups) |
+| `from_ll_service_timeout` | double | `5.0` | Seconds to wait for the conversion service before failing the load |
+
+Note: OSM node ids are 64-bit. The Route Server's `nodeid` and the relevant `nav2_msgs` use
+`uint64_t`, so the loader preserves the original OSM ids without truncation and routes can be
+requested by original OSM node id. Keep this width in mind if you define custom messages.
+
+Node and edge **metadata** (e.g. speed limits from OSM `maxspeed`) is intentionally out of scope for
+this initial loader and is planned for a follow-on contribution.
+
 ### Metadata Conventions for Convenience
 
 While other metadata fields are not required nor necessarily needed, there are some useful standards which may make your life easier within in the Route Server framework.

@@ -101,7 +101,7 @@ OperationResult CollisionMonitor::perform(
   Coordinates end = curr_edge->end->coords;
   Coordinates start = utils::findClosestPoint(
     curr_pose, curr_edge->start->coords, end);
-  unsigned int curr_edge_id = curr_edge->edgeid;
+  uint64_t curr_edge_id = curr_edge->edgeid;
 
   bool final_edge = false;
   while (!final_edge) {

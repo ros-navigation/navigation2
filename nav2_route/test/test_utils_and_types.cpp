@@ -342,7 +342,7 @@ TEST(UtilsTest, test_routing_state)
   EXPECT_EQ(state.blocked_ids.size(), 0u);
   EXPECT_EQ(state.first_time, true);
   EXPECT_EQ(state.closest_pt_on_edge.x, 0.0);
-  EXPECT_EQ(state.rerouting_start_id, std::numeric_limits<unsigned int>::max());
+  EXPECT_EQ(state.rerouting_start_id, std::numeric_limits<uint64_t>::max());
   EXPECT_EQ(state.rerouting_start_pose.pose.position.x, 0.0);
 }
 
