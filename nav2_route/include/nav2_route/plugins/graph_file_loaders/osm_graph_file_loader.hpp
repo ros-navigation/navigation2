@@ -50,9 +50,11 @@ public:
   /**
    * @brief Configure, but do not store the node
    * @param node pointer to the user's lifecycle node
+   * @param name name of the plugin
    */
   void configure(
-    const nav2::LifecycleNode::SharedPtr node) override;
+    const nav2::LifecycleNode::SharedPtr node,
+    const std::string & name) override;
 
   /**
    * @brief Loads the OSM file into the graph
