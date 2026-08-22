@@ -13,8 +13,10 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -193,10 +195,19 @@ TEST(TestCollisionMonitor, test_costmap_apis)
   publisher.on_activate();
   publisher.publishCostmap();
 
-  // Give it a moment to receive the costmap
-  rclcpp::Rate r(10);
-  r.sleep();
-  monitor.getCostmapWrapper();  // Since would otherwise be called in `perform`
+  // Poll until the costmap is received rather than waiting a fixed time
+  const auto start_time = std::chrono::steady_clock::now();
+  while (true) {
+    try {
+      monitor.getCostmapWrapper();  // Since would otherwise be called in `perform`
+      break;
+    } catch (const nav2_core::OperationFailed &) {
+      ASSERT_LT(
+        std::chrono::steady_clock::now() - start_time,
+        std::chrono::seconds(10));
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+  }
 
   Coordinates start, end;
   start.x = 1.0;

@@ -13,8 +13,10 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -76,8 +78,14 @@ TEST(PathConverterTest, test_path_converter_api)
   EXPECT_NEAR(path.poses.back().pose.position.x, 20.0, 0.01);
   EXPECT_NEAR(path.poses.back().pose.position.y, 20.0, 0.01);
 
-  rclcpp::Rate r(10);
-  r.sleep();
+  // Poll until the published path arrives rather than waiting a fixed time
+  const auto start_time = std::chrono::steady_clock::now();
+  while (path_msg.poses.empty()) {
+    ASSERT_LT(
+      std::chrono::steady_clock::now() - start_time,
+      std::chrono::seconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
 
   // Checks the same as returned and actually was published
   EXPECT_EQ(path_msg.poses.size(), path.poses.size());

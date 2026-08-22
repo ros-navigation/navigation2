@@ -13,8 +13,10 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -265,9 +267,15 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   publisher.on_activate();
   publisher.publishCostmap();
 
-  // Give it a moment to receive the costmap
-  rclcpp::Rate r(10);
-  r.sleep();
+  // Poll until the costmap is received rather than waiting a fixed time:
+  // scoring fails while no costmap has been received, succeeds afterwards
+  const auto start_time = std::chrono::steady_clock::now();
+  while (!scorer.score(&edge, route_request, edge_type, traversal_cost)) {
+    ASSERT_LT(
+      std::chrono::steady_clock::now() - start_time,
+      std::chrono::seconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
 
   n1.coords.x = 5.0;
   n1.coords.y = 8.0;
@@ -379,13 +387,20 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   publisher.on_activate();
   publisher.publishCostmap();
 
-  // Give it a moment to receive the costmap
-  rclcpp::Rate r(1);
-  r.sleep();
-
   const geometry_msgs::msg::PoseStamped start_pose, goal_pose;
   RouteRequest route_request;
   EdgeType edge_type = EdgeType::NONE;
+
+  // Poll until the costmap is received rather than waiting a fixed time:
+  // scoring fails while no costmap has been received, succeeds afterwards
+  float poll_cost = -1;
+  const auto start_time = std::chrono::steady_clock::now();
+  while (!scorer.score(&edge, route_request, edge_type, poll_cost)) {
+    ASSERT_LT(
+      std::chrono::steady_clock::now() - start_time,
+      std::chrono::seconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
 
   // Off map
   n1.coords.x = -1.0;

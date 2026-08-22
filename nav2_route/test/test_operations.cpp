@@ -13,8 +13,10 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -154,8 +156,15 @@ TEST(OperationsManagerTest, test_processing_speed_on_status)
   EXPECT_EQ(result.operations_triggered.size(), 2u);
   EXPECT_EQ(result.operations_triggered[0], std::string("AdjustSpeedLimit"));
   EXPECT_EQ(result.operations_triggered[1], std::string("ReroutingService"));
-  rclcpp::Rate r(10);
-  r.sleep();
+
+  // Poll until the speed limit message arrives rather than waiting a fixed time
+  const auto start_time = std::chrono::steady_clock::now();
+  while (!got_msg) {
+    ASSERT_LT(
+      std::chrono::steady_clock::now() - start_time,
+      std::chrono::seconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
 
   // Check values are correct
   EXPECT_TRUE(got_msg);
