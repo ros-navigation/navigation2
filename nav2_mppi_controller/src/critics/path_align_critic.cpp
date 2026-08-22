@@ -14,6 +14,7 @@
 
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
 
+
 namespace mppi::critics
 {
 
