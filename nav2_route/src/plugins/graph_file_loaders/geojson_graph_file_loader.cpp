@@ -24,7 +24,7 @@ namespace nav2_route
 {
 
 void GeoJsonGraphFileLoader::configure(
-  const nav2::LifecycleNode::SharedPtr node)
+  const nav2::LifecycleNode::SharedPtr node, const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring geojson graph file loader");
   logger_ = node->get_logger();

@@ -30,22 +30,20 @@
 namespace nav2_route
 {
 
-void OsmGraphFileLoader::configure(const nav2::LifecycleNode::SharedPtr node)
+void OsmGraphFileLoader::configure(const nav2::LifecycleNode::SharedPtr node, const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring OSM graph file loader");
   logger_ = node->get_logger();
 
-  const std::string prefix = "osm_graph_file_loader.";
+  const std::string prefix = name + ".";
 
   from_ll_service_name_ = node->declare_or_get_parameter(
-    prefix + "from_ll_service", std::string("/fromLLArray"));
+    prefix + "from_ll_service", std::string("fromLLArray"));
   from_ll_service_timeout_ = node->declare_or_get_parameter(
     prefix + "from_ll_service_timeout", 5.0);
 
-  // Convert OSM lat/lon through robot_localization's navsat_transform, so the
-  // datum (and the resulting map frame) is shared with the robot's localization
-  // rather than introducing a second, independent datum here. The client owns
-  // its own internal executor so it can be invoked synchronously at load time.
+  // Convert OSM lat/lon utilizing robot_localization's 
+  // navsat_transform, reusing the existing datum
   from_ll_client_ = node->create_client<robot_localization::srv::FromLLArray>(
     from_ll_service_name_, true /* creates and spins an internal executor */);
 }
@@ -124,12 +122,8 @@ bool OsmGraphFileLoader::parseOsm(
     return false;
   }
 
-  // Every <node> becomes an entry in the id -> (lat, lon) table. OSM ids are
-  // 64-bit, so we always read them with Int64Attribute - never an unsigned
-  // accessor, which would silently truncate. The Query* accessors report a
-  // missing/unparsable attribute instead of silently returning 0, so a
-  // malformed node is skipped rather than corrupting the table (e.g. several
-  // id-less nodes colliding at id 0).
+  // OSM ids don't fit in 32 bits, so we read them as signed 64-bit. Query*
+  // fails loudly on a bad attribute instead of defaulting to 0.
   for (const tinyxml2::XMLElement * node = osm->FirstChildElement("node");
     node != nullptr; node = node->NextSiblingElement("node"))
   {
@@ -144,10 +138,7 @@ bool OsmGraphFileLoader::parseOsm(
       continue;
     }
     if (id < 0) {
-      // The node id becomes the route node id directly; negative ids (e.g.
-      // JOSM's temporary ids for objects never uploaded to OSM) would map to
-      // huge unsigned values that can collide with the id sentinels, so
-      // require non-negative ids.
+      // JOSM's temporary ids go negative and would wrap into our id sentinels.
       RCLCPP_WARN(
         logger_,
         "Skipping OSM node with negative id %" PRId64 "; ids must be non-negative "

@@ -347,64 +347,20 @@ Edge1:                     // <-- If provided by format, stored as name in metad
 
 ### OpenStreetMap (`.osm`)
 
-A parser is also provided for OpenStreetMap `.osm` XML files (`OsmGraphFileLoader`), so that widely
-available OSM data can be used directly for off-road, agricultural, campus, and other outdoor
-navigation without converting it to GeoJSON.
-
+A parser is also provided for OpenStreetMap `.osm` XML files.
 In most cases you would export OSM for a particular area and remove any unnecessary features first.
+See `graphs/sample_graph.osm` for an example file.
 
 Unlike GeoJSON, OSM does not list edges explicitly: a `<way>` is a polyline of ordered `<nd ref>`
 node references, and two ways are connected only where they share a node id.
 
-For example:
-
-```xml
-<osm version="0.6" generator="nav2_route sample">
-  <node id="1001" lat="40.711000" lon="-74.008000"/>
-  <node id="1002" lat="40.711000" lon="-74.007500"/>
-  <node id="1003" lat="40.711000" lon="-74.007000"/>
-  <node id="1004" lat="40.711000" lon="-74.006500"/>
-  <node id="1005" lat="40.711000" lon="-74.006000"/>
-  <node id="1006" lat="40.711500" lon="-74.007000"/>
-  <node id="1007" lat="40.710500" lon="-74.007000"/>
-  <way id="2001">
-    <nd ref="1001"/>
-    <nd ref="1002"/>
-    <nd ref="1003"/>
-    <nd ref="1004"/>
-    <nd ref="1005"/>
-    <tag k="highway" v="residential"/>
-    <tag k="name" v="Sample Street"/>
-  </way>
-  <way id="2002">
-    <nd ref="1006"/>
-    <nd ref="1003"/>
-    <nd ref="1007"/>
-    <tag k="highway" v="service"/>
-    <tag k="oneway" v="yes"/>
-  </way>
-</osm>
-```
-
-To build the graph, the loader finds the intersections. A node that is shared by more than one way,
-or that sits at the end of a way, becomes a graph node. Each way is then split at those nodes into
-edges, one per section between two graph nodes. The nodes in between are kept only as the edge's
-shape, not as graph nodes. In the example above, ways 2001 and 2002 both reference node 1003, so 1003
-is an intersection and becomes a graph node; nodes 1002 and 1004 are only shape points along Sample
-Street. This yields 5 graph nodes (1001, 1003, 1005, 1006, 1007) and 4 edges.
-
 Edge direction comes from each way's `oneway` tag: `yes`, `true`, or `1` follows the way's node
-order, `-1` or `reverse` runs the opposite order, and `no` or a missing tag is bidirectional. Way
-2002 above is `oneway=yes`, so its edges only run in node order (1006 to 1003 to 1007).
+order, `-1` or `reverse` runs the opposite order, and `no` or a missing tag is bidirectional.
 
-The loader keeps every `<way>` in the file; it does not require a `highway` tag or apply any
-allowlist. A `.osm` here is treated as a purpose-built route graph, so the choice of which edges are
-preferable is left to the edge scoring plugins, which can read each way's tags.
+A `.osm` here is treated as a purpose-built route graph, so the choice of which edges are preferable is left to the edge scoring plugins, which can read each way's tags.
 
 Coordinates are converted from latitude/longitude into the map frame using robot_localization's
-`FromLLArray` service, so the graph uses the same datum as the robot's localization instead of a
-second, independent one. **This means `navsat_transform_node` has to be running when the graph is
-loaded.** The graph loads during the Route Server's `configure` transition (or on a `set_route_graph`
+`FromLLArray` service, so the graph uses the same datum as the robot's localization. **This means `navsat_transform_node` has to be running when the graph is loaded.** The graph loads during the Route Server's `configure` transition (or on a `set_route_graph`
 request), and that load blocks on the service, so if it is unavailable the transition fails.
 
 Parameters (under the `osm_graph_file_loader.` namespace):
@@ -413,8 +369,6 @@ Parameters (under the `osm_graph_file_loader.` namespace):
 | --------- | ---- | ------- | ----------- |
 | `from_ll_service` | string | `/fromLLArray` | Name of the robot_localization `FromLLArray` service (override for namespaced setups) |
 | `from_ll_service_timeout` | double | `5.0` | Seconds to wait for the conversion service before failing the load |
-
-A small example is provided in `graphs/sample_graph.osm`.
 
 Note: OSM node ids are 64-bit. The Route Server's `nodeid` and the relevant `nav2_msgs` use
 `uint64_t`, so the loader preserves the original OSM ids without truncation and routes can be
