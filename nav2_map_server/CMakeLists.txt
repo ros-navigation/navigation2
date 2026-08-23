@@ -229,6 +229,25 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
+# Optional standalone benchmark (no ROS dependency, not built by default).
+# Enable with:  colcon build --cmake-args -DBUILD_BENCHMARKS=ON
+# Or optionally with OpenCV:  ... -DBUILD_BENCHMARKS=ON -DHAVE_OPENCV=ON
+option(BUILD_BENCHMARKS "Build the rasterization benchmark executable" OFF)
+if(BUILD_BENCHMARKS)
+  add_executable(benchmark_rasterization
+    benchmark/benchmark_rasterization.cpp)
+  target_compile_features(benchmark_rasterization PRIVATE cxx_std_17)
+  if(HAVE_OPENCV)
+    find_package(OpenCV REQUIRED COMPONENTS imgproc)
+    target_compile_definitions(benchmark_rasterization PRIVATE HAVE_OPENCV)
+    target_link_libraries(benchmark_rasterization PRIVATE ${OpenCV_LIBS})
+  endif()
+  # Install the benchmark alongside other executables so it can be run from
+  # the install tree without additional build steps.
+  install(TARGETS benchmark_rasterization
+    RUNTIME DESTINATION lib/${PROJECT_NAME})
+endif()
+
 ament_export_include_directories("include/${PROJECT_NAME}")
 ament_export_libraries(
   ${library_name}

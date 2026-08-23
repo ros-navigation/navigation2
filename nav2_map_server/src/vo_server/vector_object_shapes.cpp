@@ -54,6 +54,16 @@ inline bool safeWorldToMap(
   const double resolution = map->info.resolution;
   const unsigned int size_x = map->info.width;
   const unsigned int size_y = map->info.height;
+  // Guard against NaN/Inf coordinates: all comparisons with NaN return false,
+  // so a NaN wx/wy would silently pass the bounds check below and reach the
+  // cast to unsigned int — undefined behavior.  Reject non-finite inputs first.
+  if (!std::isfinite(wx) || !std::isfinite(wy)) {
+    return false;
+  }
+  // Task 7: guard against zero-width/height map (size_x - 1 would underflow to UINT_MAX)
+  if (size_x == 0 || size_y == 0) {
+    return false;
+  }
   const double eps = resolution * 1e-6;
   const double max_x = origin_x + size_x * resolution;
   const double max_y = origin_y + size_y * resolution;
@@ -358,6 +368,8 @@ void Polygon::putFilled(
   const double origin_x = map->info.origin.position.x;
   const double origin_y = map->info.origin.position.y;
   const double res = map->info.resolution;
+  const int map_h = static_cast<int>(map->info.height);
+  const int map_w = static_cast<int>(map->info.width);
 
   std::vector<double> vx(n), vy(n);
   for (std::size_t i = 0; i < n; i++) {
@@ -365,22 +377,52 @@ void Polygon::putFilled(
     vy[i] = (pts[i].y - origin_y) / res - 0.5;
   }
 
-  // Find the Y extent of the polygon in map coordinates.
-  int y_min = static_cast<int>(std::ceil(*std::min_element(vy.begin(), vy.end())));
-  int y_max = static_cast<int>(std::floor(*std::max_element(vy.begin(), vy.end())));
-  y_min = std::max(y_min, 0);
-  y_max = std::min(y_max, static_cast<int>(map->info.height) - 1);
+  // Task 7: Guard against NaN vertices (e.g. from a bad TF result). A NaN
+  // violates std::sort's strict-weak-ordering and can walk off the buffer.
+  for (std::size_t i = 0; i < n; i++) {
+    if (!std::isfinite(vx[i]) || !std::isfinite(vy[i])) {
+      RCLCPP_WARN(
+        node->get_logger(),
+        "[UUID: %s] Polygon has non-finite vertex at index %zu after TF — skipping fill",
+        getUUID().c_str(), i);
+      return;
+    }
+  }
+
+  // Task 7: Clamp in double space before casting to int to avoid UB when the
+  // polygon extends far outside the map (e.g. bad TF result).
+  const double map_h_d = static_cast<double>(map_h - 1);
+  const double map_w_d = static_cast<double>(map_w - 1);
+
+  double y_min_d = std::ceil(*std::min_element(vy.begin(), vy.end()));
+  double y_max_d = std::floor(*std::max_element(vy.begin(), vy.end()));
+  y_min_d = std::clamp(y_min_d, 0.0, map_h_d);
+  y_max_d = std::clamp(y_max_d, 0.0, map_h_d);
+  int y_min = static_cast<int>(y_min_d);
+  int y_max = static_cast<int>(y_max_d);
+
+  if (y_min > y_max) {
+    // Task 4: Log when the polygon is entirely off-map in Y.
+    RCLCPP_WARN(
+      node->get_logger(),
+      "[UUID: %s] Polygon is fully off-map — skipping fill",
+      getUUID().c_str());
+    return;
+  }
 
   // Optimization 2: Precompute per-edge information.
-  // For each edge store: y_lo, y_hi (active Y range, half-open interval),
-  // x_at_ylo (X at the lower Y endpoint), and inv_slope (dx/dy).
-  // This avoids recomputing min/max/division inside the hot inner loop.
+  // Store xi, yi, dx (=xj-xi), dy (=yj-yi) per edge.
+  // The intersection at scanline y is computed as xi + (y - yi) * dx / dy,
+  // preserving the original nav2 multiply-then-divide order for bit-identical
+  // output on boundary cases (Task 3).
   struct EdgeInfo
   {
-    double y_lo;       // inclusive lower Y bound
-    double y_hi;       // exclusive upper Y bound
-    double x_at_ylo;  // X coordinate at y == y_lo
-    double inv_slope;  // (x1 - x0) / (y1 - y0)
+    double y_lo;  // lower (exclusive) Y bound — matches isPointInsidePolygon (y_lo, y_hi]
+    double y_hi;  // upper (inclusive) Y bound
+    double xi;   // X at the lower-Y endpoint
+    double yi;   // Y at the lower-Y endpoint
+    double dx;   // xj - xi
+    double dy;   // yj - yi  (always > 0 after orientation normalisation)
   };
   std::vector<EdgeInfo> edges;
   edges.reserve(n);
@@ -392,16 +434,17 @@ void Polygon::putFilled(
       continue;  // horizontal edge — never contributes an intersection
     }
     EdgeInfo e;
+    // Normalise so dy > 0 (low-to-high) to keep xi/yi at the lower endpoint.
     if (y0 < y1) {
-      e.y_lo = y0;  e.y_hi = y1;  e.x_at_ylo = x0;
+      e.y_lo = y0;  e.y_hi = y1;  e.xi = x0;  e.yi = y0;
+      e.dx = x1 - x0;  e.dy = y1 - y0;
     } else {
-      e.y_lo = y1;  e.y_hi = y0;  e.x_at_ylo = x1;
+      e.y_lo = y1;  e.y_hi = y0;  e.xi = x1;  e.yi = y1;
+      e.dx = x0 - x1;  e.dy = y0 - y1;
     }
-    e.inv_slope = (x1 - x0) / (y1 - y0);
     edges.push_back(e);
   }
 
-  const int map_width = static_cast<int>(map->info.width);
   const int8_t fill_val = params_->value;
 
   // Optimization 1: Allocate the intersection vector once outside the loop.
@@ -414,22 +457,25 @@ void Polygon::putFilled(
     // Collect intersections for this scanline using precomputed edge info.
     xs.clear();
     for (const auto & e : edges) {
-      // Half-open interval: y in [y_lo, y_hi)
-      if (static_cast<double>(y) < e.y_lo || static_cast<double>(y) >= e.y_hi) {
+      // Task 2: Use half-open interval (y_lo, y_hi] — lower exclusive, upper
+      // inclusive — matching nav2_util::geometry_utils::isPointInsidePolygon().
+      if (y <= e.y_lo || y > e.y_hi) {
         continue;
       }
-      xs.push_back(e.x_at_ylo + (y - e.y_lo) * e.inv_slope);
+      // Task 3: Compute intersection with multiply-then-divide order to match
+      // the nav2 formula: xi + (py - yi) * (xj - xi) / (yj - yi).
+      xs.push_back(e.xi + (y - e.yi) * e.dx / e.dy);
     }
 
     std::sort(xs.begin(), xs.end());
 
     for (std::size_t k = 0; k + 1 < xs.size(); k += 2) {
-      // To match ray-casting, x must be: xs[k] <= x < xs[k+1]
-      int x_start = static_cast<int>(std::ceil(xs[k]));
-      int x_end = static_cast<int>(std::ceil(xs[k + 1])) - 1;
+      // Task 7: Clamp x in double space before casting to avoid UB.
+      double x_start_d = std::clamp(std::ceil(xs[k]), 0.0, map_w_d);
+      double x_end_d = std::clamp(std::ceil(xs[k + 1]) - 1.0, 0.0, map_w_d);
+      int x_start = static_cast<int>(x_start_d);
+      int x_end = static_cast<int>(x_end_d);
 
-      x_start = std::max(x_start, 0);
-      x_end = std::min(x_end, map_width - 1);
       if (x_start > x_end) {
         continue;
       }
@@ -717,42 +763,80 @@ inline void Circle::putPoint(
 void Circle::putFilled(
   nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
 {
-  unsigned int mcx, mcy;
-  if (!safeWorldToMap(map, center_->x, center_->y, mcx, mcy)) {
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  if (!std::isfinite(center_->x) || !std::isfinite(center_->y) || !std::isfinite(params_->radius)) {
+    RCLCPP_WARN(
+      node->get_logger(),
+      "[UUID: %s] Circle has non-finite coordinates or radius after TF — skipping fill",
+      getUUID().c_str());
     return;
   }
 
+  const double origin_x = map->info.origin.position.x;
+  const double origin_y = map->info.origin.position.y;
   const double res = map->info.resolution;
-  const double r = params_->radius / res;
-  const double r2 = r * r;
-  const int r_int = static_cast<int>(std::ceil(r));
   const int map_w = static_cast<int>(map->info.width);
   const int map_h = static_cast<int>(map->info.height);
-  const int cx = static_cast<int>(mcx);
-  const int cy = static_cast<int>(mcy);
 
-  auto fill_hspan = [&](int y, int x0, int x1) {
-      if (y < 0 || y >= map_h) {return;}
-      x0 = std::max(x0, 0);
-      x1 = std::min(x1, map_w - 1);
-      for (int x = x0; x <= x1; x++) {
-        processCell(
-          map,
-          static_cast<unsigned int>(y) * map->info.width + static_cast<unsigned int>(x),
-          params_->value,
-          overlay_type);
-      }
-    };
+  // Task 6: Compute the circle center in continuous map-cell coordinates.
+  // This preserves sub-cell precision discarded by the previous integer-lattice
+  // approach (safeWorldToMap floors to a cell index before geometry runs).
+  // Formula: cell index = (world - origin) / res, then shift by 0.5 to move
+  // from cell-edge to cell-centre coordinates.
+  const double cxf = (center_->x - origin_x) / res - 0.5;
+  const double cyf = (center_->y - origin_y) / res - 0.5;
+  const double r = params_->radius / res;
 
-  for (int dy = -r_int; dy <= r_int + 1; dy++) {
-    double term = r2 - (dy - 0.5) * (dy - 0.5);
-    if (term < 0.0) {
+  const double map_w_d = static_cast<double>(map_w);
+  const double map_h_d = static_cast<double>(map_h);
+
+  // Task 6: Check against the circle's extent, not just its center, so a
+  // circle whose center is off-map but whose body overlaps still draws.
+  double y0_check_d = std::clamp(std::ceil(cyf - r), -1.0, map_h_d);
+  double y1_check_d = std::clamp(std::floor(cyf + r), -1.0, map_h_d);
+  double x0_check_d = std::clamp(std::ceil(cxf - r), -1.0, map_w_d);
+  double x1_check_d = std::clamp(std::floor(cxf + r), -1.0, map_w_d);
+
+  const int y0_check = static_cast<int>(y0_check_d);
+  const int y1_check = static_cast<int>(y1_check_d);
+  const int x0_check = static_cast<int>(x0_check_d);
+  const int x1_check = static_cast<int>(x1_check_d);
+
+  if (y0_check >= map_h || y1_check < 0 || x0_check >= map_w || x1_check < 0) {
+    // Task 4: Log when the circle extent is fully off-map.
+    RCLCPP_WARN(
+      node->get_logger(),
+      "[UUID: %s] Circle extent is fully off-map — skipping fill",
+      getUUID().c_str());
+    return;
+  }
+
+  const int y0 = std::max(y0_check, 0);
+  const int y1 = std::min(y1_check, map_h - 1);
+
+  for (int y = y0; y <= y1; y++) {
+    const double t = r * r - (y - cyf) * (y - cyf);
+    if (t < 0.0) {
       continue;
     }
-    double r_rem = std::sqrt(term);
-    int x0 = cx + static_cast<int>(std::ceil(-r_rem + 0.5));
-    int x1 = cx + static_cast<int>(std::floor(r_rem + 0.5));
-    fill_hspan(cy + dy, x0, x1);
+    const double dx = std::sqrt(t);
+    int x_lo = std::max(static_cast<int>(std::ceil(cxf - dx)), 0);
+    int x_hi = std::min(static_cast<int>(std::floor(cxf + dx)), map_w - 1);
+    if (x_lo > x_hi) {
+      continue;
+    }
+    const unsigned int row_offset = static_cast<unsigned int>(y) * map->info.width;
+    for (int x = x_lo; x <= x_hi; x++) {
+      processCell(
+        map,
+        row_offset + static_cast<unsigned int>(x),
+        params_->value,
+        overlay_type);
+    }
   }
 }
 
