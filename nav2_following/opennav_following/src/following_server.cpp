@@ -179,9 +179,6 @@ bool FollowingServer::checkAndWarnIfPreempted(
 
 void FollowingServer::followObject()
 {
-  // unique_lock rather than lock_guard: ownership is temporarily released below
-  // while creating the pose subscription, and must stay exception-safe so the
-  // destructor never unlocks a mutex this thread does not own.
   std::unique_lock<std::mutex> lock_reinit(param_handler_->getMutex());
   action_start_time_ = this->now();
   nav2::Rate loop_rate(this, params_->controller_frequency);
@@ -219,8 +216,6 @@ void FollowingServer::followObject()
         following_action_server_->terminate_all(result);
         return;
       } else {
-        // Temporarily release the reinit lock while creating the subscription:
-        // if creation throws, the unique_lock destructor safely skips unlocking
         lock_reinit.unlock();
         RCLCPP_INFO(get_logger(), "Subscribing to pose topic: %s", pose_topic.c_str());
         dynamic_pose_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
