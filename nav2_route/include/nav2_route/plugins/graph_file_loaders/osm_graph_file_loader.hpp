@@ -193,7 +193,7 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("OsmGraphFileLoader")};
 
   nav2::ServiceClient<robot_localization::srv::FromLLArray>::SharedPtr from_ll_client_;
-  std::string from_ll_service_name_{"/fromLLArray"};
+  std::string from_ll_service_name_{"fromLLArray"};
   double from_ll_service_timeout_{5.0};
 
   // Monotonic counter for synthesised edge ids (OSM has no per-segment id).

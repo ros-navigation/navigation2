@@ -30,7 +30,9 @@
 namespace nav2_route
 {
 
-void OsmGraphFileLoader::configure(const nav2::LifecycleNode::SharedPtr node, const std::string & name)
+void OsmGraphFileLoader::configure(
+  const nav2::LifecycleNode::SharedPtr node,
+  const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring OSM graph file loader");
   logger_ = node->get_logger();
@@ -42,8 +44,8 @@ void OsmGraphFileLoader::configure(const nav2::LifecycleNode::SharedPtr node, co
   from_ll_service_timeout_ = node->declare_or_get_parameter(
     prefix + "from_ll_service_timeout", 5.0);
 
-  // Convert OSM lat/lon utilizing robot_localization's 
-  // navsat_transform, reusing the existing datum
+  // Convert OSM lat/lon using robot_localization's navsat_transform, so the
+  // graph shares the robot's existing GPS origin instead of a second one.
   from_ll_client_ = node->create_client<robot_localization::srv::FromLLArray>(
     from_ll_service_name_, true /* creates and spins an internal executor */);
 }

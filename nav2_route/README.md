@@ -363,11 +363,11 @@ Coordinates are converted from latitude/longitude into the map frame using robot
 `FromLLArray` service, so the graph uses the same datum as the robot's localization. **This means `navsat_transform_node` has to be running when the graph is loaded.** The graph loads during the Route Server's `configure` transition (or on a `set_route_graph`
 request), and that load blocks on the service, so if it is unavailable the transition fails.
 
-Parameters (under the `osm_graph_file_loader.` namespace):
+Parameters, namespaced under the name the plugin is given in your `graph_file_loader` config:
 
 | Parameter | Type | Default | Description |
 | --------- | ---- | ------- | ----------- |
-| `from_ll_service` | string | `/fromLLArray` | Name of the robot_localization `FromLLArray` service (override for namespaced setups) |
+| `from_ll_service` | string | `fromLLArray` | Name of the robot_localization `FromLLArray` service (override for namespaced setups) |
 | `from_ll_service_timeout` | double | `5.0` | Seconds to wait for the conversion service before failing the load |
 
 Note: OSM node ids are 64-bit. The Route Server's `nodeid` and the relevant `nav2_msgs` use
