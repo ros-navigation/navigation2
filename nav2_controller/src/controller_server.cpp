@@ -564,15 +564,17 @@ void ControllerServer::computeControl()
 
       updateGlobalPath();
 
-      // Refresh the transformed plan and goal together so they share a single map->odom snapshot
-      transformedPlanAndGoal();
+      const auto current_robot_pose = getCurrentRobotPose();
 
-      if (isGoalReached()) {
+      // Refresh the transformed plan and goal together so they share a single map->odom snapshot
+      transformedPlanAndGoal(current_robot_pose);
+
+      if (isGoalReached(current_robot_pose)) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
         break;
       }
 
-      computeAndPublishVelocity();
+      computeAndPublishVelocity(current_robot_pose);
 
       auto cycle_duration = this->now() - start_time;
       if (!loop_rate.sleep()) {
@@ -708,15 +710,10 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   current_path_ = path;
 }
 
-void ControllerServer::transformedPlanAndGoal()
+void ControllerServer::transformedPlanAndGoal(
+  const geometry_msgs::msg::PoseStamped & current_robot_pose)
 {
-  geometry_msgs::msg::PoseStamped pose;
-
-  if (!getRobotPose(pose)) {
-    throw nav2_core::ControllerTFError("Failed to obtain robot pose");
-  }
-
-  end_pose_.header.stamp = pose.header.stamp;
+  end_pose_.header.stamp = current_robot_pose.header.stamp;
   if (!nav2_util::transformPoseInTargetFrame(
       end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
       costmap_ros_->getGlobalFrameID(), transform_tolerance_))
@@ -725,7 +722,7 @@ void ControllerServer::transformedPlanAndGoal()
   }
 
   auto [closest_point, pruned_plan_end] =
-    path_handlers_[current_path_handler_]->findPlanSegment(pose);
+    path_handlers_[current_path_handler_]->findPlanSegment(current_robot_pose);
   transformed_global_plan_ =
     path_handlers_[current_path_handler_]->transformLocalPlan(closest_point, pruned_plan_end);
 
@@ -735,16 +732,13 @@ void ControllerServer::transformedPlanAndGoal()
   }
 }
 
-void ControllerServer::computeAndPublishVelocity()
+void ControllerServer::computeAndPublishVelocity(
+  const geometry_msgs::msg::PoseStamped & current_robot_pose)
 {
-  geometry_msgs::msg::PoseStamped pose;
-
-  if (!getRobotPose(pose)) {
-    throw nav2_core::ControllerTFError("Failed to obtain robot pose");
-  }
-
   if (!current_progress_checker_.empty()) {
-    if (!progress_checkers_[current_progress_checker_]->check(pose)) {
+    // TODO(marco): Make the check input pose const in a future API revision.
+    auto progress_check_pose = current_robot_pose;
+    if (!progress_checkers_[current_progress_checker_]->check(progress_check_pose)) {
       throw nav2_core::FailedToMakeProgress("Failed to make progress");
     }
   }
@@ -752,14 +746,14 @@ void ControllerServer::computeAndPublishVelocity()
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
   geometry_msgs::msg::PoseStamped goal =
-    path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
+    path_handlers_[current_path_handler_]->getTransformedGoal(current_robot_pose.header.stamp);
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
   try {
     cmd_vel_2d =
       controllers_[current_controller_]->computeVelocityCommands(
-      pose,
+      current_robot_pose,
       twist,
       goal_checkers_[current_goal_checker_].get(),
       transformed_global_plan_,
@@ -797,12 +791,12 @@ void ControllerServer::computeAndPublishVelocity()
 
   if (current_path_.poses.size() >= 2) {
     double current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
-      pose, transformed_end_pose_);
+      current_robot_pose, transformed_end_pose_);
 
     // Transform robot pose to path frame for path tracking calculations
     geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
     if (!nav2_util::transformPoseInTargetFrame(
-        pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
+        current_robot_pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
         current_path_.header.frame_id, transform_tolerance_))
     {
       throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
@@ -831,11 +825,11 @@ void ControllerServer::computeAndPublishVelocity()
 
     // Create tracking error message
     auto tracking_feedback_msg = std::make_unique<nav2_msgs::msg::TrackingFeedback>();
-    tracking_feedback_msg->header = pose.header;
+    tracking_feedback_msg->header = current_robot_pose.header;
     tracking_feedback_msg->position_tracking_error = path_search_result.distance;
     tracking_feedback_msg->heading_tracking_error = heading_tracking_error;
     tracking_feedback_msg->current_path_index = path_search_result.closest_segment_index;
-    tracking_feedback_msg->robot_pose = pose;
+    tracking_feedback_msg->robot_pose = current_robot_pose;
     tracking_feedback_msg->distance_to_goal = current_distance_to_goal;
     tracking_feedback_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
     start_index_ = path_search_result.closest_segment_index;
@@ -959,29 +953,35 @@ void ControllerServer::onGoalExit(bool force_stop)
   }
 }
 
-bool ControllerServer::isGoalReached()
+bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & current_robot_pose)
 {
-  geometry_msgs::msg::PoseStamped pose;
-
-  if (!getRobotPose(pose)) {
-    return false;
-  }
-
   geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());
 
   return goal_checkers_[current_goal_checker_]->isGoalReached(
-    pose.pose, transformed_end_pose_.pose,
+    current_robot_pose.pose, transformed_end_pose_.pose,
     velocity, transformed_global_plan_);
 }
 
-bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
+geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!costmap_ros_->getRobotPose(current_pose)) {
-    return false;
+  geometry_msgs::msg::PoseStamped pose;
+  if (!costmap_ros_->getRobotPose(pose)) {
+    throw nav2_core::ControllerTFError("Failed to obtain robot pose");
   }
-  pose = current_pose;
-  return true;
+
+  const auto threshold = params_->transform_staleness_threshold;
+  if (threshold > 0.0) {
+    const auto transform_age = (now() - pose.header.stamp).seconds();
+    if (transform_age > threshold) {
+      throw nav2_core::ControllerTFError(
+              "Robot pose transform from frame '" + costmap_ros_->getBaseFrameID() +
+              "' to frame '" + costmap_ros_->getGlobalFrameID() + "' is stale: age " +
+              std::to_string(transform_age) +
+              "s exceeds threshold " + std::to_string(threshold) + "s");
+    }
+  }
+
+  return pose;
 }
 
 void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::ConstSharedPtr & msg)
