@@ -650,12 +650,7 @@ geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(
   double dx = pose.pose.position.x - robot_pose.pose.position.x;
   double dy = pose.pose.position.y - robot_pose.pose.position.y;
   const double dist = std::hypot(dx, dy);
-  if (dist == 0.0) {
-    // The robot is exactly at the tracked pose: the backwards projection is
-    // undefined and would produce NaNs downstream, return the pose unchanged.
-    RCLCPP_WARN(
-      get_logger(),
-      "Robot is already at the tracked object pose, skipping distance projection");
+  if (dist < 1e-6) {
     return pose;
   }
   geometry_msgs::msg::PoseStamped forward_pose = pose;
