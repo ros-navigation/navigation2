@@ -62,6 +62,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/DynamicEdges.srv"
   "srv/AddExclusionZone.srv"
   "srv/RemoveExclusionZone.srv"
+  "srv/SetFence.srv"
   "srv/Toggle.srv"
   "action/AssistedTeleop.action"
   "action/BackUp.action"

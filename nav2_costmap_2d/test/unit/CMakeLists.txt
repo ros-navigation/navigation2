@@ -95,3 +95,10 @@ target_link_libraries(asymmetric_inflation_layer_test
   nav2_costmap_2d_core
   layers
 )
+
+nav2_add_gtest(fence_layer_test fence_layer_test.cpp)
+target_link_libraries(fence_layer_test
+  nav2_costmap_2d_core
+  layers
+  nav2_msgs::nav2_msgs
+)
