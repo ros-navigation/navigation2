@@ -15,11 +15,11 @@
 #ifndef NAV2_MAP_SERVER__VECTOR_OBJECT_UTILS_HPP_
 #define NAV2_MAP_SERVER__VECTOR_OBJECT_UTILS_HPP_
 
+#include <uuid/uuid.h>
+
 #include <cstdint>
 #include <stdexcept>
 #include <string>
-
-#include <uuid/uuid.h>
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_util/occ_grid_values.hpp"
