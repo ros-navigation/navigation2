@@ -70,9 +70,7 @@ public:
 
 protected:
   /**
-   * @brief A way buffered from the OSM file: an ordered list of node id
-   * references plus its key/value tags. Note: a way stores no coordinates of
-   * its own, only references to nodes - that ordered ref list is the polyline.
+   * @brief A way from the OSM file: an ordered list of node ids, plus its tags
    */
   struct OsmWay
   {
@@ -81,8 +79,7 @@ protected:
   };
 
   /**
-   * @brief A run of a way between two junctions. The full ordered id list is
-   * held in node_chain [start junction, ...shape nodes..., end junction]
+   * @brief The part of a way between two junctions, held in node_chain
    */
   struct Section
   {
@@ -110,41 +107,35 @@ protected:
     std::vector<OsmWay> & kept_ways);
 
   /**
-   * @brief Count how many times each node id is referenced across all ways,
-   * including repeat visits within a single way
+   * @brief Count how many times each node id is used across all ways
    * @param ways The parsed ways
-   * @return A map of node id to its reference count across all ways
+   * @return A map of node id to how many times it is used
    */
   std::unordered_map<int64_t, size_t> countNodeReferences(const std::vector<OsmWay> & ways);
 
   /**
-   * @brief Split each way at its junction nodes (nodes with reference count
-   * > 1) into sections running junction to junction
+   * @brief Split each way at its junctions, the nodes used more than once
    * @param ways The parsed ways
-   * @param ref_count Reference count from countNodeReferences
-   * @return A vector of sections, each a run of a way between two junctions
+   * @param ref_count Use counts from countNodeReferences
+   * @return The sections, each running from one junction to the next
    */
   std::vector<Section> splitWaysIntoSections(
     const std::vector<OsmWay> & ways,
     const std::unordered_map<int64_t, size_t> & ref_count);
 
   /**
-   * @brief Collect the unique junction ids that bound the sections; these are
-   * the nodes that become graph vertices (sorted for deterministic indices)
-   * @param sections The inter-junction sections
-   * @return Sorted unique section-boundary node ids
+   * @brief Collect the junction ids at the ends of the sections, sorted
+   * @param sections The sections between junctions
+   * @return The sorted, deduplicated node ids that become graph nodes
    */
   std::vector<int64_t> collectVertexIds(const std::vector<Section> & sections);
 
   /**
-   * @brief Convert OSM lat/lon to map-frame x/y using robot_localization's
-   * FromLLArray service, so the graph lands in the same frame the robot
-   * localizes in. Ids absent from osm_nodes (e.g. clipped extracts) are
-   * skipped with a warning rather than failing the whole load.
+   * @brief Convert lat/lon to map frame x/y using the FromLLArray service
    * @param[in] osm_nodes Map of OSM node id to its (latitude, longitude)
    * @param[in] ids The node ids to convert
-   * @param[out] coords_out Map of node id to its map-frame coordinates
-   * @return True if the service converted at least the requested points
+   * @param[out] coords_out Map of node id to its map frame coordinates
+   * @return True if the service converted the requested points
    */
   bool convertCoordinates(
     const std::unordered_map<int64_t, std::pair<double, double>> & osm_nodes,
@@ -152,12 +143,11 @@ protected:
     std::unordered_map<int64_t, Coordinates> & coords_out);
 
   /**
-   * @brief Create a graph vertex for each junction that has coordinates, using
-   * the OSM node id directly as the route node id
+   * @brief Add a graph node for each junction that has coordinates
    * @param[out] graph The graph to populate with nodes
    * @param[out] graph_to_id_map Map of OSM node id to graph index
-   * @param[in] vertex_ids The junction ids that should become vertices
-   * @param[in] coords Map of node id to map-frame coordinates
+   * @param[in] vertex_ids The junction ids that should become nodes
+   * @param[in] coords Map of node id to map frame coordinates
    */
   void addNodesToGraph(
     Graph & graph,
@@ -166,26 +156,22 @@ protected:
     const std::unordered_map<int64_t, Coordinates> & coords);
 
   /**
-   * @brief Direction of travel a way permits, from its oneway tag
+   * @brief Which way traffic may travel along a way
    */
   enum class OneWay {FORWARD, REVERSE, BOTH};
 
   /**
-   * @brief Interpret a way's oneway tag: yes/true/1 -> FORWARD (along the node
-   * order), -1/reverse -> REVERSE, absent/no/false -> BOTH, anything else ->
-   * BOTH with a warning
-   * @param tags The way/section key-value tags
-   * @return The permitted direction of travel
+   * @brief Read a way's oneway tag; anything unrecognized is treated as BOTH
+   * @param tags The way's key-value tags
+   * @return The direction traffic may travel
    */
   OneWay parseOneway(const std::unordered_map<std::string, std::string> & tags);
 
   /**
-   * @brief Wire each section into the graph as one (oneway) or two (two-way)
-   * DirectionalEdges between its boundary junctions. Sections whose endpoints
-   * never became vertices (clipped extracts) are skipped.
+   * @brief Add one edge per section, or two if the way is not oneway
    * @param[out] graph The graph whose nodes gain outgoing edges
    * @param[in] graph_to_id_map Map of OSM node id to graph index
-   * @param[in] sections The inter-junction sections
+   * @param[in] sections The sections between junctions
    */
   void addEdgesFromSections(
     Graph & graph, GraphToIDMap & graph_to_id_map, const std::vector<Section> & sections);

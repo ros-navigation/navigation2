@@ -44,10 +44,9 @@ void OsmGraphFileLoader::configure(
   from_ll_service_timeout_ = node->declare_or_get_parameter(
     prefix + "from_ll_service_timeout", 5.0);
 
-  // Convert OSM lat/lon using robot_localization's navsat_transform, so the
-  // graph shares the robot's existing GPS origin instead of a second one.
+  // Use navsat_transform so the graph shares the robot's GPS origin.
   from_ll_client_ = node->create_client<robot_localization::srv::FromLLArray>(
-    from_ll_service_name_, true /* creates and spins an internal executor */);
+    from_ll_service_name_, true);
 }
 
 bool OsmGraphFileLoader::loadGraphFromFile(
@@ -58,7 +57,7 @@ bool OsmGraphFileLoader::loadGraphFromFile(
     return false;
   }
 
-  // Parse the XML into two in-memory tables: node id -> lat/lon, and the ways.
+  // Read the file into a node id -> lat/lon table plus the list of ways.
   std::unordered_map<int64_t, std::pair<double, double>> osm_nodes;
   std::vector<OsmWay> kept_ways;
   if (!parseOsm(filepath, osm_nodes, kept_ways)) {
@@ -75,14 +74,11 @@ bool OsmGraphFileLoader::loadGraphFromFile(
 
   next_edge_id_ = 0;
 
-  // Resolve the implicit topology: ways connect only where they share a node
-  // id, so shared nodes (junctions) split ways into sections, and each section
-  // becomes one edge between two junction vertices.
+  // Ways only connect where they share a node, so split them at those nodes.
   const auto ref_count = countNodeReferences(kept_ways);
   const auto sections = splitWaysIntoSections(kept_ways, ref_count);
 
-  // Project the junction coordinates into the robot's map frame and make them
-  // graph vertices, then wire the sections between them as directed edges.
+  // Convert the junctions to map frame, add them as nodes, then link them up.
   const auto vertex_ids = collectVertexIds(sections);
   std::unordered_map<int64_t, Coordinates> coords;
   if (!convertCoordinates(osm_nodes, vertex_ids, coords)) {
@@ -124,8 +120,8 @@ bool OsmGraphFileLoader::parseOsm(
     return false;
   }
 
-  // OSM ids don't fit in 32 bits, so we read them as signed 64-bit. Query*
-  // fails loudly on a bad attribute instead of defaulting to 0.
+  // OSM ids don't fit in 32 bits, so read them as signed 64-bit. Query* fails
+  // on a bad attribute instead of quietly returning 0.
   for (const tinyxml2::XMLElement * node = osm->FirstChildElement("node");
     node != nullptr; node = node->NextSiblingElement("node"))
   {
@@ -140,7 +136,7 @@ bool OsmGraphFileLoader::parseOsm(
       continue;
     }
     if (id < 0) {
-      // JOSM's temporary ids go negative and would wrap into our id sentinels.
+      // JOSM's temporary ids go negative and would wrap into our reserved ids.
       RCLCPP_WARN(
         logger_,
         "Skipping OSM node with negative id %" PRId64 "; ids must be non-negative "
@@ -171,8 +167,7 @@ bool OsmGraphFileLoader::parseOsm(
     {
       const char * key = tag->Attribute("k");
       const char * value = tag->Attribute("v");
-      // Attribute() returns nullptr if the attribute is absent; guard before
-      // constructing a std::string from it.
+      // Attribute() gives nullptr when missing, so check before using it.
       if (key != nullptr && value != nullptr) {
         osm_way.tags[key] = value;
       }
@@ -208,7 +203,7 @@ std::vector<OsmGraphFileLoader::Section> OsmGraphFileLoader::splitWaysIntoSectio
     for (size_t i = 0; i < way.refs.size(); ++i) {
       const int64_t node_id = way.refs[i];
 
-      // Consecutive duplicate refs would create zero-length segments
+      // Skip repeated nodes, they would make zero-length edges
       if (!current_section.node_chain.empty() &&
         current_section.node_chain.back() == node_id)
       {
@@ -217,9 +212,8 @@ std::vector<OsmGraphFileLoader::Section> OsmGraphFileLoader::splitWaysIntoSectio
 
       current_section.node_chain.push_back(node_id);
 
-      // A junction interior to the way closes the current section and opens
-      // the next one. The junction id ends one chain AND begins the other:
-      // sharing that boundary node is what stitches the network together.
+      // A junction mid-way ends this section and starts the next one, and is
+      // added to both so the two sections stay connected.
       const bool is_junction = ref_count.at(node_id) > 1;
       const bool is_interior = i + 1 < way.refs.size();
       if (is_junction && is_interior && current_section.node_chain.size() > 1) {
@@ -230,7 +224,7 @@ std::vector<OsmGraphFileLoader::Section> OsmGraphFileLoader::splitWaysIntoSectio
       }
     }
 
-    // Flush the final run of the way; a single-node chain has no extent
+    // Save the last section; a single node has no length
     if (current_section.node_chain.size() > 1) {
       sections.push_back(current_section);
     }
@@ -241,7 +235,7 @@ std::vector<OsmGraphFileLoader::Section> OsmGraphFileLoader::splitWaysIntoSectio
 std::vector<int64_t> OsmGraphFileLoader::collectVertexIds(
   const std::vector<Section> & sections)
 {
-  std::set<int64_t> unique;  // ordered + deduped -> deterministic graph indices
+  std::set<int64_t> unique;  // sorted and deduped, so indices come out the same
   for (const auto & section : sections) {
     if (section.node_chain.empty()) {
       continue;
@@ -262,9 +256,8 @@ bool OsmGraphFileLoader::convertCoordinates(
     return false;
   }
 
-  // Build the batch request, tracking which id each entry corresponds to so the
-  // response can be mapped back. Ids missing from the file (clipped extracts)
-  // are skipped here, so they simply never gain coordinates.
+  // Convert all points in one call, keeping the ids in order to match the
+  // reply. Nodes missing from the file are skipped and get no coordinates.
   auto request = std::make_shared<robot_localization::srv::FromLLArray::Request>();
   std::vector<int64_t> request_ids;
   request_ids.reserve(ids.size());
@@ -313,7 +306,7 @@ bool OsmGraphFileLoader::convertCoordinates(
 
   for (size_t i = 0; i < request_ids.size(); ++i) {
     Coordinates coords;
-    coords.frame_id = "map";  // LocalCartesian-style output from navsat_transform
+    coords.frame_id = "map";  // navsat_transform returns map frame coordinates
     coords.x = static_cast<float>(response->map_points[i].x);
     coords.y = static_cast<float>(response->map_points[i].y);
     coords_out[request_ids[i]] = coords;
@@ -327,7 +320,7 @@ void OsmGraphFileLoader::addNodesToGraph(
   const std::vector<int64_t> & vertex_ids,
   const std::unordered_map<int64_t, Coordinates> & coords)
 {
-  // Only junctions that actually have coordinates can become vertices.
+  // Only junctions with coordinates can become graph nodes.
   std::vector<int64_t> usable;
   usable.reserve(vertex_ids.size());
   for (const int64_t id : vertex_ids) {
@@ -339,11 +332,11 @@ void OsmGraphFileLoader::addNodesToGraph(
   graph.resize(usable.size());
   for (size_t idx = 0; idx < usable.size(); ++idx) {
     const int64_t osm_id = usable[idx];
-    // OSM ids are 64-bit, so use the OSM id directly as the route node id
-    // (parseOsm rejects negative ids, keeping them clear of the id sentinels).
+    // Node ids are 64-bit, so keep the OSM id as-is (parseOsm already
+    // rejected negatives, which would land on our reserved ids).
     const auto nodeid = static_cast<uint64_t>(osm_id);
     graph[idx].nodeid = nodeid;
-    // graph_to_id_map translates an external node id (the OSM id) to a graph index.
+    // Lets callers look up a graph index by OSM id.
     graph_to_id_map[nodeid] = static_cast<uint64_t>(idx);
     graph[idx].coords = coords.at(osm_id);
   }
@@ -385,8 +378,7 @@ void OsmGraphFileLoader::addEdgesFromSections(
     const auto start_it = graph_to_id_map.find(static_cast<uint64_t>(section.node_chain.front()));
     const auto end_it = graph_to_id_map.find(static_cast<uint64_t>(section.node_chain.back()));
     if (start_it == graph_to_id_map.end() || end_it == graph_to_id_map.end()) {
-      // A boundary junction had no coordinates (e.g. clipped extract) and so
-      // never became a vertex; this section cannot be connected.
+      // One end never became a node, so there is nothing to connect.
       RCLCPP_WARN(logger_, "Skipping a section with an unresolved boundary node");
       continue;
     }
@@ -394,9 +386,8 @@ void OsmGraphFileLoader::addEdgesFromSections(
     const uint64_t start_index = start_it->second;
     const uint64_t end_index = end_it->second;
     if (start_index == end_index) {
-      // Section that loops back to its own start (e.g. a closed spur attached
-      // to the network at a single junction). A self edge is useless for
-      // routing, so it is dropped - which also drops the spur's interior.
+      // The section loops back to where it started. An edge to itself is no
+      // use for routing, so drop it.
       RCLCPP_WARN(
         logger_,
         "Dropping self-loop section at junction %" PRIu64 " (closed spur with no second junction)",
@@ -404,9 +395,8 @@ void OsmGraphFileLoader::addEdgesFromSections(
       continue;
     }
 
-    // Default cost: the edge scorers (DistanceScorer) compute the traversal
-    // cost from the vertex coordinates at query time, exactly as for a
-    // GeoJSON edge with no explicit cost.
+    // Leave the cost at its default; the edge scorers work it out from the
+    // node positions, same as a GeoJSON edge without a cost.
     EdgeCost cost;
     const OneWay direction = parseOneway(section.tags);
     if (direction == OneWay::FORWARD || direction == OneWay::BOTH) {
