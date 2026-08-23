@@ -404,7 +404,7 @@ public:
     return (
       (inv_vx_min_sq + inv_vx_sq_range * (vx >= 0.0f).template cast<float>()) * vx.square() +
       inv_vy_max_sq * vy.square()
-    ).max(1.0f).sqrt().inverse();
+    ).max(1.0f).rsqrt();
   }
 
   /**
