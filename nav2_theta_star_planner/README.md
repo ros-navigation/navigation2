@@ -48,6 +48,9 @@ where the mean is taken over the cells the Bresenham trace from 'par' to 'neigh'
 weighted by the length of the step across it. It is a sampled average rather than an exact
 integral: a cell the line clips but the trace steps past is not charged.
 
+Free space (a costmap cost of 0) carries no traversal cost at all, so the length of a path is
+charged solely through the euclidean term.
+
 Both terms are charged per unit distance rather than once per step taken, so neither depends on
 the direction of travel relative to the grid axes. The line-of-sight traversal cost is a
 Bresenham-sampled average normalised to the length of the chord, which over a region of uniform

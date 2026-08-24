@@ -203,13 +203,13 @@ protected:
     }
   }
 
-  /*
-   * @brief this function scales the costmap cost by shifting the origin to 25 and then multiply
-   *           the actual costmap cost by 0.9 to keep the output in the range of [25, 255)
+  /**
+   * @brief the traversal cost density of a cell, in raw costmap units
+   * @return the cost density thus obtained
    */
   inline double getCost(const int & cx, const int & cy) const
   {
-    return 26 + 0.9 * costmap_->getCost(cx, cy);
+    return costmap_->getCost(cx, cy);
   }
 
   /**
