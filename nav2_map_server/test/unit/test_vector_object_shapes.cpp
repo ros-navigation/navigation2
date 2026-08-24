@@ -610,12 +610,7 @@ TEST_F(Tester, testPolygonFilledDegenerate)
   nav2_msgs::msg::PolygonObject::SharedPtr po = makePolygonObject(
     std::vector<unsigned char>());
   po->points.resize(2);
-  ASSERT_TRUE(polygon_->setParams(po));
-
-  nav_msgs::msg::OccupancyGrid::SharedPtr map = makeMap();
-  polygon_->putFilled(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
-
-  verifyMapEmpty(map);
+  ASSERT_FALSE(polygon_->setParams(po));
 }
 
 TEST_F(Tester, testPolygonDifferentFrame)
