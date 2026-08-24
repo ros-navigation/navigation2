@@ -294,13 +294,7 @@ public:
           if (elapsed < server_timeout_) {
             return BT::NodeStatus::RUNNING;
           }
-          // if server has taken more time than the specified timeout value return FAILURE
-          RCLCPP_WARN(
-            node_->get_logger(),
-            "Timed out while waiting for action server to acknowledge goal request for %s",
-            action_name_.c_str());
-          future_goal_handle_.reset();
-          on_timeout();
+          handle_goal_response_timeout();
           return BT::NodeStatus::FAILURE;
         }
       }
@@ -326,12 +320,7 @@ public:
             if (elapsed < server_timeout_) {
               return BT::NodeStatus::RUNNING;
             }
-            RCLCPP_WARN(
-              node_->get_logger(),
-              "Timed out while waiting for action server to acknowledge goal request for %s",
-              action_name_.c_str());
-            future_goal_handle_.reset();
-            on_timeout();
+            handle_goal_response_timeout();
             return BT::NodeStatus::FAILURE;
           }
         }
@@ -415,6 +404,29 @@ public:
 
 protected:
   /**
+   * @brief Handle a timeout while waiting for a goal response
+   */
+  void handle_goal_response_timeout()
+  {
+    RCLCPP_WARN(
+      node_->get_logger(),
+      "Timed out waiting for action server to acknowledge goal request for %s, "
+      "canceling all goals",
+      action_name_.c_str());
+    auto future_cancel = action_client_->async_cancel_all_goals();
+    if (callback_group_executor_.spin_until_future_complete(
+        future_cancel, cancel_timeout_) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_WARN(
+        node_->get_logger(),
+        "Timed out while waiting for action server to cancel all goals for %s",
+        action_name_.c_str());
+    }
+    future_goal_handle_.reset();
+    on_timeout();
+  }
+
+  /**
    * @brief Function to check if current goal should be cancelled
    * @return bool True if current goal should be cancelled, false otherwise
    */
@@ -489,7 +501,6 @@ protected:
 
     // server has already timed out, no need to sleep
     if (remaining <= std::chrono::milliseconds(0)) {
-      future_goal_handle_.reset();
       return false;
     }
 
@@ -548,7 +559,7 @@ protected:
   // new action goal is sent or canceled
   std::chrono::milliseconds server_timeout_;
 
-  // The timeout value when cancelling actions during halt
+  // The timeout value when cancelling actions
   std::chrono::milliseconds cancel_timeout_;
 
   // The timeout value for BT loop execution
