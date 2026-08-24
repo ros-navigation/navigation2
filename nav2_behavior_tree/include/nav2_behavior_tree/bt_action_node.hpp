@@ -410,7 +410,8 @@ protected:
   {
     RCLCPP_WARN(
       node_->get_logger(),
-      "Timed out while waiting for action server to acknowledge goal request for %s, canceling all goals for",
+      "Timed out waiting for action server to acknowledge goal request for %s, "
+      "canceling all goals",
       action_name_.c_str());
     auto future_cancel = action_client_->async_cancel_all_goals();
     if (callback_group_executor_.spin_until_future_complete(
