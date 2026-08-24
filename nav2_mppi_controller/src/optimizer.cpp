@@ -502,9 +502,9 @@ void Optimizer::applyControlSequenceConstraints()
     vx_last = vx_curr;
   }
 
-  // Apply again to ensure accel constraints don't violate specialty limits.
-  // Don't apply if constrain_translational_velocity is true, because the combined translational
-  // velocity envelope is already enforced above and applying again would violate it.
+  // Apply again to ensure accel constraints don't violate specialty limits. Skipped when the
+  // combined translational limit is on: re-applying would discard the accel-limited ramp whenever
+  // the measured speed starts outside it, e.g. when a speed limit shrinks.
   if (!constrain_translational_velocity) {
     motion_model_->applyConstraints(control_sequence_);
   }
