@@ -174,6 +174,13 @@ public:
   virtual bool isHolonomic() const = 0;
 
   /**
+   * @brief Whether the model constrains the combined translational velocity rather than each
+   *        axis on its own
+   * @return Bool If the combined translational velocity is constrained
+   */
+  virtual bool constrainTranslationalVelocity() const {return false;}
+
+  /**
    * @brief Apply hard vehicle constraints to a control sequence
    * @param control_sequence Control sequence to apply constraints to
    */
@@ -351,7 +358,7 @@ public:
     const std::string & plugin_name) override
   {
     auto getParam = param_handler->getParamGetter(plugin_name);
-    getParam(use_elliptical_velocity_limits_, "use_elliptical_velocity_limits", true);
+    getParam(constrain_translational_velocity_, "constrain_translational_velocity", true);
   }
 
   /**
@@ -364,11 +371,14 @@ public:
   }
 
   /**
-   * @brief Whether (vx, vy) is bounded by the ellipse spanned by the per-axis limits rather
-   *        than by each limit independently
-   * @return Bool If the elliptical velocity envelope is enforced
+   * @brief Whether the combined translational velocity is constrained by the envelope spanned by
+   *        the per-axis limits, rather than each axis being bounded on its own
+   * @return Bool If the combined translational velocity is constrained
    */
-  bool useEllipticalVelocityLimits() const {return use_elliptical_velocity_limits_;}
+  bool constrainTranslationalVelocity() const override
+  {
+    return constrain_translational_velocity_;
+  }
 
   /**
    * @brief Returns a scale factor, projecting any infeasible velocity back onto the
@@ -383,26 +393,23 @@ public:
    * @return Scale factors in (0, 1]
    */
   template<typename Derived>
-  typename Derived::PlainObject getVelocityScalingFactor(
+  auto getTranslationalVelocityScale(
     const Eigen::ArrayBase<Derived> & vx, const Eigen::ArrayBase<Derived> & vy) const
   {
-    // Protect the inverse of v_max² against division by zero.
-    const float vx_min_abs = std::fabs(control_constraints_.vx_min);
-    const float inv_vx_max_sq = control_constraints_.vx_max > 1e-6f ?
-      1.0f / (control_constraints_.vx_max * control_constraints_.vx_max) : 1e12f;
-    const float inv_vx_min_sq = vx_min_abs > 1e-6f ?
-      1.0f / (vx_min_abs * vx_min_abs) : 1e12f;
-    const float inv_vy_max_sq = control_constraints_.vy > 1e-6f ?
-      1.0f / (control_constraints_.vy * control_constraints_.vy) : 1e12f;
-
-
-    const float inv_vx_sq_range = inv_vx_max_sq - inv_vx_min_sq;
+    // Protect invSquare() against divide-by-zero
+    auto invSquare = [](const float limit) {
+        return limit > 1e-6f ?
+               1.0f / (limit * limit) : 1.0f / 1e-12f;
+      };
+    const float inv_vx_max_sq = invSquare(control_constraints_.vx_max);
+    const float inv_vx_min_sq = invSquare(std::fabs(control_constraints_.vx_min));
+    const float inv_vy_max_sq = invSquare(control_constraints_.vy);
 
     // 1/sqrt[(vx/vx_max)² + (vy/vy_max)²] for vx >= 0
     // 1/sqrt[(vx/vx_min)² + (vy/vy_max)²] for vx < 0
-    // clamped at 1 so that feasible velocities are left alone
+    // clamped at 1 so that feasible velocities are left alone.
     return (
-      (inv_vx_min_sq + inv_vx_sq_range * (vx >= 0.0f).template cast<float>()) * vx.square() +
+      inv_vx_max_sq * vx.max(0.0f).square() + inv_vx_min_sq * vx.min(0.0f).square() +
       inv_vy_max_sq * vy.square()
     ).max(1.0f).rsqrt();
   }
@@ -413,7 +420,7 @@ public:
    */
   void applyConstraints(models::ControlSequence & control_sequence) override
   {
-    if (!use_elliptical_velocity_limits_) {
+    if (!constrain_translational_velocity_) {
       return;
     }
 
@@ -427,14 +434,14 @@ public:
 
     // Constrain (vx, vy) onto the velocity ellipse
     const Eigen::ArrayXf scaling_factor =
-      getVelocityScalingFactor(control_sequence.vx, control_sequence.vy);
+      getTranslationalVelocityScale(control_sequence.vx, control_sequence.vy);
 
     control_sequence.vx *= scaling_factor;
     control_sequence.vy *= scaling_factor;
   }
 
 private:
-  bool use_elliptical_velocity_limits_{true};
+  bool constrain_translational_velocity_{true};
 };
 
 }  // namespace mppi

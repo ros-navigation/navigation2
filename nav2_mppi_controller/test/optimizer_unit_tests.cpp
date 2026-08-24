@@ -645,7 +645,7 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   EXPECT_TRUE((sequence.vx >= -1.0f - 1e-6f).all());
   EXPECT_TRUE((sequence.vy >= -0.75f - 1e-6f).all());
 
-  // Test that acceleration limits and elliptical velocity limits are respected simultaneously
+  // Test that acceleration limits and the translational velocity envelope hold simultaneously
   state.speed.linear.x = -0.2959;
   state.speed.linear.y = -0.7164;
   state.speed.angular.z = 0.0;
@@ -680,6 +680,66 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
     prev_vx = vx;
     prev_vy = vy;
   }
+
+  // Asymmetric acceleration limits are bounds on the change in speed, not in signed velocity,
+  // so accelerating in reverse is bounded by ax_max and braking out of reverse by ax_min
+  constraints.ax_max = 1.0f;
+  constraints.ax_min = -3.0f;
+  constraints.ay_max = 1.0f;
+  constraints.ay_min = -3.0f;
+
+  state.speed.linear.x = -0.5;
+  state.speed.linear.y = 0.0;
+  state.speed.angular.z = 0.0;
+  sequence.vx.setConstant(-1.0f);
+  sequence.vy.setConstant(0.0f);
+  sequence.wz.setConstant(0.0f);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+
+  // One controller period of reverse acceleration at ax_max, not at |ax_min|
+  EXPECT_NEAR(sequence.vx(0), -0.5f - settings.controller_period * constraints.ax_max, 1e-5);
+
+  // Braking out of reverse may use the full |ax_min|
+  state.speed.linear.x = -0.5;
+  sequence.vx.setConstant(0.0f);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  EXPECT_NEAR(
+    sequence.vx(0), -0.5f - settings.controller_period * constraints.ax_min, 1e-5);
+
+  // A speed limit shrinking mid-motion puts the measured speed outside the new envelope. The
+  // sequence must ramp back in under the accel limits rather than being snapped onto it.
+  constraints.ax_max = 3.0f;
+  constraints.ax_min = -3.0f;
+  constraints.ay_max = 3.0f;
+  constraints.ay_min = -3.0f;
+  constraints.vx_max = 0.5f;
+  constraints.vx_min = -0.5f;
+  constraints.vy = 0.375f;
+  optimizer_tester.resetMotionModel();
+  optimizer_tester.testSetOmniModel();
+
+  state.speed.linear.x = 0.7;
+  state.speed.linear.y = 0.4;
+  state.speed.angular.z = 0.0;
+  sequence.vx.setConstant(0.0f);
+  sequence.vy.setConstant(0.0f);
+  sequence.wz.setConstant(0.0f);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+
+  float last_vx = static_cast<float>(state.speed.linear.x);
+  float last_vy = static_cast<float>(state.speed.linear.y);
+  for (unsigned int i = 0; i < 50; ++i) {
+    const float dt = (i == 0) ? settings.controller_period : settings.model_dt;
+    EXPECT_GE(sequence.vx(i) - last_vx, dt * constraints.ax_min - 1e-5f);
+    EXPECT_GE(sequence.vy(i) - last_vy, dt * constraints.ay_min - 1e-5f);
+    last_vx = sequence.vx(i);
+    last_vy = sequence.vy(i);
+  }
+
+  // and it does converge into the envelope by the end of the horizon
+  EXPECT_LE(
+    std::hypot(sequence.vx(49) / constraints.vx_max, sequence.vy(49) / constraints.vy),
+    1.0f + 1e-5f);
 }
 
 TEST(OptimizerTests, applyControlSequenceConstraintsPerAxisTests)
@@ -698,7 +758,7 @@ TEST(OptimizerTests, applyControlSequenceConstraintsPerAxisTests)
   node->declare_parameter(
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   node->declare_parameter(
-    "mppic.omni.use_elliptical_velocity_limits", rclcpp::ParameterValue(false));
+    "mppic.omni.constrain_translational_velocity", rclcpp::ParameterValue(false));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -708,7 +768,7 @@ TEST(OptimizerTests, applyControlSequenceConstraintsPerAxisTests)
   auto tf_buffer = nav2::create_transform_buffer(node);
   optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
 
-  // Opting out of the elliptical envelope must keep the axes independent, both for the
+  // Opting out of the combined translational limit must keep the axes independent, both for the
   // velocity limits and for the acceleration limits
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();

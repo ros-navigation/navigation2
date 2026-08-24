@@ -260,8 +260,8 @@ TEST(CriticTests, ConstraintsCritic)
 
 TEST(CriticTests, ConstraintsCriticPerAxisFallback)
 {
-  // With use_elliptical_velocity_limits false, the omni branch scores each axis independently,
-  // exactly as it did before the elliptical envelope was introduced.
+  // With constrain_translational_velocity false, the omni branch scores each axis independently,
+  // exactly as it did before the combined translational limit was introduced.
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
@@ -288,10 +288,10 @@ TEST(CriticTests, ConstraintsCriticPerAxisFallback)
   {0.5f, -0.35f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
   auto omni_model = std::make_shared<OmniMotionModel>();
   node->declare_parameter(
-    std::string(node->get_name()) + ".omni.use_elliptical_velocity_limits", false);
+    std::string(node->get_name()) + ".omni.constrain_translational_velocity", false);
   omni_model->initialize(&param_handler, std::string(node->get_name()) + ".omni");
   omni_model->setConstraints(constraints, model_dt, 0.0f, 0.0f, 0.0f, false);
-  ASSERT_FALSE(omni_model->useEllipticalVelocityLimits());
+  ASSERT_FALSE(omni_model->constrainTranslationalVelocity());
   data.motion_model = omni_model;
 
   node->declare_parameter("mppi.vy_max", 0.3);

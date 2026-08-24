@@ -401,6 +401,29 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
   }
 }
 
+namespace
+{
+
+/**
+ * @brief Fraction of a requested velocity change that the acceleration limits allow
+ * @param last Velocity at the previous time step
+ * @param curr Requested velocity
+ * @param min_delta Most negative change in speed magnitude allowed this step
+ * @param max_delta Most positive change in speed magnitude allowed this step
+ * @return Fraction in [0, 1], or 1 when nothing is requested
+ */
+float reachableFraction(
+  const float last, const float curr, const float min_delta, const float max_delta)
+{
+  const float delta = curr - last;
+  if (delta == 0.0f) {
+    return 1.0f;
+  }
+  return (utils::clampVelocityByAccel(last, curr, min_delta, max_delta) - last) / delta;
+}
+
+}  // namespace
+
 void Optimizer::applyControlSequenceConstraints()
 {
   auto & s = settings_;
@@ -421,9 +444,7 @@ void Optimizer::applyControlSequenceConstraints()
   float wz_last = static_cast<float>(state_.speed.angular.z);
   float vy_last = isHolonomic() ? static_cast<float>(state_.speed.linear.y) : 0.0f;
 
-  // Direction-preserving accel limiting only applies when the elliptical envelope is in use
-  auto * omni = dynamic_cast<OmniMotionModel *>(motion_model_.get());
-  const bool use_elliptical_limits = omni && omni->useEllipticalVelocityLimits();
+  const bool constrain_translational_velocity = motion_model_->constrainTranslationalVelocity();
 
   // When shifting, vx(0) is "now" and not sent. Pin it so vx(1), the sent command,
   // is exactly one constraint step from current speed when shift_control_sequence
@@ -445,58 +466,48 @@ void Optimizer::applyControlSequenceConstraints()
       max_delta_wz = s.model_dt * s.constraints.az_max;
     }
 
-    // Apply translational constraints to control sequence
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
+
+    float & wz_curr = control_sequence_.wz(i);
+    wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
+    wz_curr = utils::clampVelocityByAccel(wz_last, wz_curr, -max_delta_wz, max_delta_wz);
+    wz_last = wz_curr;
 
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
 
-      if (use_elliptical_limits) {
-        const float dvx = vx_curr - vx_last;
-        const float dvy = vy_curr - vy_last;
+      if (constrain_translational_velocity) {
+        // Clamp the combined translational velocity along the requested velocity vector,
+        // rather than clamping each axis separately.
+        const float alpha = std::min(
+          {1.0f,
+            reachableFraction(vx_last, vx_curr, min_delta_vx, max_delta_vx),
+            reachableFraction(vy_last, vy_curr, min_delta_vy, max_delta_vy)});
 
-        // Apply per-axis accel limits while preserving direction of requested
-        // translational velocity, matching the elliptical velocity envelope
-        float alpha = 1.0f;
-        if (dvx > max_delta_vx) {
-          alpha = std::min(alpha, max_delta_vx / dvx);
-        } else if (dvx < min_delta_vx) {
-          alpha = std::min(alpha, min_delta_vx / dvx);
-        }
-
-        if (dvy > max_delta_vy) {
-          alpha = std::min(alpha, max_delta_vy / dvy);
-        } else if (dvy < min_delta_vy) {
-          alpha = std::min(alpha, min_delta_vy / dvy);
-        }
-
-        vx_curr = vx_last + alpha * dvx;
-        vy_curr = vy_last + alpha * dvy;
+        vx_curr = vx_last + alpha * (vx_curr - vx_last);
+        vy_curr = vy_last + alpha * (vy_curr - vy_last);
       } else {
-        // Per-axis velocity limits requested, so bound each axis independently too
+        // Each axis is limited on its own, so bound each axis on its own
         vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
         vy_curr = utils::clampVelocityByAccel(vy_last, vy_curr, min_delta_vy, max_delta_vy);
       }
 
       vy_last = vy_curr;
     } else {
-      // Non-holonomic case -> either Ackermann or Diff Drive
       vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
     }
 
     vx_last = vx_curr;
-
-    // Apply rotational constraints to control sequence
-    float & wz_curr = control_sequence_.wz(i);
-    wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
-    wz_curr = utils::clampVelocityByAccel(wz_last, wz_curr, -max_delta_wz, max_delta_wz);
-    wz_last = wz_curr;
   }
 
-  // Apply again to ensure accel constraints don't violate specialty limits
-  motion_model_->applyConstraints(control_sequence_);
+  // Apply again to ensure accel constraints don't violate specialty limits.
+  // Don't apply if constrain_translational_velocity is true, because the combined translational
+  // velocity envelope is already enforced above and applying again would violate it.
+  if (!constrain_translational_velocity) {
+    motion_model_->applyConstraints(control_sequence_);
+  }
 }
 
 void Optimizer::updateStateVelocities(

@@ -90,7 +90,7 @@ Three built-in motion models are provided:
  | Parameter                        | Type   | Definition                                                                                                  |
  | -------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
  | plugin                           | string | Required: `"mppi::OmniMotionModel"`                                                                         |
- | use_elliptical_velocity_limits   | bool   | Default true. Bound `(vx, vy)` by the ellipse spanned by the per-axis limits rather than by each limit independently.  |
+ | constrain_translational_velocity | bool   | Default true. Constrain the combined translational velocity `sqrt(vx² + vy²)` by the ellipse spanned by `vx_max`, `vx_min` and `vy_max`. When false, `vx` and `vy` are each bounded separately, which allows a translational velocity faster than either axis limit. |
 
 #### Constraint Critic
  | Parameter             | Type   | Definition                                                                                                  |
@@ -233,7 +233,7 @@ controller_server:
       # motion_model: "omni"
       # omni:
       #   plugin: "mppi::OmniMotionModel"
-      #   use_elliptical_velocity_limits: true
+      #   constrain_translational_velocity: true
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
         enabled: true

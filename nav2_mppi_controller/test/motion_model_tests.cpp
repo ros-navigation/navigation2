@@ -191,13 +191,23 @@ TEST(MotionModelTests, OmniZeroLimitConstraintsTest)
   EXPECT_NEAR(control_sequence.vx(2), 0.0f, 1e-6);
   EXPECT_NEAR(control_sequence.vy(2), 0.3f, 1e-6);
 
+  // Forward motion stays bound by vx_max while reversing is disallowed
+  control_sequence.vx << 0.5f, 0.5f, 5.0f;
+  control_sequence.vy << 0.3f, 0.0f, 0.0f;
+  model->applyConstraints(control_sequence);
+
+  EXPECT_NEAR(control_sequence.vx(0), 0.5f / std::sqrt(2.0f), 1e-6);
+  EXPECT_NEAR(control_sequence.vy(0), 0.3f / std::sqrt(2.0f), 1e-6);
+  EXPECT_NEAR(control_sequence.vx(1), 0.5f, 1e-6);
+  EXPECT_NEAR(control_sequence.vx(2), 0.5f, 1e-6);
+
   // Check it cleanly destructs
   model.reset();
 }
 
 TEST(MotionModelTests, OmniPerAxisLimitsTest)
 {
-  // With use_elliptical_velocity_limits false only per-axis clamps are applied
+  // With constrain_translational_velocity false only per-axis clamps are applied
   models::ControlSequence control_sequence;
   control_sequence.reset(2);  // populates with zeros
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
@@ -205,9 +215,9 @@ TEST(MotionModelTests, OmniPerAxisLimitsTest)
   ParametersHandler param_handler(node, name);
   auto model = std::make_unique<OmniMotionModel>();
 
-  node->declare_parameter(name + ".omni.use_elliptical_velocity_limits", false);
+  node->declare_parameter(name + ".omni.constrain_translational_velocity", false);
   model->initialize(&param_handler, name + ".omni");
-  EXPECT_FALSE(model->useEllipticalVelocityLimits());
+  EXPECT_FALSE(model->constrainTranslationalVelocity());
 
   models::ControlConstraints constraints{0.5f, -0.35f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
   model->setConstraints(constraints, 0.1f, 0.0f, 0.0f, 0.0f, false);
