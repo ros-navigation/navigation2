@@ -19,6 +19,8 @@
 #include <vector>
 #include <utility>
 
+#include <cmath>
+
 #include "nav2_theta_star_planner/parameter_handler.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 
@@ -27,6 +29,23 @@ namespace nav2_theta_star_planner
 
 using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
+
+namespace
+{
+/**
+ * @brief Reject a weight that is not a positive finite number, warning and substituting a default
+ */
+void applyPositiveFiniteDefault(
+  const rclcpp::Logger & logger, const std::string & name, double & value, const double fallback)
+{
+  if (!std::isfinite(value) || value <= 0.0) {
+    RCLCPP_WARN(
+      logger, "Your value for - %s was %f, it must be a positive finite number, "
+      "and is now set to %f", name.c_str(), value, fallback);
+    value = fallback;
+  }
+}
+}  // namespace
 
 ParameterHandler::ParameterHandler(
   const nav2::LifecycleNode::SharedPtr & node,
@@ -45,8 +64,11 @@ ParameterHandler::ParameterHandler(
     plugin_name_ + ".allow_unknown", true);
   params_.w_euc_cost = node->declare_or_get_parameter(
     plugin_name_ + ".w_euc_cost", 1.0);
+  applyPositiveFiniteDefault(logger_, plugin_name_ + ".w_euc_cost", params_.w_euc_cost, 1.0);
   params_.w_traversal_cost = node->declare_or_get_parameter(
     plugin_name_ + ".w_traversal_cost", 2.0);
+  applyPositiveFiniteDefault(
+    logger_, plugin_name_ + ".w_traversal_cost", params_.w_traversal_cost, 2.0);
   params_.w_heuristic_cost = params_.w_euc_cost < 1.0 ? params_.w_euc_cost : 1.0;
   params_.terminal_checking_interval = node->declare_or_get_parameter(
     plugin_name_ + ".terminal_checking_interval", 5000);
@@ -66,10 +88,10 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() <= 0.0) {
+      if (!std::isfinite(parameter.as_double()) || parameter.as_double() <= 0.0) {
         RCLCPP_WARN(
         logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >0. Ignoring parameter update.",
+        "it should be a positive finite number. Ignoring parameter update.",
         param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
@@ -109,6 +131,9 @@ ParameterHandler::updateParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".w_euc_cost") {
         params_.w_euc_cost = parameter.as_double();
+        // w_heuristic_cost is derived from w_euc_cost and must be recomputed with it, or the
+        // heuristic stops matching the cost function and can exceed the true remaining cost.
+        params_.w_heuristic_cost = params_.w_euc_cost < 1.0 ? params_.w_euc_cost : 1.0;
       } else if (param_name == plugin_name_ + ".w_traversal_cost") {
         params_.w_traversal_cost = parameter.as_double();
       }
