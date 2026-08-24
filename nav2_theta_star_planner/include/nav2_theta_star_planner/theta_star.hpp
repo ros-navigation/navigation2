@@ -188,13 +188,10 @@ protected:
    */
   bool isSafe(const int & cx, const int & cy, double & cost, const double & step_length) const
   {
-    double curr_cost = getCost(cx, cy);
+    const double curr_cost = getCost(cx, cy);
     if ((costmap_->getCost(cx, cy) == UNKNOWN_COST && params_->allow_unknown) ||
       curr_cost <= MAX_NON_OBSTACLE_COST)
     {
-      if (costmap_->getCost(cx, cy) == UNKNOWN_COST) {
-        curr_cost = OCCUPIED_COST - 1;
-      }
       cost += params_->w_traversal_cost * curr_cost * curr_cost / MAX_NON_OBSTACLE_COST /
         MAX_NON_OBSTACLE_COST * step_length;
       return true;
@@ -205,11 +202,14 @@ protected:
 
   /**
    * @brief the traversal cost density of a cell, in raw costmap units
+   *           unknown cells are charged as near-obstacle, so that traversing them is discouraged
+   *           wherever allow_unknown permits it at all
    * @return the cost density thus obtained
    */
   inline double getCost(const int & cx, const int & cy) const
   {
-    return costmap_->getCost(cx, cy);
+    const unsigned char cost = costmap_->getCost(cx, cy);
+    return cost == UNKNOWN_COST ? OCCUPIED_COST - 1 : cost;
   }
 
   /**
