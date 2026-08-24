@@ -159,8 +159,6 @@ public:
 
   /**
    * @brief Fills the shape interior on the map using an optimized scanline algorithm.
-   * Replaces the naive bounding-box + point-in-polygon loop previously performed
-   * inside VectorObjectServer::putVectorObjectsOnMap().
    * Empty virtual method intended to be used in child implementations.
    * @param map Output map pointer
    * @param overlay_type Overlay type
