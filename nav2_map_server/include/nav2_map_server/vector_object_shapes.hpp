@@ -274,8 +274,6 @@ public:
   /**
    * @brief Fills the polygon interior on the map using a scanline algorithm
    * (equivalent to OpenCV's cv::fillPoly) without an external OpenCV dependency.
-   * This is significantly faster than the previous approach of testing each
-   * bounding-box cell individually with isPointInside().
    * @param map Output map pointer
    * @param overlay_type Overlay type
    */
