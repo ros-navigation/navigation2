@@ -13,6 +13,8 @@
 //  limitations under the License.
 
 #include <gtest/gtest.h>
+#include <cmath>
+#include <limits>
 #include <memory>
 #include <vector>
 #include "rclcpp/rclcpp.hpp"
@@ -38,6 +40,8 @@ public:
   }
 
   bool uwithinLimits(const int & cx, const int & cy) {return withinLimits(cx, cy);}
+
+  double ugetTraversalCost(const int & cx, const int & cy) {return getTraversalCost(cx, cy);}
 
   bool uisGoal(const tree_node & this_node) {return isGoal(this_node);}
 
@@ -257,6 +261,245 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
     life_node->get_node_base_interface(),
     results);
   EXPECT_EQ(life_node->get_parameter("test.w_euc_cost").as_double(), 1.0);
+}
+
+/// The traversal cost is charged per unit distance, so two straight lines of equal metric length
+/// accrue equal cost whatever their bearing. Charging once per Bresenham step regardless of
+/// whether the step is axial or diagonal makes a 45-degree line about 29% cheaper per metre.
+TEST(ThetaStarTest, test_los_cost_is_direction_independent) {
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarDirectionTestNode");
+  auto plugin_name = std::string("test");
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+  auto planner_ = std::make_unique<test_theta_star>(params);
+
+  /// A uniform costmap: every cell has the same cost density, so the cost of a line is exactly
+  /// proportional to its length and any residual bearing dependence is the defect under test.
+  planner_->costmap_ = new nav2_costmap_2d::Costmap2D(120, 120, 1.0, 0.0, 0.0, 100);
+  params->w_traversal_cost = 2.0;
+
+  const int line_length = 100;
+  double axial_cost = 0.0, diagonal_cost = 0.0;
+  ASSERT_TRUE(planner_->ulosCheck(5, 5, 5 + line_length, 5, axial_cost));
+  ASSERT_TRUE(planner_->ulosCheck(5, 5, 5 + line_length, 5 + line_length, diagonal_cost));
+
+  EXPECT_NEAR(
+    axial_cost / line_length,
+    diagonal_cost / std::hypot(line_length, line_length),
+    1e-9);
+
+  /// Axial and 45-degree are the two bearings at which the Bresenham staircase happens to be the
+  /// same length as the line, so an off-axis bearing is needed to detect a charge that follows the
+  /// staircase rather than the line.
+  double oblique_cost = 0.0;
+  ASSERT_TRUE(planner_->ulosCheck(5, 5, 5 + line_length, 5 + line_length / 2, oblique_cost));
+  EXPECT_NEAR(
+    axial_cost / line_length,
+    oblique_cost / std::hypot(line_length, line_length / 2),
+    1e-9);
+
+  delete planner_->costmap_;
+}
+
+/// Each expansion step is charged by its metric length, so on a uniform costmap the planner
+/// reaches an off-axis goal by a straight path rather than one bowed towards the grid diagonals.
+TEST(ThetaStarTest, test_path_does_not_bow_on_uniform_costmap) {
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarBowTestNode");
+  auto plugin_name = std::string("test");
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+  auto planner_ = std::make_unique<test_theta_star>(params);
+
+  planner_->costmap_ = new nav2_costmap_2d::Costmap2D(200, 200, 1.0, 0.0, 0.0, 100);
+  params->w_euc_cost = 1.0;
+  params->w_traversal_cost = 2.0;
+  params->w_heuristic_cost = 1.0;
+  params->how_many_corners = 8;
+
+  /// An off-grid bearing, so neither the axial nor the diagonal step is favoured outright.
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = 10;
+  start.pose.position.y = 10;
+  start.pose.orientation.w = 1.0;
+  goal.pose.position.x = 190;
+  goal.pose.position.y = 120;
+  goal.pose.orientation.w = 1.0;
+  planner_->setStartAndGoal(start, goal);
+
+  std::vector<coordsW> path;
+  ASSERT_TRUE(planner_->runAlgo(path));
+  ASSERT_GE(static_cast<int>(path.size()), 2);
+
+  double length = 0.0;
+  for (size_t i = 1; i < path.size(); i++) {
+    length += std::hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+  }
+  const double chord = std::hypot(
+    path.back().x - path.front().x, path.back().y - path.front().y);
+  /// A path bowed towards the diagonals is measurably longer than its own chord.
+  EXPECT_LT(length / chord, 1.001);
+
+  delete planner_->costmap_;
+}
+
+/// w_euc_cost is the only thing charging for path length, so a non-positive value makes every
+/// path through free space cost the same and the planner returns arbitrary ones. The dynamic
+/// reconfigure path already rejects non-positive doubles; the load path must agree.
+/// w_heuristic_cost is derived from w_euc_cost and has to track it, including on reconfigure,
+/// or the heuristic can exceed the true remaining cost and the search stops being admissible.
+TEST(ThetaStarPlanner, test_w_euc_cost_validation) {
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarEucValidationNode");
+  auto plugin_name = std::string("test");
+  node->declare_parameter(plugin_name + ".w_euc_cost", rclcpp::ParameterValue(0.0));
+
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+
+  /// A non-positive w_euc_cost loaded from config is overridden rather than accepted.
+  EXPECT_GT(params->w_euc_cost, 0.0);
+  EXPECT_GT(params->w_heuristic_cost, 0.0);
+
+  /// and the heuristic weight tracks w_euc_cost when it changes at runtime.
+  auto result = node->set_parameters(
+    {rclcpp::Parameter(plugin_name + ".w_euc_cost", 0.5)});
+  ASSERT_EQ(result.size(), 1u);
+  EXPECT_TRUE(result[0].successful);
+  EXPECT_DOUBLE_EQ(params->w_euc_cost, 0.5);
+  EXPECT_DOUBLE_EQ(params->w_heuristic_cost, 0.5);
+
+  /// A non-positive value is still refused on reconfigure.
+  auto bad = node->set_parameters(
+    {rclcpp::Parameter(plugin_name + ".w_euc_cost", 0.0)});
+  ASSERT_EQ(bad.size(), 1u);
+  EXPECT_FALSE(bad[0].successful);
+  EXPECT_DOUBLE_EQ(params->w_euc_cost, 0.5);
+
+  /// A non-finite value passes a bare "<= 0.0" test, so it must be refused explicitly.
+  auto nan_result = node->set_parameters(
+    {rclcpp::Parameter(plugin_name + ".w_euc_cost", std::nan(""))});
+  ASSERT_EQ(nan_result.size(), 1u);
+  EXPECT_FALSE(nan_result[0].successful);
+  auto inf_result = node->set_parameters(
+    {rclcpp::Parameter(
+      plugin_name + ".w_euc_cost", std::numeric_limits<double>::infinity())});
+  ASSERT_EQ(inf_result.size(), 1u);
+  EXPECT_FALSE(inf_result[0].successful);
+  EXPECT_DOUBLE_EQ(params->w_euc_cost, 0.5);
+}
+
+/// w_traversal_cost is validated on reconfigure but was not at load. With the free-space floor
+/// gone a negative weight makes the per-unit charge negative on high-cost cells, which is a
+/// negative edge weight and invalidates the search ordering.
+TEST(ThetaStarPlanner, test_w_traversal_cost_validation) {
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarTraversalValidationNode");
+  auto plugin_name = std::string("test");
+  node->declare_parameter(plugin_name + ".w_traversal_cost", rclcpp::ParameterValue(-2.0));
+
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+
+  EXPECT_GT(params->w_traversal_cost, 0.0);
+}
+
+/// Non-finite weights pass a bare "<= 0.0" test, so the load path must reject them explicitly,
+/// just as the reconfigure path does.
+TEST(ThetaStarPlanner, test_non_finite_weight_at_load) {
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarNonFiniteLoadNode");
+  auto plugin_name = std::string("test");
+  node->declare_parameter(plugin_name + ".w_euc_cost", rclcpp::ParameterValue(std::nan("")));
+  node->declare_parameter(
+    plugin_name + ".w_traversal_cost",
+    rclcpp::ParameterValue(std::numeric_limits<double>::infinity()));
+
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+
+  EXPECT_TRUE(std::isfinite(params->w_euc_cost));
+  EXPECT_GT(params->w_euc_cost, 0.0);
+  EXPECT_TRUE(std::isfinite(params->w_traversal_cost));
+  EXPECT_GT(params->w_traversal_cost, 0.0);
+  EXPECT_TRUE(std::isfinite(params->w_heuristic_cost));
+}
+
+/// Free space carries no traversal cost, so the traversal term contributes nothing to a line
+/// that crosses only free cells, and the cost of such a line is charged solely by w_euc_cost.
+/// The safety cutoff also becomes consistent: both isSafe overloads then admit exactly the same
+/// set of cells, where the 26 + 0.9 remap made the line-of-sight one stop a cost level earlier.
+TEST(ThetaStarTest, test_free_space_carries_no_traversal_cost) {
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarFreeSpaceTestNode");
+  auto plugin_name = std::string("test");
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+  auto planner_ = std::make_unique<test_theta_star>(params);
+
+  planner_->costmap_ = new nav2_costmap_2d::Costmap2D(120, 120, 1.0, 0.0, 0.0, 0);
+  params->w_traversal_cost = 2.0;
+
+  double sl_cost = 0.0;
+  ASSERT_TRUE(planner_->ulosCheck(5, 5, 105, 5, sl_cost));
+  EXPECT_DOUBLE_EQ(sl_cost, 0.0);
+
+  /// A uniform non-free cost is still charged at its analytic density per unit distance.
+  for (int i = 0; i < 120; i++) {
+    for (int j = 0; j < 120; j++) {
+      planner_->costmap_->setCost(i, j, 126);
+    }
+  }
+  ASSERT_TRUE(planner_->ulosCheck(5, 5, 105, 5, sl_cost));
+  EXPECT_NEAR(sl_cost / 100.0, 2.0 * (126.0 / 252.0) * (126.0 / 252.0), 1e-9);
+
+  /// The highest non-obstacle cost is admitted by both overloads, not just the plain one.
+  planner_->costmap_->setCost(50, 5, MAX_NON_OBSTACLE_COST);
+  EXPECT_TRUE(planner_->isSafe(50, 5));
+  EXPECT_TRUE(planner_->ulosCheck(5, 5, 105, 5, sl_cost));
+
+  delete planner_->costmap_;
+}
+
+/// An unknown cell is charged as near-obstacle by both cost sites. Reading the raw costmap value
+/// at one site and the clamped value at the other made the same cell cost different amounts
+/// depending on whether it was reached by an expansion step or crossed by a line-of-sight check.
+TEST(ThetaStarTest, test_unknown_cost_agrees_between_cost_sites) {
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarUnknownTestNode");
+  auto plugin_name = std::string("test");
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+  auto planner_ = std::make_unique<test_theta_star>(params);
+
+  planner_->costmap_ = new nav2_costmap_2d::Costmap2D(120, 120, 1.0, 0.0, 0.0, UNKNOWN_COST);
+  params->w_traversal_cost = 2.0;
+  params->allow_unknown = true;
+
+  /// The per-cell charge the line-of-sight check makes, recovered per unit distance.
+  double sl_cost = 0.0;
+  ASSERT_TRUE(planner_->ulosCheck(5, 5, 105, 5, sl_cost));
+  const double los_charge = sl_cost / 100.0;
+
+  /// and the charge an expansion step makes for the same cell.
+  const double step_charge = planner_->ugetTraversalCost(50, 50);
+
+  EXPECT_NEAR(los_charge, step_charge, 1e-9);
+  /// both being the near-obstacle value, not the raw UNKNOWN_COST of 255
+  const double expected = 2.0 *
+    ((OCCUPIED_COST - 1) / static_cast<double>(MAX_NON_OBSTACLE_COST)) *
+    ((OCCUPIED_COST - 1) / static_cast<double>(MAX_NON_OBSTACLE_COST));
+  EXPECT_NEAR(step_charge, expected, 1e-9);
+
+  delete planner_->costmap_;
 }
 
 int main(int argc, char ** argv)
