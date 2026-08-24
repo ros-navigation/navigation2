@@ -110,16 +110,17 @@ void ThetaStar::setNeighbors(const tree_node * curr_data)
     mx = curr_data->x + moves[i].x;
     my = curr_data->y + moves[i].y;
 
-    if (withinLimits(mx, my)) {
-      if (!isSafe(mx, my)) {
-        continue;
-      }
-    } else {
+    if (!withinLimits(mx, my)) {
       continue;
     }
 
-    g_cost = curr_data->g + getEuclideanCost(curr_data->x, curr_data->y, mx, my) +
-      getTraversalCost(mx, my);
+    const unsigned char cost = costmap_->getCost(mx, my);
+    if (!isSafe(cost)) {
+      continue;
+    }
+
+    const double step_length = (moves[i].x != 0 && moves[i].y != 0) ? M_SQRT2 : 1.0;
+    g_cost = curr_data->g + getEuclideanCost(step_length) + getTraversalCost(cost, step_length);
 
     m_id = getIndex(mx, my);
 
@@ -178,13 +179,19 @@ bool ThetaStar::losCheck(
   int dx = abs(x1 - x0), sx = (x0 < x1) ? 1 : -1;
   int dy = abs(y1 - y0), sy = (y0 < y1) ? 1 : -1;
   int cx = x0, cy = y0, e = dx - dy;
+  double stepped_length = 0.0;
 
   while (cx != x1 || cy != y1) {
-    if (!isSafe(cx, cy, sl_cost)) {
+    const unsigned char cost = costmap_->getCost(cx, cy);
+    if (!isSafe(cost)) {
       return false;
     }
-    int e2 = 2 * e;
-    if (e2 > -dy && e2 <= dx) {
+    const int e2 = 2 * e;
+    const bool diagonal = e2 > -dy && e2 <= dx;
+    const double step_length = diagonal ? M_SQRT2 : 1.0;
+    sl_cost += getTraversalCost(cost, step_length);
+    stepped_length += step_length;
+    if (diagonal) {
       if (!isSafe(cx + sx, cy) || !isSafe(cx, cy + sy)) {
         return false;
       }
@@ -198,6 +205,11 @@ bool ThetaStar::losCheck(
       cy += sy;
       e += dx;
     }
+  }
+
+  // The steps sum to the staircase length rather than the chord, so normalize the total.
+  if (stepped_length > 0.0) {
+    sl_cost *= std::hypot(dx, dy) / stepped_length;
   }
 
   return true;
