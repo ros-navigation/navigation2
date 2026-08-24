@@ -133,6 +133,7 @@ FollowingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   vel_publisher_.reset();
   filtered_dynamic_pose_pub_.reset();
   odom_sub_.reset();
+  dynamic_pose_sub_.reset();
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -273,6 +274,7 @@ void FollowingServer::followObject()
               result->num_retries = num_retries_;
               publishZeroVelocity();
               following_action_server_->succeeded_current(result);
+              dynamic_pose_sub_.reset();
               return;
             }
           }
