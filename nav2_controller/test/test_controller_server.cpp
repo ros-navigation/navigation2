@@ -209,7 +209,8 @@ TEST(ControllerServerTest, test_dynamic_parameters)
       rclcpp::Parameter("min_y_velocity_threshold", 100.0),
       rclcpp::Parameter("min_theta_velocity_threshold", 100.0),
       rclcpp::Parameter("failure_tolerance", 5.0),
-      rclcpp::Parameter("search_window", 10.0)});
+      rclcpp::Parameter("search_window", 10.0),
+      rclcpp::Parameter("transform_staleness_threshold", 1.0)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
@@ -220,6 +221,7 @@ TEST(ControllerServerTest, test_dynamic_parameters)
   EXPECT_EQ(params_->min_theta_velocity_threshold, 100.0);
   EXPECT_EQ(params_->failure_tolerance, 5.0);
   EXPECT_EQ(params_->search_window, 10.0);
+  EXPECT_EQ(params_->transform_staleness_threshold, 1.0);
 
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("min_x_velocity_threshold", -1.0)});
