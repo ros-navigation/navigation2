@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include <chrono>
+#include <cmath>
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -190,6 +191,17 @@ TEST(FollowingServerTests, GetPoseAtDistance)
   auto new_pose = node->getPoseAtDistance(pose, 0.2);
   EXPECT_NEAR(new_pose.pose.position.x, 0.8585, 0.01);
   EXPECT_NEAR(new_pose.pose.position.y, -0.8585, 0.01);
+
+  // Robot exactly at the tracked pose: the backwards projection is undefined
+  // and must not propagate NaNs downstream
+  geometry_msgs::msg::PoseStamped at_robot;
+  at_robot.header.stamp = node->now();
+  at_robot.header.frame_id = "my_frame";
+  auto zero_dist = node->getPoseAtDistance(at_robot, 0.5);
+  EXPECT_TRUE(std::isfinite(zero_dist.pose.position.x));
+  EXPECT_TRUE(std::isfinite(zero_dist.pose.position.y));
+  EXPECT_EQ(zero_dist.pose.position.x, 0.0);
+  EXPECT_EQ(zero_dist.pose.position.y, 0.0);
 
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
