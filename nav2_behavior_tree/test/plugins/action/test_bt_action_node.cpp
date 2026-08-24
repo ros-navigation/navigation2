@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <set>
@@ -66,6 +67,16 @@ public:
     goal_response_ = goal_response;
   }
 
+  unsigned int getAcceptedGoalCount() const
+  {
+    return accepted_goal_count_.load();
+  }
+
+  unsigned int getCancelRequestCount() const
+  {
+    return cancel_request_count_.load();
+  }
+
 protected:
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID &,
@@ -81,12 +92,14 @@ protected:
   rclcpp_action::CancelResponse handle_cancel(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<test_msgs::action::Fibonacci>>)
   {
+    cancel_request_count_++;
     return rclcpp_action::CancelResponse::ACCEPT;
   }
 
   void handle_accepted(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<test_msgs::action::Fibonacci>> handle)
   {
+    accepted_goal_count_++;
     // this needs to return quickly to avoid blocking the executor, so spin up a new thread
     std::thread{std::bind(&FibonacciActionServer::execute, this, _1), handle}.detach();
   }
@@ -130,6 +143,8 @@ protected:
   std::chrono::milliseconds sleep_duration_;
   std::chrono::nanoseconds server_loop_rate_;
   rclcpp_action::GoalResponse goal_response_{rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE};
+  std::atomic_uint accepted_goal_count_{0};
+  std::atomic_uint cancel_request_count_{0};
 };
 
 class FibonacciAction : public nav2_behavior_tree::BtActionNode<test_msgs::action::Fibonacci>
@@ -144,6 +159,15 @@ public:
   void on_tick() override
   {
     getInput("order", goal_.order);
+  }
+
+  void on_wait_for_result(
+    std::shared_ptr<const test_msgs::action::Fibonacci::Feedback>) override
+  {
+    if (config().blackboard->get<bool>("goal_updated")) {
+      goal_updated_ = true;
+      config().blackboard->set("goal_updated", false);
+    }
   }
 
   BT::NodeStatus on_success() override
@@ -200,12 +224,14 @@ public:
     // Put items on the blackboard
     config_->blackboard->set("node", node_);
     config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 20ms);
+    config_->blackboard->set<std::chrono::milliseconds>("cancel_timeout", 50ms);
     config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
     config_->blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout", 1000ms);
     config_->blackboard->set("initial_pose_received", false);
     config_->blackboard->set("on_cancelled_triggered", false);
     config_->blackboard->set("on_goal_rejected_triggered", false);
     config_->blackboard->set("on_send_goal_failure_triggered", false);
+    config_->blackboard->set("goal_updated", false);
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
@@ -431,6 +457,108 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
   // since the server timeout was smaller than the action server goal handling duration
   // the BT should have failed
   EXPECT_EQ(result, BT::NodeStatus::SUCCESS);
+}
+
+TEST_F(BTActionNodeTestFixture, test_updated_goal_timeout_cancels_all_goals)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="1000000" />
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 20ms);
+  config_->blackboard->set<std::chrono::milliseconds>("cancel_timeout", 150ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+  config_->blackboard->set("goal_updated", false);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  action_server_->setHandleGoalSleepDuration(1ms);
+  action_server_->setServerLoopRate(10ms);
+
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::RUNNING);
+
+  const auto first_goal_deadline = std::chrono::steady_clock::now() + 100ms;
+  while (action_server_->getAcceptedGoalCount() < 1u &&
+    std::chrono::steady_clock::now() < first_goal_deadline)
+  {
+    std::this_thread::sleep_for(1ms);
+  }
+  ASSERT_EQ(action_server_->getAcceptedGoalCount(), 1u);
+
+  // Delay the replacement goal response past the BT action client's timeout.
+  action_server_->setHandleGoalSleepDuration(100ms);
+  config_->blackboard->set("goal_updated", true);
+
+  BT::NodeStatus result = BT::NodeStatus::RUNNING;
+  rclcpp::WallRate loop_rate(10ms);
+  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
+    result = tree_->tickOnce();
+    loop_rate.sleep();
+  }
+
+  EXPECT_EQ(result, BT::NodeStatus::FAILURE);
+
+  const auto cancel_deadline = std::chrono::steady_clock::now() + 200ms;
+  while (action_server_->getCancelRequestCount() < 2u &&
+    std::chrono::steady_clock::now() < cancel_deadline)
+  {
+    std::this_thread::sleep_for(1ms);
+  }
+
+  EXPECT_EQ(action_server_->getAcceptedGoalCount(), 2u);
+  EXPECT_EQ(action_server_->getCancelRequestCount(), 2u);
+}
+
+TEST_F(BTActionNodeTestFixture, test_updated_goal_immediate_timeout_cancels_all_goals)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="1000000" />
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 20ms);
+  config_->blackboard->set<std::chrono::milliseconds>("cancel_timeout", 150ms);
+  // Make max_timeout_ larger than server_timeout_ so the updated goal times out in the
+  // immediate goal-response check.
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 100ms);
+  config_->blackboard->set("goal_updated", false);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  action_server_->setHandleGoalSleepDuration(1ms);
+  action_server_->setServerLoopRate(10ms);
+
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::RUNNING);
+
+  const auto first_goal_deadline = std::chrono::steady_clock::now() + 100ms;
+  while (action_server_->getAcceptedGoalCount() < 1u &&
+    std::chrono::steady_clock::now() < first_goal_deadline)
+  {
+    std::this_thread::sleep_for(1ms);
+  }
+  ASSERT_EQ(action_server_->getAcceptedGoalCount(), 1u);
+
+  action_server_->setHandleGoalSleepDuration(100ms);
+  config_->blackboard->set("goal_updated", true);
+
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::FAILURE);
+
+  const auto cancel_deadline = std::chrono::steady_clock::now() + 200ms;
+  while (action_server_->getCancelRequestCount() < 2u &&
+    std::chrono::steady_clock::now() < cancel_deadline)
+  {
+    std::this_thread::sleep_for(1ms);
+  }
+
+  EXPECT_EQ(action_server_->getAcceptedGoalCount(), 2u);
+  EXPECT_EQ(action_server_->getCancelRequestCount(), 2u);
 }
 
 TEST_F(BTActionNodeTestFixture, test_goal_rejected)
