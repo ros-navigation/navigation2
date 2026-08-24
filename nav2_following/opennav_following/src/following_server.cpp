@@ -650,6 +650,9 @@ geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(
   double dx = pose.pose.position.x - robot_pose.pose.position.x;
   double dy = pose.pose.position.y - robot_pose.pose.position.y;
   const double dist = std::hypot(dx, dy);
+  if (dist < 1e-6) {
+    return pose;
+  }
   geometry_msgs::msg::PoseStamped forward_pose = pose;
   forward_pose.pose.position.x -= distance * (dx / dist);
   forward_pose.pose.position.y -= distance * (dy / dist);
