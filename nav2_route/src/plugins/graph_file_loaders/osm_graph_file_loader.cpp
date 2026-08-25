@@ -336,7 +336,7 @@ void OsmGraphFileLoader::addNodesToGraph(
     // rejected negatives, which would land on our reserved ids).
     const auto nodeid = static_cast<uint64_t>(osm_id);
     graph[idx].nodeid = nodeid;
-    // Lets callers look up a graph index by OSM id.
+    // Allows callers to look up a graph index by OSM id.
     graph_to_id_map[nodeid] = static_cast<uint64_t>(idx);
     graph[idx].coords = coords.at(osm_id);
   }
