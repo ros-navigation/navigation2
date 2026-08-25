@@ -362,8 +362,6 @@ How a graph is built from the file:
   junctions becomes an edge.
 - **Direction comes from `oneway`.** `yes`, `true`, or `1` follows the way's node order, `-1` or
   `reverse` runs the opposite order, and `no` or a missing tag is bidirectional.
-- **Every way is kept.** There is no filtering by `highway` type, so which edges are preferable is
-  left to the edge scoring plugins.
 - **Coordinates come from robot_localization.** Latitude and longitude are converted into the map
   frame with the `FromLLArray` service, so the graph uses the same datum as the robot's localization.
 
