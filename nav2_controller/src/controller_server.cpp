@@ -736,9 +736,7 @@ void ControllerServer::computeAndPublishVelocity(
   const geometry_msgs::msg::PoseStamped & current_robot_pose)
 {
   if (!current_progress_checker_.empty()) {
-    // TODO(marco): Make the check input pose const in a future API revision.
-    auto progress_check_pose = current_robot_pose;
-    if (!progress_checkers_[current_progress_checker_]->check(progress_check_pose)) {
+    if (!progress_checkers_[current_progress_checker_]->check(current_robot_pose)) {
       throw nav2_core::FailedToMakeProgress("Failed to make progress");
     }
   }
