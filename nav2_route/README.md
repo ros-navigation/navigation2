@@ -290,7 +290,7 @@ This route operation will trigger an external service when a graph node or edge 
 ## File Formats
 
 The graphs may be stored in one of the formats the parser plugins can understand or implement your own parser for a particular format of your interest!
-A parser is provided for GeoJSON formats.
+Parsers are provided for GeoJSON and OpenStreetMap (`.osm`) formats.
 The only three required features of the navigation graph is (1) for the nodes and edges to have identifiers from each other to be unique for referencing and (2) for edges to have the IDs of the nodes belonging to the start and end of the edge and (3) nodes contain coordinates.
 This is strictly required for the Route Server to operate properly in all of its features.
 
@@ -351,17 +351,25 @@ A parser is also provided for OpenStreetMap `.osm` XML files.
 In most cases you would export OSM for a particular area and remove any unnecessary features first.
 See `graphs/sample_graph.osm` for an example file.
 
-Unlike GeoJSON, OSM does not list edges explicitly: a `<way>` is a polyline of ordered `<nd ref>`
-node references, and two ways are connected only where they share a node id.
+How a graph is built from the file:
 
-Edge direction comes from each way's `oneway` tag: `yes`, `true`, or `1` follows the way's node
-order, `-1` or `reverse` runs the opposite order, and `no` or a missing tag is bidirectional.
+- **Edges are implicit.** OSM has no edge list. A `<way>` is a polyline of ordered `<nd ref>` node
+  references, and two ways connect only where they share a node id.
+- **Junctions are the shared nodes.** A node referenced by more than one way, or sitting at the end
+  of a way, becomes a graph node. The rest are shape points and are skipped, which keeps the graph
+  sparse.
+- **One edge per section.** Each way is split at its junctions, and every section between two
+  junctions becomes an edge.
+- **Direction comes from `oneway`.** `yes`, `true`, or `1` follows the way's node order, `-1` or
+  `reverse` runs the opposite order, and `no` or a missing tag is bidirectional.
+- **Every way is kept.** There is no filtering by `highway` type, so which edges are preferable is
+  left to the edge scoring plugins.
+- **Coordinates come from robot_localization.** Latitude and longitude are converted into the map
+  frame with the `FromLLArray` service, so the graph uses the same datum as the robot's localization.
 
-A `.osm` here is treated as a purpose-built route graph, so the choice of which edges are preferable is left to the edge scoring plugins, which can read each way's tags.
-
-Coordinates are converted from latitude/longitude into the map frame using robot_localization's
-`FromLLArray` service, so the graph uses the same datum as the robot's localization. **This means `navsat_transform_node` has to be running when the graph is loaded.** The graph loads during the Route Server's `configure` transition (or on a `set_route_graph`
-request), and that load blocks on the service, so if it is unavailable the transition fails.
+**`navsat_transform_node` has to be running when the graph is loaded.** The graph loads during the
+Route Server's `configure` transition (or on a `set_route_graph` request) and that load blocks on the
+service, so the transition fails if it is unavailable.
 
 Parameters, namespaced under the name the plugin is given in your `graph_file_loader` config:
 

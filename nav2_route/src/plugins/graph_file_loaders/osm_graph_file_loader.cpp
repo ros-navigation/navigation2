@@ -136,11 +136,11 @@ bool OsmGraphFileLoader::parseOsm(
       continue;
     }
     if (id < 0) {
-      // JOSM's temporary ids go negative and would wrap into our reserved ids.
+      // Editors give objects that were never uploaded a temporary negative id,
+      // which would wrap into our reserved ids.
       RCLCPP_WARN(
         logger_,
-        "Skipping OSM node with negative id %" PRId64 "; ids must be non-negative "
-        "(renumber JOSM exports or upload them first)", id);
+        "Skipping OSM node with negative id %" PRId64 "; ids must be non-negative", id);
       continue;
     }
     osm_nodes[id] = std::make_pair(lat, lon);
