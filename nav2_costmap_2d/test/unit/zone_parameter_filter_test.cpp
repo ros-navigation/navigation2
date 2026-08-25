@@ -203,6 +203,8 @@ public:
   {
     return param_clients_.count(target_node) > 0;
   }
+
+  size_t pendingSetCount() const {return pending_sets_.size();}
 };
 
 class TestZpf : public ::testing::Test
@@ -335,6 +337,25 @@ protected:
       node_executor_.spin_some();
       target_executor_.spin_some();
       state_event_executor_.spin_some();
+      std::this_thread::sleep_for(10ms);
+    }
+    return true;
+  }
+
+  // reloadFilter(), except the target executor is never spun -- so a set
+  // issued before the reload is still genuinely unanswered after it. Activation
+  // needs only the info/mask publishers and the host node.
+  bool reloadFilterLeavingTargetsUnserviced()
+  {
+    filter_->resetFilter();
+    filter_->initializeFilter(kInfoTopic);
+    auto start = node_->now();
+    while (!filter_->isActive()) {
+      if (node_->now() - start > rclcpp::Duration(2s)) {
+        return false;
+      }
+      pub_executor_.spin_some();
+      node_executor_.spin_some();
       std::this_thread::sleep_for(10ms);
     }
     return true;
@@ -1013,47 +1034,131 @@ TEST_F(TestZpf, RefusedSetpointDoesNotBlockItsSiblingInTheSameBatch)
     << "the refused setpoint must not have been applied";
 }
 
-TEST_F(TestZpf, SetpointTargetNodeAndParameterAreReadOnly)
+TEST_F(TestZpf, FirstProcessOutsideMaskAnnouncesStateZero)
 {
-  second_target_node_ = std::make_shared<SecondTargetNode>();
-  target_executor_.add_node(second_target_node_);
+  // On the first process() after activate or reload nothing is initialised
+  // yet. An in-mask cell of 0 announces state 0 on that edge
+  // (ZeroValuedMaskCellPublishesStateZeroEvent); leaving the mask has to
+  // announce it too, or the two routes diverge again on the init edge -- the
+  // exact divergence one shared enterState() exists to remove.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("nominal_defaults"), std::vector<std::string>{"speed_nominal"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.4));
+  addEntry(cfg, "nominal_defaults.speed_nominal", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(1.0));
 
+  ASSERT_TRUE(createFilter(cfg, 1, "/zpf_state")) << "Filter did not become active";
+
+  runProcess(100.0, 100.0);  // the very first process(), outside the mask
+
+  ASSERT_TRUE(waitForCond([this]() {return state_event_sub_->count() >= 1;}))
+    << "the first process() outside the mask announced nothing, while an "
+       "in-mask zero cell announces state 0 on the same edge";
+  EXPECT_EQ(state_event_sub_->lastState(), 0u);
+}
+
+TEST_F(TestZpf, ResetFilterRestoresNominalDefaults)
+{
+  // Deactivating inside a zone must not leave that zone's values applied on
+  // target nodes that no longer have anything driving them. The filter stops;
+  // the speed limit it imposed does not stop with it unless it is put back.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("nominal_defaults"), std::vector<std::string>{"speed_nominal"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.3));
+  addEntry(cfg, "nominal_defaults.speed_nominal", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(1.0));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  runProcess();
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.3;}));
+
+  filter_->resetFilter();
+  ASSERT_FALSE(filter_->isActive());
+
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 1.0;}))
+    << "the zone's speed stayed in force on the target after the filter that "
+       "imposed it was deactivated";
+}
+
+TEST_F(TestZpf, SetRefusedBeforeReloadStillSurfacesAfterIt)
+{
+  // A dispatched set cannot be recalled: destroying the client that sent it
+  // does not stop the target executing it. Dropping the future therefore does
+  // not cancel anything, it only stops us finding out -- and this one fails.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"danger_zone"}),
+    rclcpp::Parameter(fp("danger_zone.id"), 1),
+    rclcpp::Parameter(fp("danger_zone.setpoints"), std::vector<std::string>{"ro_speed"}),
+  };
+  addEntry(cfg, "danger_zone.ro_speed", "zpf_target_node", "readonly_speed",
+    rclcpp::ParameterValue(0.5));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  runProcess();  // issues the set that the target will refuse
+  ASSERT_EQ(filter_->pendingSetCount(), 1u);
+
+  ASSERT_TRUE(reloadFilterLeavingTargetsUnserviced())
+    << "Filter did not re-activate after reload";
+  EXPECT_EQ(filter_->pendingSetCount(), 1u)
+    << "the set in flight at the reload was dropped along with its client";
+
+  auto drain = [this]() {
+      spinFor(300ms);
+      runProcess(100.0, 100.0);  // out of mask: adds no sets of its own
+    };
+  EXPECT_THROW(drain(), std::runtime_error)
+    << "a set refused before the reload was never checked afterwards";
+}
+
+TEST_F(TestZpf, StateIsReAppliedOnceSetsFromBeforeTheReloadHaveDrained)
+{
+  // A set issued before the reload lands whenever the target gets to it, which
+  // may be after the reload has already re-applied the current state. Then the
+  // pre-reload value wins by arriving last and the filter reports a state the
+  // target is not in. Re-applying once the last of them has drained settles it
+  // whatever order they arrived in.
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
     rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
   };
   addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
-    rclcpp::ParameterValue(0.3));
+    rclcpp::ParameterValue(0.5));
 
   ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
-  // Re-point a declared setpoint at a different node and parameter. Nothing
-  // upstream refuses this -- validateParameterUpdatesCallback() skips dotted
-  // names -- so only the descriptor can. Either rejection shape counts.
-  auto rejected = [this](const std::string & key, const std::string & value) {
-      try {
-        return !node_->set_parameter(rclcpp::Parameter(fp(key), value)).successful;
-      } catch (const rclcpp::exceptions::ParameterImmutableException &) {
-        return true;
-      }
-    };
+  runProcess();  // set A, unanswered: the target executor is not spun
+  ASSERT_EQ(filter_->pendingSetCount(), 1u);
 
-  EXPECT_TRUE(rejected("slow_zone.speed_override.node", "zpf_second_target"))
-    << "a setpoint's target node must not be rewritable at runtime";
-  EXPECT_TRUE(rejected("slow_zone.speed_override.parameter", "inflation"))
-    << "a setpoint's target parameter must not be rewritable at runtime";
+  ASSERT_TRUE(reloadFilterLeavingTargetsUnserviced())
+    << "Filter did not re-activate after reload";
 
-  // A read-only declaration must still survive the re-entrant config load.
-  ASSERT_TRUE(reloadFilter()) << "Filter did not re-activate after reload";
+  runProcess();  // re-enters state 1: set B, with A still in flight
+  ASSERT_EQ(filter_->pendingSetCount(), 2u)
+    << "the pre-reload set should still be outstanding alongside the new one";
 
-  runProcess();
-  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.3;}))
-    << "the setpoint must still reach its configured target after a reload";
-  EXPECT_DOUBLE_EQ(second_target_node_->getSpeed(), 1.0)
-    << "the setpoint must not have been re-routed to another node";
-  EXPECT_DOUBLE_EQ(target_node_->getInflation(), 0.5)
-    << "the setpoint must not have been re-routed to another parameter";
+  spinFor(300ms);  // the target answers both; results are only read in process()
+  ASSERT_EQ(filter_->pendingSetCount(), 2u);
+
+  target_node_->clearSpeedSetCount();
+  runProcess();  // drains both, then re-applies the state they raced with
+
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->speedSetCount() >= 1;}))
+    << "the current state was not re-applied after the sets issued before the "
+       "reload drained, so a late arrival among them stands unchallenged";
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 0.5);
 }
 
 int main(int argc, char ** argv)

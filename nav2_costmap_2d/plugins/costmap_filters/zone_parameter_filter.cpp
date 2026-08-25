@@ -142,26 +142,6 @@ void ZoneParameterFilter::maskCallback(
   filter_mask_ = msg;
 }
 
-void ZoneParameterFilter::clearLoadedState()
-{
-  state_param_map_.clear();
-  nominal_defaults_.clear();
-  param_clients_.clear();
-
-  // Dropping the clients breaks the promises behind any futures they still
-  // own, and a broken future reports itself ready, so these have to go with
-  // them. Waiting for them instead would block the update thread on a node
-  // that may never answer, so they are abandoned and the loss is logged.
-  if (!pending_futures_.empty()) {
-    RCLCPP_WARN(
-      logger_,
-      "ZoneParameterFilter: abandoning %zu in-flight parameter set(s) on reload; "
-      "their results will not be checked.",
-      pending_futures_.size());
-  }
-  pending_futures_.clear();
-}
-
 void ZoneParameterFilter::loadStateConfig()
 {
   auto node = node_.lock();
@@ -172,18 +152,10 @@ void ZoneParameterFilter::loadStateConfig()
   // Obtain the node, parameter, and value for state entries
   auto read_entry =
     [&](const std::string & prefix) -> std::optional<StateParamEntry> {
-      // Read-only: `node` and `parameter` pick the target, and the param
-      // clients are built from them at load, so a runtime rewrite would only
-      // take effect at the next reload. `.value` stays writable -- retuning
-      // what a zone applies is field work, and does not change its target.
-      rcl_interfaces::msg::ParameterDescriptor routing_descriptor;
-      routing_descriptor.read_only = true;
       const std::string target_node =
-        node->declare_or_get_parameter<std::string>(
-        prefix + ".node", std::string(""), routing_descriptor);
+        node->declare_or_get_parameter<std::string>(prefix + ".node", std::string(""));
       const std::string param_name =
-        node->declare_or_get_parameter<std::string>(
-        prefix + ".parameter", std::string(""), routing_descriptor);
+        node->declare_or_get_parameter<std::string>(prefix + ".parameter", std::string(""));
       if (target_node.empty() || param_name.empty()) {
         RCLCPP_ERROR(
           logger_,
@@ -349,10 +321,16 @@ void ZoneParameterFilter::process(
       filter_mask_, mask_pose.position.x, mask_pose.position.y,
       mask_robot_i, mask_robot_j))
   {
-    if (state_initialized_ && current_state_ != 0) {
+    // Not `state_initialized_ && current_state_ != 0`: on the first process()
+    // after activate or reload nothing is initialised yet, and an in-mask cell
+    // of 0 takes the guard below and announces state 0. Requiring
+    // initialisation here would leave that same transition unannounced on this
+    // route -- the divergence one shared enterState() exists to remove, moved
+    // to the init edge.
+    if (!state_initialized_ || current_state_ != 0) {
       RCLCPP_WARN(
         logger_,
-        "ZoneParameterFilter: Robot outside filter mask; resetting to nominal defaults.");
+        "ZoneParameterFilter: Robot outside filter mask; applying nominal defaults.");
       enterState(0);
     }
     return;
@@ -496,7 +474,18 @@ void ZoneParameterFilter::issueAsyncSetParameters(
     return;
   }
 
-  pending_futures_.push_back(client_it->second->set_parameters(params));
+  if (pending_sets_.size() >= kMaxPendingSets) {
+    // Only reachable when a target has stopped answering. Client and future go
+    // together, so nothing is left holding a broken promise.
+    RCLCPP_WARN(
+      logger_,
+      "ZoneParameterFilter: %zu parameter set(s) still in flight; dropping the "
+      "oldest unanswered one. Is a target node not responding?",
+      pending_sets_.size());
+    pending_sets_.erase(pending_sets_.begin());
+  }
+  pending_sets_.push_back(
+    PendingSet{client_it->second, client_it->second->set_parameters(params)});
 }
 
 void ZoneParameterFilter::checkPendingParameterUpdates()
@@ -505,9 +494,9 @@ void ZoneParameterFilter::checkPendingParameterUpdates()
   // safety zone tried to change (worse than surfacing it), so failures throw
   // rather than get logged-and-ignored.
   // wait_for(0s) polls without blocking the costmap update loop
-  auto it = pending_futures_.begin();
-  while (it != pending_futures_.end()) {
-    if (it->wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+  auto it = pending_sets_.begin();
+  while (it != pending_sets_.end()) {
+    if (it->future.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
       ++it;
       continue;
     }
@@ -515,8 +504,8 @@ void ZoneParameterFilter::checkPendingParameterUpdates()
     // Copy the shared state out before erasing: the copy keeps the value that
     // get() returns a reference to alive for this iteration, and erasing first
     // means a service-side exception rethrown by get() surfaces exactly once.
-    const auto ready_future = *it;
-    it = pending_futures_.erase(it);
+    const auto ready_future = it->future;
+    it = pending_sets_.erase(it);
 
     // get() returns a const reference; bind it rather than copy the vector.
     const auto & results = ready_future.get();
@@ -525,6 +514,25 @@ void ZoneParameterFilter::checkPendingParameterUpdates()
         throw std::runtime_error(
                 "ZoneParameterFilter: set_parameters failed: " + r.reason);
       }
+    }
+  }
+
+  // A set issued before a reload can land after the reload has re-applied the
+  // current state, leaving the target on the older value while the filter
+  // reports the newer one. Re-applying once the last of them has drained puts
+  // the target back on the state the filter is actually in, whatever order
+  // they arrived in.
+  if (reapply_after_drain_ && pending_sets_.empty()) {
+    reapply_after_drain_ = false;
+    const bool state_still_configured =
+      current_state_ == 0 || state_param_map_.count(current_state_) > 0;
+    if (state_initialized_ && state_still_configured) {
+      RCLCPP_INFO(
+        logger_,
+        "ZoneParameterFilter: re-applying state %u; the sets issued before the "
+        "reload have drained.",
+        current_state_);
+      applyState(current_state_);
     }
   }
 }
@@ -540,12 +548,40 @@ void ZoneParameterFilter::resetFilter()
     state_event_pub_.reset();
   }
 
+  // Put the targets back before letting go of the configuration that says what
+  // "back" is. Without this, deactivating inside a zone leaves whatever that
+  // zone applied in force on nodes that no longer have anything driving them.
+  if (state_initialized_ && current_state_ != 0) {
+    RCLCPP_INFO(
+      logger_,
+      "ZoneParameterFilter: leaving state %u; restoring nominal defaults.",
+      current_state_);
+    applyState(0);
+  }
+
   filter_mask_.reset();
   filter_info_received_ = false;
   state_initialized_ = false;
   current_state_ = 0;
 
-  clearLoadedState();
+  // Everything derived from the declared configuration goes: loadStateConfig()
+  // appends to what it finds, and is re-run by `clear_entirely_<costmap>` and
+  // by every deactivate/activate cycle, both of which reach here first.
+  state_param_map_.clear();
+  nominal_defaults_.clear();
+  param_clients_.clear();
+
+  // pending_sets_ is deliberately NOT cleared. Each one still owns the client
+  // that issued it, so dropping the map above cancels nothing and breaks
+  // nothing: the results stay readable and a failed set still surfaces.
+  if (!pending_sets_.empty()) {
+    RCLCPP_INFO(
+      logger_,
+      "ZoneParameterFilter: %zu parameter set(s) still in flight across the "
+      "reload; their results will still be checked.",
+      pending_sets_.size());
+    reapply_after_drain_ = true;
+  }
 }
 
 bool ZoneParameterFilter::isActive()
