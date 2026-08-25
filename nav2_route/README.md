@@ -370,10 +370,6 @@ Parameters, namespaced under the name the plugin is given in your `graph_file_lo
 | `from_ll_service` | string | `fromLLArray` | Name of the robot_localization `FromLLArray` service (override for namespaced setups) |
 | `from_ll_service_timeout` | double | `5.0` | Seconds to wait for the conversion service before failing the load |
 
-Note: OSM node ids are 64-bit. The Route Server's `nodeid` and the relevant `nav2_msgs` use
-`uint64_t`, so the loader preserves the original OSM ids without truncation and routes can be
-requested by original OSM node id. Keep this width in mind if you define custom messages.
-
 Node and edge **metadata** (e.g. speed limits from OSM `maxspeed`) is intentionally out of scope for
 this initial loader and is planned for a follow-on contribution.
 
