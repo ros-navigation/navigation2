@@ -174,11 +174,11 @@ public:
    * @param pred_dt time in future to predict the pose
   */
   virtual void predictPose(
-    geometry_msgs::msg::PoseStamped & pose,
+    geometry_msgs::msg::Pose & pose,
     const geometry_msgs::msg::Twist & speed, float pred_dt)
   {
     const bool is_holo = isHolonomic();
-    auto initial_yaw = static_cast<float>(tf2::getYaw(pose.pose.orientation));
+    auto initial_yaw = static_cast<float>(tf2::getYaw(pose.orientation));
     auto yaw_cos = cosf(initial_yaw);
     auto yaw_sin = sinf(initial_yaw);
     auto dx = static_cast<float>(speed.linear.x) * yaw_cos;
@@ -187,10 +187,10 @@ public:
       dx -= speed.linear.y * yaw_sin;
       dy += speed.linear.y * yaw_cos;
     }
-    pose.pose.position.x += dx * pred_dt;
-    pose.pose.position.y += dy * pred_dt;
+    pose.position.x += dx * pred_dt;
+    pose.position.y += dy * pred_dt;
     initial_yaw += speed.angular.z * pred_dt;
-    pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(initial_yaw);
+    pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(initial_yaw);
   }
   /**
    * @brief Whether the motion model is holonomic, using Y axis
