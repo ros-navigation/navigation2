@@ -21,8 +21,9 @@
 #include <stdexcept>
 #include <string>
 
-#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav2_util/occ_grid_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace nav2_map_server
 {
@@ -136,7 +137,5 @@ protected:
 };
 
 }  // namespace nav2_map_server
-
-#include "nav2_util/occ_grid_utils.hpp"
 
 #endif  // NAV2_MAP_SERVER__VECTOR_OBJECT_UTILS_HPP_

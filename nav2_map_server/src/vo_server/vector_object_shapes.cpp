@@ -402,10 +402,11 @@ void Polygon::putFilled(
   int y_max = static_cast<int>(y_max_d);
 
   if (y_min > y_max) {
-    // Task 4: Log when the polygon is entirely off-map in Y.
-    RCLCPP_WARN(
+    RCLCPP_WARN_THROTTLE(
       node->get_logger(),
-      "[UUID: %s] Polygon is fully off-map — skipping fill",
+      *node->get_clock(),
+      1000,
+      "[UUID: %s] Polygon has no visible extent in Y (sub-cell or off-map) — skipping fill",
       getUUID().c_str());
     return;
   }
@@ -470,11 +471,13 @@ void Polygon::putFilled(
     std::sort(xs.begin(), xs.end());
 
     for (std::size_t k = 0; k + 1 < xs.size(); k += 2) {
-      // Task 7: Clamp x in double space before casting to avoid UB.
-      double x_start_d = std::clamp(std::ceil(xs[k]), 0.0, map_w_d);
-      double x_end_d = std::clamp(std::ceil(xs[k + 1]) - 1.0, 0.0, map_w_d);
-      int x_start = static_cast<int>(x_start_d);
-      int x_end = static_cast<int>(x_end_d);
+      const double a = std::ceil(xs[k]);
+      const double b = std::ceil(xs[k + 1]) - 1.0;
+      if (b < 0.0 || a > map_w_d) {
+        continue;
+      }
+      const int x_start = static_cast<int>(std::max(a, 0.0));
+      const int x_end = static_cast<int>(std::min(b, map_w_d));
 
       if (x_start > x_end) {
         continue;
@@ -807,9 +810,10 @@ void Circle::putFilled(
   const int x1_check = static_cast<int>(x1_check_d);
 
   if (y0_check >= map_h || y1_check < 0 || x0_check >= map_w || x1_check < 0) {
-    // Task 4: Log when the circle extent is fully off-map.
-    RCLCPP_WARN(
+    RCLCPP_WARN_THROTTLE(
       node->get_logger(),
+      *node->get_clock(),
+      1000,
       "[UUID: %s] Circle extent is fully off-map — skipping fill",
       getUUID().c_str());
     return;
@@ -818,24 +822,38 @@ void Circle::putFilled(
   const int y0 = std::max(y0_check, 0);
   const int y1 = std::min(y1_check, map_h - 1);
 
+  const int8_t fill_val = params_->value;
+
   for (int y = y0; y <= y1; y++) {
     const double t = r * r - (y - cyf) * (y - cyf);
     if (t < 0.0) {
       continue;
     }
     const double dx = std::sqrt(t);
-    int x_lo = std::max(static_cast<int>(std::ceil(cxf - dx)), 0);
-    int x_hi = std::min(static_cast<int>(std::floor(cxf + dx)), map_w - 1);
+    const double a = std::ceil(cxf - dx);
+    const double b = std::floor(cxf + dx);
+    if (b < 0.0 || a > map_w_d - 1.0) {
+      continue;
+    }
+    const int x_lo = static_cast<int>(std::max(a, 0.0));
+    const int x_hi = static_cast<int>(std::min(b, map_w_d - 1.0));
     if (x_lo > x_hi) {
       continue;
     }
     const unsigned int row_offset = static_cast<unsigned int>(y) * map->info.width;
-    for (int x = x_lo; x <= x_hi; x++) {
-      processCell(
-        map,
-        row_offset + static_cast<unsigned int>(x),
-        params_->value,
-        overlay_type);
+    if (overlay_type == OverlayType::OVERLAY_SEQ) {
+      std::fill(
+        map->data.begin() + row_offset + x_lo,
+        map->data.begin() + row_offset + x_hi + 1,
+        fill_val);
+    } else {
+      for (int x = x_lo; x <= x_hi; x++) {
+        processCell(
+          map,
+          row_offset + static_cast<unsigned int>(x),
+          fill_val,
+          overlay_type);
+      }
     }
   }
 }
