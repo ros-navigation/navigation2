@@ -180,7 +180,7 @@ bool FollowingServer::checkAndWarnIfPreempted(
 
 void FollowingServer::followObject()
 {
-  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
+  std::unique_lock<std::mutex> lock_reinit(param_handler_->getMutex());
   action_start_time_ = this->now();
   nav2::Rate loop_rate(this, params_->controller_frequency);
 
@@ -217,7 +217,7 @@ void FollowingServer::followObject()
         following_action_server_->terminate_all(result);
         return;
       } else {
-        param_handler_->getMutex().unlock();
+        lock_reinit.unlock();
         RCLCPP_INFO(get_logger(), "Subscribing to pose topic: %s", pose_topic.c_str());
         dynamic_pose_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
           pose_topic,
@@ -225,7 +225,7 @@ void FollowingServer::followObject()
             detected_dynamic_pose_ = *pose;
           },
           nav2::qos::StandardTopicQoS(1));  // Only want the most recent pose
-        param_handler_->getMutex().lock();
+        lock_reinit.lock();
       }
     } else {
       RCLCPP_INFO(get_logger(), "Following frame: %s instead of pose", target_frame.c_str());
