@@ -71,6 +71,27 @@ target_include_directories(test_controller
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
+# Test Graceful Controller plugin
+nav2_add_gtest(test_graceful_controller
+  test_graceful_controller.cpp
+)
+target_link_libraries(test_graceful_controller
+  controller
+  geometry_msgs::geometry_msgs
+  nav2_ros_common::nav2_ros_common
+  nav2_util::nav2_util_core
+  nav_msgs::nav_msgs
+  opennav_docking_core::opennav_docking_core
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+)
+target_include_directories(test_graceful_controller
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+
 # Test Simple Dock
 nav2_add_gtest(test_simple_charging_dock
   test_simple_charging_dock.cpp

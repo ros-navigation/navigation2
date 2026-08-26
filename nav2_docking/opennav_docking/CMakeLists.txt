@@ -6,6 +6,7 @@ find_package(angles REQUIRED)
 find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_graceful_controller REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -34,6 +35,8 @@ set(library_name ${executable_name}_core)
 
 add_library(controller SHARED
   src/controller.cpp
+  src/controller_base.cpp
+  src/graceful_controller.cpp
 )
 target_include_directories(controller
   PUBLIC
@@ -42,11 +45,20 @@ target_include_directories(controller
 )
 target_link_libraries(controller PUBLIC
   geometry_msgs::geometry_msgs
+  nav2_costmap_2d::nav2_costmap_2d_core
   nav2_graceful_controller::nav2_graceful_controller
   nav2_ros_common::nav2_ros_common
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   rcl_interfaces::rcl_interfaces
+  tf2_ros::tf2_ros
+)
+target_link_libraries(controller PRIVATE
+  nav2_util::nav2_util_core
+  pluginlib::pluginlib
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 
 add_library(${library_name} SHARED
@@ -170,6 +182,7 @@ target_link_libraries(simple_non_charging_dock PRIVATE
 )
 
 pluginlib_export_plugin_description_file(opennav_docking_core plugins.xml)
+pluginlib_export_plugin_description_file(opennav_docking plugins.xml)
 
 install(TARGETS ${library_name} controller pose_filter simple_charging_dock simple_non_charging_dock
   EXPORT ${PROJECT_NAME}
@@ -205,9 +218,11 @@ ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name} controller pose_filter)
 ament_export_dependencies(
   geometry_msgs
+  nav2_costmap_2d
   nav2_graceful_controller
   nav2_msgs
   nav2_util
+  nav_msgs
   opennav_docking_core
   pluginlib
   nav2_ros_common
