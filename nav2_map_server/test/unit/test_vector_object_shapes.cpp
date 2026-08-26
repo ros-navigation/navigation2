@@ -542,7 +542,37 @@ TEST_F(Tester, testPolygonBordersOnePointInsideBoundaries)
 
   polygon_->putBorders(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
 
-  verifyMapEmpty(map);
+  // Check that the visible clipped segment is rendered, so map is not empty
+  bool found_occupied = false;
+  for (const auto & cell : map->data) {
+    if (cell == nav2_util::OCC_GRID_OCCUPIED) {
+      found_occupied = true;
+      break;
+    }
+  }
+  ASSERT_TRUE(found_occupied);
+}
+
+TEST_F(Tester, testPolygonBordersClosedLoop)
+{
+  setPolygonParams("");
+  node_->set_parameter(
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".closed", true));
+  ASSERT_TRUE(polygon_->obtainParams(POLYGON_NAME));
+
+  nav_msgs::msg::OccupancyGrid::SharedPtr map = makeMap();
+
+  polygon_->putBorders(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
+
+  // 4th border (from (1.0, -1.0) back to (1.0, 1.0) at mx = map_center_x + 10) must now be drawn
+  const unsigned int map_center_x = 19;
+  const unsigned int map_center_y = 19;
+
+  for (unsigned int my = map_center_y - 10; my <= map_center_y + 10; my++) {
+    ASSERT_EQ(
+      map->data[my * map->info.width + (map_center_x + 10)],
+      nav2_util::OCC_GRID_OCCUPIED);
+  }
 }
 
 TEST_F(Tester, testPolygonFilled)

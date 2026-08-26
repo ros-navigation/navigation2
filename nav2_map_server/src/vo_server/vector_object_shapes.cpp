@@ -76,6 +76,52 @@ inline bool safeWorldToMap(
   if (my >= size_y) {my = size_y - 1;}
   return true;
 }
+
+inline bool clipLineSegment(
+  const double min_x, const double max_x,
+  const double min_y, const double max_y,
+  double & x0, double & y0,
+  double & x1, double & y1)
+{
+  double dx = x1 - x0;
+  double dy = y1 - y0;
+
+  double t0 = 0.0;
+  double t1 = 1.0;
+
+  auto clipTest = [&](double p, double q) -> bool {
+      if (p == 0.0) {
+        if (q < 0.0) {return false;}
+      } else {
+        double t = q / p;
+        if (p < 0.0) {
+          if (t > t1) {return false;}
+          if (t > t0) {t0 = t;}
+        } else {
+          if (t < t0) {return false;}
+          if (t < t1) {t1 = t;}
+        }
+      }
+      return true;
+    };
+
+  if (clipTest(-dx, x0 - min_x) &&
+    clipTest(dx, max_x - x0) &&
+    clipTest(-dy, y0 - min_y) &&
+    clipTest(dy, max_y - y0))
+  {
+    if (t1 < 1.0) {
+      x1 = x0 + t1 * dx;
+      y1 = y0 + t1 * dy;
+    }
+    if (t0 > 0.0) {
+      x0 = x0 + t0 * dx;
+      y0 = y0 + t0 * dy;
+    }
+    return true;
+  }
+  return false;
+}
 }  // namespace
 
 namespace nav2_map_server
@@ -294,33 +340,50 @@ bool Polygon::isPointInside(const double px, const double py) const
 void Polygon::putBorders(
   nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
 {
-  unsigned int mx0, my0, mx1, my1;
-
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (!safeWorldToMap(map, polygon_->points[0].x, polygon_->points[0].y, mx1, my1)) {
-    RCLCPP_ERROR(
-      node->get_logger(),
-      "[UUID: %s] Can not convert (%f, %f) point to map",
-      getUUID().c_str(), polygon_->points[0].x, polygon_->points[0].y);
+  const auto & pts = polygon_->points;
+  const std::size_t n = pts.size();
+  if (n < 2) {
     return;
   }
 
+  const double origin_x = map->info.origin.position.x;
+  const double origin_y = map->info.origin.position.y;
+  const double res = map->info.resolution;
+  const double min_x = origin_x;
+  const double max_x = origin_x + map->info.width * res;
+  const double min_y = origin_y;
+  const double max_y = origin_y + map->info.height * res;
+
   MapAction ma(map, params_->value, overlay_type);
-  for (unsigned int i = 1; i < polygon_->points.size(); i++) {
-    mx0 = mx1;
-    my0 = my1;
-    if (!safeWorldToMap(map, polygon_->points[i].x, polygon_->points[i].y, mx1, my1)) {
-      RCLCPP_ERROR(
-        node->get_logger(),
-        "[UUID: %s] Can not convert (%f, %f) point to map",
-        getUUID().c_str(), polygon_->points[i].x, polygon_->points[i].y);
-      return;
+
+  // If closed is true, loop wraps around back to vertex 0.
+  const std::size_t num_segments = params_->closed ? n : n - 1;
+
+  for (std::size_t i = 0; i < num_segments; i++) {
+    std::size_t j = (i + 1) % n;
+
+    double wx0 = pts[i].x;
+    double wy0 = pts[i].y;
+    double wx1 = pts[j].x;
+    double wy1 = pts[j].y;
+
+    if (!std::isfinite(wx0) || !std::isfinite(wy0) || !std::isfinite(wx1) || !std::isfinite(wy1)) {
+      continue;
     }
-    nav2_util::raytraceLine(ma, mx0, my0, mx1, my1, map->info.width);
+
+    if (!clipLineSegment(min_x, max_x, min_y, max_y, wx0, wy0, wx1, wy1)) {
+      continue;  // Segment is completely out-of-bounds
+    }
+
+    unsigned int mx0, my0, mx1, my1;
+    if (safeWorldToMap(map, wx0, wy0, mx0, my0) && safeWorldToMap(map, wx1, wy1, mx1, my1)) {
+      nav2_util::raytraceLine(ma, mx0, my0, mx1, my1, map->info.width);
+    }
   }
 }
 
@@ -657,49 +720,65 @@ bool Circle::isPointInside(const double px, const double py) const
 void Circle::putBorders(
   nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
 {
-  unsigned int mcx, mcy;
-  if (!centerToMap(map, mcx, mcy)) {
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  if (
+    !std::isfinite(center_->x) || !std::isfinite(center_->y) || !std::isfinite(params_->radius) ||
+    params_->radius < 0.0)
+  {
     return;
   }
 
-  // Implementation of the circle generation algorithm, based on the following work:
-  // Berthold K.P. Horn "Circle generators for display devices"
-  // Computer Graphics and Image Processing 5.2 (1976): 280-288.
+  const double origin_x = map->info.origin.position.x;
+  const double origin_y = map->info.origin.position.y;
+  const double res = map->info.resolution;
+  const int map_w = static_cast<int>(map->info.width);
+  const int map_h = static_cast<int>(map->info.height);
 
-  // Inputs initialization
-  const int r = static_cast<int>(std::round(params_->radius / map->info.resolution));
-  int x = r;
-  int y = 1;
+  const double cxf = (center_->x - origin_x) / res - 0.5;
+  const double cyf = (center_->y - origin_y) / res - 0.5;
+  const double r = params_->radius / res;
 
-  // Error initialization
-  int s = -r;
+  const int8_t fill_val = params_->value;
 
-  // Calculation algorithm
-  while (x > y) {  // Calculating only first circle octant
-    // Put 8 points in each octant reflecting symmetrically
-    putPoint(mcx + x, mcy + y, map, overlay_type);
-    putPoint(mcx + y, mcy + x, map, overlay_type);
-    putPoint(mcx - x + 1, mcy + y, map, overlay_type);
-    putPoint(mcx + y, mcy - x + 1, map, overlay_type);
-    putPoint(mcx - x + 1, mcy - y + 1, map, overlay_type);
-    putPoint(mcx - y + 1, mcy - x + 1, map, overlay_type);
-    putPoint(mcx + x, mcy - y + 1, map, overlay_type);
-    putPoint(mcx - y + 1, mcy + x, map, overlay_type);
+  auto putPointChecked = [&](double px, double py) {
+      int mx = static_cast<int>(std::floor(px + 0.5));
+      int my = static_cast<int>(std::floor(py + 0.5));
+      if (mx >= 0 && mx < map_w && my >= 0 && my < map_h) {
+        processCell(
+          map,
+          static_cast<unsigned int>(my) * map->info.width + static_cast<unsigned int>(mx),
+          fill_val,
+          overlay_type);
+      }
+    };
 
-    s = s + 2 * y + 1;
-    y++;
-    if (s > 0) {
-      s = s - 2 * x + 2;
-      x--;
-    }
+  if (r == 0.0) {
+    putPointChecked(cxf, cyf);
+    return;
   }
 
-  // Corner case for x == y: do not put end points twice
-  if (x == y) {
-    putPoint(mcx + x, mcy + y, map, overlay_type);
-    putPoint(mcx - x + 1, mcy + y, map, overlay_type);
-    putPoint(mcx - x + 1, mcy - y + 1, map, overlay_type);
-    putPoint(mcx + x, mcy - y + 1, map, overlay_type);
+  const double octant_limit = r / std::sqrt(2.0);
+  const int max_v = static_cast<int>(std::ceil(octant_limit));
+
+  for (int v_int = 0; v_int <= max_v; v_int++) {
+    double v = static_cast<double>(v_int);
+    if (v > r) {
+      v = r;
+    }
+    double u = std::sqrt(std::max(0.0, r * r - v * v));
+
+    putPointChecked(cxf + u, cyf + v);
+    putPointChecked(cxf + v, cyf + u);
+    putPointChecked(cxf - u, cyf + v);
+    putPointChecked(cxf + v, cyf - u);
+    putPointChecked(cxf - u, cyf - v);
+    putPointChecked(cxf - v, cyf - u);
+    putPointChecked(cxf + u, cyf - v);
+    putPointChecked(cxf - v, cyf + u);
   }
 }
 
