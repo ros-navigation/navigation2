@@ -236,6 +236,8 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | controller.projection_time | Time to look ahead for collisions (s). | double | 5.0     |
 | controller.simulation_time_step | Time step for projections (s). | double | 0.1     |
 | controller.dock_collision_threshold | Distance (m) from the dock pose to ignore collisions. | double | 0.3     |
+| controller.publish_trajectory | Whether to publish the projected docking trajectory for visualization / debugging. When false, no publisher is created and the trajectory is not assembled. Read at configure time only. | bool | false     |
+| controller.trajectory_topic | The topic on which to publish the projected trajectory, when `publish_trajectory` is enabled. | string | "docking_trajectory"     |
 
 Note: `dock_plugins` and either `docks` or `dock_database` are required.
 
