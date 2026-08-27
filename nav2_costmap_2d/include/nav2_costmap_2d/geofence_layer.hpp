@@ -16,6 +16,7 @@
 #define NAV2_COSTMAP_2D__GEOFENCE_LAYER_HPP_
 
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>

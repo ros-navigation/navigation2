@@ -65,7 +65,7 @@ GeofenceLayer::onInitialize()
     if (nav2_costmap_2d::makeFootprintFromString(polygon_str, pts)) {
       if (pts.size() < 3) {
         throw std::runtime_error{
-          "GeofenceLayer: fence_polygon parameter must have >= 3 vertices."};
+                "GeofenceLayer: fence_polygon parameter must have >= 3 vertices."};
       }
       auto poly = std::make_shared<geometry_msgs::msg::PolygonStamped>();
       poly->header.frame_id = global_frame_;
@@ -88,8 +88,8 @@ GeofenceLayer::onInitialize()
     } else {
       // Invalid parameter at init time — throw so the operator is immediately aware.
       throw std::runtime_error{
-        "GeofenceLayer: fence_polygon parameter is malformed. "
-        "Expected format: \"[[x1,y1],[x2,y2],...]\" with >= 3 vertices."};
+              "GeofenceLayer: fence_polygon parameter is malformed. "
+              "Expected format: \"[[x1,y1],[x2,y2],...]\" with >= 3 vertices."};
     }
   }
 
@@ -165,7 +165,7 @@ GeofenceLayer::matchSize()
 
 void
 GeofenceLayer::setFenceCallback(
-  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::SetFence::Request> request,
   std::shared_ptr<nav2_msgs::srv::SetFence::Response> response)
 {
