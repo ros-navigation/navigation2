@@ -199,15 +199,6 @@ def generate_launch_description() -> LaunchDescription:
                 parameters=[configured_params, {'yaml_filename': map_yaml_file}],
                 remappings=remappings,
             ),
-            Node(
-                package='nav2_lifecycle_manager',
-                executable='lifecycle_manager',
-                name='lifecycle_manager_map_server',
-                output='screen',
-                parameters=[
-                    configured_params,
-                    {'autostart': autostart}, {'node_names': ['map_server']}],
-            ),
         ]
     )
 
@@ -224,16 +215,6 @@ def generate_launch_description() -> LaunchDescription:
                         name='map_server',
                         parameters=[configured_params, {'yaml_filename': map_yaml_file}],
                         remappings=remappings,
-                    ),
-                    ComposableNode(
-                        package='nav2_lifecycle_manager',
-                        plugin='nav2_lifecycle_manager::LifecycleManager',
-                        name='lifecycle_manager_map_server',
-                        parameters=[
-                            configured_params,
-                            {'autostart': autostart}, {'node_names': ['map_server']}
-                        ],
-                        extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}]
                     ),
                 ],
             ),

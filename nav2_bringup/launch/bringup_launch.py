@@ -17,12 +17,12 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, GroupAction, IncludeLaunchDescription,
-                            SetEnvironmentVariable)
+                            OpaqueFunction, SetEnvironmentVariable)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import Node
-from launch_ros.descriptions import ParameterFile
+from launch_ros.actions import LoadComposableNodes, Node
+from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
@@ -68,6 +68,83 @@ def generate_launch_description() -> LaunchDescription:
         ),
         allow_substs=True,
     )
+
+    def launch_lifecycle_manager(context):
+        lifecycle_nodes = []
+
+        if use_localization.perform(context) == 'True':
+            if slam.perform(context) == 'True':
+                lifecycle_nodes.append('map_saver')
+            else:
+                lifecycle_nodes.extend(['map_server', 'amcl'])
+        else:
+            # Loopback simulations provide their own map_server, but it is managed here.
+            lifecycle_nodes.append('map_server')
+
+        if use_keepout_zones.perform(context) == 'True':
+            lifecycle_nodes.extend([
+                'keepout_filter_mask_server',
+                'keepout_costmap_filter_info_server',
+            ])
+
+        if use_speed_zones.perform(context) == 'True':
+            lifecycle_nodes.extend([
+                'speed_filter_mask_server',
+                'speed_costmap_filter_info_server',
+            ])
+
+        lifecycle_nodes.extend([
+            'controller_server',
+            'smoother_server',
+            'planner_server',
+            'route_server',
+            'behavior_server',
+            'velocity_smoother',
+            'collision_monitor',
+            'bt_navigator',
+            'waypoint_follower',
+            'docking_server',
+            'following_server',
+        ])
+
+        manager_parameters = [
+            configured_params,
+            {
+                'autostart': autostart,
+                'node_names': lifecycle_nodes,
+                'use_sim_time': use_sim_time,
+            },
+        ]
+
+        if use_composition.perform(context) == 'True':
+            return [
+                LoadComposableNodes(
+                    target_container=(namespace, '/', container_name),
+                    composable_node_descriptions=[
+                        ComposableNode(
+                            package='nav2_lifecycle_manager',
+                            plugin='nav2_lifecycle_manager::LifecycleManager',
+                            name='lifecycle_manager_nav2',
+                            parameters=manager_parameters,
+                            extra_arguments=[{
+                                'use_intra_process_comms': use_intra_process_comms
+                            }],
+                        ),
+                    ],
+                ),
+            ]
+
+        return [
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_nav2',
+                namespace=namespace,
+                output='screen',
+                arguments=['--ros-args', '--log-level', log_level],
+                parameters=manager_parameters,
+            ),
+        ]
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_LOGGING_BUFFERED_STREAM', '1'
@@ -185,6 +262,7 @@ def generate_launch_description() -> LaunchDescription:
                     'namespace': namespace,
                     'use_sim_time': use_sim_time,
                     'autostart': autostart,
+                    'use_lifecycle_manager': 'False',
                     'use_respawn': use_respawn,
                     'params_file': params_file,
                 }.items(),
@@ -199,6 +277,7 @@ def generate_launch_description() -> LaunchDescription:
                     'map': map_yaml_file,
                     'use_sim_time': use_sim_time,
                     'autostart': autostart,
+                    'use_lifecycle_manager': 'False',
                     'params_file': params_file,
                     'use_composition': use_composition,
                     'use_intra_process_comms': use_intra_process_comms,
@@ -221,6 +300,7 @@ def generate_launch_description() -> LaunchDescription:
                     'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
                     'container_name': container_name,
+                    'use_lifecycle_manager': 'False',
                 }.items(),
             ),
 
@@ -238,6 +318,7 @@ def generate_launch_description() -> LaunchDescription:
                     'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
                     'container_name': container_name,
+                    'use_lifecycle_manager': 'False',
                 }.items(),
             ),
 
@@ -257,8 +338,10 @@ def generate_launch_description() -> LaunchDescription:
                     'use_keepout_zones': use_keepout_zones,
                     'use_speed_zones': use_speed_zones,
                     'container_name': container_name,
+                    'use_lifecycle_manager': 'False',
                 }.items(),
             ),
+            OpaqueFunction(function=launch_lifecycle_manager),
         ]
     )
 

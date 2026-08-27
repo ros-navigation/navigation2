@@ -32,6 +32,7 @@ def generate_launch_description() -> LaunchDescription:
     speed_mask_yaml_file = LaunchConfiguration('speed_mask')
     use_sim_time = LaunchConfigAsBool('use_sim_time')
     autostart = LaunchConfigAsBool('autostart')
+    use_lifecycle_manager = LaunchConfigAsBool('use_lifecycle_manager')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfigAsBool('use_composition')
     use_intra_process_comms = LaunchConfigAsBool('use_intra_process_comms')
@@ -85,6 +86,18 @@ def generate_launch_description() -> LaunchDescription:
         'params_file',
         default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes',
+    )
+
+    declare_autostart_cmd = DeclareLaunchArgument(
+        'autostart',
+        default_value='True',
+        description='Automatically startup managed nodes',
+    )
+
+    declare_use_lifecycle_manager_cmd = DeclareLaunchArgument(
+        'use_lifecycle_manager',
+        default_value='True',
+        description='Whether to launch the speed-zone lifecycle manager',
     )
 
     declare_use_composition_cmd = DeclareLaunchArgument(
@@ -149,17 +162,6 @@ def generate_launch_description() -> LaunchDescription:
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,
             ),
-            Node(
-                package='nav2_lifecycle_manager',
-                executable='lifecycle_manager',
-                name='lifecycle_manager_speed_zone',
-                output='screen',
-                arguments=['--ros-args', '--log-level', log_level],
-                parameters=[
-                    configured_params,
-                    {'autostart': autostart}, {'node_names': lifecycle_nodes}
-                ],
-            ),
         ],
     )
     # LoadComposableNode for map server twice depending if we should use the
@@ -198,7 +200,31 @@ def generate_launch_description() -> LaunchDescription:
                 ],
             ),
 
+        ],
+    )
+
+    load_lifecycle_manager = GroupAction(
+        condition=IfCondition(use_lifecycle_manager),
+        actions=[
+            Node(
+                condition=IfCondition(PythonExpression(['not ', use_composition])),
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_speed_zone',
+                namespace=namespace,
+                output='screen',
+                arguments=['--ros-args', '--log-level', log_level],
+                parameters=[
+                    configured_params,
+                    {
+                        'autostart': autostart,
+                        'node_names': lifecycle_nodes,
+                        'use_sim_time': use_sim_time,
+                    },
+                ],
+            ),
             LoadComposableNodes(
+                condition=IfCondition(use_composition),
                 target_container=container_name_full,
                 composable_node_descriptions=[
                     ComposableNode(
@@ -207,9 +233,15 @@ def generate_launch_description() -> LaunchDescription:
                         name='lifecycle_manager_speed_zone',
                         parameters=[
                             configured_params,
-                            {'autostart': autostart, 'node_names': lifecycle_nodes}
+                            {
+                                'autostart': autostart,
+                                'node_names': lifecycle_nodes,
+                                'use_sim_time': use_sim_time,
+                            },
                         ],
-                        extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
+                        extra_arguments=[
+                            {'use_intra_process_comms': use_intra_process_comms}
+                        ],
                     ),
                 ],
             ),
@@ -227,6 +259,8 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_speed_mask_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_use_lifecycle_manager_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_use_intra_process_comms_cmd)
     ld.add_action(declare_container_name_cmd)
@@ -237,5 +271,6 @@ def generate_launch_description() -> LaunchDescription:
     # Add the actions to launch all of the map modifier nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
+    ld.add_action(load_lifecycle_manager)
 
     return ld

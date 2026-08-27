@@ -167,7 +167,6 @@ private:
 
   // The client used to control the nav2 stack
   std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_nav_;
-  std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_loc_;
 
   QCheckBox * store_initial_pose_checkbox_{nullptr};
 
@@ -271,41 +270,23 @@ public:
   using SystemStatus = nav2_lifecycle_manager::SystemStatus;
 
   explicit InitialThread(
-    std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> & client_nav,
-    std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> & client_loc)
-  : client_nav_(client_nav), client_loc_(client_loc)
+    std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> & client_nav)
+  : client_nav_(client_nav)
   {}
 
   void run() override
   {
     SystemStatus status_nav = SystemStatus::TIMEOUT;
-    SystemStatus status_loc = SystemStatus::TIMEOUT;
 
     while (status_nav == SystemStatus::TIMEOUT) {
-      if (status_nav == SystemStatus::TIMEOUT) {
-        status_nav = client_nav_->is_active(std::chrono::seconds(1));
-      }
-    }
-
-    // try to communicate twice, might not actually be up if in SLAM mode
-    bool tried_loc_bringup_once = false;
-    while (status_loc == SystemStatus::TIMEOUT) {
-      status_loc = client_loc_->is_active(std::chrono::seconds(1));
-      if (tried_loc_bringup_once) {
-        break;
-      }
-      tried_loc_bringup_once = true;
+      status_nav = client_nav_->is_active(std::chrono::seconds(1));
     }
 
     if (status_nav == SystemStatus::ACTIVE) {
       emit navigationActive();
-    } else {
-      emit navigationInactive();
-    }
-
-    if (status_loc == SystemStatus::ACTIVE) {
       emit localizationActive();
     } else {
+      emit navigationInactive();
       emit localizationInactive();
     }
   }
@@ -318,7 +299,6 @@ signals:
 
 private:
   std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_nav_;
-  std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_loc_;
 };
 
 }  // namespace nav2_rviz_plugins
