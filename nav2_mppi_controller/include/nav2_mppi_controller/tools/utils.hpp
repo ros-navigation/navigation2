@@ -46,6 +46,7 @@
 #include "nav2_mppi_controller/models/path.hpp"
 #include "builtin_interfaces/msg/time.hpp"
 #include "nav2_mppi_controller/critic_data.hpp"
+#include "nav2_mppi_controller/tools/velocity_limits.hpp"
 
 #define M_PIF 3.141592653589793238462643383279502884e+00F
 #define M_PIF_2 1.5707963267948966e+00F
@@ -648,37 +649,6 @@ inline auto normalize_yaws_between_points(
       yaw_between_point : angles::normalize_angle(yaw_between_point + M_PIF);
   }
   return yaws_between_points_corrected;
-}
-
-/**
- * @brief Clamps the input between the given lower and upper bounds.
- * @param lower_bound Lower bound.
- * @param upper_bound Upper bound.
- * @return Clamped output.
- */
-inline float clamp(
-  const float lower_bound, const float upper_bound, const float input)
-{
-  return std::min(upper_bound, std::max(input, lower_bound));
-}
-
-/**
- * @brief Clamp velocity by acceleration limits, whereas max is used for
- * accelerating in speed (forward or reverse) and min is used for deceleration
- * @param last_vel Previous velocity
- * @param curr_vel Current velocity to clamp
- * @param min_delta Minimum velocity change (deceleration, typically negative)
- * @param max_delta Maximum velocity change (acceleration, typically positive)
- * @return Clamped velocity
- */
-inline float clampVelocityByAccel(
-  const float last_vel, const float curr_vel,
-  const float min_delta, const float max_delta)
-{
-  if (last_vel >= 0) {
-    return clamp(last_vel + min_delta, last_vel + max_delta, curr_vel);
-  }
-  return clamp(last_vel - max_delta, last_vel - min_delta, curr_vel);
 }
 
 }  // namespace mppi::utils

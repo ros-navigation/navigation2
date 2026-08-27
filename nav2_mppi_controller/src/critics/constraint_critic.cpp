@@ -68,11 +68,9 @@ void ConstraintCritic::score(CriticData & data)
     auto & vx = data.state.vx;
     auto & vy = data.state.vy;
 
-    if (omni->constrainTranslationalVelocity()) {
+    if (omni->useVelocityEllipseScaling()) {
       // Constrain with combined translational velocity
-      addViolationCost(
-        data, (vx.square() + vy.square()).sqrt() *
-        (1.0f - omni->getTranslationalVelocityScale(vx, vy)));
+      addViolationCost(data, omni->getTranslationalVelocityViolation(vx, vy));
     } else {
       // Constrain with per-axis limits
       addViolationCost(

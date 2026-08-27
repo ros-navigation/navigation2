@@ -400,112 +400,60 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
   }
 }
 
-namespace
-{
-
-/**
- * @brief Fraction of a requested velocity change that the acceleration limits allow
- * @param last Velocity at the previous time step
- * @param curr Requested velocity
- * @param min_delta Most negative change in speed magnitude allowed this step
- * @param max_delta Most positive change in speed magnitude allowed this step
- * @return Fraction in [0, 1], or 1 when nothing is requested
- */
-float reachableFraction(
-  const float last, const float curr, const float min_delta, const float max_delta)
-{
-  const float delta = curr - last;
-  if (delta == 0.0f) {
-    return 1.0f;
-  }
-  return (utils::clampVelocityByAccel(last, curr, min_delta, max_delta) - last) / delta;
-}
-
-}  // namespace
-
 void Optimizer::applyControlSequenceConstraints()
 {
   auto & s = settings_;
-
-  // Apply constraints to set the optimal control sequence within bounds
-  motion_model_->applyConstraints(control_sequence_);
+  const bool is_holo = isHolonomic();
 
   // Use controller_period for t=0 to realistically model physical limits
-  float first_dt = s.controller_period;
-  float max_delta_vx = first_dt * s.constraints.ax_max;
-  float min_delta_vx = first_dt * s.constraints.ax_min;
-  float max_delta_vy = first_dt * s.constraints.ay_max;
-  float min_delta_vy = first_dt * s.constraints.ay_min;
-  float max_delta_wz = first_dt * s.constraints.az_max;
+  models::Control max_deltas{s.controller_period * s.constraints.ax_max,
+    s.controller_period * s.constraints.ay_max,
+    s.controller_period * s.constraints.az_max};
+  models::Control min_deltas{s.controller_period * s.constraints.ax_min,
+    s.controller_period * s.constraints.ay_min,
+    -s.controller_period * s.constraints.az_max};
 
   // Initialize as the current speed to create inter-iteration dynamic feasibility
-  float vx_last = static_cast<float>(state_.speed.linear.x);
-  float wz_last = static_cast<float>(state_.speed.angular.z);
-  float vy_last = isHolonomic() ? static_cast<float>(state_.speed.linear.y) : 0.0f;
-
-  const bool constrain_translational_velocity = motion_model_->constrainTranslationalVelocity();
+  models::Control last{static_cast<float>(state_.speed.linear.x),
+    is_holo ? static_cast<float>(state_.speed.linear.y) : 0.0f,
+    static_cast<float>(state_.speed.angular.z)};
 
   // When shifting, vx(0) is "now" and not sent. Pin it so vx(1), the sent command,
   // is exactly one constraint step from current speed when shift_control_sequence
   if (s.shift_control_sequence) {
-    control_sequence_.vx(0) = vx_last;
-    control_sequence_.wz(0) = wz_last;
-    if (isHolonomic()) {
-      control_sequence_.vy(0) = vy_last;
+    control_sequence_.vx(0) = last.vx;
+    control_sequence_.wz(0) = last.wz;
+    if (is_holo) {
+      control_sequence_.vy(0) = last.vy;
     }
   }
 
   for (unsigned int i = 0; i != control_sequence_.vx.size(); i++) {
     // After first timestep, switch to MPC model_dt for intra-iteration feasibility
     if (i == 1) {
-      max_delta_vx = s.model_dt * s.constraints.ax_max;
-      min_delta_vx = s.model_dt * s.constraints.ax_min;
-      max_delta_vy = s.model_dt * s.constraints.ay_max;
-      min_delta_vy = s.model_dt * s.constraints.ay_min;
-      max_delta_wz = s.model_dt * s.constraints.az_max;
+      max_deltas = {s.model_dt * s.constraints.ax_max,
+        s.model_dt * s.constraints.ay_max,
+        s.model_dt * s.constraints.az_max};
+      min_deltas = {s.model_dt * s.constraints.ax_min,
+        s.model_dt * s.constraints.ay_min,
+        -s.model_dt * s.constraints.az_max};
     }
 
-    float & vx_curr = control_sequence_.vx(i);
-    vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
+    // Let the motion model constrain the step to its own feasible set.
+    models::Control curr{control_sequence_.vx(i),
+      is_holo ? control_sequence_.vy(i) : 0.0f,
+      control_sequence_.wz(i)};
 
-    float & wz_curr = control_sequence_.wz(i);
-    wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
-    wz_curr = utils::clampVelocityByAccel(wz_last, wz_curr, -max_delta_wz, max_delta_wz);
-    wz_last = wz_curr;
+    motion_model_->constrainVelocityStep(curr, last, min_deltas, max_deltas);
 
-    if (isHolonomic()) {
-      float & vy_curr = control_sequence_.vy(i);
-      vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-
-      if (constrain_translational_velocity) {
-        // Clamp the combined translational velocity along the requested velocity vector,
-        // rather than clamping each axis separately.
-        const float alpha = std::min(
-          {1.0f,
-            reachableFraction(vx_last, vx_curr, min_delta_vx, max_delta_vx),
-            reachableFraction(vy_last, vy_curr, min_delta_vy, max_delta_vy)});
-
-        vx_curr = vx_last + alpha * (vx_curr - vx_last);
-        vy_curr = vy_last + alpha * (vy_curr - vy_last);
-      } else {
-        // Each axis is limited on its own, so bound each axis on its own
-        vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
-        vy_curr = utils::clampVelocityByAccel(vy_last, vy_curr, min_delta_vy, max_delta_vy);
-      }
-
-      vy_last = vy_curr;
-    } else {
-      vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
+    // Update the control sequence with the constrained values
+    control_sequence_.vx(i) = curr.vx;
+    control_sequence_.wz(i) = curr.wz;
+    if (is_holo) {
+      control_sequence_.vy(i) = curr.vy;
     }
 
-    vx_last = vx_curr;
-  }
-
-  // Apply again to ensure accel constraints don't violate specialty limits. Skipped when the
-  // combined translational limit is on: re-applying would discard the accel-limited ramp whenever
-  // the measured speed starts outside it, e.g. when a speed limit shrinks.
-  if (!constrain_translational_velocity) {
-    motion_model_->applyConstraints(control_sequence_);
+    last = curr;
   }
 }
 

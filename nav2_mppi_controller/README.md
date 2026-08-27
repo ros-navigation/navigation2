@@ -90,7 +90,7 @@ Three built-in motion models are provided:
  | Parameter                        | Type   | Definition                                                                                                  |
  | -------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
  | plugin                           | string | Required: `"mppi::OmniMotionModel"`                                                                         |
- | constrain_translational_velocity | bool   | Default true. Constrain the combined translational velocity `sqrt(vx² + vy²)` by the ellipse spanned by `vx_max`, `vx_min` and `vy_max`. When false, `vx` and `vy` are each bounded separately, which allows a translational velocity faster than either axis limit. |
+ | use_velocity_ellipse_scaling     | bool   | Default true. Constrain the combined translational velocity `sqrt(vx² + vy²)` by the ellipse spanned by `vx_max`, `vx_min` and `vy_max` to incentivize forward rather than diagonal travel when incentivizing full velocity. When false, `vx` and `vy` are each bounded separately, which allows a translational velocity faster than either axis limit. |
 
 #### Constraint Critic
  | Parameter             | Type   | Definition                                                                                                  |
@@ -233,7 +233,7 @@ controller_server:
       # motion_model: "omni"
       # omni:
       #   plugin: "mppi::OmniMotionModel"
-      #   constrain_translational_velocity: true
+      #   use_velocity_ellipse_scaling: true
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
         enabled: true

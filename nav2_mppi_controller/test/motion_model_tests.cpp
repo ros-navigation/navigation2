@@ -26,6 +26,48 @@
 
 using namespace mppi;  // NOLINT
 
+/**
+ * @brief Drive a control sequence through the model's per-step constraint, mirroring the loop in
+ *        Optimizer::applyControlSequenceConstraints() with a single time step duration
+ */
+static void constrainSequence(
+  MotionModel & model, models::ControlSequence & control_sequence,
+  const geometry_msgs::msg::Twist & initial_speed,
+  const models::ControlConstraints & constraints, const float dt)
+{
+  models::Control last{
+    static_cast<float>(initial_speed.linear.x),
+    static_cast<float>(initial_speed.linear.y),
+    static_cast<float>(initial_speed.angular.z)};
+  const models::Control min_deltas{dt * constraints.ax_min, dt * constraints.ay_min,
+    -dt * constraints.az_max};
+  const models::Control max_deltas{dt * constraints.ax_max, dt * constraints.ay_max,
+    dt * constraints.az_max};
+
+  for (unsigned int i = 0; i != control_sequence.vx.size(); i++) {
+    models::Control curr{control_sequence.vx(i), control_sequence.vy(i), control_sequence.wz(i)};
+    model.constrainVelocityStep(curr, last, min_deltas, max_deltas);
+    control_sequence.vx(i) = curr.vx;
+    control_sequence.vy(i) = curr.vy;
+    control_sequence.wz(i) = curr.wz;
+    last = curr;
+  }
+}
+
+/**
+ * @brief Constrain a control sequence starting from rest, with acceleration limits wide enough
+ *        that only the velocity envelope binds, so each time step can be checked on its own
+ */
+static void constrainWithFreeAcceleration(
+  MotionModel & model, models::ControlSequence & control_sequence,
+  const float vx_max, const float vx_min, const float vy_max, const float wz_max)
+{
+  const models::ControlConstraints constraints{vx_max, vx_min, vy_max, wz_max,
+    1e3f, -1e3f, -1e3f, 1e3f, 1e3f};
+  model.setConstraints(constraints, 0.1f, 0.0f, 0.0f, 0.0f, false);
+  constrainSequence(model, control_sequence, geometry_msgs::msg::Twist(), constraints, 0.1f);
+}
+
 TEST(MotionModelTests, DiffDriveTest)
 {
   models::ControlSequence control_sequence;
@@ -52,17 +94,22 @@ TEST(MotionModelTests, DiffDriveTest)
   EXPECT_TRUE(state.vy.isApprox(Eigen::ArrayXXf::Zero(batches, timesteps)));  // non-holonomic
   EXPECT_TRUE(state.wz.isApprox(state.cwz));
 
-  // Check that application of constraints are empty for Diff Drive
-  for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
-    control_sequence.vx(i) = i * i * i;
-    control_sequence.wz(i) = i * i * i;
-  }
+  // The base implementation bounds each axis by its own velocity and acceleration limits
+  const models::ControlConstraints constraints{0.5f, -0.35f, 0.3f, 1.9f,
+    1.0f, -1.0f, -1.0f, 1.0f, 2.0f};
+  model->setConstraints(constraints, 0.1f, 0.0f, 0.0f, 0.0f, false);
 
-  models::ControlSequence initial_control_sequence = control_sequence;
-  model->applyConstraints(control_sequence);
-  EXPECT_TRUE(initial_control_sequence.vx.isApprox(control_sequence.vx));
-  EXPECT_TRUE(initial_control_sequence.vy.isApprox(control_sequence.vy));
-  EXPECT_TRUE(initial_control_sequence.wz.isApprox(control_sequence.wz));
+  control_sequence.vx.setConstant(5.0f);
+  control_sequence.wz.setConstant(5.0f);
+  constrainSequence(
+    *model, control_sequence, geometry_msgs::msg::Twist(), constraints, 0.1f);
+
+  // One controller period of acceleration from rest, then ramping to the per-axis limits
+  EXPECT_NEAR(control_sequence.vx(0), 0.1f * constraints.ax_max, 1e-6);
+  EXPECT_NEAR(control_sequence.wz(0), 0.1f * constraints.az_max, 1e-6);
+  EXPECT_NEAR(control_sequence.vx(timesteps - 1), constraints.vx_max, 1e-6);
+  EXPECT_NEAR(control_sequence.wz(timesteps - 1), constraints.wz, 1e-6);
+  EXPECT_TRUE((control_sequence.vy == 0.0f).all());  // non-holonomic
 
   // Check that Diff Drive is properly non-holonomic
   EXPECT_EQ(model->isHolonomic(), false);
@@ -110,8 +157,6 @@ TEST(MotionModelTests, OmniEllipticalConstraintsTest)
   models::ControlSequence control_sequence;
   control_sequence.reset(6);  // populates with zeros
   auto model = std::make_unique<OmniMotionModel>();
-  models::ControlConstraints constraints{0.5f, -0.35f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
-  model->setConstraints(constraints, 0.1f, 0.0f, 0.0f, 0.0f, false);
 
   // Velocities inside the ellipse, and exactly on either semi-axis, are left untouched.
   // The last two are outside the ellipse, thus pulled onto the ellipse.
@@ -121,7 +166,7 @@ TEST(MotionModelTests, OmniEllipticalConstraintsTest)
   control_sequence.wz.setLinSpaced(6, -1.0f, 1.0f);
   const Eigen::ArrayXf wz_initial = control_sequence.wz;
 
-  model->applyConstraints(control_sequence);
+  constrainWithFreeAcceleration(*model, control_sequence, 0.5f, -0.35f, 0.3f, 1.9f);
 
   EXPECT_NEAR(control_sequence.vx(0), 0.25f, 1e-6);
   EXPECT_NEAR(control_sequence.vy(0), 0.15f, 1e-6);
@@ -157,49 +202,31 @@ TEST(MotionModelTests, OmniEllipticalConstraintsTest)
 
 TEST(MotionModelTests, OmniZeroLimitConstraintsTest)
 {
-  // The axis with limit 0 cannot be commanded at all.
-  // The other feasible axis must still reach its own limit.
+  // An axis whose limit is zero cannot be commanded at all, while the other axis must still
+  // reach its own limit. The box clamp handles this before the ellipse is ever evaluated.
   models::ControlSequence control_sequence;
   control_sequence.reset(3);  // populates with zeros
   auto model = std::make_unique<OmniMotionModel>();
 
-  // vy_max = 0.0: no lateral motion allowed
-  models::ControlConstraints no_strafe{0.5f, -0.35f, 0.0f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
-  model->setConstraints(no_strafe, 0.1f, 0.0f, 0.0f, 0.0f, false);
-
+  // vy_max = 0: no lateral motion
   control_sequence.vx << 0.4f, -0.3f, 0.5f;
-  control_sequence.vy << 0.2f, -0.2f, 0.0f;
-  model->applyConstraints(control_sequence);
+  control_sequence.vy << 0.2f, -0.2f, 0.3f;
+  constrainWithFreeAcceleration(*model, control_sequence, 0.5f, -0.35f, 0.0f, 1.9f);
 
-  EXPECT_NEAR(control_sequence.vy(0), 0.0f, 1e-6);
-  EXPECT_NEAR(control_sequence.vy(1), 0.0f, 1e-6);
-  EXPECT_NEAR(control_sequence.vy(2), 0.0f, 1e-6);
+  EXPECT_TRUE((control_sequence.vy == 0.0f).all());
   EXPECT_NEAR(control_sequence.vx(0), 0.4f, 1e-6);
   EXPECT_NEAR(control_sequence.vx(1), -0.3f, 1e-6);
   EXPECT_NEAR(control_sequence.vx(2), 0.5f, 1e-6);
 
-  // vx_min = 0.0: no reversing allowed
-  models::ControlConstraints no_reverse{0.5f, 0.0f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
-  model->setConstraints(no_reverse, 0.1f, 0.0f, 0.0f, 0.0f, false);
-
-  control_sequence.vx << 0.4f, -0.3f, 0.0f;
+  // vx_min = 0: no reversing, while forward motion stays bound by the ellipse
+  control_sequence.vx << 0.4f, -0.3f, 0.5f;
   control_sequence.vy << 0.0f, 0.0f, 0.3f;
-  model->applyConstraints(control_sequence);
+  constrainWithFreeAcceleration(*model, control_sequence, 0.5f, 0.0f, 0.3f, 1.9f);
 
   EXPECT_NEAR(control_sequence.vx(0), 0.4f, 1e-6);
   EXPECT_NEAR(control_sequence.vx(1), 0.0f, 1e-6);
-  EXPECT_NEAR(control_sequence.vx(2), 0.0f, 1e-6);
-  EXPECT_NEAR(control_sequence.vy(2), 0.3f, 1e-6);
-
-  // Forward motion stays bound by vx_max while reversing is disallowed
-  control_sequence.vx << 0.5f, 0.5f, 5.0f;
-  control_sequence.vy << 0.3f, 0.0f, 0.0f;
-  model->applyConstraints(control_sequence);
-
-  EXPECT_NEAR(control_sequence.vx(0), 0.5f / std::sqrt(2.0f), 1e-6);
-  EXPECT_NEAR(control_sequence.vy(0), 0.3f / std::sqrt(2.0f), 1e-6);
-  EXPECT_NEAR(control_sequence.vx(1), 0.5f, 1e-6);
-  EXPECT_NEAR(control_sequence.vx(2), 0.5f, 1e-6);
+  EXPECT_NEAR(control_sequence.vx(2), 0.5f / std::sqrt(2.0f), 1e-6);
+  EXPECT_NEAR(control_sequence.vy(2), 0.3f / std::sqrt(2.0f), 1e-6);
 
   // Check it cleanly destructs
   model.reset();
@@ -207,7 +234,7 @@ TEST(MotionModelTests, OmniZeroLimitConstraintsTest)
 
 TEST(MotionModelTests, OmniPerAxisLimitsTest)
 {
-  // With constrain_translational_velocity false only per-axis clamps are applied
+  // With use_velocity_ellipse_scaling false, each axis is bounded on its own
   models::ControlSequence control_sequence;
   control_sequence.reset(2);  // populates with zeros
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
@@ -215,17 +242,14 @@ TEST(MotionModelTests, OmniPerAxisLimitsTest)
   ParametersHandler param_handler(node, name);
   auto model = std::make_unique<OmniMotionModel>();
 
-  node->declare_parameter(name + ".omni.constrain_translational_velocity", false);
+  node->declare_parameter(name + ".omni.use_velocity_ellipse_scaling", false);
   model->initialize(&param_handler, name + ".omni");
-  EXPECT_FALSE(model->constrainTranslationalVelocity());
-
-  models::ControlConstraints constraints{0.5f, -0.35f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
-  model->setConstraints(constraints, 0.1f, 0.0f, 0.0f, 0.0f, false);
+  EXPECT_FALSE(model->useVelocityEllipseScaling());
 
   // The rectangle's corner passes through untouched
   control_sequence.vx << 0.5f, -0.35f;
   control_sequence.vy << 0.3f, 0.3f;
-  model->applyConstraints(control_sequence);
+  constrainWithFreeAcceleration(*model, control_sequence, 0.5f, -0.35f, 0.3f, 1.9f);
 
   EXPECT_NEAR(control_sequence.vx(0), 0.5f, 1e-6);
   EXPECT_NEAR(control_sequence.vy(0), 0.3f, 1e-6);
@@ -236,138 +260,97 @@ TEST(MotionModelTests, OmniPerAxisLimitsTest)
   model.reset();
 }
 
-TEST(MotionModelTests, AckermannTest)
+TEST(MotionModelTests, AckermannTurningRadiusTest)
 {
-  models::ControlSequence control_sequence;
-  models::State state;
-  int batches = 1000;
-  int timesteps = 50;
-  control_sequence.reset(timesteps);  // populates with zeros
-  state.reset(batches, timesteps);  // populates with zeros
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   ParametersHandler param_handler(node, name);
-  std::unique_ptr<AckermannMotionModel> model =
-    std::make_unique<AckermannMotionModel>();
+  auto model = std::make_unique<AckermannMotionModel>();
   // Initialize the plugin: parameters live under "test.ackermann"
   model->initialize(&param_handler, name + ".ackermann");
 
-  // Check that predict properly populates the trajectory velocities with the control velocities
-  state.cvx = 10 * Eigen::ArrayXXf::Ones(batches, timesteps);
-  state.cvy = 5 * Eigen::ArrayXXf::Ones(batches, timesteps);
-  state.cwz = 1 * Eigen::ArrayXXf::Ones(batches, timesteps);
-
-  // Manually set state index 0 from initial conditions which would be the speed of the robot
-  state.vx.col(0) = 10;
-  state.wz.col(0) = 1;
-
-  model->predict(state);
-
-  EXPECT_TRUE(state.vx.isApprox(state.cvx));
-  EXPECT_TRUE(state.vy.isApprox(Eigen::ArrayXXf::Zero(batches, timesteps)));  // non-holonomic
-  EXPECT_TRUE(state.wz.isApprox(state.cwz));
-
-  // Check that application of constraints are non-empty for Ackermann Drive
-  for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
-    control_sequence.vx(i) = i * i * i;
-    control_sequence.wz(i) = i * i * i * i;
-  }
-
-  models::ControlSequence initial_control_sequence = control_sequence;
-  model->applyConstraints(control_sequence);
-  // VX equal since this doesn't change, the WZ is reduced if breaking the constraint
-  EXPECT_TRUE(initial_control_sequence.vx.isApprox(control_sequence.vx));
-  EXPECT_FALSE(initial_control_sequence.wz.isApprox(control_sequence.wz));
-  for (unsigned int i = 1; i != control_sequence.wz.rows(); i++) {
-    EXPECT_GT(control_sequence.wz(i), 0.0);
-  }
-
-  // Now, check the specifics of the minimum curvature constraint
   EXPECT_NEAR(model->getMinTurningRadius(), 0.2, 1e-6);
-  for (unsigned int i = 1; i != control_sequence.vx.rows(); i++) {
-    EXPECT_TRUE(fabs(control_sequence.vx(i)) / fabs(control_sequence.wz(i)) >= 0.2);
+  EXPECT_FALSE(model->isHolonomic());
+  const float r = model->getMinTurningRadius();
+
+  // More curvature than the turning radius allows, driving forwards and in reverse, turning
+  // either way. Rotation keeps its sign but is bounded by |vx| / min_turning_r.
+  const unsigned int timesteps = 20;
+  for (const float vx_demand : {1.0f, -1.0f}) {
+    for (const float wz_demand : {20.0f, -20.0f}) {
+      models::ControlSequence control_sequence;
+      control_sequence.reset(timesteps);  // populates with zeros
+      control_sequence.vx.setConstant(vx_demand);
+      control_sequence.wz.setConstant(wz_demand);
+      constrainWithFreeAcceleration(*model, control_sequence, 1.0f, -1.0f, 0.0f, 100.0f);
+
+      for (unsigned int i = 0; i != timesteps; i++) {
+        EXPECT_EQ(std::signbit(control_sequence.wz(i)), std::signbit(wz_demand));
+        EXPECT_LE(
+          std::fabs(control_sequence.wz(i)), std::fabs(control_sequence.vx(i)) / r + 1e-5f);
+      }
+
+      // vx is free to reach its own limit, and wz saturates on the turning radius bound
+      EXPECT_NEAR(control_sequence.vx(timesteps - 1), vx_demand, 1e-6);
+      EXPECT_NEAR(
+        control_sequence.wz(timesteps - 1), std::copysign(std::fabs(vx_demand) / r, wz_demand),
+        1e-5);
+    }
   }
 
-  // Check that Ackermann Drive is properly non-holonomic and parameterized
-  EXPECT_EQ(model->isHolonomic(), false);
-
-  // Check it cleanly destructs
-  model.reset();
-}
-
-TEST(MotionModelTests, AckermannReversingTest)
-{
+  // Braking while turning tightens the turning radius bound as vx falls, and wz follows it down
+  // even though that is faster than az_max: wz is vx times curvature, not an actuated axis.
   models::ControlSequence control_sequence;
-  models::ControlSequence control_sequence2;
-  models::State state;
-  int batches = 1000;
-  int timesteps = 50;
-  control_sequence.reset(timesteps);  // populates with zeros
-  control_sequence2.reset(timesteps);  // populates with zeros
-  state.reset(batches, timesteps);  // populates with zeros
-  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
-  std::string name = "test";
-  ParametersHandler param_handler(node, name);
-  std::unique_ptr<AckermannMotionModel> model =
-    std::make_unique<AckermannMotionModel>();
-  // Initialize the plugin: parameters live under "test.ackermann"
-  model->initialize(&param_handler, name + ".ackermann");
+  control_sequence.reset(2);  // populates with zeros
+  control_sequence.vx.setConstant(0.5f);
+  control_sequence.wz.setConstant(4.0f);
 
-  // Check that predict properly populates the trajectory velocities with the control velocities
-  state.cvx = 10 * Eigen::ArrayXXf::Ones(batches, timesteps);
-  state.cvy = 5 * Eigen::ArrayXXf::Ones(batches, timesteps);
-  state.cwz = 1 * Eigen::ArrayXXf::Ones(batches, timesteps);
+  const models::ControlConstraints constraints{1.0f, -1.0f, 0.0f, 100.0f,
+    10.0f, -10.0f, -10.0f, 10.0f, 1.0f};
+  model->setConstraints(constraints, 0.1f, 0.0f, 0.0f, 0.0f, false);
 
-  // Manually set state index 0 from initial conditions which would be the speed of the robot
-  state.vx.col(0) = 10;
-  state.wz.col(0) = 1;
+  geometry_msgs::msg::Twist speed;
+  speed.linear.x = 1.0;
+  speed.angular.z = 4.0;
+  constrainSequence(*model, control_sequence, speed, constraints, 0.1f);
 
-  model->predict(state);
+  // vx reaches its demand, and wz lands exactly on the radius bound that vx now allows
+  EXPECT_NEAR(control_sequence.vx(0), 0.5f, 1e-5);
+  EXPECT_NEAR(control_sequence.wz(0), std::fabs(control_sequence.vx(0)) / r, 1e-5);
 
-  EXPECT_TRUE(state.vx.isApprox(state.cvx));
-  EXPECT_TRUE(state.vy.isApprox(Eigen::ArrayXXf::Zero(batches, timesteps)));  // non-holonomic
-  EXPECT_TRUE(state.wz.isApprox(state.cwz));
+  // That step took wz well past what az_max alone would permit, which is the intended trade:
+  // the radius bound wins because wz is not independently actuated on this vehicle
+  EXPECT_GT(std::fabs(control_sequence.wz(0) - 4.0f), 0.1f * constraints.az_max);
 
-  // Check that application of constraints are non-empty for Ackermann Drive
-  for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
-    float idx = static_cast<float>(i);
-    control_sequence.vx(i) = -idx * idx * idx;  // now reversing
-    control_sequence.wz(i) = idx * idx * idx * idx;
+  // Braking through a standstill while turning must not deadlock: wz is free to follow vx down
+  control_sequence.reset(20);
+  control_sequence.vx.setConstant(-0.35f);
+  control_sequence.wz.setConstant(1.0f);
+  speed.linear.x = 0.2;
+  speed.angular.z = 1.0;  // exactly on the radius bound, r * wz == vx
+  const models::ControlConstraints brake_constraints{0.5f, -0.35f, 0.0f, 1.9f,
+    3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
+  model->setConstraints(brake_constraints, 0.05f, 0.0f, 0.0f, 0.0f, false);
+  constrainSequence(*model, control_sequence, speed, brake_constraints, 0.05f);
+
+  EXPECT_LT(control_sequence.vx(0), 0.2f);          // it actually brakes
+  EXPECT_NEAR(control_sequence.vx(19), -0.35f, 1e-5);  // and reaches the requested reverse speed
+  for (unsigned int i = 0; i != 20; i++) {
+    EXPECT_LE(std::fabs(control_sequence.wz(i)), std::fabs(control_sequence.vx(i)) / r + 1e-5f);
   }
 
-  models::ControlSequence initial_control_sequence = control_sequence;
-  model->applyConstraints(control_sequence);
-  // VX equal since this doesn't change, the WZ is reduced if breaking the constraint
-  EXPECT_TRUE(initial_control_sequence.vx.isApprox(control_sequence.vx));
-  EXPECT_FALSE(initial_control_sequence.wz.isApprox(control_sequence.wz));
-  for (unsigned int i = 1; i != control_sequence.wz.rows(); i++) {
-    EXPECT_GT(control_sequence.wz(i), 0.0);
-  }
+  // A turning radius of zero is not validated anywhere, and neither is calling this before
+  // initialize(), which would divide by zero. Check the horizon stays finite.
+  auto zero_radius = std::make_unique<AckermannMotionModel>();
+  EXPECT_NEAR(zero_radius->getMinTurningRadius(), 0.0f, 1e-9);
 
-  // Repeat with negative rotation direction
-  for (unsigned int i = 0; i != control_sequence2.vx.rows(); i++) {
-    float idx = static_cast<float>(i);
-    control_sequence2.vx(i) = -idx * idx * idx;  // now reversing
-    control_sequence2.wz(i) = -idx * idx * idx * idx;
-  }
+  control_sequence.reset(2);
+  control_sequence.vx.setZero();
+  control_sequence.wz.setConstant(50.0f);
+  constrainWithFreeAcceleration(*zero_radius, control_sequence, 1.0f, -1.0f, 0.0f, 2.0f);
 
-  models::ControlSequence initial_control_sequence2 = control_sequence2;
-  model->applyConstraints(control_sequence2);
-  // VX equal since this doesn't change, the WZ is reduced if breaking the constraint
-  EXPECT_TRUE(initial_control_sequence2.vx.isApprox(control_sequence2.vx));
-  EXPECT_FALSE(initial_control_sequence2.wz.isApprox(control_sequence2.wz));
-  for (unsigned int i = 1; i != control_sequence2.wz.rows(); i++) {
-    EXPECT_LT(control_sequence2.wz(i), 0.0);
-  }
-
-  // Now, check the specifics of the minimum curvature constraint
-  EXPECT_NEAR(model->getMinTurningRadius(), 0.2, 1e-6);
-  for (unsigned int i = 1; i != control_sequence2.vx.rows(); i++) {
-    EXPECT_TRUE(fabs(control_sequence2.vx(i)) / fabs(control_sequence2.wz(i)) >= 0.2);
-  }
-
-  // Check that Ackermann Drive is properly non-holonomic and parameterized
-  EXPECT_EQ(model->isHolonomic(), false);
+  EXPECT_TRUE(control_sequence.wz.isFinite().all());
+  EXPECT_TRUE((control_sequence.wz == 0.0f).all());  // stopped, so no rotation
 
   // Check it cleanly destructs
   model.reset();

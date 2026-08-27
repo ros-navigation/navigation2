@@ -256,57 +256,27 @@ TEST(CriticTests, ConstraintsCritic)
   critic.score(data);
   EXPECT_GT(costs(999), 0.0f);
   costs.setZero();
-}
 
-TEST(CriticTests, ConstraintsCriticPerAxisFallback)
-{
-  // With constrain_translational_velocity false, the omni branch scores each axis independently,
-  // exactly as it did before the combined translational limit was introduced.
-  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", true);
-  std::string name = "test";
-  ParametersHandler param_handler(node, name);
-  rclcpp_lifecycle::State lstate;
-  costmap_ros->on_configure(lstate);
-
-  models::State state;
-  state.vx = Eigen::ArrayXXf::Zero(1000, 30);
-  state.vy = Eigen::ArrayXXf::Zero(1000, 30);
-  state.wz = Eigen::ArrayXXf::Zero(1000, 30);
-  models::ControlSequence control_sequence;
-  models::Trajectories generated_trajectories;
-  models::Path path;
-  geometry_msgs::msg::Pose goal;
-  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
-  float model_dt = 0.1;
-  CriticData data =
-  {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
-
-  models::ControlConstraints constraints
-  {0.5f, -0.35f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f};
-  auto omni_model = std::make_shared<OmniMotionModel>();
+  // Opting out of the ellipse restores the per-axis check, the behavior preserved for existing
+  // users: the rectangle's corner is free, and exceeding one axis costs that axis' overshoot
   node->declare_parameter(
-    std::string(node->get_name()) + ".omni.constrain_translational_velocity", false);
-  omni_model->initialize(&param_handler, std::string(node->get_name()) + ".omni");
-  omni_model->setConstraints(constraints, model_dt, 0.0f, 0.0f, 0.0f, false);
-  ASSERT_FALSE(omni_model->constrainTranslationalVelocity());
-  data.motion_model = omni_model;
+    std::string(node->get_name()) + ".omni.use_velocity_ellipse_scaling", false);
+  auto per_axis_model = std::make_shared<OmniMotionModel>();
+  per_axis_model->initialize(&param_handler, std::string(node->get_name()) + ".omni");
+  per_axis_model->setConstraints(
+    {0.5f, -0.35f, 0.3f, 1.9f, 3.0f, -3.0f, -3.0f, 3.0f, 3.5f},
+    model_dt, 0.0f, 0.0f, 0.0f, false);
+  ASSERT_FALSE(per_axis_model->useVelocityEllipseScaling());
+  data.motion_model = per_axis_model;
 
-  node->declare_parameter("mppi.vy_max", 0.3);
-  ConstraintCritic critic;
-  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
-
-  // The rectangle's corner is free under the per-axis check, which is the behavior being
-  // preserved for users who opt out
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
   state.vx.row(999).setConstant(0.5f);
   state.vy.row(999).setConstant(0.3f);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0, 1e-6);
   costs.setZero();
 
-  // Exceeding a single axis is penalized by that axis' overshoot alone
   state.vx.setConstant(0.0f);
   state.vy.setConstant(0.0f);
   state.vy.row(999).setConstant(0.5f);

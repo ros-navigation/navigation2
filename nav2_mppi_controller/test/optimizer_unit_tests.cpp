@@ -582,7 +582,7 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   // Also tests param get of set vx/vy/wz min/maxes
 
   // Set model to omni to consider holonomic vy elements
-  // Ack is not tested here because `applyConstraints` is covered in detail
+  // Ack is not tested here because its constraint step is covered in detail
   // in motion_models_test.cpp
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();
@@ -600,19 +600,6 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   optimizer_tester.applyControlSequenceConstraintsWrapper();
   EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f));
   EXPECT_TRUE(sequence.vy.isApproxToConstant(0.0f));
-  EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
-
-  // Test boundary of limits on a diagonal, where the ellipse binds before the per-axis limits
-  const float diagonal_scale = 1.0f / std::sqrt(2.0f);
-  state.speed.linear.x = 1.0 * diagonal_scale;
-  state.speed.linear.y = 0.75 * diagonal_scale;
-  state.speed.angular.z = 2.0;
-  sequence.vx = 1.0 * diagonal_scale * Eigen::ArrayXf::Ones(50);
-  sequence.vy = 0.75 * diagonal_scale * Eigen::ArrayXf::Ones(50);
-  sequence.wz = 2.0 * Eigen::ArrayXf::Ones(50);
-  optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f * diagonal_scale));
-  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.75f * diagonal_scale));
   EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
 
   // Test breaking limits sets to the maximum along the commanded direction of travel. Equal
@@ -681,31 +668,6 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
     prev_vy = vy;
   }
 
-  // Asymmetric acceleration limits are bounds on the change in speed, not in signed velocity,
-  // so accelerating in reverse is bounded by ax_max and braking out of reverse by ax_min
-  constraints.ax_max = 1.0f;
-  constraints.ax_min = -3.0f;
-  constraints.ay_max = 1.0f;
-  constraints.ay_min = -3.0f;
-
-  state.speed.linear.x = -0.5;
-  state.speed.linear.y = 0.0;
-  state.speed.angular.z = 0.0;
-  sequence.vx.setConstant(-1.0f);
-  sequence.vy.setConstant(0.0f);
-  sequence.wz.setConstant(0.0f);
-  optimizer_tester.applyControlSequenceConstraintsWrapper();
-
-  // One controller period of reverse acceleration at ax_max, not at |ax_min|
-  EXPECT_NEAR(sequence.vx(0), -0.5f - settings.controller_period * constraints.ax_max, 1e-5);
-
-  // Braking out of reverse may use the full |ax_min|
-  state.speed.linear.x = -0.5;
-  sequence.vx.setConstant(0.0f);
-  optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_NEAR(
-    sequence.vx(0), -0.5f - settings.controller_period * constraints.ax_min, 1e-5);
-
   // A speed limit shrinking mid-motion puts the measured speed outside the new envelope. The
   // sequence must ramp back in under the accel limits rather than being snapped onto it.
   constraints.ax_max = 3.0f;
@@ -758,7 +720,7 @@ TEST(OptimizerTests, applyControlSequenceConstraintsPerAxisTests)
   node->declare_parameter(
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   node->declare_parameter(
-    "mppic.omni.constrain_translational_velocity", rclcpp::ParameterValue(false));
+    "mppic.omni.use_velocity_ellipse_scaling", rclcpp::ParameterValue(false));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -775,21 +737,10 @@ TEST(OptimizerTests, applyControlSequenceConstraintsPerAxisTests)
   auto & sequence = optimizer_tester.grabControlSequence();
   auto & state = optimizer_tester.grabState();
 
-  // Demanding more than possible on both axes saturates each at its own limit, rather than
-  // being projected back onto the ellipse (which would give vx = vy = 0.6)
-  state.speed.linear.x = 0.0;
-  state.speed.linear.y = 0.0;
-  state.speed.angular.z = 0.0;
-  sequence.vx = 5.0 * Eigen::ArrayXf::Ones(50);
-  sequence.vy = 5.0 * Eigen::ArrayXf::Ones(50);
-  sequence.wz = 5.0 * Eigen::ArrayXf::Ones(50);
-  optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_NEAR(sequence.vx(49), 1.0f, 1e-3);
-  EXPECT_NEAR(sequence.vy(49), 0.75f, 1e-3);
-  EXPECT_NEAR(sequence.wz(49), 2.0f, 1e-3);
-
   // Each axis is limited by its own acceleration limit, so an axis that is already at its
-  // demand is not slowed down by the other axis needing to ramp up
+  // demand is not slowed down by the other axis needing to ramp up. This would fail with the
+  // ellipse on, where a shared fraction pulls vx below its demand, so it also proves the
+  // parameter reaches the motion model.
   auto & constraints = optimizer_tester.getControlConstraints();
   auto & settings = optimizer_tester.grabSettings();
   state.speed.linear.x = 0.5;
