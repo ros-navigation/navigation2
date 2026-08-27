@@ -133,6 +133,7 @@ FollowingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   vel_publisher_.reset();
   filtered_dynamic_pose_pub_.reset();
   odom_sub_.reset();
+  dynamic_pose_sub_.reset();
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -179,7 +180,7 @@ bool FollowingServer::checkAndWarnIfPreempted(
 
 void FollowingServer::followObject()
 {
-  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
+  std::unique_lock<std::mutex> lock_reinit(param_handler_->getMutex());
   action_start_time_ = this->now();
   nav2::Rate loop_rate(this, params_->controller_frequency);
 
@@ -216,7 +217,7 @@ void FollowingServer::followObject()
         following_action_server_->terminate_all(result);
         return;
       } else {
-        param_handler_->getMutex().unlock();
+        lock_reinit.unlock();
         RCLCPP_INFO(get_logger(), "Subscribing to pose topic: %s", pose_topic.c_str());
         dynamic_pose_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
           pose_topic,
@@ -224,7 +225,7 @@ void FollowingServer::followObject()
             detected_dynamic_pose_ = *pose;
           },
           nav2::qos::StandardTopicQoS(1));  // Only want the most recent pose
-        param_handler_->getMutex().lock();
+        lock_reinit.lock();
       }
     } else {
       RCLCPP_INFO(get_logger(), "Following frame: %s instead of pose", target_frame.c_str());
@@ -273,6 +274,7 @@ void FollowingServer::followObject()
               result->num_retries = num_retries_;
               publishZeroVelocity();
               following_action_server_->succeeded_current(result);
+              dynamic_pose_sub_.reset();
               return;
             }
           }
@@ -650,6 +652,9 @@ geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(
   double dx = pose.pose.position.x - robot_pose.pose.position.x;
   double dy = pose.pose.position.y - robot_pose.pose.position.y;
   const double dist = std::hypot(dx, dy);
+  if (dist < 1e-6) {
+    return pose;
+  }
   geometry_msgs::msg::PoseStamped forward_pose = pose;
   forward_pose.pose.position.x -= distance * (dx / dist);
   forward_pose.pose.position.y -= distance * (dy / dist);

@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include <chrono>
+#include <cmath>
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -46,6 +47,9 @@ public:
 
   virtual bool approachObject(geometry_msgs::msg::PoseStamped &, const std::string &)
   {
+    // Mirror the production behavior of updating the iteration timestamp,
+    // used e.g. by the following feedback computation.
+    iteration_start_time_ = this->now();
     std::string exception;
     this->get_parameter("exception_to_throw", exception);
     if (exception == "TransformException") {
@@ -174,6 +178,61 @@ TEST(FollowingServerTests, ErrorExceptions)
   node.reset();
 }
 
+TEST(FollowingServerTests, SubscriptionReleasedOnStaticTimeout)
+{
+  auto node = std::make_shared<FollowingServerShim>();
+  auto node_thread = nav2::NodeThread(node);
+  auto node2 = std::make_shared<rclcpp::Node>("client_node_static_timeout");
+
+  auto pub = node2->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "dynamic_pose", rclcpp::QoS(1));
+
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
+
+  // Short static timeout so that the action ends through the
+  // "object has been static" success path
+  node->set_parameter(rclcpp::Parameter("static_object_timeout", 0.3));
+
+  geometry_msgs::msg::PoseStamped detected_pose;
+  detected_pose.header.stamp = node->now();
+
+  auto client = rclcpp_action::create_client<FollowObject>(node2, "follow_object");
+  ASSERT_TRUE(client->wait_for_action_server(1s));
+  auto goal_msg = FollowObject::Goal();
+  goal_msg.pose_topic = "dynamic_pose";
+  auto future_goal_handle = client->async_send_goal(goal_msg);
+  pub->publish(detected_pose);
+
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(node2, future_goal_handle, 2s),
+    rclcpp::FutureReturnCode::SUCCESS);
+  auto future_result = client->async_get_result(future_goal_handle.get());
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(node2, future_result, 10s),
+    rclcpp::FutureReturnCode::SUCCESS);
+  EXPECT_EQ(
+    future_result.get().code, rclcpp_action::ResultCode::SUCCEEDED);
+
+  // The pose topic subscription must be released once the action is over,
+  // just like on every other terminal exit path of this action
+  auto start = std::chrono::steady_clock::now();
+  bool released = false;
+  while (std::chrono::steady_clock::now() - start < 2s) {
+    if (node2->count_subscribers("dynamic_pose") == 0) {
+      released = true;
+      break;
+    }
+    std::this_thread::sleep_for(50ms);
+  }
+  EXPECT_TRUE(released);
+
+  node->on_deactivate(rclcpp_lifecycle::State());
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node->on_shutdown(rclcpp_lifecycle::State());
+  node.reset();
+}
+
 TEST(FollowingServerTests, GetPoseAtDistance)
 {
   auto node = std::make_shared<opennav_following::FollowingServerShim>();
@@ -190,6 +249,17 @@ TEST(FollowingServerTests, GetPoseAtDistance)
   auto new_pose = node->getPoseAtDistance(pose, 0.2);
   EXPECT_NEAR(new_pose.pose.position.x, 0.8585, 0.01);
   EXPECT_NEAR(new_pose.pose.position.y, -0.8585, 0.01);
+
+  // Robot exactly at the tracked pose: the backwards projection is undefined
+  // and must not propagate NaNs downstream
+  geometry_msgs::msg::PoseStamped at_robot;
+  at_robot.header.stamp = node->now();
+  at_robot.header.frame_id = "my_frame";
+  auto zero_dist = node->getPoseAtDistance(at_robot, 0.5);
+  EXPECT_TRUE(std::isfinite(zero_dist.pose.position.x));
+  EXPECT_TRUE(std::isfinite(zero_dist.pose.position.y));
+  EXPECT_EQ(zero_dist.pose.position.x, 0.0);
+  EXPECT_EQ(zero_dist.pose.position.y, 0.0);
 
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());

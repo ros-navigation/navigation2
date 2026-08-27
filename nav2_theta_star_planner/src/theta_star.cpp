@@ -54,11 +54,12 @@ bool ThetaStar::generatePath(std::vector<coordsW> & raw_path, std::function<bool
     src_g_cost + src_h_cost};
   queue_.push({&nodes_data_[index_generated_]});
   addIndex(src_.x, src_.y, &nodes_data_[index_generated_]);
-  tree_node * curr_data = &nodes_data_[index_generated_];
   index_generated_++;
   nodes_opened = 0;
 
   while (!queue_.empty()) {
+    tree_node * curr_data = queue_.top();
+    queue_.pop();
     nodes_opened++;
 
     if (nodes_opened % params_->terminal_checking_interval == 0 && cancel_checker()) {
@@ -67,25 +68,17 @@ bool ThetaStar::generatePath(std::vector<coordsW> & raw_path, std::function<bool
     }
 
     if (isGoal(*curr_data)) {
-      break;
+      backtrace(raw_path, curr_data);
+      clearQueue();
+      return true;
     }
 
     resetParent(curr_data);
     setNeighbors(curr_data);
-
-    curr_data = queue_.top();
-    queue_.pop();
   }
 
-  if (queue_.empty()) {
-    raw_path.clear();
-    return false;
-  }
-
-  backtrace(raw_path, curr_data);
-  clearQueue();
-
-  return true;
+  raw_path.clear();
+  return false;
 }
 
 void ThetaStar::resetParent(tree_node * curr_data)
