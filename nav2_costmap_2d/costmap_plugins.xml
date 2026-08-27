@@ -27,8 +27,8 @@
     <class type="nav2_costmap_2d::PluginContainerLayer" base_class_type="nav2_costmap_2d::Layer">
       <description>Plugin to group different layers within the same costmap</description>
     </class>
-    <class type="nav2_costmap_2d::FenceLayer" base_class_type="nav2_costmap_2d::Layer">
-      <description>Defines an operational zone fence; cells outside the polygon are marked lethal to constrain navigation.</description>
+    <class type="nav2_costmap_2d::GeofenceLayer" base_class_type="nav2_costmap_2d::Layer">
+      <description>Defines an operational geofence zone; cells outside the polygon are marked lethal. Supports TF-aware polygon updates via the SetFence service and optional costmap resizing.</description>
     </class>
   </library>
 
