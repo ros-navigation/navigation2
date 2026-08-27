@@ -263,18 +263,6 @@ void DockingServer::dockRobot()
         tf2::getYaw(staging_pose.pose.orientation) + M_PI);
     }
 
-    auto reset_approach = [this, dock, dock_backward, goal, result, &staging_pose]() -> bool {
-        if (resetApproach(staging_pose, dock_backward)) {
-          return true;
-        }
-        // Cancelled, preempted, or shutting down
-        publishZeroVelocity();
-        dock->plugin->stopDetectionProcess();
-        stashDockData(goal->use_dock_id, dock, false);
-        docking_action_server_->terminate_all(result);
-        return false;
-      };
-
     // Docking control loop: while not docked, run controller
     while (rclcpp::ok()) {
       try {
@@ -313,13 +301,13 @@ void DockingServer::dockRobot()
       } catch (opennav_docking_core::DockingException & e) {
         if (++num_retries_ > params_->max_retries) {
           RCLCPP_ERROR(get_logger(), "Failed to dock, all retries have been used");
-          try {  // swallow new exceptions, so as to report original failure
-            if (!reset_approach()) {
-              return;
+          if (params_->max_retries > 0) {
+            try {  // swallow new exceptions, so as to report original failure
+              (void) resetApproach(staging_pose, dock_backward);
+            } catch (const std::exception & ex) {
+              RCLCPP_ERROR(
+                get_logger(), "Failed to return to staging pose: %s", ex.what());
             }
-          } catch (const std::exception & ex) {
-            RCLCPP_ERROR(
-              get_logger(), "Failed to return to staging pose: %s", ex.what());
           }
           throw;
         }
@@ -327,7 +315,12 @@ void DockingServer::dockRobot()
       }
 
       // Reset to staging pose to try again
-      if (!reset_approach()) {
+      if (!resetApproach(staging_pose, dock_backward)) {
+        // Cancelled, preempted, or shutting down
+        publishZeroVelocity();
+        dock->plugin->stopDetectionProcess();
+        stashDockData(goal->use_dock_id, dock, false);
+        docking_action_server_->terminate_all(result);
         return;
       }
       RCLCPP_INFO(get_logger(), "Returned to staging pose, attempting docking again");
