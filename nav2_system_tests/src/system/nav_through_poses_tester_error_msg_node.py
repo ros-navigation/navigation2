@@ -210,7 +210,7 @@ class NavTester(Node):
         self.info_msg('Shutting down')
         self.action_client.destroy()
 
-        transition_service = 'lifecycle_manager_navigation/manage_nodes'
+        transition_service = 'lifecycle_manager_nav2/manage_nodes'
         mgr_client: Client[ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
             self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
@@ -224,21 +224,6 @@ class NavTester(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
             self.info_msg('Shutting down navigation lifecycle manager complete.')
-        except Exception as e:  # noqa: B902
-            self.error_msg(f'Service call failed {e!r}')
-        transition_service = 'lifecycle_manager_localization/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
-        while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
-
-        req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request.SHUTDOWN
-        future = mgr_client.call_async(req)
-        try:
-            self.info_msg('Shutting down localization lifecycle manager...')
-            rclpy.spin_until_future_complete(self, future)
-            future.result()
-            self.info_msg('Shutting down localization lifecycle manager complete')
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 

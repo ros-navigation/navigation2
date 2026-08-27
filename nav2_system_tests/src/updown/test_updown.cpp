@@ -29,21 +29,13 @@ int main(int argc, char ** argv)
   rclcpp::Logger logger = rclcpp::get_logger("test_updown");
   RCLCPP_INFO(logger, "Initializing test");
   auto node = std::make_shared<rclcpp::Node>("lifecycle_manager_service_client");
-  nav2_lifecycle_manager::LifecycleManagerClient client_nav("lifecycle_manager_navigation", node);
-  nav2_lifecycle_manager::LifecycleManagerClient client_loc("lifecycle_manager_localization", node);
-  nav2_lifecycle_manager::LifecycleManagerClient client_keepout_zone(
-    "lifecycle_manager_keepout_zone", node);
-  nav2_lifecycle_manager::LifecycleManagerClient client_speed_zone(
-    "lifecycle_manager_speed_zone", node);
+  nav2_lifecycle_manager::LifecycleManagerClient client_nav2("lifecycle_manager_nav2", node);
 
   // Wait for a few seconds to let all of the nodes come up
   std::this_thread::sleep_for(5s);
 
   // Start the nav2 system, bringing it to the ACTIVE state
-  client_nav.startup();
-  client_loc.startup();
-  client_keepout_zone.startup();
-  client_speed_zone.startup();
+  client_nav2.startup();
 
   // Wait for a couple secs to make sure the nodes have processed all discovery
   // info before starting
@@ -54,11 +46,7 @@ int main(int argc, char ** argv)
   int retries_number = 10;
   bool test_passed = false;
   while (retries_number) {
-    if (client_nav.is_active() == nav2_lifecycle_manager::SystemStatus::ACTIVE &&
-      client_loc.is_active() == nav2_lifecycle_manager::SystemStatus::ACTIVE &&
-      client_keepout_zone.is_active() == nav2_lifecycle_manager::SystemStatus::ACTIVE &&
-      client_speed_zone.is_active() == nav2_lifecycle_manager::SystemStatus::ACTIVE)
-    {
+    if (client_nav2.is_active() == nav2_lifecycle_manager::SystemStatus::ACTIVE) {
       test_passed = true;
       break;
     }
@@ -74,10 +62,7 @@ int main(int argc, char ** argv)
   }
 
   // Shut down the nav2 system, bringing it to the FINALIZED state
-  client_nav.shutdown();
-  client_loc.shutdown();
-  client_keepout_zone.shutdown();
-  client_speed_zone.shutdown();
+  client_nav2.shutdown();
 
   if (test_passed) {
     RCLCPP_INFO(
