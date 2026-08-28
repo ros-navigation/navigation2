@@ -63,8 +63,11 @@ void SavitzkyGolaySmoother::calculateCoefficients()
   for (int i = 1; i <= poly_order_; i++) {
     x.col(i) = (x.col(i - 1).array() * v.array()).matrix();
   }
-  // Compute the pseudoinverse of X, (X^T * X)^-1 * X^T
-  Eigen::MatrixXd coeff_mat = (x.transpose() * x).inverse() * x.transpose();
+  // Compute the pseudoinverse of X by solving the least-squares problem X * C = I.
+  // HouseholderQR factors X into an orthogonal matrix and an upper-triangular matrix,
+  // then solves for the coefficient matrix C without explicitly inverting X.
+  Eigen::MatrixXd coeff_mat =
+    x.householderQr().solve(Eigen::MatrixXd::Identity(window_size_, window_size_));
 
   // Extract the smoothing coefficients
   sg_coeffs_ = coeff_mat.row(0).transpose();

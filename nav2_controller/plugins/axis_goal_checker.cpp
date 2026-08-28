@@ -31,7 +31,7 @@ namespace nav2_controller
 
 AxisGoalChecker::AxisGoalChecker()
 : along_path_tolerance_(0.25), cross_track_tolerance_(0.25),
-  path_length_tolerance_(1.0), is_overshoot_valid_(false)
+  path_length_tolerance_(1.0), direction_estimation_distance_(0.15), is_overshoot_valid_(false)
 {
 }
 
@@ -64,6 +64,8 @@ void AxisGoalChecker::initialize(
     plugin_name + ".cross_track_tolerance", 0.25);
   path_length_tolerance_ = node->declare_or_get_parameter(
     plugin_name + ".path_length_tolerance", 1.0);
+  direction_estimation_distance_ = node->declare_or_get_parameter(
+    plugin_name + ".direction_estimation_distance", 0.15);
   is_overshoot_valid_ = node->declare_or_get_parameter(
     plugin_name + ".is_overshoot_valid", false);
 
@@ -107,33 +109,32 @@ bool AxisGoalChecker::isGoalXYReached(
 
   // Check if we have at least 2 poses to determine path direction
   if (transformed_global_plan.poses.size() >= 2) {
-    // Use axis-aligned goal checking with path direction
-    // Find a pose before goal that is sufficiently far from goal
     const geometry_msgs::msg::Pose * before_goal_pose_ptr = nullptr;
     double dx = 0.0;
     double dy = 0.0;
 
+    // Walk back from the goal until a pose is at least direction_estimation_distance_ away
     for (int i = transformed_global_plan.poses.size() - 2; i >= 0; --i) {
       const auto & candidate_pose = transformed_global_plan.poses[i].pose;
       dx = goal_pose.position.x - candidate_pose.position.x;
       dy = goal_pose.position.y - candidate_pose.position.y;
       double pose_distance = std::hypot(dx, dy);
 
-      if (pose_distance >= 1e-6) {
+      if (pose_distance >= direction_estimation_distance_) {
         before_goal_pose_ptr = &candidate_pose;
         break;
       }
     }
 
-    // If all poses are too close to goal, fall back to simple distance check
+    // If no pose is far enough back to estimate a direction, fall back to simple distance check
     if (!before_goal_pose_ptr) {
       RCLCPP_DEBUG(
         logger_,
-        "All poses in path are too close to goal, falling back to simple distance check");
+        "No plan pose far enough to estimate direction, falling back to simple distance check");
       double distance_to_goal = std::hypot(
         goal_pose.position.x - query_pose.position.x,
         goal_pose.position.y - query_pose.position.y);
-      double tolerance = std::hypot(along_path_tolerance_, cross_track_tolerance_);
+      double tolerance = std::min(along_path_tolerance_, cross_track_tolerance_);
       return distance_to_goal < tolerance;
     }
 
@@ -170,7 +171,7 @@ bool AxisGoalChecker::isGoalXYReached(
     double distance_to_goal = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y);
-    double tolerance = std::hypot(along_path_tolerance_, cross_track_tolerance_);
+    double tolerance = std::min(along_path_tolerance_, cross_track_tolerance_);
     return distance_to_goal < tolerance;
   }
 }
@@ -222,6 +223,16 @@ AxisGoalChecker::validateParameterUpdatesCallback(
         param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
+      if (param_name == plugin_name_ + ".direction_estimation_distance") {
+        const double value = parameter.as_double();
+        if (value <= 0.0 || value >= path_length_tolerance_) {
+          RCLCPP_WARN(
+            logger_, "The value of parameter '%s' is set to %f, it should be >0 and "
+            "<path_length_tolerance (%f). Ignoring parameter update.",
+            param_name.c_str(), value, path_length_tolerance_);
+          result.successful = false;
+        }
+      }
     }
   }
   return result;
@@ -245,6 +256,8 @@ AxisGoalChecker::updateParametersCallback(
         cross_track_tolerance_ = parameter.as_double();
       } else if (name == plugin_name_ + ".path_length_tolerance") {
         path_length_tolerance_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".direction_estimation_distance") {
+        direction_estimation_distance_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".is_overshoot_valid") {

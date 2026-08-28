@@ -155,6 +155,17 @@ public:
     current_navigator_->preempt();
   }
 
+  /**
+   * @brief Check if the given navigator is the currently active navigator
+   * @param navigator Navigator to check
+   * @return bool If the navigator is the current active one
+   */
+  bool isCurrentNavigator(nav2_core::NavigatorBase * navigator)
+  {
+    std::scoped_lock l(mutex_);
+    return current_navigator_ == navigator;
+  }
+
 protected:
   nav2_core::NavigatorBase * current_navigator_{nullptr};
   std::mutex mutex_;
@@ -317,7 +328,8 @@ protected:
    */
   bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
   {
-    if (plugin_muxer_->isNavigating()) {
+    if (plugin_muxer_->isNavigating() && !plugin_muxer_->isCurrentNavigator(this)) {
+      // A different navigator is processing; check if cross-navigator preemption is allowed
       if (!allow_navigator_preemption_) {
         RCLCPP_ERROR(
           logger_,

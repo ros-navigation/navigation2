@@ -108,6 +108,7 @@ protected:
   double along_path_tolerance_;
   double cross_track_tolerance_;
   double path_length_tolerance_;
+  double direction_estimation_distance_;
   bool is_overshoot_valid_;
   // Dynamic parameters handler
   std::mutex mutex_;
