@@ -303,7 +303,7 @@ void DockingServer::dockRobot()
           RCLCPP_ERROR(get_logger(), "Failed to dock, all retries have been used");
           if (params_->max_retries > 0) {
             try {  // swallow new exceptions, so as to report original failure
-              (void) resetApproach(staging_pose, dock_backward);
+              resetApproach(staging_pose, dock_backward);
             } catch (const std::exception & ex) {
               RCLCPP_ERROR(
                 get_logger(), "Failed to return to staging pose: %s", ex.what());
