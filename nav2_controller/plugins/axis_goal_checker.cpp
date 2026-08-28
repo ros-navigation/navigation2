@@ -82,6 +82,8 @@ void AxisGoalChecker::initialize(
 
 void AxisGoalChecker::reset()
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  cached_end_of_path_yaw_.reset();
 }
 
 bool AxisGoalChecker::isGoalReached(
@@ -107,72 +109,70 @@ bool AxisGoalChecker::isGoalXYReached(
     return false;
   }
 
-  // Check if we have at least 2 poses to determine path direction
+  // Try to estimate the end-of-path direction from the plan
+  double end_of_path_yaw = 0.0;
+  bool direction_found = false;
   if (transformed_global_plan.poses.size() >= 2) {
-    const geometry_msgs::msg::Pose * before_goal_pose_ptr = nullptr;
-    double dx = 0.0;
-    double dy = 0.0;
-
     // Walk back from the goal until a pose is at least direction_estimation_distance_ away
     for (int i = transformed_global_plan.poses.size() - 2; i >= 0; --i) {
       const auto & candidate_pose = transformed_global_plan.poses[i].pose;
-      dx = goal_pose.position.x - candidate_pose.position.x;
-      dy = goal_pose.position.y - candidate_pose.position.y;
+      double dx = goal_pose.position.x - candidate_pose.position.x;
+      double dy = goal_pose.position.y - candidate_pose.position.y;
       double pose_distance = std::hypot(dx, dy);
 
       if (pose_distance >= direction_estimation_distance_) {
-        before_goal_pose_ptr = &candidate_pose;
+        end_of_path_yaw = atan2(dy, dx);
+        cached_end_of_path_yaw_ = end_of_path_yaw;
+        direction_found = true;
         break;
       }
     }
+  }
 
-    // If no pose is far enough back to estimate a direction, fall back to simple distance check
-    if (!before_goal_pose_ptr) {
-      RCLCPP_DEBUG(
-        logger_,
-        "No plan pose far enough to estimate direction, falling back to simple distance check");
-      double distance_to_goal = std::hypot(
-        goal_pose.position.x - query_pose.position.x,
-        goal_pose.position.y - query_pose.position.y);
-      double tolerance = std::min(along_path_tolerance_, cross_track_tolerance_);
-      return distance_to_goal < tolerance;
-    }
-
-    // end of path direction
-    double end_of_path_yaw = atan2(dy, dx);
-
-    // Check if robot is already at goal (would cause atan2(0,0))
-    double robot_to_goal_dx = goal_pose.position.x - query_pose.position.x;
-    double robot_to_goal_dy = goal_pose.position.y - query_pose.position.y;
-    double distance_to_goal = std::hypot(robot_to_goal_dx, robot_to_goal_dy);
-
-    if (distance_to_goal < 1e-6) {
-      return true;  // Robot is at goal
-    }
-
-    double robot_to_goal_yaw = atan2(robot_to_goal_dy, robot_to_goal_dx);
-    double projection_angle = angles::shortest_angular_distance(
-      robot_to_goal_yaw, end_of_path_yaw);
-    double along_path_distance = distance_to_goal * cos(projection_angle);
-    double cross_track_distance = distance_to_goal * sin(projection_angle);
-
-    if (is_overshoot_valid_) {
-      return along_path_distance < along_path_tolerance_ &&
-             fabs(cross_track_distance) < cross_track_tolerance_;
-    } else {
-      return fabs(along_path_distance) < along_path_tolerance_ &&
-             fabs(cross_track_distance) < cross_track_tolerance_;
-    }
-  } else {
-    // Fallback: path has only 1 point, use simple distance check
+  // The plan is pruned to start at the pose closest to the robot, so near the goal it may
+  // no longer contain a pose far enough back to estimate the direction; reuse the direction
+  // estimated on a previous cycle instead of degrading to a euclidean check.
+  if (!direction_found && cached_end_of_path_yaw_.has_value()) {
+    end_of_path_yaw = cached_end_of_path_yaw_.value();
+    direction_found = true;
     RCLCPP_DEBUG(
       logger_,
-      "Path has fewer than 2 poses, falling back to simple distance check");
+      "No plan pose far enough to estimate direction, using cached path direction");
+  }
+
+  // If no direction was ever estimated, fall back to simple distance check
+  if (!direction_found) {
+    RCLCPP_DEBUG(
+      logger_,
+      "No path direction available, falling back to simple distance check");
     double distance_to_goal = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y);
     double tolerance = std::min(along_path_tolerance_, cross_track_tolerance_);
     return distance_to_goal < tolerance;
+  }
+
+  // Check if robot is already at goal (would cause atan2(0,0))
+  double robot_to_goal_dx = goal_pose.position.x - query_pose.position.x;
+  double robot_to_goal_dy = goal_pose.position.y - query_pose.position.y;
+  double distance_to_goal = std::hypot(robot_to_goal_dx, robot_to_goal_dy);
+
+  if (distance_to_goal < 1e-6) {
+    return true;  // Robot is at goal
+  }
+
+  double robot_to_goal_yaw = atan2(robot_to_goal_dy, robot_to_goal_dx);
+  double projection_angle = angles::shortest_angular_distance(
+    robot_to_goal_yaw, end_of_path_yaw);
+  double along_path_distance = distance_to_goal * cos(projection_angle);
+  double cross_track_distance = distance_to_goal * sin(projection_angle);
+
+  if (is_overshoot_valid_) {
+    return along_path_distance < along_path_tolerance_ &&
+           fabs(cross_track_distance) < cross_track_tolerance_;
+  } else {
+    return fabs(along_path_distance) < along_path_tolerance_ &&
+           fabs(cross_track_distance) < cross_track_tolerance_;
   }
 }
 
