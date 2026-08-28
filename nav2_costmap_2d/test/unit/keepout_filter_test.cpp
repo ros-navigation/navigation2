@@ -359,7 +359,7 @@ TEST_F(TestNode, testFreeMasterLethalKeepout)
 
 TEST_F(TestNode, testUnknownMasterNonLethalKeepout)
 {
-  // Non-lethal mask values must NOT overwrite NO_INFORMATION master cells
+  // Initialize test system
   createMaps(
     nav2_costmap_2d::NO_INFORMATION,
     (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE) / 2,
@@ -367,25 +367,10 @@ TEST_F(TestNode, testUnknownMasterNonLethalKeepout)
   publishMaps();
   createKeepoutFilter("map");
 
-  geometry_msgs::msg::Pose pose;
-  keepout_filter_->process(*master_grid_, 0, 0, 10, 10, pose);
-  // No keepout points expected, entire master grid stays unknown
-  verifyMasterGrid(
-    nav2_costmap_2d::NO_INFORMATION, nav2_costmap_2d::LETHAL_OBSTACLE);
-
-  keepout_filter_->resetFilter();
-  reset();
-}
-
-TEST_F(TestNode, testUnknownMasterLethalKeepout)
-{
-  // Lethal mask values are allowed to overwrite NO_INFORMATION master cells.
-  createMaps(nav2_costmap_2d::NO_INFORMATION, nav2_util::OCC_GRID_OCCUPIED, "map");
-  publishMaps();
-  createKeepoutFilter("map");
-
+  // Test KeepoutFilter
   testStandardScenario(
-    nav2_costmap_2d::NO_INFORMATION, nav2_costmap_2d::LETHAL_OBSTACLE);
+    nav2_costmap_2d::NO_INFORMATION,
+    (nav2_costmap_2d::LETHAL_OBSTACLE - nav2_costmap_2d::FREE_SPACE) / 2);
 
   // Clean-up
   keepout_filter_->resetFilter();

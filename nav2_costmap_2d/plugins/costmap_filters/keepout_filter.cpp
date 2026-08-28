@@ -383,10 +383,17 @@ void KeepoutFilter::process(
           continue;
         }
 
-        // Prevent overwritng an unknown master grid cell with free.
-        if (data > old_data ||
-          (old_data == NO_INFORMATION && data >= INSCRIBED_INFLATED_OBSTACLE))
-        {
+        if (data > old_data || old_data == NO_INFORMATION) {
+          if (old_data == NO_INFORMATION && !warned_unknown_overwrite_ &&
+            master_grid.getDefaultValue() == NO_INFORMATION)
+          {
+            RCLCPP_WARN(
+              logger_,
+              "KeepoutFilter: keepout mask is overwriting unknown space with cost %u. "
+              "Set the mask's background to unknown if that's not what you want.",
+              data);
+            warned_unknown_overwrite_ = true;
+          }
           if (override_lethal_cost_ && is_pose_lethal_) {
             master_array[index] = lethal_override_cost_;
           } else {
