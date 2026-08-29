@@ -202,57 +202,47 @@ inline void collect_poly_edges(
 
   edges.reserve(edges.size() + count);
 
-  // OpenCV uses shift and offset; we use shift=0, offset=(0,0).
-  // With shift=0: pt.x <<= (XY_SHIFT - 0) = XY_SHIFT, pt.y >>= 0 = pt.y>>0.
-  // But our pts already store integer pixel coords, so we pre-scale here.
+  // Input pts are already in fixed-point (XY_SHIFT = 16) for both x and y.
+  // However, scanline algorithms require integer y, so we shift y right.
 
-  // Start from the last vertex (wraps around to form a closed polygon).
   Pt2l p0 = pts[count - 1];
-  // Scale to fixed-point: x gets XY_SHIFT fractional bits, y is integer.
-  p0.x = p0.x << XY_SHIFT;   // integer pixel → fixed-point
-  p0.y = p0.y;                // already integer scanline
+  int64_t p0_x = p0.x;
+  int p0_y = static_cast<int>(p0.y >> XY_SHIFT);
 
   for (int i = 0; i < count; i++) {
     Pt2l p1 = pts[i];
-    // Input pts are already in fixed-point (XY_SHIFT = 16), no shift needed.
+    int64_t p1_x = p1.x;
+    int p1_y = static_cast<int>(p1.y >> XY_SHIFT);
 
-    // Draw the border segment using Line2 algorithm (equivalent to
-    // OpenCV's Line() call inside CollectPolyEdges for line_type=8).
     if (draw_border) {
-      // Convert to rounded integer coords for line drawing.
-      Pt2l t0, t1;
-      t0.x = (p0.x + (XY_ONE >> 1)) >> XY_SHIFT;
-      t0.y = p0.y;
-      t1.x = (p1.x + (XY_ONE >> 1)) >> XY_SHIFT;
-      t1.y = p1.y;
-      // Call line2 with both endpoints expressed in fixed-point
-      Pt2l fp0{t0.x << XY_SHIFT, t0.y << XY_SHIFT};
-      Pt2l fp1{t1.x << XY_SHIFT, t1.y << XY_SHIFT};
-      line2(g, fp0, fp1, value);
+      // line2 expects fixed-point for both x and y, which we already have.
+      line2(g, p0, p1, value);
     }
 
     // Skip horizontal edges — they never intersect scanlines.
-    if (p0.y == p1.y) {
-      p0 = p1;
+    if (p0_y == p1_y) {
+      p0_x = p1_x;
+      p0_y = p1_y;
       continue;
     }
 
     // Build PolyEdge. Equivalent to drawing.cpp lines 1330-1343.
-    // dx = (x1 - x0) / (y1 - y0)  in fixed-point
+    // dx = (x1 - x0) / (y1 - y0) in fixed-point
     PolyEdge edge;
-    edge.dx = (p1.x - p0.x) / (p1.y - p0.y);
+    edge.dx = (p1_x - p0_x) / (p1_y - p0_y);
 
-    if (p0.y < p1.y) {
-      edge.y0 = static_cast<int>(p0.y);
-      edge.y1 = static_cast<int>(p1.y);
-      edge.x = p0.x;
+    if (p0_y < p1_y) {
+      edge.y0 = p0_y;
+      edge.y1 = p1_y;
+      edge.x = p0_x;
     } else {
-      edge.y0 = static_cast<int>(p1.y);
-      edge.y1 = static_cast<int>(p0.y);
-      edge.x = p1.x;
+      edge.y0 = p1_y;
+      edge.y1 = p0_y;
+      edge.x = p1_x;
     }
     edges.push_back(edge);
-    p0 = p1;
+    p0_x = p1_x;
+    p0_y = p1_y;
   }
 }
 
@@ -457,11 +447,8 @@ inline void draw_polyline(
 
   for (int i = (closed ? 0 : 1); i < count; i++) {
     Pt2l p1 = pts[i];
-    // Convert integer pixel coords to fixed-point for Line2.
-    // Input pts are already in fixed-point (XY_SHIFT = 16), no shift needed.
-    Pt2l fp0 = p0;
-    Pt2l fp1 = p1;
-    line2(g, fp0, fp1, value);
+    // line2 expects fixed-point for both x and y, which we already have.
+    line2(g, p0, p1, value);
     p0 = p1;
   }
 }
