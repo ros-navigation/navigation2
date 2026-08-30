@@ -56,6 +56,17 @@ public:
   nav2::TransformBuffer::SharedPtr getTfBuffer() {return tf2_buffer_;}
 };
 
+// Test shim to expose the loaded controller plugins
+class DockingServerControllerShim : public DockingServerShim
+{
+public:
+  DockingServerControllerShim()
+  : DockingServerShim() {}
+
+  const ControllerMap & getControllers() {return controllers_;}
+  std::string getCurrentController() {return current_controller_;}
+};
+
 TEST(DockingServerTests, ObjectLifecycle)
 {
   auto node = std::make_shared<opennav_docking::DockingServer>();
@@ -524,6 +535,88 @@ TEST(DockingServerTests, HandlesPluginStartFailure)
 
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
+  node->shutdown();
+}
+
+// Declare base dock parameters required for on_configure() to return SUCCESS
+void declareTestDock(const std::shared_ptr<DockingServerControllerShim> & node)
+{
+  node->declare_parameter("docks", std::vector<std::string>{"test_dock"});
+  node->declare_parameter("test_dock.type", "test_plugin");
+  node->declare_parameter("test_dock.pose", std::vector<double>{0.0, 0.0, 0.0});
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter("test_plugin.plugin", "opennav_docking::TestFailureDock");
+  node->declare_parameter("exception_to_throw", "");
+  node->declare_parameter("dock_action_called", false);
+}
+
+TEST(DockingServerTests, ControllerDefaultInstance)
+{
+  auto node = std::make_shared<DockingServerControllerShim>();
+  declareTestDock(node);
+
+  ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
+
+  // With no `controllers` list, a single instance named `controller` is synthesized so that
+  // the `controller.*` namespace existing configuration files use keeps applying
+  EXPECT_EQ(node->getControllers().size(), 1u);
+  EXPECT_EQ(node->getCurrentController(), "controller");
+  EXPECT_EQ(
+    node->get_parameter("controller.plugin").as_string(),
+    "opennav_docking::GracefulController");
+  EXPECT_EQ(node->get_parameter("controller.k_phi").as_double(), 3.0);
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+  EXPECT_TRUE(node->getControllers().empty());
+  node->shutdown();
+}
+
+TEST(DockingServerTests, ControllerNamedInstances)
+{
+  auto node = std::make_shared<DockingServerControllerShim>();
+  declareTestDock(node);
+  node->declare_parameter("controllers", std::vector<std::string>{"c1", "c2"});
+  node->declare_parameter("c1.plugin", "opennav_docking::GracefulController");
+  node->declare_parameter("c2.plugin", "opennav_docking::GracefulController");
+  node->declare_parameter("c2.k_phi", 5.0);
+
+  ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
+
+  EXPECT_EQ(node->getControllers().size(), 2u);
+  EXPECT_NE(node->getControllers().find("c1"), node->getControllers().end());
+  EXPECT_NE(node->getControllers().find("c2"), node->getControllers().end());
+
+  // Each instance owns its own parameter namespace
+  EXPECT_EQ(node->get_parameter("c1.k_phi").as_double(), 3.0);
+  EXPECT_EQ(node->get_parameter("c2.k_phi").as_double(), 5.0);
+
+  // The default instance is not synthesized when an explicit list is given
+  EXPECT_FALSE(node->has_parameter("controller.plugin"));
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node->shutdown();
+}
+
+TEST(DockingServerTests, ControllerMissingPluginFailsConfigure)
+{
+  auto node = std::make_shared<DockingServerControllerShim>();
+  declareTestDock(node);
+  node->declare_parameter("controllers", std::vector<std::string>{"c1"});
+
+  // `c1.plugin` is never set, so the plugin type cannot be resolved
+  EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
+  EXPECT_TRUE(node->getControllers().empty());
+  node->shutdown();
+}
+
+TEST(DockingServerTests, ControllerDuplicateNameFailsConfigure)
+{
+  auto node = std::make_shared<DockingServerControllerShim>();
+  declareTestDock(node);
+  node->declare_parameter("controllers", std::vector<std::string>{"c1", "c1"});
+  node->declare_parameter("c1.plugin", "opennav_docking::GracefulController");
+
+  EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
   node->shutdown();
 }
 

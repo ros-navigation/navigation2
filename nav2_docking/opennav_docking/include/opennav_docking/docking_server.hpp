@@ -20,15 +20,17 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_util/odometry_utils.hpp"
-#include "opennav_docking/controller.hpp"
+#include "opennav_docking/controller_base.hpp"
 #include "opennav_docking/utils.hpp"
 #include "opennav_docking/types.hpp"
 #include "opennav_docking/dock_database.hpp"
@@ -223,6 +225,19 @@ protected:
    */
   void undockRobot();
 
+  /**
+   * @brief Create the controller plugins listed in the `controllers` parameter.
+   * @param node Lifecycle node
+   * @return True if every controller was created and configured
+   */
+  bool loadControllerPlugins(const nav2::LifecycleNode::SharedPtr & node);
+
+  /**
+   * @brief Get the controller instance selected by the current request
+   * @return The controller, or nullptr if none is selected
+   */
+  ControllerBase::Ptr getController();
+
   // Parameter handler
   std::unique_ptr<opennav_docking::ParameterHandler> param_handler_;
   Parameters * params_;
@@ -240,8 +255,14 @@ protected:
 
   std::unique_ptr<DockDatabase> dock_db_;
   std::unique_ptr<Navigator> navigator_;
-  std::unique_ptr<Controller> controller_;
   std::string curr_dock_type_;
+
+  // Controller plugins. The loader is declared before the map so that it outlives the
+  // instances it created: members are destroyed in reverse declaration order.
+  using ControllerMap = std::unordered_map<std::string, ControllerBase::Ptr>;
+  pluginlib::ClassLoader<ControllerBase> controller_loader_;
+  ControllerMap controllers_;
+  std::string current_controller_;
 
   nav2::TransformBuffer::SharedPtr tf2_buffer_;
   nav2::TransformListener::SharedPtr tf2_listener_;

@@ -9,7 +9,7 @@
       <description>A simple non-charging dock plugin.</description>
     </class>
   </library>
-  <library path="controller">
+  <library path="graceful_controller_plugin">
     <class type="opennav_docking::GracefulController" base_class_type="opennav_docking::ControllerBase">
       <description>
         A docking controller using the smooth control law of nav2_graceful_controller.

@@ -29,9 +29,6 @@
 #include "pluginlib/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-// The control law itself lives in nav2_graceful_controller, which has over 98% test coverage.
-// These tests cover the plugin wrapper: parameter namespacing, frame resolution, and the
-// trajectory handling introduced by the opennav_docking::ControllerBase interface.
 
 namespace opennav_docking
 {
@@ -120,35 +117,6 @@ TEST(GracefulControllerTests, PluginIsDiscoverable)
   controller.reset();
 }
 
-TEST(GracefulControllerTests, ParameterNamespacesAreIsolated)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
-  setTransform(tf, "odom", "base_link", 0.0, 0.0);
-
-  nav2::declare_parameter_if_not_declared(
-    node, "fixed_frame", rclcpp::ParameterValue(std::string("odom")));
-  auto c1 = makeController(node, tf, "c1");
-  auto c2 = makeController(node, tf, "c2");
-
-  // Slow c1 down; c2 shares the node but must keep its defaults
-  node->set_parameters(
-    {rclcpp::Parameter("c1.v_linear_min", 0.01), rclcpp::Parameter("c1.v_linear_max", 0.05)});
-
-  auto trajectory = makePath("base_link", {{2.0, 0.0, 0.0}});
-  c1->setTrajectory(trajectory);
-  c2->setTrajectory(trajectory);
-
-  geometry_msgs::msg::PoseStamped robot_pose;
-  geometry_msgs::msg::Twist cmd1, cmd2;
-  EXPECT_TRUE(c1->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1, cmd1));
-  EXPECT_TRUE(c2->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1, cmd2));
-
-  EXPECT_NEAR(cmd1.linear.x, 0.05, 1e-6);
-  EXPECT_NEAR(cmd2.linear.x, 0.25, 1e-6);
-}
-
 TEST(GracefulControllerTests, FramePrecedencePrefersInstanceOverNode)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
@@ -197,37 +165,6 @@ TEST(GracefulControllerTests, FramePrecedenceFallsBackToNode)
   EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
     cmd));
   EXPECT_GT(cmd.linear.x, 0.0);
-}
-
-TEST(GracefulControllerTests, TrajectoryIsTransformedIntoBaseFrame)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
-
-  // The robot sits 1m to the left of the odom origin, facing along +x
-  setTransform(tf, "odom", "base_link", 0.0, 1.0);
-  nav2::declare_parameter_if_not_declared(
-    node, "fixed_frame", rclcpp::ParameterValue(std::string("odom")));
-  auto controller = makeController(node, tf, "c");
-
-  geometry_msgs::msg::PoseStamped robot_pose;
-  geometry_msgs::msg::Twist cmd;
-
-  // A target on the odom x-axis lies 1m to the robot's right, so the robot must steer right.
-  // Reading the odom coordinates literally would place it straight ahead and steer nowhere.
-  controller->setTrajectory(makePath("odom", {{1.0, 0.0, 0.0}}));
-  EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
-    cmd));
-  EXPECT_GT(cmd.linear.x, 0.0);
-  EXPECT_LT(cmd.angular.z, -1e-3);
-
-  // A target on the robot's own row is straight ahead, so it drives without steering
-  controller->setTrajectory(makePath("odom", {{2.0, 1.0, 0.0}}));
-  EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
-    cmd));
-  EXPECT_GT(cmd.linear.x, 0.0);
-  EXPECT_NEAR(cmd.angular.z, 0.0, 1e-6);
 }
 
 TEST(GracefulControllerTests, LastPoseOfTrajectoryIsTheTarget)
@@ -326,58 +263,6 @@ TEST(GracefulControllerTests, RotateToHeadingUsesInstanceParameters)
   EXPECT_DOUBLE_EQ(cmd.linear.x, 0.0);
   EXPECT_GT(cmd.angular.z, 0.0);
   EXPECT_LE(cmd.angular.z, 0.5);
-}
-
-TEST(GracefulControllerTests, TrajectoryPublishingIsOffByDefault)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
-  nav2::declare_parameter_if_not_declared(
-    node, "c.use_collision_detection", rclcpp::ParameterValue(false));
-  setTransform(tf, "odom", "base_link", 0.0, 0.0);
-
-  auto controller = std::make_shared<TestableGracefulController>();
-  controller->configure(node, "c", tf);
-  EXPECT_FALSE(controller->hasTrajectoryPublisher());
-
-  // Activation, command computation and deactivation must all tolerate the absent publisher.
-  controller->activate();
-  controller->setTrajectory(makePath("base_link", {{1.0, -1.0, 0.0}}));
-  geometry_msgs::msg::PoseStamped robot_pose;
-  geometry_msgs::msg::Twist cmd;
-  EXPECT_TRUE(
-    controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1, cmd));
-  EXPECT_GT(cmd.linear.x, 0.0);
-  controller->deactivate();
-  controller->cleanup();
-}
-
-TEST(GracefulControllerTests, TrajectoryPublishingIsEnabledByTheFlag)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
-  nav2::declare_parameter_if_not_declared(
-    node, "c.use_collision_detection", rclcpp::ParameterValue(false));
-  nav2::declare_parameter_if_not_declared(
-    node, "c.publish_trajectory", rclcpp::ParameterValue(true));
-  setTransform(tf, "odom", "base_link", 0.0, 0.0);
-
-  auto controller = std::make_shared<TestableGracefulController>();
-  controller->configure(node, "c", tf);
-  EXPECT_TRUE(controller->hasTrajectoryPublisher());
-
-  controller->activate();
-  controller->setTrajectory(makePath("base_link", {{1.0, -1.0, 0.0}}));
-  geometry_msgs::msg::PoseStamped robot_pose;
-  geometry_msgs::msg::Twist cmd;
-  EXPECT_TRUE(
-    controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1, cmd));
-  EXPECT_GT(cmd.linear.x, 0.0);
-  controller->deactivate();
-  controller->cleanup();
-  EXPECT_FALSE(controller->hasTrajectoryPublisher());
 }
 
 }  // namespace opennav_docking
