@@ -282,6 +282,9 @@ protected:
 
     info_pub_ = std::make_shared<InfoPublisher>(info_type, kMaskTopic, 0.0, 1.0);
     auto mask = make_mask(4, 4, mask_fill_value);
+    if (unknown_cell_index_ >= 0) {
+      mask.data[unknown_cell_index_] = -1;  // OCC_GRID_UNKNOWN
+    }
     mask_pub_ = std::make_shared<MaskPublisher>(mask);
     pub_executor_.add_node(info_pub_);
     pub_executor_.add_node(mask_pub_);
@@ -360,6 +363,10 @@ protected:
     }
     return true;
   }
+
+  // Set before createFilter() to punch a single OCC_GRID_UNKNOWN cell into the
+  // otherwise uniform mask, so a pose can reach the unknown-cell branch.
+  int unknown_cell_index_{-1};
 
   void runProcess(double pose_x = 1.5, double pose_y = 1.5)
   {
@@ -1234,6 +1241,43 @@ TEST_F(TestZpf, ThePendingReApplyStillFiresWhileTheRobotIsOutsideTheMaskAtStateZ
     << "the re-apply owed from before the reload never fired on the "
        "outside-the-mask path, so an abandoned set stands as the last write";
   EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0);
+}
+
+TEST_F(TestZpf, ThePendingReApplyStillFiresWhileTheRobotSitsOnAnUnknownCell)
+{
+  // An unknown mask cell returns above the state evaluation too, and holds the
+  // state rather than changing it. A re-apply owed from before a reload has to
+  // fire there as well: a robot parked on unmapped ground gets no transition to
+  // supersede an abandoned set, so the stale value would stand indefinitely.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.5));
+
+  unknown_cell_index_ = 15;  // cell (3,3) of the 4x4 mask, reached at (3.5, 3.5)
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  runProcess();  // (1.5, 1.5) is a known cell: enters state 1, set unanswered
+  ASSERT_EQ(filter_->pendingSetCount(), 1u);
+
+  ASSERT_TRUE(reloadFilterLeavingTargetsUnserviced())
+    << "Filter did not re-activate after reload";
+
+  runProcess();  // re-enters state 1 with the pre-reload set still in flight
+  ASSERT_EQ(filter_->pendingSetCount(), 2u);
+
+  spinFor(300ms);  // the target answers both; results are only read in process()
+  target_node_->clearSpeedSetCount();
+
+  runProcess(3.5, 3.5);  // drains, on an unknown cell: no transition can fire
+
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->speedSetCount() >= 1;}))
+    << "the re-apply owed from before the reload never fired on the unknown-cell "
+       "path, so an abandoned set stands as the last write";
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 0.5);
 }
 
 int main(int argc, char ** argv)
