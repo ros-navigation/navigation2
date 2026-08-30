@@ -15,8 +15,15 @@
 #include <gtest/gtest.h>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <string>
+#include <thread>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
+#include "geographic_msgs/msg/geo_point.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_route/plugins/graph_file_loaders/osm_graph_file_loader.hpp"
 
@@ -472,4 +479,275 @@ TEST(OsmGraphFileLoader, parallel_ways_produce_parallel_edges)
   peer.addEdgesFromSections(graph, map, sections);
 
   EXPECT_EQ(graph[0].neighbors.size(), 2u);
+}
+
+// Stands in for navsat_transform_node's FromLLArray service so the loader's
+// synchronous conversion call can complete inside a unit test. The loader
+// builds its client with an internal executor, so this server only needs a
+// thread of its own to answer on.
+class FromLLArrayFixture : public ::testing::Test
+{
+protected:
+  using FromLLArray = robot_localization::srv::FromLLArray;
+
+  void SetUp() override
+  {
+    node_ = std::make_shared<nav2::LifecycleNode>("osm_loader_test");
+    service_ = node_->create_service<FromLLArray>(
+      "fromLLArray",
+      std::bind(
+        &FromLLArrayFixture::convert, this,
+        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
+    executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    executor_->add_node(node_->get_node_base_interface());
+    spinner_ = std::thread([this]() {executor_->spin();});
+  }
+
+  void TearDown() override
+  {
+    executor_->cancel();
+    if (spinner_.joinable()) {
+      spinner_.join();
+    }
+    service_.reset();
+    executor_.reset();
+    node_.reset();
+  }
+
+  /**
+   * @brief Project a geographic point onto a plane about a fixed origin
+   * @param ll The latitude and longitude to project
+   * @return The map frame point, exact rather than approximate
+   */
+  static geometry_msgs::msg::Point project(const geographic_msgs::msg::GeoPoint & ll)
+  {
+    geometry_msgs::msg::Point point;
+    point.x = (ll.longitude - kOriginLon) * kScale;
+    point.y = (ll.latitude - kOriginLat) * kScale;
+    return point;
+  }
+
+  /**
+   * @brief Answer a conversion request as navsat_transform_node would
+   * @param[in] request The geographic points to convert
+   * @param[out] response The projected map frame points
+   */
+  void convert(
+    const std::shared_ptr<rmw_request_id_t>,
+    const std::shared_ptr<FromLLArray::Request> request,
+    std::shared_ptr<FromLLArray::Response> response)
+  {
+    for (const auto & ll : request->ll_points) {
+      response->map_points.push_back(project(ll));
+    }
+    // Withhold replies on request, to exercise the size mismatch guard.
+    for (size_t i = 0; i < withheld_replies_ && !response->map_points.empty(); ++i) {
+      response->map_points.pop_back();
+    }
+  }
+
+  static constexpr double kOriginLat = 40.711;
+  static constexpr double kOriginLon = -74.007;
+  static constexpr double kScale = 100000.0;
+
+  size_t withheld_replies_{0};
+  nav2::LifecycleNode::SharedPtr node_;
+  nav2::ServiceServer<FromLLArray>::SharedPtr service_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
+  std::thread spinner_;
+};
+
+// configure() declares both parameters under the plugin's own name and leaves
+// the loader with a usable service client.
+TEST_F(FromLLArrayFixture, configure_declares_namespaced_parameters)
+{
+  OsmLoaderTestPeer peer;
+  peer.configure(node_, "osm_loader");
+
+  EXPECT_EQ(node_->get_parameter("osm_loader.from_ll_service").as_string(), "fromLLArray");
+  EXPECT_DOUBLE_EQ(node_->get_parameter("osm_loader.from_ll_service_timeout").as_double(), 5.0);
+}
+
+// The whole pipeline against the committed sample: parse, split, convert, and
+// build a graph whose vertices carry converted map frame coordinates.
+TEST_F(FromLLArrayFixture, load_sample_graph_end_to_end)
+{
+  OsmGraphFileLoader loader;
+  loader.configure(node_, "osm_loader");
+
+  const std::string path =
+    nav2::get_package_share_directory("nav2_route") + "/graphs/sample_graph.osm";
+
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  ASSERT_TRUE(loader.loadGraphFromFile(graph, graph_to_id_map, path));
+
+  // 1002 and 1004 are shape points inside a chain, so they are not vertices.
+  ASSERT_EQ(graph.size(), 5u);
+  EXPECT_EQ(graph[0].nodeid, 1001u);
+  EXPECT_EQ(graph[4].nodeid, 1007u);
+
+  // 1003 sits at the crossing, at the projection origin.
+  const auto centre_idx = graph_to_id_map.at(1003);
+  EXPECT_NEAR(graph[centre_idx].coords.x, 0.0, 1e-2);
+  EXPECT_NEAR(graph[centre_idx].coords.y, 0.0, 1e-2);
+
+  // 1001 lies 0.001 degrees west of the origin, 1006 lies 0.0005 north.
+  EXPECT_NEAR(graph[graph_to_id_map.at(1001)].coords.x, -100.0, 1e-2);
+  EXPECT_NEAR(graph[graph_to_id_map.at(1006)].coords.y, 50.0, 1e-2);
+
+  // The residential street is bidirectional (2 sections -> 4 edges), the
+  // service road is oneway (2 sections -> 2 edges).
+  size_t edges = 0;
+  for (const auto & node : graph) {
+    edges += node.neighbors.size();
+  }
+  EXPECT_EQ(edges, 6u);
+}
+
+// A node referenced by a way but absent from the file is skipped rather than
+// failing the load, since clipped extracts routinely dangle.
+TEST_F(FromLLArrayFixture, convert_coordinates_skips_node_missing_from_file)
+{
+  OsmLoaderTestPeer peer;
+  peer.configure(node_, "osm_loader");
+
+  const std::unordered_map<int64_t, std::pair<double, double>> osm_nodes{
+    {1, {40.711, -74.007}}};
+  std::unordered_map<int64_t, Coordinates> coords;
+
+  EXPECT_TRUE(peer.convertCoordinates(osm_nodes, {1, 999}, coords));
+  EXPECT_EQ(coords.count(1), 1u);
+  EXPECT_EQ(coords.count(999), 0u);
+}
+
+// If nothing in the request had coordinates there is no call worth making.
+TEST_F(FromLLArrayFixture, convert_coordinates_without_usable_points_fails)
+{
+  OsmLoaderTestPeer peer;
+  peer.configure(node_, "osm_loader");
+
+  const std::unordered_map<int64_t, std::pair<double, double>> osm_nodes{
+    {1, {40.711, -74.007}}};
+  std::unordered_map<int64_t, Coordinates> coords;
+
+  EXPECT_FALSE(peer.convertCoordinates(osm_nodes, {998, 999}, coords));
+  EXPECT_TRUE(coords.empty());
+}
+
+// A reply that does not line up with the request cannot be matched back to ids.
+TEST_F(FromLLArrayFixture, convert_coordinates_rejects_mismatched_response)
+{
+  withheld_replies_ = 1;
+  OsmLoaderTestPeer peer;
+  peer.configure(node_, "osm_loader");
+
+  const std::unordered_map<int64_t, std::pair<double, double>> osm_nodes{
+    {1, {40.711, -74.007}}, {2, {40.7115, -74.007}}};
+  std::unordered_map<int64_t, Coordinates> coords;
+
+  EXPECT_FALSE(peer.convertCoordinates(osm_nodes, {1, 2}, coords));
+}
+
+// Without configure() there is no client, which must be reported rather than
+// dereferenced.
+TEST(OsmGraphFileLoader, convert_coordinates_without_configure_fails)
+{
+  OsmLoaderTestPeer peer;
+  const std::unordered_map<int64_t, std::pair<double, double>> osm_nodes{
+    {1, {40.711, -74.007}}};
+  std::unordered_map<int64_t, Coordinates> coords;
+
+  EXPECT_FALSE(peer.convertCoordinates(osm_nodes, {1}, coords));
+}
+
+// Loading blocks on the service, so a missing navsat_transform_node fails the
+// load instead of hanging forever.
+TEST(OsmGraphFileLoader, load_fails_when_service_never_appears)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("osm_loader_no_service_test");
+  node->declare_parameter(
+    "osm_loader.from_ll_service", rclcpp::ParameterValue(std::string("absent_service")));
+  node->declare_parameter("osm_loader.from_ll_service_timeout", rclcpp::ParameterValue(0.1));
+
+  OsmGraphFileLoader loader;
+  loader.configure(node, "osm_loader");
+
+  const std::string path =
+    nav2::get_package_share_directory("nav2_route") + "/graphs/sample_graph.osm";
+
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  EXPECT_FALSE(loader.loadGraphFromFile(graph, graph_to_id_map, path));
+}
+
+// A document that parses but carries no root element is not an OSM file.
+TEST(OsmGraphFileLoader, parse_rejects_document_without_root_element)
+{
+  const std::string file_path = "no_root.osm";
+  writeOsmToFile("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- no root -->", file_path);
+
+  OsmLoaderTestPeer peer;
+  std::unordered_map<int64_t, std::pair<double, double>> osm_nodes;
+  std::vector<OsmLoaderTestPeer::OsmWay> ways;
+
+  EXPECT_FALSE(peer.parseOsm(file_path, osm_nodes, ways));
+  std::filesystem::remove(file_path);
+}
+
+// A <nd> without a ref is dropped, leaving the rest of the way intact.
+TEST(OsmGraphFileLoader, parse_skips_nd_without_ref)
+{
+  const std::string file_path = "bad_nd.osm";
+  const std::string xml =
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<osm version=\"0.6\">\n"
+    "  <node id=\"1\" lat=\"40.0\" lon=\"-75.0\"/>\n"
+    "  <node id=\"2\" lat=\"40.001\" lon=\"-75.0\"/>\n"
+    "  <way id=\"10\">\n"
+    "    <nd ref=\"1\"/>\n"
+    "    <nd/>\n"
+    "    <nd ref=\"2\"/>\n"
+    "  </way>\n"
+    "</osm>";
+  writeOsmToFile(xml, file_path);
+
+  OsmLoaderTestPeer peer;
+  std::unordered_map<int64_t, std::pair<double, double>> osm_nodes;
+  std::vector<OsmLoaderTestPeer::OsmWay> ways;
+
+  ASSERT_TRUE(peer.parseOsm(file_path, osm_nodes, ways));
+  ASSERT_EQ(ways.size(), 1u);
+  EXPECT_EQ(ways[0].refs, (std::vector<int64_t>{1, 2}));
+  std::filesystem::remove(file_path);
+}
+
+// A way that lists the same node twice in a row must not emit a zero length
+// hop into the chain.
+TEST(OsmGraphFileLoader, topology_collapses_repeated_adjacent_node)
+{
+  OsmLoaderTestPeer peer;
+  std::vector<OsmLoaderTestPeer::OsmWay> ways;
+  ways.push_back({{1, 1, 2}, {{"highway", "track"}}});
+
+  const auto ref_count = peer.countNodeReferences(ways);
+  const auto sections = peer.splitWaysIntoSections(ways, ref_count);
+
+  for (const auto & section : sections) {
+    for (size_t i = 1; i < section.node_chain.size(); ++i) {
+      EXPECT_NE(section.node_chain[i], section.node_chain[i - 1]);
+    }
+  }
+}
+
+// An empty section contributes no vertices instead of indexing off its ends.
+TEST(OsmGraphFileLoader, collect_vertex_ids_ignores_empty_section)
+{
+  OsmLoaderTestPeer peer;
+  std::vector<OsmLoaderTestPeer::Section> sections;
+  sections.push_back({{}, {}});
+  sections.push_back({{7, 8}, {}});
+
+  EXPECT_EQ(peer.collectVertexIds(sections), (std::vector<int64_t>{7, 8}));
 }
