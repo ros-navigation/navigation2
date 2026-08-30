@@ -129,8 +129,6 @@ protected:
   unsigned int width_{0};
   unsigned int height_{0};
   bool has_updated_data_{false};
-  // If true, we've already warned that the mask is overwriting unknown space
-  bool warned_unknown_overwrite_{false};
 };
 
 }  // namespace nav2_costmap_2d
