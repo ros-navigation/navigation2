@@ -1161,6 +1161,43 @@ TEST_F(TestZpf, StateIsReAppliedOnceSetsFromBeforeTheReloadHaveDrained)
   EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 0.5);
 }
 
+TEST_F(TestZpf, TheDrainReApplyIsSkippedWhenATransitionFiresOnTheSameCycle)
+{
+  // The drain and the mask sample happen in the same process(). If the robot
+  // leaves the zone on the cycle the drain completes, re-applying the state it
+  // is leaving puts that value on the wire after the transition and it wins by
+  // arriving last -- the same last-arrival defect the re-apply exists to fix.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.5));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  runProcess();  // set A, unanswered
+  ASSERT_EQ(filter_->pendingSetCount(), 1u);
+
+  ASSERT_TRUE(reloadFilterLeavingTargetsUnserviced())
+    << "Filter did not re-activate after reload";
+
+  runProcess();  // re-enters state 1: set B, with A still in flight
+  ASSERT_EQ(filter_->pendingSetCount(), 2u);
+
+  spinFor(300ms);  // the target answers both; results are only read in process()
+  ASSERT_EQ(filter_->pendingSetCount(), 2u);
+
+  target_node_->clearSpeedSetCount();
+  runProcess(100.0, 100.0);  // drains, and leaves the mask on the same cycle
+  spinFor(300ms);
+
+  EXPECT_EQ(target_node_->speedSetCount(), 0u)
+    << "state 1 was re-applied on the cycle the robot left the zone, so the "
+       "value it was leaving behind is the last one the target sees";
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

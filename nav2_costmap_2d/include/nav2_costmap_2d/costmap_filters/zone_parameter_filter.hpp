@@ -119,6 +119,13 @@ protected:
     const std::vector<rclcpp::Parameter> & params);
 
   /**
+   * @brief Re-apply the current state once sets issued before a reload have
+   *        drained. Called only from exits of process() where no transition
+   *        fired, so it can never race a transition made on the same cycle.
+   */
+  void reapplyAfterDrainIfDue();
+
+  /**
    * @brief Process completed set_parameters results non-blockingly. Called
    *        at the start of every process(); a failed set on any target
    *        throws (a failed set on a safety parameter is a stop condition).

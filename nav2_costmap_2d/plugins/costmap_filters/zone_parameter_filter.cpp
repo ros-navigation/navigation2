@@ -325,7 +325,12 @@ void ZoneParameterFilter::process(
       RCLCPP_WARN(
         logger_,
         "ZoneParameterFilter: Robot outside filter mask; applying nominal defaults.");
+      if (pending_sets_.empty()) {
+        reapply_after_drain_ = false;
+      }
       enterState(0);
+    } else {
+      reapplyAfterDrainIfDue();
     }
     return;
   }
@@ -337,15 +342,22 @@ void ZoneParameterFilter::process(
       logger_, *(clock_), 2000,
       "ZoneParameterFilter: Filter mask cell [%u, %u] is unknown; not changing state.",
       mask_robot_i, mask_robot_j);
+    reapplyAfterDrainIfDue();
     return;
   }
 
   const uint8_t new_state = static_cast<uint8_t>(mask_data);
 
   if (state_initialized_ && new_state == current_state_) {
-    return;  // No change.
+    reapplyAfterDrainIfDue();
+    return;
   }
 
+  // A transition supersedes the pending re-apply only once its sets have
+  // drained; while they are in flight one can still land last.
+  if (pending_sets_.empty()) {
+    reapply_after_drain_ = false;
+  }
   enterState(new_state);
 }
 
@@ -503,20 +515,23 @@ void ZoneParameterFilter::checkPendingParameterUpdates()
       }
     }
   }
+}
 
-  // Sets issued before a reload can land after it; re-apply once they drain.
-  if (reapply_after_drain_ && pending_sets_.empty()) {
-    reapply_after_drain_ = false;
-    const bool state_still_configured =
-      current_state_ == 0 || state_param_map_.count(current_state_) > 0;
-    if (state_initialized_ && state_still_configured) {
-      RCLCPP_INFO(
-        logger_,
-        "ZoneParameterFilter: re-applying state %u; the sets issued before the "
-        "reload have drained.",
-        current_state_);
-      applyState(current_state_);
-    }
+void ZoneParameterFilter::reapplyAfterDrainIfDue()
+{
+  if (!reapply_after_drain_ || !pending_sets_.empty()) {
+    return;
+  }
+  reapply_after_drain_ = false;
+  const bool state_still_configured =
+    current_state_ == 0 || state_param_map_.count(current_state_) > 0;
+  if (state_initialized_ && state_still_configured) {
+    RCLCPP_INFO(
+      logger_,
+      "ZoneParameterFilter: re-applying state %u; the sets issued before the "
+      "reload have drained.",
+      current_state_);
+    applyState(current_state_);
   }
 }
 
