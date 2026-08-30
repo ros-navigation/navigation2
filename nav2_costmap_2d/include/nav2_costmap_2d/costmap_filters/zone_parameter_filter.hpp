@@ -146,13 +146,7 @@ protected:
   std::map<std::string, std::vector<rclcpp::Parameter>> nominal_defaults_;
   std::map<std::string, rclcpp::AsyncParametersClient::SharedPtr> param_clients_;
 
-  // A dispatched set_parameters request cannot be recalled: the target node
-  // will execute it whether or not the client that sent it still exists. So
-  // each in-flight set keeps its own client alive until its result is read --
-  // destroying the client early breaks the promise behind the future, and a
-  // broken future reports itself ready. The pair is released together when
-  // the result is read, so a reload drops no client that still owes an answer
-  // and retains none that does not.
+  // Client is held with its future: destroying it early breaks the future.
   struct PendingSet
   {
     rclcpp::AsyncParametersClient::SharedPtr client;
@@ -160,14 +154,10 @@ protected:
   };
   std::vector<PendingSet> pending_sets_;
 
-  // Set when a reload leaves sets in flight. Their results land after the
-  // reload has already re-applied the current state, so the pre-reload value
-  // can win by arriving last; the state is re-applied once they have drained.
+  // Re-apply the current state once sets left in flight by a reload have drained.
   bool reapply_after_drain_{false};
 
-  // A target that never answers holds its sets in flight for ever. Bounded so
-  // that repeated clears against such a target cannot grow without limit; the
-  // oldest pair is dropped whole, never a client out from under its future.
+  // Bounds in-flight sets against a target that never answers.
   static constexpr size_t kMaxPendingSets = 64;
 
   std::string state_event_topic_;

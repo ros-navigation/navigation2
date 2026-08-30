@@ -321,12 +321,6 @@ void ZoneParameterFilter::process(
       filter_mask_, mask_pose.position.x, mask_pose.position.y,
       mask_robot_i, mask_robot_j))
   {
-    // Not `state_initialized_ && current_state_ != 0`: on the first process()
-    // after activate or reload nothing is initialised yet, and an in-mask cell
-    // of 0 takes the guard below and announces state 0. Requiring
-    // initialisation here would leave that same transition unannounced on this
-    // route -- the divergence one shared enterState() exists to remove, moved
-    // to the init edge.
     if (!state_initialized_ || current_state_ != 0) {
       RCLCPP_WARN(
         logger_,
@@ -392,12 +386,7 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
     m_keys.emplace(entry.target_node, entry.param.get_name());
   }
 
-  // Reset params touched by the previous state N but not the destination M
-  // back to nominal_defaults before applying M's overrides. This preserves
-  // the invariant that all params equal state-0 defaults except those
-  // specifically set in the active state.
-  // Reset params touched by the previous state N but not the destination M
-  // back to nominal_defaults before applying M's overrides.
+  // Reset params touched by the previous state but not the destination.
   std::map<std::string, std::vector<rclcpp::Parameter>> reset_per_node;
   if (state_initialized_ && current_state_ != 0) {
     auto prev_it = state_param_map_.find(current_state_);
@@ -490,9 +479,7 @@ void ZoneParameterFilter::issueAsyncSetParameters(
 
 void ZoneParameterFilter::checkPendingParameterUpdates()
 {
-  // A silently-swallowed set failure would leave the robot on the value the
-  // safety zone tried to change (worse than surfacing it), so failures throw
-  // rather than get logged-and-ignored.
+  // Failures throw rather than being logged and ignored.
   // wait_for(0s) polls without blocking the costmap update loop
   auto it = pending_sets_.begin();
   while (it != pending_sets_.end()) {
@@ -517,11 +504,7 @@ void ZoneParameterFilter::checkPendingParameterUpdates()
     }
   }
 
-  // A set issued before a reload can land after the reload has re-applied the
-  // current state, leaving the target on the older value while the filter
-  // reports the newer one. Re-applying once the last of them has drained puts
-  // the target back on the state the filter is actually in, whatever order
-  // they arrived in.
+  // Sets issued before a reload can land after it; re-apply once they drain.
   if (reapply_after_drain_ && pending_sets_.empty()) {
     reapply_after_drain_ = false;
     const bool state_still_configured =
@@ -548,9 +531,11 @@ void ZoneParameterFilter::resetFilter()
     state_event_pub_.reset();
   }
 
-  // Put the targets back before letting go of the configuration that says what
-  // "back" is. Without this, deactivating inside a zone leaves whatever that
-  // zone applied in force on nodes that no longer have anything driving them.
+  // Sampled before the restore below issues its own sets, which would otherwise
+  // make this true on every reset.
+  const bool sets_in_flight_before_restore = !pending_sets_.empty();
+
+  // Restore nominal defaults before releasing the configuration that defines them.
   if (state_initialized_ && current_state_ != 0) {
     RCLCPP_INFO(
       logger_,
@@ -580,8 +565,8 @@ void ZoneParameterFilter::resetFilter()
       "ZoneParameterFilter: %zu parameter set(s) still in flight across the "
       "reload; their results will still be checked.",
       pending_sets_.size());
-    reapply_after_drain_ = true;
   }
+  reapply_after_drain_ = sets_in_flight_before_restore;
 }
 
 bool ZoneParameterFilter::isActive()
