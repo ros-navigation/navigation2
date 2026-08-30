@@ -59,6 +59,7 @@ nav2_add_gtest(test_controller
   test_controller.cpp
 )
 target_link_libraries(test_controller
+  controller
   geometry_msgs::geometry_msgs
   ${library_name}
   rclcpp::rclcpp

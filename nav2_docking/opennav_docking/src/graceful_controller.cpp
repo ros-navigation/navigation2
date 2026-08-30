@@ -20,7 +20,6 @@
 #include "opennav_docking/graceful_controller.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "pluginlib/class_list_macros.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using rcl_interfaces::msg::ParameterType;
@@ -101,5 +100,3 @@ void GracefulController::updateParameter(
 }
 
 }  // namespace opennav_docking
-
-PLUGINLIB_EXPORT_CLASS(opennav_docking::GracefulController, opennav_docking::ControllerBase)
