@@ -1198,6 +1198,44 @@ TEST_F(TestZpf, TheDrainReApplyIsSkippedWhenATransitionFiresOnTheSameCycle)
        "value it was leaving behind is the last one the target sees";
 }
 
+TEST_F(TestZpf, ThePendingReApplyStillFiresWhileTheRobotIsOutsideTheMaskAtStateZero)
+{
+  // Leaving the mask returns above the state evaluation. A re-apply still owed
+  // there has to fire on that path too, or a set abandoned by the reload stands
+  // as the last write for as long as the robot stays outside -- which may be
+  // indefinitely, since no transition will come to supersede it.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("nominal_defaults"), std::vector<std::string>{"speed_nominal"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.5));
+  addEntry(cfg, "nominal_defaults.speed_nominal", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(1.0));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  runProcess();  // enters state 1: a set the target is never spun to answer
+  ASSERT_EQ(filter_->pendingSetCount(), 1u);
+
+  ASSERT_TRUE(reloadFilterLeavingTargetsUnserviced())
+    << "Filter did not re-activate after reload";
+
+  runProcess(100.0, 100.0);  // outside the mask, with the pre-reload set still in flight
+
+  spinFor(300ms);  // the target answers everything outstanding
+  target_node_->clearSpeedSetCount();
+
+  runProcess(100.0, 100.0);  // still outside and already at state 0: no transition fires
+
+  ASSERT_TRUE(waitForCond([this]() {return target_node_->speedSetCount() >= 1;}))
+    << "the re-apply owed from before the reload never fired on the "
+       "outside-the-mask path, so an abandoned set stands as the last write";
+  EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
