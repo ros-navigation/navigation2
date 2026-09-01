@@ -572,7 +572,7 @@ void ZoneParameterFilter::resetFilter()
     RCLCPP_INFO(
       logger_,
       "ZoneParameterFilter: %zu parameter set(s) still in flight across the "
-      "reload; their results will still be checked.",
+      "reload.",
       pending_sets_.size());
   }
   reapply_after_drain_ = sets_in_flight_before_restore;
