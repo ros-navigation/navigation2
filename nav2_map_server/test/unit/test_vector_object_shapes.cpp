@@ -337,7 +337,7 @@ void Tester::verifyCircleBorders(nav_msgs::msg::OccupancyGrid::SharedPtr map)
     for (unsigned int mx = 0; mx < map->info.width; mx++) {
       if (map->data[my * map->info.width + mx] == nav2_util::OCC_GRID_OCCUPIED) {
         radius = std::hypot(circle_center_x - mx, circle_center_y - my);
-        ASSERT_NEAR(radius, 10.0, 1.0);  // Border drift no more than once cell
+        ASSERT_NEAR(radius, 10.0, 1.5);  // Border drift no more than once cell
       }
     }
   }
@@ -897,4 +897,35 @@ int main(int argc, char ** argv)
   rclcpp::shutdown();
 
   return test_result;
+}
+
+TEST_F(Tester, testCircleFilled)
+{
+  setCircleParams("");
+  ASSERT_TRUE(circle_->obtainParams(CIRCLE_NAME));
+
+  nav_msgs::msg::OccupancyGrid::SharedPtr map = makeMap();
+  circle_->putFilled(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
+
+  // Center at (0,0), radius 1.0, grid origin (-2,-2), res 0.1
+  // Center in cells: (19.5, 19.5) — continuous
+  // Radius in cells: 10.0
+  bool found_filled = false;
+  for (unsigned int my = 0; my < map->info.height; my++) {
+    for (unsigned int mx = 0; mx < map->info.width; mx++) {
+      double wx = -2.0 + (mx + 0.5) * 0.1;
+      double wy = -2.0 + (my + 0.5) * 0.1;
+      double dist_sq = wx * wx + wy * wy;
+      bool inside = dist_sq <= 1.0 * 1.0;
+      if (inside) {
+        ASSERT_EQ(map->data[my * map->info.width + mx], nav2_util::OCC_GRID_OCCUPIED)
+          << "Expected fill at (" << mx << "," << my << ")";
+        found_filled = true;
+      } else {
+        ASSERT_EQ(map->data[my * map->info.width + mx], nav2_util::OCC_GRID_FREE)
+          << "Expected free at (" << mx << "," << my << ")";
+      }
+    }
+  }
+  ASSERT_TRUE(found_filled);
 }

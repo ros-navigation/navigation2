@@ -368,8 +368,8 @@ void Polygon::putBorders(
     }
     map_pts.push_back(
       {
-        static_cast<int64_t>(std::llround((pts[i].x - origin_x) / res * (1LL << 16))),
-        static_cast<int64_t>(std::llround((pts[i].y - origin_y) / res * (1LL << 16)))
+        static_cast<int64_t>(std::floor((pts[i].x - origin_x) / res) * (1LL << 16)),
+        static_cast<int64_t>(std::floor((pts[i].y - origin_y) / res) * (1LL << 16))
       });
   }
 
@@ -447,8 +447,8 @@ void Polygon::putFilled(
     }
     map_pts.push_back(
       {
-        static_cast<int64_t>(std::llround((pts[i].x - origin_x) / res * (1LL << 16))),
-        static_cast<int64_t>(std::llround((pts[i].y - origin_y) / res * (1LL << 16)))
+        static_cast<int64_t>(std::floor((pts[i].x - origin_x) / res) * (1LL << 16)),
+        static_cast<int64_t>(std::floor((pts[i].y - origin_y) / res) * (1LL << 16))
       });
   }
 
@@ -733,50 +733,36 @@ inline void Circle::putPoint(
 void Circle::putFilled(
   nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
 {
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  if (
-    !std::isfinite(center_->x) || !std::isfinite(center_->y) || !std::isfinite(params_->radius) ||
-    params_->radius < 0.0)
-  {
-    RCLCPP_WARN(
-      node->get_logger(),
-      "[UUID: %s] Circle has non-finite coordinates or radius after TF — skipping fill",
-      getUUID().c_str());
-    return;
-  }
-
-  const double origin_x = map->info.origin.position.x;
-  const double origin_y = map->info.origin.position.y;
   const double res = map->info.resolution;
-  const int8_t fill_val = params_->value;
+  const double u = (center_->x - map->info.origin.position.x) / res;
+  const double v = (center_->y - map->info.origin.position.y) / res;
+  const double r = params_->radius / res;
+
   const int map_w = static_cast<int>(map->info.width);
   const int map_h = static_cast<int>(map->info.height);
 
-  // Use floor for center to match original Nav2 behavior, round for radius
-  const int cx = static_cast<int>(std::floor((center_->x - origin_x) / res));
-  const int cy = static_cast<int>(std::floor((center_->y - origin_y) / res));
-  const int radius = std::max(1, static_cast<int>(std::round(params_->radius / res)));
+  const int y_start = std::max(static_cast<int>(std::ceil(v - r - 0.5)), 0);
+  const int y_end = std::min(static_cast<int>(std::floor(v + r - 0.5)), map_h - 1);
 
-  Grid g;
-  g.data = map->data.data();
-  g.width = map_w;
-  g.height = map_h;
-  g.fill_value = fill_val;
+  for (int y = y_start; y <= y_end; y++) {
+    const double dy = y + 0.5 - v;
+    const double t = r * r - dy * dy;
+    if (t < 0.0) {continue;}
+    const double rr = std::sqrt(t);
+    const int x0 = std::max(static_cast<int>(std::ceil(u - rr - 0.5)), 0);
+    const int x1 = std::min(static_cast<int>(std::floor(u + rr - 0.5)), map_w - 1);
 
-  if (overlay_type != OverlayType::OVERLAY_SEQ) {
-    g.write_cell = [&](int x, int y) {
-        processCell(
-          map,
-          static_cast<unsigned int>(y) * map->info.width + static_cast<unsigned int>(x),
-          fill_val, overlay_type);
-      };
+    if (overlay_type == OverlayType::OVERLAY_SEQ) {
+      std::fill(
+        map->data.begin() + static_cast<size_t>(y) * map_w + x0,
+        map->data.begin() + static_cast<size_t>(y) * map_w + x1 + 1,
+        params_->value);
+    } else {
+      for (int x = x0; x <= x1; x++) {
+        processCell(map, static_cast<unsigned int>(y) * map_w + x, params_->value, overlay_type);
+      }
+    }
   }
-
-  draw_circle(g, cx, cy, radius, true, fill_val);
 }
 
 }  // namespace nav2_map_server
