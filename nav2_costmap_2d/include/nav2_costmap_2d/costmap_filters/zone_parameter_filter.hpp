@@ -92,9 +92,7 @@ protected:
   void loadStateConfig();
 
   /**
-   * @brief Apply one state transition, announce it, and record it. Every
-   *        route into a state goes through here so the state_event_topic
-   *        stream cannot diverge between routes.
+   * @brief Apply a state transition
    * @param new_state Mask value of the state being entered
    */
   void enterState(uint8_t new_state);
