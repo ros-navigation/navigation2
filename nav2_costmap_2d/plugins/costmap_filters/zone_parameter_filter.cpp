@@ -571,9 +571,6 @@ void ZoneParameterFilter::resetFilter()
   nominal_defaults_.clear();
   param_clients_.clear();
 
-  // pending_sets_ is deliberately NOT cleared. Each one still owns the client
-  // that issued it, so dropping the map above cancels nothing and breaks
-  // nothing: the results stay readable and a failed set still surfaces.
   if (!pending_sets_.empty()) {
     RCLCPP_INFO(
       logger_,
