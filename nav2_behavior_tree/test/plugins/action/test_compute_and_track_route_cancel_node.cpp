@@ -37,7 +37,7 @@ protected:
       rclcpp_action::ServerGoalHandle<nav2_msgs::action::ComputeAndTrackRoute>>
     goal_handle)
   {
-    while (!goal_handle->is_canceling()) {
+    while (!goal_handle->is_canceling() && !isStopRequested()) {
       // Assisted Teleop here until goal cancels
       std::this_thread::sleep_for(std::chrono::milliseconds(15));
     }

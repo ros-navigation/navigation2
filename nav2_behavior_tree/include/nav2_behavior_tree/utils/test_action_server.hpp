@@ -15,8 +15,12 @@
 #ifndef NAV2_BEHAVIOR_TREE__UTILS__TEST_ACTION_SERVER_HPP_
 #define NAV2_BEHAVIOR_TREE__UTILS__TEST_ACTION_SERVER_HPP_
 
-#include <string>
+#include <atomic>
 #include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -43,31 +47,44 @@ public:
       std::bind(&TestActionServer::handle_accepted, this, _1));
   }
 
+  virtual ~TestActionServer()
+  {
+    stop_requested_.store(true);
+    joinWorkers();
+  }
+
   std::shared_ptr<const typename ActionT::Goal> getCurrentGoal() const
   {
+    std::lock_guard<std::mutex> lock(current_goal_mutex_);
     return current_goal_;
   }
 
   void setReturnSuccess(bool return_success)
   {
-    return_success_ = return_success;
+    return_success_.store(return_success);
   }
 
   bool getReturnSuccess(void)
   {
-    return return_success_;
+    return return_success_.load();
   }
 
   bool isGoalCancelled()
   {
-    return goal_cancelled_;
+    return goal_cancelled_.load();
   }
 
 protected:
+  bool isStopRequested() const
+  {
+    return stop_requested_.load();
+  }
+
   virtual rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID &,
     std::shared_ptr<const typename ActionT::Goal> goal)
   {
+    std::lock_guard<std::mutex> lock(current_goal_mutex_);
     current_goal_ = goal;
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   }
@@ -75,7 +92,7 @@ protected:
   virtual rclcpp_action::CancelResponse handle_cancel(
     const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>)
   {
-    goal_cancelled_ = true;
+    goal_cancelled_.store(true);
     return rclcpp_action::CancelResponse::ACCEPT;
   }
 
@@ -85,16 +102,47 @@ protected:
   void handle_accepted(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> goal_handle)
   {
-    using namespace std::placeholders;  // NOLINT
     // this needs to return quickly to avoid blocking the executor, so spin up a new thread
-    std::thread{std::bind(&TestActionServer::execute, this, _1), goal_handle}.detach();
+    if (stop_requested_.load()) {
+      return;
+    }
+
+    std::lock_guard<std::mutex> lock(workers_mutex_);
+    workers_.emplace_back([this, goal_handle]() {
+      execute(goal_handle);
+    });
   }
 
 private:
+  void joinWorkers()
+  {
+    while (true) {
+      std::vector<std::thread> workers;
+      {
+        std::lock_guard<std::mutex> lock(workers_mutex_);
+        workers.swap(workers_);
+      }
+
+      if (workers.empty()) {
+        return;
+      }
+
+      for (auto & worker : workers) {
+        if (worker.joinable()) {
+          worker.join();
+        }
+      }
+    }
+  }
+
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
+  mutable std::mutex current_goal_mutex_;
+  std::mutex workers_mutex_;
+  std::vector<std::thread> workers_;
+  std::atomic_bool stop_requested_{false};
   std::shared_ptr<const typename ActionT::Goal> current_goal_;
-  bool return_success_ = true;
-  bool goal_cancelled_ = false;
+  std::atomic_bool return_success_{true};
+  std::atomic_bool goal_cancelled_{false};
 };
 
 #endif  // NAV2_BEHAVIOR_TREE__UTILS__TEST_ACTION_SERVER_HPP_

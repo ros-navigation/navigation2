@@ -36,7 +36,7 @@ protected:
     <nav2_msgs::action::DriveOnHeading>>
     goal_handle)
   {
-    while (!goal_handle->is_canceling()) {
+    while (!goal_handle->is_canceling() && !isStopRequested()) {
       // DriveOnHeadingCancel here until goal cancels
       std::this_thread::sleep_for(std::chrono::milliseconds(15));
     }

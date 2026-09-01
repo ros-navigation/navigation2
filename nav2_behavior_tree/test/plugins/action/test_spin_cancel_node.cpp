@@ -35,7 +35,7 @@ protected:
     const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::Spin>>
     goal_handle)
   {
-    while (!goal_handle->is_canceling()) {
+    while (!goal_handle->is_canceling() && !isStopRequested()) {
       // Spinning here until goal cancels
       std::this_thread::sleep_for(std::chrono::milliseconds(15));
     }

@@ -3,6 +3,9 @@ find_package(test_msgs REQUIRED)
 nav2_add_gtest(test_bt_action_node test_bt_action_node.cpp)
 target_link_libraries(test_bt_action_node rclcpp::rclcpp test_msgs::test_msgs rclcpp_action::rclcpp_action ${library_name})
 
+nav2_add_gtest(test_test_action_server test_test_action_server.cpp)
+target_link_libraries(test_test_action_server rclcpp::rclcpp test_msgs::test_msgs rclcpp_action::rclcpp_action ${library_name})
+
 plugin_add_test(test_action_spin_action test_spin_action.cpp nav2_spin_action_bt_node)
 
 plugin_add_test(test_action_back_up_action test_back_up_action.cpp nav2_back_up_action_bt_node)
