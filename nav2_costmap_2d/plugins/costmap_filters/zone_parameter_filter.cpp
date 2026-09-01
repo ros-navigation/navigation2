@@ -564,9 +564,6 @@ void ZoneParameterFilter::resetFilter()
   state_initialized_ = false;
   current_state_ = 0;
 
-  // Everything derived from the declared configuration goes: loadStateConfig()
-  // appends to what it finds, and is re-run by `clear_entirely_<costmap>` and
-  // by every deactivate/activate cycle, both of which reach here first.
   state_param_map_.clear();
   nominal_defaults_.clear();
   param_clients_.clear();
