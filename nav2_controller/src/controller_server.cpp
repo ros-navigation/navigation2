@@ -962,24 +962,17 @@ bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & cur
 
 geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
-  geometry_msgs::msg::PoseStamped pose;
-  if (!costmap_ros_->getRobotPose(pose)) {
-    throw nav2_core::ControllerTFError("Failed to obtain robot pose");
+  geometry_msgs::msg::TransformStamped transform;
+  try {
+    transform = nav2_util::lookupTransformWithStalenessCheck(
+      *costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
+      costmap_ros_->getBaseFrameID(), tf2::durationFromSec(transform_tolerance_), now(),
+      params_->transform_staleness_threshold);
+  } catch (const tf2::TransformException & ex) {
+    throw nav2_core::ControllerTFError("Failed to obtain robot pose: " + std::string(ex.what()));
   }
 
-  const auto threshold = params_->transform_staleness_threshold;
-  if (threshold > 0.0) {
-    const auto transform_age = (now() - pose.header.stamp).seconds();
-    if (transform_age > threshold) {
-      throw nav2_core::ControllerTFError(
-              "Robot pose transform from frame '" + costmap_ros_->getBaseFrameID() +
-              "' to frame '" + costmap_ros_->getGlobalFrameID() + "' is stale: age " +
-              std::to_string(transform_age) +
-              "s exceeds threshold " + std::to_string(threshold) + "s");
-    }
-  }
-
-  return pose;
+  return nav2_util::transformToPoseStamped(transform);
 }
 
 void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::ConstSharedPtr & msg)

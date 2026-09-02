@@ -61,6 +61,7 @@ public:
   }
 
   void setGoalDistanceThreshold(double t) {goal_distance_threshold_ = t;}
+  void setTransformStalenessThreshold(double t) {transform_staleness_threshold_ = t;}
 
   // Expire node_ weak_ptr so that node_.lock() returns null — used by node-expired tests.
   void expireNode() {node_.reset();}
@@ -105,6 +106,7 @@ static rclcpp::NodeOptions makeNodeOptions(
     rclcpp::Parameter("asymmetric_inflation_layer.inflate_around_unknown", false),
     rclcpp::Parameter("asymmetric_inflation_layer.plan_topic", std::string("plan")),
     rclcpp::Parameter("asymmetric_inflation_layer.goal_distance_threshold", 1.5),
+    rclcpp::Parameter("asymmetric_inflation_layer.transform_staleness_threshold", 0.0),
     rclcpp::Parameter("asymmetric_inflation_layer.num_threads", -1),
     rclcpp::Parameter("map_topic", std::string("map")),
     rclcpp::Parameter("track_unknown_space", false),
@@ -210,6 +212,20 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_invalid_num_threads)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.num_threads", -2)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_threads", "", options);
+  auto tf = nav2::create_transform_buffer(node);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
+  layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
+  auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
+  EXPECT_THROW(
+    layer->initialize(&layers, "asymmetric_inflation_layer", tf.get(), node, nullptr),
+    std::runtime_error);
+}
+
+TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_transform_staleness_threshold)
+{
+  auto options = makeNodeOptions(
+    {rclcpp::Parameter("asymmetric_inflation_layer.transform_staleness_threshold", -0.1)});
+  auto node = std::make_shared<nav2::LifecycleNode>("init_test_tf_staleness", "", options);
   auto tf = nav2::create_transform_buffer(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
@@ -733,6 +749,38 @@ TEST_F(AsymmetricInflationIntegrationTest, live_lookup_recovers_once_transform_b
   unsigned char south_after = costmap->getCost(20, 12);
   EXPECT_GT(north_after, south_after)
     << "Per-cycle lookup must pick up the transform without re-publishing the path";
+}
+
+TEST_F(AsymmetricInflationIntegrationTest, stale_transform_falls_back_to_symmetric_inflation)
+{
+  layer_->setSideFactors(1.0, 10.0);
+  layer_->setGoalDistanceThreshold(0.0);
+  layer_->setTransformStalenessThreshold(0.1);
+
+  auto path = std::make_shared<nav_msgs::msg::Path>();
+  path->header.frame_id = "odom";
+  for (double x : {0.5, 1.5, 2.5, 3.5}) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = "odom";
+    pose.pose.position.x = x;
+    pose.pose.position.y = 2.0;
+    path->poses.push_back(pose);
+  }
+  layer_->injectPath(path);
+
+  geometry_msgs::msg::TransformStamped tf_msg;
+  tf_msg.header.frame_id = "map";
+  tf_msg.child_frame_id = "odom";
+  tf_msg.header.stamp = rclcpp::Time(1, 0, RCL_ROS_TIME);
+  tf_msg.transform.rotation.w = 1.0;
+  tf_->setTransform(tf_msg, "test", false);
+
+  seedLethalObstacle(20, 24);
+  seedLethalObstacle(20, 16);
+  runInflation();
+
+  auto * costmap = layers_->getCostmap();
+  EXPECT_EQ(costmap->getCost(20, 28), costmap->getCost(20, 12));
 }
 
 // ============================================================

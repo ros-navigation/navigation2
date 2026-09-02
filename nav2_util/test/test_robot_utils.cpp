@@ -56,3 +56,59 @@ TEST(RobotUtils, validateTwist)
   msg.angular.z = NAN;
   EXPECT_FALSE(nav2_util::validateTwist(msg));
 }
+
+TEST(RobotUtils, lookupTransformWithStalenessCheck)
+{
+  auto clock = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+  nav2::TransformBuffer tf(clock);
+  const rclcpp::Time current_time(10, 0, RCL_ROS_TIME);
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.header.stamp = rclcpp::Time(8, 0, RCL_ROS_TIME);
+  transform.child_frame_id = "base_link";
+  transform.transform.rotation.w = 1.0;
+  tf.setTransform(transform, "test", false);
+
+  EXPECT_THROW(
+    nav2_util::lookupTransformWithStalenessCheck(
+      tf, "map", "base_link", tf2::durationFromSec(0.0), current_time, 1.0),
+    tf2::ExtrapolationException);
+  EXPECT_NO_THROW(
+    nav2_util::lookupTransformWithStalenessCheck(
+      tf, "map", "base_link", tf2::durationFromSec(0.0), current_time, 2.0));
+  EXPECT_NO_THROW(
+    nav2_util::lookupTransformWithStalenessCheck(
+      tf, "map", "base_link", tf2::durationFromSec(0.0), current_time, 0.0));
+
+  transform.header.frame_id = "map";
+  transform.child_frame_id = "static_frame";
+  tf.setTransform(transform, "test", true);
+  EXPECT_NO_THROW(
+    nav2_util::lookupTransformWithStalenessCheck(
+      tf, "map", "static_frame", tf2::durationFromSec(0.0), current_time, 1.0));
+}
+
+TEST(RobotUtils, transformToPoseStamped)
+{
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.header.stamp.sec = 12;
+  transform.header.stamp.nanosec = 34;
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.x = 1.0;
+  transform.transform.translation.y = 2.0;
+  transform.transform.translation.z = 3.0;
+  transform.transform.rotation.x = 0.1;
+  transform.transform.rotation.y = 0.2;
+  transform.transform.rotation.z = 0.3;
+  transform.transform.rotation.w = 0.4;
+
+  const auto pose = nav2_util::transformToPoseStamped(transform);
+
+  EXPECT_EQ(pose.header.frame_id, transform.header.frame_id);
+  EXPECT_EQ(pose.header.stamp, transform.header.stamp);
+  EXPECT_EQ(pose.pose.position.x, transform.transform.translation.x);
+  EXPECT_EQ(pose.pose.position.y, transform.transform.translation.y);
+  EXPECT_EQ(pose.pose.position.z, transform.transform.translation.z);
+  EXPECT_EQ(pose.pose.orientation, transform.transform.rotation);
+}
