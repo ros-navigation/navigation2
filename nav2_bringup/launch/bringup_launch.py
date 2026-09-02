@@ -112,6 +112,7 @@ def generate_launch_description() -> LaunchDescription:
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
                         name='lifecycle_manager_nav2',
+                        namespace=namespace,
                         parameters=manager_parameters,
                         extra_arguments=[{
                             'use_intra_process_comms': use_intra_process_comms
