@@ -31,7 +31,6 @@ def generate_launch_description() -> LaunchDescription:
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfigAsBool('use_sim_time')
     autostart = LaunchConfigAsBool('autostart')
-    use_lifecycle_manager = LaunchConfigAsBool('use_lifecycle_manager')
     graph_filepath = LaunchConfiguration('graph')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfigAsBool('use_composition')
@@ -42,20 +41,6 @@ def generate_launch_description() -> LaunchDescription:
     log_level = LaunchConfiguration('log_level')
     use_keepout_zones = LaunchConfigAsBool('use_keepout_zones')
     use_speed_zones = LaunchConfigAsBool('use_speed_zones')
-
-    lifecycle_nodes = [
-        'controller_server',
-        'smoother_server',
-        'planner_server',
-        'route_server',
-        'behavior_server',
-        'velocity_smoother',
-        'collision_monitor',
-        'bt_navigator',
-        'waypoint_follower',
-        'docking_server',
-        'following_server',
-    ]
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
@@ -116,12 +101,6 @@ def generate_launch_description() -> LaunchDescription:
         'autostart',
         default_value='true',
         description='Automatically startup the nav2 stack',
-    )
-
-    declare_use_lifecycle_manager_cmd = DeclareLaunchArgument(
-        'use_lifecycle_manager',
-        default_value='True',
-        description='Whether to launch the navigation lifecycle manager',
     )
 
     declare_use_composition_cmd = DeclareLaunchArgument(
@@ -392,51 +371,6 @@ def generate_launch_description() -> LaunchDescription:
         ],
     )
 
-    load_lifecycle_manager = GroupAction(
-        condition=IfCondition(use_lifecycle_manager),
-        actions=[
-            Node(
-                condition=IfCondition(PythonExpression(['not ', use_composition])),
-                package='nav2_lifecycle_manager',
-                executable='lifecycle_manager',
-                name='lifecycle_manager_navigation',
-                namespace=namespace,
-                output='screen',
-                arguments=['--ros-args', '--log-level', log_level],
-                parameters=[
-                    configured_params,
-                    {
-                        'autostart': autostart,
-                        'node_names': lifecycle_nodes,
-                        'use_sim_time': use_sim_time,
-                    },
-                ],
-            ),
-            LoadComposableNodes(
-                condition=IfCondition(use_composition),
-                target_container=container_name_full,
-                composable_node_descriptions=[
-                    ComposableNode(
-                        package='nav2_lifecycle_manager',
-                        plugin='nav2_lifecycle_manager::LifecycleManager',
-                        name='lifecycle_manager_navigation',
-                        parameters=[
-                            configured_params,
-                            {
-                                'autostart': autostart,
-                                'node_names': lifecycle_nodes,
-                                'use_sim_time': use_sim_time,
-                            },
-                        ],
-                        extra_arguments=[
-                            {'use_intra_process_comms': use_intra_process_comms}
-                        ],
-                    ),
-                ],
-            ),
-        ],
-    )
-
     # Create the launch description and populate
     ld = LaunchDescription()
 
@@ -448,7 +382,6 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
-    ld.add_action(declare_use_lifecycle_manager_cmd)
     ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_use_intra_process_comms_cmd)
@@ -460,6 +393,5 @@ def generate_launch_description() -> LaunchDescription:
     # Add the actions to launch all of the navigation nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
-    ld.add_action(load_lifecycle_manager)
 
     return ld

@@ -30,8 +30,6 @@ def generate_launch_description() -> LaunchDescription:
     namespace = LaunchConfiguration('namespace')
     params_file = LaunchConfiguration('params_file')
     use_sim_time = LaunchConfigAsBool('use_sim_time')
-    autostart = LaunchConfigAsBool('autostart')
-    use_lifecycle_manager = LaunchConfigAsBool('use_lifecycle_manager')
     use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
@@ -67,18 +65,6 @@ def generate_launch_description() -> LaunchDescription:
         'use_sim_time',
         default_value='True',
         description='Use simulation (Gazebo) clock if true',
-    )
-
-    declare_autostart_cmd = DeclareLaunchArgument(
-        'autostart',
-        default_value='True',
-        description='Automatically startup the nav2 stack',
-    )
-
-    declare_use_lifecycle_manager_cmd = DeclareLaunchArgument(
-        'use_lifecycle_manager',
-        default_value='True',
-        description='Whether to launch the SLAM lifecycle manager',
     )
 
     declare_use_respawn_cmd = DeclareLaunchArgument(
@@ -141,32 +127,12 @@ def generate_launch_description() -> LaunchDescription:
         ]
     )
 
-    start_lifecycle_manager = Node(
-        condition=IfCondition(use_lifecycle_manager),
-        package='nav2_lifecycle_manager',
-        executable='lifecycle_manager',
-        name='lifecycle_manager_slam',
-        namespace=namespace,
-        output='screen',
-        arguments=['--ros-args', '--log-level', log_level],
-        parameters=[
-            configured_params,
-            {
-                'autostart': autostart,
-                'node_names': ['map_saver'],
-                'use_sim_time': use_sim_time,
-            },
-        ],
-    )
-
     ld = LaunchDescription()
 
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_use_sim_time_cmd)
-    ld.add_action(declare_autostart_cmd)
-    ld.add_action(declare_use_lifecycle_manager_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
 
@@ -175,6 +141,5 @@ def generate_launch_description() -> LaunchDescription:
 
     # Running SLAM Toolbox (Only one of them will be run)
     ld.add_action(start_slam_toolbox_cmd)
-    ld.add_action(start_lifecycle_manager)
 
     return ld
