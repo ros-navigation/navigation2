@@ -24,6 +24,22 @@ from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
+def get_lifecycle_nodes():
+    return (
+        'controller_server',
+        'smoother_server',
+        'planner_server',
+        'route_server',
+        'behavior_server',
+        'velocity_smoother',
+        'collision_monitor',
+        'bt_navigator',
+        'waypoint_follower',
+        'docking_server',
+        'following_server',
+    )
+
+
 def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')

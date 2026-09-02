@@ -18,13 +18,12 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes, Node, SetParameter
-from launch_ros.descriptions import ComposableNode, ParameterFile
-from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+from nav2_common.launch import LaunchConfigAsBool
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -48,8 +47,6 @@ def generate_launch_description() -> LaunchDescription:
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
     use_rviz = LaunchConfigAsBool('use_rviz')
-    container_name_full = (namespace, '/', 'nav2_container')
-
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     # Declare the launch arguments
@@ -152,7 +149,7 @@ def generate_launch_description() -> LaunchDescription:
             'use_composition': use_composition,
             'use_intra_process_comms': use_intra_process_comms,
             'use_respawn': use_respawn,
-            'use_localization': 'False',  # Don't use SLAM, AMCL
+            'use_amcl': 'False',
             'use_keepout_zones': 'False',
             'use_speed_zones': 'False',
             'container_name': 'nav2_container',
@@ -165,53 +162,6 @@ def generate_launch_description() -> LaunchDescription:
         launch_arguments={
             'params_file': params_file,
         }.items(),
-    )
-
-    configured_params = ParameterFile(
-        RewrittenYaml(
-            source_file=params_file,
-            root_key=namespace,
-            param_rewrites={},
-            convert_types=True,
-        ),
-        allow_substs=True,
-    )
-
-    start_map_server = GroupAction(
-        condition=IfCondition(PythonExpression(['not ', use_composition])),
-        actions=[
-            SetParameter('use_sim_time', True),
-            Node(
-                package='nav2_map_server',
-                executable='map_server',
-                name='map_server',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params, {'yaml_filename': map_yaml_file}],
-                remappings=remappings,
-            ),
-        ]
-    )
-
-    start_composable_map_server = GroupAction(
-        condition=IfCondition(use_composition),
-        actions=[
-            SetParameter('use_sim_time', True),
-            LoadComposableNodes(
-                target_container=container_name_full,
-                composable_node_descriptions=[
-                    ComposableNode(
-                        package='nav2_map_server',
-                        plugin='nav2_map_server::MapServer',
-                        name='map_server',
-                        parameters=[configured_params, {'yaml_filename': map_yaml_file}],
-                        remappings=remappings,
-                        extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
-                    ),
-                ],
-            ),
-        ],
     )
 
     # Create the launch description and populate
@@ -233,8 +183,6 @@ def generate_launch_description() -> LaunchDescription:
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(start_map_server)
-    ld.add_action(start_composable_map_server)
     ld.add_action(loopback_sim_cmd)
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)

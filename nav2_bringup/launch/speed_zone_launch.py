@@ -24,6 +24,10 @@ from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
+def get_lifecycle_nodes():
+    return ('speed_filter_mask_server', 'speed_costmap_filter_info_server')
+
+
 def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')

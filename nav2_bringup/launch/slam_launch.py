@@ -25,6 +25,10 @@ from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import HasNodeParams, LaunchConfigAsBool, RewrittenYaml
 
 
+def get_lifecycle_nodes():
+    return ('map_saver',)
+
+
 def generate_launch_description() -> LaunchDescription:
     # Input parameters declaration
     namespace = LaunchConfiguration('namespace')

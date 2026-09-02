@@ -18,11 +18,16 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, GroupAction, IncludeLaunchDescription,
                             OpaqueFunction, SetEnvironmentVariable)
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import LoadComposableNodes, Node
 from launch_ros.descriptions import ComposableNode, ParameterFile
+from nav2_bringup.keepout_zone_launch import get_lifecycle_nodes as get_keepout_zone_nodes
+from nav2_bringup.localization_launch import get_lifecycle_nodes as get_localization_nodes
+from nav2_bringup.navigation_launch import get_lifecycle_nodes as get_navigation_nodes
+from nav2_bringup.slam_launch import get_lifecycle_nodes as get_slam_nodes
+from nav2_bringup.speed_zone_launch import get_lifecycle_nodes as get_speed_zone_nodes
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
@@ -30,7 +35,6 @@ def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
-
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
     slam = LaunchConfigAsBool('slam')
@@ -46,7 +50,7 @@ def generate_launch_description() -> LaunchDescription:
     container_name = LaunchConfiguration('container_name')
     use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
-    use_localization = LaunchConfigAsBool('use_localization')
+    use_amcl = LaunchConfigAsBool('use_amcl')
     use_keepout_zones = LaunchConfigAsBool('use_keepout_zones')
     use_speed_zones = LaunchConfigAsBool('use_speed_zones')
 
@@ -70,42 +74,25 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     def launch_lifecycle_manager(context):
+        slam_enabled = slam.perform(context) == 'True'
+        amcl_enabled = use_amcl.perform(context) == 'True'
+        keepout_zones_enabled = use_keepout_zones.perform(context) == 'True'
+        speed_zones_enabled = use_speed_zones.perform(context) == 'True'
+
         lifecycle_nodes = []
 
-        if use_localization.perform(context) == 'True':
-            if slam.perform(context) == 'True':
-                lifecycle_nodes.append('map_saver')
-            else:
-                lifecycle_nodes.extend(['map_server', 'amcl'])
+        if slam_enabled:
+            lifecycle_nodes.extend(get_slam_nodes())
         else:
-            # Loopback simulations provide their own map_server, but it is managed here.
-            lifecycle_nodes.append('map_server')
+            lifecycle_nodes.extend(get_localization_nodes(use_amcl=amcl_enabled))
 
-        if use_keepout_zones.perform(context) == 'True':
-            lifecycle_nodes.extend([
-                'keepout_filter_mask_server',
-                'keepout_costmap_filter_info_server',
-            ])
+        if keepout_zones_enabled:
+            lifecycle_nodes.extend(get_keepout_zone_nodes())
 
-        if use_speed_zones.perform(context) == 'True':
-            lifecycle_nodes.extend([
-                'speed_filter_mask_server',
-                'speed_costmap_filter_info_server',
-            ])
+        if speed_zones_enabled:
+            lifecycle_nodes.extend(get_speed_zone_nodes())
 
-        lifecycle_nodes.extend([
-            'controller_server',
-            'smoother_server',
-            'planner_server',
-            'route_server',
-            'behavior_server',
-            'velocity_smoother',
-            'collision_monitor',
-            'bt_navigator',
-            'waypoint_follower',
-            'docking_server',
-            'following_server',
-        ])
+        lifecycle_nodes.extend(get_navigation_nodes())
 
         manager_parameters = [
             configured_params,
@@ -116,26 +103,24 @@ def generate_launch_description() -> LaunchDescription:
             },
         ]
 
-        if use_composition.perform(context) == 'True':
-            return [
-                LoadComposableNodes(
-                    target_container=(namespace, '/', container_name),
-                    composable_node_descriptions=[
-                        ComposableNode(
-                            package='nav2_lifecycle_manager',
-                            plugin='nav2_lifecycle_manager::LifecycleManager',
-                            name='lifecycle_manager_nav2',
-                            parameters=manager_parameters,
-                            extra_arguments=[{
-                                'use_intra_process_comms': use_intra_process_comms
-                            }],
-                        ),
-                    ],
-                ),
-            ]
-
         return [
+            LoadComposableNodes(
+                condition=IfCondition(use_composition),
+                target_container=(namespace, '/', container_name),
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='nav2_lifecycle_manager',
+                        plugin='nav2_lifecycle_manager::LifecycleManager',
+                        name='lifecycle_manager_nav2',
+                        parameters=manager_parameters,
+                        extra_arguments=[{
+                            'use_intra_process_comms': use_intra_process_comms
+                        }],
+                    ),
+                ],
+            ),
             Node(
+                condition=UnlessCondition(use_composition),
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
                 name='lifecycle_manager_nav2',
@@ -177,9 +162,9 @@ def generate_launch_description() -> LaunchDescription:
         default_value='', description='Path to the graph file to load'
     )
 
-    declare_use_localization_cmd = DeclareLaunchArgument(
-        'use_localization', default_value='True',
-        description='Whether to enable localization or not'
+    declare_use_amcl_cmd = DeclareLaunchArgument(
+        'use_amcl', default_value='True',
+        description='Whether to enable AMCL when using localization'
     )
 
     declare_use_keepout_zones_cmd = DeclareLaunchArgument(
@@ -257,12 +242,10 @@ def generate_launch_description() -> LaunchDescription:
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'slam_launch.py')
                 ),
-                condition=IfCondition(PythonExpression([slam, ' and ', use_localization])),
+                condition=IfCondition(slam),
                 launch_arguments={
                     'namespace': namespace,
                     'use_sim_time': use_sim_time,
-                    'autostart': autostart,
-                    'use_lifecycle_manager': 'False',
                     'use_respawn': use_respawn,
                     'params_file': params_file,
                 }.items(),
@@ -271,13 +254,12 @@ def generate_launch_description() -> LaunchDescription:
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'localization_launch.py')
                 ),
-                condition=IfCondition(PythonExpression(['not ', slam, ' and ', use_localization])),
+                condition=IfCondition(PythonExpression(['not ', slam])),
                 launch_arguments={
                     'namespace': namespace,
                     'map': map_yaml_file,
                     'use_sim_time': use_sim_time,
-                    'autostart': autostart,
-                    'use_lifecycle_manager': 'False',
+                    'use_amcl': use_amcl,
                     'params_file': params_file,
                     'use_composition': use_composition,
                     'use_intra_process_comms': use_intra_process_comms,
@@ -300,7 +282,6 @@ def generate_launch_description() -> LaunchDescription:
                     'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
                     'container_name': container_name,
-                    'use_lifecycle_manager': 'False',
                 }.items(),
             ),
 
@@ -318,7 +299,6 @@ def generate_launch_description() -> LaunchDescription:
                     'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
                     'container_name': container_name,
-                    'use_lifecycle_manager': 'False',
                 }.items(),
             ),
 
@@ -338,7 +318,6 @@ def generate_launch_description() -> LaunchDescription:
                     'use_keepout_zones': use_keepout_zones,
                     'use_speed_zones': use_speed_zones,
                     'container_name': container_name,
-                    'use_lifecycle_manager': 'False',
                 }.items(),
             ),
             OpaqueFunction(function=launch_lifecycle_manager),
@@ -366,7 +345,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
-    ld.add_action(declare_use_localization_cmd)
+    ld.add_action(declare_use_amcl_cmd)
     ld.add_action(declare_use_keepout_zones_cmd)
     ld.add_action(declare_use_speed_zones_cmd)
 

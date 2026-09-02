@@ -25,6 +25,10 @@ from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
+def get_lifecycle_nodes(use_amcl=True):
+    return ('map_server', 'amcl') if use_amcl else ('map_server',)
+
+
 def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
@@ -32,6 +36,7 @@ def generate_launch_description() -> LaunchDescription:
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfigAsBool('use_sim_time')
+    use_amcl = LaunchConfigAsBool('use_amcl')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfigAsBool('use_composition')
     use_intra_process_comms = LaunchConfigAsBool('use_intra_process_comms')
@@ -69,6 +74,12 @@ def generate_launch_description() -> LaunchDescription:
         'use_sim_time',
         default_value='false',
         description='Use simulation (Gazebo) clock if true',
+    )
+
+    declare_use_amcl_cmd = DeclareLaunchArgument(
+        'use_amcl',
+        default_value='True',
+        description='Whether to launch AMCL',
     )
 
     declare_params_file_cmd = DeclareLaunchArgument(
@@ -139,6 +150,7 @@ def generate_launch_description() -> LaunchDescription:
                 remappings=remappings,
             ),
             Node(
+                condition=IfCondition(use_amcl),
                 package='nav2_amcl',
                 executable='amcl',
                 name='amcl',
@@ -197,6 +209,7 @@ def generate_launch_description() -> LaunchDescription:
                 ],
             ),
             LoadComposableNodes(
+                condition=IfCondition(use_amcl),
                 target_container=container_name_full,
                 composable_node_descriptions=[
                     ComposableNode(
@@ -222,6 +235,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_use_amcl_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_use_intra_process_comms_cmd)
