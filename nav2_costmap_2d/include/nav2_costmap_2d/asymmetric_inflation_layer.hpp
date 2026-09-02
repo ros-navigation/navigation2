@@ -245,6 +245,8 @@ protected:
   std::string plan_topic_;
   /// Timeout for path-frame TF lookups
   tf2::Duration transform_tolerance_;
+  /// Maximum path-frame transform age in seconds; zero disables the check
+  double transform_staleness_threshold_{0.0};
 
   // --- State ---
   double current_robot_x_{0.0};
