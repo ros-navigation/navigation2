@@ -363,12 +363,12 @@ inline void fill_edge_collection(
           int x1, x2;
           if (keep_prelast->x > prelast->x) {
             x1 = static_cast<int>((prelast->x + delta) >> XY_SHIFT);
-            x2 = static_cast<int>(keep_prelast->x >> XY_SHIFT);
+            x2 = static_cast<int>((keep_prelast->x - 1) >> XY_SHIFT);
           } else {
             x1 = static_cast<int>((keep_prelast->x + delta) >> XY_SHIFT);
-            x2 = static_cast<int>(prelast->x >> XY_SHIFT);
+            x2 = static_cast<int>((prelast->x - 1) >> XY_SHIFT);
           }
-          if (x1 < g.width && x2 >= 0) {
+          if (x1 <= x2 && x1 < g.width && x2 >= 0) {
             x1 = std::max(x1, 0);
             x2 = std::min(x2, g.width - 1);
             hline(g, y, x1, x2, value);
