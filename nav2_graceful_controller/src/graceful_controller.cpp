@@ -147,19 +147,13 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // Add proper orientations to plan, if needed
   validateOrientations(transformed_plan.poses);
 
-  // Transform local frame to global frame to use in collision checking
   geometry_msgs::msg::TransformStamped costmap_transform;
-  try {
-    costmap_transform = tf_buffer_->lookupTransform(
-      costmap_ros_->getGlobalFrameID(), costmap_ros_->getBaseFrameID(),
-      tf2::TimePointZero);
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(
-      logger_, "Could not transform %s to %s: %s",
-      costmap_ros_->getBaseFrameID().c_str(), costmap_ros_->getGlobalFrameID().c_str(),
-      ex.what());
-    throw ex;
-  }
+  costmap_transform.header = pose.header;
+  costmap_transform.child_frame_id = costmap_ros_->getBaseFrameID();
+  costmap_transform.transform.translation.x = pose.pose.position.x;
+  costmap_transform.transform.translation.y = pose.pose.position.y;
+  costmap_transform.transform.translation.z = pose.pose.position.z;
+  costmap_transform.transform.rotation = pose.pose.orientation;
 
   // Compute distance to goal as the path's integrated distance to account for path curvatures
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
