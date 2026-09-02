@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <iostream>
 #include <memory>
 #include <thread>
 
@@ -24,7 +25,6 @@ using namespace std::chrono;  // NOLINT
 
 namespace nav2_system_tests
 {
-
 
 ServerHandler::ServerHandler()
 : is_active_(false)
@@ -43,7 +43,8 @@ ServerHandler::ServerHandler()
     node_, "local_costmap/clear_around_pose_local_costmap");
   validate_path_server = std::make_unique<DummyService<nav2_msgs::srv::IsPathValid>>(
     node_, "is_path_valid");
-  compute_path_to_pose_server = std::make_unique<DummyComputePathToPoseActionServer>(node_);
+  compute_path_to_pose_server =
+    std::make_unique<DummyComputePathToPoseActionServer>(node_);
   follow_path_server = std::make_unique<DummyFollowPathActionServer>(node_);
   spin_server = std::make_unique<DummyActionServer<nav2_msgs::action::Spin>>(
     node_, "spin");
@@ -55,9 +56,11 @@ ServerHandler::ServerHandler()
     node_, "compute_route");
   smoother_server = std::make_unique<DummyActionServer<nav2_msgs::action::SmoothPath>>(
     node_, "smooth_path");
-  drive_on_heading_server = std::make_unique<DummyActionServer<nav2_msgs::action::DriveOnHeading>>(
+  drive_on_heading_server =
+    std::make_unique<DummyActionServer<nav2_msgs::action::DriveOnHeading>>(
     node_, "drive_on_heading");
-  ntp_server = std::make_unique<DummyActionServer<nav2_msgs::action::ComputePathThroughPoses>>(
+  ntp_server =
+    std::make_unique<DummyActionServer<nav2_msgs::action::ComputePathThroughPoses>>(
     node_, "compute_path_through_poses");
 }
 
@@ -87,25 +90,42 @@ void ServerHandler::deactivate()
     throw std::runtime_error("Trying to deactivate while already inactive");
   }
 
+  // Shutdown all action servers to join their worker threads before
+  // stopping the spin thread, guaranteeing a clean teardown sequence
+  compute_path_to_pose_server->shutdown();
+  follow_path_server->shutdown();
+  spin_server->shutdown();
+  wait_server->shutdown();
+  backup_server->shutdown();
+  compute_route_server->shutdown();
+  smoother_server->shutdown();
+  drive_on_heading_server->shutdown();
+  ntp_server->shutdown();
+
   is_active_ = false;
+  rclcpp::shutdown();
   server_thread_->join();
 
   std::cout << "Server handler has been deactivated!" << std::endl;
 }
 
-void ServerHandler::reset() const
+void ServerHandler::reset()
 {
   clear_global_costmap_server->reset();
   clear_local_costmap_server->reset();
   clear_costmap_around_robot_server->reset();
   clear_costmap_except_region_server->reset();
   clear_costmap_around_pose_server->reset();
+  validate_path_server->reset();
   compute_path_to_pose_server->reset();
   follow_path_server->reset();
   spin_server->reset();
   wait_server->reset();
   backup_server->reset();
+  compute_route_server->reset();
+  smoother_server->reset();
   drive_on_heading_server->reset();
+  ntp_server->reset();
 }
 
 void ServerHandler::spinThread()

@@ -83,7 +83,8 @@ protected:
   }
 };
 
-class DummyFollowPathActionServer : public DummyActionServer<nav2_msgs::action::FollowPath>
+class DummyFollowPathActionServer
+  : public DummyActionServer<nav2_msgs::action::FollowPath>
 {
 public:
   explicit DummyFollowPathActionServer(const rclcpp::Node::SharedPtr & node)
@@ -99,7 +100,8 @@ protected:
   }
 };
 
-class DummyClearEntireCostmapService : public DummyService<nav2_msgs::srv::ClearEntireCostmap>
+class DummyClearEntireCostmapService
+  : public DummyService<nav2_msgs::srv::ClearEntireCostmap>
 {
 public:
   explicit DummyClearEntireCostmapService(
@@ -185,7 +187,7 @@ public:
     return is_active_;
   }
 
-  void reset() const;
+  void reset();
 
 public:
   std::unique_ptr<DummyClearEntireCostmapService> clear_local_costmap_server;
