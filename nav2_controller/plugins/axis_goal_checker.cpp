@@ -102,20 +102,17 @@ bool AxisGoalChecker::isGoalXYReached(
   const nav_msgs::msg::Path & transformed_global_plan)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
-  // If the local plan length is longer than the tolerance, we skip the check
-  if (nav2_util::geometry_utils::calculate_path_length(transformed_global_plan) >
-    path_length_tolerance_)
-  {
-    return false;
-  }
 
   double robot_to_goal_dx = goal_pose.position.x - query_pose.position.x;
   double robot_to_goal_dy = goal_pose.position.y - query_pose.position.y;
   double distance_to_goal = std::hypot(robot_to_goal_dx, robot_to_goal_dy);
 
-  // Try to estimate the end-of-path direction from the plan; keep the previously
-  // cached direction if the pruned plan no longer reaches far enough back from the goal.
-  // Walk back from the goal until a pose is at least direction_estimation_distance_ away
+  // Already on the goal; skip the direction math and the atan2(0,0) below.
+  if (distance_to_goal < 1e-6) {
+    return true;
+  }
+
+  // Cache the direction
   for (int i = static_cast<int>(transformed_global_plan.poses.size()) - 2; i >= 0; --i) {
     const auto & candidate_pose = transformed_global_plan.poses[i].pose;
     double dx = goal_pose.position.x - candidate_pose.position.x;
@@ -127,17 +124,19 @@ bool AxisGoalChecker::isGoalXYReached(
     }
   }
 
+  // If the local plan length is longer than the tolerance, we skip the check
+  if (nav2_util::geometry_utils::calculate_path_length(transformed_global_plan) >
+    path_length_tolerance_)
+  {
+    return false;
+  }
+
   // If no direction was ever estimated, fall back to simple distance check
   if (!cached_end_of_path_yaw_.has_value()) {
     RCLCPP_DEBUG(
       logger_,
       "No path direction available, falling back to simple distance check");
     return distance_to_goal < std::min(along_path_tolerance_, cross_track_tolerance_);
-  }
-
-  // Check if robot is already at goal (would cause atan2(0,0))
-  if (distance_to_goal < 1e-6) {
-    return true;  // Robot is at goal
   }
 
   double robot_to_goal_yaw = atan2(robot_to_goal_dy, robot_to_goal_dx);
