@@ -1083,7 +1083,7 @@ TEST_F(Tester, testOverlaySeq)
   double my = 9;
   double mx = 1;  // inside polygon
   ASSERT_EQ(map_->data[my * map_->info.width + mx], POLYGON_VAL);
-  mx = 10;  // on the circle border laying over the polygon
+  mx = 11;  // on the circle border laying over the polygon
   ASSERT_EQ(map_->data[my * map_->info.width + mx], CIRCLE_VAL);
   mx = 14;  // inside circle and polygon
   ASSERT_EQ(map_->data[my * map_->info.width + mx], POLYGON_VAL);
