@@ -368,8 +368,8 @@ void Polygon::putBorders(
     }
     map_pts.push_back(
       {
-        static_cast<int64_t>(std::round(((pts[i].x - origin_x) / res) * (1LL << 16))),
-        static_cast<int64_t>(std::round(((pts[i].y - origin_y) / res) * (1LL << 16)))
+        static_cast<int64_t>(std::floor((pts[i].x - origin_x) / res) * (1LL << 16)),
+        static_cast<int64_t>(std::floor((pts[i].y - origin_y) / res) * (1LL << 16))
       });
   }
 
@@ -648,8 +648,8 @@ void Circle::putBorders(
   const int map_h = static_cast<int>(map->info.height);
 
   // Use floor for center to match original Nav2 behavior, round for radius
-  const int cx = static_cast<int>(std::round((center_->x - origin_x) / res));
-  const int cy = static_cast<int>(std::round((center_->y - origin_y) / res));
+  const int cx = static_cast<int>(std::floor((center_->x - origin_x) / res));
+  const int cy = static_cast<int>(std::floor((center_->y - origin_y) / res));
   const int radius = std::max(1, static_cast<int>(std::round(params_->radius / res)));
 
   Grid g;
