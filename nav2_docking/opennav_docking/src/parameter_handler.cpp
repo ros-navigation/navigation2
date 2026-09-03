@@ -44,6 +44,8 @@ ParameterHandler::ParameterHandler(
   params_.max_retries = node->declare_or_get_parameter("max_retries", 3);
   params_.base_frame = node->declare_or_get_parameter("base_frame", std::string("base_link"));
   params_.fixed_frame = node->declare_or_get_parameter("fixed_frame", std::string("odom"));
+  params_.staleness_threshold = node->declare_or_get_parameter("transform_staleness_threshold",
+      0.0);
   params_.dock_prestaging_tolerance = node->declare_or_get_parameter("dock_prestaging_tolerance",
     0.5);
   params_.rotation_angular_tolerance = node->declare_or_get_parameter("rotation_angular_tolerance",
@@ -120,6 +122,8 @@ ParameterHandler::updateParametersCallback(
         params_.undock_angular_tolerance = parameter.as_double();
       } else if (param_name == "rotation_angular_tolerance") {
         params_.rotation_angular_tolerance = parameter.as_double();
+      } else if (param_name == "transform_staleness_threshold") {
+        params_.staleness_threshold = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == "base_frame") {
