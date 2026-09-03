@@ -60,6 +60,22 @@ geometry_msgs::msg::PoseStamped transformToPoseStamped(
   const geometry_msgs::msg::TransformStamped & transform);
 
 /**
+ * @brief Convert a stamped pose to the a transform stamped from the specified child
+ * @param pose Pose to convert
+ * @return Transform from the specified child
+ */
+geometry_msgs::msg::TransformStamped poseToTransformStamped(
+  const geometry_msgs::msg::PoseStamped & pose, const std::string & child_frame);
+
+/**
+ * @brief Returns the inverse of the specified transform
+ * @param transform Transform to be inverted
+ * @return Inverse transform
+ */
+geometry_msgs::msg::TransformStamped invertTransform(
+  const geometry_msgs::msg::TransformStamped & transform);
+
+/**
 * @brief get the current pose of the robot
 * @param global_pose Pose to transform
 * @param tf_buffer TF buffer to use for the transformation

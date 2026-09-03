@@ -112,3 +112,58 @@ TEST(RobotUtils, transformToPoseStamped)
   EXPECT_EQ(pose.pose.position.z, transform.transform.translation.z);
   EXPECT_EQ(pose.pose.orientation, transform.transform.rotation);
 }
+
+TEST(RobotUtils, poseToTransform)
+{
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "map";
+  pose.header.stamp.sec = 12;
+  pose.header.stamp.nanosec = 34;
+  pose.pose.position.x = 1.0;
+  pose.pose.position.y = 2.0;
+  pose.pose.position.z = 3.0;
+  pose.pose.orientation.x = 0.1;
+  pose.pose.orientation.y = 0.2;
+  pose.pose.orientation.z = 0.3;
+  pose.pose.orientation.w = 0.4;
+
+  const auto transform = nav2_util::poseToTransformStamped(pose, "base_link");
+
+  EXPECT_EQ(transform.header, pose.header);
+  EXPECT_EQ(transform.child_frame_id, "base_link");
+  EXPECT_EQ(transform.transform.translation.x, pose.pose.position.x);
+  EXPECT_EQ(transform.transform.translation.y, pose.pose.position.y);
+  EXPECT_EQ(transform.transform.translation.z, pose.pose.position.z);
+  EXPECT_EQ(transform.transform.rotation, pose.pose.orientation);
+}
+
+TEST(RobotUtils, invertTransform)
+{
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.header.stamp.sec = 12;
+  transform.header.stamp.nanosec = 34;
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.x = 1.0;
+  transform.transform.translation.y = 2.0;
+  transform.transform.translation.z = -3.0;
+  tf2::Quaternion rotation;
+  rotation.setRPY(0.0, 0.0, M_PI_2);
+  transform.transform.rotation = tf2::toMsg(rotation);
+
+  const auto inverse = nav2_util::invertTransform(transform);
+
+  EXPECT_EQ(inverse.header.frame_id, "base_link");
+  EXPECT_EQ(inverse.header.stamp, transform.header.stamp);
+  EXPECT_EQ(inverse.child_frame_id, "map");
+  EXPECT_NEAR(inverse.transform.translation.x, -2.0, 1e-6);
+  EXPECT_NEAR(inverse.transform.translation.y, 1.0, 1e-6);
+  EXPECT_NEAR(inverse.transform.translation.z, 3.0, 1e-6);
+
+  tf2::Transform forward_tf, inverse_tf;
+  tf2::fromMsg(transform.transform, forward_tf);
+  tf2::fromMsg(inverse.transform, inverse_tf);
+  const auto identity = forward_tf * inverse_tf;
+  EXPECT_NEAR(identity.getOrigin().length(), 0.0, 1e-6);
+  EXPECT_NEAR(identity.getRotation().angleShortestPath(tf2::Quaternion::getIdentity()), 0.0, 1e-6);
+}

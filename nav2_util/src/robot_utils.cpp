@@ -78,6 +78,32 @@ geometry_msgs::msg::PoseStamped transformToPoseStamped(
   return pose;
 }
 
+geometry_msgs::msg::TransformStamped poseToTransformStamped(
+  const geometry_msgs::msg::PoseStamped & pose, const std::string & child_frame)
+{
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header = pose.header;
+  transform.child_frame_id = child_frame;
+  transform.transform.translation.x = pose.pose.position.x;
+  transform.transform.translation.y = pose.pose.position.y;
+  transform.transform.translation.z = pose.pose.position.z;
+  transform.transform.rotation = pose.pose.orientation;
+  return transform;
+}
+
+geometry_msgs::msg::TransformStamped invertTransform(
+  const geometry_msgs::msg::TransformStamped & transform)
+{
+  tf2::Transform tf_transform;
+  tf2::fromMsg(transform.transform, tf_transform);
+  geometry_msgs::msg::TransformStamped inverse;
+  inverse.header.stamp = transform.header.stamp;
+  inverse.header.frame_id = transform.child_frame_id;
+  inverse.child_frame_id = transform.header.frame_id;
+  inverse.transform = tf2::toMsg(tf_transform.inverse());
+  return inverse;
+}
+
 bool getCurrentPose(
   geometry_msgs::msg::PoseStamped & global_pose,
   nav2::TransformBuffer & tf_buffer, const std::string global_frame,
