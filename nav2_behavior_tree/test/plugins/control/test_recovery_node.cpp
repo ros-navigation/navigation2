@@ -15,6 +15,8 @@
 
 #include <gtest/gtest.h>
 #include <memory>
+#include <thread>
+#include <chrono>
 
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "utils/test_dummy_tree_node.hpp"
@@ -164,6 +166,27 @@ TEST_F(RecoveryNodeTestFixture, test_skipping)
   EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
 }
 
+TEST_F(RecoveryNodeTestFixture, test_reset_time)
+{
+  config_->input_ports["number_of_retries"] = 1;
+  config_->input_ports["reset_time"] = 0.1;  // 100 ms
+  bt_node_ = std::make_shared<nav2_behavior_tree::RecoveryNode>("recovery_node", *config_);
+  bt_node_->addChild(first_child_.get());
+  bt_node_->addChild(second_child_.get());
+
+  // first child fails, second child succeeds
+  first_child_->changeStatus(BT::NodeStatus::FAILURE);
+  second_child_->changeStatus(BT::NodeStatus::SUCCESS);
+
+  // Tick 1: retry_count_ becomes 1
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+
+  // Sleep to allow reset_time threshold to pass
+  std::this_thread::sleep_for(std::chrono::milliseconds(150));
+
+  // Tick 2: reset_time triggers counter reset to 0, allowing another retry
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+}
 
 int main(int argc, char ** argv)
 {

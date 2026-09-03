@@ -519,6 +519,10 @@
 
     <Control ID="RecoveryNode">
       <input_port name="number_of_retries" type="int" default="1">Number of retries.</input_port>
+      <input_port name="reset_distance" type="double" default="numeric_limits&lt;double&gt;::infinity()">Reset retry counter once robot travels this distance (m).</input_port>
+      <input_port name="reset_time" type="double" default="numeric_limits&lt;double&gt;::infinity()">Reset retry counter once this time elapses (s).</input_port>
+      <input_port name="global_frame" type="string" default="&quot;map&quot;">Global reference frame.</input_port>
+      <input_port name="robot_base_frame" type="string" default="&quot;base_link&quot;">Robot base frame.</input_port>
     </Control>
 
     <Control ID="RoundRobin">

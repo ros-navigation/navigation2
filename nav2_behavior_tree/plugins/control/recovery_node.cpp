@@ -13,7 +13,10 @@
 // limitations under the License.
 
 #include <string>
+#include <limits>
 #include "nav2_behavior_tree/plugins/control/recovery_node.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -24,13 +27,78 @@ RecoveryNode::RecoveryNode(
 : BT::ControlNode::ControlNode(name, conf),
   current_child_idx_(0),
   number_of_retries_(1),
-  retry_count_(0)
+  retry_count_(0),
+  transform_tolerance_(0.1),
+  reset_distance_(std::numeric_limits<double>::infinity()),
+  reset_time_(std::numeric_limits<double>::infinity()),
+  first_tick_(true)
 {
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  node_->get_parameter("transform_tolerance", transform_tolerance_);
+
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+    node_, "global_frame", this);
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+    node_, "robot_base_frame", this);
+}
+
+void RecoveryNode::checkAndResetCounterIfNeeded()
+{
+  if (!std::isinf(reset_distance_) || !std::isinf(reset_time_)) {
+    geometry_msgs::msg::PoseStamped current_pose;
+    const bool has_pose = nav2_util::getCurrentPose(
+      current_pose, *tf_, global_frame_, robot_base_frame_,
+      transform_tolerance_);
+
+    const rclcpp::Time current_time = node_->now();
+
+    if (first_tick_) {
+      if (has_pose) {
+        last_reset_pose_ = current_pose;
+      }
+      last_reset_time_ = current_time;
+      first_tick_ = false;
+      return;
+    }
+
+    bool reset_needed = false;
+
+    // Check distance reset
+    if (!std::isinf(reset_distance_) && has_pose && last_reset_pose_.header.frame_id != "") {
+      double travelled = nav2_util::geometry_utils::euclidean_distance(
+        last_reset_pose_.pose, current_pose.pose);
+      if (travelled >= reset_distance_) {
+        reset_needed = true;
+      }
+    }
+
+    // Check time reset
+    if (!std::isinf(reset_time_) && last_reset_time_.nanoseconds() > 0) {
+      double elapsed = (current_time - last_reset_time_).seconds();
+      if (elapsed >= reset_time_) {
+        reset_needed = true;
+      }
+    }
+
+    if (reset_needed) {
+      retry_count_ = 0;
+      if (has_pose) {
+        last_reset_pose_ = current_pose;
+      }
+      last_reset_time_ = current_time;
+    }
+  }
 }
 
 BT::NodeStatus RecoveryNode::tick()
 {
   getInput("number_of_retries", number_of_retries_);
+  getInput("reset_distance", reset_distance_);
+  getInput("reset_time", reset_time_);
+
+  checkAndResetCounterIfNeeded();
+
   const unsigned children_count = children_nodes_.size();
 
   if (children_count != 2) {
@@ -123,6 +191,7 @@ void RecoveryNode::halt()
   ControlNode::halt();
   retry_count_ = 0;
   current_child_idx_ = 0;
+  first_tick_ = true;
 }
 
 }  // namespace nav2_behavior_tree
