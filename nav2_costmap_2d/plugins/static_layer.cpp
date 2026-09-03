@@ -589,8 +589,7 @@ StaticLayer::updateParametersCallback(
       } else if (param_name == name_ + "." + "restore_cleared_footprint") {
         restore_cleared_footprint_ = parameter.as_bool();
       }
-    } else if (
-      param_type == ParameterType::PARAMETER_DOUBLE &&
+    } else if (param_type == ParameterType::PARAMETER_DOUBLE && // NOLINT
       param_name == name_ + "." + "transform_staleness_threshold")
     {
       transform_staleness_threshold_ = parameter.as_double();
