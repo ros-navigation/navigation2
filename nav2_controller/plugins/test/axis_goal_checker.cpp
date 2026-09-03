@@ -680,6 +680,10 @@ TEST(AxisGoalChecker, multiple_consecutive_poses_too_close_to_goal)
     {2.0, 0.0}
   });
 
+  // A new path implies a reset of the checker (as done by the controller server),
+  // clearing any cached path direction
+  agc.reset();
+
   // Robot within the fallback tolerance should succeed (fallback to distance check).
   // The fallback uses the stricter min of the two tolerances.
   query_pose.position.x = 2.0 + 0.1;
@@ -695,6 +699,52 @@ TEST(AxisGoalChecker, multiple_consecutive_poses_too_close_to_goal)
   distance = std::hypot(0.2, 0.2);
   EXPECT_GT(distance, fallback_tolerance);  // Verify we're outside tolerance
   EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, path_all_close));
+}
+
+TEST(AxisGoalChecker, truncated_plan_uses_cached_direction)
+{
+  auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
+  AxisGoalChecker agc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  agc.initialize(node, "test", costmap);
+
+  geometry_msgs::msg::Pose goal_pose;
+  goal_pose.position.x = 2.0;
+  goal_pose.position.y = 0.0;
+  goal_pose.position.z = 0.0;
+  goal_pose.orientation.w = 1.0;
+
+  geometry_msgs::msg::Pose query_pose;
+  geometry_msgs::msg::Twist velocity;
+
+  // First cycle: plan still contains a pose far enough from the goal, direction gets cached
+  nav_msgs::msg::Path full_path = createPath({{1.2, 0.0}, {1.6, 0.0}, {2.0, 0.0}});
+  query_pose.position.x = 1.3;
+  query_pose.position.y = 0.0;
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, full_path));
+
+  // Later cycle: the path handler pruned the plan behind the robot so all remaining
+  // poses are within direction_estimation_distance (0.15) of the goal
+  nav_msgs::msg::Path truncated_path = createPath({{1.95, 0.0}, {2.0, 0.0}});
+
+  // Overshoot with cross-track offset: euclidean distance (0.283) exceeds the fallback
+  // tolerance, but the axis check with the cached direction accepts it
+  query_pose.position.x = 2.2;
+  query_pose.position.y = 0.2;
+  EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, truncated_path));
+
+  // Along-path error beyond tolerance is still rejected with the cached direction
+  query_pose.position.x = 1.7;
+  query_pose.position.y = 0.0;
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, truncated_path));
+
+  // After reset (new path) the cache is cleared, so the same overshoot pose falls
+  // back to the euclidean check and is rejected
+  agc.reset();
+  query_pose.position.x = 2.2;
+  query_pose.position.y = 0.2;
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, truncated_path));
 }
 
 int main(int argc, char ** argv)

@@ -82,6 +82,8 @@ void AxisGoalChecker::initialize(
 
 void AxisGoalChecker::reset()
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  cached_end_of_path_yaw_.reset();
 }
 
 bool AxisGoalChecker::isGoalReached(
@@ -100,6 +102,28 @@ bool AxisGoalChecker::isGoalXYReached(
   const nav_msgs::msg::Path & transformed_global_plan)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  double robot_to_goal_dx = goal_pose.position.x - query_pose.position.x;
+  double robot_to_goal_dy = goal_pose.position.y - query_pose.position.y;
+  double distance_to_goal = std::hypot(robot_to_goal_dx, robot_to_goal_dy);
+
+  // Already on the goal; skip the direction math and the atan2(0,0) below.
+  if (distance_to_goal < 1e-6) {
+    return true;
+  }
+
+  // Cache the direction
+  for (int i = static_cast<int>(transformed_global_plan.poses.size()) - 2; i >= 0; --i) {
+    const auto & candidate_pose = transformed_global_plan.poses[i].pose;
+    double dx = goal_pose.position.x - candidate_pose.position.x;
+    double dy = goal_pose.position.y - candidate_pose.position.y;
+
+    if (std::hypot(dx, dy) >= direction_estimation_distance_) {
+      cached_end_of_path_yaw_ = atan2(dy, dx);
+      break;
+    }
+  }
+
   // If the local plan length is longer than the tolerance, we skip the check
   if (nav2_util::geometry_utils::calculate_path_length(transformed_global_plan) >
     path_length_tolerance_)
@@ -107,72 +131,26 @@ bool AxisGoalChecker::isGoalXYReached(
     return false;
   }
 
-  // Check if we have at least 2 poses to determine path direction
-  if (transformed_global_plan.poses.size() >= 2) {
-    const geometry_msgs::msg::Pose * before_goal_pose_ptr = nullptr;
-    double dx = 0.0;
-    double dy = 0.0;
-
-    // Walk back from the goal until a pose is at least direction_estimation_distance_ away
-    for (int i = transformed_global_plan.poses.size() - 2; i >= 0; --i) {
-      const auto & candidate_pose = transformed_global_plan.poses[i].pose;
-      dx = goal_pose.position.x - candidate_pose.position.x;
-      dy = goal_pose.position.y - candidate_pose.position.y;
-      double pose_distance = std::hypot(dx, dy);
-
-      if (pose_distance >= direction_estimation_distance_) {
-        before_goal_pose_ptr = &candidate_pose;
-        break;
-      }
-    }
-
-    // If no pose is far enough back to estimate a direction, fall back to simple distance check
-    if (!before_goal_pose_ptr) {
-      RCLCPP_DEBUG(
-        logger_,
-        "No plan pose far enough to estimate direction, falling back to simple distance check");
-      double distance_to_goal = std::hypot(
-        goal_pose.position.x - query_pose.position.x,
-        goal_pose.position.y - query_pose.position.y);
-      double tolerance = std::min(along_path_tolerance_, cross_track_tolerance_);
-      return distance_to_goal < tolerance;
-    }
-
-    // end of path direction
-    double end_of_path_yaw = atan2(dy, dx);
-
-    // Check if robot is already at goal (would cause atan2(0,0))
-    double robot_to_goal_dx = goal_pose.position.x - query_pose.position.x;
-    double robot_to_goal_dy = goal_pose.position.y - query_pose.position.y;
-    double distance_to_goal = std::hypot(robot_to_goal_dx, robot_to_goal_dy);
-
-    if (distance_to_goal < 1e-6) {
-      return true;  // Robot is at goal
-    }
-
-    double robot_to_goal_yaw = atan2(robot_to_goal_dy, robot_to_goal_dx);
-    double projection_angle = angles::shortest_angular_distance(
-      robot_to_goal_yaw, end_of_path_yaw);
-    double along_path_distance = distance_to_goal * cos(projection_angle);
-    double cross_track_distance = distance_to_goal * sin(projection_angle);
-
-    if (is_overshoot_valid_) {
-      return along_path_distance < along_path_tolerance_ &&
-             fabs(cross_track_distance) < cross_track_tolerance_;
-    } else {
-      return fabs(along_path_distance) < along_path_tolerance_ &&
-             fabs(cross_track_distance) < cross_track_tolerance_;
-    }
-  } else {
-    // Fallback: path has only 1 point, use simple distance check
+  // If no direction was ever estimated, fall back to simple distance check
+  if (!cached_end_of_path_yaw_.has_value()) {
     RCLCPP_DEBUG(
       logger_,
-      "Path has fewer than 2 poses, falling back to simple distance check");
-    double distance_to_goal = std::hypot(
-      goal_pose.position.x - query_pose.position.x,
-      goal_pose.position.y - query_pose.position.y);
-    double tolerance = std::min(along_path_tolerance_, cross_track_tolerance_);
-    return distance_to_goal < tolerance;
+      "No path direction available, falling back to simple distance check");
+    return distance_to_goal < std::min(along_path_tolerance_, cross_track_tolerance_);
+  }
+
+  double robot_to_goal_yaw = atan2(robot_to_goal_dy, robot_to_goal_dx);
+  double projection_angle = angles::shortest_angular_distance(
+    robot_to_goal_yaw, cached_end_of_path_yaw_.value());
+  double along_path_distance = distance_to_goal * cos(projection_angle);
+  double cross_track_distance = distance_to_goal * sin(projection_angle);
+
+  if (is_overshoot_valid_) {
+    return along_path_distance < along_path_tolerance_ &&
+           fabs(cross_track_distance) < cross_track_tolerance_;
+  } else {
+    return fabs(along_path_distance) < along_path_tolerance_ &&
+           fabs(cross_track_distance) < cross_track_tolerance_;
   }
 }
 
