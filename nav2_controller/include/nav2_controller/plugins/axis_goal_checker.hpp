@@ -111,8 +111,6 @@ protected:
   double path_length_tolerance_;
   double direction_estimation_distance_;
   bool is_overshoot_valid_;
-  // Last successfully estimated end-of-path direction; reused when the pruned
-  // plan no longer contains a pose far enough from the goal to estimate it.
   std::optional<double> cached_end_of_path_yaw_;
   // Dynamic parameters handler
   std::mutex mutex_;
