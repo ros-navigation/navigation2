@@ -101,6 +101,19 @@ geometry_msgs::msg::TransformStamped poseToTransformStamped(
   return transform;
 }
 
+geometry_msgs::msg::TransformStamped invertTransform(
+  const geometry_msgs::msg::TransformStamped & transform)
+{
+  tf2::Transform tf_transform;
+  tf2::fromMsg(transform.transform, tf_transform);
+  geometry_msgs::msg::TransformStamped inverse;
+  inverse.header.stamp = transform.header.stamp;
+  inverse.header.frame_id = transform.child_frame_id;
+  inverse.child_frame_id = transform.header.frame_id;
+  inverse.transform = tf2::toMsg(tf_transform.inverse());
+  return inverse;
+}
+
 bool getFreshPose(
   nav2::TransformBuffer & tf_buffer,
   const std::string & target_frame,
