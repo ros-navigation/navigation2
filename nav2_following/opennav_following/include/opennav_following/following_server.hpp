@@ -169,9 +169,12 @@ protected:
    * @brief Method to obtain the refined dynamic pose.
    * @param pose The initial estimate of the dynamic pose
    *        which will be updated with the refined pose.
+   * @param robot_pose Current robot pose in the fixed frame.
    * @return true if successful, false otherwise
    */
-  virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped & pose);
+  virtual bool getRefinedPose(
+    geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::PoseStamped & robot_pose);
 
   /**
    * @brief Get the pose of a specific frame in the fixed frame.
@@ -185,28 +188,41 @@ protected:
    * @brief Get the tracking pose based on the current tracking mode.
    * @param pose The output pose.
    * @param frame_id The frame to get the pose for.
+   * @param robot_pose Current robot pose in the fixed frame.
    * @return true if successful, false otherwise.
    */
   virtual bool getTrackingPose(
-    geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id);
+    geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id,
+    const geometry_msgs::msg::PoseStamped & robot_pose);
+
+  /**
+   * @brief Get the latest robot pose in the fixed frame and reject stale transforms.
+   * @return Current robot pose in the fixed frame.
+   */
+  geometry_msgs::msg::PoseStamped getRobotPose();
 
   /**
    * @brief Get the pose at a distance in front of the input pose
    *
    * @param pose Input pose
+   * @param robot_pose Current robot pose in the same frame as pose
    * @param distance Distance to move (in meters)
    * @return Pose distance meters in front of the input pose
    */
   geometry_msgs::msg::PoseStamped getPoseAtDistance(
-    const geometry_msgs::msg::PoseStamped & pose, double distance);
+    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::PoseStamped & robot_pose, double distance);
 
   /**
    * @brief Check if the goal has been reached.
    *
    * @param goal_pose The goal pose to check
+   * @param robot_pose Current robot pose in the same frame as goal_pose
    * @return true If the goal has been reached
    */
-  bool isGoalReached(const geometry_msgs::msg::PoseStamped & goal_pose);
+  bool isGoalReached(
+    const geometry_msgs::msg::PoseStamped & goal_pose,
+    const geometry_msgs::msg::PoseStamped & robot_pose);
 
   // Parameter handler
   std::unique_ptr<opennav_following::ParameterHandler> param_handler_;
@@ -219,7 +235,7 @@ protected:
   // Maximum number of times the robot will retry to approach the object
   int num_retries_;
 
-  // Timestamp of the last time a iteration was started
+  // Common TF timestamp used by the current control iteration
   rclcpp::Time iteration_start_time_;
 
   // This is a class member so it can be accessed in publish feedback

@@ -62,8 +62,7 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Note: Collision detection is not supported in following server so we force it off
   // and warn if the user has it enabled (from launch file or parameter file)
   controller_ =
-    std::make_unique<opennav_docking::Controller>(node, tf2_buffer_, params_->fixed_frame,
-      params_->base_frame);
+    std::make_unique<opennav_docking::Controller>(node, tf2_buffer_, params_->base_frame);
 
   if (params_->use_collision_detection) {
     RCLCPP_ERROR(
@@ -344,11 +343,6 @@ bool FollowingServer::approachObject(
 {
   rclcpp::Rate loop_rate(params_->controller_frequency);
   while (rclcpp::ok()) {
-    // Update the iteration start time, used for get robot position, transformation and control
-    iteration_start_time_ = this->now();
-
-    publishFollowingFeedback(FollowObject::Feedback::CONTROLLING);
-
     // Stop if cancelled/preempted
     if (checkAndWarnIfCancelled<FollowObject>(following_action_server_, "follow_object") ||
       checkAndWarnIfPreempted<FollowObject>(following_action_server_, "follow_object"))
@@ -356,13 +350,21 @@ bool FollowingServer::approachObject(
       return false;
     }
 
+    // Use one robot pose and timestamp for all geometry and control in this iteration.
+    const auto robot_pose = getRobotPose();
+    iteration_start_time_ = robot_pose.header.stamp;
+    const auto base_to_fixed_transform = nav2_util::poseToTransformStamped(
+      robot_pose, params_->base_frame);
+
+    publishFollowingFeedback(FollowObject::Feedback::CONTROLLING);
+
     // Get the tracking pose from topic or frame
-    getTrackingPose(object_pose, target_frame);
+    getTrackingPose(object_pose, target_frame, robot_pose);
 
     // Get the pose at the distance we want to maintain from the object
     // Stop and report success if goal is reached
-    auto target_pose = getPoseAtDistance(object_pose, params_->desired_distance);
-    if (isGoalReached(target_pose)) {
+    auto target_pose = getPoseAtDistance(object_pose, robot_pose, params_->desired_distance);
+    if (isGoalReached(target_pose, robot_pose)) {
       return true;
     }
 
@@ -372,22 +374,19 @@ bool FollowingServer::approachObject(
     // following procedure.
     const double backward_projection = 0.25;
     const double effective_distance = params_->desired_distance - backward_projection;
-    target_pose = getPoseAtDistance(object_pose, effective_distance);
+    target_pose = getPoseAtDistance(object_pose, robot_pose, effective_distance);
 
-    // ... and transform the target_pose into base_frame
-    try {
-      tf2_buffer_->transform(
-        target_pose, target_pose, params_->base_frame,
-          tf2::durationFromSec(params_->transform_tolerance));
-    } catch (const tf2::TransformException & ex) {
-      RCLCPP_WARN(get_logger(), "Failed to transform target pose: %s", ex.what());
-      return false;
-    }
+    // ... and transform the target_pose into base_frame using the same transform
+    // that the controller uses for collision checking.
+    tf2::doTransform(
+      target_pose, target_pose, nav2_util::invertTransform(base_to_fixed_transform));
 
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
-    if (!controller_->computeVelocityCommand(target_pose.pose, command->twist, true, false)) {
+    if (!controller_->computeVelocityCommand(
+        target_pose.pose, command->twist, base_to_fixed_transform, true, false))
+    {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
     vel_publisher_->publish(std::move(command));
@@ -402,24 +401,9 @@ bool FollowingServer::rotateToObject(
 {
   const double dt = 1.0 / params_->controller_frequency;
 
-  // object_pose is still default-constructed (empty frame_id) if no detection has
-  // ever arrived for this goal, fall back to the fixed frame and let the robot search.
-  const std::string reference_frame =
-    object_pose.header.frame_id.empty() ? params_->fixed_frame : object_pose.header.frame_id;
-
-  // Refresh start time before transforming.
-  iteration_start_time_ = this->now();
-
   // Compute initial robot heading
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::getCurrentPose(
-      robot_pose, *tf2_buffer_, reference_frame, params_->base_frame,
-      params_->transform_tolerance,
-      iteration_start_time_))
-  {
-    RCLCPP_WARN(get_logger(), "Failed to get current robot pose");
-    return false;
-  }
+  auto robot_pose = getRobotPose();
+  iteration_start_time_ = robot_pose.header.stamp;
   double initial_yaw = tf2::getYaw(robot_pose.pose.orientation);
 
   // Search angles: left offset, then right offset from initial heading
@@ -429,6 +413,7 @@ bool FollowingServer::rotateToObject(
   rclcpp::Rate loop_rate(params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->rotate_to_object_timeout);
+  bool reuse_robot_pose = true;
 
   // Iterate over target angles
   for (const double & target_angle : angles) {
@@ -438,8 +423,14 @@ bool FollowingServer::rotateToObject(
 
     // Rotate towards target_angle while checking for detection
     while (rclcpp::ok()) {
-      // Update the iteration start time, used for get robot position, transformation and control
-      iteration_start_time_ = this->now();
+      // Reuse the pose used to select the search headings on the first iteration. After
+      // that, obtain one pose for all geometry and control in each rotation iteration.
+      if (reuse_robot_pose) {
+        reuse_robot_pose = false;
+      } else {
+        robot_pose = getRobotPose();
+        iteration_start_time_ = robot_pose.header.stamp;
+      }
 
       publishFollowingFeedback(FollowObject::Feedback::RETRY);
 
@@ -447,16 +438,6 @@ bool FollowingServer::rotateToObject(
       if (checkAndWarnIfCancelled<FollowObject>(following_action_server_, "follow_object") ||
         checkAndWarnIfPreempted<FollowObject>(following_action_server_, "follow_object"))
       {
-        return false;
-      }
-
-      // Get current robot pose
-      if (!nav2_util::getCurrentPose(
-          robot_pose, *tf2_buffer_, reference_frame, params_->base_frame,
-          params_->transform_tolerance,
-          iteration_start_time_))
-      {
-        RCLCPP_WARN(get_logger(), "Failed to get current robot pose");
         return false;
       }
 
@@ -470,7 +451,7 @@ bool FollowingServer::rotateToObject(
 
       // While rotating, check if we can get the tracking pose (object detected)
       try {
-        if (getTrackingPose(object_pose, target_frame)) {
+        if (getTrackingPose(object_pose, target_frame, robot_pose)) {
           return true;
         }
       } catch (opennav_docking_core::FailedToDetectDock & e) {
@@ -511,12 +492,14 @@ void FollowingServer::publishFollowingFeedback(uint16_t state)
 {
   auto feedback = std::make_shared<FollowObject::Feedback>();
   feedback->state = state;
-  feedback->following_time = iteration_start_time_ - action_start_time_;
+  feedback->following_time = this->now() - action_start_time_;
   feedback->num_retries = num_retries_;
   following_action_server_->publish_feedback(feedback);
 }
 
-bool FollowingServer::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
+bool FollowingServer::getRefinedPose(
+  geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::PoseStamped & robot_pose)
 {
   // Get current detections and transform to frame
   geometry_msgs::msg::PoseStamped detected = detected_dynamic_pose_;
@@ -564,15 +547,6 @@ bool FollowingServer::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
   // Then, we skip the target orientation by pointing it
   // in the same orientation than the vector from the robot to the object.
   if (params_->skip_orientation) {
-    geometry_msgs::msg::PoseStamped robot_pose;
-    if (!nav2_util::getCurrentPose(
-        robot_pose, *tf2_buffer_, detected.header.frame_id, params_->base_frame,
-        params_->transform_tolerance,
-        iteration_start_time_))
-    {
-      RCLCPP_WARN(get_logger(), "Failed to get current robot pose");
-      return false;
-    }
     double dx = detected.pose.position.x - robot_pose.pose.position.x;
     double dy = detected.pose.position.y - robot_pose.pose.position.y;
     double angle_to_target = std::atan2(dy, dx);
@@ -592,9 +566,17 @@ bool FollowingServer::getFramePose(
 {
   try {
     // Get the transform from the target frame to the fixed frame
-    auto transform = tf2_buffer_->lookupTransform(
-      params_->fixed_frame, frame_id, iteration_start_time_,
+    geometry_msgs::msg::TransformStamped transform;
+    if (iteration_start_time_.nanoseconds() == 0) {
+      transform = nav2_util::lookupTransformWithStalenessCheck(
+        *tf2_buffer_, params_->fixed_frame, frame_id,
+        tf2::durationFromSec(params_->transform_tolerance), now(),
+        params_->staleness_threshold);
+    } else {
+      transform = tf2_buffer_->lookupTransform(
+        params_->fixed_frame, frame_id, iteration_start_time_,
         tf2::durationFromSec(params_->transform_tolerance));
+    }
 
     // Convert transform to pose
     pose.header.frame_id = params_->fixed_frame;
@@ -619,7 +601,8 @@ bool FollowingServer::getFramePose(
 }
 
 bool FollowingServer::getTrackingPose(
-  geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id)
+  geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id,
+  const geometry_msgs::msg::PoseStamped & robot_pose)
 {
   // Use frame tracking if we have a target frame, otherwise use topic tracking
   if (!frame_id.empty()) {
@@ -629,26 +612,26 @@ bool FollowingServer::getTrackingPose(
     }
   } else {
     // Use the traditional pose detection from topic
-    if (!getRefinedPose(pose)) {
+    if (!getRefinedPose(pose, robot_pose)) {
       throw opennav_docking_core::FailedToDetectDock("Failed object detection");
     }
   }
   return true;
 }
 
-geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(
-  const geometry_msgs::msg::PoseStamped & pose, double distance)
+geometry_msgs::msg::PoseStamped FollowingServer::getRobotPose()
 {
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::getCurrentPose(
-      robot_pose, *tf2_buffer_, pose.header.frame_id, params_->base_frame,
-      params_->transform_tolerance,
-      iteration_start_time_))
-  {
-    RCLCPP_WARN(get_logger(), "Failed to get current robot pose");
-    // Return original pose as fallback
-    return pose;
-  }
+  const auto base_to_fixed_transform = nav2_util::lookupTransformWithStalenessCheck(
+    *tf2_buffer_, params_->fixed_frame, params_->base_frame,
+    tf2::durationFromSec(params_->transform_tolerance), now(),
+    params_->staleness_threshold);
+  return nav2_util::transformToPoseStamped(base_to_fixed_transform);
+}
+
+geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(
+  const geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::PoseStamped & robot_pose, double distance)
+{
   double dx = pose.pose.position.x - robot_pose.pose.position.x;
   double dy = pose.pose.position.y - robot_pose.pose.position.y;
   const double dist = std::hypot(dx, dy);
@@ -661,17 +644,10 @@ geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(
   return forward_pose;
 }
 
-bool FollowingServer::isGoalReached(const geometry_msgs::msg::PoseStamped & goal_pose)
+bool FollowingServer::isGoalReached(
+  const geometry_msgs::msg::PoseStamped & goal_pose,
+  const geometry_msgs::msg::PoseStamped & robot_pose)
 {
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::getCurrentPose(
-      robot_pose, *tf2_buffer_, goal_pose.header.frame_id, params_->base_frame,
-      params_->transform_tolerance,
-      iteration_start_time_))
-  {
-    RCLCPP_WARN(get_logger(), "Failed to get current robot pose");
-    return false;
-  }
   const double dist = std::hypot(
     robot_pose.pose.position.x - goal_pose.pose.position.x,
     robot_pose.pose.position.y - goal_pose.pose.position.y);
