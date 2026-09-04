@@ -86,6 +86,12 @@ Three built-in motion models are provided:
  | plugin               | string | Required: `"mppi::AckermannMotionModel"`                                                                    |
  | min_turning_r        | double | Default 0.2. Minimum turning radius in metres                                                               |
 
+#### Omni Motion Model
+ | Parameter                        | Type   | Definition                                                                                                  |
+ | -------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | plugin                           | string | Required: `"mppi::OmniMotionModel"`                                                                         |
+ | use_velocity_ellipse_scaling     | bool   | Default true. Constrain the combined translational velocity `sqrt(vx² + vy²)` by the ellipse spanned by `vx_max`, `vx_min` and `vy_max` to incentivize forward rather than diagonal travel when incentivizing full velocity. When false, `vx` and `vy` are each bounded separately, which allows a translational velocity faster than either axis limit. |
+
 #### Constraint Critic
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
@@ -223,6 +229,11 @@ controller_server:
       # ackermann:
       #   plugin: "mppi::AckermannMotionModel"
       #   min_turning_r: 0.2
+      # To use holonomic steering instead:
+      # motion_model: "omni"
+      # omni:
+      #   plugin: "mppi::OmniMotionModel"
+      #   use_velocity_ellipse_scaling: true
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
         enabled: true

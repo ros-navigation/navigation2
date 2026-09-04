@@ -403,63 +403,58 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
 void Optimizer::applyControlSequenceConstraints()
 {
   auto & s = settings_;
-
-  // Apply constraints to set the optimal control sequence within bounds
-  motion_model_->applyConstraints(control_sequence_);
+  const bool is_holo = isHolonomic();
 
   // Use controller_period for t=0 to realistically model physical limits
-  float first_dt = s.controller_period;
-  float max_delta_vx = first_dt * s.constraints.ax_max;
-  float min_delta_vx = first_dt * s.constraints.ax_min;
-  float max_delta_vy = first_dt * s.constraints.ay_max;
-  float min_delta_vy = first_dt * s.constraints.ay_min;
-  float max_delta_wz = first_dt * s.constraints.az_max;
+  models::Control max_deltas{s.controller_period * s.constraints.ax_max,
+    s.controller_period * s.constraints.ay_max,
+    s.controller_period * s.constraints.az_max};
+  models::Control min_deltas{s.controller_period * s.constraints.ax_min,
+    s.controller_period * s.constraints.ay_min,
+    -s.controller_period * s.constraints.az_max};
 
   // Initialize as the current speed to create inter-iteration dynamic feasibility
-  float vx_last = static_cast<float>(state_.speed.linear.x);
-  float wz_last = static_cast<float>(state_.speed.angular.z);
-  float vy_last = isHolonomic() ? static_cast<float>(state_.speed.linear.y) : 0.0f;
+  models::Control last{static_cast<float>(state_.speed.linear.x),
+    is_holo ? static_cast<float>(state_.speed.linear.y) : 0.0f,
+    static_cast<float>(state_.speed.angular.z)};
 
   // When shifting, vx(0) is "now" and not sent. Pin it so vx(1), the sent command,
   // is exactly one constraint step from current speed when shift_control_sequence
   if (s.shift_control_sequence) {
-    control_sequence_.vx(0) = vx_last;
-    control_sequence_.wz(0) = wz_last;
-    if (isHolonomic()) {
-      control_sequence_.vy(0) = vy_last;
+    control_sequence_.vx(0) = last.vx;
+    control_sequence_.wz(0) = last.wz;
+    if (is_holo) {
+      control_sequence_.vy(0) = last.vy;
     }
   }
 
   for (unsigned int i = 0; i != control_sequence_.vx.size(); i++) {
     // After first timestep, switch to MPC model_dt for intra-iteration feasibility
     if (i == 1) {
-      max_delta_vx = s.model_dt * s.constraints.ax_max;
-      min_delta_vx = s.model_dt * s.constraints.ax_min;
-      max_delta_vy = s.model_dt * s.constraints.ay_max;
-      min_delta_vy = s.model_dt * s.constraints.ay_min;
-      max_delta_wz = s.model_dt * s.constraints.az_max;
+      max_deltas = {s.model_dt * s.constraints.ax_max,
+        s.model_dt * s.constraints.ay_max,
+        s.model_dt * s.constraints.az_max};
+      min_deltas = {s.model_dt * s.constraints.ax_min,
+        s.model_dt * s.constraints.ay_min,
+        -s.model_dt * s.constraints.az_max};
     }
 
-    float & vx_curr = control_sequence_.vx(i);
-    vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
-    vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
-    vx_last = vx_curr;
+    // Let the motion model constrain the step to its own feasible set.
+    models::Control curr{control_sequence_.vx(i),
+      is_holo ? control_sequence_.vy(i) : 0.0f,
+      control_sequence_.wz(i)};
 
-    float & wz_curr = control_sequence_.wz(i);
-    wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
-    wz_curr = utils::clampVelocityByAccel(wz_last, wz_curr, -max_delta_wz, max_delta_wz);
-    wz_last = wz_curr;
+    motion_model_->constrainVelocityStep(curr, last, min_deltas, max_deltas);
 
-    if (isHolonomic()) {
-      float & vy_curr = control_sequence_.vy(i);
-      vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-      vy_curr = utils::clampVelocityByAccel(vy_last, vy_curr, min_delta_vy, max_delta_vy);
-      vy_last = vy_curr;
+    // Update the control sequence with the constrained values
+    control_sequence_.vx(i) = curr.vx;
+    control_sequence_.wz(i) = curr.wz;
+    if (is_holo) {
+      control_sequence_.vy(i) = curr.vy;
     }
+
+    last = curr;
   }
-
-  // Apply again to ensure accel constraints don't violate specialty limits
-  motion_model_->applyConstraints(control_sequence_);
 }
 
 void Optimizer::updateStateVelocities(
