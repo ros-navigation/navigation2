@@ -56,3 +56,137 @@ TEST(RobotUtils, validateTwist)
   msg.angular.z = NAN;
   EXPECT_FALSE(nav2_util::validateTwist(msg));
 }
+
+TEST(RobotUtils, lookupTransformWithStalenessCheck)
+{
+  auto clock = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+  nav2::TransformBuffer tf(clock);
+  const rclcpp::Time current_time(10, 0, RCL_ROS_TIME);
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.header.stamp = rclcpp::Time(8, 0, RCL_ROS_TIME);
+  transform.child_frame_id = "base_link";
+  transform.transform.rotation.w = 1.0;
+  tf.setTransform(transform, "test", false);
+
+  EXPECT_THROW(
+    nav2_util::lookupTransformWithStalenessCheck(
+      tf, "map", "base_link", current_time, 1.0),
+    tf2::ExtrapolationException);
+  EXPECT_NO_THROW(
+    nav2_util::lookupTransformWithStalenessCheck(
+      tf, "map", "base_link", current_time, 2.0));
+  EXPECT_NO_THROW(
+    nav2_util::lookupTransformWithStalenessCheck(
+      tf, "map", "base_link", current_time, 0.0));
+
+  transform.header.frame_id = "map";
+  transform.child_frame_id = "static_frame";
+  tf.setTransform(transform, "test", true);
+  EXPECT_NO_THROW(
+    nav2_util::lookupTransformWithStalenessCheck(
+      tf, "map", "static_frame", current_time, 1.0));
+}
+
+TEST(RobotUtils, lookupTransformWithStalenessCheckSameFrameReturnsIdentity)
+{
+  auto clock = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+  nav2::TransformBuffer tf(clock);
+  const rclcpp::Time current_time(10, 123, RCL_ROS_TIME);
+
+  const auto transform = nav2_util::lookupTransformWithStalenessCheck(
+    tf, "base_link", "base_link", current_time, 1.0);
+
+  EXPECT_EQ(transform.header.frame_id, "base_link");
+  EXPECT_EQ(transform.header.stamp.sec, 10);
+  EXPECT_EQ(transform.header.stamp.nanosec, 123u);
+  EXPECT_EQ(transform.child_frame_id, "base_link");
+
+  EXPECT_DOUBLE_EQ(transform.transform.translation.x, 0.0);
+  EXPECT_DOUBLE_EQ(transform.transform.translation.y, 0.0);
+  EXPECT_DOUBLE_EQ(transform.transform.translation.z, 0.0);
+  EXPECT_DOUBLE_EQ(transform.transform.rotation.x, 0.0);
+  EXPECT_DOUBLE_EQ(transform.transform.rotation.y, 0.0);
+  EXPECT_DOUBLE_EQ(transform.transform.rotation.z, 0.0);
+  EXPECT_DOUBLE_EQ(transform.transform.rotation.w, 1.0);
+}
+
+TEST(RobotUtils, getPoseWithStalenessCheck)
+{
+  auto clock = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+  nav2::TransformBuffer tf(clock);
+  const rclcpp::Time current_time(10, 0, RCL_ROS_TIME);
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.header.stamp = rclcpp::Time(8, 0, RCL_ROS_TIME);
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.x = 1.0;
+  transform.transform.translation.y = 2.0;
+  transform.transform.translation.z = 3.0;
+  transform.transform.rotation.z = 0.6;
+  transform.transform.rotation.w = 0.8;
+  tf.setTransform(transform, "test", false);
+
+  EXPECT_THROW(
+    nav2_util::getPoseWithStalenessCheck(
+      tf, "map", "base_link", current_time, 1.0),
+    tf2::ExtrapolationException);
+
+  const auto pose = nav2_util::getPoseWithStalenessCheck(
+    tf, "map", "base_link", current_time, 2.0);
+  EXPECT_EQ(pose.header.frame_id, transform.header.frame_id);
+  EXPECT_EQ(pose.header.stamp, transform.header.stamp);
+  EXPECT_EQ(pose.pose.position.x, transform.transform.translation.x);
+  EXPECT_EQ(pose.pose.position.y, transform.transform.translation.y);
+  EXPECT_EQ(pose.pose.position.z, transform.transform.translation.z);
+  EXPECT_EQ(pose.pose.orientation, transform.transform.rotation);
+}
+
+TEST(RobotUtils, transformToPoseStamped)
+{
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.header.stamp.sec = 12;
+  transform.header.stamp.nanosec = 34;
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.x = 1.0;
+  transform.transform.translation.y = 2.0;
+  transform.transform.translation.z = 3.0;
+  transform.transform.rotation.x = 0.1;
+  transform.transform.rotation.y = 0.2;
+  transform.transform.rotation.z = 0.3;
+  transform.transform.rotation.w = 0.4;
+
+  const auto pose = nav2_util::transformToPoseStamped(transform);
+
+  EXPECT_EQ(pose.header.frame_id, transform.header.frame_id);
+  EXPECT_EQ(pose.header.stamp, transform.header.stamp);
+  EXPECT_EQ(pose.pose.position.x, transform.transform.translation.x);
+  EXPECT_EQ(pose.pose.position.y, transform.transform.translation.y);
+  EXPECT_EQ(pose.pose.position.z, transform.transform.translation.z);
+  EXPECT_EQ(pose.pose.orientation, transform.transform.rotation);
+}
+
+TEST(RobotUtils, poseToTransform)
+{
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "map";
+  pose.header.stamp.sec = 12;
+  pose.header.stamp.nanosec = 34;
+  pose.pose.position.x = 1.0;
+  pose.pose.position.y = 2.0;
+  pose.pose.position.z = 3.0;
+  pose.pose.orientation.x = 0.1;
+  pose.pose.orientation.y = 0.2;
+  pose.pose.orientation.z = 0.3;
+  pose.pose.orientation.w = 0.4;
+
+  const auto transform = nav2_util::poseToTransformStamped(pose, "base_link");
+
+  EXPECT_EQ(transform.header, pose.header);
+  EXPECT_EQ(transform.child_frame_id, "base_link");
+  EXPECT_EQ(transform.transform.translation.x, pose.pose.position.x);
+  EXPECT_EQ(transform.transform.translation.y, pose.pose.position.y);
+  EXPECT_EQ(transform.transform.translation.z, pose.pose.position.z);
+  EXPECT_EQ(transform.transform.rotation, pose.pose.orientation);
+}
