@@ -24,6 +24,10 @@ from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
+def get_lifecycle_nodes():
+    return ('speed_filter_mask_server', 'speed_costmap_filter_info_server')
+
+
 def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
@@ -31,7 +35,6 @@ def generate_launch_description() -> LaunchDescription:
     namespace = LaunchConfiguration('namespace')
     speed_mask_yaml_file = LaunchConfiguration('speed_mask')
     use_sim_time = LaunchConfigAsBool('use_sim_time')
-    autostart = LaunchConfigAsBool('autostart')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfigAsBool('use_composition')
     use_intra_process_comms = LaunchConfigAsBool('use_intra_process_comms')
@@ -40,8 +43,6 @@ def generate_launch_description() -> LaunchDescription:
     use_respawn = LaunchConfigAsBool('use_respawn')
     use_speed_zones = LaunchConfigAsBool('use_speed_zones')
     log_level = LaunchConfiguration('log_level')
-
-    lifecycle_nodes = ['speed_filter_mask_server', 'speed_costmap_filter_info_server']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
@@ -149,17 +150,6 @@ def generate_launch_description() -> LaunchDescription:
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,
             ),
-            Node(
-                package='nav2_lifecycle_manager',
-                executable='lifecycle_manager',
-                name='lifecycle_manager_speed_zone',
-                output='screen',
-                arguments=['--ros-args', '--log-level', log_level],
-                parameters=[
-                    configured_params,
-                    {'autostart': autostart}, {'node_names': lifecycle_nodes}
-                ],
-            ),
         ],
     )
     # LoadComposableNode for map server twice depending if we should use the
@@ -198,21 +188,6 @@ def generate_launch_description() -> LaunchDescription:
                 ],
             ),
 
-            LoadComposableNodes(
-                target_container=container_name_full,
-                composable_node_descriptions=[
-                    ComposableNode(
-                        package='nav2_lifecycle_manager',
-                        plugin='nav2_lifecycle_manager::LifecycleManager',
-                        name='lifecycle_manager_speed_zone',
-                        parameters=[
-                            configured_params,
-                            {'autostart': autostart, 'node_names': lifecycle_nodes}
-                        ],
-                        extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
-                    ),
-                ],
-            ),
         ],
     )
 

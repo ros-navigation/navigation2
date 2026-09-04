@@ -64,6 +64,7 @@ def generate_robot_actions(
     map_yaml_file = LaunchConfiguration('map')
     graph_filepath = LaunchConfiguration('graph')
     use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
+    use_amcl = LaunchConfigAsBool('use_amcl')
 
     # Define commands for launching the navigation instances
     group = GroupAction(
@@ -96,6 +97,7 @@ def generate_robot_actions(
                         'use_simulator': 'False',
                         'headless': 'False',
                         'use_robot_state_pub': use_robot_state_pub,
+                        'use_amcl': use_amcl,
                         'x_pose': TextSubstitution(text=str(pose.get('x', 0.0))),
                         'y_pose': TextSubstitution(text=str(pose.get('y', 0.0))),
                         'z_pose': TextSubstitution(text=str(pose.get('z', 0.0))),
@@ -193,6 +195,12 @@ def generate_launch_description() -> LaunchDescription:
         description='Whether to start the robot state publisher',
     )
 
+    declare_use_amcl_cmd = DeclareLaunchArgument(
+        'use_amcl',
+        default_value='True',
+        description='Whether to launch AMCL',
+    )
+
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz', default_value='True', description='Whether to start RVIZ'
     )
@@ -232,6 +240,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
+    ld.add_action(declare_use_amcl_cmd)
 
     # Add the actions to start gazebo, robots and simulations
     ld.add_action(world_sdf_xacro)

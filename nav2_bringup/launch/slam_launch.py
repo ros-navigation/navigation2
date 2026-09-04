@@ -25,18 +25,19 @@ from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import HasNodeParams, LaunchConfigAsBool, RewrittenYaml
 
 
+def get_lifecycle_nodes():
+    return ('map_saver',)
+
+
 def generate_launch_description() -> LaunchDescription:
     # Input parameters declaration
     namespace = LaunchConfiguration('namespace')
     params_file = LaunchConfiguration('params_file')
     use_sim_time = LaunchConfigAsBool('use_sim_time')
-    autostart = LaunchConfigAsBool('autostart')
     use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
     # Variables
-    lifecycle_nodes = ['map_saver']
-
     # Getting directories and launch-files
     bringup_dir = get_package_share_directory('nav2_bringup')
     slam_toolbox_dir = get_package_share_directory('slam_toolbox')
@@ -70,12 +71,6 @@ def generate_launch_description() -> LaunchDescription:
         description='Use simulation (Gazebo) clock if true',
     )
 
-    declare_autostart_cmd = DeclareLaunchArgument(
-        'autostart',
-        default_value='True',
-        description='Automatically startup the nav2 stack',
-    )
-
     declare_use_respawn_cmd = DeclareLaunchArgument(
         'use_respawn',
         default_value='False',
@@ -99,17 +94,6 @@ def generate_launch_description() -> LaunchDescription:
                 respawn_delay=2.0,
                 arguments=['--ros-args', '--log-level', log_level],
                 parameters=[configured_params],
-            ),
-            Node(
-                package='nav2_lifecycle_manager',
-                executable='lifecycle_manager',
-                name='lifecycle_manager_slam',
-                output='screen',
-                arguments=['--ros-args', '--log-level', log_level],
-                parameters=[
-                    configured_params,
-                    {'autostart': autostart}, {'node_names': lifecycle_nodes}
-                ],
             ),
         ]
     )
@@ -153,7 +137,6 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_use_sim_time_cmd)
-    ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
 

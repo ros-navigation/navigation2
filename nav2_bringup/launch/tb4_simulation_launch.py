@@ -53,6 +53,7 @@ def generate_launch_description() -> LaunchDescription:
 
     # Create the launch configuration variables
     slam = LaunchConfigAsBool('slam')
+    use_amcl = LaunchConfigAsBool('use_amcl')
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
     keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
@@ -94,6 +95,12 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_slam_cmd = DeclareLaunchArgument(
         'slam', default_value='False', description='Whether run a SLAM'
+    )
+
+    declare_use_amcl_cmd = DeclareLaunchArgument(
+        'use_amcl',
+        default_value='True',
+        description='Whether to launch AMCL when SLAM is disabled',
     )
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
@@ -235,6 +242,7 @@ def generate_launch_description() -> LaunchDescription:
         launch_arguments={
             'namespace': namespace,
             'slam': slam,
+            'use_amcl': use_amcl,
             'map': map_yaml_file,
             'keepout_mask': keepout_mask_yaml_file,
             'speed_mask': speed_mask_yaml_file,
@@ -305,6 +313,7 @@ def generate_launch_description() -> LaunchDescription:
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_slam_cmd)
+    ld.add_action(declare_use_amcl_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_keepout_mask_yaml_cmd)
     ld.add_action(declare_speed_mask_yaml_cmd)

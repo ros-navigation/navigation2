@@ -158,25 +158,9 @@ class WaypointFollowerTest(Node):
         self.action_client.destroy()
         self.info_msg('Destroyed follow_waypoints action client')
 
-        transition_service = 'lifecycle_manager_navigation/manage_nodes'
+        transition_service = 'lifecycle_manager_nav2/manage_nodes'
         mgr_client: Client[ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
             self.create_client(ManageLifecycleNodes, transition_service)
-        while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
-
-        req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
-        future = mgr_client.call_async(req)
-        try:
-            rclpy.spin_until_future_complete(self, future)
-            future.result()
-        except Exception as e:  # noqa: B902
-            self.error_msg(f'{transition_service} service call failed {e!r}')
-
-        self.info_msg(f'{transition_service} finished')
-
-        transition_service = 'lifecycle_manager_localization/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
