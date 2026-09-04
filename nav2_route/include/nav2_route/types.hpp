@@ -16,6 +16,7 @@
 #include <string>
 #include <any>
 #include <vector>
+#include <cstdint>
 #include <unordered_map>
 #include <utility>
 #include <limits>
@@ -60,11 +61,11 @@ struct Node;
 typedef Node * NodePtr;
 typedef std::vector<Node> NodeVector;
 typedef NodeVector Graph;
-typedef std::unordered_map<unsigned int, unsigned int> GraphToIDMap;
-typedef std::unordered_map<unsigned int, std::vector<unsigned int>> GraphToIncomingEdgesMap;
+typedef std::unordered_map<uint64_t, uint64_t> GraphToIDMap;
+typedef std::unordered_map<uint64_t, std::vector<uint64_t>> GraphToIncomingEdgesMap;
 typedef std::vector<NodePtr> NodePtrVector;
 typedef std::pair<float, NodePtr> NodeElement;
-typedef std::pair<unsigned int, unsigned int> NodeExtents;
+typedef std::pair<uint64_t, uint64_t> NodeExtents;
 
 /**
  * @struct nav2_route::NodeComparator
@@ -123,7 +124,7 @@ struct OperationsResult
 {
   std::vector<std::string> operations_triggered;
   bool reroute{false};
-  std::vector<unsigned int> blocked_ids;
+  std::vector<uint64_t> blocked_ids;
 };
 
 /**
@@ -132,7 +133,7 @@ struct OperationsResult
  */
 struct DirectionalEdge
 {
-  unsigned int edgeid;     // Edge identifier
+  uint64_t edgeid;     // Edge identifier
   NodePtr start{nullptr};  // Ptr to starting node of edge
   NodePtr end{nullptr};    // Ptr to ending node of edge
   EdgeCost edge_cost;      // Cost information associated with edge
@@ -181,7 +182,7 @@ struct Coordinates
  */
 struct Node
 {
-  unsigned int nodeid;       // Node identifier
+  uint64_t nodeid;       // Node identifier
   Coordinates coords;        // Coordinates of node
   EdgeVector neighbors;      // Directed neighbors and edges of the node
   Metadata metadata;         // Any metadata stored in the graph file of interest
@@ -189,7 +190,7 @@ struct Node
   SearchState search_state;  // State maintained by route search algorithm
 
   void addEdge(
-    EdgeCost & cost, NodePtr node, unsigned int edgeid, Metadata meta_data = {},
+    EdgeCost & cost, NodePtr node, uint64_t edgeid, Metadata meta_data = {},
     Operations operations_data = {})
   {
     neighbors.push_back({edgeid, this, node, cost, meta_data, operations_data});
@@ -222,8 +223,8 @@ struct Route
  */
 struct RouteRequest
 {
-  unsigned int start_nodeid;                    // node id of start node
-  unsigned int goal_nodeid;                     // node id of goal node
+  uint64_t start_nodeid;                    // node id of start node
+  uint64_t goal_nodeid;                     // node id of goal node
   geometry_msgs::msg::PoseStamped start_pose;   // pose of start
   geometry_msgs::msg::PoseStamped goal_pose;    // pose of goal
   bool use_poses;                               // whether the start and goal poses are used
@@ -264,7 +265,7 @@ struct ReroutingState
 {
   // Communicate edges identified as blocked by the operational plugins like collision checkers.
   // This is fully managed by the route tracker when populated.
-  std::vector<unsigned int> blocked_ids;
+  std::vector<uint64_t> blocked_ids;
 
   // Used to determine if this is the first planning iteration in the goal intent extractor
   // to bypass pruning. Fully managed in the goal intent extractor.
@@ -283,12 +284,12 @@ struct ReroutingState
   // and used by the goal intent extractor to override the initial request's
   // start, current pose along the edge, and pruning criteria. Otherwise, the initial request
   // information is used. This is managed by the route tracker but used by goal intent extractor.
-  unsigned int rerouting_start_id{std::numeric_limits<unsigned int>::max()};
+  uint64_t rerouting_start_id{std::numeric_limits<uint64_t>::max()};
   geometry_msgs::msg::PoseStamped rerouting_start_pose;
 
   void reset()
   {
-    rerouting_start_id = std::numeric_limits<unsigned int>::max();
+    rerouting_start_id = std::numeric_limits<uint64_t>::max();
     blocked_ids.clear();
     first_time = true;
     curr_edge = nullptr;
