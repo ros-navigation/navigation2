@@ -50,10 +50,12 @@ public:
    * @brief A setup function to populate database
    * @param parent Weakptr to the node to use to get interances and parameters
    * @param tf TF buffer
+   * @param valid_controller_ids Controller names the server loaded
    * @return If successful
    */
   bool initialize(
-    const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformBuffer::SharedPtr tf);
+    const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformBuffer::SharedPtr tf,
+    const std::vector<std::string> & valid_controller_ids = {});
 
   /**
    * @brief A destructor for opennav_docking::DockDatabase
@@ -113,6 +115,15 @@ protected:
   bool getDockInstances(const nav2::LifecycleNode::SharedPtr & node);
 
   /**
+   * @brief Check every controller name in the database against the loaded controllers.
+   *
+   * @param docks Dock instances to check, against the already-loaded dock plugins
+   * @return True if every name resolves and is present where required, or if no controller ids
+   *         were supplied
+   */
+  bool validateControllerNames(const DockMap & docks) const;
+
+  /**
    * @brief Find a dock instance in the database from ID
    * @param dock_id Id of dock to find
    * @return Dock pointer
@@ -133,6 +144,7 @@ protected:
   std::mutex & mutex_;  // Don't reload database while actively docking
   DockPluginMap dock_plugins_;
   DockMap dock_instances_;
+  std::vector<std::string> valid_controller_ids_;
   pluginlib::ClassLoader<opennav_docking_core::ChargingDock> dock_loader_;
   nav2::ServiceServer<nav2_msgs::srv::ReloadDockDatabase>::SharedPtr reload_db_service_;
 };

@@ -228,13 +228,45 @@ protected:
   /**
    * @brief Create the controller plugins listed in the `controllers` parameter.
    * @param node Lifecycle node
+   * @param controller_ids Set to the instance names read from `controllers`.
    * @return True if every controller was created and configured
    */
-  bool loadControllerPlugins(const nav2::LifecycleNode::SharedPtr & node);
+  bool loadControllerPlugins(
+    const nav2::LifecycleNode::SharedPtr & node, std::vector<std::string> & controller_ids);
+
+  /**
+   * @brief Resolve a requested controller name against the loaded controllers.
+   *
+   * @param c_name Requested controller name, or "" for "no preference"
+   * @param current_controller Set to the resolved name on success
+   * @return True if the name resolved to a loaded controller
+   */
+  bool findControllerId(const std::string & c_name, std::string & current_controller);
+
+  /**
+   * @brief Resolve which controller a dock instance drives with.
+   *
+   * the dock instance's own `controller` if defined, then the controller
+   * named by its type, then the single-controller default.
+   * @throw DockNotValid if the name does not resolve to a loaded controller
+   */
+  void selectControllerForDock(const Dock & dock);
+
+  /**
+   * @brief Resolve which controller an undocking request drives with.
+   *
+   * @param dock_type The dock type being undocked from
+   * @param plugin The plugin for that type
+   * @throw DockNotValid if the name does not resolve to a loaded controller
+   */
+  void selectControllerForUndock(
+    const std::string & dock_type, const ChargingDock::Ptr & plugin);
 
   /**
    * @brief Get the controller instance selected by the current request
-   * @return The controller, or nullptr if none is selected
+   *
+   * @return The controller named by current_controller_
+   * @throw FailedToControl if that name does not resolve to a loaded controller
    */
   ControllerBase::Ptr getController();
 
@@ -256,12 +288,14 @@ protected:
   std::unique_ptr<DockDatabase> dock_db_;
   std::unique_ptr<Navigator> navigator_;
   std::string curr_dock_type_;
+  std::string curr_dock_controller_;
 
   // Controller plugins. The loader is declared before the map so that it outlives the
   // instances it created: members are destroyed in reverse declaration order.
   using ControllerMap = std::unordered_map<std::string, ControllerBase::Ptr>;
   pluginlib::ClassLoader<ControllerBase> controller_loader_;
   ControllerMap controllers_;
+  std::string controller_ids_concat_;
   std::string current_controller_;
 
   nav2::TransformBuffer::SharedPtr tf2_buffer_;
