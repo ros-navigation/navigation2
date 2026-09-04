@@ -40,7 +40,7 @@ _commands:
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
               - "<< parameters.key >>-v49\
                 -{{ arch }}\
-                -main\
+                -lyrical\
                 -<no value>\
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
     save_to_cache:
