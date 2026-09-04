@@ -27,6 +27,7 @@
 #endif
 
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -52,8 +53,6 @@ void
 AsymmetricInflationLayer::onInitialize()
 {
   {
-    double temp_tf_tol = 0.0;
-
     auto node = node_.lock();
     if (!node) {
       throw std::runtime_error{"Failed to lock node"};
@@ -75,10 +74,10 @@ AsymmetricInflationLayer::onInitialize()
       name_ + "." + "plan_topic", "plan");
     goal_distance_threshold_ = node->declare_or_get_parameter(
       name_ + "." + "goal_distance_threshold", 1.5);
+    transform_staleness_threshold_ = node->declare_or_get_parameter(
+      name_ + "." + "transform_staleness_threshold", 0.0);
 
     // Get costmap2d-level parameter
-    node->get_parameter("transform_tolerance", temp_tf_tol);
-    transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
     if (inflation_radius_ < 0.0) {
       throw std::runtime_error(
@@ -99,10 +98,6 @@ AsymmetricInflationLayer::onInitialize()
     if (num_threads_ < -1) {
       throw std::runtime_error(
         "AsymmetricInflationLayer: num_threads must be -1 (auto) or > 0");
-    }
-    if (temp_tf_tol < 0.0) {
-      throw std::runtime_error(
-        "AsymmetricInflationLayer: transform_tolerance must be >= 0");
     }
 
     cost_scaling_factor_ =
@@ -225,8 +220,9 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   geometry_msgs::msg::TransformStamped transform;
   if (need_transform) {
     try {
-      transform = tf_->lookupTransform(
-        global_frame, path_frame, tf2::TimePointZero, transform_tolerance_);
+      transform = nav2_util::lookupTransformWithStalenessCheck(
+        *tf_, global_frame, path_frame, clock_->now(),
+        transform_staleness_threshold_);
     } catch (const tf2::TransformException & ex) {
       RCLCPP_WARN_THROTTLE(
         logger_, *clock_, 1000,
@@ -712,6 +708,10 @@ AsymmetricInflationLayer::updateParametersCallback(
         goal_distance_threshold_ != parameter.as_double())
       {
         goal_distance_threshold_ = parameter.as_double();
+        need_reinflation_ = true;
+        setCurrent(false);
+      } else if (param_name == name_ + ".transform_staleness_threshold") {  // NOLINT
+        transform_staleness_threshold_ = parameter.as_double();
         need_reinflation_ = true;
         setCurrent(false);
       }

@@ -45,11 +45,13 @@ public:
     tf2_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   }
 
+  void setTransform(const geometry_msgs::msg::TransformStamped & transform)
+  {
+    tf2_buffer_->setTransform(transform, "test", false);
+  }
+
   virtual bool approachObject(geometry_msgs::msg::PoseStamped &, const std::string &)
   {
-    // Mirror the production behavior of updating the iteration timestamp,
-    // used e.g. by the following feedback computation.
-    iteration_start_time_ = this->now();
     std::string exception;
     this->get_parameter("exception_to_throw", exception);
     if (exception == "TransformException") {
@@ -66,9 +68,11 @@ public:
     return true;
   }
 
-  virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
+  virtual bool getRefinedPose(
+    geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::PoseStamped & robot_pose)
   {
-    return FollowingServer::getRefinedPose(pose);
+    return FollowingServer::getRefinedPose(pose, robot_pose);
   }
 
   virtual bool getFramePose(geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id)
@@ -76,9 +80,11 @@ public:
     return FollowingServer::getFramePose(pose, frame_id);
   }
 
-  virtual bool getTrackingPose(geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id)
+  virtual bool getTrackingPose(
+    geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id,
+    const geometry_msgs::msg::PoseStamped & robot_pose)
   {
-    return FollowingServer::getTrackingPose(pose, frame_id);
+    return FollowingServer::getTrackingPose(pose, frame_id, robot_pose);
   }
 
   virtual bool rotateToObject(geometry_msgs::msg::PoseStamped &, const std::string &)
@@ -87,14 +93,17 @@ public:
   }
 
   geometry_msgs::msg::PoseStamped getPoseAtDistance(
-    const geometry_msgs::msg::PoseStamped & pose, double distance)
+    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::PoseStamped & robot_pose, double distance)
   {
-    return FollowingServer::getPoseAtDistance(pose, distance);
+    return FollowingServer::getPoseAtDistance(pose, robot_pose, distance);
   }
 
-  bool isGoalReached(const geometry_msgs::msg::PoseStamped & goal_pose)
+  bool isGoalReached(
+    const geometry_msgs::msg::PoseStamped & goal_pose,
+    const geometry_msgs::msg::PoseStamped & robot_pose)
   {
-    return FollowingServer::isGoalReached(goal_pose);
+    return FollowingServer::isGoalReached(goal_pose, robot_pose);
   }
 
   void setDynamicPose(const geometry_msgs::msg::PoseStamped & pose)
@@ -246,19 +255,25 @@ TEST(FollowingServerTests, GetPoseAtDistance)
   pose.pose.position.x = 1.0;
   pose.pose.position.y = -1.0;
 
-  auto new_pose = node->getPoseAtDistance(pose, 0.2);
-  EXPECT_NEAR(new_pose.pose.position.x, 0.8585, 0.01);
-  EXPECT_NEAR(new_pose.pose.position.y, -0.8585, 0.01);
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header = pose.header;
+  robot_pose.pose.position.x = 0.5;
+  robot_pose.pose.orientation.w = 1.0;
+
+  auto new_pose = node->getPoseAtDistance(pose, robot_pose, 0.2);
+  EXPECT_NEAR(new_pose.pose.position.x, 0.9106, 0.01);
+  EXPECT_NEAR(new_pose.pose.position.y, -0.8211, 0.01);
 
   // Robot exactly at the tracked pose: the backwards projection is undefined
   // and must not propagate NaNs downstream
   geometry_msgs::msg::PoseStamped at_robot;
   at_robot.header.stamp = node->now();
   at_robot.header.frame_id = "my_frame";
-  auto zero_dist = node->getPoseAtDistance(at_robot, 0.5);
+  at_robot.pose.position.x = robot_pose.pose.position.x;
+  auto zero_dist = node->getPoseAtDistance(at_robot, robot_pose, 0.5);
   EXPECT_TRUE(std::isfinite(zero_dist.pose.position.x));
   EXPECT_TRUE(std::isfinite(zero_dist.pose.position.y));
-  EXPECT_EQ(zero_dist.pose.position.x, 0.0);
+  EXPECT_EQ(zero_dist.pose.position.x, 0.5);
   EXPECT_EQ(zero_dist.pose.position.y, 0.0);
 
   node->on_cleanup(rclcpp_lifecycle::State());
@@ -279,12 +294,18 @@ TEST(FollowingServerTests, IsGoalReached)
   pose.pose.position.x = 1.0;
   pose.pose.position.y = -1.0;
 
-  EXPECT_FALSE(node->isGoalReached(pose));
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header = pose.header;
+  robot_pose.pose.position.x = 0.5;
+  robot_pose.pose.position.y = -0.5;
+  robot_pose.pose.orientation.w = 1.0;
+
+  EXPECT_FALSE(node->isGoalReached(pose, robot_pose));
 
   // Set the pose below the tolerance
-  pose.pose.position.x = 0.1;
-  pose.pose.position.y = 0.1;
-  EXPECT_TRUE(node->isGoalReached(pose));
+  pose.pose.position.x = 0.6;
+  pose.pose.position.y = -0.6;
+  EXPECT_TRUE(node->isGoalReached(pose, robot_pose));
 
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
@@ -303,7 +324,12 @@ TEST(FollowingServerTests, RefinedPose)
 
   // Timestamps are outdated; this is after timeout
   geometry_msgs::msg::PoseStamped pose;
-  EXPECT_FALSE(node->getRefinedPose(pose));
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "my_frame";
+  robot_pose.pose.position.x = 0.1;
+  robot_pose.pose.position.y = -1.1;
+  robot_pose.pose.orientation.w = 1.0;
+  EXPECT_FALSE(node->getRefinedPose(pose, robot_pose));
 
   // Set skip orientation to false
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -325,21 +351,22 @@ TEST(FollowingServerTests, RefinedPose)
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("fixed_frame", rclcpp::ParameterValue("my_frame"))});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
-  EXPECT_TRUE(node->getRefinedPose(pose));
+  EXPECT_TRUE(node->getRefinedPose(pose, robot_pose));
   EXPECT_NEAR(pose.pose.position.x, 0.1, 0.01);
   EXPECT_NEAR(pose.pose.position.y, -0.1, 0.01);
 
   // Now, set skip orientation to true
   results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("skip_orientation", false)});
+    {rclcpp::Parameter("skip_orientation", true)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
 
   detected_pose.header.stamp = node->now();
   node->setDynamicPose(detected_pose);
 
-  EXPECT_TRUE(node->getRefinedPose(pose));
+  EXPECT_TRUE(node->getRefinedPose(pose, robot_pose));
   EXPECT_NEAR(pose.pose.position.x, 0.1, 0.01);
   EXPECT_NEAR(pose.pose.position.y, -0.1, 0.01);
+  EXPECT_NEAR(tf2::getYaw(pose.pose.orientation), M_PI_2, 0.01);
 
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
@@ -387,6 +414,18 @@ TEST(FollowingServerTests, GetFramePose)
   EXPECT_EQ(pose.pose.position.y, 2.0);
   EXPECT_EQ(pose.pose.position.z, 3.0);
 
+  // A zero-time lookup must reject an outdated dynamic transform when configured.
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("transform_staleness_threshold", 0.1)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  geometry_msgs::msg::TransformStamped stale_transform;
+  stale_transform.header.frame_id = "fixed_frame_test";
+  stale_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(1.0);
+  stale_transform.child_frame_id = "stale_frame";
+  stale_transform.transform.rotation.w = 1.0;
+  node->setTransform(stale_transform);
+  EXPECT_FALSE(node->getFramePose(pose, stale_transform.child_frame_id));
+
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
@@ -418,7 +457,8 @@ TEST(FollowingServerTests, DynamicParams)
       rclcpp::Parameter("skip_orientation", false),
       rclcpp::Parameter("search_by_rotating", true),
       rclcpp::Parameter("search_angle", 8.0),
-      rclcpp::Parameter("transform_tolerance", 9.0)
+      rclcpp::Parameter("transform_tolerance", 9.0),
+      rclcpp::Parameter("transform_staleness_threshold", 10.0)
     });
 
   // Spin
@@ -438,6 +478,7 @@ TEST(FollowingServerTests, DynamicParams)
   EXPECT_EQ(node->get_parameter("search_by_rotating").as_bool(), true);
   EXPECT_EQ(node->get_parameter("search_angle").as_double(), 8.0);
   EXPECT_EQ(node->get_parameter("transform_tolerance").as_double(), 9.0);
+  EXPECT_EQ(node->get_parameter("transform_staleness_threshold").as_double(), 10.0);
 
   // Now, set invalid parameters and check that they are not set
   results = params->set_parameters_atomically(
@@ -449,6 +490,11 @@ TEST(FollowingServerTests, DynamicParams)
     {rclcpp::Parameter("linear_tolerance", -1.0)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_EQ(node->get_parameter("linear_tolerance").as_double(), 6.0);
+
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("transform_staleness_threshold", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("transform_staleness_threshold").as_double(), 10.0);
 }
 
 }  // namespace opennav_following

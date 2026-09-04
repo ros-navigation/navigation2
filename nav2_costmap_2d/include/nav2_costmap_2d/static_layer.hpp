@@ -219,6 +219,8 @@ protected:
   bool map_received_{false};
   bool map_received_in_update_bounds_{false};
   tf2::Duration transform_tolerance_;
+  /// Maximum map-frame transform age in seconds; zero disables the check
+  double transform_staleness_threshold_{0.0};
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr map_buffer_;
   // Dynamic parameters handler
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;

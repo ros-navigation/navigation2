@@ -46,6 +46,7 @@
 #include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_ros_common/validate_messages.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 #define EPSILON 1e-5
 
@@ -145,7 +146,6 @@ void
 StaticLayer::getParameters()
 {
   int temp_lethal_threshold = 0;
-  double temp_tf_tol = 0.0;
 
   auto node = node_.lock();
   if (!node) {
@@ -164,20 +164,19 @@ StaticLayer::getParameters()
   map_topic_ = joinWithParentNamespace(map_topic_);
   map_subscribe_transient_local_ = node->declare_or_get_parameter(
     name_ + "." + "map_subscribe_transient_local", true);
+  transform_staleness_threshold_ = node->declare_or_get_parameter(
+    name_ + "." + "transform_staleness_threshold", 0.0);
   node->get_parameter("track_unknown_space", track_unknown_space_);
   node->get_parameter("use_maximum", use_maximum_);
   node->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
   node->get_parameter("inscribed_obstacle_cost_value", inscribed_obstacle_cost_value_);
   node->get_parameter("unknown_cost_value", unknown_cost_value_);
   node->get_parameter("trinary_costmap", trinary_costmap_);
-  node->get_parameter("transform_tolerance", temp_tf_tol);
 
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   map_received_ = false;
   map_received_in_update_bounds_ = false;
-
-  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 }
 
 void
@@ -477,9 +476,9 @@ StaticLayer::updateCosts(
     // Might even be in a different frame
     geometry_msgs::msg::TransformStamped transform;
     try {
-      transform = tf_->lookupTransform(
-        map_frame_, global_frame_, tf2::TimePointZero,
-        transform_tolerance_);
+      transform = nav2_util::lookupTransformWithStalenessCheck(
+        *tf_, map_frame_, global_frame_, clock_->now(),
+        transform_staleness_threshold_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
       return;
@@ -586,6 +585,10 @@ StaticLayer::updateParametersCallback(
       } else if (param_name == name_ + "." + "restore_cleared_footprint") {
         restore_cleared_footprint_ = parameter.as_bool();
       }
+    } else if (param_type == ParameterType::PARAMETER_DOUBLE && // NOLINT
+      param_name == name_ + "." + "transform_staleness_threshold")
+    {
+      transform_staleness_threshold_ = parameter.as_double();
     }
   }
 }

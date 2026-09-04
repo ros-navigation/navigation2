@@ -94,8 +94,8 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
         parameter.as_double() < 0.0)
       {
         RCLCPP_WARN(
-        logger_, "The value of simulate_ahead_time is incorrectly set, "
-        "it should be >=0. Ignoring parameter update.");
+          logger_, "The value of parameter '%s' is incorrectly set, "
+          "it should be >=0. Ignoring parameter update.", param_name.c_str());
         result.successful = false;
       } else if (parameter.as_double() <= 0.0) {
         RCLCPP_WARN(
