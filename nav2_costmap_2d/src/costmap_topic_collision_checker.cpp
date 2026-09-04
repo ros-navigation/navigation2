@@ -15,6 +15,7 @@
 // Modified by: Shivang Patel (shivaan14@gmail.com)
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -87,6 +88,8 @@ double CostmapTopicCollisionChecker::scorePose(
       throw CollisionCheckerException(e.what());
     }
   }
+  auto costmap = collision_checker_.getCostmap();
+  std::lock_guard<Costmap2D::mutex_t> costmap_lock(*costmap->getMutex());
 
   unsigned int cell_x, cell_y;
   if (!collision_checker_.worldToMap(pose.x, pose.y, cell_x, cell_y)) {
