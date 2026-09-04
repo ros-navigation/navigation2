@@ -23,7 +23,6 @@
 #include "opennav_following/following_server.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "tf2/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 // Testing unit functions in following server, smoke/system tests in python file
 
@@ -398,7 +397,6 @@ TEST(FollowingServerTests, GetFramePose)
   EXPECT_FALSE(node->getFramePose(pose, frame_test));
 
   // Set transform between my_frame and fixed_frame_test
-  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
   geometry_msgs::msg::TransformStamped frame_to_fixed;
   frame_to_fixed.header.frame_id = "fixed_frame_test";
   frame_to_fixed.header.stamp = node->get_clock()->now();
@@ -406,7 +404,7 @@ TEST(FollowingServerTests, GetFramePose)
   frame_to_fixed.transform.translation.x = 1.0;
   frame_to_fixed.transform.translation.y = 2.0;
   frame_to_fixed.transform.translation.z = 3.0;
-  tf_broadcaster->sendTransform(frame_to_fixed);
+  node->setTransform(frame_to_fixed);
 
   // Now, we should be able to get the pose in my_frame
   EXPECT_TRUE(node->getFramePose(pose, frame_test));
