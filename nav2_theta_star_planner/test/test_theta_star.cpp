@@ -39,6 +39,8 @@ public:
 
   bool uwithinLimits(const int & cx, const int & cy) {return withinLimits(cx, cy);}
 
+  double ugetTraversalCost(const int & cx, const int & cy) {return getTraversalCost(cx, cy);}
+
   bool uisGoal(const tree_node & this_node) {return isGoal(this_node);}
 
   void uinitializePosn(int size_inc = 0)
@@ -257,6 +259,31 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
     life_node->get_node_base_interface(),
     results);
   EXPECT_EQ(life_node->get_parameter("test.w_euc_cost").as_double(), 1.0);
+}
+
+TEST(ThetaStarTest, test_unknown_cost_agrees_between_cost_sites) {
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarUnknownTestNode");
+  auto plugin_name = std::string("test");
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+  auto planner_ = std::make_unique<test_theta_star>(params);
+
+  planner_->costmap_ = new nav2_costmap_2d::Costmap2D(2, 1, 1.0, 0.0, 0.0, UNKNOWN_COST);
+  params->w_traversal_cost = 2.0;
+  params->allow_unknown = true;
+
+  // test if a line of sight check charges an unknown cell as an expansion step does
+  double sl_cost = 0.0;
+  ASSERT_TRUE(planner_->ulosCheck(0, 0, 1, 0, sl_cost));
+  EXPECT_DOUBLE_EQ(sl_cost, planner_->ugetTraversalCost(0, 0));
+
+  // test if that charge is the one for a near-obstacle cell
+  planner_->costmap_->setCost(1, 0, OCCUPIED_COST - 1);
+  EXPECT_DOUBLE_EQ(planner_->ugetTraversalCost(0, 0), planner_->ugetTraversalCost(1, 0));
+
+  delete planner_->costmap_;
 }
 
 int main(int argc, char ** argv)
