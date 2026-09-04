@@ -254,38 +254,47 @@ void loadMapFromFile(
   Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(height, width);
 
   if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale) {
-    // Convert grayscale to float in range [0.0, 1.0]
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic,
-      Eigen::RowMajor> normalized = gray_matrix.cast<float>() / 255.0f;
-
-    // Negate the image if specified (e.g. for black=occupied vs. white=occupied convention)
-    if (!load_parameters.negate) {
-      normalized = (1.0f - normalized.array()).matrix();
-    }
-
-    // Compute binary occupancy masks
-    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> occupied =
-      (normalized.array() >= load_parameters.occupied_thresh).cast<uint8_t>();
-
-    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> free =
-      (normalized.array() <= load_parameters.free_thresh).cast<uint8_t>();
-
     // Initialize occupancy grid with UNKNOWN values (-1)
     result.setConstant(nav2_util::OCC_GRID_UNKNOWN);
 
-    // Apply occupied and free cell updates
-    result = (occupied.array() > 0).select(nav2_util::OCC_GRID_OCCUPIED, result);
-    result = (free.array() > 0).select(nav2_util::OCC_GRID_FREE, result);
+    // occ = negate ? (gray/255) : (1 - gray/255); thresholds are compared against occ.
+    // Substituting occ and solving for gray avoids materializing a full-size float
+    // "normalized" matrix plus separate occupied/free mask matrices (each a full
+    // width*height buffer) just to compare against two scalar thresholds.
+    if (load_parameters.negate) {
+      result = (gray_matrix.cast<float>().array() >=
+        static_cast<float>(load_parameters.occupied_thresh) * 255.0f)
+        .select(nav2_util::OCC_GRID_OCCUPIED, result);
+      result = (gray_matrix.cast<float>().array() <=
+        static_cast<float>(load_parameters.free_thresh) * 255.0f)
+        .select(nav2_util::OCC_GRID_FREE, result);
+    } else {
+      result = (gray_matrix.cast<float>().array() <=
+        (1.0f - static_cast<float>(load_parameters.occupied_thresh)) * 255.0f)
+        .select(nav2_util::OCC_GRID_OCCUPIED, result);
+      result = (gray_matrix.cast<float>().array() >=
+        (1.0f - static_cast<float>(load_parameters.free_thresh)) * 255.0f)
+        .select(nav2_util::OCC_GRID_FREE, result);
+    }
 
     // Handle intermediate (gray) values if in Scale mode
     if (load_parameters.mode == MapMode::Scale) {
+      // occ = negate ? (gray/255) : (1 - gray/255), same derivation as above; only
+      // materialized here since Scale mode's in-between interpolation genuinely
+      // needs per-cell float values, and Scale mode is not the hot/large-map path.
+      Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> occ =
+        gray_matrix.cast<float>() / 255.0f;
+      if (!load_parameters.negate) {
+        occ = (1.0f - occ.array()).matrix();
+      }
+
       // Create in-between mask
-      auto in_between_mask = (normalized.array() > load_parameters.free_thresh) &&
-        (normalized.array() < load_parameters.occupied_thresh);
+      auto in_between_mask = (occ.array() > load_parameters.free_thresh) &&
+        (occ.array() < load_parameters.occupied_thresh);
 
       if (in_between_mask.any()) {
         // Scale in-between values to [0,100] range
-        Eigen::ArrayXXf scaled_float = ((normalized.array() - load_parameters.free_thresh) /
+        Eigen::ArrayXXf scaled_float = ((occ.array() - load_parameters.free_thresh) /
           (load_parameters.occupied_thresh - load_parameters.free_thresh)) * 100.0f;
 
         // Round and cast to int8_t
@@ -326,10 +335,12 @@ void loadMapFromFile(
     throw std::runtime_error("Invalid map mode");
   }
 
-  // Flip image vertically (as ROS expects origin at bottom-left)
-  Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
-    Eigen::RowMajor> flipped = result.colwise().reverse();
-  std::memcpy(msg.data.data(), flipped.data(), width * height);
+  // Flip image vertically (as ROS expects origin at bottom-left), writing directly
+  // into msg.data's backing buffer instead of allocating a full extra temporary
+  // ("flipped") just to memcpy from.
+  Eigen::Map<Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+  output_map(msg.data.data(), height, width);
+  output_map = result.colwise().reverse();
 
   // Since loadMapFromFile() does not belong to any node, publishing in a system time.
   rclcpp::Clock clock(RCL_SYSTEM_TIME);
