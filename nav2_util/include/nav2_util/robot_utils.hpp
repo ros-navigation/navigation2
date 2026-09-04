@@ -32,6 +32,58 @@
 
 namespace nav2_util
 {
+
+/**
+ * @brief Look up the latest transform and optionally reject it when stale
+ * @param tf_buffer TF buffer to use for the lookup
+ * @param target_frame Frame to transform into
+ * @param source_frame Frame to transform from
+ * @param current_time Time against which the transform age is measured
+ * @param staleness_threshold Maximum transform age in seconds; non-positive disables the check
+ * @return The latest transform
+ * @throw tf2::TransformException if lookup fails or the transform is stale
+ */
+geometry_msgs::msg::PoseStamped getPoseWithStalenessCheck(
+  nav2::TransformBuffer & tf_buffer,
+  const std::string & target_frame,
+  const std::string & source_frame,
+  const rclcpp::Time & current_time,
+  double staleness_threshold);
+
+/**
+ * @brief Look up the latest transform and optionally reject it when stale
+ * @param tf_buffer TF buffer to use for the lookup
+ * @param target_frame Frame to transform into
+ * @param source_frame Frame to transform from
+ * @param current_time Time against which the transform age is measured
+ * @param staleness_threshold Maximum transform age in seconds; non-positive disables the check
+ * @return The latest transform
+ * @throw tf2::TransformException if lookup fails or the transform is stale
+ */
+geometry_msgs::msg::TransformStamped lookupTransformWithStalenessCheck(
+  nav2::TransformBuffer & tf_buffer,
+  const std::string & target_frame,
+  const std::string & source_frame,
+  const rclcpp::Time & current_time,
+  double staleness_threshold);
+
+/**
+ * @brief Convert a stamped transform to the equivalent stamped pose
+ * @param transform Transform to convert
+ * @return Pose containing the transform header, translation, and rotation
+ */
+geometry_msgs::msg::PoseStamped transformToPoseStamped(
+  const geometry_msgs::msg::TransformStamped & transform);
+
+/**
+ * @brief Convert a stamped pose to a transform stamped with the specified child frame
+ * @param pose Pose to convert
+ * @param child_frame Child frame for the transform
+ * @return Transform from the specified child
+ */
+geometry_msgs::msg::TransformStamped poseToTransformStamped(
+  const geometry_msgs::msg::PoseStamped & pose, const std::string & child_frame);
+
 /**
 * @brief get the current pose of the robot
 * @param global_pose Pose to transform

@@ -564,6 +564,8 @@ void ControllerServer::computeControl()
 
       updateGlobalPath();
 
+      // The last known pose in the local map frame is retrieved without waiting.
+      // Its value and timestamp are reused across this control cycle.
       const auto current_robot_pose = getCurrentRobotPose();
 
       // Refresh the transformed plan and goal together so they share a single map->odom snapshot
@@ -962,24 +964,14 @@ bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & cur
 
 geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
-  geometry_msgs::msg::PoseStamped pose;
-  if (!costmap_ros_->getRobotPose(pose)) {
-    throw nav2_core::ControllerTFError("Failed to obtain robot pose");
+  try {
+    return nav2_util::getPoseWithStalenessCheck(
+      *costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
+      costmap_ros_->getBaseFrameID(), now(),
+      params_->transform_staleness_threshold);
+  } catch (const tf2::TransformException & ex) {
+    throw nav2_core::ControllerTFError("Failed to obtain robot pose: " + std::string(ex.what()));
   }
-
-  const auto threshold = params_->transform_staleness_threshold;
-  if (threshold > 0.0) {
-    const auto transform_age = (now() - pose.header.stamp).seconds();
-    if (transform_age > threshold) {
-      throw nav2_core::ControllerTFError(
-              "Robot pose transform from frame '" + costmap_ros_->getBaseFrameID() +
-              "' to frame '" + costmap_ros_->getGlobalFrameID() + "' is stale: age " +
-              std::to_string(transform_age) +
-              "s exceeds threshold " + std::to_string(threshold) + "s");
-    }
-  }
-
-  return pose;
 }
 
 void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::ConstSharedPtr & msg)
