@@ -72,6 +72,7 @@ public:
 
   const ControllerMap & getControllers() {return controllers_;}
   std::string getCurrentController() {return current_controller_;}
+  DockDatabase * getDockDb() {return dock_db_.get();}
 };
 
 TEST(DockingServerTests, ObjectLifecycle)
