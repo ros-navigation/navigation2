@@ -38,7 +38,6 @@ struct Parameters
   double max_angular_accel;
   double max_cost_threshold;
   double simulate_ahead_time;
-  double transform_staleness_threshold;
   double control_duration;
   bool rotate_to_goal_heading;
   bool rotate_to_heading_once;

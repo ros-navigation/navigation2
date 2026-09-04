@@ -569,22 +569,14 @@ bool FollowingServer::getFramePose(
     geometry_msgs::msg::TransformStamped transform;
     if (iteration_start_time_.nanoseconds() == 0) {
       transform = nav2_util::lookupTransformWithStalenessCheck(
-        *tf2_buffer_, params_->fixed_frame, frame_id,
-        tf2::durationFromSec(params_->transform_tolerance), now(),
+        *tf2_buffer_, params_->fixed_frame, frame_id, now(),
         params_->staleness_threshold);
     } else {
       transform = tf2_buffer_->lookupTransform(
         params_->fixed_frame, frame_id, iteration_start_time_,
         tf2::durationFromSec(params_->transform_tolerance));
     }
-
-    // Convert transform to pose
-    pose.header.frame_id = params_->fixed_frame;
-    pose.header.stamp = transform.header.stamp;
-    pose.pose.position.x = transform.transform.translation.x;
-    pose.pose.position.y = transform.transform.translation.y;
-    pose.pose.position.z = transform.transform.translation.z;
-    pose.pose.orientation = transform.transform.rotation;
+    pose = nav2_util::transformToPoseStamped(transform);
   } catch (const tf2::TransformException & ex) {
     RCLCPP_WARN(
       get_logger(),
@@ -621,11 +613,9 @@ bool FollowingServer::getTrackingPose(
 
 geometry_msgs::msg::PoseStamped FollowingServer::getRobotPose()
 {
-  const auto base_to_fixed_transform = nav2_util::lookupTransformWithStalenessCheck(
-    *tf2_buffer_, params_->fixed_frame, params_->base_frame,
-    tf2::durationFromSec(params_->transform_tolerance), now(),
+  return nav2_util::getPoseWithStalenessCheck(
+    *tf2_buffer_, params_->fixed_frame, params_->base_frame, now(),
     params_->staleness_threshold);
-  return nav2_util::transformToPoseStamped(base_to_fixed_transform);
 }
 
 geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(

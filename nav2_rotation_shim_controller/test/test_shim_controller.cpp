@@ -49,7 +49,7 @@ public:
   geometry_msgs::msg::PoseStamped getSampledPathPtWrapper(
     const geometry_msgs::msg::PoseStamped & global_goal)
   {
-    return getSampledPathPt(global_goal);
+    return getSampledPathPt(global_goal, rclcpp::Time(0));
   }
 
   geometry_msgs::msg::Pose transformPoseToBaseFrameWrapper(geometry_msgs::msg::PoseStamped pt)
@@ -169,7 +169,6 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
 
   node->declare_parameter("controller_frequency", 1.0);
-  node->declare_parameter("PathFollower.transform_staleness_threshold", 0.1);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
@@ -206,24 +205,6 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
   pt.header.stamp = rclcpp::Time();
   auto rtn = controller->transformPoseToBaseFrameWrapper(pt);
   EXPECT_EQ(rtn.position.x, 100.0);
-
-  // The latest transform is used, but rejected if it is too old.
-  geometry_msgs::msg::TransformStamped stale_transform;
-  stale_transform.header.frame_id = "base_link";
-  stale_transform.child_frame_id = "stale_frame";
-  stale_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(1.0);
-  stale_transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf->setTransform(stale_transform, "test", false));
-
-  geometry_msgs::msg::PoseStamped stale_pt;
-  stale_pt.header.frame_id = "stale_frame";
-  stale_pt.header.stamp = rclcpp::Time(0);
-  EXPECT_THROW(
-    controller->transformPoseToBaseFrameWrapper(stale_pt), nav2_core::ControllerTFError);
-
-  stale_transform.header.stamp = node->now();
-  ASSERT_TRUE(tf->setTransform(stale_transform, "test", false));
-  EXPECT_NO_THROW(controller->transformPoseToBaseFrameWrapper(stale_pt));
 
   // in frame that doesn't exist, shouldn't throw, but should fail
   geometry_msgs::msg::PoseStamped pt2;
@@ -318,6 +299,13 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
   tf_broadcaster->sendTransform(transform);
+
+  geometry_msgs::msg::TransformStamped map_to_base_link;
+  map_to_base_link.header.frame_id = "map";
+  map_to_base_link.child_frame_id = "base_link";
+  map_to_base_link.header.stamp = node->now();
+  map_to_base_link.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf->setTransform(map_to_base_link, "test", false));
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
@@ -489,6 +477,13 @@ TEST(RotationShimControllerTest, accelerationTests) {
   transform.transform.rotation.w = 1.0;
   tf_broadcaster->sendTransform(transform);
 
+  geometry_msgs::msg::TransformStamped map_to_base_link;
+  map_to_base_link.header.frame_id = "map";
+  map_to_base_link.child_frame_id = "base_link";
+  map_to_base_link.header.stamp = node->now();
+  map_to_base_link.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf->setTransform(map_to_base_link, "test", false));
+
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
     "PathFollower.primary_controller.plugin",
@@ -647,7 +642,6 @@ TEST(RotationShimControllerTest, testDynamicParameter)
       rclcpp::Parameter("test.max_cost_threshold",
       static_cast<double>(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)),
       rclcpp::Parameter("test.simulate_ahead_time", 7.0),
-      rclcpp::Parameter("test.transform_staleness_threshold", 7.0),
       rclcpp::Parameter("test.primary_controller.plugin", std::string("HI")),
       rclcpp::Parameter("test.rotate_to_goal_heading", true),
       rclcpp::Parameter("test.rotate_to_heading_once", true),
@@ -665,7 +659,6 @@ TEST(RotationShimControllerTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.max_cost_threshold").as_double(),
     static_cast<double>(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE));
   EXPECT_EQ(node->get_parameter("test.simulate_ahead_time").as_double(), 7.0);
-  EXPECT_EQ(node->get_parameter("test.transform_staleness_threshold").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.rotate_to_goal_heading").as_bool(), true);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_once").as_bool(), true);
   EXPECT_EQ(node->get_parameter("test.closed_loop").as_bool(), false);
@@ -690,16 +683,6 @@ TEST(RotationShimControllerTest, testDynamicParameter)
     results);
 
   EXPECT_EQ(node->get_parameter("test.simulate_ahead_time").as_double(), 7.0);
-
-  results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("test.transform_staleness_threshold", -0.1)}
-  );
-
-  rclcpp::spin_until_future_complete(
-    node->get_node_base_interface(),
-    results);
-
-  EXPECT_EQ(node->get_parameter("test.transform_staleness_threshold").as_double(), 7.0);
 }
 
 TEST(RotationShimControllerTest, maxCostThresholdTest)

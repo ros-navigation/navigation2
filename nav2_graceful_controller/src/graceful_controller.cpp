@@ -147,13 +147,8 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // Add proper orientations to plan, if needed
   validateOrientations(transformed_plan.poses);
 
-  geometry_msgs::msg::TransformStamped costmap_transform;
-  costmap_transform.header = pose.header;
-  costmap_transform.child_frame_id = costmap_ros_->getBaseFrameID();
-  costmap_transform.transform.translation.x = pose.pose.position.x;
-  costmap_transform.transform.translation.y = pose.pose.position.y;
-  costmap_transform.transform.translation.z = pose.pose.position.z;
-  costmap_transform.transform.rotation = pose.pose.orientation;
+  geometry_msgs::msg::TransformStamped costmap_transform = nav2_util::poseToTransformStamped(pose,
+      costmap_ros_->getBaseFrameID());
 
   // Compute distance to goal as the path's integrated distance to account for path curvatures
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);

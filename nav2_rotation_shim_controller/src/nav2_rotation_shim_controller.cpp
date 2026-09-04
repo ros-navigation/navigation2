@@ -158,7 +158,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
 
     std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
     try {
-      auto sampled_pt = getSampledPathPt(global_goal);
+      auto sampled_pt = getSampledPathPt(global_goal, pose.header.stamp);
       double angular_distance_to_heading;
       if (params_->use_path_orientations) {
         angular_distance_to_heading = angles::shortest_angular_distance(
@@ -206,7 +206,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
 }
 
 geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt(
-  const geometry_msgs::msg::PoseStamped & global_goal)
+  const geometry_msgs::msg::PoseStamped & global_goal, const rclcpp::Time & control_time)
 {
   if (current_path_.poses.size() < 2) {
     throw nav2_core::ControllerException(
@@ -223,14 +223,14 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt(
     if (hypot(dx, dy) >= params_->forward_sampling_distance) {
       current_path_.poses[i].header.frame_id = current_path_.header.frame_id;
       // Use the latest available transformation, whose age is checked before use.
-      current_path_.poses[i].header.stamp = rclcpp::Time(0);
+      current_path_.poses[i].header.stamp = control_time;
       return current_path_.poses[i];
     }
   }
 
   auto goal = current_path_.poses.back();
   goal.header.frame_id = current_path_.header.frame_id;
-  goal.header.stamp = rclcpp::Time(0);
+  goal.header.stamp = control_time;
   double gx = global_goal.pose.position.x - goal.pose.position.x;
   double gy = global_goal.pose.position.y - goal.pose.position.y;
   double distance = hypot(gx, gy);
@@ -245,15 +245,10 @@ geometry_msgs::msg::Pose
 RotationShimController::transformPoseToBaseFrame(const geometry_msgs::msg::PoseStamped & pt)
 {
   geometry_msgs::msg::PoseStamped pt_base;
-  try {
-    const auto transform = nav2_util::lookupTransformWithStalenessCheck(
-      *tf_, costmap_ros_->getBaseFrameID(), pt.header.frame_id,
-      tf2::durationFromSec(costmap_ros_->getTransformTolerance()), clock_->now(),
-      params_->transform_staleness_threshold);
-    tf2::doTransform(pt, pt_base, transform);
-  } catch (const tf2::TransformException & ex) {
-    throw nav2_core::ControllerTFError(
-            "Failed to transform pose to base frame: " + std::string(ex.what()));
+  if (!nav2_util::transformPoseInTargetFrame(pt, pt_base, *tf_, costmap_ros_->getBaseFrameID(),
+      costmap_ros_->getTransformTolerance()))
+  {
+    throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
   }
   return pt_base.pose;
 }

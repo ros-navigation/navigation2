@@ -50,8 +50,6 @@ ParameterHandler::ParameterHandler(
       static_cast<double>(nav2_costmap_2d::LETHAL_OBSTACLE));
   params_.simulate_ahead_time = node->declare_or_get_parameter(plugin_name_ +
     ".simulate_ahead_time", 1.0);
-  params_.transform_staleness_threshold = node->declare_or_get_parameter(plugin_name_ +
-    ".transform_staleness_threshold", 0.0);
   try {
     params_.primary_controller = node->declare_or_get_parameter<std::string>(plugin_name_ +
       ".primary_controller.plugin");
@@ -92,8 +90,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if ((param_name == plugin_name_ + ".simulate_ahead_time" ||
-        param_name == plugin_name_ + ".transform_staleness_threshold") &&
+      if (param_name == plugin_name_ + ".simulate_ahead_time" &&
         parameter.as_double() < 0.0)
       {
         RCLCPP_WARN(
@@ -136,8 +133,6 @@ ParameterHandler::updateParametersCallback(
         params_.max_cost_threshold = parameter.as_double();
       } else if (param_name == plugin_name_ + ".simulate_ahead_time") {
         params_.simulate_ahead_time = parameter.as_double();
-      } else if (param_name == plugin_name_ + ".transform_staleness_threshold") {
-        params_.transform_staleness_threshold = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".rotate_to_goal_heading") {

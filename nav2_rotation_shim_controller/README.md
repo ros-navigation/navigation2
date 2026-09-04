@@ -39,7 +39,6 @@ See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/
 | `max_angular_accel` | Maximum angular acceleration for rotation to heading |
 | `max_cost_threshold` | Maximum footprint cost threshold to detect a collision. Defaults to 254.0 i.e., LETHAL_OBSTACLE.
 | `simulate_ahead_time` | Time in seconds to forward simulate a rotation command to check for collisions. If a collision is found, forwards control back to the primary controller plugin. |
-| `transform_staleness_threshold` | Maximum age, in seconds, of the latest transform used to convert the sampled path point into the robot base frame. A value of `0.0` disables the staleness check. |
 | `rotate_to_goal_heading` | If true, the rotationShimController will take back control of the robot when in XY tolerance of the goal and start rotating to the goal heading |
 | `rotate_to_goal_heading_once` | If true, the rotationShimController will only rotate to heading once on a new goal, not each time a path is set. |
 | `closed_loop` | If false, the rotationShimController will use the last commanded velocity as the next iteration’s current velocity. When acceleration limits are set appropriately and the robot’s controllers are responsive, this can be a good assumption. If true, it will use odometry to estimate the robot’s current speed. In this case it is important that the source is high-rate and low-latency to account for control delay. |
@@ -76,7 +75,6 @@ controller_server:
       max_angular_accel: 3.2
       max_cost_threshold: 254.0
       simulate_ahead_time: 1.0
-      transform_staleness_threshold: 3.0
       rotate_to_goal_heading: false
 
       # Primary controller params can be placed here below

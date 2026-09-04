@@ -31,9 +31,8 @@ namespace nav2_util
 
 geometry_msgs::msg::TransformStamped lookupTransformWithStalenessCheck(
   nav2::TransformBuffer & tf_buffer,
-  const std::string & target_frame,
   const std::string & source_frame,
-  const tf2::Duration & transform_timeout,
+  const std::string & target_frame,
   const rclcpp::Time & current_time,
   double staleness_threshold)
 {
@@ -47,7 +46,7 @@ geometry_msgs::msg::TransformStamped lookupTransformWithStalenessCheck(
   }
 
   auto transform = tf_buffer.lookupTransform(
-    target_frame, source_frame, tf2::TimePointZero, transform_timeout);
+    source_frame, target_frame, tf2::TimePointZero);
 
   const bool has_timestamp =
     transform.header.stamp.sec != 0 || transform.header.stamp.nanosec != 0;
@@ -62,7 +61,6 @@ geometry_msgs::msg::TransformStamped lookupTransformWithStalenessCheck(
               "s exceeds threshold " + std::to_string(staleness_threshold) + "s");
     }
   }
-
   return transform;
 }
 
@@ -89,6 +87,18 @@ geometry_msgs::msg::TransformStamped poseToTransformStamped(
   transform.transform.translation.z = pose.pose.position.z;
   transform.transform.rotation = pose.pose.orientation;
   return transform;
+}
+
+geometry_msgs::msg::PoseStamped getPoseWithStalenessCheck(
+  nav2::TransformBuffer & tf_buffer,
+  const std::string & source_frame,
+  const std::string & target_frame,
+  const rclcpp::Time & current_time,
+  double staleness_threshold)
+{
+  auto transform = lookupTransformWithStalenessCheck(tf_buffer, source_frame, target_frame,
+      current_time, staleness_threshold);
+  return transformToPoseStamped(transform);
 }
 
 geometry_msgs::msg::TransformStamped invertTransform(

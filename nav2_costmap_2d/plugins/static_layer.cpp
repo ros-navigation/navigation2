@@ -146,7 +146,6 @@ void
 StaticLayer::getParameters()
 {
   int temp_lethal_threshold = 0;
-  double temp_tf_tol = 0.0;
 
   auto node = node_.lock();
   if (!node) {
@@ -173,14 +172,11 @@ StaticLayer::getParameters()
   node->get_parameter("inscribed_obstacle_cost_value", inscribed_obstacle_cost_value_);
   node->get_parameter("unknown_cost_value", unknown_cost_value_);
   node->get_parameter("trinary_costmap", trinary_costmap_);
-  node->get_parameter("transform_tolerance", temp_tf_tol);
 
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   map_received_ = false;
   map_received_in_update_bounds_ = false;
-
-  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 }
 
 void
@@ -481,7 +477,7 @@ StaticLayer::updateCosts(
     geometry_msgs::msg::TransformStamped transform;
     try {
       transform = nav2_util::lookupTransformWithStalenessCheck(
-        *tf_, map_frame_, global_frame_, transform_tolerance_, clock_->now(),
+        *tf_, map_frame_, global_frame_, clock_->now(),
         transform_staleness_threshold_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
