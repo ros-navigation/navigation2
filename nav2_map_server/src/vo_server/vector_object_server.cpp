@@ -307,35 +307,35 @@ void VectorObjectServer::putVectorObjectsOnMap()
   // Filling the shapes
   for (auto shape : shapes_) {
     if (shape->isFill()) {
-      // Put filled shape on map
-      double wx1 = std::numeric_limits<double>::max();
-      double wy1 = std::numeric_limits<double>::max();
-      double wx2 = std::numeric_limits<double>::lowest();
-      double wy2 = std::numeric_limits<double>::lowest();
-      unsigned int mx1 = 0;
-      unsigned int my1 = 0;
-      unsigned int mx2 = 0;
-      unsigned int my2 = 0;
-
-      shape->getBoundaries(wx1, wy1, wx2, wy2);
-      if (
-        !nav2_util::worldToMap(map_, wx1, wy1, mx1, my1) ||
-        !nav2_util::worldToMap(map_, wx2, wy2, mx2, my2))
-      {
-        RCLCPP_ERROR(
-          get_logger(),
-          "Error to get shape boundaries on map (UUID: %s)", shape->getUUID().c_str());
-        return;
-      }
-
-      unsigned int it;
-      for (unsigned int my = my1; my <= my2; my++) {
-        for (unsigned int mx = mx1; mx <= mx2; mx++) {
-          it = my * map_->info.width + mx;
-          double wx, wy;
-          nav2_util::mapToWorld(map_, mx, my, wx, wy);
-          if (shape->isPointInside(wx, wy)) {
-            processVal(map_->data[it], shape->getValue(), overlay_type_);
+      auto polygon = std::dynamic_pointer_cast<Polygon>(shape);
+      if (polygon) {
+        polygon->putFilled(map_, overlay_type_);
+      } else {
+        // Circles retain the existing point-in-shape implementation.
+        double wx1 = std::numeric_limits<double>::max();
+        double wy1 = std::numeric_limits<double>::max();
+        double wx2 = std::numeric_limits<double>::lowest();
+        double wy2 = std::numeric_limits<double>::lowest();
+        unsigned int mx1 = 0;
+        unsigned int my1 = 0;
+        unsigned int mx2 = 0;
+        unsigned int my2 = 0;
+        shape->getBoundaries(wx1, wy1, wx2, wy2);
+        if (!nav2_util::worldToMap(map_, wx1, wy1, mx1, my1) ||
+          !nav2_util::worldToMap(map_, wx2, wy2, mx2, my2))
+        {
+          RCLCPP_ERROR(get_logger(), "Error to get shape boundaries on map (UUID: %s)",
+            shape->getUUID().c_str());
+          return;
+        }
+        for (unsigned int my = my1; my <= my2; my++) {
+          for (unsigned int mx = mx1; mx <= mx2; mx++) {
+            const auto it = my * map_->info.width + mx;
+            double wx, wy;
+            nav2_util::mapToWorld(map_, mx, my, wx, wy);
+            if (shape->isPointInside(wx, wy)) {
+              processVal(map_->data[it], shape->getValue(), overlay_type_);
+            }
           }
         }
       }

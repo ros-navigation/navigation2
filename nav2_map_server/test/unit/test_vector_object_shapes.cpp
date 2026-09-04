@@ -494,6 +494,27 @@ TEST_F(Tester, testPolygonPoints)
   ASSERT_FALSE(polygon_->isPointInside(2.0, 2.0));
 }
 
+TEST_F(Tester, testPolygonFilledRasterization)
+{
+  setPolygonParams("");
+  ASSERT_TRUE(polygon_->obtainParams(POLYGON_NAME));
+
+  auto map = makeMap();
+  polygon_->putFilled(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
+
+  unsigned int filled_cells = 0;
+  for (unsigned int my = 0; my < map->info.height; ++my) {
+    for (unsigned int mx = 0; mx < map->info.width; ++mx) {
+      if (map->data[my * map->info.width + mx] == nav2_util::OCC_GRID_OCCUPIED) {
+        ++filled_cells;
+      }
+    }
+  }
+
+  // A 2m x 2m square at 0.1m resolution covers 20 x 20 cell centers.
+  ASSERT_EQ(filled_cells, 400u);
+}
+
 TEST_F(Tester, testPolygonBorders)
 {
   setPolygonParams("");
