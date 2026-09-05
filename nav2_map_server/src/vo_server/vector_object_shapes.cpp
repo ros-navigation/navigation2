@@ -15,6 +15,7 @@
 #include "nav2_map_server/vector_object_shapes.hpp"
 
 #include <uuid/uuid.h>
+#include <algorithm>
 #include <cmath>
 #include <exception>
 #include <limits>
@@ -241,6 +242,84 @@ void Polygon::getBoundaries(double & min_x, double & min_y, double & max_x, doub
 bool Polygon::isPointInside(const double px, const double py) const
 {
   return nav2_util::geometry_utils::isPointInsidePolygon(px, py, polygon_->points);
+}
+
+void Polygon::putFilled(
+  nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
+{
+  // Scanline rasterization avoids running a point-in-polygon test for every
+  // cell in the polygon's bounding box. The half-open edge rule prevents a
+  // vertex from being counted twice when two edges meet on a scanline.
+  if (polygon_->points.size() < 3 || map->info.width == 0 || map->info.height == 0) {
+    return;
+  }
+
+  const double resolution = map->info.resolution;
+  const double origin_x = map->info.origin.position.x;
+  const double origin_y = map->info.origin.position.y;
+  const auto value = params_->value;
+
+  double min_y = std::numeric_limits<double>::max();
+  double max_y = std::numeric_limits<double>::lowest();
+  for (const auto & point : polygon_->points) {
+    min_y = std::min(min_y, static_cast<double>(point.y));
+    max_y = std::max(max_y, static_cast<double>(point.y));
+  }
+
+  const auto first_row = static_cast<int>(std::ceil((min_y - origin_y) / resolution - 0.5));
+  const auto last_row = static_cast<int>(std::floor((max_y - origin_y) / resolution - 0.5));
+  const auto row_begin = std::max(0, first_row);
+  const auto row_end = std::min(static_cast<int>(map->info.height) - 1, last_row);
+
+  for (int my = row_begin; my <= row_end; ++my) {
+    const double wy = origin_y + (static_cast<double>(my) + 0.5) * resolution;
+    std::vector<double> intersections;
+    intersections.reserve(polygon_->points.size());
+
+    for (size_t i = 0; i < polygon_->points.size(); ++i) {
+      const auto & p1 = polygon_->points[i];
+      const auto & p2 = polygon_->points[(i + 1) % polygon_->points.size()];
+      const double y1 = p1.y;
+      const double y2 = p2.y;
+      if ((wy <= y1) == (wy > y2)) {
+        const double x = p1.x + (wy - y1) * (p2.x - p1.x) / (y2 - y1);
+        intersections.push_back(x);
+      }
+    }
+
+    std::sort(intersections.begin(), intersections.end());
+    for (size_t i = 0; i + 1 < intersections.size(); i += 2) {
+      // Match isPointInsidePolygon(): points on either polygon boundary are
+      // excluded because the original ray-crossing test uses x_inter > px.
+      const auto first_col = static_cast<int>(
+        std::floor((intersections[i] - origin_x) / resolution - 0.5) + 1);
+      const auto last_col = static_cast<int>(
+        std::ceil((intersections[i + 1] - origin_x) / resolution - 0.5) - 1);
+      const auto col_begin = std::max(0, first_col);
+      const auto col_end = std::min(static_cast<int>(map->info.width) - 1, last_col);
+      for (int mx = col_begin; mx <= col_end; ++mx) {
+        processCell(map, static_cast<unsigned int>(my) * map->info.width +
+          static_cast<unsigned int>(mx), value, overlay_type);
+      }
+    }
+
+    // Preserve the existing ray-crossing predicate's boundary semantics. A
+    // scanline can only differ from that predicate at cells adjacent to an
+    // edge intersection, so these checks are limited to the polygon boundary.
+    for (const auto x : intersections) {
+      const auto nearest_col = static_cast<int>(
+        std::floor((x - origin_x) / resolution - 0.5));
+      for (const auto mx : {nearest_col, nearest_col + 1}) {
+        if (mx >= 0 && mx < static_cast<int>(map->info.width)) {
+          const double wx = origin_x + (static_cast<double>(mx) + 0.5) * resolution;
+          if (isPointInside(wx, wy)) {
+            processCell(map, static_cast<unsigned int>(my) * map->info.width +
+              static_cast<unsigned int>(mx), value, overlay_type);
+          }
+        }
+      }
+    }
+  }
 }
 
 void Polygon::putBorders(

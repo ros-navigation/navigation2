@@ -254,6 +254,14 @@ public:
   bool isPointInside(const double px, const double py) const;
 
   /**
+   * @brief Rasterizes the filled polygon directly into an occupancy grid.
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   */
+  void putFilled(
+    nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
+
+  /**
    * @brief Puts shape borders on map.
    * @param map Output map pointer
    * @param overlay_type Overlay type
