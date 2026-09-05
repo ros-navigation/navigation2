@@ -515,6 +515,41 @@ TEST_F(Tester, testPolygonFilledRasterization)
   ASSERT_EQ(filled_cells, 400u);
 }
 
+TEST_F(Tester, testPolygonFilledRasterizationEmptyMap)
+{
+  setPolygonParams("");
+  ASSERT_TRUE(polygon_->obtainParams(POLYGON_NAME));
+
+  auto map = makeMap();
+  map->info.width = 0;
+  map->info.height = 0;
+  polygon_->putFilled(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
+}
+
+TEST_F(Tester, testPolygonFilledRasterizationTriangle)
+{
+  setPolygonParams("");
+  node_->set_parameter(
+    rclcpp::Parameter(
+      std::string(POLYGON_NAME) + ".points",
+      std::vector<double>{-1.0, -1.0, 1.0, -1.0, 0.0, 1.0}));
+  ASSERT_TRUE(polygon_->obtainParams(POLYGON_NAME));
+
+  auto map = makeMap();
+  polygon_->putFilled(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
+
+  unsigned int filled_cells = 0;
+  for (unsigned int my = 0; my < map->info.height; ++my) {
+    for (unsigned int mx = 0; mx < map->info.width; ++mx) {
+      if (map->data[my * map->info.width + mx] == nav2_util::OCC_GRID_OCCUPIED) {
+        ++filled_cells;
+      }
+    }
+  }
+
+  ASSERT_EQ(filled_cells, 200u);
+}
+
 TEST_F(Tester, testPolygonBorders)
 {
   setPolygonParams("");

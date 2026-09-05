@@ -281,7 +281,7 @@ void Polygon::putFilled(
       const auto & p2 = polygon_->points[(i + 1) % polygon_->points.size()];
       const double y1 = p1.y;
       const double y2 = p2.y;
-      if ((y1 <= wy && wy < y2) || (y2 <= wy && wy < y1)) {
+      if ((wy <= y1) == (wy > y2)) {
         const double x = p1.x + (wy - y1) * (p2.x - p1.x) / (y2 - y1);
         intersections.push_back(x);
       }
@@ -289,15 +289,34 @@ void Polygon::putFilled(
 
     std::sort(intersections.begin(), intersections.end());
     for (size_t i = 0; i + 1 < intersections.size(); i += 2) {
+      // Match isPointInsidePolygon(): points on either polygon boundary are
+      // excluded because the original ray-crossing test uses x_inter > px.
       const auto first_col = static_cast<int>(
-        std::ceil((intersections[i] - origin_x) / resolution - 0.5));
+        std::floor((intersections[i] - origin_x) / resolution - 0.5) + 1);
       const auto last_col = static_cast<int>(
-        std::floor((intersections[i + 1] - origin_x) / resolution - 0.5));
+        std::ceil((intersections[i + 1] - origin_x) / resolution - 0.5) - 1);
       const auto col_begin = std::max(0, first_col);
       const auto col_end = std::min(static_cast<int>(map->info.width) - 1, last_col);
       for (int mx = col_begin; mx <= col_end; ++mx) {
         processCell(map, static_cast<unsigned int>(my) * map->info.width +
           static_cast<unsigned int>(mx), value, overlay_type);
+      }
+    }
+
+    // Preserve the existing ray-crossing predicate's boundary semantics. A
+    // scanline can only differ from that predicate at cells adjacent to an
+    // edge intersection, so these checks are limited to the polygon boundary.
+    for (const auto x : intersections) {
+      const auto nearest_col = static_cast<int>(
+        std::floor((x - origin_x) / resolution - 0.5));
+      for (const auto mx : {nearest_col, nearest_col + 1}) {
+        if (mx >= 0 && mx < static_cast<int>(map->info.width)) {
+          const double wx = origin_x + (static_cast<double>(mx) + 0.5) * resolution;
+          if (isPointInside(wx, wy)) {
+            processCell(map, static_cast<unsigned int>(my) * map->info.width +
+              static_cast<unsigned int>(mx), value, overlay_type);
+          }
+        }
       }
     }
   }
