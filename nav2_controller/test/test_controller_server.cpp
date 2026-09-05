@@ -33,7 +33,12 @@ public:
   using nav2_controller::ControllerServer::ControllerServer;
 
   void setEndPoseFrame(const std::string & frame) {end_pose_.header.frame_id = frame;}
-  void callTransformedPlanAndGoal() {transformedPlanAndGoal();}
+  void callTransformedPlanAndGoal(
+    const geometry_msgs::msg::PoseStamped & current_robot_pose)
+  {
+    transformedPlanAndGoal(current_robot_pose);
+  }
+  geometry_msgs::msg::PoseStamped callGetCurrentRobotPose() {return getCurrentRobotPose();}
   nav2::TransformBuffer & getTfBuffer() {return *costmap_ros_->getTfBuffer();}
 };
 
@@ -61,8 +66,83 @@ TEST(ControllerServerTest, TransformedPlanAndGoalThrowsOnTfFailure)
   tf_msg.transform.rotation.w = 1.0;
   server->getTfBuffer().setTransform(tf_msg, "test", true);
 
+  geometry_msgs::msg::PoseStamped current_robot_pose;
+  current_robot_pose.header.stamp = server->now();
+  current_robot_pose.header.frame_id = "map";
+  current_robot_pose.pose.orientation.w = 1.0;
+
   server->setEndPoseFrame("nonexistent_frame_xyz");
-  EXPECT_THROW(server->callTransformedPlanAndGoal(), nav2_core::ControllerTFError);
+  EXPECT_THROW(
+    server->callTransformedPlanAndGoal(current_robot_pose), nav2_core::ControllerTFError);
+  server->cleanup();
+}
+
+TEST(ControllerServerTest, RejectsStaleRobotPoseTransform)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({
+    rclcpp::Parameter("transform_staleness_threshold", 0.1),
+    rclcpp::Parameter("progress_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("goal_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("controller_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("path_handler_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("filters", std::vector<std::string>{}),
+  });
+
+  auto server = std::make_shared<ControllerServerShim>(options);
+  ASSERT_EQ(
+    server->configure().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+
+  geometry_msgs::msg::TransformStamped tf_msg;
+  tf_msg.header.stamp = server->now() - rclcpp::Duration::from_seconds(1.0);
+  tf_msg.header.frame_id = "map";
+  tf_msg.child_frame_id = "base_link";
+  tf_msg.transform.rotation.w = 1.0;
+  server->getTfBuffer().setTransform(tf_msg, "test", false);
+
+  try {
+    server->callGetCurrentRobotPose();
+    FAIL() << "Expected stale robot pose transform to throw";
+  } catch (const nav2_core::ControllerTFError & exception) {
+    const std::string error_message = exception.what();
+    EXPECT_NE(error_message.find("base_link"), std::string::npos);
+    EXPECT_NE(error_message.find("map"), std::string::npos);
+  }
+
+  tf_msg.header.stamp = server->now();
+  server->getTfBuffer().setTransform(tf_msg, "test", false);
+  EXPECT_NO_THROW(server->callGetCurrentRobotPose());
+  server->cleanup();
+}
+
+TEST(ControllerServerTest, SkipsRobotPoseTransformStalenessCheckWhenDisabled)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({
+    rclcpp::Parameter("transform_staleness_threshold", -1.0),
+    rclcpp::Parameter("progress_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("goal_checker_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("controller_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("path_handler_plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("filters", std::vector<std::string>{}),
+  });
+
+  auto server = std::make_shared<ControllerServerShim>(options);
+  ASSERT_EQ(
+    server->configure().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+
+  geometry_msgs::msg::TransformStamped tf_msg;
+  tf_msg.header.stamp = server->now() - rclcpp::Duration::from_seconds(1.0);
+  tf_msg.header.frame_id = "map";
+  tf_msg.child_frame_id = "base_link";
+  tf_msg.transform.rotation.w = 1.0;
+  server->getTfBuffer().setTransform(tf_msg, "test", false);
+
+  EXPECT_NO_THROW(server->callGetCurrentRobotPose());
   server->cleanup();
 }
 
@@ -129,7 +209,8 @@ TEST(ControllerServerTest, test_dynamic_parameters)
       rclcpp::Parameter("min_y_velocity_threshold", 100.0),
       rclcpp::Parameter("min_theta_velocity_threshold", 100.0),
       rclcpp::Parameter("failure_tolerance", 5.0),
-      rclcpp::Parameter("search_window", 10.0)});
+      rclcpp::Parameter("search_window", 10.0),
+      rclcpp::Parameter("transform_staleness_threshold", 1.0)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
@@ -140,6 +221,7 @@ TEST(ControllerServerTest, test_dynamic_parameters)
   EXPECT_EQ(params_->min_theta_velocity_threshold, 100.0);
   EXPECT_EQ(params_->failure_tolerance, 5.0);
   EXPECT_EQ(params_->search_window, 10.0);
+  EXPECT_EQ(params_->transform_staleness_threshold, 1.0);
 
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("min_x_velocity_threshold", -1.0)});

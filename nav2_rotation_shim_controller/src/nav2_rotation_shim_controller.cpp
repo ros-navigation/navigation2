@@ -158,7 +158,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
 
     std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
     try {
-      auto sampled_pt = getSampledPathPt(global_goal);
+      auto sampled_pt = getSampledPathPt(global_goal, pose.header.stamp);
       double angular_distance_to_heading;
       if (params_->use_path_orientations) {
         angular_distance_to_heading = angles::shortest_angular_distance(
@@ -206,7 +206,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
 }
 
 geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt(
-  const geometry_msgs::msg::PoseStamped & global_goal)
+  const geometry_msgs::msg::PoseStamped & global_goal, const rclcpp::Time & control_time)
 {
   if (current_path_.poses.size() < 2) {
     throw nav2_core::ControllerException(
@@ -222,15 +222,15 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt(
     dy = current_path_.poses[i].pose.position.y - start.position.y;
     if (hypot(dx, dy) >= params_->forward_sampling_distance) {
       current_path_.poses[i].header.frame_id = current_path_.header.frame_id;
-      // Get current time transformation
-      current_path_.poses[i].header.stamp = clock_->now();
+      // Using the propagated control timestamp
+      current_path_.poses[i].header.stamp = control_time;
       return current_path_.poses[i];
     }
   }
 
   auto goal = current_path_.poses.back();
   goal.header.frame_id = current_path_.header.frame_id;
-  goal.header.stamp = clock_->now();
+  goal.header.stamp = control_time;
   double gx = global_goal.pose.position.x - goal.pose.position.x;
   double gy = global_goal.pose.position.y - goal.pose.position.y;
   double distance = hypot(gx, gy);

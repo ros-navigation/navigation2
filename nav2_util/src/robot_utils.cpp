@@ -29,6 +29,78 @@
 namespace nav2_util
 {
 
+geometry_msgs::msg::TransformStamped lookupTransformWithStalenessCheck(
+  nav2::TransformBuffer & tf_buffer,
+  const std::string & target_frame,
+  const std::string & source_frame,
+  const rclcpp::Time & current_time,
+  double staleness_threshold)
+{
+  if (target_frame == source_frame) {
+    geometry_msgs::msg::TransformStamped identity;
+    identity.header.frame_id = target_frame;
+    identity.header.stamp = current_time;
+    identity.child_frame_id = source_frame;
+    identity.transform.rotation.w = 1.0;
+    return identity;
+  }
+
+  auto transform = tf_buffer.lookupTransform(
+    target_frame, source_frame, tf2::TimePointZero);
+
+  const bool has_timestamp =
+    transform.header.stamp.sec != 0 || transform.header.stamp.nanosec != 0;
+  if (staleness_threshold > 0.0 && has_timestamp) {
+    const auto transform_time = rclcpp::Time(
+      transform.header.stamp, current_time.get_clock_type());
+    const double transform_age = (current_time - transform_time).seconds();
+    if (transform_age > staleness_threshold) {
+      throw tf2::ExtrapolationException(
+              "Transform from frame '" + source_frame + "' to frame '" + target_frame +
+              "' is stale: age " + std::to_string(transform_age) +
+              "s exceeds threshold " + std::to_string(staleness_threshold) + "s");
+    }
+  }
+  return transform;
+}
+
+geometry_msgs::msg::PoseStamped transformToPoseStamped(
+  const geometry_msgs::msg::TransformStamped & transform)
+{
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header = transform.header;
+  pose.pose.position.x = transform.transform.translation.x;
+  pose.pose.position.y = transform.transform.translation.y;
+  pose.pose.position.z = transform.transform.translation.z;
+  pose.pose.orientation = transform.transform.rotation;
+  return pose;
+}
+
+geometry_msgs::msg::TransformStamped poseToTransformStamped(
+  const geometry_msgs::msg::PoseStamped & pose, const std::string & child_frame)
+{
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header = pose.header;
+  transform.child_frame_id = child_frame;
+  transform.transform.translation.x = pose.pose.position.x;
+  transform.transform.translation.y = pose.pose.position.y;
+  transform.transform.translation.z = pose.pose.position.z;
+  transform.transform.rotation = pose.pose.orientation;
+  return transform;
+}
+
+geometry_msgs::msg::PoseStamped getPoseWithStalenessCheck(
+  nav2::TransformBuffer & tf_buffer,
+  const std::string & target_frame,
+  const std::string & source_frame,
+  const rclcpp::Time & current_time,
+  double staleness_threshold)
+{
+  auto transform = lookupTransformWithStalenessCheck(tf_buffer, target_frame, source_frame,
+      current_time, staleness_threshold);
+  return transformToPoseStamped(transform);
+}
+
 bool getCurrentPose(
   geometry_msgs::msg::PoseStamped & global_pose,
   nav2::TransformBuffer & tf_buffer, const std::string global_frame,
