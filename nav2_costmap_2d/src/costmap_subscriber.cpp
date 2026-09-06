@@ -17,6 +17,7 @@
 #include <mutex>
 
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "nav2_ros_common/validate_messages.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -34,6 +35,11 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
 
 void CostmapSubscriber::costmapCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr & msg)
 {
+  if (!nav2::validateMsg(*msg)) {
+    RCLCPP_ERROR(logger_, "Received costmap message is malformed. Rejecting.");
+    return;
+  }
+
   {
     std::lock_guard<std::mutex> lock(costmap_msg_mutex_);
     costmap_msg_ = msg;
