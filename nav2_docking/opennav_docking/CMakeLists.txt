@@ -64,6 +64,7 @@ target_link_libraries(controller_base PRIVATE
 add_library(controller SHARED
   src/controller.cpp
   src/graceful_controller.cpp
+  src/pid_controller.cpp
 )
 target_include_directories(controller
   PUBLIC
@@ -71,6 +72,7 @@ target_include_directories(controller
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(controller PUBLIC
+  angles::angles
   controller_base
   geometry_msgs::geometry_msgs
   nav2_costmap_2d::nav2_costmap_2d_core
@@ -102,6 +104,22 @@ target_link_libraries(graceful_controller_plugin PUBLIC
   rclcpp::rclcpp
 )
 target_link_libraries(graceful_controller_plugin PRIVATE
+  pluginlib::pluginlib
+)
+
+add_library(pid_controller_plugin SHARED
+  src/pid_controller_plugin.cpp
+)
+target_include_directories(pid_controller_plugin
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(pid_controller_plugin PUBLIC
+  controller
+  rclcpp::rclcpp
+)
+target_link_libraries(pid_controller_plugin PRIVATE
   pluginlib::pluginlib
 )
 
@@ -227,7 +245,7 @@ pluginlib_export_plugin_description_file(opennav_docking_core plugins.xml)
 pluginlib_export_plugin_description_file(opennav_docking plugins.xml)
 
 install(TARGETS ${library_name} controller controller_base graceful_controller_plugin
-  pose_filter simple_charging_dock simple_non_charging_dock
+  pid_controller_plugin pose_filter simple_charging_dock simple_non_charging_dock
   EXPORT ${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

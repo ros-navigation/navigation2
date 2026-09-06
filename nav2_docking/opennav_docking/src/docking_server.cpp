@@ -92,7 +92,6 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
     return nav2::CallbackReturn::FAILURE;
   }
   navigator_ = std::make_unique<Navigator>(node);
-
   dock_db_ = std::make_unique<DockDatabase>(param_handler_->getMutex());
   if (!dock_db_->initialize(node, tf2_buffer_, controller_ids)) {
     on_cleanup(state);

@@ -16,10 +16,7 @@
 
 #include "opennav_docking/graceful_controller.hpp"
 
-// This translation unit exists only to register GracefulController with pluginlib,
-// and is built into a library of its own (graceful_controller_plugin) that nothing
-// links against.
-//
-// Once opennav_following is migrated off opennav_docking::Controller
+// This translation is to register GracefulController with pluginlib,
+// Once opennav_following's dependency to opennav_docking::Controller is removed
 // this file can be moved back into graceful_controller.cpp.
 PLUGINLIB_EXPORT_CLASS(opennav_docking::GracefulController, opennav_docking::ControllerBase)
