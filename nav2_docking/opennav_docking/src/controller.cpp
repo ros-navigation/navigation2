@@ -31,8 +31,9 @@ Controller::Controller(
   const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
   std::string fixed_frame, std::string base_frame)
 {
-  // Seed the frames given by the caller into this instance's parameter namespace, so that
-  // configure() resolves them without the server having to set them itself.
+  // Seed the frames given into this instance's parameter namespace, so that
+  // configure() resolves them. Workaround to keep Controller class usable
+  // in its call sites.
   nav2::declare_parameter_if_not_declared(
     node, "controller.fixed_frame", rclcpp::ParameterValue(fixed_frame));
   nav2::declare_parameter_if_not_declared(
@@ -67,8 +68,6 @@ bool Controller::computeVelocityCommand(
   options.approaching = is_docking;
   setTrajectory(trajectory, options);
 
-  // The smooth control law is a pure feedback law: neither the robot pose nor its velocity nor
-  // the control period enter into it, so this legacy entry point has nothing to supply for them.
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = base_frame_;
   return computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.0, cmd);

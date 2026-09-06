@@ -246,8 +246,8 @@ protected:
   /**
    * @brief Resolve which controller a dock instance drives with.
    *
-   * the dock instance's own `controller` if defined, then the controller
-   * named by its type, then the single-controller default.
+   * Precedence: the dock instance's own `controller` if defined, then the controller
+   * named by its type, then the single default controller.
    * @throw DockNotValid if the name does not resolve to a loaded controller
    */
   void selectControllerForDock(const Dock & dock);

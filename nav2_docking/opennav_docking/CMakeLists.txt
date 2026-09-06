@@ -59,9 +59,8 @@ target_link_libraries(controller_base PRIVATE
   tf2_geometry_msgs::tf2_geometry_msgs
 )
 
-# opennav_following links this library directly (nav2_following/opennav_following/
-# CMakeLists.txt:39) and is composed into the docking server's process, so it is kept
-# to keep changes limited
+# opennav_following links this library directly
+# so it is kept to keep changes limited
 add_library(controller SHARED
   src/controller.cpp
   src/graceful_controller.cpp

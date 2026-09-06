@@ -148,7 +148,7 @@ bool ControllerBase::getTargetInBaseFrame(geometry_msgs::msg::Pose & target_pose
     return false;
   }
 
-  // The trajectory's header frame is authoritative; per-pose frames are ignored
+  // The trajectory's header frame is authoritative
   geometry_msgs::msg::PoseStamped target;
   target.header = trajectory_.header;
   target.pose = trajectory_.poses.back().pose;
@@ -164,7 +164,7 @@ bool ControllerBase::getTargetInBaseFrame(geometry_msgs::msg::Pose & target_pose
     return true;
   }
 
-  // Use the latest available transform, as the docking server historically did
+  // Use the latest available transform, as the docking server previously did
   target.header.stamp = rclcpp::Time(0);
   try {
     tf2_buffer_->transform(target, target, base_frame_);
