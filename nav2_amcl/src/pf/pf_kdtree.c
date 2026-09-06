@@ -220,7 +220,7 @@ pf_kdtree_node_t * pf_kdtree_insert_node(
   pf_kdtree_node_t * node, int key[], double value)
 {
   int i;
-  int split, max_split;
+  long long split, max_split;
 
   // If the node doesn't exist yet...
   if (node == NULL) {
@@ -252,7 +252,7 @@ pf_kdtree_node_t * pf_kdtree_insert_node(
       max_split = 0;
       node->pivot_dim = -1;
       for (i = 0; i < 3; i++) {
-        split = abs(key[i] - node->key[i]);
+        split = llabs((long long)key[i] - (long long)node->key[i]);
         if (split > max_split) {
           max_split = split;
           node->pivot_dim = i;
@@ -260,7 +260,8 @@ pf_kdtree_node_t * pf_kdtree_insert_node(
       }
       assert(node->pivot_dim >= 0);
 
-      node->pivot_value = (key[node->pivot_dim] + node->key[node->pivot_dim]) / 2.0;
+      node->pivot_value =
+        ((double)key[node->pivot_dim] + (double)node->key[node->pivot_dim]) / 2.0;
 
       if (key[node->pivot_dim] < node->pivot_value) {
         node->children[0] = pf_kdtree_insert_node(self, node, NULL, key, value);
