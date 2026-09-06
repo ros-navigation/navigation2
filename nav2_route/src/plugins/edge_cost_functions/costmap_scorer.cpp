@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "nav2_route/plugins/edge_cost_functions/costmap_scorer.hpp"
@@ -74,7 +75,10 @@ void CostmapScorer::configure(
 void CostmapScorer::prepare()
 {
   try {
-    costmap_ = costmap_subscriber_->getCostmap();
+    auto source_costmap = costmap_subscriber_->getCostmap();
+    std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(
+      *source_costmap->getMutex());
+    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(*source_costmap);
   } catch (...) {
     costmap_.reset();
   }

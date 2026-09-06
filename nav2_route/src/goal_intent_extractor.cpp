@@ -14,6 +14,7 @@
 
 #include <string>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "nav2_route/goal_intent_extractor.hpp"
@@ -142,7 +143,10 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   bool enable_search = enable_search_;
   if (enable_search) {
     try {
-      costmap = costmap_subscriber_->getCostmap();
+      auto source_costmap = costmap_subscriber_->getCostmap();
+      std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(
+        *source_costmap->getMutex());
+      costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(*source_costmap);
       costmap_frame_id = costmap_subscriber_->getFrameID();
     } catch (const std::exception & ex) {
       enable_search = false;

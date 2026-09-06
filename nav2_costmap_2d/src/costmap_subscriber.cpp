@@ -26,9 +26,7 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
   if (!isCostmapReceived()) {
     throw std::runtime_error("Costmap is not available");
   }
-  if (costmap_msg_) {
-    processCurrentCostmapMsg();
-  }
+  processCurrentCostmapMsg();
   return costmap_;
 }
 
@@ -53,9 +51,7 @@ void CostmapSubscriber::costmapUpdateCallback(
   const nav2_msgs::msg::CostmapUpdate::ConstSharedPtr & update_msg)
 {
   if (isCostmapReceived()) {
-    if (costmap_msg_) {
-      processCurrentCostmapMsg();
-    }
+    processCurrentCostmapMsg();
 
     std::lock_guard<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
 
@@ -89,6 +85,9 @@ void CostmapSubscriber::costmapUpdateCallback(
 void CostmapSubscriber::processCurrentCostmapMsg()
 {
   std::scoped_lock lock(*(costmap_->getMutex()), costmap_msg_mutex_);
+  if (!costmap_msg_) {
+    return;
+  }
   if (haveCostmapParametersChanged()) {
     costmap_->resizeMap(
       costmap_msg_->metadata.size_x, costmap_msg_->metadata.size_y,
