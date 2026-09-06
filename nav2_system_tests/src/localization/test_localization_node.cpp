@@ -111,7 +111,6 @@ void TestAmclPose::initTestPose()
 TEST_F(TestAmclPose, SimpleAmclTest)
 {
   EXPECT_EQ(true, defaultAmclTest());
-
 }
 
 TEST_F(TestAmclPose, RejectInvalidLaserLikelihoodMaxDist)
