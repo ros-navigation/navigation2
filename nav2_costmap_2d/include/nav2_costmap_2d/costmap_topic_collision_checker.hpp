@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <mutex>
 #include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
@@ -101,6 +102,7 @@ protected:
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber * footprint_sub_ = nullptr;
   FootprintCollisionChecker<std::shared_ptr<Costmap2D>> collision_checker_;
+  std::mutex score_mutex_;
   rclcpp::Clock::SharedPtr clock_;
   Footprint footprint_;
   std::string footprint_string_;
