@@ -48,9 +48,10 @@ void AxisAlignCritic::score(CriticData & data)
   Eigen::ArrayXf diagonal;
   if (normalize_) {
     // Ratio of the minor to the major body-axis velocity: 0 for axis-aligned motion,
-    // 1 at 45 degrees. Independent of speed, so the critic does not also discourage
-    // driving fast (the absolute form below does, which is rarely wanted).
-    diagonal = (vx.min(vy) / (vx.max(vy) + 1e-3f)).rowwise().mean();
+    // exactly 1 at 45 degrees. Independent of speed, so the critic does not also
+    // discourage driving fast (the absolute form below does, which is rarely wanted).
+    // The major axis is clamped to a small floor only to avoid dividing by zero at rest.
+    diagonal = (vx.min(vy) / vx.max(vy).max(1e-3f)).rowwise().mean();
   } else {
     diagonal = vx.min(vy).rowwise().mean();
   }

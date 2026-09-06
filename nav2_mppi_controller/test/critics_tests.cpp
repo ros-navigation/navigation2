@@ -990,25 +990,25 @@ TEST(CriticTests, AxisAlignCritic)
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
-  // 45 degree motion: ratio 0.5 / (0.5 + 1e-3) * 3.0 weight
+  // 45 degree motion: ratio 1.0 * 3.0 weight
   state.vx.setConstant(0.50f);
   state.vy.setConstant(0.50f);
   critic.score(data);
-  EXPECT_NEAR(costs(1), 3.0 * 0.5 / 0.501, 1e-3);
+  EXPECT_NEAR(costs(1), 3.0, 1e-5);
 
-  // partially diagonal motion: ratio 0.3 / (0.6 + 1e-3) * 3.0 weight
+  // partially diagonal motion: ratio 0.3 / 0.6 * 3.0 weight
   costs.setZero();
   state.vx.setConstant(0.60f);
   state.vy.setConstant(0.30f);
   critic.score(data);
-  EXPECT_NEAR(costs(1), 3.0 * 0.3 / 0.601, 1e-3);
+  EXPECT_NEAR(costs(1), 1.5, 1e-5);
 
   // ratio scaling is independent of speed: slow 45 degree motion costs the same as fast
   costs.setZero();
   state.vx.setConstant(0.10f);
   state.vy.setConstant(0.10f);
   critic.score(data);
-  EXPECT_NEAR(costs(1), 3.0 * 0.1 / 0.101, 1e-3);
+  EXPECT_NEAR(costs(1), 3.0, 1e-5);
 
   // absolute scaling: minor axis magnitude 0.3 * 3.0 weight
   critic.setNormalize(false);

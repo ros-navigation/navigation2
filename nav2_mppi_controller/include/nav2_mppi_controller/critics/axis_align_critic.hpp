@@ -45,7 +45,7 @@ public:
   /**
    * @brief Evaluate cost related to diagonal (simultaneous vx / vy) motion
    *
-   * @param costs [out] add reference cost values to this tensor
+   * @param data Critic data to use in scoring; cost values are added to data.costs
    */
   void score(CriticData & data) override;
 
