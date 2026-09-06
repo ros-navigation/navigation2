@@ -65,7 +65,6 @@ public:
 
   const ControllerMap & getControllers() {return controllers_;}
   std::string getCurrentController() {return current_controller_;}
-  DockDatabase * getDockDb() {return dock_db_.get();}
 };
 
 TEST(DockingServerTests, ObjectLifecycle)
@@ -578,8 +577,9 @@ TEST(DockingServerTests, ControllerNamedInstances)
   declareTestDock(node);
   node->declare_parameter("controllers", std::vector<std::string>{"c1", "c2"});
   node->declare_parameter("c1.plugin", "opennav_docking::GracefulController");
-  node->declare_parameter("c2.plugin", "opennav_docking::GracefulController");
+  node->declare_parameter("c2.plugin", "opennav_docking::PIDController");
   node->declare_parameter("c2.k_phi", 5.0);
+  node->declare_parameter("test_plugin.controller", "c1");
 
   ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
 

@@ -16,6 +16,13 @@
       </description>
     </class>
   </library>
+  <library path="pid_controller_plugin">
+    <class type="opennav_docking::PIDController" base_class_type="opennav_docking::ControllerBase">
+      <description>
+        A docking controller implementing PID controller.
+      </description>
+    </class>
+  </library>
   <library path="test_dock">
       <class type="opennav_docking::TestFailureDock"
             base_class_type="opennav_docking_core::ChargingDock">
