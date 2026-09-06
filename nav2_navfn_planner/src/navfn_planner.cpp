@@ -124,6 +124,9 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
   const std::vector<geometry_msgs::msg::PoseStamped> & viapoints,
   std::function<bool()> cancel_checker)
 {
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(
+    *(costmap_->getMutex()));
+
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
 #endif
