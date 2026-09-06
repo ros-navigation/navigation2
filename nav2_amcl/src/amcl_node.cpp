@@ -23,6 +23,7 @@
 #include "nav2_amcl/amcl_node.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <ctime>
@@ -1050,6 +1051,11 @@ rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallb
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == "z_rand" && !std::isfinite(parameter.as_double())) {
+        result.successful = false;
+        result.reason = "z_rand must be finite";
+        return result;
+      }
       if (param_name == "save_pose_rate") {
         // All values are valid
         continue;
