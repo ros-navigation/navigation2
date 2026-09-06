@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
 #include <memory>
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -110,6 +111,33 @@ void TestAmclPose::initTestPose()
 TEST_F(TestAmclPose, SimpleAmclTest)
 {
   EXPECT_EQ(true, defaultAmclTest());
+
+}
+
+TEST_F(TestAmclPose, RejectInvalidLaserLikelihoodMaxDist)
+{
+  auto parameter_client =
+    std::make_shared<rclcpp::SyncParametersClient>(node, "amcl");
+
+  ASSERT_TRUE(parameter_client->wait_for_service(10s));
+
+  const double original_value =
+    parameter_client->get_parameter<double>("laser_likelihood_max_dist");
+
+  const double invalid_values[] = {
+    -1.0,
+    std::numeric_limits<double>::infinity()
+  };
+
+  for (const double invalid_value : invalid_values) {
+    const auto result = parameter_client->set_parameters_atomically(
+      {rclcpp::Parameter("laser_likelihood_max_dist", invalid_value)});
+
+    EXPECT_FALSE(result.successful);
+    EXPECT_EQ(
+      parameter_client->get_parameter<double>("laser_likelihood_max_dist"),
+      original_value);
+  }
 }
 
 int main(int argc, char **argv)
