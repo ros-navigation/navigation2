@@ -684,9 +684,9 @@ bool DockingServer::approachDock(
     options.approaching = true;
     controller->setTrajectory(toTrajectory(target_pose), options);
 
-    // The target is already expressed in the robot's own frame, so the robot pose the
-    // controller measures it against is the origin of that frame
-    // Currently it is a workaround for minimal change in docking server code.
+    // The target is already expressed in the robot's own frame
+    // Currently it is a workaround for keeping computeVelocityCommands
+    // signature consistent with the controller server's version.
     if (!controller->computeVelocityCommands(
         identityPose(params_->base_frame, command->header.stamp),
         odom_sub_->getRawTwist(), dt, command->twist))
