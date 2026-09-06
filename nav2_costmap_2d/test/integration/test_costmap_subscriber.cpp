@@ -296,6 +296,18 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
   costmapPublisher->on_deactivate();
 }
 
+TEST_F(TestCostmapSubscriberShould, rejectMalformedFullCostmapMsgs)
+{
+  auto malformed_msg = std::make_shared<nav2_msgs::msg::Costmap>();
+  malformed_msg->metadata.size_x = 2;
+  malformed_msg->metadata.size_y = 2;
+  malformed_msg->data.resize(3);
+
+  costmapSubscriber->costmapCallback(malformed_msg);
+
+  ASSERT_ANY_THROW(costmapSubscriber->getCostmap());
+}
+
 TEST_F(
   TestCostmapSubscriberShould,
   throwExceptionIfGetCostmapMethodIsCalledBeforeAnyCostmapMsgReceived)
