@@ -94,7 +94,7 @@ void DockDatabase::deactivate()
 bool DockDatabase::validateControllerNames(const DockMap & docks) const
 {
   if (valid_controller_ids_.empty()) {
-    // No controller ids were supplied to check against; nothing to validate.
+    // nothing to validate.
     return true;
   }
 
