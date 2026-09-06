@@ -21,6 +21,8 @@
 #include <vector>
 #include <string>
 #include <chrono>
+#include <future>
+#include <mutex>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -77,12 +79,41 @@ public:
     return cancel_request_count_.load();
   }
 
+  // Withhold the goal acknowledgment until releaseGoalAck() (keeps goal_handle_ null).
+  void gateGoalAck()
+  {
+    std::lock_guard<std::mutex> lock(gate_mutex_);
+    ack_gate_promise_ = std::make_shared<std::promise<void>>();
+    ack_gate_future_ = ack_gate_promise_->get_future().share();
+  }
+
+  // Release a previously installed acknowledgment gate.
+  void releaseGoalAck()
+  {
+    std::lock_guard<std::mutex> lock(gate_mutex_);
+    if (ack_gate_promise_) {
+      ack_gate_promise_->set_value();
+      ack_gate_promise_.reset();
+    }
+    ack_gate_future_ = std::shared_future<void>();
+  }
+
 protected:
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID &,
     std::shared_ptr<const test_msgs::action::Fibonacci::Goal>)
   {
     RCLCPP_INFO(this->get_logger(), "Goal is received..");
+    // Optional ACK gate: copy the future under the lock, then wait without
+    // holding it so releaseGoalAck() cannot deadlock.
+    std::shared_future<void> gate;
+    {
+      std::lock_guard<std::mutex> lock(gate_mutex_);
+      gate = ack_gate_future_;
+    }
+    if (gate.valid()) {
+      gate.wait();
+    }
     if (sleep_duration_ > 0ms) {
       std::this_thread::sleep_for(sleep_duration_);
     }
@@ -145,6 +176,9 @@ protected:
   rclcpp_action::GoalResponse goal_response_{rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE};
   std::atomic_uint accepted_goal_count_{0};
   std::atomic_uint cancel_request_count_{0};
+  std::mutex gate_mutex_;
+  std::shared_ptr<std::promise<void>> ack_gate_promise_;
+  std::shared_future<void> ack_gate_future_;
 };
 
 class FibonacciAction : public nav2_behavior_tree::BtActionNode<test_msgs::action::Fibonacci>
@@ -665,6 +699,167 @@ TEST_F(BTActionNodeTestFixture, test_server_cancel)
   // ticks variable must be 7 because execution time of the action server
   // is at least 1000000 x 50 ms
   EXPECT_EQ(ticks, 7);
+}
+
+TEST_F(BTActionNodeTestFixture, test_cancel_pending_goal_on_halt)
+{
+  // #6426: halting a node whose goal is still pending (goal_handle_ null) must
+  // still cancel that goal once acknowledged, not leave it orphaned.
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="1000000" />
+        </BehaviorTree>
+      </root>)";
+
+  // Large server_timeout so a single tick yields RUNNING with the goal still
+  // pending, and so halt() has ample budget to wait for the (gated) ack.
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 2000ms);
+  config_->blackboard->set<std::chrono::milliseconds>("cancel_timeout", 2000ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  action_server_->setHandleGoalSleepDuration(0ms);
+  action_server_->setServerLoopRate(10000000ns);  // 10ms feedback loop
+
+  // Withhold the acknowledgment so the goal stays "sent but not acknowledged".
+  action_server_->gateGoalAck();
+
+  // One tick: the goal is dispatched; with the ack gated, the node cannot latch
+  // the goal handle and must report RUNNING with the goal still pending.
+  BT::NodeStatus status = tree_->tickOnce();
+  EXPECT_EQ(status, BT::NodeStatus::RUNNING);
+  EXPECT_EQ(action_server_->getCancelRequestCount(), 0u);
+
+  // Now let the server acknowledge, then halt the node. A correct implementation
+  // resolves the pending goal handle and cancels the in-flight goal.
+  action_server_->releaseGoalAck();
+  tree_->haltTree();
+
+  // The in-flight goal must have been cancelled exactly once (not orphaned).
+  EXPECT_EQ(action_server_->getCancelRequestCount(), 1u)
+    << "Halting a BtActionNode with a pending (unacknowledged) goal must cancel "
+       "it once acknowledged; got no cancel request, i.e. the goal was orphaned.";
+  EXPECT_EQ(action_server_->getAcceptedGoalCount(), 1u);
+}
+
+TEST_F(BTActionNodeTestFixture, test_halt_with_pending_rejected_goal)
+{
+  // #6426 companion: if the still-pending goal is rejected, halt() resolves the
+  // handle, finds nothing to cancel, and completes without throwing.
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="1000000" />
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 2000ms);
+  config_->blackboard->set<std::chrono::milliseconds>("cancel_timeout", 2000ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  action_server_->setHandleGoalSleepDuration(0ms);
+  action_server_->setServerLoopRate(10000000ns);
+  action_server_->setGoalResponse(rclcpp_action::GoalResponse::REJECT);
+
+  // Gate the response so the goal is dispatched but stays pending after the tick.
+  action_server_->gateGoalAck();
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::RUNNING);
+  EXPECT_EQ(action_server_->getCancelRequestCount(), 0u);
+
+  // Release the response (server rejects); halting resolves the pending handle,
+  // catches the rejection, and completes cleanly.
+  action_server_->releaseGoalAck();
+  EXPECT_NO_THROW(tree_->haltTree());
+
+  // A rejected goal is never accepted, so no cancel request is sent.
+  EXPECT_EQ(action_server_->getCancelRequestCount(), 0u);
+  EXPECT_EQ(action_server_->getAcceptedGoalCount(), 0u);
+}
+
+TEST_F(BTActionNodeTestFixture, test_halt_with_pending_goal_timeout)
+{
+  // #6426 companion: if no acknowledgment arrives, halt()'s bounded wait returns
+  // cleanly without sending a cancel and without hanging.
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="1000000" />
+        </BehaviorTree>
+      </root>)";
+
+  // Deliberately short, bounded server timeout so the pending-handle wait ends
+  // deterministically when no acknowledgment arrives.
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 200ms);
+  config_->blackboard->set<std::chrono::milliseconds>("cancel_timeout", 200ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  action_server_->setHandleGoalSleepDuration(0ms);
+  // Reject on release so teardown never enters execute(); the gate stays closed
+  // throughout halt(), so this still exercises the timeout path.
+  action_server_->setGoalResponse(rclcpp_action::GoalResponse::REJECT);
+
+  // Gate the acknowledgment and keep it withheld during halt: the goal stays
+  // pending, so halt()'s wait loop exhausts its bounded budget and exits.
+  action_server_->gateGoalAck();
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::RUNNING);
+
+  EXPECT_NO_THROW(tree_->haltTree());
+  EXPECT_EQ(action_server_->getCancelRequestCount(), 0u);
+
+  // Release the gate so the server worker can unblock for teardown.
+  action_server_->releaseGoalAck();
+}
+
+TEST_F(BTActionNodeTestFixture, test_halt_uses_remaining_timeout_budget)
+{
+  // #6426: halt() spends only the goal's REMAINING server_timeout_ budget, never
+  // a fresh one. Once the budget is exhausted it must not spin, so a goal that is
+  // acknowledged only afterwards is left un-latched and is not cancelled here.
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="5" />
+        </BehaviorTree>
+      </root>)";
+
+  const auto server_timeout = std::chrono::milliseconds(100);
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", server_timeout);
+  config_->blackboard->set<std::chrono::milliseconds>("cancel_timeout", 100ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  action_server_->setHandleGoalSleepDuration(0ms);
+  action_server_->setServerLoopRate(10000000ns);
+
+  // Dispatch the goal and hold it pending.
+  action_server_->gateGoalAck();
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::RUNNING);
+
+  // Let the entire server_timeout_ budget elapse before the response is available.
+  std::this_thread::sleep_for(server_timeout * 3);
+  action_server_->releaseGoalAck();
+
+  // The server does accept the goal, so the acknowledgment is genuinely available.
+  for (int i = 0; i < 200 && action_server_->getAcceptedGoalCount() == 0u; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  ASSERT_EQ(action_server_->getAcceptedGoalCount(), 1u);
+
+  // With no remaining budget halt() does not spin, does not latch the handle, and
+  // issues no cancel. A fresh-timeout implementation would instead cancel it.
+  tree_->haltTree();
+  EXPECT_EQ(action_server_->getCancelRequestCount(), 0u);
 }
 
 int main(int argc, char ** argv)
