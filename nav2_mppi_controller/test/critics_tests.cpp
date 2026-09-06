@@ -32,6 +32,7 @@
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 #include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
+#include "nav2_mppi_controller/critics/axis_align_critic.hpp"
 #include "utils_test.cpp"  // NOLINT
 
 // Tests the various critic plugin functions
@@ -41,6 +42,20 @@
 using namespace mppi;  // NOLINT
 using namespace mppi::critics;  // NOLINT
 using namespace mppi::utils;  // NOLINT
+
+class AxisAlignCriticWrapper : public AxisAlignCritic
+{
+public:
+  AxisAlignCriticWrapper()
+  : AxisAlignCritic()
+  {
+  }
+
+  void setNormalize(bool normalize)
+  {
+    normalize_ = normalize;
+  }
+};
 
 class PathAngleCriticWrapper : public PathAngleCritic
 {
@@ -927,4 +942,93 @@ TEST(CriticTests, VelocityDeadbandCritic)
   critic.score(data);
   // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
   EXPECT_NEAR(costs(1), 19.845, 0.01);
+}
+
+TEST(CriticTests, AxisAlignCritic)
+{
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.reset(1000, 30);
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+  data.motion_model = std::make_shared<OmniMotionModel>();
+  state.local_path_length = 5.0f;  // far from goal, critic active
+
+  // Initialization testing
+
+  // Make sure initializes correctly and that defaults are reasonable
+  AxisAlignCriticWrapper critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+
+  // Scoring testing
+
+  // pure forward motion is axis aligned, should not have any costs
+  state.vx.setConstant(0.80f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+
+  // pure lateral motion is axis aligned too
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.60f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+
+  // 45 degree motion: ratio 0.5 / (0.5 + 1e-3) * 3.0 weight
+  state.vx.setConstant(0.50f);
+  state.vy.setConstant(0.50f);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 3.0 * 0.5 / 0.501, 1e-3);
+
+  // partially diagonal motion: ratio 0.3 / (0.6 + 1e-3) * 3.0 weight
+  costs.setZero();
+  state.vx.setConstant(0.60f);
+  state.vy.setConstant(0.30f);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 3.0 * 0.3 / 0.601, 1e-3);
+
+  // ratio scaling is independent of speed: slow 45 degree motion costs the same as fast
+  costs.setZero();
+  state.vx.setConstant(0.10f);
+  state.vy.setConstant(0.10f);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 3.0 * 0.1 / 0.101, 1e-3);
+
+  // absolute scaling: minor axis magnitude 0.3 * 3.0 weight
+  critic.setNormalize(false);
+  costs.setZero();
+  state.vx.setConstant(0.60f);
+  state.vy.setConstant(0.30f);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 0.9, 1e-3);
+  critic.setNormalize(true);
+
+  // within threshold_to_consider of the goal the critic yields to the goal critics
+  costs.setZero();
+  state.local_path_length = 0.2f;
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+  state.local_path_length = 5.0f;
+
+  // non-holonomic motion models have no vy, critic is inactive
+  costs.setZero();
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 }
