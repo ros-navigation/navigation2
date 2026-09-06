@@ -290,8 +290,6 @@ protected:
   std::string curr_dock_type_;
   std::string curr_dock_controller_;
 
-  // Controller plugins. The loader is declared before the map so that it outlives the
-  // instances it created: members are destroyed in reverse declaration order.
   using ControllerMap = std::unordered_map<std::string, ControllerBase::Ptr>;
   pluginlib::ClassLoader<ControllerBase> controller_loader_;
   ControllerMap controllers_;
