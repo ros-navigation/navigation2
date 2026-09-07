@@ -110,8 +110,8 @@ bool Shape::putFill(
       while (hi >= lo && !inside(static_cast<unsigned int>(hi))) {
         hi--;
       }
-      for (int64_t mx = lo; mx <= hi; mx++) {
-        processVal(row[mx], value, overlay_type);
+      if (lo <= hi) {
+        processRun(row + lo, static_cast<size_t>(hi - lo + 1), value, overlay_type);
       }
     }
   }

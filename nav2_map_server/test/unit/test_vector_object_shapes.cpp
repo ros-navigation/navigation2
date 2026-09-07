@@ -979,6 +979,100 @@ TEST_F(Tester, testPutFillChecksPointsPerRowNotPerCell)
   EXPECT_LE(polygon->point_checks, 8u * 300u);
 }
 
+TEST_F(Tester, testPutFillLargeMap)
+{
+  // 9000 x 9000 cells at 5 cm (81 M cells, 450 m): warehouse-scale VO grid
+  const unsigned int size = 9000;
+  auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  map->header.frame_id = GLOBAL_FRAME_ID;
+  map->info.resolution = 0.05;
+  map->info.width = size;
+  map->info.height = size;
+  map->info.origin.position.x = 0.0;
+  map->info.origin.position.y = 0.0;
+  map->data.assign(static_cast<size_t>(size) * size, nav2_util::OCC_GRID_UNKNOWN);
+  const auto cell = [&](unsigned int mx, unsigned int my) {
+      return map->data[static_cast<size_t>(my) * size + mx];
+    };
+
+  // Axis-aligned rectangle spanning most of the grid: the filled count is exactly
+  // (columns whose center is inside) x (rows whose center is inside)
+  auto po = makePolygonObject({});
+  po->points.clear();
+  for (auto [x, y] : {std::pair{10.1f, 20.3f}, {439.7f, 20.3f}, {439.7f, 430.9f},
+      {10.1f, 430.9f}})
+  {
+    geometry_msgs::msg::Point32 p;
+    p.x = x;
+    p.y = y;
+    po->points.push_back(p);
+  }
+  ASSERT_TRUE(polygon_->setParams(po));
+  ASSERT_TRUE(polygon_->putFill(map, nav2_map_server::OverlayType::OVERLAY_SEQ));
+  size_t columns_inside = 0, rows_inside = 0;
+  for (unsigned int i = 0; i < size; i++) {
+    double wx, wy;
+    nav2_util::mapToWorld(map, i, i, wx, wy);
+    columns_inside += polygon_->isPointInside(wx, 200.0);
+    rows_inside += polygon_->isPointInside(200.0, wy);
+  }
+  EXPECT_EQ(columns_inside, 8592u);
+  EXPECT_EQ(rows_inside, 8212u);
+  EXPECT_EQ(
+    static_cast<size_t>(std::count(
+      map->data.begin(), map->data.end(), nav2_util::OCC_GRID_OCCUPIED)),
+    columns_inside * rows_inside);
+  EXPECT_EQ(cell(0, 0), nav2_util::OCC_GRID_UNKNOWN);
+  EXPECT_EQ(cell(size - 1, size - 1), nav2_util::OCC_GRID_UNKNOWN);
+  EXPECT_EQ(cell(size / 2, size / 2), nav2_util::OCC_GRID_OCCUPIED);
+
+  // A rotated triangle and a large circle overlaid with MAX; compare against the per-cell
+  // predicate on a strided sample plus every cell of the rows and columns at their extremes
+  po->points.clear();
+  for (auto [x, y] : {std::pair{5.0f, 100.0f}, {300.0f, 5.0f}, {445.0f, 440.0f}}) {
+    geometry_msgs::msg::Point32 p;
+    p.x = x;
+    p.y = y;
+    po->points.push_back(p);
+  }
+  po->value = 70;
+  ASSERT_TRUE(polygon_->setParams(po));
+  auto co = makeCircleObject({});
+  co->center.x = 225.0;
+  co->center.y = 225.0;
+  co->radius = 210.0;
+  co->value = 90;
+  ASSERT_TRUE(circle_->setParams(co));
+  map->data.assign(map->data.size(), nav2_util::OCC_GRID_UNKNOWN);
+  ASSERT_TRUE(polygon_->putFill(map, nav2_map_server::OverlayType::OVERLAY_MAX));
+  ASSERT_TRUE(circle_->putFill(map, nav2_map_server::OverlayType::OVERLAY_MAX));
+  const auto expected = [&](unsigned int mx, unsigned int my) {
+      double wx, wy;
+      nav2_util::mapToWorld(map, mx, my, wx, wy);
+      int8_t value = nav2_util::OCC_GRID_UNKNOWN;
+      if (polygon_->isPointInside(wx, wy)) {
+        value = 70;
+      }
+      if (circle_->isPointInside(wx, wy)) {
+        value = 90;
+      }
+      return value;
+    };
+  size_t mismatches = 0;
+  for (unsigned int my = 0; my < size; my += 37) {
+    for (unsigned int mx = 0; mx < size; mx += 41) {
+      mismatches += cell(mx, my) != expected(mx, my);
+    }
+  }
+  for (unsigned int i = 0; i < size; i++) {
+    for (unsigned int edge : {99u, 100u, 8699u, 8700u, 8799u, 8800u, size - 1}) {
+      mismatches += cell(i, edge) != expected(i, edge);
+      mismatches += cell(edge, i) != expected(edge, i);
+    }
+  }
+  EXPECT_EQ(mismatches, 0u);
+}
+
 int main(int argc, char ** argv)
 {
   // Initialize the system

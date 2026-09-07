@@ -16,6 +16,8 @@
 #define NAV2_MAP_SERVER__VECTOR_OBJECT_UTILS_HPP_
 
 #include <uuid/uuid.h>
+#include <algorithm>
+#include <cstddef>
 #include <stdexcept>
 #include <string>
 
@@ -86,6 +88,43 @@ inline void processVal(
 }
 
 /**
+ * @brief Updates a contiguous run of cells with given shape value according to the overlay type.
+ * Same result as processVal() on each cell; branch-free loops keep the run vectorizable
+ * @param cells Pointer to the first cell of the run
+ * @param count Number of cells in the run
+ * @param shape_val Vector object value to be overlaid on map
+ * @param overlay_type Type of overlay
+ * @throw std::exception in case of unknown overlay type
+ */
+inline void processRun(
+  int8_t * cells, const size_t count, const int8_t shape_val,
+  const OverlayType overlay_type)
+{
+  switch (overlay_type) {
+    case OverlayType::OVERLAY_SEQ:
+      std::fill_n(cells, count, shape_val);
+      return;
+    case OverlayType::OVERLAY_MAX:
+      for (size_t i = 0; i < count; i++) {
+        cells[i] = std::max(cells[i], shape_val);
+      }
+      return;
+    case OverlayType::OVERLAY_MIN:
+      if (shape_val == nav2_util::OCC_GRID_UNKNOWN) {
+        return;
+      }
+      for (size_t i = 0; i < count; i++) {
+        if (cells[i] == nav2_util::OCC_GRID_UNKNOWN || shape_val < cells[i]) {
+          cells[i] = shape_val;
+        }
+      }
+      return;
+    default:
+      throw std::runtime_error{"Unknown overlay type"};
+  }
+}
+
+/**
  * @brief Updates the cell on the map with given shape value according to the given overlay type
  * @param map Output map to be updated with
  * @param offset Offset to the cell to be updated
@@ -93,14 +132,12 @@ inline void processVal(
  * @param overlay_type Type of overlay
  */
 inline void processCell(
-  nav_msgs::msg::OccupancyGrid::SharedPtr map,
+  const nav_msgs::msg::OccupancyGrid::SharedPtr & map,
   const unsigned int offset,
   const int8_t shape_val,
   const OverlayType overlay_type)
 {
-  int8_t map_val = map->data[offset];
-  processVal(map_val, shape_val, overlay_type);
-  map->data[offset] = map_val;
+  processVal(map->data[offset], shape_val, overlay_type);
 }
 
 /// @brief Functor class used in raytraceLine algorithm
