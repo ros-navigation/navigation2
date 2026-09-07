@@ -138,7 +138,7 @@ TEST_F(TestAmclPose, RejectInvalidLaserLikelihoodMaxDist)
       original_value);
   }
   EXPECT_TRUE(parameter_client->set_parameters_atomically(
-    {rclcpp::Parameter("laser_likelihood_max_dist", 1.0)}).successful);
+      {rclcpp::Parameter("laser_likelihood_max_dist", 1.0)}).successful);
 }
 
 int main(int argc, char **argv)
