@@ -235,7 +235,7 @@ NavfnPlanner::makePlan(
     start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-  
+
   unsigned int mx, my;
   worldToMap(wx, wy, mx, my);
 
