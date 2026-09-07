@@ -17,6 +17,8 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon.hpp"
@@ -147,6 +149,25 @@ public:
   virtual bool isPointInside(const double px, const double py) const = 0;
 
   /**
+   * @brief Gets X-intervals of the shape interior along the horizontal line y = py.
+   * Intervals are half-open [begin, end) and may slightly over-cover the shape but never
+   * under-cover it; putFill() trims their ends with isPointInside()
+   * @param py Y-coordinate of the line
+   * @param spans Output world X-intervals in ascending order
+   */
+  virtual void getRowSpans(
+    const double py, std::vector<std::pair<double, double>> & spans) const = 0;
+
+  /**
+   * @brief Fills the shape on map: every cell whose center is inside the shape is updated.
+   * Produces the same result as checking isPointInside() for each cell of the shape's box
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   * @return False if shape boundaries can not be converted to map coordinates
+   */
+  bool putFill(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
+
+  /**
    * @brief Puts shape borders on map.
    * Empty virtual method intended to be used in child implementations
    * @param map Output map pointer
@@ -252,6 +273,14 @@ public:
    * @return True if given point inside the shape
    */
   bool isPointInside(const double px, const double py) const;
+
+  /**
+   * @brief Gets X-intervals of the polygon interior along the horizontal line y = py.
+   * Uses the same crossing rule and arithmetic as isPointInside(), so the intervals are exact
+   * @param py Y-coordinate of the line
+   * @param spans Output world X-intervals in ascending order
+   */
+  void getRowSpans(const double py, std::vector<std::pair<double, double>> & spans) const;
 
   /**
    * @brief Puts shape borders on map.
@@ -362,6 +391,13 @@ public:
    * @return True if given point inside the shape
    */
   bool isPointInside(const double px, const double py) const;
+
+  /**
+   * @brief Gets the X-interval of the circle interior along the horizontal line y = py
+   * @param py Y-coordinate of the line
+   * @param spans Output world X-interval, empty if the line misses the circle
+   */
+  void getRowSpans(const double py, std::vector<std::pair<double, double>> & spans) const;
 
   /**
    * @brief Puts shape borders on map.

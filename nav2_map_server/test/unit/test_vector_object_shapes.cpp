@@ -19,7 +19,10 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <random>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/point32.hpp"
@@ -785,6 +788,195 @@ TEST_F(Tester, testCircleDifferentFrame)
 
   // Try to transform to incorrect frame
   ASSERT_FALSE(circle_->toFrame("incorrect_frame", tf_buffer_, 0.1));
+}
+
+// Fills each cell of the shape's box whose center is inside: the reference putFill() must match
+static nav_msgs::msg::OccupancyGrid::SharedPtr fillPerCell(
+  nav2_map_server::Shape & shape, nav_msgs::msg::OccupancyGrid::ConstSharedPtr map,
+  const nav2_map_server::OverlayType overlay_type)
+{
+  auto expected = std::make_shared<nav_msgs::msg::OccupancyGrid>(*map);
+  double wx1, wy1, wx2, wy2;
+  unsigned int mx1 = 0, my1 = 0, mx2 = 0, my2 = 0;
+  shape.getBoundaries(wx1, wy1, wx2, wy2);
+  EXPECT_TRUE(nav2_util::worldToMap(map, wx1, wy1, mx1, my1));
+  EXPECT_TRUE(nav2_util::worldToMap(map, wx2, wy2, mx2, my2));
+  for (unsigned int my = my1; my <= my2; my++) {
+    for (unsigned int mx = mx1; mx <= mx2; mx++) {
+      double wx, wy;
+      nav2_util::mapToWorld(map, mx, my, wx, wy);
+      if (shape.isPointInside(wx, wy)) {
+        nav2_map_server::processVal(
+          expected->data[my * map->info.width + mx], shape.getValue(), overlay_type);
+      }
+    }
+  }
+  return expected;
+}
+
+// Pre-existing content (unknown, free and a mid-value stripe) makes the overlay rules observable
+static nav_msgs::msg::OccupancyGrid::SharedPtr makePrefilledMap()
+{
+  auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  map->header.frame_id = GLOBAL_FRAME_ID;
+  map->info.resolution = 0.1;
+  map->info.width = 40;
+  map->info.height = 40;
+  map->info.origin.position.x = -2.0;
+  map->info.origin.position.y = -2.0;
+  map->data.assign(40 * 40, nav2_util::OCC_GRID_UNKNOWN);
+  for (unsigned int i = 0; i < map->data.size(); i++) {
+    if (i % 7 == 0) {
+      map->data[i] = 50;
+    } else if (i % 3 == 0) {
+      map->data[i] = nav2_util::OCC_GRID_FREE;
+    }
+  }
+  return map;
+}
+
+static const nav2_map_server::OverlayType OVERLAYS[] = {
+  nav2_map_server::OverlayType::OVERLAY_SEQ,
+  nav2_map_server::OverlayType::OVERLAY_MAX,
+  nav2_map_server::OverlayType::OVERLAY_MIN};
+
+static void expectFillMatchesPerCell(nav2_map_server::Shape & shape, const std::string & label)
+{
+  for (const auto overlay : OVERLAYS) {
+    auto map = makePrefilledMap();
+    ASSERT_TRUE(shape.putFill(map, overlay)) << label;
+    ASSERT_EQ(map->data, fillPerCell(shape, makePrefilledMap(), overlay)->data)
+      << label << " overlay " << static_cast<int>(overlay);
+  }
+}
+
+TEST_F(Tester, testPutFillMatchesPerCellCheck)
+{
+  std::mt19937 generator(7);
+  std::uniform_real_distribution<float> coordinate(-1.8f, 1.8f);
+  std::uniform_int_distribution<int> vertices(3, 9);
+  for (int iteration = 0; iteration < 200; iteration++) {
+    auto po = makePolygonObject({});
+    po->points.clear();
+    const int count = vertices(generator);
+    for (int i = 0; i < count; i++) {
+      geometry_msgs::msg::Point32 p;
+      p.x = coordinate(generator);
+      p.y = coordinate(generator);
+      if (i % 3 == 0) {
+        // Vertices on cell centers and cell edges exercise the tie-breaking rules
+        p.x = std::round(p.x * 10.0f) / 10.0f + ((i % 2) ? 0.05f : 0.0f);
+      }
+      po->points.push_back(p);
+    }
+    ASSERT_TRUE(polygon_->setParams(po));
+    expectFillMatchesPerCell(*polygon_, "polygon " + std::to_string(iteration));
+
+    auto co = makeCircleObject({});
+    co->center.x = coordinate(generator) / 2.0f;
+    co->center.y = std::round(coordinate(generator) * 10.0f) / 20.0f;
+    co->radius = 0.05 + std::abs(coordinate(generator)) / 2.0;
+    ASSERT_TRUE(circle_->setParams(co));
+    expectFillMatchesPerCell(*circle_, "circle " + std::to_string(iteration));
+  }
+}
+
+TEST_F(Tester, testPutFillDegeneratePolygonsMatchPerCellCheck)
+{
+  // Cell centers of the test map lie on x, y = -1.95, -1.85, ..., 1.95
+  const std::vector<std::pair<std::string, std::vector<std::pair<float, float>>>> cases = {
+    {"bow-tie", {{-1.0f, -1.0f}, {1.0f, 1.0f}, {1.0f, -1.0f}, {-1.0f, 1.0f}}},
+    {"horizontal edges on cell-center rows",
+      {{-1.0f, 0.05f}, {1.0f, 0.05f}, {1.0f, 0.55f}, {-1.0f, 0.55f}}},
+    {"vertical edges on cell-center columns",
+      {{0.05f, -1.0f}, {0.55f, -1.0f}, {0.55f, 1.0f}, {0.05f, 1.0f}}},
+    {"vertex on a cell center", {{-1.0f, -1.0f}, {1.0f, -1.0f}, {0.05f, 1.05f}}},
+    {"duplicate consecutive vertices",
+      {{-1.0f, -1.0f}, {-1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}}},
+    {"collinear vertices",
+      {{-1.0f, -1.0f}, {0.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}}},
+    {"sub-cell polygon", {{0.01f, 0.01f}, {0.03f, 0.01f}, {0.02f, 0.03f}}},
+    {"zero-area polygon", {{-1.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}}},
+    {"touching the last cell center",
+      {{-1.0f, -1.0f}, {1.95f, -1.0f}, {1.95f, 1.95f}, {-1.0f, 1.95f}}},
+    {"concave with a notch on a cell-center row",
+      {{-1.5f, -1.5f}, {1.5f, -1.5f}, {1.5f, 1.5f}, {0.5f, 1.5f}, {0.5f, 0.05f}, {-0.5f, 0.05f},
+        {-0.5f, 1.5f}, {-1.5f, 1.5f}}},
+  };
+  for (const auto & [label, vertices] : cases) {
+    auto po = makePolygonObject({});
+    po->points.clear();
+    for (const auto & [x, y] : vertices) {
+      geometry_msgs::msg::Point32 p;
+      p.x = x;
+      p.y = y;
+      po->points.push_back(p);
+    }
+    ASSERT_TRUE(polygon_->setParams(po)) << label;
+    expectFillMatchesPerCell(*polygon_, label);
+  }
+}
+
+TEST_F(Tester, testPutFillOutsideMap)
+{
+  auto po = makePolygonObject({});
+  for (auto & p : po->points) {
+    p.x += 10.0f;
+  }
+  ASSERT_TRUE(polygon_->setParams(po));
+  auto map = makeMap();
+  ASSERT_FALSE(polygon_->putFill(map, nav2_map_server::OverlayType::OVERLAY_SEQ));
+  verifyMapEmpty(map);
+
+  // Larger than the map: boundaries can not be converted either
+  po = makePolygonObject({});
+  for (auto & p : po->points) {
+    p.x *= 3.0f;
+    p.y *= 3.0f;
+  }
+  ASSERT_TRUE(polygon_->setParams(po));
+  ASSERT_FALSE(polygon_->putFill(map, nav2_map_server::OverlayType::OVERLAY_SEQ));
+  verifyMapEmpty(map);
+}
+
+class CountingPolygon : public nav2_map_server::Polygon
+{
+public:
+  explicit CountingPolygon(const nav2::LifecycleNode::WeakPtr & node)
+  : Polygon(node)
+  {}
+
+  bool isPointInside(const double px, const double py) const override
+  {
+    ++point_checks;
+    return Polygon::isPointInside(px, py);
+  }
+
+  mutable size_t point_checks{0};
+};
+
+TEST_F(Tester, testPutFillChecksPointsPerRowNotPerCell)
+{
+  auto po = makePolygonObject({});
+  for (auto & p : po->points) {
+    p.x *= 1.5f;
+    p.y *= 1.5f;
+  }
+  auto polygon = std::make_shared<CountingPolygon>(node_);
+  ASSERT_TRUE(polygon->setParams(po));
+
+  auto map = makeMap();
+  map->info.resolution = 0.01;
+  map->info.width = 400;
+  map->info.height = 400;
+  map->data.assign(400 * 400, nav2_util::OCC_GRID_FREE);
+  ASSERT_TRUE(polygon->putFill(map, nav2_map_server::OverlayType::OVERLAY_SEQ));
+
+  const size_t filled = std::count(map->data.begin(), map->data.end(),
+    nav2_util::OCC_GRID_OCCUPIED);
+  ASSERT_EQ(filled, 300u * 300u);
+  // Interior cells are filled without testing them; only span ends are checked (a few per row)
+  EXPECT_LE(polygon->point_checks, 8u * 300u);
 }
 
 int main(int argc, char ** argv)

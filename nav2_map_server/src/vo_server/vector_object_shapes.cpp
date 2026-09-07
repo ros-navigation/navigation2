@@ -15,10 +15,12 @@
 #include "nav2_map_server/vector_object_shapes.hpp"
 
 #include <uuid/uuid.h>
+#include <algorithm>
 #include <cmath>
 #include <exception>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -45,6 +47,75 @@ Shape::~Shape()
 ShapeType Shape::getType()
 {
   return type_;
+}
+
+bool Shape::putFill(
+  nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
+{
+  double wx1, wy1, wx2, wy2;
+  unsigned int mx1, my1, mx2, my2;
+  getBoundaries(wx1, wy1, wx2, wy2);
+  if (
+    !nav2_util::worldToMap(map, wx1, wy1, mx1, my1) ||
+    !nav2_util::worldToMap(map, wx2, wy2, mx2, my2))
+  {
+    return false;
+  }
+
+  const double origin_x = map->info.origin.position.x;
+  const double resolution = map->info.resolution;
+  const int8_t value = getValue();
+  std::vector<std::pair<double, double>> spans;
+  for (unsigned int my = my1; my <= my2; my++) {
+    double row_x, row_y;
+    nav2_util::mapToWorld(map, mx1, my, row_x, row_y);
+    // Same cell-center test as the per-cell approach, evaluated only at span ends
+    const auto inside = [&](unsigned int mx) {
+        double wx, wy;
+        nav2_util::mapToWorld(map, mx, my, wx, wy);
+        return isPointInside(wx, wy);
+      };
+    getRowSpans(row_y, spans);
+    int8_t * row = map->data.data() + static_cast<size_t>(my) * map->info.width;
+    for (const auto & [x_begin, x_end] : spans) {
+      // Cells whose center lies in [x_begin, x_end), located with the same cell-center
+      // arithmetic as the predicate; index estimates alone can be one cell off at ties
+      const auto center_x = [&](int64_t mx) {
+          double wx, wy;
+          nav2_util::mapToWorld(map, static_cast<unsigned int>(mx), my, wx, wy);
+          return wx;
+        };
+      int64_t lo = static_cast<int64_t>(std::clamp(
+          std::ceil((x_begin - origin_x) / resolution - 0.5),
+          static_cast<double>(mx1), static_cast<double>(mx2)));
+      int64_t hi = static_cast<int64_t>(std::clamp(
+          std::floor((x_end - origin_x) / resolution - 0.5),
+          static_cast<double>(mx1), static_cast<double>(mx2)));
+      while (lo > mx1 && center_x(lo - 1) >= x_begin) {
+        lo--;
+      }
+      while (lo <= mx2 && center_x(lo) < x_begin) {
+        lo++;
+      }
+      while (hi < mx2 && center_x(hi + 1) < x_end) {
+        hi++;
+      }
+      while (hi >= mx1 && center_x(hi) >= x_end) {
+        hi--;
+      }
+      // Spans may be slightly wider than the shape (circles): trim with the exact predicate
+      while (lo <= hi && !inside(static_cast<unsigned int>(lo))) {
+        lo++;
+      }
+      while (hi >= lo && !inside(static_cast<unsigned int>(hi))) {
+        hi--;
+      }
+      for (int64_t mx = lo; mx <= hi; mx++) {
+        processVal(row[mx], value, overlay_type);
+      }
+    }
+  }
+  return true;
 }
 
 bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_uuid)
@@ -241,6 +312,35 @@ void Polygon::getBoundaries(double & min_x, double & min_y, double & max_x, doub
 bool Polygon::isPointInside(const double px, const double py) const
 {
   return nav2_util::geometry_utils::isPointInsidePolygon(px, py, polygon_->points);
+}
+
+void Polygon::getRowSpans(
+  const double py, std::vector<std::pair<double, double>> & spans) const
+{
+  // Mirrors the edge selection and intersection arithmetic of isPointInsidePolygon()
+  const auto & points = polygon_->points;
+  std::vector<double> crossings;
+  int i = points.size() - 1;
+  for (int j = 0; j < static_cast<int>(points.size()); j++) {
+    if ((py <= points[i].y) == (py > points[j].y)) {
+      crossings.push_back(
+        points[i].x + (py - points[i].y) * (points[j].x - points[i].x) /
+        (points[j].y - points[i].y));
+    }
+    i = j;
+  }
+  std::sort(crossings.begin(), crossings.end());
+
+  spans.clear();
+  const size_t count = crossings.size();
+  if (count % 2 == 1) {
+    spans.emplace_back(std::numeric_limits<double>::lowest(), crossings[0]);
+  }
+  for (size_t k = 1; k < count; k++) {
+    if ((count - k) % 2 == 1) {
+      spans.emplace_back(crossings[k - 1], crossings[k]);
+    }
+  }
 }
 
 void Polygon::putBorders(
@@ -446,6 +546,21 @@ bool Circle::isPointInside(const double px, const double py) const
 {
   return ( (px - center_->x) * (px - center_->x) + (py - center_->y) * (py - center_->y) ) <=
          params_->radius * params_->radius;
+}
+
+void Circle::getRowSpans(
+  const double py, std::vector<std::pair<double, double>> & spans) const
+{
+  spans.clear();
+  const double dy = py - center_->y;
+  const double half_chord_sq = params_->radius * params_->radius - dy * dy;
+  if (half_chord_sq < 0.0) {
+    return;
+  }
+  const double half_chord = std::sqrt(half_chord_sq);
+  // Slightly over-cover so rounding never drops a boundary cell; putFill() trims exactly
+  const double padding = std::max(1.0, static_cast<double>(params_->radius)) * 1e-9;
+  spans.emplace_back(center_->x - half_chord - padding, center_->x + half_chord + padding);
 }
 
 void Circle::putBorders(
