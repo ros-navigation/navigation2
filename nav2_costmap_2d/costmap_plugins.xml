@@ -27,6 +27,9 @@
     <class type="nav2_costmap_2d::PluginContainerLayer" base_class_type="nav2_costmap_2d::Layer">
       <description>Plugin to group different layers within the same costmap</description>
     </class>
+    <class type="nav2_costmap_2d::MonocularDepthLayer" base_class_type="nav2_costmap_2d::Layer">
+      <description>Monocular depth layer costmap</description>
+    </class>
   </library>
 
   <library path="filters">
