@@ -116,8 +116,9 @@ TEST_F(TestAmclPose, SimpleAmclTest)
 
 TEST_F(TestAmclPose, RejectNonFiniteZRand)
 {
+  auto parameter_node = rclcpp::Node::make_shared("z_rand_parameter_test");
   auto parameter_client =
-    std::make_shared<rclcpp::SyncParametersClient>(node, "amcl");
+    std::make_shared<rclcpp::SyncParametersClient>(parameter_node, "amcl");
 
   ASSERT_TRUE(parameter_client->wait_for_service(10s));
 
