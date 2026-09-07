@@ -37,7 +37,8 @@ def generate_launch_description() -> LaunchDescription:
 
     # Create the launch configuration variables
     slam = LaunchConfigAsBool('slam')
-    use_amcl = LaunchConfigAsBool('use_amcl')
+    use_localization = LaunchConfigAsBool('use_localization')
+    serve_static_map = LaunchConfigAsBool('serve_static_map')
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
     graph_filepath = LaunchConfiguration('graph')
@@ -77,10 +78,16 @@ def generate_launch_description() -> LaunchDescription:
         'slam', default_value='False', description='Whether run a SLAM'
     )
 
-    declare_use_amcl_cmd = DeclareLaunchArgument(
-        'use_amcl',
+    declare_use_localization_cmd = DeclareLaunchArgument(
+        'use_localization',
         default_value='True',
-        description='Whether to launch AMCL when SLAM is disabled',
+        description='Whether to enable localization or not',
+    )
+
+    declare_serve_static_map_cmd = DeclareLaunchArgument(
+        'serve_static_map',
+        default_value=use_localization,
+        description='Whether to serve the static map',
     )
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
@@ -203,7 +210,8 @@ def generate_launch_description() -> LaunchDescription:
         launch_arguments={
             'namespace': namespace,
             'slam': slam,
-            'use_amcl': use_amcl,
+            'use_localization': use_localization,
+            'serve_static_map': serve_static_map,
             'map': map_yaml_file,
             'graph': graph_filepath,
             'use_sim_time': use_sim_time,
@@ -267,7 +275,8 @@ def generate_launch_description() -> LaunchDescription:
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_slam_cmd)
-    ld.add_action(declare_use_amcl_cmd)
+    ld.add_action(declare_use_localization_cmd)
+    ld.add_action(declare_serve_static_map_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_use_sim_time_cmd)

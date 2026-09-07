@@ -50,7 +50,8 @@ def generate_launch_description() -> LaunchDescription:
     container_name = LaunchConfiguration('container_name')
     use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
-    use_amcl = LaunchConfigAsBool('use_amcl')
+    use_localization = LaunchConfigAsBool('use_localization')
+    serve_static_map = LaunchConfigAsBool('serve_static_map')
     use_keepout_zones = LaunchConfigAsBool('use_keepout_zones')
     use_speed_zones = LaunchConfigAsBool('use_speed_zones')
 
@@ -74,22 +75,20 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     def launch_lifecycle_manager(context):
-        slam_enabled = slam.perform(context) == 'True'
-        amcl_enabled = use_amcl.perform(context) == 'True'
-        keepout_zones_enabled = use_keepout_zones.perform(context) == 'True'
-        speed_zones_enabled = use_speed_zones.perform(context) == 'True'
-
         lifecycle_nodes = []
 
-        if slam_enabled:
+        if (
+            use_localization.perform(context) == 'True'
+            and slam.perform(context) == 'True'
+        ):
             lifecycle_nodes.extend(get_slam_nodes())
         else:
-            lifecycle_nodes.extend(get_localization_nodes(use_amcl=amcl_enabled))
+            lifecycle_nodes.extend(get_localization_nodes(context))
 
-        if keepout_zones_enabled:
+        if use_keepout_zones.perform(context) == 'True':
             lifecycle_nodes.extend(get_keepout_zone_nodes())
 
-        if speed_zones_enabled:
+        if use_speed_zones.perform(context) == 'True':
             lifecycle_nodes.extend(get_speed_zone_nodes())
 
         lifecycle_nodes.extend(get_navigation_nodes())
@@ -163,9 +162,14 @@ def generate_launch_description() -> LaunchDescription:
         default_value='', description='Path to the graph file to load'
     )
 
-    declare_use_amcl_cmd = DeclareLaunchArgument(
-        'use_amcl', default_value='True',
-        description='Whether to enable AMCL when using localization'
+    declare_use_localization_cmd = DeclareLaunchArgument(
+        'use_localization', default_value='True',
+        description='Whether to enable localization or not'
+    )
+
+    declare_serve_static_map_cmd = DeclareLaunchArgument(
+        'serve_static_map', default_value=use_localization,
+        description='Whether to serve the static map'
     )
 
     declare_use_keepout_zones_cmd = DeclareLaunchArgument(
@@ -243,7 +247,7 @@ def generate_launch_description() -> LaunchDescription:
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'slam_launch.py')
                 ),
-                condition=IfCondition(slam),
+                condition=IfCondition(PythonExpression([slam, ' and ', use_localization])),
                 launch_arguments={
                     'namespace': namespace,
                     'use_sim_time': use_sim_time,
@@ -255,12 +259,18 @@ def generate_launch_description() -> LaunchDescription:
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'localization_launch.py')
                 ),
-                condition=IfCondition(PythonExpression(['not ', slam])),
+                condition=IfCondition(
+                    PythonExpression([
+                        'not (', slam, ' and ', use_localization, ') and (',
+                        use_localization, ' or ', serve_static_map, ')'
+                    ])
+                ),
                 launch_arguments={
                     'namespace': namespace,
                     'map': map_yaml_file,
                     'use_sim_time': use_sim_time,
-                    'use_amcl': use_amcl,
+                    'use_localization': use_localization,
+                    'serve_static_map': serve_static_map,
                     'params_file': params_file,
                     'use_composition': use_composition,
                     'use_intra_process_comms': use_intra_process_comms,
@@ -346,7 +356,8 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
-    ld.add_action(declare_use_amcl_cmd)
+    ld.add_action(declare_use_localization_cmd)
+    ld.add_action(declare_serve_static_map_cmd)
     ld.add_action(declare_use_keepout_zones_cmd)
     ld.add_action(declare_use_speed_zones_cmd)
 

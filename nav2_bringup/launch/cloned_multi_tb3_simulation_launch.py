@@ -64,7 +64,8 @@ def generate_robot_actions(
     map_yaml_file = LaunchConfiguration('map')
     graph_filepath = LaunchConfiguration('graph')
     use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
-    use_amcl = LaunchConfigAsBool('use_amcl')
+    use_localization = LaunchConfigAsBool('use_localization')
+    serve_static_map = LaunchConfigAsBool('serve_static_map')
 
     # Define commands for launching the navigation instances
     group = GroupAction(
@@ -97,7 +98,8 @@ def generate_robot_actions(
                         'use_simulator': 'False',
                         'headless': 'False',
                         'use_robot_state_pub': use_robot_state_pub,
-                        'use_amcl': use_amcl,
+                        'use_localization': use_localization,
+                        'serve_static_map': serve_static_map,
                         'x_pose': TextSubstitution(text=str(pose.get('x', 0.0))),
                         'y_pose': TextSubstitution(text=str(pose.get('y', 0.0))),
                         'z_pose': TextSubstitution(text=str(pose.get('z', 0.0))),
@@ -139,6 +141,7 @@ def generate_launch_description() -> LaunchDescription:
     autostart = LaunchConfigAsBool('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
     use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
+    use_localization = LaunchConfigAsBool('use_localization')
     log_settings = LaunchConfiguration('log_settings', default='true')
 
     # Declare the launch arguments
@@ -195,10 +198,16 @@ def generate_launch_description() -> LaunchDescription:
         description='Whether to start the robot state publisher',
     )
 
-    declare_use_amcl_cmd = DeclareLaunchArgument(
-        'use_amcl',
+    declare_use_localization_cmd = DeclareLaunchArgument(
+        'use_localization',
         default_value='True',
-        description='Whether to launch AMCL',
+        description='Whether to enable localization or not',
+    )
+
+    declare_serve_static_map_cmd = DeclareLaunchArgument(
+        'serve_static_map',
+        default_value=use_localization,
+        description='Whether to serve the static map',
     )
 
     declare_use_rviz_cmd = DeclareLaunchArgument(
@@ -240,7 +249,8 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
-    ld.add_action(declare_use_amcl_cmd)
+    ld.add_action(declare_use_localization_cmd)
+    ld.add_action(declare_serve_static_map_cmd)
 
     # Add the actions to start gazebo, robots and simulations
     ld.add_action(world_sdf_xacro)

@@ -18,15 +18,20 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
-from launch.substitutions import (EqualsSubstitution, LaunchConfiguration, NotEqualsSubstitution,
-                                  PythonExpression)
+from launch.substitutions import (AndSubstitution, EqualsSubstitution, LaunchConfiguration,
+                                  NotEqualsSubstitution, PythonExpression)
 from launch_ros.actions import LoadComposableNodes, Node, PushROSNamespace, SetParameter
 from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
-def get_lifecycle_nodes(use_amcl=True):
-    return ('map_server', 'amcl') if use_amcl else ('map_server',)
+def get_lifecycle_nodes(context):
+    lifecycle_nodes = []
+    if LaunchConfigAsBool('serve_static_map').perform(context) == 'True':
+        lifecycle_nodes.append('map_server')
+    if LaunchConfigAsBool('use_localization').perform(context) == 'True':
+        lifecycle_nodes.append('amcl')
+    return tuple(lifecycle_nodes)
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -36,7 +41,8 @@ def generate_launch_description() -> LaunchDescription:
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfigAsBool('use_sim_time')
-    use_amcl = LaunchConfigAsBool('use_amcl')
+    use_localization = LaunchConfigAsBool('use_localization')
+    serve_static_map = LaunchConfigAsBool('serve_static_map')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfigAsBool('use_composition')
     use_intra_process_comms = LaunchConfigAsBool('use_intra_process_comms')
@@ -76,10 +82,16 @@ def generate_launch_description() -> LaunchDescription:
         description='Use simulation (Gazebo) clock if true',
     )
 
-    declare_use_amcl_cmd = DeclareLaunchArgument(
-        'use_amcl',
+    declare_use_localization_cmd = DeclareLaunchArgument(
+        'use_localization',
         default_value='True',
-        description='Whether to launch AMCL',
+        description='Whether to launch localization',
+    )
+
+    declare_serve_static_map_cmd = DeclareLaunchArgument(
+        'serve_static_map',
+        default_value=use_localization,
+        description='Whether to serve the static map',
     )
 
     declare_params_file_cmd = DeclareLaunchArgument(
@@ -123,7 +135,10 @@ def generate_launch_description() -> LaunchDescription:
             SetParameter('use_sim_time', use_sim_time),
             Node(
                 condition=IfCondition(
-                    EqualsSubstitution(LaunchConfiguration('map'), '')
+                    AndSubstitution(
+                        serve_static_map,
+                        EqualsSubstitution(LaunchConfiguration('map'), ''),
+                    )
                 ),
                 package='nav2_map_server',
                 executable='map_server',
@@ -137,7 +152,10 @@ def generate_launch_description() -> LaunchDescription:
             ),
             Node(
                 condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('map'), '')
+                    AndSubstitution(
+                        serve_static_map,
+                        NotEqualsSubstitution(LaunchConfiguration('map'), ''),
+                    )
                 ),
                 package='nav2_map_server',
                 executable='map_server',
@@ -150,7 +168,7 @@ def generate_launch_description() -> LaunchDescription:
                 remappings=remappings,
             ),
             Node(
-                condition=IfCondition(use_amcl),
+                condition=IfCondition(use_localization),
                 package='nav2_amcl',
                 executable='amcl',
                 name='amcl',
@@ -176,7 +194,10 @@ def generate_launch_description() -> LaunchDescription:
             LoadComposableNodes(
                 target_container=container_name_full,
                 condition=IfCondition(
-                    EqualsSubstitution(LaunchConfiguration('map'), '')
+                    AndSubstitution(
+                        serve_static_map,
+                        EqualsSubstitution(LaunchConfiguration('map'), ''),
+                    )
                 ),
                 composable_node_descriptions=[
                     ComposableNode(
@@ -192,7 +213,10 @@ def generate_launch_description() -> LaunchDescription:
             LoadComposableNodes(
                 target_container=container_name_full,
                 condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('map'), '')
+                    AndSubstitution(
+                        serve_static_map,
+                        NotEqualsSubstitution(LaunchConfiguration('map'), ''),
+                    )
                 ),
                 composable_node_descriptions=[
                     ComposableNode(
@@ -209,7 +233,7 @@ def generate_launch_description() -> LaunchDescription:
                 ],
             ),
             LoadComposableNodes(
-                condition=IfCondition(use_amcl),
+                condition=IfCondition(use_localization),
                 target_container=container_name_full,
                 composable_node_descriptions=[
                     ComposableNode(
@@ -235,7 +259,8 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
-    ld.add_action(declare_use_amcl_cmd)
+    ld.add_action(declare_use_localization_cmd)
+    ld.add_action(declare_serve_static_map_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_use_intra_process_comms_cmd)

@@ -149,7 +149,8 @@ def generate_launch_description() -> LaunchDescription:
             'use_respawn': use_respawn,
             'use_keepout_zones': 'False',  # Keepout zones not used in loopback simulation
             'use_speed_zones': 'False',  # Speed zones not used in loopback simulation
-            'use_amcl': 'False',
+            'use_localization': 'False',
+            'serve_static_map': 'True',
             'container_name': 'nav2_container',
         }.items(),
     )
