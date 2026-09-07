@@ -160,9 +160,6 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types_[i]);
 
-    // lock the costmap because no update is allowed until the plugin is initialized
-    std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex()));
-
     layered_costmap_->addPlugin(plugin);
 
     try {
@@ -176,8 +173,6 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
       return nav2::CallbackReturn::FAILURE;
     }
 
-    lock.unlock();
-
     RCLCPP_INFO(get_logger(), "Initialized plugin \"%s\"", plugin_names_[i].c_str());
   }
   // and costmap filters as well
@@ -186,16 +181,11 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     std::shared_ptr<Layer> filter = plugin_loader_.createSharedInstance(filter_types_[i]);
 
-    // lock the costmap because no update is allowed until the filter is initialized
-    std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex()));
-
     layered_costmap_->addFilter(filter);
 
     filter->initialize(
       layered_costmap_.get(), filter_names_[i], tf_buffer_.get(),
       shared_from_this(), callback_group_);
-
-    lock.unlock();
 
     RCLCPP_INFO(get_logger(), "Initialized costmap filter \"%s\"", filter_names_[i].c_str());
   }
@@ -502,10 +492,18 @@ Costmap2DROS::setRobotFootprint(const std::vector<geometry_msgs::msg::Point> & p
       " this isn't allowed, a footprint must contain at least one point.");
     return;
   }
-  unpadded_footprint_ = points;
-  padded_footprint_ = points;
-  padFootprint(padded_footprint_, footprint_padding_);
-  layered_costmap_->setFootprint(padded_footprint_);
+  auto padded = std::make_shared<std::vector<geometry_msgs::msg::Point>>(points);
+  padFootprint(*padded, footprint_padding_);
+
+#ifdef __cpp_lib_atomic_shared_ptr
+  unpadded_footprint_.store(std::make_shared<std::vector<geometry_msgs::msg::Point>>(points));
+  padded_footprint_.store(padded);
+#else
+  std::atomic_store(
+    &unpadded_footprint_, std::make_shared<std::vector<geometry_msgs::msg::Point>>(points));
+  std::atomic_store(&padded_footprint_, padded);
+#endif
+  layered_costmap_->setFootprint(*padded);
 }
 
 void
@@ -524,9 +522,14 @@ Costmap2DROS::getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & orie
   }
 
   double yaw = tf2::getYaw(global_pose.pose.orientation);
+#ifdef __cpp_lib_atomic_shared_ptr
+  auto padded_footprint = padded_footprint_.load();
+#else
+  auto padded_footprint = std::atomic_load(&padded_footprint_);
+#endif
   transformFootprint(
     global_pose.pose.position.x, global_pose.pose.position.y, yaw,
-    padded_footprint_, oriented_footprint);
+    *padded_footprint, oriented_footprint);
 }
 
 void
@@ -614,7 +617,12 @@ Costmap2DROS::updateMap()
 
       auto footprint = std::make_unique<geometry_msgs::msg::PolygonStamped>();
       footprint->header = pose.header;
-      transformFootprint(x, y, yaw, padded_footprint_, *footprint);
+#ifdef __cpp_lib_atomic_shared_ptr
+      auto padded_footprint = padded_footprint_.load();
+#else
+      auto padded_footprint = std::atomic_load(&padded_footprint_);
+#endif
+      transformFootprint(x, y, yaw, *padded_footprint, *footprint);
 
       RCLCPP_DEBUG(get_logger(), "Publishing footprint");
       footprint_pub_->publish(std::move(footprint));
@@ -841,9 +849,18 @@ Costmap2DROS::updateParametersCallback(const std::vector<rclcpp::Parameter> & pa
         }
       } else if (param_name == "footprint_padding") {
         footprint_padding_ = parameter.as_double();
-        padded_footprint_ = unpadded_footprint_;
-        padFootprint(padded_footprint_, footprint_padding_);
-        layered_costmap_->setFootprint(padded_footprint_);
+#ifdef __cpp_lib_atomic_shared_ptr
+        auto padded = std::make_shared<std::vector<geometry_msgs::msg::Point>>(
+          *unpadded_footprint_.load());
+        padFootprint(*padded, footprint_padding_);
+        padded_footprint_.store(padded);
+#else
+        auto padded = std::make_shared<std::vector<geometry_msgs::msg::Point>>(
+          *std::atomic_load(&unpadded_footprint_));
+        padFootprint(*padded, footprint_padding_);
+        std::atomic_store(&padded_footprint_, padded);
+#endif
+        layered_costmap_->setFootprint(*padded);
       } else if (param_name == "transform_tolerance") {
         transform_tolerance_ = parameter.as_double();
       } else if (param_name == "publish_frequency") {
