@@ -143,9 +143,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   bool enable_search = enable_search_;
   if (enable_search) {
     try {
-      auto source_costmap = costmap_subscriber_->getCostmap();
-      std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*source_costmap->getMutex());
-      costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(*source_costmap);
+      costmap = costmap_subscriber_->getCostmap();
       costmap_frame_id = costmap_subscriber_->getFrameID();
     } catch (const std::exception & ex) {
       enable_search = false;
@@ -171,6 +169,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     }
 
     auto transformed_start = transformPose(start_, costmap_frame_id);
+    std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*costmap->getMutex());
     GoalIntentSearch::LoSCollisionChecker los_checker(costmap);
     if (los_checker.worldToMap(
         candidate_nodes.front().pose.position, transformed_start.pose.position))
@@ -199,6 +198,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     }
 
     auto transformed_end = transformPose(goal_, costmap_frame_id);
+    std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*costmap->getMutex());
     GoalIntentSearch::LoSCollisionChecker los_checker(costmap);
     if (los_checker.worldToMap(
         candidate_nodes.front().pose.position, transformed_end.pose.position))
