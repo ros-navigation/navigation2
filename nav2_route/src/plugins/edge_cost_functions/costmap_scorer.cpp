@@ -76,8 +76,7 @@ void CostmapScorer::prepare()
 {
   try {
     auto source_costmap = costmap_subscriber_->getCostmap();
-    std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(
-      *source_costmap->getMutex());
+    std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*source_costmap->getMutex());
     costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(*source_costmap);
   } catch (...) {
     costmap_.reset();
