@@ -263,7 +263,11 @@ public:
   /** @brief Returns the current padded footprint as a geometry_msgs::msg::Polygon. */
   geometry_msgs::msg::Polygon getRobotFootprintPolygon()
   {
-    return nav2_costmap_2d::toPolygon(padded_footprint_);
+#ifdef __cpp_lib_atomic_shared_ptr
+    return nav2_costmap_2d::toPolygon(*padded_footprint_.load());
+#else
+    return nav2_costmap_2d::toPolygon(*std::atomic_load(&padded_footprint_));
+#endif
   }
 
   /** @brief Return the current footprint of the robot as a vector of points.
@@ -276,7 +280,11 @@ public:
    * on the "footprint" topic. */
   std::vector<geometry_msgs::msg::Point> getRobotFootprint()
   {
-    return padded_footprint_;
+#ifdef __cpp_lib_atomic_shared_ptr
+    return *padded_footprint_.load();
+#else
+    return *std::atomic_load(&padded_footprint_);
+#endif
   }
 
   /** @brief Return the current unpadded footprint of the robot as a vector of points.
@@ -288,7 +296,11 @@ public:
    * on the "footprint" topic. */
   std::vector<geometry_msgs::msg::Point> getUnpaddedRobotFootprint()
   {
-    return unpadded_footprint_;
+#ifdef __cpp_lib_atomic_shared_ptr
+    return *unpadded_footprint_.load();
+#else
+    return *std::atomic_load(&unpadded_footprint_);
+#endif
   }
 
   /**
@@ -421,8 +433,17 @@ protected:
 
   // Derived parameters
   bool use_radius_{false};
-  std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
-  std::vector<geometry_msgs::msg::Point> padded_footprint_;
+#ifdef __cpp_lib_atomic_shared_ptr
+  std::atomic<std::shared_ptr<std::vector<geometry_msgs::msg::Point>>> unpadded_footprint_{
+    std::make_shared<std::vector<geometry_msgs::msg::Point>>()};
+  std::atomic<std::shared_ptr<std::vector<geometry_msgs::msg::Point>>> padded_footprint_{
+    std::make_shared<std::vector<geometry_msgs::msg::Point>>()};
+#else
+  std::shared_ptr<std::vector<geometry_msgs::msg::Point>> unpadded_footprint_{
+    std::make_shared<std::vector<geometry_msgs::msg::Point>>()};
+  std::shared_ptr<std::vector<geometry_msgs::msg::Point>> padded_footprint_{
+    std::make_shared<std::vector<geometry_msgs::msg::Point>>()};
+#endif
 
   // Services
   nav2::ServiceServer<nav2_msgs::srv::GetCosts>::SharedPtr get_cost_service_;
