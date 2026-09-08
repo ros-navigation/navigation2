@@ -149,18 +149,17 @@ public:
   virtual bool isPointInside(const double px, const double py) const = 0;
 
   /**
-   * @brief Gets X-intervals of the shape interior along the horizontal line y = py.
-   * Intervals are half-open [begin, end) and may slightly over-cover the shape but never
-   * under-cover it; putFill() trims their ends with isPointInside()
+   * @brief Gets X-intervals covered by the shape on the horizontal line y = py.
+   * Intervals may be slightly wider than the shape, but never narrower.
+   * Empty virtual method intended to be used in child implementations
    * @param py Y-coordinate of the line
-   * @param spans Output world X-intervals in ascending order
+   * @param spans Output [begin, end) intervals in world coordinates, sorted by X
    */
   virtual void getRowSpans(
     const double py, std::vector<std::pair<double, double>> & spans) const = 0;
 
   /**
-   * @brief Fills the shape on map: every cell whose center is inside the shape is updated.
-   * Produces the same result as checking isPointInside() for each cell of the shape's box
+   * @brief Puts filled shape on map
    * @param map Output map pointer
    * @param overlay_type Overlay type
    * @return False if shape boundaries can not be converted to map coordinates
@@ -275,10 +274,9 @@ public:
   bool isPointInside(const double px, const double py) const;
 
   /**
-   * @brief Gets X-intervals of the polygon interior along the horizontal line y = py.
-   * Uses the same crossing rule and arithmetic as isPointInside(), so the intervals are exact
+   * @brief Gets X-intervals covered by the polygon on the horizontal line y = py
    * @param py Y-coordinate of the line
-   * @param spans Output world X-intervals in ascending order
+   * @param spans Output [begin, end) intervals in world coordinates, sorted by X
    */
   void getRowSpans(const double py, std::vector<std::pair<double, double>> & spans) const;
 
@@ -393,9 +391,9 @@ public:
   bool isPointInside(const double px, const double py) const;
 
   /**
-   * @brief Gets the X-interval of the circle interior along the horizontal line y = py
+   * @brief Gets X-interval covered by the circle on the horizontal line y = py
    * @param py Y-coordinate of the line
-   * @param spans Output world X-interval, empty if the line misses the circle
+   * @param spans Output [begin, end) interval in world coordinates, empty if the line misses
    */
   void getRowSpans(const double py, std::vector<std::pair<double, double>> & spans) const;
 

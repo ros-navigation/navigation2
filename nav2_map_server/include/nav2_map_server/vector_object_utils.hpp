@@ -88,8 +88,7 @@ inline void processVal(
 }
 
 /**
- * @brief Updates a contiguous run of cells with given shape value according to the overlay type.
- * Same result as processVal() on each cell; branch-free loops keep the run vectorizable
+ * @brief Updates a run of consecutive cells with given shape value according to the overlay type
  * @param cells Pointer to the first cell of the run
  * @param count Number of cells in the run
  * @param shape_val Vector object value to be overlaid on map

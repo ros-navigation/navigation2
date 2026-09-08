@@ -69,7 +69,6 @@ bool Shape::putFill(
   for (unsigned int my = my1; my <= my2; my++) {
     double row_x, row_y;
     nav2_util::mapToWorld(map, mx1, my, row_x, row_y);
-    // Same cell-center test as the per-cell approach, evaluated only at span ends
     const auto inside = [&](unsigned int mx) {
         double wx, wy;
         nav2_util::mapToWorld(map, mx, my, wx, wy);
@@ -78,8 +77,7 @@ bool Shape::putFill(
     getRowSpans(row_y, spans);
     int8_t * row = map->data.data() + static_cast<size_t>(my) * map->info.width;
     for (const auto & [x_begin, x_end] : spans) {
-      // Cells whose center lies in [x_begin, x_end), located with the same cell-center
-      // arithmetic as the predicate; index estimates alone can be one cell off at ties
+      // First and last cell whose center is in [x_begin, x_end)
       const auto center_x = [&](int64_t mx) {
           double wx, wy;
           nav2_util::mapToWorld(map, static_cast<unsigned int>(mx), my, wx, wy);
@@ -91,6 +89,7 @@ bool Shape::putFill(
       int64_t hi = static_cast<int64_t>(std::clamp(
           std::floor((x_end - origin_x) / resolution - 0.5),
           static_cast<double>(mx1), static_cast<double>(mx2)));
+      // ceil/floor may be off by one when a center lies exactly on the boundary
       while (lo > mx1 && center_x(lo - 1) >= x_begin) {
         lo--;
       }
@@ -103,7 +102,7 @@ bool Shape::putFill(
       while (hi >= mx1 && center_x(hi) >= x_end) {
         hi--;
       }
-      // Spans may be slightly wider than the shape (circles): trim with the exact predicate
+      // Spans may be slightly too wide (circles): trim with the exact test
       while (lo <= hi && !inside(static_cast<unsigned int>(lo))) {
         lo++;
       }
@@ -317,7 +316,7 @@ bool Polygon::isPointInside(const double px, const double py) const
 void Polygon::getRowSpans(
   const double py, std::vector<std::pair<double, double>> & spans) const
 {
-  // Mirrors the edge selection and intersection arithmetic of isPointInsidePolygon()
+  // Same edge rule and intersection formula as isPointInsidePolygon()
   const auto & points = polygon_->points;
   std::vector<double> crossings;
   int i = points.size() - 1;
@@ -558,7 +557,7 @@ void Circle::getRowSpans(
     return;
   }
   const double half_chord = std::sqrt(half_chord_sq);
-  // Slightly over-cover so rounding never drops a boundary cell; putFill() trims exactly
+  // Pad against rounding, putFill() trims the ends
   const double padding = std::max(1.0, static_cast<double>(params_->radius)) * 1e-9;
   spans.emplace_back(center_->x - half_chord - padding, center_->x + half_chord + padding);
 }

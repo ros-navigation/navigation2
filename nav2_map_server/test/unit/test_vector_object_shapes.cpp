@@ -790,7 +790,7 @@ TEST_F(Tester, testCircleDifferentFrame)
   ASSERT_FALSE(circle_->toFrame("incorrect_frame", tf_buffer_, 0.1));
 }
 
-// Fills each cell of the shape's box whose center is inside: the reference putFill() must match
+// Reference implementation: check every cell of the shape's bounding box
 static nav_msgs::msg::OccupancyGrid::SharedPtr fillPerCell(
   nav2_map_server::Shape & shape, nav_msgs::msg::OccupancyGrid::ConstSharedPtr map,
   const nav2_map_server::OverlayType overlay_type)
@@ -814,7 +814,7 @@ static nav_msgs::msg::OccupancyGrid::SharedPtr fillPerCell(
   return expected;
 }
 
-// Pre-existing content (unknown, free and a mid-value stripe) makes the overlay rules observable
+// Map with a mix of unknown, free and 50 cells so that overlay types give different results
 static nav_msgs::msg::OccupancyGrid::SharedPtr makePrefilledMap()
 {
   auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
@@ -850,7 +850,7 @@ static void expectFillMatchesPerCell(nav2_map_server::Shape & shape, const std::
   }
 }
 
-TEST_F(Tester, testPutFillMatchesPerCellCheck)
+TEST_F(Tester, testPutFillRandomShapes)
 {
   std::mt19937 generator(7);
   std::uniform_real_distribution<float> coordinate(-1.8f, 1.8f);
@@ -864,7 +864,7 @@ TEST_F(Tester, testPutFillMatchesPerCellCheck)
       p.x = coordinate(generator);
       p.y = coordinate(generator);
       if (i % 3 == 0) {
-        // Vertices on cell centers and cell edges exercise the tie-breaking rules
+        // Put some vertices exactly on cell centers and cell edges
         p.x = std::round(p.x * 10.0f) / 10.0f + ((i % 2) ? 0.05f : 0.0f);
       }
       po->points.push_back(p);
@@ -881,9 +881,9 @@ TEST_F(Tester, testPutFillMatchesPerCellCheck)
   }
 }
 
-TEST_F(Tester, testPutFillDegeneratePolygonsMatchPerCellCheck)
+TEST_F(Tester, testPutFillDegeneratePolygons)
 {
-  // Cell centers of the test map lie on x, y = -1.95, -1.85, ..., 1.95
+  // Cell centers of the test map are at x, y = -1.95, -1.85, ..., 1.95
   const std::vector<std::pair<std::string, std::vector<std::pair<float, float>>>> cases = {
     {"bow-tie", {{-1.0f, -1.0f}, {1.0f, 1.0f}, {1.0f, -1.0f}, {-1.0f, 1.0f}}},
     {"horizontal edges on cell-center rows",
@@ -928,7 +928,7 @@ TEST_F(Tester, testPutFillOutsideMap)
   ASSERT_FALSE(polygon_->putFill(map, nav2_map_server::OverlayType::OVERLAY_SEQ));
   verifyMapEmpty(map);
 
-  // Larger than the map: boundaries can not be converted either
+  // Polygon larger than the map
   po = makePolygonObject({});
   for (auto & p : po->points) {
     p.x *= 3.0f;
@@ -955,7 +955,7 @@ public:
   mutable size_t point_checks{0};
 };
 
-TEST_F(Tester, testPutFillChecksPointsPerRowNotPerCell)
+TEST_F(Tester, testPutFillComplexity)
 {
   auto po = makePolygonObject({});
   for (auto & p : po->points) {
@@ -975,13 +975,13 @@ TEST_F(Tester, testPutFillChecksPointsPerRowNotPerCell)
   const size_t filled = std::count(map->data.begin(), map->data.end(),
     nav2_util::OCC_GRID_OCCUPIED);
   ASSERT_EQ(filled, 300u * 300u);
-  // Interior cells are filled without testing them; only span ends are checked (a few per row)
+  // Only span ends should be tested, not every cell
   EXPECT_LE(polygon->point_checks, 8u * 300u);
 }
 
 TEST_F(Tester, testPutFillLargeMap)
 {
-  // 9000 x 9000 cells at 5 cm (81 M cells, 450 m): warehouse-scale VO grid
+  // 9000 x 9000 cells at 5 cm resolution
   const unsigned int size = 9000;
   auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
   map->header.frame_id = GLOBAL_FRAME_ID;
@@ -995,8 +995,7 @@ TEST_F(Tester, testPutFillLargeMap)
       return map->data[static_cast<size_t>(my) * size + mx];
     };
 
-  // Axis-aligned rectangle spanning most of the grid: the filled count is exactly
-  // (columns whose center is inside) x (rows whose center is inside)
+  // Rectangle: number of filled cells must be (columns inside) x (rows inside)
   auto po = makePolygonObject({});
   po->points.clear();
   for (auto [x, y] : {std::pair{10.1f, 20.3f}, {439.7f, 20.3f}, {439.7f, 430.9f},
@@ -1026,8 +1025,7 @@ TEST_F(Tester, testPutFillLargeMap)
   EXPECT_EQ(cell(size - 1, size - 1), nav2_util::OCC_GRID_UNKNOWN);
   EXPECT_EQ(cell(size / 2, size / 2), nav2_util::OCC_GRID_OCCUPIED);
 
-  // A rotated triangle and a large circle overlaid with MAX; compare against the per-cell
-  // predicate on a strided sample plus every cell of the rows and columns at their extremes
+  // Triangle and circle: check a sample of cells plus some full rows and columns
   po->points.clear();
   for (auto [x, y] : {std::pair{5.0f, 100.0f}, {300.0f, 5.0f}, {445.0f, 440.0f}}) {
     geometry_msgs::msg::Point32 p;
