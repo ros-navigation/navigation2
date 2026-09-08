@@ -69,23 +69,33 @@ TEST(RobotUtils, lookupTransformWithStalenessCheck)
   transform.transform.rotation.w = 1.0;
   tf.setTransform(transform, "test", false);
 
-  EXPECT_THROW(
+  geometry_msgs::msg::TransformStamped result;
+  result.header.frame_id = "unchanged";
+  EXPECT_FALSE(
     nav2_util::lookupTransformWithStalenessCheck(
-      tf, "map", "base_link", current_time, 1.0),
-    tf2::ExtrapolationException);
-  EXPECT_NO_THROW(
+      tf, "map", "base_link", current_time, 1.0, result));
+  EXPECT_EQ(result.header.frame_id, "unchanged");
+  EXPECT_TRUE(
     nav2_util::lookupTransformWithStalenessCheck(
-      tf, "map", "base_link", current_time, 2.0));
-  EXPECT_NO_THROW(
+      tf, "map", "base_link", current_time, 2.0, result));
+  EXPECT_EQ(result, transform);
+  EXPECT_TRUE(
     nav2_util::lookupTransformWithStalenessCheck(
-      tf, "map", "base_link", current_time, 0.0));
+      tf, "map", "base_link", current_time, 0.0, result));
 
   transform.header.frame_id = "map";
   transform.child_frame_id = "static_frame";
   tf.setTransform(transform, "test", true);
-  EXPECT_NO_THROW(
+  EXPECT_TRUE(
     nav2_util::lookupTransformWithStalenessCheck(
-      tf, "map", "static_frame", current_time, 1.0));
+      tf, "map", "static_frame", current_time, 1.0, result));
+  EXPECT_EQ(result.header.frame_id, "map");
+  EXPECT_EQ(result.child_frame_id, "static_frame");
+
+  const auto previous_result = result;
+  EXPECT_FALSE(nav2_util::lookupTransformWithStalenessCheck(
+      tf, "map", "missing_frame", current_time, 1.0, result));
+  EXPECT_EQ(result, previous_result);
 }
 
 TEST(RobotUtils, lookupTransformWithStalenessCheckSameFrameReturnsIdentity)
@@ -94,8 +104,9 @@ TEST(RobotUtils, lookupTransformWithStalenessCheckSameFrameReturnsIdentity)
   nav2::TransformBuffer tf(clock);
   const rclcpp::Time current_time(10, 123, RCL_ROS_TIME);
 
-  const auto transform = nav2_util::lookupTransformWithStalenessCheck(
-    tf, "base_link", "base_link", current_time, 1.0);
+  geometry_msgs::msg::TransformStamped transform;
+  ASSERT_TRUE(nav2_util::lookupTransformWithStalenessCheck(
+      tf, "base_link", "base_link", current_time, 1.0, transform));
 
   EXPECT_EQ(transform.header.frame_id, "base_link");
   EXPECT_EQ(transform.header.stamp.sec, 10);

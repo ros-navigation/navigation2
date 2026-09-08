@@ -964,15 +964,17 @@ bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & cur
 
 geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
-  try {
-    const auto transform = nav2_util::lookupTransformWithStalenessCheck(
+  geometry_msgs::msg::TransformStamped transform;
+  if (!nav2_util::lookupTransformWithStalenessCheck(
       *costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
       costmap_ros_->getBaseFrameID(), now(),
-      params_->transform_staleness_threshold);
-    return nav2_util::transformToPoseStamped(transform);
-  } catch (const tf2::TransformException & ex) {
-    throw nav2_core::ControllerTFError("Failed to obtain robot pose: " + std::string(ex.what()));
+      params_->transform_staleness_threshold, transform))
+  {
+    throw nav2_core::ControllerTFError(
+            "Failed to obtain robot pose in frame '" + costmap_ros_->getGlobalFrameID() +
+            "' for base frame '" + costmap_ros_->getBaseFrameID() + "'");
   }
+  return nav2_util::transformToPoseStamped(transform);
 }
 
 void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::ConstSharedPtr & msg)
