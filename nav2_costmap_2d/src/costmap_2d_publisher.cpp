@@ -287,6 +287,8 @@ Costmap2DPublisher::costmap_service_callback(
   tf2::Quaternion quaternion;
   quaternion.setRPY(0.0, 0.0, 0.0);
 
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));  // [AI generated]
+
   auto size_x = costmap_->getSizeInCellsX();
   auto size_y = costmap_->getSizeInCellsY();
   auto data_length = size_x * size_y;
