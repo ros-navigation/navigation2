@@ -38,10 +38,16 @@ void CostmapSubscriber::costmapCallback(const nav2_msgs::msg::Costmap::ConstShar
     frame_id_ = costmap_msg_->header.frame_id;
   }
   if (!isCostmapReceived()) {
-    costmap_ = std::make_shared<Costmap2D>(
-      msg->metadata.size_x, msg->metadata.size_y,
-      msg->metadata.resolution, msg->metadata.origin.position.x,
-      msg->metadata.origin.position.y);
+    {
+      std::lock_guard<std::mutex> lock(costmap_msg_mutex_);
+      if (costmap_) {
+        return;
+      }
+      costmap_ = std::make_shared<Costmap2D>(
+        msg->metadata.size_x, msg->metadata.size_y,
+        msg->metadata.resolution, msg->metadata.origin.position.x,
+        msg->metadata.origin.position.y);
+    }
 
     processCurrentCostmapMsg();
   }
