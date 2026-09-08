@@ -89,18 +89,6 @@ geometry_msgs::msg::TransformStamped poseToTransformStamped(
   return transform;
 }
 
-geometry_msgs::msg::PoseStamped getPoseWithStalenessCheck(
-  nav2::TransformBuffer & tf_buffer,
-  const std::string & target_frame,
-  const std::string & source_frame,
-  const rclcpp::Time & current_time,
-  double staleness_threshold)
-{
-  auto transform = lookupTransformWithStalenessCheck(tf_buffer, target_frame, source_frame,
-      current_time, staleness_threshold);
-  return transformToPoseStamped(transform);
-}
-
 bool getCurrentPose(
   geometry_msgs::msg::PoseStamped & global_pose,
   nav2::TransformBuffer & tf_buffer, const std::string global_frame,
