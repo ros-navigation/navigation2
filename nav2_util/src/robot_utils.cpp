@@ -29,39 +29,51 @@
 namespace nav2_util
 {
 
-geometry_msgs::msg::TransformStamped lookupTransformWithStalenessCheck(
+bool lookupTransformWithStalenessCheck(
   nav2::TransformBuffer & tf_buffer,
-  const std::string & target_frame,
   const std::string & source_frame,
+  const std::string & target_frame,
   const rclcpp::Time & current_time,
-  double staleness_threshold)
+  double staleness_threshold,
+  geometry_msgs::msg::TransformStamped & transform)
 {
-  if (target_frame == source_frame) {
+  if (source_frame == target_frame) {
     geometry_msgs::msg::TransformStamped identity;
-    identity.header.frame_id = target_frame;
+    identity.header.frame_id = source_frame;
     identity.header.stamp = current_time;
-    identity.child_frame_id = source_frame;
+    identity.child_frame_id = target_frame;
     identity.transform.rotation.w = 1.0;
-    return identity;
+    transform = identity;
+    return true;
   }
 
-  auto transform = tf_buffer.lookupTransform(
-    target_frame, source_frame, tf2::TimePointZero);
+  geometry_msgs::msg::TransformStamped latest_transform;
+  try {
+    latest_transform = tf_buffer.lookupTransform(
+      source_frame, target_frame, tf2::TimePointZero);
+  } catch (const tf2::TransformException & ex) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("lookupTransformWithStalenessCheck"),
+      "Failed to get transform: %s", ex.what());
+    return false;
+  }
 
   const bool has_timestamp =
-    transform.header.stamp.sec != 0 || transform.header.stamp.nanosec != 0;
+    latest_transform.header.stamp.sec != 0 || latest_transform.header.stamp.nanosec != 0;
   if (staleness_threshold > 0.0 && has_timestamp) {
     const auto transform_time = rclcpp::Time(
-      transform.header.stamp, current_time.get_clock_type());
+      latest_transform.header.stamp, current_time.get_clock_type());
     const double transform_age = (current_time - transform_time).seconds();
     if (transform_age > staleness_threshold) {
-      throw tf2::ExtrapolationException(
-              "Transform from frame '" + source_frame + "' to frame '" + target_frame +
-              "' is stale: age " + std::to_string(transform_age) +
-              "s exceeds threshold " + std::to_string(staleness_threshold) + "s");
+      RCLCPP_ERROR(
+        rclcpp::get_logger("lookupTransformWithStalenessCheck"),
+        "Transform from frame '%s' to frame '%s' is stale: age %fs exceeds threshold %fs",
+        target_frame.c_str(), source_frame.c_str(), transform_age, staleness_threshold);
+      return false;
     }
   }
-  return transform;
+  transform = latest_transform;
+  return true;
 }
 
 geometry_msgs::msg::PoseStamped transformToPoseStamped(
