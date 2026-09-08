@@ -22,6 +22,7 @@
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "sensor_msgs/msg/range.hpp"
@@ -198,6 +199,19 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
   }
 
   return true;
+}
+
+bool validateMsg(const nav2_msgs::msg::Costmap & msg)
+{
+  size_t expected_size;
+  if (__builtin_mul_overflow(
+      static_cast<size_t>(msg.metadata.size_x),
+      static_cast<size_t>(msg.metadata.size_y), &expected_size))
+  {
+    return false;
+  }
+
+  return msg.data.size() == expected_size;
 }
 
 // for partial map updates as `OccupancyGridUpdate`
