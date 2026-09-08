@@ -1014,6 +1014,31 @@ TEST(CriticTests, AxisAlignCritic)
   critic.score(data);
   EXPECT_NEAR(costs(1), 3.0, 1e-5);
 
+  // at a standstill the clamped major axis keeps the ratio finite instead of dividing 0 by 0
+  costs.setZero();
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_TRUE(std::isfinite(costs(0)));
+  EXPECT_NEAR(costs(0), 0.0, 1e-6);
+
+  // below the 1e-3 floor the clamp scales the ratio down rather than reporting a full diagonal:
+  // 45 degree motion at 1e-4 scores 1e-4 / 1e-3 = 0.1 of the ratio, 0.1 * 3.0 weight
+  costs.setZero();
+  state.vx.setConstant(1e-4f);
+  state.vy.setConstant(1e-4f);
+  critic.score(data);
+  EXPECT_GT(costs(0), 0.0f);
+  EXPECT_LT(costs(0), 3.0f);
+  EXPECT_NEAR(costs(0), 0.3, 1e-5);
+
+  // at the floor itself the ratio is unaffected, 45 degree motion scores the full 1.0 * 3.0 weight
+  costs.setZero();
+  state.vx.setConstant(1e-3f);
+  state.vy.setConstant(1e-3f);
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 3.0, 1e-5);
+
   // absolute scaling: minor axis magnitude 0.3 * 3.0 weight
   critic.setNormalize(false);
   costs.setZero();
@@ -1022,6 +1047,19 @@ TEST(CriticTests, AxisAlignCritic)
   critic.score(data);
   EXPECT_NEAR(costs(1), 0.9, 1e-3);
   critic.setNormalize(true);
+
+  // cost power greater than one squares the weighted ratio: (0.5 ratio * 3.0 weight)^2 = 2.25
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
+  critic = AxisAlignCriticWrapper();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  costs.setZero();
+  state.vx.setConstant(0.60f);
+  state.vy.setConstant(0.30f);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 2.25, 1e-5);
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
+  critic = AxisAlignCriticWrapper();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
 
   // within threshold_to_consider of the goal the critic yields to the goal critics
   costs.setZero();
