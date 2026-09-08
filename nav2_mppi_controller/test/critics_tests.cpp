@@ -16,6 +16,10 @@
 #include <chrono>
 #include <thread>
 #include <random>
+#include <algorithm>
+#include <cmath>
+#include <utility>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -1031,4 +1035,79 @@ TEST(CriticTests, AxisAlignCritic)
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+}
+
+TEST(CriticTests, AxisAlignCriticWheelSpeedImbalance)
+{
+  // The normalized AxisAlignCritic score is not a free-form heuristic: at wz = 0 it is exactly
+  // the wheel speed imbalance of a mecanum base, derived in axis_align_critic.hpp. This test
+  // pins that identity against an independent implementation of the mecanum inverse kinematics,
+  // so the ratio in score() cannot drift away from the physical quantity it claims to measure.
+  auto wheel_speed_imbalance = [](float vx, float vy, float r, float lx_plus_ly) {
+      const float wz = 0.0f;  // the identity holds for pure translation
+      const float rot = lx_plus_ly * wz;
+      const float w_front_left = (vx - vy - rot) / r;
+      const float w_front_right = (vx + vy + rot) / r;
+      const float w_rear_left = (vx + vy - rot) / r;
+      const float w_rear_right = (vx - vy + rot) / r;
+      const float highest = std::max(
+        std::max(std::fabs(w_front_left), std::fabs(w_front_right)),
+        std::max(std::fabs(w_rear_left), std::fabs(w_rear_right)));
+      const float lowest = std::min(
+        std::min(std::fabs(w_front_left), std::fabs(w_front_right)),
+        std::min(std::fabs(w_rear_left), std::fabs(w_rear_right)));
+      return (highest - lowest) / (highest + lowest);
+    };
+
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.reset(1000, 30);
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+  data.motion_model = std::make_shared<OmniMotionModel>();
+  state.local_path_length = 5.0f;  // far from goal, critic active
+
+  AxisAlignCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  const float weight = 3.0f;  // default cost_weight, with the default cost_power of 1
+
+  // Axis aligned, diagonal, and everything in between, including negative velocities
+  const std::vector<std::pair<float, float>> velocities = {
+    {0.80f, 0.00f}, {0.00f, 0.60f}, {0.50f, 0.50f}, {0.10f, 0.10f},
+    {0.60f, 0.30f}, {0.72f, 0.18f}, {-0.60f, 0.30f}, {0.35f, -0.70f}};
+
+  // A small and a large platform: r, lx and ly cancel, so both must give the same imbalance
+  const std::vector<std::pair<float, float>> geometries = {{0.0375f, 0.16f}, {0.1275f, 0.53f}};
+
+  for (const auto & velocity : velocities) {
+    const float vx = velocity.first;
+    const float vy = velocity.second;
+    state.vx.setConstant(vx);
+    state.vy.setConstant(vy);
+    state.wz.setConstant(0.0f);
+    costs.setZero();
+    critic.score(data);
+    const float scored_ratio = costs(0) / weight;
+
+    for (const auto & geometry : geometries) {
+      EXPECT_NEAR(
+        scored_ratio, wheel_speed_imbalance(vx, vy, geometry.first, geometry.second),
+        1e-5);
+    }
+  }
 }

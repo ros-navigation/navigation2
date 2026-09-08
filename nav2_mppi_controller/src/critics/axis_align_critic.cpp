@@ -50,6 +50,8 @@ void AxisAlignCritic::score(CriticData & data)
     // Ratio of the minor to the major body-axis velocity: 0 for axis-aligned motion,
     // exactly 1 at 45 degrees. Independent of speed, so the critic does not also
     // discourage driving fast (the absolute form below does, which is rarely wanted).
+    // For a mecanum base at wz = 0 this ratio is the normalized wheel speed imbalance,
+    // see the derivation in the class documentation.
     // The major axis is clamped to a small floor only to avoid dividing by zero at rest.
     diagonal = (vx.min(vy) / vx.max(vy).max(1e-3f)).rowwise().mean();
   } else {

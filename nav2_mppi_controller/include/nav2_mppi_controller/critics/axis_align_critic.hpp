@@ -33,6 +33,28 @@ namespace mppi::critics
  * diagonal motion slip-prone and poorly tracked on real hardware, while pure forward/backward or
  * pure lateral motion drives all four wheels. This critic scores each trajectory by how far its
  * body-frame velocity is from either axis. It is inactive for non-holonomic motion models.
+ *
+ * The normalized score is not an arbitrary heuristic: for a mecanum base it is exactly the wheel
+ * speed imbalance whenever wz is zero. With 45 degree rollers, wheel radius r, half-wheelbase lx
+ * and half-track ly, the inverse kinematics of the four wheels are
+ *
+ *     r * w_fl = vx - vy - (lx + ly) * wz       r * w_fr = vx + vy + (lx + ly) * wz
+ *     r * w_rl = vx + vy - (lx + ly) * wz       r * w_rr = vx - vy + (lx + ly) * wz
+ *
+ * At wz = 0 the four wheel speeds collapse onto two magnitudes, |vx + vy| / r and |vx - vy| / r,
+ * whose larger and smaller values are (|vx| + |vy|) / r and abs(|vx| - |vy|) / r. Their
+ * normalized imbalance is therefore
+ *
+ *     (max - min) / (max + min) = 2 * min(|vx|, |vy|) / (2 * max(|vx|, |vy|))
+ *                               = min(|vx|, |vy|) / max(|vx|, |vy|)
+ *
+ * which is the ratio scored below. The geometry cancels, so the score depends on neither r nor
+ * lx, ly: it is 0 when all four wheels turn at the same speed and 1 at 45 degrees, where two of
+ * them are commanded to a standstill and the entire traction demand falls on the other two. That
+ * loss of traction margin, rather than kinematic infeasibility, is what the critic prices in.
+ * A non-zero wz breaks the pairing above, so the identity is stated for pure translation; the
+ * critic scores the translational part only and leaves rotation to the other critics. The
+ * identity is pinned by the AxisAlignCriticWheelSpeedImbalance test in test/critics_tests.cpp.
  */
 class AxisAlignCritic : public CriticFunction
 {
