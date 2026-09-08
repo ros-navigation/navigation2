@@ -30,6 +30,7 @@ struct OptimizerSettings
   models::ControlConstraints base_constraints{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
   models::ControlConstraints constraints{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
   models::SamplingStd sampling_std{0.0f, 0.0f, 0.0f};
+  models::AdvancedConstraints advanced_constraints{0.0f, 0.0f};
   float model_dt{0.0f};
   float model_delay_vx{0.0f};
   float model_delay_vy{0.0f};

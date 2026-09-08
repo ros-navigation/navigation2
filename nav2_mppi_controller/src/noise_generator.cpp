@@ -28,6 +28,8 @@ void NoiseGenerator::initialize(
   is_holonomic_ = is_holonomic;
   active_ = true;
 
+  wz_std_adaptive = settings.sampling_std.wz;
+
   ndistribution_vx_ = std::normal_distribution(0.0f, settings_.sampling_std.vx);
   ndistribution_vy_ = std::normal_distribution(0.0f, settings_.sampling_std.vy);
   ndistribution_wz_ = std::normal_distribution(0.0f, settings_.sampling_std.wz);
@@ -63,11 +65,63 @@ void NoiseGenerator::generateNextNoises()
   noise_cond_.notify_all();
 }
 
+void NoiseGenerator::computeAdaptiveStds(const models::State & state)
+{
+  auto & s = settings_;
+
+  // Should we apply decay function? or Any constraint is invalid?
+  if (s.advanced_constraints.wz_std_decay_strength <= 0.0f || !validateWzStdDecayConstraints()) {
+    wz_std_adaptive = s.sampling_std.wz;  // skip calculation
+  } else {
+    float current_speed;
+    if (is_holonomic_) {
+      const auto vx = static_cast<float>(state.speed.linear.x);
+      const auto vy = static_cast<float>(state.speed.linear.y);
+      current_speed = hypotf(vx, vy);
+    } else {
+      current_speed = std::fabs(static_cast<float>(state.speed.linear.x));
+    }
+
+    const float decayed_wz_std =
+      (s.sampling_std.wz - s.advanced_constraints.wz_std_decay_to) *
+      std::exp(-1.0f * s.advanced_constraints.wz_std_decay_strength * current_speed) +
+      s.advanced_constraints.wz_std_decay_to;
+
+    wz_std_adaptive = decayed_wz_std;
+  }
+
+  // Check if there's any change on adaptive std's and re-create relevant distribution if any
+  if (ndistribution_wz_.stddev() != wz_std_adaptive) {
+    ndistribution_wz_ = std::normal_distribution(0.0f, wz_std_adaptive);
+  }
+}
+
+bool NoiseGenerator::validateWzStdDecayConstraints() const
+{
+  const models::AdvancedConstraints & c = settings_.advanced_constraints;
+  // Assume valid if angular decay is disabled
+  if (c.wz_std_decay_strength <= 0.0f) {
+    return true;  // valid
+  }
+
+  if (c.wz_std_decay_to < 0.0f || c.wz_std_decay_to > settings_.sampling_std.wz) {
+    return false;
+  }
+  return true;
+}
+
+float NoiseGenerator::getWzStdAdaptive() const
+{
+  return wz_std_adaptive;
+}
+
 void NoiseGenerator::setNoisedControls(
   models::State & state,
   const models::ControlSequence & control_sequence)
 {
   std::unique_lock<std::mutex> guard(noise_lock_);
+
+  computeAdaptiveStds(state);
 
   state.cvx = noises_vx_.rowwise() + control_sequence.vx.transpose();
   state.cvy = noises_vy_.rowwise() + control_sequence.vy.transpose();
@@ -82,9 +136,20 @@ void NoiseGenerator::reset(mppi::models::OptimizerSettings & settings, bool is_h
   // Recompute the noises on reset, initialization, and fallback
   {
     std::unique_lock<std::mutex> guard(noise_lock_);
+    // reset initial adaptive value to parameterized value
+    wz_std_adaptive = settings_.sampling_std.wz;
+
     noises_vx_.setZero(settings_.batch_size, settings_.time_steps);
     noises_vy_.setZero(settings_.batch_size, settings_.time_steps);
     noises_wz_.setZero(settings_.batch_size, settings_.time_steps);
+
+    // Validate decay function, print warning message if decay_to is out of bounds
+    if (!validateWzStdDecayConstraints()) {
+      // RCLCPP_WARN_STREAM(
+      //   *logger_, "wz_std_decay_to must be between 0 and wz_std. wz: "
+      //               << std::to_string(settings_.constraints.wz) << ", wz_std_decay_to: "
+      //               << std::to_string(settings_.advanced_constraints.wz_std_decay_to));
+    }
     ready_ = true;
   }
 
