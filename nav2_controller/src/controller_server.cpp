@@ -965,10 +965,11 @@ bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & cur
 geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
   try {
-    return nav2_util::getPoseWithStalenessCheck(
+    const auto transform = nav2_util::lookupTransformWithStalenessCheck(
       *costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
       costmap_ros_->getBaseFrameID(), now(),
       params_->transform_staleness_threshold);
+    return nav2_util::transformToPoseStamped(transform);
   } catch (const tf2::TransformException & ex) {
     throw nav2_core::ControllerTFError("Failed to obtain robot pose: " + std::string(ex.what()));
   }

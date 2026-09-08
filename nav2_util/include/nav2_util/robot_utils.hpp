@@ -43,23 +43,6 @@ namespace nav2_util
  * @return The latest transform
  * @throw tf2::TransformException if lookup fails or the transform is stale
  */
-geometry_msgs::msg::PoseStamped getPoseWithStalenessCheck(
-  nav2::TransformBuffer & tf_buffer,
-  const std::string & target_frame,
-  const std::string & source_frame,
-  const rclcpp::Time & current_time,
-  double staleness_threshold);
-
-/**
- * @brief Look up the latest transform and optionally reject it when stale
- * @param tf_buffer TF buffer to use for the lookup
- * @param target_frame Frame to transform into
- * @param source_frame Frame to transform from
- * @param current_time Time against which the transform age is measured
- * @param staleness_threshold Maximum transform age in seconds; non-positive disables the check
- * @return The latest transform
- * @throw tf2::TransformException if lookup fails or the transform is stale
- */
 geometry_msgs::msg::TransformStamped lookupTransformWithStalenessCheck(
   nav2::TransformBuffer & tf_buffer,
   const std::string & target_frame,
