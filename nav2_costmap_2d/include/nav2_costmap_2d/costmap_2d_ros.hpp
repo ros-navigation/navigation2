@@ -388,7 +388,7 @@ protected:
    * @brief Function on timer for costmap update
    */
   void mapUpdateLoop(double frequency);
-  bool map_update_thread_shutdown_{false};
+  std::atomic<bool> map_update_thread_shutdown_{false};  // [AI generated]
   std::atomic<bool> stop_updates_{false};
   std::atomic<bool> initialized_{false};
   std::atomic<bool> stopped_{true};
