@@ -14,6 +14,7 @@
 
 #include <string>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "nav2_route/goal_intent_extractor.hpp"
@@ -168,6 +169,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     }
 
     auto transformed_start = transformPose(start_, costmap_frame_id);
+    std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*costmap->getMutex());
     GoalIntentSearch::LoSCollisionChecker los_checker(costmap);
     if (los_checker.worldToMap(
         candidate_nodes.front().pose.position, transformed_start.pose.position))
@@ -196,6 +198,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     }
 
     auto transformed_end = transformPose(goal_, costmap_frame_id);
+    std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*costmap->getMutex());
     GoalIntentSearch::LoSCollisionChecker los_checker(costmap);
     if (los_checker.worldToMap(
         candidate_nodes.front().pose.position, transformed_end.pose.position))
