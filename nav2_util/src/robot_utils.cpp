@@ -29,6 +29,91 @@
 namespace nav2_util
 {
 
+bool lookupTransformWithStalenessCheck(
+  nav2::TransformBuffer & tf_buffer,
+  const std::string & source_frame,
+  const std::string & target_frame,
+  const rclcpp::Time & current_time,
+  double staleness_threshold,
+  geometry_msgs::msg::TransformStamped & transform)
+{
+  if (source_frame == target_frame) {
+    geometry_msgs::msg::TransformStamped identity;
+    identity.header.frame_id = source_frame;
+    identity.header.stamp = current_time;
+    identity.child_frame_id = target_frame;
+    identity.transform.rotation.w = 1.0;
+    transform = identity;
+    return true;
+  }
+
+  geometry_msgs::msg::TransformStamped latest_transform;
+  try {
+    latest_transform = tf_buffer.lookupTransform(
+      source_frame, target_frame, tf2::TimePointZero);
+  } catch (const tf2::TransformException & ex) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("lookupTransformWithStalenessCheck"),
+      "Failed to get transform: %s", ex.what());
+    return false;
+  }
+
+  const bool has_timestamp =
+    latest_transform.header.stamp.sec != 0 || latest_transform.header.stamp.nanosec != 0;
+  if (staleness_threshold > 0.0 && has_timestamp) {
+    const auto transform_time = rclcpp::Time(
+      latest_transform.header.stamp, current_time.get_clock_type());
+    const double transform_age = (current_time - transform_time).seconds();
+    if (transform_age > staleness_threshold) {
+      RCLCPP_ERROR(
+        rclcpp::get_logger("lookupTransformWithStalenessCheck"),
+        "Transform from frame '%s' to frame '%s' is stale: age %fs exceeds threshold %fs",
+        target_frame.c_str(), source_frame.c_str(), transform_age, staleness_threshold);
+      return false;
+    }
+  }
+  transform = latest_transform;
+  return true;
+}
+
+geometry_msgs::msg::PoseStamped transformToPoseStamped(
+  const geometry_msgs::msg::TransformStamped & transform)
+{
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header = transform.header;
+  pose.pose.position.x = transform.transform.translation.x;
+  pose.pose.position.y = transform.transform.translation.y;
+  pose.pose.position.z = transform.transform.translation.z;
+  pose.pose.orientation = transform.transform.rotation;
+  return pose;
+}
+
+geometry_msgs::msg::TransformStamped poseToTransformStamped(
+  const geometry_msgs::msg::PoseStamped & pose, const std::string & child_frame)
+{
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header = pose.header;
+  transform.child_frame_id = child_frame;
+  transform.transform.translation.x = pose.pose.position.x;
+  transform.transform.translation.y = pose.pose.position.y;
+  transform.transform.translation.z = pose.pose.position.z;
+  transform.transform.rotation = pose.pose.orientation;
+  return transform;
+}
+
+geometry_msgs::msg::TransformStamped invertTransform(
+  const geometry_msgs::msg::TransformStamped & transform)
+{
+  tf2::Transform tf_transform;
+  tf2::fromMsg(transform.transform, tf_transform);
+  geometry_msgs::msg::TransformStamped inverse;
+  inverse.header.stamp = transform.header.stamp;
+  inverse.header.frame_id = transform.child_frame_id;
+  inverse.child_frame_id = transform.header.frame_id;
+  inverse.transform = tf2::toMsg(tf_transform.inverse());
+  return inverse;
+}
+
 bool getCurrentPose(
   geometry_msgs::msg::PoseStamped & global_pose,
   nav2::TransformBuffer & tf_buffer, const std::string global_frame,

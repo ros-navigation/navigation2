@@ -35,7 +35,7 @@ public:
   ControllerFixture(
     const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
     std::string fixed_frame, std::string base_frame)
-  : Controller(node, tf, fixed_frame, base_frame)
+  : Controller(node, tf, base_frame), fixed_frame_(fixed_frame)
   {
   }
 
@@ -44,14 +44,21 @@ public:
   bool isTrajectoryCollisionFree(
     const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false)
   {
+    geometry_msgs::msg::TransformStamped base_to_fixed_transform;
+    base_to_fixed_transform.header.frame_id = fixed_frame_;
+    base_to_fixed_transform.child_frame_id = base_frame_;
+    base_to_fixed_transform.transform.rotation.w = 1.0;
     return opennav_docking::Controller::isTrajectoryCollisionFree(
-      target_pose, is_docking, backward);
+      target_pose, base_to_fixed_transform, is_docking, backward);
   }
 
   void setCollisionTolerance(double tolerance)
   {
     dock_collision_threshold_ = tolerance;
   }
+
+private:
+  std::string fixed_frame_;
 };
 
 class TestCollisionChecker : public nav2::LifecycleNode
@@ -200,11 +207,17 @@ TEST(ControllerTests, ObjectLifecycle)
     node, "controller.use_collision_detection", rclcpp::ParameterValue(false));
 
   auto controller = std::make_unique<opennav_docking::Controller>(
-    node, tf, "test_base_frame", "test_base_frame");
+    node, tf, "test_base_frame");
 
   geometry_msgs::msg::Pose pose;
   geometry_msgs::msg::Twist cmd_out, cmd_init;
-  EXPECT_TRUE(controller->computeVelocityCommand(pose, cmd_out, true));
+  geometry_msgs::msg::TransformStamped base_to_fixed_transform;
+  base_to_fixed_transform.header.frame_id = "test_base_frame";
+  base_to_fixed_transform.header.stamp = node->now();
+  base_to_fixed_transform.child_frame_id = "test_base_frame";
+  base_to_fixed_transform.transform.rotation.w = 1.0;
+  EXPECT_TRUE(
+    controller->computeVelocityCommand(pose, cmd_out, base_to_fixed_transform, true));
   EXPECT_NE(cmd_init, cmd_out);
   controller.reset();
 }
@@ -212,7 +225,7 @@ TEST(ControllerTests, ObjectLifecycle)
 TEST(ControllerTests, DynamicParameters) {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto controller = std::make_unique<opennav_docking::Controller>(
-    node, nullptr, "test_base_frame", "test_base_frame");
+    node, nullptr, "test_base_frame");
 
   auto params = std::make_shared<rclcpp::AsyncParametersClient>(
     node->get_node_base_interface(), node->get_node_topics_interface(),
@@ -261,20 +274,6 @@ TEST(ControllerTests, DynamicParameters) {
     {rclcpp::Parameter("controller.k_phi", -1.0)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_EQ(node->get_parameter("controller.k_phi").as_double(), 1.0);
-}
-
-TEST(ControllerTests, TFException)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-
-  auto controller = std::make_unique<opennav_docking::ControllerFixture>(
-    node, tf, "test_fixed_frame", "test_base_frame");
-
-  geometry_msgs::msg::Pose pose;
-  EXPECT_FALSE(controller->isTrajectoryCollisionFree(pose, false));
-  controller.reset();
 }
 
 TEST(ControllerTests, CollisionCheckerDockForward) {
@@ -569,7 +568,7 @@ TEST(ControllerTests, RotateToHeading) {
     rclcpp::ParameterValue(rotate_to_heading_max_angular_accel));
 
   auto controller = std::make_unique<opennav_docking::Controller>(
-    node, nullptr, "test_base_frame", "test_base_frame");
+    node, nullptr, "test_base_frame");
 
   geometry_msgs::msg::Twist current_velocity;
   double angular_distance_to_heading;

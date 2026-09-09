@@ -207,27 +207,36 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
   transformed_plan.header.stamp = global_pose_.header.stamp;
   unsigned int mx, my;
+  geometry_msgs::msg::TransformStamped plan_to_costmap;
+  try {
+    plan_to_costmap = tf_->lookupTransform(
+      costmap_ros_->getGlobalFrameID(),
+      global_plan_.header.frame_id,
+      global_pose_.header.stamp,
+      tf2::durationFromSec(transform_tolerance_));
+  } catch (const tf2::TransformException & ex) {
+    throw nav2_core::ControllerTFError(
+      std::string("Unable to transform global plan into costmap frame: ") +
+      ex.what());
+  }
+
   // Find the furthest relevant pose on the path to consider within costmap
   // bounds
-  // Transforming it to the costmap frame in the same loop
-  for (auto global_plan_pose = closest_point; global_plan_pose != pruned_plan_end;
+  for (auto global_plan_pose = closest_point;
+    global_plan_pose != pruned_plan_end;
     ++global_plan_pose)
   {
-    // Transform from global plan frame to costmap frame
+    geometry_msgs::msg::PoseStamped plan_pose = *global_plan_pose;
+    plan_pose.header = global_pose_.header;
     geometry_msgs::msg::PoseStamped costmap_plan_pose;
-    global_plan_pose->header.stamp = global_pose_.header.stamp;
-    global_plan_pose->header.frame_id = global_plan_.header.frame_id;
-    nav2_util::transformPoseInTargetFrame(*global_plan_pose, costmap_plan_pose, *tf_,
-      costmap_ros_->getGlobalFrameID(), transform_tolerance_);
-
-    // Check if pose is inside the costmap
+    tf2::doTransform(plan_pose, costmap_plan_pose, plan_to_costmap);
     if (!costmap_ros_->getCostmap()->worldToMap(
-        costmap_plan_pose.pose.position.x, costmap_plan_pose.pose.position.y, mx, my))
+        costmap_plan_pose.pose.position.x,
+        costmap_plan_pose.pose.position.y, mx, my))
     {
       break;
     }
 
-    // Filling the transformed plan to return with the transformed pose
     transformed_plan.poses.push_back(costmap_plan_pose);
   }
 

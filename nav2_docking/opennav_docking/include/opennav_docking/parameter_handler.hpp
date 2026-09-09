@@ -50,6 +50,8 @@ struct Parameters
   std::string base_frame;
   // This is our fixed frame for controlling - typically "odom"
   std::string fixed_frame;
+  // Maximum age of the base-to-fixed transform in seconds; non-positive disables the check
+  double staleness_threshold{0.0};
   // The tolerance to the dock's staging pose not requiring navigation
   double dock_prestaging_tolerance;
   // Angular tolerance to exit the rotation loop when rotate_to_dock is enabled

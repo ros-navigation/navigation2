@@ -29,6 +29,7 @@
 
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "nav2_rviz_plugins/utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rviz_common/display_context.hpp"
 #include "rviz_common/load_resource.hpp"
@@ -1191,16 +1192,7 @@ Nav2Panel::onAccumulatedWp()
         return;
       }
 
-      // Converting TransformStamped to PoseStamped
-      geometry_msgs::msg::PoseStamped initial_pose;
-      initial_pose.header = init_transform.header;
-      initial_pose.pose.position.x = init_transform.transform.translation.x;
-      initial_pose.pose.position.y = init_transform.transform.translation.y;
-      initial_pose.pose.position.z = init_transform.transform.translation.z;
-      initial_pose.pose.orientation.x = init_transform.transform.rotation.x;
-      initial_pose.pose.orientation.y = init_transform.transform.rotation.y;
-      initial_pose.pose.orientation.z = init_transform.transform.rotation.z;
-      initial_pose.pose.orientation.w = init_transform.transform.rotation.w;
+      const auto initial_pose = nav2_util::transformToPoseStamped(init_transform);
 
       // inserting the acummulated pose
       acummulated_poses_.goals.insert(acummulated_poses_.goals.begin(), initial_pose);
