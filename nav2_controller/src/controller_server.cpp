@@ -564,6 +564,8 @@ void ControllerServer::computeControl()
 
       updateGlobalPath();
 
+      // The last known pose in the local map frame is retrieved without waiting.
+      // Its value and timestamp are reused across this control cycle.
       const auto current_robot_pose = getCurrentRobotPose();
 
       // Refresh the transformed plan and goal together so they share a single map->odom snapshot
@@ -962,14 +964,17 @@ bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & cur
 
 geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
-  try {
-    return nav2_util::getPoseWithStalenessCheck(
+  geometry_msgs::msg::TransformStamped transform;
+  if (!nav2_util::lookupTransformWithStalenessCheck(
       *costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
       costmap_ros_->getBaseFrameID(), now(),
-      params_->transform_staleness_threshold);
-  } catch (const tf2::TransformException & ex) {
-    throw nav2_core::ControllerTFError("Failed to obtain robot pose: " + std::string(ex.what()));
+      params_->transform_staleness_threshold, transform))
+  {
+    throw nav2_core::ControllerTFError(
+            "Failed to obtain robot pose in frame '" + costmap_ros_->getGlobalFrameID() +
+            "' for base frame '" + costmap_ros_->getBaseFrameID() + "'");
   }
+  return nav2_util::transformToPoseStamped(transform);
 }
 
 void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::ConstSharedPtr & msg)

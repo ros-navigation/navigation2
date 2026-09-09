@@ -799,9 +799,16 @@ void DockingServer::undockRobot()
 
 geometry_msgs::msg::PoseStamped DockingServer::getRobotPoseInFrame(const std::string & frame)
 {
-  return nav2_util::getPoseWithStalenessCheck(
-    *tf2_buffer_, frame, params_->base_frame, now(),
-    params_->staleness_threshold);
+  geometry_msgs::msg::TransformStamped transform;
+  if (!nav2_util::lookupTransformWithStalenessCheck(
+      *tf2_buffer_, frame, params_->base_frame, now(),
+      params_->staleness_threshold, transform))
+  {
+    throw tf2::TransformException(
+            "Failed to obtain robot pose in frame '" + frame +
+            "' for base frame '" + params_->base_frame + "'");
+  }
+  return nav2_util::transformToPoseStamped(transform);
 }
 
 void DockingServer::publishZeroVelocity()

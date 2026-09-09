@@ -568,9 +568,13 @@ bool FollowingServer::getFramePose(
     // Get the transform from the target frame to the fixed frame
     geometry_msgs::msg::TransformStamped transform;
     if (iteration_start_time_.nanoseconds() == 0) {
-      transform = nav2_util::lookupTransformWithStalenessCheck(
-        *tf2_buffer_, params_->fixed_frame, frame_id, now(),
-        params_->staleness_threshold);
+      if (!nav2_util::lookupTransformWithStalenessCheck(
+          *tf2_buffer_, params_->fixed_frame, frame_id, now(),
+          params_->staleness_threshold, transform))
+      {
+        RCLCPP_WARN(get_logger(), "Failed to get transform for frame %s", frame_id.c_str());
+        return false;
+      }
     } else {
       transform = tf2_buffer_->lookupTransform(
         params_->fixed_frame, frame_id, iteration_start_time_,
@@ -613,9 +617,16 @@ bool FollowingServer::getTrackingPose(
 
 geometry_msgs::msg::PoseStamped FollowingServer::getRobotPose()
 {
-  return nav2_util::getPoseWithStalenessCheck(
-    *tf2_buffer_, params_->fixed_frame, params_->base_frame, now(),
-    params_->staleness_threshold);
+  geometry_msgs::msg::TransformStamped transform;
+  if (!nav2_util::lookupTransformWithStalenessCheck(
+      *tf2_buffer_, params_->fixed_frame, params_->base_frame, now(),
+      params_->staleness_threshold, transform))
+  {
+    throw tf2::TransformException(
+            "Failed to obtain robot pose in frame '" + params_->fixed_frame +
+            "' for base frame '" + params_->base_frame + "'");
+  }
+  return nav2_util::transformToPoseStamped(transform);
 }
 
 geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(

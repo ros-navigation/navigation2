@@ -36,38 +36,20 @@ namespace nav2_util
 /**
  * @brief Look up the latest transform and optionally reject it when stale
  * @param tf_buffer TF buffer to use for the lookup
- * @param source_frame Frame to transform from
- * @param target_frame Frame to transform into
- * @param transform_timeout How long to wait for the transform
+ * @param source_frame Reference frame in which to express the target frame pose
+ * @param target_frame Frame whose pose is requested
  * @param current_time Time against which the transform age is measured
  * @param staleness_threshold Maximum transform age in seconds; non-positive disables the check
- * @return The latest transform
- * @throw tf2::TransformException if lookup fails or the transform is stale
+ * @param transform Output latest transform; unchanged on failure
+ * @return True if lookup succeeds and the transform is not stale, false otherwise
  */
-geometry_msgs::msg::PoseStamped getPoseWithStalenessCheck(
+bool lookupTransformWithStalenessCheck(
   nav2::TransformBuffer & tf_buffer,
   const std::string & source_frame,
   const std::string & target_frame,
   const rclcpp::Time & current_time,
-  double staleness_threshold);
-
-/**
- * @brief Look up the latest transform and optionally reject it when stale
- * @param tf_buffer TF buffer to use for the lookup
- * @param source_frame Frame to transform from
- * @param target_frame Frame to transform into
- * @param transform_timeout How long to wait for the transform
- * @param current_time Time against which the transform age is measured
- * @param staleness_threshold Maximum transform age in seconds; non-positive disables the check
- * @return The latest transform
- * @throw tf2::TransformException if lookup fails or the transform is stale
- */
-geometry_msgs::msg::TransformStamped lookupTransformWithStalenessCheck(
-  nav2::TransformBuffer & tf_buffer,
-  const std::string & source_frame,
-  const std::string & target_frame,
-  const rclcpp::Time & current_time,
-  double staleness_threshold);
+  double staleness_threshold,
+  geometry_msgs::msg::TransformStamped & transform);
 
 /**
  * @brief Convert a stamped transform to the equivalent stamped pose
@@ -78,8 +60,9 @@ geometry_msgs::msg::PoseStamped transformToPoseStamped(
   const geometry_msgs::msg::TransformStamped & transform);
 
 /**
- * @brief Convert a stamped pose to the a transform stamped from the specified child
+ * @brief Convert a stamped pose to a transform stamped with the specified child frame
  * @param pose Pose to convert
+ * @param child_frame Child frame for the transform
  * @return Transform from the specified child
  */
 geometry_msgs::msg::TransformStamped poseToTransformStamped(

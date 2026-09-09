@@ -147,6 +147,8 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // Add proper orientations to plan, if needed
   validateOrientations(transformed_plan.poses);
 
+  // ControllerServer supplies pose in the local costmap's global frame, so it already
+  // represents the transform from the robot base frame to the costmap's global frame.
   geometry_msgs::msg::TransformStamped costmap_transform = nav2_util::poseToTransformStamped(pose,
       costmap_ros_->getBaseFrameID());
 

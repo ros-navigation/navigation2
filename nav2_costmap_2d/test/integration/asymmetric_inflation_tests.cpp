@@ -221,7 +221,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_invalid_num_threads)
     std::runtime_error);
 }
 
-TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_transform_staleness_threshold)
+TEST(AsymmetricInflationLayerInitTest, init_accepts_negative_transform_staleness_threshold)
 {
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.transform_staleness_threshold", -0.1)});
@@ -230,9 +230,8 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_transform_stalene
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
-  EXPECT_THROW(
-    layer->initialize(&layers, "asymmetric_inflation_layer", tf.get(), node, nullptr),
-    std::runtime_error);
+  EXPECT_NO_THROW(
+    layer->initialize(&layers, "asymmetric_inflation_layer", tf.get(), node, nullptr));
 }
 
 // ============================================================

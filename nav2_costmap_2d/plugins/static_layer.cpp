@@ -475,12 +475,13 @@ StaticLayer::updateCosts(
     double wx, wy;
     // Might even be in a different frame
     geometry_msgs::msg::TransformStamped transform;
-    try {
-      transform = nav2_util::lookupTransformWithStalenessCheck(
+    if (!nav2_util::lookupTransformWithStalenessCheck(
         *tf_, map_frame_, global_frame_, clock_->now(),
-        transform_staleness_threshold_);
-    } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
+        transform_staleness_threshold_, transform))
+    {
+      RCLCPP_ERROR(
+        logger_, "StaticLayer: TF lookup failed or transform is stale (%s -> %s)",
+        global_frame_.c_str(), map_frame_.c_str());
       return;
     }
     // Copy map data given proper transformations
