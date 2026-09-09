@@ -15,8 +15,11 @@
 #ifndef NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
 #define NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
 
+#include <cstddef>
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon.hpp"
@@ -147,6 +150,24 @@ public:
   virtual bool isPointInside(const double px, const double py) const = 0;
 
   /**
+   * @brief Gets X-intervals covered by the shape on the horizontal line y = py.
+   * Intervals may be slightly wider than the shape, but never narrower.
+   * Empty virtual method intended to be used in child implementations
+   * @param py Y-coordinate of the line
+   * @param spans Output [begin, end) intervals in world coordinates, sorted by X
+   */
+  virtual void getRowSpans(
+    const double py, std::vector<std::pair<double, double>> & spans) const = 0;
+
+  /**
+   * @brief Puts filled shape on map
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   * @return False if shape boundaries can not be converted to map coordinates
+   */
+  bool putFill(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
+
+  /**
    * @brief Puts shape borders on map.
    * Empty virtual method intended to be used in child implementations
    * @param map Output map pointer
@@ -156,6 +177,18 @@ public:
     nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type) = 0;
 
 protected:
+  /**
+   * @brief Updates a run of consecutive cells with given shape value according to the overlay type
+   * @param cells Pointer to the first cell of the run
+   * @param count Number of cells in the run
+   * @param shape_val Vector object value to be overlaid on map
+   * @param overlay_type Type of overlay
+   * @throw std::exception in case of unknown overlay type
+   */
+  static void processRun(
+    int8_t * cells, const size_t count, const int8_t shape_val,
+    const OverlayType overlay_type);
+
   /// @brief Type of shape
   ShapeType type_;
 
@@ -252,6 +285,13 @@ public:
    * @return True if given point inside the shape
    */
   bool isPointInside(const double px, const double py) const;
+
+  /**
+   * @brief Gets X-intervals covered by the polygon on the horizontal line y = py
+   * @param py Y-coordinate of the line
+   * @param spans Output [begin, end) intervals in world coordinates, sorted by X
+   */
+  void getRowSpans(const double py, std::vector<std::pair<double, double>> & spans) const;
 
   /**
    * @brief Puts shape borders on map.
@@ -362,6 +402,13 @@ public:
    * @return True if given point inside the shape
    */
   bool isPointInside(const double px, const double py) const;
+
+  /**
+   * @brief Gets X-interval covered by the circle on the horizontal line y = py
+   * @param py Y-coordinate of the line
+   * @param spans Output [begin, end) interval in world coordinates, empty if the line misses
+   */
+  void getRowSpans(const double py, std::vector<std::pair<double, double>> & spans) const;
 
   /**
    * @brief Puts shape borders on map.
