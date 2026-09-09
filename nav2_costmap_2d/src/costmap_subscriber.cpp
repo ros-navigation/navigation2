@@ -32,22 +32,15 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
 
 void CostmapSubscriber::costmapCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr & msg)
 {
-  {
-    std::lock_guard<std::mutex> lock(costmap_msg_mutex_);
-    costmap_msg_ = msg;
-    frame_id_ = costmap_msg_->header.frame_id;
-  }
+  std::lock_guard<std::recursive_mutex> lock(costmap_msg_mutex_);
+  costmap_msg_ = msg;
+  frame_id_ = costmap_msg_->header.frame_id;
+
   if (!isCostmapReceived()) {
-    {
-      std::lock_guard<std::mutex> lock(costmap_msg_mutex_);
-      if (costmap_) {
-        return;
-      }
-      costmap_ = std::make_shared<Costmap2D>(
-        msg->metadata.size_x, msg->metadata.size_y,
-        msg->metadata.resolution, msg->metadata.origin.position.x,
-        msg->metadata.origin.position.y);
-    }
+    costmap_ = std::make_shared<Costmap2D>(
+      msg->metadata.size_x, msg->metadata.size_y,
+      msg->metadata.resolution, msg->metadata.origin.position.x,
+      msg->metadata.origin.position.y);
 
     processCurrentCostmapMsg();
   }
