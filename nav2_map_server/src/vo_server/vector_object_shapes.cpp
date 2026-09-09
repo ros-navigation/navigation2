@@ -117,6 +117,34 @@ bool Shape::putFill(
   return true;
 }
 
+void Shape::processRun(
+  int8_t * cells, const size_t count, const int8_t shape_val,
+  const OverlayType overlay_type)
+{
+  switch (overlay_type) {
+    case OverlayType::OVERLAY_SEQ:
+      std::fill_n(cells, count, shape_val);
+      return;
+    case OverlayType::OVERLAY_MAX:
+      for (size_t i = 0; i < count; i++) {
+        cells[i] = std::max(cells[i], shape_val);
+      }
+      return;
+    case OverlayType::OVERLAY_MIN:
+      if (shape_val == nav2_util::OCC_GRID_UNKNOWN) {
+        return;
+      }
+      for (size_t i = 0; i < count; i++) {
+        if (cells[i] == nav2_util::OCC_GRID_UNKNOWN || shape_val < cells[i]) {
+          cells[i] = shape_val;
+        }
+      }
+      return;
+    default:
+      throw std::runtime_error{"Unknown overlay type"};
+  }
+}
+
 bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_uuid)
 {
   auto node = node_.lock();

@@ -15,6 +15,7 @@
 #ifndef NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
 #define NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
@@ -176,6 +177,18 @@ public:
     nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type) = 0;
 
 protected:
+  /**
+   * @brief Updates a run of consecutive cells with given shape value according to the overlay type
+   * @param cells Pointer to the first cell of the run
+   * @param count Number of cells in the run
+   * @param shape_val Vector object value to be overlaid on map
+   * @param overlay_type Type of overlay
+   * @throw std::exception in case of unknown overlay type
+   */
+  static void processRun(
+    int8_t * cells, const size_t count, const int8_t shape_val,
+    const OverlayType overlay_type);
+
   /// @brief Type of shape
   ShapeType type_;
 

@@ -23,7 +23,6 @@
 
 #include "rclcpp/create_timer.hpp"
 
-#include "nav2_util/occ_grid_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 
 using namespace std::placeholders;
