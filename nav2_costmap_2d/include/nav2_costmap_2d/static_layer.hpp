@@ -38,6 +38,7 @@
 #ifndef NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 #define NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 
+#include <array>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -135,6 +136,11 @@ protected:
   void processMap(const nav_msgs::msg::OccupancyGrid & new_map);
 
   /**
+   * @brief Report current and previous overlay extents without resizing the master.
+   */
+  void updateOverlayBounds(double * min_x, double * min_y, double * max_x, double * max_y);
+
+  /**
    * @brief  Callback to update the costmap's map from the map_server
    * @param new_map The map to put into the costmap. The origin of the new
    * map along with its size will determine what parts of the costmap's
@@ -197,6 +203,10 @@ protected:
   std::string map_frame_;  /// @brief frame that map is located in
 
   bool has_updated_data_{false};
+  bool resize_master_{true};
+  bool previous_overlay_bounds_valid_{false};
+  std::array<double, 4> previous_overlay_bounds_{};
+  tf2::Transform global_to_overlay_;
 
   unsigned int x_{0};
   unsigned int y_{0};

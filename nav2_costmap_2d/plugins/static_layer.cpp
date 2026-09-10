@@ -40,6 +40,7 @@
 #include "nav2_costmap_2d/static_layer.hpp"
 
 #include <algorithm>
+#include <limits>
 #include <string>
 
 #include "pluginlib/class_list_macros.hpp"
@@ -153,6 +154,7 @@ StaticLayer::getParameters()
   }
 
   enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+  resize_master_ = node->declare_or_get_parameter(name_ + ".resize_master", true);
   subscribe_to_updates_ = node->declare_or_get_parameter(
     name_ + "." + "subscribe_to_updates", false);
   footprint_clearing_enabled_ = node->declare_or_get_parameter(
@@ -166,6 +168,9 @@ StaticLayer::getParameters()
     name_ + "." + "map_subscribe_transient_local", true);
   node->get_parameter("track_unknown_space", track_unknown_space_);
   node->get_parameter("use_maximum", use_maximum_);
+  track_unknown_space_ = node->declare_or_get_parameter(
+    name_ + ".track_unknown_space", track_unknown_space_);
+  use_maximum_ = node->declare_or_get_parameter(name_ + ".use_maximum", use_maximum_);
   node->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
   node->get_parameter("inscribed_obstacle_cost_value", inscribed_obstacle_cost_value_);
   node->get_parameter("unknown_cost_value", unknown_cost_value_);
@@ -195,7 +200,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 
   // resize costmap if size, resolution or origin do not match
   Costmap2D * master = layered_costmap_->getCostmap();
-  if (!layered_costmap_->isRolling() && (master->getSizeInCellsX() != size_x ||
+  if (resize_master_ && !layered_costmap_->isRolling() && (master->getSizeInCellsX() != size_x ||
     master->getSizeInCellsY() != size_y ||
     !isEqual(master->getResolution(), new_map.info.resolution, EPSILON) ||
     !isEqual(master->getOriginX(), new_map.info.origin.position.x, EPSILON) ||
@@ -270,6 +275,10 @@ StaticLayer::matchSize()
 {
   // If we are using rolling costmap, the static map size is
   //   unrelated to the size of the layered costmap
+  if (!resize_master_) {
+    has_updated_data_ = true;
+    return;
+  }
   if (!layered_costmap_->isRolling()) {
     Costmap2D * master = layered_costmap_->getCostmap();
     resizeMap(
@@ -382,6 +391,15 @@ StaticLayer::updateBounds(
     map_buffer_ = nullptr;
   }
 
+  if (!resize_master_) {
+    useExtraBounds(min_x, min_y, max_x, max_y);
+    updateOverlayBounds(min_x, min_y, max_x, max_y);
+    if (enabled_ && map_received_in_update_bounds_) {
+      updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+    }
+    return;
+  }
+
   if (!layered_costmap_->isRolling() ) {
     if (!(has_updated_data_ || has_extra_bounds_)) {
       return;
@@ -422,6 +440,65 @@ StaticLayer::updateBounds(
 }
 
 void
+StaticLayer::updateOverlayBounds(double * min_x, double * min_y, double * max_x, double * max_y)
+{
+  if (!enabled_) {
+    if (previous_overlay_bounds_valid_) {
+      *min_x = std::min(*min_x, previous_overlay_bounds_[0]);
+      *min_y = std::min(*min_y, previous_overlay_bounds_[1]);
+      *max_x = std::max(*max_x, previous_overlay_bounds_[2]);
+      *max_y = std::max(*max_y, previous_overlay_bounds_[3]);
+      previous_overlay_bounds_valid_ = false;
+    }
+    return;
+  }
+  if (!has_updated_data_ && !layered_costmap_->isRolling() && map_frame_ == global_frame_) {
+    return;
+  }
+
+  tf2::Transform overlay_to_global;
+  overlay_to_global.setIdentity();
+  if (map_frame_ != global_frame_) {
+    try {
+      tf2::fromMsg(
+        tf_->lookupTransform(global_frame_, map_frame_, tf2::TimePointZero, transform_tolerance_)
+        .transform, overlay_to_global);
+    } catch (const tf2::TransformException & exception) {
+      RCLCPP_ERROR(logger_, "StaticLayer: %s", exception.what());
+      map_received_in_update_bounds_ = false;
+      setCurrent(false);
+      return;
+    }
+  }
+  global_to_overlay_ = overlay_to_global.inverse();
+  std::array<double, 4> bounds{
+    std::numeric_limits<double>::max(), std::numeric_limits<double>::max(),
+    std::numeric_limits<double>::lowest(), std::numeric_limits<double>::lowest()};
+  for (const double map_x : {origin_x_, origin_x_ + size_x_ * resolution_}) {
+    for (const double map_y : {origin_y_, origin_y_ + size_y_ * resolution_}) {
+      const auto point = overlay_to_global * tf2::Vector3(map_x, map_y, 0.0);
+      bounds[0] = std::min(bounds[0], point.x());
+      bounds[1] = std::min(bounds[1], point.y());
+      bounds[2] = std::max(bounds[2], point.x());
+      bounds[3] = std::max(bounds[3], point.y());
+    }
+  }
+  *min_x = std::min(*min_x, bounds[0]);
+  *min_y = std::min(*min_y, bounds[1]);
+  *max_x = std::max(*max_x, bounds[2]);
+  *max_y = std::max(*max_y, bounds[3]);
+  if (previous_overlay_bounds_valid_) {
+    *min_x = std::min(*min_x, previous_overlay_bounds_[0]);
+    *min_y = std::min(*min_y, previous_overlay_bounds_[1]);
+    *max_x = std::max(*max_x, previous_overlay_bounds_[2]);
+    *max_y = std::max(*max_y, previous_overlay_bounds_[3]);
+  }
+  previous_overlay_bounds_ = bounds;
+  previous_overlay_bounds_valid_ = true;
+  has_updated_data_ = false;
+}
+
+void
 StaticLayer::updateFootprint(
   double robot_x, double robot_y, double robot_yaw,
   double * min_x, double * min_y,
@@ -459,11 +536,38 @@ StaticLayer::updateCosts(
   std::vector<MapLocation> map_region_to_restore;
   if (footprint_clearing_enabled_) {
     map_region_to_restore.reserve(100);
-    getMapRegionOccupiedByPolygon(transformed_footprint_, map_region_to_restore);
+    auto layer_footprint = transformed_footprint_;
+    if (!resize_master_) {
+      for (auto & vertex : layer_footprint) {
+        const auto point = global_to_overlay_ * tf2::Vector3(vertex.x, vertex.y, 0.0);
+        vertex.x = point.x();
+        vertex.y = point.y();
+      }
+    }
+    getMapRegionOccupiedByPolygon(layer_footprint, map_region_to_restore);
     setMapRegionOccupiedByPolygon(map_region_to_restore, nav2_costmap_2d::FREE_SPACE);
   }
 
-  if (!layered_costmap_->isRolling()) {
+  if (!resize_master_) {
+    for (int master_y = min_j; master_y < max_j; ++master_y) {
+      for (int master_x = min_i; master_x < max_i; ++master_x) {
+        double world_x, world_y;
+        master_grid.mapToWorld(master_x, master_y, world_x, world_y);
+        const auto point = global_to_overlay_ * tf2::Vector3(world_x, world_y, 0.0);
+        unsigned int overlay_x, overlay_y;
+        if (!worldToMap(point.x(), point.y(), overlay_x, overlay_y)) {
+          continue;
+        }
+        const auto cost = getCost(overlay_x, overlay_y);
+        const auto old_cost = master_grid.getCost(master_x, master_y);
+        if (cost != NO_INFORMATION &&
+          (!use_maximum_ || old_cost == NO_INFORMATION || cost > old_cost))
+        {
+          master_grid.setCost(master_x, master_y, cost);
+        }
+      }
+    }
+  } else if (!layered_costmap_->isRolling()) {
     // if not rolling, the layered costmap (master_grid) has same coordinates as this layer
     if (!use_maximum_) {
       updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
@@ -535,6 +639,14 @@ rcl_interfaces::msg::SetParametersResult StaticLayer::validateParameterUpdatesCa
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+
+    if (param_name == name_ + ".resize_master" ||
+      param_name == name_ + ".track_unknown_space" || param_name == name_ + ".use_maximum")
+    {
+      result.successful = false;
+      result.reason = param_name + " cannot be changed while running";
       continue;
     }
 

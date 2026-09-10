@@ -20,6 +20,35 @@ See the [Navigation Plugin list](https://docs.nav2.org/plugins/index.html) for a
 - Currently due to some bug in rviz, you need to set the `fixed_frame` in the rviz display, to `odom` frame.
 - Using pointcloud data from a saved bag file while using gazebo simulation can be troublesome due to the clock time skipping to an earlier time.
 
+## Static Map Overlays
+
+StaticLayer defaults to `resize_master: true`, retaining its existing base-map
+behavior. Set this initialization-only parameter to `false` for an independent
+OccupancyGrid overlay, such as a Vector Object Server map. The overlay keeps its
+own extent, origin and resolution without resizing the master. Cells are sampled
+at master-cell centers, with TF projection when the map and costmap frames differ.
+Grid origins are axis-aligned, as in the existing StaticLayer implementation.
+Changing or disabling an overlay reports its previous extent so old contributions
+and inflation can be cleared by the layered costmap update.
+
+`track_unknown_space` and `use_maximum` may be set per StaticLayer instance; when
+omitted they inherit the costmap-level settings. These overrides are also
+initialization-only. Overlay unknown cells are transparent. With maximum merging,
+known overlay cells can mark an unknown master cell, matching `updateWithMax`.
+
+```yaml
+virtual_obstacles_layer:
+  plugin: "nav2_costmap_2d::StaticLayer"
+  map_topic: "/vector_objects/obstacles/map"
+  resize_master: false
+  track_unknown_space: true
+  use_maximum: true
+  footprint_clearing_enabled: false
+```
+
+Place obstacle overlays before InflationLayer. This mode currently processes full
+overlay updates; it does not implement incremental Vector Object Server publication.
+
 ## Costmap Filters
 
 ### Overview
