@@ -21,7 +21,7 @@ uint16 FAILED_TO_CONTROL=905
 uint16 TIMEOUT=907
 uint16 UNKNOWN=999
 
-bool success True  # docking success status
+bool success true  # docking success status
 uint16 error_code 0  # Contextual error code, if any
 string error_msg
 ---
