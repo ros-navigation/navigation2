@@ -210,6 +210,8 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   // Find the furthest relevant pose on the path to consider within costmap
   // bounds
   // Transforming it to the costmap frame in the same loop
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(
+    *(costmap_ros_->getCostmap()->getMutex()));
   for (auto global_plan_pose = closest_point; global_plan_pose != pruned_plan_end;
     ++global_plan_pose)
   {
