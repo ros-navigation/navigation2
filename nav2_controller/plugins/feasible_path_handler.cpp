@@ -206,7 +206,7 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   nav_msgs::msg::Path transformed_plan;
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
   transformed_plan.header.stamp = global_pose_.header.stamp;
-  unsigned int mx, my;
+  auto costmap = costmap_ros_->getCostmap();
   // Find the furthest relevant pose on the path to consider within costmap
   // bounds
   // Transforming it to the costmap frame in the same loop
@@ -220,10 +220,17 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
     nav2_util::transformPoseInTargetFrame(*global_plan_pose, costmap_plan_pose, *tf_,
       costmap_ros_->getGlobalFrameID(), transform_tolerance_);
 
-    // Check if pose is inside the costmap
-    if (!costmap_ros_->getCostmap()->worldToMap(
-        costmap_plan_pose.pose.position.x, costmap_plan_pose.pose.position.y, mx, my))
+    bool pose_in_costmap = false;
     {
+      // Protect costmap geometry reads against rolling-window origin updates.
+      std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
+      unsigned int mx, my;
+      pose_in_costmap = costmap->worldToMap(
+        costmap_plan_pose.pose.position.x, costmap_plan_pose.pose.position.y, mx, my);
+    }
+
+    // Check if pose is inside the costmap
+    if (!pose_in_costmap) {
       break;
     }
 
