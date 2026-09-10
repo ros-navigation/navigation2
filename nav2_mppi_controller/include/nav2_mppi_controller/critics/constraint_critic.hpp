@@ -42,6 +42,14 @@ public:
   void score(CriticData & data) override;
 
 protected:
+  /**
+   * @brief Accumulate the weighted cost of a constraint violation
+   * @param data Critic data whose costs are added to
+   * @param violation Per-batch, per-timestep amount by which the constraint is exceeded
+   */
+  template<typename Derived>
+  void addViolationCost(CriticData & data, const Eigen::ArrayBase<Derived> & violation);
+
   unsigned int power_{0};
   float weight_{0};
   float vx_max_{0};

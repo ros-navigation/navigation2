@@ -599,6 +599,41 @@ TEST(UtilsTests, getLastPathPoseTest)
   EXPECT_NEAR(last_path_pose.orientation.w, 0.0, 1e-3);
 }
 
+TEST(UtilsTests, ClampVelocityByAccelTest)
+{
+  // The limits bound the change in speed magnitude, not in signed velocity, so the roles of
+  // min_delta and max_delta swap once the previous velocity is negative
+  const float min_delta = -0.3f;
+  const float max_delta = 0.1f;
+
+  // Driving forwards: accelerating is bounded by max_delta, braking by min_delta
+  EXPECT_NEAR(clampVelocityByAccel(0.5f, 1.0f, min_delta, max_delta), 0.6f, 1e-6);
+  EXPECT_NEAR(clampVelocityByAccel(0.5f, 0.0f, min_delta, max_delta), 0.2f, 1e-6);
+
+  // Driving in reverse: gaining speed is still bounded by max_delta, braking by min_delta
+  EXPECT_NEAR(clampVelocityByAccel(-0.5f, -1.0f, min_delta, max_delta), -0.6f, 1e-6);
+  EXPECT_NEAR(clampVelocityByAccel(-0.5f, 0.0f, min_delta, max_delta), -0.2f, 1e-6);
+
+  // A reachable request passes through untouched in either direction
+  EXPECT_NEAR(clampVelocityByAccel(0.5f, 0.55f, min_delta, max_delta), 0.55f, 1e-6);
+  EXPECT_NEAR(clampVelocityByAccel(-0.5f, -0.55f, min_delta, max_delta), -0.55f, 1e-6);
+}
+
+TEST(UtilsTests, ReachableFractionTest)
+{
+  const float min_delta = -0.3f;
+  const float max_delta = 0.1f;
+
+  // A reachable request needs no scaling
+  EXPECT_NEAR(reachableFraction(0.5f, 0.55f, min_delta, max_delta), 1.0f, 1e-6);
+
+  // Requesting twice the available acceleration budget is met halfway
+  EXPECT_NEAR(reachableFraction(0.5f, 0.7f, min_delta, max_delta), 0.5f, 1e-6);
+
+  // Asking for no change at all is fully reachable, without dividing by zero
+  EXPECT_NEAR(reachableFraction(0.5f, 0.5f, min_delta, max_delta), 1.0f, 1e-6);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
