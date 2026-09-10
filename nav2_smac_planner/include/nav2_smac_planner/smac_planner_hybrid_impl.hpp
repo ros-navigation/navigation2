@@ -119,6 +119,17 @@ void SmacPlannerHybridT<NodeT>::configure(
     node->declare_or_get_parameter(name + ".use_quadratic_cost_penalty", false);
   _search_info.downsample_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
+  _search_info.incremental_obstacle_heuristic =
+    node->declare_or_get_parameter(name + ".incremental_obstacle_heuristic", false);
+  if (_search_info.incremental_obstacle_heuristic &&
+    _search_info.downsample_obstacle_heuristic)
+  {
+    RCLCPP_WARN(
+      _logger,
+      "incremental_obstacle_heuristic is enabled; forcing downsample_obstacle_heuristic off "
+      "(the incremental field is maintained at full resolution).");
+    _search_info.downsample_obstacle_heuristic = false;
+  }
 
   analytic_expansion_max_length_m =
     node->declare_or_get_parameter(name + ".analytic_expansion_max_length", 3.0);
@@ -356,7 +367,8 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
   std::function<bool()> cancel_checker)
 {
   if (!viapoints.empty()) {
-    RCLCPP_WARN(_logger, "Received %zu viapoints, but this planner ignores them",
+    RCLCPP_WARN(
+      _logger, "Received %zu viapoints, but this planner ignores them",
       viapoints.size());
   }
 
@@ -613,9 +625,9 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (parameter.as_double() < 0.0) {
         RCLCPP_WARN(
-        _logger, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          _logger, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       } else if (param_name == _name + ".minimum_turning_radius" && // NOLINT
         parameter.as_double() < _costmap->getResolution() * _downsampling_factor)
@@ -633,9 +645,9 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
         param_name != _name + ".max_iterations"))
       {
         RCLCPP_WARN(
-        _logger, "The value of parameter '%s' is incorrectly set to %ld, "
-        "it should be >0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_int());
+          _logger, "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
         result.successful = false;
       } else if (param_name == _name + ".angle_quantization_bins") {
         unsigned int angle_quantizations = static_cast<unsigned int>(parameter.as_int());
@@ -767,6 +779,18 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
       } else if (param_name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      } else if (param_name == _name + ".incremental_obstacle_heuristic") {
+        reinit_a_star = true;
+        _search_info.incremental_obstacle_heuristic = parameter.as_bool();
+        if (_search_info.incremental_obstacle_heuristic &&
+          _search_info.downsample_obstacle_heuristic)
+        {
+          RCLCPP_WARN(
+            _logger,
+            "incremental_obstacle_heuristic is enabled; forcing downsample_obstacle_heuristic "
+            "off (the incremental field is maintained at full resolution).");
+          _search_info.downsample_obstacle_heuristic = false;
+        }
       } else if (param_name == _name + ".allow_primitive_interpolation") {
         _search_info.allow_primitive_interpolation = parameter.as_bool();
         reinit_a_star = true;
