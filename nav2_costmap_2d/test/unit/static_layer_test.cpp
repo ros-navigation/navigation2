@@ -244,6 +244,39 @@ TEST_F(StaticLayerOverlayTest, RollingWindowProjectsOverlayAfterOriginShift)
   EXPECT_EQ(master->getSizeInCellsX(), 10u);
 }
 
+TEST_F(StaticLayerOverlayTest, RollingDefaultLayerKeepsLethalUnderUnknownMapCells)
+{
+  // A rolling costmap with the stock static layer (resize_master left at its default)
+  overlay_->deactivate();
+  layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("odom", true, true);
+  layers_->resizeMap(10, 10, 1.0, 0.0, 0.0);
+  auto base = std::make_shared<TestStaticLayer>();
+  layers_->addPlugin(base);
+  base->initialize(layers_.get(), "base", tf_.get(), node_, nullptr);
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "odom";
+  transform.child_frame_id = "map";
+  transform.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf_->setTransform(transform, "test", true));
+  // Map covers the whole window; only one cell is lethal, the rest unknown
+  auto map = makeMap(0.0);
+  map->info.width = map->info.height = 5;
+  map->info.origin.position.y = 0.0;
+  map->data.assign(25, -1);
+  map->data[0] = 100;
+  base->incomingMap(map);
+  layers_->updateMap(5.0, 5.0, 0.0);
+  auto * master = layers_->getCostmap();
+  EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_EQ(master->getCost(5, 5), nav2_costmap_2d::NO_INFORMATION);
+
+  // Another layer marks a cell the map knows nothing about; the map must not erase it
+  master->setCost(5, 5, nav2_costmap_2d::LETHAL_OBSTACLE);
+  base->updateCosts(*master, 0, 0, 10, 10);
+  EXPECT_EQ(master->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+}
+
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);

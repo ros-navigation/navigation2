@@ -136,9 +136,21 @@ protected:
   void processMap(const nav_msgs::msg::OccupancyGrid & new_map);
 
   /**
-   * @brief Report current and previous overlay extents without resizing the master.
+   * @brief Whether this layer keeps its own grid geometry instead of sharing the master's.
+   * Rolling costmaps are always overlays; non-rolling ones when resize_master is false.
+   */
+  bool isOverlay() const;
+
+  /**
+   * @brief Report current and previous overlay extents in the costmap frame
    */
   void updateOverlayBounds(double * min_x, double * min_y, double * max_x, double * max_y);
+
+  /**
+   * @brief Sample the overlay at each master cell center in the window and merge the costs
+   */
+  void updateOverlayCosts(
+    nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i, int max_j);
 
   /**
    * @brief  Callback to update the costmap's map from the map_server
