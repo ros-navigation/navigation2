@@ -375,6 +375,26 @@ public:
    */
   void halt() override
   {
+    // Resolve a pending goal response before halting so an accepted goal can be
+    // cancelled instead of being orphaned, but only within the goal's remaining
+    // server_timeout_ budget.
+    if (future_goal_handle_) {
+      auto elapsed =
+        (node_->now() - time_goal_sent_).template to_chrono<std::chrono::milliseconds>();
+      auto remaining = server_timeout_ - elapsed;
+      if (remaining > std::chrono::milliseconds(0)) {
+        if (
+          callback_group_executor_.spin_until_future_complete(
+            *future_goal_handle_, remaining) ==
+          rclcpp::FutureReturnCode::SUCCESS)
+        {
+          goal_handle_ = future_goal_handle_->get();
+        }
+      }
+
+      future_goal_handle_.reset();
+    }
+
     if (should_cancel_goal()) {
       auto future_result = action_client_->async_get_result(goal_handle_);
       auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
