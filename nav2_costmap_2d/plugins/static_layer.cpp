@@ -104,14 +104,6 @@ StaticLayer::onInitialize()
       map_topic_ + "_updates",
       std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
   }
-
-  if (!map_ready_topic_.empty()) {
-    RCLCPP_INFO(logger_, "Subscribing to map ready topic (%s)", map_ready_topic_.c_str());
-    map_ready_sub_ = node->create_subscription<std_msgs::msg::Bool>(
-      map_ready_topic_,
-      std::bind(&StaticLayer::incomingMapReady, this, std::placeholders::_1),
-      nav2::qos::LatchedSubscriptionQoS(1));
-  }
 }
 
 void
@@ -172,11 +164,6 @@ StaticLayer::getParameters()
   map_topic_ = node->declare_or_get_parameter(
     name_ + "." + "map_topic", std::string("map"));
   map_topic_ = joinWithParentNamespace(map_topic_);
-  map_ready_topic_ = node->declare_or_get_parameter(
-    name_ + "." + "map_ready_topic", std::string(""));
-  if (!map_ready_topic_.empty()) {
-    map_ready_topic_ = joinWithParentNamespace(map_ready_topic_);
-  }
   map_subscribe_transient_local_ = node->declare_or_get_parameter(
     name_ + "." + "map_subscribe_transient_local", true);
   node->get_parameter("track_unknown_space", track_unknown_space_);
@@ -279,30 +266,8 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   width_ = size_x_;
   height_ = size_y_;
   has_updated_data_ = true;
-  map_applied_since_not_ready_ = true;
 
-  setCurrentIfMapReady();
-}
-
-void
-StaticLayer::setCurrentIfMapReady()
-{
-  setCurrent(map_ready_ && map_applied_since_not_ready_);
-}
-
-void
-StaticLayer::incomingMapReady(const std_msgs::msg::Bool::ConstSharedPtr & ready)
-{
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  map_ready_ = ready->data;
-  if (!map_ready_) {
-    // A new map is coming; ignore any map applied before this point
-    map_applied_since_not_ready_ = false;
-    setCurrent(false);
-  } else if (map_received_ && map_applied_since_not_ready_ && !map_buffer_) {
-    // Nothing left to apply, and updateCosts() may not run again if no bounds are dirty
-    setCurrent(true);
-  }
+  setCurrent(true);
 }
 
 void
@@ -650,7 +615,7 @@ StaticLayer::updateCosts(
     // restore the map region occupied by the polygon using cached data
     restoreMapRegionOccupiedByPolygon(map_region_to_restore);
   }
-  setCurrentIfMapReady();
+  setCurrent(true);
 }
 
 /**
