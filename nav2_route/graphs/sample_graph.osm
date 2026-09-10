@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Small curated OpenStreetMap sample for the nav2_route OsmGraphFileLoader.
+  A two-way residential street (way 2001) is crossed at the shared node 1003 by
+  a one-way service road (way 2002). Topology resolution yields 4 sections and
+  5 junction vertices (1001, 1003, 1005, 1006, 1007); nodes 1002 and 1004 are
+  shape points that stay inside a chain and are not vertices.
+-->
+<osm version="0.6" generator="nav2_route sample">
+  <node id="1001" lat="40.711000" lon="-74.008000"/>
+  <node id="1002" lat="40.711000" lon="-74.007500"/>
+  <node id="1003" lat="40.711000" lon="-74.007000"/>
+  <node id="1004" lat="40.711000" lon="-74.006500"/>
+  <node id="1005" lat="40.711000" lon="-74.006000"/>
+  <node id="1006" lat="40.711500" lon="-74.007000"/>
+  <node id="1007" lat="40.710500" lon="-74.007000"/>
+  <way id="2001">
+    <nd ref="1001"/>
+    <nd ref="1002"/>
+    <nd ref="1003"/>
+    <nd ref="1004"/>
+    <nd ref="1005"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Sample Street"/>
+  </way>
+  <way id="2002">
+    <nd ref="1006"/>
+    <nd ref="1003"/>
+    <nd ref="1007"/>
+    <tag k="highway" v="service"/>
+    <tag k="oneway" v="yes"/>
+  </way>
+</osm>

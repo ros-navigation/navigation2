@@ -35,7 +35,7 @@ namespace nav2_route
 struct OperationResult
 {
   bool reroute{false};
-  std::vector<unsigned int> blocked_ids;
+  std::vector<uint64_t> blocked_ids;
 };
 
 /**

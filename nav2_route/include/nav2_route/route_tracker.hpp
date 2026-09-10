@@ -100,9 +100,9 @@ public:
    */
   void publishFeedback(
     const bool rereouted,
-    const unsigned int next_node_id,
-    const unsigned int last_node_id,
-    const unsigned int edge_id,
+    const uint64_t next_node_id,
+    const uint64_t last_node_id,
+    const uint64_t edge_id,
     const std::vector<std::string> & operations);
 
   /**

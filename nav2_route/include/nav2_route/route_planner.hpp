@@ -69,8 +69,8 @@ public:
    * @return Route object containing the navigation graph route
    */
   virtual Route findRoute(
-    Graph & graph, unsigned int start_index, unsigned int goal_index,
-    const std::vector<unsigned int> & blocked_ids,
+    Graph & graph, uint64_t start_index, uint64_t goal_index,
+    const std::vector<uint64_t> & blocked_ids,
     const RouteRequest & route_request);
 
 protected:
@@ -89,7 +89,7 @@ protected:
    */
   void findShortestGraphTraversal(
     Graph & graph, const NodePtr start_node, const NodePtr goal_node,
-    const std::vector<unsigned int> & blocked_ids,
+    const std::vector<uint64_t> & blocked_ids,
     const RouteRequest & route_request);
 
   /**
@@ -100,7 +100,7 @@ protected:
    * @return if this edge is valid for search
    */
   inline bool getTraversalCost(
-    const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
+    const EdgePtr edge, float & score, const std::vector<uint64_t> & blocked_ids,
     const RouteRequest & route_request);
 
   /**
@@ -150,8 +150,8 @@ protected:
   nav2_route::EdgeType classifyEdge(const EdgePtr edge);
 
   int max_iterations_{0};
-  unsigned int start_id_{0};
-  unsigned int goal_id_{0};
+  uint64_t start_id_{0};
+  uint64_t goal_id_{0};
   NodeQueue queue_;
   std::unique_ptr<EdgeScorer> edge_scorer_;
   nav2::TransformBuffer::SharedPtr tf_buffer_;
