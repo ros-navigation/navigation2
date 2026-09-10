@@ -286,6 +286,32 @@ TEST(ThetaStarTest, test_unknown_cost_agrees_between_cost_sites) {
   delete planner_->costmap_;
 }
 
+// Traversal cost is charged per unit distance, so equal-length lines cost the same at any bearing
+TEST(ThetaStarTest, test_los_cost_is_direction_independent) {
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarDirectionTestNode");
+  auto plugin_name = std::string("test");
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+  auto planner_ = std::make_unique<test_theta_star>(params);
+
+  planner_->costmap_ = new nav2_costmap_2d::Costmap2D(10, 10, 1.0, 0.0, 0.0, 100);
+  params->w_traversal_cost = 2.0;
+
+  const int len = 8;
+  double axial = 0.0, diagonal = 0.0, oblique = 0.0;
+  ASSERT_TRUE(planner_->ulosCheck(1, 1, 1 + len, 1, axial));
+  ASSERT_TRUE(planner_->ulosCheck(1, 1, 1 + len, 1 + len, diagonal));
+  // the staircase equals the chord at 0 and 45 degrees, so an oblique bearing is needed too
+  ASSERT_TRUE(planner_->ulosCheck(1, 1, 1 + len, 1 + len / 2, oblique));
+
+  EXPECT_NEAR(axial / len, diagonal / std::hypot(len, len), 1e-9);
+  EXPECT_NEAR(axial / len, oblique / std::hypot(len, len / 2), 1e-9);
+
+  delete planner_->costmap_;
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
