@@ -14,7 +14,7 @@
 
 #include <cmath>
 #include <chrono>
-
+#include <stdexcept>
 #include "nav2_ros_common/node_utils.hpp"
 #include "opennav_docking/simple_charging_dock.hpp"
 #include "opennav_docking/utils.hpp"
@@ -324,6 +324,15 @@ void SimpleChargingDock::jointStateCallback(
 {
   double velocity = 0.0;
   double effort = 0.0;
+  if (state->velocity.size() < state->name.size() ||
+    state->effort.size() < state->name.size())
+  {
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "JointState message has mismatched array sizes: name=%zu, velocity=%zu, effort=%zu",
+      state->name.size(), state->velocity.size(), state->effort.size());
+    return;
+  }
   for (size_t i = 0; i < state->name.size(); ++i) {
     for (auto & name : stall_joint_names_) {
       if (state->name[i] == name) {
