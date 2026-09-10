@@ -26,6 +26,14 @@ class TestStaticLayer : public nav2_costmap_2d::StaticLayer
 public:
   using StaticLayer::incomingMap;
   using StaticLayer::incomingUpdate;
+  using StaticLayer::incomingMapReady;
+
+  void setMapReady(bool ready)
+  {
+    auto msg = std::make_shared<std_msgs::msg::Bool>();
+    msg->data = ready;
+    incomingMapReady(msg);
+  }
 };
 
 class StaticLayerOverlayTest : public ::testing::Test
@@ -242,6 +250,58 @@ TEST_F(StaticLayerOverlayTest, RollingWindowProjectsOverlayAfterOriginShift)
   ASSERT_TRUE(master->worldToMap(6.5, 5.5, cell_x, cell_y));
   EXPECT_EQ(master->getCost(cell_x, cell_y), nav2_costmap_2d::LETHAL_OBSTACLE);
   EXPECT_EQ(master->getSizeInCellsX(), 10u);
+}
+
+TEST_F(StaticLayerOverlayTest, NotCurrentWhileMapProducerHasPendingChanges)
+{
+  overlay_->incomingMap(makeMap());
+  layers_->updateMap(10.0, 10.0, 0.0);
+  ASSERT_TRUE(overlay_->isCurrent());
+
+  // Producer announces a change: stale until a new map has been applied
+  overlay_->setMapReady(false);
+  EXPECT_FALSE(overlay_->isCurrent());
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_FALSE(overlay_->isCurrent());
+
+  // Ready before the map arrives: still waiting for the map
+  overlay_->setMapReady(true);
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_FALSE(overlay_->isCurrent());
+
+  overlay_->incomingMap(makeMap(10.0));
+  EXPECT_FALSE(overlay_->isCurrent());
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_TRUE(overlay_->isCurrent());
+  EXPECT_EQ(layers_->getCostmap()->getCost(10, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+}
+
+TEST_F(StaticLayerOverlayTest, MapBeforeReadyBecomesCurrentOnReady)
+{
+  overlay_->incomingMap(makeMap());
+  layers_->updateMap(10.0, 10.0, 0.0);
+  overlay_->setMapReady(false);
+
+  // Map applied while the producer is still not ready: not current yet
+  overlay_->incomingMap(makeMap(10.0));
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_FALSE(overlay_->isCurrent());
+
+  // Ready with the map already applied: current without another update cycle
+  overlay_->setMapReady(true);
+  EXPECT_TRUE(overlay_->isCurrent());
+}
+
+TEST_F(StaticLayerOverlayTest, ReadyWithoutAnyMapStaysNotCurrent)
+{
+  overlay_->setMapReady(false);
+  overlay_->setMapReady(true);
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_FALSE(overlay_->isCurrent());
+
+  overlay_->incomingMap(makeMap());
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_TRUE(overlay_->isCurrent());
 }
 
 int main(int argc, char ** argv)
