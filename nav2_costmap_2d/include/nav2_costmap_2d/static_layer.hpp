@@ -48,6 +48,7 @@
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 
 namespace nav2_costmap_2d
@@ -166,6 +167,17 @@ protected:
   void incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update);
 
   /**
+   * @brief Callback for the optional source_ready_topic. While the source reports false, and
+   * until a map received afterwards has been applied, the layer does not report itself current.
+   */
+  void incomingSourceReady(const std_msgs::msg::Bool::ConstSharedPtr & ready);
+
+  /**
+   * @brief Mark the layer current unless the map source still has unpublished changes
+   */
+  void setCurrentIfSourceReady();
+
+  /**
    * @brief Interpret the value in the static map given on the topic to
    * convert into costs for the costmap to utilize
    */
@@ -227,9 +239,13 @@ protected:
 
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
   nav2::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
+  nav2::Subscription<std_msgs::msg::Bool>::SharedPtr source_ready_sub_;
+  bool source_ready_{true};
+  bool map_applied_since_source_not_ready_{true};
 
   // Parameters
   std::string map_topic_;
+  std::string source_ready_topic_;
   bool map_subscribe_transient_local_;
   bool subscribe_to_updates_;
   bool track_unknown_space_;
