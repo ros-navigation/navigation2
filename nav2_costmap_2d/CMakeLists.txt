@@ -82,6 +82,7 @@ add_library(layers SHARED
   plugins/range_sensor_layer.cpp
   plugins/denoise_layer.cpp
   plugins/plugin_container_layer.cpp
+  plugins/geofence_layer.cpp
 )
 target_include_directories(layers
   PUBLIC
@@ -96,7 +97,8 @@ target_link_libraries(layers PUBLIC
   nav2_voxel_grid::voxel_grid
   nav2_costmap_2d_core
   nav2_ros_common::nav2_ros_common
-  tf2::tf2
+  tf2_ros::tf2_ros
+  tf2_geometry_msgs::tf2_geometry_msgs
   nav2_ros_common::nav2_ros_common
   point_cloud_transport::point_cloud_transport
   Eigen3::Eigen

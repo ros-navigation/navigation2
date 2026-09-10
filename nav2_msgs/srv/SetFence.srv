@@ -1,0 +1,7 @@
+# Set or update the operational fence polygon for the FenceLayer costmap plugin.
+# An empty polygon clears the fence, allowing all cells to pass through.
+
+geometry_msgs/PolygonStamped fence
+---
+bool success
+string message
