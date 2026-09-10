@@ -87,8 +87,6 @@ def generate_launch_description() -> LaunchDescription:
     autostart = LaunchConfigAsBool('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
     use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
-    use_localization = LaunchConfigAsBool('use_localization')
-    serve_static_map = LaunchConfigAsBool('serve_static_map')
     use_rviz = LaunchConfigAsBool('use_rviz')
     log_settings = LaunchConfiguration('log_settings', default='true')
 
@@ -144,18 +142,6 @@ def generate_launch_description() -> LaunchDescription:
         description='Whether to start the robot state publisher',
     )
 
-    declare_use_localization_cmd = DeclareLaunchArgument(
-        'use_localization',
-        default_value='True',
-        description='Whether to enable localization or not',
-    )
-
-    declare_serve_static_map_cmd = DeclareLaunchArgument(
-        'serve_static_map',
-        default_value=use_localization,
-        description='Whether to serve the static map',
-    )
-
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz', default_value='True', description='Whether to start RVIZ'
     )
@@ -206,8 +192,6 @@ def generate_launch_description() -> LaunchDescription:
                         'use_simulator': 'False',
                         'headless': 'False',
                         'use_robot_state_pub': use_robot_state_pub,
-                        'use_localization': use_localization,
-                        'serve_static_map': serve_static_map,
                         'x_pose': TextSubstitution(text=str(robot['x_pose'])),
                         'y_pose': TextSubstitution(text=str(robot['y_pose'])),
                         'z_pose': TextSubstitution(text=str(robot['z_pose'])),
@@ -271,8 +255,6 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
-    ld.add_action(declare_use_localization_cmd)
-    ld.add_action(declare_serve_static_map_cmd)
 
     # Add the actions to start gazebo, robots and simulations
     ld.add_action(world_sdf_xacro)

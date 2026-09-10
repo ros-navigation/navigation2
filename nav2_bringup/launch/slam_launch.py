@@ -25,7 +25,7 @@ from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import HasNodeParams, LaunchConfigAsBool, RewrittenYaml
 
 
-def get_lifecycle_nodes():
+def get_lifecycle_nodes(context):
     return ('map_saver',)
 
 

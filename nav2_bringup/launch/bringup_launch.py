@@ -81,17 +81,17 @@ def generate_launch_description() -> LaunchDescription:
             use_localization.perform(context) == 'True'
             and slam.perform(context) == 'True'
         ):
-            lifecycle_nodes.extend(get_slam_nodes())
+            lifecycle_nodes.extend(get_slam_nodes(context))
         else:
             lifecycle_nodes.extend(get_localization_nodes(context))
 
         if use_keepout_zones.perform(context) == 'True':
-            lifecycle_nodes.extend(get_keepout_zone_nodes())
+            lifecycle_nodes.extend(get_keepout_zone_nodes(context))
 
         if use_speed_zones.perform(context) == 'True':
-            lifecycle_nodes.extend(get_speed_zone_nodes())
+            lifecycle_nodes.extend(get_speed_zone_nodes(context))
 
-        lifecycle_nodes.extend(get_navigation_nodes())
+        lifecycle_nodes.extend(get_navigation_nodes(context))
 
         manager_parameters = [
             configured_params,
@@ -259,11 +259,8 @@ def generate_launch_description() -> LaunchDescription:
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'localization_launch.py')
                 ),
-                condition=IfCondition(
-                    PythonExpression([
-                        'not (', slam, ' and ', use_localization, ') and (',
-                        use_localization, ' or ', serve_static_map, ')'
-                    ])
+                condition=UnlessCondition(
+                    PythonExpression([slam, ' and ', use_localization])
                 ),
                 launch_arguments={
                     'namespace': namespace,

@@ -24,7 +24,7 @@ from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
-def get_lifecycle_nodes():
+def get_lifecycle_nodes(context):
     return (
         'controller_server',
         'smoother_server',

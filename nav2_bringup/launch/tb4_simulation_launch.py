@@ -53,8 +53,6 @@ def generate_launch_description() -> LaunchDescription:
 
     # Create the launch configuration variables
     slam = LaunchConfigAsBool('slam')
-    use_localization = LaunchConfigAsBool('use_localization')
-    serve_static_map = LaunchConfigAsBool('serve_static_map')
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
     keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
@@ -96,18 +94,6 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_slam_cmd = DeclareLaunchArgument(
         'slam', default_value='False', description='Whether run a SLAM'
-    )
-
-    declare_use_localization_cmd = DeclareLaunchArgument(
-        'use_localization',
-        default_value='True',
-        description='Whether to enable localization or not',
-    )
-
-    declare_serve_static_map_cmd = DeclareLaunchArgument(
-        'serve_static_map',
-        default_value=use_localization,
-        description='Whether to serve the static map',
     )
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
@@ -249,8 +235,8 @@ def generate_launch_description() -> LaunchDescription:
         launch_arguments={
             'namespace': namespace,
             'slam': slam,
-            'use_localization': use_localization,
-            'serve_static_map': serve_static_map,
+            'use_localization': 'True',
+            'serve_static_map': 'True',
             'map': map_yaml_file,
             'keepout_mask': keepout_mask_yaml_file,
             'speed_mask': speed_mask_yaml_file,
@@ -321,8 +307,6 @@ def generate_launch_description() -> LaunchDescription:
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_slam_cmd)
-    ld.add_action(declare_use_localization_cmd)
-    ld.add_action(declare_serve_static_map_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_keepout_mask_yaml_cmd)
     ld.add_action(declare_speed_mask_yaml_cmd)
