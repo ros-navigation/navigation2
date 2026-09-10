@@ -82,13 +82,6 @@ public:
   }
 };
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcpp_fixture;
 
 // ============================================================
 // Helper: build a default valid parameter set for initialize()
@@ -295,6 +288,15 @@ protected:
     pose.pose.position.y = 2.0;
     path->poses.push_back(pose);
     layer_->injectPath(path);
+  }
+
+  void TearDown() override
+  {
+    layer_.reset();
+    layers_.reset();
+    tf_.reset();
+    node_->shutdown();
+    node_.reset();
   }
 
   nav2::LifecycleNode::SharedPtr node_;
@@ -825,6 +827,9 @@ TEST_F(AsymmetricInflationIntegrationTest, update_parameters_callback_filters_ba
 
 int main(int argc, char ** argv)
 {
+  rclcpp::init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  const int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }
