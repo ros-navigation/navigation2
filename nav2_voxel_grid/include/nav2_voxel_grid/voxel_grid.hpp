@@ -34,6 +34,8 @@
  *
  * Author: Eitan Marder-Eppstein
  *********************************************************************/
+// [AI-generated] The VoxelGrid index-safety changes in this file were written
+// with AI assistance and reviewed by the author.
 #ifndef NAV2_VOXEL_GRID__VOXEL_GRID_HPP_
 #define NAV2_VOXEL_GRID__VOXEL_GRID_HPP_
 
@@ -107,7 +109,7 @@ public:
       return false;
     }
 
-    int index = y * size_x_ + x;
+    unsigned int index = y * size_x_ + x;
     uint32_t * col = &data_[index];
     uint32_t full_mask = ((uint32_t)1 << z << 16) | (1 << z);
     *col |= full_mask;  // clear unknown and mark cell
@@ -140,7 +142,7 @@ public:
       RCLCPP_DEBUG(logger, "Error, voxel out of bounds.\n");
       return;
     }
-    int index = y * size_x_ + x;
+    unsigned int index = y * size_x_ + x;
     uint32_t * col = &data_[index];
     uint32_t full_mask = ((uint32_t)1 << z << 16) | (1 << z);
     *col &= ~(full_mask);  // clear unknown and clear cell
@@ -260,7 +262,7 @@ public:
     unsigned int abs_dz = abs(dz);
 
     int offset_dx = sign(dx);
-    int offset_dy = sign(dy) * size_x_;
+    int offset_dy = sign(dy) * static_cast<int>(size_x_);
     int offset_dz = sign(dz);
 
     unsigned int z_mask = ((1 << 16) | 1) << (unsigned int)min_z0;
