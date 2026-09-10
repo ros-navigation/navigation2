@@ -6,6 +6,7 @@ find_package(angles REQUIRED)
 find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_graceful_controller REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -32,8 +33,38 @@ nav2_package()
 set(executable_name opennav_docking)
 set(library_name ${executable_name}_core)
 
+add_library(controller_base SHARED
+  src/controller_base.cpp
+)
+target_include_directories(controller_base
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(controller_base PUBLIC
+  geometry_msgs::geometry_msgs
+  nav2_costmap_2d::nav2_costmap_2d_client
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_ros_common::nav2_ros_common
+  nav_msgs::nav_msgs
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  rcl_interfaces::rcl_interfaces
+  tf2_ros::tf2_ros
+)
+target_link_libraries(controller_base PRIVATE
+  nav2_util::nav2_util_core
+  pluginlib::pluginlib
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+)
+
+# opennav_following links this library directly
+# so it is kept to keep changes limited
 add_library(controller SHARED
   src/controller.cpp
+  src/graceful_controller.cpp
+  src/pid_controller.cpp
 )
 target_include_directories(controller
   PUBLIC
@@ -41,12 +72,55 @@ target_include_directories(controller
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(controller PUBLIC
+  angles::angles
+  controller_base
   geometry_msgs::geometry_msgs
+  nav2_costmap_2d::nav2_costmap_2d_core
   nav2_graceful_controller::nav2_graceful_controller
   nav2_ros_common::nav2_ros_common
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   rcl_interfaces::rcl_interfaces
+  tf2_ros::tf2_ros
+)
+target_link_libraries(controller PRIVATE
+  nav2_util::nav2_util_core
+  pluginlib::pluginlib
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+)
+
+add_library(graceful_controller_plugin SHARED
+  src/graceful_controller_plugin.cpp
+)
+target_include_directories(graceful_controller_plugin
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(graceful_controller_plugin PUBLIC
+  controller
+  rclcpp::rclcpp
+)
+target_link_libraries(graceful_controller_plugin PRIVATE
+  pluginlib::pluginlib
+)
+
+add_library(pid_controller_plugin SHARED
+  src/pid_controller_plugin.cpp
+)
+target_include_directories(pid_controller_plugin
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(pid_controller_plugin PUBLIC
+  controller
+  rclcpp::rclcpp
+)
+target_link_libraries(pid_controller_plugin PRIVATE
+  pluginlib::pluginlib
 )
 
 add_library(${library_name} SHARED
@@ -62,7 +136,7 @@ target_include_directories(${library_name}
 )
 target_link_libraries(${library_name} PUBLIC
   angles::angles
-  controller
+  controller_base
   geometry_msgs::geometry_msgs
   nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
@@ -170,8 +244,10 @@ target_link_libraries(simple_non_charging_dock PRIVATE
 )
 
 pluginlib_export_plugin_description_file(opennav_docking_core plugins.xml)
+pluginlib_export_plugin_description_file(opennav_docking plugins.xml)
 
-install(TARGETS ${library_name} controller pose_filter simple_charging_dock simple_non_charging_dock
+install(TARGETS ${library_name} controller controller_base graceful_controller_plugin
+  pid_controller_plugin pose_filter simple_charging_dock simple_non_charging_dock
   EXPORT ${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -202,12 +278,15 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${library_name} controller pose_filter)
+ament_export_libraries(${library_name} controller controller_base graceful_controller_plugin
+  pid_controller_plugin pose_filter)
 ament_export_dependencies(
   geometry_msgs
+  nav2_costmap_2d
   nav2_graceful_controller
   nav2_msgs
   nav2_util
+  nav_msgs
   opennav_docking_core
   pluginlib
   nav2_ros_common

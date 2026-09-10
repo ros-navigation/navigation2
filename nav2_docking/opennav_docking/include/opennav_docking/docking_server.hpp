@@ -20,15 +20,17 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_util/odometry_utils.hpp"
-#include "opennav_docking/controller.hpp"
+#include "opennav_docking/controller_base.hpp"
 #include "opennav_docking/utils.hpp"
 #include "opennav_docking/types.hpp"
 #include "opennav_docking/dock_database.hpp"
@@ -223,6 +225,51 @@ protected:
    */
   void undockRobot();
 
+  /**
+   * @brief Create the controller plugins listed in the `controllers` parameter.
+   * @param node Lifecycle node
+   * @param controller_ids Set to the instance names read from `controllers`.
+   * @return True if every controller was created and configured
+   */
+  bool loadControllerPlugins(
+    const nav2::LifecycleNode::SharedPtr & node, std::vector<std::string> & controller_ids);
+
+  /**
+   * @brief Resolve a requested controller name against the loaded controllers.
+   *
+   * @param c_name Requested controller name, or "" for "no preference"
+   * @param current_controller Set to the resolved name on success
+   * @return True if the name resolved to a loaded controller
+   */
+  bool findControllerId(const std::string & c_name, std::string & current_controller);
+
+  /**
+   * @brief Resolve which controller a dock instance drives with.
+   *
+   * Precedence: the dock instance's own `controller` if defined, then the controller
+   * named by its type, then the single default controller.
+   * @throw DockNotValid if the name does not resolve to a loaded controller
+   */
+  void selectControllerForDock(const Dock & dock);
+
+  /**
+   * @brief Resolve which controller an undocking request drives with.
+   *
+   * @param dock_type The dock type being undocked from
+   * @param plugin The plugin for that type
+   * @throw DockNotValid if the name does not resolve to a loaded controller
+   */
+  void selectControllerForUndock(
+    const std::string & dock_type, const ChargingDock::Ptr & plugin);
+
+  /**
+   * @brief Get the controller instance selected by the current request
+   *
+   * @return The controller named by current_controller_
+   * @throw FailedToControl if that name does not resolve to a loaded controller
+   */
+  ControllerBase::Ptr getController();
+
   // Parameter handler
   std::unique_ptr<opennav_docking::ParameterHandler> param_handler_;
   Parameters * params_;
@@ -240,8 +287,14 @@ protected:
 
   std::unique_ptr<DockDatabase> dock_db_;
   std::unique_ptr<Navigator> navigator_;
-  std::unique_ptr<Controller> controller_;
   std::string curr_dock_type_;
+  std::string curr_dock_controller_;
+
+  using ControllerMap = std::unordered_map<std::string, ControllerBase::Ptr>;
+  pluginlib::ClassLoader<ControllerBase> controller_loader_;
+  ControllerMap controllers_;
+  std::string controller_ids_concat_;
+  std::string current_controller_;
 
   nav2::TransformBuffer::SharedPtr tf2_buffer_;
   nav2::TransformListener::SharedPtr tf2_listener_;

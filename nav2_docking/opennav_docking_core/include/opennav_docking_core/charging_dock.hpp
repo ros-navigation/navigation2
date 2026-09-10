@@ -155,8 +155,23 @@ public:
 
   std::string getName() {return name_;}
 
+  /**
+   * @brief Get the name of the controller every dock of this type drives with.
+   *
+   * @return std::string The configured controller name, or "" if unset.
+   */
+  std::string getControllerName() {return controller_name_;}
+
+  /**
+   * @brief Set the name of the controller every dock of this type drives with.
+   *
+   * @param name Controller name, or "" to express no preference.
+   */
+  void setControllerName(const std::string & name) {controller_name_ = name;}
+
 protected:
   std::string name_;
+  std::string controller_name_;
   DockDirection dock_direction_{DockDirection::UNKNOWN};
   bool rotate_to_dock_{false};
 };
