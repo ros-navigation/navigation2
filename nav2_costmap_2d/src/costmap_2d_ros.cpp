@@ -415,6 +415,8 @@ Costmap2DROS::getParameters()
     "track_unknown_space", false);
   transform_tolerance_ = declare_or_get_parameter(
     "transform_tolerance", 0.3);
+  transform_staleness_threshold_ = declare_or_get_parameter(
+    "transform_staleness_threshold", 0.0);
   initial_transform_timeout_ = declare_or_get_parameter(
     "initial_transform_timeout", 60.0);
   map_update_frequency_ = declare_or_get_parameter(
@@ -747,9 +749,15 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
-  return nav2_util::getCurrentPose(
-    global_pose, *tf_buffer_,
-    global_frame_, robot_base_frame_, transform_tolerance_);
+  geometry_msgs::msg::TransformStamped transform;
+  if (!nav2_util::lookupTransformWithStalenessCheck(
+      *tf_buffer_, global_frame_, robot_base_frame_, now(),
+      transform_staleness_threshold_, transform))
+  {
+    return false;
+  }
+  global_pose = nav2_util::transformToPoseStamped(transform);
+  return true;
 }
 
 bool
@@ -863,6 +871,8 @@ Costmap2DROS::updateParametersCallback(const std::vector<rclcpp::Parameter> & pa
         layered_costmap_->setFootprint(*padded);
       } else if (param_name == "transform_tolerance") {
         transform_tolerance_ = parameter.as_double();
+      } else if (param_name == "transform_staleness_threshold") {
+        transform_staleness_threshold_ = parameter.as_double();
       } else if (param_name == "publish_frequency") {
         map_publish_frequency_ = parameter.as_double();
         publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
