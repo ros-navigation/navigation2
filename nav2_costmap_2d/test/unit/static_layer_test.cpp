@@ -14,11 +14,16 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <memory>
+#include <string>
+#include <vector>
 
+#include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/static_layer.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 #include "tf2_ros/buffer.hpp"
 
 class TestStaticLayer : public nav2_costmap_2d::StaticLayer
@@ -331,6 +336,145 @@ TEST_F(StaticLayerOverlayTest, SourceReadyWithoutAnyMapStaysNotCurrent)
   overlay_->incomingMap(makeMap());
   layers_->updateMap(10.0, 10.0, 0.0);
   EXPECT_TRUE(overlay_->isCurrent());
+}
+
+TEST_F(StaticLayerOverlayTest, SourceReadyTopicIsSubscribedWhenConfigured)
+{
+  overlay_->deactivate();
+  node_->declare_parameter("gated.resize_master", false);
+  node_->declare_parameter("gated.source_ready_topic", "/overlay_source/ready");
+  auto gated = std::make_shared<TestStaticLayer>();
+  layers_->addPlugin(gated);
+  gated->initialize(layers_.get(), "gated", tf_.get(), node_, nullptr);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node_->get_node_base_interface());
+  auto spin_until = [&](auto && predicate) {
+      const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+      while (!predicate() && std::chrono::steady_clock::now() < deadline) {
+        executor.spin_some(std::chrono::milliseconds(10));
+        layers_->updateMap(10.0, 10.0, 0.0);
+      }
+    };
+
+  // Deliver the map over the real subscription this time
+  auto map_publisher = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    "map", nav2::qos::LatchedPublisherQoS());
+  map_publisher->on_activate();
+  map_publisher->publish(*makeMap());
+  spin_until([&]() {return gated->isCurrent();});
+  ASSERT_TRUE(gated->isCurrent());
+
+  auto publisher = node_->create_publisher<std_msgs::msg::Bool>(
+    "/overlay_source/ready", nav2::qos::LatchedPublisherQoS());
+  publisher->on_activate();
+  std_msgs::msg::Bool not_ready;
+  not_ready.data = false;
+  publisher->publish(not_ready);
+  spin_until([&]() {return !gated->isCurrent();});
+  EXPECT_FALSE(gated->isCurrent());
+}
+
+TEST_F(StaticLayerOverlayTest, FootprintClearingWorksInOverlayFrame)
+{
+  overlay_->deactivate();
+  node_->declare_parameter("clearing.resize_master", false);
+  node_->declare_parameter("clearing.footprint_clearing_enabled", true);
+  node_->declare_parameter("clearing.restore_cleared_footprint", false);
+  auto clearing = std::make_shared<TestStaticLayer>();
+  layers_->addPlugin(clearing);
+  clearing->initialize(layers_.get(), "clearing", tf_.get(), node_, nullptr);
+  std::vector<geometry_msgs::msg::Point> footprint(4);
+  footprint[0].x = -0.5; footprint[0].y = -0.5;
+  footprint[1].x = 0.5; footprint[1].y = -0.5;
+  footprint[2].x = 0.5; footprint[2].y = 0.5;
+  footprint[3].x = -0.5; footprint[3].y = 0.5;
+  layers_->setFootprint(footprint);
+
+  // Robot sits on the lethal overlay cell (world 5..7 x 5..7); clearing frees it
+  clearing->incomingMap(makeMap());
+  layers_->updateMap(6.0, 6.0, 0.0);
+  EXPECT_EQ(layers_->getCostmap()->getCost(5, 5), nav2_costmap_2d::FREE_SPACE);
+  EXPECT_EQ(layers_->getCostmap()->getCost(6, 6), nav2_costmap_2d::FREE_SPACE);
+}
+
+TEST_F(StaticLayerOverlayTest, RejectsMalformedMapAndAppliesPartialUpdates)
+{
+  overlay_->deactivate();
+  node_->declare_parameter("updated.resize_master", false);
+  node_->declare_parameter("updated.subscribe_to_updates", true);
+  auto updated = std::make_shared<TestStaticLayer>();
+  layers_->addPlugin(updated);
+  updated->initialize(layers_.get(), "updated", tf_.get(), node_, nullptr);
+
+  auto malformed = makeMap();
+  malformed->data.pop_back();
+  updated->incomingMap(malformed);
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_FALSE(updated->isCurrent());
+
+  updated->incomingMap(makeMap());
+  layers_->updateMap(10.0, 10.0, 0.0);
+  ASSERT_EQ(layers_->getCostmap()->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+  ASSERT_EQ(layers_->getCostmap()->getCost(7, 5), nav2_costmap_2d::NO_INFORMATION);
+
+  auto update = std::make_shared<map_msgs::msg::OccupancyGridUpdate>();
+  update->header.frame_id = "map";
+  update->x = 1;
+  update->y = 0;
+  update->width = 1;
+  update->height = 1;
+  update->data = {100};
+  updated->incomingUpdate(update);
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_EQ(layers_->getCostmap()->getCost(7, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // Out of the layer's bounds and wrong frame are both ignored
+  auto outside = std::make_shared<map_msgs::msg::OccupancyGridUpdate>(*update);
+  outside->x = 5;
+  updated->incomingUpdate(outside);
+  auto other_frame = std::make_shared<map_msgs::msg::OccupancyGridUpdate>(*update);
+  other_frame->header.frame_id = "elsewhere";
+  other_frame->data = {0};
+  updated->incomingUpdate(other_frame);
+  auto malformed_update = std::make_shared<map_msgs::msg::OccupancyGridUpdate>(*update);
+  malformed_update->data.clear();
+  updated->incomingUpdate(malformed_update);
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_EQ(layers_->getCostmap()->getCost(7, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+}
+
+TEST_F(StaticLayerOverlayTest, ScalesIntermediateValuesWhenNotTrinary)
+{
+  overlay_->deactivate();
+  node_->set_parameter(rclcpp::Parameter("trinary_costmap", false));
+  node_->declare_parameter("scaled.resize_master", false);
+  auto scaled = std::make_shared<TestStaticLayer>();
+  layers_->addPlugin(scaled);
+  scaled->initialize(layers_.get(), "scaled", tf_.get(), node_, nullptr);
+  auto map = makeMap();
+  map->data = {50, -1, -1, -1};
+  scaled->incomingMap(map);
+  layers_->updateMap(10.0, 10.0, 0.0);
+  const auto cost = layers_->getCostmap()->getCost(5, 5);
+  EXPECT_GT(cost, nav2_costmap_2d::FREE_SPACE);
+  EXPECT_LT(cost, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+}
+
+TEST_F(StaticLayerOverlayTest, RejectsInitializationOnlyAndInconsistentParameters)
+{
+  for (const auto name : {"resize_master", "track_unknown_space", "use_maximum"}) {
+    const auto result = node_->set_parameter(
+      rclcpp::Parameter(std::string("overlay.") + name, false));
+    EXPECT_FALSE(result.successful) << name;
+  }
+  // restore_cleared_footprint requires footprint clearing to be enabled
+  EXPECT_FALSE(
+    node_->set_parameter(rclcpp::Parameter("overlay.restore_cleared_footprint", true)).successful);
+  ASSERT_TRUE(
+    node_->set_parameter(rclcpp::Parameter("overlay.footprint_clearing_enabled", true)).successful);
+  EXPECT_TRUE(
+    node_->set_parameter(rclcpp::Parameter("overlay.restore_cleared_footprint", true)).successful);
 }
 
 int main(int argc, char ** argv)
