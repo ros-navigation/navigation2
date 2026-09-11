@@ -58,7 +58,7 @@ public:
    * @param current_pose Current pose of the robot
    * @return true, if the robot has moved enough, false otherwise
    */
-  bool check(geometry_msgs::msg::PoseStamped & current_pose) override;
+  bool check(const geometry_msgs::msg::PoseStamped & current_pose) override;
 
   /**
    * @brief Reset the progress checker state

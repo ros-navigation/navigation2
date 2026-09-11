@@ -49,7 +49,7 @@ public:
   geometry_msgs::msg::PoseStamped getSampledPathPtWrapper(
     const geometry_msgs::msg::PoseStamped & global_goal)
   {
-    return getSampledPathPt(global_goal);
+    return getSampledPathPt(global_goal, rclcpp::Time(0));
   }
 
   geometry_msgs::msg::Pose transformPoseToBaseFrameWrapper(geometry_msgs::msg::PoseStamped pt)
@@ -150,6 +150,8 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   auto pose = controller->getSampledPathPtWrapper(global_goal);
   EXPECT_EQ(pose.pose.position.x, 1.0);  // default forward sampling is 0.5
   EXPECT_EQ(pose.pose.position.y, 1.0);
+  EXPECT_EQ(pose.header.stamp.sec, 0);
+  EXPECT_EQ(pose.header.stamp.nanosec, 0u);
 }
 
 TEST(RotationShimControllerTest, rotationAndTransformTests)
@@ -297,6 +299,13 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
   tf_broadcaster->sendTransform(transform);
+
+  geometry_msgs::msg::TransformStamped map_to_base_link;
+  map_to_base_link.header.frame_id = "map";
+  map_to_base_link.child_frame_id = "base_link";
+  map_to_base_link.header.stamp = node->now();
+  map_to_base_link.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf->setTransform(map_to_base_link, "test", false));
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
@@ -467,6 +476,13 @@ TEST(RotationShimControllerTest, accelerationTests) {
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
   tf_broadcaster->sendTransform(transform);
+
+  geometry_msgs::msg::TransformStamped map_to_base_link;
+  map_to_base_link.header.frame_id = "map";
+  map_to_base_link.child_frame_id = "base_link";
+  map_to_base_link.header.stamp = node->now();
+  map_to_base_link.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf->setTransform(map_to_base_link, "test", false));
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(

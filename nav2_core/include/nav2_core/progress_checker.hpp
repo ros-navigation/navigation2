@@ -51,7 +51,7 @@ public:
    * @param current_pose Current pose of the robot
    * @return True if progress is made
    */
-  virtual bool check(geometry_msgs::msg::PoseStamped & current_pose) = 0;
+  virtual bool check(const geometry_msgs::msg::PoseStamped & current_pose) = 0;
   /**
    * @brief Reset class state upon calling
    */
