@@ -753,14 +753,12 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
-  geometry_msgs::msg::TransformStamped transform;
-  if (!nav2_util::lookupTransformWithStalenessCheck(
+  if (!nav2_util::getFreshPose(
       *tf_buffer_, global_frame_, robot_base_frame_, now(),
-      transform_staleness_threshold_, transform))
+      transform_staleness_threshold_, global_pose))
   {
     return false;
   }
-  global_pose = nav2_util::transformToPoseStamped(transform);
   return true;
 }
 
