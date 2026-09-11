@@ -40,6 +40,7 @@
 #include "nav2_costmap_2d/static_layer.hpp"
 
 #include <algorithm>
+#include <limits>
 #include <string>
 
 #include "pluginlib/class_list_macros.hpp"
@@ -103,6 +104,14 @@ StaticLayer::onInitialize()
       map_topic_ + "_updates",
       std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
   }
+
+  if (!source_ready_topic_.empty()) {
+    RCLCPP_INFO(logger_, "Subscribing to source ready topic (%s)", source_ready_topic_.c_str());
+    source_ready_sub_ = node->create_subscription<std_msgs::msg::Bool>(
+      source_ready_topic_,
+      std::bind(&StaticLayer::incomingSourceReady, this, std::placeholders::_1),
+      nav2::qos::LatchedSubscriptionQoS(1));
+  }
 }
 
 void
@@ -153,6 +162,7 @@ StaticLayer::getParameters()
   }
 
   enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+  resize_master_ = node->declare_or_get_parameter(name_ + "." + "resize_master", true);
   subscribe_to_updates_ = node->declare_or_get_parameter(
     name_ + "." + "subscribe_to_updates", false);
   footprint_clearing_enabled_ = node->declare_or_get_parameter(
@@ -162,10 +172,18 @@ StaticLayer::getParameters()
   map_topic_ = node->declare_or_get_parameter(
     name_ + "." + "map_topic", std::string("map"));
   map_topic_ = joinWithParentNamespace(map_topic_);
+  source_ready_topic_ = node->declare_or_get_parameter(
+    name_ + "." + "source_ready_topic", std::string(""));
+  if (!source_ready_topic_.empty()) {
+    source_ready_topic_ = joinWithParentNamespace(source_ready_topic_);
+  }
   map_subscribe_transient_local_ = node->declare_or_get_parameter(
     name_ + "." + "map_subscribe_transient_local", true);
   node->get_parameter("track_unknown_space", track_unknown_space_);
   node->get_parameter("use_maximum", use_maximum_);
+  track_unknown_space_ = node->declare_or_get_parameter(
+    name_ + "." + "track_unknown_space", track_unknown_space_);
+  use_maximum_ = node->declare_or_get_parameter(name_ + "." + "use_maximum", use_maximum_);
   node->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
   node->get_parameter("inscribed_obstacle_cost_value", inscribed_obstacle_cost_value_);
   node->get_parameter("unknown_cost_value", unknown_cost_value_);
@@ -195,7 +213,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 
   // resize costmap if size, resolution or origin do not match
   Costmap2D * master = layered_costmap_->getCostmap();
-  if (!layered_costmap_->isRolling() && (master->getSizeInCellsX() != size_x ||
+  if (resize_master_ && !layered_costmap_->isRolling() && (master->getSizeInCellsX() != size_x ||
     master->getSizeInCellsY() != size_y ||
     !isEqual(master->getResolution(), new_map.info.resolution, EPSILON) ||
     !isEqual(master->getOriginX(), new_map.info.origin.position.x, EPSILON) ||
@@ -261,21 +279,50 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   width_ = size_x_;
   height_ = size_y_;
   has_updated_data_ = true;
+  map_applied_since_source_not_ready_ = true;
 
-  setCurrent(true);
+  setCurrentIfSourceReady();
+}
+
+void
+StaticLayer::setCurrentIfSourceReady()
+{
+  setCurrent(source_ready_ && map_applied_since_source_not_ready_);
+}
+
+void
+StaticLayer::incomingSourceReady(const std_msgs::msg::Bool::ConstSharedPtr & ready)
+{
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  source_ready_ = ready->data;
+  if (!source_ready_) {
+    // Maps applied before this point predate the pending change
+    map_applied_since_source_not_ready_ = false;
+    setCurrent(false);
+  } else if (map_received_ && !map_buffer_) {
+    // Map may already be applied and updateCosts() not run again if no bounds are dirty
+    setCurrentIfSourceReady();
+  }
 }
 
 void
 StaticLayer::matchSize()
 {
-  // If we are using rolling costmap, the static map size is
-  //   unrelated to the size of the layered costmap
-  if (!layered_costmap_->isRolling()) {
-    Costmap2D * master = layered_costmap_->getCostmap();
-    resizeMap(
-      master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
-      master->getOriginX(), master->getOriginY());
+  if (isOverlay()) {
+    // Own geometry is kept; the master changed under us so bounds must be reported again
+    has_updated_data_ = true;
+    return;
   }
+  Costmap2D * master = layered_costmap_->getCostmap();
+  resizeMap(
+    master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
+    master->getOriginX(), master->getOriginY());
+}
+
+bool
+StaticLayer::isOverlay() const
+{
+  return !resize_master_ || layered_costmap_->isRolling();
 }
 
 unsigned char
@@ -382,43 +429,86 @@ StaticLayer::updateBounds(
     map_buffer_ = nullptr;
   }
 
-  if (!layered_costmap_->isRolling() ) {
-    if (!(has_updated_data_ || has_extra_bounds_)) {
-      return;
-    }
-  }
-
-  useExtraBounds(min_x, min_y, max_x, max_y);
-
-  if (layered_costmap_->isRolling()) {
-    // For rolling costmaps the global_frame (e.g. odom) differs from the
-    // map frame.  mapToWorld() returns coordinates in the map frame, but
-    // the layered costmap interprets bounds in its global_frame.  Report
-    // bounds that cover the full rolling window using the robot pose,
-    // which is already in the correct frame.  updateCosts() handles the
-    // per-cell map↔odom transform itself.
-    Costmap2D * master = layered_costmap_->getCostmap();
-    double half_w = master->getSizeInMetersX() / 2.0;
-    double half_h = master->getSizeInMetersY() / 2.0;
-    *min_x = std::min(robot_x - half_w, *min_x);
-    *min_y = std::min(robot_y - half_h, *min_y);
-    *max_x = std::max(robot_x + half_w, *max_x);
-    *max_y = std::max(robot_y + half_h, *max_y);
-  } else {
+  if (isOverlay()) {
+    updateOverlayBounds(min_x, min_y, max_x, max_y);
+  } else if (has_updated_data_ || has_extra_bounds_) {
+    // Same geometry as the master: the whole grid is the dirty area
     double wx, wy;
-
     mapToWorld(x_, y_, wx, wy);
     *min_x = std::min(wx, *min_x);
     *min_y = std::min(wy, *min_y);
-
     mapToWorld(x_ + width_, y_ + height_, wx, wy);
     *max_x = std::max(wx, *max_x);
     *max_y = std::max(wy, *max_y);
+    has_updated_data_ = false;
+  } else {
+    return;
   }
 
-  has_updated_data_ = false;
+  useExtraBounds(min_x, min_y, max_x, max_y);
+  if (enabled_ && map_received_in_update_bounds_) {
+    updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+  }
+}
 
-  updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+void
+StaticLayer::updateOverlayBounds(double * min_x, double * min_y, double * max_x, double * max_y)
+{
+  if (!enabled_) {
+    if (previous_overlay_bounds_valid_) {
+      *min_x = std::min(*min_x, previous_overlay_bounds_[0]);
+      *min_y = std::min(*min_y, previous_overlay_bounds_[1]);
+      *max_x = std::max(*max_x, previous_overlay_bounds_[2]);
+      *max_y = std::max(*max_y, previous_overlay_bounds_[3]);
+      previous_overlay_bounds_valid_ = false;
+    }
+    return;
+  }
+  // Static overlay in the costmap frame: nothing moves, so only new data dirties it
+  if (!has_updated_data_ && !layered_costmap_->isRolling() && map_frame_ == global_frame_) {
+    return;
+  }
+
+  tf2::Transform overlay_to_global;
+  overlay_to_global.setIdentity();
+  if (map_frame_ != global_frame_) {
+    try {
+      tf2::fromMsg(
+        tf_->lookupTransform(global_frame_, map_frame_, tf2::TimePointZero, transform_tolerance_)
+        .transform, overlay_to_global);
+    } catch (const tf2::TransformException & exception) {
+      RCLCPP_ERROR(logger_, "StaticLayer: %s", exception.what());
+      map_received_in_update_bounds_ = false;
+      setCurrent(false);
+      return;
+    }
+  }
+  global_to_overlay_ = overlay_to_global.inverse();
+  std::array<double, 4> bounds{
+    std::numeric_limits<double>::max(), std::numeric_limits<double>::max(),
+    std::numeric_limits<double>::lowest(), std::numeric_limits<double>::lowest()};
+  for (const double map_x : {origin_x_, origin_x_ + size_x_ * resolution_}) {
+    for (const double map_y : {origin_y_, origin_y_ + size_y_ * resolution_}) {
+      const auto point = overlay_to_global * tf2::Vector3(map_x, map_y, 0.0);
+      bounds[0] = std::min(bounds[0], point.x());
+      bounds[1] = std::min(bounds[1], point.y());
+      bounds[2] = std::max(bounds[2], point.x());
+      bounds[3] = std::max(bounds[3], point.y());
+    }
+  }
+  *min_x = std::min(*min_x, bounds[0]);
+  *min_y = std::min(*min_y, bounds[1]);
+  *max_x = std::max(*max_x, bounds[2]);
+  *max_y = std::max(*max_y, bounds[3]);
+  if (previous_overlay_bounds_valid_) {
+    *min_x = std::min(*min_x, previous_overlay_bounds_[0]);
+    *min_y = std::min(*min_y, previous_overlay_bounds_[1]);
+    *max_x = std::max(*max_x, previous_overlay_bounds_[2]);
+    *max_y = std::max(*max_y, previous_overlay_bounds_[3]);
+  }
+  previous_overlay_bounds_ = bounds;
+  previous_overlay_bounds_valid_ = true;
+  has_updated_data_ = false;
 }
 
 void
@@ -459,59 +549,60 @@ StaticLayer::updateCosts(
   std::vector<MapLocation> map_region_to_restore;
   if (footprint_clearing_enabled_) {
     map_region_to_restore.reserve(100);
-    getMapRegionOccupiedByPolygon(transformed_footprint_, map_region_to_restore);
+    auto layer_footprint = transformed_footprint_;
+    if (isOverlay()) {
+      for (auto & vertex : layer_footprint) {
+        const auto point = global_to_overlay_ * tf2::Vector3(vertex.x, vertex.y, 0.0);
+        vertex.x = point.x();
+        vertex.y = point.y();
+      }
+    }
+    getMapRegionOccupiedByPolygon(layer_footprint, map_region_to_restore);
     setMapRegionOccupiedByPolygon(map_region_to_restore, nav2_costmap_2d::FREE_SPACE);
   }
 
-  if (!layered_costmap_->isRolling()) {
-    // if not rolling, the layered costmap (master_grid) has same coordinates as this layer
-    if (!use_maximum_) {
-      updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
-    } else {
-      updateWithMax(master_grid, min_i, min_j, max_i, max_j);
-    }
+  if (isOverlay()) {
+    updateOverlayCosts(master_grid, min_i, min_j, max_i, max_j);
+  } else if (!use_maximum_) {
+    // Same geometry as the master: copy index for index
+    updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
   } else {
-    // If rolling window, the master_grid is unlikely to have same coordinates as this layer
-    unsigned int mx, my;
-    double wx, wy;
-    // Might even be in a different frame
-    geometry_msgs::msg::TransformStamped transform;
-    try {
-      transform = tf_->lookupTransform(
-        map_frame_, global_frame_, tf2::TimePointZero,
-        transform_tolerance_);
-    } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
-      return;
-    }
-    // Copy map data given proper transformations
-    tf2::Transform tf2_transform;
-    tf2::fromMsg(transform.transform, tf2_transform);
-
-    for (int i = min_i; i < max_i; ++i) {
-      for (int j = min_j; j < max_j; ++j) {
-        // Convert master_grid coordinates (i,j) into global_frame_(wx,wy) coordinates
-        layered_costmap_->getCostmap()->mapToWorld(i, j, wx, wy);
-        // Transform from global_frame_ to map_frame_
-        tf2::Vector3 p(wx, wy, 0);
-        p = tf2_transform * p;
-        // Set master_grid with cell from map
-        if (worldToMap(p.x(), p.y(), mx, my)) {
-          if (!use_maximum_) {
-            master_grid.setCost(i, j, getCost(mx, my));
-          } else {
-            master_grid.setCost(i, j, std::max(getCost(mx, my), master_grid.getCost(i, j)));
-          }
-        }
-      }
-    }
+    updateWithMax(master_grid, min_i, min_j, max_i, max_j);
   }
 
   if (footprint_clearing_enabled_ && restore_cleared_footprint_) {
     // restore the map region occupied by the polygon using cached data
     restoreMapRegionOccupiedByPolygon(map_region_to_restore);
   }
-  setCurrent(true);
+  setCurrentIfSourceReady();
+}
+
+void
+StaticLayer::updateOverlayCosts(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  int min_i, int min_j, int max_i, int max_j)
+{
+  // global_to_overlay_ was refreshed by updateOverlayBounds() this cycle
+  for (int master_y = min_j; master_y < max_j; ++master_y) {
+    for (int master_x = min_i; master_x < max_i; ++master_x) {
+      double world_x, world_y;
+      master_grid.mapToWorld(master_x, master_y, world_x, world_y);
+      const auto point = global_to_overlay_ * tf2::Vector3(world_x, world_y, 0.0);
+      unsigned int overlay_x, overlay_y;
+      if (!worldToMap(point.x(), point.y(), overlay_x, overlay_y)) {
+        continue;
+      }
+      const auto cost = getCost(overlay_x, overlay_y);
+      if (cost == NO_INFORMATION) {
+        // Unknown overlay cells are transparent so several overlays can share a master
+        continue;
+      }
+      const auto old_cost = master_grid.getCost(master_x, master_y);
+      if (!use_maximum_ || old_cost == NO_INFORMATION || cost > old_cost) {
+        master_grid.setCost(master_x, master_y, cost);
+      }
+    }
+  }
 }
 
 /**
@@ -545,6 +636,16 @@ rcl_interfaces::msg::SetParametersResult StaticLayer::validateParameterUpdatesCa
       RCLCPP_WARN(
         logger_, "%s is not a dynamic parameter "
         "cannot be changed while running. Rejecting parameter update.", param_name.c_str());
+    } else if (param_name == name_ + "." + "resize_master" ||  // NOLINT
+      param_name == name_ + "." + "track_unknown_space" ||
+      param_name == name_ + "." + "use_maximum")
+    {
+      // Changing how the grid is laid out or interpreted needs the map to be reprocessed
+      RCLCPP_WARN(
+        logger_, "%s is not a dynamic parameter "
+        "cannot be changed while running. Rejecting parameter update.", param_name.c_str());
+      result.successful = false;
+      result.reason = param_name + " cannot be changed while running";
     } else if (param_type == ParameterType::PARAMETER_BOOL && // NOLINT
       param_name == name_ + "." + "restore_cleared_footprint")
     {

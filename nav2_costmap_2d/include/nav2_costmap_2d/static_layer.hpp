@@ -38,6 +38,7 @@
 #ifndef NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 #define NAV2_COSTMAP_2D__STATIC_LAYER_HPP_
 
+#include <array>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -47,6 +48,7 @@
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 
 namespace nav2_costmap_2d
@@ -135,6 +137,23 @@ protected:
   void processMap(const nav_msgs::msg::OccupancyGrid & new_map);
 
   /**
+   * @brief Whether this layer keeps its own grid geometry instead of sharing the master's.
+   * Rolling costmaps are always overlays; non-rolling ones when resize_master is false.
+   */
+  bool isOverlay() const;
+
+  /**
+   * @brief Report current and previous overlay extents in the costmap frame
+   */
+  void updateOverlayBounds(double * min_x, double * min_y, double * max_x, double * max_y);
+
+  /**
+   * @brief Sample the overlay at each master cell center in the window and merge the costs
+   */
+  void updateOverlayCosts(
+    nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i, int max_j);
+
+  /**
    * @brief  Callback to update the costmap's map from the map_server
    * @param new_map The map to put into the costmap. The origin of the new
    * map along with its size will determine what parts of the costmap's
@@ -146,6 +165,17 @@ protected:
    * with an update in a particular area of the map
    */
   void incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update);
+
+  /**
+   * @brief Callback for the optional source_ready_topic. While the source reports false, and
+   * until a map received afterwards has been applied, the layer does not report itself current.
+   */
+  void incomingSourceReady(const std_msgs::msg::Bool::ConstSharedPtr & ready);
+
+  /**
+   * @brief Mark the layer current unless the map source still has unpublished changes
+   */
+  void setCurrentIfSourceReady();
 
   /**
    * @brief Interpret the value in the static map given on the topic to
@@ -197,6 +227,10 @@ protected:
   std::string map_frame_;  /// @brief frame that map is located in
 
   bool has_updated_data_{false};
+  bool resize_master_{true};
+  bool previous_overlay_bounds_valid_{false};
+  std::array<double, 4> previous_overlay_bounds_{};
+  tf2::Transform global_to_overlay_;
 
   unsigned int x_{0};
   unsigned int y_{0};
@@ -205,9 +239,13 @@ protected:
 
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
   nav2::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
+  nav2::Subscription<std_msgs::msg::Bool>::SharedPtr source_ready_sub_;
+  bool source_ready_{true};
+  bool map_applied_since_source_not_ready_{true};
 
   // Parameters
   std::string map_topic_;
+  std::string source_ready_topic_;
   bool map_subscribe_transient_local_;
   bool subscribe_to_updates_;
   bool track_unknown_space_;
