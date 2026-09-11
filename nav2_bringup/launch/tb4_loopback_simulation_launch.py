@@ -159,6 +159,7 @@ def generate_launch_description() -> LaunchDescription:
         PythonLaunchDescriptionSource(
             os.path.join(loopback_sim_dir, 'loopback_simulation.launch.py')),
         launch_arguments=[
+            ('namespace', namespace),
             ('params_file', params_file),
             ('scan_frame_id', 'rplidar_link'),
         ],

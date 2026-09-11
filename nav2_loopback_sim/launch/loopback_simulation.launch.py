@@ -23,6 +23,13 @@ from launch_ros.actions import LifecycleNode
 
 def generate_launch_description() -> LaunchDescription:
     bringup_dir = get_package_share_directory('nav2_bringup')
+    namespace = LaunchConfiguration('namespace')
+    declare_namespace_cmd = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Top-level namespace',
+    )
+
     params_file = LaunchConfiguration('params_file')
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
@@ -36,18 +43,22 @@ def generate_launch_description() -> LaunchDescription:
         default_value='base_scan',
     )
 
+    remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
+
     loopback_sim_cmd = LifecycleNode(
         package='nav2_loopback_sim',
         executable='loopback_simulator',
         name='loopback_simulator',
-        namespace='',
+        namespace=namespace,
         output='screen',
         autostart=True,
         parameters=[params_file, {'scan_frame_id': scan_frame_id,
                                   'use_sim_time': True}],
+        remappings=remappings,
     )
 
     ld = LaunchDescription()
+    ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_scan_frame_id_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(loopback_sim_cmd)
