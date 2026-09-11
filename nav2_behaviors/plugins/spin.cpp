@@ -58,10 +58,7 @@ void Spin::onConfigure()
 ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, local_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
+  if (!getCurrentPoseChecked(current_pose)) {
     std::string error_msg = "Current robot pose is not available.";
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
@@ -93,10 +90,8 @@ ResultStatus Spin::onCycleUpdate()
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, local_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
+  if (!getCurrentPoseChecked(current_pose)) {
+    stopRobot();
     std::string error_msg = "Current robot pose is not available.";
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
