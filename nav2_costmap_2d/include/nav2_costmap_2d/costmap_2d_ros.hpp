@@ -424,6 +424,7 @@ protected:
   bool rolling_window_{false};          ///< Whether to use a rolling window version of the costmap
   bool track_unknown_space_{false};
   double transform_tolerance_{0};           ///< The timeout before transform errors
+  double transform_staleness_threshold_{0};  ///< Maximum robot pose TF age; 0 disables the check
   double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
   double map_vis_z_{0};                 ///< The height of map, allows to avoid flickering at -0.008
   /// If true, the footprint subscriber expects a PolygonStamped msg
