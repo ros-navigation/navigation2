@@ -10,7 +10,8 @@
   <depend>backward_ros</depend>
   <depend>launch</depend>
   <depend>launch_ros</depend>
-  <depend>osrf_pycommon</depend>
+  <depend condition="$ROS_DISTRO == jazzy">osrf_pycommon</depend>
+  <depend condition="$ROS_DISTRO != jazzy">python3-osrf-pycommon</depend>
   <depend>rclpy</depend>
   <depend>python3-yaml</depend>
   <depend>python3-types-pyyaml</depend>
