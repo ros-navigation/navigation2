@@ -20,10 +20,11 @@ import sys
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription, LaunchService
 from launch.actions import (AppendEnvironmentVariable, ExecuteProcess, IncludeLaunchDescription,
-                            SetEnvironmentVariable)
+                            OpaqueFunction, SetEnvironmentVariable)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
+from nav2_bringup.navigation_launch import get_lifecycle_nodes
 from nav2_common.launch import RewrittenYaml
 
 
@@ -49,6 +50,24 @@ def generate_launch_description():
         param_rewrites={},
         convert_types=True,
     )
+
+    def launch_lifecycle_manager(context):
+        return [
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_navigation',
+                output='screen',
+                parameters=[
+                    configured_params,
+                    {
+                        'autostart': True,
+                        'node_names': get_lifecycle_nodes(context),
+                        'use_sim_time': True,
+                    },
+                ],
+            )
+        ]
 
     return LaunchDescription(
         [
@@ -101,6 +120,7 @@ def generate_launch_description():
                     'autostart': 'True',
                 }.items(),
             ),
+            OpaqueFunction(function=launch_lifecycle_manager),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'dual_ekf_navsat.launch.py')

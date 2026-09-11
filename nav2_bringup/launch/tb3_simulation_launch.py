@@ -196,6 +196,8 @@ def generate_launch_description() -> LaunchDescription:
         launch_arguments={
             'namespace': namespace,
             'slam': slam,
+            'use_localization': 'True',
+            'serve_static_map': 'True',
             'map': map_yaml_file,
             'graph': graph_filepath,
             'use_sim_time': use_sim_time,

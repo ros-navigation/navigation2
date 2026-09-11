@@ -492,10 +492,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   executor_->add_node(client_node_);
 
   client_nav_ = std::make_shared<nav2_lifecycle_manager::LifecycleManagerClient>(
-    "lifecycle_manager_navigation", client_node_);
-  client_loc_ = std::make_shared<nav2_lifecycle_manager::LifecycleManagerClient>(
-    "lifecycle_manager_localization", client_node_);
-  initial_thread_ = new InitialThread(client_nav_, client_loc_);
+    "lifecycle_manager_nav2", client_node_);
+  initial_thread_ = new InitialThread(client_nav_);
   connect(initial_thread_, &InitialThread::finished, initial_thread_, &QObject::deleteLater);
 
   QSignalTransition * activeSignal = new QSignalTransition(
@@ -978,11 +976,6 @@ Nav2Panel::onPause()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::pause,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<bool> futureLoc =
-    QtConcurrent::run(
-    std::bind(
-      &nav2_lifecycle_manager::LifecycleManagerClient::pause,
-      client_loc_.get(), std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -993,11 +986,6 @@ Nav2Panel::onResume()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::resume,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<bool> futureLoc =
-    QtConcurrent::run(
-    std::bind(
-      &nav2_lifecycle_manager::LifecycleManagerClient::resume,
-      client_loc_.get(), std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -1017,11 +1005,6 @@ Nav2Panel::onStartup()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<bool> futureLoc =
-    QtConcurrent::run(
-    std::bind(
-      &nav2_lifecycle_manager::LifecycleManagerClient::startup,
-      client_loc_.get(), std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -1032,11 +1015,6 @@ Nav2Panel::onShutdown()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<bool> futureLoc =
-    QtConcurrent::run(
-    std::bind(
-      &nav2_lifecycle_manager::LifecycleManagerClient::reset,
-      client_loc_.get(), std::placeholders::_1), server_timeout_);
   timer_.stop();
 }
 

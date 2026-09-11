@@ -235,6 +235,8 @@ def generate_launch_description() -> LaunchDescription:
         launch_arguments={
             'namespace': namespace,
             'slam': slam,
+            'use_localization': 'True',
+            'serve_static_map': 'True',
             'map': map_yaml_file,
             'keepout_mask': keepout_mask_yaml_file,
             'speed_mask': speed_mask_yaml_file,
