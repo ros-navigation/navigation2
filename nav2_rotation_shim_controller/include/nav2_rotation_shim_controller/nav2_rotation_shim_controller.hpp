@@ -122,7 +122,7 @@ protected:
    * @return pt location of the output point
    */
   geometry_msgs::msg::PoseStamped getSampledPathPt(
-    const geometry_msgs::msg::PoseStamped & global_goal);
+    const geometry_msgs::msg::PoseStamped & global_goal, const rclcpp::Time & control_time);
 
   /**
    * @brief Uses TF to find the location of the sampled path point in base frame
