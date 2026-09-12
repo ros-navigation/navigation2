@@ -176,6 +176,19 @@ Uses inflated costmap cost directly to avoid obstacles
 | threshold_to_consider | double | Default 0.5. Distance between robot and goal above which prefer forward cost is considered         |
 
 
+#### Translational Velocity Critic
+
+Only scores holonomic motion models. Penalizes samples whose combined translational velocity leaves
+the ellipse spanned by `vx_max`, `vx_min` and `vy_max`, so that a diagonal command cannot reach a
+higher speed than a straight one. The ellipse semi-axes are taken from those per-axis limits, so the
+critic adds no limit of its own.
+
+ | Parameter             | Type   | Definition                                                                                                  |
+ | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double | Default 4.0. Weight to apply to critic term.                                                                |
+ | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
+
+
 #### Twirling Critic
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
@@ -290,6 +303,10 @@ controller_server:
       #   cost_power: 1
       #   cost_weight: 35.0
       #   deadband_velocities: [0.05, 0.05, 0.05]
+      # TranslationalVelocityCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 4.0
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
