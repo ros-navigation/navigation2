@@ -115,6 +115,9 @@ protected:
 
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask_;
 
+  // Maximum age of latest dynamic TF; non-positive disables the check.
+  double transform_staleness_threshold_{0.0};
+
   std::string global_frame_;  // Frame of current layer (master_grid)
 
   bool override_lethal_cost_{false};  // If true, lethal cost will be overridden

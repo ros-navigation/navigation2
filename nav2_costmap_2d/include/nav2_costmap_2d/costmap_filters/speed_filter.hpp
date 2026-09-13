@@ -107,22 +107,26 @@ protected:
   /**
    * @brief Look up the speed limit at a single pose in the costmap's global frame
    * @param pose Pose in global_frame_
+   * @param mask_transform Transform from global frame to mask frame for this cycle
    * @param speed_limit output: computed speed limit
    * @return true if pose mapped to a valid mask cell, false otherwise
    */
   bool getSpeedLimitAtPose(
     const geometry_msgs::msg::Pose & pose,
+    const geometry_msgs::msg::TransformStamped & mask_transform,
     double & speed_limit);
   /**
    * @brief Get the speed limit from the path lookahead
    * @param robot_pose robot pose
    * @param lookahead_dist lookahead distance
+   * @param mask_transform Transform from global frame to mask frame for this cycle
    * @param speed_limit output: strictest speed limit found along the lookahead
    * @return true if the lookahead could be evaluated, false otherwise
    */
   bool getSpeedLimitFromLookahead(
     const geometry_msgs::msg::Pose & robot_pose,
     double lookahead_dist,
+    const geometry_msgs::msg::TransformStamped & mask_transform,
     double & speed_limit);
 
   nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
@@ -137,6 +141,9 @@ protected:
 
   // Odometry for variable lookahead distance calculation
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
+
+  // Maximum age of latest dynamic TF; non-positive disables the check.
+  double transform_staleness_threshold_{0.0};
 
   std::string global_frame_;  // Frame of current layer (master_grid)
 

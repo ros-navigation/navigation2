@@ -45,6 +45,7 @@
 
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -109,6 +110,9 @@ void SpeedFilter::initializeFilter(
       max_lookahead_ = min_lookahead_;
     }
   }
+
+  transform_staleness_threshold_ = node->declare_or_get_parameter(
+    name_ + ".transform_staleness_threshold", 0.0);
 
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   // Setting new costmap filter info subscriber
@@ -250,14 +254,15 @@ void SpeedFilter::pathCallback(
 
 bool SpeedFilter::getSpeedLimitAtPose(
   const geometry_msgs::msg::Pose & pose,
+  const geometry_msgs::msg::TransformStamped & mask_transform,
   double & speed_limit)
 {
   geometry_msgs::msg::Pose mask_pose;  // robot coordinates in mask frame
 
-  // Transforming robot pose from current layer frame to mask frame
-  if (!transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
-    return false;
-  }
+  // All samples in this process call use the same global-to-mask transform.
+  auto planar_pose = pose;
+  planar_pose.position.z = 0.0;
+  tf2::doTransform(planar_pose, mask_pose, mask_transform);
 
   // Converting mask_pose robot position to filter_mask_ indexes (mask_robot_i, mask_robot_j)
   unsigned int mask_robot_i, mask_robot_j;
@@ -313,6 +318,7 @@ bool SpeedFilter::getSpeedLimitAtPose(
 bool SpeedFilter::getSpeedLimitFromLookahead(
   const geometry_msgs::msg::Pose & robot_pose,
   double lookahead_dist,
+  const geometry_msgs::msg::TransformStamped & mask_transform,
   double & speed_limit)
 {
   double min_speed_limit = std::numeric_limits<double>::max();
@@ -328,17 +334,15 @@ bool SpeedFilter::getSpeedLimitFromLookahead(
 
   // Transform path if not in the global frame
   nav_msgs::msg::Path transformed_path;
-  if(current_path_->header.frame_id != global_frame_) {
-    if(!nav2_util::transformPathInTargetFrame(*current_path_, transformed_path, *tf_,
-        global_frame_))
-    {
-      RCLCPP_ERROR_THROTTLE(logger_, *(clock_), 5000,
-          "SpeedFilter: Failed to transform path to global frame, "
-          "no speed limit will be published");
-      return false;
-    }
-  } else {
-    transformed_path = *current_path_;
+  if (!nav2_util::transformPathInTargetFrame(
+      *current_path_, transformed_path, *tf_, global_frame_,
+      tf2::durationToSec(transform_tolerance_), clock_->now(), transform_staleness_threshold_))
+  {
+    RCLCPP_ERROR_THROTTLE(
+      logger_, *(clock_), 5000,
+      "SpeedFilter: Failed to transform path to global frame, "
+      "no speed limit will be published");
+    return false;
   }
 
   const auto & poses = transformed_path.poses;
@@ -351,7 +355,7 @@ bool SpeedFilter::getSpeedLimitFromLookahead(
 
   // Check robot's current pose
   double limit_at_robot_pose = NO_SPEED_LIMIT;
-  if (!getSpeedLimitAtPose(robot_pose, limit_at_robot_pose)) {
+  if (!getSpeedLimitAtPose(robot_pose, mask_transform, limit_at_robot_pose)) {
     // Pose mapped outside mask or transform failed
     RCLCPP_ERROR_THROTTLE(logger_, *(clock_), 5000,
         "SpeedFilter: Failed to get speed limit at robot pose");
@@ -373,7 +377,7 @@ bool SpeedFilter::getSpeedLimitFromLookahead(
     lookahead_point_msg->point = poses[i].pose.position;
 
     double sampled_speed_limit = NO_SPEED_LIMIT;
-    if (getSpeedLimitAtPose(poses[i].pose, sampled_speed_limit) &&
+    if (getSpeedLimitAtPose(poses[i].pose, mask_transform, sampled_speed_limit) &&
       sampled_speed_limit != NO_SPEED_LIMIT)
     {
       min_speed_limit = std::min(min_speed_limit, sampled_speed_limit);
@@ -419,6 +423,14 @@ void SpeedFilter::process(
     return;
   }
 
+  geometry_msgs::msg::TransformStamped mask_transform;
+  if (!nav2_util::lookupTransformWithStalenessCheck(
+      *tf_, filter_mask_->header.frame_id, global_frame_, clock_->now(),
+      transform_staleness_threshold_, mask_transform))
+  {
+    return;
+  }
+
   // Decide path lookahead vs just checking at robot pose.
   // Path lookahead requires a non-empty path received
   const bool use_path_lookahead =
@@ -439,12 +451,12 @@ void SpeedFilter::process(
       d_lookahead = std::max(d_lookahead, held_lookahead_dist_);
     }
 
-    if (!getSpeedLimitFromLookahead(pose, d_lookahead, speed_limit_)) {
+    if (!getSpeedLimitFromLookahead(pose, d_lookahead, mask_transform, speed_limit_)) {
       RCLCPP_ERROR(logger_, "SpeedFilter: Failed to get speed limit from lookahead");
       return;
     }
   } else {
-    if (!getSpeedLimitAtPose(pose, speed_limit_)) {
+    if (!getSpeedLimitAtPose(pose, mask_transform, speed_limit_)) {
       RCLCPP_ERROR(logger_, "SpeedFilter: Failed to get speed limit at pose");
       return;
     }

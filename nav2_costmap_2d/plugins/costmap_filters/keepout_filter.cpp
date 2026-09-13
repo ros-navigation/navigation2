@@ -46,6 +46,7 @@
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -65,6 +66,9 @@ void KeepoutFilter::initializeFilter(
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
+
+  transform_staleness_threshold_ = node->declare_or_get_parameter(
+    name_ + ".transform_staleness_threshold", 0.0);
 
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   // Setting new costmap filter info subscriber
@@ -158,6 +162,8 @@ void KeepoutFilter::maskCallback(
     filter_mask_.reset();
   }
 
+  is_pose_lethal_ = false;
+
   // Store filter_mask_
   filter_mask_ = msg;
   has_updated_data_ = true;
@@ -170,6 +176,7 @@ void KeepoutFilter::updateBounds(
   double robot_x, double robot_y, double robot_yaw,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
   if (!enabled_) {
     return;
   }
@@ -207,7 +214,12 @@ void KeepoutFilter::updateBounds(
     pose.position.z = 0.0;
     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
     geometry_msgs::msg::Pose mask_pose;
-    if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
+    geometry_msgs::msg::TransformStamped mask_transform;
+    if (nav2_util::lookupTransformWithStalenessCheck(
+        *tf_, filter_mask_->header.frame_id, global_frame_, clock_->now(),
+        transform_staleness_threshold_, mask_transform))
+    {
+      tf2::doTransform(pose, mask_pose, mask_transform);
       unsigned int mask_robot_i, mask_robot_j;
       if (nav2_util::worldToMap(
           filter_mask_, mask_pose.position.x, mask_pose.position.y,
@@ -269,20 +281,14 @@ void KeepoutFilter::process(
   if (mask_frame != global_frame_) {
     // Filter mask and current layer are in different frames:
     // prepare frame transformation if mask_frame != global_frame_
-    geometry_msgs::msg::TransformStamped transform;
-    try {
-      transform = tf_->lookupTransform(
-        mask_frame, global_frame_, tf2::TimePointZero,
-        transform_tolerance_);
-    } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR_THROTTLE(
-        logger_, *(clock_), 2000,
-        "KeepoutFilter: Failed to get costmap frame (%s) "
-        "transformation to mask frame (%s) with error: %s",
-        global_frame_.c_str(), mask_frame.c_str(), ex.what());
+    geometry_msgs::msg::TransformStamped mask_transform;
+    if (!nav2_util::lookupTransformWithStalenessCheck(
+        *tf_, mask_frame, global_frame_, clock_->now(),
+        transform_staleness_threshold_, mask_transform))
+    {
       return;
     }
-    tf2::fromMsg(transform.transform, tf2_transform);
+    tf2::fromMsg(mask_transform.transform, tf2_transform);
 
     mg_min_x = min_i;
     mg_min_y = min_j;
