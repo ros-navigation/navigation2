@@ -638,7 +638,7 @@ void Optimizer::updateControlSequence()
     control_sequence_.vy = state_.cvy.transpose().matrix() * softmax_mat;
   }
 
-  utils::savitskyGolayFilter(control_sequence_, control_history_, settings_);
+  utils::savitskyGolayFilter(control_sequence_, control_history_, settings_, is_holo);
 
   applyControlSequenceConstraints();
 }

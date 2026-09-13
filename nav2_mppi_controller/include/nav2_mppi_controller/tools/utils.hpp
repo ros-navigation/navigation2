@@ -455,12 +455,14 @@ inline float posePointAngle(
  * @brief Apply Savisky-Golay filter to optimal trajectory
  * @param control_sequence Sequence to apply filter to
  * @param control_history Recent set of controls for edge-case handling
- * @param Settings Settings to use
+ * @param settings Settings to use
+ * @param is_holonomic Skip filtering vy for non holonomic base
  */
 inline void savitskyGolayFilter(
   models::ControlSequence & control_sequence,
   std::array<mppi::models::Control, 4> & control_history,
-  const models::OptimizerSettings & settings)
+  const models::OptimizerSettings & settings,
+  const bool is_holonomic)
 {
   // Savitzky-Golay filter coefficients, 9-point window
   Eigen::Array<float, 9, 1> filter;
@@ -523,9 +525,11 @@ inline void savitskyGolayFilter(
   applyFilterOverAxis(
     control_sequence.vx, initial_control_sequence.vx, control_history[0].vx,
     control_history[1].vx, control_history[2].vx, control_history[3].vx);
-  applyFilterOverAxis(
-    control_sequence.vy, initial_control_sequence.vy, control_history[0].vy,
-    control_history[1].vy, control_history[2].vy, control_history[3].vy);
+  if (is_holonomic) {
+    applyFilterOverAxis(
+      control_sequence.vy, initial_control_sequence.vy, control_history[0].vy,
+      control_history[1].vy, control_history[2].vy, control_history[3].vy);
+  }
   applyFilterOverAxis(
     control_sequence.wz, initial_control_sequence.wz, control_history[0].wz,
     control_history[1].wz, control_history[2].wz, control_history[3].wz);

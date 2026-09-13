@@ -364,7 +364,7 @@ TEST(UtilsTests, SmootherTest)
   models::OptimizerSettings settings;
   settings.shift_control_sequence = false;  // so result stores 0th value in history
 
-  savitskyGolayFilter(noisey_sequence, history, settings);
+  savitskyGolayFilter(noisey_sequence, history, settings, true);
 
   // Check history is propagated backward
   EXPECT_NEAR(history_init[3].vx, history[2].vx, 0.02);
