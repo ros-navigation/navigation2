@@ -111,9 +111,6 @@ void SpeedFilter::initializeFilter(
     }
   }
 
-  transform_staleness_threshold_ = node->declare_or_get_parameter(
-    name_ + ".transform_staleness_threshold", 0.0);
-
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   // Setting new costmap filter info subscriber
   RCLCPP_INFO(

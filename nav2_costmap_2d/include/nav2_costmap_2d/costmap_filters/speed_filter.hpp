@@ -142,9 +142,6 @@ protected:
   // Odometry for variable lookahead distance calculation
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 
-  // Maximum age of latest dynamic TF; non-positive disables the check.
-  double transform_staleness_threshold_{0.0};
-
   std::string global_frame_;  // Frame of current layer (master_grid)
 
   double base_, multiplier_;
