@@ -16,6 +16,7 @@
 #include <chrono>
 
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "opennav_docking/simple_non_charging_dock.hpp"
 #include "opennav_docking/utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -87,6 +88,9 @@ void SimpleNonChargingDock::configure(
     name + ".dock_direction", std::string("forward"));
   rotate_to_dock_ = node_->declare_or_get_parameter(
     name + ".rotate_to_dock", false);
+
+  transform_staleness_threshold_ = node_->declare_or_get_parameter(
+    name + ".transform_staleness_threshold", 0.0);
 
   node_->get_parameter("base_frame", base_frame_id_);  // Get server base frame ID
 
@@ -202,14 +206,22 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
   // and contains the frame_id of docking
   if (detected.header.frame_id != pose.header.frame_id) {
     try {
-      if (!tf2_buffer_->canTransform(
+      geometry_msgs::msg::TransformStamped frame_transform;
+      if (rclcpp::Time(detected.header.stamp).nanoseconds() == 0) {
+        // A zero detection timestamp requests the latest TF, which may be stale.
+        if (!nav2_util::lookupTransformWithStalenessCheck(
+            *tf2_buffer_, pose.header.frame_id, detected.header.frame_id,
+            node_->now(), transform_staleness_threshold_, frame_transform))
+        {
+          return false;
+        }
+      } else {
+        // Keep the measurement time and use the lookup result directly.
+        frame_transform = tf2_buffer_->lookupTransform(
           pose.header.frame_id, detected.header.frame_id,
-          detected.header.stamp, rclcpp::Duration::from_seconds(0.2)))
-      {
-        RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
-        return false;
+          detected.header.stamp, rclcpp::Duration::from_seconds(0.2));
       }
-      tf2_buffer_->transform(detected, detected, pose.header.frame_id);
+      tf2::doTransform(detected, detected, frame_transform);
     } catch (const tf2::TransformException & ex) {
       RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
       return false;
@@ -259,21 +271,20 @@ bool SimpleNonChargingDock::isDocked()
     return false;
   }
 
-  // Find base pose in target frame
-  geometry_msgs::msg::PoseStamped base_pose;
-  base_pose.header.stamp = rclcpp::Time(0);
-  base_pose.header.frame_id = base_frame_id_;
-  base_pose.pose.orientation.w = 1.0;
-  try {
-    tf2_buffer_->transform(base_pose, base_pose, dock_pose_.header.frame_id);
-  } catch (const tf2::TransformException & ex) {
+  // The latest base transform represents the current robot position, so reject
+  // stale dynamic TF before using its translation to decide whether we are docked.
+  geometry_msgs::msg::TransformStamped base_transform;
+  if (!nav2_util::lookupTransformWithStalenessCheck(
+      *tf2_buffer_, dock_pose_.header.frame_id, base_frame_id_, node_->now(),
+      transform_staleness_threshold_, base_transform))
+  {
     return false;
   }
 
   // If we are close enough, we are docked
   double d = std::hypot(
-    base_pose.pose.position.x - dock_pose_.pose.position.x,
-    base_pose.pose.position.y - dock_pose_.pose.position.y);
+    base_transform.transform.translation.x - dock_pose_.pose.position.x,
+    base_transform.transform.translation.y - dock_pose_.pose.position.y);
   return d < docking_threshold_;
 }
 
