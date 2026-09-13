@@ -158,7 +158,7 @@ void DynFootprintCostCritic::score(CriticData & data)
       } else {
         pose_cost = static_cast<float>(costmap->getCost(getIndex(x_i, y_i)));
         // removed the pose_cost <1.0 check
-        // later we can compare this againts the biggest's tau_circ and can skip
+        // later we can compare this against the biggest's tau_circ and can skip
         // the further computation.
       }
 
