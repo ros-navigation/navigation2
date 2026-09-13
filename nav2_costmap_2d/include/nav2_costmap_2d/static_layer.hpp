@@ -48,6 +48,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
+#include "std_msgs/msg/header.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -148,6 +149,18 @@ protected:
   void incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update);
 
   /**
+   * @brief Callback for the source readiness barrier, if source_ready_topic is set
+   * @param barrier Maps stamped before this are known not to carry the source's latest
+   * state; a zero stamp means the source has nothing outstanding
+   */
+  void incomingSourceBarrier(std_msgs::msg::Header::ConstSharedPtr barrier);
+
+  /**
+   * @brief Whether the applied map is known to carry the source's latest state
+   */
+  bool isSourceReady() const;
+
+  /**
    * @brief Interpret the value in the static map given on the topic to
    * convert into costs for the costmap to utilize
    */
@@ -205,9 +218,11 @@ protected:
 
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
   nav2::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
+  nav2::Subscription<std_msgs::msg::Header>::SharedPtr source_ready_sub_;
 
   // Parameters
   std::string map_topic_;
+  std::string source_ready_topic_;
   bool map_subscribe_transient_local_;
   bool subscribe_to_updates_;
   bool track_unknown_space_;
@@ -218,6 +233,8 @@ protected:
   bool trinary_costmap_;
   bool map_received_{false};
   bool map_received_in_update_bounds_{false};
+  rclcpp::Time source_barrier_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time applied_map_stamp_{0, 0, RCL_ROS_TIME};
   tf2::Duration transform_tolerance_;
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr map_buffer_;
   // Dynamic parameters handler
