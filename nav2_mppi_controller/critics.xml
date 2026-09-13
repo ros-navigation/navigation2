@@ -9,6 +9,10 @@
       <description>mppi critic for obstacle avoidance using costmap score</description>
     </class>
 
+    <class type="mppi::critics::DynFootprintCostCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for obstacle avoidance using a velocity-scaled footprint (stub, not yet implemented)</description>
+    </class>
+
     <class type="mppi::critics::GoalCritic" base_class_type="mppi::critics::CriticFunction">
       <description>mppi critic for driving towards the goal</description>
     </class>

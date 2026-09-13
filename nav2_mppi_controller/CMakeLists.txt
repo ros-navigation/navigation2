@@ -92,7 +92,9 @@ target_link_libraries(mppi_motion_models PUBLIC
 add_library(mppi_critics SHARED
   src/critics/constraint_critic.cpp
   src/critics/cost_critic.cpp
+  src/critics/dyn_footprint_cost_critic.cpp
   src/critics/goal_critic.cpp
+  src/polygon_utils/velocity_polygon.cpp
   src/critics/goal_angle_critic.cpp
   src/critics/obstacles_critic.cpp
   src/critics/path_align_critic.cpp

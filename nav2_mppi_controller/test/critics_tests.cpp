@@ -26,6 +26,8 @@
 #include "nav2_mppi_controller/critics/goal_critic.hpp"
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
 #include "nav2_mppi_controller/critics/cost_critic.hpp"
+#include "nav2_mppi_controller/critics/dyn_footprint_cost_critic.hpp"
+#include "nav2_mppi_controller/polygon_utils/velocity_polygon.hpp"
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
 #include "nav2_mppi_controller/critics/path_angle_critic.hpp"
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
@@ -280,6 +282,228 @@ TEST(CriticTests, CostCriticAlignedParams) {
   CostCritic critic;
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   EXPECT_EQ(critic.getName(), "critic");
+}
+
+TEST(CriticTests, DynFootprintCostCriticThrowsOnRadiusFootprint) {
+  // Default costmap uses robot_radius (no explicit footprint) — this critic
+  // cannot operate without a polygon to scale with velocity.
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  DynFootprintCostCritic critic;
+  EXPECT_THROW(
+    critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler),
+    nav2_core::ControllerException
+  );
+}
+
+TEST(CriticTests, DynFootprintCostCriticThrowsOnMissingInflationLayer) {
+  // Costmap given an explicit footprint (so getUseRadius() is false), but no
+  // inflation_layer plugin — needed to compute the per-bucket
+  // circumscribed/inscribed thresholds.
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter(
+      "footprint", std::string("[[0.2,0.2],[0.2,-0.2],[-0.2,-0.2],[-0.2,0.2]]")),
+    // Costmap2DROS::default_plugins_ includes "inflation_layer" — must be
+    // overridden explicitly (to an empty list, so nothing else needs a
+    // matching ".plugin" type override) to actually exclude it here.
+    rclcpp::Parameter("plugins", std::vector<std::string>{}),
+  };
+  rclcpp::NodeOptions options;
+  options.parameter_overrides(params);
+
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(options);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  ASSERT_EQ(costmap_ros->on_configure(lstate), nav2::CallbackReturn::SUCCESS);
+
+  DynFootprintCostCritic critic;
+  EXPECT_THROW(
+    critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler),
+    nav2_core::ControllerException
+  );
+}
+
+TEST(CriticTests, DynFootprintCostCriticConfiguresSuccessfully) {
+  // Costmap with both an explicit footprint and an inflation layer, plus a
+  // valid single-bucket polygon_description
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter(
+      "footprint", std::string("[[0.2,0.2],[0.2,-0.2],[-0.2,-0.2],[-0.2,0.2]]")),
+    rclcpp::Parameter("plugins", std::vector<std::string>{"inflation_layer"}),
+    rclcpp::Parameter("inflation_layer.plugin", std::string("nav2_costmap_2d::InflationLayer")),
+    rclcpp::Parameter("inflation_layer.inflation_radius", 1.0),
+  };
+  rclcpp::NodeOptions options;
+  options.parameter_overrides(params);
+
+  std::vector<rclcpp::Parameter> node_params = {
+    rclcpp::Parameter(
+      "critic.polygon_description.velocity_polygons",
+      std::vector<std::string>{"nominal"}),
+    rclcpp::Parameter("critic.polygon_description.holonomic", false),
+    rclcpp::Parameter(
+      "critic.polygon_description.nominal.points",
+      std::string("[[0.2,0.2],[0.2,-0.2],[-0.2,-0.2],[-0.2,0.2]]")),
+    rclcpp::Parameter("critic.polygon_description.nominal.linear_min", -1.0),
+    rclcpp::Parameter("critic.polygon_description.nominal.linear_max", 1.0),
+    rclcpp::Parameter("critic.polygon_description.nominal.theta_min", -2.0),
+    rclcpp::Parameter("critic.polygon_description.nominal.theta_max", 2.0),
+  };
+  rclcpp::NodeOptions node_options;
+  node_options.parameter_overrides(node_params);
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node", node_options);
+
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(options);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  ASSERT_EQ(costmap_ros->on_configure(lstate), nav2::CallbackReturn::SUCCESS);
+
+  DynFootprintCostCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+}
+
+TEST(CriticTests, VelocityPolygonParsesAndSelectsBuckets) {
+  // Two buckets, non-holonomic: "slow" [0.0, 0.5], "fast" [0.5, 1.0].
+  std::vector<rclcpp::Parameter> node_params = {
+    rclcpp::Parameter(
+      "polygon_description.velocity_polygons",
+      std::vector<std::string>{"slow", "fast"}),
+    rclcpp::Parameter("polygon_description.holonomic", false),
+    rclcpp::Parameter(
+      "polygon_description.slow.points",
+      std::string("[[0.2,0.2],[0.2,-0.2],[-0.2,-0.2],[-0.2,0.2]]")),
+    rclcpp::Parameter("polygon_description.slow.linear_min", 0.0),
+    rclcpp::Parameter("polygon_description.slow.linear_max", 0.5),
+    rclcpp::Parameter("polygon_description.slow.theta_min", -2.0),
+    rclcpp::Parameter("polygon_description.slow.theta_max", 2.0),
+    rclcpp::Parameter(
+      "polygon_description.fast.points",
+      std::string("[[0.4,0.4],[0.4,-0.4],[-0.4,-0.4],[-0.4,0.4]]")),
+    rclcpp::Parameter("polygon_description.fast.linear_min", 0.5),
+    rclcpp::Parameter("polygon_description.fast.linear_max", 1.0),
+    rclcpp::Parameter("polygon_description.fast.theta_min", -2.0),
+    rclcpp::Parameter("polygon_description.fast.theta_max", 2.0),
+  };
+  rclcpp::NodeOptions node_options;
+  node_options.parameter_overrides(node_params);
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node", node_options);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+
+  mppi::polygon_utils::VelocityPolygon velocity_polygon;
+  ASSERT_TRUE(velocity_polygon.onConfigure("polygon_description", &param_handler));
+
+  const auto * slow_match = velocity_polygon.findPolygon(0.2, 0.0, 0.0);
+  ASSERT_NE(slow_match, nullptr);
+  EXPECT_EQ(slow_match->name, "slow");
+  EXPECT_NEAR(slow_match->circumscribed_radius, 0.2 * std::sqrt(2.0), 1e-6);
+
+  const auto * fast_match = velocity_polygon.findPolygon(0.8, 0.0, 0.0);
+  ASSERT_NE(fast_match, nullptr);
+  EXPECT_EQ(fast_match->name, "fast");
+  EXPECT_NEAR(fast_match->circumscribed_radius, 0.4 * std::sqrt(2.0), 1e-6);
+}
+
+TEST(CriticTests, VelocityPolygonFindPolygonReturnsNullOutsideRange) {
+  // One bucket covering [0.0, 0.5],a velocity well outside that should
+  // not match,
+  std::vector<rclcpp::Parameter> node_params = {
+    rclcpp::Parameter(
+      "polygon_description.velocity_polygons",
+      std::vector<std::string>{"nominal"}),
+    rclcpp::Parameter("polygon_description.holonomic", false),
+    rclcpp::Parameter(
+      "polygon_description.nominal.points",
+      std::string("[[0.2,0.2],[0.2,-0.2],[-0.2,-0.2],[-0.2,0.2]]")),
+    rclcpp::Parameter("polygon_description.nominal.linear_min", 0.0),
+    rclcpp::Parameter("polygon_description.nominal.linear_max", 0.5),
+    rclcpp::Parameter("polygon_description.nominal.theta_min", -2.0),
+    rclcpp::Parameter("polygon_description.nominal.theta_max", 2.0),
+  };
+  rclcpp::NodeOptions node_options;
+  node_options.parameter_overrides(node_params);
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node", node_options);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+
+  mppi::polygon_utils::VelocityPolygon velocity_polygon;
+  ASSERT_TRUE(velocity_polygon.onConfigure("polygon_description", &param_handler));
+
+  EXPECT_EQ(velocity_polygon.findPolygon(2.0, 0.0, 0.0), nullptr);
+}
+
+TEST(CriticTests, VelocityPolygonComputeBucketThresholdsSentinelForOutOfCoverageBucket) {
+  // Costmap with a real inflation layer, inflation_radius = 1.0.
+  std::vector<rclcpp::Parameter> costmap_params = {
+    rclcpp::Parameter(
+      "footprint", std::string("[[0.2,0.2],[0.2,-0.2],[-0.2,-0.2],[-0.2,0.2]]")),
+    rclcpp::Parameter("plugins", std::vector<std::string>{"inflation_layer"}),
+    rclcpp::Parameter("inflation_layer.plugin", std::string("nav2_costmap_2d::InflationLayer")),
+    rclcpp::Parameter("inflation_layer.inflation_radius", 1.0),
+  };
+  rclcpp::NodeOptions costmap_options;
+  costmap_options.parameter_overrides(costmap_params);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_options);
+  rclcpp_lifecycle::State lstate;
+  ASSERT_EQ(costmap_ros->on_configure(lstate), nav2::CallbackReturn::SUCCESS);
+
+  const auto inflation_layer = nav2_costmap_2d::InflationLayerInterface::getInflationLayer(
+    costmap_ros, "");
+  ASSERT_NE(inflation_layer, nullptr);
+  const double resolution = costmap_ros->getCostmap()->getResolution();
+
+  // "in_coverage": half-side 0.2 -> circumscribed radius ~0.283, well under 1.0.
+  // "out_of_coverage": half-side 2.0 -> circumscribed radius ~2.83, well over 1.0.
+  std::vector<rclcpp::Parameter> node_params = {
+    rclcpp::Parameter(
+      "polygon_description.velocity_polygons",
+      std::vector<std::string>{"in_coverage", "out_of_coverage"}),
+    rclcpp::Parameter("polygon_description.holonomic", false),
+    rclcpp::Parameter(
+      "polygon_description.in_coverage.points",
+      std::string("[[0.2,0.2],[0.2,-0.2],[-0.2,-0.2],[-0.2,0.2]]")),
+    rclcpp::Parameter("polygon_description.in_coverage.linear_min", 0.0),
+    rclcpp::Parameter("polygon_description.in_coverage.linear_max", 0.5),
+    rclcpp::Parameter("polygon_description.in_coverage.theta_min", -2.0),
+    rclcpp::Parameter("polygon_description.in_coverage.theta_max", 2.0),
+    rclcpp::Parameter(
+      "polygon_description.out_of_coverage.points",
+      std::string("[[2.0,2.0],[2.0,-2.0],[-2.0,-2.0],[-2.0,2.0]]")),
+    rclcpp::Parameter("polygon_description.out_of_coverage.linear_min", 0.5),
+    rclcpp::Parameter("polygon_description.out_of_coverage.linear_max", 1.0),
+    rclcpp::Parameter("polygon_description.out_of_coverage.theta_min", -2.0),
+    rclcpp::Parameter("polygon_description.out_of_coverage.theta_max", 2.0),
+  };
+  rclcpp::NodeOptions node_options;
+  node_options.parameter_overrides(node_params);
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node", node_options);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+
+  mppi::polygon_utils::VelocityPolygon velocity_polygon;
+  ASSERT_TRUE(velocity_polygon.onConfigure("polygon_description", &param_handler));
+  velocity_polygon.computeBucketThresholds(inflation_layer, resolution);
+
+  const auto * in_coverage = velocity_polygon.findPolygon(0.2, 0.0, 0.0);
+  ASSERT_NE(in_coverage, nullptr);
+  EXPECT_NE(in_coverage->tau_circumscribed, -1.0);
+  EXPECT_NE(in_coverage->tau_inscribed, -1.0);
+
+  const auto * out_of_coverage = velocity_polygon.findPolygon(0.7, 0.0, 0.0);
+  ASSERT_NE(out_of_coverage, nullptr);
+  EXPECT_EQ(out_of_coverage->tau_circumscribed, -1.0);
+  EXPECT_EQ(out_of_coverage->tau_inscribed, -1.0);
 }
 
 TEST(CriticTests, GoalAngleCritic)
