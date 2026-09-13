@@ -17,6 +17,7 @@
 #include <string>
 #include <memory>
 #include <filesystem>
+#include <vector>
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -24,6 +25,7 @@
 #include "nav2_map_server/map_server.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
+#include "std_msgs/msg/header.hpp"
 using namespace std::chrono_literals;
 using namespace rclcpp;  // NOLINT
 
@@ -75,6 +77,17 @@ public:
   }
 
 protected:
+  void spinFor(std::chrono::milliseconds duration)
+  {
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(node_);
+    const auto deadline = std::chrono::steady_clock::now() + duration;
+    while (std::chrono::steady_clock::now() < deadline) {
+      executor.spin_some(10ms);
+    }
+    executor.remove_node(node_);
+  }
+
   // Check that map_msg corresponds to reference pattern
   // Input: map_msg
   void verifyMapMsg(const nav_msgs::msg::OccupancyGrid & map_msg)
@@ -129,6 +142,54 @@ TEST_F(MapServerTestFixture, LoadMap)
 
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
   verifyMapMsg(resp->map);
+}
+
+// The barrier has to be raised before the new map is read, so that a consumer requiring
+// map.stamp >= barrier cannot keep treating the map it already holds as up to date
+TEST_F(MapServerTestFixture, LoadMapRaisesAReadinessBarrierBeforeLoading)
+{
+  std::vector<builtin_interfaces::msg::Time> barriers;
+  auto barrier_sub = node_->create_subscription<std_msgs::msg::Header>(
+    "/map_server/ready", rclcpp::QoS(10).reliable().transient_local(),
+    [&](std_msgs::msg::Header::ConstSharedPtr message) {barriers.push_back(message->stamp);});
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/map_server/load_map");
+  ASSERT_TRUE(client->wait_for_service());
+  spinFor(500ms);
+  const auto before = barriers.size();
+
+  auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
+  req->map_url = path(TEST_DIR) / path(g_valid_yaml_file);
+  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
+  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
+  spinFor(500ms);
+
+  ASSERT_GT(barriers.size(), before);
+  const rclcpp::Time barrier(barriers[before], RCL_ROS_TIME);
+  EXPECT_NE(barrier.nanoseconds(), 0);
+  EXPECT_GE(rclcpp::Time(resp->map.header.stamp, RCL_ROS_TIME), barrier);
+}
+
+// A load that publishes nothing leaves the map consumers hold as the current one
+TEST_F(MapServerTestFixture, FailedLoadMapClearsTheReadinessBarrier)
+{
+  std::vector<builtin_interfaces::msg::Time> barriers;
+  auto barrier_sub = node_->create_subscription<std_msgs::msg::Header>(
+    "/map_server/ready", rclcpp::QoS(10).reliable().transient_local(),
+    [&](std_msgs::msg::Header::ConstSharedPtr message) {barriers.push_back(message->stamp);});
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/map_server/load_map");
+  ASSERT_TRUE(client->wait_for_service());
+  spinFor(500ms);
+
+  auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
+  req->map_url = "";
+  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
+  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST);
+  spinFor(500ms);
+
+  ASSERT_FALSE(barriers.empty());
+  EXPECT_EQ(rclcpp::Time(barriers.back(), RCL_ROS_TIME).nanoseconds(), 0);
 }
 
 // Send map loading service request without specifying which map to load
