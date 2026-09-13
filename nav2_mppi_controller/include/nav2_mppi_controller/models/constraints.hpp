@@ -38,9 +38,10 @@ struct ControlConstraints
 struct AdvancedConstraints
 {
   /**
-   * @brief Defines the strength of the reduction function
-   * Allows dynamic modification of wz_std (angular deviation) based on linear velocity of the robot.
-   * When a robot with high inertia (e.g. 500kg) is moving fast and if wz_std is above 0.3, oscillation behavior can be observed. Lowering wz_std stabilizes the robot but then the maneuvers take more time.
+   * @brief Defines the strength of the reduction function.
+   *
+   * Allows dynamic modification of wz_std (angular deviation) based on the linear speed [sqrt(vx^2 + vy^2)] of the robot
+   * When a robot with high inertia (e.g. 500kg) is moving fast and wz_std is above 0.3, oscillation behavior can be observed. Lowering wz_std stabilizes the robot but then the maneuvers take more time.
    * Dynamically reducing wz_std as vx, vy increase (speed of the robot) solves both problems.
    * Suggested values to start with: wz_std = 0.4, wz_std_decay_to = 0.05, wz_std_decay_strength = 3.0
    * The following is used as the decay function
@@ -52,11 +53,60 @@ struct AdvancedConstraints
 
   /**
    * @brief Target wz_std value while linear speed goes to infinity.
-   * Must be between 0 and wz_std.
-   * Has no effect if `advanced.wz_std_decay_strength` <= 0.0
+   *
+   * Must be greater than 0 and at most wz_std. A sampling deviation has to stay positive,
+   * a target of 0 makes the control cost weight blow up, so such a value disables the decay.
+   * Has no effect if #wz_std_decay_strength <= 0.0
    * Default: 0.0
    */
   float wz_std_decay_to;
+
+  /**
+   * @brief Defines the strength of the reduction function applied to vx_std.
+   *
+   * Allows dynamic modification of vx_std (linear x deviation) based on vx speed of the robot.
+   * Starting from high vx_std allows the MPPI controller to produce higher velocity outputs and longer trajectories when robot speed is low.
+   * This approach helps the robot respond faster when stopped, moving through narrow spaces etc. However, if the robot speed is high,
+   * the calculated trajectory can exceed the local costmap bounds, which invalidates trajectories that are otherwise valid.
+   * Dynamically reducing vx_std as vx increases solves this problem.
+   * See #wz_std_decay_strength to understand how the decay function works.
+   * Default: -1.0 (disabled)
+   */
+  float vx_std_decay_strength;
+
+  /**
+   * @brief Target vx_std value while |vx| goes to infinity.
+   *
+   * Must be greater than 0 and at most vx_std. A sampling deviation has to stay positive,
+   * a target of 0 makes the control cost weight blow up, so such a value disables the decay.
+   * Has no effect if #vx_std_decay_strength <= 0.0
+   * Default: 0.0
+   */
+  float vx_std_decay_to;
+
+  /**
+   * @brief Defines the strength of the reduction function applied to vy_std.
+   *
+   * Allows dynamic modification of vy_std (linear y deviation) based on vy speed of the robot.
+   * Starting from high vy_std allows the MPPI controller to produce higher velocity outputs and longer trajectories when robot speed is low.
+   * This approach helps the robot respond faster when stopped, moving through narrow spaces etc. However, if the robot speed is high,
+   * the calculated trajectory can exceed the local costmap bounds, which invalidates trajectories that are otherwise valid.
+   * Dynamically reducing vy_std as vy increases solves this problem.
+   * Only has an effect on holonomic bases, vy_std is left untouched otherwise.
+   * See #wz_std_decay_strength to understand how the decay function works.
+   * Default: -1.0 (disabled)
+   */
+  float vy_std_decay_strength;
+
+  /**
+   * @brief Target vy_std value while |vy| goes to infinity.
+   *
+   * Must be greater than 0 and at most vy_std. A sampling deviation has to stay positive,
+   * a target of 0 makes the control cost weight blow up, so such a value disables the decay.
+   * Has no effect if #vy_std_decay_strength <= 0.0 or if the base is not holonomic.
+   * Default: 0.0
+   */
+  float vy_std_decay_to;
 };
 
 /**

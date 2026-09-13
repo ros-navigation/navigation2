@@ -75,16 +75,33 @@ public:
 
   /**
    * Computes adaptive values of the SamplingStd parameters and updates adaptive counterparts
-   * See also wz_std_decay_strength, wz_std_decay_to parameters for more information on how wz => wz_std_adaptive is computed
+   * See also *_std_decay_strength, *_std_decay_to parameters for more information on how
+   * vx, vy, wz => *_std_adaptive are computed.
    * @param state Current state of the robot
    */
   void computeAdaptiveStds(const models::State & state);
 
   /**
-   * Validates decay constraints and returns true if constraints are valid
-   * @return true if decay constraints are valid
+   * Validates the vx decay constraints and returns true if constraints are valid
+   * @return true if constraints are valid
+   */
+  bool validateVxStdDecayConstraints() const;
+
+  /**
+   * Validates the vy decay constraints and returns true if constraints are valid
+   * @return true if constraints are valid
+   */
+  bool validateVyStdDecayConstraints() const;
+
+  /**
+   * Validates the wz decay constraints and returns true if constraints are valid
+   * @return true if constraints are valid
    */
   bool validateWzStdDecayConstraints() const;
+
+  float getVxStdAdaptive() const;
+
+  float getVyStdAdaptive() const;
 
   float getWzStdAdaptive() const;
 
@@ -114,7 +131,8 @@ protected:
   Eigen::ArrayXXf noises_vy_;
   Eigen::ArrayXXf noises_wz_;
 
-  std::default_random_engine generator_;
+  // mt19937_64 should perform 3x faster than default_random_engine
+  std::mt19937_64 generator_;
   std::normal_distribution<float> ndistribution_vx_;
   std::normal_distribution<float> ndistribution_wz_;
   std::normal_distribution<float> ndistribution_vy_;
@@ -128,10 +146,12 @@ protected:
   bool active_{false}, ready_{false}, regenerate_noises_{false};
 
   /**
-   * @brief Internal variable that holds wz_std after decay is applied.
-   * If decay is disabled, SamplingStd.wz == wz_std_adaptive
+   * @brief Internal variables that hold the sampling deviations after decay is applied.
+   * If a decay is disabled, the adaptive value equals its SamplingStd counterpart.
   */
-  float wz_std_adaptive;
+  float vx_std_adaptive_{0.0f};
+  float vy_std_adaptive_{0.0f};
+  float wz_std_adaptive_{0.0f};
 };
 
 }  // namespace mppi

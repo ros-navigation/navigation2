@@ -121,6 +121,10 @@ void Optimizer::getParams()
   getParam(s.sampling_std.wz, "wz_std", 0.4f);
   getParam(s.advanced_constraints.wz_std_decay_to, "advanced.wz_std_decay_to", 0.0f);
   getParam(s.advanced_constraints.wz_std_decay_strength, "advanced.wz_std_decay_strength", -1.0f);
+  getParam(s.advanced_constraints.vx_std_decay_to, "advanced.vx_std_decay_to", 0.0f);
+  getParam(s.advanced_constraints.vx_std_decay_strength, "advanced.vx_std_decay_strength", -1.0f);
+  getParam(s.advanced_constraints.vy_std_decay_to, "advanced.vy_std_decay_to", 0.0f);
+  getParam(s.advanced_constraints.vy_std_decay_strength, "advanced.vy_std_decay_strength", -1.0f);
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
   getParam(s.open_loop, "open_loop", false);
 
@@ -138,6 +142,29 @@ void Optimizer::getParams()
       logger_,
       "Sign of the parameter ay_min is incorrect, consider setting it negative.");
   }
+
+  // A decay whose target is out of bounds is ignored, so say it out loud instead of leaving the
+  // operator wondering why the deviation never moves.
+  auto warn_if_decay_ignored = [this](
+    const char * axis, float strength, float decay_to, float base_std) {
+      if (strength > 0.0f && (decay_to <= 0.0f || decay_to > base_std)) {
+        RCLCPP_WARN(
+          logger_,
+          "advanced.%s_std_decay_to must be greater than 0 and at most %s_std (%f), but it is %f. "
+          "The %s_std decay is disabled.",
+          axis, axis, base_std, decay_to, axis);
+      }
+    };
+
+  warn_if_decay_ignored(
+    "vx", s.advanced_constraints.vx_std_decay_strength,
+    s.advanced_constraints.vx_std_decay_to, s.sampling_std.vx);
+  warn_if_decay_ignored(
+    "vy", s.advanced_constraints.vy_std_decay_strength,
+    s.advanced_constraints.vy_std_decay_to, s.sampling_std.vy);
+  warn_if_decay_ignored(
+    "wz", s.advanced_constraints.wz_std_decay_strength,
+    s.advanced_constraints.wz_std_decay_to, s.sampling_std.wz);
 
   getParam(motion_model_name, "motion_model", std::string("diff_drive"));
 
@@ -524,23 +551,31 @@ void Optimizer::updateControlSequence()
   const bool is_holo = isHolonomic();
   auto & s = settings_;
 
+  // A non positive adaptive deviation means the dynamic calculation is disabled for that axis, so
+  // fall back to the configured one. The guards around each term are left as upstream wrote them.
+  auto effective_std = [](float adaptive, float configured) {
+      return adaptive > 0.0f ? adaptive : configured;
+    };
+
+  const float vx_std = effective_std(noise_generator_.getVxStdAdaptive(), s.sampling_std.vx);
   auto vx_T = control_sequence_.vx.transpose();
   auto bounded_noises_vx = state_.cvx.rowwise() - vx_T;
-  const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
+  const float gamma_vx = s.gamma / (vx_std * vx_std);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
 
-  const float wz_std_adaptive = noise_generator_.getWzStdAdaptive();
-  if (wz_std_adaptive > 0.0f) {
+  if (s.sampling_std.wz > 0.0f) {
+    const float wz_std = effective_std(noise_generator_.getWzStdAdaptive(), s.sampling_std.wz);
     auto wz_T = control_sequence_.wz.transpose();
     auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
-    const float gamma_wz = s.gamma / (wz_std_adaptive * wz_std_adaptive);
+    const float gamma_wz = s.gamma / (wz_std * wz_std);
     costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
   }
 
   if (is_holo) {
+    const float vy_std = effective_std(noise_generator_.getVyStdAdaptive(), s.sampling_std.vy);
     auto vy_T = control_sequence_.vy.transpose();
     auto bounded_noises_vy = state_.cvy.rowwise() - vy_T;
-    const float gamma_vy = s.gamma / (s.sampling_std.vy * s.sampling_std.vy);
+    const float gamma_vy = s.gamma / (vy_std * vy_std);
     costs_ += (gamma_vy * (bounded_noises_vy.rowwise() * vy_T).rowwise().sum()).eval();
   }
 

@@ -204,6 +204,204 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
   generator.shutdown();
 }
 
+TEST(NoiseGeneratorTest, AdaptiveStdsDisabled)
+{
+  // With every decay disabled, the adaptive deviations must mirror the static ones
+  // no matter how fast the robot is moving
+  auto node = std::make_shared<nav2::LifecycleNode>("node");
+  node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+  NoiseGenerator generator;
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 100;
+  settings.time_steps = 25;
+  settings.sampling_std.vx = 0.2;
+  settings.sampling_std.vy = 0.3;
+  settings.sampling_std.wz = 0.4;
+  settings.advanced_constraints.vx_std_decay_strength = -1.0;
+  settings.advanced_constraints.vy_std_decay_strength = -1.0;
+  settings.advanced_constraints.wz_std_decay_strength = -1.0;
+
+  mppi::models::State state;
+  state.reset(settings.batch_size, settings.time_steps);
+
+  generator.initialize(settings, true, "test_name", &handler);
+  generator.reset(settings, true);
+
+  // Standstill
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(generator.getVxStdAdaptive(), 0.2, 1e-6);
+  EXPECT_NEAR(generator.getVyStdAdaptive(), 0.3, 1e-6);
+  EXPECT_NEAR(generator.getWzStdAdaptive(), 0.4, 1e-6);
+
+  // Moving fast
+  state.speed.linear.x = 1.5;
+  state.speed.linear.y = 1.5;
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(generator.getVxStdAdaptive(), 0.2, 1e-6);
+  EXPECT_NEAR(generator.getVyStdAdaptive(), 0.3, 1e-6);
+  EXPECT_NEAR(generator.getWzStdAdaptive(), 0.4, 1e-6);
+
+  generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, AdaptiveStdsPerAxisDecay)
+{
+  // Each linear axis decays on its own measured speed, wz decays on the linear speed magnitude
+  auto node = std::make_shared<nav2::LifecycleNode>("node");
+  node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+  NoiseGenerator generator;
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 100;
+  settings.time_steps = 25;
+  settings.sampling_std.vx = 0.6;
+  settings.sampling_std.vy = 0.5;
+  settings.sampling_std.wz = 0.4;
+  settings.advanced_constraints.vx_std_decay_to = 0.2;
+  settings.advanced_constraints.vx_std_decay_strength = 3.0;
+  settings.advanced_constraints.vy_std_decay_to = 0.1;
+  settings.advanced_constraints.vy_std_decay_strength = 3.0;
+  settings.advanced_constraints.wz_std_decay_to = 0.05;
+  settings.advanced_constraints.wz_std_decay_strength = 3.0;
+
+  mppi::models::State state;
+  state.reset(settings.batch_size, settings.time_steps);
+
+  generator.initialize(settings, true, "test_name", &handler);
+  generator.reset(settings, true);
+
+  EXPECT_TRUE(generator.validateVxStdDecayConstraints());
+  EXPECT_TRUE(generator.validateVyStdDecayConstraints());
+  EXPECT_TRUE(generator.validateWzStdDecayConstraints());
+
+  // At standstill every deviation equals its configured (boosted) value
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(generator.getVxStdAdaptive(), 0.6, 1e-6);
+  EXPECT_NEAR(generator.getVyStdAdaptive(), 0.5, 1e-6);
+  EXPECT_NEAR(generator.getWzStdAdaptive(), 0.4, 1e-6);
+
+  // Moving on x only: vx decays towards its target, vy is untouched, wz decays too
+  state.speed.linear.x = 10.0;
+  state.speed.linear.y = 0.0;
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(generator.getVxStdAdaptive(), 0.2, 1e-4);
+  EXPECT_NEAR(generator.getVyStdAdaptive(), 0.5, 1e-6);
+  EXPECT_NEAR(generator.getWzStdAdaptive(), 0.05, 1e-4);
+
+  // Moving on y only: vy decays towards its target, vx is untouched
+  state.speed.linear.x = 0.0;
+  state.speed.linear.y = 10.0;
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(generator.getVxStdAdaptive(), 0.6, 1e-6);
+  EXPECT_NEAR(generator.getVyStdAdaptive(), 0.1, 1e-4);
+
+  // The decay is monotonic, a slower robot always samples a wider spread
+  state.speed.linear.x = 0.3;
+  state.speed.linear.y = 0.0;
+  generator.computeAdaptiveStds(state);
+  const float std_at_slow_speed = generator.getVxStdAdaptive();
+  state.speed.linear.x = 0.9;
+  generator.computeAdaptiveStds(state);
+  const float std_at_high_speed = generator.getVxStdAdaptive();
+  EXPECT_GT(std_at_slow_speed, std_at_high_speed);
+  EXPECT_LT(std_at_slow_speed, 0.6);
+  EXPECT_GT(std_at_high_speed, 0.2);
+
+  generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, AdaptiveStdsNonHolonomicAndInvalidBounds)
+{
+  // vy never adapts on a non holonomic base, and out of bounds targets fall back
+  // to the static value
+  auto node = std::make_shared<nav2::LifecycleNode>("node");
+  node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+  NoiseGenerator generator;
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 100;
+  settings.time_steps = 25;
+  settings.sampling_std.vx = 0.6;
+  settings.sampling_std.vy = 0.5;
+  settings.sampling_std.wz = 0.4;
+  // decay_to above the configured std, invalid
+  settings.advanced_constraints.vx_std_decay_to = 0.9;
+  settings.advanced_constraints.vx_std_decay_strength = 3.0;
+  // valid, but the base below is not holonomic
+  settings.advanced_constraints.vy_std_decay_to = 0.1;
+  settings.advanced_constraints.vy_std_decay_strength = 3.0;
+  // negative decay_to, invalid
+  settings.advanced_constraints.wz_std_decay_to = -0.1;
+  settings.advanced_constraints.wz_std_decay_strength = 3.0;
+
+  mppi::models::State state;
+  state.reset(settings.batch_size, settings.time_steps);
+  state.speed.linear.x = 1.0;
+  state.speed.linear.y = 1.0;
+
+  generator.initialize(settings, false, "test_name", &handler);
+  generator.reset(settings, false);
+
+  EXPECT_FALSE(generator.validateVxStdDecayConstraints());
+  EXPECT_TRUE(generator.validateVyStdDecayConstraints());
+  EXPECT_FALSE(generator.validateWzStdDecayConstraints());
+
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(generator.getVxStdAdaptive(), 0.6, 1e-6);
+  EXPECT_NEAR(generator.getVyStdAdaptive(), 0.5, 1e-6);
+  EXPECT_NEAR(generator.getWzStdAdaptive(), 0.4, 1e-6);
+
+  generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, AdaptiveStdsZeroDecayTargetRejected)
+{
+  // A decay target of 0 would drive the deviation to zero and blow up the gamma control cost
+  // weight, so it is treated as an invalid configuration and the decay is skipped
+  auto node = std::make_shared<nav2::LifecycleNode>("node");
+  node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+  NoiseGenerator generator;
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 100;
+  settings.time_steps = 25;
+  settings.sampling_std.vx = 0.6;
+  settings.sampling_std.vy = 0.5;
+  settings.sampling_std.wz = 0.4;
+  settings.advanced_constraints.vx_std_decay_to = 0.0;
+  settings.advanced_constraints.vx_std_decay_strength = 3.0;
+  settings.advanced_constraints.vy_std_decay_to = 0.0;
+  settings.advanced_constraints.vy_std_decay_strength = 3.0;
+  settings.advanced_constraints.wz_std_decay_to = 0.0;
+  settings.advanced_constraints.wz_std_decay_strength = 3.0;
+
+  mppi::models::State state;
+  state.reset(settings.batch_size, settings.time_steps);
+
+  generator.initialize(settings, true, "test_name", &handler);
+  generator.reset(settings, true);
+
+  EXPECT_FALSE(generator.validateVxStdDecayConstraints());
+  EXPECT_FALSE(generator.validateVyStdDecayConstraints());
+  EXPECT_FALSE(generator.validateWzStdDecayConstraints());
+
+  // Even at a speed high enough to underflow the exponential, every deviation stays at its
+  // configured value instead of collapsing to zero
+  state.speed.linear.x = 50.0;
+  state.speed.linear.y = 50.0;
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(generator.getVxStdAdaptive(), 0.6, 1e-6);
+  EXPECT_NEAR(generator.getVyStdAdaptive(), 0.5, 1e-6);
+  EXPECT_NEAR(generator.getWzStdAdaptive(), 0.4, 1e-6);
+
+  generator.shutdown();
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
