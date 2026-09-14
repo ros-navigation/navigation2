@@ -39,6 +39,8 @@
 
 #include <Eigen/Dense>
 
+#include <array>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -254,56 +256,46 @@ void loadMapFromFile(
   Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(height, width);
 
   if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale) {
-    // Initialize occupancy grid with UNKNOWN values (-1)
-    result.setConstant(nav2_util::OCC_GRID_UNKNOWN);
+    // A grayscale pixel only has 256 possible values, so the whole classification
+    // collapses into a 256-entry lookup table. This avoids materializing any
+    // width*height intermediate ("normalized" float matrix, occupied/free masks,
+    // and in Scale mode the occ/scaled_float/scaled_int buffers) and reduces the
+    // per-pixel work to a single pass over the grayscale buffer.
+    //
+    // The arithmetic below is deliberately kept in float, in the same order and
+    // with the same operator precedence as the per-pixel Eigen expressions it
+    // replaces, so that classification of boundary pixels is bit-for-bit identical.
+    const float free_thresh = static_cast<float>(load_parameters.free_thresh);
+    const float occupied_thresh = static_cast<float>(load_parameters.occupied_thresh);
+    const float scale_span =
+      static_cast<float>(load_parameters.occupied_thresh - load_parameters.free_thresh);
 
-    // occ = negate ? (gray/255) : (1 - gray/255); thresholds are compared against occ.
-    // Substituting occ and solving for gray avoids materializing a full-size float
-    // "normalized" matrix plus separate occupied/free mask matrices (each a full
-    // width*height buffer) just to compare against two scalar thresholds.
-    if (load_parameters.negate) {
-      result = (gray_matrix.cast<float>().array() >=
-        static_cast<float>(load_parameters.occupied_thresh) * 255.0f)
-        .select(nav2_util::OCC_GRID_OCCUPIED, result);
-      result = (gray_matrix.cast<float>().array() <=
-        static_cast<float>(load_parameters.free_thresh) * 255.0f)
-        .select(nav2_util::OCC_GRID_FREE, result);
-    } else {
-      result = (gray_matrix.cast<float>().array() <=
-        (1.0f - static_cast<float>(load_parameters.occupied_thresh)) * 255.0f)
-        .select(nav2_util::OCC_GRID_OCCUPIED, result);
-      result = (gray_matrix.cast<float>().array() >=
-        (1.0f - static_cast<float>(load_parameters.free_thresh)) * 255.0f)
-        .select(nav2_util::OCC_GRID_FREE, result);
-    }
-
-    // Handle intermediate (gray) values if in Scale mode
-    if (load_parameters.mode == MapMode::Scale) {
-      // occ = negate ? (gray/255) : (1 - gray/255), same derivation as above; only
-      // materialized here since Scale mode's in-between interpolation genuinely
-      // needs per-cell float values, and Scale mode is not the hot/large-map path.
-      Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> occ =
-        gray_matrix.cast<float>() / 255.0f;
+    std::array<int8_t, 256> lut;
+    for (int g = 0; g < 256; ++g) {
+      // occ = negate ? (gray/255) : (1 - gray/255)
+      float occ = static_cast<float>(g) / 255.0f;
       if (!load_parameters.negate) {
-        occ = (1.0f - occ.array()).matrix();
+        occ = 1.0f - occ;
       }
 
-      // Create in-between mask
-      auto in_between_mask = (occ.array() > load_parameters.free_thresh) &&
-        (occ.array() < load_parameters.occupied_thresh);
-
-      if (in_between_mask.any()) {
-        // Scale in-between values to [0,100] range
-        Eigen::ArrayXXf scaled_float = ((occ.array() - load_parameters.free_thresh) /
-          (load_parameters.occupied_thresh - load_parameters.free_thresh)) * 100.0f;
-
-        // Round and cast to int8_t
-        Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> scaled_int =
-          scaled_float.array().round().cast<int8_t>();
-
-        result = in_between_mask.select(scaled_int, result);
+      int8_t value = nav2_util::OCC_GRID_UNKNOWN;
+      // Free is applied after occupied so that it wins when the thresholds overlap,
+      // matching the order the two masks were previously applied in.
+      if (occ >= occupied_thresh) {
+        value = nav2_util::OCC_GRID_OCCUPIED;
       }
+      if (occ <= free_thresh) {
+        value = nav2_util::OCC_GRID_FREE;
+      }
+      if (load_parameters.mode == MapMode::Scale &&
+        occ > free_thresh && occ < occupied_thresh)
+      {
+        value = static_cast<int8_t>(std::round(((occ - free_thresh) / scale_span) * 100.0f));
+      }
+      lut[g] = value;
     }
+
+    result = gray_matrix.unaryExpr([&lut](uint8_t g) -> int8_t {return lut[g];});
 
     // Apply alpha transparency mask: mark transparent cells as UNKNOWN
     if (has_alpha) {
