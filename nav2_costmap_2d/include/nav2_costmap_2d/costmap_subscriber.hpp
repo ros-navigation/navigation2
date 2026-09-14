@@ -91,7 +91,7 @@ public:
 protected:
   bool isCostmapReceived()
   {
-    std::lock_guard<std::mutex> guard(costmap_msg_mutex_);
+    std::lock_guard<std::recursive_mutex> guard(costmap_msg_mutex_);
     return costmap_ != nullptr;
   }
   void processCurrentCostmapMsg();
@@ -109,7 +109,7 @@ protected:
 
   std::string topic_name_;
   std::string frame_id_;
-  std::mutex costmap_msg_mutex_;
+  std::recursive_mutex costmap_msg_mutex_;
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 };
 

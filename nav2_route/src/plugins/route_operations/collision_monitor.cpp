@@ -15,6 +15,7 @@
 
 #include <math.h>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "nav2_route/plugins/route_operations/collision_monitor.hpp"
@@ -96,6 +97,8 @@ OperationResult CollisionMonitor::perform(
 
   OperationResult result;
   getCostmap();
+
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*costmap_->getMutex());
 
   float dist_checked = 0.0;
   Coordinates end = curr_edge->end->coords;

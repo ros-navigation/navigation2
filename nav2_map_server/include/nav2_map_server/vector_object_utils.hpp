@@ -93,14 +93,12 @@ inline void processVal(
  * @param overlay_type Type of overlay
  */
 inline void processCell(
-  nav_msgs::msg::OccupancyGrid::SharedPtr map,
+  const nav_msgs::msg::OccupancyGrid::SharedPtr & map,
   const unsigned int offset,
   const int8_t shape_val,
   const OverlayType overlay_type)
 {
-  int8_t map_val = map->data[offset];
-  processVal(map_val, shape_val, overlay_type);
-  map->data[offset] = map_val;
+  processVal(map->data[offset], shape_val, overlay_type);
 }
 
 /// @brief Functor class used in raytraceLine algorithm
