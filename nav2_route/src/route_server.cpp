@@ -402,10 +402,25 @@ void RouteServer::exceptionWarning(
     goal->goal.pose.position.x, goal->goal.pose.position.y, goal->goal_id, ex.what());
 }
 
+template bool RouteServer::isRequestValid<RouteServer::ComputeRoute>(
+  nav2::SimpleActionServer<RouteServer::ComputeRoute>::SharedPtr & action_server);
 template bool RouteServer::isRequestValid<RouteServer::ComputeAndTrackRoute>(
+  nav2::SimpleActionServer<RouteServer::ComputeAndTrackRoute>::SharedPtr & action_server);
+template Route RouteServer::findRoute<RouteServer::ComputeRouteGoal>(
+  const std::shared_ptr<const RouteServer::ComputeRouteGoal> goal,
+  ReroutingState & rerouting_info);
+template Route RouteServer::findRoute<RouteServer::ComputeAndTrackRouteGoal>(
+  const std::shared_ptr<const RouteServer::ComputeAndTrackRouteGoal> goal,
+  ReroutingState & rerouting_info);
+template void RouteServer::processRouteRequest<RouteServer::ComputeRoute>(
+  nav2::SimpleActionServer<RouteServer::ComputeRoute>::SharedPtr & action_server);
+template void RouteServer::processRouteRequest<RouteServer::ComputeAndTrackRoute>(
   nav2::SimpleActionServer<RouteServer::ComputeAndTrackRoute>::SharedPtr & action_server);
 template void RouteServer::exceptionWarning<RouteServer::ComputeRouteGoal>(
   const std::shared_ptr<const RouteServer::ComputeRouteGoal> goal,
+  const std::exception & ex);
+template void RouteServer::exceptionWarning<RouteServer::ComputeAndTrackRouteGoal>(
+  const std::shared_ptr<const RouteServer::ComputeAndTrackRouteGoal> goal,
   const std::exception & ex);
 
 }  // namespace nav2_route
