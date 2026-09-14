@@ -425,11 +425,12 @@ void CollisionDetector::publishTriggeringPoints(
   std_msgs::msg::Header header;
   header.frame_id = base_frame_id_;
   header.stamp = stamp;
-  auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>(triggering_cloud_.create(header));
+  auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>(TriggeringCloud::create(header));
   for (const auto & polygon : polygons_) {
-    const auto found = all_triggering_points.find(polygon->getName());
+    const auto & name = polygon->getName();
+    const auto found = all_triggering_points.find(name);
     if (found != all_triggering_points.end()) {
-      triggering_cloud_.append(*cloud, found->second, polygon->getName(), DO_NOTHING);
+      triggering_cloud_.append(*cloud, found->second, name, DO_NOTHING);
     }
   }
   triggering_points_pub_->publish(std::move(cloud));

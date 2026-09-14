@@ -33,7 +33,7 @@ public:
     }
   }
 
-  sensor_msgs::msg::PointCloud2 create(const std_msgs::msg::Header & header) const
+  static sensor_msgs::msg::PointCloud2 create(const std_msgs::msg::Header & header)
   {
     sensor_msgs::msg::PointCloud2 cloud;
     cloud.header = header;
@@ -54,12 +54,13 @@ public:
     sensor_msgs::msg::PointCloud2 & cloud, const std::vector<Point> & points,
     const std::string & polygon, ActionType action) const
   {
-    const size_t offset = cloud.width;
-    sensor_msgs::PointCloud2Modifier modifier(cloud);
-    modifier.resize(offset + points.size());
     if (points.empty()) {
       return;
     }
+    const uint32_t polygon_index = lookup(polygons_, polygon);
+    const size_t offset = cloud.width;
+    sensor_msgs::PointCloud2Modifier modifier(cloud);
+    modifier.resize(offset + points.size());
     sensor_msgs::PointCloud2Iterator<float> xpos(cloud, "x");
     sensor_msgs::PointCloud2Iterator<float> ypos(cloud, "y");
     sensor_msgs::PointCloud2Iterator<float> zpos(cloud, "z");
@@ -84,7 +85,7 @@ public:
       *ypos = coord_y;
       *zpos = coord_z;
       *source_id = lookup(sources_, point.source);
-      *polygon_id = lookup(polygons_, polygon);
+      *polygon_id = polygon_index;
       *action_type = static_cast<uint32_t>(action);
       ++xpos;
       ++ypos;

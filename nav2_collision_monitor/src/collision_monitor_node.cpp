@@ -699,7 +699,7 @@ void CollisionMonitor::publishTriggeringPoints(const Action & action, const rclc
   std_msgs::msg::Header header;
   header.frame_id = base_frame_id_;
   header.stamp = stamp;
-  auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>(triggering_cloud_.create(header));
+  auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>(TriggeringCloud::create(header));
   triggering_cloud_.append(
     *cloud, action.triggering_points, action.polygon_name, action.action_type);
   triggering_points_pub_->publish(std::move(cloud));

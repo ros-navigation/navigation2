@@ -16,13 +16,19 @@ TEST(TriggeringCloud, EmptyAndTaggedPoints)
   std_msgs::msg::Header header;
   header.frame_id = "base_link";
   header.stamp.sec = 42;
-  auto cloud = builder.create(header);
+  auto cloud = TriggeringCloud::create(header);
   EXPECT_EQ(cloud.header, header);
   EXPECT_EQ(cloud.width, 0u);
   EXPECT_EQ(cloud.height, 1u);
   EXPECT_EQ(cloud.point_step, 24u);
+  const auto empty_cloud = cloud;
+  builder.append(cloud, {}, "slow", STOP);
+  EXPECT_EQ(cloud, empty_cloud);
   builder.append(cloud, {{1, 2, 3, "rear"}, {4, 5, 6, "front"}}, "slow", STOP);
   builder.append(cloud, {{1, 2, 3, "rear"}}, "stop", DO_NOTHING);
+  const auto populated_cloud = cloud;
+  builder.append(cloud, {}, "stop", DO_NOTHING);
+  EXPECT_EQ(cloud, populated_cloud);
   ASSERT_EQ(cloud.width, 3u);
   EXPECT_EQ(cloud.row_step, 72u);
   sensor_msgs::PointCloud2ConstIterator<uint32_t> source(cloud, "source_id");
@@ -50,7 +56,7 @@ TEST(TriggeringCloud, DropsNonfiniteAndResetsMapping)
   TriggeringCloud builder;
   builder.configure({"old"}, {"old"});
   builder.configure({"new"}, {"new"});
-  auto cloud = builder.create(std_msgs::msg::Header{});
+  auto cloud = TriggeringCloud::create(std_msgs::msg::Header{});
   builder.append(cloud, {{0, 0, std::numeric_limits<double>::infinity(), "new"},
       {0, 0, 1, "old"}}, "old", STOP);
   ASSERT_EQ(cloud.width, 1u);

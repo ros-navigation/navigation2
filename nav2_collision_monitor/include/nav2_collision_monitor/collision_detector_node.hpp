@@ -138,8 +138,9 @@ protected:
   void publishVisualizations() const;
 
   /**
-  * @brief Publishes points inside each detected polygon with source and polygon fields.
+   * @brief Publishes points inside each detected polygon with source and polygon fields.
    * @param all_triggering_points Map from polygon name to its triggering points.
+   * @param stamp Processing time used for the cloud header
    */
   void publishTriggeringPoints(
     const std::unordered_map<std::string, std::vector<Point>> & all_triggering_points,

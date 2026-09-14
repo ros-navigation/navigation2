@@ -203,8 +203,9 @@ protected:
   void publishVisualizations() const;
 
   /**
-  * @brief Publishes triggering points with source, polygon and action fields.
+   * @brief Publishes triggering points with source, polygon and action fields.
    * @param action Current robot action
+   * @param stamp Processing time used for the cloud header
    */
   void publishTriggeringPoints(const Action & action, const rclcpp::Time & stamp);
 
