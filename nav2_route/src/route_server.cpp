@@ -402,6 +402,13 @@ void RouteServer::exceptionWarning(
     goal->goal.pose.position.x, goal->goal.pose.position.y, goal->goal_id, ex.what());
 }
 
+template bool RouteServer::isRequestValid<RouteServer::ComputeAndTrackRoute>(
+  nav2::SimpleActionServer<RouteServer::ComputeAndTrackRoute>::SharedPtr & action_server);
+
+template void RouteServer::exceptionWarning<RouteServer::ComputeRouteGoal>(
+  const std::shared_ptr<const RouteServer::ComputeRouteGoal> goal,
+  const std::exception & ex);
+
 }  // namespace nav2_route
 
 #include "rclcpp_components/register_node_macro.hpp"
