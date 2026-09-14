@@ -85,41 +85,6 @@ For `stop`, `slowdown`, and `limit` polygons, temporal debounce can be tuned wit
 A value of `1/1` behaves like the historical behavior (single-cycle trigger/release). In practice, values larger than `1` are recommended to reduce sensor noise flicker while keeping response times reasonable.
 
 
-### Triggering Points
-
-Both nodes publish `sensor_msgs/msg/PointCloud2` on `~/triggering_points` when
-subscribed. This replaces the previous `MarkerArray` topic without a compatibility
-publisher. The separate `~/collision_points_marker` debug topic is unchanged.
-
-Each point occupies 24 bytes, with these scalar fields in order:
-
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `x`, `y`, `z` | FLOAT32 | Coordinates in `base_frame_id`, in metres |
-| `source_id` | UINT32 | Zero-based index in the node's `observation_sources` array |
-| `polygon_id` | UINT32 | Zero-based index in the node's `polygons` array |
-| `action_type` | UINT32 | 0: none, 1: stop, 2: slowdown, 3: approach, 4: limit |
-
-IDs are assigned at lifecycle configuration and remain stable until reconfiguration.
-Reordering either parameter array changes its IDs; mappings are local to each node.
-Unknown source or polygon names use `4294967295` (`UINT32_MAX`). Inspect the arrays
-with `ros2 param get /collision_monitor observation_sources` and
-`ros2 param get /collision_monitor polygons` (substitute the detector node name as
-needed). Keep the matching configuration with recordings to interpret the IDs.
-Source IDs identify Nav2 observation sources: an already-merged input cloud remains
-one source, and any incoming `source_id` field is not propagated.
-
-The monitor publishes points for the selected action. The detector publishes points
-for every detected polygon, always with `action_type = 0`; a point in overlapping
-polygons appears once per polygon. Nonfinite coordinates are omitted from the
-output only, without changing collision decisions. The header uses the processing
-timestamp and `base_frame_id`. Empty clouds clear the previous triggering output.
-
-In RViz, use a PointCloud2 display with the Intensity color transformer and
-`source_id` channel (or `polygon_id` / `action_type`), and zero decay time.
-The cloud can use the recorder's existing Cloudini PointCloud2 codec; no extra
-conversion node is needed.
-
 ### Metrics
 
 Designed to be used in wide variety of robots (incl. moving fast) and have a high level of reliability, Collision Monitor node should operate at fast rates.
