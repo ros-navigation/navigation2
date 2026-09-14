@@ -503,33 +503,67 @@ void Optimizer::integrateStateVelocities(
     return;
   }
 
+  // Integrate poses with trapezoidal (second-order) accuracy rather than
+  // first-order Euler. Rollout velocities are acceleration-limited at every
+  // prediction step, so when accel limits are active the velocity changes
+  // significantly over a single model_dt interval; integrating the whole
+  // interval with only the start-of-step velocity then introduces a systematic
+  // rollout error that grows with model_dt. Using the interval-averaged
+  // velocities v_avg = 0.5 * (v[i] + v[i+1]), w_avg = 0.5 * (w[i] + w[i+1]) and
+  // evaluating translation at the midpoint heading
+  // theta_mid = theta[i] + 0.5 * w_avg * dt gives second-order accuracy for only
+  // a few extra vector ops per step, and makes coarser model_dt discretizations
+  // more practical for a fixed horizon. The horizon stores no velocity sample
+  // past its final step, so that last interval reuses its start-of-step
+  // velocity (first-order for that single step).
+  // See https://github.com/ros-navigation/navigation2/issues/6400
+  const float dt = settings_.model_dt;
+  Eigen::ArrayXf vx_avg = Eigen::ArrayXf::Zero(n_size);
+  Eigen::ArrayXf wz_avg = Eigen::ArrayXf::Zero(n_size);
+  if (n_size > 1) {
+    vx_avg.head(n_size - 1) = 0.5f * (vx.head(n_size - 1) + vx.tail(n_size - 1));
+    wz_avg.head(n_size - 1) = 0.5f * (wz.head(n_size - 1) + wz.tail(n_size - 1));
+  }
+  vx_avg(n_size - 1) = vx(n_size - 1);
+  wz_avg(n_size - 1) = wz(n_size - 1);
+
   float last_yaw = initial_yaw;
   for (size_t i = 0; i != n_size; i++) {
-    last_yaw += wz(i) * settings_.model_dt;
+    last_yaw += wz_avg(i) * dt;
     traj_yaws(i) = last_yaw;
   }
 
-  Eigen::ArrayXf yaw_cos = traj_yaws.cos();
-  Eigen::ArrayXf yaw_sin = traj_yaws.sin();
-  utils::shiftColumnsByOnePlace(yaw_cos, 1);
-  utils::shiftColumnsByOnePlace(yaw_sin, 1);
-  yaw_cos(0) = cosf(initial_yaw);
-  yaw_sin(0) = sinf(initial_yaw);
+  // Midpoint heading of each interval: theta[i] + 0.5 * w_avg[i] * dt,
+  // where theta[i] is the heading at the interval start
+  Eigen::ArrayXf yaw_mid(n_size);
+  yaw_mid(0) = initial_yaw;
+  if (n_size > 1) {
+    yaw_mid.tail(n_size - 1) = traj_yaws.head(n_size - 1);
+  }
+  yaw_mid += 0.5f * wz_avg * dt;
 
-  auto dx = (vx * yaw_cos).eval();
-  auto dy = (vx * yaw_sin).eval();
+  Eigen::ArrayXf yaw_cos = yaw_mid.cos();
+  Eigen::ArrayXf yaw_sin = yaw_mid.sin();
+
+  auto dx = (vx_avg * yaw_cos).eval();
+  auto dy = (vx_avg * yaw_sin).eval();
 
   if (isHolonomic()) {
-    auto vy = sequence.col(2);
-    dx = (dx - vy * yaw_sin).eval();
-    dy = (dy + vy * yaw_cos).eval();
+    const auto vy = sequence.col(2);
+    Eigen::ArrayXf vy_avg = Eigen::ArrayXf::Zero(n_size);
+    if (n_size > 1) {
+      vy_avg.head(n_size - 1) = 0.5f * (vy.head(n_size - 1) + vy.tail(n_size - 1));
+    }
+    vy_avg(n_size - 1) = vy(n_size - 1);
+    dx = (dx - vy_avg * yaw_sin).eval();
+    dy = (dy + vy_avg * yaw_cos).eval();
   }
 
   float last_x = state_.pose.pose.position.x;
   float last_y = state_.pose.pose.position.y;
   for (size_t i = 0; i != n_size; i++) {
-    last_x += dx(i) * settings_.model_dt;
-    last_y += dy(i) * settings_.model_dt;
+    last_x += dx(i) * dt;
+    last_y += dy(i) * dt;
     traj_x(i) = last_x;
     traj_y(i) = last_y;
   }
@@ -541,26 +575,62 @@ void Optimizer::integrateStateVelocities(
 {
   auto initial_yaw = static_cast<float>(tf2::getYaw(state.pose.pose.orientation));
   const size_t n_cols = trajectories.yaws.cols();
+  const float dt = settings_.model_dt;
+
+  // Integrate poses with trapezoidal (second-order) accuracy rather than
+  // first-order Euler. Rollout velocities are acceleration-limited at every
+  // prediction step, so when accel limits are active the velocity changes
+  // significantly over a single model_dt interval; integrating the whole
+  // interval with only the start-of-step velocity then introduces a systematic
+  // rollout error that grows with model_dt. Using the interval-averaged
+  // velocities v_avg = 0.5 * (v[i] + v[i+1]), w_avg = 0.5 * (w[i] + w[i+1]) and
+  // evaluating translation at the midpoint heading
+  // theta_mid = theta[i] + 0.5 * w_avg * dt gives second-order accuracy for only
+  // a few extra vector ops per step, and makes coarser model_dt discretizations
+  // more practical for a fixed horizon. The horizon stores no velocity sample
+  // past its final step, so that last interval reuses its start-of-step
+  // velocity (first-order for that single step).
+  // See https://github.com/ros-navigation/navigation2/issues/6400
+  Eigen::ArrayXXf vx_avg(state.vx.rows(), n_cols);
+  Eigen::ArrayXXf wz_avg(state.wz.rows(), n_cols);
+  if (n_cols > 1) {
+    const size_t n_avg = n_cols - 1;
+    vx_avg.leftCols(n_avg) = 0.5f * (state.vx.leftCols(n_avg) + state.vx.rightCols(n_avg));
+    wz_avg.leftCols(n_avg) = 0.5f * (state.wz.leftCols(n_avg) + state.wz.rightCols(n_avg));
+  }
+  vx_avg.col(n_cols - 1) = state.vx.col(n_cols - 1);
+  wz_avg.col(n_cols - 1) = state.wz.col(n_cols - 1);
 
   Eigen::ArrayXf last_yaws = Eigen::ArrayXf::Constant(trajectories.yaws.rows(), initial_yaw);
   for (size_t i = 0; i != n_cols; i++) {
-    last_yaws += state.wz.col(i) * settings_.model_dt;
+    last_yaws += wz_avg.col(i) * dt;
     trajectories.yaws.col(i) = last_yaws;
   }
 
-  Eigen::ArrayXXf yaw_cos = trajectories.yaws.cos();
-  Eigen::ArrayXXf yaw_sin = trajectories.yaws.sin();
-  utils::shiftColumnsByOnePlace(yaw_cos, 1);
-  utils::shiftColumnsByOnePlace(yaw_sin, 1);
-  yaw_cos.col(0) = cosf(initial_yaw);
-  yaw_sin.col(0) = sinf(initial_yaw);
+  // Midpoint heading of each interval: theta[i] + 0.5 * w_avg[i] * dt,
+  // where theta[i] is the heading at the interval start
+  Eigen::ArrayXXf yaw_mid(trajectories.yaws.rows(), n_cols);
+  yaw_mid.col(0).setConstant(initial_yaw);
+  if (n_cols > 1) {
+    yaw_mid.rightCols(n_cols - 1) = trajectories.yaws.leftCols(n_cols - 1);
+  }
+  yaw_mid += 0.5f * wz_avg * dt;
 
-  auto dx = (state.vx * yaw_cos).eval();
-  auto dy = (state.vx * yaw_sin).eval();
+  Eigen::ArrayXXf yaw_cos = yaw_mid.cos();
+  Eigen::ArrayXXf yaw_sin = yaw_mid.sin();
+
+  auto dx = (vx_avg * yaw_cos).eval();
+  auto dy = (vx_avg * yaw_sin).eval();
 
   if (isHolonomic()) {
-    dx -= state.vy * yaw_sin;
-    dy += state.vy * yaw_cos;
+    Eigen::ArrayXXf vy_avg(state.vy.rows(), n_cols);
+    if (n_cols > 1) {
+      const size_t n_avg = n_cols - 1;
+      vy_avg.leftCols(n_avg) = 0.5f * (state.vy.leftCols(n_avg) + state.vy.rightCols(n_avg));
+    }
+    vy_avg.col(n_cols - 1) = state.vy.col(n_cols - 1);
+    dx -= vy_avg * yaw_sin;
+    dy += vy_avg * yaw_cos;
   }
 
   Eigen::ArrayXf last_x = Eigen::ArrayXf::Constant(
@@ -571,8 +641,8 @@ void Optimizer::integrateStateVelocities(
     state.pose.pose.position.y);
 
   for (size_t i = 0; i != n_cols; i++) {
-    last_x += dx.col(i) * settings_.model_dt;
-    last_y += dy.col(i) * settings_.model_dt;
+    last_x += dx.col(i) * dt;
+    last_y += dy.col(i) * dt;
     trajectories.x.col(i) = last_x;
     trajectories.y.col(i) = last_y;
   }

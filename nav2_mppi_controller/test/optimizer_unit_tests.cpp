@@ -745,7 +745,9 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   EXPECT_TRUE(traj.y.isApproxToConstant(0.0f));
   EXPECT_TRUE(traj.yaws.isApproxToConstant(0.0f));
   for (unsigned int i = 0; i != traj.x.cols(); i++) {
-    EXPECT_NEAR(traj.x(1, i), i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
+    // Trapezoidal integration: the first interval averages the 0 -> 0.1 m/s
+    // ramp, so x leads the first-order rollout by half a step (0.005 m)
+    EXPECT_NEAR(traj.x(1, i), 0.005f + i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-6);
   }
 
   // Give it a bit of a more complex trajectory to crunch
@@ -755,8 +757,9 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
 
   EXPECT_TRUE(traj.yaws.isApproxToConstant(0.0f));
   for (unsigned int i = 0; i != traj.x.cols(); i++) {
-    EXPECT_NEAR(traj.x(1, i), i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
-    EXPECT_NEAR(traj.y(1, i), i * 0.2 /*vel*/ * 0.1 /*dt*/, 1e-3);
+    // Trapezoidal integration: the first interval averages the 0 -> v ramps
+    EXPECT_NEAR(traj.x(1, i), 0.005f + i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-6);
+    EXPECT_NEAR(traj.y(1, i), 0.01f + i * 0.2 /*vel*/ * 0.1 /*dt*/, 1e-6);
   }
 
   // Let's add some angular motion to the mix
@@ -767,12 +770,21 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
 
   float x = 0;
   float y = 0;
-  for (unsigned int i = 1; i != traj.x.cols(); i++) {
-    x += (0.1 /*vx*/ * cosf(0.2 /*wz*/ * 0.1 /*model_dt*/ * (i - 1))) * 0.1 /*model_dt*/;
-    y += (0.1 /*vx*/ * sinf(0.2 /*wz*/ * 0.1 /*model_dt*/ * (i - 1))) * 0.1 /*model_dt*/;
+  float yaw = 0;
+  for (unsigned int i = 0; i != traj.x.cols(); i++) {
+    // Trapezoidal integration with midpoint heading: the first interval
+    // averages the 0 -> v ramps, the last interval reuses its start velocity
+    // (no velocity sample exists past the horizon)
+    const float vx_avg = (i == 0) ? 0.05f : 0.1f;
+    const float wz_avg = (i == 0) ? 0.1f : 0.2f;
+    const float yaw_mid = yaw + 0.5f * wz_avg * 0.1f /*model_dt*/;
+    x += vx_avg * cosf(yaw_mid) * 0.1f /*model_dt*/;
+    y += vx_avg * sinf(yaw_mid) * 0.1f /*model_dt*/;
+    yaw += wz_avg * 0.1f /*model_dt*/;
 
     EXPECT_NEAR(traj.x(1, i), x, 1e-6);
     EXPECT_NEAR(traj.y(1, i), y, 1e-6);
+    EXPECT_NEAR(traj.yaws(1, i), yaw, 1e-6);
   }
 }
 
