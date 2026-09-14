@@ -40,6 +40,7 @@
 #define NAV2_COSTMAP_2D__COSTMAP_2D_PUBLISHER_HPP_
 
 #include <algorithm>
+#include <atomic>
 #include <string>
 #include <memory>
 
@@ -138,9 +139,6 @@ private:
   /** @brief Prepare CostmapUpdate msg for publication. */
   std::unique_ptr<nav2_msgs::msg::CostmapUpdate> createCostmapUpdateMsg();
 
-  /** @brief Publish the latest full costmap to the new subscriber. */
-  // void onNewSubscription(const ros::SingleSubscriberPublisher& pub);
-
   void updateGridParams();
 
   /** @brief GetCostmap callback service */
@@ -163,6 +161,7 @@ private:
   double saved_origin_y_{0.0};
   bool always_send_full_costmap_{false};
   bool costmap_published_once_{false};
+  std::atomic<bool> republish_costmap_{false};
   double map_vis_z_{0.0};
 
   // Publisher for translated costmap values as msg::OccupancyGrid used in visualization
