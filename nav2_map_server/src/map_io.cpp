@@ -256,15 +256,10 @@ void loadMapFromFile(
   Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(height, width);
 
   if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale) {
-    // A grayscale pixel only has 256 possible values, so the whole classification
-    // collapses into a 256-entry lookup table. This avoids materializing any
-    // width*height intermediate ("normalized" float matrix, occupied/free masks,
-    // and in Scale mode the occ/scaled_float/scaled_int buffers) and reduces the
-    // per-pixel work to a single pass over the grayscale buffer.
-    //
-    // The arithmetic below is deliberately kept in float, in the same order and
-    // with the same operator precedence as the per-pixel Eigen expressions it
-    // replaces, so that classification of boundary pixels is bit-for-bit identical.
+    // A grayscale pixel has only 256 possible values, so classification collapses
+    // into a lookup table, avoiding every width*height intermediate buffer. The
+    // float arithmetic is kept in its original order so that boundary pixels
+    // classify bit-for-bit identically.
     const float free_thresh = static_cast<float>(load_parameters.free_thresh);
     const float occupied_thresh = static_cast<float>(load_parameters.occupied_thresh);
     const float scale_span =
@@ -272,15 +267,13 @@ void loadMapFromFile(
 
     std::array<int8_t, 256> lut;
     for (int g = 0; g < 256; ++g) {
-      // occ = negate ? (gray/255) : (1 - gray/255)
       float occ = static_cast<float>(g) / 255.0f;
       if (!load_parameters.negate) {
         occ = 1.0f - occ;
       }
 
       int8_t value = nav2_util::OCC_GRID_UNKNOWN;
-      // Free is applied after occupied so that it wins when the thresholds overlap,
-      // matching the order the two masks were previously applied in.
+      // Free after occupied so it wins when the thresholds overlap, as in the original.
       if (occ >= occupied_thresh) {
         value = nav2_util::OCC_GRID_OCCUPIED;
       }
@@ -328,8 +321,7 @@ void loadMapFromFile(
   }
 
   // Flip image vertically (as ROS expects origin at bottom-left), writing directly
-  // into msg.data's backing buffer instead of allocating a full extra temporary
-  // ("flipped") just to memcpy from.
+  // into msg.data instead of through a temporary.
   Eigen::Map<Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
   output_map(msg.data.data(), height, width);
   output_map = result.colwise().reverse();
