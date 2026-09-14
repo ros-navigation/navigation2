@@ -404,7 +404,6 @@ void RouteServer::exceptionWarning(
 
 template bool RouteServer::isRequestValid<RouteServer::ComputeAndTrackRoute>(
   nav2::SimpleActionServer<RouteServer::ComputeAndTrackRoute>::SharedPtr & action_server);
-
 template void RouteServer::exceptionWarning<RouteServer::ComputeRouteGoal>(
   const std::shared_ptr<const RouteServer::ComputeRouteGoal> goal,
   const std::exception & ex);
