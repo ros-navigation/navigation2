@@ -186,6 +186,63 @@ TEST(AxisGoalChecker, dynamic_parameters)
   EXPECT_EQ(node->get_parameter("test.direction_estimation_distance").as_double(), 0.3);
 }
 
+TEST(AxisGoalChecker, radial_goal_tolerance)
+{
+  auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
+  node->declare_parameter("test.along_path_tolerance", 0.05);
+  node->declare_parameter("test.cross_track_tolerance", 0.8);
+  AxisGoalChecker checker;
+  checker.initialize(node, "test", nullptr);
+
+  auto short_path = createPath({{-0.06, 0.0}, {0.0, 0.0}});
+  auto goal_pose = short_path.poses.back().pose;
+  auto query_pose = goal_pose;
+  query_pose.position.x = -0.06;
+  query_pose.position.y = 0.075;
+  geometry_msgs::msg::Twist velocity;
+
+  EXPECT_DOUBLE_EQ(node->get_parameter("test.radial_goal_tolerance").as_double(), 0.05);
+  EXPECT_FALSE(checker.isGoalReached(query_pose, goal_pose, velocity, short_path));
+  ASSERT_TRUE(node->set_parameter(
+      rclcpp::Parameter("test.radial_goal_tolerance", 0.1)).successful);
+  EXPECT_TRUE(checker.isGoalReached(query_pose, goal_pose, velocity, short_path));
+
+  query_pose.position.x = 0.0;
+  query_pose.position.y = 0.1;
+  EXPECT_FALSE(checker.isGoalReached(query_pose, goal_pose, velocity, short_path));
+  EXPECT_FALSE(node->set_parameter(
+      rclcpp::Parameter("test.radial_goal_tolerance", -0.1)).successful);
+  EXPECT_DOUBLE_EQ(node->get_parameter("test.radial_goal_tolerance").as_double(), 0.1);
+
+  auto longer_path = createPath({{-0.5, 0.0}, {0.0, 0.0}});
+  query_pose.position.x = -0.06;
+  query_pose.position.y = 0.075;
+  EXPECT_FALSE(checker.isGoalReached(query_pose, goal_pose, velocity, longer_path));
+  query_pose.position.x = 0.0;
+  query_pose.position.y = 0.2;
+  EXPECT_TRUE(checker.isGoalReached(query_pose, goal_pose, velocity, longer_path));
+
+  checker.reset();
+  query_pose.position.y = 0.075;
+  EXPECT_TRUE(checker.isGoalReached(query_pose, goal_pose, velocity, short_path));
+}
+
+TEST(AxisGoalChecker, radial_goal_tolerance_initial_parameter)
+{
+  auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
+  node->declare_parameter("test.along_path_tolerance", 0.05);
+  node->declare_parameter("test.radial_goal_tolerance", 0.1);
+  AxisGoalChecker checker;
+  checker.initialize(node, "test", nullptr);
+
+  auto path = createPath({{0.0, 0.0}});
+  auto goal_pose = path.poses.back().pose;
+  auto query_pose = goal_pose;
+  query_pose.position.y = 0.075;
+  geometry_msgs::msg::Twist velocity;
+  EXPECT_TRUE(checker.isGoalReached(query_pose, goal_pose, velocity, path));
+}
+
 TEST(AxisGoalChecker, single_point_path)
 {
   auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
