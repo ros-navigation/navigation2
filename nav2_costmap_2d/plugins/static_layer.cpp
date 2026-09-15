@@ -523,15 +523,10 @@ StaticLayer::updateCosts(
         p = tf2_transform * p;
         // Set master_grid with cell from map
         if (worldToMap(p.x(), p.y(), mx, my)) {
-          const unsigned char cost = getCost(mx, my);
           if (!use_maximum_) {
-            master_grid.setCost(i, j, cost);
-          } else if (cost != NO_INFORMATION) {
-            // Same rule as updateWithMax: unknown is transparent, known beats unknown
-            const unsigned char old_cost = master_grid.getCost(i, j);
-            if (old_cost == NO_INFORMATION || cost > old_cost) {
-              master_grid.setCost(i, j, cost);
-            }
+            master_grid.setCost(i, j, getCost(mx, my));
+          } else {
+            master_grid.setCost(i, j, std::max(getCost(mx, my), master_grid.getCost(i, j)));
           }
         }
       }
