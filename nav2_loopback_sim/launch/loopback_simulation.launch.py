@@ -19,6 +19,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import LifecycleNode
+from launch_ros.descriptions import ParameterFile
+from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -45,6 +47,16 @@ def generate_launch_description() -> LaunchDescription:
 
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
+    configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=params_file,
+            root_key=namespace,
+            param_rewrites={},
+            convert_types=True,
+        ),
+        allow_substs=True,
+    )
+
     loopback_sim_cmd = LifecycleNode(
         package='nav2_loopback_sim',
         executable='loopback_simulator',
@@ -52,8 +64,10 @@ def generate_launch_description() -> LaunchDescription:
         namespace=namespace,
         output='screen',
         autostart=True,
-        parameters=[params_file, {'scan_frame_id': scan_frame_id,
-                                  'use_sim_time': True}],
+        parameters=[
+            configured_params,
+            {'scan_frame_id': scan_frame_id, 'use_sim_time': True},
+        ],
         remappings=remappings,
     )
 

@@ -181,7 +181,6 @@ private:
   QPushButton * start_nav_to_pose_button_{nullptr};
 
   QLabel * navigation_status_indicator_{nullptr};
-  QLabel * localization_status_indicator_{nullptr};
   QLabel * navigation_goal_status_indicator_{nullptr};
   QLabel * navigation_feedback_indicator_{nullptr};
   QLabel * waypoint_status_indicator_{nullptr};
@@ -284,18 +283,14 @@ public:
 
     if (status_nav == SystemStatus::ACTIVE) {
       emit navigationActive();
-      emit localizationActive();
     } else {
       emit navigationInactive();
-      emit localizationInactive();
     }
   }
 
 signals:
   void navigationActive();
   void navigationInactive();
-  void localizationActive();
-  void localizationInactive();
 
 private:
   std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_nav_;
