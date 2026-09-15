@@ -129,6 +129,12 @@ public:
    */
   void publishCostmap();
 
+  /** @brief Whether a new subscriber has requested a full costmap publication. */
+  bool isRepublishRequested() const
+  {
+    return republish_costmap_.load();
+  }
+
 private:
   /** @brief Prepare grid_ message for publication. */
   void prepareGrid();

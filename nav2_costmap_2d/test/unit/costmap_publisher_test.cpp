@@ -113,13 +113,20 @@ protected:
 TEST_P(CostmapPublisherTest, LateSubscriberReceivesChangesWithoutUpdateSubscribers)
 {
   changeCost(254);
+  EXPECT_FALSE(publisher_->isRepublishRequested());
   subscribe();
   ASSERT_TRUE(waitFor([this]() {return received_ > 0;}));
+  ASSERT_TRUE(waitFor([this]() {return publisher_->isRepublishRequested();}));
+  // Reading the request must not consume it before the caller publishes.
+  EXPECT_TRUE(publisher_->isRepublishRequested());
   ASSERT_TRUE(waitFor([this]() {
-      publisher_->publishCostmap();
+      if (publisher_->isRepublishRequested()) {
+        publisher_->publishCostmap();
+      }
       return value_ == (GetParam() ? 254 : 100);
     }));
 
+  EXPECT_FALSE(publisher_->isRepublishRequested());
   const auto count = received_;
   publisher_->publishCostmap();
   spinForDiscovery();
@@ -138,7 +145,9 @@ TEST_P(CostmapPublisherTest, ReconnectingSubscriberReceivesCurrentSnapshot)
   changeCost(254);
   subscribe();
   ASSERT_TRUE(waitFor([this]() {
-      publisher_->publishCostmap();
+      if (publisher_->isRepublishRequested()) {
+        publisher_->publishCostmap();
+      }
       return value_ == (GetParam() ? 254 : 100);
     }));
 }
