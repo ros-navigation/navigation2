@@ -19,6 +19,7 @@
 #include <array>
 #include <cmath>
 #include <iostream>
+#include <limits>
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -82,10 +83,10 @@ bool validateMsg(const std::array<double, N> & msg)
   return true;
 }
 
-const int NSEC_PER_SEC = 1e9;  // 1 second = 1e9 nanosecond
+constexpr int NANOSECONDS_PER_SECOND = 1e9;
 bool validateMsg(const builtin_interfaces::msg::Time & msg)
 {
-  if (msg.nanosec >= NSEC_PER_SEC) {
+  if (msg.nanosec >= NANOSECONDS_PER_SECOND) {
     return false;                                      // invalid nanosec-stamp
   }
   return true;
@@ -186,11 +187,13 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
     return false;
   }
 
-  uint32_t num_cells;
-  if (__builtin_mul_overflow(msg.info.width, msg.info.height, &num_cells)) {
+  if (msg.info.width != 0 &&
+    msg.info.height > std::numeric_limits<uint32_t>::max() / msg.info.width)
+  {
     // avoid overflow msg.info.width * msg.info.height in nav2_amcl::convertMap()
     return false;
   }
+  const uint32_t num_cells = msg.info.width * msg.info.height;
 
   // check logic
   if (msg.data.size() != static_cast<size_t>(num_cells)) {
@@ -221,8 +224,9 @@ bool validateMsg(const map_msgs::msg::OccupancyGridUpdate & msg)
     return false;
   }
 
-  uint32_t num_cells;
-  if (__builtin_mul_overflow(msg.width, msg.height, &num_cells)) {
+  if (msg.width != 0 &&
+    msg.height > std::numeric_limits<uint32_t>::max() / msg.width)
+  {
     // avoid overflow msg.width * msg.height in StaticLayer::incomingUpdate()
     return false;
   }
