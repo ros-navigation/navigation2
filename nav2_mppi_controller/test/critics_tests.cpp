@@ -30,6 +30,7 @@
 #include "nav2_mppi_controller/critics/path_angle_critic.hpp"
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
+#include "nav2_mppi_controller/critics/translational_velocity_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 #include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
 #include "utils_test.cpp"  // NOLINT
@@ -200,6 +201,115 @@ TEST(CriticTests, ConstraintsCritic)
   EXPECT_GT(costs.sum(), 0);
   // 3.6^2 = 12.96
   EXPECT_NEAR(costs(999), 12.96, 0.01);
+  costs.setZero();
+}
+
+TEST(CriticTests, TranslationalVelocityCritic)
+{
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.vx = Eigen::ArrayXXf::Zero(1000, 30);
+  state.vy = Eigen::ArrayXXf::Zero(1000, 30);
+  state.wz = Eigen::ArrayXXf::Zero(1000, 30);
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  // Make sure initializes correctly and that defaults are reasonable
+  TranslationalVelocityCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+
+  // Non-holonomic models have no vy to combine, so they are left to the constraint critic
+  state.vx.setConstant(0.6f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0, 1e-6);
+  costs.setZero();
+
+  // Semi-axes are vx_max = 0.5 forward, vx_min = -0.35 reverse and vy_max = 0.3 lateral
+  node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.3));
+  critic = TranslationalVelocityCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  data.motion_model = std::make_shared<OmniMotionModel>();
+
+  // Inside the ellipse, no cost. rsqrt is approximate, so a feasible sample is charged a rounding
+  // error of about 1e-8 of its speed rather than a hard zero.
+  state.vx.setConstant(0.4f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_LT(costs.maxCoeff(), 1e-5);
+  costs.setZero();
+
+  // Exactly on the ellipse, no cost
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.3f);
+  critic.score(data);
+  EXPECT_LT(costs.maxCoeff(), 1e-5);
+  costs.setZero();
+
+  // Corner of the per-axis box, which the ellipse excludes. Each axis is at its own limit, so the
+  // constraint critic would score this as feasible.
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.vx.row(999).setConstant(0.5f);
+  state.vy.row(999).setConstant(0.3f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // speed sqrt(0.5^2 + 0.3^2) = 0.5831 is scaled by (1 - 1/sqrt(2)), leaving 0.1708 excess
+  // 4.0 weight * 0.1 model_dt * 0.1708 excess * 30 timesteps = 2.049
+  EXPECT_NEAR(costs(999), 2.049, 0.01);
+  costs.setZero();
+
+  // The reverse semi-axis is shorter than the forward one
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.vx.row(1).setConstant(-0.7f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 4.0 weight * 0.1 model_dt * (0.7 - 0.35) excess * 30 timesteps = 4.2
+  EXPECT_NEAR(costs(1), 4.2, 0.01);
+  costs.setZero();
+
+  // Test with different cost power
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
+  critic = TranslationalVelocityCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 4.2^2 = 17.64
+  EXPECT_NEAR(costs(1), 17.64, 0.01);
+  costs.setZero();
+
+  // A zero semi-axis collapses the ellipse but must stay finite
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
+  node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.0));
+  critic = TranslationalVelocityCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  state.vx.setConstant(0.4f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_LT(costs.maxCoeff(), 1e-5);
+  costs.setZero();
+
+  state.vy.row(999).setConstant(0.1f);
+  critic.score(data);
+  EXPECT_TRUE(costs.allFinite());
+  EXPECT_GT(costs(999), 0);
   costs.setZero();
 }
 
