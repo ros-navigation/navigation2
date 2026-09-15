@@ -138,7 +138,7 @@ protected:
    * @brief Whether this layer's grid is the master's grid (non-rolling, resize_master true).
    * Otherwise the map keeps its own size, origin and resolution and is sampled into the master.
    */
-  bool sharesMasterGeometry() const;
+  bool usesMasterCostmapSize() const;
 
   /**
    * @brief  Callback to update the costmap's map from the map_server

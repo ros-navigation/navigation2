@@ -196,7 +196,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 
   // resize costmap if size, resolution or origin do not match
   Costmap2D * master = layered_costmap_->getCostmap();
-  if (sharesMasterGeometry() && (master->getSizeInCellsX() != size_x ||
+  if (usesMasterCostmapSize() && (master->getSizeInCellsX() != size_x ||
     master->getSizeInCellsY() != size_y ||
     !isEqual(master->getResolution(), new_map.info.resolution, EPSILON) ||
     !isEqual(master->getOriginX(), new_map.info.origin.position.x, EPSILON) ||
@@ -271,7 +271,7 @@ StaticLayer::matchSize()
 {
   // If we are using rolling costmap or an overlay, the static map size is
   //   unrelated to the size of the layered costmap
-  if (sharesMasterGeometry()) {
+  if (usesMasterCostmapSize()) {
     Costmap2D * master = layered_costmap_->getCostmap();
     resizeMap(
       master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
@@ -280,7 +280,7 @@ StaticLayer::matchSize()
 }
 
 bool
-StaticLayer::sharesMasterGeometry() const
+StaticLayer::usesMasterCostmapSize() const
 {
   return !layered_costmap_->isRolling() && resize_master_;
 }
@@ -488,7 +488,7 @@ StaticLayer::updateCosts(
     setMapRegionOccupiedByPolygon(map_region_to_restore, nav2_costmap_2d::FREE_SPACE);
   }
 
-  if (sharesMasterGeometry()) {
+  if (usesMasterCostmapSize()) {
     // if not rolling, the layered costmap (master_grid) has same coordinates as this layer
     if (!use_maximum_) {
       updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
