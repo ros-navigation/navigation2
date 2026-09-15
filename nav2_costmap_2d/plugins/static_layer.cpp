@@ -456,10 +456,34 @@ StaticLayer::updateCosts(
     return;
   }
 
+  // global_frame_ -> map_frame_; only needed for rolling costmaps, where the frames differ
+  tf2::Transform tf2_transform = tf2::Transform::getIdentity();
+  if (layered_costmap_->isRolling()) {
+    geometry_msgs::msg::TransformStamped transform;
+    try {
+      transform = tf_->lookupTransform(
+        map_frame_, global_frame_, tf2::TimePointZero,
+        transform_tolerance_);
+    } catch (tf2::TransformException & ex) {
+      RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
+      return;
+    }
+    tf2::fromMsg(transform.transform, tf2_transform);
+  }
+
   std::vector<MapLocation> map_region_to_restore;
   if (footprint_clearing_enabled_) {
+    // The footprint is in global_frame_ but is rasterized into this layer's map_frame_ grid
+    std::vector<geometry_msgs::msg::Point> footprint_in_map_frame = transformed_footprint_;
+    if (layered_costmap_->isRolling()) {
+      for (auto & point : footprint_in_map_frame) {
+        const tf2::Vector3 p = tf2_transform * tf2::Vector3(point.x, point.y, 0);
+        point.x = p.x();
+        point.y = p.y();
+      }
+    }
     map_region_to_restore.reserve(100);
-    getMapRegionOccupiedByPolygon(transformed_footprint_, map_region_to_restore);
+    getMapRegionOccupiedByPolygon(footprint_in_map_frame, map_region_to_restore);
     setMapRegionOccupiedByPolygon(map_region_to_restore, nav2_costmap_2d::FREE_SPACE);
   }
 
@@ -474,19 +498,6 @@ StaticLayer::updateCosts(
     // If rolling window, the master_grid is unlikely to have same coordinates as this layer
     unsigned int mx, my;
     double wx, wy;
-    // Might even be in a different frame
-    geometry_msgs::msg::TransformStamped transform;
-    try {
-      transform = tf_->lookupTransform(
-        map_frame_, global_frame_, tf2::TimePointZero,
-        transform_tolerance_);
-    } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
-      return;
-    }
-    // Copy map data given proper transformations
-    tf2::Transform tf2_transform;
-    tf2::fromMsg(transform.transform, tf2_transform);
 
     for (int i = min_i; i < max_i; ++i) {
       for (int j = min_j; j < max_j; ++j) {
