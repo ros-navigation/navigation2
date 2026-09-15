@@ -190,6 +190,32 @@ TEST_F(StaticLayerResizeMasterTest, TwoLayersShareOneMaster)
   EXPECT_EQ(master->getSizeInCellsX(), 20u);
 }
 
+TEST_F(StaticLayerResizeMasterTest, MasterResizeRepaintsTheLayer)
+{
+  auto layer = addLayer("annotations", false);
+  layer->incomingMap(makeMap());
+  layers_->updateMap(10.0, 10.0, 0.0);
+  ASSERT_EQ(layers_->getCostmap()->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // e.g. dynamic width/height parameters, or another layer with resize_master true
+  layers_->resizeMap(30, 30, 1.0, 0.0, 0.0);
+  layers_->updateMap(10.0, 10.0, 0.0);
+  auto * master = layers_->getCostmap();
+  EXPECT_EQ(master->getSizeInCellsX(), 30u);
+  EXPECT_EQ(master->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+}
+
+TEST_F(StaticLayerResizeMasterTest, MapInAnotherFrameIsRejected)
+{
+  auto layer = addLayer("annotations", false);
+  auto map = makeMap();
+  map->header.frame_id = "other";
+  layer->incomingMap(map);
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_EQ(layers_->getCostmap()->getCost(5, 5), nav2_costmap_2d::NO_INFORMATION);
+  EXPECT_FALSE(layer->isCurrent());
+}
+
 TEST_F(StaticLayerResizeMasterTest, DefaultStillResizesTheMaster)
 {
   auto base = addLayer("static", true);

@@ -282,6 +282,9 @@ StaticLayer::matchSize()
     resizeMap(
       master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
       master->getOriginX(), master->getOriginY());
+  } else {
+    // The master was resized (and cleared) by someone else: repaint our extent into it
+    has_updated_data_ = true;
   }
 }
 
@@ -316,6 +319,17 @@ StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & ne
 {
   if (!nav2::validateMsg(*new_map)) {
     RCLCPP_ERROR(logger_, "Received map message is malformed. Rejecting.");
+    return;
+  }
+  if (!layered_costmap_->isRolling() && !resize_master_ &&
+    new_map->header.frame_id != global_frame_)
+  {
+    // Non-rolling bounds are reported in the map frame, so it must be the costmap frame
+    RCLCPP_ERROR_THROTTLE(
+      logger_, *clock_, 10000,
+      "StaticLayer: Map in frame %s ignored: with resize_master false on a non-rolling costmap "
+      "the map must be in the costmap global frame (%s)",
+      new_map->header.frame_id.c_str(), global_frame_.c_str());
     return;
   }
   if (!map_received_) {
