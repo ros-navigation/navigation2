@@ -17,7 +17,7 @@
 #include <memory>
 #include <string>
 
-#include "opennav_docking/graceful_controller.hpp"
+#include "opennav_docking/controller_plugins/graceful_controller.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -27,7 +27,7 @@ using rcl_interfaces::msg::ParameterType;
 namespace opennav_docking
 {
 
-void GracefulController::configureController(const nav2::LifecycleNode::SharedPtr & node)
+void GracefulController::onConfigure(const nav2::LifecycleNode::SharedPtr & node)
 {
   k_phi_ = node->declare_or_get_parameter(name_ + ".k_phi", 3.0);
   k_delta_ = node->declare_or_get_parameter(name_ + ".k_delta", 2.0);

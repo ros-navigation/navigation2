@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "yaml-cpp/yaml.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -29,6 +31,19 @@
 
 namespace utils
 {
+
+/**
+ * @brief Wrap a single target pose as a one-pose path for a controller.
+ * @param target Target pose; its header becomes the path's header
+ * @return A path whose only pose is the target
+ */
+inline nav_msgs::msg::Path toPath(const geometry_msgs::msg::PoseStamped & target)
+{
+  nav_msgs::msg::Path path;
+  path.header = target.header;
+  path.poses.push_back(target);
+  return path;
+}
 
 using rclcpp::ParameterType::PARAMETER_STRING;
 using rclcpp::ParameterType::PARAMETER_STRING_ARRAY;
