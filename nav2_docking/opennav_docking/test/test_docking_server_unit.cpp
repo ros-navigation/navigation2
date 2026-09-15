@@ -71,7 +71,7 @@ public:
   : DockingServerShim() {}
 
   const ControllerMap & getControllers() {return controllers_;}
-  std::string getCurrentController() {return current_controller_;}
+  std::string getCurrentController() {return controller_ ? controller_->getName() : "";}
 };
 
 TEST(DockingServerTests, ObjectLifecycle)
@@ -567,7 +567,7 @@ TEST(DockingServerTests, ControllerDefaultInstance)
   // With no `controllers` list, a single instance named `controller` is synthesized so that
   // the `controller.*` namespace existing configuration files use keeps applying
   EXPECT_EQ(node->getControllers().size(), 1u);
-  EXPECT_EQ(node->getCurrentController(), "controller");
+  EXPECT_TRUE(node->getCurrentController().empty());
   EXPECT_EQ(
     node->get_parameter("controller.plugin").as_string(),
     "opennav_docking::GracefulController");
@@ -625,6 +625,31 @@ TEST(DockingServerTests, ControllerDuplicateNameFailsConfigure)
   node->declare_parameter("c1.plugin", "opennav_docking::GracefulController");
 
   EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
+  EXPECT_TRUE(node->getControllers().empty());
+  node->shutdown();
+}
+
+TEST(DockingServerTests, controllerEmptyListFails)
+{
+  auto node = std::make_shared<DockingServerControllerShim>();
+  declareTestDock(node);
+  node->declare_parameter("controllers", std::vector<std::string>{});
+
+  EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
+  EXPECT_TRUE(node->getControllers().empty());
+  node->shutdown();
+}
+
+TEST(DockingServerTests, controllerUnknownPluginTypeFails)
+{
+  auto node = std::make_shared<DockingServerControllerShim>();
+  declareTestDock(node);
+  node->declare_parameter("controllers", std::vector<std::string>{"c1"});
+  // Declare unknown controller plugin
+  node->declare_parameter("c1.plugin", "opennav_docking::NoSuchController");
+
+  EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
+  EXPECT_TRUE(node->getControllers().empty());
   node->shutdown();
 }
 

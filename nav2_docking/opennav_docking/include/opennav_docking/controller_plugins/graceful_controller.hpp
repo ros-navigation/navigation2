@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef OPENNAV_DOCKING__GRACEFUL_CONTROLLER_HPP_
-#define OPENNAV_DOCKING__GRACEFUL_CONTROLLER_HPP_
+#ifndef OPENNAV_DOCKING__CONTROLLER_PLUGINS__GRACEFUL_CONTROLLER_HPP_
+#define OPENNAV_DOCKING__CONTROLLER_PLUGINS__GRACEFUL_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -40,12 +40,11 @@ public:
    */
   void cleanup() override;
 
-protected:
   /**
    * @brief Declare the smooth control law parameters and construct the control law.
    * @param node Lifecycle node
    */
-  void configureController(const nav2::LifecycleNode::SharedPtr & node) override;
+  void onConfigure(const nav2::LifecycleNode::SharedPtr & node) override;
 
   /**
    * @brief Compute a velocity command using the smooth control law.
@@ -76,6 +75,7 @@ protected:
    */
   void updateParameter(const std::string & name, const rclcpp::Parameter & parameter) override;
 
+protected:
   // Smooth control law
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
   double k_phi_, k_delta_, beta_, lambda_;
@@ -84,4 +84,4 @@ protected:
 
 }  // namespace opennav_docking
 
-#endif  // OPENNAV_DOCKING__GRACEFUL_CONTROLLER_HPP_
+#endif  // OPENNAV_DOCKING__CONTROLLER_PLUGINS__GRACEFUL_CONTROLLER_HPP_

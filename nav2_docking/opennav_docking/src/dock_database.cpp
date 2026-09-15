@@ -57,7 +57,7 @@ bool DockDatabase::initialize(
     return false;
   }
 
-  if (!validateControllerNames(dock_instances_)) {
+  if (!validateControllersExist(dock_instances_)) {
     return false;
   }
 
@@ -91,7 +91,7 @@ void DockDatabase::deactivate()
   }
 }
 
-bool DockDatabase::validateControllerNames(const DockMap & docks) const
+bool DockDatabase::validateControllersExist(const DockMap & docks) const
 {
   if (valid_controller_ids_.empty()) {
     // nothing to validate.
@@ -101,7 +101,7 @@ bool DockDatabase::validateControllerNames(const DockMap & docks) const
   auto node = node_.lock();
   bool valid = true;
 
-  auto isLoaded = [this](const std::string & name) {
+  auto isControllerLoaded = [this](const std::string & name) {
       return std::find(valid_controller_ids_.begin(), valid_controller_ids_.end(), name) !=
              valid_controller_ids_.end();
     };
@@ -117,7 +117,7 @@ bool DockDatabase::validateControllerNames(const DockMap & docks) const
           entry.first.c_str(), valid_controller_ids_.size(), entry.first.c_str());
         valid = false;
       }
-    } else if (!isLoaded(name)) {
+    } else if (!isControllerLoaded(name)) {
       RCLCPP_ERROR(
         node->get_logger(),
         "Dock plugin '%s' names controller '%s', which is not loaded.",
@@ -128,7 +128,7 @@ bool DockDatabase::validateControllerNames(const DockMap & docks) const
 
   for (const auto & entry : docks) {
     const std::string & name = entry.second.controller_name;
-    if (!name.empty() && !isLoaded(name)) {
+    if (!name.empty() && !isControllerLoaded(name)) {
       RCLCPP_ERROR(
         node->get_logger(),
         "Dock '%s' names controller '%s', which is not loaded.",
@@ -154,7 +154,7 @@ void DockDatabase::reloadDbCb(
   auto node = node_.lock();
   DockMap dock_instances;
   if (utils::parseDockFile(request->filepath, node, dock_instances) &&
-    validateControllerNames(dock_instances))
+    validateControllersExist(dock_instances))
   {
     dock_instances_ = dock_instances;
     response->success = true;

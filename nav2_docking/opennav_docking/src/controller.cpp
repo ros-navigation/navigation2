@@ -55,18 +55,18 @@ bool Controller::computeVelocityCommand(
   const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
   bool backward)
 {
-  nav_msgs::msg::Path trajectory;
-  trajectory.header.frame_id = base_frame_;
+  nav_msgs::msg::Path path;
+  path.header.frame_id = base_frame_;
 
   geometry_msgs::msg::PoseStamped target;
   target.header.frame_id = base_frame_;
   target.pose = pose;
-  trajectory.poses.push_back(target);
+  path.poses.push_back(target);
 
-  TrajectoryOptions options;
+  DockingOptions options;
   options.reverse = backward;
-  options.approaching = is_docking;
-  setTrajectory(trajectory, options);
+  options.undocking = !is_docking;
+  setPath(path, options);
 
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = base_frame_;

@@ -16,7 +16,7 @@
 #include <cmath>
 #include <string>
 
-#include "opennav_docking/pid_controller.hpp"
+#include "opennav_docking/controller_plugins/pid_controller.hpp"
 
 #include "angles/angles.h"
 
@@ -28,7 +28,7 @@ using rcl_interfaces::msg::ParameterType;
 namespace opennav_docking
 {
 
-void PIDController::configureController(const nav2::LifecycleNode::SharedPtr & node)
+void PIDController::onConfigure(const nav2::LifecycleNode::SharedPtr & node)
 {
   x_.kp = node->declare_or_get_parameter(name_ + ".kp_x", 1.0);
   x_.ki = node->declare_or_get_parameter(name_ + ".ki_x", 0.0);
@@ -190,3 +190,6 @@ void PIDController::updateParameter(
 }
 
 }  // namespace opennav_docking
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(opennav_docking::PIDController, opennav_docking::ControllerBase)

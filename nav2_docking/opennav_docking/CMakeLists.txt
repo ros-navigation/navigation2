@@ -62,8 +62,7 @@ target_link_libraries(controller_base PRIVATE
 # so it is kept to keep changes limited
 add_library(controller SHARED
   src/controller.cpp
-  src/graceful_controller.cpp
-  src/pid_controller.cpp
+  src/controller_plugins/graceful_controller.cpp
 )
 target_include_directories(controller
   PUBLIC
@@ -91,7 +90,7 @@ target_link_libraries(controller PRIVATE
 )
 
 add_library(graceful_controller_plugin SHARED
-  src/graceful_controller_plugin.cpp
+  src/controller_plugins/graceful_controller_plugin.cpp
 )
 target_include_directories(graceful_controller_plugin
   PUBLIC
@@ -107,7 +106,7 @@ target_link_libraries(graceful_controller_plugin PRIVATE
 )
 
 add_library(pid_controller_plugin SHARED
-  src/pid_controller_plugin.cpp
+  src/controller_plugins/pid_controller.cpp
 )
 target_include_directories(pid_controller_plugin
   PUBLIC
@@ -115,11 +114,14 @@ target_include_directories(pid_controller_plugin
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(pid_controller_plugin PUBLIC
-  controller
+  controller_base
   rclcpp::rclcpp
 )
 target_link_libraries(pid_controller_plugin PRIVATE
+  angles::angles
+  nav2_util::nav2_util_core
   pluginlib::pluginlib
+  tf2::tf2
 )
 
 add_library(${library_name} SHARED

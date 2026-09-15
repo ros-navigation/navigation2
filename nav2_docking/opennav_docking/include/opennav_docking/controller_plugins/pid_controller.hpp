@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef OPENNAV_DOCKING__PID_CONTROLLER_HPP_
-#define OPENNAV_DOCKING__PID_CONTROLLER_HPP_
+#ifndef OPENNAV_DOCKING__CONTROLLER_PLUGINS__PID_CONTROLLER_HPP_
+#define OPENNAV_DOCKING__CONTROLLER_PLUGINS__PID_CONTROLLER_HPP_
 
 #include <string>
 
@@ -39,12 +39,11 @@ public:
    */
   void reset() override;
 
-protected:
   /**
    * @brief Declare and read the parameters.
    * @param node Lifecycle node
    */
-  void configureController(const nav2::LifecycleNode::SharedPtr & node) override;
+  void onConfigure(const nav2::LifecycleNode::SharedPtr & node) override;
 
   /**
    * @brief Apply the PID law to produce a velocity command.
@@ -135,6 +134,7 @@ protected:
     const geometry_msgs::msg::Pose & target, bool reverse, double lookahead,
     double & rho, double & alpha, double & alignment);
 
+protected:
   /// Hard floor under lookahead_distance_.
   static constexpr double kMinLookahead = 1e-3;
 
@@ -145,4 +145,4 @@ protected:
 
 }  // namespace opennav_docking
 
-#endif  // OPENNAV_DOCKING__PID_CONTROLLER_HPP_
+#endif  // OPENNAV_DOCKING__CONTROLLER_PLUGINS__PID_CONTROLLER_HPP_

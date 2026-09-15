@@ -73,7 +73,7 @@ void ControllerBase::configure(
   dock_collision_threshold_ = node->declare_or_get_parameter(
     name_ + ".dock_collision_threshold", 0.3);
   // Let the derived control law declare its own parameters before any update can arrive
-  configureController(node);
+  onConfigure(node);
 
   // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -112,13 +112,13 @@ void ControllerBase::deactivate()
   trajectory_pub_->on_deactivate();
 }
 
-void ControllerBase::setTrajectory(
-  const nav_msgs::msg::Path & trajectory,
-  const TrajectoryOptions & options)
+void ControllerBase::setPath(
+  const nav_msgs::msg::Path & path,
+  const DockingOptions & options)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
-  trajectory_ = trajectory;
-  trajectory_options_ = options;
+  path_ = path;
+  docking_options_ = options;
 }
 
 bool ControllerBase::computeVelocityCommands(
@@ -136,26 +136,26 @@ bool ControllerBase::computeVelocityCommands(
     return false;
   }
 
-  cmd = computeCommand(target_pose, trajectory_options_.reverse, dt);
+  cmd = computeCommand(target_pose, docking_options_.reverse, dt);
   return isTrajectoryCollisionFree(
-    target_pose, trajectory_options_.approaching, trajectory_options_.reverse);
+    target_pose, !docking_options_.undocking, docking_options_.reverse);
 }
 
 bool ControllerBase::getTargetInBaseFrame(geometry_msgs::msg::Pose & target_pose)
 {
-  if (trajectory_.poses.empty()) {
-    RCLCPP_ERROR(logger_, "Controller %s has no trajectory to follow!", name_.c_str());
+  if (path_.poses.empty()) {
+    RCLCPP_ERROR(logger_, "Controller %s has no path to follow!", name_.c_str());
     return false;
   }
 
   // The trajectory's header frame is authoritative
   geometry_msgs::msg::PoseStamped target;
-  target.header = trajectory_.header;
-  target.pose = trajectory_.poses.back().pose;
+  target.header = path_.header;
+  target.pose = path_.poses.back().pose;
 
   if (target.header.frame_id.empty()) {
     RCLCPP_ERROR(
-      logger_, "Controller %s was given a trajectory with no frame_id!", name_.c_str());
+      logger_, "Controller %s was given a path with no frame_id!", name_.c_str());
     return false;
   }
 

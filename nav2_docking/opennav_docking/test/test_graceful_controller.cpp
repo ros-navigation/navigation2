@@ -25,7 +25,7 @@
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "opennav_docking/graceful_controller.hpp"
+#include "opennav_docking/controller_plugins/graceful_controller.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -103,7 +103,7 @@ TEST(GracefulControllerTests, PluginIsDiscoverable)
   controller->configure(node, "c", tf);
   EXPECT_EQ(controller->getName(), "c");
 
-  controller->setTrajectory(makePath("base_link", {{1.0, 0.0, 0.0}}));
+  controller->setPath(makePath("base_link", {{1.0, 0.0, 0.0}}));
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Twist cmd;
   EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
@@ -135,7 +135,7 @@ TEST(GracefulControllerTests, FramePrecedencePrefersInstanceOverNode)
     node, "c.base_frame", rclcpp::ParameterValue(std::string("my_base")));
 
   auto controller = makeController(node, tf, "c");
-  controller->setTrajectory(makePath("odom", {{1.0, 0.0, 0.0}}));
+  controller->setPath(makePath("odom", {{1.0, 0.0, 0.0}}));
 
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Twist cmd;
@@ -158,7 +158,7 @@ TEST(GracefulControllerTests, FramePrecedenceFallsBackToNode)
     node, "base_frame", rclcpp::ParameterValue(std::string("my_base")));
 
   auto controller = makeController(node, tf, "c");
-  controller->setTrajectory(makePath("odom", {{1.0, 0.0, 0.0}}));
+  controller->setPath(makePath("odom", {{1.0, 0.0, 0.0}}));
 
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Twist cmd;
@@ -167,7 +167,7 @@ TEST(GracefulControllerTests, FramePrecedenceFallsBackToNode)
   EXPECT_GT(cmd.linear.x, 0.0);
 }
 
-TEST(GracefulControllerTests, LastPoseOfTrajectoryIsTheTarget)
+TEST(GracefulControllerTests, LastPoseOfPathIsTheTarget)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto tf = nav2::create_transform_buffer(node);
@@ -180,11 +180,11 @@ TEST(GracefulControllerTests, LastPoseOfTrajectoryIsTheTarget)
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Twist single, multi;
 
-  controller->setTrajectory(makePath("base_link", {{1.0, 0.5, 0.0}}));
+  controller->setPath(makePath("base_link", {{1.0, 0.5, 0.0}}));
   EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
     single));
 
-  controller->setTrajectory(makePath("base_link", {{5.0, -3.0, 1.0}, {1.0, 0.5, 0.0}}));
+  controller->setPath(makePath("base_link", {{5.0, -3.0, 1.0}, {1.0, 0.5, 0.0}}));
   EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
     multi));
 
@@ -201,9 +201,9 @@ TEST(GracefulControllerTests, ReverseDrivesBackwards)
     node, "fixed_frame", rclcpp::ParameterValue(std::string("odom")));
   auto controller = makeController(node, tf, "c");
 
-  opennav_docking::TrajectoryOptions options;
+  opennav_docking::DockingOptions options;
   options.reverse = true;
-  controller->setTrajectory(makePath("base_link", {{-1.0, 0.0, M_PI}}), options);
+  controller->setPath(makePath("base_link", {{-1.0, 0.0, M_PI}}), options);
 
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Twist cmd;
@@ -225,25 +225,25 @@ TEST(GracefulControllerTests, InvalidTrajectoriesFailWithoutCrashing)
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Twist cmd, zero;
 
-  // Never given a trajectory at all
+  // Never given a path at all
   EXPECT_FALSE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
     cmd));
   EXPECT_EQ(cmd, zero);
 
   // An empty path
-  controller->setTrajectory(makePath("base_link", {}));
+  controller->setPath(makePath("base_link", {}));
   EXPECT_FALSE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
     cmd));
   EXPECT_EQ(cmd, zero);
 
   // A path with no frame at all
-  controller->setTrajectory(makePath("", {{1.0, 0.0, 0.0}}));
+  controller->setPath(makePath("", {{1.0, 0.0, 0.0}}));
   EXPECT_FALSE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
     cmd));
   EXPECT_EQ(cmd, zero);
 
   // A path in a frame that is not in the TF tree
-  controller->setTrajectory(makePath("nowhere", {{1.0, 0.0, 0.0}}));
+  controller->setPath(makePath("nowhere", {{1.0, 0.0, 0.0}}));
   EXPECT_FALSE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
     cmd));
   EXPECT_EQ(cmd, zero);
