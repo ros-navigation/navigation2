@@ -116,6 +116,11 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     topic_name,
     nav2::qos::LatchedPublisherQoS());
 
+  // Let's consumers tell that the map they hold predates a load that is still in progress
+  ready_pub_ = create_publisher<std_msgs::msg::Header>(
+    "~/ready",
+    nav2::qos::LatchedPublisherQoS());
+
   // Create a service that loads the occupancy grid from a file
   load_map_service_ = create_service<nav2_msgs::srv::LoadMap>(
     service_prefix + std::string(load_map_service_name_),
@@ -131,6 +136,7 @@ MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Publish the map using the latched topic
   occ_pub_->on_activate();
+  ready_pub_->on_activate();
   if (map_available_) {
     auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
     occ_pub_->publish(std::move(occ_grid));
@@ -148,6 +154,7 @@ MapServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   occ_pub_->on_deactivate();
+  ready_pub_->on_deactivate();
 
   // destroy bond connection
   destroyBond();
@@ -161,6 +168,7 @@ MapServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   occ_pub_.reset();
+  ready_pub_.reset();
   occ_service_.reset();
   load_map_service_.reset();
   map_available_ = false;
@@ -206,11 +214,25 @@ void MapServer::loadMapCallback(
     return;
   }
   RCLCPP_INFO(get_logger(), "Handling LoadMap request");
+  // Raised before the load so consumers cannot treat the outgoing map as up to date while
+  // the new one is being read and propagated
+  publishReady(now());
   // Load from file
   if (loadMapResponseFromYaml(request->map_url, response)) {
     auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
     occ_pub_->publish(std::move(occ_grid));  // publish new map
+  } else {
+    // Nothing was published, so the map consumers already hold is still the current one
+    publishReady(rclcpp::Time(0, 0, RCL_ROS_TIME));
   }
+}
+
+void MapServer::publishReady(const rclcpp::Time & stamp)
+{
+  std_msgs::msg::Header message;
+  message.stamp = stamp;
+  message.frame_id = frame_id_;
+  ready_pub_->publish(message);
 }
 
 bool MapServer::loadMapResponseFromYaml(

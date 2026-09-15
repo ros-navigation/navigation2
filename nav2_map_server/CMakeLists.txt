@@ -86,6 +86,7 @@ target_link_libraries(${library_name} PUBLIC
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
+  std_msgs::std_msgs
 )
 target_link_libraries(${library_name} PRIVATE
   lifecycle_msgs::lifecycle_msgs

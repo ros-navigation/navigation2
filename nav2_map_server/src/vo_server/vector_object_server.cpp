@@ -322,6 +322,9 @@ void VectorObjectServer::putVectorObjectsOnMap()
 void VectorObjectServer::publishMap()
 {
   if (map_) {
+    // Stamped so consumers can tell whether a grid predates a shape change they know about
+    map_->header.stamp = now();
+    map_->info.map_load_time = map_->header.stamp;
     auto map = std::make_unique<nav_msgs::msg::OccupancyGrid>(*map_);
     map_pub_->publish(std::move(map));
   }

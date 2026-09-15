@@ -25,6 +25,7 @@
 #include "nav2_msgs/srv/load_map.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "std_msgs/msg/header.hpp"
 
 namespace nav2_map_server
 {
@@ -119,6 +120,13 @@ protected:
     const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
     std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
+  /**
+   * @brief Announce that maps published before the given stamp no longer reflect the map
+   * this server holds. A zero stamp means nothing is outstanding
+   * @param stamp The barrier stamp to publish
+   */
+  void publishReady(const rclcpp::Time & stamp);
+
   // The name of the service for getting a map
   const std::string service_name_{"map"};
 
@@ -133,6 +141,8 @@ protected:
 
   // A topic on which the occupancy grid will be published
   nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
+
+  nav2::Publisher<std_msgs::msg::Header>::SharedPtr ready_pub_;
 
   // The frame ID used in the returned OccupancyGrid message
   std::string frame_id_;
