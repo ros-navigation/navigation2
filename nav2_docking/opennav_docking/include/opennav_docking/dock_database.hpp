@@ -121,7 +121,7 @@ protected:
    * @return True if every name resolves and is present where required, or if no controller ids
    *         were supplied
    */
-  bool validateControllerNames(const DockMap & docks) const;
+  bool validateControllersExist(const DockMap & docks) const;
 
   /**
    * @brief Find a dock instance in the database from ID

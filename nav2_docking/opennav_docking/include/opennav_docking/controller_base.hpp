@@ -36,16 +36,16 @@ namespace opennav_docking
 {
 
 /**
- * @struct TrajectoryOptions
- * @brief Describes how the trajectory handed to ControllerBase::setTrajectory is to be driven.
+ * @struct DockingOptions
+ * @brief Describes how the path handed to ControllerBase::setPath is to be driven.
  */
-struct TrajectoryOptions
+struct DockingOptions
 {
   /// @brief If true, the robot drives in reverse along the trajectory.
   bool reverse{false};
 
-  /// @brief True while approaching a dock, false while undocking.
-  bool approaching{true};
+  /// @brief True when leaving the dock
+  bool undocking{false};
 };
 
 /**
@@ -98,14 +98,14 @@ public:
   virtual void reset() {}
 
   /**
-   * @brief Set trajectory to follow.
+   * @brief Set the path to follow.
    *
-   * @param trajectory The trajectory to follow.
-   * @param options How the trajectory is to be driven.
+   * @param path The path to follow; its last pose is the target.
+   * @param options How the path is to be driven.
    */
-  virtual void setTrajectory(
-    const nav_msgs::msg::Path & trajectory,
-    const TrajectoryOptions & options = TrajectoryOptions());
+  virtual void setPath(
+    const nav_msgs::msg::Path & path,
+    const DockingOptions & options = DockingOptions());
 
   /**
    * @brief Compute a velocity command towards the end of the cached trajectory
@@ -140,7 +140,6 @@ public:
    */
   std::string getName() {return name_;}
 
-protected:
   /**
    * @brief Declare and read the parameters specific to the derived control law.
    *
@@ -149,7 +148,7 @@ protected:
    *
    * @param node Lifecycle node
    */
-  virtual void configureController(const nav2::LifecycleNode::SharedPtr & node) = 0;
+  virtual void onConfigure(const nav2::LifecycleNode::SharedPtr & node) = 0;
 
   /**
    * @brief Apply the control law to produce a velocity command.
@@ -191,6 +190,7 @@ protected:
    */
   virtual void updateParameter(const std::string & name, const rclcpp::Parameter & parameter);
 
+protected:
   /**
    * @brief Check if a trajectory is collision free.
    *
@@ -252,9 +252,9 @@ protected:
   // In-place rotation profile
   double rotate_to_heading_angular_vel_, rotate_to_heading_max_angular_accel_;
 
-  // The trajectory to follow and how to drive it
-  nav_msgs::msg::Path trajectory_;
-  TrajectoryOptions trajectory_options_;
+  // The path to follow and how to drive it
+  nav_msgs::msg::Path path_;
+  DockingOptions docking_options_;
 
   // The trajectory of the robot while dock / undock for visualization / debug purposes
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr trajectory_pub_;

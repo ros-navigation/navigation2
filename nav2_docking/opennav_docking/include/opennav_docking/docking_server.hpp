@@ -238,37 +238,22 @@ protected:
    * @brief Resolve a requested controller name against the loaded controllers.
    *
    * @param c_name Requested controller name, or "" for "no preference"
-   * @param current_controller Set to the resolved name on success
+   * @param controller_id Set to the resolved name on success
    * @return True if the name resolved to a loaded controller
    */
-  bool findControllerId(const std::string & c_name, std::string & current_controller);
+  bool findControllerId(const std::string & c_name, std::string & controller_id);
 
   /**
-   * @brief Resolve which controller a dock instance drives with.
+   * @brief Select the controller for a docking or undocking request.
    *
-   * Precedence: the dock instance's own `controller` if defined, then the controller
-   * named by its type, then the single default controller.
+   * @param plugin Dock plugin
+   * @param dock Dock instance (nullptr when undocking)
+   * @param dock_type Dock type for undocking. In order to use the controller it docked with while undocking
    * @throw DockNotValid if the name does not resolve to a loaded controller
    */
-  void selectControllerForDock(const Dock & dock);
-
-  /**
-   * @brief Resolve which controller an undocking request drives with.
-   *
-   * @param dock_type The dock type being undocked from
-   * @param plugin The plugin for that type
-   * @throw DockNotValid if the name does not resolve to a loaded controller
-   */
-  void selectControllerForUndock(
-    const std::string & dock_type, const ChargingDock::Ptr & plugin);
-
-  /**
-   * @brief Get the controller instance selected by the current request
-   *
-   * @return The controller named by current_controller_
-   * @throw FailedToControl if that name does not resolve to a loaded controller
-   */
-  ControllerBase::Ptr getController();
+  void selectController(
+    const ChargingDock::Ptr & plugin, const Dock * dock = nullptr,
+    const std::string & dock_type = "");
 
   // Parameter handler
   std::unique_ptr<opennav_docking::ParameterHandler> param_handler_;
@@ -294,7 +279,7 @@ protected:
   pluginlib::ClassLoader<ControllerBase> controller_loader_;
   ControllerMap controllers_;
   std::string controller_ids_concat_;
-  std::string current_controller_;
+  ControllerBase::Ptr controller_;
 
   nav2::TransformBuffer::SharedPtr tf2_buffer_;
   nav2::TransformListener::SharedPtr tf2_listener_;

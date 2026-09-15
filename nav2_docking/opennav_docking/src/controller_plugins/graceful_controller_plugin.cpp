@@ -14,7 +14,9 @@
 
 #include "pluginlib/class_list_macros.hpp"
 
-#include "opennav_docking/pid_controller.hpp"
+#include "opennav_docking/controller_plugins/graceful_controller.hpp"
 
-// register PIDController with pluginlib
-PLUGINLIB_EXPORT_CLASS(opennav_docking::PIDController, opennav_docking::ControllerBase)
+// This translation is to register GracefulController with pluginlib,
+// Once opennav_following's dependency to opennav_docking::Controller is removed
+// this file can be moved back into graceful_controller.cpp.
+PLUGINLIB_EXPORT_CLASS(opennav_docking::GracefulController, opennav_docking::ControllerBase)

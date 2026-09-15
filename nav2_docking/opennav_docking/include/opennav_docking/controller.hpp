@@ -24,7 +24,7 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
-#include "opennav_docking/graceful_controller.hpp"
+#include "opennav_docking/controller_plugins/graceful_controller.hpp"
 
 namespace opennav_docking
 {
