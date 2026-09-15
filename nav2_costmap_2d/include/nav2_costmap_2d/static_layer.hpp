@@ -135,6 +135,12 @@ protected:
   void processMap(const nav_msgs::msg::OccupancyGrid & new_map);
 
   /**
+   * @brief Whether this layer's grid is the master's grid (non-rolling, resize_master true).
+   * Otherwise the map keeps its own size, origin and resolution and is sampled into the master.
+   */
+  bool sharesMasterGeometry() const;
+
+  /**
    * @brief  Callback to update the costmap's map from the map_server
    * @param new_map The map to put into the costmap. The origin of the new
    * map along with its size will determine what parts of the costmap's
@@ -197,6 +203,9 @@ protected:
   std::string map_frame_;  /// @brief frame that map is located in
 
   bool has_updated_data_{false};
+  bool resize_master_{true};
+  bool has_previous_overlay_bounds_{false};
+  double previous_overlay_bounds_[4]{};
 
   unsigned int x_{0};
   unsigned int y_{0};

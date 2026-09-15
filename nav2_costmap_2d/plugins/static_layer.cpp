@@ -153,6 +153,7 @@ StaticLayer::getParameters()
   }
 
   enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+  resize_master_ = node->declare_or_get_parameter(name_ + "." + "resize_master", true);
   subscribe_to_updates_ = node->declare_or_get_parameter(
     name_ + "." + "subscribe_to_updates", false);
   footprint_clearing_enabled_ = node->declare_or_get_parameter(
@@ -195,7 +196,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 
   // resize costmap if size, resolution or origin do not match
   Costmap2D * master = layered_costmap_->getCostmap();
-  if (!layered_costmap_->isRolling() && (master->getSizeInCellsX() != size_x ||
+  if (sharesMasterGeometry() && (master->getSizeInCellsX() != size_x ||
     master->getSizeInCellsY() != size_y ||
     !isEqual(master->getResolution(), new_map.info.resolution, EPSILON) ||
     !isEqual(master->getOriginX(), new_map.info.origin.position.x, EPSILON) ||
@@ -268,14 +269,20 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 void
 StaticLayer::matchSize()
 {
-  // If we are using rolling costmap, the static map size is
+  // If we are using rolling costmap or an overlay, the static map size is
   //   unrelated to the size of the layered costmap
-  if (!layered_costmap_->isRolling()) {
+  if (sharesMasterGeometry()) {
     Costmap2D * master = layered_costmap_->getCostmap();
     resizeMap(
       master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
       master->getOriginX(), master->getOriginY());
   }
+}
+
+bool
+StaticLayer::sharesMasterGeometry() const
+{
+  return !layered_costmap_->isRolling() && resize_master_;
 }
 
 unsigned char
@@ -404,6 +411,24 @@ StaticLayer::updateBounds(
     *min_y = std::min(robot_y - half_h, *min_y);
     *max_x = std::max(robot_x + half_w, *max_x);
     *max_y = std::max(robot_y + half_h, *max_y);
+  } else if (!resize_master_) {
+    // Overlay on a non-rolling costmap: the map keeps its own geometry, so report its
+    // extent (and the previous one, so a moved or shrunk map clears what it used to cover)
+    double bounds[4] = {
+      origin_x_, origin_y_,
+      origin_x_ + size_x_ * resolution_, origin_y_ + size_y_ * resolution_};
+    if (has_previous_overlay_bounds_) {
+      *min_x = std::min(*min_x, previous_overlay_bounds_[0]);
+      *min_y = std::min(*min_y, previous_overlay_bounds_[1]);
+      *max_x = std::max(*max_x, previous_overlay_bounds_[2]);
+      *max_y = std::max(*max_y, previous_overlay_bounds_[3]);
+    }
+    std::copy(bounds, bounds + 4, previous_overlay_bounds_);
+    has_previous_overlay_bounds_ = true;
+    *min_x = std::min(bounds[0], *min_x);
+    *min_y = std::min(bounds[1], *min_y);
+    *max_x = std::max(bounds[2], *max_x);
+    *max_y = std::max(bounds[3], *max_y);
   } else {
     double wx, wy;
 
@@ -463,7 +488,7 @@ StaticLayer::updateCosts(
     setMapRegionOccupiedByPolygon(map_region_to_restore, nav2_costmap_2d::FREE_SPACE);
   }
 
-  if (!layered_costmap_->isRolling()) {
+  if (sharesMasterGeometry()) {
     // if not rolling, the layered costmap (master_grid) has same coordinates as this layer
     if (!use_maximum_) {
       updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
@@ -471,7 +496,8 @@ StaticLayer::updateCosts(
       updateWithMax(master_grid, min_i, min_j, max_i, max_j);
     }
   } else {
-    // If rolling window, the master_grid is unlikely to have same coordinates as this layer
+    // If rolling window or overlay, the master_grid is unlikely to have same coordinates
+    // as this layer
     unsigned int mx, my;
     double wx, wy;
     // Might even be in a different frame
@@ -545,7 +571,8 @@ rcl_interfaces::msg::SetParametersResult StaticLayer::validateParameterUpdatesCa
 
     if (param_name == name_ + "." + "map_subscribe_transient_local" ||
       param_name == name_ + "." + "map_topic" ||
-      param_name == name_ + "." + "subscribe_to_updates")
+      param_name == name_ + "." + "subscribe_to_updates" ||
+      param_name == name_ + "." + "resize_master")
     {
       RCLCPP_WARN(
         logger_, "%s is not a dynamic parameter "
