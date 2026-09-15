@@ -62,19 +62,24 @@ PathSearchResult distance_from_path(
   const double search_window_length = std::numeric_limits<double>::max());
 
 /**
-  * @brief get an arbitrary path in a target frame
-  * @param input_path Path to transform
-  * @param transformed_path Output transformation
-  * @param tf_buffer TF buffer to use for the transformation
-  * @param target_frame Frame to transform into
-  * @param transform_timeout TF Timeout to use for transformation
-  * @return bool Whether it could be transformed successfully
-  */
+ * @brief Transform a path, optionally checking the age of the latest TF
+ * @param input_path Path to transform
+ * @param transformed_path Output transformation
+ * @param tf_buffer TF buffer to use for the transformation
+ * @param target_frame Frame to transform into
+ * @param transform_timeout TF timeout for unchecked or timestamped lookups
+ * @param current_time Current time from the caller's clock, matching the TF clock;
+ * must be supplied when enabling the staleness check
+ * @param staleness_threshold Maximum age in seconds for zero-stamped paths only;
+ * non-positive disables the check. Checked latest lookups do not wait for TF.
+ * @return Whether the path could be transformed with an acceptable transform
+ */
 bool transformPathInTargetFrame(
   const nav_msgs::msg::Path & input_path,
   nav_msgs::msg::Path & transformed_path,
   nav2::TransformBuffer & tf_buffer, const std::string target_frame,
-  const double transform_timeout = 0.1);
+  const double transform_timeout = 0.1, const rclcpp::Time & current_time = rclcpp::Time(0),
+  const double staleness_threshold = 0.0);
 
 /**
  * @brief Find the iterator of the first pose at which there is an inversion or in place rotation on the path,

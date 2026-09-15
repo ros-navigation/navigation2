@@ -48,9 +48,107 @@ class SimpleChargingDockTestable : public opennav_docking::SimpleChargingDock
 public:
   using opennav_docking::SimpleChargingDock::SimpleChargingDock;
 
+  void setDetection(const geometry_msgs::msg::PoseStamped & pose)
+  {
+    detected_dock_pose_ = pose;
+    initial_pose_received_ = true;
+  }
+
   // Expose detector state for test verification
   bool isDetectorActive() const {return initial_pose_received_;}
 };
+
+TEST(SimpleChargingDockTests, DockedTransformFreshness)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  node->declare_parameter("base_frame", "base_link");
+  node->declare_parameter("my_dock.transform_staleness_threshold", 0.5);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  SimpleChargingDock dock;
+  dock.configure(node, "my_dock", tf_buffer);
+  dock.activate();
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "odom";
+  pose.pose.position.x = 2.0;
+  pose.pose.orientation.w = 1.0;
+  ASSERT_TRUE(dock.getRefinedPose(pose, ""));
+  EXPECT_FALSE(dock.isDocked());  // Missing transform.
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "odom";
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.x = 2.0;
+  transform.transform.rotation.w = 1.0;
+  transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
+  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", false));
+  EXPECT_FALSE(dock.isDocked());  // Old TF must not report docking success.
+
+  transform.header.stamp = node->now();
+  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", false));
+  EXPECT_TRUE(dock.isDocked());  // Recover as soon as fresh TF arrives.
+
+  transform.header.stamp = node->now() + rclcpp::Duration::from_seconds(0.01);
+  transform.transform.translation.x = 3.0;
+  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", false));
+  EXPECT_FALSE(dock.isDocked());  // Do not retain the previous robot position.
+
+  tf_buffer->clear();
+  transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
+  transform.transform.translation.x = 2.0;
+  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", true));
+  EXPECT_TRUE(dock.isDocked());  // Static transforms do not expire.
+
+  pose.header.frame_id = "base_link";
+  pose.pose.position.x = 0.0;
+  ASSERT_TRUE(dock.getRefinedPose(pose, ""));
+  EXPECT_TRUE(dock.isDocked());  // Same-frame identity needs no TF data.
+
+  dock.deactivate();
+  dock.cleanup();
+}
+
+TEST(SimpleChargingDockTests, DetectionUsesMeasurementTransform)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  node->declare_parameter("my_dock.use_external_detection_pose", true);
+  node->declare_parameter("my_dock.external_detection_translation_x", 0.0);
+  node->declare_parameter("my_dock.external_detection_rotation_pitch", 0.0);
+  node->declare_parameter("my_dock.external_detection_rotation_roll", 0.0);
+  node->declare_parameter("my_dock.transform_staleness_threshold", 0.1);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  tf_buffer->setUsingDedicatedThread(true);
+  SimpleChargingDockTestable dock;
+  dock.configure(node, "my_dock", tf_buffer);
+  dock.activate();
+
+  const auto measurement_time = node->now() - rclcpp::Duration::from_seconds(0.5);
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "odom";
+  transform.child_frame_id = "camera";
+  transform.header.stamp = measurement_time;
+  transform.transform.translation.x = 2.0;
+  transform.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", false));
+  transform.header.stamp = node->now();
+  transform.transform.translation.x = 5.0;
+  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", false));
+
+  geometry_msgs::msg::PoseStamped detection;
+  detection.header.frame_id = "camera";
+  detection.header.stamp = measurement_time;
+  detection.pose.orientation.w = 1.0;
+  detection.pose.position.x = 1.0;
+  dock.setDetection(detection);
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "odom";
+  ASSERT_TRUE(dock.getRefinedPose(pose, ""));
+  EXPECT_NEAR(pose.pose.position.x, 3.0, 1e-6);
+  EXPECT_EQ(pose.header.stamp, detection.header.stamp);
+
+  dock.deactivate();
+  dock.cleanup();
+}
 
 TEST(SimpleChargingDockTests, ObjectLifecycle)
 {
