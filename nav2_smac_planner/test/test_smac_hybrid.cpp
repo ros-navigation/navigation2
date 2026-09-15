@@ -206,8 +206,9 @@ TEST(SmacTest, test_smac_se2)
   executor.spin_until_future_complete(results);
   goal.pose.position.x = 4.0;
   goal.pose.position.y = 4.0;
-  EXPECT_THROW(planner->createPlan(
-    start, goal, no_viapoints, dummy_cancel_checker), std::runtime_error);
+  EXPECT_THROW(
+    planner->createPlan(
+      start, goal, no_viapoints, dummy_cancel_checker), std::runtime_error);
 
   planner->deactivate();
   planner->cleanup();
@@ -218,6 +219,28 @@ TEST(SmacTest, test_smac_se2)
   nodeSE2->cleanup();
   costmap_ros.reset();
   nodeSE2.reset();
+}
+
+TEST(SmacTest, test_smac_se2_incremental_config)
+{
+  // Configuring with incremental_obstacle_heuristic=true exercises the parameter
+  // plumbing and the forced-downsample-off warning branch in configure().
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacSE2IncCfg");
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  node->configure();
+  node->activate();
+
+  node->declare_parameter(
+    "test.incremental_obstacle_heuristic", rclcpp::ParameterValue(true));
+
+  auto planner = std::make_unique<HybridWrap>();
+  EXPECT_NO_THROW(planner->configure(node, "test", nullptr, costmap_ros));
+  planner->activate();
 }
 
 TEST(SmacTest, test_smac_se2_reconfigure)
@@ -251,6 +274,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.max_iterations", -1),
       rclcpp::Parameter("test.minimum_turning_radius", 1.0),
       rclcpp::Parameter("test.cache_obstacle_heuristic", true),
+      rclcpp::Parameter("test.incremental_obstacle_heuristic", true),
       rclcpp::Parameter("test.reverse_penalty", 5.0),
       rclcpp::Parameter("test.change_penalty", 1.0),
       rclcpp::Parameter("test.non_straight_penalty", 2.0),
@@ -279,6 +303,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(nodeSE2->get_parameter("test.max_iterations").as_int(), -1);
   EXPECT_EQ(nodeSE2->get_parameter("test.minimum_turning_radius").as_double(), 1.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.cache_obstacle_heuristic").as_bool(), true);
+  EXPECT_EQ(nodeSE2->get_parameter("test.incremental_obstacle_heuristic").as_bool(), true);
   EXPECT_EQ(nodeSE2->get_parameter("test.reverse_penalty").as_double(), 5.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.change_penalty").as_double(), 1.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.non_straight_penalty").as_double(), 2.0);
