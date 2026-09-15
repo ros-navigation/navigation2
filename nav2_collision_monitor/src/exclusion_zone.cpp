@@ -100,6 +100,8 @@ bool ExclusionZone::configure(const nav2_msgs::msg::ExclusionZoneDescription & d
   }
 
   node_clock_ = node->get_clock();
+  transform_staleness_threshold_ = node->declare_or_get_parameter("transform_staleness_threshold",
+      1.0);
 
   enabled_ = desc.enabled;
   visualize_ = desc.visualize;
@@ -159,6 +161,8 @@ bool ExclusionZone::getParameters()
 
   enabled_ = node->declare_or_get_parameter(zone_name_ + ".enabled", false);
   visualize_ = node->declare_or_get_parameter(zone_name_ + ".visualize", false);
+  transform_staleness_threshold_ = node->declare_or_get_parameter("transform_staleness_threshold",
+      1.0);
 
   // Frame the zone is anchored to. Empty -> static zone in the robot base frame.
   frame_id_ = node->declare_or_get_parameter(
@@ -272,54 +276,27 @@ bool ExclusionZone::getZoneToBaseTransform(
   // Runs on the collision monitor thread, so all lookups are NON-BLOCKING (zero
   // timeout): they read the cached TF buffer and fail immediately. A blocking
   // lookup on a flaky zone frame would stall the monitor loop, make healthy sources look
-  // stale and trip the source_timeout watchdog. transform_tolerance_ is used only
-  // as the staleness allowance below, never as a wait.
+  // stale and trip the source_timeout watchdog.
   const tf2::Duration non_blocking = tf2::Duration::zero();
 
-  // Look up the zone frame at the *latest* available time (never curr_time) so a
-  // slowly published frame is not extrapolated; its stamp tells us how stale it is.
-  rclcpp::Time zone_stamp = curr_time;
+  // Look up the zone frame at the latest available time. The configured hold
+  // timeout may extend the general transform age limit for this frame.
   tf2::Transform tf_zone_to_global;
   tf_zone_to_global.setIdentity();
   if (frame_id_ != global_frame_id_) {
     geometry_msgs::msg::TransformStamped zone_to_global_msg;
-    if (!nav2_util::getTransform(
-        frame_id_, global_frame_id_, non_blocking, tf_buffer_, zone_to_global_msg))
+    if (!nav2_util::lookupTransformWithStalenessCheck(
+        *tf_buffer_, global_frame_id_, frame_id_, curr_time,
+        std::max(frame_hold_timeout_, transform_staleness_threshold_), zone_to_global_msg))
     {
-      RCLCPP_WARN_THROTTLE(
-        logger_, *node_clock_, 2000,
-        "[%s]: no transform available for exclusion zone frame '%s'; not excluding any points",
-        zone_name_.c_str(), frame_id_.c_str());
       return false;
     }
-    zone_stamp = rclcpp::Time(zone_to_global_msg.header.stamp, curr_time.get_clock_type());
-
-    // Accept the pose only within the hold window: at least the transform tolerance
-    // (so a healthy frame always passes), extended by frame_hold_timeout_ to ride
-    // out brief dropouts. Anything older is dropped so we are never blinded by a
-    // frame that may have moved.
-    const double age = (curr_time - zone_stamp).seconds();
-    const double max_age =
-      std::max(frame_hold_timeout_, tf2::durationToSec(transform_tolerance_));
-    if (age > max_age) {
-      RCLCPP_WARN_THROTTLE(
-        logger_, *node_clock_, 2000,
-        "[%s]: exclusion zone frame '%s' stale for %.2fs (> %.2fs hold window); "
-        "not excluding any points",
-        zone_name_.c_str(), frame_id_.c_str(), age, max_age);
-      return false;
-    }
-
-    // Freeze the pose in the smooth global (odom) frame -- where the last valid
-    // detection placed the zone in the WORLD. The charger frame is a child of a
-    // robot lidar frame, so a held zone-to-base transform would otherwise ride
-    // with the robot and sweep the mask off the world-fixed charger.
+    // Freeze the pose in the smooth global frame so a held zone remains fixed
+    // in the world while the robot continues moving.
     tf2::fromMsg(zone_to_global_msg.transform, tf_zone_to_global);
   }
 
-  // Re-project the (possibly held) world pose into the current base frame by
-  // advancing only the global -> base leg. base_shift_correction samples the base
-  // at curr_time; otherwise the latest base pose is used. Both stay non-blocking.
+  // Re-project the world pose into the current base frame.
   tf2::Transform tf_global_to_base;
   bool got_base;
   if (base_shift_correction_) {
@@ -327,8 +304,13 @@ bool ExclusionZone::getZoneToBaseTransform(
       global_frame_id_, curr_time, base_frame_id_, curr_time, global_frame_id_,
       non_blocking, tf_buffer_, tf_global_to_base);
   } else {
-    got_base = nav2_util::getTransform(
-      global_frame_id_, base_frame_id_, non_blocking, tf_buffer_, tf_global_to_base);
+    geometry_msgs::msg::TransformStamped global_to_base_msg;
+    got_base = nav2_util::lookupTransformWithStalenessCheck(
+      *tf_buffer_, base_frame_id_, global_frame_id_, curr_time,
+      transform_staleness_threshold_, global_to_base_msg);
+    if (got_base) {
+      tf2::fromMsg(global_to_base_msg.transform, tf_global_to_base);
+    }
   }
   if (!got_base) {
     RCLCPP_WARN_THROTTLE(
