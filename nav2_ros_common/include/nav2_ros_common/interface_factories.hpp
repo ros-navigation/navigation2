@@ -221,6 +221,7 @@ typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
  * @param topic_name Name of topic
  * @param qos QoS settings for the publisher (default is nav2::qos::StandardTopicQoS())
  * @param callback_group The callback group to use (if provided)
+ * @param matched_callback Callback when a subscriber matches or unmatches
  * @return A shared pointer to the created publisher
  */
 template<typename MessageT, typename NodeT>
@@ -228,7 +229,8 @@ typename nav2::Publisher<MessageT>::SharedPtr create_publisher(
   const NodeT & node,
   const std::string & topic_name,
   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
-  const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
+  const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr,
+  rclcpp::PublisherMatchedCallbackType matched_callback = nullptr)
 {
   bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
     node, "allow_parameter_qos_overrides", true);
@@ -237,7 +239,8 @@ typename nav2::Publisher<MessageT>::SharedPtr create_publisher(
     *node,
     topic_name,
     qos,
-    createPublisherOptions(topic_name, allow_parameter_qos_overrides, callback_group));
+    createPublisherOptions(
+      topic_name, allow_parameter_qos_overrides, callback_group, matched_callback));
   return pub;
 }
 
