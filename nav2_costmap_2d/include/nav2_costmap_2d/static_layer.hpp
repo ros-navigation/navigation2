@@ -204,8 +204,6 @@ protected:
 
   bool has_updated_data_{false};
   bool resize_master_{true};
-  bool has_previous_overlay_bounds_{false};
-  double previous_overlay_bounds_[4]{};
 
   unsigned int x_{0};
   unsigned int y_{0};

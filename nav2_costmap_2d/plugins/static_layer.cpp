@@ -237,6 +237,12 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
       logger_,
       "StaticLayer: Resizing static layer to %d X %d at %f m/pix", size_x, size_y,
       new_map.info.resolution);
+    if (!layered_costmap_->isRolling() && !resize_master_ && size_x_ > 0 && size_y_ > 0) {
+      // Re-render the previous map's extent so a moved or shrunk map clears what it covered
+      addExtraBounds(
+        origin_x_, origin_y_,
+        origin_x_ + size_x_ * resolution_, origin_y_ + size_y_ * resolution_);
+    }
     resizeMap(
       size_x, size_y, new_map.info.resolution,
       new_map.info.origin.position.x, new_map.info.origin.position.y);
@@ -269,7 +275,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 void
 StaticLayer::matchSize()
 {
-  // If we are using rolling costmap or an overlay, the static map size is
+  // If we are using rolling costmap or not resizing the master, the static map size is
   //   unrelated to the size of the layered costmap
   if (usesMasterCostmapSize()) {
     Costmap2D * master = layered_costmap_->getCostmap();
@@ -411,34 +417,12 @@ StaticLayer::updateBounds(
     *min_y = std::min(robot_y - half_h, *min_y);
     *max_x = std::max(robot_x + half_w, *max_x);
     *max_y = std::max(robot_y + half_h, *max_y);
-  } else if (!resize_master_) {
-    // Overlay on a non-rolling costmap: the map keeps its own geometry, so report its
-    // extent (and the previous one, so a moved or shrunk map clears what it used to cover)
-    double bounds[4] = {
-      origin_x_, origin_y_,
-      origin_x_ + size_x_ * resolution_, origin_y_ + size_y_ * resolution_};
-    if (has_previous_overlay_bounds_) {
-      *min_x = std::min(*min_x, previous_overlay_bounds_[0]);
-      *min_y = std::min(*min_y, previous_overlay_bounds_[1]);
-      *max_x = std::max(*max_x, previous_overlay_bounds_[2]);
-      *max_y = std::max(*max_y, previous_overlay_bounds_[3]);
-    }
-    std::copy(bounds, bounds + 4, previous_overlay_bounds_);
-    has_previous_overlay_bounds_ = true;
-    *min_x = std::min(bounds[0], *min_x);
-    *min_y = std::min(bounds[1], *min_y);
-    *max_x = std::max(bounds[2], *max_x);
-    *max_y = std::max(bounds[3], *max_y);
   } else {
-    double wx, wy;
-
-    mapToWorld(x_, y_, wx, wy);
-    *min_x = std::min(wx, *min_x);
-    *min_y = std::min(wy, *min_y);
-
-    mapToWorld(x_ + width_, y_ + height_, wx, wy);
-    *max_x = std::max(wx, *max_x);
-    *max_y = std::max(wy, *max_y);
+    // Cell edges rather than mapToWorld() centres: this layer may be coarser than the master
+    *min_x = std::min(origin_x_ + x_ * resolution_, *min_x);
+    *min_y = std::min(origin_y_ + y_ * resolution_, *min_y);
+    *max_x = std::max(origin_x_ + (x_ + width_) * resolution_, *max_x);
+    *max_y = std::max(origin_y_ + (y_ + height_) * resolution_, *max_y);
   }
 
   has_updated_data_ = false;
@@ -496,8 +480,8 @@ StaticLayer::updateCosts(
       updateWithMax(master_grid, min_i, min_j, max_i, max_j);
     }
   } else {
-    // If rolling window or overlay, the master_grid is unlikely to have same coordinates
-    // as this layer
+    // If rolling window or not resizing the master, the master_grid is unlikely to have
+    // same coordinates as this layer
     unsigned int mx, my;
     double wx, wy;
     // Might even be in a different frame
