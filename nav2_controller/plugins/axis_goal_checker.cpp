@@ -31,7 +31,8 @@ namespace nav2_controller
 
 AxisGoalChecker::AxisGoalChecker()
 : along_path_tolerance_(0.25), cross_track_tolerance_(0.25),
-  path_length_tolerance_(1.0), direction_estimation_distance_(0.15), is_overshoot_valid_(false)
+  fallback_radial_goal_tolerance_(0.25), path_length_tolerance_(1.0),
+  direction_estimation_distance_(0.15), is_overshoot_valid_(false)
 {
 }
 
@@ -62,6 +63,9 @@ void AxisGoalChecker::initialize(
     plugin_name + ".along_path_tolerance", 0.25);
   cross_track_tolerance_ = node->declare_or_get_parameter(
     plugin_name + ".cross_track_tolerance", 0.25);
+  fallback_radial_goal_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".fallback_radial_goal_tolerance",
+    std::min(along_path_tolerance_, cross_track_tolerance_));
   path_length_tolerance_ = node->declare_or_get_parameter(
     plugin_name + ".path_length_tolerance", 1.0);
   direction_estimation_distance_ = node->declare_or_get_parameter(
@@ -136,7 +140,7 @@ bool AxisGoalChecker::isGoalXYReached(
     RCLCPP_DEBUG(
       logger_,
       "No path direction available, falling back to simple distance check");
-    return distance_to_goal < std::min(along_path_tolerance_, cross_track_tolerance_);
+    return distance_to_goal < fallback_radial_goal_tolerance_;
   }
 
   double robot_to_goal_yaw = atan2(robot_to_goal_dy, robot_to_goal_dx);
@@ -232,6 +236,8 @@ AxisGoalChecker::updateParametersCallback(
         along_path_tolerance_ = parameter.as_double();
       } else if (name == plugin_name_ + ".cross_track_tolerance") {
         cross_track_tolerance_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".fallback_radial_goal_tolerance") {
+        fallback_radial_goal_tolerance_ = parameter.as_double();
       } else if (name == plugin_name_ + ".path_length_tolerance") {
         path_length_tolerance_ = parameter.as_double();
       } else if (name == plugin_name_ + ".direction_estimation_distance") {
