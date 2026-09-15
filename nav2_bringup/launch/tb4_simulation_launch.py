@@ -188,7 +188,7 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     declare_simulator_cmd = DeclareLaunchArgument(
-        'headless', default_value='True', description='Whether to execute gzclient)'
+        'headless', default_value='False', description='Whether to execute gzclient)'
     )
 
     declare_world_cmd = DeclareLaunchArgument(
