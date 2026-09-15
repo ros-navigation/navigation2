@@ -34,16 +34,52 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
+// [AI-generated] The VoxelGrid overflow validation in this file was written
+// with AI assistance and reviewed by the author.
 #include <nav2_voxel_grid/voxel_grid.hpp>
+
+#include <stdexcept>
+#include <string>
 
 #include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 
 namespace nav2_voxel_grid
 {
+
+namespace
+{
+// Validates that a grid of size_x * size_y cells can be safely represented
+// by VoxelGrid's flattened unsigned int offsets. Throws std::invalid_argument
+// if not. size_x and size_y are each bounded by INT_MAX because raytraceLine()
+// derives signed offsets (e.g. offset_dy = sign(dy) * size_x_) from them, and
+// the product is bounded by UINT_MAX because it is the flattened offset range
+// used throughout the class.
+void validateVoxelGridSize(unsigned int size_x, unsigned int size_y)
+{
+  constexpr unsigned int kMaxDim = static_cast<unsigned int>(INT_MAX);
+  if (size_x > kMaxDim || size_y > kMaxDim) {
+    throw std::invalid_argument(
+            "VoxelGrid: size_x (" + std::to_string(size_x) + ") and size_y (" +
+            std::to_string(size_y) + ") must each not exceed INT_MAX (" +
+            std::to_string(INT_MAX) + ")");
+  }
+
+  const uint64_t cells = static_cast<uint64_t>(size_x) * static_cast<uint64_t>(size_y);
+  if (cells > static_cast<uint64_t>(UINT_MAX)) {
+    throw std::invalid_argument(
+            "VoxelGrid: size_x * size_y (" + std::to_string(cells) +
+            ") exceeds the maximum representable cell count (" +
+            std::to_string(UINT_MAX) + ")");
+  }
+}
+}  // namespace
+
 VoxelGrid::VoxelGrid(unsigned int size_x, unsigned int size_y, unsigned int size_z)
 : logger(rclcpp::get_logger("voxel_grid"))
 {
+  validateVoxelGridSize(size_x, size_y);
+
   size_x_ = size_x;
   size_y_ = size_y;
   size_z_ = size_z;
@@ -71,6 +107,8 @@ void VoxelGrid::resize(unsigned int size_x, unsigned int size_y, unsigned int si
     reset();
     return;
   }
+
+  validateVoxelGridSize(size_x, size_y);
 
   delete[] data_;
   size_x_ = size_x;
