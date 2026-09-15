@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <functional>
+#include <unordered_map>
 
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "tf2/transform_datatypes.hpp"
@@ -88,33 +89,23 @@ bool PolygonSource::getSourceData(
         return curr_time - rclcpp::Time(polygon_stamped.header.stamp) > source_timeout_;
       }), data_.end());
 
-  tf2::Stamped<tf2::Transform> tf_transform;
+  std::unordered_map<std::string, tf2::Transform> transforms;
   for (const auto & polygon_instance : data_) {
+    tf2::Transform tf_transform;
     if (base_shift_correction_) {
-      // Obtaining the transform to get data from source frame and time where it was received
-      // to the base frame and current time
-      if (
-        !nav2_util::getTransform(
-          polygon_instance.header.frame_id, polygon_instance.header.stamp,
-          base_frame_id_, curr_time, global_frame_id_,
-          transform_tolerance_, tf_buffer_, tf_transform))
-      {
+      if (!getTransform(curr_time, polygon_instance.header, tf_transform)) {
         return false;
       }
     } else {
-      // Obtaining the transform to get data from source frame to base frame without time shift
-      // considered. Less accurate but much more faster option not dependent on state estimation
-      // frames.
-      if (
-        !nav2_util::getTransform(
-          polygon_instance.header.frame_id, base_frame_id_,
-          transform_tolerance_, tf_buffer_, tf_transform))
-      {
+      const auto [it, inserted] = transforms.try_emplace(polygon_instance.header.frame_id);
+      if (inserted && !getTransform(curr_time, polygon_instance.header, it->second)) {
         return false;
       }
+      tf_transform = it->second;
     }
     geometry_msgs::msg::PolygonStamped poly_out, polygon_stamped;
-    geometry_msgs::msg::TransformStamped tf = tf2::toMsg(tf_transform);
+    geometry_msgs::msg::TransformStamped tf;
+    tf.transform = tf2::toMsg(tf_transform);
     polygon_stamped.header = polygon_instance.header;
     polygon_stamped.polygon = polygon_instance.polygon.polygon;
     tf2::doTransform(polygon_stamped, poly_out, tf);
