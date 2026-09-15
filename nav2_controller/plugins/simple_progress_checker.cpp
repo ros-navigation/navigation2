@@ -67,7 +67,7 @@ void SimpleProgressChecker::initialize(
       this, std::placeholders::_1));
 }
 
-bool SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
+bool SimpleProgressChecker::check(const geometry_msgs::msg::PoseStamped & current_pose)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
   // relies on short circuit evaluation to not call is_robot_moved_enough if
