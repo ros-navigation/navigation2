@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <vector>
 
 #include "nav2_costmap_2d/static_layer.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -31,6 +32,12 @@ class StaticLayerRollingTest : public ::testing::Test
 protected:
   void SetUp() override
   {
+    init(0.0, false);
+  }
+
+  // Rolling 10x10 costmap in "odom"; the map is in "map", offset by odom_to_map_x metres
+  void init(double odom_to_map_x, bool footprint_clearing)
+  {
     node_ = std::make_shared<nav2::LifecycleNode>("static_layer_rolling_test");
     node_->declare_parameter("track_unknown_space", true);
     node_->declare_parameter("use_maximum", true);
@@ -39,10 +46,12 @@ protected:
     node_->declare_parameter("unknown_cost_value", 255);
     node_->declare_parameter("trinary_costmap", true);
     node_->declare_parameter("transform_tolerance", 0.0);
+    node_->declare_parameter("static.footprint_clearing_enabled", footprint_clearing);
     tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
     geometry_msgs::msg::TransformStamped transform;
     transform.header.frame_id = "odom";
     transform.child_frame_id = "map";
+    transform.transform.translation.x = odom_to_map_x;
     transform.transform.rotation.w = 1.0;
     ASSERT_TRUE(tf_->setTransform(transform, "test", true));
     layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("odom", true, true);
@@ -88,6 +97,50 @@ TEST_F(StaticLayerRollingTest, MaximumMergeTreatsUnknownAsTransparent)
   layer_->updateCosts(*master, 0, 0, 10, 10);
   EXPECT_EQ(master->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+}
+
+class StaticLayerRollingFootprintTest : public StaticLayerRollingTest
+{
+protected:
+  void SetUp() override
+  {
+    init(3.0, true);  // p_odom = p_map + 3
+  }
+};
+
+TEST_F(StaticLayerRollingFootprintTest, FootprintClearingFollowsTheMapFrame)
+{
+  // 0.8 m square footprint: covers exactly the cell under the robot centre
+  std::vector<geometry_msgs::msg::Point> footprint(4);
+  footprint[0].x = -0.4; footprint[0].y = -0.4;
+  footprint[1].x = 0.4; footprint[1].y = -0.4;
+  footprint[2].x = 0.4; footprint[2].y = 0.4;
+  footprint[3].x = -0.4; footprint[3].y = 0.4;
+  layers_->setFootprint(footprint);
+
+  // Lethal under the robot (map (2,5) = odom (5,5)) and 3 m ahead (map (5,5) = odom (8,5))
+  auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  map->header.frame_id = "map";
+  map->info.width = map->info.height = 10;
+  map->info.resolution = 1.0;
+  map->info.origin.orientation.w = 1.0;
+  map->data.assign(100, 0);
+  map->data[5 * 10 + 2] = 100;
+  map->data[5 * 10 + 5] = 100;
+  layer_->incomingMap(map);
+
+  layers_->updateMap(5.5, 5.5, 0.0);
+  auto * master = layers_->getCostmap();
+  unsigned int under_x, under_y, ahead_x, ahead_y;
+  ASSERT_TRUE(master->worldToMap(5.5, 5.5, under_x, under_y));
+  ASSERT_TRUE(master->worldToMap(8.5, 5.5, ahead_x, ahead_y));
+  EXPECT_EQ(master->getCost(under_x, under_y), nav2_costmap_2d::FREE_SPACE);
+  EXPECT_EQ(master->getCost(ahead_x, ahead_y), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // The cleared cell is restored in the layer afterwards
+  unsigned int mx, my;
+  ASSERT_TRUE(layer_->worldToMap(2.5, 5.5, mx, my));
+  EXPECT_EQ(layer_->getCost(mx, my), nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
 int main(int argc, char ** argv)
