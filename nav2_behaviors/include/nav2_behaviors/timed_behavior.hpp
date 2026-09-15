@@ -74,8 +74,7 @@ public:
   TimedBehavior()
   : action_server_(nullptr),
     cycle_frequency_(10.0),
-    enabled_(false),
-    transform_tolerance_(0.0)
+    enabled_(false)
   {
   }
 
@@ -133,7 +132,8 @@ public:
     node->get_parameter("local_frame", local_frame_);
     node->get_parameter("global_frame", global_frame_);
     node->get_parameter("robot_base_frame", robot_base_frame_);
-    node->get_parameter("transform_tolerance", transform_tolerance_);
+    transform_staleness_threshold_ = node->declare_or_get_parameter(
+      "transform_staleness_threshold", 0.0);
 
     action_server_ = node->create_action_server<ActionT>(
       behavior_name_,
@@ -175,6 +175,24 @@ public:
   }
 
 protected:
+  /**
+   * @brief Get one checked robot pose in the local frame, preserving the TF timestamp
+   * @param pose Pose to reuse throughout the current run initialization or cycle
+   * @return False if the transform is missing or stale; pose is unchanged on failure
+   */
+  bool getCurrentPoseChecked(geometry_msgs::msg::PoseStamped & pose)
+  {
+    geometry_msgs::msg::TransformStamped transform;
+    if (!nav2_util::lookupTransformWithStalenessCheck(
+        *tf_, local_frame_, robot_base_frame_, clock_->now(),
+        transform_staleness_threshold_, transform))
+    {
+      return false;
+    }
+    pose = nav2_util::transformToPoseStamped(transform);
+    return true;
+  }
+
   nav2::LifecycleNode::WeakPtr node_;
 
   std::string behavior_name_;
@@ -189,7 +207,7 @@ protected:
   std::string local_frame_;
   std::string global_frame_;
   std::string robot_base_frame_;
-  double transform_tolerance_;
+  double transform_staleness_threshold_{0.0};
   rclcpp::Duration elapsed_time_{0, 0};
 
   // Clock

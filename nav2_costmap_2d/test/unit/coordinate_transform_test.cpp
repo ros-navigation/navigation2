@@ -14,8 +14,13 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 
 /**
@@ -44,6 +49,39 @@ TEST(mapToWorldNoBounds, MapToWorldNoBoundsNegativeMapCoords)
   EXPECT_DOUBLE_EQ(wy, -15.0);
 }
 
+
+TEST(GetRobotPose, PreservesTransformAndRejectsStalePose)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({
+    rclcpp::Parameter("plugins", std::vector<std::string>{}),
+    rclcpp::Parameter("transform_staleness_threshold", 10.0)});
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>(options);
+  costmap->on_configure(rclcpp_lifecycle::State());
+
+  geometry_msgs::msg::PoseStamped pose;
+  EXPECT_FALSE(costmap->getRobotPose(pose));
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = costmap->getGlobalFrameID();
+  transform.child_frame_id = costmap->getBaseFrameID();
+  transform.header.stamp = costmap->now() - rclcpp::Duration::from_seconds(30.0);
+  transform.transform.translation.x = 1.0;
+  transform.transform.translation.y = 2.0;
+  transform.transform.rotation.w = 1.0;
+  ASSERT_TRUE(costmap->getTfBuffer()->setTransform(transform, "test"));
+  EXPECT_FALSE(costmap->getRobotPose(pose));
+
+  transform.header.stamp = costmap->now();
+  ASSERT_TRUE(costmap->getTfBuffer()->setTransform(transform, "test"));
+  ASSERT_TRUE(costmap->getRobotPose(pose));
+  EXPECT_EQ(pose.header, transform.header);
+  EXPECT_DOUBLE_EQ(pose.pose.position.x, 1.0);
+  EXPECT_DOUBLE_EQ(pose.pose.position.y, 2.0);
+  EXPECT_EQ(pose.pose.orientation, transform.transform.rotation);
+
+  costmap->on_cleanup(rclcpp_lifecycle::State());
+}
 
 int main(int argc, char ** argv)
 {

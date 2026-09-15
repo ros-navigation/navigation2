@@ -84,10 +84,7 @@ public:
 
     end_time_ = this->clock_->now() + command_time_allowance_;
 
-    if (!nav2_util::getCurrentPose(
-        initial_pose_, *this->tf_, this->local_frame_, this->robot_base_frame_,
-        this->transform_tolerance_))
-    {
+    if (!this->getCurrentPoseChecked(initial_pose_)) {
       error_msg = "Initial robot pose is not available.";
       RCLCPP_ERROR(this->logger_, "%s", error_msg.c_str());
       return ResultStatus{Status::FAILED, ActionT::Result::TF_ERROR, error_msg};
@@ -112,10 +109,8 @@ public:
     }
 
     geometry_msgs::msg::PoseStamped current_pose;
-    if (!nav2_util::getCurrentPose(
-        current_pose, *this->tf_, this->local_frame_, this->robot_base_frame_,
-        this->transform_tolerance_))
-    {
+    if (!this->getCurrentPoseChecked(current_pose)) {
+      this->stopRobot();
       std::string error_msg = "Current robot pose is not available.";
       RCLCPP_ERROR(this->logger_, "%s", error_msg.c_str());
       return ResultStatus{Status::FAILED, ActionT::Result::TF_ERROR, error_msg};
