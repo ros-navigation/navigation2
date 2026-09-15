@@ -582,27 +582,29 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   // Also tests param get of set vx/vy/wz min/maxes
 
   // Set model to omni to consider holonomic vy elements
-  // Ack is not tested here because `applyConstraints` is covered in detail
+  // Ack is not tested here because its constraint step is covered in detail
   // in motion_models_test.cpp
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();
   auto & sequence = optimizer_tester.grabControlSequence();
   auto & state = optimizer_tester.grabState();
 
-  // Test boundary of limits
+  // Test boundary of limits, on the vx semi-axis of the holonomic velocity ellipse
   // Set state speed to match so acceleration constraints are satisfied
   state.speed.linear.x = 1.0;
-  state.speed.linear.y = 0.75;
+  state.speed.linear.y = 0.0;
   state.speed.angular.z = 2.0;
   sequence.vx = Eigen::ArrayXf::Ones(50);
-  sequence.vy = 0.75 * Eigen::ArrayXf::Ones(50);
+  sequence.vy = Eigen::ArrayXf::Zero(50);
   sequence.wz = 2.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
   EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f));
-  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.75f));
+  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.0f));
   EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
 
-  // Test breaking limits sets to maximum
+  // Test breaking limits sets to the maximum along the commanded direction of travel. Equal
+  // vx and vy demand puts that at vx = 0.6, vy = 0.6: on the ellipse, and within both
+  // per-axis limits. The sequence ramps there under the acceleration limits, so check the tail.
   state.speed.linear.x = 1.0;
   state.speed.linear.y = 0.75;
   state.speed.angular.z = 2.0;
@@ -610,9 +612,11 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   sequence.vy = 5.0 * Eigen::ArrayXf::Ones(50);
   sequence.wz = 5.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f));
-  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.75f));
-  EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
+  EXPECT_NEAR(sequence.vx(49), 0.6f, 1e-3);
+  EXPECT_NEAR(sequence.vy(49), 0.6f, 1e-3);
+  EXPECT_NEAR(sequence.wz(49), 2.0f, 1e-3);
+  EXPECT_TRUE((sequence.vx <= 1.0f + 1e-6f).all());
+  EXPECT_TRUE((sequence.vy <= 0.75f + 1e-6f).all());
 
   // Test breaking limits sets to minimum
   state.speed.linear.x = -1.0;
@@ -622,9 +626,133 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   sequence.vy = -5.0 * Eigen::ArrayXf::Ones(50);
   sequence.wz = -5.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_TRUE(sequence.vx.isApproxToConstant(-1.0f));
-  EXPECT_TRUE(sequence.vy.isApproxToConstant(-0.75f));
-  EXPECT_TRUE(sequence.wz.isApproxToConstant(-2.0f));
+  EXPECT_NEAR(sequence.vx(49), -0.6f, 1e-3);
+  EXPECT_NEAR(sequence.vy(49), -0.6f, 1e-3);
+  EXPECT_NEAR(sequence.wz(49), -2.0f, 1e-3);
+  EXPECT_TRUE((sequence.vx >= -1.0f - 1e-6f).all());
+  EXPECT_TRUE((sequence.vy >= -0.75f - 1e-6f).all());
+
+  // Test that acceleration limits and the translational velocity envelope hold simultaneously
+  state.speed.linear.x = -0.2959;
+  state.speed.linear.y = -0.7164;
+  state.speed.angular.z = 0.0;
+  sequence.vx.setConstant(-0.404f);
+  sequence.vy.setConstant(-0.687f);
+  sequence.wz.setConstant(0.0f);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+
+  float prev_vx = static_cast<float>(state.speed.linear.x);
+  float prev_vy = static_cast<float>(state.speed.linear.y);
+  auto & constraints = optimizer_tester.getControlConstraints();
+  auto & settings = optimizer_tester.grabSettings();
+  for (unsigned int i = 0; i < 50; ++i) {
+    float vx = sequence.vx(i);
+    float vy = sequence.vy(i);
+    float ellipse_val = (vx * vx) / (1.0f * 1.0f) + (vy * vy) / (0.75f * 0.75f);
+    EXPECT_LE(ellipse_val, 1.0f + 1e-5f);
+
+    float dt = (i == 0) ? settings.controller_period : settings.model_dt;
+    float max_dvx = dt * constraints.ax_max;
+    float min_dvx = dt * constraints.ax_min;
+    float max_dvy = dt * constraints.ay_max;
+    float min_dvy = dt * constraints.ay_min;
+
+    float dvx = vx - prev_vx;
+    float dvy = vy - prev_vy;
+    EXPECT_LE(dvx, max_dvx + 1e-5f);
+    EXPECT_GE(dvx, min_dvx - 1e-5f);
+    EXPECT_LE(dvy, max_dvy + 1e-5f);
+    EXPECT_GE(dvy, min_dvy - 1e-5f);
+
+    prev_vx = vx;
+    prev_vy = vy;
+  }
+
+  // A speed limit shrinking mid-motion puts the measured speed outside the new envelope. The
+  // sequence must ramp back in under the accel limits rather than being snapped onto it.
+  constraints.ax_max = 3.0f;
+  constraints.ax_min = -3.0f;
+  constraints.ay_max = 3.0f;
+  constraints.ay_min = -3.0f;
+  constraints.vx_max = 0.5f;
+  constraints.vx_min = -0.5f;
+  constraints.vy = 0.375f;
+  optimizer_tester.resetMotionModel();
+  optimizer_tester.testSetOmniModel();
+
+  state.speed.linear.x = 0.7;
+  state.speed.linear.y = 0.4;
+  state.speed.angular.z = 0.0;
+  sequence.vx.setConstant(0.0f);
+  sequence.vy.setConstant(0.0f);
+  sequence.wz.setConstant(0.0f);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+
+  float last_vx = static_cast<float>(state.speed.linear.x);
+  float last_vy = static_cast<float>(state.speed.linear.y);
+  for (unsigned int i = 0; i < 50; ++i) {
+    const float dt = (i == 0) ? settings.controller_period : settings.model_dt;
+    EXPECT_GE(sequence.vx(i) - last_vx, dt * constraints.ax_min - 1e-5f);
+    EXPECT_GE(sequence.vy(i) - last_vy, dt * constraints.ay_min - 1e-5f);
+    last_vx = sequence.vx(i);
+    last_vy = sequence.vy(i);
+  }
+
+  // and it does converge into the envelope by the end of the horizon
+  EXPECT_LE(
+    std::hypot(sequence.vx(49) / constraints.vx_max, sequence.vy(49) / constraints.vy),
+    1.0f + 1e-5f);
+}
+
+TEST(OptimizerTests, applyControlSequenceConstraintsPerAxisTests)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter("mppic.vx_max", rclcpp::ParameterValue(1.0));
+  node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-1.0));
+  node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.75));
+  node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
+  node->declare_parameter(
+    "mppic.omni.use_velocity_ellipse_scaling", rclcpp::ParameterValue(false));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  // Opting out of the combined translational limit must keep the axes independent, both for the
+  // velocity limits and for the acceleration limits
+  optimizer_tester.resetMotionModel();
+  optimizer_tester.testSetOmniModel();
+  auto & sequence = optimizer_tester.grabControlSequence();
+  auto & state = optimizer_tester.grabState();
+
+  // Each axis is limited by its own acceleration limit, so an axis that is already at its
+  // demand is not slowed down by the other axis needing to ramp up. This would fail with the
+  // ellipse on, where a shared fraction pulls vx below its demand, so it also proves the
+  // parameter reaches the motion model.
+  auto & constraints = optimizer_tester.getControlConstraints();
+  auto & settings = optimizer_tester.grabSettings();
+  state.speed.linear.x = 0.5;
+  state.speed.linear.y = 0.0;
+  state.speed.angular.z = 0.0;
+  sequence.vx.setConstant(0.5f);
+  sequence.vy.setConstant(0.75f);
+  sequence.wz.setZero();
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  EXPECT_TRUE(sequence.vx.isApproxToConstant(0.5f));
+  EXPECT_NEAR(sequence.vy(0), settings.controller_period * constraints.ay_max, 1e-5);
+  EXPECT_NEAR(sequence.vy(49), 0.75f, 1e-3);
 }
 
 TEST(OptimizerTests, updateStateVelocitiesTests)
