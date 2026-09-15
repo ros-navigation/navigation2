@@ -31,17 +31,17 @@ namespace nav2_util
 
 bool lookupTransformWithStalenessCheck(
   nav2::TransformBuffer & tf_buffer,
-  const std::string & source_frame,
   const std::string & target_frame,
+  const std::string & source_frame,
   const rclcpp::Time & current_time,
   double staleness_threshold,
   geometry_msgs::msg::TransformStamped & transform)
 {
-  if (source_frame == target_frame) {
+  if (target_frame == source_frame) {
     geometry_msgs::msg::TransformStamped identity;
-    identity.header.frame_id = source_frame;
+    identity.header.frame_id = target_frame;
     identity.header.stamp = current_time;
-    identity.child_frame_id = target_frame;
+    identity.child_frame_id = source_frame;
     identity.transform.rotation.w = 1.0;
     transform = identity;
     return true;
@@ -50,7 +50,7 @@ bool lookupTransformWithStalenessCheck(
   geometry_msgs::msg::TransformStamped latest_transform;
   try {
     latest_transform = tf_buffer.lookupTransform(
-      source_frame, target_frame, tf2::TimePointZero);
+      target_frame, source_frame, tf2::TimePointZero);
   } catch (const tf2::TransformException & ex) {
     RCLCPP_ERROR(
       rclcpp::get_logger("lookupTransformWithStalenessCheck"),
@@ -68,7 +68,7 @@ bool lookupTransformWithStalenessCheck(
       RCLCPP_ERROR(
         rclcpp::get_logger("lookupTransformWithStalenessCheck"),
         "Transform from frame '%s' to frame '%s' is stale: age %fs exceeds threshold %fs",
-        target_frame.c_str(), source_frame.c_str(), transform_age, staleness_threshold);
+        source_frame.c_str(), target_frame.c_str(), transform_age, staleness_threshold);
       return false;
     }
   }
