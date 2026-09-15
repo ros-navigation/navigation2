@@ -35,6 +35,7 @@
 #include "nav2_msgs/srv/toggle.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
+#include "nav2_collision_monitor/triggering_cloud.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
 #include "nav2_collision_monitor/circle.hpp"
 #include "nav2_collision_monitor/velocity_polygon.hpp"
@@ -202,10 +203,11 @@ protected:
   void publishVisualizations() const;
 
   /**
-   * @brief Publishes action.triggering_points as markers, colour-coded by action type.
+   * @brief Publishes triggering points with source, polygon and action fields.
    * @param action Current robot action
+   * @param stamp Processing time used for the cloud header
    */
-  void publishTriggeringPoints(const Action & action);
+  void publishTriggeringPoints(const Action & action, const rclcpp::Time & stamp);
 
   /**
    * @brief Enable/disable collision monitor service callback
@@ -244,9 +246,10 @@ protected:
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_pub_;
 
-  /// @brief Triggering points marker publisher (points inside the active triggering zone)
-  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  /// @brief Triggering points cloud publisher (points inside the active triggering zone)
+  nav2::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
     triggering_points_pub_;
+  TriggeringCloud triggering_cloud_;
 
   /// @brief Enable/disable collision monitor service
   nav2::ServiceServer<nav2_msgs::srv::Toggle>::SharedPtr toggle_cm_service_;

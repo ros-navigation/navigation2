@@ -199,7 +199,7 @@ protected:
   void cmdVelOutCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg);
   void actionStateCallback(nav2_msgs::msg::CollisionMonitorState::ConstSharedPtr msg);
   void collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg);
-  void triggeringPointsCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg);
+  void triggeringPointsCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
 
   // CollisionMonitor node
   std::shared_ptr<CollisionMonitorWrapper> cm_;
@@ -231,10 +231,10 @@ protected:
     collision_points_marker_sub_;
   visualization_msgs::msg::MarkerArray::ConstSharedPtr collision_points_marker_msg_;
 
-  // CollisionMonitor triggering points markers
-  nav2::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
+  // CollisionMonitor triggering points cloud
+  nav2::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr
     triggering_points_sub_;
-  visualization_msgs::msg::MarkerArray::ConstSharedPtr triggering_points_msg_;
+  sensor_msgs::msg::PointCloud2::ConstSharedPtr triggering_points_msg_;
 
   // Service client for setting CollisionMonitor parameters
   nav2::ServiceClient<rcl_interfaces::srv::SetParameters>::SharedPtr parameters_client_;
@@ -280,7 +280,7 @@ Tester::Tester()
   collision_points_marker_sub_ = cm_->create_subscription<visualization_msgs::msg::MarkerArray>(
     COLLISION_POINTS_MARKERS_TOPIC,
     std::bind(&Tester::collisionPointsMarkerCallback, this, std::placeholders::_1));
-  triggering_points_sub_ = cm_->create_subscription<visualization_msgs::msg::MarkerArray>(
+  triggering_points_sub_ = cm_->create_subscription<sensor_msgs::msg::PointCloud2>(
     TRIGGERING_POINTS_TOPIC,
     std::bind(&Tester::triggeringPointsCallback, this, std::placeholders::_1));
   parameters_client_ =
@@ -827,7 +827,7 @@ void Tester::collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray:
   collision_points_marker_msg_ = msg;
 }
 
-void Tester::triggeringPointsCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg)
+void Tester::triggeringPointsCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
   triggering_points_msg_ = msg;
 }
@@ -1612,7 +1612,7 @@ TEST_F(Tester, testCollisionPointsMarkers)
   cm_->stop();
 }
 
-TEST_F(Tester, testTriggeringPointsMarkers)
+TEST_F(Tester, testTriggeringPointsCloud)
 {
   rclcpp::Time curr_time = cm_->now();
 
@@ -1625,16 +1625,11 @@ TEST_F(Tester, testTriggeringPointsMarkers)
   cm_->start();
   sendTransforms(curr_time);
 
-  // No obstacle: triggering_points should contain only the DELETEALL clear marker.
   publishCmdVel(0.5, 0.0, 0.0);
   ASSERT_TRUE(waitTriggeringPoints(500ms));
-  ASSERT_EQ(triggering_points_msg_->markers.size(), 1u);
-  EXPECT_EQ(
-    triggering_points_msg_->markers[0].action,
-    visualization_msgs::msg::Marker::DELETEALL);
+  EXPECT_EQ(triggering_points_msg_->width, 0u);
+  EXPECT_TRUE(triggering_points_msg_->data.empty());
 
-  // Obstacle inside the Stop polygon: STOP action triggers, marker array must
-  // contain the clear marker plus one POINTS marker for the Scan source.
   publishScan(0.5, curr_time);
   ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.0, 0.0);
@@ -1642,28 +1637,30 @@ TEST_F(Tester, testTriggeringPointsMarkers)
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
 
-  ASSERT_EQ(triggering_points_msg_->markers.size(), 2u);
-  EXPECT_EQ(
-    triggering_points_msg_->markers[0].action,
-    visualization_msgs::msg::Marker::DELETEALL);
-
-  const auto & points_marker = triggering_points_msg_->markers[1];
-  EXPECT_EQ(points_marker.type, visualization_msgs::msg::Marker::POINTS);
-  EXPECT_EQ(points_marker.action, visualization_msgs::msg::Marker::ADD);
-  EXPECT_EQ(points_marker.ns, std::string("Stop/") + SCAN_NAME);
-  EXPECT_EQ(points_marker.header.frame_id, BASE_FRAME_ID);
-  EXPECT_TRUE(points_marker.frame_locked);
-  // STOP colour: red.
-  EXPECT_FLOAT_EQ(points_marker.color.r, 1.0f);
-  EXPECT_FLOAT_EQ(points_marker.color.g, 0.0f);
-  EXPECT_FLOAT_EQ(points_marker.color.b, 0.0f);
-  EXPECT_FLOAT_EQ(points_marker.color.a, 1.0f);
-
-  ASSERT_FALSE(points_marker.points.empty());
-  for (const auto & p : points_marker.points) {
-    EXPECT_LE(std::abs(p.x), 1.0 + EPSILON);
-    EXPECT_LE(std::abs(p.y), 1.0 + EPSILON);
+  const auto & cloud = *triggering_points_msg_;
+  EXPECT_EQ(cloud.header.frame_id, BASE_FRAME_ID);
+  EXPECT_GE(rclcpp::Time(cloud.header.stamp), curr_time);
+  EXPECT_EQ(cloud.point_step, 24u);
+  EXPECT_EQ(cloud.row_step, cloud.width * cloud.point_step);
+  ASSERT_GT(cloud.width, 0u);
+  sensor_msgs::PointCloud2ConstIterator<float> xpos(cloud, "x");
+  sensor_msgs::PointCloud2ConstIterator<float> ypos(cloud, "y");
+  sensor_msgs::PointCloud2ConstIterator<uint32_t> source(cloud, "source_id");
+  sensor_msgs::PointCloud2ConstIterator<uint32_t> polygon(cloud, "polygon_id");
+  sensor_msgs::PointCloud2ConstIterator<uint32_t> action(cloud, "action_type");
+  for (; xpos != xpos.end(); ++xpos, ++ypos, ++source, ++polygon, ++action) {
+    EXPECT_LE(std::abs(*xpos), 1.0 + EPSILON);
+    EXPECT_LE(std::abs(*ypos), 1.0 + EPSILON);
+    EXPECT_EQ(*source, 0u);
+    EXPECT_EQ(*polygon, 0u);
+    EXPECT_EQ(*action, static_cast<uint32_t>(STOP));
   }
+
+  publishScan(2.0, curr_time);
+  ASSERT_TRUE(waitData(2.0, 500ms, curr_time));
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitTriggeringPoints(500ms));
+  EXPECT_EQ(triggering_points_msg_->width, 0u);
 
   cm_->stop();
 }

@@ -79,7 +79,16 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
   collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
     "~/collision_points_marker");
 
-  triggering_points_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
+  std::vector<std::string> source_names;
+  std::vector<std::string> polygon_names;
+  for (const auto & source : sources_) {
+    source_names.push_back(source->getSourceName());
+  }
+  for (const auto & polygon : polygons_) {
+    polygon_names.push_back(polygon->getName());
+  }
+  triggering_cloud_.configure(source_names, polygon_names);
+  triggering_points_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
     "~/triggering_points");
 
   // Toggle service initialization
@@ -524,7 +533,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   }
 
   if (triggering_points_pub_->get_subscription_count() > 0) {
-    publishTriggeringPoints(robot_action);
+    publishTriggeringPoints(robot_action, curr_time);
   }
 
   if ((robot_action.polygon_name != robot_action_prev_.polygon_name) && enabled_) {
@@ -685,56 +694,15 @@ void CollisionMonitor::notifyActionState(
   }
 }
 
-void CollisionMonitor::publishTriggeringPoints(const Action & action)
+void CollisionMonitor::publishTriggeringPoints(const Action & action, const rclcpp::Time & stamp)
 {
-  auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-
-  // Clear markers from previous cycle.
-  visualization_msgs::msg::Marker clear;
-  clear.action = visualization_msgs::msg::Marker::DELETEALL;
-  marker_array->markers.push_back(clear);
-
-  if (!action.triggering_points.empty()) {
-    // Colour by action type: STOP=red, SLOWDOWN=yellow, APPROACH=blue, LIMIT=orange
-    float r = 0.0f, g = 0.0f, b = 0.0f;
-    switch (action.action_type) {
-      case STOP:     r = 1.0f; g = 0.0f; b = 0.0f; break;
-      case SLOWDOWN: r = 1.0f; g = 1.0f; b = 0.0f; break;
-      case APPROACH: r = 0.0f; g = 0.5f; b = 1.0f; break;
-      case LIMIT:    r = 1.0f; g = 0.5f; b = 0.0f; break;
-      default: break;
-    }
-
-    std::unordered_map<std::string, size_t> marker_index;
-    for (const auto & p : action.triggering_points) {
-      auto [it, new_source] = marker_index.try_emplace(p.source, marker_array->markers.size());
-
-      if (new_source) {
-        visualization_msgs::msg::Marker marker;
-        marker.header.frame_id = base_frame_id_;
-        marker.header.stamp = rclcpp::Time(0, 0);
-        marker.ns = action.polygon_name + "/" + p.source;
-        marker.id = 0;
-        marker.type = visualization_msgs::msg::Marker::POINTS;
-        marker.action = visualization_msgs::msg::Marker::ADD;
-        marker.scale.x = 0.05;
-        marker.scale.y = 0.05;
-        marker.color.r = r;
-        marker.color.g = g;
-        marker.color.b = b;
-        marker.color.a = 1.0f;
-        marker.lifetime = rclcpp::Duration(0, 0);
-        marker.frame_locked = true;
-        marker_array->markers.push_back(std::move(marker));
-      }
-      geometry_msgs::msg::Point gp;
-      gp.x = p.x;
-      gp.y = p.y;
-      gp.z = p.z;
-      marker_array->markers[it->second].points.push_back(gp);
-    }
-  }
-  triggering_points_pub_->publish(std::move(marker_array));
+  std_msgs::msg::Header header;
+  header.frame_id = base_frame_id_;
+  header.stamp = stamp;
+  auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>(TriggeringCloud::create(header));
+  triggering_cloud_.append(
+    *cloud, action.triggering_points, action.polygon_name, action.action_type);
+  triggering_points_pub_->publish(std::move(cloud));
 }
 
 void CollisionMonitor::publishVisualizations() const

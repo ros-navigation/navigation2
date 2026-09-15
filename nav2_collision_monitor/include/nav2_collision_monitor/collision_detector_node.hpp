@@ -31,6 +31,7 @@
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
+#include "nav2_collision_monitor/triggering_cloud.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
 #include "nav2_collision_monitor/circle.hpp"
 #include "nav2_collision_monitor/velocity_polygon.hpp"
@@ -137,12 +138,13 @@ protected:
   void publishVisualizations() const;
 
   /**
-   * @brief Publishes the points inside each detected polygon as markers,
-   * bucketed by polygon name and per-point source.
+   * @brief Publishes points inside each detected polygon with source and polygon fields.
    * @param all_triggering_points Map from polygon name to its triggering points.
+   * @param stamp Processing time used for the cloud header
    */
   void publishTriggeringPoints(
-    const std::unordered_map<std::string, std::vector<Point>> & all_triggering_points);
+    const std::unordered_map<std::string, std::vector<Point>> & all_triggering_points,
+    const rclcpp::Time & stamp);
 
   // ----- Variables -----
 
@@ -162,9 +164,10 @@ protected:
   /// @brief Collision points marker publisher
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_pub_;
-  /// @brief Triggering points marker publisher (points inside each detected polygon)
-  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  /// @brief Triggering points cloud publisher (points inside each detected polygon)
+  nav2::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
     triggering_points_pub_;
+  TriggeringCloud triggering_cloud_;
   /// @brief timer that runs actions
   rclcpp::TimerBase::SharedPtr timer_;
 
