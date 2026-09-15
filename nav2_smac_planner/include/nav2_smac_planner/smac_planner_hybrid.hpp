@@ -117,6 +117,15 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
+  /**
+   * @brief Update resolution-dependent search settings from their world-unit values.
+   * Converts the turning radius, analytic expansion maximum length and heuristic
+   * lookup size to search-grid units.
+   * @param resolution Effective search-grid resolution in meters per cell,
+   * including costmap downsampling when enabled.
+   */
+  void updateSearchResolution(double resolution);
+
   std::unique_ptr<AStarAlgorithm<NodeT>> _a_star;
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
@@ -139,6 +148,8 @@ protected:
   SearchInfo _search_info;
   double _max_planning_time;
   double _lookup_table_size;
+  double _search_resolution{0.0};
+  double _analytic_expansion_max_length_m;
   double _minimum_turning_radius_global_coords;
   bool _debug_visualizations;
   std::string _motion_model_for_search;
@@ -158,8 +169,6 @@ protected:
   // Dynamic parameters handler
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr _post_set_params_handler;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _on_set_params_handler;
-  std::shared_ptr<rclcpp::ParameterEventHandler> _remote_param_subscriber;
-  std::shared_ptr<rclcpp::ParameterCallbackHandle> _remote_resolution_handler;
 };
 
 // Backward-compatible type alias
