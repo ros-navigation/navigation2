@@ -168,6 +168,7 @@ public:
    * @param topic_name Name of topic
    * @param qos QoS settings for the publisher (default is nav2::qos::StandardTopicQoS())
    * @param callback_group The callback group to use (if provided)
+   * @param matched_callback Callback when a subscriber matches or unmatches
    * @return A shared pointer to the created nav2::Publisher
    */
   template<typename MessageT>
@@ -175,10 +176,11 @@ public:
   create_publisher(
     const std::string & topic_name,
     const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
-    const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
+    const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr,
+    rclcpp::PublisherMatchedCallbackType matched_callback = nullptr)
   {
     auto pub = nav2::interfaces::create_publisher<MessageT>(
-      shared_from_this(), topic_name, qos, callback_group);
+      shared_from_this(), topic_name, qos, callback_group, matched_callback);
     this->add_managed_entity(pub);
 
     // Automatically activate the publisher if the node is already active
