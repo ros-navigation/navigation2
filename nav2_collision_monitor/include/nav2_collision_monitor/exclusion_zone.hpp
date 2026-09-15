@@ -178,11 +178,12 @@ protected:
   std::string global_frame_id_;
   /// @brief Transform tolerance
   tf2::Duration transform_tolerance_;
+  /// @brief Maximum age in seconds for transforms requested at the latest time
+  double transform_staleness_threshold_{1.0};
   /// @brief Whether to correct the zone transform for base movement between data and current time
   bool base_shift_correction_;
 
-  /// @brief Extra time (s) beyond the transform tolerance that a stale zone-frame
-  /// pose may keep being used before the zone fails safe. 0 -> only the tolerance.
+  /// @brief Optional max age override for the zone frame if > than transform_staleness_threshold_
   double frame_hold_timeout_{0.0};
 
   /// @brief Frame the zone shape is anchored to (tracked via TF). Defaults to base_frame_id_.

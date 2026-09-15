@@ -630,6 +630,12 @@ TEST_F(ExclusionZoneTester, DynamicFrameHoldTimeoutUpdateExtendsWindow)
 
   // 3 s after the last detection exceeds the 1 s hold window -> fail safe.
   const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(3.0);
+  geometry_msgs::msg::TransformStamped fresh_base;
+  fresh_base.header.frame_id = GLOBAL_FRAME_ID;
+  fresh_base.child_frame_id = BASE_FRAME_ID;
+  fresh_base.header.stamp = later;
+  fresh_base.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf_buffer_->setTransform(fresh_base, "test"));
   {
     std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
     zone->apply(later, data);
@@ -699,6 +705,22 @@ TEST_F(ExclusionZoneTester, ConfigureFailsOnUnknownType)
 // Flaky-frame hold behaviour
 // ---------------------------------------------------------------------------
 
+TEST_F(ExclusionZoneTester, HeldZoneDoesNotMaskWithStaleRobotPose)
+{
+  declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
+  node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
+  node_->declare_parameter(
+    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(5.0));
+  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+
+  auto zone = makeZone();
+  ASSERT_TRUE(zone->configure());
+
+  std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}};
+  zone->apply(node_->now() + rclcpp::Duration::from_seconds(2.0), data);
+  EXPECT_EQ(data.size(), 1u);
+}
+
 TEST_F(ExclusionZoneTester, HeldZoneKeepsMaskingWithinWindow)
 {
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
@@ -717,6 +739,12 @@ TEST_F(ExclusionZoneTester, HeldZoneKeepsMaskingWithinWindow)
   // 2 s later the frame has not refreshed, but that is within the 5 s hold
   // window, so the zone must keep masking at its last known pose.
   const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(2.0);
+  geometry_msgs::msg::TransformStamped fresh_base;
+  fresh_base.header.frame_id = GLOBAL_FRAME_ID;
+  fresh_base.child_frame_id = BASE_FRAME_ID;
+  fresh_base.header.stamp = later;
+  fresh_base.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf_buffer_->setTransform(fresh_base, "test"));
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
   zone->apply(later, data);
   ASSERT_EQ(data.size(), 1u);
