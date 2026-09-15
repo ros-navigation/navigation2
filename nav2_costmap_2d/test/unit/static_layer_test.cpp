@@ -91,12 +91,12 @@ TEST_F(StaticLayerRollingTest, MaximumMergeTreatsUnknownAsTransparent)
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
-class StaticLayerOverlayTest : public ::testing::Test
+class StaticLayerResizeMasterTest : public ::testing::Test
 {
 protected:
   void SetUp() override
   {
-    node_ = std::make_shared<nav2::LifecycleNode>("static_layer_overlay_test");
+    node_ = std::make_shared<nav2::LifecycleNode>("static_layer_resize_master_test");
     node_->declare_parameter("track_unknown_space", true);
     node_->declare_parameter("use_maximum", true);
     node_->declare_parameter("lethal_cost_threshold", 100);
@@ -144,10 +144,10 @@ protected:
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
 };
 
-TEST_F(StaticLayerOverlayTest, OverlayKeepsMasterGeometryAndProjectsCosts)
+TEST_F(StaticLayerResizeMasterTest, KeepsMasterGeometryAndProjectsCosts)
 {
-  auto overlay = addLayer("overlay", false);
-  overlay->incomingMap(makeMap());
+  auto layer = addLayer("annotations", false);
+  layer->incomingMap(makeMap());
   auto * master = layers_->getCostmap();
   EXPECT_EQ(master->getSizeInCellsX(), 20u);
   EXPECT_EQ(master->getSizeInCellsY(), 20u);
@@ -159,17 +159,17 @@ TEST_F(StaticLayerOverlayTest, OverlayKeepsMasterGeometryAndProjectsCosts)
   EXPECT_EQ(master->getCost(6, 6), nav2_costmap_2d::LETHAL_OBSTACLE);
   EXPECT_EQ(master->getCost(7, 5), nav2_costmap_2d::NO_INFORMATION);
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::NO_INFORMATION);
-  EXPECT_TRUE(overlay->isCurrent());
+  EXPECT_TRUE(layer->isCurrent());
 }
 
-TEST_F(StaticLayerOverlayTest, ReplacementMapClearsThePreviousExtent)
+TEST_F(StaticLayerResizeMasterTest, ReplacementMapClearsThePreviousExtent)
 {
-  auto overlay = addLayer("overlay", false);
-  overlay->incomingMap(makeMap());
+  auto layer = addLayer("annotations", false);
+  layer->incomingMap(makeMap());
   layers_->updateMap(10.0, 10.0, 0.0);
   ASSERT_EQ(layers_->getCostmap()->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
 
-  overlay->incomingMap(makeMap(10.0));
+  layer->incomingMap(makeMap(10.0));
   layers_->updateMap(10.0, 10.0, 0.0);
   auto * master = layers_->getCostmap();
   EXPECT_EQ(master->getCost(10, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
@@ -177,7 +177,7 @@ TEST_F(StaticLayerOverlayTest, ReplacementMapClearsThePreviousExtent)
   EXPECT_EQ(master->getSizeInCellsX(), 20u);
 }
 
-TEST_F(StaticLayerOverlayTest, TwoOverlaysShareOneMaster)
+TEST_F(StaticLayerResizeMasterTest, TwoLayersShareOneMaster)
 {
   auto first = addLayer("first", false);
   auto second = addLayer("second", false);
@@ -190,7 +190,7 @@ TEST_F(StaticLayerOverlayTest, TwoOverlaysShareOneMaster)
   EXPECT_EQ(master->getSizeInCellsX(), 20u);
 }
 
-TEST_F(StaticLayerOverlayTest, DefaultStillResizesTheMaster)
+TEST_F(StaticLayerResizeMasterTest, DefaultStillResizesTheMaster)
 {
   auto base = addLayer("static", true);
   base->incomingMap(makeMap());
@@ -202,13 +202,13 @@ TEST_F(StaticLayerOverlayTest, DefaultStillResizesTheMaster)
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
-TEST_F(StaticLayerOverlayTest, ResizeMasterIsNotDynamic)
+TEST_F(StaticLayerResizeMasterTest, ResizeMasterIsNotDynamic)
 {
-  auto overlay = addLayer("overlay", false);
-  overlay->incomingMap(makeMap());
+  auto layer = addLayer("annotations", false);
+  layer->incomingMap(makeMap());
   // Like map_topic, the parameter is read at initialization only: setting it later has no effect
-  node_->set_parameter(rclcpp::Parameter("overlay.resize_master", true));
-  overlay->incomingMap(makeMap(10.0));
+  node_->set_parameter(rclcpp::Parameter("annotations.resize_master", true));
+  layer->incomingMap(makeMap(10.0));
   layers_->updateMap(10.0, 10.0, 0.0);
   EXPECT_EQ(layers_->getCostmap()->getSizeInCellsX(), 20u);
 }

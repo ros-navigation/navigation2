@@ -492,6 +492,7 @@ StaticLayer::updateCosts(
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
+      has_updated_data_ = true;
       return;
     }
     // Copy map data given proper transformations
