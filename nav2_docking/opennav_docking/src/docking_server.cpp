@@ -26,7 +26,8 @@ namespace opennav_docking
 {
 
 DockingServer::DockingServer(const rclcpp::NodeOptions & options)
-: nav2::LifecycleNode("docking_server", "", options)
+: nav2::LifecycleNode("docking_server", "", options),
+  controller_loader_("opennav_docking", "opennav_docking::ControllerBase")
 {
   RCLCPP_INFO(get_logger(), "Creating %s", get_name());
 }
@@ -61,11 +62,14 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
     true);
 
   // Create composed utilities
-  controller_ = std::make_unique<Controller>(node, tf2_buffer_, params_->fixed_frame,
-      params_->base_frame);
+  std::vector<std::string> controller_ids;
+  if (!loadControllerPlugins(node, controller_ids)) {
+    on_cleanup(state);
+    return nav2::CallbackReturn::FAILURE;
+  }
   navigator_ = std::make_unique<Navigator>(node);
   dock_db_ = std::make_unique<DockDatabase>(param_handler_->getMutex());
-  if (!dock_db_->initialize(node, tf2_buffer_)) {
+  if (!dock_db_->initialize(node, tf2_buffer_, controller_ids)) {
     on_cleanup(state);
     return nav2::CallbackReturn::FAILURE;
   }
@@ -82,12 +86,16 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   tf2_listener_ = nav2::create_transform_listener(*tf2_buffer_, this, true);
   dock_db_->activate();
+  for (auto & controller : controllers_) {
+    controller.second->activate();
+  }
   navigator_->activate();
   vel_publisher_->on_activate();
   docking_action_server_->activate();
   undocking_action_server_->activate();
   param_handler_->activate();
   curr_dock_type_.clear();
+  curr_dock_controller_.clear();
 
   // Create bond connection
   createBond();
@@ -103,6 +111,9 @@ DockingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   docking_action_server_->deactivate();
   undocking_action_server_->deactivate();
   dock_db_->deactivate();
+  for (auto & controller : controllers_) {
+    controller.second->deactivate();
+  }
   navigator_->deactivate();
   vel_publisher_->on_deactivate();
   param_handler_->deactivate();
@@ -124,6 +135,11 @@ DockingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   dock_db_.reset();
   navigator_.reset();
   curr_dock_type_.clear();
+  curr_dock_controller_.clear();
+  for (auto & controller : controllers_) {
+    controller.second->cleanup();
+  }
+  controllers_.clear();
   controller_.reset();
   vel_publisher_.reset();
   params_->dock_backwards.reset();
@@ -136,6 +152,106 @@ DockingServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down %s", get_name());
   return nav2::CallbackReturn::SUCCESS;
+}
+
+bool DockingServer::loadControllerPlugins(
+  const nav2::LifecycleNode::SharedPtr & node, std::vector<std::string> & controller_ids)
+{
+  const std::vector<std::string> default_controller_ids{"controller"};
+  controller_ids = node->declare_or_get_parameter("controllers", default_controller_ids);
+
+  if (controller_ids == default_controller_ids) {
+    nav2::declare_parameter_if_not_declared(
+      node, "controller.plugin",
+      rclcpp::ParameterValue("opennav_docking::GracefulController"));
+  }
+
+  if (controller_ids.empty()) {
+    RCLCPP_ERROR(node->get_logger(), "Controllers empty! Must provide at least 1.");
+    return false;
+  }
+
+  for (size_t i = 0; i != controller_ids.size(); i++) {
+    if (controllers_.find(controller_ids[i]) != controllers_.end()) {
+      RCLCPP_FATAL(
+        node->get_logger(), "Controller %s is listed more than once in `controllers`.",
+        controller_ids[i].c_str());
+      return false;
+    }
+
+    try {
+      std::string plugin_type = nav2::get_plugin_type_param(node, controller_ids[i]);
+      ControllerBase::Ptr controller = controller_loader_.createSharedInstance(plugin_type);
+      RCLCPP_INFO(
+        node->get_logger(), "Created controller plugin %s of type %s",
+        controller_ids[i].c_str(), plugin_type.c_str());
+      controller->configure(node, controller_ids[i], tf2_buffer_);
+      controllers_.insert({controller_ids[i], controller});
+    } catch (const std::exception & ex) {
+      RCLCPP_FATAL(
+        node->get_logger(), "Failed to create controller plugin %s. Exception: %s",
+        controller_ids[i].c_str(), ex.what());
+      return false;
+    }
+  }
+
+  controller_ids_concat_.clear();
+  for (const auto & controller_id : controller_ids) {
+    controller_ids_concat_ += controller_id + std::string(" ");
+  }
+  RCLCPP_INFO(
+    node->get_logger(), "Docking server has %s controllers available.",
+    controller_ids_concat_.c_str());
+
+  return true;
+}
+
+bool DockingServer::findControllerId(
+  const std::string & c_name, std::string & controller_id)
+{
+  if (controllers_.find(c_name) == controllers_.end()) {
+    if (controllers_.size() == 1 && c_name.empty()) {
+      RCLCPP_WARN_ONCE(
+        get_logger(),
+        "No controller was specified in the dock configuration. "
+        "Server will use only plugin %s. "
+        "This warning will appear once.", controller_ids_concat_.c_str());
+      controller_id = controllers_.begin()->first;
+    } else {
+      RCLCPP_ERROR(
+        get_logger(), "Dock requested controller '%s', which does not exist. "
+        "Available controllers are: %s.", c_name.c_str(), controller_ids_concat_.c_str());
+      return false;
+    }
+  } else {
+    RCLCPP_DEBUG(get_logger(), "Selected controller: %s.", c_name.c_str());
+    controller_id = c_name;
+  }
+
+  return true;
+}
+
+void DockingServer::selectController(
+  const ChargingDock::Ptr & plugin, const Dock * dock, const std::string & dock_type)
+{
+  std::string name;
+  if (dock) {
+    // docking
+    name = dock->controller_name.empty() ? plugin->getControllerName() : dock->controller_name;
+  } else {
+    // undocking
+    name = (!curr_dock_controller_.empty() && dock_type == curr_dock_type_) ?
+      curr_dock_controller_ : plugin->getControllerName();
+  }
+
+  // Empty name selects default controller
+  std::string controller_id;
+  if (!findControllerId(name, controller_id)) {
+    throw opennav_docking_core::DockNotValid(
+            std::string(dock ? "Dock" : "Undocking") + " names controller '" + name +
+            "', which is not loaded");
+  }
+  controller_ = controllers_.at(controller_id);
 }
 
 template<typename ActionT>
@@ -210,6 +326,9 @@ void DockingServer::dockRobot()
         goal->dock_pose.pose.position.x, goal->dock_pose.pose.position.y);
       dock = generateGoalDock(goal);
     }
+
+    // Pick the controller this dock drives with before any motion is commanded.
+    selectController(dock->plugin, dock);
 
     // Check if robot is docked or charging before proceeding, only applicable to charging docks
     if (dock->plugin->isCharger() && (dock->plugin->isDocked() || dock->plugin->isCharging())) {
@@ -377,6 +496,7 @@ void DockingServer::stashDockData(bool use_dock_id, Dock * dock, bool successful
 {
   if (dock && successful) {
     curr_dock_type_ = dock->type;
+    curr_dock_controller_ = controller_ ? controller_->getName() : std::string();
   }
 
   if (!use_dock_id && dock) {
@@ -430,6 +550,10 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
 
 void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose)
 {
+  if (!controller_) {
+    throw opennav_docking_core::FailedToControl("No controller is selected");
+  }
+
   const double dt = 1.0 / params_->controller_frequency;
   auto target_pose = dock_pose;
   target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
@@ -438,6 +562,8 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
   nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->rotate_to_dock_timeout);
+
+  controller_->reset();
 
   while (rclcpp::ok()) {
     auto robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
@@ -468,9 +594,16 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
 bool DockingServer::approachDock(
   Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose, bool backward)
 {
+  if (!controller_) {
+    throw opennav_docking_core::FailedToControl("No controller is selected");
+  }
+
+  const double dt = 1.0 / params_->controller_frequency;
   nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->dock_approach_timeout);
+
+  controller_->reset();
 
   while (rclcpp::ok()) {
     publishDockingFeedback(DockRobot::Feedback::CONTROLLING);
@@ -516,7 +649,14 @@ bool DockingServer::approachDock(
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
-    if (!controller_->computeVelocityCommand(target_pose.pose, command->twist, true, backward)) {
+    DockingOptions options;
+    options.reverse = backward;
+    controller_->setPath(utils::toPath(target_pose), options);
+
+    if (!controller_->computeVelocityCommands(
+        getRobotPoseInFrame(params_->fixed_frame),
+        odom_sub_->getRawTwist(), dt, command->twist))
+    {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
     vel_publisher_->publish(std::move(command));
@@ -566,9 +706,16 @@ bool DockingServer::waitForCharge(Dock * dock)
 bool DockingServer::resetApproach(
   const geometry_msgs::msg::PoseStamped & staging_pose, bool backward)
 {
+  if (!controller_) {
+    throw opennav_docking_core::FailedToControl("No controller is selected");
+  }
+
   nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->dock_approach_timeout);
+
+  controller_->reset();
+
   while (rclcpp::ok()) {
     publishDockingFeedback(DockRobot::Feedback::INITIAL_PERCEPTION);
 
@@ -604,6 +751,10 @@ bool DockingServer::getCommandToPose(
   geometry_msgs::msg::Twist & cmd, const geometry_msgs::msg::PoseStamped & pose,
   double linear_tolerance, double angular_tolerance, bool is_docking, bool backward)
 {
+  if (!controller_) {
+    throw opennav_docking_core::FailedToControl("No controller is selected");
+  }
+
   // Reset command to zero velocity
   cmd.linear.x = 0;
   cmd.angular.z = 0;
@@ -625,7 +776,15 @@ bool DockingServer::getCommandToPose(
   tf2_buffer_->transform(target_pose, target_pose, params_->base_frame);
 
   // Compute velocity command
-  if (!controller_->computeVelocityCommand(target_pose.pose, cmd, is_docking, backward)) {
+  DockingOptions options;
+  options.reverse = backward;
+  options.undocking = !is_docking;
+  controller_->setPath(utils::toPath(target_pose), options);
+
+  if (!controller_->computeVelocityCommands(
+      getRobotPoseInFrame(params_->fixed_frame), odom_sub_->getRawTwist(),
+      1.0 / params_->controller_frequency, cmd))
+  {
     throw opennav_docking_core::FailedToControl("Failed to get control");
   }
 
@@ -671,6 +830,8 @@ void DockingServer::undockRobot()
       get_logger(),
       "Attempting to undock robot of dock type %s.", dock->getName().c_str());
 
+    selectController(dock, nullptr, dock_type);
+
     // Check if the robot is docked before proceeding
     if (dock->isCharger() && (!dock->isDocked() && !dock->isCharging())) {
       RCLCPP_INFO(get_logger(), "Robot is not in the dock, no need to undock");
@@ -703,6 +864,7 @@ void DockingServer::undockRobot()
 
     // Control robot to staging pose
     rclcpp::Time loop_start = this->now();
+    controller_->reset();
     while (rclcpp::ok()) {
       // Stop if we exceed max duration
       auto timeout = rclcpp::Duration::from_seconds(goal->max_undocking_time);
@@ -746,6 +908,7 @@ void DockingServer::undockRobot()
           RCLCPP_INFO(get_logger(), "Robot has undocked!");
           result->success = true;
           curr_dock_type_.clear();
+          curr_dock_controller_.clear();
           publishZeroVelocity();
           undocking_action_server_->succeeded_current(result);
           return;
