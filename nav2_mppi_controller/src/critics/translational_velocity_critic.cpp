@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <cmath>
 
 #include "nav2_mppi_controller/critics/translational_velocity_critic.hpp"
 
@@ -23,14 +24,14 @@ namespace
 {
 
 /**
- * @brief Inverse square of a velocity limit, floored so that a zero limit cannot divide by zero
+ * @brief Reciprocal of a velocity limit, floored so that a zero limit cannot divide by zero
  * @param limit Velocity limit of either sign
- * @return 1 / limit², at most 1e12
+ * @return 1 / |limit|, at most 1e6
  */
-float invSquare(const float limit)
+float invLimit(const float limit)
 {
   constexpr float min_limit = 1e-6f;
-  return 1.0f / std::max(limit * limit, min_limit * min_limit);
+  return 1.0f / std::max(std::abs(limit), min_limit);
 }
 
 }  // namespace
@@ -60,19 +61,21 @@ void TranslationalVelocityCritic::score(CriticData & data)
   auto & vx = data.state.vx;
   auto & vy = data.state.vy;
 
-  // (vx/vx_max)² + (vy/vy_max)², which is 1 exactly on the ellipse. The forward and reverse
-  // semi-axes differ, so vx is split by direction of travel.
+  // (vx/vx_max)² + (vy/vy_max)², which is 1 exactly on the ellipse.
   const auto normalized_sq =
-    invSquare(vx_max_) * vx.max(0.0f).square() +
-    invSquare(vx_min_) * vx.min(0.0f).square() +
-    invSquare(vy_max_) * vy.square();
+    (vx.max(0.0f) * invLimit(vx_max_) + vx.min(0.0f) * invLimit(vx_min_)).square() +
+    (vy * invLimit(vy_max_)).square();
 
-  // |v| - |v| / sqrt(normalized_sq), the excess speed along the direction of travel, clamped so
-  // that velocities inside the ellipse cost nothing
+  // The speed given up in scaling the sample back onto the ellipse
   const auto violation =
     (vx.square() + vy.square()).sqrt() * (1.0f - normalized_sq.max(1.0f).rsqrt());
 
-  const Eigen::ArrayXf cost = violation.rowwise().sum() * data.model_dt * weight_;
+  // Use column loop to preserve vectorization.
+  Eigen::ArrayXf cost = Eigen::ArrayXf::Zero(vx.rows());
+  for (int i = 0; i < vx.cols(); ++i) {
+    cost += violation.col(i);
+  }
+  cost *= data.model_dt * weight_;
   if (power_ > 1u) {
     data.costs += cost.pow(power_);
   } else {
