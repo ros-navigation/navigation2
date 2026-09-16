@@ -219,7 +219,10 @@ void KeepoutFilter::updateBounds(
     {
       tf2::doTransform(pose, mask_pose, mask_transform);
       const auto & footprint = layered_costmap_->getFootprint();
-      if (!footprint.empty()) {
+      unsigned int mask_x, mask_y;
+      if (!footprint.empty() &&
+        filter_mask_costmap_->worldToMap(mask_pose.position.x, mask_pose.position.y, mask_x, mask_y))
+      {
         const auto footprint_cost = footprint_collision_checker_->footprintCostAtPose(
           mask_pose.position.x, mask_pose.position.y, tf2::getYaw(mask_pose.orientation),
           footprint);
