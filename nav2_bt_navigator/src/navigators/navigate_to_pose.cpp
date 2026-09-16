@@ -126,16 +126,14 @@ NavigateToPoseNavigator::onLoop()
   auto feedback_msg = std::make_shared<ActionT::Feedback>();
 
   geometry_msgs::msg::PoseStamped current_pose;
-  geometry_msgs::msg::TransformStamped transform;
-  if (!nav2_util::lookupTransformWithStalenessCheck(
+  if (!nav2_util::getFreshPose(
       *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.robot_frame, clock_->now(),
-      transform_staleness_threshold_, transform))
+      transform_staleness_threshold_, current_pose))
   {
     RCLCPP_ERROR(logger_, "Robot pose is not available.");
     return;
   }
-  current_pose = nav2_util::transformToPoseStamped(transform);
 
   auto blackboard = bt_action_server_->getBlackboard();
 
@@ -228,18 +226,16 @@ bool
 NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  geometry_msgs::msg::TransformStamped transform;
-  if (!nav2_util::lookupTransformWithStalenessCheck(
+  if (!nav2_util::getFreshPose(
       *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.robot_frame, clock_->now(),
-      transform_staleness_threshold_, transform))
+      transform_staleness_threshold_, current_pose))
   {
     bt_action_server_->setInternalError(
       ActionT::Result::TF_ERROR,
       "Initial robot pose is not available.");
     return false;
   }
-  current_pose = nav2_util::transformToPoseStamped(transform);
 
   geometry_msgs::msg::PoseStamped goal_pose;
   if (!nav2_util::transformPoseInTargetFrame(

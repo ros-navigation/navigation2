@@ -28,6 +28,8 @@ IsGoalNearbyCondition::IsGoalNearbyCondition(
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   tf_buffer_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
+  transform_staleness_threshold_ = node_->declare_or_get_parameter(
+    "transform_staleness_threshold", 0.0);
 
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(node_, "global_frame", this);
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(node_, "robot_base_frame", this);
@@ -58,13 +60,13 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
   }
 
   geometry_msgs::msg::PoseStamped pose;
-  if (!nav2_util::getCurrentPose(
-      pose, *tf_buffer_, global_frame_, robot_base_frame_, transform_tolerance_))
+  if (!nav2_util::getFreshPose(
+      *tf_buffer_, global_frame_, robot_base_frame_, node_->now(), transform_staleness_threshold_,
+      pose))
   {
     RCLCPP_ERROR(node_->get_logger(), "Failed to get current robot pose");
     return BT::NodeStatus::FAILURE;
   }
-
   // let's get the pose of the robot in the frame of the plan
   geometry_msgs::msg::PoseStamped robot_pose;
   if (!nav2_util::transformPoseInTargetFrame(

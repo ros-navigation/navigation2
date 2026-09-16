@@ -147,16 +147,14 @@ NavigateThroughPosesNavigator::onLoop()
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
-  geometry_msgs::msg::TransformStamped transform;
-  if (!nav2_util::lookupTransformWithStalenessCheck(
+  if (!nav2_util::getFreshPose(
       *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.robot_frame, clock_->now(),
-      transform_staleness_threshold_, transform))
+      transform_staleness_threshold_, current_pose))
   {
     RCLCPP_ERROR(logger_, "Robot pose is not available.");
     return;
   }
-  current_pose = nav2_util::transformToPoseStamped(transform);
 
   // Get current path points
   nav_msgs::msg::Path current_path;
@@ -246,18 +244,16 @@ bool
 NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  geometry_msgs::msg::TransformStamped transform;
-  if (!nav2_util::lookupTransformWithStalenessCheck(
+  if (!nav2_util::getFreshPose(
       *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.robot_frame, clock_->now(),
-      transform_staleness_threshold_, transform))
+      transform_staleness_threshold_, current_pose))
   {
     bt_action_server_->setInternalError(
       ActionT::Result::TF_ERROR,
       "Initial robot pose is not available.");
     return false;
   }
-  current_pose = nav2_util::transformToPoseStamped(transform);
 
   nav_msgs::msg::Goals goals_array = goal->poses;
   int i = 0;
