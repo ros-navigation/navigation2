@@ -213,7 +213,10 @@ void KeepoutFilter::updateBounds(
     geometry_msgs::msg::Pose mask_pose;
     if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
       const auto & footprint = layered_costmap_->getFootprint();
-      if (!footprint.empty()) {
+      unsigned int mask_x, mask_y;
+      if (!footprint.empty() &&
+        filter_mask_costmap_->worldToMap(mask_pose.position.x, mask_pose.position.y, mask_x, mask_y))
+      {
         const auto footprint_cost = footprint_collision_checker_->footprintCostAtPose(
           mask_pose.position.x, mask_pose.position.y, tf2::getYaw(mask_pose.orientation),
           footprint);
