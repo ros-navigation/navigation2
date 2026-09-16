@@ -283,6 +283,7 @@ void Tester::sendTransform()
   transform.transform.rotation.w = 1.0;
 
   tf_broadcaster->sendTransform(transform);
+  tf_buffer_->setTransform(transform, "test", false);
 }
 
 nav_msgs::msg::OccupancyGrid::SharedPtr Tester::makeMap()

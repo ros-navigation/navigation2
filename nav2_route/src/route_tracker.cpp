@@ -40,6 +40,8 @@ void RouteTracker::configure(
   boundary_radius_threshold_ = node->declare_or_get_parameter(
     "boundary_radius_to_achieve_node", 1.0);
   tracker_update_rate_ = node->declare_or_get_parameter("tracker_update_rate", 50.0);
+  transform_staleness_threshold_ = node->declare_or_get_parameter(
+    "transform_staleness_threshold", 0.0);
   aggregate_blocked_ids_ = node->declare_or_get_parameter(
     "aggregate_blocked_ids", false);
 
@@ -49,7 +51,10 @@ void RouteTracker::configure(
 geometry_msgs::msg::PoseStamped RouteTracker::getRobotPose()
 {
   geometry_msgs::msg::PoseStamped pose;
-  if (!nav2_util::getCurrentPose(pose, *tf_buffer_, route_frame_, base_frame_)) {
+  if (!nav2_util::getFreshPose(
+      *tf_buffer_, route_frame_, base_frame_, clock_->now(), transform_staleness_threshold_,
+      pose))
+  {
     throw nav2_core::RouteTFError("Unable to get robot pose in route frame: " + route_frame_);
   }
   return pose;
