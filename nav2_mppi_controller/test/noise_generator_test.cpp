@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <chrono>
+#include <cmath>
 #include <thread>
 
 #include "gtest/gtest.h"
@@ -202,6 +203,57 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
   EXPECT_EQ(state.cwz(0, 9), initial_cwz_9);
 
   generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, ResetUsesUpdatedSamplingStd)
+{
+  for (const bool regenerate : {false, true}) {
+    SCOPED_TRACE(regenerate);
+    auto node = std::make_shared<nav2::LifecycleNode>("node");
+    node->declare_parameter("test.regenerate_noises", rclcpp::ParameterValue(regenerate));
+    std::string name = "test";
+    ParametersHandler handler(node, name);
+    NoiseGenerator generator;
+    models::OptimizerSettings settings;
+    settings.batch_size = 1000;
+    settings.time_steps = 20;
+    settings.sampling_std.vx = 0.2f;
+    settings.sampling_std.vy = 0.3f;
+    settings.sampling_std.wz = 0.4f;
+
+    models::ControlSequence control_sequence;
+    control_sequence.reset(settings.time_steps);
+    models::State state;
+    state.reset(settings.batch_size, settings.time_steps);
+
+    auto wait_for_noise = [&]() {
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+        do {
+          generator.setNoisedControls(state, control_sequence);
+          if (!state.cwz.isZero()) {
+            return true;
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        } while (std::chrono::steady_clock::now() < deadline);
+        return false;
+      };
+
+    generator.initialize(settings, true, name, &handler);
+    generator.reset(settings, true);
+    EXPECT_TRUE(wait_for_noise());
+
+    settings.sampling_std.vx = 0.05f;
+    settings.sampling_std.vy = 0.07f;
+    settings.sampling_std.wz = 0.09f;
+    generator.reset(settings, true);
+    EXPECT_TRUE(wait_for_noise());
+    generator.shutdown();
+
+    // Zero controls expose the new noise scale directly, with 20,000 samples per axis.
+    EXPECT_NEAR(std::sqrt(state.cvx.square().mean()), settings.sampling_std.vx, 0.005f);
+    EXPECT_NEAR(std::sqrt(state.cvy.square().mean()), settings.sampling_std.vy, 0.007f);
+    EXPECT_NEAR(std::sqrt(state.cwz.square().mean()), settings.sampling_std.wz, 0.009f);
+  }
 }
 
 int main(int argc, char ** argv)
