@@ -140,6 +140,53 @@ class TestLineIterator(unittest.TestCase):
                     lt.advance()
                 self.assertFalse(lt.isValid())
 
+    def test_precise_endpoints(self):
+        # Clamping must preserve endpoints that cannot be rounded to five decimals.
+        for end in [(1, 2.000001), (1, 1.999999), (0.123456, 2.000001)]:
+            for reverse in (False, True):
+                for transpose in (False, True):
+                    with self.subTest(end=end, reverse=reverse, transpose=transpose):
+                        start, finish = (0, 0), end
+                        if reverse:
+                            start, finish = finish, start
+                        if transpose:
+                            start, finish = start[::-1], finish[::-1]
+                        lt = LineIterator(*start, *finish, 1)
+                        points = []
+                        for _ in range(6):
+                            if not lt.isValid():
+                                break
+                            points.append((lt.getX(), lt.getY()))
+                            lt.advance()
+                        self.assertFalse(lt.isValid())
+                        self.assertEqual(points[0], start)
+                        self.assertEqual(points[-1], finish)
+                        self.assertEqual(points.count(finish), 1)
+                        lt.advance()
+                        self.assertFalse(lt.isValid())
+                        self.assertEqual((lt.getX(), lt.getY()), finish)
+
+    def test_small_steps_make_progress(self):
+        # Rounding must not keep the iterator on the same dominant-axis coordinate.
+        for reverse in (False, True):
+            for transpose in (False, True):
+                with self.subTest(reverse=reverse, transpose=transpose):
+                    start, end = (0, 0), (0.000001, 0.000003)
+                    if reverse:
+                        start, end = end, start
+                    if transpose:
+                        start, end = start[::-1], end[::-1]
+                    lt = LineIterator(*start, *end, 0.000001)
+                    for _ in range(6):
+                        if not lt.isValid():
+                            break
+                        previous = (lt.getX(), lt.getY())
+                        lt.advance()
+                        if previous != end:
+                            self.assertNotEqual((lt.getX(), lt.getY()), previous)
+                    self.assertFalse(lt.isValid())
+                    self.assertEqual((lt.getX(), lt.getY()), end)
+
     def test_hor_line(self):
         # Test if the calculations are correct for y = 0x+b (horizontal line)
         lt = LineIterator(0, 10, 5, 10, 1)

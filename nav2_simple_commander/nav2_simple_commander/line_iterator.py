@@ -105,19 +105,29 @@ class LineIterator:
             if current >= end:
                 self.valid_ = False
                 return
-            current = round(self.clamp(current + self.step_size_, start, end), 5)
+            next_coordinate = self.clamp(current + self.step_size_, start, end)
         else:
             if current <= end:
                 self.valid_ = False
                 return
-            current = round(self.clamp(current - self.step_size_, end, start), 5)
+            next_coordinate = self.clamp(current - self.step_size_, end, start)
+
+        if next_coordinate != end:
+            rounded = round(next_coordinate, 5)
+            # Keep rounding from erasing a small step or moving past the endpoint.
+            if (end > start and rounded > current) or (end < start and rounded < current):
+                next_coordinate = self.clamp(rounded, min(start, end), max(start, end))
+
+        if next_coordinate == end:
+            self.x_, self.y_ = self.x1_, self.y1_
+            return
 
         if self.steep_:
-            self.y_ = current
+            self.y_ = next_coordinate
             if self.x0_ != self.x1_:
                 self.x_ = round(self.m_ * self.y_ + self.b_, 5)
         else:
-            self.x_ = current
+            self.x_ = next_coordinate
             self.y_ = round(self.m_ * self.x_ + self.b_, 5)
 
     def getX(self):
