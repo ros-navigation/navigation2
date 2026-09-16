@@ -26,6 +26,7 @@
  *************************************************************************/
 
 #include <assert.h>
+#include <limits.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -108,14 +109,34 @@ void pf_kdtree_clear(pf_kdtree_t * self)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Convert a pose to an integer key
+static int pf_kdtree_pose_to_key(pf_kdtree_t * self, pf_vector_t pose, int key[3])
+{
+  int i;
+
+  for (i = 0; i < 3; i++) {
+    const double value = floor(pose.v[i] / self->size[i]);
+    if (!isfinite(value) ||
+      value < INT_MIN || value > INT_MAX)
+    {
+      return 0;
+    }
+    key[i] = (int)value;
+  }
+
+  return 1;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 // Insert a pose into the tree.
 void pf_kdtree_insert(pf_kdtree_t * self, pf_vector_t pose, double value)
 {
   int key[3];
 
-  key[0] = floor(pose.v[0] / self->size[0]);
-  key[1] = floor(pose.v[1] / self->size[1]);
-  key[2] = floor(pose.v[2] / self->size[2]);
+  if (!pf_kdtree_pose_to_key(self, pose, key)) {
+    return;
+  }
 
   self->root = pf_kdtree_insert_node(self, NULL, self->root, key, value);
 
@@ -169,9 +190,9 @@ int pf_kdtree_get_cluster(pf_kdtree_t * self, pf_vector_t pose)
   int key[3];
   pf_kdtree_node_t * node;
 
-  key[0] = floor(pose.v[0] / self->size[0]);
-  key[1] = floor(pose.v[1] / self->size[1]);
-  key[2] = floor(pose.v[2] / self->size[2]);
+  if (!pf_kdtree_pose_to_key(self, pose, key)) {
+    return -1;
+  }
 
   node = pf_kdtree_find_node(self, self->root, key);
   if (node == NULL) {
@@ -394,12 +415,24 @@ void pf_kdtree_cluster_node(pf_kdtree_t * self, pf_kdtree_node_t * node, int dep
 {
   int i;
   int nkey[3];
+  int64_t nk[3];
   pf_kdtree_node_t * nnode;
 
   for (i = 0; i < 3 * 3 * 3; i++) {
-    nkey[0] = node->key[0] + (i / 9) - 1;
-    nkey[1] = node->key[1] + ((i % 9) / 3) - 1;
-    nkey[2] = node->key[2] + ((i % 9) % 3) - 1;
+    nk[0] = (int64_t)node->key[0] + (i / 9) - 1;
+    nk[1] = (int64_t)node->key[1] + ((i % 9) / 3) - 1;
+    nk[2] = (int64_t)node->key[2] + ((i % 9) % 3) - 1;
+
+    if (nk[0] < INT_MIN || nk[0] > INT_MAX ||
+      nk[1] < INT_MIN || nk[1] > INT_MAX ||
+      nk[2] < INT_MIN || nk[2] > INT_MAX)
+    {
+      continue;
+    }
+
+    nkey[0] = (int)nk[0];
+    nkey[1] = (int)nk[1];
+    nkey[2] = (int)nk[2];
 
     nnode = pf_kdtree_find_node(self, self->root, nkey);
     if (nnode == NULL) {
