@@ -178,10 +178,7 @@ Uses inflated costmap cost directly to avoid obstacles
 
 #### Translational Velocity Critic
 
-Only scores holonomic motion models. Penalizes samples whose combined translational velocity leaves
-the ellipse spanned by `vx_max`, `vx_min` and `vy_max`, so that a diagonal command cannot reach a
-higher speed than a straight one. The ellipse semi-axes are taken from those per-axis limits, so the
-critic adds no limit of its own.
+Penalizes combined translational velocities that leave the ellipse spanned by `vx_max`, `vx_min` and `vy_max`. This prevents a diagonal command from reaching a higher speed than one along the robot's x and y axes.
 
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
