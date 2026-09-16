@@ -52,7 +52,8 @@ namespace nav2_costmap_2d
 SpeedFilter::SpeedFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   speed_limit_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
-  speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT)
+  speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT),
+  clear_path_on_reset_(false)  // [AI generated]
 {
 }
 
@@ -83,6 +84,9 @@ void SpeedFilter::initializeFilter(
   // [AI generated]
   max_path_rewind_ = node->declare_or_get_parameter(
     name_ + "." + "max_path_rewind", 1.0);
+  // [AI generated]
+  clear_path_on_reset_ = node->declare_or_get_parameter(
+    name_ + "." + "clear_path_on_reset", false);
   std::string path_topic = node->declare_or_get_parameter(
     name_ + "." + "path_topic", std::string("plan"));
   std::string odom_topic = node->declare_or_get_parameter(
@@ -498,6 +502,11 @@ void SpeedFilter::resetFilter()
 
   filter_info_sub_.reset();
   mask_sub_.reset();
+  // [AI generated]
+  if (clear_path_on_reset_) {
+    // resetFilter() also runs on a full costmap clear, not only on deactivation.
+    current_path_.reset();
+  }
   if (speed_limit_pub_) {
     speed_limit_pub_->on_deactivate();
     speed_limit_pub_.reset();

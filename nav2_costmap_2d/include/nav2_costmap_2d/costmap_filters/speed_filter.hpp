@@ -153,6 +153,8 @@ protected:
   double max_lookahead_;   // Upper limit on lookahead distance (m)
   // [AI generated]
   double max_path_rewind_;  // Path length (m) the closest-segment search may rewind per update
+  // [AI generated]
+  bool clear_path_on_reset_;  // Whether resetFilter() drops the cached path
 };
 
 }  // namespace nav2_costmap_2d
