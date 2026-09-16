@@ -201,19 +201,6 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
   return true;
 }
 
-bool validateMsg(const nav2_msgs::msg::Costmap & msg)
-{
-  size_t expected_size;
-  if (__builtin_mul_overflow(
-      static_cast<size_t>(msg.metadata.size_x),
-      static_cast<size_t>(msg.metadata.size_y), &expected_size))
-  {
-    return false;
-  }
-
-  return msg.data.size() == expected_size;
-}
-
 // for partial map updates as `OccupancyGridUpdate`
 bool validateMsg(const map_msgs::msg::OccupancyGridUpdate & msg)
 {
@@ -257,6 +244,20 @@ bool validateMsg(const sensor_msgs::msg::Range & msg)
   }
 
   if (msg.min_range < 0.0 || msg.max_range <= msg.min_range) {
+    return false;
+  }
+
+  return true;
+}
+
+bool validateMsg(const nav2_msgs::msg::Costmap & msg)
+{
+  uint32_t num_cells;
+  if (__builtin_mul_overflow(msg.metadata.size_x, msg.metadata.size_y, &num_cells)) {
+    return false;
+  }
+
+  if (msg.data.size() != static_cast<size_t>(num_cells)) {
     return false;
   }
 
