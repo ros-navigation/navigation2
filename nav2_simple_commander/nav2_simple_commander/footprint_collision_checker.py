@@ -101,7 +101,7 @@ class FootprintCollisionChecker:
             y0 (float): Ordinate of the initial point in map coordinates
             x1 (float): Abscissa of the final point in map coordinates
             y1 (float): Ordinate of the final point in map coordinates
-            step_size (float): Optional, Increments' resolution, defaults to 0.5
+            step_size (float): Optional, step along the longer axis, defaults to 0.5
 
         Returns
         -------
@@ -111,12 +111,18 @@ class FootprintCollisionChecker:
         """
         line_cost = 0.0
         point_cost = -1.0
-        line_iterator = LineIterator(x0, y0, x1, y1, step_size)
+        # LineIterator steps in x, so transpose steep edges to avoid skipping rows.
+        steep = abs(y1 - y0) > abs(x1 - x0)
+        if steep:
+            line_iterator = LineIterator(y0, x0, y1, x1, step_size)
+        else:
+            line_iterator = LineIterator(x0, y0, x1, y1, step_size)
 
         while line_iterator.isValid():
-            point_cost = float(self.pointCost(
-                int(line_iterator.getX()), int(line_iterator.getY())
-            ))
+            x, y = line_iterator.getX(), line_iterator.getY()
+            if steep:
+                x, y = y, x
+            point_cost = float(self.pointCost(int(x), int(y)))
 
             if point_cost == LETHAL_OBSTACLE:
                 return point_cost
