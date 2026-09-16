@@ -154,6 +154,8 @@ bool VectorObjectServer::obtainParams()
       static_cast<int>(OverlayType::OVERLAY_SEQ)));
   update_frequency_ = nav2::declare_or_get_parameter(node, "update_frequency", 1.0);
   transform_tolerance_ = nav2::declare_or_get_parameter(node, "transform_tolerance", 0.1);
+  transform_staleness_threshold_ = nav2::declare_or_get_parameter(
+    node, "transform_staleness_threshold", 0.0);
 
   // Shapes
   auto shape_names = nav2::declare_or_get_parameter(node, "shapes", std::vector<std::string>());
@@ -224,7 +226,9 @@ bool VectorObjectServer::transformVectorObjects()
   for (auto shape : shapes_) {
     if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
       // Shape to be updated dynamically
-      if (!shape->toFrame(global_frame_id_, tf_buffer_, transform_tolerance_)) {
+      if (!shape->toFrame(
+          global_frame_id_, tf_buffer_, transform_tolerance_, transform_staleness_threshold_))
+      {
         RCLCPP_ERROR(
           get_logger(), "Can not transform vector object from %s to %s frame",
           shape->getFrameID().c_str(), global_frame_id_.c_str());

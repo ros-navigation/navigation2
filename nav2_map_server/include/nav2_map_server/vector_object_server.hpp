@@ -206,6 +206,8 @@ protected:
   bool enforce_global_frame_id_;
   /// @brief Transform tolerance
   double transform_tolerance_;
+  /// @brief Maximum age of a latest transform; non-positive disables the check
+  double transform_staleness_threshold_;
 
   /// @brief Frequency to dynamically update/publish the map (if necessary)
   double update_frequency_;
