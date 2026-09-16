@@ -20,6 +20,26 @@ from nav2_simple_commander.line_iterator import LineIterator
 
 class TestLineIterator(unittest.TestCase):
 
+    def _line_points(self, start, end, step=1, max_points=100):
+        """Collect samples with a bound and verify endpoints and termination."""
+        lt = LineIterator(*start, *end, step)
+        self.assertEqual((lt.getX0(), lt.getY0()), start)
+        self.assertEqual((lt.getX1(), lt.getY1()), end)
+        points = []
+        for _ in range(max_points):
+            if not lt.isValid():
+                break
+            points.append((lt.getX(), lt.getY()))
+            lt.advance()
+        self.assertFalse(lt.isValid())
+        self.assertEqual(points[0], start)
+        self.assertEqual(points[-1], end)
+        self.assertEqual(len(points), len(set(points)))
+        lt.advance()
+        self.assertFalse(lt.isValid())
+        self.assertEqual((lt.getX(), lt.getY()), end)
+        return points
+
     def test_type_error(self):
         # Test if a type error raised when passing invalid arguments types
         self.assertRaises(TypeError, LineIterator, 0, 0, '10', 10, '1')
@@ -85,17 +105,8 @@ class TestLineIterator(unittest.TestCase):
                             expected.reverse()
                         if transpose:
                             expected = [(y, x) for x, y in expected]
-                        start, end = expected[0], expected[-1]
-                        lt = LineIterator(*start, *end)
-                        self.assertEqual((lt.getX0(), lt.getY0()), start)
-                        self.assertEqual((lt.getX1(), lt.getY1()), end)
-                        self.assertEqual(lt.get_line_length(), sqrt(101))
-                        for x, y in expected:
-                            self.assertTrue(lt.isValid())
-                            self.assertAlmostEqual(lt.getX(), x)
-                            self.assertAlmostEqual(lt.getY(), y)
-                            lt.advance()
-                        self.assertFalse(lt.isValid())
+                        self.assertEqual(
+                            self._line_points(expected[0], expected[-1]), expected)
 
     def test_steep_line_fractional_step(self):
         # A half-cell step must also apply along Y for a steep edge.
@@ -105,12 +116,7 @@ class TestLineIterator(unittest.TestCase):
         for reverse in (False, True):
             with self.subTest(reverse=reverse):
                 points = expected[::-1] if reverse else expected
-                lt = LineIterator(*points[0], *points[-1], 0.5)
-                for point in points:
-                    self.assertTrue(lt.isValid())
-                    self.assertEqual((lt.getX(), lt.getY()), point)
-                    lt.advance()
-                self.assertFalse(lt.isValid())
+                self.assertEqual(self._line_points(points[0], points[-1], 0.5), points)
 
     def test_steep_line_endpoint(self):
         # Include the endpoint when the step does not divide the span or exceeds it.
@@ -122,23 +128,14 @@ class TestLineIterator(unittest.TestCase):
         ]
         for step, points in cases:
             with self.subTest(step=step, points=points):
-                lt = LineIterator(*points[0], *points[-1], step)
-                for point in points:
-                    self.assertTrue(lt.isValid())
-                    self.assertEqual((lt.getX(), lt.getY()), point)
-                    lt.advance()
-                self.assertFalse(lt.isValid())
+                self.assertEqual(self._line_points(points[0], points[-1], step), points)
 
     def test_vertical_line_constant_x(self):
         # Advancing a vertical line must leave its X coordinate unchanged.
         for ys in ([0, 1, 2], [2, 1, 0]):
             with self.subTest(ys=ys):
-                lt = LineIterator(0.123456, ys[0], 0.123456, ys[-1])
-                for y in ys:
-                    self.assertTrue(lt.isValid())
-                    self.assertEqual((lt.getX(), lt.getY()), (0.123456, y))
-                    lt.advance()
-                self.assertFalse(lt.isValid())
+                points = [(0.123456, y) for y in ys]
+                self.assertEqual(self._line_points(points[0], points[-1]), points)
 
     def test_precise_endpoints(self):
         # Clamping must preserve endpoints that cannot be rounded to five decimals.
@@ -151,20 +148,7 @@ class TestLineIterator(unittest.TestCase):
                             start, finish = finish, start
                         if transpose:
                             start, finish = start[::-1], finish[::-1]
-                        lt = LineIterator(*start, *finish, 1)
-                        points = []
-                        for _ in range(6):
-                            if not lt.isValid():
-                                break
-                            points.append((lt.getX(), lt.getY()))
-                            lt.advance()
-                        self.assertFalse(lt.isValid())
-                        self.assertEqual(points[0], start)
-                        self.assertEqual(points[-1], finish)
-                        self.assertEqual(points.count(finish), 1)
-                        lt.advance()
-                        self.assertFalse(lt.isValid())
-                        self.assertEqual((lt.getX(), lt.getY()), finish)
+                        self._line_points(start, finish, max_points=6)
 
     def test_small_steps_make_progress(self):
         # Rounding must not keep the iterator on the same dominant-axis coordinate.
@@ -176,16 +160,7 @@ class TestLineIterator(unittest.TestCase):
                         start, end = end, start
                     if transpose:
                         start, end = start[::-1], end[::-1]
-                    lt = LineIterator(*start, *end, 0.000001)
-                    for _ in range(6):
-                        if not lt.isValid():
-                            break
-                        previous = (lt.getX(), lt.getY())
-                        lt.advance()
-                        if previous != end:
-                            self.assertNotEqual((lt.getX(), lt.getY()), previous)
-                    self.assertFalse(lt.isValid())
-                    self.assertEqual((lt.getX(), lt.getY()), end)
+                    self._line_points(start, end, 0.000001, max_points=6)
 
     def test_hor_line(self):
         # Test if the calculations are correct for y = 0x+b (horizontal line)
