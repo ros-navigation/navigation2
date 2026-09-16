@@ -186,6 +186,17 @@ Penalizes combined translational velocities that leave the ellipse spanned by `v
  | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
 
 
+#### Mecanum Critic
+
+Penalizes velocities outside the reachable velocity space of a mecanum drivetrain.
+
+ | Parameter             | Type   | Definition                                                                                                  |
+ | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double | Default 4.0. Weight to apply to critic term.                                                                |
+ | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
+ | sum_of_robot_center_projection_on_X_Y_axis | double | Default 0.3. lx + ly in meters, half the wheelbase plus half the track. Use the same value as your ros2_control mecanum_drive_controller. |
+
+
 #### Twirling Critic
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
@@ -304,6 +315,11 @@ controller_server:
       #   enabled: true
       #   cost_power: 1
       #   cost_weight: 4.0
+      # MecanumCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 4.0
+      #   sum_of_robot_center_projection_on_X_Y_axis: 0.3
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1

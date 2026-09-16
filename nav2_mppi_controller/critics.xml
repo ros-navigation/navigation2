@@ -37,6 +37,10 @@
       <description>mppi critic for preventing twirling behavior when using omnidirectional models</description>
     </class>
 
+    <class type="mppi::critics::MecanumCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for bounding the velocity of holonomic models by the wheel speed a mecanum drivetrain can deliver, rotation included</description>
+    </class>
+
     <class type="mppi::critics::TranslationalVelocityCritic" base_class_type="mppi::critics::CriticFunction">
       <description>mppi critic for bounding the combined translational velocity of holonomic models by the ellipse spanned by the per-axis limits</description>
     </class>

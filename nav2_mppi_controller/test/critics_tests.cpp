@@ -24,6 +24,7 @@
 #include "nav2_mppi_controller/critics/constraint_critic.hpp"
 #include "nav2_mppi_controller/critics/goal_angle_critic.hpp"
 #include "nav2_mppi_controller/critics/goal_critic.hpp"
+#include "nav2_mppi_controller/critics/mecanum_critic.hpp"
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
 #include "nav2_mppi_controller/critics/cost_critic.hpp"
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
@@ -299,6 +300,161 @@ TEST(CriticTests, TranslationalVelocityCritic)
   node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
   node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.0));
   critic = TranslationalVelocityCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  state.vx.setConstant(0.4f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_LT(costs.maxCoeff(), 1e-5);
+  costs.setZero();
+
+  state.vy.row(999).setConstant(0.1f);
+  critic.score(data);
+  EXPECT_TRUE(costs.allFinite());
+  EXPECT_GT(costs(999), 0);
+  costs.setZero();
+}
+
+TEST(CriticTests, MecanumCritic)
+{
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.vx = Eigen::ArrayXXf::Zero(1000, 30);
+  state.vy = Eigen::ArrayXXf::Zero(1000, 30);
+  state.wz = Eigen::ArrayXXf::Zero(1000, 30);
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  // Make sure initializes correctly and that defaults are reasonable
+  MecanumCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+
+  // Non-holonomic models have no vy to combine, so they are left to the constraint critic
+  state.vx.setConstant(0.6f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0, 1e-6);
+  costs.setZero();
+
+  // Limits are vx_max = 0.5 forward, vx_min = -0.35 reverse, vy_max = 0.3 lateral and
+  // wz_max = 1.0, with rotation reaching the wheels through a 0.4 m moment arm. wz stays zero
+  // until the rotation cases at the end
+  node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.3));
+  node->set_parameter(rclcpp::Parameter("mppi.wz_max", 1.0));
+  node->set_parameter(
+    rclcpp::Parameter("critic.sum_of_robot_center_projection_on_X_Y_axis", 0.4));
+  critic = MecanumCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  data.motion_model = std::make_shared<OmniMotionModel>();
+
+  // Inside the diamond, no cost
+  state.vx.setConstant(0.4f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_LT(costs.maxCoeff(), 1e-5);
+  costs.setZero();
+
+  // Exactly on the diamond, no cost. The ellipse would leave this sample a wide margin
+  state.vx.setConstant(0.25f);
+  state.vy.setConstant(0.15f);
+  critic.score(data);
+  EXPECT_LT(costs.maxCoeff(), 1e-5);
+  costs.setZero();
+
+  // Feasible for an ellipse, infeasible for a mecanum: each axis is at 70% of its own limit,
+  // so the wheels are asked for 140% of what one of them can do
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.vx.row(999).setConstant(0.35f);
+  state.vy.row(999).setConstant(0.21f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // speed sqrt(0.35^2 + 0.21^2) = 0.4082 is scaled by (1 - 1/1.4), leaving 0.1166 excess
+  // 4.0 weight * 0.1 model_dt * 0.1166 excess * 30 timesteps = 1.399
+  EXPECT_NEAR(costs(999), 1.399, 0.01);
+  costs.setZero();
+
+  // Corner of the per-axis box, which the diamond excludes twice over
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.vx.row(999).setConstant(0.5f);
+  state.vy.row(999).setConstant(0.3f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // speed sqrt(0.5^2 + 0.3^2) = 0.5831 is scaled by (1 - 1/2), leaving 0.2915 excess
+  // 4.0 weight * 0.1 model_dt * 0.2915 excess * 30 timesteps = 3.499
+  EXPECT_NEAR(costs(999), 3.499, 0.01);
+  costs.setZero();
+
+  // The reverse vertex is closer than the forward one
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.vx.row(1).setConstant(-0.7f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 4.0 weight * 0.1 model_dt * (0.7 - 0.35) excess * 30 timesteps = 4.2
+  EXPECT_NEAR(costs(1), 4.2, 0.01);
+  costs.setZero();
+
+  // Test with different cost power
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
+  critic = MecanumCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 4.2^2 = 17.64
+  EXPECT_NEAR(costs(1), 17.64, 0.01);
+  costs.setZero();
+
+  // Rotation draws on the same wheels: vx alone at 80% of its limit is feasible, and becomes
+  // infeasible once half the rotational budget is spent
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
+  critic = MecanumCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  state.vx.setConstant(0.4f);
+  state.vy.setConstant(0.0f);
+  state.wz.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_LT(costs.maxCoeff(), 1e-5);
+  costs.setZero();
+
+  state.wz.row(999).setConstant(0.5f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 0.4 speed plus 0.5 * 0.4 m arm of rotation is scaled by (1 - 1/(0.8 + 0.5)), leaving 0.1385
+  // 4.0 weight * 0.1 model_dt * 0.1385 excess * 30 timesteps = 1.662
+  EXPECT_NEAR(costs(999), 1.662, 0.01);
+  costs.setZero();
+
+  // Rotation alone is charged too, through the same moment arm
+  state.vx.setConstant(0.0f);
+  state.wz.setConstant(2.0f);
+  critic.score(data);
+  EXPECT_GT(costs.minCoeff(), 0);
+  // 2.0 * 0.4 m arm is scaled by (1 - 1/2), leaving 0.4 excess
+  // 4.0 weight * 0.1 model_dt * 0.4 excess * 30 timesteps = 4.8
+  EXPECT_NEAR(costs(0), 4.8, 0.01);
+  costs.setZero();
+  state.wz.setConstant(0.0f);
+
+  // A zero vertex collapses the diamond but must stay finite
+  node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.0));
+  critic = MecanumCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   state.vx.setConstant(0.4f);
   state.vy.setConstant(0.0f);
