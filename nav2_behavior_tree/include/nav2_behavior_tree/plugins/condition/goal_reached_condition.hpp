@@ -103,6 +103,7 @@ private:
 
   double goal_reached_tol_;
   double transform_tolerance_;
+  double transform_staleness_threshold_;
   std::string robot_base_frame_;
 };
 

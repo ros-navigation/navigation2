@@ -76,6 +76,7 @@ private:
 
   nav2::TransformBuffer::SharedPtr tf_;
   double transform_tolerance_;
+  double transform_staleness_threshold_;
 
   geometry_msgs::msg::PoseStamped start_pose_;
   double distance_;
