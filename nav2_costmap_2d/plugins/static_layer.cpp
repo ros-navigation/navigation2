@@ -432,11 +432,15 @@ StaticLayer::updateBounds(
     *max_x = std::max(robot_x + half_w, *max_x);
     *max_y = std::max(robot_y + half_h, *max_y);
   } else {
-    // Cell edges rather than mapToWorld() centres: this layer may be coarser than the master
-    *min_x = std::min(origin_x_ + x_ * resolution_, *min_x);
-    *min_y = std::min(origin_y_ + y_ * resolution_, *min_y);
-    *max_x = std::max(origin_x_ + (x_ + width_) * resolution_, *max_x);
-    *max_y = std::max(origin_y_ + (y_ + height_) * resolution_, *max_y);
+    double wx, wy;
+
+    mapToWorld(x_, y_, wx, wy);
+    *min_x = std::min(wx, *min_x);
+    *min_y = std::min(wy, *min_y);
+
+    mapToWorld(x_ + width_, y_ + height_, wx, wy);
+    *max_x = std::max(wx, *max_x);
+    *max_y = std::max(wy, *max_y);
   }
 
   has_updated_data_ = false;

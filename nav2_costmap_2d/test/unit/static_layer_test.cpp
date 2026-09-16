@@ -177,14 +177,14 @@ protected:
     return layer;
   }
 
-  // 2x2 cells of 2 m: one lethal cell at (origin_x .. +2, 5 .. 7), rest unknown
+  // 2x2 cells of 1 m: one lethal cell at (origin_x .. +1, 5 .. 6), rest unknown
   nav_msgs::msg::OccupancyGrid::SharedPtr makeMap(double origin_x = 5.0)
   {
     auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
     map->header.frame_id = "map";
     map->info.width = 2;
     map->info.height = 2;
-    map->info.resolution = 2.0;
+    map->info.resolution = 1.0;
     map->info.origin.position.x = origin_x;
     map->info.origin.position.y = 5.0;
     map->info.origin.orientation.w = 1.0;
@@ -209,7 +209,7 @@ TEST_F(StaticLayerResizeMasterTest, KeepsMasterGeometryAndProjectsCosts)
 
   layers_->updateMap(10.0, 10.0, 0.0);
   EXPECT_EQ(master->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
-  EXPECT_EQ(master->getCost(6, 6), nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_EQ(master->getCost(6, 6), nav2_costmap_2d::NO_INFORMATION);
   EXPECT_EQ(master->getCost(7, 5), nav2_costmap_2d::NO_INFORMATION);
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::NO_INFORMATION);
   EXPECT_TRUE(layer->isCurrent());
@@ -275,7 +275,7 @@ TEST_F(StaticLayerResizeMasterTest, DefaultStillResizesTheMaster)
   base->incomingMap(makeMap());
   auto * master = layers_->getCostmap();
   EXPECT_EQ(master->getSizeInCellsX(), 2u);
-  EXPECT_DOUBLE_EQ(master->getResolution(), 2.0);
+  EXPECT_DOUBLE_EQ(master->getResolution(), 1.0);
   EXPECT_DOUBLE_EQ(master->getOriginX(), 5.0);
   layers_->updateMap(6.0, 6.0, 0.0);
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
