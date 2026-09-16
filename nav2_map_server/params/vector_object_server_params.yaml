@@ -7,6 +7,7 @@ vector_object_server:
     overlay_type: 0
     update_frequency: 1.0
     transform_tolerance: 0.1
+    transform_staleness_threshold: 0.0
     shapes: ["Poly", "Circle"]
     Poly:
       type: "polygon"
