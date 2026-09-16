@@ -218,11 +218,14 @@ void KeepoutFilter::updateBounds(
         transform_staleness_threshold_, mask_transform))
     {
       tf2::doTransform(pose, mask_pose, mask_transform);
-      const auto footprint_cost = footprint_collision_checker_->footprintCostAtPose(
-        mask_pose.position.x, mask_pose.position.y, tf2::getYaw(mask_pose.orientation),
-        layered_costmap_->getFootprint());
-      is_pose_lethal_ =
-        footprint_cost == INSCRIBED_INFLATED_OBSTACLE || footprint_cost == LETHAL_OBSTACLE;
+      const auto & footprint = layered_costmap_->getFootprint();
+      if (!footprint.empty()) {
+        const auto footprint_cost = footprint_collision_checker_->footprintCostAtPose(
+          mask_pose.position.x, mask_pose.position.y, tf2::getYaw(mask_pose.orientation),
+          footprint);
+        is_pose_lethal_ =
+          footprint_cost == INSCRIBED_INFLATED_OBSTACLE || footprint_cost == LETHAL_OBSTACLE;
+      }
       if (is_pose_lethal_) {
         RCLCPP_WARN_THROTTLE(
           logger_, *(clock_), 2000,
