@@ -137,6 +137,13 @@ class TestLineIterator(unittest.TestCase):
                 points = [(0.123456, y) for y in ys]
                 self.assertEqual(self._line_points(points[0], points[-1]), points)
 
+    def test_horizontal_line_constant_y(self):
+        # Advancing a horizontal line must leave its Y coordinate unchanged.
+        for xs in ([0, 1, 2, 3, 4], [4, 3, 2, 1, 0]):
+            with self.subTest(xs=xs):
+                points = [(x, 2.999999) for x in xs]
+                self.assertEqual(self._line_points(points[0], points[-1]), points)
+
     def test_precise_endpoints(self):
         # Clamping must preserve endpoints that cannot be rounded to five decimals.
         for end in [(1, 2.000001), (1, 1.999999), (0.123456, 2.000001)]:

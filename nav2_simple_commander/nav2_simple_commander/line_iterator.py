@@ -128,7 +128,8 @@ class LineIterator:
                 self.x_ = round(self.m_ * self.y_ + self.b_, 5)
         else:
             self.x_ = next_coordinate
-            self.y_ = round(self.m_ * self.x_ + self.b_, 5)
+            if self.y0_ != self.y1_:
+                self.y_ = round(self.m_ * self.x_ + self.b_, 5)
 
     def getX(self):
         """Get the abscissa of the current point."""
