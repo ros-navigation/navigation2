@@ -24,20 +24,16 @@ namespace mppi::critics
 
 /**
  * @class mppi::critics::MecanumCritic
- * @brief Critic objective function penalizing velocity combinations a mecanum drivetrain cannot
- *        deliver, its wheels being shared between the two translational axes and rotation
+ * @brief Critic objective function for enforcing mecanum drive constraints
  *
  * A mecanum drivetrain produces vx, vy and wz from the same four wheels: with rollers at 45 degrees
  * a wheel turns at (vx ± vy ± (lx + ly) * wz) / r, so a wheel saturates once
  * |vx| / vx_max + |vy| / vy_max + |wz| / wz_max reaches 1, each per-axis limit being what that axis
- * could reach on its own. The achievable set is therefore a simplex rather than the box the limits
- * describe: a diagonal command is slower than a straight one, and rotating costs translational
- * speed. Only holonomic motion models are scored, as the others have no vy to combine.
+ * could reach on its own.
  *
  * The cost is the speed the sample has to give up to fit: the translational speed plus the rotation
  * converted to the same units by its moment arm lx + ly, times the fraction of the demand the
- * wheels cannot meet. Rotation is charged like translation, so a sample that is infeasible through
- * rotation alone is scored like any other.
+ * wheels cannot meet.
  */
 class MecanumCritic : public CriticFunction
 {
@@ -58,12 +54,9 @@ protected:
   unsigned int power_{0};
   float weight_{0};
   float vx_max_{0};
-  float vx_min_{0};
   float vy_max_{0};
   float wz_max_{0};
-  // sum_of_robot_center_projection_on_X_Y_axis, named as the ros2_control mecanum controller
-  // names it
-  float center_projection_{0};
+  float center_projection_{0};  // sum_of_robot_center_projection_on_X_Y_axis
 };
 
 }  // namespace mppi::critics
