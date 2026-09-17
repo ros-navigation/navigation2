@@ -271,7 +271,6 @@ void SmacPlannerHybridT<NodeT>::activate()
     std::bind(
       &SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
-
 }
 
 template<typename NodeT>
@@ -368,8 +367,9 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
   }
 
-  // The resolution can change, even if the parameter is not updated (e.g. if the map is provided with a different resolution),
-  // Therefore, we need to check the costmap resolution and update the search resolution if it has changed.
+  // The resolution can change, even if the parameter is not updated 
+  // (e.g. if the map is provided with a different resolution). Therefore, we
+  // need to check the costmap resolution and update the search resolution if it has changed.
   if (_search_resolution != costmap->getResolution()) {
     updateSearchResolution(costmap->getResolution());
     _a_star = std::make_unique<AStarAlgorithm<NodeT>>(_motion_model, _search_info);
@@ -832,7 +832,7 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
     }
   }
 
-  if (reinit_a_star || reinit_downsampler || reinit_collision_checker) {
+  if (reinit_a_star || reinit_downsampler || reinit_collision_checker || reinit_smoother) {
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
     if (_search_resolution != _costmap->getResolution() *
       (_downsample_costmap ? _downsampling_factor : 1))
@@ -883,14 +883,14 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
         _costmap_ros->getUseRadius(),
         findCircumscribedCost(_costmap_ros));
     }
-  }
 
-  // Re-Initialize smoother
-  if (reinit_smoother) {
-    SmootherParams params;
-    params.get(_node.lock(), _name);
-    _smoother = std::make_unique<Smoother>(params);
-    _smoother->initialize(_minimum_turning_radius_global_coords);
+    // Re-Initialize smoother
+    if (reinit_smoother) {
+      SmootherParams params;
+      params.get(_node.lock(), _name);
+      _smoother = std::make_unique<Smoother>(params);
+      _smoother->initialize(_minimum_turning_radius_global_coords);
+    }
   }
 }
 
