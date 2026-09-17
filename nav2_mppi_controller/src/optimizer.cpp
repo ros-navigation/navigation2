@@ -272,6 +272,7 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
 void Optimizer::optimize()
 {
   for (size_t i = 0; i < settings_.iteration_count; ++i) {
+    costs_.setZero();
     generateNoisedTrajectories();
     critic_manager_.evalTrajectoriesScores(critics_data_);
     updateControlSequence();
