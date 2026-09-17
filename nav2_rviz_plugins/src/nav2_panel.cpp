@@ -25,6 +25,7 @@
 #include <vector>
 #include <utility>
 #include <chrono>
+#include <fstream>
 #include <string>
 
 #include "nav2_rviz_plugins/goal_common.hpp"
