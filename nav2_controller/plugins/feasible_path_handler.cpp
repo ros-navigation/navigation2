@@ -209,6 +209,7 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   unsigned int mx, my;
   geometry_msgs::msg::TransformStamped plan_to_costmap;
   try {
+    // Uses timestamp which has already been validated for staleness
     plan_to_costmap = tf_->lookupTransform(
       costmap_ros_->getGlobalFrameID(),
       global_plan_.header.frame_id,
