@@ -367,7 +367,7 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
   }
 
-  // The resolution can change, even if the parameter is not updated 
+  // The resolution can change, even if the parameter is not updated
   // (e.g. if the map is provided with a different resolution). Therefore, we
   // need to check the costmap resolution and update the search resolution if it has changed.
   if (_search_resolution != costmap->getResolution()) {
@@ -887,7 +887,7 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
     // Re-Initialize smoother
     if (reinit_smoother) {
       SmootherParams params;
-      params.get(_node.lock(), _name);
+      params.get(node, _name);
       _smoother = std::make_unique<Smoother>(params);
       _smoother->initialize(_minimum_turning_radius_global_coords);
     }
