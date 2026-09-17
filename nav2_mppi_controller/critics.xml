@@ -38,7 +38,7 @@
     </class>
 
     <class type="mppi::critics::MecanumCritic" base_class_type="mppi::critics::CriticFunction">
-      <description>mppi critic for bounding the velocity of to what the mecanum drivetrain can deliver</description>
+      <description>mppi critic for bounding the velocity to what the mecanum drivetrain can deliver</description>
     </class>
 
     <class type="mppi::critics::TranslationalVelocityCritic" base_class_type="mppi::critics::CriticFunction">
