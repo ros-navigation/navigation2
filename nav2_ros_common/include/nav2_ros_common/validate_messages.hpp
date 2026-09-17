@@ -23,6 +23,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/msg/costmap_meta_data.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "sensor_msgs/msg/range.hpp"
@@ -250,8 +251,22 @@ bool validateMsg(const sensor_msgs::msg::Range & msg)
   return true;
 }
 
+bool validateMsg(const nav2_msgs::msg::CostmapMetaData & msg)
+{
+  if (!validateMsg(msg.origin)) {return false;}
+  if (!validateMsg(msg.resolution)) {return false;}
+
+  if (msg.resolution < MIN_MAP_RESOLUTION) {return false;}
+  if (msg.size_x == 0 || msg.size_y == 0) {return false;}
+
+  return true;
+}
+
 bool validateMsg(const nav2_msgs::msg::Costmap & msg)
 {
+  if (!validateMsg(msg.header)) {return false;}
+  if (!validateMsg(msg.metadata)) {return false;}
+
   uint32_t num_cells;
   if (__builtin_mul_overflow(msg.metadata.size_x, msg.metadata.size_y, &num_cells)) {
     return false;

@@ -299,6 +299,9 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
 TEST_F(TestCostmapSubscriberShould, rejectMalformedFullCostmapMsgs)
 {
   auto malformed_msg = std::make_shared<nav2_msgs::msg::Costmap>();
+  malformed_msg->header.frame_id = "map";
+  malformed_msg->metadata.resolution = 0.05;
+  malformed_msg->metadata.origin.orientation.w = 1.0;
   malformed_msg->metadata.size_x = 2;
   malformed_msg->metadata.size_y = 2;
   malformed_msg->data.resize(3);
