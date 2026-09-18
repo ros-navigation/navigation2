@@ -614,12 +614,12 @@ TEST_F(ExclusionZoneTester, DynamicHeightBandUpdateChangesMask)
   }
 }
 
-TEST_F(ExclusionZoneTester, DynamicFrameHoldTimeoutUpdateExtendsWindow)
+TEST_F(ExclusionZoneTester, DynamicTransformStalenessThresholdUpdateExtendsWindow)
 {
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(
-    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(1.0));
+    std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(1.0));
 
   const rclcpp::Time stamp0 = node_->now();
   broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
@@ -645,7 +645,7 @@ TEST_F(ExclusionZoneTester, DynamicFrameHoldTimeoutUpdateExtendsWindow)
   // Extend the hold window to 5 s: the same stale pose is now within the window
   // and the zone keeps masking at its last known pose.
   const auto result = node_->set_parameter(
-    rclcpp::Parameter(std::string(ZONE_NAME) + ".frame_hold_timeout", 5.0));
+    rclcpp::Parameter(std::string(ZONE_NAME) + ".transform_staleness_threshold", 5.0));
   EXPECT_TRUE(result.successful);
   {
     std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
@@ -655,20 +655,20 @@ TEST_F(ExclusionZoneTester, DynamicFrameHoldTimeoutUpdateExtendsWindow)
   }
 }
 
-TEST_F(ExclusionZoneTester, DynamicFrameHoldTimeoutUpdateRejectsNegative)
+TEST_F(ExclusionZoneTester, DynamicTransformStalenessThresholdUpdateRejectsNegative)
 {
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(
-    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(1.0));
+    std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(1.0));
   broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
 
-  // A negative hold timeout must be rejected.
+  // A negative staleness threshold must be rejected.
   const auto result = node_->set_parameter(
-    rclcpp::Parameter(std::string(ZONE_NAME) + ".frame_hold_timeout", -1.0));
+    rclcpp::Parameter(std::string(ZONE_NAME) + ".transform_staleness_threshold", -1.0));
   EXPECT_FALSE(result.successful);
 }
 
@@ -710,7 +710,7 @@ TEST_F(ExclusionZoneTester, HeldZoneDoesNotMaskWithStaleRobotPose)
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(
-    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(5.0));
+    std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(5.0));
   broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
@@ -726,7 +726,7 @@ TEST_F(ExclusionZoneTester, HeldZoneKeepsMaskingWithinWindow)
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(
-    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(5.0));
+    std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(5.0));
 
   // Detection at stamp0; robot at the odom origin, zone at the origin.
   const rclcpp::Time stamp0 = node_->now();
@@ -756,7 +756,7 @@ TEST_F(ExclusionZoneTester, HeldZoneFailsSafeAfterWindowExpires)
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(
-    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(1.0));
+    std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(1.0));
 
   const rclcpp::Time stamp0 = node_->now();
   broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
@@ -777,7 +777,7 @@ TEST_F(ExclusionZoneTester, HeldZoneStaysFixedInWorldAsRobotMoves)
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(
-    std::string(ZONE_NAME) + ".frame_hold_timeout", rclcpp::ParameterValue(5.0));
+    std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(5.0));
 
   // Robot at the odom origin; charger detected 10 m ahead -> world pose (10, 0).
   const rclcpp::Time stamp0 = node_->now();
