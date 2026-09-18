@@ -38,6 +38,7 @@ void GoalIntentExtractor::configure(
   id_to_graph_map_ = id_to_graph_map;
   graph_ = &graph;
   tf_ = tf;
+  clock_ = node->get_clock();
   costmap_subscriber_ = costmap_subscriber;
   route_frame_ = route_frame;
   base_frame_ = base_frame;
@@ -45,6 +46,8 @@ void GoalIntentExtractor::configure(
   node_spatial_tree_->computeTree(graph);
 
   prune_goal_ = node->declare_or_get_parameter("prune_goal", true);
+  transform_staleness_threshold_ = node->declare_or_get_parameter(
+    "transform_staleness_threshold", 0.0);
 
   max_dist_from_edge_ = static_cast<float>(
     node->declare_or_get_parameter("max_prune_dist_from_edge", 8.0));
@@ -77,7 +80,16 @@ geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
       logger_,
       "Request pose in %s frame. Converting to route server frame: %s.",
       pose.header.frame_id.c_str(), target_frame.c_str());
-    if (!nav2_util::transformPoseInTargetFrame(pose, pose, *tf_, target_frame)) {
+    if (pose.header.stamp.sec == 0 && pose.header.stamp.nanosec == 0) {
+      geometry_msgs::msg::TransformStamped transform;
+      if (!nav2_util::lookupTransformWithStalenessCheck(
+          *tf_, target_frame, pose.header.frame_id, clock_->now(),
+          transform_staleness_threshold_, transform))
+      {
+        throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame);
+      }
+      tf2::doTransform(pose, pose, transform);
+    } else if (!nav2_util::transformPoseInTargetFrame(pose, pose, *tf_, target_frame)) {
       throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame);
     }
   }
@@ -112,9 +124,14 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   if (goal->use_start) {
     start_pose = goal->start;
   } else {
-    if (!nav2_util::getCurrentPose(start_pose, *tf_, route_frame_, base_frame_)) {
+    geometry_msgs::msg::TransformStamped transform;
+    if (!nav2_util::lookupTransformWithStalenessCheck(
+        *tf_, route_frame_, base_frame_, clock_->now(), transform_staleness_threshold_,
+        transform))
+    {
       throw nav2_core::RouteTFError("Failed to obtain starting pose in: " + route_frame_);
     }
+    start_pose = nav2_util::transformToPoseStamped(transform);
   }
 
   // transform to route_frame
