@@ -101,6 +101,24 @@ geometry_msgs::msg::TransformStamped poseToTransformStamped(
   return transform;
 }
 
+bool getFreshPose(
+  nav2::TransformBuffer & tf_buffer,
+  const std::string & target_frame,
+  const std::string & source_frame,
+  const rclcpp::Time & current_time,
+  double staleness_threshold,
+  geometry_msgs::msg::PoseStamped & pose)
+{
+  geometry_msgs::msg::TransformStamped transform;
+  if (lookupTransformWithStalenessCheck(
+      tf_buffer, target_frame, source_frame, current_time, staleness_threshold, transform))
+  {
+    pose = transformToPoseStamped(transform);
+    return true;
+  }
+  return false;
+}
+
 bool getCurrentPose(
   geometry_msgs::msg::PoseStamped & global_pose,
   nav2::TransformBuffer & tf_buffer, const std::string global_frame,

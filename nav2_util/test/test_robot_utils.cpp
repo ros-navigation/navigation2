@@ -122,6 +122,43 @@ TEST(RobotUtils, lookupTransformWithStalenessCheckSameFrameReturnsIdentity)
   EXPECT_DOUBLE_EQ(transform.transform.rotation.w, 1.0);
 }
 
+TEST(RobotUtils, getFreshPose)
+{
+  auto clock = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+  nav2::TransformBuffer tf(clock);
+  const rclcpp::Time current_time(10, 0, RCL_ROS_TIME);
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.header.stamp = rclcpp::Time(9, 0, RCL_ROS_TIME);
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.x = 1.0;
+  transform.transform.translation.y = 2.0;
+  transform.transform.translation.z = 3.0;
+  transform.transform.rotation.x = 0.1;
+  transform.transform.rotation.y = 0.2;
+  transform.transform.rotation.z = 0.3;
+  transform.transform.rotation.w = 0.9273618495495703;
+  tf.setTransform(transform, "test", false);
+
+  geometry_msgs::msg::PoseStamped pose;
+  ASSERT_TRUE(nav2_util::getFreshPose(
+      tf, "map", "base_link", current_time, 1.0, pose));
+  EXPECT_EQ(pose.header, transform.header);
+  EXPECT_EQ(pose.pose.position.x, transform.transform.translation.x);
+  EXPECT_EQ(pose.pose.position.y, transform.transform.translation.y);
+  EXPECT_EQ(pose.pose.position.z, transform.transform.translation.z);
+  EXPECT_EQ(pose.pose.orientation, transform.transform.rotation);
+
+  const auto previous_pose = pose;
+  EXPECT_FALSE(nav2_util::getFreshPose(
+      tf, "map", "base_link", current_time, 0.5, pose));
+  EXPECT_EQ(pose, previous_pose);
+  EXPECT_FALSE(nav2_util::getFreshPose(
+      tf, "map", "missing_frame", current_time, 1.0, pose));
+  EXPECT_EQ(pose, previous_pose);
+}
+
 TEST(RobotUtils, transformToPoseStamped)
 {
   geometry_msgs::msg::TransformStamped transform;
