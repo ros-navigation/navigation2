@@ -206,7 +206,7 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
   std::vector<std::vector<std::uint8_t>> receivedCostmaps;
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
-    node, costmapToSend.get(), "", topicName, always_send_full_costmap);
+    node, costmapToSend.get(), "map", topicName, always_send_full_costmap);
   costmapPublisher->on_activate();
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
@@ -249,7 +249,7 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
   std::vector<std::vector<std::uint8_t>> receivedCostmaps;
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
-    node, costmapToSend.get(), "", topicName, always_send_full_costmap);
+    node, costmapToSend.get(), "map", topicName, always_send_full_costmap);
   costmapPublisher->on_activate();
   std::uint32_t x0 = 0;
   std::uint32_t xn = costmapToSend->getSizeInCellsX();
