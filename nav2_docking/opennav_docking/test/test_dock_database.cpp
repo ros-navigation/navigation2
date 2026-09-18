@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include <chrono>
+#include <string>
+#include <vector>
+
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "opennav_docking/dock_database.hpp"
@@ -205,6 +208,50 @@ TEST(DatabaseTests, reloadDbMutexLocked)
   EXPECT_FALSE(result.get()->success);
 
   mutex.unlock();
+}
+
+// Reusable Create node with a dock
+static nav2::LifecycleNode::SharedPtr createControllerTestNode(
+  const std::string & type_controller = "")
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"dockv1"});
+  node->declare_parameter("dockv1.plugin", "opennav_docking::SimpleChargingDock");
+  if (!type_controller.empty()) {
+    node->declare_parameter("dockv1.controller", type_controller);
+  }
+  return node;
+}
+
+// Add dock d1 of type dockv1, name a controller for this
+static void addDockInstance(
+  const nav2::LifecycleNode::SharedPtr & node, const std::string & controller)
+{
+  node->declare_parameter("docks", std::vector<std::string>{"d1"});
+  node->declare_parameter("d1.type", "dockv1");
+  node->declare_parameter("d1.pose", std::vector<double>{0.0, 0.0, 0.0});
+  node->declare_parameter("d1.controller", controller);
+}
+
+TEST(DatabaseTests, controllerValidationAcceptsLoadedController)
+{
+  auto node = createControllerTestNode("c1");
+  addDockInstance(node, "c2");
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
+
+  EXPECT_TRUE(db.initialize(node, nullptr, {"c1", "c2"}));
+  EXPECT_EQ(db.instance_size(), 1u);
+}
+
+TEST(DatabaseTests, controllerValidationRejectsUnknownController)
+{
+  auto node = createControllerTestNode();
+  addDockInstance(node, "not_loaded");
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
+
+  EXPECT_FALSE(db.initialize(node, nullptr, {"c1"}));
 }
 
 }  // namespace opennav_docking
