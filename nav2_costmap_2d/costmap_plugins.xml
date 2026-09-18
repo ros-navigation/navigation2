@@ -28,7 +28,7 @@
       <description>Plugin to group different layers within the same costmap</description>
     </class>
     <class type="nav2_costmap_2d::GeofenceLayer" base_class_type="nav2_costmap_2d::Layer">
-      <description>Marks a configurable-thickness border of LETHAL cells outside the polygon boundary as the operational fence; cells interior to the polygon remain unmodified.</description>
+      <description>Defines the operational area of a non-rolling global costmap from a dynamically supplied polygon.</description>
     </class>
   </library>
 
