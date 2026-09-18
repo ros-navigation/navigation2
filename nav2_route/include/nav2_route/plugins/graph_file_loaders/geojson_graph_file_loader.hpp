@@ -51,7 +51,8 @@ public:
    * @param parent pointer to user's node
    */
   void configure(
-    const nav2::LifecycleNode::SharedPtr node) override;
+    const nav2::LifecycleNode::SharedPtr node,
+    const std::string & name) override;
 
   /**
    * @brief Loads the geojson file into the graph

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cinttypes>
 #include <string>
 #include <limits>
 #include <memory>
@@ -87,8 +88,8 @@ nav_msgs::msg::Path PathConverter::densify(
       } else {
         if (smooth_corners_) {
           RCLCPP_WARN(
-            logger_, "Unable to smooth corner between edge %i and edge %i", edge->edgeid,
-            next_edge->edgeid);
+            logger_, "Unable to smooth corner between edge %" PRIu64 " and edge %" PRIu64,
+            edge->edgeid, next_edge->edgeid);
         }
         interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
         start = end;

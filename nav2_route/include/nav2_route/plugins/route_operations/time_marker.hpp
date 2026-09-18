@@ -90,7 +90,7 @@ protected:
   std::string time_tag_;
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Time edge_start_time_;
-  unsigned int curr_edge_;
+  uint64_t curr_edge_;
 };
 
 }  // namespace nav2_route
