@@ -14,8 +14,11 @@
 
 #include <math.h>
 
+#include <atomic>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -76,6 +79,43 @@ TEST(NavfnTest, testDynamicParameter)
 
   // Invalid value should not be set
   EXPECT_EQ(node->get_parameter("test.max_cycles_factor").as_int(), 6);
+}
+
+// AI-generated: exercise configuration against concurrent resizing under ThreadSanitizer.
+TEST(NavfnTest, testConfigureWhileCostmapResizes)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("NavfnConfigureTest");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  auto tf = nav2::create_transform_buffer(node);
+  nav2_navfn_planner::NavfnPlanner planner;
+
+  std::atomic<bool> running{true};
+  std::atomic<unsigned int> resize_count{0};
+  std::thread resize_thread([&]() {
+      unsigned int size = 16;
+      while (running.load(std::memory_order_relaxed)) {
+        {
+          std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
+          costmap->resizeMap(size, size + 8, 0.1, 0.0, 0.0);
+        }
+        size = size == 16 ? 17 : 16;
+        resize_count.fetch_add(1, std::memory_order_relaxed);
+        std::this_thread::yield();
+      }
+    });
+
+  while (resize_count.load(std::memory_order_relaxed) == 0) {
+    std::this_thread::yield();
+  }
+  for (int i = 0; i < 100; ++i) {
+    EXPECT_NO_THROW(planner.configure(node, "test", tf, costmap_ros));
+    planner.cleanup();
+  }
+
+  running.store(false, std::memory_order_relaxed);
+  resize_thread.join();
 }
 
 int main(int argc, char ** argv)
