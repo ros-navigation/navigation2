@@ -186,6 +186,63 @@ TEST(AxisGoalChecker, dynamic_parameters)
   EXPECT_EQ(node->get_parameter("test.direction_estimation_distance").as_double(), 0.3);
 }
 
+TEST(AxisGoalChecker, fallback_radial_goal_tolerance)
+{
+  auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
+  node->declare_parameter("test.along_path_tolerance", 0.05);
+  node->declare_parameter("test.cross_track_tolerance", 0.8);
+  AxisGoalChecker checker;
+  checker.initialize(node, "test", nullptr);
+
+  auto short_path = createPath({{-0.06, 0.0}, {0.0, 0.0}});
+  auto goal_pose = short_path.poses.back().pose;
+  auto query_pose = goal_pose;
+  query_pose.position.x = -0.06;
+  query_pose.position.y = 0.075;
+  geometry_msgs::msg::Twist velocity;
+
+  EXPECT_DOUBLE_EQ(node->get_parameter("test.fallback_radial_goal_tolerance").as_double(), 0.05);
+  EXPECT_FALSE(checker.isGoalReached(query_pose, goal_pose, velocity, short_path));
+  ASSERT_TRUE(node->set_parameter(
+      rclcpp::Parameter("test.fallback_radial_goal_tolerance", 0.1)).successful);
+  EXPECT_TRUE(checker.isGoalReached(query_pose, goal_pose, velocity, short_path));
+
+  query_pose.position.x = 0.0;
+  query_pose.position.y = 0.1;
+  EXPECT_FALSE(checker.isGoalReached(query_pose, goal_pose, velocity, short_path));
+  EXPECT_FALSE(node->set_parameter(
+        rclcpp::Parameter("test.fallback_radial_goal_tolerance", -0.1)).successful);
+      EXPECT_DOUBLE_EQ(node->get_parameter("test.fallback_radial_goal_tolerance").as_double(), 0.1);
+
+  auto longer_path = createPath({{-0.5, 0.0}, {0.0, 0.0}});
+  query_pose.position.x = -0.06;
+  query_pose.position.y = 0.075;
+  EXPECT_FALSE(checker.isGoalReached(query_pose, goal_pose, velocity, longer_path));
+  query_pose.position.x = 0.0;
+  query_pose.position.y = 0.2;
+  EXPECT_TRUE(checker.isGoalReached(query_pose, goal_pose, velocity, longer_path));
+
+  checker.reset();
+  query_pose.position.y = 0.075;
+  EXPECT_TRUE(checker.isGoalReached(query_pose, goal_pose, velocity, short_path));
+}
+
+TEST(AxisGoalChecker, fallback_radial_goal_tolerance_initial_parameter)
+{
+  auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
+  node->declare_parameter("test.along_path_tolerance", 0.05);
+  node->declare_parameter("test.fallback_radial_goal_tolerance", 0.1);
+  AxisGoalChecker checker;
+  checker.initialize(node, "test", nullptr);
+
+  auto path = createPath({{0.0, 0.0}});
+  auto goal_pose = path.poses.back().pose;
+  auto query_pose = goal_pose;
+  query_pose.position.y = 0.075;
+  geometry_msgs::msg::Twist velocity;
+  EXPECT_TRUE(checker.isGoalReached(query_pose, goal_pose, velocity, path));
+}
+
 TEST(AxisGoalChecker, single_point_path)
 {
   auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
@@ -680,6 +737,10 @@ TEST(AxisGoalChecker, multiple_consecutive_poses_too_close_to_goal)
     {2.0, 0.0}
   });
 
+  // A new path implies a reset of the checker (as done by the controller server),
+  // clearing any cached path direction
+  agc.reset();
+
   // Robot within the fallback tolerance should succeed (fallback to distance check).
   // The fallback uses the stricter min of the two tolerances.
   query_pose.position.x = 2.0 + 0.1;
@@ -695,6 +756,52 @@ TEST(AxisGoalChecker, multiple_consecutive_poses_too_close_to_goal)
   distance = std::hypot(0.2, 0.2);
   EXPECT_GT(distance, fallback_tolerance);  // Verify we're outside tolerance
   EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, path_all_close));
+}
+
+TEST(AxisGoalChecker, truncated_plan_uses_cached_direction)
+{
+  auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
+  AxisGoalChecker agc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  agc.initialize(node, "test", costmap);
+
+  geometry_msgs::msg::Pose goal_pose;
+  goal_pose.position.x = 2.0;
+  goal_pose.position.y = 0.0;
+  goal_pose.position.z = 0.0;
+  goal_pose.orientation.w = 1.0;
+
+  geometry_msgs::msg::Pose query_pose;
+  geometry_msgs::msg::Twist velocity;
+
+  // First cycle: plan still contains a pose far enough from the goal, direction gets cached
+  nav_msgs::msg::Path full_path = createPath({{1.2, 0.0}, {1.6, 0.0}, {2.0, 0.0}});
+  query_pose.position.x = 1.3;
+  query_pose.position.y = 0.0;
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, full_path));
+
+  // Later cycle: the path handler pruned the plan behind the robot so all remaining
+  // poses are within direction_estimation_distance (0.15) of the goal
+  nav_msgs::msg::Path truncated_path = createPath({{1.95, 0.0}, {2.0, 0.0}});
+
+  // Overshoot with cross-track offset: euclidean distance (0.283) exceeds the fallback
+  // tolerance, but the axis check with the cached direction accepts it
+  query_pose.position.x = 2.2;
+  query_pose.position.y = 0.2;
+  EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, truncated_path));
+
+  // Along-path error beyond tolerance is still rejected with the cached direction
+  query_pose.position.x = 1.7;
+  query_pose.position.y = 0.0;
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, truncated_path));
+
+  // After reset (new path) the cache is cleared, so the same overshoot pose falls
+  // back to the euclidean check and is rejected
+  agc.reset();
+  query_pose.position.x = 2.2;
+  query_pose.position.y = 0.2;
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, truncated_path));
 }
 
 int main(int argc, char ** argv)

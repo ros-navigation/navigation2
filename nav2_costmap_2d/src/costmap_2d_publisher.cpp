@@ -67,13 +67,17 @@ Costmap2DPublisher::Costmap2DPublisher(
   clock_ = node->get_clock();
   logger_ = node->get_logger();
 
-  // TODO(bpwilcox): port onNewSubscription functionality for publisher
+  auto matched_callback = [this](rclcpp::MatchedInfo & status) {
+      if (status.total_count_change > 0) {
+        republish_costmap_ = true;
+      }
+    };
   costmap_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name,
-    nav2::qos::LatchedPublisherQoS());
+    nav2::qos::LatchedPublisherQoS(), nullptr, matched_callback);
   costmap_raw_pub_ = node->create_publisher<nav2_msgs::msg::Costmap>(
     topic_name + "_raw",
-    nav2::qos::LatchedPublisherQoS());
+    nav2::qos::LatchedPublisherQoS(), nullptr, matched_callback);
   costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", nav2::qos::LatchedPublisherQoS());
   costmap_raw_update_pub_ = node->create_publisher<nav2_msgs::msg::CostmapUpdate>(
@@ -108,15 +112,6 @@ Costmap2DPublisher::Costmap2DPublisher(
 }
 
 Costmap2DPublisher::~Costmap2DPublisher() {}
-
-// TODO(bpwilcox): find equivalent/workaround to ros::SingleSubscriberPublisher
-/*
-void Costmap2DPublisher::onNewSubscription(const ros::SingleSubscriberPublisher& pub)
-{
-  prepareGrid();
-  pub.publish(grid_);
-} */
-
 
 void Costmap2DPublisher::updateGridParams()
 {
@@ -241,13 +236,14 @@ void Costmap2DPublisher::publishCostmap()
     return;
   }
 
+  const bool republish = republish_costmap_.exchange(false);
   float resolution = costmap_->getResolution();
   if (always_send_full_costmap_ || grid_resolution_ != resolution ||
     grid_width_ != costmap_->getSizeInCellsX() ||
     grid_height_ != costmap_->getSizeInCellsY() ||
     saved_origin_x_ != costmap_->getOriginX() ||
     saved_origin_y_ != costmap_->getOriginY() ||
-    !costmap_published_once_)
+    !costmap_published_once_ || republish)
   {
     updateGridParams();
     if (costmap_pub_->get_subscription_count() > 0 || !costmap_published_once_) {
@@ -286,6 +282,8 @@ Costmap2DPublisher::costmap_service_callback(
   // TODO(bpwilcox): Grab correct orientation information
   tf2::Quaternion quaternion;
   quaternion.setRPY(0.0, 0.0, 0.0);
+
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
 
   auto size_x = costmap_->getSizeInCellsX();
   auto size_y = costmap_->getSizeInCellsY();

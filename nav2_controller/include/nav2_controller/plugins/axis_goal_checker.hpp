@@ -16,6 +16,7 @@
 #define NAV2_CONTROLLER__PLUGINS__AXIS_GOAL_CHECKER_HPP_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -107,9 +108,11 @@ public:
 protected:
   double along_path_tolerance_;
   double cross_track_tolerance_;
+  double fallback_radial_goal_tolerance_;
   double path_length_tolerance_;
   double direction_estimation_distance_;
   bool is_overshoot_valid_;
+  std::optional<double> cached_end_of_path_yaw_;
   // Dynamic parameters handler
   std::mutex mutex_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "nav2_route/plugins/edge_cost_functions/costmap_scorer.hpp"
@@ -89,6 +90,8 @@ bool CostmapScorer::score(
     RCLCPP_WARN_THROTTLE(logger_, *clock_, 1000, "No costmap yet received!");
     return false;
   }
+
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*costmap_->getMutex());
 
   float largest_cost = 0.0, running_cost = 0.0, point_cost = 0.0;
   unsigned int x0, y0, x1, y1, idx = 0;

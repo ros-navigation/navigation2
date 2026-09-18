@@ -45,8 +45,17 @@ ParameterHandler::ParameterHandler(
     plugin_name_ + ".allow_unknown", true);
   params_.w_euc_cost = node->declare_or_get_parameter(
     plugin_name_ + ".w_euc_cost", 1.0);
+  if (params_.w_euc_cost <= 0.0) {
+    params_.w_euc_cost = 1.0;
+    RCLCPP_WARN(logger_, "Your value for - .w_euc_cost  was overridden, and is now set to 1.0");
+  }
   params_.w_traversal_cost = node->declare_or_get_parameter(
     plugin_name_ + ".w_traversal_cost", 2.0);
+  if (params_.w_traversal_cost <= 0.0) {
+    params_.w_traversal_cost = 2.0;
+    RCLCPP_WARN(
+      logger_, "Your value for - .w_traversal_cost  was overridden, and is now set to 2.0");
+  }
   params_.w_heuristic_cost = params_.w_euc_cost < 1.0 ? params_.w_euc_cost : 1.0;
   params_.terminal_checking_interval = node->declare_or_get_parameter(
     plugin_name_ + ".terminal_checking_interval", 5000);
@@ -109,6 +118,7 @@ ParameterHandler::updateParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".w_euc_cost") {
         params_.w_euc_cost = parameter.as_double();
+        params_.w_heuristic_cost = params_.w_euc_cost < 1.0 ? params_.w_euc_cost : 1.0;
       } else if (param_name == plugin_name_ + ".w_traversal_cost") {
         params_.w_traversal_cost = parameter.as_double();
       }

@@ -73,7 +73,6 @@ void SmacPlannerHybridT<NodeT>::configure(
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerHybrid", name.c_str());
 
   int angle_quantizations;
-  double analytic_expansion_max_length_m;
   bool smooth_path;
 
   // General planner params
@@ -120,10 +119,8 @@ void SmacPlannerHybridT<NodeT>::configure(
   _search_info.downsample_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
 
-  analytic_expansion_max_length_m =
+  _analytic_expansion_max_length_m =
     node->declare_or_get_parameter(name + ".analytic_expansion_max_length", 3.0);
-  _search_info.analytic_expansion_max_length =
-    analytic_expansion_max_length_m / _costmap->getResolution();
 
   _max_planning_time = node->declare_or_get_parameter(name + ".max_planning_time", 5.0);
   _lookup_table_size = node->declare_or_get_parameter(name + ".lookup_table_size", 20.0);
@@ -195,23 +192,7 @@ void SmacPlannerHybridT<NodeT>::configure(
   if (!_downsample_costmap) {
     _downsampling_factor = 1;
   }
-  _search_info.minimum_turning_radius =
-    _minimum_turning_radius_global_coords / (_costmap->getResolution() * _downsampling_factor);
-  _lookup_table_dim =
-    static_cast<float>(_lookup_table_size) /
-    static_cast<float>(_costmap->getResolution() * _downsampling_factor);
-
-  // Make sure its a whole number
-  _lookup_table_dim = static_cast<float>(static_cast<int>(_lookup_table_dim));
-
-  // Make sure its an odd number
-  if (static_cast<int>(_lookup_table_dim) % 2 == 0) {
-    RCLCPP_INFO(
-      _logger,
-      "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
-      _lookup_table_dim);
-    _lookup_table_dim += 1.0;
-  }
+  updateSearchResolution(_costmap->getResolution() * _downsampling_factor);
 
   // Initialize collision checker
   _collision_checker = GridCollisionChecker(_costmap_ros, _angle_quantizations, node);
@@ -290,15 +271,6 @@ void SmacPlannerHybridT<NodeT>::activate()
     std::bind(
       &SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
-
-  // Special case handling to obtain resolution changes in global costmap
-  auto resolution_remote_cb = [this](const rclcpp::Parameter & p) {
-      updateParametersCallback(
-        {rclcpp::Parameter("resolution", rclcpp::ParameterValue(p.as_double()))});
-    };
-  _remote_param_subscriber = std::make_shared<rclcpp::ParameterEventHandler>(_node.lock());
-  _remote_resolution_handler = _remote_param_subscriber->add_parameter_callback(
-    "resolution", resolution_remote_cb, "global_costmap/global_costmap");
 }
 
 template<typename NodeT>
@@ -349,6 +321,30 @@ void SmacPlannerHybridT<NodeT>::cleanup()
 }
 
 template<typename NodeT>
+void SmacPlannerHybridT<NodeT>::updateSearchResolution(double resolution)
+{
+  _search_resolution = resolution;
+  _search_info.minimum_turning_radius =
+    std::max(_minimum_turning_radius_global_coords / resolution, 1.0);
+  _search_info.analytic_expansion_max_length = _analytic_expansion_max_length_m / resolution;
+  _lookup_table_dim =
+    static_cast<float>(_lookup_table_size) /
+    static_cast<float>(resolution);
+
+  // Make sure its a whole number
+  _lookup_table_dim = static_cast<float>(static_cast<int>(_lookup_table_dim));
+
+  // Make sure its an odd number
+  if (static_cast<int>(_lookup_table_dim) % 2 == 0) {
+    RCLCPP_INFO(
+      _logger,
+      "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
+      _lookup_table_dim);
+    _lookup_table_dim += 1.0;
+  }
+}
+
+template<typename NodeT>
 nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
@@ -369,8 +365,20 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
   nav2_costmap_2d::Costmap2D * costmap = _costmap;
   if (_downsample_costmap && _downsampling_factor > 1) {
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
-    _collision_checker.setCostmap(costmap);
   }
+
+  // The resolution can change, even if the parameter is not updated
+  // (e.g. if the map is provided with a different resolution). Therefore, we
+  // need to check the costmap resolution and update the search resolution if it has changed.
+  if (_search_resolution != costmap->getResolution()) {
+    updateSearchResolution(costmap->getResolution());
+    _a_star = std::make_unique<AStarAlgorithm<NodeT>>(_motion_model, _search_info);
+    _a_star->initialize(
+      _allow_unknown, _max_iterations, _max_on_approach_iterations,
+      _terminal_checking_interval, _max_planning_time, _lookup_table_dim,
+      _angle_quantizations);
+  }
+  _collision_checker.setCostmap(costmap);
 
   // Set collision checker and costmap information
   _collision_checker.setFootprint(
@@ -705,7 +713,7 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if (param_name.find(_name + ".") != 0 && param_name != "resolution") {
+    if (param_name.find(_name + ".") != 0) {
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
@@ -742,20 +750,10 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
         _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
       } else if (param_name == _name + ".analytic_expansion_max_length") {
         reinit_a_star = true;
-        _search_info.analytic_expansion_max_length =
-          static_cast<float>(parameter.as_double()) / _costmap->getResolution();
+        _analytic_expansion_max_length_m = parameter.as_double();
       } else if (param_name == _name + ".analytic_expansion_max_cost") {
         reinit_a_star = true;
         _search_info.analytic_expansion_max_cost = static_cast<float>(parameter.as_double());
-      } else if (param_name == "resolution") {
-        // Special case: When the costmap's resolution changes, need to reinitialize
-        // the controller to have new resolution information
-        RCLCPP_INFO(_logger, "Costmap resolution changed. Reinitializing SmacPlannerHybrid.");
-        reinit_collision_checker = true;
-        reinit_a_star = true;
-        reinit_lookup_table = true;
-        reinit_downsampler = true;
-        reinit_smoother = true;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == _name + ".downsample_costmap") {
@@ -834,30 +832,19 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
     }
   }
 
-  // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
   if (reinit_a_star || reinit_downsampler || reinit_collision_checker || reinit_smoother) {
+    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
+    if (_search_resolution != _costmap->getResolution() *
+      (_downsample_costmap ? _downsampling_factor : 1))
+    {
+      reinit_a_star = true;
+      reinit_lookup_table = true;
+    }
     // convert to grid coordinates
     if (!_downsample_costmap) {
       _downsampling_factor = 1;
     }
-    _search_info.minimum_turning_radius =
-      _minimum_turning_radius_global_coords / (_costmap->getResolution() * _downsampling_factor);
-    _lookup_table_dim =
-      static_cast<float>(_lookup_table_size) /
-      static_cast<float>(_costmap->getResolution() * _downsampling_factor);
-
-    // Make sure its a whole number
-    _lookup_table_dim = static_cast<float>(static_cast<int>(_lookup_table_dim));
-
-    // Make sure its an odd number
-    if (static_cast<int>(_lookup_table_dim) % 2 == 0) {
-      RCLCPP_INFO(
-        _logger,
-        "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
-        _lookup_table_dim);
-      _lookup_table_dim += 1.0;
-    }
-
+    updateSearchResolution(_costmap->getResolution() * _downsampling_factor);
     auto node = _node.lock();
 
     // Re-Initialize A* template

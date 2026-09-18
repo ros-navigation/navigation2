@@ -25,6 +25,7 @@
 #include <vector>
 #include <utility>
 #include <chrono>
+#include <fstream>
 #include <string>
 
 #include "nav2_rviz_plugins/goal_common.hpp"
@@ -60,7 +61,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   pause_waypoint_button_ = new QPushButton;
   start_nav_to_pose_button_ = new QPushButton;
   navigation_status_indicator_ = new QLabel;
-  localization_status_indicator_ = new QLabel;
   navigation_goal_status_indicator_ = new QLabel;
   navigation_feedback_indicator_ = new QLabel;
   waypoint_status_indicator_ = new QLabel;
@@ -91,20 +91,12 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     "<td>inactive</td></tr></table>");
   const QString navigation_unknown("<table><tr><td width=150><b>Navigation:</b></td>"
     "<td>unknown</td></tr></table>");
-  const QString localization_active("<table><tr><td width=150><b>Localization:</b></td>"
-    "<td><font color=green>active</color></td></tr></table>");
-  const QString localization_inactive("<table><tr><td width=150><b>Localization:</b></td>"
-    "<td>inactive</td></tr></table>");
-  const QString localization_unknown("<table><tr><td width=150><b>Localization:</b></td>"
-    "<td>unknown</td></tr></table>");
 
   navigation_status_indicator_->setText(navigation_unknown);
-  localization_status_indicator_->setText(localization_unknown);
   navigation_goal_status_indicator_->setText(nav2_rviz_plugins::getGoalStatusLabel());
   number_of_loops_->setText("Num of loops");
   navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
   navigation_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-  localization_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   navigation_goal_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   navigation_feedback_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   waypoint_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -492,10 +484,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   executor_->add_node(client_node_);
 
   client_nav_ = std::make_shared<nav2_lifecycle_manager::LifecycleManagerClient>(
-    "lifecycle_manager_navigation", client_node_);
-  client_loc_ = std::make_shared<nav2_lifecycle_manager::LifecycleManagerClient>(
-    "lifecycle_manager_localization", client_node_);
-  initial_thread_ = new InitialThread(client_nav_, client_loc_);
+    "lifecycle_manager_nav2", client_node_);
+  initial_thread_ = new InitialThread(client_nav_);
   connect(initial_thread_, &InitialThread::finished, initial_thread_, &QObject::deleteLater);
 
   QSignalTransition * activeSignal = new QSignalTransition(
@@ -521,17 +511,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
       navigation_goal_status_indicator_->setText(nav2_rviz_plugins::getGoalStatusLabel());
       navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
     });
-  QObject::connect(
-    initial_thread_, &InitialThread::localizationActive,
-    [this, localization_active] {
-      localization_status_indicator_->setText(localization_active);
-    });
-  QObject::connect(
-    initial_thread_, &InitialThread::localizationInactive,
-    [this, localization_inactive] {
-      localization_status_indicator_->setText(localization_inactive);
-    });
-
   state_machine_.addState(pre_initial_);
   state_machine_.addState(initial_);
   state_machine_.addState(idle_);
@@ -562,7 +541,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/classes/nav2_logo_small.png"));
 
   status_layout->addWidget(navigation_status_indicator_);
-  status_layout->addWidget(localization_status_indicator_);
   status_layout->addWidget(navigation_goal_status_indicator_);
 
   logo_layout->addWidget(imgDisplayLabel_, 5, Qt::AlignRight);
@@ -978,11 +956,6 @@ Nav2Panel::onPause()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::pause,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<bool> futureLoc =
-    QtConcurrent::run(
-    std::bind(
-      &nav2_lifecycle_manager::LifecycleManagerClient::pause,
-      client_loc_.get(), std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -993,11 +966,6 @@ Nav2Panel::onResume()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::resume,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<bool> futureLoc =
-    QtConcurrent::run(
-    std::bind(
-      &nav2_lifecycle_manager::LifecycleManagerClient::resume,
-      client_loc_.get(), std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -1017,11 +985,6 @@ Nav2Panel::onStartup()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<bool> futureLoc =
-    QtConcurrent::run(
-    std::bind(
-      &nav2_lifecycle_manager::LifecycleManagerClient::startup,
-      client_loc_.get(), std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -1032,11 +995,6 @@ Nav2Panel::onShutdown()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<bool> futureLoc =
-    QtConcurrent::run(
-    std::bind(
-      &nav2_lifecycle_manager::LifecycleManagerClient::reset,
-      client_loc_.get(), std::placeholders::_1), server_timeout_);
   timer_.stop();
 }
 

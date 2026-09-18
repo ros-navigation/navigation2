@@ -63,8 +63,15 @@ public:
 
   void clearRobotFootprint()
   {
-    unpadded_footprint_.clear();
-    padded_footprint_.clear();
+#ifdef __cpp_lib_atomic_shared_ptr
+    unpadded_footprint_.store(std::make_shared<std::vector<geometry_msgs::msg::Point>>());
+    padded_footprint_.store(std::make_shared<std::vector<geometry_msgs::msg::Point>>());
+#else
+    std::atomic_store(
+      &unpadded_footprint_, std::make_shared<std::vector<geometry_msgs::msg::Point>>());
+    std::atomic_store(
+      &padded_footprint_, std::make_shared<std::vector<geometry_msgs::msg::Point>>());
+#endif
   }
 };
 

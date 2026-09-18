@@ -1,13 +1,13 @@
 #goal definition
 
-bool use_dock_id True  # Whether to use the dock_id or dock_pose fields
+bool use_dock_id true  # Whether to use the dock_id or dock_pose fields
 string dock_id  # Dock name or ID to dock at, from given dock database
 
 geometry_msgs/PoseStamped dock_pose  # Dock pose
 string dock_type  # If using dock_pose, what type of dock it is. Not necessary if only using one type of dock.
 
 float32 max_staging_time 1000.0  # Maximum time for navigation to get to the dock's staging pose.
-bool navigate_to_staging_pose True  # Whether or not to navigate to staging pose or assume robot is already at staging pose within tolerance to execute behavior
+bool navigate_to_staging_pose true  # Whether or not to navigate to staging pose or assume robot is already at staging pose within tolerance to execute behavior
 
 ---
 #result definition
@@ -26,7 +26,7 @@ uint16 FAILED_TO_CHARGE=906
 uint16 TIMEOUT=907
 uint16 UNKNOWN=999
 
-bool success True  # docking success status
+bool success true  # docking success status
 uint16 error_code 0  # Contextual error code, if any
 uint16 num_retries 0  # Number of retries attempted
 string error_msg
