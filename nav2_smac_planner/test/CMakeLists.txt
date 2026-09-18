@@ -75,6 +75,18 @@ target_link_libraries(test_a_star
   rclcpp_lifecycle::rclcpp_lifecycle
 )
 
+# Test incremental (LPA*) obstacle heuristic
+nav2_add_gtest(test_obstacle_heuristic_incremental
+  test_obstacle_heuristic_incremental.cpp
+)
+target_link_libraries(test_obstacle_heuristic_incremental
+  ${library_name}
+  ament_index_cpp::ament_index_cpp
+  nav2_costmap_2d::nav2_costmap_2d_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+)
+
 # Test SMAC Hybrid
 nav2_add_gtest(test_smac_hybrid
   test_smac_hybrid.cpp
