@@ -104,7 +104,7 @@ private:
   std::deque<nav_msgs::msg::Odometry>::size_type odom_history_size_;
 
   // Calculated states
-  double current_accel_;
+  std::atomic<double> current_accel_;
 
   // Robot specific parameters
   double brake_accel_limit_;
