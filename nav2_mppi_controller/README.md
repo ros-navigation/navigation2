@@ -146,7 +146,8 @@ Uses inflated costmap cost directly to avoid obstacles
 | threshold_to_consider      | double | Default 0.5. Distance between robot and goal above which path align cost is considered                                    |
  | offset_from_furthest      | double | Default 20. Checks that the candidate trajectories are sufficiently far along their way tracking the path to apply the alignment critic. This ensures that path alignment is only considered when actually tracking the path, preventing awkward initialization motions preventing the robot from leaving the path to achieve the appropriate heading.  |
  | trajectory_point_step      | int | Default 4. Step of trajectory points to evaluate for path distance to reduce compute time. Between 1-10 is typically reasonable.   |
- | max_path_occupancy_ratio   | double | Default 0.07 (7%). Maximum proportion of the path that can be occupied before this critic is not considered to allow the obstacle and path follow critics to avoid obstacles while following the path's intent in presence of dynamic objects in the scene.  |
+ | max_path_occupancy_ratio   | double | Default 0.07 (7%). Maximum proportion of a path segment that can be occupied before this critic is not considered to allow the obstacle and path follow critics to avoid obstacles while following the path's intent in presence of dynamic objects in the scene.  |
+ | min_distance_occupancy_check   | double | Default 2.0. Min distance for the occupancy check's path segment. The segment length is ``min(min_distance_occupancy_check, distance_to_furthest_reached_path_point)`` |
  | use_path_orientations   | bool | Default false. Whether to consider path's orientations in path alignment, which can be useful when paired with feasible smac planners to incentivize directional changes only where/when the smac planner requests them. If you want the robot to deviate and invert directions where the controller sees fit, keep as false. If your plans do not contain orientation information (e.g. navfn), keep as false.  |
 
 #### Path Angle Critic
@@ -189,6 +190,20 @@ Uses inflated costmap cost directly to avoid obstacles
  | cost_weight           | double   | Default 35.0. Weight to apply to critic term.                                                               |
  | cost_power            | int      | Default 1. Power order to apply to term.                                                                    |
  | deadband_velocities   | double[] | Default [0.0, 0.0, 0.0].  The array of deadband velocities [vx, vz, wz]. A zero array indicates that the critic will take no action.      |
+
+#### Obstacle Bypass Critic
+
+Steers the robot around dynamic obstacles blocking the path by determining the best side to bypass using the costmap and scoring trajectories toward an offset target point.
+
+ | Parameter                    | Type   | Definition                                                                                                  |
+ | ---------------              | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight                  | double | Default 4.667. Weight to apply to critic term.                                                              |
+ | cost_power                   | int    | Default 1. Power order to apply to term.                                                                    |
+ | min_distance_occupancy_check | double | Default 2.0. Minimum distance (m) along the path to check for occupancy to determine if the path is blocked. |
+ | max_path_occupancy_ratio     | double | Default 0.07 (7%). Maximum proportion of the checked path segment that can be occupied before the bypass behavior activates. |
+ | offset_from_furthest         | int    | Default 20. Number of path points after the furthest reached point to place the bypass target, controlling how far ahead the robot aims while bypassing. |
+ | threshold_to_consider        | double | Default 0.5. Distance between robot and goal above which the bypass critic stops being considered.          |
+ | bypass_offset_dist           | double | Default 1.0. Additional offset distance (m) beyond the first free cell when computing the bypass target point perpendicular to the path. |
 
 
 ### XML configuration example
@@ -316,7 +331,7 @@ Tune std's carefully for low acceleration. If you're seeing a lot of chatter in 
 
 If you don't require path following behavior (e.g. just want to follow a goal pose and let the model predictive elements decide the best way to accomplish that), you may easily remove the PathAlign, PathFollow and PathAngle critics.
 
-By default, the controller is tuned and has the capabilities established in the PathAlign/Obstacle critics to generally follow the path closely when no obstacles prevent it, but able to deviate from the path when blocked. See `PathAlignCritic::score()` for details, but it is disabled when the local path is blocked so the obstacle critic takes over in that state.
+By default, the controller is tuned and has the capabilities established in the PathAlign/Obstacle critics to generally follow the path closely when no obstacles prevent it, but able to deviate from the path when blocked. See `PathAlignCritic::score()` for details, but it is disabled when the local path is blocked so the obstacle critic takes over in that state. The ``ObstacleBypassCritic`` can be helpful to bypass around obstacles on the path, if desired. Just make sure to have a reasoanble prediction horizon (model_dt * time_steps), prune distance, and costmap sensor range to see far enough ahead to start going around an obstacle before approaching it to slow down. As such, `min_distance_occupancy_check >= prediction horizon`, in general.
 
 If you want to slow further on approach to goal, consider increasing the ``threshold_to_consider`` parameters to give a hand off from the path tracking critics to the goal approach critics sooner - then tune those critics for your profile of interest.
 
@@ -327,6 +342,10 @@ As this is a predictive planner, there is some relationship between maximum spee
 The same applies to the Path Follow and Align offsets from furthest. In the same example if the furthest point we can consider is already at the edge of the costmap, then further offsets are thresholded because they're unusable. So its important while selecting these parameters to make sure that the theoretical offsets can exist on the costmap settings selected with the maximum prediction horizon and velocities desired. Setting the threshold for consideration in the path follower + goal critics as the same as your prediction horizon can make sure you have clean hand-offs between them, as the path follower will otherwise attempt to slow slightly once it reaches the final goal pose as its marker.
 
 The Path Follow critic cannot drive velocities greater than the projectable distance of that velocity on the available path on the rolling costmap. The Path Align critic `offset_from_furthest` represents the number of path points a trajectory passes through while tracking the path. If this is set either absurdly low (e.g. 5) it can trigger when a robot is simply trying to start path tracking causing some suboptimal behaviors and local minima while starting a task. If it is set absurdly high (e.g. 50) relative to the path resolution and costmap size, then the critic may never trigger or only do so when at full-speed. A balance here is wise. A selection of this value to be ~30% of the maximum velocity distance projected is good (e.g. if a planner produces points every 2.5cm, 60 can fit on the 1.5m local costmap radius. If the max speed is 0.5m/s with a 3s prediction time, then 20 points represents 33% of the maximum speed projected over the prediction horizon onto the path). When in doubt, `prediction_horizon_s * max_speed / path_resolution / 3.0` is a good baseline.
+
+If your robot's kinematics is very different than the defaults, you may need to tune ``PathAlignCritic.min_distance_occupancy_check``. This distance defines the min length of the path segment used to disable the ``PathAlignCritic``. A reasonable initial value should be the horizon's length (``= time_step*model_dt``) at full speed. If the distance is too short, the robot may slow down when approaching an obstacle ahead and may even get too close to it and get stuck. If the distance is too big, the critic will be disabled too early, which may cause deviation from path (if for example, the reference point for PathFollowCritic is beyond a curve on the path).
+
+Note: that a sufficiently long horizon length is needed for this behavior to work well. If the horizon is too short, the controller may not find trajectories around the obstacle.
 
 ### Obstacle, Inflation Layer, and Path Following
 
