@@ -15,3 +15,10 @@ target_link_libraries(test_pose_persistence
   nav2_util::nav2_util_core
   rclcpp::rclcpp
 )
+
+nav2_add_gtest(test_pf_kdtree
+  test_pf_kdtree.cpp
+)
+target_link_libraries(test_pf_kdtree
+  pf_lib
+)
