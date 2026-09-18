@@ -82,6 +82,9 @@ void NoiseGenerator::reset(mppi::models::OptimizerSettings & settings, bool is_h
   // Recompute the noises on reset, initialization, and fallback
   {
     std::unique_lock<std::mutex> guard(noise_lock_);
+    ndistribution_vx_ = std::normal_distribution(0.0f, settings_.sampling_std.vx);
+    ndistribution_vy_ = std::normal_distribution(0.0f, settings_.sampling_std.vy);
+    ndistribution_wz_ = std::normal_distribution(0.0f, settings_.sampling_std.wz);
     noises_vx_.setZero(settings_.batch_size, settings_.time_steps);
     noises_vy_.setZero(settings_.batch_size, settings_.time_steps);
     noises_wz_.setZero(settings_.batch_size, settings_.time_steps);

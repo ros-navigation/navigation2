@@ -146,11 +146,11 @@ geometry_msgs::msg::Pose AssistedTeleop::projectPose(
   double theta = tf2::getYaw(pose.orientation);
 
   projected_pose.position.x += projection_time * (
-    twist.linear.x * cos(theta) +
+    twist.linear.x * cos(theta) -
     twist.linear.y * sin(theta));
 
   projected_pose.position.y += projection_time * (
-    twist.linear.x * sin(theta) -
+    twist.linear.x * sin(theta) +
     twist.linear.y * cos(theta));
 
   double new_theta = theta + projection_time * twist.angular.z;

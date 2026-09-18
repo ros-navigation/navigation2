@@ -153,6 +153,7 @@ StaticLayer::getParameters()
   }
 
   enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+  resize_master_ = node->declare_or_get_parameter(name_ + "." + "resize_master", true);
   subscribe_to_updates_ = node->declare_or_get_parameter(
     name_ + "." + "subscribe_to_updates", false);
   footprint_clearing_enabled_ = node->declare_or_get_parameter(
@@ -195,7 +196,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 
   // resize costmap if size, resolution or origin do not match
   Costmap2D * master = layered_costmap_->getCostmap();
-  if (!layered_costmap_->isRolling() && (master->getSizeInCellsX() != size_x ||
+  if (usesMasterCostmapSize() && (master->getSizeInCellsX() != size_x ||
     master->getSizeInCellsY() != size_y ||
     !isEqual(master->getResolution(), new_map.info.resolution, EPSILON) ||
     !isEqual(master->getOriginX(), new_map.info.origin.position.x, EPSILON) ||
@@ -236,6 +237,12 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
       logger_,
       "StaticLayer: Resizing static layer to %d X %d at %f m/pix", size_x, size_y,
       new_map.info.resolution);
+    if (!layered_costmap_->isRolling() && !resize_master_ && size_x_ > 0 && size_y_ > 0) {
+      // Re-render the previous map's extent so a moved or shrunk map clears what it covered
+      addExtraBounds(
+        origin_x_, origin_y_,
+        origin_x_ + size_x_ * resolution_, origin_y_ + size_y_ * resolution_);
+    }
     resizeMap(
       size_x, size_y, new_map.info.resolution,
       new_map.info.origin.position.x, new_map.info.origin.position.y);
@@ -268,14 +275,23 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 void
 StaticLayer::matchSize()
 {
-  // If we are using rolling costmap, the static map size is
+  // If we are using rolling costmap or not resizing the master, the static map size is
   //   unrelated to the size of the layered costmap
-  if (!layered_costmap_->isRolling()) {
+  if (usesMasterCostmapSize()) {
     Costmap2D * master = layered_costmap_->getCostmap();
     resizeMap(
       master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
       master->getOriginX(), master->getOriginY());
+  } else {
+    // The master was resized (and cleared) by someone else: repaint our extent into it
+    has_updated_data_ = true;
   }
+}
+
+bool
+StaticLayer::usesMasterCostmapSize() const
+{
+  return !layered_costmap_->isRolling() && resize_master_;
 }
 
 unsigned char
@@ -303,6 +319,17 @@ StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & ne
 {
   if (!nav2::validateMsg(*new_map)) {
     RCLCPP_ERROR(logger_, "Received map message is malformed. Rejecting.");
+    return;
+  }
+  if (!layered_costmap_->isRolling() && !resize_master_ &&
+    new_map->header.frame_id != global_frame_)
+  {
+    // Non-rolling bounds are reported in the map frame, so it must be the costmap frame
+    RCLCPP_ERROR_THROTTLE(
+      logger_, *clock_, 10000,
+      "StaticLayer: Map in frame %s ignored: with resize_master false on a non-rolling costmap "
+      "the map must be in the costmap global frame (%s)",
+      new_map->header.frame_id.c_str(), global_frame_.c_str());
     return;
   }
   if (!map_received_) {
@@ -456,25 +483,9 @@ StaticLayer::updateCosts(
     return;
   }
 
-  std::vector<MapLocation> map_region_to_restore;
-  if (footprint_clearing_enabled_) {
-    map_region_to_restore.reserve(100);
-    getMapRegionOccupiedByPolygon(transformed_footprint_, map_region_to_restore);
-    setMapRegionOccupiedByPolygon(map_region_to_restore, nav2_costmap_2d::FREE_SPACE);
-  }
-
-  if (!layered_costmap_->isRolling()) {
-    // if not rolling, the layered costmap (master_grid) has same coordinates as this layer
-    if (!use_maximum_) {
-      updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
-    } else {
-      updateWithMax(master_grid, min_i, min_j, max_i, max_j);
-    }
-  } else {
-    // If rolling window, the master_grid is unlikely to have same coordinates as this layer
-    unsigned int mx, my;
-    double wx, wy;
-    // Might even be in a different frame
+  // global_frame_ -> map_frame_; only needed for rolling costmaps, where the frames differ
+  tf2::Transform tf2_transform = tf2::Transform::getIdentity();
+  if (layered_costmap_->isRolling()) {
     geometry_msgs::msg::TransformStamped transform;
     try {
       transform = tf_->lookupTransform(
@@ -482,11 +493,40 @@ StaticLayer::updateCosts(
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
+      has_updated_data_ = true;
       return;
     }
-    // Copy map data given proper transformations
-    tf2::Transform tf2_transform;
     tf2::fromMsg(transform.transform, tf2_transform);
+  }
+
+  std::vector<MapLocation> map_region_to_restore;
+  if (footprint_clearing_enabled_) {
+    // The footprint is in global_frame_ but is rasterized into this layer's map_frame_ grid
+    std::vector<geometry_msgs::msg::Point> footprint_in_map_frame = transformed_footprint_;
+    if (layered_costmap_->isRolling()) {
+      for (auto & point : footprint_in_map_frame) {
+        const tf2::Vector3 p = tf2_transform * tf2::Vector3(point.x, point.y, 0);
+        point.x = p.x();
+        point.y = p.y();
+      }
+    }
+    map_region_to_restore.reserve(100);
+    getMapRegionOccupiedByPolygon(footprint_in_map_frame, map_region_to_restore);
+    setMapRegionOccupiedByPolygon(map_region_to_restore, nav2_costmap_2d::FREE_SPACE);
+  }
+
+  if (usesMasterCostmapSize()) {
+    // if not rolling, the layered costmap (master_grid) has same coordinates as this layer
+    if (!use_maximum_) {
+      updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
+    } else {
+      updateWithMax(master_grid, min_i, min_j, max_i, max_j);
+    }
+  } else {
+    // If rolling window or not resizing the master, the master_grid is unlikely to have
+    // same coordinates as this layer
+    unsigned int mx, my;
+    double wx, wy;
 
     for (int i = min_i; i < max_i; ++i) {
       for (int j = min_j; j < max_j; ++j) {
@@ -497,10 +537,15 @@ StaticLayer::updateCosts(
         p = tf2_transform * p;
         // Set master_grid with cell from map
         if (worldToMap(p.x(), p.y(), mx, my)) {
+          const unsigned char cost = getCost(mx, my);
           if (!use_maximum_) {
-            master_grid.setCost(i, j, getCost(mx, my));
-          } else {
-            master_grid.setCost(i, j, std::max(getCost(mx, my), master_grid.getCost(i, j)));
+            master_grid.setCost(i, j, cost);
+          } else if (cost != NO_INFORMATION) {
+            // Same rule as updateWithMax: unknown is transparent, known beats unknown
+            const unsigned char old_cost = master_grid.getCost(i, j);
+            if (old_cost == NO_INFORMATION || cost > old_cost) {
+              master_grid.setCost(i, j, cost);
+            }
           }
         }
       }
@@ -540,7 +585,8 @@ rcl_interfaces::msg::SetParametersResult StaticLayer::validateParameterUpdatesCa
 
     if (param_name == name_ + "." + "map_subscribe_transient_local" ||
       param_name == name_ + "." + "map_topic" ||
-      param_name == name_ + "." + "subscribe_to_updates")
+      param_name == name_ + "." + "subscribe_to_updates" ||
+      param_name == name_ + "." + "resize_master")
     {
       RCLCPP_WARN(
         logger_, "%s is not a dynamic parameter "
