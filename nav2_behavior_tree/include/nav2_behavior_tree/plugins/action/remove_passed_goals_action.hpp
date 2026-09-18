@@ -87,6 +87,7 @@ private:
 
   double viapoint_achieved_radius_;
   double transform_tolerance_;
+  double transform_staleness_threshold_;
   nav2::LifecycleNode::SharedPtr node_;
   nav2::TransformBuffer::SharedPtr tf_;
   std::string robot_base_frame_;

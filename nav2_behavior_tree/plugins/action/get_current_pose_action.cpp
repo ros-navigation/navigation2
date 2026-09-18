@@ -36,6 +36,8 @@ GetCurrentPoseAction::GetCurrentPoseAction(
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
   node->get_parameter("transform_tolerance", transform_tolerance_);
+  transform_staleness_threshold_ = node->declare_or_get_parameter(
+    "transform_staleness_threshold", 0.0);
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node, "global_frame", this);
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
@@ -47,14 +49,18 @@ inline BT::NodeStatus GetCurrentPoseAction::tick()
   setStatus(BT::NodeStatus::RUNNING);
   geometry_msgs::msg::PoseStamped current_pose;
 
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_))
+  geometry_msgs::msg::TransformStamped transform;
+  auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  if (!nav2_util::lookupTransformWithStalenessCheck(
+      *tf_, global_frame_, robot_base_frame_, node->now(), transform_staleness_threshold_,
+      transform))
   {
     RCLCPP_WARN(
       config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node")->get_logger(),
       "Current robot pose is not available.");
     return BT::NodeStatus::FAILURE;
   }
+  current_pose = nav2_util::transformToPoseStamped(transform);
 
   setOutput("current_pose", current_pose);
   return BT::NodeStatus::SUCCESS;

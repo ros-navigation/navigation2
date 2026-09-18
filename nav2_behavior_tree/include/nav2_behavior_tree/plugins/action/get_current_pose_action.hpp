@@ -80,6 +80,7 @@ private:
   std::string global_frame_, robot_base_frame_;
   nav2::TransformBuffer::SharedPtr tf_;
   double transform_tolerance_{0.1};
+  double transform_staleness_threshold_{0.0};
 };
 
 }  // namespace nav2_behavior_tree

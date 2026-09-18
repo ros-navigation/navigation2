@@ -40,6 +40,9 @@ TruncatePathLocal::TruncatePathLocal(
   tf_buffer_ =
     config().blackboard->template get<nav2::TransformBuffer::SharedPtr>(
     "tf_buffer");
+  auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  transform_staleness_threshold_ = node->declare_or_get_parameter(
+    "transform_staleness_threshold", 0.0);
 }
 
 inline BT::NodeStatus TruncatePathLocal::tick()
@@ -124,16 +127,17 @@ inline bool TruncatePathLocal::getRobotPose(
         "Neither pose nor robot_base_frame specified for %s", name().c_str());
       return false;
     }
-    double transform_tolerance;
-    getInput("transform_tolerance", transform_tolerance);
-    if (!nav2_util::getCurrentPose(
-        pose, *tf_buffer_, path_frame_id, robot_frame, transform_tolerance))
+    geometry_msgs::msg::TransformStamped transform;
+    if (!nav2_util::lookupTransformWithStalenessCheck(
+        *tf_buffer_, path_frame_id, robot_frame, node->now(), transform_staleness_threshold_,
+        transform))
     {
       RCLCPP_WARN(
         node->get_logger(),
         "Failed to lookup current robot pose for %s", name().c_str());
       return false;
     }
+    pose = nav2_util::transformToPoseStamped(transform);
   }
   return true;
 }
