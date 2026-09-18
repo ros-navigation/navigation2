@@ -206,7 +206,7 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
   std::vector<std::vector<std::uint8_t>> receivedCostmaps;
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
-    node, costmapToSend.get(), "", topicName, always_send_full_costmap);
+    node, costmapToSend.get(), "map", topicName, always_send_full_costmap);
   costmapPublisher->on_activate();
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
@@ -249,7 +249,7 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
   std::vector<std::vector<std::uint8_t>> receivedCostmaps;
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
-    node, costmapToSend.get(), "", topicName, always_send_full_costmap);
+    node, costmapToSend.get(), "map", topicName, always_send_full_costmap);
   costmapPublisher->on_activate();
   std::uint32_t x0 = 0;
   std::uint32_t xn = costmapToSend->getSizeInCellsX();
@@ -294,6 +294,21 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
   ASSERT_EQ(expectedGrids, receivedGrids);
 
   costmapPublisher->on_deactivate();
+}
+
+TEST_F(TestCostmapSubscriberShould, rejectMalformedFullCostmapMsgs)
+{
+  auto malformed_msg = std::make_shared<nav2_msgs::msg::Costmap>();
+  malformed_msg->header.frame_id = "map";
+  malformed_msg->metadata.resolution = 0.05;
+  malformed_msg->metadata.origin.orientation.w = 1.0;
+  malformed_msg->metadata.size_x = 2;
+  malformed_msg->metadata.size_y = 2;
+  malformed_msg->data.resize(3);
+
+  costmapSubscriber->costmapCallback(malformed_msg);
+
+  ASSERT_ANY_THROW(costmapSubscriber->getCostmap());
 }
 
 TEST_F(
