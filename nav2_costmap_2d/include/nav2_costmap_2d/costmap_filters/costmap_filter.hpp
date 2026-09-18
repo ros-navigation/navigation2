@@ -172,7 +172,8 @@ protected:
     std::shared_ptr<std_srvs::srv::SetBool::Response> response);
 
   /**
-   * @brief:  Transforms robot pose from current layer frame to mask frame
+   * @brief: Transforms robot position using latest TF, rejecting stale dynamic TF
+   * when transform_staleness_threshold_ is positive; preserves orientation and Z
    * @param:  global_frame Costmap frame to transform from
    * @param:  global_pose Robot pose in costmap frame
    * @param:  mask_frame Filter mask frame to transform to
@@ -224,6 +225,11 @@ protected:
    * @brief: mask_frame->global_frame_ transform tolerance
    */
   tf2::Duration transform_tolerance_;
+
+  /**
+   * @brief: Max age for transforms. Check disabled if <= 0.
+   */
+  double transform_staleness_threshold_{0.0};
 
   /**
    * @brief: A service to enable/disable costmap filter
