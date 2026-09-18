@@ -80,13 +80,21 @@ public:
   bool generatePath(std::vector<coordsW> & raw_path, std::function<bool()> cancel_checker);
 
   /**
+   * @brief this function checks whether a costmap cost is less than or equal to the MAX_NON_OBSTACLE_COST
+   * @return the result of the check
+   */
+  inline bool isSafe(const unsigned char & cost) const
+  {
+    return (cost == UNKNOWN_COST && params_->allow_unknown) || cost <= MAX_NON_OBSTACLE_COST;
+  }
+
+  /**
    * @brief this function checks whether the cost of a point(cx, cy) on the costmap is less than or equal to the MAX_NON_OBSTACLE_COST
    * @return the result of the check
    */
   inline bool isSafe(const int & cx, const int & cy) const
   {
-    return (costmap_->getCost(cx, cy) == UNKNOWN_COST && params_->allow_unknown) ||
-           costmap_->getCost(cx, cy) <= MAX_NON_OBSTACLE_COST;
+    return isSafe(costmap_->getCost(cx, cy));
   }
 
   /**
@@ -180,47 +188,57 @@ protected:
   void backtrace(std::vector<coordsW> & raw_points, const tree_node * curr_n) const;
 
   /**
-   * @brief it is an overloaded function to ease the cost calculations while performing the LOS check
-   * @param cost denotes the total straight line traversal cost; it adds the traversal cost for the node (cx, cy) at every instance; it is also being returned
-   * @return false if the traversal cost is greater than the MAX_NON_OBSTACLE_COST and true otherwise
-   */
-  bool isSafe(const int & cx, const int & cy, double & cost) const
-  {
-    const double curr_cost = getCost(cx, cy);
-    if ((costmap_->getCost(cx, cy) == UNKNOWN_COST && params_->allow_unknown) ||
-      curr_cost <= MAX_NON_OBSTACLE_COST)
-    {
-      cost += params_->w_traversal_cost * curr_cost * curr_cost / MAX_NON_OBSTACLE_COST /
-        MAX_NON_OBSTACLE_COST;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  /**
    * @brief this function scales the costmap cost by shifting the origin to 25 and then multiply
    *           the actual costmap cost by 0.9 to keep the output in the range of [25, 255)
    *           an unknown cell is charged as near-obstacle, so that traversing one is discouraged
    *           wherever allow_unknown permits it at all
    * @return the scaled cost thus obtained
    */
-  inline double getCost(const int & cx, const int & cy) const
+  inline double getCost(const unsigned char & cost) const
   {
-    const unsigned char cost = costmap_->getCost(cx, cy);
     return 26 + 0.9 * (cost == UNKNOWN_COST ? OCCUPIED_COST - 1 : cost);
   }
 
   /**
-   * @brief for the point(cx, cy), its traversal cost is calculated by
-   *                    <parameter>*(<actual_traversal_cost_from_costmap>)^2/(<max_cost>)^2
+   * @brief this function scales the cost of the cell at the point(cx, cy)
+   * @return the scaled cost thus obtained
+   */
+  inline double getCost(const int & cx, const int & cy) const
+  {
+    return getCost(costmap_->getCost(cx, cy));
+  }
+
+  /**
+   * @brief the traversal cost of a step of the given length across a cell of the given cost,
+   *                    <parameter>*(<actual_traversal_cost_from_costmap>)^2/(<max_cost>)^2*<length>
+   *           the squared term is a cost per unit distance, so it is charged over the step
    * @return the traversal cost thus calculated
    */
-  inline double getTraversalCost(const int & cx, const int & cy)
+  inline double getTraversalCost(const unsigned char & cost, const double & length) const
   {
-    double curr_cost = getCost(cx, cy);
+    const double curr_cost = getCost(cost);
     return params_->w_traversal_cost * curr_cost * curr_cost / MAX_NON_OBSTACLE_COST /
-           MAX_NON_OBSTACLE_COST;
+           MAX_NON_OBSTACLE_COST * length;
+  }
+
+  /**
+   * @brief for the point(cx, cy), its traversal cost density is calculated by
+   *                    <parameter>*(<actual_traversal_cost_from_costmap>)^2/(<max_cost>)^2
+   * @return the traversal cost density thus calculated
+   */
+  inline double getTraversalCost(const int & cx, const int & cy) const
+  {
+    return getTraversalCost(costmap_->getCost(cx, cy), 1.0);
+  }
+
+  /**
+   * @brief calculates the cost of travelling the given length by
+   *                    <euc_cost_parameter>*<length>
+   * @return the cost thus calculated
+   */
+  inline double getEuclideanCost(const double & length) const
+  {
+    return params_->w_euc_cost * length;
   }
 
   /**
@@ -230,7 +248,7 @@ protected:
    */
   inline double getEuclideanCost(const int & ax, const int & ay, const int & bx, const int & by)
   {
-    return params_->w_euc_cost * std::hypot(ax - bx, ay - by);
+    return getEuclideanCost(std::hypot(ax - bx, ay - by));
   }
 
   /**
