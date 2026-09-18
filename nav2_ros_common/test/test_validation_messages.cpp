@@ -528,5 +528,38 @@ TEST(ValidateMessagesTest, RangeCheck)
   EXPECT_FALSE(nav2::validateMsg(invalid_range));
 }
 
+TEST(ValidateMessagesTest, CostmapCheck)
+{
+  nav2_msgs::msg::Costmap valid_costmap;
+  valid_costmap.header.frame_id = "map";
+  valid_costmap.metadata.resolution = 0.05;
+  valid_costmap.metadata.size_x = 2;
+  valid_costmap.metadata.size_y = 2;
+  valid_costmap.metadata.origin.orientation.w = 1.0;
+  valid_costmap.data.resize(4);
+  EXPECT_TRUE(nav2::validateMsg(valid_costmap));
+
+  nav2_msgs::msg::Costmap invalid_costmap = valid_costmap;
+  invalid_costmap.header.frame_id.clear();
+  EXPECT_FALSE(nav2::validateMsg(invalid_costmap));
+
+  invalid_costmap = valid_costmap;
+  invalid_costmap.metadata.resolution = 0.0;
+  EXPECT_FALSE(nav2::validateMsg(invalid_costmap));
+
+  invalid_costmap = valid_costmap;
+  invalid_costmap.metadata.size_x = 0;
+  EXPECT_FALSE(nav2::validateMsg(invalid_costmap));
+
+  invalid_costmap = valid_costmap;
+  invalid_costmap.metadata.size_x = std::numeric_limits<uint32_t>::max();
+  invalid_costmap.metadata.size_y = 2;
+  EXPECT_FALSE(nav2::validateMsg(invalid_costmap));
+
+  invalid_costmap = valid_costmap;
+  invalid_costmap.data.resize(3);
+  EXPECT_FALSE(nav2::validateMsg(invalid_costmap));
+}
+
 
 // Add more test cases for other validateMsg functions if needed
