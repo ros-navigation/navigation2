@@ -159,8 +159,6 @@ void KeepoutFilter::maskCallback(
     filter_mask_.reset();
   }
 
-  is_pose_lethal_ = false;
-
   // Store filter_mask_
   filter_mask_ = msg;
   has_updated_data_ = true;
@@ -173,7 +171,6 @@ void KeepoutFilter::updateBounds(
   double robot_x, double robot_y, double robot_yaw,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
-  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
   if (!enabled_) {
     return;
   }

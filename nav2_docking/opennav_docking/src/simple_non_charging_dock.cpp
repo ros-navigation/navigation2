@@ -273,18 +273,18 @@ bool SimpleNonChargingDock::isDocked()
 
   // The latest base transform represents the current robot position, so reject
   // stale dynamic TF before using its translation to decide whether we are docked.
-  geometry_msgs::msg::TransformStamped base_transform;
-  if (!nav2_util::lookupTransformWithStalenessCheck(
+  geometry_msgs::msg::PoseStamped base_pose;
+  if (!nav2_util::getFreshPose(
       *tf2_buffer_, dock_pose_.header.frame_id, base_frame_id_, node_->now(),
-      transform_staleness_threshold_, base_transform))
+      transform_staleness_threshold_, base_pose))
   {
     return false;
   }
 
   // If we are close enough, we are docked
   double d = std::hypot(
-    base_transform.transform.translation.x - dock_pose_.pose.position.x,
-    base_transform.transform.translation.y - dock_pose_.pose.position.y);
+    base_pose.pose.position.x - dock_pose_.pose.position.x,
+    base_pose.pose.position.y - dock_pose_.pose.position.y);
   return d < docking_threshold_;
 }
 

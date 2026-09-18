@@ -547,6 +547,9 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   mask->data = {0, 100, 0, 0};
   filter.maskCallback(mask);
   grid.resetMap(0, 0, 4, 1);
+  // Consume the mask update, then refresh the lethal-override state from the new mask.
+  filter.updateBounds(0.5, 0.5, 0.0, &min_x, &min_y, &max_x, &max_y);
+  filter.updateBounds(0.5, 0.5, 0.0, &min_x, &min_y, &max_x, &max_y);
   filter.process(grid, 0, 0, 4, 1, pose);
   EXPECT_EQ(grid.getCost(0, 0), 0);
   EXPECT_EQ(grid.getCost(1, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
