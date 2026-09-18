@@ -32,16 +32,23 @@ TEST(TypesTest, test_metadata)
   float flt = 0.8f;
   std::string str = "value";
   unsigned int uintv = 17u;
+  float cr = 1.5f;
   mdata.setValue<std::string>("key", str);
   mdata.setValue<float>("speed_limit", flt);
   mdata.setValue<unsigned int>("graph_id", uintv);
+  mdata.setValue<float>("corner_radius", cr);
+  mdata.setValue<float>("max_speed", 3.5f);
 
   float default_flt = 1.0f;
   std::string default_str = "";
   unsigned int default_uint = 0u;
+  std::string missing_str = "missing";
   EXPECT_EQ(mdata.getValue<std::string>("key", default_str), str);
   EXPECT_EQ(mdata.getValue<float>("speed_limit", default_flt), flt);
   EXPECT_EQ(mdata.getValue<unsigned int>("graph_id", default_uint), uintv);
+  EXPECT_EQ(mdata.getValue<float>("corner_radius", 0.0f), cr);
+  EXPECT_EQ(mdata.getValue<float>("max_speed", 0.0f), 3.5f);
+  EXPECT_EQ(mdata.getValue<std::string>("missing_key", missing_str), missing_str);
 }
 
 TEST(TypesTest, test_search_state)
