@@ -176,6 +176,31 @@ Uses inflated costmap cost directly to avoid obstacles
 | threshold_to_consider | double | Default 0.5. Distance between robot and goal above which prefer forward cost is considered         |
 
 
+#### Translational Velocity Critic
+
+Penalizes combined translational velocities that leave the ellipse spanned by `vx_max`, `vx_min` and `vy_max`. This prevents a diagonal command from reaching a higher speed than one along the robot's x and y axes.
+
+ | Parameter             | Type   | Definition                                                                                                  |
+ | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double | Default 4.0. Weight to apply to critic term.                                                                |
+ | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
+
+
+#### Mecanum Critic
+
+Penalizes velocities outside the reachable velocity space of a mecanum drivetrain. This critic bounds what velocity combination of vx, vy and wz the drivetrain can deliver.
+This critic does not default to the controller's velocity limits, as the controller's limits are defined by the environment, while the mecanum critic is be defined by the drivetrain.
+
+ | Parameter             | Type   | Definition                                                                                                  |
+ | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double | Default 4.0. Weight to apply to critic term.                                                                |
+ | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
+ | sum_of_robot_center_projection_on_X_Y_axis | double | Default 0.3. lx + ly in meters, half the wheelbase plus half the track. Use the same value as your ros2_control mecanum_drive_controller. |
+ | vx_max                | double | Defaults to 0.5. Max speed the robot can reach along x.                                                     |
+ | vy_max                | double | Defaults to 0.5. Max speed the robot can reach along y.                                                     |
+ | wz_max                | double | Defaults to 1.7. Max speed at which the robot can rotate.                                                   |
+
+
 #### Twirling Critic
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
@@ -290,6 +315,18 @@ controller_server:
       #   cost_power: 1
       #   cost_weight: 35.0
       #   deadband_velocities: [0.05, 0.05, 0.05]
+      # TranslationalVelocityCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 4.0
+      # MecanumCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 4.0
+      #   vx_max: 0.5
+      #   vy_max: 0.5
+      #   wz_max: 1.7
+      #   sum_of_robot_center_projection_on_X_Y_axis: 0.3
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
