@@ -65,6 +65,10 @@ public:
 
   const ControllerMap & getControllers() {return controllers_;}
   std::string getCurrentController() {return controller_ ? controller_->getName() : "";}
+  ChargingDock::Ptr getDockPlugin(const std::string & type) {return dock_db_->findDockPlugin(type);}
+
+  using DockingServer::findControllerId;
+  using DockingServer::selectController;
 };
 
 TEST(DockingServerTests, ObjectLifecycle)
@@ -643,6 +647,61 @@ TEST(DockingServerTests, controllerUnknownPluginTypeFails)
 
   EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
   EXPECT_TRUE(node->getControllers().empty());
+  node->shutdown();
+}
+
+TEST(DockingServerTests, ControllerSelectRejectsUnknownController)
+{
+  auto node = std::make_shared<DockingServerControllerShim>();
+  declareTestDock(node);
+  node->declare_parameter("controllers", std::vector<std::string>{"c1", "c2"});
+  node->declare_parameter("c1.plugin", "opennav_docking::GracefulController");
+  node->declare_parameter("c2.plugin", "opennav_docking::GracefulController");
+  node->declare_parameter("test_plugin.controller", "c1");
+
+  ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
+
+  std::string controller_id;
+  EXPECT_TRUE(node->findControllerId("c2", controller_id));
+  EXPECT_EQ(controller_id, "c2");
+  // When there are two controllers there is no default fallback
+  EXPECT_FALSE(node->findControllerId("", controller_id));
+  EXPECT_FALSE(node->findControllerId("not_loaded", controller_id));
+
+  auto plugin = node->getDockPlugin("test_plugin");
+  ASSERT_NE(plugin, nullptr);
+
+  // Dock instance with an not loaded controller
+  Dock dock;
+  dock.type = "test_plugin";
+  dock.plugin = plugin;
+  dock.controller_name = "not_loaded";
+  EXPECT_THROW(node->selectController(plugin, &dock), opennav_docking_core::DockNotValid);
+
+  // Failed selection leaves no controller selected
+  EXPECT_TRUE(node->getCurrentController().empty());
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node->shutdown();
+}
+
+TEST(DockingServerTests, ControlLoopsFailWithoutControllerSelected)
+{
+  auto node = std::make_shared<DockingServerControllerShim>();
+  declareTestDock(node);
+
+  ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(node->getCurrentController().empty());
+
+  geometry_msgs::msg::PoseStamped pose;
+  geometry_msgs::msg::Twist cmd;
+  Dock dock;
+
+  EXPECT_THROW(node->rotateToDock(pose), opennav_docking_core::FailedToControl);
+  EXPECT_THROW(node->approachDock(&dock, pose, false), opennav_docking_core::FailedToControl);
+  EXPECT_THROW(node->resetApproach(pose, false), opennav_docking_core::FailedToControl);
+
+  node->on_cleanup(rclcpp_lifecycle::State());
   node->shutdown();
 }
 
