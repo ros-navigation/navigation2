@@ -259,6 +259,8 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
+  // Process any publisher-matched events that are already ready before publishing
+  executor.spin_some();
 
   for (const auto & mapChange : mapChanges) {
     for (const auto & observation : mapChange.observations) {
