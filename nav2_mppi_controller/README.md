@@ -191,6 +191,16 @@ Uses inflated costmap cost directly to avoid obstacles
  | deadband_velocities   | double[] | Default [0.0, 0.0, 0.0].  The array of deadband velocities [vx, vz, wz]. A zero array indicates that the critic will take no action.      |
 
 
+#### Axis Align Critic
+ | Parameter             | Type     | Definition                                                                                                  |
+ | ---------------       | ------   | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double   | Default 3.0. Weight to apply to critic term.                                                                |
+ | cost_power            | int      | Default 1. Power order to apply to term.                                                                    |
+ | threshold_to_consider | double   | Default 0.5. Distance between robot and goal above which the critic is considered, so the final approach into the goal is left to the goal critics. |
+ | normalize             | bool     | Default true. Score the ratio of the minor to the major body-axis velocity (0 for axis-aligned motion, 1 at 45 degrees), which is independent of speed. If false, score the minor-axis velocity magnitude itself, which also discourages driving fast. |
+
+Penalizes diagonal motion (commanding `vx` and `vy` at the same time) on holonomic platforms. Mecanum bases only drive two of their four wheels when translating at 45 degrees, which slips on real hardware, while pure forward or pure lateral motion drives all four. The critic is inactive for non-holonomic motion models. Weights of 2 to 4 work well alongside the default critic set; much larger weights start to trade diagonal motion for in-place rotation.
+
 ### XML configuration example
 ```
 controller_server:
