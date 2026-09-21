@@ -89,13 +89,22 @@ protected:
    */
   void preemptTeleopCallback(const std_msgs::msg::Empty::ConstSharedPtr & msg);
 
+  /**
+   * @brief Check whether the last teleop command is older than teleop_command_timeout
+   * @param now Current time to compare the command stamp against
+   * @return true if the timeout is enabled, a command was received, and it is stale
+   */
+  bool isTeleopCommandStale(const rclcpp::Time & now) const;
+
   AssistedTeleopAction::Feedback::SharedPtr feedback_;
 
   // parameters
   double projection_time_;
   double simulation_time_step_;
+  double teleop_command_timeout_;
 
   geometry_msgs::msg::TwistStamped teleop_twist_;
+  bool received_first_command_{false};
   bool preempt_teleop_{false};
 
   // subscribers

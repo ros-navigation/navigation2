@@ -16,3 +16,4 @@ See the [Navigation Plugin list](https://docs.nav2.org/plugins/index.html) for a
 
 The `TimedBehavior` template makes use of a [nav2_util::TwistPublisher](../nav2_util/README.md#twist-publisher-and-twist-subscriber-for-commanded-velocities).
 The `AssistedTeleop` behavior makes use of a [nav2_util::TwistSubscriber](../nav2_util/README.md#twist-publisher-and-twist-subscriber-for-commanded-velocities).
+It stops the robot and fails the action with `TELEOP_INPUT_TIMEOUT` if no teleop command is received within `teleop_command_timeout` (default 0.25s) once the operator has started driving; when using `TwistStamped` input the header stamp must be populated by the source. Set the parameter to `0.0` to disable the check for sparse teleop sources.
