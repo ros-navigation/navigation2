@@ -327,9 +327,9 @@ unsigned int HybridMotionTable::getClosestAngularBin(const double & theta)
   return bin < num_angle_quantization ? bin : 0u;
 }
 
-float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx)
+float HybridMotionTable::getAngleFromBin(const float & bin_coordinate)
 {
-  return bin_idx * bin_size;
+  return bin_coordinate * bin_size;
 }
 
 double HybridMotionTable::getAngle(const double & theta)
