@@ -89,10 +89,8 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, local_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
+  if (!getCurrentPoseChecked(current_pose)) {
+    stopRobot();
     std::string error_msg = "Current robot pose is not available for " + behavior_name_;
     RCLCPP_ERROR_STREAM(logger_, error_msg.c_str());
     return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TF_ERROR, error_msg};
@@ -101,12 +99,13 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   geometry_msgs::msg::Pose projected_pose = current_pose.pose;
 
   auto scaled_twist = std::make_unique<geometry_msgs::msg::TwistStamped>(teleop_twist_);
+  bool fetch_data = true;
   for (double time = simulation_time_step_; time < projection_time_;
     time += simulation_time_step_)
   {
     projected_pose = projectPose(projected_pose, teleop_twist_.twist, simulation_time_step_);
 
-    if (!local_collision_checker_->isCollisionFree(projected_pose)) {
+    if (!local_collision_checker_->isCollisionFree(projected_pose, fetch_data)) {
       if (time == simulation_time_step_) {
         RCLCPP_DEBUG_STREAM_THROTTLE(
           logger_,
@@ -130,6 +129,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
         break;
       }
     }
+    fetch_data = false;
   }
   vel_pub_->publish(std::move(scaled_twist));
 
