@@ -114,6 +114,17 @@ void SmacPlannerLatticeT<NodeT>::configure(
     node->declare_or_get_parameter(name + ".use_quadratic_cost_penalty", false);
   _search_info.downsample_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
+  _search_info.incremental_obstacle_heuristic =
+    node->declare_or_get_parameter(name + ".incremental_obstacle_heuristic", false);
+  if (_search_info.incremental_obstacle_heuristic &&
+    _search_info.downsample_obstacle_heuristic)
+  {
+    RCLCPP_WARN(
+      _logger,
+      "incremental_obstacle_heuristic is enabled; forcing downsample_obstacle_heuristic off "
+      "(the incremental field is maintained at full resolution).");
+    _search_info.downsample_obstacle_heuristic = false;
+  }
 
   _max_planning_time = node->declare_or_get_parameter(name + ".max_planning_time", 5.0);
   _lookup_table_size = node->declare_or_get_parameter(name + ".lookup_table_size", 20.0);
@@ -317,7 +328,8 @@ nav_msgs::msg::Path SmacPlannerLatticeT<NodeT>::createPlan(
   std::function<bool()> cancel_checker)
 {
   if (!viapoints.empty()) {
-    RCLCPP_WARN(_logger, "Received %zu viapoints, but this planner ignores them",
+    RCLCPP_WARN(
+      _logger, "Received %zu viapoints, but this planner ignores them",
       viapoints.size());
   }
 
@@ -564,9 +576,9 @@ SmacPlannerLatticeT<NodeT>::validateParameterUpdatesCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (parameter.as_double() < 0.0) {
         RCLCPP_WARN(
-        _logger, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          _logger, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
@@ -583,9 +595,9 @@ SmacPlannerLatticeT<NodeT>::validateParameterUpdatesCallback(
         param_name != _name + ".max_on_approach_iterations"))
       {
         RCLCPP_WARN(
-        _logger, "The value of parameter '%s' is incorrectly set to %ld, "
-        "it should be >0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_int());
+          _logger, "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
         result.successful = false;
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {
@@ -676,6 +688,18 @@ SmacPlannerLatticeT<NodeT>::updateParametersCallback(
       } else if (param_name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      } else if (param_name == _name + ".incremental_obstacle_heuristic") {
+        reinit_a_star = true;
+        _search_info.incremental_obstacle_heuristic = parameter.as_bool();
+        if (_search_info.incremental_obstacle_heuristic &&
+          _search_info.downsample_obstacle_heuristic)
+        {
+          RCLCPP_WARN(
+            _logger,
+            "incremental_obstacle_heuristic is enabled; forcing downsample_obstacle_heuristic "
+            "off (the incremental field is maintained at full resolution).");
+          _search_info.downsample_obstacle_heuristic = false;
+        }
       } else if (param_name == _name + ".allow_reverse_expansion") {
         reinit_a_star = true;
         reinit_lookup_table = true;
