@@ -40,6 +40,7 @@ struct Dock
   std::string frame;
   std::string type;
   std::string id;
+  std::string controller_name;
   opennav_docking_core::ChargingDock::Ptr plugin{nullptr};
 };
 
