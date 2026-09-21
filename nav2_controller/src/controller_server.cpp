@@ -25,6 +25,7 @@
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/path_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_controller/controller_server.hpp"
 
 using namespace std::chrono_literals;
@@ -964,17 +965,17 @@ bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & cur
 
 geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
-  geometry_msgs::msg::TransformStamped transform;
-  if (!nav2_util::lookupTransformWithStalenessCheck(
+  geometry_msgs::msg::PoseStamped pose;
+  if (!nav2_util::getFreshPose(
       *costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
       costmap_ros_->getBaseFrameID(), now(),
-      params_->transform_staleness_threshold, transform))
+      params_->transform_staleness_threshold, pose))
   {
     throw nav2_core::ControllerTFError(
             "Failed to obtain robot pose in frame '" + costmap_ros_->getGlobalFrameID() +
             "' for base frame '" + costmap_ros_->getBaseFrameID() + "'");
   }
-  return nav2_util::transformToPoseStamped(transform);
+  return pose;
 }
 
 void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::ConstSharedPtr & msg)
