@@ -223,6 +223,8 @@ protected:
   std::string global_frame_id_;
   /// @brief Transform tolerance
   tf2::Duration transform_tolerance_;
+  /// @brief Maximum age in seconds for transforms requested at the latest time
+  double transform_staleness_threshold_{1.0};
   /// @brief Maximum time interval in which data is considered valid
   rclcpp::Duration source_timeout_;
   /// @brief Whether to correct source data towards to base frame movement,
