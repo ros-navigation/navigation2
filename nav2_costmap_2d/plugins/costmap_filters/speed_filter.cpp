@@ -52,7 +52,8 @@ namespace nav2_costmap_2d
 SpeedFilter::SpeedFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   speed_limit_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
-  speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT)
+  speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT),
+  clear_path_on_reset_(false)  // [AI generated]
 {
 }
 
@@ -80,6 +81,12 @@ void SpeedFilter::initializeFilter(
     name_ + "." + "min_lookahead", 0.3);
   max_lookahead_ = node->declare_or_get_parameter(
     name_ + "." + "max_lookahead", 5.0);
+  // [AI generated]
+  max_path_rewind_ = node->declare_or_get_parameter(
+    name_ + "." + "max_path_rewind", 1.0);
+  // [AI generated]
+  clear_path_on_reset_ = node->declare_or_get_parameter(
+    name_ + "." + "clear_path_on_reset", false);
   std::string path_topic = node->declare_or_get_parameter(
     name_ + "." + "path_topic", std::string("plan"));
   std::string odom_topic = node->declare_or_get_parameter(
@@ -107,6 +114,14 @@ void SpeedFilter::initializeFilter(
         "clamping to min_lookahead.",
         max_lookahead_, min_lookahead_);
       max_lookahead_ = min_lookahead_;
+    }
+    // [AI generated]
+    if (max_path_rewind_ < 0.0) {
+      RCLCPP_WARN(
+        logger_,
+        "SpeedFilter: max_path_rewind = %f is negative,"
+        "clamping to 0.0m", max_path_rewind_);
+      max_path_rewind_ = 0.0;
     }
   }
 
@@ -345,9 +360,20 @@ bool SpeedFilter::getSpeedLimitFromLookahead(
   const size_t pose_search_start =
     (lookahead_start_idx_ < poses.size()) ? lookahead_start_idx_ : 0;
 
+  // [AI generated]
+  // distance_from_path() only scans forward, so the cached index never rewinds on its own.
+  // Bounded: a global re-search snaps onto an earlier leg where a path passes near itself.
+  size_t search_start = pose_search_start;
+  double rewound = 0.0;
+  while (search_start > 0 && rewound < max_path_rewind_) {
+    rewound += nav2_util::geometry_utils::euclidean_distance(
+      poses[search_start - 1].pose.position, poses[search_start].pose.position);
+    search_start--;
+  }
+
   // Update cached start index
   lookahead_start_idx_ = nav2_util::distance_from_path(
-    transformed_path, robot_pose, pose_search_start).closest_segment_index;
+    transformed_path, robot_pose, search_start).closest_segment_index;
 
   // Check robot's current pose
   double limit_at_robot_pose = NO_SPEED_LIMIT;
@@ -476,6 +502,11 @@ void SpeedFilter::resetFilter()
 
   filter_info_sub_.reset();
   mask_sub_.reset();
+  // [AI generated]
+  if (clear_path_on_reset_) {
+    // resetFilter() also runs on a full costmap clear, not only on deactivation.
+    current_path_.reset();
+  }
   if (speed_limit_pub_) {
     speed_limit_pub_->on_deactivate();
     speed_limit_pub_.reset();
