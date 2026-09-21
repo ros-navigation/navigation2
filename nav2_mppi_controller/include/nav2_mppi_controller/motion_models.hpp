@@ -18,6 +18,7 @@
 
 #include <Eigen/Dense>
 
+#include <cmath>
 #include <cstdint>
 #include <string>
 #include <algorithm>
@@ -28,8 +29,11 @@
 #include "nav2_mppi_controller/models/constraints.hpp"
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
+#include "nav2_mppi_controller/tools/velocity_limits.hpp"
+
 #include "nav2_util/geometry_utils.hpp"
 #include "tf2/utils.hpp"
+
 namespace mppi
 {
 
@@ -199,10 +203,26 @@ public:
   virtual bool isHolonomic() const = 0;
 
   /**
-   * @brief Apply hard vehicle constraints to a control sequence
-   * @param control_sequence Control sequence to apply constraints to
+   * @brief Constrain one time step of a control sequence to the velocities reachable from the
+   *        previous one, bounding each axis by its own velocity and acceleration limits
+   * @param curr Requested velocities, constrained in place
+   * @param last Velocities at the previous time step, assumed to be reachable
+   * @param min_deltas Most negative change in speed the acceleration limits allow, per axis
+   * @param max_deltas Most positive change in speed the acceleration limits allow, per axis
    */
-  virtual void applyConstraints(models::ControlSequence & /*control_sequence*/) {}
+  virtual void constrainVelocityStep(
+    models::Control & curr, const models::Control & last,
+    const models::Control & min_deltas, const models::Control & max_deltas) const
+  {
+    curr.vx = utils::clamp(control_constraints_.vx_min, control_constraints_.vx_max, curr.vx);
+    curr.vx = utils::clampVelocityByAccel(last.vx, curr.vx, min_deltas.vx, max_deltas.vx);
+
+    curr.vy = utils::clamp(-control_constraints_.vy, control_constraints_.vy, curr.vy);
+    curr.vy = utils::clampVelocityByAccel(last.vy, curr.vy, min_deltas.vy, max_deltas.vy);
+
+    curr.wz = utils::clamp(-control_constraints_.wz, control_constraints_.wz, curr.wz);
+    curr.wz = utils::clampVelocityByAccel(last.wz, curr.wz, min_deltas.wz, max_deltas.wz);
+  }
 
 protected:
   /**
@@ -312,21 +332,25 @@ public:
   }
 
   /**
-   * @brief Apply hard vehicle constraints to a control sequence
-   * @param control_sequence Control sequence to apply constraints to
-   */
-  void applyConstraints(models::ControlSequence & control_sequence) override
-  {
-    const auto wz_constrained = control_sequence.vx.abs() / min_turning_r_;
-    control_sequence.wz = control_sequence.wz
-      .max((-wz_constrained))
-      .min(wz_constrained);
-  }
-  /**
    * @brief Get minimum turning radius of ackermann drive
    * @return Minimum turning radius
    */
   float getMinTurningRadius() const {return min_turning_r_;}
+
+  /**
+   * @brief Constrain one time step to the reachable velocities
+   */
+  void constrainVelocityStep(
+    models::Control & curr, const models::Control & last,
+    const models::Control & min_deltas, const models::Control & max_deltas) const override
+  {
+    // constrain by axial acceleration and velocity limits
+    MotionModel::constrainVelocityStep(curr, last, min_deltas, max_deltas);
+
+    // wz of an ackermann vehicle is vx times the path curvature.
+    const float wz_bound = std::fabs(curr.vx) / std::max(min_turning_r_, 1e-6f);
+    curr.wz = utils::clamp(-wz_bound, wz_bound, curr.wz);
+  }
 
 private:
   float min_turning_r_{0.0f};
@@ -367,6 +391,19 @@ public:
   OmniMotionModel() = default;
 
   /**
+   * @brief Initialize motion model.
+   * @param param_handler Pointer to the shared parameters handler
+   * @param plugin_name   Namespaced name of this plugin instance
+   */
+  void initialize(
+    ParametersHandler * param_handler,
+    const std::string & plugin_name) override
+  {
+    auto getParam = param_handler->getParamGetter(plugin_name);
+    getParam(use_velocity_ellipse_scaling_, "use_velocity_ellipse_scaling", true);
+  }
+
+  /**
    * @brief Whether the motion model is holonomic, using Y axis
    * @return Bool If holonomic
    */
@@ -374,6 +411,124 @@ public:
   {
     return true;
   }
+
+  /**
+   * @brief Whether the combined translational velocity is bounded by the ellipse spanned by the
+   *        per-axis limits, rather than each axis being bounded on its own
+   *
+   * Bounding the combination means a diagonal command cannot travel faster than a straight one,
+   * which stops incentivizing diagonal travel when the optimizer asks for full velocity.
+   * Bounding each axis on its own let's the combined speed reach sqrt(vx_max² + vy_max²).
+   *
+   * @return Bool If the combined translational velocity is bounded
+   */
+  bool useVelocityEllipseScaling() const
+  {
+    return use_velocity_ellipse_scaling_;
+  }
+
+  /**
+   * @brief Calculates excess speed along direction of travel
+   * @param vx Longitudinal velocities
+   * @param vy Lateral velocities
+   * @return Excess speed in m/s, zero where feasible
+   */
+  template<typename Derived>
+  auto getTranslationalVelocityViolation(
+    const Eigen::ArrayBase<Derived> & vx, const Eigen::ArrayBase<Derived> & vy) const
+  {
+    // (vx/vx_max)² + (vy/vy_max)², which is 1 exactly on the ellipse. The forward and reverse
+    // semi-axes differ, so vx is split by direction of travel.
+    const auto normalized_sq =
+      invSquare(control_constraints_.vx_max) * vx.max(0.0f).square() +
+      invSquare(control_constraints_.vx_min) * vx.min(0.0f).square() +
+      invSquare(control_constraints_.vy) * vy.square();
+
+    // |v| - |v| / sqrt(normalized_sq), clamped so that feasible velocities cost nothing
+    return (vx.square() + vy.square()).sqrt() * (1.0f - normalized_sq.max(1.0f).rsqrt());
+  }
+
+  /**
+   * @brief Constrain one time step to the reachable velocities
+   */
+  void constrainVelocityStep(
+    models::Control & curr, const models::Control & last,
+    const models::Control & min_deltas, const models::Control & max_deltas) const override
+  {
+    // constrain by angular acceleration and velocity limits
+    curr.wz = utils::clamp(-control_constraints_.wz, control_constraints_.wz, curr.wz);
+    curr.wz = utils::clampVelocityByAccel(last.wz, curr.wz, min_deltas.wz, max_deltas.wz);
+
+    // In case of turned off ellipse scaling, constrain each axis independently
+    if (!use_velocity_ellipse_scaling_) {
+      curr.vx = utils::clamp(control_constraints_.vx_min, control_constraints_.vx_max, curr.vx);
+      curr.vx = utils::clampVelocityByAccel(last.vx, curr.vx, min_deltas.vx, max_deltas.vx);
+      curr.vy = utils::clamp(-control_constraints_.vy, control_constraints_.vy, curr.vy);
+      curr.vy = utils::clampVelocityByAccel(last.vy, curr.vy, min_deltas.vy, max_deltas.vy);
+      return;
+    }
+
+    // Constrain requested velocity within the velocity ellipse.
+    float vx_target = curr.vx;
+    float vy_target = curr.vy;
+    projectOntoVelocityEllipse(vx_target, vy_target);
+
+    // Constrain along the direction of travel to the reachable set, bounded by acceleration limits.
+    const float alpha = std::min(
+      {1.0f,
+        utils::reachableFraction(last.vx, vx_target, min_deltas.vx, max_deltas.vx),
+        utils::reachableFraction(last.vy, vy_target, min_deltas.vy, max_deltas.vy)});
+
+    curr.vx = last.vx + alpha * (vx_target - last.vx);
+    curr.vy = last.vy + alpha * (vy_target - last.vy);
+  }
+
+private:
+  /**
+   * @brief Replace a requested velocity with the closest one the velocity ellipse allows.
+   *
+   * Feasible velocities are left alone. Radial scaling ensures that direction of travel is preserved.
+   *
+   * @param vx Longitudinal velocity
+   * @param vy Lateral velocity
+   */
+  void projectOntoVelocityEllipse(float & vx, float & vy) const
+  {
+    // An axis limited to zero collapses the ellipse onto the remaining axes, which a radial
+    // scale cannot reach. Drop such an axis first so the others can still be commanded.a
+    if (control_constraints_.vy <= 1e-6f) {
+      vy = 0.0f;
+    }
+    if (control_constraints_.vx_max <= 1e-6f) {
+      vx = std::min(vx, 0.0f);
+    }
+    if (control_constraints_.vx_min >= -1e-6f) {
+      vx = std::max(vx, 0.0f);
+    }
+
+    const float vx_limit = vx >= 0.0f ?
+      control_constraints_.vx_max : control_constraints_.vx_min;
+    const float normalized_sq =
+      invSquare(vx_limit) * vx * vx + invSquare(control_constraints_.vy) * vy * vy;
+
+    // Clamped at 1 so that velocities already inside the ellipse are not scaled up
+    const float scale = 1.0f / std::sqrt(std::max(normalized_sq, 1.0f));
+    vx *= scale;
+    vy *= scale;
+  }
+
+  /**
+   * @brief Inverse square of a velocity limit, floored so that a zero limit cannot divide by zero
+   * @param limit Velocity limit of either sign
+   * @return 1 / limit², at most 1e12
+   */
+  static float invSquare(const float limit)
+  {
+    constexpr float min_limit = 1e-6f;
+    return 1.0f / std::max(limit * limit, min_limit * min_limit);
+  }
+
+  bool use_velocity_ellipse_scaling_{true};
 };
 
 }  // namespace mppi
