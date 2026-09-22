@@ -19,12 +19,10 @@ target_link_libraries(${library_name} PUBLIC
   nav_msgs::nav_msgs
   rcl_interfaces::rcl_interfaces
   rclcpp::rclcpp
-  rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
-  pluginlib::pluginlib
   nav2_ros_common::nav2_ros_common
   angles::angles
 )

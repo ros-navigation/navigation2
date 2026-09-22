@@ -86,7 +86,7 @@ endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
-ament_export_dependencies(bondcpp diagnostic_updater nav2_util rclcpp rclcpp_action std_srvs nav2_ros_common)
+ament_export_dependencies(bondcpp diagnostic_updater nav2_util rclcpp std_srvs nav2_ros_common)
 ament_export_targets(${library_name})
 
 ament_package()
