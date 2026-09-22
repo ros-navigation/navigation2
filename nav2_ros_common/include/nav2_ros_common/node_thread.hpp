@@ -17,7 +17,9 @@
 
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executor.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/node_interfaces/node_base_interface.hpp"
 
 namespace nav2
 {
