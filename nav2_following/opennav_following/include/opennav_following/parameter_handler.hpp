@@ -48,7 +48,7 @@ struct Parameters
   // This is our fixed frame for controlling - typically "odom"
   std::string fixed_frame;
   // Maximum age of the base-to-fixed transform in seconds; non-positive disables the check
-  double staleness_threshold{0.0};
+  double transform_staleness_threshold{0.0};
   // Desired distance to keep from the object
   double desired_distance;
   // Skip perception orientation
