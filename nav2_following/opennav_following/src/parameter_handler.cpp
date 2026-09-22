@@ -49,7 +49,7 @@ ParameterHandler::ParameterHandler(
     "base_frame", std::string("base_link"));
   params_.fixed_frame = node->declare_or_get_parameter(
     "fixed_frame", std::string("odom"));
-  params_.staleness_threshold = node->declare_or_get_parameter(
+  params_.transform_staleness_threshold = node->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
   params_.desired_distance = node->declare_or_get_parameter(
     "desired_distance", 1.0);
@@ -136,7 +136,7 @@ ParameterHandler::updateParametersCallback(
       } else if (param_name == "transform_tolerance") {
         params_.transform_tolerance = parameter.as_double();
       } else if (param_name == "transform_staleness_threshold") {
-        params_.staleness_threshold = parameter.as_double();
+        params_.transform_staleness_threshold = parameter.as_double();
       } else if (param_name == "search_angle") {
         params_.search_angle = parameter.as_double();
       }
