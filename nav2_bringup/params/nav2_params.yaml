@@ -447,6 +447,7 @@ behavior_server:
       plugin: "nav2_behaviors::Wait"
     assisted_teleop:
       plugin: "nav2_behaviors::AssistedTeleop"
+      teleop_command_timeout: 0.25
     local_frame: odom
     global_frame: map
     robot_base_frame: base_link

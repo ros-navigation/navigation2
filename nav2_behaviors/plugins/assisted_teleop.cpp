@@ -35,6 +35,8 @@ void AssistedTeleop::onConfigure()
   // set up parameters
   projection_time_ = node->declare_or_get_parameter("projection_time", 1.0);
   simulation_time_step_ = node->declare_or_get_parameter("simulation_time_step", 0.1);
+  teleop_command_timeout_ = node->declare_or_get_parameter(
+    behavior_name_ + ".teleop_command_timeout", 0.25);
   std::string cmd_vel_teleop = node->declare_or_get_parameter(
     "cmd_vel_teleop", std::string("cmd_vel_teleop"));
 
@@ -43,8 +45,11 @@ void AssistedTeleop::onConfigure()
     cmd_vel_teleop,
     [&](const geometry_msgs::msg::Twist::ConstSharedPtr & msg) {
       teleop_twist_.twist = *msg;
+      teleop_twist_.header.stamp = clock_->now();
+      received_first_command_ = true;
     }, [&](const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg) {
       teleop_twist_ = *msg;
+      received_first_command_ = true;
     });
 
   preempt_teleop_sub_ = node->create_subscription<std_msgs::msg::Empty>(
@@ -57,6 +62,7 @@ void AssistedTeleop::onConfigure()
 ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command)
 {
   preempt_teleop_ = false;
+  received_first_command_ = false;
   command_time_allowance_ = command->time_allowance;
   end_time_ = this->clock_->now() + command_time_allowance_;
   return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE, ""};
@@ -65,6 +71,7 @@ ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAct
 void AssistedTeleop::onActionCompletion(std::shared_ptr<AssistedTeleopActionResult>/*result*/)
 {
   teleop_twist_ = geometry_msgs::msg::TwistStamped();
+  received_first_command_ = false;
   preempt_teleop_ = false;
 }
 
@@ -86,6 +93,16 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   if (preempt_teleop_) {
     stopRobot();
     return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE, ""};
+  }
+
+  // teleop source stopped publishing (operator released input, node or link died)
+  if (isTeleopCommandStale(this->clock_->now())) {
+    stopRobot();
+    std::string error_msg = "No teleop command received within teleop_command_timeout (" +
+      std::to_string(teleop_command_timeout_) + " s) - Exiting " + behavior_name_;
+    RCLCPP_WARN_STREAM(logger_, error_msg.c_str());
+    return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TELEOP_INPUT_TIMEOUT,
+      error_msg};
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
@@ -162,6 +179,15 @@ geometry_msgs::msg::Pose AssistedTeleop::projectPose(
 void AssistedTeleop::preemptTeleopCallback(const std_msgs::msg::Empty::ConstSharedPtr &)
 {
   preempt_teleop_ = true;
+}
+
+bool AssistedTeleop::isTeleopCommandStale(const rclcpp::Time & now) const
+{
+  if (teleop_command_timeout_ <= 0.0 || !received_first_command_) {
+    return false;
+  }
+  return (now - rclcpp::Time(teleop_twist_.header.stamp, now.get_clock_type())).seconds() >
+         teleop_command_timeout_;
 }
 
 }  // namespace nav2_behaviors

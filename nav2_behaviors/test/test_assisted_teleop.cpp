@@ -22,7 +22,48 @@ class AssistedTeleopShim : public nav2_behaviors::AssistedTeleop
 {
 public:
   using nav2_behaviors::AssistedTeleop::projectPose;
+  using nav2_behaviors::AssistedTeleop::isTeleopCommandStale;
+  using nav2_behaviors::AssistedTeleop::teleop_command_timeout_;
+  using nav2_behaviors::AssistedTeleop::received_first_command_;
+  using nav2_behaviors::AssistedTeleop::teleop_twist_;
 };
+
+TEST(AssistedTeleopTest, teleopCommandStaleDisabled)
+{
+  AssistedTeleopShim behavior;
+  behavior.teleop_command_timeout_ = 0.0;
+  behavior.received_first_command_ = true;
+  behavior.teleop_twist_.header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
+
+  // A non-positive timeout disables the check no matter how old the command is
+  EXPECT_FALSE(behavior.isTeleopCommandStale(rclcpp::Time(1000, 0, RCL_ROS_TIME)));
+  behavior.teleop_command_timeout_ = -1.0;
+  EXPECT_FALSE(behavior.isTeleopCommandStale(rclcpp::Time(1000, 0, RCL_ROS_TIME)));
+}
+
+TEST(AssistedTeleopTest, teleopCommandStaleBeforeFirstCommand)
+{
+  AssistedTeleopShim behavior;
+  behavior.teleop_command_timeout_ = 0.25;
+  behavior.received_first_command_ = false;
+  behavior.teleop_twist_.header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
+
+  // Nothing received yet for this goal: never stale, the operator may not have started
+  EXPECT_FALSE(behavior.isTeleopCommandStale(rclcpp::Time(1000, 0, RCL_ROS_TIME)));
+}
+
+TEST(AssistedTeleopTest, teleopCommandStaleWithinAndPastTimeout)
+{
+  AssistedTeleopShim behavior;
+  behavior.teleop_command_timeout_ = 0.25;
+  behavior.received_first_command_ = true;
+  behavior.teleop_twist_.header.stamp = rclcpp::Time(100, 0, RCL_ROS_TIME);
+
+  EXPECT_FALSE(behavior.isTeleopCommandStale(rclcpp::Time(100, 0, RCL_ROS_TIME)));
+  EXPECT_FALSE(behavior.isTeleopCommandStale(rclcpp::Time(100, 200000000, RCL_ROS_TIME)));
+  EXPECT_TRUE(behavior.isTeleopCommandStale(rclcpp::Time(100, 300000000, RCL_ROS_TIME)));
+  EXPECT_TRUE(behavior.isTeleopCommandStale(rclcpp::Time(105, 0, RCL_ROS_TIME)));
+}
 
 TEST(AssistedTeleopTest, projectPoseDiffDrive)
 {
