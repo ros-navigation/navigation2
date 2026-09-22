@@ -128,6 +128,8 @@ private:
     const double angular_distance_weight);
 
   nav2::TransformBuffer::SharedPtr tf_buffer_;
+  rclcpp::Clock::SharedPtr clock_;
+  double transform_staleness_threshold_{0.0};
 
   nav_msgs::msg::Path path_;
   nav_msgs::msg::Path::_poses_type::iterator closest_pose_detection_begin_;
