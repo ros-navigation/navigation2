@@ -48,6 +48,8 @@ public:
   FollowingServerShim()
   : FollowingServer() {}
 
+  using FollowingServer::getRobotPose;
+
   void setUsingDedicatedThread()
   {
     tf2_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
@@ -64,6 +66,8 @@ public:
     this->get_parameter("exception_to_throw", exception);
     if (exception == "TransformException") {
       throw tf2::TransformException("TransformException");
+    } else if (exception == "DockingTFError") {
+      throw opennav_docking_core::DockingTFError("DockingTFError");
     } else if (exception == "FailedToDetectObject") {
       throw opennav_docking_core::FailedToDetectDock("FailedToDetectObject");
     } else if (exception == "FailedToControl") {
@@ -118,6 +122,11 @@ public:
   {
     detected_dynamic_pose_ = pose;
   }
+
+  void setIterationStartTime(const rclcpp::Time & stamp)
+  {
+    iteration_start_time_ = stamp;
+  }
 };
 
 TEST(FollowingServerTests, ObjectLifecycle)
@@ -151,9 +160,9 @@ TEST(FollowingServerTests, ErrorExceptions)
 
   // Error codes following
   std::vector<std::string> error_ids{
-    "TransformException", "FailedToDetectObject", "FailedToControl",
+    "TransformException", "DockingTFError", "FailedToDetectObject", "FailedToControl",
     "DockingException", "exception"};
-  std::vector<int> error_codes{801, 802, 803, 899, 899};
+  std::vector<int> error_codes{801, 801, 802, 803, 899, 899};
 
   // Call action, check error code
   for (unsigned int i = 0; i != error_ids.size(); i++) {
@@ -408,6 +417,7 @@ TEST(FollowingServerTests, GetFramePose)
     {rclcpp::Parameter("fixed_frame", rclcpp::ParameterValue("fixed_frame_test"))});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_FALSE(node->getFramePose(pose, frame_test));
+  EXPECT_THROW(node->getRobotPose(), opennav_docking_core::DockingTFError);
 
   // Set transform between my_frame and fixed_frame_test
   geometry_msgs::msg::TransformStamped frame_to_fixed;
@@ -425,17 +435,14 @@ TEST(FollowingServerTests, GetFramePose)
   EXPECT_EQ(pose.pose.position.y, 2.0);
   EXPECT_EQ(pose.pose.position.z, 3.0);
 
-  // A zero-time lookup must reject an outdated dynamic transform when configured.
-  results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("transform_staleness_threshold", 0.1)});
-  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   geometry_msgs::msg::TransformStamped stale_transform;
   stale_transform.header.frame_id = "fixed_frame_test";
   stale_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(1.0);
   stale_transform.child_frame_id = "stale_frame";
   stale_transform.transform.rotation.w = 1.0;
   node->setTransform(stale_transform);
-  EXPECT_FALSE(node->getFramePose(pose, stale_transform.child_frame_id));
+  node->setIterationStartTime(stale_transform.header.stamp);
+  EXPECT_TRUE(node->getFramePose(pose, stale_transform.child_frame_id));
 
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
