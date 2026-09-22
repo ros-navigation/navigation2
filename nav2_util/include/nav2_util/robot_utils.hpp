@@ -111,13 +111,17 @@ bool getCurrentPose(
 * @param tf_buffer TF buffer to use for the transformation
 * @param target_frame Frame to transform into
 * @param transform_timeout How long to wait for the target frame. When value is zero the functions does not block.
+* @param current_time Time against which latest-transform age is measured
+* @param staleness_threshold Maximum latest-transform age; non-positive disables the check
 * @return bool Whether it could be transformed successfully
 */
 bool transformPoseInTargetFrame(
   const geometry_msgs::msg::PoseStamped & input_pose,
   geometry_msgs::msg::PoseStamped & transformed_pose,
   nav2::TransformBuffer & tf_buffer, const std::string target_frame,
-  const double transform_timeout = 0.1);
+  const double transform_timeout = 0.1,
+  const rclcpp::Time & current_time = rclcpp::Time(),
+  const double staleness_threshold = 0.0);
 
 /**
  * @brief Obtains a transform from source_frame_id -> to target_frame_id

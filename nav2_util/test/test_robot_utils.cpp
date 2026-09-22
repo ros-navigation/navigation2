@@ -159,6 +159,44 @@ TEST(RobotUtils, getFreshPose)
   EXPECT_EQ(pose, previous_pose);
 }
 
+TEST(RobotUtils, transformPoseInTargetFrameChecksOnlyLatestTransformAge)
+{
+  auto clock = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+  nav2::TransformBuffer tf(clock);
+  const rclcpp::Time current_time(10, 0, RCL_ROS_TIME);
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.header.stamp = rclcpp::Time(8, 0, RCL_ROS_TIME);
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.x = 1.0;
+  transform.transform.rotation.w = 1.0;
+  tf.setTransform(transform, "test", false);
+
+  geometry_msgs::msg::PoseStamped input;
+  input.header.frame_id = "base_link";
+  input.pose.orientation.w = 1.0;
+  geometry_msgs::msg::PoseStamped output;
+
+  EXPECT_FALSE(nav2_util::transformPoseInTargetFrame(
+      input, output, tf, "map", 0.0, current_time, 1.0));
+
+  // A nonzero stamp represents a historical observation, so its exact-time transform remains valid.
+  input.header.stamp = transform.header.stamp;
+  ASSERT_TRUE(nav2_util::transformPoseInTargetFrame(
+      input, output, tf, "map", 0.0, current_time, 1.0));
+  EXPECT_EQ(output.header.stamp, transform.header.stamp);
+  EXPECT_DOUBLE_EQ(output.pose.position.x, 1.0);
+
+  // Static transforms have a zero stamp in the buffer and are never rejected as stale.
+  transform.child_frame_id = "static_frame";
+  tf.setTransform(transform, "test", true);
+  input.header.frame_id = "static_frame";
+  input.header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  EXPECT_TRUE(nav2_util::transformPoseInTargetFrame(
+      input, output, tf, "map", 0.0, current_time, 1.0));
+}
+
 TEST(RobotUtils, transformToPoseStamped)
 {
   geometry_msgs::msg::TransformStamped transform;

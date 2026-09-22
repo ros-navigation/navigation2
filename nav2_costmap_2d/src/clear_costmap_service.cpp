@@ -40,6 +40,8 @@ ClearCostmapService::ClearCostmapService(
   auto node = parent.lock();
   logger_ = node->get_logger();
   reset_value_ = costmap_.getCostmap()->getDefaultValue();
+  transform_staleness_threshold_ = node->declare_or_get_parameter(
+    "transform_staleness_threshold", 0.0);
 
   clear_except_service_ = node->create_service<ClearExceptRegion>(
     std::string("clear_except_") + costmap_.getName(),
@@ -140,17 +142,13 @@ bool ClearCostmapService::clearAroundPose(
 
   // Transform pose to costmap frame if necessary
   geometry_msgs::msg::PoseStamped global_pose;
-  try {
-    if (pose.header.frame_id == costmap_.getGlobalFrameID()) {
-      global_pose = pose;
-    } else {
-      costmap_.getTfBuffer()->transform(pose, global_pose, costmap_.getGlobalFrameID());
-    }
-  } catch (tf2::TransformException & ex) {
+  if (!nav2_util::transformPoseInTargetFrame(
+      pose, global_pose, *costmap_.getTfBuffer(), costmap_.getGlobalFrameID(),
+      costmap_.getTransformTolerance(), costmap_.now(), transform_staleness_threshold_))
+  {
     RCLCPP_ERROR(
       logger_,
-      "Cannot clear map around pose because pose cannot be transformed to costmap frame: %s",
-      ex.what());
+      "Cannot clear map around pose because pose cannot be transformed to costmap frame");
     return false;
   }
 

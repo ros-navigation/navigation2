@@ -137,12 +137,27 @@ bool transformPoseInTargetFrame(
   const geometry_msgs::msg::PoseStamped & input_pose,
   geometry_msgs::msg::PoseStamped & transformed_pose,
   nav2::TransformBuffer & tf_buffer, const std::string target_frame,
-  const double transform_timeout)
+  const double transform_timeout, const rclcpp::Time & current_time,
+  const double staleness_threshold)
 {
   static rclcpp::Logger logger = rclcpp::get_logger("transformPoseInTargetFrame");
 
   if (input_pose.header.frame_id == target_frame) {
     transformed_pose = input_pose;
+    return true;
+  }
+
+  const bool has_timestamp =
+    input_pose.header.stamp.sec != 0 || input_pose.header.stamp.nanosec != 0;
+  if (!has_timestamp && staleness_threshold > 0.0) {
+    geometry_msgs::msg::TransformStamped transform;
+    if (!lookupTransformWithStalenessCheck(
+        tf_buffer, target_frame, input_pose.header.frame_id, current_time,
+        staleness_threshold, transform))
+    {
+      return false;
+    }
+    tf2::doTransform(input_pose, transformed_pose, transform);
     return true;
   }
 
@@ -175,7 +190,6 @@ bool transformPoseInTargetFrame(
 
   return false;
 }
-
 bool getTransform(
   const std::string & source_frame_id,
   const std::string & target_frame_id,

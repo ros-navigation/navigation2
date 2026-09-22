@@ -56,9 +56,13 @@ FootprintSubscriber::getFootprintInRobotFrame(
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, tf_, footprint_header.frame_id, robot_base_frame_,
-      transform_tolerance_, footprint_header.stamp))
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = robot_base_frame_;
+  robot_pose.header.stamp = footprint_header.stamp;
+  robot_pose.pose.orientation.w = 1.0;
+  if (!nav2_util::transformPoseInTargetFrame(
+      robot_pose, current_pose, tf_, footprint_header.frame_id, transform_tolerance_,
+      clock_->now(), transform_staleness_threshold_))
   {
     return false;
   }
