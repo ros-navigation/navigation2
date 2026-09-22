@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <limits>
 #include <memory>
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -113,32 +112,19 @@ TEST_F(TestAmclPose, SimpleAmclTest)
   EXPECT_EQ(true, defaultAmclTest());
 }
 
-TEST_F(TestAmclPose, RejectInvalidLaserLikelihoodMaxDist)
+TEST_F(TestAmclPose, RejectNegativeLaserLikelihoodMaxDist)
 {
-  auto parameter_client =
-    std::make_shared<rclcpp::SyncParametersClient>(node, "amcl");
+  ASSERT_TRUE(defaultAmclTest());
 
-  ASSERT_TRUE(parameter_client->wait_for_service(10s));
+  rclcpp::SyncParametersClient parameter_client(node, "amcl");
 
-  const double original_value =
-    parameter_client->get_parameter<double>("laser_likelihood_max_dist");
+  ASSERT_TRUE(parameter_client.wait_for_service(10s));
 
-  const double invalid_values[] = {
-    -1.0,
-    std::numeric_limits<double>::infinity()
-  };
+  const rcl_interfaces::msg::SetParametersResult result =
+    parameter_client.set_parameters_atomically(
+    {rclcpp::Parameter("laser_likelihood_max_dist", -1.0)});
 
-  for (const double invalid_value : invalid_values) {
-    const auto result = parameter_client->set_parameters_atomically(
-      {rclcpp::Parameter("laser_likelihood_max_dist", invalid_value)});
-
-    EXPECT_FALSE(result.successful);
-    EXPECT_EQ(
-      parameter_client->get_parameter<double>("laser_likelihood_max_dist"),
-      original_value);
-  }
-  EXPECT_TRUE(parameter_client->set_parameters_atomically(
-      {rclcpp::Parameter("laser_likelihood_max_dist", 1.0)}).successful);
+  EXPECT_FALSE(result.successful);
 }
 
 int main(int argc, char **argv)

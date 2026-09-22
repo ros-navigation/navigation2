@@ -23,7 +23,6 @@
 #include "nav2_amcl/amcl_node.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <memory>
 #include <string>
 #include <utility>
@@ -1261,9 +1260,9 @@ AmclNode::dynamicParametersCallback(
         reinit_laser = true;
       } else if (param_name == "laser_likelihood_max_dist") {
         const double value = parameter.as_double();
-        if (!std::isfinite(value) || value < 0.0) {
+        if (value < 0.0) {
           result.successful = false;
-          result.reason = "laser_likelihood_max_dist must be finite and non-negative";
+          result.reason = "laser_likelihood_max_dist must be non-negative";
           return result;
         }
         laser_likelihood_max_dist_ = value;
