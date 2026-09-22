@@ -172,6 +172,7 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
 
   counter_ = 0;
   auto start_time = std::chrono::system_clock::now();
+  auto stopped_time = std::chrono::system_clock::now();
   while (rclcpp::ok()) {
     geometry_msgs::msg::TwistStamped cmd_vel = geometry_msgs::msg::TwistStamped();
     cmd_vel.header.stamp = node_->now();
@@ -179,7 +180,12 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
     cmd_vel.twist.angular.z = ang_vel;
     cmd_vel_pub_->publish(cmd_vel);
 
-    if (counter_ > 1) {
+    // Only preempt once the behavior has held the robot stopped for a while. A single
+    // zero command is transient while it creeps up to the obstacle and the pose is
+    // then still marginal for the collision check below.
+    if (counter_ == 0) {
+      stopped_time = std::chrono::system_clock::now();
+    } else if (std::chrono::system_clock::now() - stopped_time > 1s) {
       break;
     }
 

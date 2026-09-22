@@ -35,7 +35,8 @@ void AssistedTeleop::onConfigure()
   // set up parameters
   projection_time_ = node->declare_or_get_parameter("projection_time", 1.0);
   simulation_time_step_ = node->declare_or_get_parameter("simulation_time_step", 0.1);
-  teleop_command_timeout_ = node->declare_or_get_parameter("teleop_command_timeout", 0.25);
+  teleop_command_timeout_ = node->declare_or_get_parameter(
+    behavior_name_ + ".teleop_command_timeout", 0.25);
   std::string cmd_vel_teleop = node->declare_or_get_parameter(
     "cmd_vel_teleop", std::string("cmd_vel_teleop"));
 
