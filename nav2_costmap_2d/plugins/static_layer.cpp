@@ -492,6 +492,7 @@ StaticLayer::updateCosts(
     {
       RCLCPP_ERROR(logger_, "StaticLayer: transform lookup failed or returned stale data");
       has_updated_data_ = true;
+      setCurrent(false);
       return;
     }
     tf2::fromMsg(transform.transform, tf2_transform);
