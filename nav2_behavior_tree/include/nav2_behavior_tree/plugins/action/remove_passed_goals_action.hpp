@@ -89,6 +89,7 @@ private:
   double transform_tolerance_;
   double transform_staleness_threshold_;
   nav2::LifecycleNode::SharedPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
   nav2::TransformBuffer::SharedPtr tf_;
   std::string robot_base_frame_;
 };

@@ -41,6 +41,7 @@ TruncatePathLocal::TruncatePathLocal(
     config().blackboard->template get<nav2::TransformBuffer::SharedPtr>(
     "tf_buffer");
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  clock_ = node->get_clock();
   transform_staleness_threshold_ = node->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
 }
@@ -128,7 +129,7 @@ inline bool TruncatePathLocal::getRobotPose(
       return false;
     }
     if (!nav2_util::getFreshPose(
-        *tf_buffer_, path_frame_id, robot_frame, node->now(), transform_staleness_threshold_,
+        *tf_buffer_, path_frame_id, robot_frame, clock_->now(), transform_staleness_threshold_,
         pose))
     {
       RCLCPP_WARN(

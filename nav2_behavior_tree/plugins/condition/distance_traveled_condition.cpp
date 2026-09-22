@@ -39,6 +39,7 @@ void DistanceTraveledCondition::initialize()
   getInput("distance", distance_);
 
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  clock_ = node_->get_clock();
   tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
@@ -55,11 +56,10 @@ BT::NodeStatus DistanceTraveledCondition::tick()
   if (!BT::isStatusActive(status())) {
     initialize();
     if (!nav2_util::getFreshPose(
-        *tf_, global_frame_, robot_base_frame_, node_->now(), transform_staleness_threshold_,
+        *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_,
         start_pose_))
     {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
-      return BT::NodeStatus::FAILURE;
     }
     return BT::NodeStatus::FAILURE;
   }
@@ -67,12 +67,13 @@ BT::NodeStatus DistanceTraveledCondition::tick()
   // Determine distance travelled since we've started this iteration
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getFreshPose(
-      *tf_, global_frame_, robot_base_frame_, node_->now(), transform_staleness_threshold_,
+      *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_,
       current_pose))
   {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return BT::NodeStatus::FAILURE;
   }
+
   // Get euclidean distance
   auto travelled = nav2_util::geometry_utils::euclidean_distance(
     start_pose_.pose, current_pose.pose);
