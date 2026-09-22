@@ -21,7 +21,9 @@
 
 #include "nav2_behavior_tree/plugins/decorator/goal_updater_node.hpp"
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/time.hpp"
 
 namespace nav2_behavior_tree
 {

@@ -17,7 +17,10 @@
 #include <memory>
 #include <set>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_util/odometry_utils.hpp"
 
 #include "utils/test_behavior_tree_fixture.hpp"

@@ -21,7 +21,9 @@
 #include <string>
 
 #include "behaviortree_cpp/loggers/abstract_logger.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
 #include "nav2_msgs/msg/behavior_tree_log.hpp"
 #include "nav2_msgs/msg/behavior_tree_status_change.hpp"
 #include "tf2/time.hpp"

@@ -18,7 +18,9 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/service.hpp"
 
 template<class ServiceT>
 class TestService : public rclcpp::Node
