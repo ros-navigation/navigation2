@@ -125,8 +125,8 @@
     <Action ID="ComputeRoute">
       <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Only used if not left empty. Takes in a blackboard variable, e.g. "{start}".</input_port>
       <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Goal pose. Takes in a blackboard variable, e.g. "{goal}".</input_port>
-      <input_port name="start_id" type="unsigned int">Start node ID to use.</input_port>
-      <input_port name="goal_id" type="unsigned int">Goal node ID to use.</input_port>
+      <input_port name="start_id" type="uint64_t">Start node ID to use.</input_port>
+      <input_port name="goal_id" type="uint64_t">Goal node ID to use.</input_port>
       <input_port name="use_start" type="bool" default="false">Whether to use the start or use TF to obtain the robot's start pose.</input_port>
       <input_port name="use_poses" type="bool" default="false">Whether to use the start and goal poses or start and goal node IDs.</input_port>
       <input_port name="server_name" type="string">Action server name. If not specified, `compute_route` is used.</input_port>
@@ -141,16 +141,16 @@
     <Action ID="ComputeAndTrackRoute">
       <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Only used if not left empty. Takes in a blackboard variable, e.g. "{start}".</input_port>
       <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Goal pose. Takes in a blackboard variable, e.g. "{goal}".</input_port>
-      <input_port name="start_id" type="unsigned int">Start node ID to use.</input_port>
-      <input_port name="goal_id" type="unsigned int">Goal node ID to use.</input_port>
+      <input_port name="start_id" type="uint64_t">Start node ID to use.</input_port>
+      <input_port name="goal_id" type="uint64_t">Goal node ID to use.</input_port>
       <input_port name="use_start" type="bool" default="false">Whether to use the start or use TF to obtain the robot's start pose.</input_port>
       <input_port name="use_poses" type="bool" default="false">Whether to use the start and goal poses or start and goal node IDs.</input_port>
       <input_port name="server_name" type="string">Action server name. If not specified, `compute_and_track_route` is used.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
       <output_port name="execution_duration" type="builtin_interfaces::msg::Duration">Time it took to compute the route.</output_port>
-      <output_port name="last_node_id" type="uint16">ID of the previous node.</output_port>
-      <output_port name="next_node_id" type="uint16">ID of the next node.</output_port>
-      <output_port name="current_edge_id" type="uint16">ID of the current edge.</output_port>
+      <output_port name="last_node_id" type="uint64_t">ID of the previous node.</output_port>
+      <output_port name="next_node_id" type="uint64_t">ID of the next node.</output_port>
+      <output_port name="current_edge_id" type="uint64_t">ID of the current edge.</output_port>
       <output_port name="route" type="nav2_msgs::msg::Route">List of RouteNodes to go from start to end.</output_port>
       <output_port name="path" type="nav_msgs::msg::Path">Path created by ComputeAndTrackRoute node.</output_port>
       <output_port name="rerouted" type="bool">Whether the plan has rerouted.</output_port>

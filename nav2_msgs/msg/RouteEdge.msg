@@ -1,3 +1,3 @@
-uint16 edgeid
+uint64 edgeid
 geometry_msgs/Point start
 geometry_msgs/Point end
