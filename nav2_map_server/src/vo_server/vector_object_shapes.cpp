@@ -68,7 +68,7 @@ bool lookupShapeTransform(
 // ---------- Shape ----------
 
 Shape::Shape(const nav2::LifecycleNode::WeakPtr & node)
-: type_(UNKNOWN), node_(node)
+: type_(UNKNOWN), node_(node), clock_(node.lock()->get_clock())
 {}
 
 Shape::~Shape()
@@ -331,13 +331,9 @@ bool Polygon::toFrame(
   const double transform_tolerance,
   const double transform_staleness_threshold)
 {
-  auto node = node_.lock();
-  if (!node) {
-    return false;
-  }
   geometry_msgs::msg::TransformStamped transform;
   if (!lookupShapeTransform(
-      params_->header, to_frame, tf_buffer, node->now(), transform_tolerance,
+      params_->header, to_frame, tf_buffer, clock_->now(), transform_tolerance,
       transform_staleness_threshold, transform))
   {
     return false;
@@ -580,13 +576,9 @@ bool Circle::toFrame(
   const double transform_tolerance,
   const double transform_staleness_threshold)
 {
-  auto node = node_.lock();
-  if (!node) {
-    return false;
-  }
   geometry_msgs::msg::TransformStamped transform;
   if (!lookupShapeTransform(
-      params_->header, to_frame, tf_buffer, node->now(), transform_tolerance,
+      params_->header, to_frame, tf_buffer, clock_->now(), transform_tolerance,
       transform_staleness_threshold, transform))
   {
     return false;
