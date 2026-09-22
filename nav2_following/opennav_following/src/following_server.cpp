@@ -381,7 +381,6 @@ bool FollowingServer::approachObject(
     target_pose = getPoseAtDistance(object_pose, robot_pose, effective_distance);
 
     // ... and transform the target_pose into base_frame using the same transform
-    // that the controller uses for collision checking.
     tf2::doTransform(
       target_pose, target_pose, nav2_util::invertTransform(base_to_fixed_transform));
 
