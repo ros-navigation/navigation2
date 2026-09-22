@@ -47,7 +47,7 @@ geometry_msgs::msg::PoseStamped transformPoseToFrame(
       tf_buffer, target_frame, transformed_pose.header.frame_id, current_time,
       staleness_threshold, transform))
   {
-    throw opennav_docking_core::DockingException(
+    throw opennav_docking_core::DockingTFError(
             "Transform error: failed to get a fresh transform from " +
             transformed_pose.header.frame_id + " to " + target_frame);
   }
@@ -602,9 +602,8 @@ bool DockingServer::waitForCharge(Dock * dock)
 bool DockingServer::resetApproach(
   const geometry_msgs::msg::PoseStamped & staging_pose, bool backward)
 {
-  auto fixed_staging_pose = staging_pose;
-  fixed_staging_pose.header.stamp = rclcpp::Time(0);
-  tf2_buffer_->transform(fixed_staging_pose, fixed_staging_pose, params_->fixed_frame);
+  const auto fixed_staging_pose = transformPoseToFrame(
+    *tf2_buffer_, staging_pose, params_->fixed_frame, now(), params_->staleness_threshold);
 
   nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
@@ -837,7 +836,7 @@ geometry_msgs::msg::PoseStamped DockingServer::getRobotPoseInFrame(const std::st
       *tf2_buffer_, frame, params_->base_frame, now(),
       params_->staleness_threshold, robot_pose))
   {
-    throw opennav_docking_core::DockingException(
+    throw opennav_docking_core::DockingTFError(
             "Transform error: failed to get a fresh robot pose in frame " + frame);
   }
   return robot_pose;

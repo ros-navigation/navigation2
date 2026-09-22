@@ -65,7 +65,7 @@ public:
   nav2::TransformBuffer::SharedPtr getTfBuffer() {return tf2_buffer_;}
 };
 
-TEST(DockingServerTests, RobotPoseFailureIsDockingException)
+TEST(DockingServerTests, RobotPoseFailureIsDockingTFError)
 {
   auto node = std::make_shared<DockingServerRealTFShim>();
   node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
@@ -73,7 +73,7 @@ TEST(DockingServerTests, RobotPoseFailureIsDockingException)
     "test_plugin.plugin", "opennav_docking::TestFailureDock");
   node->on_configure(rclcpp_lifecycle::State());
 
-  EXPECT_THROW(node->getRobotPoseInFrame("odom"), opennav_docking_core::DockingException);
+  EXPECT_THROW(node->getRobotPoseInFrame("odom"), opennav_docking_core::DockingTFError);
 
   node->on_cleanup(rclcpp_lifecycle::State());
 }
@@ -135,7 +135,7 @@ TEST(DockingServerTests, GetCommandRejectsStalePoseTransform)
 
   EXPECT_THROW(
     node->getCommandToPose(command, target, 0.1, 0.1, false, false),
-    opennav_docking_core::DockingException);
+    opennav_docking_core::DockingTFError);
 
   node->on_cleanup(rclcpp_lifecycle::State());
 }

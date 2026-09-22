@@ -308,6 +308,10 @@ void FollowingServer::followObject()
       }
       loop_rate.sleep();
     }
+  } catch (const opennav_docking_core::DockingTFError & e) {
+    result->error_msg = std::string("Transform error: ") + e.what();
+    RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
+    result->error_code = FollowObject::Result::TF_ERROR;
   } catch (const tf2::TransformException & e) {
     result->error_msg = std::string("Transform error: ") + e.what();
     RCLCPP_ERROR(get_logger(), "%s", result->error_msg.c_str());
@@ -565,20 +569,12 @@ bool FollowingServer::getFramePose(
   geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id)
 {
   try {
-    // Get the transform from the target frame to the fixed frame
-    if (iteration_start_time_.nanoseconds() == 0) {
-      if (!nav2_util::getFreshPose(
-          *tf2_buffer_, params_->fixed_frame, frame_id, now(),
-          params_->staleness_threshold, pose))
-      {
-        return false;
-      }
-    } else {
-      const auto transform = tf2_buffer_->lookupTransform(
-        params_->fixed_frame, frame_id, iteration_start_time_,
-        tf2::durationFromSec(params_->transform_tolerance));
-      pose = nav2_util::transformToPoseStamped(transform);
-    }
+    // Matching the target to the staleness-checked robot snapshot used by this control
+    // iteration.
+    const auto transform = tf2_buffer_->lookupTransform(
+      params_->fixed_frame, frame_id, iteration_start_time_,
+      tf2::durationFromSec(params_->transform_tolerance));
+    pose = nav2_util::transformToPoseStamped(transform);
   } catch (const tf2::TransformException & ex) {
     RCLCPP_WARN(
       get_logger(),
@@ -620,7 +616,7 @@ geometry_msgs::msg::PoseStamped FollowingServer::getRobotPose()
       *tf2_buffer_, params_->fixed_frame, params_->base_frame, now(),
       params_->staleness_threshold, robot_pose))
   {
-    throw std::runtime_error("Failed to get a fresh robot pose");
+    throw opennav_docking_core::DockingTFError("Failed to get a fresh robot pose");
   }
   return robot_pose;
 }
