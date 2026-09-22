@@ -26,6 +26,37 @@ using std::placeholders::_1;
 namespace opennav_docking
 {
 
+namespace
+{
+
+geometry_msgs::msg::PoseStamped transformPoseToFrame(
+  nav2::TransformBuffer & tf_buffer,
+  const geometry_msgs::msg::PoseStamped & pose,
+  const std::string & target_frame,
+  const rclcpp::Time & current_time,
+  const double staleness_threshold)
+{
+  auto transformed_pose = pose;
+  transformed_pose.header.stamp = rclcpp::Time(0);
+  if (transformed_pose.header.frame_id == target_frame) {
+    return transformed_pose;
+  }
+
+  geometry_msgs::msg::TransformStamped transform;
+  if (!nav2_util::lookupTransformWithStalenessCheck(
+      tf_buffer, target_frame, transformed_pose.header.frame_id, current_time,
+      staleness_threshold, transform))
+  {
+    throw opennav_docking_core::DockingException(
+            "Transform error: failed to get a fresh transform from " +
+            transformed_pose.header.frame_id + " to " + target_frame);
+  }
+  tf2::doTransform(transformed_pose, transformed_pose, transform);
+  return transformed_pose;
+}
+
+}  // namespace
+
 DockingServer::DockingServer(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("docking_server", "", options)
 {
@@ -493,8 +524,8 @@ bool DockingServer::approachDock(
     }
 
     // Transform target_pose into base_link frame
-    geometry_msgs::msg::PoseStamped target_pose = dock_pose;
-    target_pose.header.stamp = rclcpp::Time(0);
+    geometry_msgs::msg::PoseStamped target_pose = transformPoseToFrame(
+      *tf2_buffer_, dock_pose, params_->fixed_frame, now(), params_->staleness_threshold);
 
     // The control law can get jittery when close to the end when atan2's can explode.
     // Thus, we backward project the controller's target pose a little bit after the
@@ -617,22 +648,24 @@ bool DockingServer::getCommandToPose(
   cmd.linear.x = 0;
   cmd.angular.z = 0;
 
+  geometry_msgs::msg::PoseStamped fixed_pose = transformPoseToFrame(
+    *tf2_buffer_, pose, params_->fixed_frame, now(), params_->staleness_threshold);
+
   // Determine if we have reached pose yet & stop
   const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
   const auto base_to_fixed_transform = nav2_util::poseToTransformStamped(robot_pose,
       params_->base_frame);
   const double dist = std::hypot(
-    robot_pose.pose.position.x - pose.pose.position.x,
-    robot_pose.pose.position.y - pose.pose.position.y);
+    robot_pose.pose.position.x - fixed_pose.pose.position.x,
+    robot_pose.pose.position.y - fixed_pose.pose.position.y);
   const double yaw = angles::shortest_angular_distance(
-    tf2::getYaw(robot_pose.pose.orientation), tf2::getYaw(pose.pose.orientation));
+    tf2::getYaw(robot_pose.pose.orientation), tf2::getYaw(fixed_pose.pose.orientation));
   if (dist < linear_tolerance && abs(yaw) < angular_tolerance) {
     return true;
   }
 
   // Transform target_pose into base_link frame
-  geometry_msgs::msg::PoseStamped target_pose = pose;
-  target_pose.header.stamp = rclcpp::Time(0);
+  geometry_msgs::msg::PoseStamped target_pose = fixed_pose;
   tf2::doTransform(target_pose, target_pose, nav2_util::invertTransform(base_to_fixed_transform));
 
   // Compute velocity command
@@ -804,7 +837,8 @@ geometry_msgs::msg::PoseStamped DockingServer::getRobotPoseInFrame(const std::st
       *tf2_buffer_, frame, params_->base_frame, now(),
       params_->staleness_threshold, robot_pose))
   {
-    throw std::runtime_error("Failed to get a fresh robot pose in frame " + frame);
+    throw opennav_docking_core::DockingException(
+            "Transform error: failed to get a fresh robot pose in frame " + frame);
   }
   return robot_pose;
 }
