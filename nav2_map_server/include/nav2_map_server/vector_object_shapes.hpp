@@ -196,6 +196,9 @@ protected:
 
   /// @brief VectorObjectServer node
   nav2::LifecycleNode::WeakPtr node_;
+
+  /// @brief Clock
+  rclcpp::Clock::SharedPtr clock_;
 };
 
 /// @brief Polygon shape class

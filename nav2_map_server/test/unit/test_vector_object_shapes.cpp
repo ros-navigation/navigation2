@@ -88,7 +88,7 @@ protected:
   nav2_msgs::msg::CircleObject::SharedPtr makeCircleObject(
     const std::vector<unsigned char> & uuid);
 
-  void sendTransform();
+  rclcpp::Time sendTransform();
 
   nav_msgs::msg::OccupancyGrid::SharedPtr makeMap();
   void verifyPolygonBorders(nav_msgs::msg::OccupancyGrid::SharedPtr map);
@@ -262,7 +262,7 @@ nav2_msgs::msg::CircleObject::SharedPtr Tester::makeCircleObject(
   return co;
 }
 
-void Tester::sendTransform()
+rclcpp::Time Tester::sendTransform()
 {
   nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
     nav2::create_transform_broadcaster(node_);
@@ -284,6 +284,8 @@ void Tester::sendTransform()
 
   tf_broadcaster->sendTransform(transform);
   tf_buffer_->setTransform(transform, "test", false);
+
+  return transform.header.stamp;
 }
 
 nav_msgs::msg::OccupancyGrid::SharedPtr Tester::makeMap()
@@ -587,6 +589,31 @@ TEST_F(Tester, testPolygonDifferentFrame)
 
   // Try to transform to incorrect frame
   ASSERT_FALSE(polygon_->toFrame("incorrect_frame", tf_buffer_, 0.1));
+}
+
+TEST_F(Tester, testPolygonTransformAtTimestamp)
+{
+  const auto transform_stamp = sendTransform();
+  auto polygon_object = makePolygonObject({});
+  polygon_object->header.frame_id = SHAPE_FRAME_ID;
+  polygon_object->header.stamp = transform_stamp;
+  ASSERT_TRUE(polygon_->setParams(polygon_object));
+
+  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 0.1));
+
+  const auto poly = polygon_->getPoly();
+  ASSERT_NEAR(poly->points[0].x, 1.0 + FRAME_SHIFT, EPSILON);
+  ASSERT_NEAR(poly->points[0].y, 1.0 + FRAME_SHIFT, EPSILON);
+}
+
+TEST_F(Tester, testPolygonTransformAtTimestampFailsWithoutTransform)
+{
+  auto polygon_object = makePolygonObject({});
+  polygon_object->header.frame_id = SHAPE_FRAME_ID;
+  polygon_object->header.stamp = node_->now();
+  ASSERT_TRUE(polygon_->setParams(polygon_object));
+
+  ASSERT_FALSE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 0.1));
 }
 
 //---------- Circles testcases ----------
