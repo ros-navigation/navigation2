@@ -247,7 +247,7 @@ protected:
     }
 
     simulate_ahead_time_ = node->declare_or_get_parameter(
-      "simulate_ahead_time", 2.0);
+      this->behavior_name_ + ".simulate_ahead_time", 2.0);
     acceleration_limit_ = node->declare_or_get_parameter(
       this->behavior_name_ + ".acceleration_limit", 2.5);
     deceleration_limit_ = node->declare_or_get_parameter(
