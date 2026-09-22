@@ -51,7 +51,6 @@ target_include_directories(${library_name}_common
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    ${OMPL_INCLUDE_DIRS}
 )
 target_link_libraries(${library_name}_common PUBLIC
   geometry_msgs::geometry_msgs
@@ -61,7 +60,7 @@ target_link_libraries(${library_name}_common PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   nav_msgs::nav_msgs
   nlohmann_json::nlohmann_json
-  ${OMPL_LIBRARIES}
+  ompl::ompl
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
@@ -79,7 +78,6 @@ target_include_directories(${library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    ${OMPL_INCLUDE_DIRS}
 )
 target_link_libraries(${library_name} PUBLIC
   ${library_name}_common
@@ -89,7 +87,7 @@ target_link_libraries(${library_name} PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   nav_msgs::nav_msgs
   nlohmann_json::nlohmann_json
-  ${OMPL_LIBRARIES}
+  ompl::ompl
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   rcl_interfaces::rcl_interfaces
@@ -109,7 +107,6 @@ target_include_directories(${library_name}_2d
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    ${OMPL_INCLUDE_DIRS}
 )
 target_link_libraries(${library_name}_2d PUBLIC
   ${library_name}_common
@@ -119,7 +116,7 @@ target_link_libraries(${library_name}_2d PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   nav_msgs::nav_msgs
   nlohmann_json::nlohmann_json
-  ${OMPL_LIBRARIES}
+  ompl::ompl
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   rcl_interfaces::rcl_interfaces
@@ -139,7 +136,6 @@ target_include_directories(${library_name}_lattice
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    ${OMPL_INCLUDE_DIRS}
 )
 target_link_libraries(${library_name}_lattice PUBLIC
   ${library_name}_common
@@ -149,7 +145,7 @@ target_link_libraries(${library_name}_lattice PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   nav_msgs::nav_msgs
   nlohmann_json::nlohmann_json
-  ${OMPL_LIBRARIES}
+  ompl::ompl
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   rcl_interfaces::rcl_interfaces

@@ -20,14 +20,13 @@
 #include <string>
 #include <exception>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
 
 #include "sensor_msgs/msg/image.hpp"
 #include "nav2_core/waypoint_task_executor.hpp"
 #include "opencv2/core.hpp"
 #include "opencv2/opencv.hpp"
 #include "cv_bridge/cv_bridge.hpp"
-#include "image_transport/image_transport.hpp"
 
 
 namespace nav2_waypoint_follower

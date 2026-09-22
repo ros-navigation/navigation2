@@ -17,7 +17,10 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
 #include "nav2_loopback_sim/clock_publisher.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"

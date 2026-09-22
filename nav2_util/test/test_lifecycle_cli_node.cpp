@@ -20,7 +20,7 @@
 #include "gtest/gtest.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_thread.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 
 #ifdef _WIN32
 #include <windows.h>

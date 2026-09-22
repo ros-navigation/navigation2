@@ -40,8 +40,7 @@ add_library(pf_lib SHARED
 target_include_directories(pf_lib
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 if(HAVE_DRAND48)
   target_compile_definitions(pf_lib PRIVATE "HAVE_DRAND48")
 endif()
@@ -55,8 +54,7 @@ add_library(map_lib SHARED
 target_include_directories(map_lib
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
 add_library(motions_lib SHARED
   src/motion_model/omni_motion_model.cpp

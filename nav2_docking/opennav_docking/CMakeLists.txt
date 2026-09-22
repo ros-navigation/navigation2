@@ -25,7 +25,6 @@ find_package(tf2_ros REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(nav2_ros_common REQUIRED)
-find_package(bond REQUIRED)
 
 nav2_package()
 
@@ -123,7 +122,6 @@ target_include_directories(simple_charging_dock
 )
 target_link_libraries(simple_charging_dock PUBLIC
   geometry_msgs::geometry_msgs
-  ${bond_TARGETS}
   opennav_docking_core::opennav_docking_core
   pose_filter
   rclcpp::rclcpp
@@ -133,7 +131,6 @@ target_link_libraries(simple_charging_dock PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
   nav2_ros_common::nav2_ros_common
-  bondcpp::bondcpp
 )
 target_link_libraries(simple_charging_dock PRIVATE
   angles::angles

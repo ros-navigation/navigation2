@@ -25,7 +25,11 @@
 #include <thread>
 #include <utility>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -33,10 +37,7 @@
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_core/behavior.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.hpp"
-#pragma GCC diagnostic pop
 
 
 namespace nav2_behaviors

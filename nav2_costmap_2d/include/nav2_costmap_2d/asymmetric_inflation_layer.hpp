@@ -24,7 +24,7 @@
 #include <unordered_map>
 #include <cstdint>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav_msgs/msg/path.hpp"
 

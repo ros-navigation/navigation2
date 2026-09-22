@@ -20,7 +20,15 @@
 #include <vector>
 #include <functional>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/publisher.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/occ_grid_values.hpp"

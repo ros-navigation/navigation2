@@ -14,8 +14,14 @@
 // limitations under the License.
 
 #include <chrono>
+#include <memory>
 
 #include "nav2_rviz_plugins/utils.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/future_return_code.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/parameter_client.hpp"
+#include "rclcpp/utilities.hpp"
 
 namespace nav2_rviz_plugins
 {

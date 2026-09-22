@@ -18,7 +18,14 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/rate.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "std_srvs/srv/trigger.hpp"

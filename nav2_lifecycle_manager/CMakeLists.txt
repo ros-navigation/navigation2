@@ -5,13 +5,11 @@ find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
 find_package(bondcpp REQUIRED)
 find_package(diagnostic_updater REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
@@ -35,7 +33,6 @@ target_link_libraries(${library_name} PUBLIC
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
-  rclcpp_action::rclcpp_action
   std_srvs::std_srvs
 )
 target_link_libraries(${library_name} PRIVATE

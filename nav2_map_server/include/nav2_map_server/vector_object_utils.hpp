@@ -19,7 +19,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"

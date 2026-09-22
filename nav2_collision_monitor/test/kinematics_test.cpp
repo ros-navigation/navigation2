@@ -20,7 +20,7 @@
 #include <vector>
 #include <limits>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/kinematics.hpp"

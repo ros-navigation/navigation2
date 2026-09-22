@@ -19,7 +19,9 @@
 #include <mutex>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/logger.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_core/waypoint_task_executor.hpp"

@@ -20,7 +20,6 @@
 #include <vector>
 #include <queue>
 #include <algorithm>
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_theta_star_planner/parameter_handler.hpp"
 

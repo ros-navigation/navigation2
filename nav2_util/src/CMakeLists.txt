@@ -13,7 +13,6 @@ target_include_directories(${library_name}
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${library_name} PUBLIC
-  bondcpp::bondcpp
   geometry_msgs::geometry_msgs
   lifecycle_msgs::lifecycle_msgs
   nav2_msgs::nav2_msgs
@@ -28,9 +27,6 @@ target_link_libraries(${library_name} PUBLIC
   pluginlib::pluginlib
   nav2_ros_common::nav2_ros_common
   angles::angles
-)
-target_link_libraries(${library_name} PRIVATE
-  ${bond_TARGETS}
 )
 target_include_directories(${library_name} PUBLIC
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"

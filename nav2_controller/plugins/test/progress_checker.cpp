@@ -40,6 +40,7 @@
 #include "nav2_controller/plugins/pose_progress_checker.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "rclcpp/parameter_client.hpp"
 
 using nav2_controller::SimpleProgressChecker;
 using nav2_controller::PoseProgressChecker;

@@ -20,7 +20,7 @@
 #include <memory>
 #include <functional>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
 #include "nav2_msgs/srv/clear_costmap_around_pose.hpp"

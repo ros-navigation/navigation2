@@ -39,7 +39,9 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/utilities.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_costmap_2d/footprint.hpp"

@@ -24,7 +24,7 @@
 
 #include "nav2_core/controller.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_graceful_controller/parameter_handler.hpp"

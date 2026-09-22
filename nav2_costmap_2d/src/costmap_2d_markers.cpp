@@ -41,7 +41,12 @@
 #include <memory>
 #include <utility>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/publisher.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "nav2_msgs/msg/voxel_grid.hpp"
 #include "nav2_voxel_grid/voxel_grid.hpp"

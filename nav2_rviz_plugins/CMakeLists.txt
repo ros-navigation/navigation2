@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(nav2_rviz_plugins)
 
 find_package(ament_cmake REQUIRED)
+find_package(action_msgs REQUIRED)
 find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -29,11 +30,11 @@ if(TARGET Qt5::Core)
   set(QT_VERSION_MAJOR 5)
   set(QT_VERSION ${Qt5Core_VERSION})
   # In Qt5, state machine is part of core
-  find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+  find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Concurrent)
 elseif(TARGET Qt6::Core)
   set(QT_VERSION_MAJOR 6)
   set(QT_VERSION ${Qt6Core_VERSION})
-  find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets StateMachine Test Concurrent)
+  find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets StateMachine Concurrent)
 endif()
 if(${QT_VERSION} VERSION_LESS 5.15.0)
   function(qt_wrap_cpp out)
@@ -99,11 +100,11 @@ add_library(${library_name} SHARED
   ${route_tool_UIS_H}
 )
 target_include_directories(${library_name} PUBLIC
-  ${OGRE_INCLUDE_DIRS}
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(${library_name} PUBLIC
+  action_msgs::action_msgs
   geometry_msgs::geometry_msgs
   nav2_lifecycle_manager::nav2_lifecycle_manager_core
   nav2_msgs::nav2_msgs
@@ -114,6 +115,7 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp_action::rclcpp_action
   rviz_common::rviz_common
   rviz_default_plugins::rviz_default_plugins
+  rviz_ogre_vendor::OgreMain
   rviz_rendering::rviz_rendering
   std_msgs::std_msgs
   tf2_geometry_msgs::tf2_geometry_msgs
@@ -122,6 +124,7 @@ target_link_libraries(${library_name} PUBLIC
 )
 target_link_libraries(${library_name} PRIVATE
   pluginlib::pluginlib
+  Qt${QT_VERSION_MAJOR}::Concurrent
   yaml-cpp::yaml-cpp
 )
 
@@ -155,6 +158,7 @@ endif()
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_targets(${library_name} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
+  action_msgs
   geometry_msgs
   nav2_lifecycle_manager
   nav2_msgs
@@ -165,6 +169,7 @@ ament_export_dependencies(
   rclcpp_action
   rviz_common
   rviz_default_plugins
+  rviz_ogre_vendor
   rviz_rendering
   std_msgs
   tf2_geometry_msgs

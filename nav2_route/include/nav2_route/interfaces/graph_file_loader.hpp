@@ -19,7 +19,6 @@
 #include <memory>
 
 
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_route/types.hpp"
 

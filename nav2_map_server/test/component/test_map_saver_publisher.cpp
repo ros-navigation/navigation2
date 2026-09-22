@@ -17,7 +17,11 @@
 #include <memory>
 
 #include "nav2_ros_common/qos_profiles.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/publisher.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_map_server/map_io.hpp"
 #include "test_constants/test_constants.h"
 

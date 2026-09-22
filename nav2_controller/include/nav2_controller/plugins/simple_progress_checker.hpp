@@ -17,7 +17,12 @@
 
 #include <string>
 #include <vector>
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/time.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_core/progress_checker.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"

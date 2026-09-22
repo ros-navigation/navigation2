@@ -19,7 +19,7 @@
 #include <string>
 #include <algorithm>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 
 #include "wait_behavior_tester.hpp"
 

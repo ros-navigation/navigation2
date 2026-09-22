@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "opennav_docking/utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 

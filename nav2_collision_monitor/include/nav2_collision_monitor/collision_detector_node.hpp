@@ -21,7 +21,9 @@
 #include <memory>
 #include <unordered_map>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/timer.hpp"
 
 #include "tf2/time.hpp"
 

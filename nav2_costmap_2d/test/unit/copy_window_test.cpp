@@ -14,7 +14,7 @@
 
 #include <gtest/gtest.h>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 
 TEST(CopyWindow, copyValidWindow)

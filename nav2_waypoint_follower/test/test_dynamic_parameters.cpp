@@ -21,7 +21,10 @@
 #include "gtest/gtest.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_waypoint_follower/waypoint_follower.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_client.hpp"
+#include "rclcpp/utilities.hpp"
 
 TEST(WPTest, test_dynamic_parameters)
 {

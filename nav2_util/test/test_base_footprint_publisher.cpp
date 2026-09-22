@@ -19,6 +19,7 @@
 #include "gtest/gtest.h"
 #include "tf2/exceptions.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/rate.hpp"
 
 TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
 {

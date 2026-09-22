@@ -131,13 +131,11 @@ target_include_directories(test_pose_filter
 add_library(test_dock SHARED testing_dock.cpp)
 target_link_libraries(test_dock PUBLIC
   geometry_msgs::geometry_msgs
-  ${bond_TARGETS}
   opennav_docking_core::opennav_docking_core
   nav2_ros_common::nav2_ros_common
   pluginlib::pluginlib
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
-  bondcpp::bondcpp
 )
 install(TARGETS test_dock
   ARCHIVE DESTINATION lib
