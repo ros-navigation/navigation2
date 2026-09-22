@@ -112,6 +112,26 @@ TEST_F(TestAmclPose, SimpleAmclTest)
   EXPECT_EQ(true, defaultAmclTest());
 }
 
+TEST_F(TestAmclPose, RejectNegativeLaserLikelihoodMaxDist)
+{
+  ASSERT_TRUE(defaultAmclTest());
+
+  rclcpp::SyncParametersClient parameter_client(node, "amcl");
+
+  ASSERT_TRUE(parameter_client.wait_for_service(10s));
+
+  rcl_interfaces::msg::SetParametersResult result =
+    parameter_client.set_parameters_atomically(
+    {rclcpp::Parameter("laser_likelihood_max_dist", -1.0)});
+
+  EXPECT_FALSE(result.successful);
+
+  result = parameter_client.set_parameters_atomically(
+    {rclcpp::Parameter("laser_likelihood_max_dist", 1.0)});
+
+  EXPECT_TRUE(result.successful);
+}
+
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

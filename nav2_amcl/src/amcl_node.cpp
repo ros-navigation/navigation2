@@ -1259,7 +1259,13 @@ AmclNode::dynamicParametersCallback(
         lambda_short_ = parameter.as_double();
         reinit_laser = true;
       } else if (param_name == "laser_likelihood_max_dist") {
-        laser_likelihood_max_dist_ = parameter.as_double();
+        const double value = parameter.as_double();
+        if (value < 0.0) {
+          result.successful = false;
+          result.reason = "laser_likelihood_max_dist must be non-negative";
+          return result;
+        }
+        laser_likelihood_max_dist_ = value;
         reinit_laser = true;
       } else if (param_name == "laser_max_range") {
         laser_max_range_ = parameter.as_double();
