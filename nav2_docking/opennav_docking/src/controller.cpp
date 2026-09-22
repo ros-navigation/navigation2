@@ -29,11 +29,10 @@ namespace opennav_docking
 
 Controller::Controller(
   const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
-  std::string fixed_frame, std::string base_frame)
-: tf2_buffer_(tf), fixed_frame_(fixed_frame), base_frame_(base_frame)
+  std::string base_frame)
+: tf2_buffer_(tf), base_frame_(base_frame)
 {
   logger_ = node->get_logger();
-  clock_ = node->get_clock();
 
   std::string costmap_topic, footprint_topic;
   k_phi_ = node->declare_or_get_parameter("controller.k_phi", 3.0);
@@ -96,12 +95,13 @@ Controller::~Controller()
 }
 
 bool Controller::computeVelocityCommand(
-  const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
-  bool backward)
+  const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd,
+  const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
+  bool is_docking, bool backward)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = control_law_->calculateRegularVelocity(pose, backward);
-  return isTrajectoryCollisionFree(pose, is_docking, backward);
+  return isTrajectoryCollisionFree(pose, base_to_fixed_transform, is_docking, backward);
 }
 
 geometry_msgs::msg::Twist Controller::computeRotateToHeadingCommand(
@@ -130,30 +130,19 @@ geometry_msgs::msg::Twist Controller::computeRotateToHeadingCommand(
 }
 
 bool Controller::isTrajectoryCollisionFree(
-  const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward)
+  const geometry_msgs::msg::Pose & target_pose,
+  const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
+  bool is_docking, bool backward)
 {
   // Visualization of the trajectory
   auto trajectory = std::make_unique<nav_msgs::msg::Path>();
   trajectory->header.frame_id = base_frame_;
-  trajectory->header.stamp = clock_->now();
+  trajectory->header.stamp = base_to_fixed_transform.header.stamp;
 
   // First pose
   geometry_msgs::msg::PoseStamped next_pose;
   next_pose.header.frame_id = base_frame_;
   trajectory->poses.push_back(next_pose);
-
-  // Get the transform from base_frame to fixed_frame
-  geometry_msgs::msg::TransformStamped base_to_fixed_transform;
-  try {
-    base_to_fixed_transform = tf2_buffer_->lookupTransform(
-      fixed_frame_, base_frame_, trajectory->header.stamp,
-      tf2::durationFromSec(transform_tolerance_));
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(
-      logger_, "Could not get transform from %s to %s: %s",
-      base_frame_.c_str(), fixed_frame_.c_str(), ex.what());
-    return false;
-  }
 
   // Generate path
   double distance = std::numeric_limits<double>::max();

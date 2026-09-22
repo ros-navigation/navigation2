@@ -34,6 +34,17 @@ public:
 };
 
 /**
+ * @class DockingTFError
+ * @brief A required transform was unavailable or stale
+ */
+class DockingTFError : public DockingException
+{
+public:
+  explicit DockingTFError(const std::string & description)
+  : DockingException(description) {}
+};
+
+/**
  * @class DockNotInDB
  * @brief Dock was not found in the provided dock database
  */

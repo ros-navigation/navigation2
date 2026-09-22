@@ -56,6 +56,90 @@ public:
   nav2::TransformBuffer::SharedPtr getTfBuffer() {return tf2_buffer_;}
 };
 
+// Test shim that retains the production robot-pose lookup.
+class DockingServerRealTFShim : public DockingServer
+{
+public:
+  DockingServerRealTFShim()
+  : DockingServer() {}
+  nav2::TransformBuffer::SharedPtr getTfBuffer() {return tf2_buffer_;}
+};
+
+TEST(DockingServerTests, RobotPoseFailureIsDockingTFError)
+{
+  auto node = std::make_shared<DockingServerRealTFShim>();
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter(
+    "test_plugin.plugin", "opennav_docking::TestFailureDock");
+  node->on_configure(rclcpp_lifecycle::State());
+
+  EXPECT_THROW(node->getRobotPoseInFrame("odom"), opennav_docking_core::DockingTFError);
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+}
+
+TEST(DockingServerTests, GetCommandTransformsPoseToFixedFrame)
+{
+  auto node = std::make_shared<DockingServerRealTFShim>();
+  node->declare_parameter("controller.use_collision_detection", false);
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter(
+    "test_plugin.plugin", "opennav_docking::TestFailureDock");
+  node->on_configure(rclcpp_lifecycle::State());
+
+  geometry_msgs::msg::TransformStamped base_transform;
+  base_transform.header.frame_id = "odom";
+  base_transform.child_frame_id = "base_link";
+  base_transform.transform.rotation.w = 1.0;
+  node->getTfBuffer()->setTransform(base_transform, "test_authority", true);
+
+  geometry_msgs::msg::TransformStamped sensor_transform;
+  sensor_transform.header.frame_id = "odom";
+  sensor_transform.child_frame_id = "sensor";
+  sensor_transform.transform.translation.x = 1.0;
+  sensor_transform.transform.rotation.w = 1.0;
+  node->getTfBuffer()->setTransform(sensor_transform, "test_authority", true);
+
+  geometry_msgs::msg::PoseStamped target;
+  target.header.frame_id = "sensor";
+  target.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist command;
+
+  // The target is at x=1 in odom, rather than at the robot's x=0 position.
+  EXPECT_FALSE(node->getCommandToPose(command, target, 0.1, 0.1, false, false));
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+}
+
+TEST(DockingServerTests, GetCommandRejectsStalePoseTransform)
+{
+  auto node = std::make_shared<DockingServerRealTFShim>();
+  node->declare_parameter("controller.use_collision_detection", false);
+  node->declare_parameter("transform_staleness_threshold", 0.1);
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter(
+    "test_plugin.plugin", "opennav_docking::TestFailureDock");
+  node->on_configure(rclcpp_lifecycle::State());
+
+  geometry_msgs::msg::TransformStamped sensor_transform;
+  sensor_transform.header.frame_id = "odom";
+  sensor_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(1.0);
+  sensor_transform.child_frame_id = "sensor";
+  sensor_transform.transform.rotation.w = 1.0;
+  node->getTfBuffer()->setTransform(sensor_transform, "test_authority");
+
+  geometry_msgs::msg::PoseStamped target;
+  target.header.frame_id = "sensor";
+  target.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist command;
+
+  EXPECT_THROW(
+    node->getCommandToPose(command, target, 0.1, 0.1, false, false),
+    opennav_docking_core::DockingTFError);
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+}
+
 TEST(DockingServerTests, ObjectLifecycle)
 {
   auto node = std::make_shared<opennav_docking::DockingServer>();
@@ -284,6 +368,8 @@ TEST(DockingServerTests, testDynamicParams)
   node->on_configure(rclcpp_lifecycle::State());
   node->on_activate(rclcpp_lifecycle::State());
 
+  EXPECT_EQ(node->get_parameter("transform_staleness_threshold").as_double(), 0.0);
+
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
     node->get_node_base_interface(), node->get_node_topics_interface(),
     node->get_node_graph_interface(),
@@ -297,6 +383,7 @@ TEST(DockingServerTests, testDynamicParams)
       rclcpp::Parameter("undock_angular_tolerance", 0.125),
       rclcpp::Parameter("base_frame", std::string("hi")),
       rclcpp::Parameter("fixed_frame", std::string("hi")),
+      rclcpp::Parameter("transform_staleness_threshold", 0.7),
       rclcpp::Parameter("max_retries", 7),
       rclcpp::Parameter("rotation_angular_tolerance", 0.42)});
 
@@ -308,6 +395,7 @@ TEST(DockingServerTests, testDynamicParams)
   EXPECT_EQ(node->get_parameter("undock_angular_tolerance").as_double(), 0.125);
   EXPECT_EQ(node->get_parameter("base_frame").as_string(), std::string("hi"));
   EXPECT_EQ(node->get_parameter("fixed_frame").as_string(), std::string("hi"));
+  EXPECT_EQ(node->get_parameter("transform_staleness_threshold").as_double(), 0.7);
   EXPECT_EQ(node->get_parameter("max_retries").as_int(), 7);
   EXPECT_EQ(node->get_parameter("rotation_angular_tolerance").as_double(), 0.42);
 
@@ -321,6 +409,11 @@ TEST(DockingServerTests, testDynamicParams)
     {rclcpp::Parameter("initial_perception_timeout", -1.0)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_EQ(node->get_parameter("initial_perception_timeout").as_double(), 1.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("transform_staleness_threshold", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("transform_staleness_threshold").as_double(), 0.7);
 
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
