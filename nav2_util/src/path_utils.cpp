@@ -19,6 +19,7 @@
 #include <stdexcept>
 
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 namespace nav2_util
@@ -88,7 +89,8 @@ bool transformPathInTargetFrame(
   const nav_msgs::msg::Path & input_path,
   nav_msgs::msg::Path & transformed_path,
   nav2::TransformBuffer & tf_buffer, const std::string target_frame,
-  const double transform_timeout)
+  const double transform_timeout, const rclcpp::Time & current_time,
+  const double staleness_threshold)
 {
   static rclcpp::Logger logger = rclcpp::get_logger("transformPathInTargetFrame");
 
@@ -106,17 +108,28 @@ bool transformPathInTargetFrame(
   }
 
   geometry_msgs::msg::TransformStamped transform;
-  try {
-    transform = tf_buffer.lookupTransform(
-      target_frame, input_path.header.frame_id,
-      tf2_ros::fromMsg(input_path.header.stamp),
-      tf2::durationFromSec(transform_timeout));
-  } catch (const tf2::TransformException & ex) {
-    RCLCPP_ERROR(
-      logger,
-      "Failed to transform path from '%s' to '%s': %s",
-      input_path.header.frame_id.c_str(), target_frame.c_str(), ex.what());
-    return false;
+  if (staleness_threshold > 0.0 &&
+    input_path.header.stamp.sec == 0 && input_path.header.stamp.nanosec == 0)
+  {
+    if (!lookupTransformWithStalenessCheck(
+        tf_buffer, target_frame, input_path.header.frame_id, current_time,
+        staleness_threshold, transform))
+    {
+      return false;
+    }
+  } else {
+    try {
+      transform = tf_buffer.lookupTransform(
+        target_frame, input_path.header.frame_id,
+        tf2_ros::fromMsg(input_path.header.stamp),
+        tf2::durationFromSec(transform_timeout));
+    } catch (const tf2::TransformException & ex) {
+      RCLCPP_ERROR(
+        logger,
+        "Failed to transform path from '%s' to '%s': %s",
+        input_path.header.frame_id.c_str(), target_frame.c_str(), ex.what());
+      return false;
+    }
   }
 
   for (const auto & input_pose : input_path.poses) {

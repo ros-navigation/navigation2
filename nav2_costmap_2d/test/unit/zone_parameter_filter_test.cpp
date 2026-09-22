@@ -760,6 +760,83 @@ TEST_F(TestZpf, ParamWithoutNominalDefaultsPersistsAcrossTransitions)
     << "param without nominal_defaults legitimately persists across N→M";
 }
 
+
+class ZoneParameterFilterTFTestable : public nav2_costmap_2d::ZoneParameterFilter
+{
+public:
+  using ZoneParameterFilter::maskCallback;
+  int state() const {return current_state_;}
+};
+
+TEST(ZoneParameterFilterTF, StaleTransformPreservesState)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("tf_test");
+  node->declare_parameter("filter.filter_info_topic", "filter_info");
+  node->declare_parameter("filter.transform_staleness_threshold", 0.5);
+  node->declare_parameter("filter.states", std::vector<std::string>{"restricted"});
+  node->declare_parameter("filter.restricted.id", 1);
+  auto buffer = nav2::create_transform_buffer(node);
+  nav2_costmap_2d::LayeredCostmap layers("odom", false, false);
+  ZoneParameterFilterTFTestable filter;
+  filter.initialize(&layers, "filter", buffer.get(), node, nullptr);
+  filter.initializeFilter("filter_info");
+  auto mask = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  mask->header.frame_id = "map";
+  mask->info.width = 2;
+  mask->info.height = 1;
+  mask->info.resolution = 1.0;
+  mask->info.origin.orientation.w = 1.0;
+  mask->data = {1, 0};
+  filter.maskCallback(mask);
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = pose.position.y = 0.5;
+  pose.orientation.w = 1.0;
+  nav2_costmap_2d::Costmap2D grid(2, 1, 1.0, 0.0, 0.0, 0);
+  filter.process(grid, 0, 0, 2, 1, pose);
+  EXPECT_EQ(filter.state(), 0);  // Missing TF cannot trigger a transition.
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.child_frame_id = "odom";
+  transform.transform.rotation.w = 1.0;
+  transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
+  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  filter.process(grid, 0, 0, 2, 1, pose);
+  EXPECT_EQ(filter.state(), 0);  // Stale TF cannot enter the marked zone.
+
+  transform.header.stamp = node->now();
+  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  filter.process(grid, 0, 0, 2, 1, pose);
+  EXPECT_EQ(filter.state(), 1);
+
+  buffer->clear();
+  transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
+  transform.transform.translation.x = 1.0;
+  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  filter.process(grid, 0, 0, 2, 1, pose);
+  EXPECT_EQ(filter.state(), 1);  // Stale TF must not reset the active state.
+
+  transform.header.stamp = node->now();
+  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  filter.process(grid, 0, 0, 2, 1, pose);
+  EXPECT_EQ(filter.state(), 0);  // Fresh TF permits the transition.
+
+  buffer->clear();
+  transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
+  transform.transform.translation.x = 0.0;
+  ASSERT_TRUE(buffer->setTransform(transform, "test", true));
+  filter.process(grid, 0, 0, 2, 1, pose);
+  EXPECT_EQ(filter.state(), 1);  // Static transforms do not expire.
+
+  mask = std::make_shared<nav_msgs::msg::OccupancyGrid>(*mask);
+  mask->header.frame_id = "odom";
+  mask->data = {0, 0};
+  filter.maskCallback(mask);
+  filter.process(grid, 0, 0, 2, 1, pose);
+  EXPECT_EQ(filter.state(), 0);  // Same-frame poses need no TF.
+  filter.resetFilter();
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
