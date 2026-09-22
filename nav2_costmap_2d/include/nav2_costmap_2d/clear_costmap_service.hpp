@@ -86,6 +86,7 @@ private:
 
   // Clearing parameters
   unsigned char reset_value_;
+  double transform_staleness_threshold_;
 
   // Server for clearing the costmap
   nav2::ServiceServer<nav2_msgs::srv::ClearCostmapExceptRegion>::SharedPtr

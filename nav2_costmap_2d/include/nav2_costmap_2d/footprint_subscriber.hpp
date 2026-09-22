@@ -37,6 +37,12 @@ class FootprintSubscriber
 public:
   /**
    * @brief A constructor
+   * @param parent Node used to create the subscription and obtain the current time
+   * @param topic_name Footprint topic
+   * @param tf TF buffer
+   * @param robot_base_frame Robot base frame
+   * @param transform_tolerance How long to wait for a transform
+   * @param transform_staleness_threshold Maximum latest-transform age; non-positive disables it
    */
   template<typename NodeT>
   explicit FootprintSubscriber(
@@ -44,10 +50,13 @@ public:
     const std::string & topic_name,
     nav2::TransformBuffer & tf,
     std::string robot_base_frame = "base_link",
-    double transform_tolerance = 0.1)
+    double transform_tolerance = 0.1,
+    double transform_staleness_threshold = 0.0)
   : tf_(tf),
     robot_base_frame_(robot_base_frame),
-    transform_tolerance_(transform_tolerance)
+    transform_tolerance_(transform_tolerance),
+    transform_staleness_threshold_(transform_staleness_threshold),
+    clock_(parent->get_clock())
   {
     // Could be using a user rclcpp::Node, so need to use the Nav2 factory to create the
     // subscription to convert nav2::LifecycleNode, rclcpp::Node or rclcpp_lifecycle::LifecycleNode
@@ -92,6 +101,8 @@ protected:
   nav2::TransformBuffer & tf_;
   std::string robot_base_frame_;
   double transform_tolerance_;
+  double transform_staleness_threshold_;
+  rclcpp::Clock::SharedPtr clock_;
   std::atomic_bool footprint_received_{false};
 #ifdef __cpp_lib_atomic_shared_ptr
   std::atomic<geometry_msgs::msg::PolygonStamped::ConstSharedPtr> footprint_;
