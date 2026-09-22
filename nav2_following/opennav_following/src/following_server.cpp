@@ -613,7 +613,7 @@ geometry_msgs::msg::PoseStamped FollowingServer::getRobotPose()
   geometry_msgs::msg::PoseStamped robot_pose;
   if (!nav2_util::getFreshPose(
       *tf2_buffer_, params_->fixed_frame, params_->base_frame, now(),
-      params_->staleness_threshold, robot_pose))
+      params_->transform_staleness_threshold, robot_pose))
   {
     throw opennav_docking_core::DockingTFError("Failed to get a fresh robot pose");
   }
