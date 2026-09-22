@@ -35,10 +35,40 @@
 namespace nav2_map_server
 {
 
+namespace
+{
+
+bool lookupShapeTransform(
+  const std_msgs::msg::Header & header,
+  const std::string & target_frame,
+  const nav2::TransformBuffer::SharedPtr & tf_buffer,
+  const rclcpp::Time & current_time,
+  const double transform_tolerance,
+  const double transform_staleness_threshold,
+  geometry_msgs::msg::TransformStamped & transform)
+{
+  if (header.stamp.sec == 0 && header.stamp.nanosec == 0) {
+    return nav2_util::lookupTransformWithStalenessCheck(
+      *tf_buffer, target_frame, header.frame_id, current_time,
+      transform_staleness_threshold, transform);
+  }
+
+  try {
+    transform = tf_buffer->lookupTransform(
+      target_frame, header.frame_id, rclcpp::Time(header.stamp),
+      tf2::durationFromSec(transform_tolerance));
+    return true;
+  } catch (const tf2::TransformException &) {
+    return false;
+  }
+}
+
+}  // namespace
+
 // ---------- Shape ----------
 
 Shape::Shape(const nav2::LifecycleNode::WeakPtr & node)
-: type_(UNKNOWN), node_(node)
+: type_(UNKNOWN), node_(node), clock_(node.lock()->get_clock())
 {}
 
 Shape::~Shape()
@@ -298,24 +328,27 @@ bool Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
 bool Polygon::toFrame(
   const std::string & to_frame,
   const nav2::TransformBuffer::SharedPtr tf_buffer,
-  const double transform_tolerance)
+  const double transform_tolerance,
+  const double transform_staleness_threshold)
 {
+  geometry_msgs::msg::TransformStamped transform;
+  if (!lookupShapeTransform(
+      params_->header, to_frame, tf_buffer, clock_->now(), transform_tolerance,
+      transform_staleness_threshold, transform))
+  {
+    return false;
+  }
+
   geometry_msgs::msg::PoseStamped from_pose, to_pose;
   from_pose.header = params_->header;
   for (unsigned int i = 0; i < params_->points.size(); i++) {
     from_pose.pose.position.x = params_->points[i].x;
     from_pose.pose.position.y = params_->points[i].y;
     from_pose.pose.position.z = params_->points[i].z;
-    if (
-      nav2_util::transformPoseInTargetFrame(
-        from_pose, to_pose, *tf_buffer, to_frame, transform_tolerance))
-    {
-      polygon_->points[i].x = to_pose.pose.position.x;
-      polygon_->points[i].y = to_pose.pose.position.y;
-      polygon_->points[i].z = to_pose.pose.position.z;
-    } else {
-      return false;
-    }
+    tf2::doTransform(from_pose, to_pose, transform);
+    polygon_->points[i].x = to_pose.pose.position.x;
+    polygon_->points[i].y = to_pose.pose.position.y;
+    polygon_->points[i].z = to_pose.pose.position.z;
   }
 
   return true;
@@ -540,23 +573,26 @@ bool Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
 bool Circle::toFrame(
   const std::string & to_frame,
   const nav2::TransformBuffer::SharedPtr tf_buffer,
-  const double transform_tolerance)
+  const double transform_tolerance,
+  const double transform_staleness_threshold)
 {
+  geometry_msgs::msg::TransformStamped transform;
+  if (!lookupShapeTransform(
+      params_->header, to_frame, tf_buffer, clock_->now(), transform_tolerance,
+      transform_staleness_threshold, transform))
+  {
+    return false;
+  }
+
   geometry_msgs::msg::PoseStamped from_pose, to_pose;
   from_pose.header = params_->header;
   from_pose.pose.position.x = params_->center.x;
   from_pose.pose.position.y = params_->center.y;
   from_pose.pose.position.z = params_->center.z;
-  if (
-    nav2_util::transformPoseInTargetFrame(
-      from_pose, to_pose, *tf_buffer, to_frame, transform_tolerance))
-  {
-    center_->x = to_pose.pose.position.x;
-    center_->y = to_pose.pose.position.y;
-    center_->z = to_pose.pose.position.z;
-  } else {
-    return false;
-  }
+  tf2::doTransform(from_pose, to_pose, transform);
+  center_->x = to_pose.pose.position.x;
+  center_->y = to_pose.pose.position.y;
+  center_->z = to_pose.pose.position.z;
 
   return true;
 }
