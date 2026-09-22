@@ -22,11 +22,6 @@ find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-include_directories(
-  include
-  ${EIGEN3_INCLUDE_DIR}
-)
-
 nav2_package()
 
 include(CheckCXXCompilerFlag)
@@ -53,6 +48,7 @@ target_include_directories(mppi_controller
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_controller PUBLIC
+  Eigen3::Eigen
   angles::angles
   geometry_msgs::geometry_msgs
   nav2_core::nav2_core
@@ -85,6 +81,7 @@ target_include_directories(mppi_motion_models
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_motion_models PUBLIC
+  Eigen3::Eigen
   mppi_controller
   pluginlib::pluginlib
 )
@@ -114,6 +111,7 @@ target_include_directories(mppi_critics
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_critics PUBLIC
+  Eigen3::Eigen
   angles::angles
   geometry_msgs::geometry_msgs
   nav2_core::nav2_core
@@ -140,9 +138,9 @@ target_compile_options(mppi_trajectory_validators PUBLIC -O3)
 target_include_directories(mppi_trajectory_validators
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_trajectory_validators PUBLIC
+  Eigen3::Eigen
   angles::angles
   geometry_msgs::geometry_msgs
   nav2_core::nav2_core
