@@ -49,10 +49,14 @@ void Spin::onConfigure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  simulate_ahead_time_ = node->declare_or_get_parameter("simulate_ahead_time", 2.0);
-  max_rotational_vel_ = node->declare_or_get_parameter("max_rotational_vel", 1.0);
-  min_rotational_vel_ = node->declare_or_get_parameter("min_rotational_vel", 0.4);
-  rotational_acc_lim_ = node->declare_or_get_parameter("rotational_acc_lim", 3.2);
+  simulate_ahead_time_ = node->declare_or_get_parameter(
+    behavior_name_ + ".simulate_ahead_time", 2.0);
+  max_rotational_vel_ = node->declare_or_get_parameter(
+    behavior_name_ + ".max_rotational_vel", 1.0);
+  min_rotational_vel_ = node->declare_or_get_parameter(
+    behavior_name_ + ".min_rotational_vel", 0.4);
+  rotational_acc_lim_ = node->declare_or_get_parameter(
+    behavior_name_ + ".rotational_acc_lim", 3.2);
 }
 
 ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
