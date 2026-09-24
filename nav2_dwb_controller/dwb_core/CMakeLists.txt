@@ -76,8 +76,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(dwb_core)
 ament_export_dependencies(
   builtin_interfaces
   dwb_msgs

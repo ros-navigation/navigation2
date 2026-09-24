@@ -223,8 +223,6 @@ if(BUILD_TESTING)
   pluginlib_export_plugin_description_file(nav2_costmap_2d test/regression/order_layer.xml)
 endif()
 
-ament_export_include_directories("include/${PROJECT_NAME}")
-ament_export_libraries(layers filters nav2_costmap_2d_core nav2_costmap_2d_client)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   angles
@@ -245,9 +243,8 @@ ament_export_dependencies(
   tf2_sensor_msgs
   nav2_ros_common
   point_cloud_transport
+  Eigen3
 )
-
-ament_export_dependencies(Eigen3)
 
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()

@@ -224,12 +224,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories("include/${PROJECT_NAME}")
-ament_export_libraries(
-  ${library_name}
-  ${map_io_library_name}
-  ${vo_library_name}
-)
 ament_export_dependencies(nav_msgs nav2_msgs nav2_util rclcpp rclcpp_lifecycle nav2_ros_common Eigen3)
 ament_export_targets(${library_name})
 

@@ -246,7 +246,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_dependencies(
   rclcpp
   rclcpp_lifecycle
@@ -263,6 +262,5 @@ ament_export_dependencies(
   nlohmann_json
   nav2_ros_common
 )
-ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()

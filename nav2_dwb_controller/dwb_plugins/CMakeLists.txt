@@ -68,8 +68,6 @@ install(FILES plugins.xml
   DESTINATION share/${PROJECT_NAME}
 )
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(standard_traj_generator)
 ament_export_dependencies(
   dwb_core
   dwb_msgs

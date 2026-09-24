@@ -75,8 +75,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(conversions path_ops)
 ament_export_dependencies(
   geometry_msgs
   nav_2d_msgs

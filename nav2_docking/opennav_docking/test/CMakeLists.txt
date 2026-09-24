@@ -147,7 +147,6 @@ target_include_directories(test_dock
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-ament_export_libraries(test_dock)
 
 # Test docking server (unit)
 nav2_add_gtest(test_docking_server_unit

@@ -166,8 +166,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories("include/${PROJECT_NAME}")
-ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib)
 ament_export_dependencies(
   geometry_msgs
   message_filters

@@ -183,8 +183,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${library_name} ${library_name}_2d ${library_name}_lattice)
 ament_export_dependencies(
   geometry_msgs
   nav2_core

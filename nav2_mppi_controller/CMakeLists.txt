@@ -178,7 +178,6 @@ if(BUILD_TESTING)
   add_subdirectory(benchmark)
 endif()
 
-ament_export_libraries(${libraries})
 ament_export_dependencies(
   angles
   geometry_msgs
@@ -195,7 +194,6 @@ ament_export_dependencies(
   nav2_ros_common
   Eigen3
 )
-ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_targets(nav2_mppi_controller)
 
 pluginlib_export_plugin_description_file(nav2_core mppic.xml)

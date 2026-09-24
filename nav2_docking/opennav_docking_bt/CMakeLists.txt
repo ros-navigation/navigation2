@@ -64,8 +64,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(opennav_dock_action_bt_node opennav_undock_action_bt_node)
 ament_export_dependencies(
   behaviortree_cpp
   geometry_msgs

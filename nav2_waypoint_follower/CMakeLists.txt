@@ -159,8 +159,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(wait_at_waypoint photo_at_waypoint input_at_waypoint ${library_name})
 ament_export_dependencies(
   cv_bridge
   geographic_msgs

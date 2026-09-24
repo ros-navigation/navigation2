@@ -53,8 +53,6 @@ install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(nav2_costmap_2d)
 ament_export_targets(${PROJECT_NAME})
 
