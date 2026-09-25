@@ -15,7 +15,9 @@
 
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_loopback_sim/loopback_simulator.hpp"
 
 int main(int argc, char ** argv)

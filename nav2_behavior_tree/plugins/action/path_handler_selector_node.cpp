@@ -19,7 +19,7 @@
 
 #include "nav2_behavior_tree/plugins/action/path_handler_selector_node.hpp"
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
 
 namespace nav2_behavior_tree
 {

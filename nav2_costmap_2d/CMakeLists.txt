@@ -16,7 +16,6 @@ find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
@@ -224,8 +223,6 @@ if(BUILD_TESTING)
   pluginlib_export_plugin_description_file(nav2_costmap_2d test/regression/order_layer.xml)
 endif()
 
-ament_export_include_directories("include/${PROJECT_NAME}")
-ament_export_libraries(layers filters nav2_costmap_2d_core nav2_costmap_2d_client)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   angles
@@ -239,7 +236,6 @@ ament_export_dependencies(
   nav2_voxel_grid
   pluginlib
   rclcpp
-  rmw
   std_msgs
   std_srvs
   tf2
@@ -247,9 +243,8 @@ ament_export_dependencies(
   tf2_sensor_msgs
   nav2_ros_common
   point_cloud_transport
+  Eigen3
 )
-
-ament_export_dependencies(Eigen3)
 
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()

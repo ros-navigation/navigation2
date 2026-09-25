@@ -17,15 +17,9 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(Eigen3 REQUIRED)
-
-include_directories(
-  include
-  ${EIGEN3_INCLUDE_DIR}
-)
 
 nav2_package()
 
@@ -53,6 +47,7 @@ target_include_directories(mppi_controller
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_controller PUBLIC
+  Eigen3::Eigen
   angles::angles
   geometry_msgs::geometry_msgs
   nav2_core::nav2_core
@@ -67,7 +62,6 @@ target_link_libraries(mppi_controller PUBLIC
   std_msgs::std_msgs
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
-  tf2_ros::tf2_ros
   visualization_msgs::visualization_msgs
 )
 
@@ -85,6 +79,7 @@ target_include_directories(mppi_motion_models
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_motion_models PUBLIC
+  Eigen3::Eigen
   mppi_controller
   pluginlib::pluginlib
 )
@@ -114,6 +109,7 @@ target_include_directories(mppi_critics
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_critics PUBLIC
+  Eigen3::Eigen
   angles::angles
   geometry_msgs::geometry_msgs
   nav2_core::nav2_core
@@ -126,7 +122,6 @@ target_link_libraries(mppi_critics PUBLIC
   std_msgs::std_msgs
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
-  tf2_ros::tf2_ros
   visualization_msgs::visualization_msgs
 )
 target_link_libraries(mppi_critics PRIVATE
@@ -140,9 +135,9 @@ target_compile_options(mppi_trajectory_validators PUBLIC -O3)
 target_include_directories(mppi_trajectory_validators
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_trajectory_validators PUBLIC
+  Eigen3::Eigen
   angles::angles
   geometry_msgs::geometry_msgs
   nav2_core::nav2_core
@@ -154,7 +149,6 @@ target_link_libraries(mppi_trajectory_validators PUBLIC
   std_msgs::std_msgs
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
-  tf2_ros::tf2_ros
   visualization_msgs::visualization_msgs
 )
 target_link_libraries(mppi_trajectory_validators PRIVATE
@@ -184,7 +178,6 @@ if(BUILD_TESTING)
   add_subdirectory(benchmark)
 endif()
 
-ament_export_libraries(${libraries})
 ament_export_dependencies(
   angles
   geometry_msgs
@@ -197,12 +190,10 @@ ament_export_dependencies(
   std_msgs
   tf2
   tf2_geometry_msgs
-  tf2_ros
   visualization_msgs
   nav2_ros_common
   Eigen3
 )
-ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_targets(nav2_mppi_controller)
 
 pluginlib_export_plugin_description_file(nav2_core mppic.xml)

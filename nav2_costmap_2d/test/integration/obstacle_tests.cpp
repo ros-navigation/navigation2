@@ -44,6 +44,7 @@
 #include "../testing_helper.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/parameter_client.hpp"
 
 using std::begin;
 using std::end;

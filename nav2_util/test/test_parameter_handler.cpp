@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <rclcpp/rclcpp.hpp>
+#include "rclcpp/logger.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_util/parameter_handler.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 

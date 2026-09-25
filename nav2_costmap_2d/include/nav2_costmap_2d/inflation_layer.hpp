@@ -27,7 +27,8 @@
 #endif
 #include <Eigen/Core>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/parameter.hpp"
 #include "nav2_costmap_2d/inflation_layer_interface.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/distance_transform.hpp"

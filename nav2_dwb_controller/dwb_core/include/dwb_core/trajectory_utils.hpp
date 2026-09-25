@@ -35,7 +35,6 @@
 #ifndef DWB_CORE__TRAJECTORY_UTILS_HPP_
 #define DWB_CORE__TRAJECTORY_UTILS_HPP_
 
-#include "rclcpp/rclcpp.hpp"
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 
 namespace dwb_core

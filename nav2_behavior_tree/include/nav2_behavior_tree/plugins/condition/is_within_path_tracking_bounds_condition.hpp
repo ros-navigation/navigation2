@@ -21,7 +21,8 @@
 #include "behaviortree_cpp/condition_node.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/msg/tracking_feedback.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/logger.hpp"
 
 namespace nav2_behavior_tree
 {

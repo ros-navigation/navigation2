@@ -76,8 +76,6 @@ install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${library_name})
 ament_export_dependencies(ceres eigen3 nav2_core nav2_ros_common nav2_costmap_2d nav2_util rclcpp rclcpp_lifecycle tf2_ros)
 ament_export_targets(${library_name})
 

@@ -7,10 +7,7 @@ find_package(behaviortree_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
 find_package(nav2_common REQUIRED)
-find_package(nav2_core REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(nav2_util REQUIRED)
-find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(nav2_ros_common REQUIRED)
@@ -67,8 +64,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(opennav_dock_action_bt_node opennav_undock_action_bt_node)
 ament_export_dependencies(
   behaviortree_cpp
   geometry_msgs

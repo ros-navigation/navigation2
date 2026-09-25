@@ -19,7 +19,11 @@
 #include <vector>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/time.hpp"
 
 #include "tf2/time.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"

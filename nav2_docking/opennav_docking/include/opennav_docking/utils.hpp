@@ -20,7 +20,9 @@
 
 #include "yaml-cpp/yaml.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/time.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "angles/angles.h"
 #include "opennav_docking/types.hpp"

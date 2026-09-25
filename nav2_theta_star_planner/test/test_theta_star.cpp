@@ -15,7 +15,10 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <vector>
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_client.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
 #include "nav2_theta_star_planner/theta_star_planner.hpp"
 #include "nav2_theta_star_planner/parameter_handler.hpp"

@@ -43,7 +43,9 @@
 #include <unordered_set>
 
 #include "nav2_ros_common/tf2_factories.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/logger.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"

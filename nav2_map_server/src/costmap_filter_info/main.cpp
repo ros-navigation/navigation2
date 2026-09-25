@@ -15,7 +15,10 @@
 #include <memory>
 
 #include "nav2_map_server/costmap_filter_info_server.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/utilities.hpp"
 
 int main(int argc, char * argv[])
 {

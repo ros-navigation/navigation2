@@ -40,7 +40,6 @@
 #include <memory>
 #include <utility>
 
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"

@@ -38,10 +38,10 @@
 
 #include "gtest/gtest.h"
 #include "dwb_plugins/kinematic_parameters.hpp"
+#include "rclcpp/parameter_client.hpp"
 
 using rcl_interfaces::msg::Parameter;
 using rcl_interfaces::msg::ParameterType;
-using rcl_interfaces::msg::ParameterEvent;
 
 TEST(KinematicParameters, SetAllParameters) {
   std::string nodeName = "test_node";

@@ -23,7 +23,8 @@
 #include <functional>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "nav2_msgs/action/follow_object.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
