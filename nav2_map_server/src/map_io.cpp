@@ -39,6 +39,8 @@
 
 #include <Eigen/Dense>
 
+#include <array>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -247,54 +249,52 @@ void loadMapFromFile(
 
   bool has_alpha = img.matte();
 
+  // ROS expects the origin at the bottom-left, so the image is flipped vertically on
+  // the way out. Mapping msg.data lets the classified values land straight in the
+  // message, with no width*height intermediate of our own.
+  Eigen::Map<Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+  output_map(msg.data.data(), height, width);
+
   // Handle different map modes with if else condition
   // Trinary and Scale modes are handled together
   // because they share a lot of code
   // Raw mode is handled separately in else if block
-  Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(height, width);
+  std::array<int8_t, 256> lut;
 
   if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale) {
-    // Convert grayscale to float in range [0.0, 1.0]
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic,
-      Eigen::RowMajor> normalized = gray_matrix.cast<float>() / 255.0f;
+    // A grayscale pixel has only 256 possible values, so classification collapses
+    // into a lookup table, avoiding every width*height intermediate buffer. The
+    // float arithmetic is kept in its original order so that boundary pixels
+    // classify bit-for-bit identically.
+    const float free_thresh = static_cast<float>(load_parameters.free_thresh);
+    const float occupied_thresh = static_cast<float>(load_parameters.occupied_thresh);
+    const float scale_span =
+      static_cast<float>(load_parameters.occupied_thresh - load_parameters.free_thresh);
 
-    // Negate the image if specified (e.g. for black=occupied vs. white=occupied convention)
-    if (!load_parameters.negate) {
-      normalized = (1.0f - normalized.array()).matrix();
-    }
-
-    // Compute binary occupancy masks
-    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> occupied =
-      (normalized.array() >= load_parameters.occupied_thresh).cast<uint8_t>();
-
-    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> free =
-      (normalized.array() <= load_parameters.free_thresh).cast<uint8_t>();
-
-    // Initialize occupancy grid with UNKNOWN values (-1)
-    result.setConstant(nav2_util::OCC_GRID_UNKNOWN);
-
-    // Apply occupied and free cell updates
-    result = (occupied.array() > 0).select(nav2_util::OCC_GRID_OCCUPIED, result);
-    result = (free.array() > 0).select(nav2_util::OCC_GRID_FREE, result);
-
-    // Handle intermediate (gray) values if in Scale mode
-    if (load_parameters.mode == MapMode::Scale) {
-      // Create in-between mask
-      auto in_between_mask = (normalized.array() > load_parameters.free_thresh) &&
-        (normalized.array() < load_parameters.occupied_thresh);
-
-      if (in_between_mask.any()) {
-        // Scale in-between values to [0,100] range
-        Eigen::ArrayXXf scaled_float = ((normalized.array() - load_parameters.free_thresh) /
-          (load_parameters.occupied_thresh - load_parameters.free_thresh)) * 100.0f;
-
-        // Round and cast to int8_t
-        Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> scaled_int =
-          scaled_float.array().round().cast<int8_t>();
-
-        result = in_between_mask.select(scaled_int, result);
+    for (int g = 0; g < 256; ++g) {
+      float occ = static_cast<float>(g) / 255.0f;
+      if (!load_parameters.negate) {
+        occ = 1.0f - occ;
       }
+
+      int8_t value = nav2_util::OCC_GRID_UNKNOWN;
+      // Free after occupied so it wins when the thresholds overlap, as in the original.
+      if (occ >= occupied_thresh) {
+        value = nav2_util::OCC_GRID_OCCUPIED;
+      }
+      if (occ <= free_thresh) {
+        value = nav2_util::OCC_GRID_FREE;
+      }
+      if (load_parameters.mode == MapMode::Scale &&
+        occ > free_thresh && occ < occupied_thresh)
+      {
+        value = static_cast<int8_t>(std::round(((occ - free_thresh) / scale_span) * 100.0f));
+      }
+      lut[g] = value;
     }
+
+    output_map = gray_matrix.unaryExpr([&lut](uint8_t g) -> int8_t {return lut[g];})
+      .colwise().reverse();
 
     // Apply alpha transparency mask: mark transparent cells as UNKNOWN
     if (has_alpha) {
@@ -307,29 +307,29 @@ void loadMapFromFile(
         Eigen::RowMajor>> alpha_array(
         alpha_buf.data(), height, width);
 
-      // Apply mask directly with Eigen::select
-      result = (alpha_array < 255).select(nav2_util::OCC_GRID_UNKNOWN, result);
+      // Reversed to line up with the already-flipped output
+      output_map = (alpha_array.colwise().reverse() < 255)
+        .select(nav2_util::OCC_GRID_UNKNOWN, output_map);
     }
 
   } else if (load_parameters.mode == MapMode::Raw) {
-    // Raw mode: interpret raw image pixel values directly as occupancy values
-    result = gray_matrix.cast<int8_t>();
+    // Raw mode: interpret raw image pixel values directly as occupancy values,
+    // clamping anything outside [0, 100] to UNKNOWN. Also a pure function of the
+    // gray level, so it collapses into a lookup table the same way.
+    for (int g = 0; g < 256; ++g) {
+      const int8_t value = static_cast<int8_t>(g);
+      const bool in_bounds = value >= nav2_util::OCC_GRID_FREE &&
+        value <= nav2_util::OCC_GRID_OCCUPIED;
+      lut[g] = in_bounds ? value : nav2_util::OCC_GRID_UNKNOWN;
+    }
 
-    // Clamp out-of-bound values (outside [-1, 100]) to UNKNOWN (-1)
-    auto out_of_bounds = (result.array() < nav2_util::OCC_GRID_FREE) ||
-      (result.array() > nav2_util::OCC_GRID_OCCUPIED);
-
-    result = out_of_bounds.select(nav2_util::OCC_GRID_UNKNOWN, result);
+    output_map = gray_matrix.unaryExpr([&lut](uint8_t g) -> int8_t {return lut[g];})
+      .colwise().reverse();
 
   } else {
     // If the map mode is not recognized, throw an error
     throw std::runtime_error("Invalid map mode");
   }
-
-  // Flip image vertically (as ROS expects origin at bottom-left)
-  Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
-    Eigen::RowMajor> flipped = result.colwise().reverse();
-  std::memcpy(msg.data.data(), flipped.data(), width * height);
 
   // Since loadMapFromFile() does not belong to any node, publishing in a system time.
   rclcpp::Clock clock(RCL_SYSTEM_TIME);
