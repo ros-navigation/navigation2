@@ -14,7 +14,7 @@
 // limitations under the License.
 
 #include "nav2_loopback_sim/clock_publisher.hpp"
-
+#include "rclcpp/rclcpp.hpp"
 #include <chrono>
 #include <memory>
 #include <stdexcept>
