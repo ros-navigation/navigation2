@@ -223,10 +223,11 @@ public:
     // get the default behavior tree for this navigator
     std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
 
+    const auto bt_tree_directory =
+      nav2::get_package_share_directory("nav2_bt_navigator") + "/behavior_trees";
     auto search_directories = node->declare_or_get_parameter(
       "bt_search_directories",
-      std::vector<std::string>{nav2::get_package_share_directory(
-          "nav2_bt_navigator") + "/behavior_trees"}
+      std::vector<std::string>{bt_tree_directory, bt_tree_directory + "/subtrees"}
     );
 
     allow_navigator_preemption_ = node->declare_or_get_parameter(
