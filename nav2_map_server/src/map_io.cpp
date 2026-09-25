@@ -249,11 +249,17 @@ void loadMapFromFile(
 
   bool has_alpha = img.matte();
 
+  // ROS expects the origin at the bottom-left, so the image is flipped vertically on
+  // the way out. Mapping msg.data lets the classified values land straight in the
+  // message, with no width*height intermediate of our own.
+  Eigen::Map<Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+  output_map(msg.data.data(), height, width);
+
   // Handle different map modes with if else condition
   // Trinary and Scale modes are handled together
   // because they share a lot of code
   // Raw mode is handled separately in else if block
-  Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(height, width);
+  std::array<int8_t, 256> lut;
 
   if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale) {
     // A grayscale pixel has only 256 possible values, so classification collapses
@@ -265,7 +271,6 @@ void loadMapFromFile(
     const float scale_span =
       static_cast<float>(load_parameters.occupied_thresh - load_parameters.free_thresh);
 
-    std::array<int8_t, 256> lut;
     for (int g = 0; g < 256; ++g) {
       float occ = static_cast<float>(g) / 255.0f;
       if (!load_parameters.negate) {
@@ -288,7 +293,8 @@ void loadMapFromFile(
       lut[g] = value;
     }
 
-    result = gray_matrix.unaryExpr([&lut](uint8_t g) -> int8_t {return lut[g];});
+    output_map = gray_matrix.unaryExpr([&lut](uint8_t g) -> int8_t {return lut[g];})
+      .colwise().reverse();
 
     // Apply alpha transparency mask: mark transparent cells as UNKNOWN
     if (has_alpha) {
@@ -301,30 +307,29 @@ void loadMapFromFile(
         Eigen::RowMajor>> alpha_array(
         alpha_buf.data(), height, width);
 
-      // Apply mask directly with Eigen::select
-      result = (alpha_array < 255).select(nav2_util::OCC_GRID_UNKNOWN, result);
+      // Reversed to line up with the already-flipped output
+      output_map = (alpha_array.colwise().reverse() < 255)
+        .select(nav2_util::OCC_GRID_UNKNOWN, output_map);
     }
 
   } else if (load_parameters.mode == MapMode::Raw) {
-    // Raw mode: interpret raw image pixel values directly as occupancy values
-    result = gray_matrix.cast<int8_t>();
+    // Raw mode: interpret raw image pixel values directly as occupancy values,
+    // clamping anything outside [0, 100] to UNKNOWN. Also a pure function of the
+    // gray level, so it collapses into a lookup table the same way.
+    for (int g = 0; g < 256; ++g) {
+      const int8_t value = static_cast<int8_t>(g);
+      const bool in_bounds = value >= nav2_util::OCC_GRID_FREE &&
+        value <= nav2_util::OCC_GRID_OCCUPIED;
+      lut[g] = in_bounds ? value : nav2_util::OCC_GRID_UNKNOWN;
+    }
 
-    // Clamp out-of-bound values (outside [-1, 100]) to UNKNOWN (-1)
-    auto out_of_bounds = (result.array() < nav2_util::OCC_GRID_FREE) ||
-      (result.array() > nav2_util::OCC_GRID_OCCUPIED);
-
-    result = out_of_bounds.select(nav2_util::OCC_GRID_UNKNOWN, result);
+    output_map = gray_matrix.unaryExpr([&lut](uint8_t g) -> int8_t {return lut[g];})
+      .colwise().reverse();
 
   } else {
     // If the map mode is not recognized, throw an error
     throw std::runtime_error("Invalid map mode");
   }
-
-  // Flip image vertically (as ROS expects origin at bottom-left), writing directly
-  // into msg.data instead of through a temporary.
-  Eigen::Map<Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-  output_map(msg.data.data(), height, width);
-  output_map = result.colwise().reverse();
 
   // Since loadMapFromFile() does not belong to any node, publishing in a system time.
   rclcpp::Clock clock(RCL_SYSTEM_TIME);
