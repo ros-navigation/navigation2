@@ -46,6 +46,7 @@ rclcpp_components_register_nodes(${library_name} "nav2_velocity_smoother::Veloci
 
 install(
   TARGETS ${library_name}
+  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -79,4 +80,5 @@ ament_export_dependencies(
   rclcpp_lifecycle
   nav2_ros_common
 )
+ament_export_targets(${library_name})
 ament_package()
