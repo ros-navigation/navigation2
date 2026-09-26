@@ -114,8 +114,6 @@ public:
    */
   uint16_t classType() override;
 
-  friend class ConfinedSpaceClassifierHelperTest;  // For testing private helpers using gtest
-
 protected:
   /**
    * @brief Inflate footprint by delta metres using Clipper1 mitered offset.

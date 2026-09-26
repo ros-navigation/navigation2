@@ -22,37 +22,41 @@
 #include "nav2_path_classifier/path_splitter.hpp"
 
 // ---------------------------------------------------------------------------
-// Test fixture, declared as friend in PathSplitter.
+// Test fixture. A wrapper subclass exposes the protected helpers for testing.
 // ---------------------------------------------------------------------------
 
 namespace nav2_path_classifier
 {
 
-class PathSplitterHelperTest : public ::testing::Test
+class PathSplitterWrapper : public PathSplitter
 {
-protected:
-  PathSplitter splitter_;
-
-  // Access the private Segment type
+public:
   using Segment = PathSplitter::Segment;
 
-  // Wrappers that forward to private methods
   void mergeShortSegments(std::vector<Segment> & segments)
   {
-    splitter_.mergeShortSegments(segments);
+    PathSplitter::mergeShortSegments(segments);
   }
 
   nav2_msgs::msg::ClassifiedPathArray buildResult(
     const nav_msgs::msg::Path & path,
     const std::vector<Segment> & segments)
   {
-    return splitter_.buildResult(path, segments);
+    return PathSplitter::buildResult(path, segments);
   }
 
   void setMinSegmentPoses(int val)
   {
-    splitter_.min_segment_poses_ = val;
+    min_segment_poses_ = val;
   }
+};
+
+class PathSplitterHelperTest : public ::testing::Test
+{
+public:
+  PathSplitterWrapper splitter_;
+
+  using Segment = PathSplitterWrapper::Segment;
 
   // Helper to build a path with n poses at x = 0, 1, 2, ...
   static nav_msgs::msg::Path makePath(size_t n)
@@ -78,8 +82,8 @@ TEST_F(PathSplitterHelperTest, MergeSingleSegmentNoOp)
 {
   // A single segment should never be merged regardless of length
   std::vector<Segment> segs = {{0, 0, 2}};
-  setMinSegmentPoses(5);
-  mergeShortSegments(segs);
+  splitter_.setMinSegmentPoses(5);
+  splitter_.mergeShortSegments(segs);
 
   ASSERT_EQ(segs.size(), 1u);
   EXPECT_EQ(segs[0].start_idx, 0u);
@@ -94,8 +98,8 @@ TEST_F(PathSplitterHelperTest, MergeAllLongEnoughNoOp)
     {1, 10, 20},
     {0, 20, 30}
   };
-  setMinSegmentPoses(5);
-  mergeShortSegments(segs);
+  splitter_.setMinSegmentPoses(5);
+  splitter_.mergeShortSegments(segs);
 
   ASSERT_EQ(segs.size(), 3u);
   EXPECT_EQ(segs[0].end_idx, 10u);
@@ -111,8 +115,8 @@ TEST_F(PathSplitterHelperTest, MergeShortMiddleIntoLeftNeighbor)
     {1, 10, 12},  // length 2 (short)
     {0, 12, 22}   // length 10
   };
-  setMinSegmentPoses(5);
-  mergeShortSegments(segs);
+  splitter_.setMinSegmentPoses(5);
+  splitter_.mergeShortSegments(segs);
 
   ASSERT_EQ(segs.size(), 2u);
   // Left neighbor absorbs the short segment
@@ -131,8 +135,8 @@ TEST_F(PathSplitterHelperTest, MergeShortFirstIntoRightNeighbor)
     {1, 0, 2},    // length 2 (short)
     {0, 2, 12}    // length 10
   };
-  setMinSegmentPoses(5);
-  mergeShortSegments(segs);
+  splitter_.setMinSegmentPoses(5);
+  splitter_.mergeShortSegments(segs);
 
   ASSERT_EQ(segs.size(), 1u);
   EXPECT_EQ(segs[0].start_idx, 0u);
@@ -150,8 +154,8 @@ TEST_F(PathSplitterHelperTest, MergeCascadingShortSegments)
     {2, 12, 14},  // length 2 (short)
     {0, 14, 24}   // length 10
   };
-  setMinSegmentPoses(5);
-  mergeShortSegments(segs);
+  splitter_.setMinSegmentPoses(5);
+  splitter_.mergeShortSegments(segs);
 
   // Both short segments should be absorbed
   ASSERT_EQ(segs.size(), 2u);
@@ -167,8 +171,8 @@ TEST_F(PathSplitterHelperTest, MergeAllShortExceptOne)
     {0, 2, 20},   // length 18
     {1, 20, 22}   // length 2
   };
-  setMinSegmentPoses(5);
-  mergeShortSegments(segs);
+  splitter_.setMinSegmentPoses(5);
+  splitter_.mergeShortSegments(segs);
 
   ASSERT_EQ(segs.size(), 1u);
   EXPECT_EQ(segs[0].start_idx, 0u);
@@ -178,8 +182,8 @@ TEST_F(PathSplitterHelperTest, MergeAllShortExceptOne)
 TEST_F(PathSplitterHelperTest, MergeEmptySegmentsVector)
 {
   std::vector<Segment> segs;
-  setMinSegmentPoses(5);
-  mergeShortSegments(segs);
+  splitter_.setMinSegmentPoses(5);
+  splitter_.mergeShortSegments(segs);
 
   EXPECT_TRUE(segs.empty());
 }
@@ -192,8 +196,8 @@ TEST_F(PathSplitterHelperTest, MergeMinSegmentPosesOne)
     {1, 1, 2},
     {0, 2, 3}
   };
-  setMinSegmentPoses(1);
-  mergeShortSegments(segs);
+  splitter_.setMinSegmentPoses(1);
+  splitter_.mergeShortSegments(segs);
 
   ASSERT_EQ(segs.size(), 3u);
 }
@@ -207,12 +211,12 @@ TEST_F(PathSplitterHelperTest, MergePreservesCoverage)
     {2, 12, 13},
     {0, 13, 25}
   };
-  setMinSegmentPoses(5);
+  splitter_.setMinSegmentPoses(5);
 
   size_t original_start = segs.front().start_idx;
   size_t original_end = segs.back().end_idx;
 
-  mergeShortSegments(segs);
+  splitter_.mergeShortSegments(segs);
 
   EXPECT_EQ(segs.front().start_idx, original_start);
   EXPECT_EQ(segs.back().end_idx, original_end);
@@ -233,7 +237,7 @@ TEST_F(PathSplitterHelperTest, BuildResultSingleSegment)
   auto path = makePath(10);
   std::vector<Segment> segs = {{0, 0, 10}};
 
-  auto result = buildResult(path, segs);
+  auto result = splitter_.buildResult(path, segs);
 
   ASSERT_EQ(result.paths.size(), 1u);
   EXPECT_EQ(result.paths[0].class_type, 0u);
@@ -250,7 +254,7 @@ TEST_F(PathSplitterHelperTest, BuildResultTwoSegmentsWithOverlap)
     {1, 10, 20}
   };
 
-  auto result = buildResult(path, segs);
+  auto result = splitter_.buildResult(path, segs);
 
   ASSERT_EQ(result.paths.size(), 2u);
 
@@ -277,7 +281,7 @@ TEST_F(PathSplitterHelperTest, BuildResultThreeSegmentsOverlapAtEachBoundary)
     {2, 20, 30}
   };
 
-  auto result = buildResult(path, segs);
+  auto result = splitter_.buildResult(path, segs);
 
   ASSERT_EQ(result.paths.size(), 3u);
 
@@ -297,7 +301,7 @@ TEST_F(PathSplitterHelperTest, BuildResultClassTypePropagated)
     {7, 10, 20}
   };
 
-  auto result = buildResult(path, segs);
+  auto result = splitter_.buildResult(path, segs);
 
   EXPECT_EQ(result.paths[0].class_type, 42u);
   EXPECT_EQ(result.paths[1].class_type, 7u);
@@ -309,7 +313,7 @@ TEST_F(PathSplitterHelperTest, BuildResultHeaderPropagated)
   path.header.frame_id = "odom";
   std::vector<Segment> segs = {{0, 0, 10}};
 
-  auto result = buildResult(path, segs);
+  auto result = splitter_.buildResult(path, segs);
 
   EXPECT_EQ(result.paths[0].path.header.frame_id, "odom");
 }
@@ -322,7 +326,7 @@ TEST_F(PathSplitterHelperTest, BuildResultPosesAreCorrect)
     {1, 5, 10}
   };
 
-  auto result = buildResult(path, segs);
+  auto result = splitter_.buildResult(path, segs);
 
   // First segment poses should be x = 0,1,2,3,4 + overlap at x=5
   ASSERT_EQ(result.paths[0].path.poses.size(), 6u);
@@ -348,7 +352,7 @@ TEST_F(PathSplitterHelperTest, BuildResultEmptySegments)
   auto path = makePath(10);
   std::vector<Segment> segs;
 
-  auto result = buildResult(path, segs);
+  auto result = splitter_.buildResult(path, segs);
 
   EXPECT_TRUE(result.paths.empty());
 }
