@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_PATH_CLASSIFIER__CLASSIFIERS__CONSTRAINT_CLASSIFIER_HPP_
-#define NAV2_PATH_CLASSIFIER__CLASSIFIERS__CONSTRAINT_CLASSIFIER_HPP_
+#ifndef NAV2_PATH_CLASSIFIER__CLASSIFIERS__CONFINED_SPACE_CLASSIFIER_HPP_
+#define NAV2_PATH_CLASSIFIER__CLASSIFIERS__CONFINED_SPACE_CLASSIFIER_HPP_
 
 #include <cmath>
 #include <algorithm>
@@ -34,8 +34,8 @@ namespace nav2_path_classifier
 {
 
 /**
- * @class ConstraintClassifier
- * @brief Classifies a pose as CONSTRAINT_SPACE by iteratively inflating the
+ * @class ConfinedSpaceClassifier
+ * @brief Classifies a pose as confined space by iteratively inflating the
  *        robot footprint and detecting LETHAL cost on opposite edges.
  *
  * Algorithm:
@@ -47,7 +47,7 @@ namespace nav2_path_classifier
  *   3. Loop limit: total inflation = max_constraint_clearance.
  *   4. Each iteration: compute lineCost per inflated edge.
  *      - If an edge hits LETHAL_OBSTACLE, record its index.
- *      - If the opposite edge of any recorded index also hits LETHAL, mark as CONSTRAINT.
+ *      - If the opposite edge of any recorded index also hits LETHAL, mark as confined space.
  *   5. Early exit on first opposite-pair LETHAL match.
  *
  * Parameters:
@@ -55,18 +55,18 @@ namespace nav2_path_classifier
  *   - inflation_resolution (double):    step size per iteration in metres (default 0.20)
  *   - max_constraint_clearance (double): max inflation distance from footprint edge (default 1.0)
  */
-class ConstraintClassifier : public ClassifierBase
+class ConfinedSpaceClassifier : public ClassifierBase
 {
 public:
   /**
-   * @brief A constructor for nav2_path_classifier::ConstraintClassifier
+   * @brief A constructor for nav2_path_classifier::ConfinedSpaceClassifier
    */
-  ConstraintClassifier() = default;
+  ConfinedSpaceClassifier() = default;
 
   /**
-   * @brief A destructor for nav2_path_classifier::ConstraintClassifier
+   * @brief A destructor for nav2_path_classifier::ConfinedSpaceClassifier
    */
-  ~ConstraintClassifier() override = default;
+  ~ConfinedSpaceClassifier() override = default;
 
   /**
    * @brief Configure the classifier from ROS parameters.
@@ -114,7 +114,7 @@ public:
    */
   uint16_t classType() override;
 
-  friend class ConstraintClassifierHelperTest;  // For testing private helpers using gtest
+  friend class ConfinedSpaceClassifierHelperTest;  // For testing private helpers using gtest
 
 protected:
   /**
@@ -145,7 +145,7 @@ protected:
     const nav2_costmap_2d::Footprint & fp) const;
 
   std::string name_;
-  rclcpp::Logger logger_{rclcpp::get_logger("ConstraintClassifier")};
+  rclcpp::Logger logger_{rclcpp::get_logger("ConfinedSpaceClassifier")};
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *> collision_checker_;
@@ -162,4 +162,4 @@ protected:
 
 }  // namespace nav2_path_classifier
 
-#endif  // NAV2_PATH_CLASSIFIER__CLASSIFIERS__CONSTRAINT_CLASSIFIER_HPP_
+#endif  // NAV2_PATH_CLASSIFIER__CLASSIFIERS__CONFINED_SPACE_CLASSIFIER_HPP_

@@ -39,7 +39,7 @@ namespace nav2_path_classifier
  * Reads from the parent node's parameters:
  *   pose_classifier_plugins: ["ConstraintSpace"]
  *   ConstraintSpace:
- *     plugin: "nav2_path_classifier/ConstraintClassifier"
+ *     plugin: "nav2_path_classifier/ConfinedSpaceClassifier"
  *     inflation_resolution: 0.20
  *     max_constraint_clearance: 1.0
  */
