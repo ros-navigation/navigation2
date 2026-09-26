@@ -1,0 +1,7 @@
+<library path="pose_classifiers">
+  <class name="nav2_path_classifier/ConfinedSpaceClassifier"
+         type="nav2_path_classifier::ConfinedSpaceClassifier"
+         base_class_type="nav2_path_classifier::ClassifierBase">
+    <description>Classifies poses in confined space by detecting obstacles on opposite footprint edges</description>
+  </class>
+</library>
