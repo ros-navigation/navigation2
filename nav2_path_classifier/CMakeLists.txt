@@ -70,7 +70,7 @@ ament_target_dependencies(${executable_name}
 
 # Pose classifier plugins
 add_library(pose_classifiers SHARED
-  src/classifiers/constraint_classifier.cpp
+  src/classifiers/confined_space_classifier.cpp
 )
 
 ament_target_dependencies(pose_classifiers

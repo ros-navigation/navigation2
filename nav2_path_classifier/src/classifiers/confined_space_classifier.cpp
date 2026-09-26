@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_path_classifier/classifiers/constraint_classifier.hpp"
+#include "nav2_path_classifier/classifiers/confined_space_classifier.hpp"
 
 namespace nav2_path_classifier
 {
@@ -50,7 +50,7 @@ static bool footprintChanged(
 // configure
 // ---------------------------------------------------------------------------
 
-void ConstraintClassifier::configure(
+void ConfinedSpaceClassifier::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & name,
   std::shared_ptr<tf2_ros::Buffer>/*tf*/,
@@ -63,7 +63,7 @@ void ConstraintClassifier::configure(
 
   auto node = parent.lock();
   if (!node) {
-    throw std::runtime_error("ConstraintClassifier: parent node expired during configure");
+    throw std::runtime_error("ConfinedSpaceClassifier: parent node expired during configure");
   }
   logger_ = node->get_logger();
 
@@ -84,26 +84,26 @@ void ConstraintClassifier::configure(
   inflation_resolution_ = node->get_parameter(name_ + ".inflation_resolution").as_double();
   if (inflation_resolution_ <= 0.0) {
     throw std::runtime_error(
-            "ConstraintClassifier: 'inflation_resolution' parameter must be positive.");
+            "ConfinedSpaceClassifier: 'inflation_resolution' parameter must be positive.");
   }
   max_constraint_clearance_ = node->get_parameter(name_ + ".max_constraint_clearance").as_double();
 
   RCLCPP_INFO(
     logger_,
-    "ConstraintClassifier [%s] configured: inflation_resolution=%.3f, "
+    "ConfinedSpaceClassifier [%s] configured: inflation_resolution=%.3f, "
     "max_constraint_clearance=%.3f",
     name_.c_str(), inflation_resolution_, max_constraint_clearance_);
 }
 
-void ConstraintClassifier::cleanup() {}
-void ConstraintClassifier::activate() {}
-void ConstraintClassifier::deactivate() {}
+void ConfinedSpaceClassifier::cleanup() {}
+void ConfinedSpaceClassifier::activate() {}
+void ConfinedSpaceClassifier::deactivate() {}
 
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
 
-nav2_costmap_2d::Footprint ConstraintClassifier::inflateFootprint(
+nav2_costmap_2d::Footprint ConfinedSpaceClassifier::inflateFootprint(
   const nav2_costmap_2d::Footprint & fp, double delta) const
 {
   // Convert footprint to Clipper integer path (micrometre scale)
@@ -139,7 +139,7 @@ nav2_costmap_2d::Footprint ConstraintClassifier::inflateFootprint(
   return result;
 }
 
-nav2_costmap_2d::Footprint ConstraintClassifier::orientFootprint(
+nav2_costmap_2d::Footprint ConfinedSpaceClassifier::orientFootprint(
   const nav2_costmap_2d::Footprint & fp,
   double x, double y, double cos_th, double sin_th) const
 {
@@ -156,7 +156,7 @@ nav2_costmap_2d::Footprint ConstraintClassifier::orientFootprint(
   return result;
 }
 
-std::vector<size_t> ConstraintClassifier::buildOppositePairs(
+std::vector<size_t> ConfinedSpaceClassifier::buildOppositePairs(
   const nav2_costmap_2d::Footprint & fp) const
 {
   const size_t n = fp.size();  // number of vertices in the footprint
@@ -222,7 +222,7 @@ std::vector<size_t> ConstraintClassifier::buildOppositePairs(
 // matches: core classification
 // ---------------------------------------------------------------------------
 
-bool ConstraintClassifier::matches(
+bool ConfinedSpaceClassifier::matches(
   const geometry_msgs::msg::PoseStamped & pose, bool fetch_data)
 {
   // ── 1. Pose ───────────────────────────────────────────────────────────────
@@ -309,7 +309,7 @@ bool ConstraintClassifier::matches(
 
         // Check if the opposite edge (via centroid ray) already hit LETHAL
         if (opposites_[i] < n && lethal_edges[opposites_[i]]) {
-          return true;  // Both sides walled, so classify as CONSTRAINT
+          return true;  // Both sides walled, so classify as confined space
         }
       }
     }
@@ -322,7 +322,7 @@ bool ConstraintClassifier::matches(
 // classType
 // ---------------------------------------------------------------------------
 
-uint16_t ConstraintClassifier::classType()
+uint16_t ConfinedSpaceClassifier::classType()
 {
   return class_type_;
 }
@@ -331,5 +331,5 @@ uint16_t ConstraintClassifier::classType()
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(
-  nav2_path_classifier::ConstraintClassifier,
+  nav2_path_classifier::ConfinedSpaceClassifier,
   nav2_path_classifier::ClassifierBase)

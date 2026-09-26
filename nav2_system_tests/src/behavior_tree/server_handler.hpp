@@ -86,7 +86,7 @@ public:
     nav2_msgs::msg::ClassifiedPath free_segment;
     free_segment.class_type = nav2_msgs::msg::ClassifiedPath::FREE_SPACE;
     nav2_msgs::msg::ClassifiedPath constrained_segment;
-    constrained_segment.class_type = nav2_msgs::msg::ClassifiedPath::CONSTRAINT_SPACE;
+    constrained_segment.class_type = nav2_msgs::msg::ClassifiedPath::CONFINED_SPACE;
     for (int i = 0; i < 3; ++i) {
       free_segment.path.poses.push_back(pose);
       constrained_segment.path.poses.push_back(pose);
