@@ -21,35 +21,38 @@
 #include "nav2_path_classifier/classifiers/confined_space_classifier.hpp"
 
 // ---------------------------------------------------------------------------
-// Test fixture, declared as friend in ConfinedSpaceClassifier.
+// Test fixture. A wrapper subclass exposes the protected helpers for testing.
 // ---------------------------------------------------------------------------
 
 namespace nav2_path_classifier
 {
 
-class ConfinedSpaceClassifierHelperTest : public ::testing::Test
+class ConfinedSpaceClassifierWrapper : public ConfinedSpaceClassifier
 {
-protected:
-  ConfinedSpaceClassifier classifier_;
-
-  // Wrappers that forward to private methods
+public:
   nav2_costmap_2d::Footprint inflateFootprint(
-    const nav2_costmap_2d::Footprint & fp, double delta)
+    const nav2_costmap_2d::Footprint & fp, double delta) const
   {
-    return classifier_.inflateFootprint(fp, delta);
+    return ConfinedSpaceClassifier::inflateFootprint(fp, delta);
   }
 
   nav2_costmap_2d::Footprint orientFootprint(
     const nav2_costmap_2d::Footprint & fp,
-    double x, double y, double cos_th, double sin_th)
+    double x, double y, double cos_th, double sin_th) const
   {
-    return classifier_.orientFootprint(fp, x, y, cos_th, sin_th);
+    return ConfinedSpaceClassifier::orientFootprint(fp, x, y, cos_th, sin_th);
   }
 
-  std::vector<size_t> buildOppositePairs(const nav2_costmap_2d::Footprint & fp)
+  std::vector<size_t> buildOppositePairs(const nav2_costmap_2d::Footprint & fp) const
   {
-    return classifier_.buildOppositePairs(fp);
+    return ConfinedSpaceClassifier::buildOppositePairs(fp);
   }
+};
+
+class ConfinedSpaceClassifierHelperTest : public ::testing::Test
+{
+public:
+  ConfinedSpaceClassifierWrapper classifier_;
 
   // Helper to build a point
   static geometry_msgs::msg::Point makePoint(double x, double y)
@@ -106,7 +109,7 @@ protected:
 TEST_F(ConfinedSpaceClassifierHelperTest, InflateSquarePreservesVertexCount)
 {
   auto fp = makeSquare(0.5);
-  auto inflated = inflateFootprint(fp, 0.1);
+  auto inflated = classifier_.inflateFootprint(fp, 0.1);
 
   // Clipper with jtMiter + etClosedPolygon preserves vertex count for convex polygons
   EXPECT_EQ(inflated.size(), fp.size());
@@ -116,7 +119,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, InflateSquareGrowsByDelta)
 {
   auto fp = makeSquare(0.5);
   const double delta = 0.2;
-  auto inflated = inflateFootprint(fp, delta);
+  auto inflated = classifier_.inflateFootprint(fp, delta);
 
   double min_x, max_x, min_y, max_y;
   getBounds(inflated, min_x, max_x, min_y, max_y);
@@ -133,7 +136,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, InflateRectangleGrowsByDelta)
 {
   auto fp = makeRectangle();
   const double delta = 0.1;
-  auto inflated = inflateFootprint(fp, delta);
+  auto inflated = classifier_.inflateFootprint(fp, delta);
 
   double min_x, max_x, min_y, max_y;
   getBounds(inflated, min_x, max_x, min_y, max_y);
@@ -149,7 +152,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, InflateRectangleGrowsByDelta)
 TEST_F(ConfinedSpaceClassifierHelperTest, InflateZeroDeltaReturnsSameFootprint)
 {
   auto fp = makeSquare(0.5);
-  auto inflated = inflateFootprint(fp, 0.0);
+  auto inflated = classifier_.inflateFootprint(fp, 0.0);
 
   ASSERT_EQ(inflated.size(), fp.size());
   for (size_t i = 0; i < fp.size(); ++i) {
@@ -164,7 +167,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, InflateMultipleStepsGrowsMonotonically
 
   double prev_max_x = 0.5;
   for (int step = 1; step <= 5; ++step) {
-    auto inflated = inflateFootprint(fp, step * 0.1);
+    auto inflated = classifier_.inflateFootprint(fp, step * 0.1);
     double min_x, max_x, min_y, max_y;
     getBounds(inflated, min_x, max_x, min_y, max_y);
 
@@ -182,7 +185,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OrientIdentityTransform)
   auto fp = makeSquare(0.5);
 
   // Zero translation, zero rotation (cos=1, sin=0)
-  auto oriented = orientFootprint(fp, 0.0, 0.0, 1.0, 0.0);
+  auto oriented = classifier_.orientFootprint(fp, 0.0, 0.0, 1.0, 0.0);
 
   ASSERT_EQ(oriented.size(), fp.size());
   for (size_t i = 0; i < fp.size(); ++i) {
@@ -196,7 +199,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OrientPureTranslation)
   auto fp = makeSquare(0.5);
   const double tx = 3.0, ty = -2.0;
 
-  auto oriented = orientFootprint(fp, tx, ty, 1.0, 0.0);
+  auto oriented = classifier_.orientFootprint(fp, tx, ty, 1.0, 0.0);
 
   ASSERT_EQ(oriented.size(), fp.size());
   for (size_t i = 0; i < fp.size(); ++i) {
@@ -209,7 +212,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, Orient90DegreeRotation)
 {
   auto fp = makeSquare(0.5);
   // 90 degrees: cos=0, sin=1
-  auto oriented = orientFootprint(fp, 0.0, 0.0, 0.0, 1.0);
+  auto oriented = classifier_.orientFootprint(fp, 0.0, 0.0, 0.0, 1.0);
 
   // (0.5, 0.5) rotated 90° -> (-0.5, 0.5)
   ASSERT_EQ(oriented.size(), fp.size());
@@ -225,7 +228,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, Orient180DegreeRotation)
 {
   auto fp = makeSquare(0.5);
   // 180 degrees: cos=-1, sin=0
-  auto oriented = orientFootprint(fp, 0.0, 0.0, -1.0, 0.0);
+  auto oriented = classifier_.orientFootprint(fp, 0.0, 0.0, -1.0, 0.0);
 
   // Each point should be negated
   ASSERT_EQ(oriented.size(), fp.size());
@@ -243,7 +246,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OrientTranslationAndRotation)
   const double cos_th = std::cos(theta);
   const double sin_th = std::sin(theta);
 
-  auto oriented = orientFootprint(fp, tx, ty, cos_th, sin_th);
+  auto oriented = classifier_.orientFootprint(fp, tx, ty, cos_th, sin_th);
 
   // Verify each point: rotated + translated
   ASSERT_EQ(oriented.size(), fp.size());
@@ -258,7 +261,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OrientTranslationAndRotation)
 TEST_F(ConfinedSpaceClassifierHelperTest, OrientPreservesVertexCount)
 {
   auto fp = makeRectangle();
-  auto oriented = orientFootprint(fp, 5.0, 3.0, 0.707, 0.707);
+  auto oriented = classifier_.orientFootprint(fp, 5.0, 3.0, 0.707, 0.707);
   EXPECT_EQ(oriented.size(), fp.size());
 }
 
@@ -271,7 +274,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsSquareSymmetry)
   // Unit square: edges 0(top), 1(left), 2(bottom), 3(right)
   // Opposite of top=bottom, left=right
   auto fp = makeSquare(0.5);
-  auto opp = buildOppositePairs(fp);
+  auto opp = classifier_.buildOppositePairs(fp);
 
   ASSERT_EQ(opp.size(), 4u);
 
@@ -289,7 +292,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsRectangle)
 {
   // Rectangle with 4 edges should still have proper opposite pairs
   auto fp = makeRectangle();
-  auto opp = buildOppositePairs(fp);
+  auto opp = classifier_.buildOppositePairs(fp);
 
   ASSERT_EQ(opp.size(), 4u);
 
@@ -314,7 +317,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsAllValid)
     hex.push_back(makePoint(std::cos(angle), std::sin(angle)));
   }
 
-  auto opp = buildOppositePairs(hex);
+  auto opp = classifier_.buildOppositePairs(hex);
 
   ASSERT_EQ(opp.size(), 6u);
 
@@ -334,7 +337,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsSymmetric)
 {
   // For any convex polygon, if opp[i] = j, then opp[j] = i
   auto fp = makeSquare(0.5);
-  auto opp = buildOppositePairs(fp);
+  auto opp = classifier_.buildOppositePairs(fp);
 
   for (size_t i = 0; i < opp.size(); ++i) {
     if (opp[i] < opp.size()) {
@@ -348,7 +351,7 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsSymmetric)
 TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsNeverSelf)
 {
   auto fp = makeRectangle();
-  auto opp = buildOppositePairs(fp);
+  auto opp = classifier_.buildOppositePairs(fp);
 
   for (size_t i = 0; i < opp.size(); ++i) {
     EXPECT_NE(opp[i], i) << "Edge " << i << " maps to itself";
@@ -362,8 +365,8 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsNeverSelf)
 TEST_F(ConfinedSpaceClassifierHelperTest, InflateThenOrientPreservesVertexCount)
 {
   auto fp = makeRectangle();
-  auto inflated = inflateFootprint(fp, 0.15);
-  auto oriented = orientFootprint(inflated, 2.0, 3.0, 0.866, 0.5);
+  auto inflated = classifier_.inflateFootprint(fp, 0.15);
+  auto oriented = classifier_.orientFootprint(inflated, 2.0, 3.0, 0.866, 0.5);
 
   EXPECT_EQ(oriented.size(), fp.size());
 }
@@ -371,10 +374,10 @@ TEST_F(ConfinedSpaceClassifierHelperTest, InflateThenOrientPreservesVertexCount)
 TEST_F(ConfinedSpaceClassifierHelperTest, InflateThenOrientCentroidAtPose)
 {
   auto fp = makeSquare(0.5);
-  auto inflated = inflateFootprint(fp, 0.1);
+  auto inflated = classifier_.inflateFootprint(fp, 0.1);
 
   const double tx = 5.0, ty = -3.0;
-  auto oriented = orientFootprint(inflated, tx, ty, 1.0, 0.0);
+  auto oriented = classifier_.orientFootprint(inflated, tx, ty, 1.0, 0.0);
 
   // Centroid of the oriented footprint should be near (tx, ty)
   double cx = 0.0, cy = 0.0;
