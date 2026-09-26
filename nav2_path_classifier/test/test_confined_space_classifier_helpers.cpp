@@ -18,19 +18,19 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_path_classifier/classifiers/constraint_classifier.hpp"
+#include "nav2_path_classifier/classifiers/confined_space_classifier.hpp"
 
 // ---------------------------------------------------------------------------
-// Test fixture, declared as friend in ConstraintClassifier.
+// Test fixture, declared as friend in ConfinedSpaceClassifier.
 // ---------------------------------------------------------------------------
 
 namespace nav2_path_classifier
 {
 
-class ConstraintClassifierHelperTest : public ::testing::Test
+class ConfinedSpaceClassifierHelperTest : public ::testing::Test
 {
 protected:
-  ConstraintClassifier classifier_;
+  ConfinedSpaceClassifier classifier_;
 
   // Wrappers that forward to private methods
   nav2_costmap_2d::Footprint inflateFootprint(
@@ -103,7 +103,7 @@ protected:
 // inflateFootprint tests
 // ===========================================================================
 
-TEST_F(ConstraintClassifierHelperTest, InflateSquarePreservesVertexCount)
+TEST_F(ConfinedSpaceClassifierHelperTest, InflateSquarePreservesVertexCount)
 {
   auto fp = makeSquare(0.5);
   auto inflated = inflateFootprint(fp, 0.1);
@@ -112,7 +112,7 @@ TEST_F(ConstraintClassifierHelperTest, InflateSquarePreservesVertexCount)
   EXPECT_EQ(inflated.size(), fp.size());
 }
 
-TEST_F(ConstraintClassifierHelperTest, InflateSquareGrowsByDelta)
+TEST_F(ConfinedSpaceClassifierHelperTest, InflateSquareGrowsByDelta)
 {
   auto fp = makeSquare(0.5);
   const double delta = 0.2;
@@ -129,7 +129,7 @@ TEST_F(ConstraintClassifierHelperTest, InflateSquareGrowsByDelta)
   EXPECT_NEAR(-min_y, 0.5 + delta, 0.01);
 }
 
-TEST_F(ConstraintClassifierHelperTest, InflateRectangleGrowsByDelta)
+TEST_F(ConfinedSpaceClassifierHelperTest, InflateRectangleGrowsByDelta)
 {
   auto fp = makeRectangle();
   const double delta = 0.1;
@@ -146,7 +146,7 @@ TEST_F(ConstraintClassifierHelperTest, InflateRectangleGrowsByDelta)
   EXPECT_NEAR(min_y, -0.375 - delta, 0.01);
 }
 
-TEST_F(ConstraintClassifierHelperTest, InflateZeroDeltaReturnsSameFootprint)
+TEST_F(ConfinedSpaceClassifierHelperTest, InflateZeroDeltaReturnsSameFootprint)
 {
   auto fp = makeSquare(0.5);
   auto inflated = inflateFootprint(fp, 0.0);
@@ -158,7 +158,7 @@ TEST_F(ConstraintClassifierHelperTest, InflateZeroDeltaReturnsSameFootprint)
   }
 }
 
-TEST_F(ConstraintClassifierHelperTest, InflateMultipleStepsGrowsMonotonically)
+TEST_F(ConfinedSpaceClassifierHelperTest, InflateMultipleStepsGrowsMonotonically)
 {
   auto fp = makeSquare(0.5);
 
@@ -177,7 +177,7 @@ TEST_F(ConstraintClassifierHelperTest, InflateMultipleStepsGrowsMonotonically)
 // orientFootprint tests
 // ===========================================================================
 
-TEST_F(ConstraintClassifierHelperTest, OrientIdentityTransform)
+TEST_F(ConfinedSpaceClassifierHelperTest, OrientIdentityTransform)
 {
   auto fp = makeSquare(0.5);
 
@@ -191,7 +191,7 @@ TEST_F(ConstraintClassifierHelperTest, OrientIdentityTransform)
   }
 }
 
-TEST_F(ConstraintClassifierHelperTest, OrientPureTranslation)
+TEST_F(ConfinedSpaceClassifierHelperTest, OrientPureTranslation)
 {
   auto fp = makeSquare(0.5);
   const double tx = 3.0, ty = -2.0;
@@ -205,7 +205,7 @@ TEST_F(ConstraintClassifierHelperTest, OrientPureTranslation)
   }
 }
 
-TEST_F(ConstraintClassifierHelperTest, Orient90DegreeRotation)
+TEST_F(ConfinedSpaceClassifierHelperTest, Orient90DegreeRotation)
 {
   auto fp = makeSquare(0.5);
   // 90 degrees: cos=0, sin=1
@@ -221,7 +221,7 @@ TEST_F(ConstraintClassifierHelperTest, Orient90DegreeRotation)
   EXPECT_NEAR(oriented[1].y, -0.5, 1e-9);
 }
 
-TEST_F(ConstraintClassifierHelperTest, Orient180DegreeRotation)
+TEST_F(ConfinedSpaceClassifierHelperTest, Orient180DegreeRotation)
 {
   auto fp = makeSquare(0.5);
   // 180 degrees: cos=-1, sin=0
@@ -235,7 +235,7 @@ TEST_F(ConstraintClassifierHelperTest, Orient180DegreeRotation)
   }
 }
 
-TEST_F(ConstraintClassifierHelperTest, OrientTranslationAndRotation)
+TEST_F(ConfinedSpaceClassifierHelperTest, OrientTranslationAndRotation)
 {
   auto fp = makeSquare(0.5);
   const double tx = 1.0, ty = 2.0;
@@ -255,7 +255,7 @@ TEST_F(ConstraintClassifierHelperTest, OrientTranslationAndRotation)
   }
 }
 
-TEST_F(ConstraintClassifierHelperTest, OrientPreservesVertexCount)
+TEST_F(ConfinedSpaceClassifierHelperTest, OrientPreservesVertexCount)
 {
   auto fp = makeRectangle();
   auto oriented = orientFootprint(fp, 5.0, 3.0, 0.707, 0.707);
@@ -266,7 +266,7 @@ TEST_F(ConstraintClassifierHelperTest, OrientPreservesVertexCount)
 // buildOppositePairs tests
 // ===========================================================================
 
-TEST_F(ConstraintClassifierHelperTest, OppositePairsSquareSymmetry)
+TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsSquareSymmetry)
 {
   // Unit square: edges 0(top), 1(left), 2(bottom), 3(right)
   // Opposite of top=bottom, left=right
@@ -285,7 +285,7 @@ TEST_F(ConstraintClassifierHelperTest, OppositePairsSquareSymmetry)
   EXPECT_EQ(opp[3], 1u);
 }
 
-TEST_F(ConstraintClassifierHelperTest, OppositePairsRectangle)
+TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsRectangle)
 {
   // Rectangle with 4 edges should still have proper opposite pairs
   auto fp = makeRectangle();
@@ -305,7 +305,7 @@ TEST_F(ConstraintClassifierHelperTest, OppositePairsRectangle)
   EXPECT_EQ(opp[3], 1u);  // right -> left
 }
 
-TEST_F(ConstraintClassifierHelperTest, OppositePairsAllValid)
+TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsAllValid)
 {
   // Test with a larger polygon (hexagon-like)
   nav2_costmap_2d::Footprint hex;
@@ -330,7 +330,7 @@ TEST_F(ConstraintClassifierHelperTest, OppositePairsAllValid)
   }
 }
 
-TEST_F(ConstraintClassifierHelperTest, OppositePairsSymmetric)
+TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsSymmetric)
 {
   // For any convex polygon, if opp[i] = j, then opp[j] = i
   auto fp = makeSquare(0.5);
@@ -345,7 +345,7 @@ TEST_F(ConstraintClassifierHelperTest, OppositePairsSymmetric)
   }
 }
 
-TEST_F(ConstraintClassifierHelperTest, OppositePairsNeverSelf)
+TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsNeverSelf)
 {
   auto fp = makeRectangle();
   auto opp = buildOppositePairs(fp);
@@ -359,7 +359,7 @@ TEST_F(ConstraintClassifierHelperTest, OppositePairsNeverSelf)
 // Combined tests: inflate then orient
 // ===========================================================================
 
-TEST_F(ConstraintClassifierHelperTest, InflateThenOrientPreservesVertexCount)
+TEST_F(ConfinedSpaceClassifierHelperTest, InflateThenOrientPreservesVertexCount)
 {
   auto fp = makeRectangle();
   auto inflated = inflateFootprint(fp, 0.15);
@@ -368,7 +368,7 @@ TEST_F(ConstraintClassifierHelperTest, InflateThenOrientPreservesVertexCount)
   EXPECT_EQ(oriented.size(), fp.size());
 }
 
-TEST_F(ConstraintClassifierHelperTest, InflateThenOrientCentroidAtPose)
+TEST_F(ConfinedSpaceClassifierHelperTest, InflateThenOrientCentroidAtPose)
 {
   auto fp = makeSquare(0.5);
   auto inflated = inflateFootprint(fp, 0.1);

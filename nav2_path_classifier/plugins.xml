@@ -1,7 +1,7 @@
 <library path="pose_classifiers">
-  <class name="nav2_path_classifier/ConstraintClassifier"
-         type="nav2_path_classifier::ConstraintClassifier"
+  <class name="nav2_path_classifier/ConfinedSpaceClassifier"
+         type="nav2_path_classifier::ConfinedSpaceClassifier"
          base_class_type="nav2_path_classifier::ClassifierBase">
-    <description>Classifies poses as CONSTRAINT_SPACE based on costmap cost threshold</description>
+    <description>Classifies poses in confined space by detecting obstacles on opposite footprint edges</description>
   </class>
 </library>
