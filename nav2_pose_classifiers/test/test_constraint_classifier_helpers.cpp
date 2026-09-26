@@ -21,7 +21,7 @@
 #include "nav2_pose_classifiers/constraint_classifier.hpp"
 
 // ---------------------------------------------------------------------------
-// Test fixture — declared as friend in ConstraintClassifier.
+// Test fixture, declared as friend in ConstraintClassifier.
 // ---------------------------------------------------------------------------
 
 namespace nav2_pose_classifiers
@@ -287,7 +287,7 @@ TEST_F(ConstraintClassifierHelperTest, OppositePairsSquareSymmetry)
 
 TEST_F(ConstraintClassifierHelperTest, OppositePairsRectangle)
 {
-  // Rectangle with 4 edges — should still have proper opposite pairs
+  // Rectangle with 4 edges should still have proper opposite pairs
   auto fp = makeRectangle();
   auto opp = buildOppositePairs(fp);
 
@@ -356,7 +356,7 @@ TEST_F(ConstraintClassifierHelperTest, OppositePairsNeverSelf)
 }
 
 // ===========================================================================
-// Combined tests — inflate then orient
+// Combined tests: inflate then orient
 // ===========================================================================
 
 TEST_F(ConstraintClassifierHelperTest, InflateThenOrientPreservesVertexCount)

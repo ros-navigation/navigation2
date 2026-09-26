@@ -46,7 +46,14 @@ namespace nav2_path_classifier
 class PoseClassifier
 {
 public:
+  /**
+   * @brief A constructor for nav2_path_classifier::PoseClassifier
+   */
   PoseClassifier();
+
+  /**
+   * @brief A destructor for nav2_path_classifier::PoseClassifier
+   */
   ~PoseClassifier() = default;
 
   /**
@@ -62,8 +69,19 @@ public:
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub);
 
+  /**
+   * @brief Cleanup all loaded classifier plugins.
+   */
   void cleanup();
+
+  /**
+   * @brief Activate all loaded classifier plugins.
+   */
   void activate();
+
+  /**
+   * @brief Deactivate all loaded classifier plugins.
+   */
   void deactivate();
 
   /**
@@ -82,7 +100,7 @@ public:
    */
   bool hasClassifiers() const;
 
-private:
+protected:
   pluginlib::ClassLoader<nav2_pose_classifiers::ClassifierBase> classifier_loader_;
   std::vector<nav2_pose_classifiers::ClassifierBase::Ptr> classifiers_;
   std::vector<std::string> classifier_ids_;
