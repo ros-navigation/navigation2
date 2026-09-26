@@ -50,7 +50,6 @@ set(dependencies
 # Server core library
 add_library(${library_name} SHARED
   src/path_classifier_server.cpp
-  src/pose_classifier.cpp
   src/path_splitter.cpp
 )
 

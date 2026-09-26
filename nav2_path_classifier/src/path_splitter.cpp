@@ -18,6 +18,7 @@
 #include <stdexcept>
 
 #include "nav2_util/node_utils.hpp"
+#include "nav2_path_classifier/path_classifier_server.hpp"
 
 namespace nav2_path_classifier
 {
@@ -68,7 +69,7 @@ void PathSplitter::cleanup() {}
 
 PathSplitter::SplitResult PathSplitter::splitPath(
   const nav_msgs::msg::Path & path,
-  PoseClassifier & pose_classifier,
+  PathClassifierServer & server,
   bool build_classified_poses)
 {
   SplitResult result;
@@ -80,7 +81,7 @@ PathSplitter::SplitResult PathSplitter::splitPath(
   // Stage 1+2+3 (single pass): classify each pose, apply hysteresis, group into segments.
   // Also builds raw classified_poses for visualization if requested.
   auto segments = classifyAndGroup(
-    path, pose_classifier,
+    path, server,
     build_classified_poses ? &result.classified_poses : nullptr);
 
   // Stage 4: merge segments shorter than min_segment_poses into neighbors
@@ -100,7 +101,7 @@ PathSplitter::SplitResult PathSplitter::splitPath(
 // Stage 1+2+3 (single pass): classify, hysteresis filter, group into segments
 //
 // For each pose:
-//   - Stage 1: call pose_classifier.classify() to get the raw class
+//   - Stage 1: call server.classify() to get the raw class
 //   - Stage 2: apply hysteresis, which only confirms a class transition after
 //              hysteresis_window_ consecutive poses of the new class.
 //              On confirmation, backfill by adjusting the segment boundary
@@ -113,7 +114,7 @@ PathSplitter::SplitResult PathSplitter::splitPath(
 
 std::vector<PathSplitter::Segment> PathSplitter::classifyAndGroup(
   const nav_msgs::msg::Path & path,
-  PoseClassifier & pose_classifier,
+  PathClassifierServer & server,
   std::vector<ClassifiedPose> * classified_poses)
 {
   const size_t n = path.poses.size();
@@ -124,7 +125,7 @@ std::vector<PathSplitter::Segment> PathSplitter::classifyAndGroup(
   }
 
   // --- Initialize with first pose (fetches costmap + footprint for the whole path) ---
-  uint16_t first_raw = pose_classifier.classify(path.poses[0], true);
+  uint16_t first_raw = server.classify(path.poses[0], true);
 
   // Hysteresis state
   uint16_t current_class = first_raw;   // accepted (post-hysteresis) class
@@ -145,7 +146,7 @@ std::vector<PathSplitter::Segment> PathSplitter::classifyAndGroup(
   // --- Single pass over remaining poses ---
   for (size_t i = 1; i < n; ++i) {
     // Stage 1: classify this pose (reuses the data fetched for pose 0)
-    uint16_t raw = pose_classifier.classify(path.poses[i], false);
+    uint16_t raw = server.classify(path.poses[i], false);
 
     // Build raw classified pose for visualization (pre-hysteresis)
     if (classified_poses) {

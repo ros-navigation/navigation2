@@ -23,10 +23,11 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_msgs/msg/classified_path.hpp"
 #include "nav2_msgs/msg/classified_path_array.hpp"
-#include "nav2_path_classifier/pose_classifier.hpp"
 
 namespace nav2_path_classifier
 {
+
+class PathClassifierServer;
 
 /**
  * @struct ClassifiedPose
@@ -43,7 +44,7 @@ struct ClassifiedPose
  * @brief Splits a planner path into ClassifiedPathArray segments.
  *
  * Pipeline (single-pass for stages 1-3):
- *   1. Classify each pose via PoseClassifier
+ *   1. Classify each pose via the owning PathClassifierServer
  *   2. Apply hysteresis filter (N consecutive flips to confirm transition)
  *   3. Group consecutive same-type poses into segments
  *   --- post-pass ---
@@ -91,13 +92,13 @@ public:
   /**
    * @brief Split a path into classified segments.
    * @param path                   Input path from the planner
-   * @param pose_classifier        Reference to PoseClassifier for per-pose classification
+   * @param server                 Reference to the owning server for per-pose classification
    * @param build_classified_poses If true, populates result.classified_poses for visualization
    * @return SplitResult containing raw classified poses and the final ClassifiedPathArray
    */
   SplitResult splitPath(
     const nav_msgs::msg::Path & path,
-    PoseClassifier & pose_classifier,
+    PathClassifierServer & server,
     bool build_classified_poses = false);
 
 protected:
@@ -116,13 +117,13 @@ protected:
    * @brief Stage 1+2+3: classify each pose, apply the hysteresis filter, and
    *        group consecutive poses of the same class into segments.
    * @param path Input path from the planner
-   * @param pose_classifier Classifier used to label each pose
+   * @param server Owning server used to classify each pose
    * @param classified_poses If non-null, filled with the raw per-pose classes
    * @return The list of segments before short-segment merging
    */
   std::vector<Segment> classifyAndGroup(
     const nav_msgs::msg::Path & path,
-    PoseClassifier & pose_classifier,
+    PathClassifierServer & server,
     std::vector<ClassifiedPose> * classified_poses);
 
   /**

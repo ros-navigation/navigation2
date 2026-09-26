@@ -32,10 +32,11 @@
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_path_classifier/pose_classifier.hpp"
+#include "nav2_path_classifier/classifier_base.hpp"
 #include "nav2_path_classifier/path_splitter.hpp"
 
 namespace nav2_path_classifier
@@ -59,6 +60,22 @@ public:
    * @brief A destructor for nav2_path_classifier::PathClassifierServer
    */
   ~PathClassifierServer() = default;
+
+  /**
+   * @brief Classify a single pose by iterating loaded classifier plugins in priority order.
+   * @param pose Pose to classify
+   * @param fetch_data Pull the latest data (costmap, footprint, ...) before evaluating
+   * @return class_type from the first matching plugin, or the default class if none match
+   */
+  uint16_t classify(
+    const geometry_msgs::msg::PoseStamped & pose,
+    bool fetch_data = true);
+
+  /**
+   * @brief Check if any classifier plugins are loaded.
+   * @return true if at least one classifier plugin is configured
+   */
+  bool hasClassifiers() const;
 
 protected:
   /**
@@ -95,6 +112,26 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Load and configure all classifier plugins from parameters.
+   */
+  void configureClassifiers();
+
+  /**
+   * @brief Cleanup all loaded classifier plugins.
+   */
+  void cleanupClassifiers();
+
+  /**
+   * @brief Activate all loaded classifier plugins.
+   */
+  void activateClassifiers();
+
+  /**
+   * @brief Deactivate all loaded classifier plugins.
+   */
+  void deactivateClassifiers();
 
   using Action = nav2_msgs::action::ClassifyPath;
   using ActionServer = nav2_util::SimpleActionServer<Action>;
@@ -147,7 +184,11 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     raw_classified_poses_marker_pub_;
 
-  PoseClassifier pose_classifier_;
+  pluginlib::ClassLoader<nav2_path_classifier::ClassifierBase> classifier_loader_{
+    "nav2_path_classifier", "nav2_path_classifier::ClassifierBase"};
+  std::vector<nav2_path_classifier::ClassifierBase::Ptr> classifiers_;
+  std::vector<std::string> classifier_ids_;
+  std::vector<std::string> classifier_types_;
 
   PathSplitter path_splitter_;
 };
