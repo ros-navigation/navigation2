@@ -25,7 +25,7 @@
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "tf2_ros/buffer.h"
 #include "pluginlib/class_loader.hpp"
-#include "nav2_pose_classifiers/classifier_base.hpp"
+#include "nav2_path_classifier/classifier_base.hpp"
 #include "nav2_msgs/msg/classified_path.hpp"
 
 namespace nav2_path_classifier
@@ -39,7 +39,7 @@ namespace nav2_path_classifier
  * Reads from the parent node's parameters:
  *   pose_classifier_plugins: ["ConstraintSpace"]
  *   ConstraintSpace:
- *     plugin: "nav2_pose_classifiers/ConstraintClassifier"
+ *     plugin: "nav2_path_classifier/ConstraintClassifier"
  *     inflation_resolution: 0.20
  *     max_constraint_clearance: 1.0
  */
@@ -101,8 +101,8 @@ public:
   bool hasClassifiers() const;
 
 protected:
-  pluginlib::ClassLoader<nav2_pose_classifiers::ClassifierBase> classifier_loader_;
-  std::vector<nav2_pose_classifiers::ClassifierBase::Ptr> classifiers_;
+  pluginlib::ClassLoader<nav2_path_classifier::ClassifierBase> classifier_loader_;
+  std::vector<nav2_path_classifier::ClassifierBase::Ptr> classifiers_;
   std::vector<std::string> classifier_ids_;
   std::vector<std::string> classifier_types_;
   uint16_t default_class_type_{nav2_msgs::msg::ClassifiedPath::FREE_SPACE};

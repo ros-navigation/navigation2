@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_POSE_CLASSIFIERS__CLASSIFIER_BASE_HPP_
-#define NAV2_POSE_CLASSIFIERS__CLASSIFIER_BASE_HPP_
+#ifndef NAV2_PATH_CLASSIFIER__CLASSIFIER_BASE_HPP_
+#define NAV2_PATH_CLASSIFIER__CLASSIFIER_BASE_HPP_
 
 #include <memory>
 #include <string>
@@ -24,7 +24,7 @@
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "tf2_ros/buffer.h"
 
-namespace nav2_pose_classifiers
+namespace nav2_path_classifier
 {
 
 /**
@@ -91,6 +91,6 @@ public:
   virtual uint16_t classType() = 0;
 };
 
-}  // namespace nav2_pose_classifiers
+}  // namespace nav2_path_classifier
 
-#endif  // NAV2_POSE_CLASSIFIERS__CLASSIFIER_BASE_HPP_
+#endif  // NAV2_PATH_CLASSIFIER__CLASSIFIER_BASE_HPP_
