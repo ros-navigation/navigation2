@@ -40,14 +40,14 @@ namespace nav2_pose_classifiers
  *
  * Algorithm:
  *   1. For each edge, find its geometric opposite by casting a ray from the
- *      edge midpoint through the polygon centroid — the edge it hits on the
+ *      edge midpoint through the polygon centroid. The edge it hits on the
  *      other side is the opposite. Stored as a 1:1 map.
  *   2. Starting from the base footprint, inflate by inflation_resolution each
  *      iteration using Clipper1 mitered offset (ClipperOffset + jtMiter).
  *   3. Loop limit: total inflation = max_constraint_clearance.
  *   4. Each iteration: compute lineCost per inflated edge.
- *      - If an edge hits LETHAL_OBSTACLE → record its index.
- *      - If the opposite edge of any recorded index also hits LETHAL → CONSTRAINT.
+ *      - If an edge hits LETHAL_OBSTACLE, record its index.
+ *      - If the opposite edge of any recorded index also hits LETHAL, mark as CONSTRAINT.
  *   5. Early exit on first opposite-pair LETHAL match.
  *
  * Parameters:
@@ -58,9 +58,24 @@ namespace nav2_pose_classifiers
 class ConstraintClassifier : public ClassifierBase
 {
 public:
+  /**
+   * @brief A constructor for nav2_pose_classifiers::ConstraintClassifier
+   */
   ConstraintClassifier() = default;
+
+  /**
+   * @brief A destructor for nav2_pose_classifiers::ConstraintClassifier
+   */
   ~ConstraintClassifier() override = default;
 
+  /**
+   * @brief Configure the classifier from ROS parameters.
+   * @param parent Weak pointer to the owning lifecycle node
+   * @param name Parameter namespace for this classifier instance
+   * @param tf TF buffer
+   * @param costmap_sub Subscriber to the costmap the classifier reasons over
+   * @param footprint_sub Subscriber to the robot footprint
+   */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & name,
@@ -68,21 +83,43 @@ public:
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub) override;
 
+  /**
+   * @brief Method to cleanup resources used on shutdown.
+   */
   void cleanup() override;
+
+  /**
+   * @brief Method to activate the classifier and any threads involved in execution.
+   */
   void activate() override;
+
+  /**
+   * @brief Method to deactivate the classifier and any threads involved in execution.
+   */
   void deactivate() override;
 
+  /**
+   * @brief Check if a pose lies in constraint space.
+   * @param pose The pose to classify
+   * @param fetch_data Pull the latest data (costmap, footprint) before evaluating
+   * @return true if the pose matches constraint space
+   */
   bool matches(
     const geometry_msgs::msg::PoseStamped & pose,
     bool fetch_data = true) override;
+
+  /**
+   * @brief Return the class_type value this classifier emits.
+   * @return class_type set via the class_type parameter
+   */
   uint16_t classType() override;
 
   friend class ConstraintClassifierHelperTest;  // For testing private helpers using gtest
 
-private:
+protected:
   /**
    * @brief Inflate footprint by delta metres using Clipper1 mitered offset.
-   *        Converts double coords → Clipper integer coords (micrometre scale),
+   *        Converts double coords to Clipper integer coords (micrometre scale),
    *        runs ClipperOffset(jtMiter), converts back.
    */
   nav2_costmap_2d::Footprint inflateFootprint(
@@ -113,14 +150,12 @@ private:
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *> collision_checker_;
 
-  // Latest costmap pulled from the subscriber, held so !fetch_data calls can reuse it
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
 
   uint16_t class_type_;
   double inflation_resolution_;
   double max_constraint_clearance_;
 
-  // Cached footprint + opposite-pairs (recomputed only when footprint changes)
   nav2_costmap_2d::Footprint raw_fp_;
   std::vector<size_t> opposites_;
 };

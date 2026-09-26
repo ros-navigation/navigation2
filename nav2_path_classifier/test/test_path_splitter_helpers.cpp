@@ -22,7 +22,7 @@
 #include "nav2_path_classifier/path_splitter.hpp"
 
 // ---------------------------------------------------------------------------
-// Test fixture — declared as friend in PathSplitter.
+// Test fixture, declared as friend in PathSplitter.
 // ---------------------------------------------------------------------------
 
 namespace nav2_path_classifier
@@ -108,7 +108,7 @@ TEST_F(PathSplitterHelperTest, MergeShortMiddleIntoLeftNeighbor)
   // Middle segment (length 2) is too short, should merge into left neighbor
   std::vector<Segment> segs = {
     {0, 0, 10},   // length 10
-    {1, 10, 12},  // length 2 — short
+    {1, 10, 12},  // length 2 (short)
     {0, 12, 22}   // length 10
   };
   setMinSegmentPoses(5);
@@ -128,7 +128,7 @@ TEST_F(PathSplitterHelperTest, MergeShortFirstIntoRightNeighbor)
 {
   // First segment is too short, should merge into right neighbor
   std::vector<Segment> segs = {
-    {1, 0, 2},    // length 2 — short
+    {1, 0, 2},    // length 2 (short)
     {0, 2, 12}    // length 10
   };
   setMinSegmentPoses(5);
@@ -146,8 +146,8 @@ TEST_F(PathSplitterHelperTest, MergeCascadingShortSegments)
   // Multiple short segments that cascade into merges
   std::vector<Segment> segs = {
     {0, 0, 10},   // length 10
-    {1, 10, 12},  // length 2 — short
-    {2, 12, 14},  // length 2 — short
+    {1, 10, 12},  // length 2 (short)
+    {2, 12, 14},  // length 2 (short)
     {0, 14, 24}   // length 10
   };
   setMinSegmentPoses(5);
@@ -237,7 +237,7 @@ TEST_F(PathSplitterHelperTest, BuildResultSingleSegment)
 
   ASSERT_EQ(result.paths.size(), 1u);
   EXPECT_EQ(result.paths[0].class_type, 0u);
-  // Single segment, no overlap needed — gets all 10 poses
+  // Single segment, no overlap needed, so it gets all 10 poses
   EXPECT_EQ(result.paths[0].path.poses.size(), 10u);
   EXPECT_EQ(result.paths[0].path.header.frame_id, "map");
 }
@@ -361,7 +361,7 @@ TEST_F(PathSplitterHelperTest, SplitEmptyPathReturnsEmpty)
 {
   nav_msgs::msg::Path empty_path;
   // We need a PoseClassifier but it won't be called for empty path
-  // Use a trick: create one without configuring — splitPath returns early
+  // Use a trick: create one without configuring, so splitPath returns early
   PoseClassifier dummy_classifier;
 
   auto result = splitter_.splitPath(empty_path, dummy_classifier, true);

@@ -17,14 +17,19 @@
 namespace nav2_pose_classifiers
 {
 
-// Scale factor to convert metres → Clipper integer coordinates.
+// Scale factor to convert metres to Clipper integer coordinates.
 // 1e6 = micrometre precision. Clipper1 uses int64 so max ≈ ±4.6e18,
-// giving a coordinate range of ±4.6e12 metres — more than enough.
+// giving a coordinate range of ±4.6e12 metres, more than enough.
 static constexpr double kClipperScale = 1e6;
 
 static constexpr double kFootprintEpsilon = 1e-9;
 
-// Check if the footprint changed
+/**
+ * @brief Check whether two footprints differ in vertex count or position.
+ * @param a First footprint
+ * @param b Second footprint
+ * @return true if the footprints differ
+ */
 static bool footprintChanged(
   const nav2_costmap_2d::Footprint & a, const nav2_costmap_2d::Footprint & b)
 {
@@ -62,7 +67,7 @@ void ConstraintClassifier::configure(
   }
   logger_ = node->get_logger();
 
-  // Required — every classifier instance must declare the class id it emits
+  // Required: every classifier instance must declare the class id it emits
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".class_type", rclcpp::ParameterType::PARAMETER_INTEGER);
 
@@ -173,7 +178,7 @@ std::vector<size_t> ConstraintClassifier::buildOppositePairs(
     const double mx = (fp[i].x + fp[i_next].x) * 0.5;
     const double my = (fp[i].y + fp[i_next].y) * 0.5;
 
-    // Ray direction: midpoint → centroid → beyond
+    // Ray direction: from midpoint through centroid and beyond
     const double dx = cx - mx;
     const double dy = cy - my;
 
@@ -214,7 +219,7 @@ std::vector<size_t> ConstraintClassifier::buildOppositePairs(
 }
 
 // ---------------------------------------------------------------------------
-// matches  —  core classification
+// matches: core classification
 // ---------------------------------------------------------------------------
 
 bool ConstraintClassifier::matches(
@@ -286,7 +291,7 @@ bool ConstraintClassifier::matches(
       continue;  // some vertices outside map, skip this step
     }
 
-    // 5d. Per-edge lineCost — check for LETHAL
+    // 5d. Per-edge lineCost: check for LETHAL
     // Clipper with jtMiter + etClosedPolygon preserves vertex count for
     // convex polygons, so edge i of inflated == edge i of original.
     if (m != n) {
@@ -304,7 +309,7 @@ bool ConstraintClassifier::matches(
 
         // Check if the opposite edge (via centroid ray) already hit LETHAL
         if (opposites_[i] < n && lethal_edges[opposites_[i]]) {
-          return true;  // Both sides walled → CONSTRAINT
+          return true;  // Both sides walled, so classify as CONSTRAINT
         }
       }
     }

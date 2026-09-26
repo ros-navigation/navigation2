@@ -40,6 +40,9 @@ class ClassifierBase
 public:
   using Ptr = std::shared_ptr<ClassifierBase>;
 
+  /**
+   * @brief Virtual destructor
+   */
   virtual ~ClassifierBase() {}
 
   /**
@@ -57,8 +60,19 @@ public:
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub) = 0;
 
+  /**
+   * @brief Method to cleanup resources used on shutdown.
+   */
   virtual void cleanup() = 0;
+
+  /**
+   * @brief Method to activate the classifier and any threads involved in execution.
+   */
   virtual void activate() = 0;
+
+  /**
+   * @brief Method to deactivate the classifier and any threads involved in execution.
+   */
   virtual void deactivate() = 0;
 
   /**

@@ -57,16 +57,35 @@ struct ClassifiedPose
 class PathSplitter
 {
 public:
+  /**
+   * @struct SplitResult
+   * @brief Output of splitPath: the raw per-pose classes and the final segments.
+   */
   struct SplitResult
   {
     std::vector<ClassifiedPose> classified_poses;
     nav2_msgs::msg::ClassifiedPathArray classified_path_array;
   };
 
+  /**
+   * @brief A constructor for nav2_path_classifier::PathSplitter
+   */
   PathSplitter() = default;
+
+  /**
+   * @brief A destructor for nav2_path_classifier::PathSplitter
+   */
   ~PathSplitter() = default;
 
+  /**
+   * @brief Declare and read the splitter parameters from the parent node.
+   * @param parent Lifecycle node that owns the splitter
+   */
   void configure(const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent);
+
+  /**
+   * @brief Reset member variables.
+   */
   void cleanup();
 
   /**
@@ -81,7 +100,11 @@ public:
     PoseClassifier & pose_classifier,
     bool build_classified_poses = false);
 
-private:
+protected:
+  /**
+   * @struct Segment
+   * @brief A contiguous run of poses sharing one class, as [start_idx, end_idx).
+   */
   struct Segment
   {
     uint16_t class_type;
@@ -89,16 +112,32 @@ private:
     size_t end_idx;    // exclusive
   };
 
-  // Stage 1+2+3 (single pass): classify, hysteresis filter, and group into segments
+  /**
+   * @brief Stage 1+2+3: classify each pose, apply the hysteresis filter, and
+   *        group consecutive poses of the same class into segments.
+   * @param path Input path from the planner
+   * @param pose_classifier Classifier used to label each pose
+   * @param classified_poses If non-null, filled with the raw per-pose classes
+   * @return The list of segments before short-segment merging
+   */
   std::vector<Segment> classifyAndGroup(
     const nav_msgs::msg::Path & path,
     PoseClassifier & pose_classifier,
     std::vector<ClassifiedPose> * classified_poses);
 
-  // Stage 4: merge short segments into neighbors
+  /**
+   * @brief Stage 4: merge segments shorter than min_segment_poses into a neighbor.
+   * @param segments Segments to merge in place
+   */
   void mergeShortSegments(std::vector<Segment> & segments);
 
-  // Stage 5: build ClassifiedPathArray with 1-pose overlap at boundaries
+  /**
+   * @brief Stage 5: build the ClassifiedPathArray, adding a one-pose overlap at
+   *        segment boundaries for controller handoff.
+   * @param path Input path from the planner
+   * @param segments Final segments to convert
+   * @return The classified path array
+   */
   nav2_msgs::msg::ClassifiedPathArray buildResult(
     const nav_msgs::msg::Path & path,
     const std::vector<Segment> & segments);
