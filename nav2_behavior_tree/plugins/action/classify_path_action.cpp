@@ -42,6 +42,20 @@ BT::NodeStatus ClassifyPathAction::on_success()
   return BT::NodeStatus::SUCCESS;
 }
 
+BT::NodeStatus ClassifyPathAction::on_aborted()
+{
+  setOutput("classified_paths", nav2_msgs::msg::ClassifiedPathArray());
+  setOutput("classification_time", 0.0);
+  return BT::NodeStatus::FAILURE;
+}
+
+BT::NodeStatus ClassifyPathAction::on_cancelled()
+{
+  setOutput("classified_paths", nav2_msgs::msg::ClassifiedPathArray());
+  setOutput("classification_time", 0.0);
+  return BT::NodeStatus::SUCCESS;
+}
+
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"
