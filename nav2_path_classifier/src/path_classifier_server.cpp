@@ -76,7 +76,7 @@ PathClassifierServer::on_configure(const rclcpp_lifecycle::State &)
     shared_from_this(), footprint_topic, *tf_, robot_base_frame, transform_tolerance);
 
   // Configure pose classifier plugins (if any specified in params)
-  pose_classifier_.configure(shared_from_this(), tf_, costmap_sub_, footprint_sub_);
+  configureClassifiers();
 
   // Configure path splitter (reads hysteresis/merge parameters)
   path_splitter_.configure(shared_from_this());
@@ -109,7 +109,7 @@ PathClassifierServer::on_activate(const rclcpp_lifecycle::State &)
     classified_segments_marker_pub_->on_activate();
     raw_classified_poses_marker_pub_->on_activate();
   }
-  pose_classifier_.activate();
+  activateClassifiers();
   action_server_->activate();
 
   // create bond connection
@@ -124,7 +124,7 @@ PathClassifierServer::on_deactivate(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   action_server_->deactivate();
-  pose_classifier_.deactivate();
+  deactivateClassifiers();
   if (publish_classified_paths_) {
     classified_segments_marker_pub_->on_deactivate();
     raw_classified_poses_marker_pub_->on_deactivate();
@@ -141,7 +141,7 @@ PathClassifierServer::on_cleanup(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  pose_classifier_.cleanup();
+  cleanupClassifiers();
   path_splitter_.cleanup();
 
   action_server_.reset();
@@ -160,6 +160,82 @@ PathClassifierServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
+}
+
+void PathClassifierServer::configureClassifiers()
+{
+  classifier_ids_ = get_parameter("pose_classifier_plugins").as_string_array();
+
+  if (classifier_ids_.empty()) {
+    RCLCPP_INFO(
+      get_logger(), "PathClassifierServer: no pose_classifier_plugins configured. "
+      "All poses will be classified as the default class.");
+    return;
+  }
+
+  classifier_types_.resize(classifier_ids_.size());
+
+  for (size_t i = 0; i < classifier_ids_.size(); ++i) {
+    // Each classifier name has a ".plugin" param with the pluginlib type string
+    classifier_types_[i] = nav2_util::get_plugin_type_param(shared_from_this(), classifier_ids_[i]);
+
+    try {
+      auto classifier = classifier_loader_.createSharedInstance(classifier_types_[i]);
+      classifier->configure(
+        shared_from_this(), classifier_ids_[i], tf_, costmap_sub_, footprint_sub_);
+      classifiers_.push_back(classifier);
+      RCLCPP_INFO(
+        get_logger(), "PathClassifierServer: loaded classifier plugin '%s' of type '%s'",
+        classifier_ids_[i].c_str(), classifier_types_[i].c_str());
+    } catch (const pluginlib::PluginlibException & ex) {
+      RCLCPP_FATAL(
+        get_logger(), "Failed to create classifier plugin '%s'. Exception: %s",
+        classifier_ids_[i].c_str(), ex.what());
+      throw;
+    }
+  }
+
+  RCLCPP_INFO(
+    get_logger(), "PathClassifierServer: %zu classifier plugin(s) loaded.", classifiers_.size());
+}
+
+void PathClassifierServer::cleanupClassifiers()
+{
+  for (auto & classifier : classifiers_) {
+    classifier->cleanup();
+  }
+  classifiers_.clear();
+}
+
+void PathClassifierServer::activateClassifiers()
+{
+  for (auto & classifier : classifiers_) {
+    classifier->activate();
+  }
+}
+
+void PathClassifierServer::deactivateClassifiers()
+{
+  for (auto & classifier : classifiers_) {
+    classifier->deactivate();
+  }
+}
+
+uint16_t PathClassifierServer::classify(
+  const geometry_msgs::msg::PoseStamped & pose, bool fetch_data)
+{
+  // Priority order: first match wins
+  for (auto & classifier : classifiers_) {
+    if (classifier->matches(pose, fetch_data)) {
+      return classifier->classType();
+    }
+  }
+  return default_class_type_;
+}
+
+bool PathClassifierServer::hasClassifiers() const
+{
+  return !classifiers_.empty();
 }
 
 void PathClassifierServer::classifyPath()
@@ -184,9 +260,9 @@ void PathClassifierServer::classifyPath()
       return;
     }
 
-    if (pose_classifier_.hasClassifiers()) {
+    if (hasClassifiers()) {
       auto split_result = path_splitter_.splitPath(
-        goal->path, pose_classifier_, publish_classified_paths_);
+        goal->path, *this, publish_classified_paths_);
       result->classified_paths = split_result.classified_path_array;
 
       if (publish_classified_paths_) {

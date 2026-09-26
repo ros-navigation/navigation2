@@ -13,12 +13,15 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <memory>
 #include <vector>
 
+#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_msgs/msg/classified_path.hpp"
 #include "nav2_msgs/msg/classified_path_array.hpp"
+#include "nav2_path_classifier/path_classifier_server.hpp"
 #include "nav2_path_classifier/path_splitter.hpp"
 
 // ---------------------------------------------------------------------------
@@ -364,11 +367,11 @@ TEST_F(PathSplitterHelperTest, BuildResultEmptySegments)
 TEST_F(PathSplitterHelperTest, SplitEmptyPathReturnsEmpty)
 {
   nav_msgs::msg::Path empty_path;
-  // We need a PoseClassifier but it won't be called for empty path
+  // We need a PathClassifierServer but it won't be called for empty path
   // Use a trick: create one without configuring, so splitPath returns early
-  PoseClassifier dummy_classifier;
+  auto dummy_server = std::make_shared<PathClassifierServer>();
 
-  auto result = splitter_.splitPath(empty_path, dummy_classifier, true);
+  auto result = splitter_.splitPath(empty_path, *dummy_server, true);
 
   EXPECT_TRUE(result.classified_poses.empty());
   EXPECT_TRUE(result.classified_path_array.paths.empty());
@@ -379,5 +382,8 @@ TEST_F(PathSplitterHelperTest, SplitEmptyPathReturnsEmpty)
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }
