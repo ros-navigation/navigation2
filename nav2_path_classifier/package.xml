@@ -25,7 +25,7 @@
   <depend>tf2_ros</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>pluginlib</depend>
-  <depend>nav2_pose_classifiers</depend>
+  <depend>polyclipping-dev</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
@@ -33,5 +33,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <nav2_path_classifier plugin="${prefix}/plugins.xml" />
   </export>
 </package>

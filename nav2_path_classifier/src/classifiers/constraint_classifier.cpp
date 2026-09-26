@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_pose_classifiers/constraint_classifier.hpp"
+#include "nav2_path_classifier/classifiers/constraint_classifier.hpp"
 
-namespace nav2_pose_classifiers
+namespace nav2_path_classifier
 {
 
 // Scale factor to convert metres to Clipper integer coordinates.
@@ -327,9 +327,9 @@ uint16_t ConstraintClassifier::classType()
   return class_type_;
 }
 
-}  // namespace nav2_pose_classifiers
+}  // namespace nav2_path_classifier
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(
-  nav2_pose_classifiers::ConstraintClassifier,
-  nav2_pose_classifiers::ClassifierBase)
+  nav2_path_classifier::ConstraintClassifier,
+  nav2_path_classifier::ClassifierBase)
