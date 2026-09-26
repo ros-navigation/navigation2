@@ -14,7 +14,9 @@
 
 #include "nav2_path_classifier/path_classifier_server.hpp"
 
+#include <array>
 #include <chrono>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -208,23 +210,69 @@ void PathClassifierServer::classifyPath()
   }
 }
 
-std_msgs::msg::ColorRGBA PathClassifierServer::colorForClass(uint16_t class_type)
+/**
+ * @brief Convert an HSV color to RGB.
+ * @param hue Hue in [0, 1)
+ * @param saturation Saturation in [0, 1]
+ * @param value Brightness in [0, 1]
+ * @return Equivalent RGB color with components in [0, 1]
+ */
+static std_msgs::msg::ColorRGBA hsvToRgb(double hue, double saturation, double value)
 {
-  constexpr float kShadeStep = 0.25f;
-  constexpr float kShadeFloor = 0.40f;
-  const size_t hue = class_type % kClassPalette.size();
-  const size_t cycle = class_type / kClassPalette.size();
-  float factor = 1.0f - kShadeStep * static_cast<float>(cycle);
-  if (factor < kShadeFloor) {
-    factor = kShadeFloor;
+  const double h6 = hue * 6.0;
+  const int sector = static_cast<int>(h6);
+  const double f = h6 - sector;
+  const double p = value * (1.0 - saturation);
+  const double q = value * (1.0 - saturation * f);
+  const double t = value * (1.0 - saturation * (1.0 - f));
+
+  double r, g, b;
+  switch (sector) {
+    case 0: r = value; g = t; b = p; break;
+    case 1: r = q; g = value; b = p; break;
+    case 2: r = p; g = value; b = t; break;
+    case 3: r = p; g = q; b = value; break;
+    case 4: r = t; g = p; b = value; break;
+    default: r = value; g = p; b = q; break;  // sector == 5
   }
-  const auto & c = kClassPalette[hue];
+
   std_msgs::msg::ColorRGBA color;
-  color.r = c[0] * factor;
-  color.g = c[1] * factor;
-  color.b = c[2] * factor;
+  color.r = static_cast<float>(r);
+  color.g = static_cast<float>(g);
+  color.b = static_cast<float>(b);
   color.a = 1.0f;
   return color;
+}
+
+std_msgs::msg::ColorRGBA PathClassifierServer::colorForClass(uint16_t class_type)
+{
+  constexpr std::array<std::array<float, 3>, 6> kClassPalette = {{
+    {{0.2f, 0.4f, 1.0f}},   // blue
+    {{0.2f, 0.8f, 0.2f}},   // green
+    {{0.9f, 0.1f, 0.1f}},   // red
+    {{1.0f, 0.6f, 0.0f}},   // orange
+    {{0.8f, 0.2f, 0.8f}},   // magenta
+    {{0.2f, 0.8f, 0.8f}}    // cyan
+  }};
+
+  if (class_type < kClassPalette.size()) {
+    const auto & c = kClassPalette[class_type];
+    std_msgs::msg::ColorRGBA color;
+    color.r = c[0];
+    color.g = c[1];
+    color.b = c[2];
+    color.a = 1.0f;
+    return color;
+  }
+
+  // Beyond the curated palette: step the hue by the golden ratio conjugate so
+  // colors stay spread across the full hue circle no matter how many classes exist,
+  // with no risk of repeating.
+  constexpr double kGoldenRatioConjugate = 0.6180339887498949;
+  constexpr double kSaturation = 0.85;
+  constexpr double kValue = 0.95;
+  const double hue = std::fmod(class_type * kGoldenRatioConjugate, 1.0);
+  return hsvToRgb(hue, kSaturation, kValue);
 }
 
 visualization_msgs::msg::MarkerArray
