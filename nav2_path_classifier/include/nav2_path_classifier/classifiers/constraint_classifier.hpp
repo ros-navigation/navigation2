@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_POSE_CLASSIFIERS__CONSTRAINT_CLASSIFIER_HPP_
-#define NAV2_POSE_CLASSIFIERS__CONSTRAINT_CLASSIFIER_HPP_
+#ifndef NAV2_PATH_CLASSIFIER__CLASSIFIERS__CONSTRAINT_CLASSIFIER_HPP_
+#define NAV2_PATH_CLASSIFIER__CLASSIFIERS__CONSTRAINT_CLASSIFIER_HPP_
 
 #include <cmath>
 #include <algorithm>
@@ -23,14 +23,14 @@
 #include <utility>
 #include <vector>
 
-#include "nav2_pose_classifiers/classifier_base.hpp"
+#include "nav2_path_classifier/classifier_base.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "tf2/utils.h"
 #include "clipper.hpp"
 
-namespace nav2_pose_classifiers
+namespace nav2_path_classifier
 {
 
 /**
@@ -59,12 +59,12 @@ class ConstraintClassifier : public ClassifierBase
 {
 public:
   /**
-   * @brief A constructor for nav2_pose_classifiers::ConstraintClassifier
+   * @brief A constructor for nav2_path_classifier::ConstraintClassifier
    */
   ConstraintClassifier() = default;
 
   /**
-   * @brief A destructor for nav2_pose_classifiers::ConstraintClassifier
+   * @brief A destructor for nav2_path_classifier::ConstraintClassifier
    */
   ~ConstraintClassifier() override = default;
 
@@ -160,6 +160,6 @@ protected:
   std::vector<size_t> opposites_;
 };
 
-}  // namespace nav2_pose_classifiers
+}  // namespace nav2_path_classifier
 
-#endif  // NAV2_POSE_CLASSIFIERS__CONSTRAINT_CLASSIFIER_HPP_
+#endif  // NAV2_PATH_CLASSIFIER__CLASSIFIERS__CONSTRAINT_CLASSIFIER_HPP_

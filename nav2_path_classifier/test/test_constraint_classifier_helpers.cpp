@@ -18,13 +18,13 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_pose_classifiers/constraint_classifier.hpp"
+#include "nav2_path_classifier/classifiers/constraint_classifier.hpp"
 
 // ---------------------------------------------------------------------------
 // Test fixture, declared as friend in ConstraintClassifier.
 // ---------------------------------------------------------------------------
 
-namespace nav2_pose_classifiers
+namespace nav2_path_classifier
 {
 
 class ConstraintClassifierHelperTest : public ::testing::Test
@@ -389,7 +389,7 @@ TEST_F(ConstraintClassifierHelperTest, InflateThenOrientCentroidAtPose)
   EXPECT_NEAR(cy, ty, 0.01);
 }
 
-}  // namespace nav2_pose_classifiers
+}  // namespace nav2_path_classifier
 
 int main(int argc, char ** argv)
 {

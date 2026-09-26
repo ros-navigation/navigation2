@@ -22,7 +22,7 @@ namespace nav2_path_classifier
 {
 
 PoseClassifier::PoseClassifier()
-: classifier_loader_("nav2_pose_classifiers", "nav2_pose_classifiers::ClassifierBase")
+: classifier_loader_("nav2_path_classifier", "nav2_path_classifier::ClassifierBase")
 {
 }
 

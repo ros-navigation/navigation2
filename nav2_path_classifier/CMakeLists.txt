@@ -17,12 +17,14 @@ find_package(builtin_interfaces REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(nav2_pose_classifiers REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(POLYCLIPPING REQUIRED polyclipping)
 
 nav2_package()
 
 include_directories(
   include
+  ${POLYCLIPPING_INCLUDE_DIRS}
 )
 
 set(executable_name path_classifier_server)
@@ -43,9 +45,9 @@ set(dependencies
   tf2_ros
   nav2_costmap_2d
   pluginlib
-  nav2_pose_classifiers
 )
 
+# Server core library
 add_library(${library_name} SHARED
   src/path_classifier_server.cpp
   src/pose_classifier.cpp
@@ -66,9 +68,24 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
+# Pose classifier plugins
+add_library(pose_classifiers SHARED
+  src/classifiers/constraint_classifier.cpp
+)
+
+ament_target_dependencies(pose_classifiers
+  ${dependencies}
+)
+
+target_link_libraries(pose_classifiers
+  ${POLYCLIPPING_LIBRARIES}
+)
+
+pluginlib_export_plugin_description_file(nav2_path_classifier plugins.xml)
+
 rclcpp_components_register_nodes(${library_name} "nav2_path_classifier::PathClassifierServer")
 
-install(TARGETS ${library_name}
+install(TARGETS ${library_name} pose_classifiers
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -92,6 +109,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+ament_export_libraries(${library_name} pose_classifiers)
 ament_export_dependencies(${dependencies})
 ament_package()
