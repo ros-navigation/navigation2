@@ -63,7 +63,7 @@ void PathSplitter::configure(
 void PathSplitter::cleanup() {}
 
 // ---------------------------------------------------------------------------
-// splitPath — orchestrates the full pipeline
+// splitPath: orchestrates the full pipeline
 // ---------------------------------------------------------------------------
 
 PathSplitter::SplitResult PathSplitter::splitPath(
@@ -101,11 +101,11 @@ PathSplitter::SplitResult PathSplitter::splitPath(
 //
 // For each pose:
 //   - Stage 1: call pose_classifier.classify() to get the raw class
-//   - Stage 2: apply hysteresis — only confirm a class transition after
+//   - Stage 2: apply hysteresis, which only confirms a class transition after
 //              hysteresis_window_ consecutive poses of the new class.
 //              On confirmation, backfill by adjusting the segment boundary
 //              to the start of the confirmed run.
-//   - Stage 3: track segment boundaries inline — a new segment starts
+//   - Stage 3: track segment boundaries inline, where a new segment starts
 //              whenever the filtered (post-hysteresis) class changes.
 //
 // Optionally builds classified_poses (raw, pre-hysteresis) for visualization.
@@ -157,7 +157,7 @@ std::vector<PathSplitter::Segment> PathSplitter::classifyAndGroup(
 
     // Stage 2+3: hysteresis filter + inline segment grouping
     if (raw == current_class) {
-      // Matches accepted state — reset any pending transition.
+      // Matches accepted state, so reset any pending transition.
       // Pose stays in current_segment, nothing to do.
       run_count = 0;
       pending_class = current_class;
@@ -167,7 +167,7 @@ std::vector<PathSplitter::Segment> PathSplitter::classifyAndGroup(
       ++run_count;
 
       if (run_count >= hysteresis_window_) {
-        // Transition confirmed — backfill by adjusting segment boundary.
+        // Transition confirmed, so backfill by adjusting the segment boundary.
         // The last run_count poses were tentatively in current_segment
         // but actually belong to the new class.
         size_t backfill_start = i - run_count + 1;
@@ -186,7 +186,7 @@ std::vector<PathSplitter::Segment> PathSplitter::classifyAndGroup(
       // If not yet confirmed, pose logically stays in current_segment
 
     } else {
-      // A different class appeared — reset pending to this new candidate
+      // A different class appeared, so reset pending to this new candidate
       pending_class = raw;
       run_count = 1;
 
@@ -234,7 +234,7 @@ void PathSplitter::mergeShortSegments(std::vector<Segment> & segments)
           // Merge into left neighbor
           segments[i - 1].end_idx = segments[i].end_idx;
         } else {
-          // First segment — merge into right neighbor
+          // First segment: merge into right neighbor
           segments[i + 1].start_idx = segments[i].start_idx;
         }
         segments.erase(segments.begin() + static_cast<ptrdiff_t>(i));
