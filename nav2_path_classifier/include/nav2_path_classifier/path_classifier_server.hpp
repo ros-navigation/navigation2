@@ -15,7 +15,6 @@
 #ifndef NAV2_PATH_CLASSIFIER__PATH_CLASSIFIER_SERVER_HPP_
 #define NAV2_PATH_CLASSIFIER__PATH_CLASSIFIER_SERVER_HPP_
 
-#include <array>
 #include <memory>
 #include <string>
 #include <vector>
@@ -134,15 +133,6 @@ protected:
   static constexpr const char * kRawPoseMarkerNs = "raw_classified_poses";
   static constexpr double kSegmentLineWidth = 0.05;
   static constexpr double kRawPoseSize = 0.06;
-
-  static constexpr std::array<std::array<float, 3>, 6> kClassPalette = {{
-    {{0.2f, 0.4f, 1.0f}},   // blue
-    {{0.2f, 0.8f, 0.2f}},   // green
-    {{0.9f, 0.1f, 0.1f}},   // red
-    {{1.0f, 0.6f, 0.0f}},   // orange
-    {{0.8f, 0.2f, 0.8f}},   // magenta
-    {{0.2f, 0.8f, 0.8f}}    // cyan
-  }};
 
   /**
    * @brief Get the marker color for a given path class_type
