@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cmath>
 #include <cstdio>
 #include <ctime>
 #include <iomanip>
@@ -1050,7 +1051,12 @@ rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallb
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == "save_pose_rate") {
+      if (!std::isfinite(parameter.as_double())) {
+        RCLCPP_WARN(
+          get_logger(), "The value of parameter '%s' is not finite. Ignoring parameter update.",
+          param_name.c_str());
+        result.successful = false;
+      } else if (param_name == "save_pose_rate") {
         // All values are valid
         continue;
       } else if (parameter.as_double() < 0.0 &&  // NOLINT(readability/braces)

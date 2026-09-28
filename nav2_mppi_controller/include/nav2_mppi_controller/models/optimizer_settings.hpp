@@ -38,8 +38,8 @@ struct OptimizerSettings
   float controller_period{0.0f};
   float temperature{0.0f};
   float gamma{0.0f};
-  unsigned int batch_size{0u};
-  unsigned int time_steps{0u};
+  int batch_size{0};
+  int time_steps{0};
   unsigned int iteration_count{0u};
   bool shift_control_sequence{false};
   size_t retry_attempt_limit{0};

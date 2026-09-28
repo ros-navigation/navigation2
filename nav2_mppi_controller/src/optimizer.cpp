@@ -102,6 +102,42 @@ void Optimizer::getParams()
     parameters_handler_->addPreCallback(name_ + "." + p, kinematic_guard);
   }
 
+  auto size_guard = [this](
+    const rclcpp::Parameter & param,
+    rcl_interfaces::msg::SetParametersResult & result)
+    {
+      const std::string & param_name = param.get_name();
+      const auto value = param.as_int();
+      if (param_name == name_ + ".batch_size" &&
+        (value <= 0 || value > 100000))
+      {
+        result.successful = false;
+        if (!result.reason.empty()) {
+          result.reason += "\n";
+        }
+        result.reason += "MPPI batch_size must be in [1, 100000]";
+        if (value > 100000) {
+          result.reason += ". If you need a larger value, contact the maintainers to discuss "
+            "extending this limit";
+        }
+      }
+      if (param_name == name_ + ".time_steps" &&
+        (value <= 0 || value > 1000))
+      {
+        result.successful = false;
+        if (!result.reason.empty()) {
+          result.reason += "\n";
+        }
+        result.reason += "MPPI time_steps must be in [1, 1000]";
+        if (value > 1000) {
+          result.reason += ". If you need a larger value, contact the maintainers to discuss "
+            "extending this limit";
+        }
+      }
+    };
+  parameters_handler_->addPreCallback(name_ + ".batch_size", size_guard);
+  parameters_handler_->addPreCallback(name_ + ".time_steps", size_guard);
+
   getParam(s.model_dt, "model_dt", 0.05f);
   getParam(s.model_delay_vx, "model_delay_vx", 0.0f);
   getParam(s.model_delay_vy, "model_delay_vy", 0.0f);
@@ -148,6 +184,18 @@ void Optimizer::getParams()
   }
 
   getParam(motion_model_name, "motion_model", std::string("diff_drive"));
+
+  if (s.batch_size <= 0 || s.batch_size > 100000 ||
+    s.time_steps <= 0 || s.time_steps > 1000)
+  {
+    std::string error_msg =
+      "MPPI batch_size must be in [1, 100000] and time_steps must be in [1, 1000]";
+    if (s.batch_size > 100000 || s.time_steps > 1000) {
+      error_msg += ". If you need a larger value, contact the maintainers to discuss extending "
+        "these limits";
+    }
+    throw nav2_core::ControllerException(error_msg);
+  }
 
   s.constraints = s.base_constraints;
 
