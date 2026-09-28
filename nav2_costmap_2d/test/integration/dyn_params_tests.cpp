@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -131,6 +132,20 @@ TEST(DynParamTestNode, testDynParamsSet)
 
   EXPECT_EQ(costmap->get_parameter("width").as_int(), 2);
   EXPECT_EQ(costmap->get_parameter("height").as_int(), 3);
+  // Try setting dimensions whose cell count exceeds INT_MAX, should be rejected
+  auto results6 = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("width", std::numeric_limits<int>::max()),
+    rclcpp::Parameter("height", std::numeric_limits<int>::max()),
+    rclcpp::Parameter("resolution", 0.01),
+  });
+
+  node_executor.spin_all(std::chrono::milliseconds(50));
+  costmap_executor.spin_all(std::chrono::milliseconds(50));
+
+  EXPECT_EQ(costmap->get_parameter("width").as_int(), 2);
+  EXPECT_EQ(costmap->get_parameter("height").as_int(), 3);
+  EXPECT_EQ(costmap->get_parameter("resolution").as_double(), 5.678);
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());

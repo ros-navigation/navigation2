@@ -264,6 +264,24 @@ public:
   }
 };
 
+TEST(OptimizerTests, RejectInvalidInitialSize)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(100001));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+
+  EXPECT_THROW(
+    optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler),
+    std::runtime_error);
+}
+
 TEST(OptimizerTests, BasicInitializedFunctions)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
@@ -280,12 +298,22 @@ TEST(OptimizerTests, BasicInitializedFunctions)
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "test";
+  std::string name = "mppic";
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   auto tf_buffer = nav2::create_transform_buffer(node);
   optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  param_handler.start();
+
+  auto result = node->set_parameter(rclcpp::Parameter("mppic.batch_size", 0));
+  EXPECT_FALSE(result.successful);
+  result = node->set_parameter(rclcpp::Parameter("mppic.batch_size", 100001));
+  EXPECT_FALSE(result.successful);
+  result = node->set_parameter(rclcpp::Parameter("mppic.time_steps", 0));
+  EXPECT_FALSE(result.successful);
+  result = node->set_parameter(rclcpp::Parameter("mppic.time_steps", 1001));
+  EXPECT_FALSE(result.successful);
 
   // Test value of ax_min, ay_min it should be negative
   auto & constraints = optimizer_tester.getControlConstraints();
