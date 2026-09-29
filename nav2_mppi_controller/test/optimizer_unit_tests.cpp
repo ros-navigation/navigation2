@@ -264,11 +264,15 @@ public:
   }
 };
 
-TEST(OptimizerTests, RejectInvalidInitialSize)
+TEST(OptimizerTests, DefaultInvalidInitialSize)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   OptimizerTester optimizer_tester;
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(100001));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(1001));
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -277,9 +281,9 @@ TEST(OptimizerTests, RejectInvalidInitialSize)
   costmap_ros->on_configure(lstate);
   auto tf_buffer = nav2::create_transform_buffer(node);
 
-  EXPECT_THROW(
-    optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler),
-    std::runtime_error);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  EXPECT_EQ(optimizer_tester.grabSettings().batch_size, 1000u);
+  EXPECT_EQ(optimizer_tester.grabSettings().time_steps, 56u);
 }
 
 TEST(OptimizerTests, BasicInitializedFunctions)

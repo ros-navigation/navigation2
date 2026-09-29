@@ -785,20 +785,9 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
 
-  int width = map_width_meters_;
-  int height = map_height_meters_;
-  double resolution = resolution_;
-
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if (param_name == "width") {
-      width = parameter.as_int();
-    } else if (param_name == "height") {
-      height = parameter.as_int();
-    } else if (param_name == "resolution") {
-      resolution = parameter.as_double();
-    }
     if (param_name.find('.') != std::string::npos) {
       continue;
     }
@@ -849,17 +838,6 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
     }
   }
 
-  if (result.successful) {
-    const double size_x = width / resolution;
-    const double size_y = height / resolution;
-    const double max_cells = std::numeric_limits<int>::max();
-    if (size_x > max_cells / size_y) {
-      RCLCPP_WARN(
-        get_logger(), "Costmap cell count exceeds the supported signed index range. "
-        "Ignoring parameter update.");
-      result.successful = false;
-    }
-  }
   return result;
 }
 

@@ -86,9 +86,8 @@ public:
     auto getParam = param_handler_->getParamGetter(name_);
     getParam(collision_lookahead_time_, "collision_lookahead_time", 2.0f);
     traj_samples_to_evaluate_ = collision_lookahead_time_ / settings.model_dt;
-    const unsigned int time_steps = static_cast<unsigned int>(settings.time_steps);
-    if (traj_samples_to_evaluate_ > time_steps) {
-      traj_samples_to_evaluate_ = time_steps;
+    if (traj_samples_to_evaluate_ > settings.time_steps) {
+      traj_samples_to_evaluate_ = settings.time_steps;
       RCLCPP_WARN(
         node->get_logger(),
         "Collision lookahead time is greater than the number of trajectory samples, "

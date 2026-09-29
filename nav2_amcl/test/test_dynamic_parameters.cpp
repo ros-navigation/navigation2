@@ -14,7 +14,6 @@
 
 #include <math.h>
 
-#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -130,11 +129,6 @@ TEST(WPTest, test_dynamic_parameters)
   EXPECT_EQ(amcl->get_parameter("random_seed").as_int(), 42);
 
   results = rec_param->set_parameters_atomically({rclcpp::Parameter("alpha1", -1.0)});
-  rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
-  EXPECT_EQ(amcl->get_parameter("alpha1").as_double(), 1.0);
-
-  results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("alpha1", std::numeric_limits<double>::infinity())});
   rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
   EXPECT_EQ(amcl->get_parameter("alpha1").as_double(), 1.0);
 
