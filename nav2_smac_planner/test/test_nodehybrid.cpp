@@ -541,6 +541,31 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   EXPECT_EQ(neighbors.size(), 0u);
 }
 
+TEST(NodeHybridTest, backtrace_preserves_fractional_headings)
+{
+  nav2_smac_planner::NodeHybrid::NodeContext ctx;
+  ctx.motion_table.bin_size = 2.0f * M_PI / 64.0f;
+  nav2_smac_planner::NodeHybrid start(0, &ctx), middle(1, &ctx), goal(2, &ctx);
+  // Analytic interpolation stores continuous headings in bin units.
+  start.pose = {1.0f, 2.0f, 0.25f};
+  middle.pose = {3.0f, 4.0f, 12.75f};
+  goal.pose = {5.0f, 6.0f, 63.5f};
+  middle.parent = &start;
+  goal.parent = &middle;
+  nav2_smac_planner::NodeHybrid::CoordinateVector path;
+  ASSERT_TRUE(goal.backtracePath(path));
+  ASSERT_EQ(path.size(), 3u);
+  const auto bin_size = ctx.motion_table.bin_size;
+  EXPECT_FLOAT_EQ(path[0].theta, 63.5f * bin_size);
+  EXPECT_FLOAT_EQ(path[1].theta, 12.75f * bin_size);
+  EXPECT_FLOAT_EQ(path[2].theta, 0.25f * bin_size);
+  EXPECT_FLOAT_EQ(path[0].x, goal.pose.x);
+  EXPECT_FLOAT_EQ(path[1].y, middle.pose.y);
+  EXPECT_FLOAT_EQ(path[2].x, start.pose.x);
+  EXPECT_FLOAT_EQ(middle.pose.theta, 12.75f);
+  EXPECT_FLOAT_EQ(ctx.motion_table.getAngleFromBin(12u), 12.0f * bin_size);
+}
+
 TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
 {
   // Tests to check getClosestAngularBin behavior for different input types
