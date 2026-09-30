@@ -16,7 +16,7 @@
 #include <memory>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logging.hpp"
 #include "tf2/time.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 

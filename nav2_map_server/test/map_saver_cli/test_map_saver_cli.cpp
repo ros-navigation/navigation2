@@ -20,7 +20,10 @@
 
 #include "nav2_ros_common/qos_profiles.hpp"
 #include "nav2_ros_common/rate.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/rate.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
 TEST(MapSaverCLI, CLITest)

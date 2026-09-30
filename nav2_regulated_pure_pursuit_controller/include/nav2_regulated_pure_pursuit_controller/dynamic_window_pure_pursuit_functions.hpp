@@ -15,14 +15,14 @@
 #ifndef NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__DYNAMIC_WINDOW_PURE_PURSUIT_FUNCTIONS_HPP_
 #define NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__DYNAMIC_WINDOW_PURE_PURSUIT_FUNCTIONS_HPP_
 
-#include <string>
-#include <vector>
 #include <algorithm>
+#include <cmath>
+#include <limits>
+#include <string>
 #include <tuple>
 #include <utility>
-#include <limits>
+#include <vector>
 
-#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller

@@ -13,11 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_loopback_sim/clock_publisher.hpp"
-
 #include <chrono>
 #include <memory>
 #include <stdexcept>
+
+#include "nav2_loopback_sim/clock_publisher.hpp"
 
 namespace nav2_loopback_sim
 {

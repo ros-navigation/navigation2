@@ -19,7 +19,10 @@
 #include <thread>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/future_return_code.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/utilities.hpp"
 
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behaviors/timed_behavior.hpp"

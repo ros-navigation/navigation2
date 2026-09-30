@@ -15,6 +15,7 @@
 #include "nav2_rviz_plugins/selector.hpp"
 #include "nav2_rviz_plugins/utils.hpp"
 #include "rviz_common/display_context.hpp"
+#include "rclcpp/rate.hpp"
 
 using namespace std::chrono_literals;
 

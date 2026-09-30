@@ -21,7 +21,6 @@
 #include <utility>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"

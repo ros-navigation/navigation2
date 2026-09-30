@@ -20,7 +20,12 @@
 #include <memory>
 #include <filesystem>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/client.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/future_return_code.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/utilities.hpp"
 
 #include "test_constants/test_constants.h"
 #include "nav2_map_server/map_saver.hpp"

@@ -22,7 +22,8 @@
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_client.hpp"
 #include "std_msgs/msg/u_int8.hpp"
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
