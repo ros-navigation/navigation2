@@ -151,9 +151,7 @@ protected:
   double max_decel_;       // Deceleration (m/s^2) used to size lookahead
   double min_lookahead_;   // Lower limit on lookahead distance (m)
   double max_lookahead_;   // Upper limit on lookahead distance (m)
-  // [AI generated]
   double max_path_rewind_;  // Path length (m) the closest-segment search may rewind per update
-  // [AI generated]
   bool clear_path_on_reset_;  // Whether resetFilter() drops the cached path
 };
 

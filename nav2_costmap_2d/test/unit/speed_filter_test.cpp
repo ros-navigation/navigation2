@@ -289,7 +289,6 @@ protected:
   void testPathLookaheadDetection(
     uint8_t type, double base, double multiplier, double linear_vel,
     double tr_x, double tr_y);
-  // [AI generated]
   void testPathLookaheadRewind(
     uint8_t type, double base, double multiplier, double linear_vel);
   void testPathLookaheadRewindStaysOnLeg(
@@ -797,7 +796,6 @@ void TestNode::testPathLookaheadDetection(
   verifySpeedLimit(type, base, multiplier, 2, 1, speed_limit);
 }
 
-// [AI generated]
 void TestNode::testPathLookaheadRewind(
   uint8_t type, double base, double multiplier, double linear_vel)
 {
@@ -832,7 +830,6 @@ void TestNode::testPathLookaheadRewind(
   verifySpeedLimit(type, base, multiplier, 2, 1, speed_limit);
 }
 
-// [AI generated]
 void TestNode::testPathLookaheadRewindStaysOnLeg(
   uint8_t type, double base, double multiplier, double linear_vel)
 {
@@ -1084,7 +1081,6 @@ TEST_F(TestNode, testPathLookaheadWithDifferentFrame)
   reset();
 }
 
-// [AI generated]
 TEST_F(TestNode, testPathLookaheadRewindsAfterBackwardMotion)
 {
   createMaps("map");
@@ -1103,7 +1099,6 @@ TEST_F(TestNode, testPathLookaheadRewindsAfterBackwardMotion)
   reset();
 }
 
-// [AI generated]
 TEST_F(TestNode, testPathLookaheadRewindStaysOnCurrentLeg)
 {
   createMaps("map");
