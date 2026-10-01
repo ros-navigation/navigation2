@@ -518,11 +518,22 @@
     <Control ID="PipelineSequence"/>
 
     <Control ID="RecoveryNode">
-      <input_port name="number_of_retries" type="int" default="1">Number of retries.</input_port>
+      <input_port name="number_of_retries" type="int" default="1">Number of retries, negative to retry forever.</input_port>
     </Control>
 
     <Control ID="RoundRobin">
       <input_port name="wrap_around" type="bool" default="false">Controls wrap-around behavior. When `false`, the node returns FAILURE instead of wrapping to the first child after all children have been attempted. When `true`, the node wraps around to the first child and continues the round-robin behavior.</input_port>
+    </Control>
+
+    <Control ID="RecoveryManager">
+      <input_port name="param_namespace" type="string" default="recovery_manager">Parameter namespace of the recovery sequences. Each error code group has a `default` sequence and `error_specific` sequences keyed by error name or code. Use `[none]` for errors that can't be recovered from.</input_port>
+      <input_port name="error_code_names" type="vector&lt;string&gt;" default="compute_path_error_code;follow_path_error_code">Blackboard keys of the error codes to recover from, in order of priority. Each one gets a group named after it without `_error_code`.</input_port>
+      <input_port name="reset_distance" type="double" default="0.5">Distance the robot has to move after a recovery for the sequences to start over, zero to disable.</input_port>
+      <input_port name="wrap_around" type="bool" default="false">Start a sequence over instead of failing once it runs out.</input_port>
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Destination. Sequences start over when it changes.</input_port>
+      <input_port name="goals" type="nav_msgs::msg::Goals">Destinations. Sequences start over when they change.</input_port>
+      <input_port name="global_frame" type="string">Global frame</input_port>
+      <input_port name="robot_base_frame" type="string">Robot base frame</input_port>
     </Control>
 
     <Control ID="NonblockingSequence"/>
