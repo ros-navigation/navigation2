@@ -37,6 +37,7 @@
 
 #include "nav2_costmap_2d/costmap_filters/speed_filter.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <utility>
@@ -49,10 +50,19 @@
 namespace nav2_costmap_2d
 {
 
+namespace
+{
+// Growth in distance from the cached path point, in segment lengths (or mask cells if larger),
+// that triggers a search back along the path. Moving forward along a segment never exceeds one
+// segment length.
+constexpr double kBackupThresholdScale = 2.0;
+}  // namespace
+
 SpeedFilter::SpeedFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   speed_limit_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
   speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT),
+  lookahead_ref_dist_(std::numeric_limits<double>::infinity()),
   clear_path_on_reset_(false)
 {
 }
@@ -81,8 +91,6 @@ void SpeedFilter::initializeFilter(
     name_ + "." + "min_lookahead", 0.3);
   max_lookahead_ = node->declare_or_get_parameter(
     name_ + "." + "max_lookahead", 5.0);
-  max_path_rewind_ = node->declare_or_get_parameter(
-    name_ + "." + "max_path_rewind", 1.0);
   clear_path_on_reset_ = node->declare_or_get_parameter(
     name_ + "." + "clear_path_on_reset", false);
   std::string path_topic = node->declare_or_get_parameter(
@@ -112,13 +120,6 @@ void SpeedFilter::initializeFilter(
         "clamping to min_lookahead.",
         max_lookahead_, min_lookahead_);
       max_lookahead_ = min_lookahead_;
-    }
-    if (max_path_rewind_ < 0.0) {
-      RCLCPP_WARN(
-        logger_,
-        "SpeedFilter: max_path_rewind = %f is negative,"
-        "clamping to 0.0m", max_path_rewind_);
-      max_path_rewind_ = 0.0;
     }
   }
 
@@ -168,6 +169,7 @@ void SpeedFilter::initializeFilter(
   // Reset path lookahead states
   held_lookahead_dist_ = 0.0;
   lookahead_start_idx_ = 0;
+  lookahead_ref_dist_ = std::numeric_limits<double>::infinity();
 }
 
 void SpeedFilter::filterInfoCallback(
@@ -258,6 +260,7 @@ void SpeedFilter::pathCallback(
 
   // Reset cached start index when new path is received
   lookahead_start_idx_ = 0;
+  lookahead_ref_dist_ = std::numeric_limits<double>::infinity();
 }
 
 bool SpeedFilter::getSpeedLimitAtPose(
@@ -322,6 +325,56 @@ bool SpeedFilter::getSpeedLimitAtPose(
   return true;
 }
 
+void SpeedFilter::updateLookaheadStart(
+  const nav_msgs::msg::Path & path,
+  const geometry_msgs::msg::Pose & robot_pose)
+{
+  const auto & poses = path.poses;
+  const size_t start = (lookahead_start_idx_ < poses.size()) ? lookahead_start_idx_ : 0;
+
+  // distance_from_path() only scans forward from start
+  const size_t forward_idx =
+    nav2_util::distance_from_path(path, robot_pose, start).closest_segment_index;
+  if (forward_idx != start) {
+    lookahead_start_idx_ = forward_idx;
+    lookahead_ref_dist_ = nav2_util::geometry_utils::euclidean_distance(
+      robot_pose.position, poses[forward_idx].pose.position);
+    return;
+  }
+
+  // Still on the cached segment. Moving forward along a segment moves the robot away from its
+  // start point by at most one segment length, so only a larger increase over the closest
+  // approach means the robot has backed away from the path.
+  const double dist = nav2_util::geometry_utils::euclidean_distance(
+    robot_pose.position, poses[start].pose.position);
+  const double segment_length = (start + 1 < poses.size()) ?
+    nav2_util::geometry_utils::euclidean_distance(
+    poses[start].pose.position, poses[start + 1].pose.position) : 0.0;
+  const double threshold = kBackupThresholdScale *
+    std::max(segment_length, static_cast<double>(filter_mask_->info.resolution));
+
+  if (dist <= lookahead_ref_dist_ + threshold) {
+    lookahead_ref_dist_ = std::min(lookahead_ref_dist_, dist);
+    return;
+  }
+
+  // Search back by as much path as the robot has moved away from the cached point. Bounding it
+  // keeps a part of the path that passes near the robot, but is further back, out of reach.
+  const double window = dist - lookahead_ref_dist_;
+  size_t back_idx = start;
+  double walked = 0.0;
+  while (back_idx > 0 && walked < window) {
+    walked += nav2_util::geometry_utils::euclidean_distance(
+      poses[back_idx - 1].pose.position, poses[back_idx].pose.position);
+    back_idx--;
+  }
+
+  lookahead_start_idx_ =
+    nav2_util::distance_from_path(path, robot_pose, back_idx).closest_segment_index;
+  lookahead_ref_dist_ = nav2_util::geometry_utils::euclidean_distance(
+    robot_pose.position, poses[lookahead_start_idx_].pose.position);
+}
+
 bool SpeedFilter::getSpeedLimitFromLookahead(
   const geometry_msgs::msg::Pose & robot_pose,
   double lookahead_dist,
@@ -354,22 +407,7 @@ bool SpeedFilter::getSpeedLimitFromLookahead(
   }
 
   const auto & poses = transformed_path.poses;
-  const size_t pose_search_start =
-    (lookahead_start_idx_ < poses.size()) ? lookahead_start_idx_ : 0;
-
-  // distance_from_path() only scans forward, so the cached index never rewinds on its own.
-  // Bounded: a global re-search snaps onto an earlier leg where a path passes near itself.
-  size_t search_start = pose_search_start;
-  double rewound = 0.0;
-  while (search_start > 0 && rewound < max_path_rewind_) {
-    rewound += nav2_util::geometry_utils::euclidean_distance(
-      poses[search_start - 1].pose.position, poses[search_start].pose.position);
-    search_start--;
-  }
-
-  // Update cached start index
-  lookahead_start_idx_ = nav2_util::distance_from_path(
-    transformed_path, robot_pose, search_start).closest_segment_index;
+  updateLookaheadStart(transformed_path, robot_pose);
 
   // Check robot's current pose
   double limit_at_robot_pose = NO_SPEED_LIMIT;
