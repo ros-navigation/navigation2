@@ -82,8 +82,6 @@ ParameterHandler::ParameterHandler(
     plugin_name_ + ".obstacle_cost_margin", 1);
   params_.final_rotation_search_step = node->declare_or_get_parameter(
     plugin_name_ + ".final_rotation_search_step", 0.1);
-  // [AI generated] setSpeedLimit() scales from these references, so they must
-  // start at the configured maximums, as in the dynamic parameter callback
   params_.v_linear_max_initial = params_.v_linear_max;
   params_.v_angular_max_initial = params_.v_angular_max;
 
