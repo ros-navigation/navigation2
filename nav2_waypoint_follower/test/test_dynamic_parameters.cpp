@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_waypoint_follower/waypoint_follower.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -61,6 +62,21 @@ TEST(WPTest, test_dynamic_parameters)
   node->deactivate();
   node->cleanup();
   node.reset();
+}
+
+TEST(WPTest, invalid_task_executor_fails_configuration)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({
+    rclcpp::Parameter("waypoint_task_executor_plugin", "missing"),
+    rclcpp::Parameter("missing.plugin", "does_not_exist::MissingPlugin"),
+    rclcpp::Parameter("bond_heartbeat_period", 0.0),
+  });
+
+  auto follower = std::make_shared<nav2_waypoint_follower::WaypointFollower>(options);
+  EXPECT_EQ(
+    follower->configure().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED);
 }
 
 int main(int argc, char ** argv)
