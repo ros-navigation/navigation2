@@ -39,7 +39,11 @@ BT::NodeStatus RecoveryNode::tick()
 
   setStatus(BT::NodeStatus::RUNNING);
 
-  while (current_child_idx_ < children_count && retry_count_ <= number_of_retries_) {
+  const bool retry_forever = number_of_retries_ < 0;
+  const unsigned int max_retries =
+    retry_forever ? 0 : static_cast<unsigned int>(number_of_retries_);
+
+  while (current_child_idx_ < children_count && (retry_forever || retry_count_ <= max_retries)) {
     TreeNode * child_node = children_nodes_[current_child_idx_];
     const BT::NodeStatus child_status = child_node->executeTick();
 
@@ -62,7 +66,7 @@ BT::NodeStatus RecoveryNode::tick()
 
         case BT::NodeStatus::FAILURE:
           {
-            if (retry_count_ < number_of_retries_) {
+            if (retry_forever || retry_count_ < max_retries) {
               // halt first child and tick second child in next iteration
               ControlNode::haltChild(0);
               current_child_idx_++;
