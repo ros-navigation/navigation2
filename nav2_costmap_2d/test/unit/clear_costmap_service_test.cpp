@@ -24,7 +24,9 @@
 #include "nav2_msgs/srv/clear_costmap_around_pose.hpp"
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
@@ -122,6 +124,27 @@ protected:
     // Expect service call to fail since voxel_layer is unknown
     testClearingWithPluginList({"obstacle_layer", "voxel_layer"},
       "'Clearing with known and unknown plugin' test", false);
+  }
+
+  void testClearingOneCellRegion()
+  {
+    const auto & plugins = *(costmap_->getLayeredCostmap()->getPlugins());
+    auto layer = std::dynamic_pointer_cast<nav2_costmap_2d::CostmapLayer>(plugins.at(1));
+    ASSERT_NE(layer, nullptr);
+
+    const unsigned int mx = layer->getSizeInCellsX() / 2;
+    const unsigned int my = layer->getSizeInCellsY() / 2;
+    double wx, wy;
+    layer->mapToWorld(mx, my, wx, wy);
+    layer->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+    auto request = createDefaultSrvRequest();
+    request->pose.pose.position.x = wx;
+    request->pose.pose.position.y = wy;
+    request->reset_distance = layer->getResolution();
+    validateServiceCall(request, "'Clearing one cell region' test", true);
+
+    EXPECT_EQ(layer->getCost(mx, my), nav2_costmap_2d::NO_INFORMATION);
   }
 
 private:
@@ -273,6 +296,11 @@ TEST_F(ClearCostmapAroundPoseTest, TestPluginsInitialization)
 TEST_F(ClearCostmapAroundPoseTest, TestClearingWithEmptyPluginList)
 {
   testClearingWithEmptyPluginList();
+}
+
+TEST_F(ClearCostmapAroundPoseTest, TestClearingOneCellRegion)
+{
+  testClearingOneCellRegion();
 }
 
 TEST_F(ClearCostmapAroundPoseTest, TestClearingWithClearablePlugin)
