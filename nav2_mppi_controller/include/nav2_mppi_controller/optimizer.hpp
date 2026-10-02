@@ -246,7 +246,7 @@ protected:
   void propagateStateVelocitiesFromInitials(models::State & state) const;
 
   /**
-   * @brief Rollout velocities in state to poses
+   * @brief Roll out velocities to poses with trapezoidal velocity integration
    * @param trajectories to rollout
    * @param state fill state
    */
@@ -255,7 +255,7 @@ protected:
     const models::State & state) const;
 
   /**
-   * @brief Rollout velocities in state to poses
+   * @brief Roll out velocities to poses with trapezoidal velocity integration
    * @param trajectories to rollout
    * @param state fill state
    */

@@ -256,6 +256,12 @@ public:
     return getControlFromSequenceAsTwist(stamp);
   }
 
+  models::ControlSequence & getMutableControlSequence()
+  {
+    // AI-assisted test seam for exercising optimized-trajectory integration.
+    return control_sequence_;
+  }
+
   void integrateStateVelocitiesWrapper(
     models::Trajectories & traj,
     const models::State & state)
@@ -830,8 +836,10 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   optimizer_tester.integrateStateVelocitiesWrapper(traj, state);
   EXPECT_TRUE(traj.y.isApproxToConstant(0.0f));
   EXPECT_TRUE(traj.yaws.isApproxToConstant(0.0f));
+  // AI-assisted expectations for interval-endpoint velocity integration.
   for (unsigned int i = 0; i != traj.x.cols(); i++) {
-    EXPECT_NEAR(traj.x(1, i), i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
+    const float expected_x = (i + 0.5f) * 0.1f /*vel*/ * 0.1f /*dt*/;
+    EXPECT_NEAR(traj.x(1, i), expected_x, 1e-3);
   }
 
   // Give it a bit of a more complex trajectory to crunch
@@ -840,25 +848,61 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   optimizer_tester.integrateStateVelocitiesWrapper(traj, state);
 
   EXPECT_TRUE(traj.yaws.isApproxToConstant(0.0f));
+  // AI-assisted expectations for holonomic interval-endpoint integration.
   for (unsigned int i = 0; i != traj.x.cols(); i++) {
-    EXPECT_NEAR(traj.x(1, i), i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
-    EXPECT_NEAR(traj.y(1, i), i * 0.2 /*vel*/ * 0.1 /*dt*/, 1e-3);
+    const float expected_x = (i + 0.5f) * 0.1f /*vel*/ * 0.1f /*dt*/;
+    const float expected_y = (i + 0.5f) * 0.2f /*vel*/ * 0.1f /*dt*/;
+    EXPECT_NEAR(traj.x(1, i), expected_x, 1e-3);
+    EXPECT_NEAR(traj.y(1, i), expected_y, 1e-3);
   }
 
-  // Let's add some angular motion to the mix
+  // AI-assisted test for angular motion with midpoint-heading integration.
+  state.vx = 0.1 * Eigen::ArrayXXf::Ones(1000, 50);
   state.vy = Eigen::ArrayXXf::Zero(1000, 50);
   state.wz = 0.2 * Eigen::ArrayXXf::Ones(1000, 50);
-  state.wz.col(0) = Eigen::ArrayXf::Zero(1000);
   optimizer_tester.integrateStateVelocitiesWrapper(traj, state);
 
-  float x = 0;
-  float y = 0;
-  for (unsigned int i = 1; i != traj.x.cols(); i++) {
-    x += (0.1 /*vx*/ * cosf(0.2 /*wz*/ * 0.1 /*model_dt*/ * (i - 1))) * 0.1 /*model_dt*/;
-    y += (0.1 /*vx*/ * sinf(0.2 /*wz*/ * 0.1 /*model_dt*/ * (i - 1))) * 0.1 /*model_dt*/;
+  for (unsigned int i = 0; i != traj.x.cols(); i++) {
+    const float time = static_cast<float>(i + 1) * 0.1f /*model_dt*/;
+    const float expected_yaw = 0.2f /*wz*/ * time;
+    const float turn_radius = 0.1f /*vx*/ / 0.2f /*wz*/;
+    EXPECT_NEAR(traj.x(1, i), turn_radius * sinf(expected_yaw), 1e-4);
+    EXPECT_NEAR(traj.y(1, i), turn_radius * (1.0f - cosf(expected_yaw)), 1e-4);
+    EXPECT_NEAR(traj.yaws(1, i), expected_yaw, 1e-6);
+  }
 
-    EXPECT_NEAR(traj.x(1, i), x, 1e-6);
-    EXPECT_NEAR(traj.y(1, i), y, 1e-6);
+  // AI-assisted test: trapezoidal integration is exact where both endpoint samples are available;
+  // the terminal interval holds its final velocity because no later sample exists.
+  state.vx = Eigen::ArrayXXf::Zero(1000, 50);
+  state.wz = Eigen::ArrayXXf::Zero(1000, 50);
+  for (unsigned int i = 0; i != state.vx.cols(); i++) {
+    state.vx.col(i).setConstant(static_cast<float>(i) * 0.1f);
+  }
+  optimizer_tester.integrateStateVelocitiesWrapper(traj, state);
+  for (unsigned int i = 0; i != traj.x.cols(); i++) {
+    const float time = static_cast<float>(i + 1) * 0.1f;
+    float expected_x = 0.5f * time * time;
+    if (i + 1 == static_cast<unsigned int>(traj.x.cols())) {
+      const float terminal_start = time - 0.1f;
+      expected_x = 0.5f * terminal_start * terminal_start + terminal_start * 0.1f;
+    }
+    EXPECT_NEAR(traj.x(1, i), expected_x, 1e-5);
+    EXPECT_NEAR(traj.y(1, i), 0.0f, 1e-6);
+  }
+
+  // AI-assisted test: the optimized trajectory uses the same midpoint-heading integration.
+  auto & control_sequence = optimizer_tester.getMutableControlSequence();
+  control_sequence.vx.setConstant(0.1f);
+  control_sequence.vy.setZero();
+  control_sequence.wz.setConstant(0.2f);
+  const auto optimized_traj = optimizer_tester.getOptimizedTrajectory();
+  for (unsigned int i = 0; i != optimized_traj.rows(); i++) {
+    const float time = static_cast<float>(i + 1) * 0.1f /*model_dt*/;
+    const float expected_yaw = 0.2f /*wz*/ * time;
+    const float turn_radius = 0.1f /*vx*/ / 0.2f /*wz*/;
+    EXPECT_NEAR(optimized_traj(i, 0), turn_radius * sinf(expected_yaw), 1e-4);
+    EXPECT_NEAR(optimized_traj(i, 1), turn_radius * (1.0f - cosf(expected_yaw)), 1e-4);
+    EXPECT_NEAR(optimized_traj(i, 2), expected_yaw, 1e-6);
   }
 }
 
