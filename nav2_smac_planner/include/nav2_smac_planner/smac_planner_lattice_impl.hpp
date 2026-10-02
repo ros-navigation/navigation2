@@ -325,8 +325,6 @@ nav_msgs::msg::Path SmacPlannerLatticeT<NodeT>::createPlan(
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
 
-  // Primitives are generated for a fixed grid resolution. Do not silently
-  // scale their physical geometry
   if (std::abs(_costmap->getResolution() - _metadata.grid_resolution) > 1e-6) {
     throw nav2_core::PlannerException(
             "Costmap resolution " + std::to_string(_costmap->getResolution()) +
