@@ -4,7 +4,7 @@
   behaviors can be added here as more children.
 -->
 <root BTCPP_format="4">
-  <BehaviorTree ID="NavigateRecoveryBehaviors">
+  <BehaviorTree ID="RecoveryManagerSubtree">
     <RecoveryManager name="RecoveryActions" param_namespace="recovery_manager">
       <ClearEntireCostmap name="ClearLocalCostmap" service_name="local_costmap/clear_entirely_local_costmap"/>
       <ClearEntireCostmap name="ClearGlobalCostmap" service_name="global_costmap/clear_entirely_global_costmap"/>

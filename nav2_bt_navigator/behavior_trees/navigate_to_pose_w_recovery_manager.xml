@@ -1,6 +1,6 @@
 <!--
   This Behavior Tree replans the global path periodically at 1 Hz. When planning or control
-  fails, the NavigateRecoveryBehaviors subtree picks a recovery behavior for the error code,
+  fails, the RecoveryManagerSubtree picks a recovery behavior for the error code,
   using the recovery_manager parameters. Navigation is retried until the recovery gives up.
 -->
 <root BTCPP_format="4" main_tree_to_execute="NavigateToPoseWRecoveryManager">
@@ -29,7 +29,7 @@
       </PipelineSequence>
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>
-        <SubTree ID="NavigateRecoveryBehaviors" _autoremap="true"/>
+        <SubTree ID="RecoveryManagerSubtree" _autoremap="true"/>
       </ReactiveFallback>
     </RecoveryNode>
   </BehaviorTree>
