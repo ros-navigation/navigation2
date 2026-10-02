@@ -178,6 +178,24 @@ static void BM_ObstaclesCriticPointFootprint(benchmark::State & state)
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }
 
+static void BM_TranslationalVelocityCritic(benchmark::State & state)
+{
+  bool consider_footprint = true;
+  std::string motion_model = "omni";
+  std::vector<std::string> critics = {{"TranslationalVelocityCritic"}};
+
+  prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
+}
+
+static void BM_MecanumCritic(benchmark::State & state)
+{
+  bool consider_footprint = true;
+  std::string motion_model = "omni";
+  std::vector<std::string> critics = {{"MecanumCritic"}};
+
+  prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
+}
+
 static void BM_TwilringCritic(benchmark::State & state)
 {
   bool consider_footprint = true;
@@ -216,6 +234,8 @@ BENCHMARK(BM_PathAngleCritic)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_PathFollowCritic)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_ObstaclesCritic)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_ObstaclesCriticPointFootprint)->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_TranslationalVelocityCritic)->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_MecanumCritic)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_TwilringCritic)->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN();
