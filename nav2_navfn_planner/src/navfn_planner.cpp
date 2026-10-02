@@ -29,6 +29,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -85,10 +86,16 @@ NavfnPlanner::configure(
     node, name_, logger_);
   params_ = param_handler_->getParams();
 
+  // AI-generated: snapshot both dimensions under the lock used by costmap resizing.
+  unsigned int size_x, size_y;
+  {
+    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+    size_x = costmap_->getSizeInCellsX();
+    size_y = costmap_->getSizeInCellsY();
+  }
+
   // Create a planner based on the new costmap size
-  planner_ = std::make_unique<NavFn>(
-    costmap_->getSizeInCellsX(),
-    costmap_->getSizeInCellsY());
+  planner_ = std::make_unique<NavFn>(size_x, size_y);
 }
 
 void
