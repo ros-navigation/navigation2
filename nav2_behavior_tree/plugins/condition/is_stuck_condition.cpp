@@ -131,7 +131,7 @@ bool IsStuckCondition::isStuck()
   if (current_accel_ < brake_accel_limit_) {
     RCLCPP_DEBUG(
       node_->get_logger(), "Current deceleration is beyond brake limit."
-      " brake limit: %.2f, current accel: %.2f", brake_accel_limit_, current_accel_);
+      " brake limit: %.2f, current accel: %.2f", brake_accel_limit_, current_accel_.load());
 
     return true;
   }
