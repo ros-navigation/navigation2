@@ -80,16 +80,7 @@ geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
       logger_,
       "Request pose in %s frame. Converting to route server frame: %s.",
       pose.header.frame_id.c_str(), target_frame.c_str());
-    if (pose.header.stamp.sec == 0 && pose.header.stamp.nanosec == 0) {
-      geometry_msgs::msg::TransformStamped transform;
-      if (!nav2_util::lookupTransformWithStalenessCheck(
-          *tf_, target_frame, pose.header.frame_id, clock_->now(),
-          transform_staleness_threshold_, transform))
-      {
-        throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame);
-      }
-      tf2::doTransform(pose, pose, transform);
-    } else if (!nav2_util::transformPoseInTargetFrame(pose, pose, *tf_, target_frame)) {
+    if (!nav2_util::transformPoseInTargetFrame(pose, pose, *tf_, target_frame)) {
       throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame);
     }
   }

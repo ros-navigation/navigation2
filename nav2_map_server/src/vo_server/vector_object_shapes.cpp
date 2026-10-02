@@ -29,7 +29,6 @@
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/raytrace_line_2d.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_map_server
@@ -42,17 +41,9 @@ bool lookupShapeTransform(
   const std_msgs::msg::Header & header,
   const std::string & target_frame,
   const nav2::TransformBuffer::SharedPtr & tf_buffer,
-  const rclcpp::Time & current_time,
   const double transform_tolerance,
-  const double transform_staleness_threshold,
   geometry_msgs::msg::TransformStamped & transform)
 {
-  if (header.stamp.sec == 0 && header.stamp.nanosec == 0) {
-    return nav2_util::lookupTransformWithStalenessCheck(
-      *tf_buffer, target_frame, header.frame_id, current_time,
-      transform_staleness_threshold, transform);
-  }
-
   try {
     transform = tf_buffer->lookupTransform(
       target_frame, header.frame_id, rclcpp::Time(header.stamp),
@@ -68,7 +59,7 @@ bool lookupShapeTransform(
 // ---------- Shape ----------
 
 Shape::Shape(const nav2::LifecycleNode::WeakPtr & node)
-: type_(UNKNOWN), node_(node), clock_(node.lock()->get_clock())
+: type_(UNKNOWN), node_(node)
 {}
 
 Shape::~Shape()
@@ -328,13 +319,11 @@ bool Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
 bool Polygon::toFrame(
   const std::string & to_frame,
   const nav2::TransformBuffer::SharedPtr tf_buffer,
-  const double transform_tolerance,
-  const double transform_staleness_threshold)
+  const double transform_tolerance)
 {
   geometry_msgs::msg::TransformStamped transform;
   if (!lookupShapeTransform(
-      params_->header, to_frame, tf_buffer, clock_->now(), transform_tolerance,
-      transform_staleness_threshold, transform))
+      params_->header, to_frame, tf_buffer, transform_tolerance, transform))
   {
     return false;
   }
@@ -573,13 +562,11 @@ bool Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
 bool Circle::toFrame(
   const std::string & to_frame,
   const nav2::TransformBuffer::SharedPtr tf_buffer,
-  const double transform_tolerance,
-  const double transform_staleness_threshold)
+  const double transform_tolerance)
 {
   geometry_msgs::msg::TransformStamped transform;
   if (!lookupShapeTransform(
-      params_->header, to_frame, tf_buffer, clock_->now(), transform_tolerance,
-      transform_staleness_threshold, transform))
+      params_->header, to_frame, tf_buffer, transform_tolerance, transform))
   {
     return false;
   }
