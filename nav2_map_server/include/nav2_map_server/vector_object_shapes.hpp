@@ -122,14 +122,12 @@ public:
    * @param to_frame Frame ID to transform to
    * @param tf_buffer TF buffer to use for the transformation
    * @param transform_tolerance Transform tolerance
-   * @param transform_staleness_threshold Maximum age of the latest transform
    * @return Whether it was transformed successfully
    */
   virtual bool toFrame(
     const std::string & to_frame,
     const nav2::TransformBuffer::SharedPtr tf_buffer,
-    const double transform_tolerance,
-    const double transform_staleness_threshold) = 0;
+    const double transform_tolerance) = 0;
 
   /**
    * @brief Gets shape box-boundaries.
@@ -195,9 +193,6 @@ protected:
 
   /// @brief VectorObjectServer node
   nav2::LifecycleNode::WeakPtr node_;
-
-  /// @brief Clock
-  rclcpp::Clock::SharedPtr clock_;
 };
 
 /// @brief Polygon shape class
@@ -266,14 +261,12 @@ public:
    * @param to_frame Frame ID to transform to
    * @param tf_buffer TF buffer to use for the transformation
    * @param transform_tolerance Transform tolerance
-   * @param transform_staleness_threshold Maximum age of the latest transform
    * @return Whether it was transformed successfully
    */
   bool toFrame(
     const std::string & to_frame,
     const nav2::TransformBuffer::SharedPtr tf_buffer,
-    const double transform_tolerance,
-    const double transform_staleness_threshold);
+    const double transform_tolerance);
 
   /**
    * @brief Gets shape box-boundaries
@@ -385,14 +378,12 @@ public:
    * @param to_frame Frame ID to transform to
    * @param tf_buffer TF buffer to use for the transformation
    * @param transform_tolerance Transform tolerance
-   * @param transform_staleness_threshold Maximum age of the latest transform
    * @return Whether it was transformed successfully
    */
   bool toFrame(
     const std::string & to_frame,
     const nav2::TransformBuffer::SharedPtr tf_buffer,
-    const double transform_tolerance,
-    const double transform_staleness_threshold);
+    const double transform_tolerance);
 
   /**
    * @brief Gets shape box-boundaries
