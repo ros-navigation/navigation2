@@ -787,10 +787,8 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
  * ComputePathToPose returns FAILURE and ClearGlobalCostmap-Context returns FAILURE
  * PipelineSequence returns FAILURE and NavigateRecovery triggers RecoveryFallback
  * GoalUpdated returns FAILURE and RoundRobin is triggered
- * RoundRobin triggers ClearingActions Sequence which returns FAILURE
- * RoundRobin triggers Spin, Wait, and BackUp which return FAILURE
- * RoundRobin returns FAILURE hence RecoveryCallbackk returns FAILURE
- * Finally NavigateRecovery returns FAILURE
+ * RoundRobin repeatedly triggers each recovery action because wrap_around is enabled
+ * All recovery actions return FAILURE until NavigateRecovery exhausts its retries
  * The behavior tree should return FAILURE
  */
 TEST_F(BehaviorTreeTestFixture, TestAllFailure)
@@ -825,8 +823,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   // The final result should be failure
   EXPECT_EQ(result, BT::NodeStatus::FAILURE);
 
-  // Goal count should be 2 since only two goals are sent to ComputePathToPose
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 4);
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 14);
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getResult()->error_code, 207);
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getResult()->error_msg, "Timeout");
 
@@ -835,14 +832,13 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   EXPECT_EQ(server_handler->follow_path_server->getResult()->error_code, 0);
   EXPECT_EQ(server_handler->follow_path_server->getResult()->error_msg, "");
 
-  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 1);
-  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 1);
-  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 1);
+  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 5);
+  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 5);
+  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 5);
 
-  // Service count is 1 to try and resolve global planner error
-  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 3);
+  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 13);
 
-  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 1);
+  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 6);
 }
 
 /**
@@ -1051,28 +1047,23 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
     std::this_thread::sleep_for(10ms);
   }
 
-  // The final result should be success
+  // The final result should be failure
   EXPECT_EQ(result, BT::NodeStatus::FAILURE);
 
-  // ComputePathToPose is called 12 times
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 3);
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 7);
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getResult()->error_code, 0);
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getResult()->error_msg, "");
 
-  // FollowPath is called 4 times
-  EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 6);
+  EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 14);
   EXPECT_EQ(server_handler->follow_path_server->getResult()->error_code, 106);
   EXPECT_EQ(server_handler->follow_path_server->getResult()->error_msg, "No valid control");
 
-  // Local costmap is cleared 5 times
-  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 4);
+  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 10);
 
-  // Global costmap is cleared 8 times
-  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 1);
+  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 3);
 
-  // All recovery action servers receive 2 goals
-  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 1);
-  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 1);
+  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 2);
+  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 2);
   EXPECT_EQ(server_handler->backup_server->getGoalCount(), 1);
 }
 
