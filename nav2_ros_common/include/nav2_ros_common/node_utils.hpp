@@ -35,6 +35,11 @@
   #include <pthread.h>
   #include <mach/mach.h>
   #include <mach/thread_policy.h>
+#elif defined(_WIN32)
+  #ifndef NOMINMAX
+    #define NOMINMAX
+  #endif
+  #include <windows.h>
 #else
   #include <sched.h>
   #include <errno.h>
@@ -376,6 +381,14 @@ inline void setSoftRealTimePriority()
       "Thread remains at default priority. Mach Error Code: " +
       std::to_string(result);
     throw std::runtime_error(errmsg);
+  }
+#elif defined(_WIN32)
+  // Windows: Raise only the current thread one level above its normal priority
+  // within the existing process priority class.
+  if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL)) {
+    throw std::runtime_error(
+            "Failed to set soft real-time thread priority on Windows. Error: " +
+            std::to_string(GetLastError()));
   }
 #else
   // Linux: True real-time scheduling (requires privileges)
