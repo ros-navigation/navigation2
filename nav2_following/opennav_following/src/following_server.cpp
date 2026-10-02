@@ -367,8 +367,8 @@ bool FollowingServer::approachObject(
 
     // Get the pose at the distance we want to maintain from the object
     // Stop and report success if goal is reached
-    auto target_pose = getPoseAtDistance(object_pose, robot_pose, params_->desired_distance);
-    if (isGoalReached(target_pose, robot_pose)) {
+    auto target_pose = getPoseAtDistance(robot_pose, object_pose, params_->desired_distance);
+    if (isGoalReached(robot_pose, target_pose)) {
       return true;
     }
 
@@ -378,7 +378,7 @@ bool FollowingServer::approachObject(
     // following procedure.
     const double backward_projection = 0.25;
     const double effective_distance = params_->desired_distance - backward_projection;
-    target_pose = getPoseAtDistance(object_pose, robot_pose, effective_distance);
+    target_pose = getPoseAtDistance(robot_pose, object_pose, effective_distance);
 
     // ... and transform the target_pose into base_frame using the same transform
     tf2::doTransform(
@@ -621,8 +621,8 @@ geometry_msgs::msg::PoseStamped FollowingServer::getRobotPose()
 }
 
 geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(
-  const geometry_msgs::msg::PoseStamped & pose,
-  const geometry_msgs::msg::PoseStamped & robot_pose, double distance)
+  const geometry_msgs::msg::PoseStamped & robot_pose,
+  const geometry_msgs::msg::PoseStamped & pose, double distance)
 {
   double dx = pose.pose.position.x - robot_pose.pose.position.x;
   double dy = pose.pose.position.y - robot_pose.pose.position.y;
@@ -637,8 +637,8 @@ geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(
 }
 
 bool FollowingServer::isGoalReached(
-  const geometry_msgs::msg::PoseStamped & goal_pose,
-  const geometry_msgs::msg::PoseStamped & robot_pose)
+  const geometry_msgs::msg::PoseStamped & robot_pose,
+  const geometry_msgs::msg::PoseStamped & goal_pose)
 {
   const double dist = std::hypot(
     robot_pose.pose.position.x - goal_pose.pose.position.x,
