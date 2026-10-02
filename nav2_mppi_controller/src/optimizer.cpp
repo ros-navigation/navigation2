@@ -15,13 +15,14 @@
 
 #include "nav2_mppi_controller/optimizer.hpp"
 
+#include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <cmath>
-#include <chrono>
 
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
@@ -545,6 +546,7 @@ void Optimizer::integrateStateVelocities(
 
   const auto vx = sequence.col(0);
   const auto wz = sequence.col(1);
+  const bool is_holonomic = isHolonomic();
 
   auto traj_x = trajectory.col(0);
   auto traj_y = trajectory.col(1);
@@ -555,35 +557,33 @@ void Optimizer::integrateStateVelocities(
     return;
   }
 
-  float last_yaw = initial_yaw;
-  for (size_t i = 0; i != n_size; i++) {
-    last_yaw += wz(i) * settings_.model_dt;
-    traj_yaws(i) = last_yaw;
-  }
-
-  Eigen::ArrayXf yaw_cos = traj_yaws.cos();
-  Eigen::ArrayXf yaw_sin = traj_yaws.sin();
-  utils::shiftColumnsByOnePlace(yaw_cos, 1);
-  utils::shiftColumnsByOnePlace(yaw_sin, 1);
-  yaw_cos(0) = cosf(initial_yaw);
-  yaw_sin(0) = sinf(initial_yaw);
-
-  auto dx = (vx * yaw_cos).eval();
-  auto dy = (vx * yaw_sin).eval();
-
-  if (isHolonomic()) {
-    auto vy = sequence.col(2);
-    dx = (dx - vy * yaw_sin).eval();
-    dy = (dy + vy * yaw_cos).eval();
-  }
-
   float last_x = state_.pose.pose.position.x;
   float last_y = state_.pose.pose.position.y;
+  float last_yaw = initial_yaw;
+
+  // AI-assisted change: use interval-endpoint velocities and a midpoint heading.
   for (size_t i = 0; i != n_size; i++) {
-    last_x += dx(i) * settings_.model_dt;
-    last_y += dy(i) * settings_.model_dt;
+    // Average the velocities at both ends of the interval. The terminal velocity
+    // is held constant because the rollout has no sample beyond its horizon.
+    const size_t next_i = std::min(i + 1, n_size - 1);
+    const float interval_vx = 0.5f * (vx(i) + vx(next_i));
+    const float current_vy = is_holonomic ? sequence(i, 2) : 0.0f;
+    const float next_vy = is_holonomic ? sequence(next_i, 2) : 0.0f;
+    const float interval_vy = 0.5f * (current_vy + next_vy);
+    const float interval_wz = 0.5f * (wz(i) + wz(next_i));
+    const float delta_yaw = interval_wz * settings_.model_dt;
+    const float midpoint_yaw = last_yaw + 0.5f * delta_yaw;
+    const float yaw_cos = cosf(midpoint_yaw);
+    const float yaw_sin = sinf(midpoint_yaw);
+
+    const float dx = interval_vx * yaw_cos - interval_vy * yaw_sin;
+    const float dy = interval_vx * yaw_sin + interval_vy * yaw_cos;
+    last_x += dx * settings_.model_dt;
+    last_y += dy * settings_.model_dt;
+    last_yaw += delta_yaw;
     traj_x(i) = last_x;
     traj_y(i) = last_y;
+    traj_yaws(i) = last_yaw;
   }
 }
 
@@ -593,26 +593,8 @@ void Optimizer::integrateStateVelocities(
 {
   auto initial_yaw = static_cast<float>(tf2::getYaw(state.pose.pose.orientation));
   const size_t n_cols = trajectories.yaws.cols();
-
-  Eigen::ArrayXf last_yaws = Eigen::ArrayXf::Constant(trajectories.yaws.rows(), initial_yaw);
-  for (size_t i = 0; i != n_cols; i++) {
-    last_yaws += state.wz.col(i) * settings_.model_dt;
-    trajectories.yaws.col(i) = last_yaws;
-  }
-
-  Eigen::ArrayXXf yaw_cos = trajectories.yaws.cos();
-  Eigen::ArrayXXf yaw_sin = trajectories.yaws.sin();
-  utils::shiftColumnsByOnePlace(yaw_cos, 1);
-  utils::shiftColumnsByOnePlace(yaw_sin, 1);
-  yaw_cos.col(0) = cosf(initial_yaw);
-  yaw_sin.col(0) = sinf(initial_yaw);
-
-  auto dx = (state.vx * yaw_cos).eval();
-  auto dy = (state.vx * yaw_sin).eval();
-
-  if (isHolonomic()) {
-    dx -= state.vy * yaw_sin;
-    dy += state.vy * yaw_cos;
+  if (n_cols == 0) {
+    return;
   }
 
   Eigen::ArrayXf last_x = Eigen::ArrayXf::Constant(
@@ -621,12 +603,42 @@ void Optimizer::integrateStateVelocities(
   Eigen::ArrayXf last_y = Eigen::ArrayXf::Constant(
     trajectories.y.rows(),
     state.pose.pose.position.y);
+  Eigen::ArrayXf last_yaws = Eigen::ArrayXf::Constant(trajectories.yaws.rows(), initial_yaw);
+  Eigen::ArrayXf interval_vx(trajectories.x.rows());
+  Eigen::ArrayXf interval_vy(trajectories.x.rows());
+  Eigen::ArrayXf interval_wz(trajectories.x.rows());
+  Eigen::ArrayXf delta_yaw(trajectories.x.rows());
+  Eigen::ArrayXf midpoint_yaws(trajectories.x.rows());
+  Eigen::ArrayXf yaw_cos(trajectories.x.rows());
+  Eigen::ArrayXf yaw_sin(trajectories.x.rows());
+  Eigen::ArrayXf dx(trajectories.x.rows());
+  Eigen::ArrayXf dy(trajectories.x.rows());
+  const bool is_holonomic = isHolonomic();
 
+  // AI-assisted change: use interval-endpoint velocities and a midpoint heading.
   for (size_t i = 0; i != n_cols; i++) {
-    last_x += dx.col(i) * settings_.model_dt;
-    last_y += dy.col(i) * settings_.model_dt;
+    const size_t next_i = std::min(i + 1, n_cols - 1);
+    interval_vx = 0.5f * (state.vx.col(i) + state.vx.col(next_i));
+    interval_vy = 0.5f * (state.vy.col(i) + state.vy.col(next_i));
+    interval_wz = 0.5f * (state.wz.col(i) + state.wz.col(next_i));
+
+    delta_yaw = interval_wz * settings_.model_dt;
+    midpoint_yaws = last_yaws + 0.5f * delta_yaw;
+    yaw_cos = midpoint_yaws.cos();
+    yaw_sin = midpoint_yaws.sin();
+    dx = interval_vx * yaw_cos;
+    dy = interval_vx * yaw_sin;
+    if (is_holonomic) {
+      dx -= interval_vy * yaw_sin;
+      dy += interval_vy * yaw_cos;
+    }
+
+    last_x += dx * settings_.model_dt;
+    last_y += dy * settings_.model_dt;
+    last_yaws += delta_yaw;
     trajectories.x.col(i) = last_x;
     trajectories.y.col(i) = last_y;
+    trajectories.yaws.col(i) = last_yaws;
   }
 }
 
