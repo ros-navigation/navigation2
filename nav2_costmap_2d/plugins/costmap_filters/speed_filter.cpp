@@ -333,7 +333,7 @@ bool SpeedFilter::getSpeedLimitFromLookahead(
   nav_msgs::msg::Path transformed_path;
   if (!nav2_util::transformPathInTargetFrame(
       *current_path_, transformed_path, *tf_, global_frame_,
-      tf2::durationToSec(transform_tolerance_), clock_->now(), transform_staleness_threshold_))
+      tf2::durationToSec(transform_tolerance_)))
   {
     RCLCPP_ERROR_THROTTLE(
       logger_, *(clock_), 5000,

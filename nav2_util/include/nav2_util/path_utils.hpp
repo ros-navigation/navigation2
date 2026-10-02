@@ -29,7 +29,6 @@
 #include "tf2/utils.hpp"
 #include "angles/angles.h"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 namespace nav2_util
 {
 
@@ -62,24 +61,19 @@ PathSearchResult distance_from_path(
   const double search_window_length = std::numeric_limits<double>::max());
 
 /**
- * @brief Transform a path, optionally checking the age of the latest TF
+ * @brief Transform a path into the target frame
  * @param input_path Path to transform
  * @param transformed_path Output transformation
  * @param tf_buffer TF buffer to use for the transformation
  * @param target_frame Frame to transform into
- * @param transform_timeout TF timeout for unchecked or timestamped lookups
- * @param current_time Current time from the caller's clock, matching the TF clock;
- * must be supplied when enabling the staleness check
- * @param staleness_threshold Maximum age in seconds for zero-stamped paths only;
- * non-positive disables the check. Checked latest lookups do not wait for TF.
- * @return Whether the path could be transformed with an acceptable transform
+ * @param transform_timeout TF lookup timeout
+ * @return Whether the path could be transformed
  */
 bool transformPathInTargetFrame(
   const nav_msgs::msg::Path & input_path,
   nav_msgs::msg::Path & transformed_path,
   nav2::TransformBuffer & tf_buffer, const std::string target_frame,
-  const double transform_timeout = 0.1, const rclcpp::Time & current_time = rclcpp::Time(0),
-  const double staleness_threshold = 0.0);
+  const double transform_timeout = 0.1);
 
 /**
  * @brief Find the iterator of the first pose at which there is an inversion or in place rotation on the path,

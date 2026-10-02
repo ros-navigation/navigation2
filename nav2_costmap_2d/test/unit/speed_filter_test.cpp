@@ -1131,7 +1131,6 @@ TEST(SpeedFilterTF, FreshnessAndLookaheadFrames)
   filter.process(grid, 0, 0, 4, 1, pose);
   EXPECT_EQ(filter.publishedLimit(), 20.0);
 
-  // A distinct path frame also needs a fresh latest transform.
   path = std::make_shared<nav_msgs::msg::Path>(*path);
   path->header.frame_id = "plan";
   filter.pathCallback(path);
@@ -1144,15 +1143,15 @@ TEST(SpeedFilterTF, FreshnessAndLookaheadFrames)
   mask->data = {80, 40, 10, 0};
   filter.maskCallback(mask);
   filter.process(grid, 0, 0, 4, 1, pose);
-  EXPECT_EQ(filter.publishedLimit(), 20.0);  // No new limit on stale path TF.
+  EXPECT_EQ(filter.publishedLimit(), 10.0);
 
   path_transform.header.stamp = node->now();
   ASSERT_TRUE(buffer->setTransform(path_transform, "test", false));
   filter.process(grid, 0, 0, 4, 1, pose);
   EXPECT_EQ(filter.publishedLimit(), 10.0);
 
-  // Nonzero path stamps select historical TF, even if it exceeds the latest-TF
-  // age limit. A different latest transform must not change that interpretation.
+  // Nonzero path stamps select historical TF. A different latest transform
+  // must not change that interpretation.
   const auto measurement_time = node->now() - rclcpp::Duration::from_seconds(1.0);
   path_transform.header.stamp = measurement_time;
   ASSERT_TRUE(buffer->setTransform(path_transform, "test", false));

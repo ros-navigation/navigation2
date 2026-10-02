@@ -463,12 +463,11 @@ TEST(TransformPathTest, MissingTransform)
   rclcpp::shutdown();
 }
 
-TEST(TransformPathTest, LatestTransformStaleness)
+TEST(TransformPathTest, ZeroStampUsesLatestTransform)
 {
   rclcpp::init(0, nullptr);
-  auto node = std::make_shared<rclcpp::Node>("test_path_staleness");
+  auto node = std::make_shared<rclcpp::Node>("test_path_zero_stamp");
   auto buffer = nav2::create_transform_buffer(node);
-  // Use a simulated timeline, independent of wall time.
   const rclcpp::Time now(100, 0, RCL_ROS_TIME);
   geometry_msgs::msg::TransformStamped transform;
   transform.header.frame_id = "map";
@@ -481,11 +480,8 @@ TEST(TransformPathTest, LatestTransformStaleness)
   path.header.frame_id = "odom";
   path.poses.push_back(createPoseStamped(2.0, 0.0));
   nav_msgs::msg::Path output;
-  EXPECT_FALSE(nav2_util::transformPathInTargetFrame(
-    path, output, *buffer, "map", 0.0, now, 0.5));
-  EXPECT_TRUE(output.poses.empty());
-  EXPECT_TRUE(nav2_util::transformPathInTargetFrame(
-    path, output, *buffer, "map", 0.0, now));  // Disabled by default.
+  ASSERT_TRUE(nav2_util::transformPathInTargetFrame(
+    path, output, *buffer, "map", 0.0));
   EXPECT_DOUBLE_EQ(output.poses.front().pose.position.x, 3.0);
 
   output = nav_msgs::msg::Path();
@@ -493,27 +489,14 @@ TEST(TransformPathTest, LatestTransformStaleness)
   transform.transform.translation.x = 4.0;
   ASSERT_TRUE(buffer->setTransform(transform, "test", false));
   ASSERT_TRUE(nav2_util::transformPathInTargetFrame(
-    path, output, *buffer, "map", 0.0, now, 0.5));
+    path, output, *buffer, "map", 0.0));
   EXPECT_DOUBLE_EQ(output.poses.front().pose.position.x, 6.0);
 
   output = nav_msgs::msg::Path();
   path.header.stamp = now - rclcpp::Duration::from_seconds(5.0);
   ASSERT_TRUE(nav2_util::transformPathInTargetFrame(
-    path, output, *buffer, "map", 0.0, now, 0.5));
+    path, output, *buffer, "map", 0.0));
   EXPECT_DOUBLE_EQ(output.poses.front().pose.position.x, 3.0);
-
-  buffer->clear();
-  transform.header.stamp = now - rclcpp::Duration::from_seconds(50.0);
-  ASSERT_TRUE(buffer->setTransform(transform, "test", true));
-  path.header.stamp = rclcpp::Time(0);
-  output = nav_msgs::msg::Path();
-  EXPECT_TRUE(nav2_util::transformPathInTargetFrame(
-    path, output, *buffer, "map", 0.0, now, 0.5));  // Static TF does not expire.
-  output = nav_msgs::msg::Path();
-  EXPECT_TRUE(nav2_util::transformPathInTargetFrame(
-    path, output, *buffer, "odom", 0.0, now, 0.5));  // Same frame needs no TF.
-  EXPECT_FALSE(nav2_util::transformPathInTargetFrame(
-    path, output, *buffer, "missing", 0.0, now, 0.5));
   rclcpp::shutdown();
 }
 
