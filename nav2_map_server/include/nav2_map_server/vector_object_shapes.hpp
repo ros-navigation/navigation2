@@ -130,7 +130,7 @@ public:
     const std::string & to_frame,
     const nav2::TransformBuffer::SharedPtr tf_buffer,
     const double transform_tolerance,
-    const double transform_staleness_threshold = 0.0) = 0;
+    const double transform_staleness_threshold) = 0;
 
   /**
    * @brief Gets shape box-boundaries.
@@ -274,7 +274,7 @@ public:
     const std::string & to_frame,
     const nav2::TransformBuffer::SharedPtr tf_buffer,
     const double transform_tolerance,
-    const double transform_staleness_threshold = 0.0);
+    const double transform_staleness_threshold);
 
   /**
    * @brief Gets shape box-boundaries
@@ -393,7 +393,7 @@ public:
     const std::string & to_frame,
     const nav2::TransformBuffer::SharedPtr tf_buffer,
     const double transform_tolerance,
-    const double transform_staleness_threshold = 0.0);
+    const double transform_staleness_threshold);
 
   /**
    * @brief Gets shape box-boundaries

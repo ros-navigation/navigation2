@@ -574,7 +574,7 @@ TEST_F(Tester, testPolygonDifferentFrame)
   ASSERT_NEAR(poly->points[3].y, -1.0, EPSILON);
 
   // Transform shape coordinates to global frame
-  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 1.0));
+  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 1.0, 0.0));
 
   // Verify that shape coordinates were transformed to global frame successfully
   poly = polygon_->getPoly();
@@ -588,7 +588,7 @@ TEST_F(Tester, testPolygonDifferentFrame)
   ASSERT_NEAR(poly->points[3].y, -1.0 + FRAME_SHIFT, EPSILON);
 
   // Try to transform to incorrect frame
-  ASSERT_FALSE(polygon_->toFrame("incorrect_frame", tf_buffer_, 0.1));
+  ASSERT_FALSE(polygon_->toFrame("incorrect_frame", tf_buffer_, 0.1, 0.0));
 }
 
 TEST_F(Tester, testPolygonTransformAtTimestamp)
@@ -599,7 +599,7 @@ TEST_F(Tester, testPolygonTransformAtTimestamp)
   polygon_object->header.stamp = transform_stamp;
   ASSERT_TRUE(polygon_->setParams(polygon_object));
 
-  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 0.1));
+  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 0.1, 0.0));
 
   const auto poly = polygon_->getPoly();
   ASSERT_NEAR(poly->points[0].x, 1.0 + FRAME_SHIFT, EPSILON);
@@ -613,7 +613,7 @@ TEST_F(Tester, testPolygonTransformAtTimestampFailsWithoutTransform)
   polygon_object->header.stamp = node_->now();
   ASSERT_TRUE(polygon_->setParams(polygon_object));
 
-  ASSERT_FALSE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 0.1));
+  ASSERT_FALSE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 0.1, 0.0));
 }
 
 //---------- Circles testcases ----------
@@ -807,7 +807,7 @@ TEST_F(Tester, testCircleDifferentFrame)
   ASSERT_NEAR(center->x, 0.0, EPSILON);
   ASSERT_NEAR(center->y, 0.0, EPSILON);
   // Transform shape coordinates to global frame
-  ASSERT_TRUE(circle_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 1.0));
+  ASSERT_TRUE(circle_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 1.0, 0.0));
 
   // Verify that shape coordinates were transformed to global frame successfully
   center = circle_->getCenter();
@@ -815,7 +815,7 @@ TEST_F(Tester, testCircleDifferentFrame)
   ASSERT_NEAR(center->y, FRAME_SHIFT, EPSILON);
 
   // Try to transform to incorrect frame
-  ASSERT_FALSE(circle_->toFrame("incorrect_frame", tf_buffer_, 0.1));
+  ASSERT_FALSE(circle_->toFrame("incorrect_frame", tf_buffer_, 0.1, 0.0));
 }
 
 // Reference implementation: check every cell of the shape's bounding box
