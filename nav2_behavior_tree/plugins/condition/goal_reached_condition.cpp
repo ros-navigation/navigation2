@@ -44,11 +44,14 @@ GoalReachedCondition::~GoalReachedCondition()
 void GoalReachedCondition::initialize()
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  clock_ = node_->get_clock();
 
   goal_reached_tol_ = node_->declare_or_get_parameter("goal_reached_tol", 0.25);
   tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
 
   node_->get_parameter("transform_tolerance", transform_tolerance_);
+  transform_staleness_threshold_ = node_->declare_or_get_parameter(
+    "transform_staleness_threshold", 0.0);
 }
 
 BT::NodeStatus GoalReachedCondition::tick()
@@ -69,8 +72,9 @@ bool GoalReachedCondition::isGoalReached()
   getInput("goal", goal);
 
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, goal.header.frame_id, robot_base_frame_, transform_tolerance_))
+  if (!nav2_util::getFreshPose(
+      *tf_, goal.header.frame_id, robot_base_frame_, clock_->now(), transform_staleness_threshold_,
+      current_pose))
   {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return false;

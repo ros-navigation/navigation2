@@ -43,6 +43,8 @@ NavigateToPoseNavigator::configure(
     std::string("tracking_feedback"));
 
   search_window_ = node->declare_or_get_parameter(getName() + "search_window", 2.0);
+  transform_staleness_threshold_ = node->declare_or_get_parameter(
+    getName() + ".transform_staleness_threshold", 0.0);
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
@@ -124,10 +126,10 @@ NavigateToPoseNavigator::onLoop()
   auto feedback_msg = std::make_shared<ActionT::Feedback>();
 
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *feedback_utils_.tf,
-      feedback_utils_.global_frame, feedback_utils_.robot_frame,
-      feedback_utils_.transform_tolerance))
+  if (!nav2_util::getFreshPose(
+      *feedback_utils_.tf, feedback_utils_.global_frame,
+      feedback_utils_.robot_frame, clock_->now(),
+      transform_staleness_threshold_, current_pose))
   {
     RCLCPP_ERROR(logger_, "Robot pose is not available.");
     return;
@@ -224,10 +226,10 @@ bool
 NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *feedback_utils_.tf,
-      feedback_utils_.global_frame, feedback_utils_.robot_frame,
-      feedback_utils_.transform_tolerance))
+  if (!nav2_util::getFreshPose(
+      *feedback_utils_.tf, feedback_utils_.global_frame,
+      feedback_utils_.robot_frame, clock_->now(),
+      transform_staleness_threshold_, current_pose))
   {
     bt_action_server_->setInternalError(
       ActionT::Result::TF_ERROR,
