@@ -342,6 +342,34 @@ TEST_F(RecoveryManagerTestFixture, test_custom_error_names)
   EXPECT_EQ(tickCount("Wait"), 1);
 }
 
+TEST_F(RecoveryManagerTestFixture, test_custom_names_overlapping_nav2_names)
+{
+  config_->input_ports["error_code_names"] = "my_action_error_code;follow_path_error_code";
+  // TIMEOUT of my_action is 950, not the 108 that is TIMEOUT for FollowPath
+  setErrorName("my_action_error_code.error_names.TIMEOUT", 950);
+  setErrorName("my_action_error_code.error_names.BATTERY_LOW", 108);
+  setSequence("my_action_error_code.error_specific.battery_low", {"BackUp"});
+  setSequence("my_action_error_code.error_specific.timeout", {"Wait"});
+  // Another name for FAILED_TO_MAKE_PROGRESS, which keeps its Nav2 name as well
+  setErrorName("follow_path_error_code.error_names.STUCK", 105);
+  setSequence("follow_path_error_code.error_specific.failed_to_make_progress", {"ClearCostmap"});
+  createRecoveryManager();
+
+  setErrorCode("my_action_error_code", 950);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("Wait"), 1);
+
+  setErrorCode("my_action_error_code", 108);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("BackUp"), 1);
+  EXPECT_EQ(tickCount("Wait"), 1);
+
+  setErrorCode("my_action_error_code", 0);
+  setErrorCode("follow_path_error_code", 105);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("ClearCostmap"), 1);
+}
+
 TEST_F(RecoveryManagerTestFixture, test_unknown_behavior_name)
 {
   setSequence("follow_path_error_code.default", {"Spin"});
