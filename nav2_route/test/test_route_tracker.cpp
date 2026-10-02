@@ -69,6 +69,7 @@ TEST(RouteTrackerTest, test_get_robot_pose)
   transform.header.stamp = node->now();
   transform.child_frame_id = "base_link";
   broadcaster->sendTransform(transform);
+  tf->setTransform(transform, "test", false);
   EXPECT_NO_THROW(tracker.getRobotPose());
 }
 

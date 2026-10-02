@@ -130,6 +130,7 @@ protected:
   GraphToIDMap * id_to_graph_map_;
   Graph * graph_;
   nav2::TransformBuffer::SharedPtr tf_;
+  rclcpp::Clock::SharedPtr clock_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::string route_frame_;
   std::string base_frame_;
@@ -137,6 +138,7 @@ protected:
   bool prune_goal_, enable_search_;
   int max_nn_search_iterations_;
   float max_dist_from_edge_, min_dist_from_goal_, min_dist_from_start_;
+  double transform_staleness_threshold_;
 };
 
 }  // namespace nav2_route
