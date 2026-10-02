@@ -278,8 +278,10 @@ TEST_F(BehaviorTest, testingFailureStopsRobot)
 {
   ASSERT_TRUE(sendCommand("Testing command then failure"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node_lifecycle_->get_node_base_interface());
   for (int i = 0; i < 10; ++i) {
-    rclcpp::spin_some(node_lifecycle_->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(10ms);
   }
   ASSERT_GE(velocities_.size(), 2u);
