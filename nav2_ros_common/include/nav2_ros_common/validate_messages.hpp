@@ -271,10 +271,12 @@ bool validateMsg(const nav2_msgs::msg::Costmap & msg)
   if (!validateMsg(msg.header)) {return false;}
   if (!validateMsg(msg.metadata)) {return false;}
 
-  uint32_t num_cells;
-  if (__builtin_mul_overflow(msg.metadata.size_x, msg.metadata.size_y, &num_cells)) {
+  if (msg.metadata.size_x != 0 &&
+    msg.metadata.size_y > std::numeric_limits<uint32_t>::max() / msg.metadata.size_x)
+  {
     return false;
   }
+  const uint32_t num_cells = msg.metadata.size_x * msg.metadata.size_y;
 
   if (msg.data.size() != static_cast<size_t>(num_cells)) {
     return false;
