@@ -34,8 +34,11 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
+// [AI-generated] The VoxelGrid overflow regression tests in this file were
+// written with AI assistance and reviewed by the author.
 #include <nav2_voxel_grid/voxel_grid.hpp>
 #include <gtest/gtest.h>
+#include <stdexcept>
 
 TEST(voxel_grid, basicMarkingAndClearing) {
   int size_x = 50, size_y = 10, size_z = 16;
@@ -195,6 +198,54 @@ TEST(voxel_grid, GetVoxelData) {
   EXPECT_EQ(
     nav2_voxel_grid::VoxelGrid::getVoxel(0, 0, 0, 3, 3, 3, data), nav2_voxel_grid::FREE);
   delete[] data;
+}
+
+TEST(voxel_grid, ConstructorRejectsMultiplicationOverflow) {
+  // 65537 * 65537 = 4,295,098,369 > UINT_MAX; must be rejected before any
+  // allocation is attempted (issue #6411's reported repro values).
+  EXPECT_THROW(
+    nav2_voxel_grid::VoxelGrid vg(65537u, 65537u, 16u),
+    std::invalid_argument);
+}
+
+TEST(voxel_grid, ConstructorRejectsDimensionAboveIntMax) {
+  const unsigned int too_large = static_cast<unsigned int>(INT_MAX) + 1u;
+  // Keep the other dimension tiny so no large allocation could ever occur,
+  // even if the per-dimension check were missing and only the product
+  // check remained.
+  EXPECT_THROW(
+    nav2_voxel_grid::VoxelGrid vg(too_large, 1u, 16u),
+    std::invalid_argument);
+  EXPECT_THROW(
+    nav2_voxel_grid::VoxelGrid vg(1u, too_large, 16u),
+    std::invalid_argument);
+}
+
+TEST(voxel_grid, ResizeRejectsOverflowAndPreservesGrid) {
+  nav2_voxel_grid::VoxelGrid vg(10u, 10u, 10u);
+  vg.markVoxelInMap(5, 5, 5, 0);
+  ASSERT_EQ(vg.getVoxel(5, 5, 5), nav2_voxel_grid::MARKED);
+
+  EXPECT_THROW(vg.resize(65537u, 65537u, 10u), std::invalid_argument);
+
+  // the grid must remain exactly as it was before the failed resize
+  EXPECT_EQ(vg.sizeX(), 10u);
+  EXPECT_EQ(vg.sizeY(), 10u);
+  EXPECT_EQ(vg.sizeZ(), 10u);
+  EXPECT_EQ(vg.getVoxel(5, 5, 5), nav2_voxel_grid::MARKED);
+}
+
+TEST(voxel_grid, MarkAndClearVoxelInMapUnsignedIndex) {
+  // Ordinary-sized grid exercising markVoxelInMap()/clearVoxelInMap() after
+  // their flattened index type changed from int to unsigned int.
+  int size_x = 100, size_y = 100, size_z = 10;
+  nav2_voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
+
+  EXPECT_TRUE(vg.markVoxelInMap(99, 99, 9, 0));
+  EXPECT_EQ(vg.getVoxel(99, 99, 9), nav2_voxel_grid::MARKED);
+
+  vg.clearVoxelInMap(99, 99, 9);
+  EXPECT_EQ(vg.getVoxel(99, 99, 9), nav2_voxel_grid::FREE);
 }
 
 int main(int argc, char ** argv)
