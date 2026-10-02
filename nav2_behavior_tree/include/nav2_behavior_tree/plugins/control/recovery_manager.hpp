@@ -49,11 +49,16 @@ namespace nav2_behavior_tree
  *   follow_path_error_code:
  *     default: [ClearLocalCostmap, Wait, ClearLocalCostmap]
  *     error_specific:
- *       "102": [Wait]
+ *       tf_error: [Wait]
+ *   my_action_error_code:
+ *     error_names: {MY_FAILURE: 950}
+ *     error_specific:
+ *       my_failure: [BackUp]
  * @endcode
  *
- * Errors are given by name or by code, and `[none]` means that nothing can be done about them.
- * A group without a default uses all children in order.
+ * Errors are given by name, and `[none]` means that nothing can be done about them.
+ * A group without a default uses all children in order. Custom error codes are named in
+ * `error_names`, and those names only apply within their group.
  *
  * Every error code walks through its own sequence, one behavior per failure, even when that
  * behavior fails. Once the sequence runs out this node returns FAILURE. Sequences start over
@@ -126,6 +131,8 @@ private:
   {
     std::string name;
     std::string blackboard_key;
+    // Uppercase names of custom error codes, from error_names
+    std::unordered_map<std::string, uint16_t> custom_error_codes;
     RecoverySequence default_sequence;
     std::unordered_map<uint16_t, RecoverySequence> sequence_by_error_code;
   };
@@ -157,6 +164,7 @@ private:
   std::unordered_map<uint16_t, std::size_t> next_behavior_index_by_error_code_;
 
   uint16_t error_code_being_recovered_{0};
+  std::string error_description_;
   std::optional<std::size_t> running_behavior_index_;
 
   geometry_msgs::msg::PoseStamped last_goal_;

@@ -526,7 +526,7 @@
     </Control>
 
     <Control ID="RecoveryManager">
-      <input_port name="param_namespace" type="string" default="recovery_manager">Parameter namespace of the recovery sequences. Each error code group has a `default` sequence and `error_specific` sequences keyed by error name or code. Use `[none]` for errors that can't be recovered from.</input_port>
+      <input_port name="param_namespace" type="string" default="recovery_manager">Parameter namespace of the recovery sequences. Each error code group has a `default` sequence and `error_specific` sequences keyed by error name. Use `[none]` for errors that can't be recovered from. Custom error codes are named in the group's `error_names`.</input_port>
       <input_port name="error_code_names" type="vector&lt;string&gt;" default="compute_path_error_code;follow_path_error_code">Blackboard keys of the error codes to recover from, in order of priority. Each one gets a group of sequences named after it.</input_port>
       <input_port name="reset_distance" type="double" default="0.5">Distance the robot has to move after a recovery for the sequences to start over, zero to disable.</input_port>
       <input_port name="wrap_around" type="bool" default="false">Start a sequence over instead of failing once it runs out.</input_port>

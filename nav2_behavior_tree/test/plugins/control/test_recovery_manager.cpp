@@ -93,6 +93,11 @@ public:
     node_->declare_parameter(testName() + "." + param_name, rclcpp::ParameterValue(), descriptor);
   }
 
+  void setErrorName(const std::string & param_name, int64_t error_code)
+  {
+    node_->declare_parameter(testName() + "." + param_name, rclcpp::ParameterValue(error_code));
+  }
+
   void setErrorCode(const std::string & blackboard_key, uint16_t error_code)
   {
     config_->blackboard->set<uint16_t>(blackboard_key, error_code);
@@ -141,7 +146,7 @@ TEST_F(RecoveryManagerTestFixture, test_default_sequence)
 TEST_F(RecoveryManagerTestFixture, test_error_specific_sequences)
 {
   setSequence("compute_path_error_code.default", {"Wait"});
-  setSequence("compute_path_error_code.error_specific.205", {"BackUp"});
+  setSequence("compute_path_error_code.error_specific.start_occupied", {"BackUp"});
   setSequence("follow_path_error_code.default", {"ClearCostmap"});
   setSequence("follow_path_error_code.error_specific.FAILED_to_make_progress",
     {"BackUp", "ClearCostmap"});
@@ -175,6 +180,8 @@ TEST_F(RecoveryManagerTestFixture, test_no_recovery_possible)
   setSequence("follow_path_error_code.error_specific.invalid_path", {"none"});
   setEmptySequence("follow_path_error_code.error_specific.tf_error");
   setSequence("follow_path_error_code.error_specific.not_an_error", {"ClearCostmap"});
+  // Errors are given by name, not by code
+  setSequence("follow_path_error_code.error_specific.105", {"ClearCostmap"});
   createRecoveryManager();
 
   setErrorCode("follow_path_error_code", 103);
@@ -299,6 +306,40 @@ TEST_F(RecoveryManagerTestFixture, test_reset_after_robot_moved)
 
   EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(tickCount("ClearCostmap"), 2);
+}
+
+TEST_F(RecoveryManagerTestFixture, test_custom_error_names)
+{
+  config_->input_ports["error_code_names"] = "first_action_error_code;second_action_error_code";
+  setErrorName("first_action_error_code.error_names.MY_FAILURE", 950);
+  setErrorName("second_action_error_code.error_names.my_failure", 951);
+  setErrorName("second_action_error_code.error_names.too_big", 70000);
+  setSequence("first_action_error_code.default", {"ClearCostmap"});
+  setSequence("first_action_error_code.error_specific.my_failure", {"BackUp"});
+  setSequence("second_action_error_code.default", {"ClearCostmap"});
+  setSequence("second_action_error_code.error_specific.my_failure", {"Wait"});
+  setSequence("second_action_error_code.error_specific.too_big", {"Wait"});
+  createRecoveryManager();
+
+  setErrorCode("first_action_error_code", 950);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("BackUp"), 1);
+
+  // The same name means another code in the other group
+  setErrorCode("first_action_error_code", 0);
+  setErrorCode("second_action_error_code", 952);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("ClearCostmap"), 1);
+
+  setErrorCode("second_action_error_code", 951);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("Wait"), 1);
+
+  // 70000 doesn't fit an error code, so it doesn't wrap around to 4464
+  setErrorCode("second_action_error_code", 4464);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("ClearCostmap"), 2);
+  EXPECT_EQ(tickCount("Wait"), 1);
 }
 
 TEST_F(RecoveryManagerTestFixture, test_unknown_behavior_name)
