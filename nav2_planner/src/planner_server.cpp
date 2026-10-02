@@ -71,7 +71,11 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Configuring");
   auto node = shared_from_this();
 
-  costmap_ros_->configure();
+  if (costmap_ros_->configure().id() !=
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    return nav2::CallbackReturn::FAILURE;
+  }
   costmap_ = costmap_ros_->getCostmap();
 
   // Launch a thread to run the costmap node
