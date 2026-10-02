@@ -41,6 +41,7 @@
 #include <memory>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -470,18 +471,25 @@ Costmap2DROS::getParameters()
   // 4. The width, height, and resolution of map cannot be negative or 0
   // (to avoid abnormal memory usage)
   if (map_width_meters_ <= 0) {
-    RCLCPP_ERROR(
-      get_logger(), "You try to set width of map to be negative or zero,"
-      " this isn't allowed, please give a positive value.");
+    throw std::invalid_argument(
+            "You try to set width of map to be negative or zero, "
+            "this isn't allowed, please give a positive value.");
   }
   if (map_height_meters_ <= 0) {
-    RCLCPP_ERROR(
-      get_logger(), "You try to set height of map to be negative or zero,"
-      " this isn't allowed, please give a positive value.");
-  }
-  if (resolution_ <= 0.0 || !std::isfinite(resolution_)) {
     throw std::invalid_argument(
-            "Costmap resolution must be a positive finite value.");
+            "You try to set height of map to be negative or zero, "
+            "this isn't allowed, please give a positive value.");
+  }
+  if (resolution_ <= 0.0) {
+    throw std::invalid_argument(
+            "Costmap resolution must be greater than zero.");
+  }
+
+  const double size_x = map_width_meters_ / resolution_;
+  const double size_y = map_height_meters_ / resolution_;
+  const double max_cells = std::numeric_limits<int>::max();
+  if (size_x > max_cells / size_y) {
+    throw std::invalid_argument("Costmap cell count exceeds the supported signed index range");
   }
 }
 
@@ -782,6 +790,7 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
+
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
@@ -834,6 +843,7 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
       }
     }
   }
+
   return result;
 }
 

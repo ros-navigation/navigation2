@@ -134,6 +134,18 @@ TEST(SmacTest, test_smac_se2)
   EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
   nodeSE2->set_parameter(rclcpp::Parameter("test.motion_model_for_search", std::string("DUBIN")));
 
+  nodeSE2->set_parameter(rclcpp::Parameter("test.angle_quantization_bins", 0));
+  EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
+  nodeSE2->set_parameter(rclcpp::Parameter("test.angle_quantization_bins", 72));
+
+  nodeSE2->set_parameter(rclcpp::Parameter("test.analytic_expansion_max_length", 1001.0));
+  EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
+  nodeSE2->set_parameter(rclcpp::Parameter("test.analytic_expansion_max_length", 3.0));
+
+  nodeSE2->set_parameter(rclcpp::Parameter("test.lookup_table_size", 21.0));
+  EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
+  nodeSE2->set_parameter(rclcpp::Parameter("test.lookup_table_size", 20.0));
+
   // invalid coarse search resolution
   nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", -1));
@@ -259,7 +271,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.retrospective_penalty", 0.2),
       rclcpp::Parameter("test.analytic_expansion_ratio", 4.0),
       rclcpp::Parameter("test.max_planning_time", 10.0),
-      rclcpp::Parameter("test.lookup_table_size", 30.0),
+      rclcpp::Parameter("test.lookup_table_size", 20.0),
       rclcpp::Parameter("test.smooth_path", false),
       rclcpp::Parameter("test.analytic_expansion_max_length", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
@@ -288,7 +300,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(nodeSE2->get_parameter("test.analytic_expansion_ratio").as_double(), 4.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.smooth_path").as_bool(), false);
   EXPECT_EQ(nodeSE2->get_parameter("test.max_planning_time").as_double(), 10.0);
-  EXPECT_EQ(nodeSE2->get_parameter("test.lookup_table_size").as_double(), 30.0);
+  EXPECT_EQ(nodeSE2->get_parameter("test.lookup_table_size").as_double(), 20.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.analytic_expansion_max_length").as_double(), 42.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.max_on_approach_iterations").as_int(), 42);
   EXPECT_EQ(nodeSE2->get_parameter("test.terminal_checking_interval").as_int(), 42);
@@ -308,6 +320,29 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(
     nodeSE2->get_parameter("test.analytic_expansion_max_length").as_double(),
     42.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.analytic_expansion_max_length", 1001.0)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  EXPECT_EQ(
+    nodeSE2->get_parameter("test.analytic_expansion_max_length").as_double(),
+    42.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.lookup_table_size", 21.0)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  EXPECT_EQ(nodeSE2->get_parameter("test.lookup_table_size").as_double(), 20.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.angle_quantization_bins", 1025)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  EXPECT_EQ(nodeSE2->get_parameter("test.angle_quantization_bins").as_int(), 72);
 
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("resolution", 0.2)});

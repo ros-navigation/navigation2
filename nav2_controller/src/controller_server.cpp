@@ -68,7 +68,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
-  costmap_ros_->configure();
+  if (costmap_ros_->configure().id() !=
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    return nav2::CallbackReturn::FAILURE;
+  }
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2::NodeThread>(costmap_ros_);
   transform_tolerance_ = costmap_ros_->getTransformTolerance();
