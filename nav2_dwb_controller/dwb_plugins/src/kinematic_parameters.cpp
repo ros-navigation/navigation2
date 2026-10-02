@@ -257,9 +257,9 @@ KinematicsHandler::updateParametersCallback(const std::vector<rclcpp::Parameter>
       } else if (param_name == plugin_name_ + ".max_speed_xy") {
         kinematics.max_speed_xy_ = parameter.as_double();
         kinematics.base_max_speed_xy_ = kinematics.max_speed_xy_;
+        kinematics.max_speed_xy_sq_ = kinematics.max_speed_xy_ * kinematics.max_speed_xy_;
       } else if (param_name == plugin_name_ + ".min_speed_theta") {
         kinematics.min_speed_theta_ = parameter.as_double();
-        kinematics.max_speed_xy_sq_ = kinematics.max_speed_xy_ * kinematics.max_speed_xy_;
       } else if (param_name == plugin_name_ + ".acc_lim_x") {
         kinematics.acc_lim_x_ = parameter.as_double();
       } else if (param_name == plugin_name_ + ".acc_lim_y") {
