@@ -282,7 +282,8 @@ TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
   ASSERT_TRUE(std::filesystem::exists(root_dir));
   ASSERT_TRUE(std::filesystem::is_directory(root_dir));
 
-  std::vector<std::string> search_directories = {root_dir.string()};
+  std::vector<std::string> search_directories = {
+    root_dir.string(), (root_dir / "subtrees").string()};
 
   for (auto const & entry : std::filesystem::recursive_directory_iterator(root_dir)) {
     if (entry.is_regular_file() && entry.path().extension() == ".xml") {
@@ -748,7 +749,8 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_directories = {root_dir.string()};
+  std::vector<std::string> search_directories = {
+    root_dir.string(), (root_dir / "subtrees").string()};
 
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
@@ -799,7 +801,8 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_directories = {root_dir.string()};
+  std::vector<std::string> search_directories = {
+    root_dir.string(), (root_dir / "subtrees").string()};
 
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
@@ -859,7 +862,8 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_directories = {root_dir.string()};
+  std::vector<std::string> search_directories = {
+    root_dir.string(), (root_dir / "subtrees").string()};
 
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
@@ -922,7 +926,8 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_directories = {root_dir.string()};
+  std::vector<std::string> search_directories = {
+    root_dir.string(), (root_dir / "subtrees").string()};
 
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
@@ -1024,7 +1029,8 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_directories = {root_dir.string()};
+  std::vector<std::string> search_directories = {
+    root_dir.string(), (root_dir / "subtrees").string()};
 
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
@@ -1096,7 +1102,8 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_directories = {root_dir.string()};
+  std::vector<std::string> search_directories = {
+    root_dir.string(), (root_dir / "subtrees").string()};
 
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 

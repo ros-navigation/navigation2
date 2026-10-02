@@ -22,13 +22,31 @@
 namespace nav2_behavior_tree
 {
 
-/** Log a message through the BT navigator's ROS logger. */
+/**
+ * @brief A BT::SyncActionNode that logs a message through the BT navigator's ROS logger
+ *
+ * Usage in XML:
+ * @code
+ * <Log level="INFO" message="Starting recovery"/>
+ * @endcode
+ */
 class LogAction : public BT::SyncActionNode
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::LogAction
+   * @param name Name for the XML tag for this node
+   * @param config BT node configuration
+   */
   LogAction(const std::string & name, const BT::NodeConfiguration & config)
   : BT::SyncActionNode(name, config) {}
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing the required level and message input ports
+   *
+   * The level must be DEBUG, INFO, WARN, ERROR, or FATAL. The message is the text to log.
+   */
   static BT::PortsList providedPorts()
   {
     return {
@@ -37,6 +55,11 @@ public:
     };
   }
 
+  /**
+   * @brief Logs the input message at the specified level using the blackboard's node
+   * @return BT::NodeStatus::SUCCESS if the message is logged, or BT::NodeStatus::FAILURE
+   * if a required input is missing or the log level is invalid
+   */
   BT::NodeStatus tick() override;
 };
 
