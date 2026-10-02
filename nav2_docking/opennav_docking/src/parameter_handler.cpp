@@ -45,8 +45,7 @@ ParameterHandler::ParameterHandler(
   params_.base_frame = node->declare_or_get_parameter("base_frame", std::string("base_link"));
   params_.fixed_frame = node->declare_or_get_parameter("fixed_frame", std::string("odom"));
   params_.transform_staleness_threshold =
-    node->declare_or_get_parameter("transform_staleness_threshold",
-      0.0);
+    node->declare_or_get_parameter("transform_staleness_threshold", 0.0);
   params_.dock_prestaging_tolerance = node->declare_or_get_parameter("dock_prestaging_tolerance",
     0.5);
   params_.rotation_angular_tolerance = node->declare_or_get_parameter("rotation_angular_tolerance",

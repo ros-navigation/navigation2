@@ -205,25 +205,25 @@ protected:
   /**
    * @brief Get the pose at a distance in front of the input pose
    *
-   * @param pose Input pose
    * @param robot_pose Current robot pose in the same frame as pose
+   * @param pose Input pose
    * @param distance Distance to move (in meters)
    * @return Pose distance meters in front of the input pose
    */
   geometry_msgs::msg::PoseStamped getPoseAtDistance(
-    const geometry_msgs::msg::PoseStamped & pose,
-    const geometry_msgs::msg::PoseStamped & robot_pose, double distance);
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const geometry_msgs::msg::PoseStamped & pose, double distance);
 
   /**
    * @brief Check if the goal has been reached.
    *
-   * @param goal_pose The goal pose to check
    * @param robot_pose Current robot pose in the same frame as goal_pose
+   * @param goal_pose The goal pose to check
    * @return true If the goal has been reached
    */
   bool isGoalReached(
-    const geometry_msgs::msg::PoseStamped & goal_pose,
-    const geometry_msgs::msg::PoseStamped & robot_pose);
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const geometry_msgs::msg::PoseStamped & goal_pose);
 
   // Parameter handler
   std::unique_ptr<opennav_following::ParameterHandler> param_handler_;

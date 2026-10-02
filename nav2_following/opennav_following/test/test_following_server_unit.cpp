@@ -105,17 +105,17 @@ public:
   }
 
   geometry_msgs::msg::PoseStamped getPoseAtDistance(
-    const geometry_msgs::msg::PoseStamped & pose,
-    const geometry_msgs::msg::PoseStamped & robot_pose, double distance)
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const geometry_msgs::msg::PoseStamped & pose, double distance)
   {
-    return FollowingServer::getPoseAtDistance(pose, robot_pose, distance);
+    return FollowingServer::getPoseAtDistance(robot_pose, pose, distance);
   }
 
   bool isGoalReached(
-    const geometry_msgs::msg::PoseStamped & goal_pose,
-    const geometry_msgs::msg::PoseStamped & robot_pose)
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const geometry_msgs::msg::PoseStamped & goal_pose)
   {
-    return FollowingServer::isGoalReached(goal_pose, robot_pose);
+    return FollowingServer::isGoalReached(robot_pose, goal_pose);
   }
 
   void setDynamicPose(const geometry_msgs::msg::PoseStamped & pose)
@@ -281,7 +281,7 @@ TEST(FollowingServerTests, GetPoseAtDistance)
   robot_pose.pose.position.x = 0.5;
   robot_pose.pose.orientation.w = 1.0;
 
-  auto new_pose = node->getPoseAtDistance(pose, robot_pose, 0.2);
+  auto new_pose = node->getPoseAtDistance(robot_pose, pose, 0.2);
   EXPECT_NEAR(new_pose.pose.position.x, 0.9106, 0.01);
   EXPECT_NEAR(new_pose.pose.position.y, -0.8211, 0.01);
 
@@ -291,7 +291,7 @@ TEST(FollowingServerTests, GetPoseAtDistance)
   at_robot.header.stamp = node->now();
   at_robot.header.frame_id = "my_frame";
   at_robot.pose.position.x = robot_pose.pose.position.x;
-  auto zero_dist = node->getPoseAtDistance(at_robot, robot_pose, 0.5);
+  auto zero_dist = node->getPoseAtDistance(robot_pose, at_robot, 0.5);
   EXPECT_TRUE(std::isfinite(zero_dist.pose.position.x));
   EXPECT_TRUE(std::isfinite(zero_dist.pose.position.y));
   EXPECT_EQ(zero_dist.pose.position.x, 0.5);
@@ -321,12 +321,12 @@ TEST(FollowingServerTests, IsGoalReached)
   robot_pose.pose.position.y = -0.5;
   robot_pose.pose.orientation.w = 1.0;
 
-  EXPECT_FALSE(node->isGoalReached(pose, robot_pose));
+  EXPECT_FALSE(node->isGoalReached(robot_pose, pose));
 
   // Set the pose below the tolerance
   pose.pose.position.x = 0.6;
   pose.pose.position.y = -0.6;
-  EXPECT_TRUE(node->isGoalReached(pose, robot_pose));
+  EXPECT_TRUE(node->isGoalReached(robot_pose, pose));
 
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
