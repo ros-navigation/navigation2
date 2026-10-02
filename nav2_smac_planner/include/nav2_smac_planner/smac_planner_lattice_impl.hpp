@@ -70,7 +70,6 @@ void SmacPlannerLatticeT<NodeT>::configure(
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerLattice", name.c_str());
 
   // General planner params
-  double analytic_expansion_max_length_m;
 
   _tolerance = static_cast<float>(node->declare_or_get_parameter(name + ".tolerance", 0.25));
   _allow_unknown = node->declare_or_get_parameter(name + ".allow_unknown", true);
@@ -106,10 +105,8 @@ void SmacPlannerLatticeT<NodeT>::configure(
     node->declare_or_get_parameter(name + ".analytic_expansion_max_cost", 200.0);
   _search_info.analytic_expansion_max_cost_override =
     node->declare_or_get_parameter(name + ".analytic_expansion_max_cost_override", false);
-  analytic_expansion_max_length_m =
+  _analytic_expansion_max_length_m =
     node->declare_or_get_parameter(name + ".analytic_expansion_max_length", 3.0);
-  _search_info.analytic_expansion_max_length =
-    analytic_expansion_max_length_m / _costmap->getResolution();
   _search_info.use_quadratic_cost_penalty =
     node->declare_or_get_parameter(name + ".use_quadratic_cost_penalty", false);
   _search_info.downsample_obstacle_heuristic =
@@ -135,8 +132,10 @@ void SmacPlannerLatticeT<NodeT>::configure(
   }
 
   _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
+  _search_info.analytic_expansion_max_length =
+    _analytic_expansion_max_length_m / _metadata.grid_resolution;
   _search_info.minimum_turning_radius =
-    _metadata.min_turning_radius / (_costmap->getResolution());
+    _metadata.min_turning_radius / (_metadata.grid_resolution);
   _motion_model = MotionModel::STATE_LATTICE;
 
   if (_metadata.motion_model == "omni" && _search_info.allow_reverse_expansion) {
@@ -176,7 +175,7 @@ void SmacPlannerLatticeT<NodeT>::configure(
 
   float lookup_table_dim =
     static_cast<float>(_lookup_table_size) /
-    static_cast<float>(_costmap->getResolution());
+    static_cast<float>(_metadata.grid_resolution);
 
   // Make sure its a whole number
   lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
@@ -325,6 +324,15 @@ nav_msgs::msg::Path SmacPlannerLatticeT<NodeT>::createPlan(
   steady_clock::time_point a = steady_clock::now();
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
+
+  // Primitives are generated for a fixed grid resolution. Do not silently
+  // scale their physical geometry
+  if (std::abs(_costmap->getResolution() - _metadata.grid_resolution) > 1e-6) {
+    throw nav2_core::PlannerException(
+            "Costmap resolution " + std::to_string(_costmap->getResolution()) +
+            " does not match lattice resolution " + std::to_string(_metadata.grid_resolution) +
+            ". Use primitives generated for the actual costmap resolution.");
+  }
 
   // Set collision checker and costmap information
   _collision_checker.setFootprint(
@@ -663,8 +671,7 @@ SmacPlannerLatticeT<NodeT>::updateParametersCallback(
         _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
       } else if (param_name == _name + ".analytic_expansion_max_length") {
         reinit_a_star = true;
-        _search_info.analytic_expansion_max_length =
-          static_cast<float>(parameter.as_double()) / _costmap->getResolution();
+        _analytic_expansion_max_length_m = parameter.as_double();
       } else if (param_name == _name + ".analytic_expansion_max_cost") {
         reinit_a_star = true;
         _search_info.analytic_expansion_max_cost = static_cast<float>(parameter.as_double());
@@ -725,7 +732,7 @@ SmacPlannerLatticeT<NodeT>::updateParametersCallback(
         _search_info.lattice_filepath = parameter.as_string();
         _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
         _search_info.minimum_turning_radius =
-          _metadata.min_turning_radius / (_costmap->getResolution());
+          _metadata.min_turning_radius / (_metadata.grid_resolution);
       } else if (param_name == _name + ".goal_heading_mode") {
         std::string goal_heading_type = parameter.as_string();
         RCLCPP_INFO(
@@ -739,12 +746,14 @@ SmacPlannerLatticeT<NodeT>::updateParametersCallback(
 
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
   if (reinit_a_star || reinit_smoother) {
-    // convert to grid coordinates
+    // Convert using the fixed resolution of the lattice primitives.
+    _search_info.analytic_expansion_max_length =
+      _analytic_expansion_max_length_m / _metadata.grid_resolution;
     _search_info.minimum_turning_radius =
-      _metadata.min_turning_radius / (_costmap->getResolution());
+      _metadata.min_turning_radius / (_metadata.grid_resolution);
     float lookup_table_dim =
       static_cast<float>(_lookup_table_size) /
-      static_cast<float>(_costmap->getResolution());
+      static_cast<float>(_metadata.grid_resolution);
 
     // Make sure its a whole number
     lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
