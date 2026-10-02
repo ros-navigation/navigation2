@@ -383,9 +383,9 @@ inline void setSoftRealTimePriority()
     throw std::runtime_error(errmsg);
   }
 #elif defined(_WIN32)
-  // Windows: Raise only the current thread two levels above its normal priority
+  // Windows: Raise only the current thread one level above its normal priority
   // within the existing process priority class.
-  if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST)) {
+  if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL)) {
     throw std::runtime_error(
             "Failed to set soft real-time thread priority on Windows. Error: " +
             std::to_string(GetLastError()));
