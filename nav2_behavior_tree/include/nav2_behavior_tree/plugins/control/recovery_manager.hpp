@@ -40,7 +40,7 @@ namespace nav2_behavior_tree
  * blackboard key in `error_code_names` gets its own group of sequences, named after the key:
  *
  * @code{.yaml}
- * navigate_recovery:
+ * recovery_manager:
  *   compute_path_error_code:
  *     default: [ClearGlobalCostmap, Wait, ClearGlobalCostmap]
  *     error_specific:
@@ -69,7 +69,7 @@ namespace nav2_behavior_tree
  * @code
  * <RecoveryNode number_of_retries="-1">
  *   <!--navigation-->
- *   <RecoveryManager param_namespace="navigate_recovery">
+ *   <RecoveryManager param_namespace="recovery_manager">
  *     <ClearEntireCostmap name="ClearLocalCostmap" service_name="..."/>
  *     <Wait wait_duration="5.0"/>
  *     <BackUp backup_dist="0.30" backup_speed="0.15"/>

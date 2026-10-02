@@ -91,7 +91,7 @@ bt_navigator:
 
     # Recovery sequences used by navigate_to_pose_w_recovery_manager.xml, one behavior per
     # failure. Errors are given by name, and [none] means nothing can be done.
-    navigate_recovery:
+    recovery_manager:
       compute_path_error_code: 
         default: ["ClearGlobalCostmap", "Wait", "ClearGlobalCostmap"]
         error_specific:
