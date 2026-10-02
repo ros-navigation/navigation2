@@ -249,8 +249,6 @@ void ObstacleLayer::onInitialize()
         *sub, *tf_, global_frame_, 50,
         node, tf2::durationFromSec(transform_tolerance));
 
-      // Per-source projector: MessageFilter callbacks can run concurrently on
-      // the TF thread; laser_geometry::LaserProjection is not thread-safe.
       auto projector = std::make_shared<laser_geometry::LaserProjection>();
       projectors_.push_back(projector);
 
