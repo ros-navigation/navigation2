@@ -16,6 +16,10 @@
 #include <chrono>
 #include <thread>
 #include <random>
+#include <algorithm>
+#include <cmath>
+#include <utility>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -32,6 +36,7 @@
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 #include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
+#include "nav2_mppi_controller/critics/axis_align_critic.hpp"
 #include "utils_test.cpp"  // NOLINT
 
 // Tests the various critic plugin functions
@@ -41,6 +46,20 @@
 using namespace mppi;  // NOLINT
 using namespace mppi::critics;  // NOLINT
 using namespace mppi::utils;  // NOLINT
+
+class AxisAlignCriticWrapper : public AxisAlignCritic
+{
+public:
+  AxisAlignCriticWrapper()
+  : AxisAlignCritic()
+  {
+  }
+
+  void setNormalize(bool normalize)
+  {
+    normalize_ = normalize;
+  }
+};
 
 class PathAngleCriticWrapper : public PathAngleCritic
 {
@@ -927,4 +946,206 @@ TEST(CriticTests, VelocityDeadbandCritic)
   critic.score(data);
   // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
   EXPECT_NEAR(costs(1), 19.845, 0.01);
+}
+
+TEST(CriticTests, AxisAlignCritic)
+{
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.reset(1000, 30);
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+  data.motion_model = std::make_shared<OmniMotionModel>();
+  state.local_path_length = 5.0f;  // far from goal, critic active
+
+  // Initialization testing
+
+  // Make sure initializes correctly and that defaults are reasonable
+  AxisAlignCriticWrapper critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+
+  // Scoring testing
+
+  // pure forward motion is axis aligned, should not have any costs
+  state.vx.setConstant(0.80f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+
+  // pure lateral motion is axis aligned too
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.60f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+
+  // 45 degree motion: ratio 1.0 * 3.0 weight
+  state.vx.setConstant(0.50f);
+  state.vy.setConstant(0.50f);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 3.0, 1e-5);
+
+  // partially diagonal motion: ratio 0.3 / 0.6 * 3.0 weight
+  costs.setZero();
+  state.vx.setConstant(0.60f);
+  state.vy.setConstant(0.30f);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 1.5, 1e-5);
+
+  // ratio scaling is independent of speed: slow 45 degree motion costs the same as fast
+  costs.setZero();
+  state.vx.setConstant(0.10f);
+  state.vy.setConstant(0.10f);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 3.0, 1e-5);
+
+  // at a standstill the clamped major axis keeps the ratio finite instead of dividing 0 by 0
+  costs.setZero();
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  critic.score(data);
+  EXPECT_TRUE(std::isfinite(costs(0)));
+  EXPECT_NEAR(costs(0), 0.0, 1e-6);
+
+  // below the 1e-3 floor the clamp scales the ratio down rather than reporting a full diagonal:
+  // 45 degree motion at 1e-4 scores 1e-4 / 1e-3 = 0.1 of the ratio, 0.1 * 3.0 weight
+  costs.setZero();
+  state.vx.setConstant(1e-4f);
+  state.vy.setConstant(1e-4f);
+  critic.score(data);
+  EXPECT_GT(costs(0), 0.0f);
+  EXPECT_LT(costs(0), 3.0f);
+  EXPECT_NEAR(costs(0), 0.3, 1e-5);
+
+  // at the floor itself the ratio is unaffected, 45 degree motion scores the full 1.0 * 3.0 weight
+  costs.setZero();
+  state.vx.setConstant(1e-3f);
+  state.vy.setConstant(1e-3f);
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 3.0, 1e-5);
+
+  // absolute scaling: minor axis magnitude 0.3 * 3.0 weight
+  critic.setNormalize(false);
+  costs.setZero();
+  state.vx.setConstant(0.60f);
+  state.vy.setConstant(0.30f);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 0.9, 1e-3);
+  critic.setNormalize(true);
+
+  // cost power greater than one squares the weighted ratio: (0.5 ratio * 3.0 weight)^2 = 2.25
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
+  critic = AxisAlignCriticWrapper();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  costs.setZero();
+  state.vx.setConstant(0.60f);
+  state.vy.setConstant(0.30f);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 2.25, 1e-5);
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
+  critic = AxisAlignCriticWrapper();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+
+  // within threshold_to_consider of the goal the critic yields to the goal critics
+  costs.setZero();
+  state.local_path_length = 0.2f;
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+  state.local_path_length = 5.0f;
+
+  // non-holonomic motion models have no vy, critic is inactive
+  costs.setZero();
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+}
+
+TEST(CriticTests, AxisAlignCriticWheelSpeedImbalance)
+{
+  // The normalized AxisAlignCritic score is not a free-form heuristic: at wz = 0 it is exactly
+  // the wheel speed imbalance of a mecanum base, derived in axis_align_critic.hpp. This test
+  // pins that identity against an independent implementation of the mecanum inverse kinematics,
+  // so the ratio in score() cannot drift away from the physical quantity it claims to measure.
+  auto wheel_speed_imbalance = [](float vx, float vy, float r, float lx_plus_ly) {
+      const float wz = 0.0f;  // the identity holds for pure translation
+      const float rot = lx_plus_ly * wz;
+      const float w_front_left = (vx - vy - rot) / r;
+      const float w_front_right = (vx + vy + rot) / r;
+      const float w_rear_left = (vx + vy - rot) / r;
+      const float w_rear_right = (vx - vy + rot) / r;
+      const float highest = std::max(
+        std::max(std::fabs(w_front_left), std::fabs(w_front_right)),
+        std::max(std::fabs(w_rear_left), std::fabs(w_rear_right)));
+      const float lowest = std::min(
+        std::min(std::fabs(w_front_left), std::fabs(w_front_right)),
+        std::min(std::fabs(w_rear_left), std::fabs(w_rear_right)));
+      return (highest - lowest) / (highest + lowest);
+    };
+
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.reset(1000, 30);
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+  data.motion_model = std::make_shared<OmniMotionModel>();
+  state.local_path_length = 5.0f;  // far from goal, critic active
+
+  AxisAlignCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  const float weight = 3.0f;  // default cost_weight, with the default cost_power of 1
+
+  // Axis aligned, diagonal, and everything in between, including negative velocities
+  const std::vector<std::pair<float, float>> velocities = {
+    {0.80f, 0.00f}, {0.00f, 0.60f}, {0.50f, 0.50f}, {0.10f, 0.10f},
+    {0.60f, 0.30f}, {0.72f, 0.18f}, {-0.60f, 0.30f}, {0.35f, -0.70f}};
+
+  // A small and a large platform: r, lx and ly cancel, so both must give the same imbalance
+  const std::vector<std::pair<float, float>> geometries = {{0.0375f, 0.16f}, {0.1275f, 0.53f}};
+
+  for (const auto & velocity : velocities) {
+    const float vx = velocity.first;
+    const float vy = velocity.second;
+    state.vx.setConstant(vx);
+    state.vy.setConstant(vy);
+    state.wz.setConstant(0.0f);
+    costs.setZero();
+    critic.score(data);
+    const float scored_ratio = costs(0) / weight;
+
+    for (const auto & geometry : geometries) {
+      EXPECT_NEAR(
+        scored_ratio, wheel_speed_imbalance(vx, vy, geometry.first, geometry.second),
+        1e-5);
+    }
+  }
 }
