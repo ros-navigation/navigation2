@@ -289,6 +289,11 @@ protected:
   void testPathLookaheadDetection(
     uint8_t type, double base, double multiplier, double linear_vel,
     double tr_x, double tr_y);
+  // [AI generated]
+  void testPathLookaheadRewind(
+    uint8_t type, double base, double multiplier, double linear_vel);
+  void testPathLookaheadRewindStaysOnLeg(
+    uint8_t type, double base, double multiplier, double linear_vel);
 
   void reset();
 
@@ -792,6 +797,77 @@ void TestNode::testPathLookaheadDetection(
   verifySpeedLimit(type, base, multiplier, 2, 1, speed_limit);
 }
 
+// [AI generated]
+void TestNode::testPathLookaheadRewind(
+  uint8_t type, double base, double multiplier, double linear_vel)
+{
+  const int min_i = 0;
+  const int min_j = 0;
+  const int max_i = width_ + 4;
+  const int max_j = height_ + 4;
+
+  // Path runs (2, 0) -> (2, 5), entering the speed-restricted region (y >= 1)
+  publishOdom(linear_vel);
+  publishPath(createPath(2.0, 0.0, 2.0, 5.0, 0.5, "map"));
+
+  // Advance the cached start index past the first in-zone cell at (2, 1)
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 2.0;
+  pose.position.y = 4.0;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  auto speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  verifySpeedLimit(type, base, multiplier, 2, 3, speed_limit);
+
+  // The 4 m displacement exceeds max_path_rewind, so the index converges over several updates
+  pose.position.y = 0.0;
+  for (int i = 0; i < 6; i++) {
+    speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+    auto update = waitSpeedLimit();
+    if (update != nullptr) {
+      speed_limit = update;
+    }
+  }
+
+  verifySpeedLimit(type, base, multiplier, 2, 1, speed_limit);
+}
+
+// [AI generated]
+void TestNode::testPathLookaheadRewindStaysOnLeg(
+  uint8_t type, double base, double multiplier, double linear_vel)
+{
+  const int min_i = 0;
+  const int min_j = 0;
+  const int max_i = width_ + 4;
+  const int max_j = height_ + 4;
+
+  // Out-and-back: the outbound leg (y = 0) is free in the mask, the return leg (y = 1) is not
+  nav_msgs::msg::Path path = createPath(0.0, 0.0, 5.0, 0.0, 0.25, "map");
+  const nav_msgs::msg::Path return_leg = createPath(5.0, 1.0, 0.0, 1.0, 0.25, "map");
+  path.poses.insert(path.poses.end(), return_leg.poses.begin(), return_leg.poses.end());
+
+  publishOdom(linear_vel);
+  publishPath(path);
+
+  // Put the cached index on the return leg
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 3.0;
+  pose.position.y = 1.0;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  auto speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  verifySpeedLimit(type, base, multiplier, 3, 1, speed_limit);
+
+  // Now closer to the free outbound leg (0.4 m) than to the return leg (0.6 m)
+  pose.position.x = 2.0;
+  pose.position.y = 0.4;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+
+  verifySpeedLimit(type, base, multiplier, 2, 1, speed_limit);
+}
+
 void TestNode::reset()
 {
   mask_.reset();
@@ -1003,6 +1079,45 @@ TEST_F(TestNode, testPathLookaheadWithDifferentFrame)
   // Path is published in odom frame, but filter is in map frame
   testPathLookaheadDetection(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0, TRANSLATION_X,
     TRANSLATION_Y);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+// [AI generated]
+TEST_F(TestNode, testPathLookaheadRewindsAfterBackwardMotion)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.2;
+  params.min_lookahead = 0.0;
+  params.max_lookahead = 5.0;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadRewind(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+// [AI generated]
+TEST_F(TestNode, testPathLookaheadRewindStaysOnCurrentLeg)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.2;
+  params.min_lookahead = 0.0;
+  // Cap the window so only the cell at the cursor is sampled
+  params.max_lookahead = 0.1;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadRewindStaysOnLeg(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0);
 
   speed_filter_->resetFilter();
   reset();
