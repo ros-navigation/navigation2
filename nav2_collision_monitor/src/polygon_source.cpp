@@ -89,6 +89,8 @@ bool PolygonSource::getSourceData(
         return curr_time - rclcpp::Time(polygon_stamped.header.stamp) > source_timeout_;
       }), data_.end());
 
+  // Reusing the same transform for each frame so polygons in that
+  // frame are transformed consistently during this processing cycle.
   std::unordered_map<std::string, tf2::Transform> transforms;
   for (const auto & polygon_instance : data_) {
     tf2::Transform tf_transform;
