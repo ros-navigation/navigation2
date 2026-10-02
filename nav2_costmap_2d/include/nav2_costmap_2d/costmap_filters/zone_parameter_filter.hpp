@@ -62,8 +62,8 @@ public:
     const geometry_msgs::msg::Pose & pose) override;
 
   /**
-   * @brief Reset filter — drop subscriptions, reset publisher, clear
-   *        nominal-defaults capture.
+   * @brief Reset filter — drop subscriptions, reset publisher, drop the
+   *        loaded configuration.
    */
   void resetFilter() override;
 
@@ -92,6 +92,12 @@ protected:
   void loadStateConfig();
 
   /**
+   * @brief Apply a state transition
+   * @param new_state Mask value of the state being entered
+   */
+  void enterState(uint8_t new_state);
+
+  /**
    * @brief Apply the parameter set associated with the given state.
    *        State 0 restores nominal_defaults; throws on unknown state.
    */
@@ -109,6 +115,13 @@ protected:
   void issueAsyncSetParameters(
     const std::string & target_node,
     const std::vector<rclcpp::Parameter> & params);
+
+  /**
+   * @brief Re-apply the current state once sets issued before a reload have
+   *        drained. Called only from exits of process() where no transition
+   *        fired, so it can never race a transition made on the same cycle.
+   */
+  void reapplyAfterDrainIfDue();
 
   /**
    * @brief Process completed set_parameters results non-blockingly. Called
@@ -138,8 +151,19 @@ protected:
   std::map<std::string, std::vector<rclcpp::Parameter>> nominal_defaults_;
   std::map<std::string, rclcpp::AsyncParametersClient::SharedPtr> param_clients_;
 
-  std::vector<std::shared_future<
-      std::vector<rcl_interfaces::msg::SetParametersResult>>> pending_futures_;
+  // Client is held with its future: destroying it early breaks the future.
+  struct PendingSet
+  {
+    rclcpp::AsyncParametersClient::SharedPtr client;
+    std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future;
+  };
+  std::vector<PendingSet> pending_sets_;
+
+  // Re-apply the current state once sets left in flight by a reload have drained.
+  bool reapply_after_drain_{false};
+
+  // Bounds in-flight sets against a target that never answers.
+  static constexpr size_t kMaxPendingSets = 64;
 
   std::string state_event_topic_;
 
