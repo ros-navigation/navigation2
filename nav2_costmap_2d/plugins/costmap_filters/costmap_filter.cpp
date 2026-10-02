@@ -43,6 +43,7 @@
 #include <exception>
 
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -77,6 +78,8 @@ void CostmapFilter::onInitialize()
     double transform_tolerance = node->declare_or_get_parameter(name_ + "." + "transform_tolerance",
       0.1);
     transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
+    transform_staleness_threshold_ = node->declare_or_get_parameter(
+      name_ + ".transform_staleness_threshold", 0.0);
 
     // Costmap Filter enabling service
     enable_service_ = node->create_service<std_srvs::srv::SetBool>(
@@ -159,22 +162,17 @@ bool CostmapFilter::transformPose(
     // to mask_pose in mask_frame
     geometry_msgs::msg::TransformStamped transform;
     geometry_msgs::msg::PointStamped in, out;
-    in.header.stamp = clock_->now();
     in.header.frame_id = global_frame;
     in.point.x = global_pose.position.x;
     in.point.y = global_pose.position.y;
     in.point.z = 0.0;
 
-    try {
-      tf_->transform(in, out, mask_frame, transform_tolerance_);
-    } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR_THROTTLE(
-        logger_, *(clock_), 2000,
-        "CostmapFilter: failed to get costmap frame (%s) "
-        "transformation to mask frame (%s) with error: %s",
-        global_frame.c_str(), mask_frame.c_str(), ex.what());
+    if (!nav2_util::lookupTransformWithStalenessCheck(
+        *tf_, mask_frame, global_frame, clock_->now(), transform_staleness_threshold_, transform))
+    {
       return false;
     }
+    tf2::doTransform(in, out, transform);
 
     mask_pose = global_pose;
     mask_pose.position.x = out.point.x;
