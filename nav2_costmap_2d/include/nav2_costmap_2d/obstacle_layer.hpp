@@ -246,7 +246,7 @@ protected:
   double min_obstacle_height_;  ///< @brief Max Obstacle Height
   double max_obstacle_height_;  ///< @brief Max Obstacle Height
 
-  /// @brief One projector per LaserScan source; kept alive for MessageFilter binds
+  /// @brief Used to project laser scans into point clouds
   std::vector<std::shared_ptr<laser_geometry::LaserProjection>> projectors_;
   /// @brief Used for the observation message filters
   #if RCLCPP_VERSION_GTE(29, 6, 0)
