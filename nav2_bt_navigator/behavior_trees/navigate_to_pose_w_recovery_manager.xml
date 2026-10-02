@@ -1,7 +1,7 @@
 <!--
   This Behavior Tree replans the global path periodically at 1 Hz. When planning or control
   fails, the NavigateRecoveryBehaviors subtree picks a recovery behavior for the error code,
-  using the navigate_recovery parameters. Navigation is retried until the recovery gives up.
+  using the recovery_manager parameters. Navigation is retried until the recovery gives up.
 -->
 <root BTCPP_format="4" main_tree_to_execute="NavigateToPoseWRecoveryManager">
   <BehaviorTree ID="NavigateToPoseWRecoveryManager">
