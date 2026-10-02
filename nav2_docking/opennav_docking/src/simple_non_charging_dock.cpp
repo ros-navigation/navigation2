@@ -206,21 +206,13 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
   // and contains the frame_id of docking
   if (detected.header.frame_id != pose.header.frame_id) {
     try {
-      geometry_msgs::msg::TransformStamped frame_transform;
       if (rclcpp::Time(detected.header.stamp).nanoseconds() == 0) {
-        // A zero detection timestamp requests the latest TF, which may be stale.
-        if (!nav2_util::lookupTransformWithStalenessCheck(
-            *tf2_buffer_, pose.header.frame_id, detected.header.frame_id,
-            node_->now(), transform_staleness_threshold_, frame_transform))
-        {
-          return false;
-        }
-      } else {
-        // Keep the measurement time and use the lookup result directly.
-        frame_transform = tf2_buffer_->lookupTransform(
-          pose.header.frame_id, detected.header.frame_id,
-          detected.header.stamp, rclcpp::Duration::from_seconds(0.2));
+        RCLCPP_ERROR_ONCE(node_->get_logger(),
+            "Provided a detection pose without a timestamp, unexpected");
       }
+      geometry_msgs::msg::TransformStamped frame_transform = tf2_buffer_->lookupTransform(
+        pose.header.frame_id, detected.header.frame_id,
+        detected.header.stamp, rclcpp::Duration::from_seconds(0.2));
       tf2::doTransform(detected, detected, frame_transform);
     } catch (const tf2::TransformException & ex) {
       RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
