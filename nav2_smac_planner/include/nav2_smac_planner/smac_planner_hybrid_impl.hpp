@@ -80,10 +80,6 @@ void SmacPlannerHybridT<NodeT>::configure(
   _downsampling_factor = node->declare_or_get_parameter(name + ".downsampling_factor", 1);
 
   angle_quantizations = node->declare_or_get_parameter(name + ".angle_quantization_bins", 72);
-  if (angle_quantizations <= 0 || angle_quantizations > 1024) {
-    std::string error_msg = "angle_quantization_bins must be in [1, 1024]";
-    throw nav2_core::PlannerException(error_msg);
-  }
   _angle_bin_size = 2.0 * M_PI / angle_quantizations;
   _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
 
@@ -178,6 +174,11 @@ void SmacPlannerHybridT<NodeT>::configure(
     );
 
     _coarse_search_resolution = 1;
+  }
+
+  if (angle_quantizations <= 0 || angle_quantizations > 1024) {
+    std::string error_msg = "angle_quantization_bins must be in [1, 1024]";
+    throw nav2_core::PlannerException(error_msg);
   }
 
   if (_angle_quantizations % _coarse_search_resolution != 0) {
