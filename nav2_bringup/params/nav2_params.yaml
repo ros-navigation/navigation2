@@ -93,9 +93,9 @@ bt_navigator:
       - wait
 
     # Recovery sequences used by navigate_to_pose_w_recovery_manager.xml, one behavior per
-    # failure. Errors are given by name or by code, and [none] means nothing can be done.
+    # failure. Errors are given by name, and [none] means nothing can be done.
     navigate_recovery:
-      compute_path_error_code:
+      compute_path_error_code: 
         default: ["ClearGlobalCostmap", "Wait", "ClearGlobalCostmap"]
         error_specific:
           invalid_planner: ["none"]
@@ -112,6 +112,13 @@ bt_navigator:
           invalid_path: ["none"]
           failed_to_make_progress: ["ClearLocalCostmap", "BackUp", "Spin"]
           no_valid_control: ["ClearLocalCostmap", "BackUp"]
+      # A custom action's error codes are named in error_names. Its blackboard key also has to
+      # be added to the error_code_names port of the RecoveryManager.
+      # my_action_error_code:
+      #   error_names: {MY_FAILURE: 950}
+      #   default: ["Wait"]
+      #   error_specific:
+      #     my_failure: ["BackUp"]
 
 controller_server:
   ros__parameters:
