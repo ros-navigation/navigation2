@@ -1,0 +1,33 @@
+<!--
+  Executes a BackUp only if the robot traveled at least reset_distance since the last one
+-->
+<root BTCPP_format="4" main_tree_to_execute="BackupWithReset">
+  <BehaviorTree ID="BackupWithReset">
+    <Sequence>
+      <RunOnce>
+        <Script code="_backup_executed:=false"/>
+      </RunOnce>
+      <ScriptCondition code="_last_backup_pose_valid == true"
+                       _successIf="!_backup_executed"/>
+      <GetCurrentPose global_frame="{global_frame}" robot_base_frame="{robot_base_frame}"
+                      current_pose="{_current_backup_pose}"
+                      _successIf="!_backup_executed"/>
+      <Fallback>
+        <Sequence>
+          <ArePosesNear ref_pose="{_last_backup_pose}" target_pose="{_current_backup_pose}"
+                        tolerance="{reset_distance}" global_frame="{global_frame}"
+                        _failureIf="!_backup_executed"/>
+          <Log level="INFO" message="Backup skipped because it was already performed near this pose"/>
+        </Sequence>
+        <Sequence>
+          <BackUp backup_dist="{backup_dist}" backup_speed="{backup_speed}"
+                  error_code_id="{error_code_id}" error_msg="{error_msg}"
+                  _onSuccess="_backup_executed:=true; _last_backup_pose_valid:=false"/>
+          <GetCurrentPose global_frame="{global_frame}" robot_base_frame="{robot_base_frame}"
+                          current_pose="{_last_backup_pose}"
+                          _onSuccess="_last_backup_pose_valid:=true"/>
+        </Sequence>
+      </Fallback>
+    </Sequence>
+  </BehaviorTree>
+</root>
