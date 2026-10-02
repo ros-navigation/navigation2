@@ -37,17 +37,16 @@ namespace nav2_behavior_tree
  * a sequence per error code, configured with parameters instead of in the tree.
  *
  * The children are the available recovery behaviors, referred to by their name. Each
- * blackboard key in `error_code_names` gets its own group of sequences, named after the key
- * without `_error_code`:
+ * blackboard key in `error_code_names` gets its own group of sequences, named after the key:
  *
  * @code{.yaml}
  * navigate_recovery:
- *   compute_path:
+ *   compute_path_error_code:
  *     default: [ClearGlobalCostmap, Wait, ClearGlobalCostmap]
  *     error_specific:
  *       start_occupied: [ClearGlobalCostmap, BackUp]
  *       goal_occupied: [none]
- *   follow_path:
+ *   follow_path_error_code:
  *     default: [ClearLocalCostmap, Wait, ClearLocalCostmap]
  *     error_specific:
  *       "102": [Wait]
