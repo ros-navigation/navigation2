@@ -35,13 +35,14 @@ namespace nav2_behavior_tree
 namespace
 {
 
-const std::vector<std::pair<uint16_t, std::string>> & errorCodeNames()
+// The errors of Nav2's actions, by code. No two of them share a code.
+const std::unordered_map<uint16_t, std::string> & builtinErrorNames()
 {
   using FollowPath = nav2_msgs::action::FollowPath::Result;
   using ComputePathToPose = nav2_msgs::action::ComputePathToPose::Result;
   using ComputePathThroughPoses = nav2_msgs::action::ComputePathThroughPoses::Result;
   using SmoothPath = nav2_msgs::action::SmoothPath::Result;
-  static const std::vector<std::pair<uint16_t, std::string>> error_code_names = {
+  static const std::unordered_map<uint16_t, std::string> builtin_error_names = {
     {FollowPath::NONE, "NONE"},
     {FollowPath::GOAL_REJECTED, "GOAL_REJECTED"},
     {FollowPath::SEND_GOAL_FAILURE, "SEND_GOAL_FAILURE"},
@@ -80,59 +81,13 @@ const std::vector<std::pair<uint16_t, std::string>> & errorCodeNames()
     {SmoothPath::FAILED_TO_SMOOTH_PATH, "FAILED_TO_SMOOTH_PATH"},
     {SmoothPath::INVALID_PATH, "INVALID_PATH"},
   };
-  return error_code_names;
+  return builtin_error_names;
 }
-
-using CustomErrorCodes = std::unordered_map<std::string, uint16_t>;
 
 std::string toUppercase(std::string text)
 {
   std::transform(text.begin(), text.end(), text.begin(), ::toupper);
   return text;
-}
-
-// e.g. "105 (FAILED_TO_MAKE_PROGRESS)"
-std::string describeErrorCode(
-  const uint16_t error_code, const CustomErrorCodes & custom_error_codes = {})
-{
-  for (const auto & [name, code] : custom_error_codes) {
-    if (code == error_code) {
-      return std::to_string(error_code) + " (" + name + ")";
-    }
-  }
-  std::string error_name = "UNKNOWN_ERROR_CODE";
-  for (const auto & [code, name] : errorCodeNames()) {
-    if (code == error_code) {
-      error_name = name;
-      break;
-    }
-  }
-  return std::to_string(error_code) + " (" + error_name + ")";
-}
-
-// A name like "tf_error" matches the code of every action with that error, unless it is the
-// name of a custom error code
-std::vector<uint16_t> errorCodesForKey(
-  const std::string & error_key, const CustomErrorCodes & custom_error_codes)
-{
-  const std::string uppercase_key = toUppercase(error_key);
-  const auto custom_error_code = custom_error_codes.find(uppercase_key);
-  if (custom_error_code != custom_error_codes.end()) {
-    return {custom_error_code->second};
-  }
-
-  std::vector<uint16_t> matching_codes;
-  for (const auto & [code, name] : errorCodeNames()) {
-    if (name == uppercase_key) {
-      matching_codes.push_back(code);
-    }
-  }
-  return matching_codes;
-}
-
-bool startsWith(const std::string & text, const std::string & prefix)
-{
-  return text.rfind(prefix, 0) == 0;
 }
 
 }  // namespace
@@ -243,23 +198,27 @@ RecoveryManager::ErrorCodeGroup RecoveryManager::loadErrorCodeGroup(
 {
   ErrorCodeGroup group;
   group.blackboard_key = blackboard_key;
-  group.name = blackboard_key;
-
+  group.error_names = builtinErrorNames();
+  // Without a default, every child is used in order
   for (std::size_t behavior_index = 0; behavior_index < children_nodes_.size(); ++behavior_index) {
     group.default_sequence.push_back(behavior_index);
   }
 
+  // e.g. recovery_manager.follow_path_error_code, whose parameters are named relative to it
   const std::string group_prefix =
-    param_namespace.empty() ? group.name : param_namespace + "." + group.name;
-  const std::string default_param_name = group_prefix + ".default";
-  const std::string error_names_prefix = group_prefix + ".error_names.";
-  const std::string error_specific_prefix = group_prefix + ".error_specific.";
-
+    param_namespace.empty() ? blackboard_key : param_namespace + "." + blackboard_key;
   const auto parameters = getParametersUnder(group_prefix);
+  const auto key_of = [&](const std::string & param_name) {
+      return param_name.substr(group_prefix.size() + 1);
+    };
+  const std::string error_names = "error_names.";
+  const std::string error_specific = "error_specific.";
 
-  // Custom error codes are named first, so that the error specific sequences can use the names
+  // 1. Custom error names, first so that the error specific sequences can use them
+  std::unordered_map<std::string, uint16_t> custom_error_codes;
   for (const auto & [param_name, param_value] : parameters) {
-    if (!startsWith(param_name, error_names_prefix)) {
+    const std::string key = key_of(param_name);
+    if (!key.starts_with(error_names)) {
       continue;
     }
     const int64_t error_code =
@@ -270,39 +229,43 @@ RecoveryManager::ErrorCodeGroup RecoveryManager::loadErrorCodeGroup(
         logger_, "Ignoring parameter %s: not an error code from 1 to 65535", param_name.c_str());
       continue;
     }
-    group.custom_error_codes[toUppercase(param_name.substr(error_names_prefix.size()))] =
-      static_cast<uint16_t>(error_code);
+    const std::string error_name = toUppercase(key.substr(error_names.size()));
+    custom_error_codes[error_name] = static_cast<uint16_t>(error_code);
+    group.error_names[static_cast<uint16_t>(error_code)] = error_name;
   }
 
+  // 2. The default and error specific sequences
   for (const auto & [param_name, param_value] : parameters) {
-    if (startsWith(param_name, error_names_prefix)) {
-      continue;
-    }
-
-    if (param_name == default_param_name) {
+    const std::string key = key_of(param_name);
+    if (key == "default") {
       if (auto sequence = parseRecoverySequence(param_name, param_value)) {
         group.default_sequence = *sequence;
       }
-      continue;
-    }
-
-    if (!startsWith(param_name, error_specific_prefix)) {
-      RCLCPP_WARN(logger_, "Ignoring parameter %s: unknown parameter", param_name.c_str());
-      continue;
-    }
-
-    const std::string error_key = param_name.substr(error_specific_prefix.size());
-    const std::vector<uint16_t> error_codes =
-      errorCodesForKey(error_key, group.custom_error_codes);
-    if (error_codes.empty()) {
-      RCLCPP_WARN(logger_, "Ignoring parameter %s: unknown error", param_name.c_str());
-      continue;
-    }
-
-    if (auto sequence = parseRecoverySequence(param_name, param_value)) {
-      for (const uint16_t error_code : error_codes) {
-        group.sequence_by_error_code[error_code] = *sequence;
+    } else if (key.starts_with(error_specific)) {
+      // A custom name only means its own code. Otherwise a Nav2 name can stand for several
+      // codes, e.g. TF_ERROR of the planner and of the controller.
+      const std::string error_name = toUppercase(key.substr(error_specific.size()));
+      std::vector<uint16_t> error_codes;
+      if (custom_error_codes.contains(error_name)) {
+        error_codes.push_back(custom_error_codes.at(error_name));
+      } else {
+        for (const auto & [code, name] : builtinErrorNames()) {
+          if (name == error_name) {
+            error_codes.push_back(code);
+          }
+        }
       }
+      if (error_codes.empty()) {
+        RCLCPP_WARN(logger_, "Ignoring parameter %s: unknown error", param_name.c_str());
+        continue;
+      }
+      if (auto sequence = parseRecoverySequence(param_name, param_value)) {
+        for (const uint16_t error_code : error_codes) {
+          group.sequence_by_error_code[error_code] = *sequence;
+        }
+      }
+    } else if (!key.starts_with(error_names)) {
+      RCLCPP_WARN(logger_, "Ignoring parameter %s: unknown parameter", param_name.c_str());
     }
   }
 
@@ -317,7 +280,7 @@ std::map<std::string, rclcpp::ParameterValue> RecoveryManager::getParametersUnde
   std::map<std::string, rclcpp::ParameterValue> parameters;
   const auto parameters_interface = node_->get_node_parameters_interface();
   for (const auto & [param_name, param_value] : parameters_interface->get_parameter_overrides()) {
-    if (startsWith(param_name, prefix + ".")) {
+    if (param_name.starts_with(prefix + ".")) {
       parameters[param_name] = param_value;
     }
   }
@@ -364,41 +327,42 @@ std::optional<RecoveryManager::RecoverySequence> RecoveryManager::parseRecoveryS
 
 bool RecoveryManager::selectNextRecoveryBehavior()
 {
+  // 1. The first error code that is set, in order of priority, is the one to recover from
   const ErrorCodeGroup * failed_group = nullptr;
-  error_code_being_recovered_ = 0;
+  uint16_t error_code = 0;
   for (const auto & group : error_code_groups_) {
-    uint16_t error_code = 0;
     if (config().blackboard->get(group.blackboard_key, error_code) && error_code != 0) {
       failed_group = &group;
-      error_code_being_recovered_ = error_code;
       break;
     }
   }
-
-  RecoverySequence sequence;
-  if (failed_group != nullptr) {
-    const auto specific_sequence =
-      failed_group->sequence_by_error_code.find(error_code_being_recovered_);
-    sequence = specific_sequence != failed_group->sequence_by_error_code.end() ?
-      specific_sequence->second : failed_group->default_sequence;
-  }
-
-  error_description_ = failed_group != nullptr ?
-    describeErrorCode(error_code_being_recovered_, failed_group->custom_error_codes) :
-    describeErrorCode(error_code_being_recovered_);
-  const std::string & error_description = error_description_;
-  if (sequence.empty()) {
-    RCLCPP_WARN(logger_, "No recovery configured for error code %s", error_description.c_str());
+  if (failed_group == nullptr) {
+    RCLCPP_WARN(logger_, "No recovery configured for error code 0 (NONE)");
     return false;
   }
 
-  std::size_t & next_behavior_index =
-    next_behavior_index_by_error_code_[error_code_being_recovered_];
+  const auto error_name = failed_group->error_names.find(error_code);
+  error_description_ = std::to_string(error_code) + " (" +
+    (error_name != failed_group->error_names.end() ? error_name->second : "UNKNOWN_ERROR_CODE") +
+    ")";
+
+  // 2. Its error specific sequence, or else the default one
+  const auto specific_sequence = failed_group->sequence_by_error_code.find(error_code);
+  const RecoverySequence & sequence =
+    specific_sequence != failed_group->sequence_by_error_code.end() ?
+    specific_sequence->second : failed_group->default_sequence;
+  if (sequence.empty()) {
+    RCLCPP_WARN(logger_, "No recovery configured for error code %s", error_description_.c_str());
+    return false;
+  }
+
+  // 3. The next behavior of that sequence
+  std::size_t & next_behavior_index = next_behavior_index_by_error_code_[error_code];
   if (next_behavior_index >= sequence.size()) {
     if (!wrap_around_) {
       RCLCPP_WARN(
         logger_, "Already executed all %zu recovery behaviors for error code %s",
-        sequence.size(), error_description.c_str());
+        sequence.size(), error_description_.c_str());
       return false;
     }
     next_behavior_index = 0;
@@ -410,7 +374,7 @@ bool RecoveryManager::selectNextRecoveryBehavior()
   RCLCPP_INFO(
     logger_, "Executing recovery behavior %s (%zu/%zu) for error code %s",
     children_nodes_[*running_behavior_index_]->name().c_str(), next_behavior_index,
-    sequence.size(), error_description.c_str());
+    sequence.size(), error_description_.c_str());
   return true;
 }
 

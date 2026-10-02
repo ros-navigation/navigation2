@@ -129,10 +129,9 @@ private:
 
   struct ErrorCodeGroup
   {
-    std::string name;
     std::string blackboard_key;
-    // Uppercase names of custom error codes, from error_names
-    std::unordered_map<std::string, uint16_t> custom_error_codes;
+    // Uppercase error names by code: Nav2's, plus the custom ones from error_names
+    std::unordered_map<uint16_t, std::string> error_names;
     RecoverySequence default_sequence;
     std::unordered_map<uint16_t, RecoverySequence> sequence_by_error_code;
   };
@@ -163,7 +162,6 @@ private:
   std::vector<ErrorCodeGroup> error_code_groups_;
   std::unordered_map<uint16_t, std::size_t> next_behavior_index_by_error_code_;
 
-  uint16_t error_code_being_recovered_{0};
   std::string error_description_;
   std::optional<std::size_t> running_behavior_index_;
 
