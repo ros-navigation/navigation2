@@ -229,12 +229,6 @@ RecoveryManager::ErrorCodeGroup RecoveryManager::loadErrorCodeGroup(
   ErrorCodeGroup group;
   group.blackboard_key = blackboard_key;
   group.name = blackboard_key;
-  const std::string suffix = "_error_code";
-  const bool has_suffix = blackboard_key.size() > suffix.size() &&
-    blackboard_key.compare(blackboard_key.size() - suffix.size(), suffix.size(), suffix) == 0;
-  if (has_suffix) {
-    group.name = blackboard_key.substr(0, blackboard_key.size() - suffix.size());
-  }
 
   for (std::size_t behavior_index = 0; behavior_index < children_nodes_.size(); ++behavior_index) {
     group.default_sequence.push_back(behavior_index);

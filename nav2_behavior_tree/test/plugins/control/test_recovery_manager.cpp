@@ -123,7 +123,7 @@ protected:
 
 TEST_F(RecoveryManagerTestFixture, test_default_sequence)
 {
-  setSequence("follow_path.default", {"ClearCostmap", "Wait"});
+  setSequence("follow_path_error_code.default", {"ClearCostmap", "Wait"});
   createRecoveryManager();
   setErrorCode("follow_path_error_code", 105);
 
@@ -140,10 +140,11 @@ TEST_F(RecoveryManagerTestFixture, test_default_sequence)
 
 TEST_F(RecoveryManagerTestFixture, test_error_specific_sequences)
 {
-  setSequence("compute_path.default", {"Wait"});
-  setSequence("compute_path.error_specific.205", {"BackUp"});
-  setSequence("follow_path.default", {"ClearCostmap"});
-  setSequence("follow_path.error_specific.FAILED_to_make_progress", {"BackUp", "ClearCostmap"});
+  setSequence("compute_path_error_code.default", {"Wait"});
+  setSequence("compute_path_error_code.error_specific.205", {"BackUp"});
+  setSequence("follow_path_error_code.default", {"ClearCostmap"});
+  setSequence("follow_path_error_code.error_specific.FAILED_to_make_progress",
+    {"BackUp", "ClearCostmap"});
   createRecoveryManager();
 
   setErrorCode("follow_path_error_code", 105);
@@ -171,9 +172,9 @@ TEST_F(RecoveryManagerTestFixture, test_error_specific_sequences)
 
 TEST_F(RecoveryManagerTestFixture, test_no_recovery_possible)
 {
-  setSequence("follow_path.error_specific.invalid_path", {"none"});
-  setEmptySequence("follow_path.error_specific.tf_error");
-  setSequence("follow_path.error_specific.not_an_error", {"ClearCostmap"});
+  setSequence("follow_path_error_code.error_specific.invalid_path", {"none"});
+  setEmptySequence("follow_path_error_code.error_specific.tf_error");
+  setSequence("follow_path_error_code.error_specific.not_an_error", {"ClearCostmap"});
   createRecoveryManager();
 
   setErrorCode("follow_path_error_code", 103);
@@ -197,7 +198,7 @@ TEST_F(RecoveryManagerTestFixture, test_no_recovery_possible)
 
 TEST_F(RecoveryManagerTestFixture, test_failed_behavior_still_has_its_turn)
 {
-  setSequence("follow_path.default", {"ClearCostmap", "Wait"});
+  setSequence("follow_path_error_code.default", {"ClearCostmap", "Wait"});
   createRecoveryManager();
   setErrorCode("follow_path_error_code", 105);
 
@@ -212,7 +213,7 @@ TEST_F(RecoveryManagerTestFixture, test_failed_behavior_still_has_its_turn)
 
 TEST_F(RecoveryManagerTestFixture, test_running_behavior)
 {
-  setSequence("follow_path.default", {"ClearCostmap", "Wait"});
+  setSequence("follow_path_error_code.default", {"ClearCostmap", "Wait"});
   createRecoveryManager();
   setErrorCode("follow_path_error_code", 105);
 
@@ -232,7 +233,7 @@ TEST_F(RecoveryManagerTestFixture, test_running_behavior)
 
 TEST_F(RecoveryManagerTestFixture, test_halt_while_running_resets_sequences)
 {
-  setSequence("follow_path.default", {"ClearCostmap", "Wait"});
+  setSequence("follow_path_error_code.default", {"ClearCostmap", "Wait"});
   createRecoveryManager();
   setErrorCode("follow_path_error_code", 105);
 
@@ -250,7 +251,7 @@ TEST_F(RecoveryManagerTestFixture, test_halt_while_running_resets_sequences)
 TEST_F(RecoveryManagerTestFixture, test_wrap_around)
 {
   config_->input_ports["wrap_around"] = "true";
-  setSequence("follow_path.default", {"ClearCostmap", "Wait"});
+  setSequence("follow_path_error_code.default", {"ClearCostmap", "Wait"});
   createRecoveryManager();
   setErrorCode("follow_path_error_code", 105);
 
@@ -263,7 +264,7 @@ TEST_F(RecoveryManagerTestFixture, test_wrap_around)
 
 TEST_F(RecoveryManagerTestFixture, test_reset_on_goal_update)
 {
-  setSequence("follow_path.default", {"ClearCostmap"});
+  setSequence("follow_path_error_code.default", {"ClearCostmap"});
   createRecoveryManager();
   setErrorCode("follow_path_error_code", 105);
 
@@ -280,7 +281,7 @@ TEST_F(RecoveryManagerTestFixture, test_reset_on_goal_update)
 TEST_F(RecoveryManagerTestFixture, test_reset_after_robot_moved)
 {
   config_->input_ports["reset_distance"] = "0.5";
-  setSequence("follow_path.default", {"ClearCostmap"});
+  setSequence("follow_path_error_code.default", {"ClearCostmap"});
   createRecoveryManager();
   setErrorCode("follow_path_error_code", 105);
 
@@ -302,14 +303,14 @@ TEST_F(RecoveryManagerTestFixture, test_reset_after_robot_moved)
 
 TEST_F(RecoveryManagerTestFixture, test_unknown_behavior_name)
 {
-  setSequence("follow_path.default", {"Spin"});
+  setSequence("follow_path_error_code.default", {"Spin"});
   createRecoveryManager();
   EXPECT_THROW(recovery_manager_->executeTick(), BT::RuntimeError);
 }
 
 TEST_F(RecoveryManagerTestFixture, test_inside_subtree)
 {
-  setSequence("follow_path.error_specific.failed_to_make_progress", {"Second"});
+  setSequence("follow_path_error_code.error_specific.failed_to_make_progress", {"Second"});
 
   const std::string xml_txt =
     R"(
