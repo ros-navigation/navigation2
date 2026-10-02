@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "yaml-cpp/yaml.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -29,6 +31,19 @@
 
 namespace utils
 {
+
+/**
+ * @brief Wrap a single target pose as a one-pose path for a controller.
+ * @param target Target pose; its header becomes the path's header
+ * @return A path whose only pose is the target
+ */
+inline nav_msgs::msg::Path toPath(const geometry_msgs::msg::PoseStamped & target)
+{
+  nav_msgs::msg::Path path;
+  path.header = target.header;
+  path.poses.push_back(target);
+  return path;
+}
 
 using rclcpp::ParameterType::PARAMETER_STRING;
 using rclcpp::ParameterType::PARAMETER_STRING_ARRAY;
@@ -62,10 +77,11 @@ inline bool parseDockFile(
   }
 
   auto yaml_docks = yaml_file["docks"];
-  Dock curr_dock;
   for (const auto & yaml_dock : yaml_docks) {
     std::string dock_name = yaml_dock.first.as<std::string>();
     const YAML::Node & dock_attribs = yaml_dock.second;
+
+    Dock curr_dock;
 
     curr_dock.frame = "map";
     if (dock_attribs["frame"]) {
@@ -101,6 +117,10 @@ inline bool parseDockFile(
       curr_dock.id = dock_attribs["id"].as<std::string>();
     }
 
+    if (dock_attribs["controller"]) {
+      curr_dock.controller_name = dock_attribs["controller"].as<std::string>();
+    }
+
     // Insert into dock instance database
     dock_db.emplace(dock_name, curr_dock);
   }
@@ -119,9 +139,9 @@ inline bool parseDockParams(
   const nav2::LifecycleNode::SharedPtr & node,
   DockMap & dock_db)
 {
-  Dock curr_dock;
   std::vector<double> pose_arr;
   for (const auto & dock_name : docks_param) {
+    Dock curr_dock;
     curr_dock.frame = node->declare_or_get_parameter(dock_name + ".frame", std::string("map"));
 
     try {
@@ -147,6 +167,8 @@ inline bool parseDockParams(
     curr_dock.pose.orientation = orientationAroundZAxis(pose_arr[2]);
 
     curr_dock.id = node->declare_or_get_parameter(dock_name + ".id", std::string(""));
+    curr_dock.controller_name =
+      node->declare_or_get_parameter(dock_name + ".controller", std::string(""));
 
     // Insert into dock instance database
     dock_db.emplace(dock_name, curr_dock);
