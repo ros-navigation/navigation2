@@ -256,7 +256,12 @@ void WaypointFollower::followWaypointsHandler(
         action_server->terminate_current(result);
         return;
       }
-      goal_index = 0;
+      goal_index = goal->goal_index;
+      no_of_loops = goal->number_of_loops;
+      current_loop_no = 0;
+      result->error_code = 0;
+      result->error_msg.clear();
+      result->missed_waypoints.clear();
       new_goal = true;
     }
 
