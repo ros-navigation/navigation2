@@ -33,23 +33,27 @@ namespace nav2_behavior_tree
 {
 
 /**
- * @brief Runs one recovery behavior each time navigation fails. Which one is picked from
- * a sequence per error code, configured with parameters instead of in the tree.
+ * @brief Runs one recovery behavior each time navigation fails. There is a sequence
+ * configured per error code and it follows that.
  *
- * The children are the available recovery behaviors, referred to by their name. Each
- * blackboard key in `error_code_names` gets its own group of sequences, named after the key:
+ * The children are the available recovery behaviors which are referred to by their name.
+ * Each blackboard key in `error_code_names` gets its own group of sequences which is named
+ * after the key:
  *
  * @code{.yaml}
  * recovery_manager:
+ *   # compute_path_error_code is the name of the blackboard key some action is storing its error code
  *   compute_path_error_code:
  *     default: [ClearGlobalCostmap, Wait, ClearGlobalCostmap]
  *     error_specific:
  *       start_occupied: [ClearGlobalCostmap, BackUp]
  *       goal_occupied: [none]
+ *   # follow_path_error_code is the name of the blackboard key some action is storing its error code
  *   follow_path_error_code:
  *     default: [ClearLocalCostmap, Wait, ClearLocalCostmap]
  *     error_specific:
  *       tf_error: [Wait]
+ *   # this is where your custom defined action puts its error code
  *   my_action_error_code:
  *     error_names: {MY_FAILURE: 950}
  *     error_specific:
@@ -60,10 +64,9 @@ namespace nav2_behavior_tree
  * A group without a default uses all children in order. Custom error codes are named in
  * `error_names`, and those names only apply within their group.
  *
- * Every error code walks through its own sequence, one behavior per failure, even when that
- * behavior fails. Once the sequence runs out this node returns FAILURE. Sequences start over
- * when the goal changes, when a running recovery is halted, or once the robot has moved
- * `reset_distance` since the last recovery.
+ * Every error code walks through its own sequence. Once the sequence runs out this node
+ * returns FAILURE. Sequences start over when the goal changes, when a running recovery is
+ * halted, or once the robot has moved `reset_distance` since the last recovery.
  *
  * Usage in XML:
  * @code
