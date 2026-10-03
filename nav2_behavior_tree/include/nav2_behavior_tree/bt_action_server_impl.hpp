@@ -253,6 +253,35 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     return true;
   }
 
+  // When always_reload_bt_ is true and the same BT is requested, only perform the full reload if at
+  // least one XML file on disk actually changed
+  if (always_reload_bt_ && current_bt_file_or_id_ == file_or_id) {
+    bool any_changed = bt_xml_mtimes_.empty();  // no snapshot: force reload
+    try {
+      for (const auto & [path, old_mtime] : bt_xml_mtimes_) {
+        if (fs::last_write_time(path) != old_mtime) {
+          any_changed = true;
+          break;
+        }
+      }
+    } catch (const std::filesystem::filesystem_error &) {
+      any_changed = true;  // file vanished or became inaccessible: force reload
+    }
+    if (!any_changed) {
+      RCLCPP_DEBUG(logger_, "BT XML files unchanged on disk, skipping reload");
+      return true;
+    }
+    RCLCPP_INFO(logger_, "BT XML file(s) modified on disk, reloading tree");
+  }
+
+  // When reloading an already-loaded BT, clean up all resources before re-registering.
+  if (!current_bt_file_or_id_.empty()) {
+    topic_logger_.reset();
+    bt_->haltAllActions(tree_);
+    tree_ = BT::Tree{};
+    bt_->clearRegisteredBehaviorTrees();
+  }
+
   // Reset any existing Groot2 monitoring
   bt_->resetGrootMonitor();
 
@@ -391,6 +420,26 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     RCLCPP_DEBUG(
       logger_, "Enabling Groot2 monitoring for %s: %d",
       action_name_.c_str(), groot_server_port_);
+  }
+
+  if (always_reload_bt_) {
+    bt_xml_mtimes_.clear();
+    try {
+      if (!is_bt_id && fs::exists(file_or_id)) {
+        bt_xml_mtimes_[file_or_id] = fs::last_write_time(file_or_id);
+      }
+      for (const auto & directory : search_directories_) {
+        if (fs::exists(directory) && fs::is_directory(directory)) {
+          for (const auto & entry : fs::directory_iterator(directory)) {
+            if (entry.path().extension() == ".xml") {
+              bt_xml_mtimes_[entry.path().string()] = fs::last_write_time(entry.path());
+            }
+          }
+        }
+      }
+    } catch (const std::filesystem::filesystem_error & e) {
+      RCLCPP_WARN(logger_, "Failed to snapshot BT XML mtimes: %s", e.what());
+    }
   }
 
   return true;
