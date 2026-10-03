@@ -121,9 +121,10 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
   obj.reset();
 }
 
-void testCancel(std::string plugin)
+void testCancel(std::string plugin, double costmap_resolution = 0.1)
 {
   auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
+  obj->setCostmapResolution(costmap_resolution);
   rclcpp_lifecycle::State state;
   obj->declare_parameter("GridBased.plugin", rclcpp::ParameterValue(plugin));
   obj->declare_parameter("GridBased.terminal_checking_interval", rclcpp::ParameterValue(1));
@@ -350,7 +351,8 @@ TEST(testPluginMap, Smac2dCancel)
 
 TEST(testPluginMap, SmacLatticeCancel)
 {
-  testCancel("nav2_smac_planner::SmacPlannerLattice");
+  // Match the resolution of the default lattice motion primitives.
+  testCancel("nav2_smac_planner::SmacPlannerLattice", 0.05);
 }
 
 TEST(testPluginMap, SmacHybridAStarCancel)
