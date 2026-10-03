@@ -16,7 +16,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "gtest/gtest.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -24,7 +23,6 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav_msgs/msg/path.hpp"
 #include "opennav_docking/controller_plugins/graceful_controller.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -33,21 +31,14 @@
 namespace opennav_docking
 {
 
-/// @brief Build a path in the given frame from a list of (x, y, yaw) triples.
-nav_msgs::msg::Path makePath(
-  const std::string & frame, const std::vector<std::array<double, 3>> & points)
+/// @brief Build a target pose in the robot's base frame.
+geometry_msgs::msg::Pose makeTarget(double x, double y, double yaw)
 {
-  nav_msgs::msg::Path path;
-  path.header.frame_id = frame;
-  for (const auto & point : points) {
-    geometry_msgs::msg::PoseStamped pose;
-    pose.header.frame_id = frame;
-    pose.pose.position.x = point[0];
-    pose.pose.position.y = point[1];
-    pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(point[2]);
-    path.poses.push_back(pose);
-  }
-  return path;
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = x;
+  pose.position.y = y;
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+  return pose;
 }
 
 /// @brief Insert a static transform directly into the buffer, so no spinning is required.
@@ -95,18 +86,18 @@ TEST(GracefulControllerTests, PluginIsDiscoverable)
   nav2::declare_parameter_if_not_declared(
     node, "c.use_collision_detection", rclcpp::ParameterValue(false));
   nav2::declare_parameter_if_not_declared(
-    node, "c.base_frame", rclcpp::ParameterValue(std::string("base_link")));
+    node, "base_frame", rclcpp::ParameterValue(std::string("base_link")));
   nav2::declare_parameter_if_not_declared(
-    node, "c.fixed_frame", rclcpp::ParameterValue(std::string("base_link")));
+    node, "fixed_frame", rclcpp::ParameterValue(std::string("base_link")));
 
   auto controller = loader.createSharedInstance("opennav_docking::GracefulController");
   controller->configure(node, "c", tf);
   EXPECT_EQ(controller->getName(), "c");
 
-  controller->setPath(makePath("base_link", {{1.0, 0.0, 0.0}}));
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Twist cmd;
-  EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
+  EXPECT_TRUE(controller->computeVelocityCommands(
+    robot_pose, geometry_msgs::msg::Twist(), makeTarget(1.0, 0.0, 0.0), {}, 0.1,
     cmd));
   EXPECT_GT(cmd.linear.x, 0.0);
 
@@ -117,78 +108,26 @@ TEST(GracefulControllerTests, PluginIsDiscoverable)
   controller.reset();
 }
 
-TEST(GracefulControllerTests, FramePrecedencePrefersInstanceOverNode)
+TEST(GracefulControllerTests, UsesServerFrames)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);
   setTransform(tf, "odom", "my_base", 0.0, 0.0);
 
-  // The node-level frames name something that does not exist in the TF tree
-  nav2::declare_parameter_if_not_declared(
-    node, "fixed_frame", rclcpp::ParameterValue(std::string("bogus_fixed")));
-  nav2::declare_parameter_if_not_declared(
-    node, "base_frame", rclcpp::ParameterValue(std::string("bogus_base")));
-  nav2::declare_parameter_if_not_declared(
-    node, "c.fixed_frame", rclcpp::ParameterValue(std::string("odom")));
-  nav2::declare_parameter_if_not_declared(
-    node, "c.base_frame", rclcpp::ParameterValue(std::string("my_base")));
-
-  auto controller = makeController(node, tf, "c");
-  controller->setPath(makePath("odom", {{1.0, 0.0, 0.0}}));
-
-  geometry_msgs::msg::PoseStamped robot_pose;
-  geometry_msgs::msg::Twist cmd;
-  EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
-    cmd));
-  EXPECT_GT(cmd.linear.x, 0.0);
-}
-
-TEST(GracefulControllerTests, FramePrecedenceFallsBackToNode)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
-  setTransform(tf, "odom", "my_base", 0.0, 0.0);
-
-  // No per-instance override: the server's frames must be picked up
+  // The controller must pick up the server's frames
   nav2::declare_parameter_if_not_declared(
     node, "fixed_frame", rclcpp::ParameterValue(std::string("odom")));
   nav2::declare_parameter_if_not_declared(
     node, "base_frame", rclcpp::ParameterValue(std::string("my_base")));
 
   auto controller = makeController(node, tf, "c");
-  controller->setPath(makePath("odom", {{1.0, 0.0, 0.0}}));
-
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Twist cmd;
-  EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
+  EXPECT_TRUE(controller->computeVelocityCommands(
+    robot_pose, geometry_msgs::msg::Twist(), makeTarget(1.0, 0.0, 0.0), {}, 0.1,
     cmd));
   EXPECT_GT(cmd.linear.x, 0.0);
-}
-
-TEST(GracefulControllerTests, LastPoseOfPathIsTheTarget)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
-  setTransform(tf, "odom", "base_link", 0.0, 0.0);
-  nav2::declare_parameter_if_not_declared(
-    node, "fixed_frame", rclcpp::ParameterValue(std::string("odom")));
-  auto controller = makeController(node, tf, "c");
-
-  geometry_msgs::msg::PoseStamped robot_pose;
-  geometry_msgs::msg::Twist single, multi;
-
-  controller->setPath(makePath("base_link", {{1.0, 0.5, 0.0}}));
-  EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
-    single));
-
-  controller->setPath(makePath("base_link", {{5.0, -3.0, 1.0}, {1.0, 0.5, 0.0}}));
-  EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
-    multi));
-
-  EXPECT_EQ(single, multi);
 }
 
 TEST(GracefulControllerTests, ReverseDrivesBackwards)
@@ -203,50 +142,27 @@ TEST(GracefulControllerTests, ReverseDrivesBackwards)
 
   opennav_docking::DockingOptions options;
   options.reverse = true;
-  controller->setPath(makePath("base_link", {{-1.0, 0.0, M_PI}}), options);
-
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Twist cmd;
-  EXPECT_TRUE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
-    cmd));
+  EXPECT_TRUE(controller->computeVelocityCommands(
+    robot_pose, geometry_msgs::msg::Twist(), makeTarget(-1.0, 0.0, M_PI), options,
+    0.1, cmd));
   EXPECT_LT(cmd.linear.x, 0.0);
 }
 
-TEST(GracefulControllerTests, InvalidTrajectoriesFailWithoutCrashing)
+TEST(GracefulControllerTests, MissingTransformFails)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);
-  setTransform(tf, "odom", "base_link", 0.0, 0.0);
   nav2::declare_parameter_if_not_declared(
-    node, "fixed_frame", rclcpp::ParameterValue(std::string("odom")));
+    node, "fixed_frame", rclcpp::ParameterValue(std::string("nowhere")));
   auto controller = makeController(node, tf, "c");
 
   geometry_msgs::msg::PoseStamped robot_pose;
-  geometry_msgs::msg::Twist cmd, zero;
-
-  // Never given a path at all
-  EXPECT_FALSE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
-    cmd));
-  EXPECT_EQ(cmd, zero);
-
-  // An empty path
-  controller->setPath(makePath("base_link", {}));
-  EXPECT_FALSE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
-    cmd));
-  EXPECT_EQ(cmd, zero);
-
-  // A path with no frame at all
-  controller->setPath(makePath("", {{1.0, 0.0, 0.0}}));
-  EXPECT_FALSE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
-    cmd));
-  EXPECT_EQ(cmd, zero);
-
-  // A path in a frame that is not in the TF tree
-  controller->setPath(makePath("nowhere", {{1.0, 0.0, 0.0}}));
-  EXPECT_FALSE(controller->computeVelocityCommands(robot_pose, geometry_msgs::msg::Twist(), 0.1,
-    cmd));
-  EXPECT_EQ(cmd, zero);
+  geometry_msgs::msg::Twist cmd;
+  EXPECT_FALSE(controller->computeVelocityCommands(
+    robot_pose, geometry_msgs::msg::Twist(), makeTarget(1.0, 0.0, 0.0), {}, 0.1, cmd));
 }
 
 TEST(GracefulControllerTests, RotateToHeadingUsesInstanceParameters)

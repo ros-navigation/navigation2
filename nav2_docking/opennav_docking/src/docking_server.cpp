@@ -231,17 +231,17 @@ bool DockingServer::findControllerId(
   return true;
 }
 
-void DockingServer::selectController(
-  const ChargingDock::Ptr & plugin, const Dock * dock, const std::string & dock_type)
+void DockingServer::selectController(const Dock * dock, const std::string & dock_type)
 {
   std::string name;
   if (dock) {
     // docking
-    name = dock->controller_name.empty() ? plugin->getControllerName() : dock->controller_name;
+    name = dock->controller_name.empty() ?
+      dock_db_->getTypeControllerName(dock->type) : dock->controller_name;
   } else {
     // undocking
     name = (!curr_dock_controller_.empty() && dock_type == curr_dock_type_) ?
-      curr_dock_controller_ : plugin->getControllerName();
+      curr_dock_controller_ : dock_db_->getTypeControllerName(dock_type);
   }
 
   // Empty name selects default controller
@@ -328,7 +328,7 @@ void DockingServer::dockRobot()
     }
 
     // Pick the controller this dock drives with before any motion is commanded.
-    selectController(dock->plugin, dock);
+    selectController(dock);
 
     // Check if robot is docked or charging before proceeding, only applicable to charging docks
     if (dock->plugin->isCharger() && (dock->plugin->isDocked() || dock->plugin->isCharging())) {
@@ -651,11 +651,9 @@ bool DockingServer::approachDock(
     command->header.stamp = now();
     DockingOptions options;
     options.reverse = backward;
-    controller_->setPath(utils::toPath(target_pose), options);
-
     if (!controller_->computeVelocityCommands(
-        getRobotPoseInFrame(params_->fixed_frame),
-        odom_sub_->getRawTwist(), dt, command->twist))
+        getRobotPoseInFrame(params_->fixed_frame), odom_sub_->getRawTwist(), target_pose.pose,
+        options, dt, command->twist))
     {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
@@ -779,10 +777,8 @@ bool DockingServer::getCommandToPose(
   DockingOptions options;
   options.reverse = backward;
   options.undocking = !is_docking;
-  controller_->setPath(utils::toPath(target_pose), options);
-
   if (!controller_->computeVelocityCommands(
-      getRobotPoseInFrame(params_->fixed_frame), odom_sub_->getRawTwist(),
+      robot_pose, odom_sub_->getRawTwist(), target_pose.pose, options,
       1.0 / params_->controller_frequency, cmd))
   {
     throw opennav_docking_core::FailedToControl("Failed to get control");
@@ -830,7 +826,7 @@ void DockingServer::undockRobot()
       get_logger(),
       "Attempting to undock robot of dock type %s.", dock->getName().c_str());
 
-    selectController(dock, nullptr, dock_type);
+    selectController(nullptr, dock_type);
 
     // Check if the robot is docked before proceeding
     if (dock->isCharger() && (!dock->isDocked() && !dock->isCharging())) {

@@ -37,6 +37,86 @@ using rcl_interfaces::msg::ParameterType;
 namespace opennav_docking
 {
 
+ControllerParameterHandler::ControllerParameterHandler(
+  const nav2::LifecycleNode::SharedPtr & node, const std::string & name,
+  const rclcpp::Logger & logger)
+: nav2_util::ParameterHandler<ControllerParameters>(node, logger), name_(name)
+{
+  params_.rotate_to_heading_angular_vel = node->declare_or_get_parameter(
+    name_ + ".rotate_to_heading_angular_vel", 1.0);
+  params_.rotate_to_heading_max_angular_accel = node->declare_or_get_parameter(
+    name_ + ".rotate_to_heading_max_angular_accel", 3.2);
+  params_.projection_time = node->declare_or_get_parameter(name_ + ".projection_time", 5.0);
+  params_.simulation_time_step = node->declare_or_get_parameter(
+    name_ + ".simulation_time_step", 0.1);
+  params_.dock_collision_threshold = node->declare_or_get_parameter(
+    name_ + ".dock_collision_threshold", 0.3);
+}
+
+rcl_interfaces::msg::SetParametersResult
+ControllerParameterHandler::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type != ParameterType::PARAMETER_DOUBLE) {
+      continue;
+    }
+    const bool non_negative =
+      param_name == name_ + ".rotate_to_heading_angular_vel" ||
+      param_name == name_ + ".rotate_to_heading_max_angular_accel" ||
+      param_name == name_ + ".projection_time" ||
+      param_name == name_ + ".dock_collision_threshold";
+    if (param_name == name_ + ".simulation_time_step" && parameter.as_double() <= 0.0) {
+      RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+      result.successful = false;
+    } else if (non_negative && parameter.as_double() < 0.0) {
+      RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+      result.successful = false;
+    }
+  }
+  return result;
+}
+
+void ControllerParameterHandler::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + ".rotate_to_heading_angular_vel") {
+        params_.rotate_to_heading_angular_vel = parameter.as_double();
+      } else if (param_name == name_ + ".rotate_to_heading_max_angular_accel") {
+        params_.rotate_to_heading_max_angular_accel = parameter.as_double();
+      } else if (param_name == name_ + ".projection_time") {
+        params_.projection_time = parameter.as_double();
+      } else if (param_name == name_ + ".simulation_time_step") {
+        params_.simulation_time_step = parameter.as_double();
+      } else if (param_name == name_ + ".dock_collision_threshold") {
+        params_.dock_collision_threshold = parameter.as_double();
+      }
+    }
+  }
+}
+
 void ControllerBase::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & name, nav2::TransformBuffer::SharedPtr tf)
@@ -51,16 +131,14 @@ void ControllerBase::configure(
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
-  // Frames may be overridden per controller instance; otherwise the server's frames are used
-  fixed_frame_ = node->declare_or_get_parameter(
-    name_ + ".fixed_frame", node->declare_or_get_parameter("fixed_frame", std::string("odom")));
-  base_frame_ = node->declare_or_get_parameter(
-    name_ + ".base_frame", node->declare_or_get_parameter("base_frame", std::string("base_link")));
+  // Frames are the server's; targets are given in its base frame
+  fixed_frame_ = node->declare_or_get_parameter("fixed_frame", std::string("odom"));
+  base_frame_ = node->declare_or_get_parameter("base_frame", std::string("base_link"));
 
-  rotate_to_heading_angular_vel_ = node->declare_or_get_parameter(
-    name_ + ".rotate_to_heading_angular_vel", 1.0);
-  rotate_to_heading_max_angular_accel_ = node->declare_or_get_parameter(
-    name_ + ".rotate_to_heading_max_angular_accel", 3.2);
+  param_handler_ = std::make_unique<ControllerParameterHandler>(node, name_, logger_);
+  params_ = param_handler_->getParams();
+
+  // Configure time only parameters
   use_collision_detection_ = node->declare_or_get_parameter(
     name_ + ".use_collision_detection", true);
   auto costmap_topic = node->declare_or_get_parameter(
@@ -68,22 +146,9 @@ void ControllerBase::configure(
   auto footprint_topic = node->declare_or_get_parameter(
     name_ + ".footprint_topic", std::string("local_costmap/published_footprint"));
   transform_tolerance_ = node->declare_or_get_parameter(name_ + ".transform_tolerance", 0.1);
-  projection_time_ = node->declare_or_get_parameter(name_ + ".projection_time", 5.0);
-  simulation_time_step_ = node->declare_or_get_parameter(name_ + ".simulation_time_step", 0.1);
-  dock_collision_threshold_ = node->declare_or_get_parameter(
-    name_ + ".dock_collision_threshold", 0.3);
-  // Let the derived control law declare its own parameters before any update can arrive
-  onConfigure(node);
 
-  // Add callback for dynamic parameters
-  post_set_params_handler_ = node->add_post_set_parameters_callback(
-    std::bind(
-      &ControllerBase::updateParametersCallback,
-      this, std::placeholders::_1));
-  on_set_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &ControllerBase::validateParameterUpdatesCallback,
-      this, std::placeholders::_1));
+  // Let the derived control law declare its own parameters
+  onConfigure(node);
 
   if (use_collision_detection_) {
     configureCollisionChecker(node, costmap_topic, footprint_topic, transform_tolerance_);
@@ -94,8 +159,8 @@ void ControllerBase::configure(
 
 void ControllerBase::cleanup()
 {
-  post_set_params_handler_.reset();
-  on_set_params_handler_.reset();
+  params_ = nullptr;
+  param_handler_.reset();
   trajectory_pub_.reset();
   collision_checker_.reset();
   costmap_sub_.reset();
@@ -105,78 +170,26 @@ void ControllerBase::cleanup()
 void ControllerBase::activate()
 {
   trajectory_pub_->on_activate();
+  param_handler_->activate();
 }
 
 void ControllerBase::deactivate()
 {
   trajectory_pub_->on_deactivate();
-}
-
-void ControllerBase::setPath(
-  const nav_msgs::msg::Path & path,
-  const DockingOptions & options)
-{
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
-  path_ = path;
-  docking_options_ = options;
+  param_handler_->deactivate();
 }
 
 bool ControllerBase::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & /*robot_pose*/,
   const geometry_msgs::msg::Twist & /*velocity*/,
+  const geometry_msgs::msg::Pose & target,
+  const DockingOptions & options,
   double dt,
   geometry_msgs::msg::Twist & cmd)
 {
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
-
-  cmd = geometry_msgs::msg::Twist();
-
-  geometry_msgs::msg::Pose target_pose;
-  if (!getTargetInBaseFrame(target_pose)) {
-    return false;
-  }
-
-  cmd = computeCommand(target_pose, docking_options_.reverse, dt);
-  return isTrajectoryCollisionFree(
-    target_pose, !docking_options_.undocking, docking_options_.reverse);
-}
-
-bool ControllerBase::getTargetInBaseFrame(geometry_msgs::msg::Pose & target_pose)
-{
-  if (path_.poses.empty()) {
-    RCLCPP_ERROR(logger_, "Controller %s has no path to follow!", name_.c_str());
-    return false;
-  }
-
-  // The trajectory's header frame is authoritative
-  geometry_msgs::msg::PoseStamped target;
-  target.header = path_.header;
-  target.pose = path_.poses.back().pose;
-
-  if (target.header.frame_id.empty()) {
-    RCLCPP_ERROR(
-      logger_, "Controller %s was given a path with no frame_id!", name_.c_str());
-    return false;
-  }
-
-  if (target.header.frame_id == base_frame_) {
-    target_pose = target.pose;
-    return true;
-  }
-
-  // Use the latest available transform, as the docking server previously did
-  target.header.stamp = rclcpp::Time(0);
-  try {
-    tf2_buffer_->transform(target, target, base_frame_);
-  } catch (const tf2::TransformException & ex) {
-    RCLCPP_ERROR(
-      logger_, "Could not transform the trajectory from %s to %s: %s",
-      target.header.frame_id.c_str(), base_frame_.c_str(), ex.what());
-    return false;
-  }
-
-  target_pose = target.pose;
-  return true;
+  std::lock_guard<std::mutex> lock(param_handler_->getMutex());
+  cmd = computeCommand(target, options.reverse, dt);
+  return isTrajectoryCollisionFree(target, !options.undocking, options.reverse);
 }
 
 geometry_msgs::msg::Twist ControllerBase::computeRotateToHeadingCommand(
@@ -184,19 +197,21 @@ geometry_msgs::msg::Twist ControllerBase::computeRotateToHeadingCommand(
   const geometry_msgs::msg::Twist & current_velocity,
   const double & dt)
 {
+  std::lock_guard<std::mutex> lock(param_handler_->getMutex());
   geometry_msgs::msg::Twist cmd_vel;
   const double sign = angular_distance_to_heading > 0.0 ? 1.0 : -1.0;
-  const double angular_vel = sign * rotate_to_heading_angular_vel_;
+  const double angular_vel = sign * params_->rotate_to_heading_angular_vel;
   const double min_feasible_angular_speed =
-    current_velocity.angular.z - rotate_to_heading_max_angular_accel_ * dt;
+    current_velocity.angular.z - params_->rotate_to_heading_max_angular_accel * dt;
   const double max_feasible_angular_speed =
-    current_velocity.angular.z + rotate_to_heading_max_angular_accel_ * dt;
+    current_velocity.angular.z + params_->rotate_to_heading_max_angular_accel * dt;
   cmd_vel.angular.z =
     std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
 
   // Check if we need to slow down to avoid overshooting
   double max_vel_to_stop =
-    std::sqrt(2 * rotate_to_heading_max_angular_accel_ * fabs(angular_distance_to_heading));
+    std::sqrt(
+    2 * params_->rotate_to_heading_max_angular_accel * fabs(angular_distance_to_heading));
   if (fabs(cmd_vel.angular.z) > max_vel_to_stop) {
     cmd_vel.angular.z = sign * max_vel_to_stop;
   }
@@ -232,12 +247,13 @@ bool ControllerBase::isTrajectoryCollisionFree(
 
   // Generate path
   double distance = std::numeric_limits<double>::max();
-  unsigned int max_iter = static_cast<unsigned int>(ceil(projection_time_ / simulation_time_step_));
+  unsigned int max_iter = static_cast<unsigned int>(
+    ceil(params_->projection_time / params_->simulation_time_step));
 
   do{
     // Apply velocities to calculate next pose
     next_pose.pose = predictNextPose(
-      simulation_time_step_, target_pose, next_pose.pose, backward);
+      params_->simulation_time_step, target_pose, next_pose.pose, backward);
 
     // Add the pose to the trajectory for visualization
     trajectory->poses.push_back(next_pose);
@@ -257,7 +273,7 @@ bool ControllerBase::isTrajectoryCollisionFree(
 
     // If this distance is greater than the dock_collision_threshold, check for collisions
     if (use_collision_detection_ &&
-      dock_collision_distance > dock_collision_threshold_ &&
+      dock_collision_distance > params_->dock_collision_threshold &&
       !collision_checker_->isCollisionFree(local_pose.pose))
     {
       RCLCPP_WARN(
@@ -286,65 +302,6 @@ void ControllerBase::configureCollisionChecker(
     node, footprint_topic, *tf2_buffer_, base_frame_, transform_tolerance);
   collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
     *costmap_sub_, *footprint_sub_, node->get_name());
-}
-
-rcl_interfaces::msg::SetParametersResult ControllerBase::validateParameterUpdatesCallback(
-  const std::vector<rclcpp::Parameter> & parameters)
-{
-  const std::string prefix = name_ + ".";
-  rcl_interfaces::msg::SetParametersResult result;
-  result.successful = true;
-  for (const auto & parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-    if (param_name.find(prefix) != 0) {
-      continue;
-    }
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0) {
-        RCLCPP_WARN(
-        logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
-        result.successful = false;
-      }
-    }
-  }
-  return result;
-}
-
-void ControllerBase::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
-{
-  const std::string prefix = name_ + ".";
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
-
-  for (const auto & parameter : parameters) {
-    const auto & param_name = parameter.get_name();
-    if (param_name.find(prefix) != 0) {
-      continue;
-    }
-    updateParameter(param_name.substr(prefix.size()), parameter);
-  }
-}
-
-void ControllerBase::updateParameter(
-  const std::string & name, const rclcpp::Parameter & parameter)
-{
-  if (parameter.get_type() != ParameterType::PARAMETER_DOUBLE) {
-    return;
-  }
-
-  if (name == "rotate_to_heading_angular_vel") {
-    rotate_to_heading_angular_vel_ = parameter.as_double();
-  } else if (name == "rotate_to_heading_max_angular_accel") {
-    rotate_to_heading_max_angular_accel_ = parameter.as_double();
-  } else if (name == "projection_time") {
-    projection_time_ = parameter.as_double();
-  } else if (name == "simulation_time_step") {
-    simulation_time_step_ = parameter.as_double();
-  } else if (name == "dock_collision_threshold") {
-    dock_collision_threshold_ = parameter.as_double();
-  }
 }
 
 }  // namespace opennav_docking

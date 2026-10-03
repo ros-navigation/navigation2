@@ -19,6 +19,8 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -27,6 +29,65 @@
 
 namespace opennav_docking
 {
+
+/**
+ * @struct GracefulParameters
+ * @brief Parameters of the smooth control law.
+ */
+struct GracefulParameters
+{
+  double k_phi;
+  double k_delta;
+  double beta;
+  double lambda;
+  double v_linear_min;
+  double v_linear_max;
+  double v_angular_max;
+  double slowdown_radius;
+  double deceleration_max;
+};
+
+/**
+ * @class opennav_docking::GracefulParameterHandler
+ * @brief Handles the parameters and dynamic parameters of GracefulController.
+ */
+class GracefulParameterHandler : public nav2_util::ParameterHandler<GracefulParameters>
+{
+public:
+  /**
+   * @brief Declare parameters in controller namespace.
+   * @param node Lifecycle node
+   * @param name The controller's parameter namespace
+   * @param logger Logger
+   */
+  GracefulParameterHandler(
+    const nav2::LifecycleNode::SharedPtr & node, const std::string & name,
+    const rclcpp::Logger & logger);
+
+  /**
+   * @brief Check if parameters changed since the last call with mutex held.
+   * @return True if the parameters were updated
+   */
+  bool isUpdated() {return std::exchange(updated_, false);}
+
+protected:
+  /**
+   * @brief Validate parameter before applying.
+   * @param parameters List of parameters to update.
+   * @return rcl_interfaces::msg::SetParametersResult Result of the update.
+   */
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
+    const std::vector<rclcpp::Parameter> & parameters) override;
+
+  /**
+   * @brief Apply parameter after validation
+   * @param parameters List of parameters to be updated.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) override;
+
+  std::string name_;
+  bool updated_{false};
+};
 
 /**
  * @class opennav_docking::GracefulController
@@ -39,6 +100,16 @@ public:
    * @brief Release the smooth control law along with the shared resources.
    */
   void cleanup() override;
+
+  /**
+   * @brief Activate parameter callbacks.
+   */
+  void activate() override;
+
+  /**
+   * @brief Deactivate the parameter callbacks.
+   */
+  void deactivate() override;
 
   /**
    * @brief Declare the smooth control law parameters and construct the control law.
@@ -68,18 +139,16 @@ public:
     double dt, const geometry_msgs::msg::Pose & target,
     const geometry_msgs::msg::Pose & current, bool reverse) override;
 
-  /**
-   * @brief Apply a dynamic parameter update to the smooth control law.
-   * @param name The parameter name with this controller's namespace prefix stripped.
-   * @param parameter The parameter being updated.
-   */
-  void updateParameter(const std::string & name, const rclcpp::Parameter & parameter) override;
-
 protected:
+  /**
+   * @brief Copy the latest parameters. Call with the param mutex held.
+   */
+  void applyParameters();
+
   // Smooth control law
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
-  double k_phi_, k_delta_, beta_, lambda_;
-  double slowdown_radius_, deceleration_max_, v_linear_min_, v_linear_max_, v_angular_max_;
+  std::unique_ptr<GracefulParameterHandler> graceful_param_handler_;
+  GracefulParameters * graceful_params_{nullptr};
 };
 
 }  // namespace opennav_docking
