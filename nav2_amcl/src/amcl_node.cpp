@@ -243,7 +243,8 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   frame_to_laser_.clear();
   force_update_ = true;
 
-  if (set_initial_pose_) {
+  // [AI generated] Do not persist an uninitialized pose over configured parameters.
+  if (set_initial_pose_ && initial_pose_is_known_) {
     set_parameter(
       rclcpp::Parameter(
         "initial_pose.x",
