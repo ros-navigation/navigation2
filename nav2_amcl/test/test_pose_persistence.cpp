@@ -328,6 +328,25 @@ TEST_F(PosePersistenceTest, test_ros_params_priority_over_saved_pose)
   amcl->cleanup();
 }
 
+// [AI generated] Verify cleanup preserves configured parameters until a pose is known.
+TEST_F(PosePersistenceTest, cleanup_without_estimate_preserves_initial_pose)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides(
+    {{"random_seed", 42},
+      {"set_initial_pose", false},
+      {"initial_pose.x", 2.0}});
+
+  auto amcl = std::make_shared<nav2_amcl::AmclNode>(options);
+  amcl->configure();
+  amcl->activate();
+  amcl->set_parameter(rclcpp::Parameter("set_initial_pose", true));
+  amcl->deactivate();
+  amcl->cleanup();
+
+  EXPECT_EQ(amcl->get_parameter("initial_pose.x").as_double(), 2.0);
+}
+
 TEST_F(PosePersistenceTest, global_localization_before_map_returns_safely)
 {
   using namespace std::chrono_literals;
