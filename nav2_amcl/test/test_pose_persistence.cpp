@@ -44,6 +44,53 @@ protected:
   std::string test_filepath_;
 };
 
+// [AI generated] Expose the map callback and state needed by the regression test.
+class AmclNodeTester : public nav2_amcl::AmclNode
+{
+public:
+  using nav2_amcl::AmclNode::AmclNode;
+
+  void receiveMap(double origin_x)
+  {
+    auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+    map->header.frame_id = "map";
+    map->info.width = 10;
+    map->info.height = 10;
+    map->info.resolution = 1.0;
+    map->info.origin.position.x = origin_x;
+    map->info.origin.orientation.w = 1.0;
+    map->data.assign(100, 0);
+    mapReceived(map);
+  }
+
+  double mapOriginX() const {return map_->origin_x;}
+
+  void updateMapTopic(const std::string & topic)
+  {
+    updateParametersCallback({rclcpp::Parameter("map_topic", topic)});
+  }
+};
+
+// [AI generated] Verify the first map from a replacement topic is accepted.
+TEST_F(PosePersistenceTest, map_topic_change_starts_new_first_map_epoch)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({{"random_seed", 42}, {"first_map_only", true}});
+
+  auto amcl = std::make_shared<AmclNodeTester>(options);
+  amcl->configure();
+  amcl->activate();
+  amcl->receiveMap(0.0);
+  EXPECT_EQ(amcl->mapOriginX(), 5.0);
+
+  amcl->updateMapTopic("replacement_map");
+  amcl->receiveMap(100.0);
+
+  EXPECT_EQ(amcl->mapOriginX(), 105.0);
+  amcl->deactivate();
+  amcl->cleanup();
+}
+
 TEST_F(PosePersistenceTest, test_pose_persistence_parameters)
 {
   rclcpp::NodeOptions options;
