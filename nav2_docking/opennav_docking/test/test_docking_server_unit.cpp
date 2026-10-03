@@ -676,7 +676,7 @@ TEST(DockingServerTests, ControllerSelectRejectsUnknownController)
   dock.type = "test_plugin";
   dock.plugin = plugin;
   dock.controller_name = "not_loaded";
-  EXPECT_THROW(node->selectController(plugin, &dock), opennav_docking_core::DockNotValid);
+  EXPECT_THROW(node->selectController(&dock), opennav_docking_core::DockNotValid);
 
   // Failed selection leaves no controller selected
   EXPECT_TRUE(node->getCurrentController().empty());

@@ -31,8 +31,8 @@
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_util/odometry_utils.hpp"
-#include "opennav_docking/controller.hpp"
 #include "opennav_docking/pose_filter.hpp"
+#include "opennav_following/controller.hpp"
 #include "opennav_following/parameter_handler.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -242,7 +242,7 @@ protected:
   std::unique_ptr<nav2_util::OdomSmoother> odom_sub_;
   typename FollowingActionServer::SharedPtr following_action_server_;
 
-  std::unique_ptr<opennav_docking::Controller> controller_;
+  std::unique_ptr<opennav_following::Controller> controller_;
 
   nav2::TransformBuffer::SharedPtr tf2_buffer_;
   nav2::TransformListener::SharedPtr tf2_listener_;

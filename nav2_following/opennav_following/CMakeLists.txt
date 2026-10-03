@@ -5,6 +5,7 @@ find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
+find_package(nav2_graceful_controller REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -23,6 +24,7 @@ set(executable_name opennav_following)
 set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
+  src/controller.cpp
   src/parameter_handler.cpp
   src/following_server.cpp
 )
@@ -34,9 +36,9 @@ target_include_directories(${library_name}
 )
 target_link_libraries(${library_name} PUBLIC
   geometry_msgs::geometry_msgs
+  nav2_graceful_controller::nav2_graceful_controller
   nav2_util::nav2_util_core
   nav2_msgs::nav2_msgs
-  opennav_docking::controller
   opennav_docking::pose_filter
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -91,6 +93,7 @@ ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
 ament_export_dependencies(
   geometry_msgs
+  nav2_graceful_controller
   nav2_msgs
   nav2_ros_common
   nav2_util

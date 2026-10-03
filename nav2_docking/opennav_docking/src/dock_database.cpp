@@ -31,6 +31,7 @@ DockDatabase::~DockDatabase()
 {
   dock_instances_.clear();
   dock_plugins_.clear();
+  type_controllers_.clear();
   reload_db_service_.reset();
 }
 
@@ -106,8 +107,8 @@ bool DockDatabase::validateControllersExist(const DockMap & docks) const
              valid_controller_ids_.end();
     };
 
-  for (const auto & entry : dock_plugins_) {
-    const std::string name = entry.second->getControllerName();
+  for (const auto & entry : type_controllers_) {
+    const std::string & name = entry.second;
     if (name.empty()) {
       if (valid_controller_ids_.size() > 1) {
         RCLCPP_ERROR(
@@ -208,6 +209,20 @@ ChargingDock::Ptr DockDatabase::findDockPlugin(const std::string & type)
   return nullptr;
 }
 
+std::string DockDatabase::getTypeControllerName(const std::string & type) const
+{
+  // If only one dock type and type not set, use the default dock's
+  if (type.empty() && type_controllers_.size() == 1) {
+    return type_controllers_.begin()->second;
+  }
+
+  auto it = type_controllers_.find(type);
+  if (it != type_controllers_.end()) {
+    return it->second;
+  }
+  return "";
+}
+
 bool DockDatabase::getDockPlugins(
   const nav2::LifecycleNode::SharedPtr & node,
   nav2::TransformBuffer::SharedPtr tf)
@@ -237,8 +252,8 @@ bool DockDatabase::getDockPlugins(
       dock->configure(node, docks_plugins[i], tf);
       // Type-level controller selection. Empty means "no preference"; an individual dock
       // instance may still override this, and the server falls back to its default.
-      dock->setControllerName(
-        node->declare_or_get_parameter(docks_plugins[i] + ".controller", std::string("")));
+      type_controllers_[docks_plugins[i]] =
+        node->declare_or_get_parameter(docks_plugins[i] + ".controller", std::string(""));
       dock_plugins_.insert({docks_plugins[i], dock});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(

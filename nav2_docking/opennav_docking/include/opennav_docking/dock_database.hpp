@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <mutex>
+#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -87,6 +88,13 @@ public:
   ChargingDock::Ptr findDockPlugin(const std::string & type);
 
   /**
+   * @brief Get the controller name configured for a dock type
+   * @param type Dock type. When empty it selects default controller when a only one loaded
+   * @return Controller name or "" if the type name not found
+   */
+  std::string getTypeControllerName(const std::string & type) const;
+
+  /**
    * @brief Get the number of docks in the database
    * @return unsigned int Number of dock instances in the database
    */
@@ -143,6 +151,7 @@ protected:
   nav2::LifecycleNode::WeakPtr node_;
   std::mutex & mutex_;  // Don't reload database while actively docking
   DockPluginMap dock_plugins_;
+  std::unordered_map<std::string, std::string> type_controllers_;
   DockMap dock_instances_;
   std::vector<std::string> valid_controller_ids_;
   pluginlib::ClassLoader<opennav_docking_core::ChargingDock> dock_loader_;

@@ -14,7 +14,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
+#include <mutex>
 #include <string>
+#include <vector>
 
 #include "opennav_docking/controller_plugins/pid_controller.hpp"
 
@@ -28,30 +31,142 @@ using rcl_interfaces::msg::ParameterType;
 namespace opennav_docking
 {
 
+PIDParameterHandler::PIDParameterHandler(
+  const nav2::LifecycleNode::SharedPtr & node, const std::string & name,
+  const rclcpp::Logger & logger)
+: nav2_util::ParameterHandler<PIDParameters>(node, logger), name_(name)
+{
+  params_.x.kp = node->declare_or_get_parameter(name_ + ".kp_x", 1.0);
+  params_.x.ki = node->declare_or_get_parameter(name_ + ".ki_x", 0.0);
+  params_.x.kd = node->declare_or_get_parameter(name_ + ".kd_x", 0.0);
+  params_.x.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_x", 0.2);
+
+  params_.y.kp = node->declare_or_get_parameter(name_ + ".kp_y", 2.2);
+  params_.y.ki = node->declare_or_get_parameter(name_ + ".ki_y", 0.0);
+  params_.y.kd = node->declare_or_get_parameter(name_ + ".kd_y", 0.0);
+  params_.y.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_y", 0.5);
+
+  params_.theta.kp = node->declare_or_get_parameter(name_ + ".kp_theta", 1.2);
+  params_.theta.ki = node->declare_or_get_parameter(name_ + ".ki_theta", 0.0);
+  params_.theta.kd = node->declare_or_get_parameter(name_ + ".kd_theta", 0.0);
+  params_.theta.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_theta", 0.5);
+
+  params_.v_linear_max = node->declare_or_get_parameter(name_ + ".v_linear_max", 0.25);
+  params_.v_angular_max = node->declare_or_get_parameter(name_ + ".v_angular_max", 0.75);
+  params_.lookahead_distance = node->declare_or_get_parameter(
+    name_ + ".lookahead_distance", 0.25);
+}
+
+rcl_interfaces::msg::SetParametersResult PIDParameterHandler::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void PIDParameterHandler::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + ".kp_x") {
+        params_.x.kp = parameter.as_double();
+      } else if (param_name == name_ + ".ki_x") {
+        params_.x.ki = parameter.as_double();
+      } else if (param_name == name_ + ".kd_x") {
+        params_.x.kd = parameter.as_double();
+      } else if (param_name == name_ + ".i_clamp_x") {
+        params_.x.i_clamp = parameter.as_double();
+      } else if (param_name == name_ + ".kp_y") {
+        params_.y.kp = parameter.as_double();
+      } else if (param_name == name_ + ".ki_y") {
+        params_.y.ki = parameter.as_double();
+      } else if (param_name == name_ + ".kd_y") {
+        params_.y.kd = parameter.as_double();
+      } else if (param_name == name_ + ".i_clamp_y") {
+        params_.y.i_clamp = parameter.as_double();
+      } else if (param_name == name_ + ".kp_theta") {
+        params_.theta.kp = parameter.as_double();
+      } else if (param_name == name_ + ".ki_theta") {
+        params_.theta.ki = parameter.as_double();
+      } else if (param_name == name_ + ".kd_theta") {
+        params_.theta.kd = parameter.as_double();
+      } else if (param_name == name_ + ".i_clamp_theta") {
+        params_.theta.i_clamp = parameter.as_double();
+      } else if (param_name == name_ + ".v_linear_max") {
+        params_.v_linear_max = parameter.as_double();
+      } else if (param_name == name_ + ".v_angular_max") {
+        params_.v_angular_max = parameter.as_double();
+      } else if (param_name == name_ + ".lookahead_distance") {
+        params_.lookahead_distance = parameter.as_double();
+      }
+    }
+  }
+  updated_ = true;
+}
+
 void PIDController::onConfigure(const nav2::LifecycleNode::SharedPtr & node)
 {
-  x_.kp = node->declare_or_get_parameter(name_ + ".kp_x", 1.0);
-  x_.ki = node->declare_or_get_parameter(name_ + ".ki_x", 0.0);
-  x_.kd = node->declare_or_get_parameter(name_ + ".kd_x", 0.0);
-  x_.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_x", 0.2);
-
-  y_.kp = node->declare_or_get_parameter(name_ + ".kp_y", 2.2);
-  y_.ki = node->declare_or_get_parameter(name_ + ".ki_y", 0.0);
-  y_.kd = node->declare_or_get_parameter(name_ + ".kd_y", 0.0);
-  y_.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_y", 0.5);
-
-  theta_.kp = node->declare_or_get_parameter(name_ + ".kp_theta", 1.2);
-  theta_.ki = node->declare_or_get_parameter(name_ + ".ki_theta", 0.0);
-  theta_.kd = node->declare_or_get_parameter(name_ + ".kd_theta", 0.0);
-  theta_.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_theta", 0.5);
-
-  v_linear_max_ = node->declare_or_get_parameter(name_ + ".v_linear_max", 0.25);
-  v_angular_max_ = node->declare_or_get_parameter(name_ + ".v_angular_max", 0.75);
-
-  lookahead_distance_ = std::max(
-    kMinLookahead, node->declare_or_get_parameter(name_ + ".lookahead_distance", 0.25));
-
+  pid_param_handler_ = std::make_unique<PIDParameterHandler>(node, name_, logger_);
+  pid_params_ = pid_param_handler_->getParams();
+  {
+    std::lock_guard<std::mutex> lock(pid_param_handler_->getMutex());
+    applyParameters();
+  }
   reset();
+}
+
+void PIDController::cleanup()
+{
+  ControllerBase::cleanup();
+  pid_params_ = nullptr;
+  pid_param_handler_.reset();
+}
+
+void PIDController::activate()
+{
+  ControllerBase::activate();
+  pid_param_handler_->activate();
+}
+
+void PIDController::deactivate()
+{
+  ControllerBase::deactivate();
+  pid_param_handler_->deactivate();
+}
+
+void PIDController::applyParameters()
+{
+  x_ = pid_params_->x;
+  y_ = pid_params_->y;
+  theta_ = pid_params_->theta;
+  v_linear_max_ = pid_params_->v_linear_max;
+  v_angular_max_ = pid_params_->v_angular_max;
+  lookahead_distance_ = std::max(kMinLookahead, pid_params_->lookahead_distance);
 }
 
 void PIDController::reset()
@@ -95,6 +210,13 @@ void PIDController::poseError(
 geometry_msgs::msg::Twist PIDController::computeCommand(
   const geometry_msgs::msg::Pose & target, bool reverse, double dt)
 {
+  {
+    std::lock_guard<std::mutex> lock(pid_param_handler_->getMutex());
+    if (pid_param_handler_->isUpdated()) {
+      applyParameters();
+    }
+  }
+
   double rho = 0.0, alpha = 0.0, alignment = 0.0;
   poseError(target, reverse, lookahead_distance_, rho, alpha, alignment);
 
@@ -144,49 +266,6 @@ geometry_msgs::msg::Pose PIDController::predictNextPose(
   next.position.y += v * sin_yaw * dt;
   next.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw + w * dt);
   return next;
-}
-
-void PIDController::updateParameter(
-  const std::string & name, const rclcpp::Parameter & parameter)
-{
-  ControllerBase::updateParameter(name, parameter);
-
-  if (parameter.get_type() != ParameterType::PARAMETER_DOUBLE) {
-    return;
-  }
-  const double value = parameter.as_double();
-
-  if (name == "kp_x") {
-    x_.kp = value;
-  } else if (name == "ki_x") {
-    x_.ki = value;
-  } else if (name == "kd_x") {
-    x_.kd = value;
-  } else if (name == "i_clamp_x") {
-    x_.i_clamp = value;
-  } else if (name == "kp_y") {
-    y_.kp = value;
-  } else if (name == "ki_y") {
-    y_.ki = value;
-  } else if (name == "kd_y") {
-    y_.kd = value;
-  } else if (name == "i_clamp_y") {
-    y_.i_clamp = value;
-  } else if (name == "kp_theta") {
-    theta_.kp = value;
-  } else if (name == "ki_theta") {
-    theta_.ki = value;
-  } else if (name == "kd_theta") {
-    theta_.kd = value;
-  } else if (name == "i_clamp_theta") {
-    theta_.i_clamp = value;
-  } else if (name == "v_linear_max") {
-    v_linear_max_ = value;
-  } else if (name == "v_angular_max") {
-    v_angular_max_ = value;
-  } else if (name == "lookahead_distance") {
-    lookahead_distance_ = std::max(kMinLookahead, value);
-  }
 }
 
 }  // namespace opennav_docking

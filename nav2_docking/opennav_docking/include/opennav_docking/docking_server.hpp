@@ -246,14 +246,11 @@ protected:
   /**
    * @brief Select the controller for a docking or undocking request.
    *
-   * @param plugin Dock plugin
    * @param dock Dock instance (nullptr when undocking)
    * @param dock_type Dock type for undocking. In order to use the controller it docked with while undocking
    * @throw DockNotValid if the name does not resolve to a loaded controller
    */
-  void selectController(
-    const ChargingDock::Ptr & plugin, const Dock * dock = nullptr,
-    const std::string & dock_type = "");
+  void selectController(const Dock * dock, const std::string & dock_type = "");
 
   // Parameter handler
   std::unique_ptr<opennav_docking::ParameterHandler> param_handler_;

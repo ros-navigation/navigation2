@@ -59,7 +59,7 @@ nav2_add_gtest(test_controller
   test_controller.cpp
 )
 target_link_libraries(test_controller
-  controller
+  graceful_controller_plugin
   geometry_msgs::geometry_msgs
   ${library_name}
   rclcpp::rclcpp
@@ -77,7 +77,7 @@ nav2_add_gtest(test_graceful_controller
   test_graceful_controller.cpp
 )
 target_link_libraries(test_graceful_controller
-  controller
+  graceful_controller_plugin
   geometry_msgs::geometry_msgs
   nav2_ros_common::nav2_ros_common
   nav2_util::nav2_util_core

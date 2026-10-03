@@ -18,7 +18,6 @@
 #define OPENNAV_DOCKING__CONTROLLER_BASE_HPP_
 
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -30,6 +29,7 @@
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_util/parameter_handler.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace opennav_docking
@@ -37,7 +37,8 @@ namespace opennav_docking
 
 /**
  * @struct DockingOptions
- * @brief Describes how the path handed to ControllerBase::setPath is to be driven.
+ * @brief Describes how the target handed to ControllerBase::computeVelocityCommands is to be
+ * driven.
  */
 struct DockingOptions
 {
@@ -49,10 +50,58 @@ struct DockingOptions
 };
 
 /**
+ * @struct ControllerParameters
+ * @brief Dynamic parameters every controller shares.
+ */
+struct ControllerParameters
+{
+  double rotate_to_heading_angular_vel;
+  double rotate_to_heading_max_angular_accel;
+  double projection_time;
+  double simulation_time_step;
+  double dock_collision_threshold;
+};
+
+/**
+ * @class opennav_docking::ControllerParameterHandler
+ * @brief Handles the dynamic parameters.
+ */
+class ControllerParameterHandler : public nav2_util::ParameterHandler<ControllerParameters>
+{
+public:
+  /**
+   * @brief Declare shared parameters in controller namespace.
+   * @param node Lifecycle node
+   * @param name The parameter namespace
+   * @param logger Logger
+   */
+  ControllerParameterHandler(
+    const nav2::LifecycleNode::SharedPtr & node, const std::string & name,
+    const rclcpp::Logger & logger);
+
+protected:
+  /**
+   * @brief Validate parameters before applying.
+   * @param parameters List of parameters.
+   * @return rcl_interfaces::msg::SetParametersResult Result of the update request.
+   */
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
+    const std::vector<rclcpp::Parameter> & parameters) override;
+
+  /**
+   * @brief Apply parameter after validation
+   * @param parameters List of parameters updated.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) override;
+
+  std::string name_;
+};
+
+/**
  * @class opennav_docking::ControllerBase
  * @brief Base class for docking controllers, and the pluginlib base type.
  *
- * A controller consumes a trajectory to the dock and produces velocity commands.
+ * A controller consumes a target pose near the dock and produces velocity commands.
  */
 class ControllerBase
 {
@@ -81,12 +130,12 @@ public:
   virtual void cleanup();
 
   /**
-   * @brief Activate the trajectory publisher.
+   * @brief Activate parameters callbacks.
    */
   virtual void activate();
 
   /**
-   * @brief Deactivate the trajectory publisher.
+   * @brief Deactivate parameters callbacks.
    */
   virtual void deactivate();
 
@@ -98,20 +147,12 @@ public:
   virtual void reset() {}
 
   /**
-   * @brief Set the path to follow.
-   *
-   * @param path The path to follow; its last pose is the target.
-   * @param options How the path is to be driven.
-   */
-  virtual void setPath(
-    const nav_msgs::msg::Path & path,
-    const DockingOptions & options = DockingOptions());
-
-  /**
-   * @brief Compute a velocity command towards the end of the cached trajectory
+   * @brief Compute a velocity command towards the target pose
    *
    * @param robot_pose Current pose of the robot.
    * @param velocity Current velocity of the robot.
+   * @param target Target pose, in the robot's base frame.
+   * @param options How the target is to be driven to.
    * @param dt Control loop duration [s].
    * @param cmd Output command velocity.
    * @returns True if the command is valid, false otherwise.
@@ -119,6 +160,8 @@ public:
   virtual bool computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & velocity,
+    const geometry_msgs::msg::Pose & target,
+    const DockingOptions & options,
     double dt,
     geometry_msgs::msg::Twist & cmd);
 
@@ -143,8 +186,7 @@ public:
   /**
    * @brief Declare and read the parameters specific to the derived control law.
    *
-   * Called by configure() after the shared parameters have been read and before the dynamic
-   * parameter callbacks are registered.
+   * Called by configure() after the shared parameters have been read.
    *
    * @param node Lifecycle node
    */
@@ -153,7 +195,7 @@ public:
   /**
    * @brief Apply the control law to produce a velocity command.
    *
-   * Called with dynamic_params_lock_ held; implementations must not take it again.
+   * Called with the shared parameter lock held; implementations must not take it again.
    *
    * @param target Target pose, in robot centric coordinates.
    * @param reverse If true, robot will drive backwards to the goal.
@@ -166,7 +208,7 @@ public:
   /**
    * @brief Forward-simulate one step of the control law, for collision checking.
    *
-   * Called with dynamic_params_lock_ held; implementations must not take it again.
+   * Called with the shared parameter lock held; implementations must not take it again.
    *
    * @param dt Simulation time step [s].
    * @param target Target pose, in robot centric coordinates.
@@ -177,18 +219,6 @@ public:
   virtual geometry_msgs::msg::Pose predictNextPose(
     double dt, const geometry_msgs::msg::Pose & target,
     const geometry_msgs::msg::Pose & current, bool reverse) = 0;
-
-  /**
-   * @brief Apply one dynamic parameter update.
-   *
-   * Called with dynamic_params_lock_ held, once per updated parameter belonging to this
-   * controller's namespace. Derived overrides should call this base implementation so the
-   * shared parameters keep working.
-   *
-   * @param name The parameter name with this controller's namespace prefix stripped.
-   * @param parameter The parameter being updated.
-   */
-  virtual void updateParameter(const std::string & name, const rclcpp::Parameter & parameter);
 
 protected:
   /**
@@ -203,33 +233,6 @@ protected:
     const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false);
 
   /**
-   * @brief Get the end of the trajectory expressed in the robot's base frame.
-   *
-   * @param target_pose Output target pose, in robot centric coordinates.
-   * @return True if the target pose could be resolved.
-   */
-  bool getTargetInBaseFrame(geometry_msgs::msg::Pose & target_pose);
-
-  /**
-   * @brief Validate incoming parameter updates before applying them.
-   * This callback is triggered when one or more parameters are about to be updated.
-   * It checks the validity of parameter values and rejects updates that would lead
-   * to invalid or inconsistent configurations
-   * @param parameters List of parameters that are being updated.
-   * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
-   */
-  virtual rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
-    const std::vector<rclcpp::Parameter> & parameters);
-
-  /**
-   * @brief Apply parameter updates after validation
-   * This callback is executed when parameters have been successfully updated.
-   * It updates the internal configuration of the node with the new parameter values.
-   * @param parameters List of parameters that have been updated.
-   */
-  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
-
-  /**
    * @brief Configure the collision checker.
    *
    * @param node Lifecycle node
@@ -241,29 +244,17 @@ protected:
     const nav2::LifecycleNode::SharedPtr & node,
     std::string costmap_topic, std::string footprint_topic, double transform_tolerance);
 
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
-  std::mutex dynamic_params_lock_;
+  std::unique_ptr<ControllerParameterHandler> param_handler_;
+  ControllerParameters * params_{nullptr};
 
   rclcpp::Logger logger_{rclcpp::get_logger("Controller")};
   rclcpp::Clock::SharedPtr clock_;
-
-  // In-place rotation profile
-  double rotate_to_heading_angular_vel_, rotate_to_heading_max_angular_accel_;
-
-  // The path to follow and how to drive it
-  nav_msgs::msg::Path path_;
-  DockingOptions docking_options_;
 
   // The trajectory of the robot while dock / undock for visualization / debug purposes
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr trajectory_pub_;
 
   // Used for collision checking
   bool use_collision_detection_;
-  double projection_time_;
-  double simulation_time_step_;
-  double dock_collision_threshold_;
   double transform_tolerance_;
   nav2::TransformBuffer::SharedPtr tf2_buffer_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
