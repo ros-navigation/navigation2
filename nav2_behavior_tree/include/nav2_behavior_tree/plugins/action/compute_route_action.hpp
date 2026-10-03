@@ -90,8 +90,8 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<unsigned int>("start_id", "ID of the start node"),
-        BT::InputPort<unsigned int>("goal_id", "ID of the goal node"),
+        BT::InputPort<uint64_t>("start_id", "ID of the start node"),
+        BT::InputPort<uint64_t>("goal_id", "ID of the goal node"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(
           "start",
           "Start pose of the path if overriding current robot pose and using poses over IDs"),

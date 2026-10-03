@@ -129,7 +129,7 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
   RoutePlanner planner;
   planner.configure(node, tf_buffer, collision_checker);
-  std::vector<unsigned int> blocked_ids;
+  std::vector<uint64_t> blocked_ids;
   unsigned int start, goal;
 
   // Create a graph to test routing upon.
@@ -189,7 +189,7 @@ TEST(RoutePlannerTest, test_route_planner_negative)
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
   RoutePlanner planner;
   planner.configure(node, tf_buffer, collision_checker);
-  std::vector<unsigned int> blocked_ids;
+  std::vector<uint64_t> blocked_ids;
   unsigned int start = 0;
   unsigned int goal = 15;
   Graph graph;

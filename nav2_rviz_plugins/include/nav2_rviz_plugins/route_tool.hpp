@@ -114,7 +114,7 @@ private:
   nav2::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
     clicked_point_subscription_;
 
-  unsigned int next_node_id_ = 0;
+  uint64_t next_node_id_ = 0;
 };
 }  // namespace nav2_rviz_plugins
 #endif  // NAV2_RVIZ_PLUGINS__ROUTE_TOOL_HPP_

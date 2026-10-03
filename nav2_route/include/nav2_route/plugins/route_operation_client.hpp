@@ -15,6 +15,7 @@
 #ifndef NAV2_ROUTE__PLUGINS__ROUTE_OPERATION_CLIENT_HPP_
 #define NAV2_ROUTE__PLUGINS__ROUTE_OPERATION_CLIENT_HPP_
 
+#include <cinttypes>
 #include <memory>
 #include <chrono>
 #include <string>
@@ -174,7 +175,7 @@ protected:
 
     RCLCPP_INFO(
       logger_,
-      "%s: Processed operation at Node %i with service %s.",
+      "%s: Processed operation at Node %" PRIu64 " with service %s.",
       name_.c_str(), node_achieved->nodeid, srv_name.c_str());
     return processResponse(response);
   }

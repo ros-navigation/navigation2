@@ -72,6 +72,14 @@ target_link_libraries(test_geojson_graph_file_loader
   ${library_name} graph_file_loaders
 )
 
+# Test osm parser
+nav2_add_gtest(test_osm_graph_file_loader
+    test_osm_graph_file_loader.cpp
+)
+target_link_libraries(test_osm_graph_file_loader
+  ${library_name} graph_file_loaders
+)
+
 # Test geojson saver
 nav2_add_gtest(test_geojson_graph_file_saver
     test_geojson_graph_file_saver.cpp
