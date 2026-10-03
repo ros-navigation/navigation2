@@ -71,7 +71,11 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Configuring");
   auto node = shared_from_this();
 
-  costmap_ros_->configure();
+  if (costmap_ros_->configure().id() !=
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    return nav2::CallbackReturn::FAILURE;
+  }
   costmap_ = costmap_ros_->getCostmap();
 
   // Launch a thread to run the costmap node
@@ -303,7 +307,7 @@ bool PlannerServer::isCancelRequested(
 template<typename T>
 void PlannerServer::getPreemptedGoalIfRequested(
   typename nav2::SimpleActionServer<T>::SharedPtr & action_server,
-  typename std::shared_ptr<const typename T::Goal> goal)
+  typename std::shared_ptr<const typename T::Goal> & goal)
 {
   if (action_server->is_preempt_requested()) {
     goal = action_server->accept_pending_goal();

@@ -49,7 +49,7 @@ protected:
     node_->declare_parameter("cycle_frequency", 10.0);
     node_->declare_parameter("transform_staleness_threshold", 10.0);
     // These tests exercise pose acquisition without requiring a costmap.
-    node_->declare_parameter("projection_time", 0.0);
+    node_->declare_parameter("behavior.projection_time", 0.0);
     tf_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
     behavior_ = std::make_unique<Behavior>();
     behavior_->configure(node_, "behavior", tf_, nullptr, nullptr);
