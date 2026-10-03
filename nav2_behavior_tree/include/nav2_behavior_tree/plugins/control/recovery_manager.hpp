@@ -42,13 +42,15 @@ namespace nav2_behavior_tree
  *
  * @code{.yaml}
  * recovery_manager:
- *   # compute_path_error_code is the name of the blackboard key some action is storing its error code
+ *   # compute_path_error_code is the name of the blackboard key some action is storing its
+ *   # error code
  *   compute_path_error_code:
  *     default: [ClearGlobalCostmap, Wait, ClearGlobalCostmap]
  *     error_specific:
  *       start_occupied: [ClearGlobalCostmap, BackUp]
  *       goal_occupied: [none]
- *   # follow_path_error_code is the name of the blackboard key some action is storing its error code
+ *   # follow_path_error_code is the name of the blackboard key some action is storing its
+ *   # error code
  *   follow_path_error_code:
  *     default: [ClearLocalCostmap, Wait, ClearLocalCostmap]
  *     error_specific:
@@ -84,7 +86,7 @@ class RecoveryManager : public BT::ControlNode
 {
 public:
   /**
-   * @brief A constructor for nav2_behavior_tree::RecoveryManager
+   * @brief Constructor for nav2_behavior_tree::RecoveryManager
    * @param name Name for the XML tag for this node
    * @param config BT node configuration
    */
@@ -97,7 +99,7 @@ public:
   BT::NodeStatus tick() override;
 
   /**
-   * @brief Halts the running behavior
+   * @brief Halts the current running behavior
    */
   void halt() override;
 
@@ -139,16 +141,69 @@ private:
     std::unordered_map<uint16_t, RecoverySequence> sequence_by_error_code;
   };
 
+  /**
+   * @brief Indexes the children nodes by name and loads a group of sequences for each key in
+   * error_code_names.
+   * @throw BT::RuntimeError If two children share a name, or a sequence names an unknown child
+   */
   void loadRecoverySequences();
+
+  /**
+   * @brief Loads the custom error names, default sequence and error specific sequences of
+   * one error code group from the parameters
+   * @param blackboard_key Blackboard key holding the error code which is also the name of the group
+   * @param param_namespace Parameter namespace under which group is stored
+   * @return ErrorCodeGroup The loaded group
+   */
   ErrorCodeGroup loadErrorCodeGroup(
     const std::string & blackboard_key, const std::string & param_namespace);
+
+  /**
+   * @brief Gets the parameters under a prefix.
+   * For e.g. the prefix "recovery_manager.follow_path_error_code" gets parameters like
+   * "recovery_manager.follow_path_error_code.default" and
+   * "recovery_manager.follow_path_error_code.error_specific.tf_error"
+   * @param prefix Parameter name prefix, without the trailing dot
+   * @return Parameter values by their full name
+   */
   std::map<std::string, rclcpp::ParameterValue> getParametersUnder(const std::string & prefix);
+
+  /**
+   * @brief Declares a sequence parameter and turns its behavior names into child indices.
+   * "none" entries are skipped
+   * @param param_name Full name of the parameter
+   * @param param_value Value of the parameter, expected to be a list of strings
+   * @return RecoverySequence The child indices, empty for an empty list, or std::nullopt if
+   * the value is not a list of strings
+   * @throw BT::RuntimeError If a name is not one of the children
+   */
   std::optional<RecoverySequence> parseRecoverySequence(
     const std::string & param_name, const rclcpp::ParameterValue & param_value);
 
+  /**
+   * @brief Picks the next behavior from its error specific sequence or else the group's
+   * default sequence for the first error code that is set. Sets running_behavior_index_
+   * @return bool False if there is nothing to run: no error code is set, the sequence is
+   * empty, or it ran out and wrap_around is off
+   */
   bool selectNextRecoveryBehavior();
+
+  /**
+   * @brief Starts all sequences over if the goal changed, or if the robot has moved at least
+   * reset_distance since the last recovery
+   */
   void resetSequencesIfGoalChangedOrRobotMoved();
+
+  /**
+   * @brief Starts all sequences over from their first behavior
+   * @param reason Why they start over, for logging
+   */
   void resetAllSequences(const std::string & reason);
+
+  /**
+   * @brief Gets the robot pose in the global frame
+   * @return The robot pose, or std::nullopt if the transform is not available
+   */
   std::optional<geometry_msgs::msg::PoseStamped> getRobotPose();
 
   nav2::LifecycleNode::SharedPtr node_;
