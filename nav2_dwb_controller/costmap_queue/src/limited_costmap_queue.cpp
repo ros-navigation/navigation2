@@ -43,6 +43,7 @@ LimitedCostmapQueue::LimitedCostmapQueue(
 : CostmapQueue(costmap)
 {
   max_distance_ = distance_limit;
+  use_costmap_size_ = false;
   reset();
 }
 

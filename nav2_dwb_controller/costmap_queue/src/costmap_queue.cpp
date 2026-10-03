@@ -42,8 +42,8 @@ namespace costmap_queue
 {
 
 CostmapQueue::CostmapQueue(nav2_costmap_2d::Costmap2D & costmap, bool manhattan)
-: MapBasedQueue(), costmap_(costmap), max_distance_(-1), manhattan_(manhattan),
-  cached_max_distance_(-1)
+: MapBasedQueue(), costmap_(costmap), max_distance_(-1), use_costmap_size_(true),
+  manhattan_(manhattan), cached_max_distance_(-1)
 {
   reset();
 }
@@ -113,7 +113,7 @@ CellData CostmapQueue::getNextCell()
 
 void CostmapQueue::computeCache()
 {
-  if (max_distance_ == -1) {
+  if (use_costmap_size_) {
     max_distance_ = std::max(costmap_.getSizeInCellsX(), costmap_.getSizeInCellsY());
   }
   if (max_distance_ == cached_max_distance_) {return;}
