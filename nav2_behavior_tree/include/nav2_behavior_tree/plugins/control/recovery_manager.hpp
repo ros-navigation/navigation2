@@ -158,7 +158,7 @@ private:
   bool wrap_around_{false};
 
   bool sequences_loaded_{false};
-  std::unordered_map<std::string, std::size_t> behavior_index_by_name_;
+  std::unordered_map<std::string, std::size_t> child_node_index_by_name_;
   std::vector<ErrorCodeGroup> error_code_groups_;
   std::unordered_map<uint16_t, std::size_t> next_behavior_index_by_error_code_;
 

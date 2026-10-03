@@ -35,7 +35,7 @@ namespace nav2_behavior_tree
 namespace
 {
 
-// The errors of Nav2's actions, by code. No two of them share a code.
+// The errors of some of Nav2's actions
 const std::unordered_map<uint16_t, std::string> & builtinErrorNames()
 {
   using FollowPath = nav2_msgs::action::FollowPath::Result;
@@ -114,7 +114,7 @@ RecoveryManager::RecoveryManager(
 
 BT::NodeStatus RecoveryManager::tick()
 {
-  // Children are only added after construction, so the sequences are loaded on the first tick
+  // Children are added after construction, which means we can load the sequences on the first tick
   if (!sequences_loaded_) {
     loadRecoverySequences();
   }
@@ -172,21 +172,24 @@ void RecoveryManager::halt()
 
 void RecoveryManager::loadRecoverySequences()
 {
-  for (std::size_t behavior_index = 0; behavior_index < children_nodes_.size(); ++behavior_index) {
-    const TreeNode * behavior = children_nodes_[behavior_index];
-    if (!behavior_index_by_name_.emplace(behavior->name(), behavior_index).second) {
+  // Every recovery behavior is a child node of this node
+  for (std::size_t child_node_index = 0; child_node_index < children_nodes_.size();
+    ++child_node_index)
+  {
+    const TreeNode * child_node = children_nodes_[child_node_index];
+    if (!child_node_index_by_name_.emplace(child_node->name(), child_node_index).second) {
       throw BT::RuntimeError(
-              "RecoveryManager: more than one recovery behavior is named '", behavior->name(),
+              "RecoveryManager: more than one recovery behavior is named '", child_node->name(),
               "'. Give each of them a unique name attribute.");
     }
   }
 
   std::string param_namespace;
   getInput("param_namespace", param_namespace);
-  std::vector<std::string> error_code_names;
-  getInput("error_code_names", error_code_names);
+  std::vector<std::string> error_code_blackboard_key;
+  getInput("error_code_names", error_code_blackboard_key);
 
-  for (const auto & blackboard_key : error_code_names) {
+  for (const auto & blackboard_key : error_code_blackboard_key) {
     error_code_groups_.push_back(loadErrorCodeGroup(blackboard_key, param_namespace));
   }
 
@@ -199,25 +202,30 @@ RecoveryManager::ErrorCodeGroup RecoveryManager::loadErrorCodeGroup(
   ErrorCodeGroup group;
   group.blackboard_key = blackboard_key;
   group.error_names = builtinErrorNames();
-  // Without a default, every child is used in order
+
+  // Every child is used in order without a default
   for (std::size_t behavior_index = 0; behavior_index < children_nodes_.size(); ++behavior_index) {
     group.default_sequence.push_back(behavior_index);
   }
 
-  // e.g. recovery_manager.follow_path_error_code, whose parameters are named relative to it
+  // e.g. recovery_manager.follow_path_error_code
   const std::string group_prefix =
     param_namespace.empty() ? blackboard_key : param_namespace + "." + blackboard_key;
-  const auto parameters = getParametersUnder(group_prefix);
-  const auto key_of = [&](const std::string & param_name) {
+  const auto parameters_for_this_group = getParametersUnder(group_prefix);
+
+  // for e.g. changes "recovery_manager.follow_path_error_code.error_specific.tf_error" to
+  // "error_specific.tf_error"
+  const auto strip_parameter_prefix = [&](const std::string & param_name) {
       return param_name.substr(group_prefix.size() + 1);
     };
+
   const std::string error_names = "error_names.";
   const std::string error_specific = "error_specific.";
 
-  // 1. Custom error names, first so that the error specific sequences can use them
+  // 1. Custom error names first so that the error specific sequences can use them
   std::unordered_map<std::string, uint16_t> custom_error_codes;
-  for (const auto & [param_name, param_value] : parameters) {
-    const std::string key = key_of(param_name);
+  for (const auto & [param_name, param_value] : parameters_for_this_group) {
+    const std::string key = strip_parameter_prefix(param_name);
     if (!key.starts_with(error_names)) {
       continue;
     }
@@ -235,8 +243,8 @@ RecoveryManager::ErrorCodeGroup RecoveryManager::loadErrorCodeGroup(
   }
 
   // 2. The default and error specific sequences
-  for (const auto & [param_name, param_value] : parameters) {
-    const std::string key = key_of(param_name);
+  for (const auto & [param_name, param_value] : parameters_for_this_group) {
+    const std::string key = strip_parameter_prefix(param_name);
     if (key == "default") {
       if (auto sequence = parseRecoverySequence(param_name, param_value)) {
         group.default_sequence = *sequence;
@@ -314,8 +322,8 @@ std::optional<RecoveryManager::RecoverySequence> RecoveryManager::parseRecoveryS
     if (behavior_name == "none") {
       continue;
     }
-    auto behavior = behavior_index_by_name_.find(behavior_name);
-    if (behavior == behavior_index_by_name_.end()) {
+    auto behavior = child_node_index_by_name_.find(behavior_name);
+    if (behavior == child_node_index_by_name_.end()) {
       throw BT::RuntimeError(
               "RecoveryManager: recovery behavior '", behavior_name, "' in parameter '",
               param_name, "' is not a child of '", name(), "'");
@@ -327,30 +335,30 @@ std::optional<RecoveryManager::RecoverySequence> RecoveryManager::parseRecoveryS
 
 bool RecoveryManager::selectNextRecoveryBehavior()
 {
-  // 1. The first error code that is set, in order of priority, is the one to recover from
-  const ErrorCodeGroup * failed_group = nullptr;
+  // 1. The first error code that is set is the one to recover from first
+  const ErrorCodeGroup * group_with_error = nullptr;
   uint16_t error_code = 0;
   for (const auto & group : error_code_groups_) {
     if (config().blackboard->get(group.blackboard_key, error_code) && error_code != 0) {
-      failed_group = &group;
+      group_with_error = &group;
       break;
     }
   }
-  if (failed_group == nullptr) {
+  if (group_with_error == nullptr) {
     RCLCPP_WARN(logger_, "No recovery configured for error code 0 (NONE)");
     return false;
   }
 
-  const auto error_name = failed_group->error_names.find(error_code);
+  const auto error_name = group_with_error->error_names.find(error_code);
   error_description_ = std::to_string(error_code) + " (" +
-    (error_name != failed_group->error_names.end() ? error_name->second : "UNKNOWN_ERROR_CODE") +
-    ")";
+    (error_name != group_with_error->error_names.end() ?
+    error_name->second : "UNKNOWN_ERROR_CODE") + ")";
 
-  // 2. Its error specific sequence, or else the default one
-  const auto specific_sequence = failed_group->sequence_by_error_code.find(error_code);
+  // 2. Its error specific sequence else the default one
+  const auto specific_sequence = group_with_error->sequence_by_error_code.find(error_code);
   const RecoverySequence & sequence =
-    specific_sequence != failed_group->sequence_by_error_code.end() ?
-    specific_sequence->second : failed_group->default_sequence;
+    specific_sequence != group_with_error->sequence_by_error_code.end() ?
+    specific_sequence->second : group_with_error->default_sequence;
   if (sequence.empty()) {
     RCLCPP_WARN(logger_, "No recovery configured for error code %s", error_description_.c_str());
     return false;
