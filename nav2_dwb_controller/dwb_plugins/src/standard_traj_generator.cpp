@@ -154,6 +154,7 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
   double running_time = 0.0;
   std::vector<double> steps = getTimeSteps(cmd_vel);
   traj.poses.push_back(start_pose);
+  traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
   bool first_vel = false;
   for (double dt : steps) {
     //  calculate velocities
@@ -167,13 +168,13 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
     pose = computeNewPosition(pose, vel, dt);
 
     traj.poses.push_back(pose);
-    traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
     running_time += dt;
+    traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
   }  //  end for simulation steps
 
-  if (include_last_point_) {
-    traj.poses.push_back(pose);
-    traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
+  if (!include_last_point_) {
+    traj.poses.pop_back();
+    traj.time_offsets.pop_back();
   }
 
   return traj;
