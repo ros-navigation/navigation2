@@ -29,7 +29,7 @@
 namespace opennav_docking
 {
 
-// Helper for initalizing controller plugins tf frames.
+// Helper for initializing controller plugins tf frames.
 template<typename ControllerT = GracefulController>
 std::unique_ptr<ControllerT> makeController(
   const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,

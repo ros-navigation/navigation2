@@ -48,6 +48,7 @@ ParameterHandler::ParameterHandler(
     0.5);
   params_.rotation_angular_tolerance = node->declare_or_get_parameter("rotation_angular_tolerance",
     0.05);
+  params_.approach_lookahead_dist = node->declare_or_get_parameter("approach_lookahead_dist", 0.0);
 
   RCLCPP_INFO(logger_, "Controller frequency set to %.4fHz", params_.controller_frequency);
 
@@ -120,6 +121,8 @@ ParameterHandler::updateParametersCallback(
         params_.undock_angular_tolerance = parameter.as_double();
       } else if (param_name == "rotation_angular_tolerance") {
         params_.rotation_angular_tolerance = parameter.as_double();
+      } else if (param_name == "approach_lookahead_dist") {
+        params_.approach_lookahead_dist = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == "base_frame") {

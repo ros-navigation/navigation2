@@ -54,6 +54,8 @@ struct Parameters
   double dock_prestaging_tolerance;
   // Angular tolerance to exit the rotation loop when rotate_to_dock is enabled
   double rotation_angular_tolerance;
+  // Lookahead distance along the dock's approach axis for early aligning robot to dock axis
+  double approach_lookahead_dist;
   // Does the robot drive backwards onto the dock? Default is forwards
   std::optional<bool> dock_backwards;
   // Parameters for OdomSmoother

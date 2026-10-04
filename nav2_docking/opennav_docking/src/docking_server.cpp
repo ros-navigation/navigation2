@@ -625,18 +625,17 @@ bool DockingServer::approachDock(
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 
-    // Transform target_pose into base_link frame
-    geometry_msgs::msg::PoseStamped target_pose = dock_pose;
-    target_pose.header.stamp = rclcpp::Time(0);
-
     // The control law can get jittery when close to the end when atan2's can explode.
     // Thus, we backward project the controller's target pose a little bit after the
     // dock so that the robot never gets to the end of the spiral before its in contact
     // with the dock to stop the docking procedure.
     const double backward_projection = 0.25;
-    const double yaw = tf2::getYaw(target_pose.pose.orientation);
-    target_pose.pose.position.x += cos(yaw) * backward_projection;
-    target_pose.pose.position.y += sin(yaw) * backward_projection;
+    geometry_msgs::msg::PoseStamped target_pose = dock_pose;
+    target_pose.header.stamp = rclcpp::Time(0);
+    const geometry_msgs::msg::PoseStamped robot_pose =
+      getRobotPoseInFrame(dock_pose.header.frame_id);
+    target_pose.pose = utils::approachLineTarget(
+      dock_pose.pose, robot_pose.pose, params_->approach_lookahead_dist, backward_projection);
     tf2_buffer_->transform(target_pose, target_pose, params_->base_frame);
 
     // Make sure that the target pose is pointing at the robot when moving backwards
@@ -652,8 +651,7 @@ bool DockingServer::approachDock(
     DockingOptions options;
     options.reverse = backward;
     if (!controller_->computeVelocityCommands(
-        getRobotPoseInFrame(params_->fixed_frame), odom_sub_->getRawTwist(), target_pose.pose,
-        options, dt, command->twist))
+        robot_pose, odom_sub_->getRawTwist(), target_pose.pose, options, dt, command->twist))
     {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }

@@ -313,7 +313,8 @@ TEST(DockingServerTests, testDynamicParams)
       rclcpp::Parameter("base_frame", std::string("hi")),
       rclcpp::Parameter("fixed_frame", std::string("hi")),
       rclcpp::Parameter("max_retries", 7),
-      rclcpp::Parameter("rotation_angular_tolerance", 0.42)});
+      rclcpp::Parameter("rotation_angular_tolerance", 0.42),
+      rclcpp::Parameter("approach_lookahead_dist", 0.35)});
 
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
 
@@ -325,6 +326,7 @@ TEST(DockingServerTests, testDynamicParams)
   EXPECT_EQ(node->get_parameter("fixed_frame").as_string(), std::string("hi"));
   EXPECT_EQ(node->get_parameter("max_retries").as_int(), 7);
   EXPECT_EQ(node->get_parameter("rotation_angular_tolerance").as_double(), 0.42);
+  EXPECT_EQ(node->get_parameter("approach_lookahead_dist").as_double(), 0.35);
 
   // Test setting invalid value
   results = rec_param->set_parameters_atomically(

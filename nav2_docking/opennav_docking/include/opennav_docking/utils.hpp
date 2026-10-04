@@ -15,6 +15,8 @@
 #ifndef OPENNAV_DOCKING__UTILS_HPP_
 #define OPENNAV_DOCKING__UTILS_HPP_
 
+#include <algorithm>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -30,6 +32,42 @@
 
 namespace utils
 {
+
+/**
+ * @brief Target pose on the dock axis at look ahead distance.
+ *
+ * The target lies on dock axis at lookahead_dist ahead of the robot's projection onto it,
+ * but limited by max_projection_dist past the dock. It makes robot steer to the dock axis
+ * first from staging point which improves lateral alignment with the dock and heading error.
+ *
+ * @param dock Dock pose
+ * @param robot Robot pose in the same frame
+ * @param lookahead_dist Distance [m] along the dock axis from robot's position
+ * @param max_projection_dist Furthest [m] distance where target may lie past the dock
+ * @return Target pose in the same frame
+ */
+inline geometry_msgs::msg::Pose approachLineTarget(
+  const geometry_msgs::msg::Pose & dock, const geometry_msgs::msg::Pose & robot,
+  double lookahead_dist, double max_projection_dist)
+{
+  const double yaw = tf2::getYaw(dock.orientation);
+  const double c = std::cos(yaw);
+  const double s = std::sin(yaw);
+
+  // Signed distance along the line from the dock to the robot's projection onto dock axis
+  const double along =
+    (robot.position.x - dock.position.x) * c + (robot.position.y - dock.position.y) * s;
+
+  double target_along = max_projection_dist;
+  if (lookahead_dist > 0.0) {
+    target_along = std::min(along + lookahead_dist, max_projection_dist);
+  }
+
+  geometry_msgs::msg::Pose target = dock;
+  target.position.x = dock.position.x + target_along * c;
+  target.position.y = dock.position.y + target_along * s;
+  return target;
+}
 
 using rclcpp::ParameterType::PARAMETER_STRING;
 using rclcpp::ParameterType::PARAMETER_STRING_ARRAY;
