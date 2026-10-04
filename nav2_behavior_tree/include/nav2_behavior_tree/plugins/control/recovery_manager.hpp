@@ -66,7 +66,7 @@ namespace nav2_behavior_tree
  * A group without a default uses all children in order. Custom error codes are named in
  * `error_names`, and those names only apply within their group.
  *
- * Every error code walks through its own sequence. Once the sequence runs out this node
+ * Every error code of every group walks through its own sequence. Once the sequence runs out this node
  * returns FAILURE. Sequences start over when the goal changes, when a running recovery is
  * halted, or once the robot has moved `reset_distance` since the last recovery.
  *
@@ -139,6 +139,8 @@ private:
     std::unordered_map<uint16_t, std::string> error_names;
     RecoverySequence default_sequence;
     std::unordered_map<uint16_t, RecoverySequence> sequence_by_error_code;
+    // How far each error code has got through its sequence
+    std::unordered_map<uint16_t, std::size_t> next_behavior_index_by_error_code;
   };
 
   /**
@@ -218,7 +220,6 @@ private:
   bool sequences_loaded_{false};
   std::unordered_map<std::string, std::size_t> child_node_index_by_name_;
   std::vector<ErrorCodeGroup> error_code_groups_;
-  std::unordered_map<uint16_t, std::size_t> next_behavior_index_by_error_code_;
 
   std::string error_description_;
   std::optional<std::size_t> running_behavior_index_;

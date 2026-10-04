@@ -370,6 +370,25 @@ TEST_F(RecoveryManagerTestFixture, test_custom_names_overlapping_nav2_names)
   EXPECT_EQ(tickCount("ClearCostmap"), 1);
 }
 
+TEST_F(RecoveryManagerTestFixture, test_same_error_code_in_different_groups)
+{
+  // GOAL_REJECTED is 1 for both the planner and the controller
+  setSequence("compute_path_error_code.error_specific.goal_rejected", {"ClearCostmap", "BackUp"});
+  setSequence("follow_path_error_code.error_specific.goal_rejected", {"Wait", "BackUp"});
+  createRecoveryManager();
+
+  setErrorCode("compute_path_error_code", 1);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("ClearCostmap"), 1);
+
+  // The controller's sequence starts from its own first behavior
+  setErrorCode("compute_path_error_code", 0);
+  setErrorCode("follow_path_error_code", 1);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("Wait"), 1);
+  EXPECT_EQ(tickCount("BackUp"), 0);
+}
+
 TEST_F(RecoveryManagerTestFixture, test_unknown_behavior_name)
 {
   setSequence("follow_path_error_code.default", {"Spin"});

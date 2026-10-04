@@ -360,9 +360,9 @@ std::optional<RecoveryManager::RecoverySequence> RecoveryManager::parseRecoveryS
 bool RecoveryManager::selectNextRecoveryBehavior()
 {
   // 1. The first error code that is set is the one to recover from first
-  const ErrorCodeGroup * group_with_error = nullptr;
+  ErrorCodeGroup * group_with_error = nullptr;
   uint16_t error_code = 0;
-  for (const auto & group : error_code_groups_) {
+  for (auto & group : error_code_groups_) {
     if (config().blackboard->get(group.blackboard_key, error_code) && error_code != 0) {
       group_with_error = &group;
       break;
@@ -389,7 +389,8 @@ bool RecoveryManager::selectNextRecoveryBehavior()
   }
 
   // 3. The next behavior of that sequence
-  std::size_t & next_behavior_index = next_behavior_index_by_error_code_[error_code];
+  std::size_t & next_behavior_index =
+    group_with_error->next_behavior_index_by_error_code[error_code];
   if (next_behavior_index >= sequence.size()) {
     if (!wrap_around_) {
       RCLCPP_WARN(
@@ -442,10 +443,16 @@ void RecoveryManager::resetSequencesIfGoalChangedOrRobotMoved()
 
 void RecoveryManager::resetAllSequences(const std::string & reason)
 {
-  if (!next_behavior_index_by_error_code_.empty()) {
+  const bool any_sequence_started = std::any_of(
+    error_code_groups_.begin(), error_code_groups_.end(), [](const ErrorCodeGroup & group) {
+      return !group.next_behavior_index_by_error_code.empty();
+    });
+  if (any_sequence_started) {
     RCLCPP_INFO(logger_, "Starting all recovery sequences over: %s", reason.c_str());
   }
-  next_behavior_index_by_error_code_.clear();
+  for (auto & group : error_code_groups_) {
+    group.next_behavior_index_by_error_code.clear();
+  }
   pose_after_last_recovery_.reset();
 }
 
