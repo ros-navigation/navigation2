@@ -143,7 +143,7 @@ private:
 
   /**
    * @brief Indexes the children nodes by name and loads a group of sequences for each key in
-   * error_code_names.
+   * error_code_names. Warns about children that no sequence refers to
    * @throw BT::RuntimeError If two children share a name, or a sequence names an unknown child
    */
   void loadRecoverySequences();

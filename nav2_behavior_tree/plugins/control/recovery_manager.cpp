@@ -193,6 +193,28 @@ void RecoveryManager::loadRecoverySequences()
     error_code_groups_.push_back(loadErrorCodeGroup(blackboard_key, param_namespace));
   }
 
+  // A child that no sequence refers to can never run
+  std::vector<bool> child_node_used(children_nodes_.size(), false);
+  for (const auto & group : error_code_groups_) {
+    for (const std::size_t behavior_index : group.default_sequence) {
+      child_node_used[behavior_index] = true;
+    }
+    for (const auto & [error_code, sequence] : group.sequence_by_error_code) {
+      for (const std::size_t behavior_index : sequence) {
+        child_node_used[behavior_index] = true;
+      }
+    }
+  }
+  for (std::size_t child_node_index = 0; child_node_index < children_nodes_.size();
+    ++child_node_index)
+  {
+    if (!child_node_used[child_node_index]) {
+      RCLCPP_WARN(
+        logger_, "Recovery behavior %s is not in any recovery sequence and will never run",
+        children_nodes_[child_node_index]->name().c_str());
+    }
+  }
+
   sequences_loaded_ = true;
 }
 
@@ -264,6 +286,8 @@ RecoveryManager::ErrorCodeGroup RecoveryManager::loadErrorCodeGroup(
         }
       }
       if (error_codes.empty()) {
+        // Still parsed so that a misspelled error name doesn't hide an unknown behavior name
+        parseRecoverySequence(param_name, param_value);
         RCLCPP_WARN(logger_, "Ignoring parameter %s: unknown error", param_name.c_str());
         continue;
       }

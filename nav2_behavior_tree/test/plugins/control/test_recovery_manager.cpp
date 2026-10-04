@@ -377,6 +377,19 @@ TEST_F(RecoveryManagerTestFixture, test_unknown_behavior_name)
   EXPECT_THROW(recovery_manager_->executeTick(), BT::RuntimeError);
 }
 
+TEST_F(RecoveryManagerTestFixture, test_unused_behavior_only_warns)
+{
+  setSequence("compute_path_error_code.default", {"ClearCostmap"});
+  setSequence("follow_path_error_code.default", {"Wait"});
+  createRecoveryManager();
+  setErrorCode("follow_path_error_code", 105);
+
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("Wait"), 1);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tickCount("BackUp"), 0);
+}
+
 TEST_F(RecoveryManagerTestFixture, test_inside_subtree)
 {
   setSequence("follow_path_error_code.error_specific.failed_to_make_progress", {"Second"});
