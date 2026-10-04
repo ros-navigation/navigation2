@@ -213,6 +213,7 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | fixed_frame        | Fixed frame to use, recommended to be a smooth odometry frame **not** map   | string |  "odom"      |
 | odom_topic        | The topic to use for the odometry data | string |  "odom"      |
 | rotation_angular_tolerance  | Angular tolerance (rad) to exit the rotation loop when rotate_to_dock is enabled | double | 0.05      |
+| approach_lookahead_dist  | While approaching steer to a point on the dock's approach axis this far (m) ahead of the robot's projection onto it. This improves lateral alignment and heading to dock, by earlier convergence to dock axis. If it is 0.0, it does not change behavior, robot directly targets dock. | double | 0.0      |
 | dock_prestaging_tolerance  |  L2 distance in X,Y,Theta from the staging pose to bypass navigation | double |  0.5      |
 | dock_plugins  | A set of dock plugins to load | vector<string> |  N/A      |
 | dock_database  |  The filepath to the dock database to use for this environment | string |  N/A  |
