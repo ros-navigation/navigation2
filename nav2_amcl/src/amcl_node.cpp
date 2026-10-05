@@ -1269,7 +1269,7 @@ AmclNode::updateParametersCallback(
   // Re-initialize the map
   if (reinit_map) {
     map_sub_.reset();
-    // [AI generated] Treat a new map topic as a new first-map epoch.
+    // Treat a new map topic as a new first-map epoch.
     first_map_received_ = false;
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_,
