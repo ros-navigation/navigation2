@@ -18,6 +18,7 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "opennav_docking/controller_plugins/graceful_controller.hpp"
+#include "opennav_docking/controller_plugins/pid_controller.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -643,6 +644,86 @@ TEST(ControllerTests, RotateToHeading) {
   EXPECT_DOUBLE_EQ(cmd_vel.angular.z, 0.0);
 
   controller.reset();
+}
+
+TEST(ControllerTests, PIDControlTests) {
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto controller = makeController<PIDController>(
+    node, nullptr, "test_base_frame", "test_base_frame");
+
+  // Case 1: Target ahead and to the left
+  geometry_msgs::msg::Pose target;
+  target.position.x = 1.0;
+  target.position.y = 0.2;
+  target.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.1);
+  auto cmd = controller->computeCommand(target, false, 0.1);
+  EXPECT_GT(cmd.linear.x, 0.0);
+  EXPECT_GT(cmd.angular.z, 0.0);
+
+  // Case 2: Same target behind the robot
+  target.position.x = -1.0;
+  target.position.y = -0.2;
+  controller->reset();
+  cmd = controller->computeCommand(target, true, 0.1);
+  EXPECT_LT(cmd.linear.x, 0.0);
+
+  // Case 3: Far target, linear velocity saturates
+  target = geometry_msgs::msg::Pose();
+  target.position.x = 10.0;
+  controller->reset();
+  cmd = controller->computeCommand(target, false, 0.1);
+  EXPECT_DOUBLE_EQ(cmd.linear.x, 0.25);
+  EXPECT_DOUBLE_EQ(cmd.angular.z, 0.0);
+
+  // Case 4: One prediction step moves the robot towards the target
+  geometry_msgs::msg::Pose current;
+  auto next = controller->predictNextPose(0.1, target, current, false);
+  EXPECT_NEAR(next.position.x, 0.025, 1e-9);
+  EXPECT_NEAR(next.position.y, 0.0, 1e-9);
+  target.position.x = -10.0;
+  next = controller->predictNextPose(0.1, target, current, true);
+  EXPECT_NEAR(next.position.x, -0.025, 1e-9);
+
+  controller.reset();
+}
+
+TEST(ControllerTests, PIDDynamicParameters) {
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto controller = makeController<PIDController>(
+    node, nullptr, "test_base_frame", "test_base_frame");
+  controller->activate();
+
+  auto params = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  const std::vector<std::string> names{
+    "kp_x", "ki_x", "kd_x", "i_clamp_x", "kp_y", "ki_y", "kd_y", "i_clamp_y",
+    "kp_theta", "ki_theta", "kd_theta", "i_clamp_theta", "v_angular_max", "lookahead_distance"};
+  std::vector<rclcpp::Parameter> values;
+  for (size_t i = 0; i < names.size(); ++i) {
+    values.emplace_back("controller." + names[i], 1.0 + i);
+  }
+  values.emplace_back("controller.v_linear_max", 0.1);
+  auto results = params->set_parameters_atomically(values);
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  for (size_t i = 0; i < names.size(); ++i) {
+    EXPECT_EQ(node->get_parameter("controller." + names[i]).as_double(), 1.0 + i);
+  }
+
+  // Parameters are applied on the next command
+  geometry_msgs::msg::Pose target;
+  target.position.x = 10.0;
+  auto cmd = controller->computeCommand(target, false, 0.1);
+  EXPECT_DOUBLE_EQ(cmd.linear.x, 0.1);
+
+  // Negative values are rejected
+  results = params->set_parameters_atomically({rclcpp::Parameter("controller.kp_x", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("controller.kp_x").as_double(), 1.0);
+
+  controller->deactivate();
 }
 
 }  // namespace opennav_docking
