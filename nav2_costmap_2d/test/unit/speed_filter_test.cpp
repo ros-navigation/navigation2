@@ -1079,6 +1079,62 @@ public:
   double publishedLimit() const {return speed_limit_prev_;}
 };
 
+TEST(SpeedFilterTF, LookaheadPathTransformFailure)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("tf_failure_test");
+  node->declare_parameter(std::string(FILTER_NAME) + ".filter_info_topic", INFO_TOPIC);
+  node->declare_parameter(std::string(FILTER_NAME) + ".enable_path_lookahead", true);
+  node->declare_parameter(std::string(FILTER_NAME) + ".min_lookahead", 3.0);
+  node->declare_parameter(std::string(FILTER_NAME) + ".transform_tolerance", 0.0);
+  auto buffer = nav2::create_transform_buffer(node);
+  buffer->setUsingDedicatedThread(true);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
+  layers.resizeMap(4, 1, 1.0, 0.0, 0.0);
+  SpeedFilterTFTestable filter;
+  filter.initialize(&layers, FILTER_NAME, buffer.get(), node, nullptr);
+  filter.initializeFilter(INFO_TOPIC);
+
+  auto mask = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  mask->header.frame_id = "map";
+  mask->info.width = 4;
+  mask->info.height = 1;
+  mask->info.resolution = 1.0;
+  mask->info.origin.orientation.w = 1.0;
+  mask->data = {80, 40, 20, 0};
+  filter.maskCallback(mask);
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 0.5;
+  pose.position.y = 0.5;
+  pose.orientation.w = 1.0;
+  nav2_costmap_2d::Costmap2D grid(4, 1, 1.0, 0.0, 0.0, 0);
+  filter.process(grid, 0, 0, 4, 1, pose);
+  ASSERT_EQ(filter.publishedLimit(), 80.0);
+
+  auto path = std::make_shared<nav_msgs::msg::Path>();
+  path->header.frame_id = "plan";
+  geometry_msgs::msg::PoseStamped point;
+  point.header.frame_id = "plan";
+  point.pose = pose;
+  path->poses.push_back(point);
+  point.pose.position.x += 1.0;
+  path->poses.push_back(point);
+  filter.pathCallback(path);
+
+  // The mask transform succeeds, but the path frame has no transform to map.
+  filter.process(grid, 0, 0, 4, 1, pose);
+  EXPECT_EQ(filter.publishedLimit(), 80.0);
+
+  // Once the path transform is available, processing resumes with the limit ahead.
+  geometry_msgs::msg::TransformStamped path_transform;
+  path_transform.header.frame_id = "map";
+  path_transform.child_frame_id = "plan";
+  path_transform.transform.rotation.w = 1.0;
+  ASSERT_TRUE(buffer->setTransform(path_transform, "test", true));
+  filter.process(grid, 0, 0, 4, 1, pose);
+  EXPECT_EQ(filter.publishedLimit(), 40.0);
+  filter.resetFilter();
+}
+
 TEST(SpeedFilterTF, FreshnessAndLookaheadFrames)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("tf_test");

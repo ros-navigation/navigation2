@@ -150,6 +150,46 @@ TEST(SimpleChargingDockTests, DetectionUsesMeasurementTransform)
   dock.cleanup();
 }
 
+TEST(SimpleChargingDockTests, DetectionWithoutTimestamp)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_unstamped_detection");
+  // Keep ROS time at zero so the unstamped detection passes the timeout check.
+  node->set_parameter(rclcpp::Parameter("use_sim_time", true));
+  ASSERT_EQ(node->now().nanoseconds(), 0);
+  node->declare_parameter("my_dock.use_external_detection_pose", true);
+  node->declare_parameter("my_dock.external_detection_translation_x", 0.0);
+  node->declare_parameter("my_dock.external_detection_rotation_pitch", 0.0);
+  node->declare_parameter("my_dock.external_detection_rotation_roll", 0.0);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  tf_buffer->setUsingDedicatedThread(true);
+  SimpleChargingDockTestable dock;
+  dock.configure(node, "my_dock", tf_buffer);
+  dock.activate();
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "odom";
+  transform.child_frame_id = "camera";
+  transform.transform.translation.x = 2.0;
+  transform.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", true));
+
+  geometry_msgs::msg::PoseStamped detection;
+  detection.header.frame_id = "camera";
+  detection.pose.position.x = 1.0;
+  detection.pose.orientation.w = 1.0;
+  dock.setDetection(detection);
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "odom";
+
+  ASSERT_TRUE(dock.getRefinedPose(pose, ""));
+  EXPECT_EQ(pose.header.frame_id, "odom");
+  EXPECT_EQ(rclcpp::Time(pose.header.stamp).nanoseconds(), 0);
+  EXPECT_NEAR(pose.pose.position.x, 3.0, 1e-6);
+
+  dock.deactivate();
+  dock.cleanup();
+}
+
 TEST(SimpleChargingDockTests, ObjectLifecycle)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
