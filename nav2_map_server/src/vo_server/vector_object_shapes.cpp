@@ -34,28 +34,6 @@
 namespace nav2_map_server
 {
 
-namespace
-{
-
-bool lookupShapeTransform(
-  const std_msgs::msg::Header & header,
-  const std::string & target_frame,
-  const nav2::TransformBuffer::SharedPtr & tf_buffer,
-  const double transform_tolerance,
-  geometry_msgs::msg::TransformStamped & transform)
-{
-  try {
-    transform = tf_buffer->lookupTransform(
-      target_frame, header.frame_id, rclcpp::Time(header.stamp),
-      tf2::durationFromSec(transform_tolerance));
-    return true;
-  } catch (const tf2::TransformException &) {
-    return false;
-  }
-}
-
-}  // namespace
-
 // ---------- Shape ----------
 
 Shape::Shape(const nav2::LifecycleNode::WeakPtr & node)
