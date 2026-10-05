@@ -1,5 +1,6 @@
 <!--
-  Executes a BackUp only if the robot traveled at least reset_distance since the last one
+  Executes a BackUp only if the robot traveled at least reset_distance since the last one.
+  Resets only if the Behavior-tree is reloaded.
 -->
 <root BTCPP_format="4" main_tree_to_execute="BackupWithReset">
   <BehaviorTree ID="BackupWithReset">
