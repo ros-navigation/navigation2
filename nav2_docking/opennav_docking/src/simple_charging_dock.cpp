@@ -227,7 +227,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
   if (detected.header.frame_id != pose.header.frame_id) {
     try {
       if (rclcpp::Time(detected.header.stamp).nanoseconds() == 0) {
-        RCLCPP_ERROR_ONCE(node_->get_logger(),
+        RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 3000,
             "Provided a detection pose without a timestamp, unexpected");
       }
       geometry_msgs::msg::TransformStamped frame_transform = tf2_buffer_->lookupTransform(
