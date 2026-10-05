@@ -41,6 +41,9 @@ public:
     }
   }
 
+  float radiusInCells() {return _search_info.minimum_turning_radius;}
+  float expansionInCells() {return _search_info.analytic_expansion_max_length;}
+
   int getCoarseSearchResolution()
   {
     return _coarse_search_resolution;
@@ -96,6 +99,8 @@ TEST(SmacTest, test_smac_lattice)
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  // Match the default 5 cm lattice primitives explicitly.
+  costmap_ros->declare_parameter("resolution", 0.05);
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
   geometry_msgs::msg::PoseArray::ConstSharedPtr received_expansions;
@@ -230,6 +235,8 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  // Match the default 5 cm lattice primitives explicitly.
+  costmap_ros->declare_parameter("resolution", 0.05);
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
   auto planner = std::make_unique<LatticeWrap>();
@@ -331,6 +338,8 @@ TEST(SmacTest, test_smac_lattice_omni_configure)
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  // Match the default 5 cm lattice primitives explicitly.
+  costmap_ros->declare_parameter("resolution", 0.05);
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
   std::string omni_filepath =
@@ -364,6 +373,8 @@ TEST(SmacTest, test_smac_lattice_omni_reconfigure)
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  // Match the default 5 cm lattice primitives explicitly.
+  costmap_ros->declare_parameter("resolution", 0.05);
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
   auto planner = std::make_unique<LatticeWrap>();
@@ -396,6 +407,37 @@ TEST(SmacTest, test_smac_lattice_omni_reconfigure)
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
   costmap_ros.reset();
   nodeLattice.reset();
+}
+
+TEST(SmacTest, lattice_resolution_must_match_primitives)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("lattice_resolution_test");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  // Match the default 5 cm lattice primitives explicitly.
+  costmap_ros->declare_parameter("resolution", 0.05);
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto map = costmap_ros->getCostmap();
+  map->resizeMap(100, 100, 0.1, 0.0, 0.0);
+  LatticeWrap planner;
+  planner.configure(node, "test", nullptr, costmap_ros);
+  // Default primitives use 0.05 m cells and a 0.5 m turning radius.
+  EXPECT_NEAR(planner.radiusInCells(), 10.0, 1e-5);
+  EXPECT_NEAR(planner.expansionInCells(), 60.0, 1e-5);
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = -1.0;
+  start.pose.orientation.w = goal.pose.orientation.w = 1.0;
+  try {
+    planner.createPlan(start, goal, {}, []() {return false;});
+    FAIL() << "Expected resolution mismatch";
+  } catch (const nav2_core::PlannerException & e) {
+    EXPECT_NE(std::string(e.what()).find("does not match lattice resolution"), std::string::npos);
+  }
+  // Simulate the map arriving after configuration; matching resolution may plan.
+  map->resizeMap(100, 100, 0.05, 0.0, 0.0);
+  EXPECT_THROW(
+    planner.createPlan(start, goal, {}, []() {return false;}),
+    nav2_core::StartOutsideMapBounds);
+  planner.cleanup();
 }
 
 int main(int argc, char ** argv)
