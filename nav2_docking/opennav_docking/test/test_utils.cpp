@@ -109,6 +109,18 @@ TEST(UtilsTests, parseDockFile)
   EXPECT_EQ(db["dock2"].id, std::string("2"));
 }
 
+TEST(UtilsTests, parseDockFileController)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test4");
+  DockMap db;
+  std::string filepath = nav2::get_package_share_directory("opennav_docking") +
+    "/dock_files/test_dock_controller_file.yaml";
+  EXPECT_TRUE(utils::parseDockFile(filepath, node, db));
+  EXPECT_EQ(db.size(), 2u);
+  EXPECT_EQ(db["dock1"].controller_name, std::string("pid"));
+  EXPECT_EQ(db["dock2"].controller_name, std::string(""));
+}
+
 TEST(UtilsTests, parseDockFile2)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test4");
