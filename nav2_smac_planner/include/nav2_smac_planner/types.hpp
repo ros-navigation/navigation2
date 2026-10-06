@@ -46,6 +46,7 @@ struct SearchInfo
   float analytic_expansion_ratio{3.5};
   float analytic_expansion_max_length{60.0};
   float analytic_expansion_max_cost{200.0};
+  float forward_expansion_multiplier{3.0};
   bool analytic_expansion_max_cost_override{false};
   std::string lattice_filepath;
   bool cache_obstacle_heuristic{false};
@@ -53,6 +54,7 @@ struct SearchInfo
   bool allow_primitive_interpolation{false};
   bool downsample_obstacle_heuristic{true};
   bool use_quadratic_cost_penalty{false};
+  bool prefer_forward_expansions{false};
 };
 
 /**
