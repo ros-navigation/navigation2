@@ -86,17 +86,20 @@ ResultStatus Spin::onCycleUpdate()
 {
   rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
-    stopRobot();
     std::string error_msg = "Exceeded time allowance before reaching the Spin goal - Exiting Spin";
     RCLCPP_WARN(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TIMEOUT, error_msg};
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
+<<<<<<< HEAD
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, local_frame_, robot_base_frame_,
       transform_tolerance_))
   {
+=======
+  if (!getCurrentPoseChecked(current_pose)) {
+>>>>>>> 235fc5c (Stop failed behaviors and reset waypoint state on preemption (#6588))
     std::string error_msg = "Current robot pose is not available.";
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
@@ -132,7 +135,6 @@ ResultStatus Spin::onCycleUpdate()
   geometry_msgs::msg::Pose pose = current_pose.pose;
 
   if (!isCollisionFree(remaining_yaw, cmd_vel->twist, pose)) {
-    stopRobot();
     std::string error_msg = "Collision Ahead - Exiting Spin";
     RCLCPP_WARN(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::COLLISION_AHEAD, error_msg};
