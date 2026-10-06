@@ -380,24 +380,36 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
     // higher than the minimum turning radius and use the best solution based on
     // a scoring function similar to that used in traversal cost estimation.
     auto scoringFn = [&](const AnalyticExpansionNodes & expansion) {
-        if (expansion.nodes.size() < 2) {
-          return std::numeric_limits<float>::max();
-        }
+      if (expansion.nodes.size() < 2) {
+        return std::numeric_limits<float>::max();
+      }
 
-        float score = 0.0;
-        float normalized_cost = 0.0;
-        // Analytic expansions are consistently spaced
-        const float distance = hypotf(
-          expansion.nodes[1].proposed_coords.x - expansion.nodes[0].proposed_coords.x,
-          expansion.nodes[1].proposed_coords.y - expansion.nodes[0].proposed_coords.y);
-        const float & weight = _ctx->motion_table.cost_penalty;
-        for (auto iter = expansion.nodes.begin(); iter != expansion.nodes.end(); ++iter) {
-          normalized_cost = iter->node->getCost() / 252.0f;
-          // Search's Traversal Cost Function
-          score += distance * (1.0 + weight * normalized_cost);
-        }
-        return score;
-      };
+      const float & cost_weight = expansion.nodes[0].node->motion_table.cost_penalty;
+      const float & reverse_weight = expansion.nodes[0].node->motion_table.reverse_penalty;
+
+      float score = 0.0f;
+      for (size_t i = 1; i < expansion.nodes.size(); i++) {
+
+        const float theta = expansion.nodes[i-1].node->motion_table.getAngleFromBin(
+          static_cast<unsigned int>(expansion.nodes[i-1].proposed_coords.theta));
+
+        const float seg_distance = hypotf(
+          expansion.nodes[i].proposed_coords.x - expansion.nodes[i-1].proposed_coords.x,
+          expansion.nodes[i].proposed_coords.y - expansion.nodes[i-1].proposed_coords.y);
+
+        const float seg_direction =
+          (expansion.nodes[i].proposed_coords.x - expansion.nodes[i-1].proposed_coords.x) * cosf(theta) +
+          (expansion.nodes[i].proposed_coords.y - expansion.nodes[i-1].proposed_coords.y) * sinf(theta);
+
+        const float normalized_cost = expansion.nodes[i].node->getCost() / 252.0f;
+        const float reverse_penalty = (seg_direction < 0.0f) ? reverse_weight : 0.0f;
+        const float seg_score = seg_distance * (1.0f + cost_weight * normalized_cost + reverse_penalty);
+
+        score += seg_score;
+      }
+
+      return score;
+    };
 
     float original_score = scoringFn(analytic_nodes);
     float best_score = original_score;
