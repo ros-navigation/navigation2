@@ -352,7 +352,6 @@ ament_export_dependencies(
   action_msgs
   behaviortree_cpp
   geometry_msgs
-  nav2_common
   nav2_msgs
   nav2_util
   nav_msgs

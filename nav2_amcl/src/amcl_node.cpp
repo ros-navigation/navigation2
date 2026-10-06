@@ -243,7 +243,8 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   frame_to_laser_.clear();
   force_update_ = true;
 
-  if (set_initial_pose_) {
+  // Do not persist an uninitialized pose over configured parameters.
+  if (set_initial_pose_ && initial_pose_is_known_) {
     set_parameter(
       rclcpp::Parameter(
         "initial_pose.x",
@@ -1269,6 +1270,8 @@ AmclNode::updateParametersCallback(
   // Re-initialize the map
   if (reinit_map) {
     map_sub_.reset();
+    // Treat a new map topic as a new first-map epoch.
+    first_map_received_ = false;
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_,
       std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),

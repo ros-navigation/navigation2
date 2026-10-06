@@ -264,6 +264,28 @@ public:
   }
 };
 
+TEST(OptimizerTests, DefaultInvalidInitialSize)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(100001));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(1001));
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  EXPECT_EQ(optimizer_tester.grabSettings().batch_size, 1000u);
+  EXPECT_EQ(optimizer_tester.grabSettings().time_steps, 56u);
+}
+
 TEST(OptimizerTests, BasicInitializedFunctions)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
@@ -280,12 +302,22 @@ TEST(OptimizerTests, BasicInitializedFunctions)
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "test";
+  std::string name = "mppic";
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   auto tf_buffer = nav2::create_transform_buffer(node);
   optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  param_handler.start();
+
+  auto result = node->set_parameter(rclcpp::Parameter("mppic.batch_size", 0));
+  EXPECT_FALSE(result.successful);
+  result = node->set_parameter(rclcpp::Parameter("mppic.batch_size", 100001));
+  EXPECT_FALSE(result.successful);
+  result = node->set_parameter(rclcpp::Parameter("mppic.time_steps", 0));
+  EXPECT_FALSE(result.successful);
+  result = node->set_parameter(rclcpp::Parameter("mppic.time_steps", 1001));
+  EXPECT_FALSE(result.successful);
 
   // Test value of ax_min, ay_min it should be negative
   auto & constraints = optimizer_tester.getControlConstraints();
@@ -426,9 +458,12 @@ TEST(OptimizerTests, FallbackTests)
 
   // Test fallback logic, also tests getting set param retry_attempt_limit
   // Because retry set to 2, it should attempt soft resets 2x before throwing exception
-  // for hard reset
+  // for hard reset.
+  // A successful cycle on another optimizer must not reset this one.
   EXPECT_FALSE(optimizer_tester.fallbackWrapper(false));
   EXPECT_TRUE(optimizer_tester.fallbackWrapper(true));
+  OptimizerTester other_optimizer;
+  EXPECT_FALSE(other_optimizer.fallbackWrapper(false));
   EXPECT_TRUE(optimizer_tester.fallbackWrapper(true));
   EXPECT_THROW(optimizer_tester.fallbackWrapper(true), std::runtime_error);
 }

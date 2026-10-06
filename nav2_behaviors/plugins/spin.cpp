@@ -62,10 +62,7 @@ void Spin::onConfigure()
 ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, local_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
+  if (!getCurrentPoseChecked(current_pose)) {
     std::string error_msg = "Current robot pose is not available.";
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
@@ -96,10 +93,7 @@ ResultStatus Spin::onCycleUpdate()
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, local_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
+  if (!getCurrentPoseChecked(current_pose)) {
     std::string error_msg = "Current robot pose is not available.";
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
@@ -134,7 +128,7 @@ ResultStatus Spin::onCycleUpdate()
 
   geometry_msgs::msg::Pose pose = current_pose.pose;
 
-  if (!isCollisionFree(relative_yaw_, cmd_vel->twist, pose)) {
+  if (!isCollisionFree(remaining_yaw, cmd_vel->twist, pose)) {
     std::string error_msg = "Collision Ahead - Exiting Spin";
     RCLCPP_WARN(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::COLLISION_AHEAD, error_msg};

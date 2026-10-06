@@ -102,6 +102,44 @@ void Optimizer::getParams()
     parameters_handler_->addPreCallback(name_ + "." + p, kinematic_guard);
   }
 
+  auto batch_size_guard = [](
+    const rclcpp::Parameter & param,
+    rcl_interfaces::msg::SetParametersResult & result)
+    {
+      const auto value = param.as_int();
+      if (value <= 0 || value > 100000) {
+        result.successful = false;
+        if (!result.reason.empty()) {
+          result.reason += "\n";
+        }
+        result.reason += "MPPI batch_size must be in [1, 100000]";
+        if (value > 100000) {
+          result.reason += ". If you need a larger value, contact the maintainers to discuss "
+            "extending this limit";
+        }
+      }
+    };
+  parameters_handler_->addPreCallback(name_ + ".batch_size", batch_size_guard);
+
+  auto time_steps_guard = [](
+    const rclcpp::Parameter & param,
+    rcl_interfaces::msg::SetParametersResult & result)
+    {
+      const auto value = param.as_int();
+      if (value <= 0 || value > 1000) {
+        result.successful = false;
+        if (!result.reason.empty()) {
+          result.reason += "\n";
+        }
+        result.reason += "MPPI time_steps must be in [1, 1000]";
+        if (value > 1000) {
+          result.reason += ". If you need a larger value, contact the maintainers to discuss "
+            "extending this limit";
+        }
+      }
+    };
+  parameters_handler_->addPreCallback(name_ + ".time_steps", time_steps_guard);
+
   getParam(s.model_dt, "model_dt", 0.05f);
   getParam(s.model_delay_vx, "model_delay_vx", 0.0f);
   getParam(s.model_delay_vy, "model_delay_vy", 0.0f);
@@ -148,6 +186,19 @@ void Optimizer::getParams()
   }
 
   getParam(motion_model_name, "motion_model", std::string("diff_drive"));
+
+  if (s.batch_size == 0u || s.batch_size > 100000u) {
+    RCLCPP_WARN(
+      logger_, "batch_size must be in [1, 100000], defaulting to 1000. "
+      "If you need a larger value, contact the maintainers to discuss extending this limit");
+    s.batch_size = 1000u;
+  }
+  if (s.time_steps == 0u || s.time_steps > 1000u) {
+    RCLCPP_WARN(
+      logger_, "time_steps must be in [1, 1000], defaulting to 56. "
+      "If you need a larger value, contact the maintainers to discuss extending this limit");
+    s.time_steps = 56u;
+  }
 
   s.constraints = s.base_constraints;
 
@@ -281,17 +332,16 @@ void Optimizer::optimize()
 
 bool Optimizer::fallback(bool fail)
 {
-  static size_t counter = 0;
-
+  // Keep retry history scoped to this optimizer instance.
   if (!fail) {
-    counter = 0;
+    fallback_count_ = 0;
     return false;
   }
 
   reset(false /*Don't reset zone-based speed limits after fallback*/);
 
-  if (++counter > settings_.retry_attempt_limit) {
-    counter = 0;
+  if (++fallback_count_ > settings_.retry_attempt_limit) {
+    fallback_count_ = 0;
     throw nav2_core::NoValidControl("Optimizer fail to compute path");
   }
 
