@@ -281,7 +281,7 @@ void Optimizer::optimize()
 
 bool Optimizer::fallback(bool fail)
 {
-  // [AI generated] Keep retry history scoped to this optimizer instance.
+  // Keep retry history scoped to this optimizer instance.
   if (!fail) {
     fallback_count_ = 0;
     return false;

@@ -427,7 +427,7 @@ TEST(OptimizerTests, FallbackTests)
   // Test fallback logic, also tests getting set param retry_attempt_limit
   // Because retry set to 2, it should attempt soft resets 2x before throwing exception
   // for hard reset.
-  // [AI generated] A successful cycle on another optimizer must not reset this one.
+  // A successful cycle on another optimizer must not reset this one.
   EXPECT_FALSE(optimizer_tester.fallbackWrapper(false));
   EXPECT_TRUE(optimizer_tester.fallbackWrapper(true));
   OptimizerTester other_optimizer;
