@@ -90,7 +90,6 @@ ResultStatus Spin::onCycleUpdate()
 {
   rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
-    stopRobot();
     std::string error_msg = "Exceeded time allowance before reaching the Spin goal - Exiting Spin";
     RCLCPP_WARN(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TIMEOUT, error_msg};
@@ -136,7 +135,6 @@ ResultStatus Spin::onCycleUpdate()
   geometry_msgs::msg::Pose pose = current_pose.pose;
 
   if (!isCollisionFree(relative_yaw_, cmd_vel->twist, pose)) {
-    stopRobot();
     std::string error_msg = "Collision Ahead - Exiting Spin";
     RCLCPP_WARN(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::COLLISION_AHEAD, error_msg};
