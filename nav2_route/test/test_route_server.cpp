@@ -137,7 +137,7 @@ public:
     graph_.resize(1);
   }
 
-  // [AI generated] Expose graph size to verify failed replacement is non-destructive.
+  // Expose graph size to verify failed replacement is non-destructive.
   size_t graphSize() const
   {
     return graph_.size();
