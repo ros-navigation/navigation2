@@ -134,6 +134,7 @@ protected:
   size_t start_index_ = 0;
   nav_msgs::msg::Path previous_path_;
   double search_window_;
+  double transform_staleness_threshold_;
 };
 
 }  // namespace nav2_bt_navigator

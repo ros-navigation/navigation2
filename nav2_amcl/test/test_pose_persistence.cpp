@@ -12,18 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <cstdio>
 #include <fstream>
 #include <memory>
 #include <string>
 
 #include "gtest/gtest.h"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_amcl/amcl_node.hpp"
 #include "rclcpp/executors.hpp"
+#include "rclcpp/future_return_code.hpp"
+#include "rclcpp/node.hpp"
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/parameter_client.hpp"
 #include "rclcpp/utilities.hpp"
+#include "std_srvs/srv/empty.hpp"
 
 class PosePersistenceTest : public ::testing::Test
 {
@@ -325,6 +330,39 @@ TEST_F(PosePersistenceTest, test_ros_params_priority_over_saved_pose)
   EXPECT_EQ(amcl->get_parameter("initial_pose.x").as_double(), 1.0);
   EXPECT_EQ(amcl->get_parameter("initial_pose.y").as_double(), 2.0);
   EXPECT_EQ(amcl->get_parameter("initial_pose.yaw").as_double(), 0.5);
+
+  amcl->deactivate();
+  amcl->cleanup();
+}
+
+TEST_F(PosePersistenceTest, global_localization_before_map_returns_safely)
+{
+  using namespace std::chrono_literals;
+
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({
+    rclcpp::Parameter("random_seed", 42),
+    rclcpp::Parameter("bond_heartbeat_period", 0.0),
+  });
+
+  auto amcl = std::make_shared<nav2_amcl::AmclNode>(options);
+  ASSERT_EQ(amcl->configure().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  ASSERT_EQ(amcl->activate().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  auto client_node = std::make_shared<rclcpp::Node>("amcl_global_localization_test_client");
+  auto client = client_node->create_client<std_srvs::srv::Empty>(
+    "/reinitialize_global_localization");
+  ASSERT_TRUE(client->wait_for_service(2s));
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(amcl->get_node_base_interface());
+  executor.add_node(client_node);
+  auto future = client->async_send_request(std::make_shared<std_srvs::srv::Empty::Request>());
+  EXPECT_EQ(
+    executor.spin_until_future_complete(future, 2s),
+    rclcpp::FutureReturnCode::SUCCESS);
+  executor.remove_node(client_node);
+  executor.remove_node(amcl->get_node_base_interface());
 
   amcl->deactivate();
   amcl->cleanup();

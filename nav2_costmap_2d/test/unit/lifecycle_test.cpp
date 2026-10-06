@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <limits>
 #include <memory>
+#include <vector>
 
 #include "gtest/gtest.h"
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter.hpp"
 #include "rclcpp/utilities.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
 
@@ -56,4 +60,29 @@ TEST(LifecylceTest, CheckInitialTfTimeout) {
   if (spin_thread.joinable()) {
     spin_thread.join();
   }
+}
+
+TEST(LifecylceTest, RejectInvalidCostmapSize) {
+  rclcpp::init(0, nullptr);
+
+  const auto expect_failure = [](const std::vector<rclcpp::Parameter> & parameters) {
+      rclcpp::NodeOptions options;
+      options.parameter_overrides(parameters);
+      auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>(options);
+      EXPECT_EQ(
+        costmap->on_configure(rclcpp_lifecycle::State()),
+        nav2::CallbackReturn::FAILURE);
+    };
+
+  expect_failure({rclcpp::Parameter("width", -1)});
+  expect_failure({rclcpp::Parameter("height", -1)});
+  expect_failure({rclcpp::Parameter("resolution", 0.0)});
+  expect_failure(
+  {
+    rclcpp::Parameter("width", std::numeric_limits<int>::max()),
+    rclcpp::Parameter("height", std::numeric_limits<int>::max()),
+    rclcpp::Parameter("resolution", 0.01),
+  });
+
+  rclcpp::shutdown();
 }

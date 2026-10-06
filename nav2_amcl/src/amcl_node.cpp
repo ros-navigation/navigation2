@@ -365,6 +365,11 @@ AmclNode::globalLocalizationCallback(
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
+  if (!map_) {
+    RCLCPP_ERROR(get_logger(), "Cannot initialize globally before a map is received");
+    return;
+  }
+
   RCLCPP_INFO(get_logger(), "Initializing with uniform distribution");
 
   pf_init_model(
