@@ -256,7 +256,10 @@ void WaypointFollower::followWaypointsHandler(
         action_server->terminate_current(result);
         return;
       }
-      goal_index = 0;
+      goal_index = goal->goal_index;
+      no_of_loops = goal->number_of_loops;
+      current_loop_no = 0;
+      result->missed_waypoints.clear();
       new_goal = true;
     }
 
@@ -277,7 +280,7 @@ void WaypointFollower::followWaypointsHandler(
 
       future_goal_handle_ =
         nav_to_pose_client_->async_send_goal(client_goal, send_goal_options);
-      current_goal_status_.status = ActionStatus::PROCESSING;
+      current_goal_status_ = {ActionStatus::PROCESSING, 0, ""};
     }
 
     feedback->current_waypoint = goal_index;
