@@ -360,11 +360,12 @@ void RangeSensorLayer::updateCostmap(
   // Limit Bounds to Grid
   bx0 = std::max(0, bx0);
   by0 = std::max(0, by0);
-  bx1 = std::min(static_cast<int>(size_x_), bx1);
-  by1 = std::min(static_cast<int>(size_y_), by1);
+  bx1 = std::min(static_cast<int>(size_x_) - 1, bx1);
+  by1 = std::min(static_cast<int>(size_y_) - 1, by1);
 
-  for (unsigned int x = bx0; x <= (unsigned int)bx1; x++) {
-    for (unsigned int y = by0; y <= (unsigned int)by1; y++) {
+  // Signed indices, as the bounds are empty if the cone lies wholly off the grid
+  for (int x = bx0; x <= bx1; x++) {
+    for (int y = by0; y <= by1; y++) {
       bool update_xy_cell = true;
 
       // Unless inflate_cone_ is set to 100 %, we update cells only within the
