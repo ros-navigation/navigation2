@@ -136,7 +136,7 @@ TEST(FollowingServerTests, ErrorExceptions)
   std::vector<std::string> error_ids{
     "TransformException", "FailedToDetectObject", "FailedToControl",
     "DockingException", "exception"};
-  std::vector<int> error_codes{901, 902, 903, 999, 999};
+  std::vector<int> error_codes{801, 802, 803, 899, 899};
 
   // Call action, check error code
   for (unsigned int i = 0; i != error_ids.size(); i++) {
