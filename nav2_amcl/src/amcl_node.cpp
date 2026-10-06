@@ -1270,6 +1270,8 @@ AmclNode::updateParametersCallback(
   // Re-initialize the map
   if (reinit_map) {
     map_sub_.reset();
+    // Treat a new map topic as a new first-map epoch.
+    first_map_received_ = false;
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_,
       std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
