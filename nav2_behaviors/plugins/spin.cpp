@@ -130,7 +130,7 @@ ResultStatus Spin::onCycleUpdate()
 
   geometry_msgs::msg::Pose pose = current_pose.pose;
 
-  if (!isCollisionFree(relative_yaw_, cmd_vel->twist, pose)) {
+  if (!isCollisionFree(remaining_yaw, cmd_vel->twist, pose)) {
     stopRobot();
     std::string error_msg = "Collision Ahead - Exiting Spin";
     RCLCPP_WARN(logger_, "%s", error_msg.c_str());
