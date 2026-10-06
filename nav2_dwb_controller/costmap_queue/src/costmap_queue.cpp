@@ -42,8 +42,8 @@ namespace costmap_queue
 {
 
 CostmapQueue::CostmapQueue(nav2_costmap_2d::Costmap2D & costmap, bool manhattan)
-: MapBasedQueue(), costmap_(costmap), max_distance_(-1), use_costmap_size_(true),
-  manhattan_(manhattan), cached_max_distance_(-1)
+: MapBasedQueue(), costmap_(costmap), max_distance_(-1), manhattan_(manhattan),
+  cached_max_distance_(-1)
 {
   reset();
 }
@@ -113,16 +113,17 @@ CellData CostmapQueue::getNextCell()
 
 void CostmapQueue::computeCache()
 {
-  if (use_costmap_size_) {
-    max_distance_ = std::max(costmap_.getSizeInCellsX(), costmap_.getSizeInCellsY());
+  int max_distance = max_distance_;
+  if (max_distance == -1) {
+    max_distance = std::max(costmap_.getSizeInCellsX(), costmap_.getSizeInCellsY());
   }
-  if (max_distance_ == cached_max_distance_) {return;}
+  if (max_distance == cached_max_distance_) {return;}
   cached_distances_.clear();
 
-  cached_distances_.resize(max_distance_ + 2);
+  cached_distances_.resize(max_distance + 2);
 
   for (unsigned int i = 0; i < cached_distances_.size(); ++i) {
-    cached_distances_[i].resize(max_distance_ + 2);
+    cached_distances_[i].resize(max_distance + 2);
     for (unsigned int j = 0; j < cached_distances_[i].size(); ++j) {
       if (manhattan_) {
         cached_distances_[i][j] = i + j;
@@ -131,7 +132,7 @@ void CostmapQueue::computeCache()
       }
     }
   }
-  cached_max_distance_ = max_distance_;
+  cached_max_distance_ = max_distance;
 }
 
 }  // namespace costmap_queue

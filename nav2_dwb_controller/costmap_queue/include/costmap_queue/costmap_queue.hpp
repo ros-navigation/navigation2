@@ -162,7 +162,6 @@ protected:
   nav2_costmap_2d::Costmap2D & costmap_;
   std::vector<bool> seen_;
   int max_distance_;
-  bool use_costmap_size_;
   bool manhattan_;
 
 protected:
