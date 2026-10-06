@@ -303,6 +303,26 @@ TEST_F(MapIOTester, loadInvalidYAML)
   ASSERT_ANY_THROW(loadParameters = loadMapYaml(path(TEST_DIR) / path("invalid_file.yaml")));
 }
 
+TEST_F(MapIOTester, loadTildeYAMLWithRelativeImage)
+{
+  const char * current_home = std::getenv("HOME");
+  const std::string saved_home = current_home == nullptr ? "" : current_home;
+  ASSERT_EQ(setenv("HOME", TEST_DIR, 1), 0);
+
+  LoadParameters load_parameters;
+  EXPECT_NO_THROW(load_parameters = loadMapYaml("~/testmap.yaml"));
+
+  if (current_home == nullptr) {
+    unsetenv("HOME");
+  } else {
+    setenv("HOME", saved_home.c_str(), 1);
+  }
+
+  EXPECT_EQ(
+    load_parameters.image_file_name,
+    (path(TEST_DIR) / path(g_valid_png_file)).string());
+}
+
 TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenShorterThanTwo)
 {
   const std::string emptyFileName{};
