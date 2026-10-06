@@ -313,6 +313,7 @@ protected:
   OptimalTrajectoryValidator::Ptr trajectory_validator_;
 
   models::OptimizerSettings settings_;
+  size_t fallback_count_{0};
 
   models::State state_;
   models::ControlSequence control_sequence_;

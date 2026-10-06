@@ -332,17 +332,16 @@ void Optimizer::optimize()
 
 bool Optimizer::fallback(bool fail)
 {
-  static size_t counter = 0;
-
+  // Keep retry history scoped to this optimizer instance.
   if (!fail) {
-    counter = 0;
+    fallback_count_ = 0;
     return false;
   }
 
   reset(false /*Don't reset zone-based speed limits after fallback*/);
 
-  if (++counter > settings_.retry_attempt_limit) {
-    counter = 0;
+  if (++fallback_count_ > settings_.retry_attempt_limit) {
+    fallback_count_ = 0;
     throw nav2_core::NoValidControl("Optimizer fail to compute path");
   }
 
