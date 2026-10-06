@@ -44,7 +44,7 @@ protected:
   std::string test_filepath_;
 };
 
-// [AI generated] Expose the map callback and state needed by the regression test.
+// Expose the map callback and state needed by the regression test.
 class AmclNodeTester : public nav2_amcl::AmclNode
 {
 public:
@@ -71,7 +71,7 @@ public:
   }
 };
 
-// [AI generated] Verify the first map from a replacement topic is accepted.
+// Verify the first map from a replacement topic is accepted.
 TEST_F(PosePersistenceTest, map_topic_change_starts_new_first_map_epoch)
 {
   rclcpp::NodeOptions options;
