@@ -328,7 +328,7 @@ TEST_F(PosePersistenceTest, test_ros_params_priority_over_saved_pose)
   amcl->cleanup();
 }
 
-// [AI generated] Verify cleanup preserves configured parameters until a pose is known.
+// Verify cleanup preserves configured parameters until a pose is known.
 TEST_F(PosePersistenceTest, cleanup_without_estimate_preserves_initial_pose)
 {
   rclcpp::NodeOptions options;
