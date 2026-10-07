@@ -287,6 +287,70 @@ void FollowingServer::followObject()
           dynamic_pose_sub_.reset();
           return;
         }
+      } catch (opennav_docking_core::FailedToDetectDock & e) {
+        // A lost target first enters a bounded hold. Keep the robot stopped and
+        // do not consume a retry while waiting for the same target to reappear.
+        publishZeroVelocity();
+        const auto wait_start = this->now();
+        const auto wait_timeout =
+          rclcpp::Duration::from_seconds(params_->target_loss_hold_timeout);
+        bool reacquired = false;
+
+        while (rclcpp::ok() && this->now() - wait_start < wait_timeout) {
+          iteration_start_time_ = this->now();
+          publishFollowingFeedback(FollowObject::Feedback::WAITING_FOR_TARGET);
+          publishZeroVelocity();
+
+          // Cancellation and preemption remain immediate during the hold.
+          if (checkAndWarnIfCancelled<FollowObject>(following_action_server_, "follow_object") ||
+            checkAndWarnIfPreempted<FollowObject>(following_action_server_, "follow_object"))
+          {
+            result->total_elapsed_time = this->now() - action_start_time_;
+            result->num_retries = num_retries_;
+            publishZeroVelocity();
+            following_action_server_->terminate_all(result);
+            dynamic_pose_sub_.reset();
+            return;
+          }
+
+          try {
+            if (getTrackingPose(object_pose, target_frame)) {
+              reacquired = true;
+              break;
+            }
+          } catch (opennav_docking_core::FailedToDetectDock &) {
+            // Still absent: remain stopped in WAITING_FOR_TARGET until timeout.
+          }
+
+          loop_rate.sleep();
+        }
+
+        if (reacquired) {
+          RCLCPP_INFO(get_logger(), "Target reacquired during hold; resuming control");
+          continue;
+        }
+
+        // Only after the hold expires do we consume a retry. Publish RETRY
+        // explicitly so this transition is observable with either recovery mode.
+        if (++num_retries_ > params_->max_retries) {
+          RCLCPP_ERROR(get_logger(), "Failed to follow, all retries have been used");
+          throw;
+        }
+        publishFollowingFeedback(FollowObject::Feedback::RETRY);
+        RCLCPP_WARN(get_logger(), "Target hold expired, will retry: %s", e.what());
+
+        // Perform an in-place rotation to find the object again
+        if (params_->search_by_rotating) {
+          RCLCPP_INFO(get_logger(), "Rotating to find object again");
+          if (!rotateToObject(object_pose, target_frame)) {
+            // Cancelled, preempted, or shutting down
+            publishZeroVelocity();
+            following_action_server_->terminate_all(result);
+            return;
+          }
+        } else {
+          RCLCPP_INFO(get_logger(), "Using last known heading to find object again");
+        }
       } catch (opennav_docking_core::DockingException & e) {
         if (++num_retries_ > params_->max_retries) {
           RCLCPP_ERROR(get_logger(), "Failed to follow, all retries have been used");
