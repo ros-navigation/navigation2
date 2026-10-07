@@ -22,7 +22,8 @@
 #include <rviz_common/tool.hpp>
 #include <rviz_common/properties/bool_property.hpp>
 #include <rviz_common/properties/qos_profile_property.hpp>
-#include <rclcpp/rclcpp.hpp>
+#include "rclcpp/client.hpp"
+#include "rclcpp/qos.hpp"
 #include "nav2_ros_common/service_client.hpp"
 
 namespace nav2_rviz_plugins

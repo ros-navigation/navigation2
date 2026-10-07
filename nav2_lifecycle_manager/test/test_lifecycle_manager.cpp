@@ -15,7 +15,9 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <chrono>
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"

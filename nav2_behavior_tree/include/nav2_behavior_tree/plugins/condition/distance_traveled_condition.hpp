@@ -24,6 +24,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/clock.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree

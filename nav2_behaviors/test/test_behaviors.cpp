@@ -19,12 +19,17 @@
 #include <thread>
 #include <vector>
 
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/future_return_code.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/utilities.hpp"
 
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/dummy_behavior.hpp"
+#include "nav2_ros_common/subscription.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 using nav2_behaviors::TimedBehavior;

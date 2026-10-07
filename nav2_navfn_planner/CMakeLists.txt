@@ -3,7 +3,6 @@ project(nav2_navfn_planner)
 
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
-find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
@@ -43,7 +42,6 @@ target_link_libraries(${library_name} PUBLIC
   tf2_ros::tf2_ros
 )
 target_link_libraries(${library_name} PRIVATE
-  builtin_interfaces::builtin_interfaces
   pluginlib::pluginlib
 )
 
@@ -73,8 +71,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${library_name})
 ament_export_dependencies(
   geometry_msgs
   nav2_core

@@ -23,7 +23,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node_options.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
 namespace nav2_map_server

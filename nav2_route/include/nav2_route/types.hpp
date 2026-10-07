@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <utility>
 #include <limits>
+#include <cmath>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 
 #ifndef NAV2_ROUTE__TYPES_HPP_

@@ -43,7 +43,8 @@
 #include <vector>
 
 #include "map_msgs/msg/occupancy_grid_update.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/parameter.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"

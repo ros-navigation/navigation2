@@ -17,7 +17,11 @@
 
 #include "nav2_util/twist_publisher.hpp"
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 
 TEST(TwistPublisher, Unstamped)

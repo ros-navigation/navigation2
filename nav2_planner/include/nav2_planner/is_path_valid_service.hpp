@@ -19,7 +19,9 @@
 #include <limits>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"

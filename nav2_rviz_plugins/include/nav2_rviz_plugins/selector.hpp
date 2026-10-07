@@ -22,7 +22,8 @@
 #include <QToolButton>
 #include <QWidget>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/publisher.hpp"
 #include "rviz_common/panel.hpp"
 #include "vector"
 #include "memory"

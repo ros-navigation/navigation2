@@ -16,7 +16,11 @@
 #include <thread>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_client.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_controller/plugins/feasible_path_handler.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 

@@ -17,7 +17,9 @@
 #include <chrono>
 #include <future>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"

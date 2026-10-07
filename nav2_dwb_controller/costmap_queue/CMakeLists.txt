@@ -29,8 +29,6 @@ if(BUILD_TESTING)
 
   find_package(ament_cmake_gtest REQUIRED)
 
-  find_package(rclcpp REQUIRED)
-
   ament_find_gtest()
 
   nav2_add_gtest(mbq_test test/mbq_test.cpp)
@@ -42,7 +40,6 @@ if(BUILD_TESTING)
   target_link_libraries(utest
     ${PROJECT_NAME}
     nav2_costmap_2d::nav2_costmap_2d_core
-    rclcpp::rclcpp
   )
 endif()
 
@@ -56,8 +53,6 @@ install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(nav2_costmap_2d)
 ament_export_targets(${PROJECT_NAME})
 
