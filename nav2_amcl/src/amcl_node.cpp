@@ -243,7 +243,8 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   frame_to_laser_.clear();
   force_update_ = true;
 
-  if (set_initial_pose_) {
+  // Do not persist an uninitialized pose over configured parameters.
+  if (set_initial_pose_ && initial_pose_is_known_) {
     set_parameter(
       rclcpp::Parameter(
         "initial_pose.x",
@@ -420,12 +421,14 @@ AmclNode::initialPoseReceived(
       global_frame_id_.c_str());
     return;
   }
-  if (first_map_received_ && (abs(msg->pose.pose.position.x) > map_->size_x ||
-    abs(msg->pose.pose.position.y) > map_->size_y))
-  {
-    RCLCPP_ERROR(
-      get_logger(), "Received initialpose from message is out of the size of map. Rejecting.");
-    return;
+  if (first_map_received_) {
+    const int map_x = MAP_GXWX(map_, msg->pose.pose.position.x);
+    const int map_y = MAP_GYWY(map_, msg->pose.pose.position.y);
+    if (!MAP_VALID(map_, map_x, map_y)) {
+      RCLCPP_ERROR(
+        get_logger(), "Received initialpose from message is out of the size of map. Rejecting.");
+      return;
+    }
   }
 
   // Overriding last published pose to initial pose
@@ -1269,6 +1272,8 @@ AmclNode::updateParametersCallback(
   // Re-initialize the map
   if (reinit_map) {
     map_sub_.reset();
+    // Treat a new map topic as a new first-map epoch.
+    first_map_received_ = false;
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_,
       std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),

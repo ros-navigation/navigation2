@@ -152,7 +152,9 @@ std::string expand_user_home_dir_if_needed(
 
 LoadParameters loadMapYaml(const std::string & yaml_filename)
 {
-  YAML::Node doc = YAML::LoadFile(expand_user_home_dir_if_needed(yaml_filename, get_home_dir()));
+  const auto expanded_yaml_filename =
+    expand_user_home_dir_if_needed(yaml_filename, get_home_dir());
+  YAML::Node doc = YAML::LoadFile(expanded_yaml_filename);
   LoadParameters load_parameters;
 
   auto image_file_name = yaml_get_value<std::string>(doc, "image");
@@ -161,7 +163,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   }
   if (image_file_name[0] != '/') {
     // dirname takes a mutable char *, so we copy into a vector
-    std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
+    std::vector<char> fname_copy(expanded_yaml_filename.begin(), expanded_yaml_filename.end());
     fname_copy.push_back('\0');
     image_file_name = std::string(dirname(fname_copy.data())) + '/' + image_file_name;
   }

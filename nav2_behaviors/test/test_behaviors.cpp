@@ -17,7 +17,9 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <vector>
 
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "gtest/gtest.h"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/future_return_code.hpp"
@@ -27,6 +29,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/dummy_behavior.hpp"
+#include "nav2_ros_common/subscription.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 using nav2_behaviors::TimedBehavior;
@@ -59,7 +62,9 @@ public:
 
     // onRun method can have various possible outcomes (success, failure, cancelled)
     // The output is defined by the tester class on the command string.
-    if (command_ == "Testing success" || command_ == "Testing failure on run") {
+    if (command_ == "Testing success" || command_ == "Testing failure on run" ||
+      command_ == "Testing command then failure")
+    {
       initialized_ = true;
       return ResultStatus{Status::SUCCEEDED, 0, ""};
     }
@@ -72,6 +77,13 @@ public:
     // A normal behavior would set the robot in motion in the first call
     // and check for robot states on subsequent calls to check if the movement
     // was completed.
+
+    if (command_ == "Testing command then failure") {
+      auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
+      cmd_vel->twist.linear.x = 0.4;
+      vel_pub_->publish(std::move(cmd_vel));
+      return ResultStatus{Status::FAILED, 0, "failed"};
+    }
 
     if (command_ != "Testing success" || !initialized_) {
       return ResultStatus{Status::FAILED, 0, "failed"};
@@ -163,6 +175,11 @@ protected:
       global_collision_checker_);
     behavior_->activate();
 
+    cmd_vel_sub_ = node_lifecycle_->create_subscription<geometry_msgs::msg::TwistStamped>(
+      "cmd_vel", [this](geometry_msgs::msg::TwistStamped::ConstSharedPtr msg) {
+        velocities_.push_back(msg->twist.linear.x);
+      });
+
     client_ = rclcpp_action::create_client<BehaviorAction>(
       node_lifecycle_->get_node_base_interface(),
       node_lifecycle_->get_node_graph_interface(),
@@ -226,6 +243,8 @@ protected:
   std::shared_ptr<DummyBehavior> behavior_;
   std::shared_ptr<nav2::ActionClient<BehaviorAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<BehaviorAction>> goal_handle_;
+  nav2::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_vel_sub_;
+  std::vector<double> velocities_;
   nav2::TransformBuffer::SharedPtr tf_buffer_;
   nav2::TransformListener::SharedPtr tf_listener_;
 };
@@ -258,6 +277,21 @@ TEST_F(BehaviorTest, testingSequentialFailures)
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
   SUCCEED();
+}
+
+TEST_F(BehaviorTest, testingFailureStopsRobot)
+{
+  ASSERT_TRUE(sendCommand("Testing command then failure"));
+  EXPECT_EQ(getOutcome(), Status::FAILED);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node_lifecycle_->get_node_base_interface());
+  for (int i = 0; i < 10; ++i) {
+    executor.spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  ASSERT_GE(velocities_.size(), 2u);
+  EXPECT_NE(velocities_.front(), 0.0);
+  EXPECT_EQ(velocities_.back(), 0.0);
 }
 
 TEST_F(BehaviorTest, testingTotalElapsedTimeIsGratherThanZeroIfStarted)

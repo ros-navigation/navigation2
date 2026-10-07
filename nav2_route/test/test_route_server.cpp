@@ -144,6 +144,12 @@ public:
     graph_.resize(1);
   }
 
+  // Expose graph size to verify failed replacement is non-destructive.
+  size_t graphSize() const
+  {
+    return graph_.size();
+  }
+
   void useErrorCodePlanner()
   {
     route_planner_ = std::make_shared<RoutePlannerErrorTester>();
@@ -182,12 +188,15 @@ TEST(RouteServerTest, test_set_srv)
   req2->graph_filepath = real_filepath;
   auto resp2 = srv_client.invoke(req2, std::chrono::nanoseconds(1000000000));
   EXPECT_TRUE(resp2->success);
+  const auto graph_size = server->graphSize();
+  EXPECT_GT(graph_size, 0u);
 
   auto req3 = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
   req3->graph_filepath = nav2::get_package_share_directory("nav2_route") +
     "/test/test_graphs/invalid.json";
   auto resp3 = srv_client.invoke(req3, std::chrono::nanoseconds(1000000000));
   EXPECT_FALSE(resp3->success);
+  EXPECT_EQ(server->graphSize(), graph_size);
 
   server->shutdown();
   node_thread.reset();

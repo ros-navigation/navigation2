@@ -84,7 +84,6 @@ ResultStatus AssistedTeleop::onCycleUpdate()
 
   rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
-    stopRobot();
     std::string error_msg = "Exceeded time allowance before reaching the " + behavior_name_ +
       "goal - Exiting " + behavior_name_;
     RCLCPP_WARN_STREAM(logger_, error_msg.c_str());
@@ -99,7 +98,6 @@ ResultStatus AssistedTeleop::onCycleUpdate()
 
   // teleop source stopped publishing (operator released input, node or link died)
   if (isTeleopCommandStale(this->clock_->now())) {
-    stopRobot();
     std::string error_msg = "No teleop command received within teleop_command_timeout (" +
       std::to_string(teleop_command_timeout_) + " s) - Exiting " + behavior_name_;
     RCLCPP_WARN_STREAM(logger_, error_msg.c_str());
@@ -109,7 +107,6 @@ ResultStatus AssistedTeleop::onCycleUpdate()
 
   geometry_msgs::msg::PoseStamped current_pose;
   if (!getCurrentPoseChecked(current_pose)) {
-    stopRobot();
     std::string error_msg = "Current robot pose is not available for " + behavior_name_;
     RCLCPP_ERROR_STREAM(logger_, error_msg.c_str());
     return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TF_ERROR, error_msg};

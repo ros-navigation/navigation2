@@ -15,7 +15,9 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <vector>
 
+#include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "gtest/gtest.h"
@@ -23,6 +25,14 @@
 #include "nav2_behaviors/plugins/back_up.hpp"
 #include "nav2_behaviors/plugins/drive_on_heading.hpp"
 #include "nav2_behaviors/plugins/spin.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/utilities.hpp"
@@ -175,6 +185,86 @@ TYPED_TEST(BehaviorPoseTest, ZeroThresholdDisablesAgeCheck)
   this->setTransform(30.0);
   geometry_msgs::msg::PoseStamped pose;
   EXPECT_TRUE(this->behavior_->getCurrentPoseChecked(pose));
+}
+
+class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
+{
+public:
+  DummyCostmapSubscriber(nav2::LifecycleNode::SharedPtr node, const std::string & topic)
+  : CostmapSubscriber(node, topic) {}
+
+  void setCostmap(const nav2_msgs::msg::Costmap::SharedPtr msg)
+  {
+    costmap_msg_ = msg;
+    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
+      msg->metadata.size_x, msg->metadata.size_y, msg->metadata.resolution,
+      msg->metadata.origin.position.x, msg->metadata.origin.position.y);
+    processCurrentCostmapMsg();
+  }
+};
+
+TEST(SpinTest, ChecksTheRemainingMotionForCollisions)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("spin_collision_horizon_test");
+  node->declare_parameter("local_frame", "odom");
+  node->declare_parameter("global_frame", "map");
+  node->declare_parameter("robot_base_frame", "base_link");
+  node->declare_parameter("cycle_frequency", 10.0);
+  node->declare_parameter("transform_staleness_threshold", 10.0);
+  node->declare_parameter("behavior.simulate_ahead_time", 2.0);
+  node->declare_parameter("behavior.max_rotational_vel", 1.0);
+  node->declare_parameter("behavior.min_rotational_vel", 0.4);
+  node->declare_parameter("behavior.rotational_acc_lim", 3.2);
+
+  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "odom";
+  transform.child_frame_id = "base_link";
+  transform.header.stamp = node->now();
+  transform.transform.translation.x = 5.0;
+  transform.transform.translation.y = 5.0;
+  transform.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf->setTransform(transform, "test"));
+
+  auto costmap = std::make_shared<nav2_msgs::msg::Costmap>();
+  costmap->metadata.resolution = 0.05;
+  costmap->metadata.size_x = 200;
+  costmap->metadata.size_y = 200;
+  costmap->metadata.origin.orientation.w = 1.0;
+  costmap->data.resize(costmap->metadata.size_x * costmap->metadata.size_y, 0);
+  for (unsigned int y = 110; y <= 112; ++y) {
+    for (unsigned int x = 115; x <= 117; ++x) {
+      costmap->data[y * costmap->metadata.size_x + x] = nav2_costmap_2d::LETHAL_OBSTACLE;
+    }
+  }
+
+  const std::string topic = "costmap";
+  auto subscriber = std::make_shared<DummyCostmapSubscriber>(node, topic);
+  subscriber->setCostmap(costmap);
+  auto collision_checker =
+    std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+    *subscriber, "[[-1.0,-0.2],[-1.0,0.2],[1.0,0.2],[1.0,-0.2]]");
+
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 5.0;
+  pose.position.y = 5.0;
+  pose.orientation.w = 1.0;
+  ASSERT_TRUE(collision_checker->isCollisionFree(pose));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.6);
+  ASSERT_FALSE(collision_checker->isCollisionFree(pose));
+
+  nav2_behaviors::Spin spin;
+  spin.configure(node, "behavior", tf, collision_checker, nullptr);
+  spin.activate();
+  auto goal = std::make_shared<nav2_msgs::action::Spin::Goal>();
+  goal->target_yaw = 1.0;
+  ASSERT_EQ(spin.onRun(goal).status, nav2_behaviors::Status::SUCCEEDED);
+
+  const auto result = spin.onCycleUpdate();
+  EXPECT_EQ(result.status, nav2_behaviors::Status::FAILED);
+  EXPECT_EQ(result.error_code, nav2_msgs::action::Spin::Result::COLLISION_AHEAD);
+  spin.deactivate();
+  spin.cleanup();
 }
 
 int main(int argc, char ** argv)
