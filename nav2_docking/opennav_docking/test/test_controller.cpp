@@ -691,6 +691,27 @@ TEST(ControllerTests, PIDControlTests) {
   next = controller->predictNextPose(0.1, target, current, true);
   EXPECT_NEAR(next.position.x, -0.025, 1e-9);
 
+  // Case 5: Target passed in dock axis
+  target = geometry_msgs::msg::Pose();
+  target.position.x = 0.02;
+  controller->reset();
+  cmd = controller->computeCommand(target, true, 0.1);
+  EXPECT_DOUBLE_EQ(cmd.linear.x, 0.02);
+  EXPECT_DOUBLE_EQ(cmd.angular.z, 0.0);
+
+  target.position.x = -0.02;
+  controller->reset();
+  cmd = controller->computeCommand(target, false, 0.1);
+  EXPECT_DOUBLE_EQ(cmd.linear.x, -0.02);
+  EXPECT_DOUBLE_EQ(cmd.angular.z, 0.0);
+
+  // Case 6: Target passed on the left
+  target.position.y = 0.01;
+  controller->reset();
+  cmd = controller->computeCommand(target, false, 0.1);
+  EXPECT_LT(cmd.linear.x, 0.0);
+  EXPECT_LT(cmd.angular.z, 0.0);
+
   controller.reset();
 }
 

@@ -203,7 +203,12 @@ void PIDController::poseError(
   const double e_y = sign * target.position.y;
 
   rho = std::hypot(e_x, e_y);
-  alpha = std::atan2(e_y, std::max(e_x, lookahead));
+  // Reverse direction if passed dock's axis
+  alpha = std::atan2(e_y, std::max(std::abs(e_x), lookahead));
+  if (e_x < 0.0) {
+    rho = -rho;
+    alpha = -alpha;
+  }
   alignment = angles::normalize_angle(alpha - tf2::getYaw(target.orientation));
 }
 
