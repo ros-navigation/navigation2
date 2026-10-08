@@ -87,25 +87,11 @@ ResultStatus AssistedTeleop::onCycleUpdate()
     return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE, ""};
   }
 
-<<<<<<< HEAD
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, local_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-=======
-  // teleop source stopped publishing (operator released input, node or link died)
-  if (isTeleopCommandStale(this->clock_->now())) {
-    std::string error_msg = "No teleop command received within teleop_command_timeout (" +
-      std::to_string(teleop_command_timeout_) + " s) - Exiting " + behavior_name_;
-    RCLCPP_WARN_STREAM(logger_, error_msg.c_str());
-    return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TELEOP_INPUT_TIMEOUT,
-      error_msg};
-  }
-
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!getCurrentPoseChecked(current_pose)) {
->>>>>>> 235fc5c (Stop failed behaviors and reset waypoint state on preemption (#6588))
     std::string error_msg = "Current robot pose is not available for " + behavior_name_;
     RCLCPP_ERROR_STREAM(logger_, error_msg.c_str());
     return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TF_ERROR, error_msg};
