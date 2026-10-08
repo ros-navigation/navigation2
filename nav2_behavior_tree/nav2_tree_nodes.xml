@@ -139,19 +139,19 @@
     </Action>
 
     <Action ID="TrackPrecomputedRoute">
-      <input_port name="route_id" type="string" default="">Opaque route correlation ID.</input_port>
+      <input_port name="route_id" type="string" default="&quot;&quot;">Opaque route correlation ID.</input_port>
       <input_port name="start_node_id" type="uint16">Starting node in the loaded graph.</input_port>
-      <input_port name="edge_ids" type="std::vector&lt;uint16&gt;">Ordered directed edge IDs, separated by semicolons or from the blackboard.</input_port>
+      <input_port name="edge_ids" type="vector&lt;uint16_t&gt;">Ordered directed edge IDs, separated by semicolons or from the blackboard.</input_port>
       <output_port name="execution_duration" type="builtin_interfaces::msg::Duration">Tracking duration.</output_port>
-      <output_port name="blocked_ids" type="std::vector&lt;uint32&gt;">IDs reported by route operations.</output_port>
+      <output_port name="blocked_ids" type="vector&lt;uint32_t&gt;">IDs reported by route operations.</output_port>
       <output_port name="last_node_id" type="uint16">Previous node ID.</output_port>
       <output_port name="next_node_id" type="uint16">Next node ID.</output_port>
       <output_port name="current_edge_id" type="uint16">Current edge ID.</output_port>
       <output_port name="route" type="nav2_msgs::msg::Route">Canonical route.</output_port>
       <output_port name="path" type="nav_msgs::msg::Path">Densified route path.</output_port>
-      <output_port name="operations_triggered" type="std::vector&lt;std::string&gt;">Triggered operations.</output_port>
-      <input_port name="server_name" type="string" default="track_precomputed_route">Action server name.</input_port>
-      <input_port name="server_timeout" type="double">Server timeout in ms.</input_port>
+      <output_port name="operations_triggered" type="vector&lt;string&gt;">Triggered operations.</output_port>
+      <input_port name="server_name" type="string" >Action server name.</input_port>
+      <input_port name="server_timeout" type="chrono::milliseconds">Server timeout in ms.</input_port>
       <output_port name="error_code_id" type="uint16">TrackPrecomputedRoute result error code.</output_port>
       <output_port name="error_msg" type="string">TrackPrecomputedRoute result error message.</output_port>
     </Action>
