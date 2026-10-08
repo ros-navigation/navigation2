@@ -254,7 +254,7 @@ void loadMapFromFile(
   bool has_alpha = img.matte();
 
   // ROS expects the origin at the bottom-left, so the image is flipped vertically on
-  // the way out. Mapping msg.data lets the classified values land straight in the
+  // the way out. Mapping msg.data let's the classified values land straight in the
   // message, with no width*height intermediate of our own.
   Eigen::Map<Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
   output_map(msg.data.data(), height, width);
