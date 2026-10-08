@@ -23,6 +23,7 @@
 #include "lifecycle_msgs/srv/get_state.hpp"
 #include "nav2_ros_common/service_client.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "rclcpp/rate.hpp"
 
 
 namespace nav2_util

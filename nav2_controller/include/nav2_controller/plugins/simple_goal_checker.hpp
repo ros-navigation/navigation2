@@ -39,7 +39,9 @@
 #include <string>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/parameter.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"

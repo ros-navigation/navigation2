@@ -21,9 +21,9 @@
 #include <map>
 
 // ROS includes
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp/callback_group.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/callback_group.hpp"
 #include "behaviortree_cpp/control_node.h"
 #include "nav2_ros_common/service_server.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"

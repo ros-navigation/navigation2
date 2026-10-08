@@ -20,7 +20,7 @@
 #include <string>
 #include <utility>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"

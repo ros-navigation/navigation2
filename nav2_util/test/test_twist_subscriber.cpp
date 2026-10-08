@@ -20,7 +20,10 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/utilities.hpp"
 
 
 TEST(TwistSubscriber, Unstamped)

@@ -18,7 +18,7 @@
 #include <random>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 #include "nav2_mppi_controller/motion_models.hpp"
 #include "nav2_mppi_controller/critics/constraint_critic.hpp"

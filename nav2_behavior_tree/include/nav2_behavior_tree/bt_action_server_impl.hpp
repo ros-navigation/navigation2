@@ -30,6 +30,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "rcl_action/action_server.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "rclcpp/copy_all_parameter_values.hpp"
 
 namespace nav2_behavior_tree
 {

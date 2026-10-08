@@ -16,7 +16,7 @@
 #define NAV2_ROS_COMMON__SUBSCRIPTION_HPP_
 
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/subscription.hpp"
 
 namespace nav2
 {

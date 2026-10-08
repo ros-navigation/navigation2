@@ -11,7 +11,6 @@
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
 
   <depend>backward_ros</depend>
-  <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
 
   <exec_depend>rosidl_default_runtime</exec_depend>
