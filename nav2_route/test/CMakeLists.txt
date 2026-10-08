@@ -135,3 +135,9 @@ nav2_add_gtest(test_corner_smoothing
 target_link_libraries(test_corner_smoothing
   ${library_name}
 )
+
+nav2_add_gtest(test_precomputed_route test_precomputed_route.cpp)
+target_link_libraries(test_precomputed_route ${library_name})
+
+nav2_add_gtest(test_track_precomputed_route test_track_precomputed_route.cpp)
+target_link_libraries(test_track_precomputed_route ${library_name})

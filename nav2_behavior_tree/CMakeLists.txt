@@ -253,6 +253,9 @@ list(APPEND plugin_libs nav2_compute_and_track_route_cancel_bt_node)
 add_library(nav2_compute_and_track_route_bt_node SHARED plugins/action/compute_and_track_route_action.cpp)
 list(APPEND plugin_libs nav2_compute_and_track_route_bt_node)
 
+add_library(nav2_track_precomputed_route_bt_node SHARED plugins/action/track_precomputed_route_action.cpp)
+list(APPEND plugin_libs nav2_track_precomputed_route_bt_node)
+
 add_library(nav2_compute_route_bt_node SHARED plugins/action/compute_route_action.cpp)
 list(APPEND plugin_libs nav2_compute_route_bt_node)
 

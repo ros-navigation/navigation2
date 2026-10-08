@@ -1,0 +1,32 @@
+# Track this exact directed edge sequence in the server's currently loaded graph.
+# route_id is an opaque correlation ID echoed in feedback and results.
+string route_id
+uint16 start_node_id
+uint16[] edge_ids
+---
+uint16 NONE=0
+uint16 GOAL_REJECTED=1
+uint16 SEND_GOAL_FAILURE=2
+uint16 UNKNOWN=400
+uint16 TF_ERROR=401
+uint16 NO_VALID_GRAPH=402
+uint16 TIMEOUT=404
+uint16 INVALID_ROUTE=405
+uint16 OPERATION_FAILED=406
+uint16 REROUTE_REQUIRED=408
+uint16 BUSY=409
+
+string route_id
+builtin_interfaces/Duration execution_duration
+uint16 error_code 0
+string error_msg
+# IDs reported by route operations; the caller decides how to replan.
+uint32[] blocked_ids
+---
+string route_id
+uint16 last_node_id
+uint16 next_node_id
+uint16 current_edge_id
+Route route
+nav_msgs/Path path
+string[] operations_triggered

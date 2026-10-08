@@ -238,7 +238,8 @@ enum class TrackerResult
 {
   EXITED = 0,
   INTERRUPTED = 1,
-  COMPLETED = 2
+  COMPLETED = 2,
+  REROUTE_REQUESTED = 3
 };
 
 /**

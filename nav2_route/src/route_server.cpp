@@ -49,6 +49,11 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&RouteServer::computeAndTrackRoute, this),
     nullptr, nullptr, std::chrono::milliseconds(500), true);
 
+  track_precomputed_route_server_ = create_action_server<TrackPrecomputedRoute>(
+    "track_precomputed_route",
+    std::bind(&RouteServer::trackPrecomputedRoute, this),
+    nullptr, nullptr, std::chrono::milliseconds(500), true);
+
   set_graph_service_ = node->create_service<nav2_msgs::srv::SetRouteGraph>(
     std::string(node->get_name()) + "/set_route_graph",
     std::bind(
@@ -100,6 +105,7 @@ RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
   compute_route_server_->activate();
   compute_and_track_route_server_->activate();
+  track_precomputed_route_server_->activate();
   graph_vis_publisher_->on_activate();
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
   route_publisher_->on_activate();
@@ -113,6 +119,7 @@ RouteServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
   compute_route_server_->deactivate();
   compute_and_track_route_server_->deactivate();
+  track_precomputed_route_server_->deactivate();
   graph_vis_publisher_->on_deactivate();
   route_publisher_->on_deactivate();
   destroyBond();
@@ -125,6 +132,7 @@ RouteServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Cleaning up");
   compute_route_server_.reset();
   compute_and_track_route_server_.reset();
+  track_precomputed_route_server_.reset();
   set_graph_service_.reset();
   graph_loader_.reset();
   route_planner_.reset();
@@ -210,6 +218,7 @@ Route RouteServer::findRoute(
   const std::shared_ptr<const GoalT> goal,
   ReroutingState & rerouting_info)
 {
+  std::lock_guard<std::mutex> planning_lock(planning_mutex_);
   // Find the search boundaries
   auto [start_route, end_route] = goal_intent_extractor_->findStartandGoal(goal);
 
@@ -248,6 +257,14 @@ RouteServer::processRouteRequest(
 {
   auto goal = action_server->get_current_goal();
   auto result = std::make_shared<typename ActionT::Result>();
+  std::shared_lock<std::shared_mutex> graph_lock(graph_mutex_);
+  std::unique_lock<std::mutex> tracking_lock(tracking_mutex_, std::defer_lock);
+  if (std::is_same<ActionT, ComputeAndTrackRoute>::value && !tracking_lock.try_lock()) {
+    result->error_code = ActionT::Result::UNKNOWN;
+    result->error_msg = "Another route tracking request is active";
+    action_server->terminate_current(result);
+    return;
+  }
   ReroutingState rerouting_info;
   auto start_time = this->now();
 
@@ -278,6 +295,7 @@ RouteServer::processRouteRequest(
             populateActionResult(result, route, path, this->now() - start_time);
             action_server->succeeded_current(result);
             return;
+          case TrackerResult::REROUTE_REQUESTED:
           case TrackerResult::INTERRUPTED:
             // Reroute, cancel, or preempt requested
             break;
@@ -361,6 +379,12 @@ void RouteServer::setRouteGraph(
   const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
   std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response)
 {
+  std::unique_lock<std::shared_mutex> graph_lock(graph_mutex_, std::try_to_lock);
+  if (!graph_lock.owns_lock()) {
+    RCLCPP_WARN(get_logger(), "Cannot replace graph while route requests are active");
+    response->success = false;
+    return;
+  }
   RCLCPP_INFO(get_logger(), "Setting new route graph: %s.", request->graph_filepath.c_str());
   try {
     // Keep the active graph until its replacement loads successfully.

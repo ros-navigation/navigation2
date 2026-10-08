@@ -30,8 +30,10 @@ set(library_name ${executable_name}_core)
 # Main library
 add_library(${library_name} SHARED
   src/route_server.cpp
+  src/track_precomputed_route.cpp
   src/route_planner.cpp
   src/route_tracker.cpp
+  src/precomputed_route.cpp
   src/edge_scorer.cpp
   src/operations_manager.cpp
   src/node_spatial_tree.cpp

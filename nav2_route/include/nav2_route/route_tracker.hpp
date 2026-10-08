@@ -15,6 +15,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <functional>
 
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -40,6 +41,14 @@ class RouteTracker
 public:
   using ActionServerTrack = nav2::SimpleActionServer<nav2_msgs::action::ComputeAndTrackRoute>;
   using Feedback = nav2_msgs::action::ComputeAndTrackRoute::Feedback;
+
+  struct TrackingContext
+  {
+    std::function<bool()> is_active;
+    std::function<bool()> is_cancel_requested;
+    std::function<bool()> is_preempt_requested;
+    std::function<void(std::unique_ptr<Feedback>)> publish_feedback;
+  };
 
   /**
    * @brief A constructor for nav2_route::RouteTracker
@@ -115,6 +124,11 @@ public:
   TrackerResult trackRoute(
     const Route & route, const nav_msgs::msg::Path & path,
     ReroutingState & rerouting_info);
+
+  /** @brief Track using callbacks supplied by another action server. */
+  TrackerResult trackRoute(
+    const Route & route, const nav_msgs::msg::Path & path,
+    ReroutingState & rerouting_info, const TrackingContext & context);
 
 protected:
   nav2_msgs::msg::Route route_msg_;

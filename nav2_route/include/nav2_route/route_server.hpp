@@ -21,6 +21,7 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
+#include <shared_mutex>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -30,6 +31,8 @@
 #include "nav2_ros_common/service_server.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
+#include "nav2_msgs/action/track_precomputed_route.hpp"
+#include "nav2_route/precomputed_route.hpp"
 #include "nav2_msgs/msg/route.hpp"
 #include "nav2_msgs/msg/route_node.hpp"
 #include "nav2_msgs/srv/set_route_graph.hpp"
@@ -54,6 +57,9 @@ namespace nav2_route
 class RouteServer : public nav2::LifecycleNode
 {
 public:
+  using TrackPrecomputedRoute = nav2_msgs::action::TrackPrecomputedRoute;
+  using TrackPrecomputedRouteServer = nav2::SimpleActionServer<TrackPrecomputedRoute>;
+
   using ComputeRoute = nav2_msgs::action::ComputeRoute;
   using ComputeRouteGoal = ComputeRoute::Goal;
   using ComputeRouteResult = ComputeRoute::Result;
@@ -114,6 +120,7 @@ protected:
   /**
    * @brief Main route action server callbacks for computing and tracking a route
    */
+  void trackPrecomputedRoute();
   void computeRoute();
   void computeAndTrackRoute();
 
@@ -215,6 +222,14 @@ protected:
 
   typename ComputeRouteServer::SharedPtr compute_route_server_;
   typename ComputeAndTrackRouteServer::SharedPtr compute_and_track_route_server_;
+
+  typename TrackPrecomputedRouteServer::SharedPtr track_precomputed_route_server_;
+
+  // Requests retain graph pointers. Graph replacement must wait for all users;
+  // the service fails promptly when a request is active. Only one tracker may run.
+  std::shared_mutex graph_mutex_;
+  std::mutex tracking_mutex_;
+  std::mutex planning_mutex_;
 
   // TF
   nav2::TransformBuffer::SharedPtr tf_;

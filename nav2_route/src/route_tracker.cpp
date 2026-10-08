@@ -146,6 +146,34 @@ TrackerResult RouteTracker::trackRoute(
   const Route & route, const nav_msgs::msg::Path & path,
   ReroutingState & rerouting_info)
 {
+  TrackingContext context;
+  context.is_active = [this]() {return action_server_->is_server_active();};
+  context.is_cancel_requested = [this]() {return action_server_->is_cancel_requested();};
+  context.is_preempt_requested = [this]() {return action_server_->is_preempt_requested();};
+  context.publish_feedback = [this](std::unique_ptr<Feedback> feedback) {
+      action_server_->publish_feedback(std::move(feedback));
+    };
+  return trackRoute(route, path, rerouting_info, context);
+}
+
+TrackerResult RouteTracker::trackRoute(
+  const Route & route, const nav_msgs::msg::Path & path,
+  ReroutingState & rerouting_info, const TrackingContext & context)
+{
+  auto publish_feedback = [&](
+    bool rerouted, unsigned int next, unsigned int last, unsigned int edge,
+    const std::vector<std::string> & operations)
+    {
+      auto feedback = std::make_unique<Feedback>();
+      feedback->route = route_msg_;
+      feedback->path = path_;
+      feedback->rerouted = rerouted;
+      feedback->next_node_id = next;
+      feedback->last_node_id = last;
+      feedback->current_edge_id = edge;
+      feedback->operations_triggered = operations;
+      context.publish_feedback(std::move(feedback));
+    };
   route_msg_ = utils::toMsg(route, route_frame_, clock_->now());
   path_ = path;
   RouteTrackingState state;
@@ -161,10 +189,10 @@ TrackerResult RouteTracker::trackRoute(
     // to represent the 'currently' progressing edge that is omitted from the route (and its start)
     state.current_edge = rerouting_info.curr_edge;
     state.last_node = state.current_edge->start;
-    publishFeedback(
+    publish_feedback(
       true, route.start_node->nodeid, state.last_node->nodeid, state.current_edge->edgeid, {});
   } else {
-    publishFeedback(true, route.start_node->nodeid, 0, 0, {});
+    publish_feedback(true, route.start_node->nodeid, 0, 0, {});
   }
 
   auto node = node_.lock();
@@ -177,9 +205,12 @@ TrackerResult RouteTracker::trackRoute(
     bool status_change = false, completed = false;
 
     // Check if OK to keep processing
-    if (action_server_->is_cancel_requested()) {
+    if (!context.is_active()) {
+      return TrackerResult::EXITED;
+    }
+    if (context.is_cancel_requested()) {
       return TrackerResult::INTERRUPTED;
-    } else if (action_server_->is_preempt_requested()) {
+    } else if (context.is_preempt_requested()) {
       return TrackerResult::INTERRUPTED;
     }
 
@@ -206,12 +237,12 @@ TrackerResult RouteTracker::trackRoute(
     if (completed) {
       RCLCPP_INFO(logger_, "Routing to goal completed!");
       // Publishing last feedback
-      publishFeedback(false, 0, state.last_node->nodeid, 0, ops_result.operations_triggered);
+      publish_feedback(false, 0, state.last_node->nodeid, 0, ops_result.operations_triggered);
       return TrackerResult::COMPLETED;
     }
 
     if ((status_change || !ops_result.operations_triggered.empty()) && state.current_edge) {
-      publishFeedback(
+      publish_feedback(
         false,  // No rerouting occurred
         state.next_node->nodeid, state.last_node->nodeid,
         state.current_edge->edgeid, ops_result.operations_triggered);
@@ -237,7 +268,7 @@ TrackerResult RouteTracker::trackRoute(
       // Update so during rerouting we can check if we are continuing on the same edge
       rerouting_info.curr_edge = state.current_edge;
       RCLCPP_INFO(logger_, "Rerouting requested by route tracking operations!");
-      return TrackerResult::INTERRUPTED;
+      return TrackerResult::REROUTE_REQUESTED;
     }
 
     r.sleep();
