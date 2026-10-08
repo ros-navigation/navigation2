@@ -41,6 +41,7 @@
 #include <memory>
 #include <algorithm>
 #include "tf2/convert.hpp"
+#include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
@@ -160,6 +161,9 @@ void KeepoutFilter::maskCallback(
 
   // Store filter_mask_
   filter_mask_ = msg;
+  filter_mask_costmap_ = std::make_unique<Costmap2D>(*filter_mask_);
+  footprint_collision_checker_ =
+    std::make_unique<FootprintCollisionChecker<Costmap2D *>>(filter_mask_costmap_.get());
   has_updated_data_ = true;
   x_ = y_ = 0;
   width_ = msg->info.width;
@@ -198,7 +202,7 @@ void KeepoutFilter::updateBounds(
     return;
   }
 
-  // Let's find the pose's cost if we are allowed to override the lethal cost
+  // Let's find the footprint cost if we are allowed to override the lethal cost
   is_pose_lethal_ = false;
   if (override_lethal_cost_) {
     geometry_msgs::msg::Pose pose;
@@ -208,18 +212,21 @@ void KeepoutFilter::updateBounds(
     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
     geometry_msgs::msg::Pose mask_pose;
     if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
-      unsigned int mask_robot_i, mask_robot_j;
-      if (nav2_util::worldToMap(
-          filter_mask_, mask_pose.position.x, mask_pose.position.y,
-          mask_robot_i, mask_robot_j))
+      const auto & footprint = layered_costmap_->getFootprint();
+      unsigned int mask_x, mask_y;
+      if (!footprint.empty() &&
+        filter_mask_costmap_->worldToMap(mask_pose.position.x, mask_pose.position.y, mask_x, mask_y))
       {
-        auto data = getMaskCost(filter_mask_, mask_robot_i, mask_robot_j);
-        is_pose_lethal_ = (data == INSCRIBED_INFLATED_OBSTACLE || data == LETHAL_OBSTACLE);
-        if (is_pose_lethal_) {
-          RCLCPP_WARN_THROTTLE(
-            logger_, *(clock_), 2000,
-            "KeepoutFilter: Pose is in keepout zone, reducing cost override to navigate out.");
-        }
+        const auto footprint_cost = footprint_collision_checker_->footprintCostAtPose(
+          mask_pose.position.x, mask_pose.position.y, tf2::getYaw(mask_pose.orientation),
+          footprint);
+        is_pose_lethal_ =
+          footprint_cost == INSCRIBED_INFLATED_OBSTACLE || footprint_cost == LETHAL_OBSTACLE;
+      }
+      if (is_pose_lethal_) {
+        RCLCPP_WARN_THROTTLE(
+          logger_, *(clock_), 2000,
+          "KeepoutFilter: Footprint is in keepout zone, reducing cost override to navigate out.");
       }
     }
 
