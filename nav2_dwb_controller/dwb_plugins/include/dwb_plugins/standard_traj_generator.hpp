@@ -159,21 +159,6 @@ protected:
 
   /// @brief Option to limit velocity in the trajectory generator by using current velocity
   bool limit_vel_cmd_in_traj_;
-
-  /* Backwards Compatibility Parameter: include_last_point
-   *
-   * dwa had an off-by-one error built into it.
-   * It generated N trajectory points, where N = ceil(sim_time / time_delta).
-   * If for example, sim_time=3.0 and time_delta=1.5, it would generate trajectories with 2 points, which
-   * indeed were time_delta seconds apart. However, the points would be at t=0 and t=1.5, and thus the
-   * actual sim_time was much less than advertised.
-   *
-   * This is remedied by adding one final point at t=sim_time, but only if include_last_point_ is true.
-   *
-   * Nothing I could find actually used the time_delta variable or seemed to care that the trajectories
-   * were not projected out as far as they intended.
-   */
-  bool include_last_point_;
 };
 
 

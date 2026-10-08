@@ -345,25 +345,6 @@ TEST(TrajectoryGenerator, basic)
   matchPose(res.poses[n - 1], DEFAULT_SIM_TIME * forward.x, 0, 0);
 }
 
-TEST(TrajectoryGenerator, basic_no_last_point)
-{
-  auto nh = makeTestNode(
-    "basic_no_last_point", {
-    rclcpp::Parameter("dwb.include_last_point", false),
-    rclcpp::Parameter("dwb.linear_granularity", 0.5)});
-  StandardTrajectoryGenerator gen;
-  gen.initialize(nh, "dwb");
-  dwb_msgs::msg::Trajectory2D res = gen.generateTrajectory(origin, forward, forward);
-  matchTwist(res.velocity, forward);
-  EXPECT_DOUBLE_EQ(durationToSec(res.time_offsets.back()), DEFAULT_SIM_TIME / 2);
-  int n = res.poses.size();
-  EXPECT_EQ(n, 2);
-  ASSERT_GT(n, 0);
-
-  matchPose(res.poses[0], origin);
-  matchPose(res.poses[n - 1], 0.255, 0, 0);
-}
-
 TEST(TrajectoryGenerator, too_slow)
 {
   auto nh = makeTestNode("too_slow", {rclcpp::Parameter("dwb.linear_granularity", 0.5)});
