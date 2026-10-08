@@ -15,7 +15,6 @@ find_package(nav2_util REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_ros_common REQUIRED)
@@ -99,8 +98,7 @@ add_library(${vo_library_name} SHARED
 target_include_directories(${vo_library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${vo_library_name} PUBLIC
   geometry_msgs::geometry_msgs
   nav_msgs::nav_msgs
@@ -111,11 +109,6 @@ target_link_libraries(${vo_library_name} PUBLIC
   rclcpp_components::component
   tf2_ros::tf2_ros
   ${UUID_LIBRARIES}
-)
-target_link_libraries(${library_name} PRIVATE
-  lifecycle_msgs::lifecycle_msgs
-  rclcpp_components::component
-  yaml-cpp::yaml-cpp
 )
 
 add_executable(${map_server_executable}
@@ -231,12 +224,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories("include/${PROJECT_NAME}")
-ament_export_libraries(
-  ${library_name}
-  ${map_io_library_name}
-  ${vo_library_name}
-)
 ament_export_dependencies(nav_msgs nav2_msgs nav2_util rclcpp rclcpp_lifecycle nav2_ros_common Eigen3)
 ament_export_targets(${library_name})
 

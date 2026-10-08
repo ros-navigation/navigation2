@@ -40,7 +40,7 @@
 
 #include "geometry_msgs/msg/point_stamped.hpp"
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node.hpp"
 
 #include "dummy_action_server.hpp"
 #include "dummy_service.hpp"

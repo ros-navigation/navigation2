@@ -23,7 +23,8 @@
 #include <thread>
 #include <algorithm>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/publisher.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_msgs/action/wait.hpp"
 #include "nav2_util/robot_utils.hpp"

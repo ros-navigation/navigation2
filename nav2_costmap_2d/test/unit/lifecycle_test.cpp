@@ -19,7 +19,11 @@
 #include "gtest/gtest.h"
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/utilities.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
 

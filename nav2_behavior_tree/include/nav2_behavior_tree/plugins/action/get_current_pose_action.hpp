@@ -28,6 +28,7 @@
 
 #include "behaviortree_cpp/action_node.h"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/clock.hpp"
 
 namespace nav2_behavior_tree
 {
