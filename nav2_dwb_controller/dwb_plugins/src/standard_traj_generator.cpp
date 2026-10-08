@@ -73,8 +73,6 @@ void StandardTrajectoryGenerator::initialize(
     plugin_name + ".linear_granularity", 0.5);
   angular_granularity_ = nh->declare_or_get_parameter(
     plugin_name + ".angular_granularity", 0.025);
-  include_last_point_ = nh->declare_or_get_parameter(
-    plugin_name + ".include_last_point", true);
   limit_vel_cmd_in_traj_ = nh->declare_or_get_parameter(
     plugin_name + ".limit_vel_cmd_in_traj", false);
 }
@@ -153,9 +151,11 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
   nav_2d_msgs::msg::Twist2D vel = start_vel;
   double running_time = 0.0;
   std::vector<double> steps = getTimeSteps(cmd_vel);
-  traj.poses.push_back(start_pose);
   bool first_vel = false;
   for (double dt : steps) {
+    traj.poses.push_back(pose);
+    traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
+
     //  calculate velocities
     vel = computeNewVelocity(cmd_vel, vel, dt);
     if (!first_vel && limit_vel_cmd_in_traj_) {
@@ -165,16 +165,11 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
 
     //  update the position of the robot using the velocities passed in
     pose = computeNewPosition(pose, vel, dt);
-
-    traj.poses.push_back(pose);
-    traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
     running_time += dt;
   }  //  end for simulation steps
 
-  if (include_last_point_) {
-    traj.poses.push_back(pose);
-    traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
-  }
+  traj.poses.push_back(pose);
+  traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
 
   return traj;
 }
