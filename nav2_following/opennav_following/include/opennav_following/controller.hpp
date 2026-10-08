@@ -1,6 +1,5 @@
 // Copyright (c) 2024 Open Navigation LLC
 // Copyright (c) 2024 Alberto J. Tudela Roldán
-// Copyright (c) 2026 Karinca Robotics
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,19 +17,24 @@
 #define OPENNAV_FOLLOWING__CONTROLLER_HPP_
 
 #include <memory>
-#include <mutex>
+#include <string>
 #include <vector>
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "nav2_costmap_2d/footprint_subscriber.hpp"
+#include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_graceful_controller/smooth_control_law.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace opennav_following
 {
 /**
  * @class opennav_following::Controller
- * @brief Control law for approaching the followed object
+ * @brief Default control law for approaching a dock target
  */
 class Controller
 {
@@ -39,8 +43,13 @@ public:
    * @brief Create a controller instance. Configure ROS 2 parameters.
    *
    * @param node Lifecycle node
+   * @param tf tf2_ros TF buffer
+   * @param fixed_frame Fixed frame
+   * @param base_frame Robot base frame
    */
-  explicit Controller(const nav2::LifecycleNode::SharedPtr & node);
+  Controller(
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
+    std::string fixed_frame, std::string base_frame);
 
   /**
    * @brief A destructor for opennav_following::Controller
@@ -50,11 +59,14 @@ public:
   /**
    * @brief Compute a velocity command using control law.
    * @param pose Target pose, in robot centric coordinates.
+   * @param cmd Command velocity.
+   * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
-   * @returns Command velocity.
+   * @returns True if command is valid, false otherwise.
    */
-  geometry_msgs::msg::Twist computeVelocityCommands(
-    const geometry_msgs::msg::Pose & pose, bool backward = false);
+  bool computeVelocityCommand(
+    const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
+    bool backward = false);
 
   /**
    * @brief Perform a command for in-place rotation.
@@ -69,6 +81,17 @@ public:
     const double & dt);
 
 protected:
+  /**
+   * @brief Check if a trajectory is collision free.
+   *
+   * @param target_pose Target pose, in robot centric coordinates.
+   * @param is_docking If true, robot is docking. If false, robot is undocking.
+   * @param backward If true, robot will drive backwards to goal.
+   * @return True if trajectory is collision free.
+   */
+  bool isTrajectoryCollisionFree(
+    const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false);
+
   /**
    * @brief Validate incoming parameter updates before applying them.
    * This callback is triggered when one or more parameters are about to be updated.
@@ -88,17 +111,46 @@ protected:
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
+  /**
+   * @brief Configure the collision checker.
+   *
+   * @param node Lifecycle node
+   * @param costmap_topic Costmap topic
+   * @param footprint_topic Footprint topic
+   * @param transform_tolerance Transform tolerance
+   */
+  void configureCollisionChecker(
+    const nav2::LifecycleNode::SharedPtr & node,
+    std::string costmap_topic, std::string footprint_topic, double transform_tolerance);
+
   // Dynamic parameters handler
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   std::mutex dynamic_params_lock_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("Controller")};
+  rclcpp::Clock::SharedPtr clock_;
 
+  // Smooth control law
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
   double k_phi_, k_delta_, beta_, lambda_;
   double slowdown_radius_, deceleration_max_, v_linear_min_, v_linear_max_, v_angular_max_;
   double rotate_to_heading_angular_vel_, rotate_to_heading_max_angular_accel_;
+
+  // The trajectory of the robot while dock / undock for visualization / debug purposes
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr trajectory_pub_;
+
+  // Used for collision checking
+  bool use_collision_detection_;
+  double projection_time_;
+  double simulation_time_step_;
+  double dock_collision_threshold_;
+  double transform_tolerance_;
+  nav2::TransformBuffer::SharedPtr tf2_buffer_;
+  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
+  std::string fixed_frame_, base_frame_;
 };
 
 }  // namespace opennav_following

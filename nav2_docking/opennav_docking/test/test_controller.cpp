@@ -63,8 +63,10 @@ public:
 
   void setCollisionTolerance(double tolerance)
   {
-    params_->dock_collision_threshold = tolerance;
+    dock_collision_threshold_ = tolerance;
   }
+
+  using GracefulController::validateParameterUpdatesCallback;
 };
 
 class TestCollisionChecker : public nav2::LifecycleNode
@@ -291,6 +293,26 @@ TEST(ControllerTests, DynamicParameters) {
   EXPECT_EQ(node->get_parameter("controller.v_linear_min").as_double(), 5.0);
 
   controller->deactivate();
+}
+
+TEST(ControllerTests, SharedParameterValidation)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto controller = makeController<ControllerFixture>(
+    node, nullptr, "test_base_frame", "test_base_frame");
+
+  EXPECT_FALSE(
+    controller->validateParameterUpdatesCallback(
+      {rclcpp::Parameter("controller.projection_time", -1.0)}).successful);
+  EXPECT_FALSE(
+    controller->validateParameterUpdatesCallback(
+      {rclcpp::Parameter("controller.simulation_time_step", 0.0)}).successful);
+
+  EXPECT_TRUE(
+    controller->validateParameterUpdatesCallback(
+      {rclcpp::Parameter("controller.projection_time", 1.0),
+        rclcpp::Parameter("controller.use_collision_detection", true),
+        rclcpp::Parameter("other.projection_time", -1.0)}).successful);
 }
 
 TEST(ControllerTests, TFException)

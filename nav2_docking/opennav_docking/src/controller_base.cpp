@@ -37,86 +37,6 @@ using rcl_interfaces::msg::ParameterType;
 namespace opennav_docking
 {
 
-ControllerParameterHandler::ControllerParameterHandler(
-  const nav2::LifecycleNode::SharedPtr & node, const std::string & name,
-  const rclcpp::Logger & logger)
-: nav2_util::ParameterHandler<ControllerParameters>(node, logger), name_(name)
-{
-  params_.rotate_to_heading_angular_vel = node->declare_or_get_parameter(
-    name_ + ".rotate_to_heading_angular_vel", 1.0);
-  params_.rotate_to_heading_max_angular_accel = node->declare_or_get_parameter(
-    name_ + ".rotate_to_heading_max_angular_accel", 3.2);
-  params_.projection_time = node->declare_or_get_parameter(name_ + ".projection_time", 5.0);
-  params_.simulation_time_step = node->declare_or_get_parameter(
-    name_ + ".simulation_time_step", 0.1);
-  params_.dock_collision_threshold = node->declare_or_get_parameter(
-    name_ + ".dock_collision_threshold", 0.3);
-}
-
-rcl_interfaces::msg::SetParametersResult
-ControllerParameterHandler::validateParameterUpdatesCallback(
-  const std::vector<rclcpp::Parameter> & parameters)
-{
-  rcl_interfaces::msg::SetParametersResult result;
-  result.successful = true;
-  for (const auto & parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-    if (param_name.find(name_ + ".") != 0) {
-      continue;
-    }
-    if (param_type != ParameterType::PARAMETER_DOUBLE) {
-      continue;
-    }
-    const bool non_negative =
-      param_name == name_ + ".rotate_to_heading_angular_vel" ||
-      param_name == name_ + ".rotate_to_heading_max_angular_accel" ||
-      param_name == name_ + ".projection_time" ||
-      param_name == name_ + ".dock_collision_threshold";
-    if (param_name == name_ + ".simulation_time_step" && parameter.as_double() <= 0.0) {
-      RCLCPP_WARN(
-        logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
-      result.successful = false;
-    } else if (non_negative && parameter.as_double() < 0.0) {
-      RCLCPP_WARN(
-        logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
-      result.successful = false;
-    }
-  }
-  return result;
-}
-
-void ControllerParameterHandler::updateParametersCallback(
-  const std::vector<rclcpp::Parameter> & parameters)
-{
-  std::lock_guard<std::mutex> lock(mutex_);
-
-  for (const auto & parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-    if (param_name.find(name_ + ".") != 0) {
-      continue;
-    }
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + ".rotate_to_heading_angular_vel") {
-        params_.rotate_to_heading_angular_vel = parameter.as_double();
-      } else if (param_name == name_ + ".rotate_to_heading_max_angular_accel") {
-        params_.rotate_to_heading_max_angular_accel = parameter.as_double();
-      } else if (param_name == name_ + ".projection_time") {
-        params_.projection_time = parameter.as_double();
-      } else if (param_name == name_ + ".simulation_time_step") {
-        params_.simulation_time_step = parameter.as_double();
-      } else if (param_name == name_ + ".dock_collision_threshold") {
-        params_.dock_collision_threshold = parameter.as_double();
-      }
-    }
-  }
-}
-
 void ControllerBase::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & name, nav2::TransformBuffer::SharedPtr tf)
@@ -126,6 +46,7 @@ void ControllerBase::configure(
     throw std::runtime_error{"Failed to lock node in docking controller " + name};
   }
 
+  node_ = parent;
   name_ = name;
   tf2_buffer_ = tf;
   logger_ = node->get_logger();
@@ -135,8 +56,14 @@ void ControllerBase::configure(
   fixed_frame_ = node->declare_or_get_parameter("fixed_frame", std::string("odom"));
   base_frame_ = node->declare_or_get_parameter("base_frame", std::string("base_link"));
 
-  param_handler_ = std::make_unique<ControllerParameterHandler>(node, name_, logger_);
-  params_ = param_handler_->getParams();
+  rotate_to_heading_angular_vel_ = node->declare_or_get_parameter(
+    name_ + ".rotate_to_heading_angular_vel", 1.0);
+  rotate_to_heading_max_angular_accel_ = node->declare_or_get_parameter(
+    name_ + ".rotate_to_heading_max_angular_accel", 3.2);
+  projection_time_ = node->declare_or_get_parameter(name_ + ".projection_time", 5.0);
+  simulation_time_step_ = node->declare_or_get_parameter(name_ + ".simulation_time_step", 0.1);
+  dock_collision_threshold_ = node->declare_or_get_parameter(
+    name_ + ".dock_collision_threshold", 0.3);
 
   // Configure time only parameters
   use_collision_detection_ = node->declare_or_get_parameter(
@@ -159,8 +86,6 @@ void ControllerBase::configure(
 
 void ControllerBase::cleanup()
 {
-  params_ = nullptr;
-  param_handler_.reset();
   trajectory_pub_.reset();
   collision_checker_.reset();
   costmap_sub_.reset();
@@ -170,13 +95,11 @@ void ControllerBase::cleanup()
 void ControllerBase::activate()
 {
   trajectory_pub_->on_activate();
-  param_handler_->activate();
 }
 
 void ControllerBase::deactivate()
 {
   trajectory_pub_->on_deactivate();
-  param_handler_->deactivate();
 }
 
 bool ControllerBase::computeVelocityCommands(
@@ -187,7 +110,7 @@ bool ControllerBase::computeVelocityCommands(
   double dt,
   geometry_msgs::msg::Twist & cmd)
 {
-  std::lock_guard<std::mutex> lock(param_handler_->getMutex());
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = computeCommand(target, options.reverse, dt);
   return isTrajectoryCollisionFree(target, !options.undocking, options.reverse);
 }
@@ -197,21 +120,21 @@ geometry_msgs::msg::Twist ControllerBase::computeRotateToHeadingCommand(
   const geometry_msgs::msg::Twist & current_velocity,
   const double & dt)
 {
-  std::lock_guard<std::mutex> lock(param_handler_->getMutex());
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   geometry_msgs::msg::Twist cmd_vel;
   const double sign = angular_distance_to_heading > 0.0 ? 1.0 : -1.0;
-  const double angular_vel = sign * params_->rotate_to_heading_angular_vel;
+  const double angular_vel = sign * rotate_to_heading_angular_vel_;
   const double min_feasible_angular_speed =
-    current_velocity.angular.z - params_->rotate_to_heading_max_angular_accel * dt;
+    current_velocity.angular.z - rotate_to_heading_max_angular_accel_ * dt;
   const double max_feasible_angular_speed =
-    current_velocity.angular.z + params_->rotate_to_heading_max_angular_accel * dt;
+    current_velocity.angular.z + rotate_to_heading_max_angular_accel_ * dt;
   cmd_vel.angular.z =
     std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
 
   // Check if we need to slow down to avoid overshooting
   double max_vel_to_stop =
     std::sqrt(
-    2 * params_->rotate_to_heading_max_angular_accel * fabs(angular_distance_to_heading));
+    2 * rotate_to_heading_max_angular_accel_ * fabs(angular_distance_to_heading));
   if (fabs(cmd_vel.angular.z) > max_vel_to_stop) {
     cmd_vel.angular.z = sign * max_vel_to_stop;
   }
@@ -248,12 +171,12 @@ bool ControllerBase::isTrajectoryCollisionFree(
   // Generate path
   double distance = std::numeric_limits<double>::max();
   unsigned int max_iter = static_cast<unsigned int>(
-    ceil(params_->projection_time / params_->simulation_time_step));
+    ceil(projection_time_ / simulation_time_step_));
 
   do{
     // Apply velocities to calculate next pose
     next_pose.pose = predictNextPose(
-      params_->simulation_time_step, target_pose, next_pose.pose, backward);
+      simulation_time_step_, target_pose, next_pose.pose, backward);
 
     // Add the pose to the trajectory for visualization
     trajectory->poses.push_back(next_pose);
@@ -273,7 +196,7 @@ bool ControllerBase::isTrajectoryCollisionFree(
 
     // If this distance is greater than the dock_collision_threshold, check for collisions
     if (use_collision_detection_ &&
-      dock_collision_distance > params_->dock_collision_threshold &&
+      dock_collision_distance > dock_collision_threshold_ &&
       !collision_checker_->isCollisionFree(local_pose.pose))
     {
       RCLCPP_WARN(
@@ -290,6 +213,56 @@ bool ControllerBase::isTrajectoryCollisionFree(
 
   trajectory_pub_->publish(std::move(trajectory));
 
+  return true;
+}
+
+bool ControllerBase::validateSharedParameter(const rclcpp::Parameter & parameter)
+{
+  if (parameter.get_type() != ParameterType::PARAMETER_DOUBLE) {
+    return true;
+  }
+  const auto & param_name = parameter.get_name();
+  if (param_name == name_ + ".simulation_time_step" && parameter.as_double() <= 0.0) {
+    RCLCPP_WARN(
+      logger_, "The value of parameter '%s' is incorrectly set to %f, "
+      "it should be >0. Ignoring parameter update.",
+      param_name.c_str(), parameter.as_double());
+    return false;
+  }
+  const bool non_negative =
+    param_name == name_ + ".rotate_to_heading_angular_vel" ||
+    param_name == name_ + ".rotate_to_heading_max_angular_accel" ||
+    param_name == name_ + ".projection_time" ||
+    param_name == name_ + ".dock_collision_threshold";
+  if (non_negative && parameter.as_double() < 0.0) {
+    RCLCPP_WARN(
+      logger_, "The value of parameter '%s' is incorrectly set to %f, "
+      "it should be >=0. Ignoring parameter update.",
+      param_name.c_str(), parameter.as_double());
+    return false;
+  }
+  return true;
+}
+
+bool ControllerBase::updateSharedParameter(const rclcpp::Parameter & parameter)
+{
+  if (parameter.get_type() != ParameterType::PARAMETER_DOUBLE) {
+    return false;
+  }
+  const auto & param_name = parameter.get_name();
+  if (param_name == name_ + ".rotate_to_heading_angular_vel") {
+    rotate_to_heading_angular_vel_ = parameter.as_double();
+  } else if (param_name == name_ + ".rotate_to_heading_max_angular_accel") {
+    rotate_to_heading_max_angular_accel_ = parameter.as_double();
+  } else if (param_name == name_ + ".projection_time") {
+    projection_time_ = parameter.as_double();
+  } else if (param_name == name_ + ".simulation_time_step") {
+    simulation_time_step_ = parameter.as_double();
+  } else if (param_name == name_ + ".dock_collision_threshold") {
+    dock_collision_threshold_ = parameter.as_double();
+  } else {
+    return false;
+  }
   return true;
 }
 

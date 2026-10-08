@@ -550,10 +550,6 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
 
 void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose)
 {
-  if (!controller_) {
-    throw opennav_docking_core::FailedToControl("No controller is selected");
-  }
-
   const double dt = 1.0 / params_->controller_frequency;
   auto target_pose = dock_pose;
   target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
@@ -594,10 +590,6 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
 bool DockingServer::approachDock(
   Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose, bool backward)
 {
-  if (!controller_) {
-    throw opennav_docking_core::FailedToControl("No controller is selected");
-  }
-
   const double dt = 1.0 / params_->controller_frequency;
   nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
@@ -702,10 +694,6 @@ bool DockingServer::waitForCharge(Dock * dock)
 bool DockingServer::resetApproach(
   const geometry_msgs::msg::PoseStamped & staging_pose, bool backward)
 {
-  if (!controller_) {
-    throw opennav_docking_core::FailedToControl("No controller is selected");
-  }
-
   nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->dock_approach_timeout);
@@ -747,10 +735,6 @@ bool DockingServer::getCommandToPose(
   geometry_msgs::msg::Twist & cmd, const geometry_msgs::msg::PoseStamped & pose,
   double linear_tolerance, double angular_tolerance, bool is_docking, bool backward)
 {
-  if (!controller_) {
-    throw opennav_docking_core::FailedToControl("No controller is selected");
-  }
-
   // Reset command to zero velocity
   cmd.linear.x = 0;
   cmd.angular.z = 0;

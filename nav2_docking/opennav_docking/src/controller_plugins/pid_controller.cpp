@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -31,33 +32,60 @@ using rcl_interfaces::msg::ParameterType;
 namespace opennav_docking
 {
 
-PIDParameterHandler::PIDParameterHandler(
-  const nav2::LifecycleNode::SharedPtr & node, const std::string & name,
-  const rclcpp::Logger & logger)
-: nav2_util::ParameterHandler<PIDParameters>(node, logger), name_(name)
+void PIDController::onConfigure(const nav2::LifecycleNode::SharedPtr & node)
 {
-  params_.x.kp = node->declare_or_get_parameter(name_ + ".kp_x", 1.0);
-  params_.x.ki = node->declare_or_get_parameter(name_ + ".ki_x", 0.0);
-  params_.x.kd = node->declare_or_get_parameter(name_ + ".kd_x", 0.0);
-  params_.x.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_x", 0.2);
+  x_.kp = node->declare_or_get_parameter(name_ + ".kp_x", 1.0);
+  x_.ki = node->declare_or_get_parameter(name_ + ".ki_x", 0.0);
+  x_.kd = node->declare_or_get_parameter(name_ + ".kd_x", 0.0);
+  x_.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_x", 0.2);
 
-  params_.y.kp = node->declare_or_get_parameter(name_ + ".kp_y", 2.2);
-  params_.y.ki = node->declare_or_get_parameter(name_ + ".ki_y", 0.0);
-  params_.y.kd = node->declare_or_get_parameter(name_ + ".kd_y", 0.0);
-  params_.y.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_y", 0.5);
+  y_.kp = node->declare_or_get_parameter(name_ + ".kp_y", 2.2);
+  y_.ki = node->declare_or_get_parameter(name_ + ".ki_y", 0.0);
+  y_.kd = node->declare_or_get_parameter(name_ + ".kd_y", 0.0);
+  y_.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_y", 0.5);
 
-  params_.theta.kp = node->declare_or_get_parameter(name_ + ".kp_theta", 1.2);
-  params_.theta.ki = node->declare_or_get_parameter(name_ + ".ki_theta", 0.0);
-  params_.theta.kd = node->declare_or_get_parameter(name_ + ".kd_theta", 0.0);
-  params_.theta.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_theta", 0.5);
+  theta_.kp = node->declare_or_get_parameter(name_ + ".kp_theta", 1.2);
+  theta_.ki = node->declare_or_get_parameter(name_ + ".ki_theta", 0.0);
+  theta_.kd = node->declare_or_get_parameter(name_ + ".kd_theta", 0.0);
+  theta_.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_theta", 0.5);
 
-  params_.v_linear_max = node->declare_or_get_parameter(name_ + ".v_linear_max", 0.25);
-  params_.v_angular_max = node->declare_or_get_parameter(name_ + ".v_angular_max", 0.75);
-  params_.lookahead_distance = node->declare_or_get_parameter(
-    name_ + ".lookahead_distance", 0.25);
+  v_linear_max_ = node->declare_or_get_parameter(name_ + ".v_linear_max", 0.25);
+  v_angular_max_ = node->declare_or_get_parameter(name_ + ".v_angular_max", 0.75);
+  lookahead_distance_ = std::max(
+    kMinLookahead, node->declare_or_get_parameter(name_ + ".lookahead_distance", 0.25));
+
+  reset();
 }
 
-rcl_interfaces::msg::SetParametersResult PIDParameterHandler::validateParameterUpdatesCallback(
+void PIDController::activate()
+{
+  ControllerBase::activate();
+  auto node = node_.lock();
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &PIDController::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &PIDController::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void PIDController::deactivate()
+{
+  ControllerBase::deactivate();
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  on_set_params_handler_.reset();
+}
+
+rcl_interfaces::msg::SetParametersResult PIDController::validateParameterUpdatesCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -65,108 +93,67 @@ rcl_interfaces::msg::SetParametersResult PIDParameterHandler::validateParameterU
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if (param_name.find(name_ + ".") != 0) {
+    if (param_name.find(name_ + ".") != 0 || param_type != ParameterType::PARAMETER_DOUBLE) {
       continue;
     }
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0) {
-        RCLCPP_WARN(
-          logger_, "The value of parameter '%s' is incorrectly set to %f, "
-          "it should be >=0. Ignoring parameter update.",
-          param_name.c_str(), parameter.as_double());
-        result.successful = false;
-      }
+    if (!validateSharedParameter(parameter)) {
+      result.successful = false;
+    } else if (parameter.as_double() < 0.0) {
+      RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+      result.successful = false;
     }
   }
   return result;
 }
 
-void PIDParameterHandler::updateParametersCallback(
-  const std::vector<rclcpp::Parameter> & parameters)
+void PIDController::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
 {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if (param_name.find(name_ + ".") != 0) {
+    if (param_name.find(name_ + ".") != 0 || param_type != ParameterType::PARAMETER_DOUBLE) {
       continue;
     }
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + ".kp_x") {
-        params_.x.kp = parameter.as_double();
-      } else if (param_name == name_ + ".ki_x") {
-        params_.x.ki = parameter.as_double();
-      } else if (param_name == name_ + ".kd_x") {
-        params_.x.kd = parameter.as_double();
-      } else if (param_name == name_ + ".i_clamp_x") {
-        params_.x.i_clamp = parameter.as_double();
-      } else if (param_name == name_ + ".kp_y") {
-        params_.y.kp = parameter.as_double();
-      } else if (param_name == name_ + ".ki_y") {
-        params_.y.ki = parameter.as_double();
-      } else if (param_name == name_ + ".kd_y") {
-        params_.y.kd = parameter.as_double();
-      } else if (param_name == name_ + ".i_clamp_y") {
-        params_.y.i_clamp = parameter.as_double();
-      } else if (param_name == name_ + ".kp_theta") {
-        params_.theta.kp = parameter.as_double();
-      } else if (param_name == name_ + ".ki_theta") {
-        params_.theta.ki = parameter.as_double();
-      } else if (param_name == name_ + ".kd_theta") {
-        params_.theta.kd = parameter.as_double();
-      } else if (param_name == name_ + ".i_clamp_theta") {
-        params_.theta.i_clamp = parameter.as_double();
-      } else if (param_name == name_ + ".v_linear_max") {
-        params_.v_linear_max = parameter.as_double();
-      } else if (param_name == name_ + ".v_angular_max") {
-        params_.v_angular_max = parameter.as_double();
-      } else if (param_name == name_ + ".lookahead_distance") {
-        params_.lookahead_distance = parameter.as_double();
-      }
+    if (updateSharedParameter(parameter)) {
+      continue;
+    }
+    if (param_name == name_ + ".kp_x") {
+      x_.kp = parameter.as_double();
+    } else if (param_name == name_ + ".ki_x") {
+      x_.ki = parameter.as_double();
+    } else if (param_name == name_ + ".kd_x") {
+      x_.kd = parameter.as_double();
+    } else if (param_name == name_ + ".i_clamp_x") {
+      x_.i_clamp = parameter.as_double();
+    } else if (param_name == name_ + ".kp_y") {
+      y_.kp = parameter.as_double();
+    } else if (param_name == name_ + ".ki_y") {
+      y_.ki = parameter.as_double();
+    } else if (param_name == name_ + ".kd_y") {
+      y_.kd = parameter.as_double();
+    } else if (param_name == name_ + ".i_clamp_y") {
+      y_.i_clamp = parameter.as_double();
+    } else if (param_name == name_ + ".kp_theta") {
+      theta_.kp = parameter.as_double();
+    } else if (param_name == name_ + ".ki_theta") {
+      theta_.ki = parameter.as_double();
+    } else if (param_name == name_ + ".kd_theta") {
+      theta_.kd = parameter.as_double();
+    } else if (param_name == name_ + ".i_clamp_theta") {
+      theta_.i_clamp = parameter.as_double();
+    } else if (param_name == name_ + ".v_linear_max") {
+      v_linear_max_ = parameter.as_double();
+    } else if (param_name == name_ + ".v_angular_max") {
+      v_angular_max_ = parameter.as_double();
+    } else if (param_name == name_ + ".lookahead_distance") {
+      lookahead_distance_ = std::max(kMinLookahead, parameter.as_double());
     }
   }
-  updated_ = true;
-}
-
-void PIDController::onConfigure(const nav2::LifecycleNode::SharedPtr & node)
-{
-  pid_param_handler_ = std::make_unique<PIDParameterHandler>(node, name_, logger_);
-  pid_params_ = pid_param_handler_->getParams();
-  {
-    std::lock_guard<std::mutex> lock(pid_param_handler_->getMutex());
-    applyParameters();
-  }
-  reset();
-}
-
-void PIDController::cleanup()
-{
-  ControllerBase::cleanup();
-  pid_params_ = nullptr;
-  pid_param_handler_.reset();
-}
-
-void PIDController::activate()
-{
-  ControllerBase::activate();
-  pid_param_handler_->activate();
-}
-
-void PIDController::deactivate()
-{
-  ControllerBase::deactivate();
-  pid_param_handler_->deactivate();
-}
-
-void PIDController::applyParameters()
-{
-  x_ = pid_params_->x;
-  y_ = pid_params_->y;
-  theta_ = pid_params_->theta;
-  v_linear_max_ = pid_params_->v_linear_max;
-  v_angular_max_ = pid_params_->v_angular_max;
-  lookahead_distance_ = std::max(kMinLookahead, pid_params_->lookahead_distance);
 }
 
 void PIDController::reset()
@@ -215,13 +202,6 @@ void PIDController::poseError(
 geometry_msgs::msg::Twist PIDController::computeCommand(
   const geometry_msgs::msg::Pose & target, bool reverse, double dt)
 {
-  {
-    std::lock_guard<std::mutex> lock(pid_param_handler_->getMutex());
-    if (pid_param_handler_->isUpdated()) {
-      applyParameters();
-    }
-  }
-
   double rho = 0.0, alpha = 0.0, alignment = 0.0;
   poseError(target, reverse, lookahead_distance_, rho, alpha, alignment);
 

@@ -17,6 +17,8 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
 #include "opennav_docking/utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "tf2/utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
 // Test parsing dock plugins and database files (see test_dock_file.yaml).

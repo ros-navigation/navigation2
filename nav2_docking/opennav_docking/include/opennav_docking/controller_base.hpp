@@ -18,6 +18,7 @@
 #define OPENNAV_DOCKING__CONTROLLER_BASE_HPP_
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -29,7 +30,6 @@
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
-#include "nav2_util/parameter_handler.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace opennav_docking
@@ -47,54 +47,6 @@ struct DockingOptions
 
   /// @brief True when leaving the dock
   bool undocking{false};
-};
-
-/**
- * @struct ControllerParameters
- * @brief Dynamic parameters every controller shares.
- */
-struct ControllerParameters
-{
-  double rotate_to_heading_angular_vel;
-  double rotate_to_heading_max_angular_accel;
-  double projection_time;
-  double simulation_time_step;
-  double dock_collision_threshold;
-};
-
-/**
- * @class opennav_docking::ControllerParameterHandler
- * @brief Handles the dynamic parameters.
- */
-class ControllerParameterHandler : public nav2_util::ParameterHandler<ControllerParameters>
-{
-public:
-  /**
-   * @brief Declare shared parameters in controller namespace.
-   * @param node Lifecycle node
-   * @param name The parameter namespace
-   * @param logger Logger
-   */
-  ControllerParameterHandler(
-    const nav2::LifecycleNode::SharedPtr & node, const std::string & name,
-    const rclcpp::Logger & logger);
-
-protected:
-  /**
-   * @brief Validate parameters before applying.
-   * @param parameters List of parameters.
-   * @return rcl_interfaces::msg::SetParametersResult Result of the update request.
-   */
-  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
-    const std::vector<rclcpp::Parameter> & parameters) override;
-
-  /**
-   * @brief Apply parameter after validation
-   * @param parameters List of parameters updated.
-   */
-  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) override;
-
-  std::string name_;
 };
 
 /**
@@ -130,12 +82,12 @@ public:
   virtual void cleanup();
 
   /**
-   * @brief Activate parameters callbacks.
+   * @brief Activate the trajectory publisher.
    */
   virtual void activate();
 
   /**
-   * @brief Deactivate parameters callbacks.
+   * @brief Deactivate the trajectory publisher.
    */
   virtual void deactivate();
 
@@ -244,9 +196,29 @@ protected:
     const nav2::LifecycleNode::SharedPtr & node,
     std::string costmap_topic, std::string footprint_topic, double transform_tolerance);
 
-  std::unique_ptr<ControllerParameterHandler> param_handler_;
-  ControllerParameters * params_{nullptr};
+  /**
+   * @brief Validate an update of parameter.
+   * Plugins should call it from their parameter validation callback.
+   *
+   * @param parameter The parameter name.
+   * @returns False if value is invalid.
+   */
+  bool validateSharedParameter(const rclcpp::Parameter & parameter);
 
+  /**
+   * @brief Apply new parameter.
+   * Plugins should call it from their parameter update callback with dynamic_params_lock_ held.
+   *
+   * @param parameter The parameter name.
+   * @returns True if the parameter is declared by this base class.
+   */
+  bool updateSharedParameter(const rclcpp::Parameter & parameter);
+
+  std::mutex dynamic_params_lock_;
+  double rotate_to_heading_angular_vel_, rotate_to_heading_max_angular_accel_;
+  double projection_time_, simulation_time_step_, dock_collision_threshold_;
+
+  nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_{rclcpp::get_logger("Controller")};
   rclcpp::Clock::SharedPtr clock_;
 

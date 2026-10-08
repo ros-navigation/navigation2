@@ -61,7 +61,9 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Create the controller
   // Note: Collision detection is not supported in following server so we force it off
   // and warn if the user has it enabled (from launch file or parameter file)
-  controller_ = std::make_unique<opennav_following::Controller>(node);
+  controller_ =
+    std::make_unique<opennav_following::Controller>(node, tf2_buffer_, params_->fixed_frame,
+      params_->base_frame);
 
   if (params_->use_collision_detection) {
     RCLCPP_ERROR(
@@ -385,7 +387,9 @@ bool FollowingServer::approachObject(
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
-    command->twist = controller_->computeVelocityCommands(target_pose.pose);
+    if (!controller_->computeVelocityCommand(target_pose.pose, command->twist, true, false)) {
+      throw opennav_docking_core::FailedToControl("Failed to get control");
+    }
     vel_publisher_->publish(std::move(command));
 
     loop_rate.sleep();

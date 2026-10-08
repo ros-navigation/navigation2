@@ -272,6 +272,16 @@ TEST(DatabaseTests, typeControllerName)
   EXPECT_EQ(db.getTypeControllerName(""), "c1");
 }
 
+TEST(DatabaseTests, rejectUnknownController)
+{
+  auto node = createControllerTestNode("not_loaded");
+  addDockInstance(node, "c1");
+  std::mutex mutex;
+  opennav_docking::DockDatabase db(mutex);
+
+  EXPECT_FALSE(db.initialize(node, nullptr, {"c1"}));
+}
+
 }  // namespace opennav_docking
 
 int main(int argc, char ** argv)
