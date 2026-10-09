@@ -509,6 +509,11 @@ ObstacleLayer::updateBounds(
 
     const sensor_msgs::msg::PointCloud2 & cloud = obs.cloud_;
 
+    // the height filter of the observation buffer can leave a cloud without points
+    if (cloud.height == 0 || cloud.width == 0) {
+      continue;
+    }
+
     const unsigned int max_range_cells = cellDistance(obs.obstacle_max_range_);
     const unsigned int min_range_cells = cellDistance(obs.obstacle_min_range_);
 
@@ -732,6 +737,11 @@ ObstacleLayer::raytraceFreespace(
 
 
   touch(ox, oy, min_x, min_y, max_x, max_y);
+
+  // the height filter of the observation buffer can leave a cloud without points
+  if (cloud.height == 0 || cloud.width == 0) {
+    return;
+  }
 
   // for each point in the cloud, we want to trace a line from the origin
   // and clear obstacles along it
