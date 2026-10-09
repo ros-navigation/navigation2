@@ -397,7 +397,11 @@ void DockingPanel::onDockingButtonPressed()
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options = nav2::ActionClient<Dock>::SendGoalOptions();
   send_goal_options.result_callback = [this](const DockGoalHandle::WrappedResult & result) {
-      dock_goal_handle_.reset();
+      // Only clear the handle if it still refers to the goal that finished; a preempted goal's
+      // result can arrive after the handle has been replaced by the new goal's handle.
+      if (dock_goal_handle_ && dock_goal_handle_->get_goal_id() == result.goal_id) {
+        dock_goal_handle_.reset();
+      }
       if (result.result->success) {
         docking_result_indicator_->setText("");
       } else {
@@ -455,7 +459,11 @@ void DockingPanel::onUndockingButtonPressed()
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options = nav2::ActionClient<Undock>::SendGoalOptions();
   send_goal_options.result_callback = [this](const UndockGoalHandle::WrappedResult & result) {
-      undock_goal_handle_.reset();
+      // Only clear the handle if it still refers to the goal that finished; a preempted goal's
+      // result can arrive after the handle has been replaced by the new goal's handle.
+      if (undock_goal_handle_ && undock_goal_handle_->get_goal_id() == result.goal_id) {
+        undock_goal_handle_.reset();
+      }
       if (result.result->success) {
         docking_result_indicator_->setText("");
       } else {
@@ -544,8 +552,10 @@ void DockingPanel::timerEvent(QTimerEvent * event)
         return;
       }
 
+      // Keep the goal alive if spin_some() clears the member.
+      auto goal_handle = dock_goal_handle_;
       executor_->spin_some();
-      auto status = dock_goal_handle_->get_status();
+      auto status = goal_handle->get_status();
 
       // Check if the goal is still executing
       if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
@@ -563,8 +573,10 @@ void DockingPanel::timerEvent(QTimerEvent * event)
         return;
       }
 
+      // Keep the goal alive if spin_some() clears the member.
+      auto goal_handle = undock_goal_handle_;
       executor_->spin_some();
-      auto status = undock_goal_handle_->get_status();
+      auto status = goal_handle->get_status();
 
       // Check if the goal is still executing
       if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
