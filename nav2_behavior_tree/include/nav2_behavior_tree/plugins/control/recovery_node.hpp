@@ -70,7 +70,7 @@ public:
 
 private:
   unsigned int current_child_idx_;
-  int number_of_retries_;
+  unsigned int number_of_retries_;
   unsigned int retry_count_;
 
   /**

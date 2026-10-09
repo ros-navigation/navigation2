@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
 #include <string>
 #include "nav2_behavior_tree/plugins/control/recovery_node.hpp"
 
@@ -30,7 +31,11 @@ RecoveryNode::RecoveryNode(
 
 BT::NodeStatus RecoveryNode::tick()
 {
-  getInput("number_of_retries", number_of_retries_);
+  int number_of_retries = 1;
+  getInput("number_of_retries", number_of_retries);
+  // A negative number retries forever, so only a failing second child ends the loop
+  number_of_retries_ = number_of_retries < 0 ?
+    std::numeric_limits<int>::max() : static_cast<unsigned int>(number_of_retries);
   const unsigned children_count = children_nodes_.size();
 
   if (children_count != 2) {
@@ -39,11 +44,7 @@ BT::NodeStatus RecoveryNode::tick()
 
   setStatus(BT::NodeStatus::RUNNING);
 
-  const bool retry_forever = number_of_retries_ < 0;
-  const unsigned int max_retries =
-    retry_forever ? 0 : static_cast<unsigned int>(number_of_retries_);
-
-  while (current_child_idx_ < children_count && (retry_forever || retry_count_ <= max_retries)) {
+  while (current_child_idx_ < children_count && retry_count_ <= number_of_retries_) {
     TreeNode * child_node = children_nodes_[current_child_idx_];
     const BT::NodeStatus child_status = child_node->executeTick();
 
@@ -66,7 +67,7 @@ BT::NodeStatus RecoveryNode::tick()
 
         case BT::NodeStatus::FAILURE:
           {
-            if (retry_forever || retry_count_ < max_retries) {
+            if (retry_count_ < number_of_retries_) {
               // halt first child and tick second child in next iteration
               ControlNode::haltChild(0);
               current_child_idx_++;
