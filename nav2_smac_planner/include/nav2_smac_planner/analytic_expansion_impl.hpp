@@ -224,7 +224,12 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     // into higher cost areas far out from the goal itself, let search to the work of getting
     // close before the analytic expansion brings it home. This should never be smaller than
     // 4-5x the minimum turning radius being used, or planning times will begin to spike.
-    if (d > _search_info.analytic_expansion_max_length || d < sqrt_2) {
+    bool is_dubins = dynamic_cast<ompl::base::DubinsStateSpace *>(state_space.get()) != nullptr;
+    if (is_dubins && _search_info.prefer_forward_expansions) {
+      if (d > _search_info.analytic_expansion_max_length*_search_info.forward_expansion_multiplier || d < sqrt_2) {
+        return AnalyticExpansionNodes();
+      } 
+    } else if (d > _search_info.analytic_expansion_max_length || d < sqrt_2) {
       return AnalyticExpansionNodes();
     }
 
@@ -380,24 +385,36 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
     // higher than the minimum turning radius and use the best solution based on
     // a scoring function similar to that used in traversal cost estimation.
     auto scoringFn = [&](const AnalyticExpansionNodes & expansion) {
-        if (expansion.nodes.size() < 2) {
-          return std::numeric_limits<float>::max();
-        }
+      if (expansion.nodes.size() < 2) {
+        return std::numeric_limits<float>::max();
+      }
 
-        float score = 0.0;
-        float normalized_cost = 0.0;
-        // Analytic expansions are consistently spaced
-        const float distance = hypotf(
-          expansion.nodes[1].proposed_coords.x - expansion.nodes[0].proposed_coords.x,
-          expansion.nodes[1].proposed_coords.y - expansion.nodes[0].proposed_coords.y);
-        const float & weight = _ctx->motion_table.cost_penalty;
-        for (auto iter = expansion.nodes.begin(); iter != expansion.nodes.end(); ++iter) {
-          normalized_cost = iter->node->getCost() / 252.0f;
-          // Search's Traversal Cost Function
-          score += distance * (1.0 + weight * normalized_cost);
-        }
-        return score;
-      };
+      const float & cost_weight = expansion.nodes[0].node->motion_table.cost_penalty;
+      const float & reverse_weight = expansion.nodes[0].node->motion_table.reverse_penalty;
+
+      float score = 0.0f;
+      for (size_t i = 1; i < expansion.nodes.size(); i++) {
+
+        const float theta = expansion.nodes[i-1].node->motion_table.getAngleFromBin(
+          static_cast<unsigned int>(expansion.nodes[i-1].proposed_coords.theta));
+
+        const float seg_distance = hypotf(
+          expansion.nodes[i].proposed_coords.x - expansion.nodes[i-1].proposed_coords.x,
+          expansion.nodes[i].proposed_coords.y - expansion.nodes[i-1].proposed_coords.y);
+
+        const float seg_direction =
+          (expansion.nodes[i].proposed_coords.x - expansion.nodes[i-1].proposed_coords.x) * cosf(theta) +
+          (expansion.nodes[i].proposed_coords.y - expansion.nodes[i-1].proposed_coords.y) * sinf(theta);
+
+        const float normalized_cost = expansion.nodes[i].node->getCost() / 252.0f;
+        const float reverse_penalty = (seg_direction < 0.0f) ? reverse_weight : 0.0f;
+        const float seg_score = seg_distance * (1.0f + cost_weight * normalized_cost + reverse_penalty);
+
+        score += seg_score;
+      }
+
+      return score;
+    };
 
     float original_score = scoringFn(analytic_nodes);
     float best_score = original_score;
@@ -438,6 +455,37 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
         analytic_nodes = refined_analytic_nodes;
         best_score = score;
       }
+    }
+
+    // When prefer_forward_expansions is set and the motion model is Reeds-Shepp,
+    // also attempt a Dubins (forward-only) expansion over the same range of turning
+    // radii and prefer it if it achieves a lower score than the Reeds-Shepp result.
+    if (_search_info.prefer_forward_expansions &&
+      node->motion_table.motion_model == MotionModel::REEDS_SHEPP)
+    {
+      AnalyticExpansionNodes dubins_nodes;
+      float best_dubins_score = std::numeric_limits<float>::max();
+      float dubins_min_turn_rad = node->motion_table.min_turning_radius;
+      const float dubins_max_turn_rad = 4.0 * dubins_min_turn_rad;
+
+      while (dubins_min_turn_rad < dubins_max_turn_rad) {
+        dubins_min_turn_rad += 0.5;
+        ompl::base::StateSpacePtr dubins_space =
+          std::make_shared<ompl::base::DubinsStateSpace>(dubins_min_turn_rad);
+        AnalyticExpansionNodes dubins_refined_nodes =
+          getAnalyticPath(node, goal_node, getter, dubins_space);
+        float dubins_score = scoringFn(dubins_refined_nodes);
+
+        if (dubins_score < best_dubins_score) {
+          dubins_nodes = dubins_refined_nodes;
+          best_dubins_score = dubins_score;
+        }
+      }
+
+      if (best_dubins_score < best_score) {
+        analytic_nodes = dubins_nodes;
+        best_score = best_dubins_score;
+      } 
     }
 
     return best_score;
