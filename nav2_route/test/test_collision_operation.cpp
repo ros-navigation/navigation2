@@ -115,14 +115,14 @@ protected:
     ab.start = &a;
     ab.end = &b;
     ab.edgeid = 10;
-    ba.start = &b;
-    ba.end = &a;
-    ba.edgeid = 20;
+    backward_edge.start = &b;
+    backward_edge.end = &a;
+    backward_edge.edgeid = 20;
     bc.start = &b;
     bc.end = &c;
     bc.edgeid = 30;
     route.start_node = &a;
-    route.edges = {&ab, &ba, &ab, &bc};
+    route.edges = {&ab, &backward_edge, &ab, &bc};
   }
 
   void configureMonitor(double horizon = 5.0)
@@ -158,7 +158,7 @@ protected:
   std::unique_ptr<CollisionOperationsManager> manager;
   std::shared_ptr<CollisionMonitorWrapper> monitor;
   Node a, b, c;
-  DirectionalEdge ab, ba, bc;
+  DirectionalEdge ab, backward_edge, bc;
   Route route;
 };
 
@@ -191,8 +191,8 @@ TEST_F(RepeatedEdgeCollisionTest, fullRouteCheckTerminates)
 TEST_F(RepeatedEdgeCollisionTest, sharedDirectionalIdCheckTerminates)
 {
   b.coords.x = 2.1;
-  ba.edgeid = ab.edgeid;
-  route.edges = {&ab, &ba};
+  backward_edge.edgeid = ab.edgeid;
+  route.edges = {&ab, &backward_edge};
   configureMonitor();
   ASSERT_EXIT({alarm(2); _exit(check(0).reroute ? 1 : 0);}, ::testing::ExitedWithCode(0), "");
 }
