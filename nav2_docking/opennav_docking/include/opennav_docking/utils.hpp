@@ -183,7 +183,6 @@ inline geometry_msgs::msg::PoseStamped transformPoseToFrame(
   const double transform_staleness_threshold)
 {
   auto transformed_pose = pose;
-  transformed_pose.header.stamp = rclcpp::Time(0);
   if (transformed_pose.header.frame_id == target_frame) {
     return transformed_pose;
   }

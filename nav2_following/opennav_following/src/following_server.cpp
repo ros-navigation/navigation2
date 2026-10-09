@@ -406,7 +406,6 @@ bool FollowingServer::rotateToObject(
 
   // Compute initial robot heading
   auto robot_pose = getRobotPose();
-  iteration_start_time_ = robot_pose.header.stamp;
   double initial_yaw = tf2::getYaw(robot_pose.pose.orientation);
 
   // Search angles: left offset, then right offset from initial heading
@@ -416,7 +415,6 @@ bool FollowingServer::rotateToObject(
   rclcpp::Rate loop_rate(params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->rotate_to_object_timeout);
-  bool reuse_robot_pose = true;
 
   // Iterate over target angles
   for (const double & target_angle : angles) {
@@ -426,14 +424,9 @@ bool FollowingServer::rotateToObject(
 
     // Rotate towards target_angle while checking for detection
     while (rclcpp::ok()) {
-      // Reuse the pose used to select the search headings on the first iteration. After
-      // that, obtain one pose for all geometry and control in each rotation iteration.
-      if (reuse_robot_pose) {
-        reuse_robot_pose = false;
-      } else {
-        robot_pose = getRobotPose();
-        iteration_start_time_ = robot_pose.header.stamp;
-      }
+      // Obtain one pose for all geometry and control in this rotation iteration.
+      robot_pose = getRobotPose();
+      iteration_start_time_ = robot_pose.header.stamp;
 
       publishFollowingFeedback(FollowObject::Feedback::RETRY);
 

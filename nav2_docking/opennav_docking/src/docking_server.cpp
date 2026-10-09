@@ -507,6 +507,8 @@ bool DockingServer::approachDock(
     const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
     const auto base_to_fixed_transform = nav2_util::poseToTransformStamped(
       robot_pose, params_->base_frame);
+    // Transforming the target pose from the fixed frame into the robot's base frame,
+    // using the inverse of the robot pose transform that is also passed to the controller.
     tf2::doTransform(target_pose, target_pose, nav2_util::invertTransform(base_to_fixed_transform));
 
     // Make sure that the target pose is pointing at the robot when moving backwards
