@@ -130,6 +130,30 @@ public:
     const Route & route,
     const geometry_msgs::msg::PoseStamped & curr_pose,
     const Metadata * mdata = nullptr) = 0;
+
+  /**
+   * @brief Invoke the existing plugin API with the tracker's exact route occurrence.
+   * Context is available only during this call. Existing perform overrides remain valid.
+   */
+  OperationResult performWithContext(
+    const RouteTrackingState & state, EdgePtr edge_exited, const Route & route,
+    const geometry_msgs::msg::PoseStamped & pose, const Metadata * mdata = nullptr)
+  {
+    const auto previous_state = tracking_state_;
+    tracking_state_ = &state;
+    try {
+      auto result = perform(state.last_node, state.current_edge, edge_exited, route, pose, mdata);
+      tracking_state_ = previous_state;
+      return result;
+    } catch (...) {
+      tracking_state_ = previous_state;
+      throw;
+    }
+  }
+
+protected:
+  // OperationsManager serializes plugin calls through the existing tracking ownership lock.
+  const RouteTrackingState * tracking_state_{nullptr};
 };
 
 }  // namespace nav2_route

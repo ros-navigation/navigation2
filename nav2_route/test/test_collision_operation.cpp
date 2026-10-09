@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <unistd.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -67,7 +68,175 @@ public:
   {
     getCostmap();
   }
+
+  void checkNow()
+  {
+    last_check_time_ = clock_->now() - checking_duration_;
+  }
 };
+
+class CollisionOperationsManager : public OperationsManager
+{
+public:
+  using OperationsManager::OperationsManager;
+
+  void addMonitor(const RouteOperation::Ptr & monitor)
+  {
+    query_operations_.push_back(monitor);
+  }
+};
+
+class RepeatedEdgeCollisionTest : public ::testing::Test
+{
+protected:
+  void SetUp() override
+  {
+    ::testing::GTEST_FLAG(death_test_style) = "threadsafe";
+    node = std::make_shared<nav2::LifecycleNode>("repeated_edge_collision_test");
+    node->declare_parameter("operations", std::vector<std::string>{});
+    node->declare_parameter("costmap_topic", "revisit_costmap_raw");
+    node->declare_parameter("monitor.costmap_topic", "revisit_costmap_raw");
+    subscriber = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
+      node, "revisit_costmap_raw");
+    auto msg = std::make_shared<nav2_msgs::msg::Costmap>();
+    msg->header.frame_id = "map";
+    msg->metadata.size_x = 60;
+    msg->metadata.size_y = 30;
+    msg->metadata.resolution = 0.1;
+    msg->metadata.origin.position.x = -1.0;
+    msg->metadata.origin.position.y = -1.0;
+    msg->metadata.origin.orientation.w = 1.0;
+    msg->data.resize(1800, 0);
+    subscriber->costmapCallback(msg);
+    manager = std::make_unique<CollisionOperationsManager>(node, subscriber);
+    a.coords.x = 0.0;
+    b.coords.x = 1.0;
+    c.coords.x = 2.0;
+    ab.start = &a;
+    ab.end = &b;
+    ab.edgeid = 10;
+    ba.start = &b;
+    ba.end = &a;
+    ba.edgeid = 20;
+    bc.start = &b;
+    bc.end = &c;
+    bc.edgeid = 30;
+    route.start_node = &a;
+    route.edges = {&ab, &ba, &ab, &bc};
+  }
+
+  void configureMonitor(double horizon = 5.0)
+  {
+    node->declare_parameter("monitor.max_collision_dist", horizon);
+    monitor = std::make_shared<CollisionMonitorWrapper>();
+    monitor->configure(node, subscriber, "monitor");
+    manager->addMonitor(monitor);
+  }
+
+  OperationsResult check(int index)
+  {
+    monitor->checkNow();
+    RouteTrackingState state;
+    state.route_edges_idx = index;
+    state.current_edge = route.edges[index];
+    state.last_node = state.current_edge->start;
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = state.last_node->coords.x;
+    return manager->process(false, state, route, pose, ReroutingState());
+  }
+
+  void blockSuffix()
+  {
+    auto map = subscriber->getCostmap();
+    unsigned int x, y;
+    ASSERT_TRUE(map->worldToMap(1.5, 0.0, x, y));
+    map->setCost(x, y, 254);
+  }
+
+  nav2::LifecycleNode::SharedPtr node;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> subscriber;
+  std::unique_ptr<CollisionOperationsManager> manager;
+  std::shared_ptr<CollisionMonitorWrapper> monitor;
+  Node a, b, c;
+  DirectionalEdge ab, ba, bc;
+  Route route;
+};
+
+TEST_F(RepeatedEdgeCollisionTest, checksSuffixAfterRepeatedEdge)
+{
+  configureMonitor();
+  blockSuffix();
+  auto result = check(0);
+  EXPECT_TRUE(result.reroute);
+  EXPECT_EQ(result.blocked_ids, std::vector<unsigned int>({30}));
+}
+
+TEST_F(RepeatedEdgeCollisionTest, distinguishesSecondOccurrence)
+{
+  configureMonitor(2.0);
+  blockSuffix();
+  EXPECT_FALSE(check(0).reroute);
+  auto result = check(2);
+  EXPECT_TRUE(result.reroute);
+  EXPECT_EQ(result.blocked_ids, std::vector<unsigned int>({30}));
+}
+
+TEST_F(RepeatedEdgeCollisionTest, fullRouteCheckTerminates)
+{
+  configureMonitor(0.0);
+  // Bound the regression in a subprocess: the former ID search never reaches the suffix.
+  ASSERT_EXIT({alarm(2); _exit(check(0).reroute ? 1 : 0);}, ::testing::ExitedWithCode(0), "");
+}
+
+TEST_F(RepeatedEdgeCollisionTest, sharedDirectionalIdCheckTerminates)
+{
+  b.coords.x = 2.1;
+  ba.edgeid = ab.edgeid;
+  route.edges = {&ab, &ba};
+  configureMonitor();
+  ASSERT_EXIT({alarm(2); _exit(check(0).reroute ? 1 : 0);}, ::testing::ExitedWithCode(0), "");
+}
+
+TEST_F(RepeatedEdgeCollisionTest, prunedPartialEdgeChecksNewRoute)
+{
+  configureMonitor();
+  blockSuffix();
+  route.start_node = &b;
+  route.edges = {&bc};
+  RouteTrackingState state;
+  state.current_edge = &ab;
+  geometry_msgs::msg::PoseStamped pose;
+  monitor->checkNow();
+  auto result = manager->process(false, state, route, pose, ReroutingState());
+  EXPECT_TRUE(result.reroute);
+  EXPECT_EQ(result.blocked_ids, std::vector<unsigned int>({30}));
+}
+
+TEST_F(RepeatedEdgeCollisionTest, legacyCallRejectsAmbiguousOccurrence)
+{
+  configureMonitor();
+  monitor->checkNow();
+  geometry_msgs::msg::PoseStamped pose;
+  EXPECT_THROW(monitor->perform(&a, &ab, nullptr, route, pose, nullptr),
+    nav2_core::OperationFailed);
+  // A contextual call remains valid after the direct-call rejection.
+  EXPECT_FALSE(check(2).reroute);
+}
+
+TEST_F(RepeatedEdgeCollisionTest, clearsContextAfterException)
+{
+  configureMonitor();
+  RouteTrackingState state;
+  state.current_edge = &ab;
+  state.route_edges_idx = 1;
+  geometry_msgs::msg::PoseStamped pose;
+  monitor->checkNow();
+  EXPECT_THROW(
+    manager->process(false, state, route, pose, ReroutingState()), nav2_core::OperationFailed);
+  route.edges = {&ab, &bc};
+  monitor->checkNow();
+  EXPECT_FALSE(monitor->perform(&a, &ab, nullptr, route, pose, nullptr).reroute);
+}
 
 TEST(TestCollisionMonitor, test_lifecycle)
 {

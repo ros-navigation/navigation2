@@ -108,8 +108,7 @@ protected:
    */
   void processOperationsPluginVector(
     const std::vector<RouteOperation::Ptr> & operations, OperationsResult & result,
-    const NodePtr node,
-    const EdgePtr edge_entered,
+    const RouteTrackingState & state,
     const EdgePtr edge_exited,
     const Route & route,
     const geometry_msgs::msg::PoseStamped & pose);

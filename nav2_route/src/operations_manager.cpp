@@ -109,15 +109,14 @@ void OperationsManager::updateResult(
 void OperationsManager::processOperationsPluginVector(
   const std::vector<RouteOperation::Ptr> & route_operations,
   OperationsResult & result,
-  const NodePtr node,
-  const EdgePtr edge_entered,
+  const RouteTrackingState & state,
   const EdgePtr edge_exited,
   const Route & route,
   const geometry_msgs::msg::PoseStamped & pose)
 {
   for (OperationsIter it = route_operations.begin(); it != route_operations.end(); ++it) {
     const RouteOperation::Ptr & plugin = *it;
-    OperationResult op_result = plugin->perform(node, edge_entered, edge_exited, route, pose);
+    OperationResult op_result = plugin->performWithContext(state, edge_exited, route, pose);
     updateResult(plugin->getName(), op_result, result);
   }
 }
@@ -148,8 +147,8 @@ OperationsResult OperationsManager::process(
     for (unsigned int i = 0; i != operations.size(); i++) {
       auto op = graph_operations_.find(operations[i]->type);
       if (op != graph_operations_.end()) {
-        OperationResult op_result = op->second->perform(
-          node, edge_entered, edge_exited, route, pose, &operations[i]->metadata);
+        OperationResult op_result = op->second->performWithContext(
+          state, edge_exited, route, pose, &operations[i]->metadata);
         updateResult(op->second->getName(), op_result, result);
       } else {
         throw nav2_core::OperationFailed(
@@ -160,12 +159,12 @@ OperationsResult OperationsManager::process(
 
     // Process operations which trigger on any status changes
     processOperationsPluginVector(
-      change_operations_, result, node, edge_entered, edge_exited, route, pose);
+      change_operations_, result, state, edge_exited, route, pose);
   }
 
   // Process operations which trigger regardless of status change or nodes / edges
   processOperationsPluginVector(
-    query_operations_, result, node, edge_entered /*edge_curr*/, edge_exited, route, pose);
+    query_operations_, result, state, edge_exited, route, pose);
   return result;
 }
 

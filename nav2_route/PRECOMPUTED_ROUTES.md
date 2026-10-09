@@ -6,6 +6,12 @@ from the server's loaded graph. It must contain one more node than edges;
 a single node with no edges is valid. Loops and repeated nodes or edges retain
 their supplied order. No local planning, pruning or deduplication is performed.
 
+OperationsManager supplies the tracker's current edge occurrence during plugin
+calls, while retaining existing `RouteOperation::perform` overrides. CollisionMonitor
+uses that position to advance through the remaining route exactly once, including
+repeated edges and opposite directions sharing an ID. Direct CollisionMonitor calls
+without tracking context support unique edge occurrences and reject ambiguous repeats.
+
 The server resolves node IDs with its existing graph ID map, then resolves each
 edge ID among the current node's outgoing edges to the next supplied node.
 The loaded graph supplies coordinates, metadata, operations and stored costs;

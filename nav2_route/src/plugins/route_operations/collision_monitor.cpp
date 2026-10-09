@@ -95,6 +95,30 @@ OperationResult CollisionMonitor::perform(
   }
   last_check_time_ = now;
 
+  size_t next_edge_idx = route.edges.size();
+  if (tracking_state_) {
+    const int index = tracking_state_->route_edges_idx;
+    const bool valid_index = index >= 0 && static_cast<size_t>(index) < route.edges.size();
+    if (index == -1) {
+      // The current partial edge was pruned during rerouting; the new route starts next.
+      next_edge_idx = 0;
+    } else if (valid_index && route.edges[index] == curr_edge) {
+      next_edge_idx = static_cast<size_t>(index) + 1;
+    } else {
+      throw nav2_core::OperationFailed("Collision Monitor received inconsistent tracking state.");
+    }
+  } else {
+    // Preserve direct calls for a unique edge, without guessing a repeated occurrence.
+    auto iter = std::find(route.edges.begin(), route.edges.end(), curr_edge);
+    if (iter != route.edges.end()) {
+      if (std::find(iter + 1, route.edges.end(), curr_edge) != route.edges.end()) {
+        throw nav2_core::OperationFailed(
+                "Collision Monitor requires tracking context for a repeated edge.");
+      }
+      next_edge_idx = std::distance(route.edges.begin(), iter) + 1;
+    }
+  }
+
   OperationResult result;
   getCostmap();
 
@@ -145,12 +169,10 @@ OperationResult CollisionMonitor::perform(
     // Restart loop for next edge until complete
     start = end;
     if (!final_edge) {
-      auto isCurrEdge = [&](const EdgePtr & edge) {return edge->edgeid == curr_edge_id;};
-      auto iter = std::find_if(route.edges.begin(), route.edges.end(), isCurrEdge);
-      if (iter != route.edges.end() && ++iter != route.edges.end()) {
-        // If we found the edge and the next edge is also valid
-        curr_edge_id = (*iter)->edgeid;
-        end = (*iter)->end->coords;
+      if (next_edge_idx < route.edges.size()) {
+        const auto next_edge = route.edges[next_edge_idx++];
+        curr_edge_id = next_edge->edgeid;
+        end = next_edge->end->coords;
       } else {
         final_edge = true;
       }
