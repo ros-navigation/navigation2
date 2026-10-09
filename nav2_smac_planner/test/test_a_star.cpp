@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <limits>
+#include <optional>
 
 #include "gtest/gtest.h"
 #include "rclcpp/utilities.hpp"
@@ -531,6 +532,153 @@ TEST(AStarTest, test_goal_heading_mode)
       80u, 80u, 10u,
       nav2_smac_planner::GoalHeadingMode::UNKNOWN), std::runtime_error);
   delete costmapA;
+}
+
+// Obstacles just beside (90, 52) and ahead of (91, 50) a 2m footprint's tip at (50.5, 50.5, 0)
+std::shared_ptr<nav2_costmap_2d::Costmap2DROS> makeExactGoalCostmap()
+{
+  nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
+  costmapA.setCost(90, 52, 254);
+  costmapA.setCost(91, 50, 254);
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  *costmap_ros->getCostmap() = costmapA;
+  return costmap_ros;
+}
+
+nav2_costmap_2d::Footprint makeExactGoalFootprint()
+{
+  geometry_msgs::msg::Point p1;
+  p1.x = -0.05;
+  p1.y = 0.05;
+  geometry_msgs::msg::Point p2;
+  p2.x = 2.02;
+  p2.y = 0.05;
+  geometry_msgs::msg::Point p3;
+  p3.x = 2.02;
+  p3.y = -0.05;
+  geometry_msgs::msg::Point p4;
+  p4.x = -0.05;
+  p4.y = -0.05;
+  return {p1, p2, p3, p4};
+}
+
+template<typename NodeT>
+void testGoalCheckedAtExactPose(
+  nav2_smac_planner::AStarAlgorithm<NodeT> & a_star,
+  nav2_smac_planner::GridCollisionChecker * checker)
+{
+  auto isGoalValid = [&](const unsigned int & i) {
+      return a_star.getGoalManager().getGoalsState()[i].goal->isNodeValid(false, checker);
+    };
+  auto setGoal = [&](
+    const float & mx, const nav2_smac_planner::GoalHeadingMode & mode,
+    const std::optional<double> & yaw) {
+      a_star.setCollisionChecker(checker);
+      a_star.setStart(10u, 10u, 0u);
+      a_star.setGoal(mx, 50.5f, 0u, mode, 1, yaw);
+    };
+  const double yaw = 2.0 * M_PI / 180.0;
+
+  // Cell center and bin 0 heading is free
+  setGoal(50.5f, nav2_smac_planner::GoalHeadingMode::DEFAULT, 0.0);
+  EXPECT_TRUE(isGoalValid(0));
+
+  // 2 degrees snaps to bin 0, but is in collision
+  setGoal(50.5f, nav2_smac_planner::GoalHeadingMode::DEFAULT, yaw);
+  EXPECT_FALSE(isGoalValid(0));
+
+  typename NodeT::CoordinateVector path;
+  int num_it = 0;
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+  EXPECT_THROW(
+    a_star.createPath(path, num_it, 0.0f, dummy_cancel_checker),
+    nav2_core::GoalOccupied);
+
+  // Ahead of the cell center is in collision, with or without a heading
+  setGoal(50.9f, nav2_smac_planner::GoalHeadingMode::DEFAULT, 0.0);
+  EXPECT_FALSE(isGoalValid(0));
+  setGoal(50.9f, nav2_smac_planner::GoalHeadingMode::DEFAULT, std::nullopt);
+  EXPECT_FALSE(isGoalValid(0));
+
+  // Only the requested heading is in collision, not the opposite
+  setGoal(50.5f, nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL, yaw);
+  EXPECT_FALSE(isGoalValid(0));
+  EXPECT_TRUE(isGoalValid(1));
+
+  // Any heading is accepted, so goals are checked at their bins
+  setGoal(50.5f, nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION, yaw);
+  EXPECT_TRUE(isGoalValid(0));
+}
+
+TEST(AStarTest, test_hybrid_goal_checked_at_exact_pose)
+{
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.1;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = 2.0;
+  info.minimum_turning_radius = 8;  // in grid coordinates
+  info.retrospective_penalty = 0.015;
+  info.analytic_expansion_max_length = 20.0;  // in grid coordinates
+  info.analytic_expansion_ratio = 3.5;
+  unsigned int size_theta = 72;
+  info.cost_penalty = 1.7;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+
+  auto costmap_ros = makeExactGoalCostmap();
+  auto checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
+  checker->setFootprint(makeExactGoalFootprint(), false, 0.0);
+
+  testGoalCheckedAtExactPose(a_star, checker.get());
+}
+
+TEST(AStarTest, test_lattice_goal_checked_at_exact_pose)
+{
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.05;
+  info.non_straight_penalty = 1.05;
+  info.reverse_penalty = 2.0;
+  info.retrospective_penalty = 0.1;
+  info.analytic_expansion_ratio = 3.5;
+  info.lattice_filepath =
+    nav2::get_package_share_directory("nav2_smac_planner") +
+    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
+    "/output.json";
+  info.minimum_turning_radius = 8;  // in grid coordinates 0.4/0.05
+  info.analytic_expansion_max_length = 20.0;  // in grid coordinates
+  unsigned int size_theta = 16;
+  info.cost_penalty = 2.0;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeLattice> a_star(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, info);
+  int max_iterations = 10000;
+  int it_on_approach = std::numeric_limits<int>::max();
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+
+  // Lattice planner always uses 72 collision checker bins
+  auto costmap_ros = makeExactGoalCostmap();
+  auto checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72u, lnode);
+  checker->setFootprint(makeExactGoalFootprint(), false, 0.0);
+
+  testGoalCheckedAtExactPose(a_star, checker.get());
 }
 
 TEST(AStarTest, test_constants)

@@ -215,6 +215,52 @@ TEST(collision_footprint, test_point_and_line_cost)
   delete costmap_;
 }
 
+TEST(collision_footprint, test_footprint_at_exact_pose)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("testF");
+  nav2_costmap_2d::Costmap2D * costmap_ = new nav2_costmap_2d::Costmap2D(
+    10, 10, 1.0, 0.0, 0.0, 0);
+
+  // Single obstacle in the cell just ahead of the footprint
+  costmap_->setCost(7, 5, 254);
+
+  // 2.4m x 2.4m square footprint
+  geometry_msgs::msg::Point p1;
+  p1.x = -1.2;
+  p1.y = 1.2;
+  geometry_msgs::msg::Point p2;
+  p2.x = 1.2;
+  p2.y = 1.2;
+  geometry_msgs::msg::Point p3;
+  p3.x = 1.2;
+  p3.y = -1.2;
+  geometry_msgs::msg::Point p4;
+  p4.x = -1.2;
+  p4.y = -1.2;
+  nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmap_;
+
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
+  collision_checker.setFootprint(footprint, false /*use footprint*/, 0.0);
+
+  // Pose at x = 5.9 is in cell 5. The grid check snaps it to the cell center (5.5),
+  // so the front edge sits at 6.7 (cell 6) and the obstacle in cell 7 is skipped.
+  EXPECT_FALSE(collision_checker.inCollision(5.9, 5.5, 0.0, false));
+
+  // The exact pose check puts the front edge at 7.1 (cell 7) and hits the obstacle
+  EXPECT_TRUE(collision_checker.inCollisionAtPose(5.9, 5.5, 0.0, false));
+
+  // Poses outside of the map are in collision
+  EXPECT_TRUE(collision_checker.inCollisionAtPose(10.0, 5.5, 0.0, false));
+
+  delete costmap_;
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

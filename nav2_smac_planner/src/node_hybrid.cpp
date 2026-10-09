@@ -383,6 +383,17 @@ bool NodeHybrid::isNodeValid(
   return _is_node_valid;
 }
 
+bool NodeHybrid::isNodeValidAtPose(
+  const bool & traverse_unknown,
+  GridCollisionChecker * collision_checker,
+  const double & yaw)
+{
+  _is_node_valid = !collision_checker->inCollisionAtPose(
+    this->pose.x, this->pose.y, yaw, traverse_unknown);
+  _cell_cost = collision_checker->getCost();
+  return _is_node_valid;
+}
+
 float NodeHybrid::getTraversalCost(const NodePtr & child)
 {
   const float normalized_cost = child->getCost() / 252.0f;
