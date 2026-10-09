@@ -37,6 +37,12 @@ namespace nav2_behavior_tree
  * configured per error code and it follows that.
  *
  * The children are the available recovery behaviors which are referred to by their name.
+ * Unlike a Sequence or a RoundRobin, this node does not tick its children in the order they
+ * are written in the XML. Which child runs, and when, is decided only by the configured
+ * sequences: on each failure, the error code that was set picks its sequence and the next
+ * behavior in it is run. Reordering the children in the XML has no effect on execution,
+ * except for a group with no `default` sequence (see below).
+ *
  * Each blackboard key in `error_code_names` gets its own group of sequences which is named
  * after the key:
  *
@@ -74,7 +80,8 @@ namespace nav2_behavior_tree
  * @endcode
  *
  * Errors are given by name, and `[none]` means that nothing can be done about them.
- * A group without a default uses all children in order. Custom error codes are named in
+ * A group without a default uses all children in their XML order; this is the only case where
+ * the order of the children matters. Custom error codes are named in
  * `error_names`, and those names only apply within their group.
  *
  * Every error code of every group walks through its own sequence. Once the sequence runs out this node
