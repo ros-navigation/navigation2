@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <type_traits>
+
 #include "nav2_route/route_tracker.hpp"
 
 #include "nav2_ros_common/rate.hpp"
@@ -131,49 +133,46 @@ void RouteTracker::publishFeedback(
   const unsigned int edge_id,
   const std::vector<std::string> & operations)
 {
-  auto feedback = std::make_unique<Feedback>();
+  publishFeedback<nav2_msgs::action::ComputeAndTrackRoute>(
+    rereouted, next_node_id, last_node_id, edge_id, operations, action_server_);
+}
+
+template<typename ActionT>
+void RouteTracker::publishFeedback(
+  const bool rerouted,
+  const unsigned int next_node_id,
+  const unsigned int last_node_id,
+  const unsigned int edge_id,
+  const std::vector<std::string> & operations,
+  typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server)
+{
+  auto feedback = std::make_unique<typename ActionT::Feedback>();
   feedback->route = route_msg_;
   feedback->path = path_;
-  feedback->rerouted = rereouted;
+  if constexpr (std::is_same<ActionT, nav2_msgs::action::ComputeAndTrackRoute>::value) {
+    feedback->rerouted = rerouted;
+  }
   feedback->next_node_id = next_node_id;
   feedback->last_node_id = last_node_id;
   feedback->current_edge_id = edge_id;
   feedback->operations_triggered = operations;
-  action_server_->publish_feedback(std::move(feedback));
+  action_server->publish_feedback(std::move(feedback));
 }
 
 TrackerResult RouteTracker::trackRoute(
   const Route & route, const nav_msgs::msg::Path & path,
   ReroutingState & rerouting_info)
 {
-  TrackingContext context;
-  context.is_active = [this]() {return action_server_->is_server_active();};
-  context.is_cancel_requested = [this]() {return action_server_->is_cancel_requested();};
-  context.is_preempt_requested = [this]() {return action_server_->is_preempt_requested();};
-  context.publish_feedback = [this](std::unique_ptr<Feedback> feedback) {
-      action_server_->publish_feedback(std::move(feedback));
-    };
-  return trackRoute(route, path, rerouting_info, context);
+  return trackRoute<nav2_msgs::action::ComputeAndTrackRoute>(
+    route, path, rerouting_info, action_server_);
 }
 
+template<typename ActionT>
 TrackerResult RouteTracker::trackRoute(
   const Route & route, const nav_msgs::msg::Path & path,
-  ReroutingState & rerouting_info, const TrackingContext & context)
+  ReroutingState & rerouting_info,
+  typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server)
 {
-  auto publish_feedback = [&](
-    bool rerouted, unsigned int next, unsigned int last, unsigned int edge,
-    const std::vector<std::string> & operations)
-    {
-      auto feedback = std::make_unique<Feedback>();
-      feedback->route = route_msg_;
-      feedback->path = path_;
-      feedback->rerouted = rerouted;
-      feedback->next_node_id = next;
-      feedback->last_node_id = last;
-      feedback->current_edge_id = edge;
-      feedback->operations_triggered = operations;
-      context.publish_feedback(std::move(feedback));
-    };
   route_msg_ = utils::toMsg(route, route_frame_, clock_->now());
   path_ = path;
   RouteTrackingState state;
@@ -189,10 +188,11 @@ TrackerResult RouteTracker::trackRoute(
     // to represent the 'currently' progressing edge that is omitted from the route (and its start)
     state.current_edge = rerouting_info.curr_edge;
     state.last_node = state.current_edge->start;
-    publish_feedback(
-      true, route.start_node->nodeid, state.last_node->nodeid, state.current_edge->edgeid, {});
+    publishFeedback<ActionT>(
+      true, route.start_node->nodeid, state.last_node->nodeid,
+      state.current_edge->edgeid, {}, action_server);
   } else {
-    publish_feedback(true, route.start_node->nodeid, 0, 0, {});
+    publishFeedback<ActionT>(true, route.start_node->nodeid, 0, 0, {}, action_server);
   }
 
   auto node = node_.lock();
@@ -205,12 +205,12 @@ TrackerResult RouteTracker::trackRoute(
     bool status_change = false, completed = false;
 
     // Check if OK to keep processing
-    if (!context.is_active()) {
+    if (!action_server->is_server_active()) {
       return TrackerResult::EXITED;
     }
-    if (context.is_cancel_requested()) {
+    if (action_server->is_cancel_requested()) {
       return TrackerResult::INTERRUPTED;
-    } else if (context.is_preempt_requested()) {
+    } else if (action_server->is_preempt_requested()) {
       return TrackerResult::INTERRUPTED;
     }
 
@@ -237,15 +237,16 @@ TrackerResult RouteTracker::trackRoute(
     if (completed) {
       RCLCPP_INFO(logger_, "Routing to goal completed!");
       // Publishing last feedback
-      publish_feedback(false, 0, state.last_node->nodeid, 0, ops_result.operations_triggered);
+      publishFeedback<ActionT>(
+        false, 0, state.last_node->nodeid, 0, ops_result.operations_triggered, action_server);
       return TrackerResult::COMPLETED;
     }
 
     if ((status_change || !ops_result.operations_triggered.empty()) && state.current_edge) {
-      publish_feedback(
+      publishFeedback<ActionT>(
         false,  // No rerouting occurred
         state.next_node->nodeid, state.last_node->nodeid,
-        state.current_edge->edgeid, ops_result.operations_triggered);
+        state.current_edge->edgeid, ops_result.operations_triggered, action_server);
     }
 
     if (ops_result.reroute) {
@@ -276,5 +277,13 @@ TrackerResult RouteTracker::trackRoute(
 
   return TrackerResult::EXITED;
 }
+
+template TrackerResult RouteTracker::trackRoute<nav2_msgs::action::ComputeAndTrackRoute>(
+  const Route &, const nav_msgs::msg::Path &, ReroutingState &,
+  nav2::SimpleActionServer<nav2_msgs::action::ComputeAndTrackRoute>::SharedPtr &);
+
+template TrackerResult RouteTracker::trackRoute<nav2_msgs::action::TrackPrecomputedRoute>(
+  const Route &, const nav_msgs::msg::Path &, ReroutingState &,
+  nav2::SimpleActionServer<nav2_msgs::action::TrackPrecomputedRoute>::SharedPtr &);
 
 }  // namespace nav2_route

@@ -38,7 +38,7 @@ protected:
   {
     auto result = std::make_shared<Action::Result>();
     result->execution_duration = rclcpp::Duration::from_seconds(0.1);
-    if (handle->get_goal()->route_id == "blocked") {
+    if (handle->get_goal()->route.nodes.front().nodeid == 99) {
       result->error_code = Action::Result::REROUTE_REQUIRED;
       result->error_msg = "Route blocked";
       result->blocked_ids = {10, 20};
@@ -49,14 +49,18 @@ protected:
   }
 };
 
-TEST(TrackPrecomputedRouteBT, ParsesEdgeSequencesWithoutTruncation)
+nav2_msgs::msg::Route makeRoute(uint16_t start)
 {
-  EXPECT_EQ(BT::convertFromString<std::vector<uint16_t>>("0;10;65535"),
-    (std::vector<uint16_t>{0, 10, 65535}));
-  EXPECT_TRUE(BT::convertFromString<std::vector<uint16_t>>("").empty());
-  for (const std::string text : {"65536", "-1", "1x", "1;;2", "1;"}) {
-    EXPECT_THROW(BT::convertFromString<std::vector<uint16_t>>(text), BT::RuntimeError);
-  }
+  nav2_msgs::msg::Route route;
+  nav2_msgs::msg::RouteNode node;
+  node.nodeid = start;
+  route.nodes.push_back(node);
+  node.nodeid = 3;
+  route.nodes.push_back(node);
+  nav2_msgs::msg::RouteEdge edge;
+  edge.edgeid = 20;
+  route.edges.push_back(edge);
+  return route;
 }
 
 TEST(TrackPrecomputedRouteBT, SendsGoalAndPropagatesResultAndBlockedIDs)
@@ -81,26 +85,24 @@ TEST(TrackPrecomputedRouteBT, SendsGoalAndPropagatesResultAndBlockedIDs)
     R"(
     <root BTCPP_format="4">
       <BehaviorTree ID="MainTree">
-        <TrackPrecomputedRoute route_id="{id}" start_node_id="1" edge_ids="10;20"
+        <TrackPrecomputedRoute route="{route}"
           blocked_ids="{blocked}" error_code_id="{error}" error_msg="{message}"
           execution_duration="{duration}"/>
       </BehaviorTree>
     </root>)",
     blackboard);
 
-  for (const auto & id : {"success", "blocked", "success-again"}) {
-    blackboard->set("id", std::string(id));
+  for (uint16_t id : {1, 99, 2}) {
+    blackboard->set("route", makeRoute(id));
     auto status = BT::NodeStatus::RUNNING;
     auto deadline = std::chrono::steady_clock::now() + 3s;
     while (status == BT::NodeStatus::RUNNING && std::chrono::steady_clock::now() < deadline) {
       status = tree.tickOnce();
     }
-    const bool blocked = std::string(id) == "blocked";
+    const bool blocked = id == 99;
     EXPECT_EQ(status, blocked ? BT::NodeStatus::FAILURE : BT::NodeStatus::SUCCESS);
     ASSERT_NE(server->getCurrentGoal(), nullptr);
-    EXPECT_EQ(server->getCurrentGoal()->route_id, id);
-    EXPECT_EQ(server->getCurrentGoal()->start_node_id, 1u);
-    EXPECT_EQ(server->getCurrentGoal()->edge_ids, (std::vector<uint16_t>{10, 20}));
+    EXPECT_EQ(server->getCurrentGoal()->route, makeRoute(id));
     EXPECT_EQ(blackboard->get<uint16_t>("error"),
       blocked ? Action::Result::REROUTE_REQUIRED : Action::Result::NONE);
     EXPECT_EQ(blackboard->get<std::vector<uint32_t>>("blocked"),
@@ -127,9 +129,7 @@ TEST(TrackPrecomputedRouteBT, UpdatesAllGoalInputsBeforePreemption)
   blackboard->set("server_timeout", 20ms);
   blackboard->set("bt_loop_duration", 10ms);
   blackboard->set("wait_for_service_timeout", 1000ms);
-  blackboard->set("id", std::string("original"));
-  blackboard->set("start", uint16_t{1});
-  blackboard->set("edges", std::vector<uint16_t>{10, 20});
+  blackboard->set("route", makeRoute(1));
   BT::BehaviorTreeFactory factory;
   factory.registerBuilder<InspectablePrecomputedAction>(
     "TrackPrecomputedRoute",
@@ -142,7 +142,7 @@ TEST(TrackPrecomputedRouteBT, UpdatesAllGoalInputsBeforePreemption)
     R"(
     <root BTCPP_format="4">
       <BehaviorTree ID="MainTree">
-        <TrackPrecomputedRoute route_id="{id}" start_node_id="{start}" edge_ids="{edges}"
+        <TrackPrecomputedRoute route="{route}"
           path="{path}" blocked_ids="{blocked}"/>
       </BehaviorTree>
     </root>)",
@@ -150,10 +150,8 @@ TEST(TrackPrecomputedRouteBT, UpdatesAllGoalInputsBeforePreemption)
   auto action = dynamic_cast<InspectablePrecomputedAction *>(tree.rootNode());
   ASSERT_NE(action, nullptr);
   action->on_tick();
-  EXPECT_EQ(action->request().edge_ids, (std::vector<uint16_t>{10, 20}));
-  blackboard->set("id", std::string("replacement"));
-  blackboard->set("start", uint16_t{2});
-  blackboard->set("edges", std::vector<uint16_t>{20});
+  EXPECT_EQ(action->request().route, makeRoute(1));
+  blackboard->set("route", makeRoute(2));
   nav_msgs::msg::Path stale_path;
   stale_path.poses.resize(2);
   blackboard->set("path", stale_path);
@@ -162,9 +160,7 @@ TEST(TrackPrecomputedRouteBT, UpdatesAllGoalInputsBeforePreemption)
   stale_feedback->path = stale_path;
   action->on_wait_for_result(stale_feedback);
   EXPECT_TRUE(action->updated());
-  EXPECT_EQ(action->request().route_id, "replacement");
-  EXPECT_EQ(action->request().start_node_id, 2u);
-  EXPECT_EQ(action->request().edge_ids, (std::vector<uint16_t>{20}));
+  EXPECT_EQ(action->request().route, makeRoute(2));
   EXPECT_TRUE(blackboard->get<nav_msgs::msg::Path>("path").poses.empty());
   EXPECT_TRUE(blackboard->get<std::vector<uint32_t>>("blocked").empty());
 }

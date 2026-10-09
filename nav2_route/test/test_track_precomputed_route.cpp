@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <chrono>
 #include <future>
 #include <memory>
@@ -52,6 +53,29 @@ private:
   bool fail_;
 };
 
+class RecordingOperation : public RouteOperation
+{
+public:
+  explicit RecordingOperation(std::shared_ptr<std::vector<unsigned int>> entered)
+  : entered_(entered) {}
+  void configure(
+    const nav2::LifecycleNode::SharedPtr,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>, const std::string &) override {}
+  std::string getName() override {return "test_recording_operation";}
+  OperationResult perform(
+    NodePtr, EdgePtr edge_enter, EdgePtr, const Route &,
+    const geometry_msgs::msg::PoseStamped &, const Metadata *) override
+  {
+    if (edge_enter) {
+      entered_->push_back(edge_enter->edgeid);
+    }
+    return {};
+  }
+
+private:
+  std::shared_ptr<std::vector<unsigned int>> entered_;
+};
+
 class TestOperationsManager : public OperationsManager
 {
 public:
@@ -62,9 +86,26 @@ public:
   }
 };
 
+class RecordingOperationsManager : public OperationsManager
+{
+public:
+  RecordingOperationsManager(
+    nav2::LifecycleNode::SharedPtr node, std::shared_ptr<std::vector<unsigned int>> entered)
+  : OperationsManager(node, nullptr)
+  {
+    change_operations_.push_back(std::make_shared<RecordingOperation>(entered));
+  }
+};
+
 class TestRouteTracker : public RouteTracker
 {
 public:
+  void recordOperations(
+    nav2::LifecycleNode::SharedPtr node, std::shared_ptr<std::vector<unsigned int>> entered)
+  {
+    operations_manager_ = std::make_unique<RecordingOperationsManager>(node, entered);
+  }
+
   void useOperation(nav2::LifecycleNode::SharedPtr node, bool fail)
   {
     operations_manager_ = std::make_unique<TestOperationsManager>(node, fail);
@@ -86,6 +127,7 @@ public:
     EdgeCost cost{1.0f, false};
     graph_[0].addEdge(cost, &graph_[1], 10);
     graph_[1].addEdge(cost, &graph_[2], 20);
+    graph_[2].addEdge(cost, &graph_[0], 30);
     goal_intent_extractor_->setGraph(graph_, &id_to_graph_map_);
     ASSERT_EQ(on_activate(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
   }
@@ -119,6 +161,16 @@ public:
       shared_from_this(), tf_, costmap_subscriber_, compute_and_track_route_server_,
       route_frame_, base_frame_);
     tracker->useOperation(shared_from_this(), fail);
+    route_tracker_ = tracker;
+  }
+
+  void recordOperations(std::shared_ptr<std::vector<unsigned int>> entered)
+  {
+    auto tracker = std::make_shared<TestRouteTracker>();
+    tracker->configure(
+      shared_from_this(), tf_, costmap_subscriber_, compute_and_track_route_server_,
+      route_frame_, base_frame_);
+    tracker->recordOperations(shared_from_this(), entered);
     route_tracker_ = tracker;
   }
 
@@ -201,12 +253,19 @@ protected:
     ASSERT_FALSE(feedbacks.empty());
   }
 
-  Action::Goal goal(std::string id = "fleet-route")
+  Action::Goal goal()
   {
     Action::Goal request;
-    request.route_id = id;
-    request.start_node_id = 1;
-    request.edge_ids = {10, 20};
+    for (uint16_t id : {1, 2, 3}) {
+      nav2_msgs::msg::RouteNode route_node;
+      route_node.nodeid = id;
+      request.route.nodes.push_back(route_node);
+    }
+    for (uint16_t id : {10, 20}) {
+      nav2_msgs::msg::RouteEdge edge;
+      edge.edgeid = id;
+      request.route.edges.push_back(edge);
+    }
     return request;
   }
 
@@ -224,11 +283,9 @@ TEST_F(TrackPrecomputedRouteTest, CompletesExactSequenceAndPublishesPath)
   auto completed = result(handle);
   ASSERT_NE(completed.result, nullptr);
   EXPECT_EQ(completed.code, rclcpp_action::ResultCode::SUCCEEDED);
-  EXPECT_EQ(completed.result->route_id, "fleet-route");
   EXPECT_EQ(completed.result->error_code, Action::Result::NONE);
   ASSERT_FALSE(feedbacks.empty());
   const auto & first = feedbacks.front();
-  EXPECT_EQ(first.route_id, "fleet-route");
   ASSERT_EQ(first.route.edges.size(), 2u);
   EXPECT_EQ(first.route.edges[0].edgeid, 10u);
   EXPECT_EQ(first.route.edges[1].edgeid, 20u);
@@ -237,17 +294,36 @@ TEST_F(TrackPrecomputedRouteTest, CompletesExactSequenceAndPublishesPath)
   EXPECT_EQ(feedbacks.back().last_node_id, 3u);
 }
 
+TEST_F(TrackPrecomputedRouteTest, TracksRevisitedNodesAndRunsRepeatedEdgeOperations)
+{
+  auto entered = std::make_shared<std::vector<unsigned int>>();
+  server->recordOperations(entered);
+  auto request = goal();
+  request.route.nodes.push_back(request.route.nodes[0]);
+  request.route.nodes.push_back(request.route.nodes[1]);
+  nav2_msgs::msg::RouteEdge closing_edge;
+  closing_edge.edgeid = 30;
+  request.route.edges.push_back(closing_edge);
+  request.route.edges.push_back(request.route.edges[0]);
+  auto handle = send(request, true);
+  ASSERT_NE(handle, nullptr);
+  auto completed = result(handle);
+  ASSERT_NE(completed.result, nullptr);
+  EXPECT_EQ(completed.code, rclcpp_action::ResultCode::SUCCEEDED);
+  EXPECT_EQ(*entered, (std::vector<unsigned int>{10, 20, 30, 10}));
+  EXPECT_EQ(feedbacks.back().last_node_id, 2u);
+}
+
 TEST_F(TrackPrecomputedRouteTest, RejectsInvalidRouteWithoutTracking)
 {
   auto request = goal();
-  request.edge_ids = {20, 10};
+  request.route.edges[0].edgeid = 20;
   auto handle = send(request);
   ASSERT_NE(handle, nullptr);
   auto rejected = result(handle);
   ASSERT_NE(rejected.result, nullptr);
   EXPECT_EQ(rejected.code, rclcpp_action::ResultCode::ABORTED);
-  EXPECT_EQ(rejected.result->error_code, Action::Result::INVALID_ROUTE);
-  EXPECT_EQ(rejected.result->route_id, request.route_id);
+  EXPECT_EQ(rejected.result->error_code, Action::Result::NO_VALID_ROUTE);
   EXPECT_TRUE(feedbacks.empty());
 }
 
@@ -264,23 +340,22 @@ TEST_F(TrackPrecomputedRouteTest, CancelsActiveRouteAndReleasesGraph)
   EXPECT_TRUE(server->replaceGraph());
 }
 
-TEST_F(TrackPrecomputedRouteTest, PreemptsWithNewRouteAndCorrelationID)
+TEST_F(TrackPrecomputedRouteTest, PreemptsWithNewRoute)
 {
-  auto original = send(goal("old"));
+  auto original = send(goal());
   ASSERT_NE(original, nullptr);
   waitForFeedback();
-  auto replacement = goal("new");
-  replacement.edge_ids.clear();
+  auto replacement = goal();
+  replacement.route.edges.clear();
+  replacement.route.nodes.resize(1);
   auto handle = send(replacement);
   ASSERT_NE(handle, nullptr);
   auto completed = result(handle);
   ASSERT_NE(completed.result, nullptr);
   EXPECT_EQ(completed.code, rclcpp_action::ResultCode::SUCCEEDED);
-  EXPECT_EQ(completed.result->route_id, "new");
   auto preempted = result(original);
   EXPECT_EQ(preempted.code, rclcpp_action::ResultCode::ABORTED);
   ASSERT_NE(preempted.result, nullptr);
-  EXPECT_EQ(preempted.result->route_id, "old");
 }
 
 TEST_F(TrackPrecomputedRouteTest, ReturnsRerouteRequiredWithoutLocalPlanning)
@@ -299,7 +374,6 @@ TEST_F(TrackPrecomputedRouteTest, ReturnsRerouteRequiredWithoutLocalPlanning)
   ASSERT_NE(aborted.result, nullptr);
   EXPECT_EQ(aborted.code, rclcpp_action::ResultCode::ABORTED);
   EXPECT_EQ(aborted.result->error_code, Action::Result::REROUTE_REQUIRED);
-  EXPECT_EQ(aborted.result->route_id, "fleet-route");
 }
 
 TEST_F(TrackPrecomputedRouteTest, AllowsPlanningButSerializesTrackingActions)
@@ -369,7 +443,6 @@ TEST_F(TrackPrecomputedRouteTest, RejectsNewActionWhileComputedRouteIsTracking)
   ASSERT_NE(busy.result, nullptr);
   EXPECT_EQ(busy.code, rclcpp_action::ResultCode::ABORTED);
   EXPECT_EQ(busy.result->error_code, Action::Result::BUSY);
-  EXPECT_EQ(busy.result->route_id, "fleet-route");
   auto canceled = tracking->async_cancel_goal(sent.get());
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, canceled, 3s),
       rclcpp::FutureReturnCode::SUCCESS);
@@ -386,7 +459,7 @@ TEST_F(TrackPrecomputedRouteTest, RejectsStartOutsideBoundaryRadius)
   ASSERT_NE(handle, nullptr);
   auto rejected = result(handle);
   ASSERT_NE(rejected.result, nullptr);
-  EXPECT_EQ(rejected.result->error_code, Action::Result::INVALID_ROUTE);
+  EXPECT_EQ(rejected.result->error_code, Action::Result::NO_VALID_ROUTE);
   EXPECT_TRUE(feedbacks.empty());
 }
 

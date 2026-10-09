@@ -32,7 +32,6 @@
 #include "nav2_msgs/action/compute_route.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
 #include "nav2_msgs/action/track_precomputed_route.hpp"
-#include "nav2_route/precomputed_route.hpp"
 #include "nav2_msgs/msg/route.hpp"
 #include "nav2_msgs/msg/route_node.hpp"
 #include "nav2_msgs/srv/set_route_graph.hpp"
@@ -57,9 +56,6 @@ namespace nav2_route
 class RouteServer : public nav2::LifecycleNode
 {
 public:
-  using TrackPrecomputedRoute = nav2_msgs::action::TrackPrecomputedRoute;
-  using TrackPrecomputedRouteServer = nav2::SimpleActionServer<TrackPrecomputedRoute>;
-
   using ComputeRoute = nav2_msgs::action::ComputeRoute;
   using ComputeRouteGoal = ComputeRoute::Goal;
   using ComputeRouteResult = ComputeRoute::Result;
@@ -70,6 +66,9 @@ public:
   using ComputeAndTrackRouteFeedback = ComputeAndTrackRoute::Feedback;
   using ComputeAndTrackRouteResult = ComputeAndTrackRoute::Result;
   using ComputeAndTrackRouteServer = nav2::SimpleActionServer<ComputeAndTrackRoute>;
+
+  using TrackPrecomputedRoute = nav2_msgs::action::TrackPrecomputedRoute;
+  using TrackPrecomputedRouteServer = nav2::SimpleActionServer<TrackPrecomputedRoute>;
 
   /**
    * @brief A constructor for nav2_route::RouteServer
@@ -120,9 +119,9 @@ protected:
   /**
    * @brief Main route action server callbacks for computing and tracking a route
    */
-  void trackPrecomputedRoute();
   void computeRoute();
   void computeAndTrackRoute();
+  void trackPrecomputedRoute();
 
   /**
    * @brief Compute a route to the goal, incorporating rerouting information.
@@ -147,7 +146,19 @@ protected:
     ReroutingState & rerouting_info);
 
   /**
-   * @brief Main processing called by both action server callbacks to centralize
+   * @brief Resolve ordered node and edge IDs to canonical graph objects.
+   * Positions, metadata, operations and costs are taken from the loaded graph.
+   * Repeated nodes and edges retain their order in the supplied route.
+   */
+  Route resolveRoute(const nav2_msgs::msg::Route & route_msg);
+
+  /** @brief Resolve an external route and validate the robot's starting position. */
+  Route findRoute(
+    const std::shared_ptr<const TrackPrecomputedRoute::Goal> goal,
+    ReroutingState & rerouting_info);
+
+  /**
+   * @brief Main processing called by all action server callbacks to centralize
    * the great deal of shared code between them
    */
   template<typename ActionT>
@@ -195,6 +206,18 @@ protected:
     const nav_msgs::msg::Path & /*path*/,
     const rclcpp::Duration & /*planning_duration*/);
 
+  /** @brief Populate the execution duration for external route tracking. */
+  void populateActionResult(
+    std::shared_ptr<TrackPrecomputedRoute::Result> result,
+    const Route & route,
+    const nav_msgs::msg::Path & path,
+    const rclcpp::Duration & execution_duration);
+
+  /** @brief Log an exception for an external route request. */
+  void exceptionWarning(
+    const std::shared_ptr<const TrackPrecomputedRoute::Goal> goal,
+    const std::exception & ex);
+
   /**
    * @brief The service callback to set a new route graph
    * @param request_header to the service
@@ -225,10 +248,15 @@ protected:
 
   typename TrackPrecomputedRouteServer::SharedPtr track_precomputed_route_server_;
 
-  // Requests retain graph pointers. Graph replacement must wait for all users;
-  // the service fails promptly when a request is active. Only one tracker may run.
+  // Action execution runs on independent worker threads. Hold graph_mutex_ for
+  // each request's lifetime: routes and operations retain raw node/edge pointers.
+  // set_route_graph takes the exclusive lock before replacing their storage.
   std::shared_mutex graph_mutex_;
+  // RouteTracker's feedback, progress and OperationsManager are shared by both
+  // tracking actions. Reject competing owners while allowing ComputeRoute.
   std::mutex tracking_mutex_;
+  // Both compute actions mutate node search state, scorers and goal extraction
+  // state. Serialize findRoute(), without holding this lock during tracking.
   std::mutex planning_mutex_;
 
   // TF

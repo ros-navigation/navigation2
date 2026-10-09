@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <type_traits>
+
 #include "nav2_route/route_server.hpp"
 
 using std::placeholders::_1;
@@ -185,8 +187,10 @@ RouteServer::isRequestValid(
   }
 
   if (graph_.empty()) {
-    RCLCPP_INFO(get_logger(), "No graph set! Aborting request.");
-    action_server->terminate_current();
+    auto result = std::make_shared<typename ActionT::Result>();
+    result->error_code = ActionT::Result::NO_VALID_GRAPH;
+    result->error_msg = "No route graph loaded";
+    action_server->terminate_current(result);
     return false;
   }
 
@@ -250,6 +254,75 @@ Route RouteServer::findRoute(
   return goal_intent_extractor_->pruneStartandGoal(route, goal, rerouting_info);
 }
 
+Route RouteServer::resolveRoute(const nav2_msgs::msg::Route & route_msg)
+{
+  if (graph_.empty()) {
+    throw nav2_core::NoValidGraph("No route graph loaded");
+  }
+  if (route_msg.nodes.empty() || route_msg.nodes.size() != route_msg.edges.size() + 1) {
+    throw nav2_core::NoValidRouteCouldBeFound("Route must contain one more node than edges");
+  }
+  if (!route_msg.header.frame_id.empty() && route_msg.header.frame_id != route_frame_) {
+    throw nav2_core::NoValidRouteCouldBeFound("Route frame does not match the loaded graph");
+  }
+
+  auto find_node = [this](unsigned int id) -> NodePtr {
+      auto it = id_to_graph_map_.find(id);
+      if (it == id_to_graph_map_.end()) {
+        throw nav2_core::NoValidRouteCouldBeFound("Unknown route node ID");
+      }
+      return &graph_.at(it->second);
+    };
+  Route route;
+  route.start_node = find_node(route_msg.nodes.front().nodeid);
+  route.edges.reserve(route_msg.edges.size());
+  NodePtr current = route.start_node;
+  for (size_t i = 0; i < route_msg.edges.size(); ++i) {
+    NodePtr next = find_node(route_msg.nodes[i + 1].nodeid);
+    EdgePtr selected = nullptr;
+    for (auto & edge : current->neighbors) {
+      if (edge.edgeid == route_msg.edges[i].edgeid && edge.start == current && edge.end == next) {
+        if (selected) {
+          throw nav2_core::NoValidRouteCouldBeFound("Ambiguous directed route edge");
+        }
+        selected = &edge;
+      }
+    }
+    if (!selected) {
+      throw nav2_core::NoValidRouteCouldBeFound("Unknown or disconnected directed route edge");
+    }
+    route.edges.push_back(selected);
+    route.route_cost += selected->edge_cost.cost;
+    current = next;
+  }
+  return route;
+}
+
+Route RouteServer::findRoute(
+  const std::shared_ptr<const TrackPrecomputedRoute::Goal> goal,
+  ReroutingState & /*rerouting_info*/)
+{
+  auto route = resolveRoute(goal->route);
+  const auto pose = route_tracker_->getRobotPose();
+  const double distance = std::hypot(
+    pose.pose.position.x - route.start_node->coords.x,
+    pose.pose.position.y - route.start_node->coords.y);
+  if (distance > get_parameter("boundary_radius_to_achieve_node").as_double()) {
+    throw nav2_core::NoValidRouteCouldBeFound(
+            "Robot must be within boundary_radius_to_achieve_node of the starting node");
+  }
+  return route;
+}
+
+void RouteServer::populateActionResult(
+  std::shared_ptr<TrackPrecomputedRoute::Result> result,
+  const Route &,
+  const nav_msgs::msg::Path &,
+  const rclcpp::Duration & execution_duration)
+{
+  result->execution_duration = execution_duration;
+}
+
 template<typename ActionT>
 void
 RouteServer::processRouteRequest(
@@ -259,8 +332,12 @@ RouteServer::processRouteRequest(
   auto result = std::make_shared<typename ActionT::Result>();
   std::shared_lock<std::shared_mutex> graph_lock(graph_mutex_);
   std::unique_lock<std::mutex> tracking_lock(tracking_mutex_, std::defer_lock);
-  if (std::is_same<ActionT, ComputeAndTrackRoute>::value && !tracking_lock.try_lock()) {
-    result->error_code = ActionT::Result::UNKNOWN;
+  if (!std::is_same<ActionT, ComputeRoute>::value && !tracking_lock.try_lock()) {
+    if constexpr (std::is_same<ActionT, TrackPrecomputedRoute>::value) {
+      result->error_code = ActionT::Result::BUSY;
+    } else {
+      result->error_code = ActionT::Result::UNKNOWN;
+    }
     result->error_msg = "Another route tracking request is active";
     action_server->terminate_current(result);
     return;
@@ -278,6 +355,7 @@ RouteServer::processRouteRequest(
         RCLCPP_INFO(get_logger(), "Computing new preempted route to goal.");
         goal = action_server->accept_pending_goal();
         rerouting_info.reset();
+        start_time = this->now();
       }
 
       // Find the route
@@ -288,14 +366,24 @@ RouteServer::processRouteRequest(
       publishRoute(route);
       auto path = path_converter_->densify(route, rerouting_info, route_frame_, this->now());
 
-      if (std::is_same<ActionT, ComputeAndTrackRoute>::value) {
+      if constexpr (!std::is_same<ActionT, ComputeRoute>::value) {
         // blocks until re-route requested or task completion, publishes feedback
-        switch (route_tracker_->trackRoute(route, path, rerouting_info)) {
+        switch (route_tracker_->trackRoute<ActionT>(route, path, rerouting_info, action_server)) {
           case TrackerResult::COMPLETED:
             populateActionResult(result, route, path, this->now() - start_time);
             action_server->succeeded_current(result);
             return;
           case TrackerResult::REROUTE_REQUESTED:
+            if constexpr (std::is_same<ActionT, TrackPrecomputedRoute>::value) {
+              result->execution_duration = this->now() - start_time;
+              result->error_code = ActionT::Result::REROUTE_REQUIRED;
+              result->error_msg = "Route operations requested replanning by the route provider";
+              result->blocked_ids = rerouting_info.blocked_ids;
+              action_server->terminate_current(result);
+              return;
+            }
+            // Computed routes are replanned locally on the next iteration.
+            break;
           case TrackerResult::INTERRUPTED:
             // Reroute, cancel, or preempt requested
             break;
@@ -374,6 +462,13 @@ RouteServer::computeAndTrackRoute()
   processRouteRequest<ComputeAndTrackRoute>(compute_and_track_route_server_);
 }
 
+void
+RouteServer::trackPrecomputedRoute()
+{
+  RCLCPP_INFO(get_logger(), "Tracking externally computed route.");
+  processRouteRequest<TrackPrecomputedRoute>(track_precomputed_route_server_);
+}
+
 void RouteServer::setRouteGraph(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
@@ -427,6 +522,15 @@ void RouteServer::exceptionWarning(
     "Route server failed on request: Start: [(%0.2f, %0.2f) / %i] Goal: [(%0.2f, %0.2f) / %i]:"
     " \"%s\"", goal->start.pose.position.x, goal->start.pose.position.y, goal->start_id,
     goal->goal.pose.position.x, goal->goal.pose.position.y, goal->goal_id, ex.what());
+}
+
+void RouteServer::exceptionWarning(
+  const std::shared_ptr<const TrackPrecomputedRoute::Goal> goal,
+  const std::exception & ex)
+{
+  RCLCPP_WARN(
+    get_logger(), "Route server failed on external route request with %zu edges: \"%s\"",
+    goal->route.edges.size(), ex.what());
 }
 
 template bool RouteServer::isRequestValid<RouteServer::ComputeRoute>(

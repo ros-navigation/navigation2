@@ -15,12 +15,12 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include <functional>
 
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
+#include "nav2_msgs/action/track_precomputed_route.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/operations_manager.hpp"
@@ -41,14 +41,6 @@ class RouteTracker
 public:
   using ActionServerTrack = nav2::SimpleActionServer<nav2_msgs::action::ComputeAndTrackRoute>;
   using Feedback = nav2_msgs::action::ComputeAndTrackRoute::Feedback;
-
-  struct TrackingContext
-  {
-    std::function<bool()> is_active;
-    std::function<bool()> is_cancel_requested;
-    std::function<bool()> is_preempt_requested;
-    std::function<void(std::unique_ptr<Feedback>)> publish_feedback;
-  };
 
   /**
    * @brief A constructor for nav2_route::RouteTracker
@@ -125,12 +117,24 @@ public:
     const Route & route, const nav_msgs::msg::Path & path,
     ReroutingState & rerouting_info);
 
-  /** @brief Track using callbacks supplied by another action server. */
+  /** @brief Track a route using the requesting action server. */
+  template<typename ActionT>
   TrackerResult trackRoute(
     const Route & route, const nav_msgs::msg::Path & path,
-    ReroutingState & rerouting_info, const TrackingContext & context);
+    ReroutingState & rerouting_info,
+    typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server);
 
 protected:
+  /** @brief Publish common route feedback to the requesting action server. */
+  template<typename ActionT>
+  void publishFeedback(
+    const bool rerouted,
+    const unsigned int next_node_id,
+    const unsigned int last_node_id,
+    const unsigned int edge_id,
+    const std::vector<std::string> & operations,
+    typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server);
+
   nav2_msgs::msg::Route route_msg_;
   nav_msgs::msg::Path path_;
   std::string route_frame_, base_frame_;

@@ -25,9 +25,8 @@ TrackPrecomputedRouteAction::TrackPrecomputedRouteAction(
 
 void TrackPrecomputedRouteAction::on_tick()
 {
-  getInput("route_id", goal_.route_id);
-  if (!getInput("start_node_id", goal_.start_node_id) || !getInput("edge_ids", goal_.edge_ids)) {
-    throw BT::RuntimeError("TrackPrecomputedRoute requires start_node_id and edge_ids");
+  if (!getInput("route", goal_.route)) {
+    throw BT::RuntimeError("TrackPrecomputedRoute requires a route");
   }
   resetFeedback();
   setOutput("blocked_ids", std::vector<uint32_t>());
@@ -38,7 +37,7 @@ void TrackPrecomputedRouteAction::resetFeedback()
   setOutput("last_node_id", uint16_t{0});
   setOutput("next_node_id", uint16_t{0});
   setOutput("current_edge_id", uint16_t{0});
-  setOutput("route", nav2_msgs::msg::Route());
+  setOutput("route_feedback", nav2_msgs::msg::Route());
   setOutput("path", nav_msgs::msg::Path());
   setOutput("operations_triggered", std::vector<std::string>());
 }
@@ -77,11 +76,8 @@ void TrackPrecomputedRouteAction::on_wait_for_result(
   std::shared_ptr<const Action::Feedback> feedback)
 {
   Action::Goal updated;
-  getInput("route_id", updated.route_id);
-  if (!getInput("start_node_id", updated.start_node_id) || !getInput("edge_ids",
-      updated.edge_ids))
-  {
-    throw BT::RuntimeError("TrackPrecomputedRoute requires start_node_id and edge_ids");
+  if (!getInput("route", updated.route)) {
+    throw BT::RuntimeError("TrackPrecomputedRoute requires a route");
   }
   if (updated != goal_) {
     goal_ = updated;
@@ -92,7 +88,7 @@ void TrackPrecomputedRouteAction::on_wait_for_result(
     setOutput("last_node_id", feedback->last_node_id);
     setOutput("next_node_id", feedback->next_node_id);
     setOutput("current_edge_id", feedback->current_edge_id);
-    setOutput("route", feedback->route);
+    setOutput("route_feedback", feedback->route);
     setOutput("path", feedback->path);
     setOutput("operations_triggered", feedback->operations_triggered);
   }

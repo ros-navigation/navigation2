@@ -1,52 +1,61 @@
 # Tracking externally planned routes
 
 `track_precomputed_route` accepts `nav2_msgs/action/TrackPrecomputedRoute`.
-It executes an exact directed edge sequence against the server's loaded graph,
-without calling the route planner, pruning the sequence, or rerouting locally.
-This supports fleet planners that own route selection while Nav2 handles robot
-progress, dense path generation, and graph operations.
+The goal is an existing `nav2_msgs/msg/Route`: ordered nodes and directed edges
+from the server's loaded graph. It must contain one more node than edges;
+a single node with no edges is valid. Loops and repeated nodes or edges retain
+their supplied order. No local planning, pruning or deduplication is performed.
 
-The goal contains an opaque `route_id`, a `start_node_id`, and ordered `edge_ids`.
-IDs are resolved from the current node's outgoing edges, preserving the server's
-canonical coordinates, metadata, and operations. Unknown or disconnected edges
-and ambiguous outgoing IDs fail with `INVALID_ROUTE`. Opposite directions may
-reuse an edge ID; duplicate IDs among a node's outgoing edges are ambiguous.
-Loops and repeated edges are preserved. An empty edge list tracks one node.
-The reported route cost is the sum of stored edge costs; edge scorers do not run.
+The server resolves node IDs with its existing graph ID map, then resolves each
+edge ID among the current node's outgoing edges to the next supplied node.
+The loaded graph supplies coordinates, metadata, operations and stored costs;
+message coordinates and cost do not override it. An empty frame is accepted;
+a supplied frame must match `route_frame`. Unknown IDs, inconsistent sequences,
+disconnected edges or multiple edges with the same ID and directed endpoints
+fail with `NO_VALID_ROUTE`. Opposite directions may reuse an edge ID.
 
 The robot must be within `boundary_radius_to_achieve_node` of the supplied start.
-The caller must arrange the approach before submitting the goal. Missing robot
-TF produces `TF_ERROR`. The route provider and server must use the same graph;
-`route_id` identifies the request, not a graph version or a deduplication key.
+The caller arranges the approach before submitting a goal. Missing robot TF
+produces `TF_ERROR`. Provider and server must use the same graph; graph version
+negotiation is outside this interface.
 
-Feedback echoes `route_id`, the route, the densified path, current edge and node
-IDs, and triggered operations. Tracking does not drive the robot: consume the
-path with `FollowPath`, as with `ComputeAndTrackRoute`. Cancellation stops
-tracking; a replacement goal on the same action preempts the previous request.
-Operations requesting a reroute abort with `REROUTE_REQUIRED` and their
-`blocked_ids`, allowing the provider to submit a new route. IDs may be empty
-when an operation requests replanning without identifying blocked elements.
-Operational failures produce `OPERATION_FAILED`.
+The action UUID already identifies the request, so no separate correlation ID
+is needed. Feedback follows `ComputeAndTrackRoute`: canonical route, densified
+path, node and edge IDs, and triggered operations. Tracking does not drive the
+robot: consume the path with `FollowPath`. Cancellation stops tracking;
+replacement goals on the same action preempt the previous request.
 
-Only one tracking action may run at a time. A competing new tracking action
-fails with `BUSY`; the existing `ComputeAndTrackRoute` action uses `UNKNOWN`
-and a descriptive message because its existing interface has no busy code.
-`ComputeRoute` remains available during tracking. Graph replacement through
-`set_route_graph` returns `success=false` while any route request holds graph
-references; retry after completion or cancellation.
+An operation requesting rerouting aborts with `REROUTE_REQUIRED` instead of
+selecting a different route locally. Its `blocked_ids` are retained as uint32
+because operations use unsigned graph IDs and the external provider needs
+those constraints to replan. They may be empty for a general reroute request.
+These are discovered during execution, not available from the input route.
+`execution_duration` follows the existing tracking action's result convention.
+Operation failures produce `OPERATION_FAILED`.
 
-The `TrackPrecomputedRoute` BT plugin uses these input ports:
+The three actions share request validation, preemption, route publication,
+path generation, exception handling and result completion. Both tracking
+actions use the same tracker and feedback implementation. The computed action
+continues to replan locally when operations request it.
+
+Action execution uses independent worker threads. A graph read lock protects
+raw graph pointers until each request exits; graph replacement returns
+`success=false` while they are in use. One tracking lock protects shared tracker
+and operation state: a competing external tracking action fails with `BUSY`,
+while the existing computed tracking action uses `UNKNOWN` and a descriptive
+message. A planning lock protects shared goal extraction, scorer and node search
+state for the two compute actions. It is released before tracking, so
+`ComputeRoute` remains available during either tracking action.
+
+The BT plugin accepts a Route blackboard value:
 
 ```xml
-<TrackPrecomputedRoute route_id="{fleet_route_id}" start_node_id="1"
-                      edge_ids="10;20" path="{path}" route="{route}"
+<TrackPrecomputedRoute route="{fleet_route}" path="{path}"
+                      route_feedback="{canonical_route}"
                       blocked_ids="{blocked_ids}"
                       error_code_id="{route_error_code}" error_msg="{route_error_msg}"/>
 ```
 
-`edge_ids` also accepts a `std::vector<uint16_t>` blackboard value. An empty
-string represents a single-node route. Updating any goal input preempts the
-current request. `execution_duration`, node/edge IDs, and `operations_triggered`
-are additional outputs. On termination, transient feedback outputs are cleared;
-failure results retain their blocked IDs and error for the caller's recovery.
-The existing compute actions and their local rerouting behavior remain available.
+Updating `route` preempts the current request. `execution_duration`, node/edge
+IDs and `operations_triggered` are additional outputs. Terminal states clear
+transient feedback outputs; failures retain blocked IDs and error information.
