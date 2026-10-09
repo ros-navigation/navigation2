@@ -1,9 +1,20 @@
 <!--
-  The recovery behaviors available to NavigateToPoseWRecoveryManager. Which of them run, and in
-  what order for each error code, is set by the recovery_manager parameters. Custom recovery
+  Runs one recovery behavior each time navigation fails. Which of the children run, and in what
+  order for each error code, is set by the recovery_manager parameters. Custom recovery
   behaviors can be added here as more children.
+
+  Use it as the recovery branch of a RecoveryNode:
+
+  <RecoveryNode number_of_retries="-1">
+    ... navigation with error_code_id="{compute_path_error_code}" and
+        error_code_id="{follow_path_error_code}" ...
+    <ReactiveFallback>
+      <GoalUpdated/>
+      <SubTree ID="RecoveryManagerSubtree" _autoremap="true"/>
+    </ReactiveFallback>
+  </RecoveryNode>
 -->
-<root BTCPP_format="4">
+<root BTCPP_format="4" main_tree_to_execute="RecoveryManagerSubtree">
   <BehaviorTree ID="RecoveryManagerSubtree">
     <RecoveryManager name="RecoveryActions" param_namespace="recovery_manager">
       <ClearEntireCostmap name="ClearLocalCostmap" service_name="local_costmap/clear_entirely_local_costmap"/>

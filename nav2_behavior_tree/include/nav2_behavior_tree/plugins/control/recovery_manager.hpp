@@ -92,6 +92,8 @@ namespace nav2_behavior_tree
  *   </RecoveryManager>
  * </RecoveryNode>
  * @endcode
+ *
+ * A ready to use subtree is in nav2_bt_navigator/behavior_trees/subtrees/recovery_manager.xml.
  */
 class RecoveryManager : public BT::ControlNode
 {
