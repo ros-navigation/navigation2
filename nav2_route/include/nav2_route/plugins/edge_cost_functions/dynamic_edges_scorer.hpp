@@ -87,8 +87,8 @@ public:
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("DynamicEdgesScorer")};
   std::string name_;
-  std::set<unsigned int> closed_edges_;
-  std::unordered_map<unsigned int, float> dynamic_penalties_;
+  std::set<uint64_t> closed_edges_;
+  std::unordered_map<uint64_t, float> dynamic_penalties_;
   nav2::ServiceServer<nav2_msgs::srv::DynamicEdges>::SharedPtr service_;
 };
 
