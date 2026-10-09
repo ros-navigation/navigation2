@@ -190,7 +190,8 @@ void AStarAlgorithm<NodeT>::setGoal(
   const float & my,
   const unsigned int & dim_3,
   const GoalHeadingMode & goal_heading_mode,
-  const int & coarse_search_resolution)
+  const int & coarse_search_resolution,
+  const std::optional<double> & goal_yaw)
 {
   if constexpr (std::is_base_of_v<Node2D, NodeT>) {
     // Node2D-specific: simplified goal setting, no heading modes
@@ -290,6 +291,20 @@ void AStarAlgorithm<NodeT>::setGoal(
         }
       case GoalHeadingMode::UNKNOWN:
         throw std::runtime_error("Goal heading is UNKNOWN.");
+    }
+
+    // Collision check goals at their exact pose rather than their cell center and bin.
+    // The second BIDIRECTIONAL goal is the requested heading flipped.
+    if (_collision_checker) {
+      auto & goals_state = _goal_manager.getGoalsState();
+      for (unsigned int i = 0; i != goals_state.size(); i++) {
+        NodePtr & goal = goals_state[i].goal;
+        double yaw = _shared_ctx->motion_table.getAngleFromBin(goal->pose.theta);
+        if (goal_yaw && goal_heading_mode != GoalHeadingMode::ALL_DIRECTION) {
+          yaw = *goal_yaw + (i == 0 ? 0.0 : M_PI);
+        }
+        goal->isNodeValidAtPose(_traverse_unknown, _collision_checker, yaw);
+      }
     }
   }
 }

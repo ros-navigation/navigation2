@@ -18,6 +18,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <queue>
 #include <tuple>
 #include <utility>
@@ -139,13 +140,15 @@ public:
    * @param dim_3 The node dim_3 index of the goal
    * @param goal_heading_mode The goal heading mode to use
    * @param coarse_search_resolution The resolution to search for goal heading
+   * @param goal_yaw Exact goal heading in radians to collision check SE2 goals at
    */
   void setGoal(
     const float & mx,
     const float & my,
     const unsigned int & dim_3,
     const GoalHeadingMode & goal_heading_mode = GoalHeadingMode::DEFAULT,
-    const int & coarse_search_resolution = 1);
+    const int & coarse_search_resolution = 1,
+    const std::optional<double> & goal_yaw = std::nullopt);
 
   /**
    * @brief Set the starting pose for planning, as a node index
@@ -314,7 +317,7 @@ protected:
   MotionModel _motion_model;
   NodeHeuristicPair _best_heuristic_node;
 
-  GridCollisionChecker * _collision_checker;
+  GridCollisionChecker * _collision_checker{nullptr};
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<AnalyticExpansion<NodeT>> _expander;
   std::shared_ptr<NodeContext> _shared_ctx;

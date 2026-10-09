@@ -278,6 +278,18 @@ public:
     GridCollisionChecker * collision_checker);
 
   /**
+   * @brief Check if this node is valid at its exact position and a given heading
+   * @param traverse_unknown If we can explore unknown nodes on the graph
+   * @param collision_checker: Collision checker object
+   * @param yaw Heading to check this node at, in radians
+   * @return whether this node is valid and collision free
+   */
+  bool isNodeValidAtPose(
+    const bool & traverse_unknown,
+    GridCollisionChecker * collision_checker,
+    const double & yaw);
+
+  /**
    * @brief Get traversal cost of parent node to child node
    * @param child Node pointer to child
    * @return traversal cost
