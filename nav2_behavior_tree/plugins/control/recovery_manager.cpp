@@ -96,8 +96,6 @@ RecoveryManager::RecoveryManager(
   const BT::NodeConfiguration & config)
 : BT::ControlNode(name, config)
 {
-  getInput("wrap_around", wrap_around_);
-
   node_ = config.blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   logger_ = node_->get_logger().get_child("RecoveryManager");
 }
@@ -111,6 +109,7 @@ BT::NodeStatus RecoveryManager::tick()
 
   const bool starting_new_recovery = status() != BT::NodeStatus::RUNNING;
   if (starting_new_recovery) {
+    getInput("wrap_around", wrap_around_);
     resetSequencesIfGoalChanged();
     if (!selectNextRecoveryBehavior()) {
       return BT::NodeStatus::FAILURE;
