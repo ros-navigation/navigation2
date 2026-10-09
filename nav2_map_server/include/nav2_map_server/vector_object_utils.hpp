@@ -16,10 +16,10 @@
 #define NAV2_MAP_SERVER__VECTOR_OBJECT_UTILS_HPP_
 
 #include <uuid/uuid.h>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "std_msgs/msg/header.hpp"

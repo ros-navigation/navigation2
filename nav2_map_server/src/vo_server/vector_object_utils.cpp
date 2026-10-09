@@ -17,7 +17,6 @@
 namespace nav2_map_server
 {
 
-// TODO(Marco): Remove when introducing new API
 bool lookupShapeTransform(
   const std_msgs::msg::Header & header,
   const std::string & target_frame,
