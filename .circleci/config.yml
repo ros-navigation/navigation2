@@ -178,6 +178,19 @@ _commands:
                         --packages-select-cache-invalid \
                         --packages-select-cache-key build \
                       | xargs)
+
+                    # Removed route sources can leave coverage notes in a restored build cache.
+                    STALE_ROUTE_COVERAGE=false
+                    for source in precomputed_route track_precomputed_route; do
+                      if [ ! -f "src/navigation2/nav2_route/src/${source}.cpp" ] &&
+                         [ -d build/nav2_route ] &&
+                         [ -n "$(find build/nav2_route -type f -name "${source}.cpp.gcno" -print -quit)" ]
+                      then
+                        STALE_ROUTE_COVERAGE=true
+                        BUILD_INVALID="$BUILD_INVALID nav2_route"
+                        break
+                      fi
+                    done
                     echo BUILD_INVALID: $BUILD_INVALID
 
                     BUILD_PACKAGES=""
@@ -211,6 +224,15 @@ _commands:
                     colcon clean packages --yes \
                       --packages-select ${BUILD_PACKAGES} \
                       --base-select install
+
+                    # Clean only when this stage actually rebuilds the affected package.
+                    if [ "$STALE_ROUTE_COVERAGE" = true ] &&
+                       [[ " $BUILD_PACKAGES " == *" nav2_route "* ]]
+                    then
+                      colcon clean packages --yes \
+                        --packages-select nav2_route \
+                        --base-select build
+                    fi
 
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
