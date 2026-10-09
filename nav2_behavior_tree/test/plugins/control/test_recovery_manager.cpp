@@ -55,7 +55,6 @@ public:
     config_->blackboard->set("goal", geometry_msgs::msg::PoseStamped());
     config_->blackboard->set("goals", nav_msgs::msg::Goals());
     config_->input_ports["param_namespace"] = testName();
-    config_->input_ports["error_code_names"] = "compute_path_error_code;follow_path_error_code";
     config_->input_ports["reset_distance"] = "0.0";
     config_->input_ports["wrap_around"] = "false";
     config_->input_ports["global_frame"] = "map";
@@ -63,6 +62,7 @@ public:
     for (const auto & behavior_name : {"ClearCostmap", "Wait", "BackUp"}) {
       behaviors_[behavior_name] = std::make_shared<FakeRecoveryBehavior>(behavior_name);
     }
+    setErrorCodeNamePrefixes({"compute_path", "follow_path"});
   }
 
   void TearDown() override
@@ -77,6 +77,20 @@ public:
       std::make_shared<nav2_behavior_tree::RecoveryManager>("recovery_manager", *config_);
     for (const auto & behavior_name : {"ClearCostmap", "Wait", "BackUp"}) {
       recovery_manager_->addChild(behaviors_[behavior_name].get());
+    }
+  }
+
+  // Declared by the BT action server in a real system
+  void setErrorCodeNamePrefixes(const std::vector<std::string> & prefixes)
+  {
+    if (!node_->has_parameter("error_code_name_prefixes")) {
+      // Dynamically typed so that a test can undeclare it
+      rcl_interfaces::msg::ParameterDescriptor descriptor;
+      descriptor.dynamic_typing = true;
+      node_->declare_parameter(
+        "error_code_name_prefixes", rclcpp::ParameterValue(prefixes), descriptor);
+    } else {
+      node_->set_parameter(rclcpp::Parameter("error_code_name_prefixes", prefixes));
     }
   }
 
@@ -165,7 +179,7 @@ TEST_F(RecoveryManagerTestFixture, test_error_specific_sequences)
   EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(tickCount("ClearCostmap"), 2);
 
-  // compute_path_error_code comes first in error_code_names
+  // compute_path comes first in error_code_name_prefixes
   setErrorCode("compute_path_error_code", 208);
   EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(tickCount("Wait"), 1);
@@ -310,7 +324,7 @@ TEST_F(RecoveryManagerTestFixture, test_reset_after_robot_moved)
 
 TEST_F(RecoveryManagerTestFixture, test_custom_error_names)
 {
-  config_->input_ports["error_code_names"] = "first_action_error_code;second_action_error_code";
+  setErrorCodeNamePrefixes({"first_action", "second_action"});
   setErrorName("first_action_error_code.error_names.MY_FAILURE", 950);
   setErrorName("second_action_error_code.error_names.my_failure", 951);
   setErrorName("second_action_error_code.error_names.too_big", 70000);
@@ -344,7 +358,7 @@ TEST_F(RecoveryManagerTestFixture, test_custom_error_names)
 
 TEST_F(RecoveryManagerTestFixture, test_custom_names_overlapping_nav2_names)
 {
-  config_->input_ports["error_code_names"] = "my_action_error_code;follow_path_error_code";
+  setErrorCodeNamePrefixes({"my_action", "follow_path"});
   // TIMEOUT of my_action is 950, not the 108 that is TIMEOUT for FollowPath
   setErrorName("my_action_error_code.error_names.TIMEOUT", 950);
   setErrorName("my_action_error_code.error_names.BATTERY_LOW", 108);
@@ -387,6 +401,31 @@ TEST_F(RecoveryManagerTestFixture, test_same_error_code_in_different_groups)
   EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(tickCount("Wait"), 1);
   EXPECT_EQ(tickCount("BackUp"), 0);
+}
+
+TEST_F(RecoveryManagerTestFixture, test_unconfigured_error_codes_are_ignored)
+{
+  // backup comes first, but a failed BackUp recovery must not take over the recovery
+  setErrorCodeNamePrefixes({"backup", "follow_path"});
+  setSequence("follow_path_error_code.default", {"ClearCostmap"});
+  createRecoveryManager();
+
+  setErrorCode("backup_error_code", 710);
+  setErrorCode("follow_path_error_code", 105);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tickCount("ClearCostmap"), 1);
+
+  setErrorCode("follow_path_error_code", 0);
+  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tickCount("ClearCostmap") + tickCount("Wait") + tickCount("BackUp"), 1);
+}
+
+TEST_F(RecoveryManagerTestFixture, test_missing_error_code_name_prefixes)
+{
+  setSequence("follow_path_error_code.default", {"ClearCostmap"});
+  node_->undeclare_parameter("error_code_name_prefixes");
+  createRecoveryManager();
+  EXPECT_THROW(recovery_manager_->executeTick(), BT::RuntimeError);
 }
 
 TEST_F(RecoveryManagerTestFixture, test_unknown_behavior_name)

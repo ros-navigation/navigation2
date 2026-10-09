@@ -43,8 +43,10 @@ namespace nav2_behavior_tree
  * behavior in it is run. Reordering the children in the XML has no effect on execution,
  * except for a group with no `default` sequence (see below).
  *
- * Each blackboard key in `error_code_names` gets its own group of sequences which is named
- * after the key:
+ * The error codes come from the same `error_code_name_prefixes` parameter the server uses to
+ * report them: each prefix with configuration below gets its own group of sequences, named
+ * after its `<prefix>_error_code` blackboard key. Prefixes without any configuration are
+ * ignored. 
  *
  * @code{.yaml}
  * bt_navigator:
@@ -70,8 +72,8 @@ namespace nav2_behavior_tree
  *           invalid_path: ["none"]
  *           failed_to_make_progress: ["ClearLocalCostmap", "BackUp", "Spin"]
  *           no_valid_control: ["ClearLocalCostmap", "BackUp"]
- *       # A custom action's error codes are named in error_names. Its blackboard key also
- *       # has to be added to the error_code_names port
+ *       # A custom action's error codes are named in error_names. Its prefix (my_action)
+ *       # also has to be in error_code_name_prefixes
  *       my_action_error_code:
  *         error_names: {MY_FAILURE: 950}
  *         default: ["Wait"]
@@ -132,9 +134,6 @@ public:
     return {
       BT::InputPort<std::string>(
         "param_namespace", "recovery_manager", "Parameter namespace of the recovery sequences"),
-      BT::InputPort<std::vector<std::string>>(
-        "error_code_names", "compute_path_error_code;follow_path_error_code",
-        "Blackboard keys of the error codes to recover from, in order of priority"),
       BT::InputPort<double>(
         "reset_distance", 0.5,
         "Distance the robot has to move after a recovery for the sequences to start over, "
@@ -164,8 +163,8 @@ private:
   };
 
   /**
-   * @brief Indexes the children nodes by name and loads a group of sequences for each key in
-   * error_code_names. Warns about children that no sequence refers to
+   * @brief Indexes the children nodes by name and loads a group of sequences for each prefix in
+   * error_code_name_prefixes that is configured. Warns about children that no sequence refers to
    * @throw BT::RuntimeError If two children share a name, or a sequence names an unknown child
    */
   void loadRecoverySequences();
@@ -175,9 +174,9 @@ private:
    * one error code group from the parameters
    * @param blackboard_key Blackboard key holding the error code which is also the name of the group
    * @param param_namespace Parameter namespace under which group is stored
-   * @return ErrorCodeGroup The loaded group
+   * @return ErrorCodeGroup The loaded group, or std::nullopt if it has no parameters
    */
-  ErrorCodeGroup loadErrorCodeGroup(
+  std::optional<ErrorCodeGroup> loadErrorCodeGroup(
     const std::string & blackboard_key, const std::string & param_namespace);
 
   /**

@@ -16,6 +16,7 @@
 #include <cctype>
 #include <limits>
 #include <map>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -186,11 +187,25 @@ void RecoveryManager::loadRecoverySequences()
 
   std::string param_namespace;
   getInput("param_namespace", param_namespace);
-  std::vector<std::string> error_code_blackboard_key;
-  getInput("error_code_names", error_code_blackboard_key);
+  // The same prefixes the server reports the error codes of, e.g. follow_path for
+  // follow_path_error_code
+  std::vector<std::string> error_code_name_prefixes;
+  if (!node_->get_parameter("error_code_name_prefixes", error_code_name_prefixes)) {
+    throw BT::RuntimeError(
+            "RecoveryManager: parameter 'error_code_name_prefixes' is not declared on the node");
+  }
 
-  for (const auto & blackboard_key : error_code_blackboard_key) {
-    error_code_groups_.push_back(loadErrorCodeGroup(blackboard_key, param_namespace));
+  // Only the error codes that have recovery sequences configured are recovered from
+  for (const auto & error_code_name_prefix : error_code_name_prefixes) {
+    auto group = loadErrorCodeGroup(error_code_name_prefix + "_error_code", param_namespace);
+    if (group) {
+      error_code_groups_.push_back(std::move(*group));
+    }
+  }
+  if (error_code_groups_.empty()) {
+    RCLCPP_WARN(
+      logger_, "No recovery sequences are configured under '%s' for any error code",
+      param_namespace.c_str());
   }
 
   // A child that no sequence refers to can never run
@@ -218,9 +233,17 @@ void RecoveryManager::loadRecoverySequences()
   sequences_loaded_ = true;
 }
 
-RecoveryManager::ErrorCodeGroup RecoveryManager::loadErrorCodeGroup(
+std::optional<RecoveryManager::ErrorCodeGroup> RecoveryManager::loadErrorCodeGroup(
   const std::string & blackboard_key, const std::string & param_namespace)
 {
+  // e.g. recovery_manager.follow_path_error_code
+  const std::string group_prefix =
+    param_namespace.empty() ? blackboard_key : param_namespace + "." + blackboard_key;
+  const auto parameters_for_this_group = getParametersUnder(group_prefix);
+  if (parameters_for_this_group.empty()) {
+    return std::nullopt;
+  }
+
   ErrorCodeGroup group;
   group.blackboard_key = blackboard_key;
   group.error_names = builtinErrorNames();
@@ -229,11 +252,6 @@ RecoveryManager::ErrorCodeGroup RecoveryManager::loadErrorCodeGroup(
   for (std::size_t behavior_index = 0; behavior_index < children_nodes_.size(); ++behavior_index) {
     group.default_sequence.push_back(behavior_index);
   }
-
-  // e.g. recovery_manager.follow_path_error_code
-  const std::string group_prefix =
-    param_namespace.empty() ? blackboard_key : param_namespace + "." + blackboard_key;
-  const auto parameters_for_this_group = getParametersUnder(group_prefix);
 
   // for e.g. changes "recovery_manager.follow_path_error_code.error_specific.tf_error" to
   // "error_specific.tf_error"
