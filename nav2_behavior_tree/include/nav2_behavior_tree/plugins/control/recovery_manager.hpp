@@ -41,25 +41,36 @@ namespace nav2_behavior_tree
  * after the key:
  *
  * @code{.yaml}
- * recovery_manager:
- *   # compute_path_error_code is the name of the blackboard key some action is storing its
- *   # error code
- *   compute_path_error_code:
- *     default: [ClearGlobalCostmap, Wait, ClearGlobalCostmap]
- *     error_specific:
- *       start_occupied: [ClearGlobalCostmap, BackUp]
- *       goal_occupied: [none]
- *   # follow_path_error_code is the name of the blackboard key some action is storing its
- *   # error code
- *   follow_path_error_code:
- *     default: [ClearLocalCostmap, Wait, ClearLocalCostmap]
- *     error_specific:
- *       tf_error: [Wait]
- *   # this is where your custom defined action puts its error code
- *   my_action_error_code:
- *     error_names: {MY_FAILURE: 950}
- *     error_specific:
- *       my_failure: [BackUp]
+ * bt_navigator:
+ *   ros__parameters:
+ *     recovery_manager:
+ *       # compute_path_error_code is the blackboard key ComputePathToPose stores its error
+ *       # code in
+ *       compute_path_error_code:
+ *         default: ["ClearGlobalCostmap", "Wait", "ClearGlobalCostmap"]
+ *         error_specific:
+ *           invalid_planner: ["none"]
+ *           tf_error: ["Wait"]
+ *           start_outside_map: ["none"]
+ *           goal_outside_map: ["none"]
+ *           start_occupied: ["ClearGlobalCostmap", "BackUp"]
+ *           goal_occupied: ["none"]
+ *       # follow_path_error_code is the blackboard key FollowPath stores its error code in
+ *       follow_path_error_code:
+ *         default: ["ClearLocalCostmap", "Wait", "ClearLocalCostmap"]
+ *         error_specific:
+ *           invalid_controller: ["none"]
+ *           tf_error: ["Wait"]
+ *           invalid_path: ["none"]
+ *           failed_to_make_progress: ["ClearLocalCostmap", "BackUp", "Spin"]
+ *           no_valid_control: ["ClearLocalCostmap", "BackUp"]
+ *       # A custom action's error codes are named in error_names. Its blackboard key also
+ *       # has to be added to the error_code_names port
+ *       my_action_error_code:
+ *         error_names: {MY_FAILURE: 950}
+ *         default: ["Wait"]
+ *         error_specific:
+ *           my_failure: ["BackUp"]
  * @endcode
  *
  * Errors are given by name, and `[none]` means that nothing can be done about them.
