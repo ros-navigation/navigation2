@@ -132,6 +132,12 @@ public:
   void registerTreeFromFile(const std::string & file_path);
 
   /**
+   * @brief Clear all registered behavior trees
+   * This prevents the parser's list from growing unboundedly when trees are re-registered
+   */
+  void clearRegisteredBehaviorTrees();
+
+  /**
    * @brief Function to explicitly reset all BT nodes to initial state
    * @param tree Tree to halt
    */
