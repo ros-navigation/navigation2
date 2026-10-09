@@ -10,4 +10,4 @@ float64 min_height -1.7976931348623158e+308          # Lower z-bound in base fra
 float64 max_height 1.7976931348623158e+308           # Upper z-bound in base frame (default: +DBL_MAX)
 bool enabled true                                   # Whether zone is active on creation
 bool visualize false                                # Whether to publish the zone polygon for rviz
-float64 frame_hold_timeout 0.0                      # Extra staleness allowance (seconds)
+float64 transform_staleness_threshold 1.0           # Maximum transform age (seconds)
