@@ -93,6 +93,7 @@ target_link_libraries(${library_name} PRIVATE
 )
 
 add_library(${vo_library_name} SHARED
+  src/vo_server/vector_object_utils.cpp
   src/vo_server/vector_object_shapes.cpp
   src/vo_server/vector_object_server.cpp)
 target_include_directories(${vo_library_name}
