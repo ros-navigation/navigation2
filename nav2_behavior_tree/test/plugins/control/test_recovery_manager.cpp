@@ -51,8 +51,6 @@ public:
   {
     config_->blackboard->set<uint16_t>("compute_path_error_code", 0);
     config_->blackboard->set<uint16_t>("follow_path_error_code", 0);
-    config_->blackboard->set("goal", geometry_msgs::msg::PoseStamped());
-    config_->blackboard->set("goals", nav_msgs::msg::Goals());
     config_->input_ports["param_namespace"] = testName();
     config_->input_ports["wrap_around"] = "false";
     for (const auto & behavior_name : {"ClearCostmap", "Wait", "BackUp"}) {
@@ -113,12 +111,10 @@ public:
     config_->blackboard->set<uint16_t>(blackboard_key, error_code);
   }
 
-  // Ticks one whole recovery, followed by the halt the parent RecoveryNode would send
+  // Ticks one whole recovery. The parent RecoveryNode doesn't halt a finished recovery
   BT::NodeStatus runOneRecovery()
   {
-    const BT::NodeStatus status = recovery_manager_->executeTick();
-    recovery_manager_->halt();
-    return status;
+    return recovery_manager_->executeTick();
   }
 
   int tickCount(const std::string & behavior_name)
@@ -279,7 +275,7 @@ TEST_F(RecoveryManagerTestFixture, test_wrap_around)
   EXPECT_EQ(tickCount("Wait"), 2);
 }
 
-TEST_F(RecoveryManagerTestFixture, test_reset_on_goal_update)
+TEST_F(RecoveryManagerTestFixture, test_halt_after_navigation_resets_sequences)
 {
   setSequence("follow_path_error_code.default", {"ClearCostmap"});
   createRecoveryManager();
@@ -288,9 +284,8 @@ TEST_F(RecoveryManagerTestFixture, test_reset_on_goal_update)
   EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(runOneRecovery(), BT::NodeStatus::FAILURE);
 
-  geometry_msgs::msg::PoseStamped new_goal;
-  new_goal.pose.position.x = 1.0;
-  config_->blackboard->set("goal", new_goal);
+  // The tree is halted at the end of each navigation, also reaching nodes that aren't running
+  recovery_manager_->halt();
   EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(tickCount("ClearCostmap"), 2);
 }

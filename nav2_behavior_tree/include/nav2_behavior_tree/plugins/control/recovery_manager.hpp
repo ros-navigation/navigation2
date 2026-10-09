@@ -23,10 +23,7 @@
 
 #include "behaviortree_cpp/control_node.h"
 #include "behaviortree_cpp/bt_factory.h"
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/goals.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -45,7 +42,7 @@ namespace nav2_behavior_tree
  * The error codes come from the same `error_code_name_prefixes` parameter the server uses to
  * report them: each prefix with configuration below gets its own group of sequences, named
  * after its `<prefix>_error_code` blackboard key. Prefixes without any configuration are
- * ignored. 
+ * ignored.
  *
  * @code{.yaml}
  * bt_navigator:
@@ -86,8 +83,9 @@ namespace nav2_behavior_tree
  * `error_names`, and those names only apply within their group.
  *
  * Every error code of every group walks through its own sequence. Once the sequence runs out this node
- * returns FAILURE. Sequences start over when the goal changes or when a running recovery is
- * halted.
+ * returns FAILURE. Sequences start over whenever this node is halted: when a running recovery
+ * is preempted (e.g. by GoalUpdated in a ReactiveFallback) and when the tree is halted at the
+ * end of each navigation. Any other reset is left to the surrounding tree.
  *
  * Usage in XML:
  * @code
@@ -120,7 +118,7 @@ public:
   BT::NodeStatus tick() override;
 
   /**
-   * @brief Halts the current running behavior
+   * @brief Halts the current running behavior and starts all sequences over
    */
   void halt() override;
 
@@ -135,8 +133,6 @@ public:
         "param_namespace", "recovery_manager", "Parameter namespace of the recovery sequences"),
       BT::InputPort<bool>(
         "wrap_around", false, "Start a sequence over instead of failing once it runs out"),
-      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination"),
-      BT::InputPort<nav_msgs::msg::Goals>("goals", "Destinations"),
     };
   }
 
@@ -203,11 +199,6 @@ private:
   bool selectNextRecoveryBehavior();
 
   /**
-   * @brief Starts all sequences over if the goal changed
-   */
-  void resetSequencesIfGoalChanged();
-
-  /**
    * @brief Starts all sequences over from their first behavior
    * @param reason Why they start over, for logging
    */
@@ -223,9 +214,6 @@ private:
 
   std::string error_description_;
   std::optional<std::size_t> running_behavior_index_;
-
-  geometry_msgs::msg::PoseStamped last_goal_;
-  nav_msgs::msg::Goals last_goals_;
 };
 
 }  // namespace nav2_behavior_tree

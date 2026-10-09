@@ -110,7 +110,6 @@ BT::NodeStatus RecoveryManager::tick()
   const bool starting_new_recovery = status() != BT::NodeStatus::RUNNING;
   if (starting_new_recovery) {
     getInput("wrap_around", wrap_around_);
-    resetSequencesIfGoalChanged();
     if (!selectNextRecoveryBehavior()) {
       return BT::NodeStatus::FAILURE;
     }
@@ -143,12 +142,9 @@ BT::NodeStatus RecoveryManager::tick()
 
 void RecoveryManager::halt()
 {
-  // Halted mid recovery means navigation was cancelled or preempted
-  const bool recovery_was_running =
-    status() == BT::NodeStatus::RUNNING && running_behavior_index_.has_value();
-  if (recovery_was_running) {
-    resetAllSequences("recovery was halted");
-  }
+  // A finished recovery is not halted by its parent, so this means the recovery was
+  // preempted, or the tree was halted at the end of the navigation
+  resetAllSequences("recovery manager was halted");
 
   ControlNode::halt();
   running_behavior_index_.reset();
@@ -410,20 +406,6 @@ bool RecoveryManager::selectNextRecoveryBehavior()
     children_nodes_[*running_behavior_index_]->name().c_str(), next_behavior_index,
     sequence.size(), error_description_.c_str());
   return true;
-}
-
-void RecoveryManager::resetSequencesIfGoalChanged()
-{
-  geometry_msgs::msg::PoseStamped current_goal;
-  nav_msgs::msg::Goals current_goals;
-  BT::getInputOrBlackboard("goal", current_goal);
-  BT::getInputOrBlackboard("goals", current_goals);
-
-  if (current_goal != last_goal_ || current_goals != last_goals_) {
-    last_goal_ = current_goal;
-    last_goals_ = current_goals;
-    resetAllSequences("goal changed");
-  }
 }
 
 void RecoveryManager::resetAllSequences(const std::string & reason)
