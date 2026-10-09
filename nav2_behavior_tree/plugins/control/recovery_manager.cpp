@@ -26,8 +26,6 @@
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
-#include "nav2_util/robot_utils.hpp"
-#include "nav2_util/geometry_utils.hpp"
 #include "nav2_behavior_tree/plugins/control/recovery_manager.hpp"
 
 namespace nav2_behavior_tree
@@ -98,19 +96,10 @@ RecoveryManager::RecoveryManager(
   const BT::NodeConfiguration & config)
 : BT::ControlNode(name, config)
 {
-  getInput("reset_distance", reset_distance_);
   getInput("wrap_around", wrap_around_);
 
   node_ = config.blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   logger_ = node_->get_logger().get_child("RecoveryManager");
-
-  if (reset_distance_ > 0.0) {
-    tf_buffer_ = config.blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
-    node_->get_parameter("transform_tolerance", transform_tolerance_);
-    global_frame_ = BT::deconflictPortAndParamFrame<std::string>(node_, "global_frame", this);
-    robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
-      node_, "robot_base_frame", this);
-  }
 }
 
 BT::NodeStatus RecoveryManager::tick()
@@ -122,7 +111,7 @@ BT::NodeStatus RecoveryManager::tick()
 
   const bool starting_new_recovery = status() != BT::NodeStatus::RUNNING;
   if (starting_new_recovery) {
-    resetSequencesIfGoalChangedOrRobotMoved();
+    resetSequencesIfGoalChanged();
     if (!selectNextRecoveryBehavior()) {
       return BT::NodeStatus::FAILURE;
     }
@@ -148,11 +137,6 @@ BT::NodeStatus RecoveryManager::tick()
 
   haltChild(*running_behavior_index_);
   running_behavior_index_.reset();
-
-  // Taken after the behavior, so that its own motion (e.g. backing up) isn't counted as progress
-  if (reset_distance_ > 0.0) {
-    pose_after_last_recovery_ = getRobotPose();
-  }
 
   // Even a failed behavior had its turn, so navigation is retried before the next one
   return BT::NodeStatus::SUCCESS;
@@ -429,7 +413,7 @@ bool RecoveryManager::selectNextRecoveryBehavior()
   return true;
 }
 
-void RecoveryManager::resetSequencesIfGoalChangedOrRobotMoved()
+void RecoveryManager::resetSequencesIfGoalChanged()
 {
   geometry_msgs::msg::PoseStamped current_goal;
   nav_msgs::msg::Goals current_goals;
@@ -440,22 +424,6 @@ void RecoveryManager::resetSequencesIfGoalChangedOrRobotMoved()
     last_goal_ = current_goal;
     last_goals_ = current_goals;
     resetAllSequences("goal changed");
-    return;
-  }
-
-  if (reset_distance_ <= 0.0 || !pose_after_last_recovery_) {
-    return;
-  }
-
-  const auto robot_pose = getRobotPose();
-  if (!robot_pose) {
-    return;
-  }
-
-  const double distance_moved = nav2_util::geometry_utils::euclidean_distance(
-    pose_after_last_recovery_->pose, robot_pose->pose);
-  if (distance_moved >= reset_distance_) {
-    resetAllSequences("robot moved on since the last recovery");
   }
 }
 
@@ -471,18 +439,6 @@ void RecoveryManager::resetAllSequences(const std::string & reason)
   for (auto & group : error_code_groups_) {
     group.next_behavior_index_by_error_code.clear();
   }
-  pose_after_last_recovery_.reset();
-}
-
-std::optional<geometry_msgs::msg::PoseStamped> RecoveryManager::getRobotPose()
-{
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::getCurrentPose(
-      robot_pose, *tf_buffer_, global_frame_, robot_base_frame_, transform_tolerance_))
-  {
-    return std::nullopt;
-  }
-  return robot_pose;
 }
 
 }  // namespace nav2_behavior_tree

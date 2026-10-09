@@ -532,12 +532,9 @@
 
     <Control ID="RecoveryManager">
       <input_port name="param_namespace" type="string" default="&quot;recovery_manager&quot;">Parameter namespace of the recovery sequences. Each error code group has a `default` sequence and `error_specific` sequences keyed by error name. Use `[none]` for errors that can't be recovered from. Custom error codes are named in the group's `error_names`.</input_port>
-      <input_port name="reset_distance" type="double" default="0.5">Distance the robot has to move after a recovery for the sequences to start over, zero to disable.</input_port>
       <input_port name="wrap_around" type="bool" default="false">Start a sequence over instead of failing once it runs out.</input_port>
       <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Destination. Sequences start over when it changes.</input_port>
       <input_port name="goals" type="nav_msgs::msg::Goals">Destinations. Sequences start over when they change.</input_port>
-      <input_port name="global_frame" type="string">Global frame</input_port>
-      <input_port name="robot_base_frame" type="string">Robot base frame</input_port>
     </Control>
 
     <Control ID="NonblockingSequence"/>

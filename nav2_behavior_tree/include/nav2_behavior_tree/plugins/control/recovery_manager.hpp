@@ -26,7 +26,6 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/goals.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
@@ -87,8 +86,8 @@ namespace nav2_behavior_tree
  * `error_names`, and those names only apply within their group.
  *
  * Every error code of every group walks through its own sequence. Once the sequence runs out this node
- * returns FAILURE. Sequences start over when the goal changes, when a running recovery is
- * halted, or once the robot has moved `reset_distance` since the last recovery.
+ * returns FAILURE. Sequences start over when the goal changes or when a running recovery is
+ * halted.
  *
  * Usage in XML:
  * @code
@@ -134,16 +133,10 @@ public:
     return {
       BT::InputPort<std::string>(
         "param_namespace", "recovery_manager", "Parameter namespace of the recovery sequences"),
-      BT::InputPort<double>(
-        "reset_distance", 0.5,
-        "Distance the robot has to move after a recovery for the sequences to start over, "
-        "zero to disable"),
       BT::InputPort<bool>(
         "wrap_around", false, "Start a sequence over instead of failing once it runs out"),
       BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination"),
       BT::InputPort<nav_msgs::msg::Goals>("goals", "Destinations"),
-      BT::InputPort<std::string>("global_frame", "Global frame"),
-      BT::InputPort<std::string>("robot_base_frame", "Robot base frame"),
     };
   }
 
@@ -210,10 +203,9 @@ private:
   bool selectNextRecoveryBehavior();
 
   /**
-   * @brief Starts all sequences over if the goal changed, or if the robot has moved at least
-   * reset_distance since the last recovery
+   * @brief Starts all sequences over if the goal changed
    */
-  void resetSequencesIfGoalChangedOrRobotMoved();
+  void resetSequencesIfGoalChanged();
 
   /**
    * @brief Starts all sequences over from their first behavior
@@ -221,19 +213,8 @@ private:
    */
   void resetAllSequences(const std::string & reason);
 
-  /**
-   * @brief Gets the robot pose in the global frame
-   * @return The robot pose, or std::nullopt if the transform is not available
-   */
-  std::optional<geometry_msgs::msg::PoseStamped> getRobotPose();
-
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Logger logger_{rclcpp::get_logger("RecoveryManager")};
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  std::string global_frame_;
-  std::string robot_base_frame_;
-  double transform_tolerance_{0.1};
-  double reset_distance_{0.5};
   bool wrap_around_{false};
 
   bool sequences_loaded_{false};
@@ -245,7 +226,6 @@ private:
 
   geometry_msgs::msg::PoseStamped last_goal_;
   nav_msgs::msg::Goals last_goals_;
-  std::optional<geometry_msgs::msg::PoseStamped> pose_after_last_recovery_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "nav2_util/robot_utils.hpp"
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/control/recovery_manager.hpp"
 
@@ -55,10 +54,7 @@ public:
     config_->blackboard->set("goal", geometry_msgs::msg::PoseStamped());
     config_->blackboard->set("goals", nav_msgs::msg::Goals());
     config_->input_ports["param_namespace"] = testName();
-    config_->input_ports["reset_distance"] = "0.0";
     config_->input_ports["wrap_around"] = "false";
-    config_->input_ports["global_frame"] = "map";
-    config_->input_ports["robot_base_frame"] = "base_link";
     for (const auto & behavior_name : {"ClearCostmap", "Wait", "BackUp"}) {
       behaviors_[behavior_name] = std::make_shared<FakeRecoveryBehavior>(behavior_name);
     }
@@ -299,29 +295,6 @@ TEST_F(RecoveryManagerTestFixture, test_reset_on_goal_update)
   EXPECT_EQ(tickCount("ClearCostmap"), 2);
 }
 
-TEST_F(RecoveryManagerTestFixture, test_reset_after_robot_moved)
-{
-  config_->input_ports["reset_distance"] = "0.5";
-  setSequence("follow_path_error_code.default", {"ClearCostmap"});
-  createRecoveryManager();
-  setErrorCode("follow_path_error_code", 105);
-
-  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::FAILURE);
-
-  geometry_msgs::msg::PoseStamped robot_pose;
-  robot_pose.pose.position.x = 1.0;
-  robot_pose.pose.orientation.w = 1.0;
-  transform_handler_->updateRobotPose(robot_pose.pose);
-  while (!nav2_util::getCurrentPose(robot_pose, *transform_handler_->getBuffer()) ||
-    robot_pose.pose.position.x < 0.9)
-  {
-  }
-
-  EXPECT_EQ(runOneRecovery(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(tickCount("ClearCostmap"), 2);
-}
-
 TEST_F(RecoveryManagerTestFixture, test_custom_error_names)
 {
   setErrorCodeNamePrefixes({"first_action", "second_action"});
@@ -459,7 +432,7 @@ TEST_F(RecoveryManagerTestFixture, test_inside_subtree)
           <SubTree ID="Recovery" _autoremap="true"/>
         </BehaviorTree>
         <BehaviorTree ID="Recovery">
-          <RecoveryManager param_namespace="test_inside_subtree" reset_distance="0.0">
+          <RecoveryManager param_namespace="test_inside_subtree">
             <AlwaysSuccess name="First"/>
             <AlwaysSuccess name="Second"/>
           </RecoveryManager>
