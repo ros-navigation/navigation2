@@ -23,6 +23,7 @@
 #include <functional>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "rclcpp/duration.hpp"
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
@@ -165,6 +166,21 @@ protected:
    * @brief Main action callback method to complete following request
    */
   void followObject();
+
+  enum class TargetWaitResult
+  {
+    REACQUIRED,
+    TIMED_OUT,
+    INTERRUPTED,
+    MAX_DURATION
+  };
+
+  /**
+   * @brief Wait for short target detection dropouts without consuming retries.
+   */
+  TargetWaitResult waitForTarget(
+    geometry_msgs::msg::PoseStamped & object_pose, const std::string & target_frame,
+    const rclcpp::Duration & max_duration);
 
   /**
    * @brief Method to obtain the refined dynamic pose.

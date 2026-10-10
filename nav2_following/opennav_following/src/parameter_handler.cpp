@@ -36,6 +36,8 @@ ParameterHandler::ParameterHandler(
     "controller_frequency", 50.0);
   params_.detection_timeout = node->declare_or_get_parameter(
     "detection_timeout", 2.0);
+  params_.target_loss_hold_timeout = node->declare_or_get_parameter(
+    "target_loss_hold_timeout", 1.0);
   params_.rotate_to_object_timeout = node->declare_or_get_parameter(
     "rotate_to_object_timeout", 10.0);
   params_.static_object_timeout = node->declare_or_get_parameter(
@@ -123,6 +125,8 @@ ParameterHandler::updateParametersCallback(
         params_.controller_frequency = parameter.as_double();
       } else if (param_name == "detection_timeout") {
         params_.detection_timeout = parameter.as_double();
+      } else if (param_name == "target_loss_hold_timeout") {
+        params_.target_loss_hold_timeout = parameter.as_double();
       } else if (param_name == "rotate_to_object_timeout") {
         params_.rotate_to_object_timeout = parameter.as_double();
       } else if (param_name == "static_object_timeout") {

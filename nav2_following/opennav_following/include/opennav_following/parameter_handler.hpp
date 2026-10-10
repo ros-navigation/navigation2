@@ -36,6 +36,8 @@ struct Parameters
   double controller_frequency;
   // Timeout to detect the object
   double detection_timeout;
+  // Hold duration after target loss before consuming a retry
+  double target_loss_hold_timeout;
   // Timeout to detect the object while rotating to it
   double rotate_to_object_timeout;
   // Timeout after which a static object is considered as goal reached

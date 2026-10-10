@@ -287,9 +287,33 @@ void FollowingServer::followObject()
           return;
         }
       } catch (opennav_docking_core::DockingException & e) {
+        const bool target_lost =
+          dynamic_cast<opennav_docking_core::FailedToDetectDock *>(&e) != nullptr;
+        if (target_lost) {
+          const auto wait_result = waitForTarget(object_pose, target_frame, max_duration);
+          if (wait_result == TargetWaitResult::REACQUIRED) {
+            continue;
+          }
+          if (wait_result == TargetWaitResult::INTERRUPTED ||
+            wait_result == TargetWaitResult::MAX_DURATION)
+          {
+            result->total_elapsed_time = this->now() - action_start_time_;
+            result->num_retries = num_retries_;
+            if (wait_result == TargetWaitResult::MAX_DURATION) {
+              following_action_server_->succeeded_current(result);
+            } else {
+              following_action_server_->terminate_all(result);
+            }
+            dynamic_pose_sub_.reset();
+            return;
+          }
+        }
         if (++num_retries_ > params_->max_retries) {
           RCLCPP_ERROR(get_logger(), "Failed to follow, all retries have been used");
           throw;
+        }
+        if (target_lost && !params_->search_by_rotating) {
+          publishFollowingFeedback(FollowObject::Feedback::RETRY);
         }
         RCLCPP_WARN(get_logger(), "Following failed, will retry: %s", e.what());
 
@@ -340,6 +364,66 @@ void FollowingServer::followObject()
   publishZeroVelocity();
   following_action_server_->terminate_current(result);
   dynamic_pose_sub_.reset();
+}
+
+FollowingServer::TargetWaitResult FollowingServer::waitForTarget(
+  geometry_msgs::msg::PoseStamped & object_pose, const std::string & target_frame,
+  const rclcpp::Duration & max_duration)
+{
+  publishZeroVelocity();
+
+  if (max_duration.seconds() > 0.0 &&
+    this->now() - action_start_time_ > max_duration)
+  {
+    return TargetWaitResult::MAX_DURATION;
+  }
+  if (params_->target_loss_hold_timeout <= 0.0) {
+    return TargetWaitResult::TIMED_OUT;
+  }
+
+  const auto start = this->now();
+  const auto timeout = rclcpp::Duration::from_seconds(params_->target_loss_hold_timeout);
+  nav2::Rate loop_rate(this, params_->controller_frequency);
+
+  while (rclcpp::ok() && this->now() - start < timeout) {
+    publishFollowingFeedback(FollowObject::Feedback::WAITING_FOR_TARGET);
+
+    if (checkAndWarnIfCancelled<FollowObject>(following_action_server_, "follow_object") ||
+      checkAndWarnIfPreempted<FollowObject>(following_action_server_, "follow_object"))
+    {
+      return TargetWaitResult::INTERRUPTED;
+    }
+    if (max_duration.seconds() > 0.0 &&
+      this->now() - action_start_time_ > max_duration)
+    {
+      return TargetWaitResult::MAX_DURATION;
+    }
+
+    // Use the same fresh robot pose for tracking as approachObject().
+    const auto robot_pose = getRobotPose();
+    iteration_start_time_ = robot_pose.header.stamp;
+    try {
+      if (getTrackingPose(object_pose, target_frame, robot_pose)) {
+        return TargetWaitResult::REACQUIRED;
+      }
+    } catch (const opennav_docking_core::FailedToDetectDock &) {
+      // The target is still absent; other exceptions reach the action handler.
+    }
+    loop_rate.sleep();
+  }
+
+  if (!rclcpp::ok() ||
+    checkAndWarnIfCancelled<FollowObject>(following_action_server_, "follow_object") ||
+    checkAndWarnIfPreempted<FollowObject>(following_action_server_, "follow_object"))
+  {
+    return TargetWaitResult::INTERRUPTED;
+  }
+  if (max_duration.seconds() > 0.0 &&
+    this->now() - action_start_time_ > max_duration)
+  {
+    return TargetWaitResult::MAX_DURATION;
+  }
+  return TargetWaitResult::TIMED_OUT;
 }
 
 bool FollowingServer::approachObject(
