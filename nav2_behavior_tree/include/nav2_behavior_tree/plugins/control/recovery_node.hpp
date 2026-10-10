@@ -31,6 +31,8 @@ namespace nav2_behavior_tree
  *
  * - If the second child returns FAILURE, this control node will stop the loop and returns FAILURE.
  *
+ * A negative number_of_retries retries forever, so only a failing second child ends the loop.
+ *
  * Usage in XML:
  * @code
  * <RecoveryNode number_of_retries="1">
@@ -62,7 +64,7 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<int>("number_of_retries", 1, "Number of retries")
+      BT::InputPort<int>("number_of_retries", 1, "Number of retries, negative to retry forever")
     };
   }
 

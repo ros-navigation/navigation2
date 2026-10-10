@@ -164,6 +164,68 @@ TEST_F(RecoveryNodeTestFixture, test_skipping)
   EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
 }
 
+// Returns one status for the first few ticks and another one after that, even across halts
+class StatusSwitchingNode : public BT::ActionNodeBase
+{
+public:
+  StatusSwitchingNode(
+    BT::NodeStatus status_before_switch, int ticks_before_switch,
+    BT::NodeStatus status_after_switch)
+  : BT::ActionNodeBase("status_switching_node", {}),
+    status_before_switch_(status_before_switch),
+    status_after_switch_(status_after_switch),
+    ticks_before_switch_(ticks_before_switch)
+  {
+  }
+
+  BT::NodeStatus tick() override
+  {
+    const bool switched = tick_count >= ticks_before_switch_;
+    tick_count++;
+    return switched ? status_after_switch_ : status_before_switch_;
+  }
+
+  void halt() override
+  {
+    resetStatus();
+  }
+
+  int tick_count{0};
+
+private:
+  BT::NodeStatus status_before_switch_;
+  BT::NodeStatus status_after_switch_;
+  int ticks_before_switch_;
+};
+
+TEST_F(RecoveryNodeTestFixture, test_retry_forever)
+{
+  config_->input_ports["number_of_retries"] = "-1";
+
+  {
+    nav2_behavior_tree::RecoveryNode recovery_node("retry_forever", *config_);
+    StatusSwitchingNode navigation(BT::NodeStatus::FAILURE, 50, BT::NodeStatus::SUCCESS);
+    StatusSwitchingNode recovery(BT::NodeStatus::SUCCESS, 0, BT::NodeStatus::SUCCESS);
+    recovery_node.addChild(&navigation);
+    recovery_node.addChild(&recovery);
+
+    EXPECT_EQ(recovery_node.executeTick(), BT::NodeStatus::SUCCESS);
+    EXPECT_EQ(recovery.tick_count, 50);
+  }
+
+  // Only the recovery giving up ends the loop
+  {
+    nav2_behavior_tree::RecoveryNode recovery_node("retry_forever", *config_);
+    StatusSwitchingNode navigation(BT::NodeStatus::FAILURE, 0, BT::NodeStatus::FAILURE);
+    StatusSwitchingNode recovery(BT::NodeStatus::SUCCESS, 50, BT::NodeStatus::FAILURE);
+    recovery_node.addChild(&navigation);
+    recovery_node.addChild(&recovery);
+
+    EXPECT_EQ(recovery_node.executeTick(), BT::NodeStatus::FAILURE);
+    EXPECT_EQ(navigation.tick_count, 51);
+    EXPECT_EQ(recovery.tick_count, 51);
+  }
+}
 
 int main(int argc, char ** argv)
 {
