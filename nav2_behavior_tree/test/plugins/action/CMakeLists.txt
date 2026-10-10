@@ -106,3 +106,5 @@ plugin_add_test(test_check_stop_status_action test_check_stop_status_action.cpp 
 plugin_add_test(test_check_pose_occupancy_action test_check_pose_occupancy_action.cpp check_pose_occupancy_action_bt_node)
 
 plugin_add_test(test_validate_path_action test_validate_path_action.cpp validate_path_action_bt_node)
+
+plugin_add_test(test_log_action test_log_action.cpp nav2_log_action_bt_node)

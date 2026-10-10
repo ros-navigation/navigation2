@@ -30,7 +30,15 @@
 
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "nav2_rviz_plugins/utils.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/future_return_code.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/qos.hpp"
 #include "rviz_common/display_context.hpp"
 #include "rviz_common/load_resource.hpp"
 #include "yaml-cpp/yaml.h"
@@ -1223,8 +1231,10 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         return;
       }
 
+      // Keep the goal alive if spin_some() clears the member.
+      auto goal_handle = waypoint_follower_goal_handle_;
       executor_->spin_some();
-      auto status = waypoint_follower_goal_handle_->get_status();
+      auto status = goal_handle->get_status();
 
       // Check if the goal is still executing
       if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
@@ -1246,8 +1256,10 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         return;
       }
 
+      // Keep the goal alive if spin_some() clears the member.
+      auto goal_handle = nav_through_poses_goal_handle_;
       executor_->spin_some();
-      auto status = nav_through_poses_goal_handle_->get_status();
+      auto status = goal_handle->get_status();
 
       // Check if the goal is still executing
       if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
@@ -1269,8 +1281,10 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         return;
       }
 
+      // Keep the goal alive if spin_some() clears the member.
+      auto goal_handle = navigation_goal_handle_;
       executor_->spin_some();
-      auto status = navigation_goal_handle_->get_status();
+      auto status = goal_handle->get_status();
 
       // Check if the goal is still executing
       if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
@@ -1318,8 +1332,14 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
     nav2::ActionClient<nav2_msgs::action::FollowWaypoints>::SendGoalOptions();
-  send_goal_options.result_callback = [this](auto) {
-      waypoint_follower_goal_handle_.reset();
+  send_goal_options.result_callback = [this](const auto & result) {
+      // Only clear the handle if it still refers to the goal that finished; a preempted goal's
+      // result can arrive after the handle has been replaced by the new goal's handle.
+      if (waypoint_follower_goal_handle_ &&
+        waypoint_follower_goal_handle_->get_goal_id() == result.goal_id)
+      {
+        waypoint_follower_goal_handle_.reset();
+      }
     };
 
   send_goal_options.feedback_callback = [this](
@@ -1385,8 +1405,14 @@ Nav2Panel::startNavThroughPoses(nav_msgs::msg::Goals poses)
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
     nav2::ActionClient<nav2_msgs::action::NavigateThroughPoses>::SendGoalOptions();
-  send_goal_options.result_callback = [this](auto) {
-      nav_through_poses_goal_handle_.reset();
+  send_goal_options.result_callback = [this](const auto & result) {
+      // Only clear the handle if it still refers to the goal that finished; a preempted goal's
+      // result can arrive after the handle has been replaced by the new goal's handle.
+      if (nav_through_poses_goal_handle_ &&
+        nav_through_poses_goal_handle_->get_goal_id() == result.goal_id)
+      {
+        nav_through_poses_goal_handle_.reset();
+      }
     };
 
   auto future_goal_handle =
@@ -1439,8 +1465,12 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
     nav2::ActionClient<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
-  send_goal_options.result_callback = [this](auto) {
-      navigation_goal_handle_.reset();
+  send_goal_options.result_callback = [this](const auto & result) {
+      // Only clear the handle if it still refers to the goal that finished; a preempted goal's
+      // result can arrive after the handle has been replaced by the new goal's handle.
+      if (navigation_goal_handle_ && navigation_goal_handle_->get_goal_id() == result.goal_id) {
+        navigation_goal_handle_.reset();
+      }
     };
 
   auto future_goal_handle =
@@ -1633,8 +1663,12 @@ Nav2Panel::onSendNavToPose()
 
   auto send_goal_options =
     nav2::ActionClient<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
-  send_goal_options.result_callback = [this](auto) {
-      navigation_goal_handle_.reset();
+  send_goal_options.result_callback = [this](const auto & result) {
+      // Only clear the handle if it still refers to the goal that finished; a preempted goal's
+      // result can arrive after the handle has been replaced by the new goal's handle.
+      if (navigation_goal_handle_ && navigation_goal_handle_->get_goal_id() == result.goal_id) {
+        navigation_goal_handle_.reset();
+      }
     };
 
   auto future_goal_handle =

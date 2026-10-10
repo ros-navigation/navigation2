@@ -17,7 +17,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <chrono>
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
 
 using std::cerr;

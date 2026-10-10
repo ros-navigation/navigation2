@@ -21,7 +21,10 @@
 #include "nav2_map_server/map_mode.hpp"
 #include "nav2_map_server/map_saver.hpp"
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/utilities.hpp"
 
 using namespace nav2_map_server;  // NOLINT
 

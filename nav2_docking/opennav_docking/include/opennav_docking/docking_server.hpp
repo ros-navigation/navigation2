@@ -22,7 +22,8 @@
 #include <string>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/time.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
@@ -121,7 +122,7 @@ public:
   /**
    * @brief Run a single iteration of the control loop to approach a pose.
    * @param cmd The return command.
-   * @param pose The pose to command towards.
+   * @param pose The pose to command towards, expressed in any TF-connected frame.
    * @param linear_tolerance Pose is reached when linear distance is within this tolerance.
    * @param angular_tolerance Pose is reached when angular distance is within this tolerance.
    * @param is_docking If true, the robot is docking. If false, the robot is undocking.

@@ -17,16 +17,25 @@
 #include <type_traits>
 #include <vector>
 
+#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "gtest/gtest.h"
 #include "nav2_behaviors/plugins/assisted_teleop.hpp"
 #include "nav2_behaviors/plugins/back_up.hpp"
 #include "nav2_behaviors/plugins/drive_on_heading.hpp"
 #include "nav2_behaviors/plugins/spin.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/utilities.hpp"
 
 template<typename Plugin, typename Action>
 class TestBehavior : public Plugin

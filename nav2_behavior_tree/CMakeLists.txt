@@ -12,7 +12,6 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
@@ -41,7 +40,6 @@ target_link_libraries(${library_name} PUBLIC
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
-  rclcpp_lifecycle::rclcpp_lifecycle
   sensor_msgs::sensor_msgs
   tf2::tf2
   tf2_ros::tf2_ros
@@ -80,6 +78,9 @@ list(APPEND plugin_libs nav2_follow_path_action_bt_node)
 
 add_library(nav2_back_up_action_bt_node SHARED plugins/action/back_up_action.cpp)
 list(APPEND plugin_libs nav2_back_up_action_bt_node)
+
+add_library(nav2_log_action_bt_node SHARED plugins/action/log_action.cpp)
+list(APPEND plugin_libs nav2_log_action_bt_node)
 
 add_library(nav2_drive_on_heading_bt_node SHARED plugins/action/drive_on_heading_action.cpp)
 list(APPEND plugin_libs nav2_drive_on_heading_bt_node)
@@ -289,7 +290,6 @@ foreach(bt_plugin ${plugin_libs})
     nav2_util::nav2_util_core
     rclcpp::rclcpp
     rclcpp_action::rclcpp_action
-    rclcpp_lifecycle::rclcpp_lifecycle
     sensor_msgs::sensor_msgs
     tf2::tf2
     tf2_ros::tf2_ros
@@ -342,12 +342,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(
-  include/${PROJECT_NAME}
-)
-
-ament_export_libraries(${library_name})
-
 ament_export_dependencies(
   action_msgs
   behaviortree_cpp
@@ -357,7 +351,6 @@ ament_export_dependencies(
   nav_msgs
   rclcpp
   rclcpp_action
-  rclcpp_lifecycle
   sensor_msgs
   std_msgs
   std_srvs

@@ -19,7 +19,6 @@
   <depend>std_msgs</depend>
   <depend>builtin_interfaces</depend>
   <depend>geometry_msgs</depend>
-  <depend>action_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>geographic_msgs</depend>
   <depend>unique_identifier_msgs</depend>

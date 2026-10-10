@@ -28,7 +28,7 @@
 #include "tf2/transform_datatypes.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/time.hpp"
 
 namespace nav2_util
 {
@@ -69,6 +69,14 @@ geometry_msgs::msg::PoseStamped transformToPoseStamped(
  */
 geometry_msgs::msg::TransformStamped poseToTransformStamped(
   const geometry_msgs::msg::PoseStamped & pose, const std::string & child_frame);
+
+/**
+ * @brief Return the inverse of a stamped transform
+ * @param transform Transform to invert
+ * @return Inverse transform with parent and child frames exchanged
+ */
+geometry_msgs::msg::TransformStamped invertTransform(
+  const geometry_msgs::msg::TransformStamped & transform);
 
 /**
  * @brief Retrieves the most recent target pose in the specified frame, without synchronizing

@@ -22,7 +22,15 @@
 #include <functional>
 #include <stdexcept>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/publisher.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/occ_grid_values.hpp"
@@ -1070,6 +1078,160 @@ TEST_F(TestNode, testPathLookaheadInvalidMaxLookahead)
   reset();
 }
 
+
+class SpeedFilterTFTestable : public nav2_costmap_2d::SpeedFilter
+{
+public:
+  using SpeedFilter::maskCallback;
+  using SpeedFilter::pathCallback;
+  double publishedLimit() const {return speed_limit_prev_;}
+};
+
+TEST(SpeedFilterTF, LookaheadPathTransformFailure)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("tf_failure_test");
+  node->declare_parameter(std::string(FILTER_NAME) + ".filter_info_topic", INFO_TOPIC);
+  node->declare_parameter(std::string(FILTER_NAME) + ".enable_path_lookahead", true);
+  node->declare_parameter(std::string(FILTER_NAME) + ".min_lookahead", 3.0);
+  node->declare_parameter(std::string(FILTER_NAME) + ".transform_tolerance", 0.0);
+  auto buffer = nav2::create_transform_buffer(node);
+  buffer->setUsingDedicatedThread(true);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
+  layers.resizeMap(4, 1, 1.0, 0.0, 0.0);
+  SpeedFilterTFTestable filter;
+  filter.initialize(&layers, FILTER_NAME, buffer.get(), node, nullptr);
+  filter.initializeFilter(INFO_TOPIC);
+
+  auto mask = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  mask->header.frame_id = "map";
+  mask->info.width = 4;
+  mask->info.height = 1;
+  mask->info.resolution = 1.0;
+  mask->info.origin.orientation.w = 1.0;
+  mask->data = {80, 40, 20, 0};
+  filter.maskCallback(mask);
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 0.5;
+  pose.position.y = 0.5;
+  pose.orientation.w = 1.0;
+  nav2_costmap_2d::Costmap2D grid(4, 1, 1.0, 0.0, 0.0, 0);
+  filter.process(grid, 0, 0, 4, 1, pose);
+  ASSERT_EQ(filter.publishedLimit(), 80.0);
+
+  auto path = std::make_shared<nav_msgs::msg::Path>();
+  path->header.frame_id = "plan";
+  geometry_msgs::msg::PoseStamped point;
+  point.header.frame_id = "plan";
+  point.pose = pose;
+  path->poses.push_back(point);
+  point.pose.position.x += 1.0;
+  path->poses.push_back(point);
+  filter.pathCallback(path);
+
+  // The mask transform succeeds, but the path frame has no transform to map.
+  filter.process(grid, 0, 0, 4, 1, pose);
+  EXPECT_EQ(filter.publishedLimit(), 80.0);
+
+  // Once the path transform is available, processing resumes with the limit ahead.
+  geometry_msgs::msg::TransformStamped path_transform;
+  path_transform.header.frame_id = "map";
+  path_transform.child_frame_id = "plan";
+  path_transform.transform.rotation.w = 1.0;
+  ASSERT_TRUE(buffer->setTransform(path_transform, "test", true));
+  filter.process(grid, 0, 0, 4, 1, pose);
+  EXPECT_EQ(filter.publishedLimit(), 40.0);
+  filter.resetFilter();
+}
+
+TEST(SpeedFilterTF, FreshnessAndLookaheadFrames)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("tf_test");
+  node->declare_parameter(std::string(FILTER_NAME) + ".filter_info_topic", INFO_TOPIC);
+  node->declare_parameter(std::string(FILTER_NAME) + ".transform_staleness_threshold", 0.5);
+  auto buffer = nav2::create_transform_buffer(node);
+  nav2_costmap_2d::LayeredCostmap layers("odom", false, false);
+  layers.resizeMap(4, 1, 1.0, 0.0, 0.0);
+  auto mask = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  mask->header.frame_id = "map";
+  mask->info.width = 4;
+  mask->info.height = 1;
+  mask->info.resolution = 1.0;
+  mask->info.origin.orientation.w = 1.0;
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.child_frame_id = "odom";
+  transform.transform.rotation.w = 1.0;
+  transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
+  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 0.5;
+  pose.position.y = 0.5;
+  pose.orientation.w = 1.0;
+  nav2_costmap_2d::Costmap2D grid(4, 1, 1.0, 0.0, 0.0, 0);
+  node->declare_parameter(std::string(FILTER_NAME) + ".enable_path_lookahead", true);
+  node->declare_parameter(std::string(FILTER_NAME) + ".min_lookahead", 3.0);
+  SpeedFilterTFTestable filter;
+  filter.initialize(&layers, FILTER_NAME, buffer.get(), node, nullptr);
+  filter.initializeFilter(INFO_TOPIC);
+  mask->data = {80, 40, 20, 0};
+  filter.maskCallback(mask);
+  filter.process(grid, 0, 0, 4, 1, pose);
+  EXPECT_EQ(filter.publishedLimit(), nav2_costmap_2d::NO_SPEED_LIMIT);
+
+  transform.header.stamp = node->now();
+  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  filter.process(grid, 0, 0, 4, 1, pose);
+  EXPECT_EQ(filter.publishedLimit(), 80.0);
+
+  auto path = std::make_shared<nav_msgs::msg::Path>();
+  path->header.frame_id = "map";
+  for (int i = 0; i < 3; ++i) {
+    geometry_msgs::msg::PoseStamped point;
+    point.pose = pose;
+    point.pose.position.x += i;
+    path->poses.push_back(point);
+  }
+  filter.pathCallback(path);
+  filter.process(grid, 0, 0, 4, 1, pose);
+  EXPECT_EQ(filter.publishedLimit(), 20.0);
+
+  path = std::make_shared<nav_msgs::msg::Path>(*path);
+  path->header.frame_id = "plan";
+  filter.pathCallback(path);
+  auto path_transform = transform;
+  path_transform.header.frame_id = "odom";
+  path_transform.child_frame_id = "plan";
+  path_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
+  ASSERT_TRUE(buffer->setTransform(path_transform, "test", false));
+  mask = std::make_shared<nav_msgs::msg::OccupancyGrid>(*mask);
+  mask->data = {80, 40, 10, 0};
+  filter.maskCallback(mask);
+  filter.process(grid, 0, 0, 4, 1, pose);
+  EXPECT_EQ(filter.publishedLimit(), 10.0);
+
+  path_transform.header.stamp = node->now();
+  ASSERT_TRUE(buffer->setTransform(path_transform, "test", false));
+  filter.process(grid, 0, 0, 4, 1, pose);
+  EXPECT_EQ(filter.publishedLimit(), 10.0);
+
+  // Nonzero path stamps select historical TF. A different latest transform
+  // must not change that interpretation.
+  const auto measurement_time = node->now() - rclcpp::Duration::from_seconds(1.0);
+  path_transform.header.stamp = measurement_time;
+  ASSERT_TRUE(buffer->setTransform(path_transform, "test", false));
+  path_transform.header.stamp = node->now();
+  path_transform.transform.translation.x = 20.0;
+  ASSERT_TRUE(buffer->setTransform(path_transform, "test", false));
+  path = std::make_shared<nav_msgs::msg::Path>(*path);
+  path->header.stamp = measurement_time;
+  filter.pathCallback(path);
+  mask = std::make_shared<nav_msgs::msg::OccupancyGrid>(*mask);
+  mask->data = {80, 40, 5, 0};
+  filter.maskCallback(mask);
+  filter.process(grid, 0, 0, 4, 1, pose);
+  EXPECT_EQ(filter.publishedLimit(), 5.0);
+  filter.resetFilter();
+}
 int main(int argc, char ** argv)
 {
   // Initialize the system

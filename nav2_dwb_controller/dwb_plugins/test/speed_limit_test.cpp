@@ -40,7 +40,9 @@
 #include <memory>
 #include <chrono>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 

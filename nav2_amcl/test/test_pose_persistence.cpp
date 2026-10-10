@@ -12,16 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <cstdio>
 #include <fstream>
 #include <memory>
 #include <string>
 
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "gtest/gtest.h"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_amcl/amcl_node.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/future_return_code.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_client.hpp"
+#include "rclcpp/utilities.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 class PosePersistenceTest : public ::testing::Test
 {

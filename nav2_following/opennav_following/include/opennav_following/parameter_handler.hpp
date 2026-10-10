@@ -21,7 +21,8 @@
 #include <algorithm>
 #include <mutex>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/parameter.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/parameter_handler.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -49,6 +50,8 @@ struct Parameters
   std::string base_frame;
   // This is our fixed frame for controlling - typically "odom"
   std::string fixed_frame;
+  // Maximum age of the base-to-fixed transform in seconds; non-positive disables the check
+  double transform_staleness_threshold{0.0};
   // Desired distance to keep from the object
   double desired_distance;
   // Skip perception orientation

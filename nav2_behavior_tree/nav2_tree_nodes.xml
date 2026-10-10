@@ -217,6 +217,11 @@
       <output_port name="error_msg" type="string">Follow object error message. See `FollowObject` action for the enumerated set of error code definitions.</output_port>
     </Action>
 
+    <Action ID="Log">
+      <input_port name="level" type="string">Log level: DEBUG, INFO, WARN, ERROR, or FATAL.</input_port>
+      <input_port name="message" type="string">Message to log through the BT navigator's ROS logger.</input_port>
+    </Action>
+
     <Action ID="NavigateToPose">
       <input_port name="goal" type="geometry_msgs::msg::PoseStamped">Takes in a blackboard variable containing the goal, eg. "{goal}".</input_port>
       <input_port name="behavior_tree" type="string">Behavior tree absolute path or ID. If none is specified, NavigateToPose action server uses a default behavior tree.</input_port>

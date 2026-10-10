@@ -51,3 +51,18 @@ nav2_add_pytest_test(test_following_server_waiting_preempt test_following_server
   ENV
   FOLLOWING_MODE=waiting_preempt
 )
+
+nav2_add_pytest_test(test_following_server_waiting_max_duration test_following_server.py
+  ENV
+  FOLLOWING_MODE=waiting_max_duration
+)
+
+nav2_add_pytest_test(test_following_server_waiting_tf test_following_server.py
+  ENV
+  FOLLOWING_MODE=waiting_tf
+)
+
+nav2_add_pytest_test(test_following_server_waiting_rotate test_following_server.py
+  ENV
+  FOLLOWING_MODE=waiting_rotate
+)

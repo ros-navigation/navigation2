@@ -15,7 +15,12 @@
 #include <memory>
 #include <string>
 #include "nav2_ros_common/service_client.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/client.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/utilities.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "gtest/gtest.h"
