@@ -29,6 +29,10 @@ namespace opennav_docking
  * @class opennav_docking::PIDController
  * @brief A docking controller implementing PID controller.
  *
+ * Calculation of the heading error in poseError method is based on
+ * "On uniform semiglobal exponential stability of proportional line-of-sight
+ * guidance laws" (Fossen and Pettersen, Automatica, 2014).
+ *
  */
 class PIDController : public ControllerBase
 {
@@ -124,23 +128,21 @@ public:
    */
   double advance(ControllerState & channel, double error, double dt);
 
-  /**
-   * @brief Calculate target pose in polar coordinate.
-   *
-   * @param target Target pose, in robot centric coordinates.
-   * @param reverse If true, robot will drive backwards to the goal.
-   * @param lookahead Floor on denominator [m] in bearing calculation.
-   * @param rho Range to the target [m].
-   * @param alpha Bearing to the target, in (-pi/2, pi/2) [rad].
-   * @param alignment Line of sight relative to the target's axis [rad].
-   */
-  static void poseError(
-    const geometry_msgs::msg::Pose & target, bool reverse, double lookahead,
-    double & rho, double & alpha, double & alignment);
-
 protected:
   /// Hard floor under lookahead_distance_.
   static constexpr double kMinLookahead = 1e-3;
+
+  /**
+   * @brief Calculate the distance and the heading error to the target.
+   *
+   * @param target Target pose, in robot centric coordinates.
+   * @param reverse If true, robot will drive backwards to the goal.
+   * @param e_x Distance to the target along the robot's heading [m]
+   * @param alpha Heading error relative to the target's x axis [rad].
+   */
+  void poseError(
+    const geometry_msgs::msg::Pose & target, bool reverse,
+    double & e_x, double & alpha) const;
 
   /**
    * @brief Validate parameter updates before applying.
@@ -159,7 +161,7 @@ protected:
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
 
-  ControllerState x_, y_, theta_;
+  ControllerState x_, y_;
   double v_linear_max_{0.25}, v_angular_max_{0.75};
   double lookahead_distance_{0.25};
 };

@@ -44,11 +44,6 @@ void PIDController::onConfigure(const nav2::LifecycleNode::SharedPtr & node)
   y_.kd = node->declare_or_get_parameter(name_ + ".kd_y", 0.0);
   y_.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_y", 0.5);
 
-  theta_.kp = node->declare_or_get_parameter(name_ + ".kp_theta", 1.2);
-  theta_.ki = node->declare_or_get_parameter(name_ + ".ki_theta", 0.0);
-  theta_.kd = node->declare_or_get_parameter(name_ + ".kd_theta", 0.0);
-  theta_.i_clamp = node->declare_or_get_parameter(name_ + ".i_clamp_theta", 0.5);
-
   v_linear_max_ = node->declare_or_get_parameter(name_ + ".v_linear_max", 0.25);
   v_angular_max_ = node->declare_or_get_parameter(name_ + ".v_angular_max", 0.75);
   lookahead_distance_ = std::max(
@@ -138,14 +133,6 @@ void PIDController::updateParametersCallback(const std::vector<rclcpp::Parameter
       y_.kd = parameter.as_double();
     } else if (param_name == name_ + ".i_clamp_y") {
       y_.i_clamp = parameter.as_double();
-    } else if (param_name == name_ + ".kp_theta") {
-      theta_.kp = parameter.as_double();
-    } else if (param_name == name_ + ".ki_theta") {
-      theta_.ki = parameter.as_double();
-    } else if (param_name == name_ + ".kd_theta") {
-      theta_.kd = parameter.as_double();
-    } else if (param_name == name_ + ".i_clamp_theta") {
-      theta_.i_clamp = parameter.as_double();
     } else if (param_name == name_ + ".v_linear_max") {
       v_linear_max_ = parameter.as_double();
     } else if (param_name == name_ + ".v_angular_max") {
@@ -160,7 +147,6 @@ void PIDController::reset()
 {
   x_.reset();
   y_.reset();
-  theta_.reset();
 }
 
 double PIDController::evaluate(
@@ -182,35 +168,36 @@ double PIDController::advance(ControllerState & channel, double error, double dt
 
 
 void PIDController::poseError(
-  const geometry_msgs::msg::Pose & target, bool reverse, double lookahead,
-  double & rho, double & alpha, double & alignment)
+  const geometry_msgs::msg::Pose & target, bool reverse,
+  double & e_x, double & alpha) const
 {
   const double sign = reverse ? -1.0 : 1.0;
-  const double e_x = sign * target.position.x;
+  e_x = sign * target.position.x;
   const double e_y = sign * target.position.y;
+  const double target_yaw = tf2::getYaw(target.orientation);
 
-  rho = std::hypot(e_x, e_y);
-  // Reverse direction if passed dock's axis
-  alpha = std::atan2(e_y, std::max(std::abs(e_x), lookahead));
+  // Lateral offset from the target's axis (left positive)
+  double lateral = std::sin(target_yaw) * e_x - std::cos(target_yaw) * e_y;
   if (e_x < 0.0) {
-    rho = -rho;
-    alpha = -alpha;
+    // Target passed: drive back to it, steering as seen from the rear (frame rotated by pi)
+    lateral = -lateral;
   }
-  alignment = angles::normalize_angle(alpha - tf2::getYaw(target.orientation));
+
+  // Both lateral and heading errors are zero only on the axis, aligned.
+  alpha = angles::normalize_angle(target_yaw - std::atan2(lateral, lookahead_distance_));
 }
 
 geometry_msgs::msg::Twist PIDController::computeCommand(
   const geometry_msgs::msg::Pose & target, bool reverse, double dt)
 {
-  double rho = 0.0, alpha = 0.0, alignment = 0.0;
-  poseError(target, reverse, lookahead_distance_, rho, alpha, alignment);
+  double e_x = 0.0, alpha = 0.0;
+  poseError(target, reverse, e_x, alpha);
 
-  const double v_raw = advance(x_, rho, dt);
-  const double w_bearing = advance(y_, alpha, dt);
-  const double w_alignment = advance(theta_, alignment, dt);
+  const double v_raw = advance(x_, e_x, dt);
+  const double w_raw = advance(y_, alpha, dt);
 
   const double v = std::clamp(v_raw, -v_linear_max_, v_linear_max_);
-  const double w = std::clamp(w_bearing + w_alignment, -v_angular_max_, v_angular_max_);
+  const double w = std::clamp(w_raw, -v_angular_max_, v_angular_max_);
 
   geometry_msgs::msg::Twist cmd;
   cmd.linear.x = (reverse ? -1.0 : 1.0) * v;
@@ -234,13 +221,11 @@ geometry_msgs::msg::Pose PIDController::predictNextPose(
   relative.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
     angles::shortest_angular_distance(yaw, tf2::getYaw(target.orientation)));
 
-  double rho = 0.0, alpha = 0.0, alignment = 0.0;
-  poseError(relative, reverse, lookahead_distance_, rho, alpha, alignment);
+  double e_x = 0.0, alpha = 0.0;
+  poseError(relative, reverse, e_x, alpha);
 
-  const double v_raw = evaluate(x_, rho, x_.integral, x_.derivative);
-  const double w_raw =
-    evaluate(y_, alpha, y_.integral, y_.derivative) +
-    evaluate(theta_, alignment, theta_.integral, theta_.derivative);
+  const double v_raw = evaluate(x_, e_x, x_.integral, x_.derivative);
+  const double w_raw = evaluate(y_, alpha, y_.integral, y_.derivative);
 
   const double v =
     (reverse ? -1.0 : 1.0) * std::clamp(v_raw, -v_linear_max_, v_linear_max_);

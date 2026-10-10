@@ -750,7 +750,7 @@ TEST(ControllerTests, PIDDynamicParameters) {
 
   const std::vector<std::string> names{
     "kp_x", "ki_x", "kd_x", "i_clamp_x", "kp_y", "ki_y", "kd_y", "i_clamp_y",
-    "kp_theta", "ki_theta", "kd_theta", "i_clamp_theta", "v_angular_max", "lookahead_distance"};
+    "v_angular_max", "lookahead_distance"};
   std::vector<rclcpp::Parameter> values;
   for (size_t i = 0; i < names.size(); ++i) {
     values.emplace_back("controller." + names[i], 1.0 + i);
