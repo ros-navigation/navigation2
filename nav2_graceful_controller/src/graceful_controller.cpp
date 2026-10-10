@@ -219,6 +219,12 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       target_pose = transformed_plan.poses[i];
     }
 
+    // Make sure target is far enough away to avoid instability,
+    // unless we are approaching the goal
+    if (dist_to_goal >= params_->max_lookahead && dist_to_target < params_->min_lookahead) {
+      continue;
+    }
+
     // Compute velocity at this moment if valid target pose is found
     if (
       validateTargetPoseOnApproach(target_pose, dist_to_target, dist_to_goal, local_plan,
