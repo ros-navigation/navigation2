@@ -133,7 +133,7 @@ BT::NodeStatus RecoveryManager::tick()
       error_description_.c_str());
   }
 
-  haltChild(*running_behavior_index_);
+  ControlNode::haltChildren();
   running_behavior_index_.reset();
 
   // Even a failed behavior had its turn, so navigation is retried before the next one
