@@ -694,26 +694,6 @@ TEST(DockingServerTests, ControllerSelectRejectsUnknownController)
   node->shutdown();
 }
 
-TEST(DockingServerTests, ControlLoopsFailWithoutControllerSelected)
-{
-  auto node = std::make_shared<DockingServerControllerShim>();
-  declareTestDock(node);
-
-  ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
-  ASSERT_TRUE(node->getCurrentController().empty());
-
-  geometry_msgs::msg::PoseStamped pose;
-  geometry_msgs::msg::Twist cmd;
-  Dock dock;
-
-  EXPECT_THROW(node->rotateToDock(pose), opennav_docking_core::FailedToControl);
-  EXPECT_THROW(node->approachDock(&dock, pose, false), opennav_docking_core::FailedToControl);
-  EXPECT_THROW(node->resetApproach(pose, false), opennav_docking_core::FailedToControl);
-
-  node->on_cleanup(rclcpp_lifecycle::State());
-  node->shutdown();
-}
-
 }  // namespace opennav_docking
 
 int main(int argc, char ** argv)

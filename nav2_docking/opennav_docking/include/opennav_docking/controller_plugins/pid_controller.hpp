@@ -137,11 +137,12 @@ protected:
    *
    * @param target Target pose, in robot centric coordinates.
    * @param reverse If true, robot will drive backwards to the goal.
+   * @param side Sign of the lateral term, becomes -1 when it passes target.
    * @param e_x Distance to the target along the robot's heading [m]
    * @param alpha Heading error relative to the target's x axis [rad].
    */
   void poseError(
-    const geometry_msgs::msg::Pose & target, bool reverse,
+    const geometry_msgs::msg::Pose & target, bool reverse, double & side,
     double & e_x, double & alpha) const;
 
   /**
@@ -164,6 +165,10 @@ protected:
   ControllerState x_, y_;
   double v_linear_max_{0.25}, v_angular_max_{0.75};
   double lookahead_distance_{0.25};
+  // Distance e_x must pass zero before the control direction switches [m]
+  double passed_target_hysteresis_{0.05};
+  // Sign of the lateral term used in poseError
+  double side_{1.0};
 };
 
 }  // namespace opennav_docking

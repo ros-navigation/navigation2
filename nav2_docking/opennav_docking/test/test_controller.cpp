@@ -728,6 +728,7 @@ TEST(ControllerTests, PIDControlTests) {
   EXPECT_DOUBLE_EQ(cmd.angular.z, 0.0);
 
   // Case 6: Target passed on the left
+  target.position.x = -0.1;
   target.position.y = 0.01;
   controller->reset();
   cmd = controller->computeCommand(target, false, 0.1);
@@ -750,7 +751,7 @@ TEST(ControllerTests, PIDDynamicParameters) {
 
   const std::vector<std::string> names{
     "kp_x", "ki_x", "kd_x", "i_clamp_x", "kp_y", "ki_y", "kd_y", "i_clamp_y",
-    "v_angular_max", "lookahead_distance"};
+    "v_angular_max", "lookahead_distance", "passed_target_hysteresis"};
   std::vector<rclcpp::Parameter> values;
   for (size_t i = 0; i < names.size(); ++i) {
     values.emplace_back("controller." + names[i], 1.0 + i);

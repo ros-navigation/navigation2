@@ -48,6 +48,8 @@ void PIDController::onConfigure(const nav2::LifecycleNode::SharedPtr & node)
   v_angular_max_ = node->declare_or_get_parameter(name_ + ".v_angular_max", 0.75);
   lookahead_distance_ = std::max(
     kMinLookahead, node->declare_or_get_parameter(name_ + ".lookahead_distance", 0.25));
+  passed_target_hysteresis_ =
+    node->declare_or_get_parameter(name_ + ".passed_target_hysteresis", 0.05);
 
   reset();
 }
@@ -92,6 +94,12 @@ rcl_interfaces::msg::SetParametersResult PIDController::validateParameterUpdates
       continue;
     }
     if (!validateSharedParameter(parameter)) {
+      result.successful = false;
+    } else if (param_name == name_ + ".lookahead_distance" && parameter.as_double() <= 0.0) {
+      RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
       result.successful = false;
     } else if (parameter.as_double() < 0.0) {
       RCLCPP_WARN(
@@ -139,6 +147,8 @@ void PIDController::updateParametersCallback(const std::vector<rclcpp::Parameter
       v_angular_max_ = parameter.as_double();
     } else if (param_name == name_ + ".lookahead_distance") {
       lookahead_distance_ = std::max(kMinLookahead, parameter.as_double());
+    } else if (param_name == name_ + ".passed_target_hysteresis") {
+      passed_target_hysteresis_ = parameter.as_double();
     }
   }
 }
@@ -147,6 +157,7 @@ void PIDController::reset()
 {
   x_.reset();
   y_.reset();
+  side_ = 1.0;
 }
 
 double PIDController::evaluate(
@@ -168,7 +179,7 @@ double PIDController::advance(ControllerState & channel, double error, double dt
 
 
 void PIDController::poseError(
-  const geometry_msgs::msg::Pose & target, bool reverse,
+  const geometry_msgs::msg::Pose & target, bool reverse, double & side,
   double & e_x, double & alpha) const
 {
   const double sign = reverse ? -1.0 : 1.0;
@@ -176,12 +187,15 @@ void PIDController::poseError(
   const double e_y = sign * target.position.y;
   const double target_yaw = tf2::getYaw(target.orientation);
 
-  // Lateral offset from the target's axis (left positive)
-  double lateral = std::sin(target_yaw) * e_x - std::cos(target_yaw) * e_y;
-  if (e_x < 0.0) {
-    // Target passed: drive back to it, steering as seen from the rear (frame rotated by pi)
-    lateral = -lateral;
+  // Hysteresis band prevents e_x jitter around 0
+  if (e_x > passed_target_hysteresis_) {
+    side = 1.0;
+  } else if (e_x < -passed_target_hysteresis_) {
+    side = -1.0;
   }
+
+  // Lateral offset from the target's axis (left positive)
+  const double lateral = side * (std::sin(target_yaw) * e_x - std::cos(target_yaw) * e_y);
 
   // Both lateral and heading errors are zero only on the axis, aligned.
   alpha = angles::normalize_angle(target_yaw - std::atan2(lateral, lookahead_distance_));
@@ -191,7 +205,7 @@ geometry_msgs::msg::Twist PIDController::computeCommand(
   const geometry_msgs::msg::Pose & target, bool reverse, double dt)
 {
   double e_x = 0.0, alpha = 0.0;
-  poseError(target, reverse, e_x, alpha);
+  poseError(target, reverse, side_, e_x, alpha);
 
   const double v_raw = advance(x_, e_x, dt);
   const double w_raw = advance(y_, alpha, dt);
@@ -221,8 +235,8 @@ geometry_msgs::msg::Pose PIDController::predictNextPose(
   relative.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
     angles::shortest_angular_distance(yaw, tf2::getYaw(target.orientation)));
 
-  double e_x = 0.0, alpha = 0.0;
-  poseError(relative, reverse, e_x, alpha);
+  double side = side_, e_x = 0.0, alpha = 0.0;
+  poseError(relative, reverse, side, e_x, alpha);
 
   const double v_raw = evaluate(x_, e_x, x_.integral, x_.derivative);
   const double w_raw = evaluate(y_, alpha, y_.integral, y_.derivative);
