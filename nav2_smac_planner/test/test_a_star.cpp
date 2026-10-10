@@ -320,9 +320,11 @@ TEST(AStarTest, analytic_expansion_restores_revisited_goal)
   std::unordered_map<uint64_t, std::unique_ptr<Node>> nodes;
   Node::NodePtr start_ptr = &start, goal_ptr = &goal;
   auto getter = [&](const uint64_t & index, Node::NodePtr & result) {
-      if (index == goal.getIndex()) {result = goal_ptr;}
-      else if (index == start.getIndex()) {result = start_ptr;}
-      else {
+      if (index == goal.getIndex()) {
+        result = goal_ptr;
+      } else if (index == start.getIndex()) {
+        result = start_ptr;
+      } else {
         auto & stored = nodes[index];
         if (!stored) {stored = std::make_unique<Node>(index, ctx);}
         result = stored.get();
