@@ -20,14 +20,9 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/path.hpp"
-#include "std_msgs/msg/color_rgba.hpp"
-#include "std_msgs/msg/header.hpp"
-#include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_msgs/action/classify_path.hpp"
-#include "nav2_msgs/msg/classified_path.hpp"
-#include "nav2_msgs/msg/classified_path_array.hpp"
+#include "nav2_msgs/msg/classified_pose.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -36,16 +31,15 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_path_classifier/classifier_base.hpp"
-#include "nav2_path_classifier/path_splitter.hpp"
+#include "nav2_path_classifier/classification_filter.hpp"
+#include "nav2_path_classifier/path_classifier.hpp"
 
 namespace nav2_path_classifier
 {
 
 /**
  * @class nav2_path_classifier::PathClassifierServer
- * @brief Hosts ClassifierBase plugins and splits an incoming path into
- *        classified segments, exposed through the ClassifyPath action.
+ * @brief Hosts PathClassifier plugins and merges their per-pose classes by priority.
  */
 class PathClassifierServer : public nav2_util::LifecycleNode
 {
@@ -61,25 +55,9 @@ public:
    */
   ~PathClassifierServer() = default;
 
-  /**
-   * @brief Classify a single pose by iterating loaded classifier plugins in priority order.
-   * @param pose Pose to classify
-   * @param fetch_data Pull the latest data (costmap, footprint, ...) before evaluating
-   * @return class_type from the first matching plugin, or the default class if none match
-   */
-  uint16_t classify(
-    const geometry_msgs::msg::PoseStamped & pose,
-    bool fetch_data = true);
-
-  /**
-   * @brief Check if any classifier plugins are loaded.
-   * @return true if at least one classifier plugin is configured
-   */
-  bool hasClassifiers() const;
-
 protected:
   /**
-   * @brief Configure classifier plugins, splitter, subscribers and action server
+   * @brief Configure classifier plugins, classification filter, subscribers and action server
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
@@ -137,24 +115,9 @@ protected:
   using ActionServer = nav2_util::SimpleActionServer<Action>;
 
   /**
-   * @brief ClassifyPath action server callback. Classifies the goal path and
-   *        returns it split into segments of uniform class.
+   * @brief ClassifyPath action server callback. Classifies each pose of the goal path.
    */
   void classifyPath();
-
-  /**
-   * @brief Build MarkerArray of line-strip segments from classified path array.
-   */
-  visualization_msgs::msg::MarkerArray buildSegmentMarkers(
-    const nav2_msgs::msg::ClassifiedPathArray & paths,
-    const std_msgs::msg::Header & header);
-
-  /**
-   * @brief Build MarkerArray of per-pose spheres from raw classified poses.
-   */
-  visualization_msgs::msg::MarkerArray buildRawPoseMarkers(
-    const std::vector<ClassifiedPose> & poses,
-    const std_msgs::msg::Header & header);
 
   std::unique_ptr<ActionServer> action_server_;
 
@@ -166,31 +129,19 @@ protected:
 
   uint16_t default_class_type_;
 
-  static constexpr const char * kSegmentMarkerNs = "classified_paths";
-  static constexpr const char * kRawPoseMarkerNs = "raw_classified_poses";
-  static constexpr double kSegmentLineWidth = 0.05;
-  static constexpr double kRawPoseSize = 0.06;
-
-  /**
-   * @brief Get the marker color for a given path class_type
-   * @param class_type Class identifier to map to a color
-   * @return Color for the class
-   */
-  static std_msgs::msg::ColorRGBA colorForClass(uint16_t class_type);
-
-  bool publish_classified_paths_{false};
+  bool publish_classified_path_{false};
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-    classified_segments_marker_pub_;
+    filtered_classified_path_marker_pub_;
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-    raw_classified_poses_marker_pub_;
+    raw_classified_path_marker_pub_;
 
-  pluginlib::ClassLoader<nav2_path_classifier::ClassifierBase> classifier_loader_{
-    "nav2_path_classifier", "nav2_path_classifier::ClassifierBase"};
-  std::vector<nav2_path_classifier::ClassifierBase::Ptr> classifiers_;
+  pluginlib::ClassLoader<nav2_path_classifier::PathClassifier> classifier_loader_{
+    "nav2_path_classifier", "nav2_path_classifier::PathClassifier"};
+  std::vector<nav2_path_classifier::PathClassifier::Ptr> classifiers_;
   std::vector<std::string> classifier_ids_;
   std::vector<std::string> classifier_types_;
 
-  PathSplitter path_splitter_;
+  std::unique_ptr<ClassificationFilter> classification_filter_;
 };
 
 }  // namespace nav2_path_classifier

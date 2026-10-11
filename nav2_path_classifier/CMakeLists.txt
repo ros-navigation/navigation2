@@ -50,7 +50,7 @@ set(dependencies
 # Server core library
 add_library(${library_name} SHARED
   src/path_classifier_server.cpp
-  src/path_splitter.cpp
+  src/classification_filter.cpp
 )
 
 ament_target_dependencies(${library_name}

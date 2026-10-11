@@ -23,7 +23,7 @@
 #include <utility>
 #include <vector>
 
-#include "nav2_path_classifier/classifier_base.hpp"
+#include "nav2_path_classifier/path_classifier.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -52,10 +52,10 @@ namespace nav2_path_classifier
  *
  * Parameters:
  *   - class_type (int):                 class enum value (required, no default)
- *   - inflation_resolution (double):    step size per iteration in metres (default 0.20)
- *   - max_constraint_clearance (double): max inflation distance from footprint edge (default 1.0)
+ *   - inflation_resolution (double):    step size per iteration in metres (default 0.05)
+ *   - max_constraint_clearance (double): max inflation distance from footprint edge (default 0.1)
  */
-class ConfinedSpaceClassifier : public ClassifierBase
+class ConfinedSpaceClassifier : public PathClassifier
 {
 public:
   /**
@@ -99,22 +99,22 @@ public:
   void deactivate() override;
 
   /**
-   * @brief Check if a pose lies in constraint space.
-   * @param pose The pose to classify
-   * @param fetch_data Pull the latest data (costmap, footprint) before evaluating
-   * @return true if the pose matches constraint space
+   * @brief Classify every pose of a path as confined space or UNKNOWN.
+   * @param path Path to classify
+   * @return One classified pose per path pose, class_type for confined poses and UNKNOWN otherwise
    */
-  bool matches(
-    const geometry_msgs::msg::PoseStamped & pose,
-    bool fetch_data = true) override;
-
-  /**
-   * @brief Return the class_type value this classifier emits.
-   * @return class_type set via the class_type parameter
-   */
-  uint16_t classType() override;
+  std::vector<nav2_msgs::msg::ClassifiedPose> classify(
+    const nav_msgs::msg::Path & path) override;
 
 protected:
+  /**
+   * @brief Check if a pose lies in confined space, using the footprint and costmap
+   *        fetched by classify(). The costmap must be locked by the caller.
+   * @param pose The pose to check
+   * @return true if the pose lies in confined space
+   */
+  bool isConfined(const geometry_msgs::msg::PoseStamped & pose);
+
   /**
    * @brief Inflate footprint by delta metres using Clipper1 mitered offset.
    *        Converts double coords to Clipper integer coords (micrometre scale),
