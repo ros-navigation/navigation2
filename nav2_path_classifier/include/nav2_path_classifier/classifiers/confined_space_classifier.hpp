@@ -84,21 +84,6 @@ public:
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub) override;
 
   /**
-   * @brief Method to cleanup resources used on shutdown.
-   */
-  void cleanup() override;
-
-  /**
-   * @brief Method to activate the classifier and any threads involved in execution.
-   */
-  void activate() override;
-
-  /**
-   * @brief Method to deactivate the classifier and any threads involved in execution.
-   */
-  void deactivate() override;
-
-  /**
    * @brief Classify every pose of a path as confined space or UNKNOWN.
    * @param path Path to classify
    * @return One classified pose per path pose, class_type for confined poses and UNKNOWN otherwise
