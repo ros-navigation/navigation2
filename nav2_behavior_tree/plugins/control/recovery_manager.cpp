@@ -13,83 +13,17 @@
 // limitations under the License.
 
 #include <algorithm>
-#include <cctype>
-#include <limits>
+#include <cstdlib>
 #include <map>
 #include <optional>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "nav2_msgs/action/compute_path_through_poses.hpp"
-#include "nav2_msgs/action/compute_path_to_pose.hpp"
-#include "nav2_msgs/action/follow_path.hpp"
-#include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_behavior_tree/plugins/control/recovery_manager.hpp"
 
 namespace nav2_behavior_tree
 {
-
-namespace
-{
-
-// The errors of some of Nav2's actions
-const std::unordered_map<uint16_t, std::string> & builtinErrorNames()
-{
-  using FollowPath = nav2_msgs::action::FollowPath::Result;
-  using ComputePathToPose = nav2_msgs::action::ComputePathToPose::Result;
-  using ComputePathThroughPoses = nav2_msgs::action::ComputePathThroughPoses::Result;
-  using SmoothPath = nav2_msgs::action::SmoothPath::Result;
-  static const std::unordered_map<uint16_t, std::string> builtin_error_names = {
-    {FollowPath::NONE, "NONE"},
-    {FollowPath::GOAL_REJECTED, "GOAL_REJECTED"},
-    {FollowPath::SEND_GOAL_FAILURE, "SEND_GOAL_FAILURE"},
-    {FollowPath::UNKNOWN, "UNKNOWN"},
-    {FollowPath::INVALID_CONTROLLER, "INVALID_CONTROLLER"},
-    {FollowPath::TF_ERROR, "TF_ERROR"},
-    {FollowPath::INVALID_PATH, "INVALID_PATH"},
-    {FollowPath::PATIENCE_EXCEEDED, "PATIENCE_EXCEEDED"},
-    {FollowPath::FAILED_TO_MAKE_PROGRESS, "FAILED_TO_MAKE_PROGRESS"},
-    {FollowPath::NO_VALID_CONTROL, "NO_VALID_CONTROL"},
-    {FollowPath::CONTROLLER_TIMED_OUT, "CONTROLLER_TIMED_OUT"},
-    {FollowPath::TIMEOUT, "TIMEOUT"},
-    {ComputePathToPose::UNKNOWN, "UNKNOWN"},
-    {ComputePathToPose::INVALID_PLANNER, "INVALID_PLANNER"},
-    {ComputePathToPose::TF_ERROR, "TF_ERROR"},
-    {ComputePathToPose::START_OUTSIDE_MAP, "START_OUTSIDE_MAP"},
-    {ComputePathToPose::GOAL_OUTSIDE_MAP, "GOAL_OUTSIDE_MAP"},
-    {ComputePathToPose::START_OCCUPIED, "START_OCCUPIED"},
-    {ComputePathToPose::GOAL_OCCUPIED, "GOAL_OCCUPIED"},
-    {ComputePathToPose::TIMEOUT, "TIMEOUT"},
-    {ComputePathToPose::NO_VALID_PATH, "NO_VALID_PATH"},
-    {ComputePathThroughPoses::UNKNOWN, "UNKNOWN"},
-    {ComputePathThroughPoses::INVALID_PLANNER, "INVALID_PLANNER"},
-    {ComputePathThroughPoses::TF_ERROR, "TF_ERROR"},
-    {ComputePathThroughPoses::START_OUTSIDE_MAP, "START_OUTSIDE_MAP"},
-    {ComputePathThroughPoses::GOAL_OUTSIDE_MAP, "GOAL_OUTSIDE_MAP"},
-    {ComputePathThroughPoses::START_OCCUPIED, "START_OCCUPIED"},
-    {ComputePathThroughPoses::GOAL_OCCUPIED, "GOAL_OCCUPIED"},
-    {ComputePathThroughPoses::TIMEOUT, "TIMEOUT"},
-    {ComputePathThroughPoses::NO_VALID_PATH, "NO_VALID_PATH"},
-    {ComputePathThroughPoses::NO_VIAPOINTS_GIVEN, "NO_VIAPOINTS_GIVEN"},
-    {SmoothPath::UNKNOWN, "UNKNOWN"},
-    {SmoothPath::INVALID_SMOOTHER, "INVALID_SMOOTHER"},
-    {SmoothPath::TIMEOUT, "TIMEOUT"},
-    {SmoothPath::SMOOTHED_PATH_IN_COLLISION, "SMOOTHED_PATH_IN_COLLISION"},
-    {SmoothPath::FAILED_TO_SMOOTH_PATH, "FAILED_TO_SMOOTH_PATH"},
-    {SmoothPath::INVALID_PATH, "INVALID_PATH"},
-  };
-  return builtin_error_names;
-}
-
-std::string toUppercase(std::string text)
-{
-  std::transform(text.begin(), text.end(), text.begin(), ::toupper);
-  return text;
-}
-
-}  // namespace
 
 RecoveryManager::RecoveryManager(
   const std::string & name,
@@ -127,16 +61,22 @@ BT::NodeStatus RecoveryManager::tick()
     throw BT::LogicError("A child node must never return IDLE");
   }
 
-  if (behavior_status != BT::NodeStatus::SUCCESS) {
+  const bool behavior_failed = behavior_status != BT::NodeStatus::SUCCESS;
+  const bool abort_recovery = behavior_failed && abort_on_failure_[*running_behavior_index_];
+  if (behavior_failed) {
     RCLCPP_WARN(
-      logger_, "Recovery behavior %s failed for error code %s", behavior->name().c_str(),
-      error_description_.c_str());
+      logger_, "Recovery behavior %s failed for %s%s", behavior->name().c_str(),
+      error_description_.c_str(), abort_recovery ? ", aborting recovery" : "");
   }
 
   ControlNode::haltChildren();
   running_behavior_index_.reset();
 
-  // Even a failed behavior had its turn, so navigation is retried before the next one
+  if (abort_recovery) {
+    return BT::NodeStatus::FAILURE;
+  }
+
+  // Any other failed behavior still had its turn, so navigation is retried before the next one
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -166,6 +106,19 @@ void RecoveryManager::loadRecoverySequences()
 
   std::string param_namespace;
   getInput("param_namespace", param_namespace);
+
+  // A failure of behaviors with abort_on_failure fails the recovery, the failures of the others
+  // are ignored
+  const std::string abort_on_failure_param =
+    param_namespace.empty() ? "abort_on_failure" : param_namespace + ".abort_on_failure";
+  abort_on_failure_.assign(children_nodes_.size(), false);
+  if (auto behaviors = parseRecoverySequence(
+      abort_on_failure_param, getParameterValue(abort_on_failure_param)))
+  {
+    for (const std::size_t behavior_index : *behaviors) {
+      abort_on_failure_[behavior_index] = true;
+    }
+  }
   // The same prefixes the server reports the error codes of, e.g. follow_path for
   // follow_path_error_code
   std::vector<std::string> error_code_name_prefixes;
@@ -225,75 +178,27 @@ std::optional<RecoveryManager::ErrorCodeGroup> RecoveryManager::loadErrorCodeGro
 
   ErrorCodeGroup group;
   group.blackboard_key = blackboard_key;
-  group.error_names = builtinErrorNames();
 
-  // Every child is used in order without a default
-  for (std::size_t behavior_index = 0; behavior_index < children_nodes_.size(); ++behavior_index) {
-    group.default_sequence.push_back(behavior_index);
-  }
-
-  // for e.g. changes "recovery_manager.follow_path_error_code.error_specific.tf_error" to
-  // "error_specific.tf_error"
-  const auto strip_parameter_prefix = [&](const std::string & param_name) {
-      return param_name.substr(group_prefix.size() + 1);
-    };
-
-  const std::string error_names = "error_names.";
   const std::string error_specific = "error_specific.";
-
-  // 1. Custom error names first so that the error specific sequences can use them
-  std::unordered_map<std::string, uint16_t> custom_error_codes;
   for (const auto & [param_name, param_value] : parameters_for_this_group) {
-    const std::string key = strip_parameter_prefix(param_name);
-    if (!key.starts_with(error_names)) {
-      continue;
-    }
-    const int64_t error_code =
-      param_value.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER ?
-      node_->declare_or_get_parameter(param_name, param_value.get<int64_t>()) : 0;
-    if (error_code <= 0 || error_code > std::numeric_limits<uint16_t>::max()) {
-      RCLCPP_WARN(
-        logger_, "Ignoring parameter %s: not an error code from 1 to 65535", param_name.c_str());
-      continue;
-    }
-    const std::string error_name = toUppercase(key.substr(error_names.size()));
-    custom_error_codes[error_name] = static_cast<uint16_t>(error_code);
-    group.error_names[static_cast<uint16_t>(error_code)] = error_name;
-  }
-
-  // 2. The default and error specific sequences
-  for (const auto & [param_name, param_value] : parameters_for_this_group) {
-    const std::string key = strip_parameter_prefix(param_name);
+    // e.g. "error_specific.105" of "recovery_manager.follow_path_error_code.error_specific.105"
+    const std::string key = param_name.substr(group_prefix.size() + 1);
     if (key == "default") {
       if (auto sequence = parseRecoverySequence(param_name, param_value)) {
         group.default_sequence = *sequence;
       }
     } else if (key.starts_with(error_specific)) {
-      // A custom name only means its own code. Otherwise a Nav2 name can stand for several
-      // codes, e.g. TF_ERROR of the planner and of the controller.
-      const std::string error_name = toUppercase(key.substr(error_specific.size()));
-      std::vector<uint16_t> error_codes;
-      if (custom_error_codes.contains(error_name)) {
-        error_codes.push_back(custom_error_codes.at(error_name));
-      } else {
-        for (const auto & [code, name] : builtinErrorNames()) {
-          if (name == error_name) {
-            error_codes.push_back(code);
-          }
-        }
+      // Parsed even for an invalid error code so that it doesn't hide an unknown behavior name
+      auto sequence = parseRecoverySequence(param_name, param_value);
+      // Text that isn't a number gives 0, which is not an error code either
+      const auto error_code =
+        static_cast<uint16_t>(std::strtoul(key.substr(error_specific.size()).c_str(), nullptr, 10));
+      if (error_code == 0) {
+        RCLCPP_WARN(logger_, "Ignoring parameter %s: not an error code", param_name.c_str());
+      } else if (sequence) {
+        group.sequence_by_error_code[error_code] = *sequence;
       }
-      if (error_codes.empty()) {
-        // Still parsed so that a misspelled error name doesn't hide an unknown behavior name
-        parseRecoverySequence(param_name, param_value);
-        RCLCPP_WARN(logger_, "Ignoring parameter %s: unknown error", param_name.c_str());
-        continue;
-      }
-      if (auto sequence = parseRecoverySequence(param_name, param_value)) {
-        for (const uint16_t error_code : error_codes) {
-          group.sequence_by_error_code[error_code] = *sequence;
-        }
-      }
-    } else if (!key.starts_with(error_names)) {
+    } else {
       RCLCPP_WARN(logger_, "Ignoring parameter %s: unknown parameter", param_name.c_str());
     }
   }
@@ -304,22 +209,19 @@ std::optional<RecoveryManager::ErrorCodeGroup> RecoveryManager::loadErrorCodeGro
 std::map<std::string, rclcpp::ParameterValue> RecoveryManager::getParametersUnder(
   const std::string & prefix)
 {
-  // Errors are named freely by the user, so their parameters can't be declared up front and
-  // are looked up in the parameter file instead
   std::map<std::string, rclcpp::ParameterValue> parameters;
-  const auto parameters_interface = node_->get_node_parameters_interface();
-  for (const auto & [param_name, param_value] : parameters_interface->get_parameter_overrides()) {
-    if (param_name.starts_with(prefix + ".")) {
-      parameters[param_name] = param_value;
-    }
-  }
-
   const auto declared_parameters = node_->list_parameters(
     {prefix}, rcl_interfaces::srv::ListParameters::Request::DEPTH_RECURSIVE);
   for (const auto & param_name : declared_parameters.names) {
     parameters[param_name] = node_->get_parameter(param_name).get_parameter_value();
   }
   return parameters;
+}
+
+rclcpp::ParameterValue RecoveryManager::getParameterValue(const std::string & param_name)
+{
+  return node_->has_parameter(param_name) ?
+         node_->get_parameter(param_name).get_parameter_value() : rclcpp::ParameterValue();
 }
 
 std::optional<RecoveryManager::RecoverySequence> RecoveryManager::parseRecoverySequence(
@@ -356,42 +258,40 @@ std::optional<RecoveryManager::RecoverySequence> RecoveryManager::parseRecoveryS
 
 bool RecoveryManager::selectNextRecoveryBehavior()
 {
-  // 1. The first error code that is set is the one to recover from first
+  // 1. The first error code that is set and has recovery behaviors configured, from its error
+  // specific sequence else the default one
   ErrorCodeGroup * group_with_error = nullptr;
+  const RecoverySequence * recovery_sequence = nullptr;
   uint16_t error_code = 0;
   for (auto & group : error_code_groups_) {
-    if (config().blackboard->get(group.blackboard_key, error_code) && error_code != 0) {
+    if (!config().blackboard->get(group.blackboard_key, error_code) || error_code == 0) {
+      continue;
+    }
+    const auto specific_sequence = group.sequence_by_error_code.find(error_code);
+    recovery_sequence = specific_sequence != group.sequence_by_error_code.end() ?
+      &specific_sequence->second : &group.default_sequence;
+    if (!recovery_sequence->empty()) {
       group_with_error = &group;
       break;
     }
+    RCLCPP_WARN(
+      logger_, "No recovery configured for %s %u", group.blackboard_key.c_str(), error_code);
   }
   if (group_with_error == nullptr) {
-    RCLCPP_WARN(logger_, "No recovery configured for error code 0 (NONE)");
+    RCLCPP_WARN(logger_, "No recovery configured for any error code that is set");
     return false;
   }
 
-  const auto error_name = group_with_error->error_names.find(error_code);
-  error_description_ = std::to_string(error_code) + " (" +
-    (error_name != group_with_error->error_names.end() ?
-    error_name->second : "UNKNOWN_ERROR_CODE") + ")";
+  error_description_ = group_with_error->blackboard_key + " " + std::to_string(error_code);
+  const RecoverySequence & sequence = *recovery_sequence;
 
-  // 2. Its error specific sequence else the default one
-  const auto specific_sequence = group_with_error->sequence_by_error_code.find(error_code);
-  const RecoverySequence & sequence =
-    specific_sequence != group_with_error->sequence_by_error_code.end() ?
-    specific_sequence->second : group_with_error->default_sequence;
-  if (sequence.empty()) {
-    RCLCPP_WARN(logger_, "No recovery configured for error code %s", error_description_.c_str());
-    return false;
-  }
-
-  // 3. The next behavior of that sequence
+  // 2. The next behavior of that sequence
   std::size_t & next_behavior_index =
     group_with_error->next_behavior_index_by_error_code[error_code];
   if (next_behavior_index >= sequence.size()) {
     if (!wrap_around_) {
       RCLCPP_WARN(
-        logger_, "Already executed all %zu recovery behaviors for error code %s",
+        logger_, "Already executed all %zu recovery behaviors for %s",
         sequence.size(), error_description_.c_str());
       return false;
     }
@@ -402,7 +302,7 @@ bool RecoveryManager::selectNextRecoveryBehavior()
   ++next_behavior_index;
 
   RCLCPP_INFO(
-    logger_, "Executing recovery behavior %s (%zu/%zu) for error code %s",
+    logger_, "Executing recovery behavior %s (%zu/%zu) for %s",
     children_nodes_[*running_behavior_index_]->name().c_str(), next_behavior_index,
     sequence.size(), error_description_.c_str());
   return true;

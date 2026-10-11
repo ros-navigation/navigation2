@@ -36,8 +36,7 @@ namespace nav2_behavior_tree
  * Unlike a Sequence or a RoundRobin, this node does not tick its children in the order they
  * are written in the XML. Which child runs, and when, is decided only by the configured
  * sequences: on each failure, the error code that was set picks its sequence and the next
- * behavior in it is run. Reordering the children in the XML has no effect on execution,
- * except for a group with no `default` sequence (see below).
+ * behavior in it is run. Reordering the children in the XML has no effect on execution.
  *
  * The error codes come from the same `error_code_name_prefixes` parameter the server uses to
  * report them: each prefix with configuration below gets its own group of sequences, named
@@ -48,41 +47,46 @@ namespace nav2_behavior_tree
  * bt_navigator:
  *   ros__parameters:
  *     recovery_manager:
+ *       # A failure of these behaviors fails the recovery and so the navigation.
+ *       # Failures of the other behaviors are ignored and the next failure gets the next one
+ *       abort_on_failure: ["BackUp"]
  *       # compute_path_error_code is the blackboard key ComputePathToPose stores its error
  *       # code in
  *       compute_path_error_code:
  *         default: ["ClearGlobalCostmap", "Wait", "ClearGlobalCostmap"]
+ *         # Keyed by error code, see ComputePathToPose.action
  *         error_specific:
- *           invalid_planner: ["none"]
- *           tf_error: ["Wait"]
- *           start_outside_map: ["none"]
- *           goal_outside_map: ["none"]
- *           start_occupied: ["ClearGlobalCostmap", "BackUp"]
- *           goal_occupied: ["none"]
+ *           201: ["none"]  # INVALID_PLANNER
+ *           202: ["Wait"]  # TF_ERROR
+ *           203: ["none"]  # START_OUTSIDE_MAP
+ *           204: ["none"]  # GOAL_OUTSIDE_MAP
+ *           205: ["ClearGlobalCostmap", "BackUp"]  # START_OCCUPIED
+ *           206: ["none"]  # GOAL_OCCUPIED
  *       # follow_path_error_code is the blackboard key FollowPath stores its error code in
  *       follow_path_error_code:
  *         default: ["ClearLocalCostmap", "Wait", "ClearLocalCostmap"]
+ *         # Keyed by error code, see FollowPath.action
  *         error_specific:
- *           invalid_controller: ["none"]
- *           tf_error: ["Wait"]
- *           invalid_path: ["none"]
- *           failed_to_make_progress: ["ClearLocalCostmap", "BackUp", "Spin"]
- *           no_valid_control: ["ClearLocalCostmap", "BackUp"]
- *       # A custom action's error codes are named in error_names. Its prefix (my_action)
- *       # also has to be in error_code_name_prefixes
+ *           101: ["none"]  # INVALID_CONTROLLER
+ *           102: ["Wait"]  # TF_ERROR
+ *           103: ["none"]  # INVALID_PATH
+ *           105: ["ClearLocalCostmap", "BackUp", "Spin"]  # FAILED_TO_MAKE_PROGRESS
+ *           106: ["ClearLocalCostmap", "BackUp"]  # NO_VALID_CONTROL
+ *       # A custom action is configured the same way. Its prefix (my_action) also has to be in
+ *       # error_code_name_prefixes
  *       my_action_error_code:
- *         error_names: {MY_FAILURE: 950}
  *         default: ["Wait"]
  *         error_specific:
- *           my_failure: ["BackUp"]
+ *           950: ["BackUp"]
  * @endcode
  *
- * Errors are given by name, and `[none]` means that nothing can be done about them.
- * A group without a default uses all children in their XML order; this is the only case where
- * the order of the children matters. Custom error codes are named in
- * `error_names`, and those names only apply within their group.
+ * Error specific sequences are keyed by the numeric error code, and `[none]` means that nothing
+ * can be done about it. An error code with neither an error specific nor a default sequence is
+ * not recovered from.
  *
  * Every error code of every group walks through its own sequence. Once the sequence runs out this node
+ * returns FAILURE. A behavior that fails also uses up its turn: this node returns SUCCESS so that
+ * navigation is retried, unless the behavior is listed in `abort_on_failure`, in which case it
  * returns FAILURE. Sequences start over whenever this node is halted: when a running recovery
  * is preempted (e.g. by GoalUpdated in a ReactiveFallback) and when the tree is halted at the
  * end of each navigation. Any other reset is left to the surrounding tree.
@@ -143,8 +147,6 @@ private:
   struct ErrorCodeGroup
   {
     std::string blackboard_key;
-    // Uppercase error names by code: Nav2's, plus the custom ones from error_names
-    std::unordered_map<uint16_t, std::string> error_names;
     RecoverySequence default_sequence;
     std::unordered_map<uint16_t, RecoverySequence> sequence_by_error_code;
     // How far each error code has got through its sequence
@@ -159,8 +161,8 @@ private:
   void loadRecoverySequences();
 
   /**
-   * @brief Loads the custom error names, default sequence and error specific sequences of
-   * one error code group from the parameters
+   * @brief Loads the default sequence and error specific sequences of one error code group
+   * from the parameters
    * @param blackboard_key Blackboard key holding the error code which is also the name of the group
    * @param param_namespace Parameter namespace under which group is stored
    * @return ErrorCodeGroup The loaded group, or std::nullopt if it has no parameters
@@ -172,14 +174,22 @@ private:
    * @brief Gets the parameters under a prefix.
    * For e.g. the prefix "recovery_manager.follow_path_error_code" gets parameters like
    * "recovery_manager.follow_path_error_code.default" and
-   * "recovery_manager.follow_path_error_code.error_specific.tf_error"
+   * "recovery_manager.follow_path_error_code.error_specific.102"
    * @param prefix Parameter name prefix, without the trailing dot
    * @return Parameter values by their full name
    */
   std::map<std::string, rclcpp::ParameterValue> getParametersUnder(const std::string & prefix);
 
   /**
-   * @brief Declares a sequence parameter and turns its behavior names into child indices.
+   * @brief Gets the value of a parameter
+   * @param param_name Full name of the parameter
+   * @return The value, unset if there is no such parameter
+   */
+  rclcpp::ParameterValue getParameterValue(const std::string & param_name);
+
+  /**
+   * @brief Declares a parameter listing behaviors, e.g. a sequence, and turns their names into
+   * child indices.
    * "none" entries are skipped
    * @param param_name Full name of the parameter
    * @param param_value Value of the parameter, expected to be a list of strings
@@ -192,9 +202,10 @@ private:
 
   /**
    * @brief Picks the next behavior from its error specific sequence or else the group's
-   * default sequence for the first error code that is set. Sets running_behavior_index_
-   * @return bool False if there is nothing to run: no error code is set, the sequence is
-   * empty, or it ran out and wrap_around is off
+   * default sequence for the first error code that is set and has recovery behaviors configured.
+   * Sets running_behavior_index_
+   * @return bool False if there is nothing to run: no error code that is set has recovery
+   * behaviors configured, or the sequence ran out and wrap_around is off
    */
   bool selectNextRecoveryBehavior();
 
@@ -210,8 +221,11 @@ private:
 
   bool sequences_loaded_{false};
   std::unordered_map<std::string, std::size_t> child_node_index_by_name_;
+  // Per child, whether its failure fails the recovery
+  std::vector<bool> abort_on_failure_;
   std::vector<ErrorCodeGroup> error_code_groups_;
 
+  // e.g. "compute_path_error_code 208", for logging
   std::string error_description_;
   std::optional<std::size_t> running_behavior_index_;
 };
