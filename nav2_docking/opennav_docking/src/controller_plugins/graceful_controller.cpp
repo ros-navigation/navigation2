@@ -23,7 +23,8 @@
 #include "opennav_docking/controller_plugins/graceful_controller.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/parameter.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 

@@ -29,7 +29,8 @@
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/parameter.hpp"
 #include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
