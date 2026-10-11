@@ -41,13 +41,17 @@ namespace utils
 /**
  * @brief Target pose on the dock axis at look ahead distance.
  *
- * The target lies on dock axis at lookahead_dist ahead of the robot's projection onto it,
- * but limited by max_projection_dist past the dock. It makes robot steer to the dock axis
- * first from staging point which improves lateral alignment with the dock and heading error.
+ * The robot is projected onto the dock axis (the line along dock's x axis).
+ * The target is placed lookahead_dist ahead on that axis, but never more than
+ * max_projection_dist past the dock. Steering at a point that slides along the axis makes
+ * the robot align with the axis early instead of curving into the dock from the staging pose,
+ * which reduces lateral and heading error at contact.
+ *
+ * If lookahead_dist <= 0, the behavior does not change, it directly targets dock.
  *
  * @param dock Dock pose
  * @param robot Robot pose in the same frame
- * @param lookahead_dist Distance [m] along the dock axis from robot's position
+ * @param lookahead_dist Distance [m] of the target ahead of the robot's projection on the dock axis
  * @param max_projection_dist Furthest [m] distance where target may lie past the dock
  * @return Target pose in the same frame
  */
