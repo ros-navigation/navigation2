@@ -176,16 +176,22 @@ bool DockingServer::loadControllerPlugins(
   }
 
   // Docks naming no controller use a graceful controller
-  const std::string default_controller_name = "default_graceful_controller";
-  default_controller_id_ = default_controller_name;
-  while (std::find(controller_ids.begin(), controller_ids.end(), default_controller_id_) !=
-    controller_ids.end())
+  if (controller_ids == default_controller_ids &&
+    nav2::get_plugin_type_param(node, default_controller_ids.front()) == graceful_type)
   {
-    default_controller_id_ = default_controller_name + std::to_string(std::rand());
+    default_controller_id_ = default_controller_ids.front();
+  } else {
+    const std::string default_controller_name = "default_graceful_controller";
+    default_controller_id_ = default_controller_name;
+    while (std::find(controller_ids.begin(), controller_ids.end(), default_controller_id_) !=
+      controller_ids.end())
+    {
+      default_controller_id_ = default_controller_name + std::to_string(std::rand());
+    }
+    controller_ids.push_back(default_controller_id_);
+    nav2::declare_parameter_if_not_declared(
+      node, default_controller_id_ + ".plugin", rclcpp::ParameterValue(graceful_type));
   }
-  controller_ids.push_back(default_controller_id_);
-  nav2::declare_parameter_if_not_declared(
-    node, default_controller_id_ + ".plugin", rclcpp::ParameterValue(graceful_type));
 
   for (size_t i = 0; i != controller_ids.size(); i++) {
     if (controllers_.find(controller_ids[i]) != controllers_.end()) {

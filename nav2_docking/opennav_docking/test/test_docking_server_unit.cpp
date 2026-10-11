@@ -669,7 +669,7 @@ TEST(DockingServerTests, ControllerDefaultInstance)
 
   // With no `controllers` list, a single instance named `controller` is synthesized so that
   // the `controller.*` namespace existing configuration files use keeps applying
-  EXPECT_EQ(node->getControllers().size(), 2u);
+  EXPECT_EQ(node->getControllers().size(), 1u);
   EXPECT_TRUE(node->getCurrentController().empty());
   EXPECT_EQ(
     node->get_parameter("controller.plugin").as_string(),
