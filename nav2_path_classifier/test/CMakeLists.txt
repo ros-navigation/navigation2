@@ -28,19 +28,7 @@ ament_target_dependencies(test_utils
   ${dependencies}
 )
 
-# Test confined_space_classifier helper functions
-ament_add_gtest(test_confined_space_classifier_helpers
-  test_confined_space_classifier_helpers.cpp
-)
-ament_target_dependencies(test_confined_space_classifier_helpers
-  ${dependencies}
-)
-target_link_libraries(test_confined_space_classifier_helpers
-  pose_classifiers
-  ${POLYCLIPPING_LIBRARIES}
-)
-
-# Test confined_space_classifier configuration and classification
+# Test the confined space classifier and its geometry helpers
 ament_add_gtest(test_confined_space_classifier
   test_confined_space_classifier.cpp
 )

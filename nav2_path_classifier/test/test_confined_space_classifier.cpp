@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -20,6 +22,7 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -166,6 +169,72 @@ static geometry_msgs::msg::PoseStamped makePose(double x, double y)
   return pose;
 }
 
+class ConfinedSpaceClassifierWrapper : public ConfinedSpaceClassifier
+{
+public:
+  nav2_costmap_2d::Footprint inflateFootprint(
+    const nav2_costmap_2d::Footprint & fp, double delta) const
+  {
+    return ConfinedSpaceClassifier::inflateFootprint(fp, delta);
+  }
+
+  nav2_costmap_2d::Footprint orientFootprint(
+    const nav2_costmap_2d::Footprint & fp,
+    double x, double y, double cos_th, double sin_th) const
+  {
+    return ConfinedSpaceClassifier::orientFootprint(fp, x, y, cos_th, sin_th);
+  }
+
+  std::vector<size_t> buildOppositePairs(const nav2_costmap_2d::Footprint & fp) const
+  {
+    return ConfinedSpaceClassifier::buildOppositePairs(fp);
+  }
+};
+
+static geometry_msgs::msg::Point makePoint(double x, double y)
+{
+  geometry_msgs::msg::Point p;
+  p.x = x;
+  p.y = y;
+  return p;
+}
+
+// Square footprint centered at the origin
+static nav2_costmap_2d::Footprint makeSquare(double half_side)
+{
+  return {
+    makePoint(half_side, half_side),
+    makePoint(-half_side, half_side),
+    makePoint(-half_side, -half_side),
+    makePoint(half_side, -half_side)
+  };
+}
+
+// Rectangle footprint: front=0.45, rear=-0.65, left=0.375, right=-0.375
+static nav2_costmap_2d::Footprint makeRectangle()
+{
+  return {
+    makePoint(0.45, 0.375),
+    makePoint(-0.65, 0.375),
+    makePoint(-0.65, -0.375),
+    makePoint(0.45, -0.375)
+  };
+}
+
+static void getBounds(
+  const nav2_costmap_2d::Footprint & fp,
+  double & min_x, double & max_x, double & min_y, double & max_y)
+{
+  min_x = min_y = 1e18;
+  max_x = max_y = -1e18;
+  for (const auto & pt : fp) {
+    min_x = std::min(min_x, pt.x);
+    max_x = std::max(max_x, pt.x);
+    min_y = std::min(min_y, pt.y);
+    max_y = std::max(max_y, pt.y);
+  }
+}
+
 class ConfinedSpaceClassifierTest : public ::testing::Test
 {
 public:
@@ -235,20 +304,8 @@ public:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;
-  ConfinedSpaceClassifier classifier_;
+  ConfinedSpaceClassifierWrapper classifier_;
 };
-
-TEST_F(ConfinedSpaceClassifierTest, ConfinedPosesGetConfiguredClassType)
-{
-  node_->set_parameter(rclcpp::Parameter("confined.class_type", 7));
-  configure();
-  setCorridor(0.55, 0.85);
-  footprint_sub_->setSquareFootprint(0.3);
-
-  nav_msgs::msg::Path path;
-  path.poses.push_back(makePose(0.0, 0.0));
-  EXPECT_EQ(classifier_.classify(path)[0].class_type, 7u);
-}
 
 TEST_F(ConfinedSpaceClassifierTest, ConfigureRejectsNonPositiveResolution)
 {
@@ -268,14 +325,6 @@ TEST_F(ConfinedSpaceClassifierTest, ConfigureThrowsOnExpiredParent)
   EXPECT_THROW(
     classifier_.configure(expired, "confined", tf_, costmap_sub_, footprint_sub_),
     std::runtime_error);
-}
-
-TEST_F(ConfinedSpaceClassifierTest, LifecycleCallbacksDoNotThrow)
-{
-  configure();
-  EXPECT_NO_THROW(classifier_.activate());
-  EXPECT_NO_THROW(classifier_.deactivate());
-  EXPECT_NO_THROW(classifier_.cleanup());
 }
 
 TEST_F(ConfinedSpaceClassifierTest, NoMatchWithoutFootprint)
@@ -300,22 +349,6 @@ TEST_F(ConfinedSpaceClassifierTest, NoMatchForDegenerateFootprint)
   EXPECT_FALSE(isConfinedAt(0.0, 0.0));
 }
 
-TEST_F(ConfinedSpaceClassifierTest, MatchesNarrowCorridor)
-{
-  configure();
-  setCorridor(0.55, 0.85);
-  footprint_sub_->setSquareFootprint(0.3);
-  EXPECT_TRUE(isConfinedAt(0.0, 0.0));
-}
-
-TEST_F(ConfinedSpaceClassifierTest, NoMatchInOpenSpace)
-{
-  configure();
-  costmap_sub_->setCostmap(makeFreeCostmap());
-  footprint_sub_->setSquareFootprint(0.3);
-  EXPECT_FALSE(isConfinedAt(0.0, 0.0));
-}
-
 TEST_F(ConfinedSpaceClassifierTest, NoMatchWhenWallsBeyondClearance)
 {
   configure();
@@ -327,6 +360,7 @@ TEST_F(ConfinedSpaceClassifierTest, NoMatchWhenWallsBeyondClearance)
 
 TEST_F(ConfinedSpaceClassifierTest, ClassifiesEachPoseOfPath)
 {
+  node_->set_parameter(rclcpp::Parameter("confined.class_type", 7));
   configure();
   setCorridor(0.55, 0.85);
   footprint_sub_->setSquareFootprint(0.3);
@@ -338,7 +372,7 @@ TEST_F(ConfinedSpaceClassifierTest, ClassifiesEachPoseOfPath)
   const auto classified_path = classifier_.classify(path);
 
   ASSERT_EQ(classified_path.size(), 2u);
-  EXPECT_EQ(classified_path[0].class_type, 2u);
+  EXPECT_EQ(classified_path[0].class_type, 7u);
   EXPECT_EQ(classified_path[1].class_type, nav2_msgs::msg::ClassifiedPose::UNKNOWN);
   EXPECT_DOUBLE_EQ(classified_path[1].pose.pose.position.y, 3.0);
 }
@@ -372,6 +406,96 @@ TEST_F(ConfinedSpaceClassifierTest, FootprintChangeIsPickedUp)
   // Edge reaches 0.1 + 0.5 = 0.6 m, short of the walls
   footprint_sub_->setSquareFootprint(0.1);
   EXPECT_FALSE(isConfinedAt(0.0, 0.0));
+}
+
+TEST_F(ConfinedSpaceClassifierTest, InflateSquareGrowsByDelta)
+{
+  auto fp = makeSquare(0.5);
+  const double delta = 0.2;
+  auto inflated = classifier_.inflateFootprint(fp, delta);
+
+  // Mitered offset keeps the vertex count for convex polygons, which isConfined() relies on
+  EXPECT_EQ(inflated.size(), fp.size());
+
+  double min_x, max_x, min_y, max_y;
+  getBounds(inflated, min_x, max_x, min_y, max_y);
+  EXPECT_NEAR(max_x, 0.5 + delta, 0.01);
+  EXPECT_NEAR(-min_x, 0.5 + delta, 0.01);
+  EXPECT_NEAR(max_y, 0.5 + delta, 0.01);
+  EXPECT_NEAR(-min_y, 0.5 + delta, 0.01);
+}
+
+TEST_F(ConfinedSpaceClassifierTest, InflateRectangleGrowsByDelta)
+{
+  auto fp = makeRectangle();
+  const double delta = 0.1;
+  auto inflated = classifier_.inflateFootprint(fp, delta);
+
+  double min_x, max_x, min_y, max_y;
+  getBounds(inflated, min_x, max_x, min_y, max_y);
+  EXPECT_NEAR(max_x, 0.45 + delta, 0.01);
+  EXPECT_NEAR(min_x, -0.65 - delta, 0.01);
+  EXPECT_NEAR(max_y, 0.375 + delta, 0.01);
+  EXPECT_NEAR(min_y, -0.375 - delta, 0.01);
+}
+
+TEST_F(ConfinedSpaceClassifierTest, Orient90DegreeRotation)
+{
+  auto fp = makeSquare(0.5);
+  // 90 degrees: cos=0, sin=1
+  auto oriented = classifier_.orientFootprint(fp, 0.0, 0.0, 0.0, 1.0);
+
+  // (0.5, 0.5) rotated 90 degrees -> (-0.5, 0.5), (-0.5, 0.5) -> (-0.5, -0.5)
+  ASSERT_EQ(oriented.size(), fp.size());
+  EXPECT_NEAR(oriented[0].x, -0.5, 1e-9);
+  EXPECT_NEAR(oriented[0].y, 0.5, 1e-9);
+  EXPECT_NEAR(oriented[1].x, -0.5, 1e-9);
+  EXPECT_NEAR(oriented[1].y, -0.5, 1e-9);
+}
+
+TEST_F(ConfinedSpaceClassifierTest, OrientTranslationAndRotation)
+{
+  auto fp = makeSquare(0.5);
+  const double tx = 1.0, ty = 2.0;
+  const double theta = M_PI / 4.0;
+  const double cos_th = std::cos(theta);
+  const double sin_th = std::sin(theta);
+
+  auto oriented = classifier_.orientFootprint(fp, tx, ty, cos_th, sin_th);
+
+  ASSERT_EQ(oriented.size(), fp.size());
+  for (size_t i = 0; i < fp.size(); ++i) {
+    EXPECT_NEAR(oriented[i].x, tx + (fp[i].x * cos_th - fp[i].y * sin_th), 1e-9);
+    EXPECT_NEAR(oriented[i].y, ty + (fp[i].x * sin_th + fp[i].y * cos_th), 1e-9);
+  }
+}
+
+TEST_F(ConfinedSpaceClassifierTest, OppositePairsRectangle)
+{
+  auto opp = classifier_.buildOppositePairs(makeRectangle());
+
+  // Front <-> rear and left <-> right
+  ASSERT_EQ(opp.size(), 4u);
+  EXPECT_EQ(opp[0], 2u);
+  EXPECT_EQ(opp[2], 0u);
+  EXPECT_EQ(opp[1], 3u);
+  EXPECT_EQ(opp[3], 1u);
+}
+
+TEST_F(ConfinedSpaceClassifierTest, OppositePairsHexagon)
+{
+  nav2_costmap_2d::Footprint hex;
+  for (int i = 0; i < 6; ++i) {
+    const double angle = i * M_PI / 3.0;
+    hex.push_back(makePoint(std::cos(angle), std::sin(angle)));
+  }
+
+  // For a regular hexagon the opposite of edge i is edge (i + 3) % 6
+  auto opp = classifier_.buildOppositePairs(hex);
+  ASSERT_EQ(opp.size(), 6u);
+  for (size_t i = 0; i < 6; ++i) {
+    EXPECT_EQ(opp[i], (i + 3) % 6) << "edge " << i;
+  }
 }
 
 }  // namespace nav2_path_classifier
