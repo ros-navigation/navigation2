@@ -91,10 +91,6 @@ void ConfinedSpaceClassifier::configure(
     name_.c_str(), inflation_resolution_, max_constraint_clearance_);
 }
 
-void ConfinedSpaceClassifier::cleanup() {}
-void ConfinedSpaceClassifier::activate() {}
-void ConfinedSpaceClassifier::deactivate() {}
-
 nav2_costmap_2d::Footprint ConfinedSpaceClassifier::inflateFootprint(
   const nav2_costmap_2d::Footprint & fp, double delta) const
 {
