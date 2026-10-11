@@ -71,6 +71,14 @@ geometry_msgs::msg::TransformStamped poseToTransformStamped(
   const geometry_msgs::msg::PoseStamped & pose, const std::string & child_frame);
 
 /**
+ * @brief Return the inverse of a stamped transform
+ * @param transform Transform to invert
+ * @return Inverse transform with parent and child frames exchanged
+ */
+geometry_msgs::msg::TransformStamped invertTransform(
+  const geometry_msgs::msg::TransformStamped & transform);
+
+/**
  * @brief Retrieves the most recent target pose in the specified frame, without synchronizing
  *        it with any specific time stamp. Verifies that the pose is not older than specified.
  * @param tf_buffer TF buffer to use for the lookup

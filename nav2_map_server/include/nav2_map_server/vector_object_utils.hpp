@@ -16,17 +16,37 @@
 #define NAV2_MAP_SERVER__VECTOR_OBJECT_UTILS_HPP_
 
 #include <uuid/uuid.h>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "std_msgs/msg/header.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 
 namespace nav2_map_server
 {
+
+/**
+ * @brief Looks up the transform for a vector object's header.
+ * @param header Header containing the source frame and timestamp
+ * @param target_frame Frame to transform the object into
+ * @param tf_buffer TF buffer to use for the lookup
+ * @param transform_tolerance Maximum wait time for the transform
+ * @param transform Output transform from the header frame to the target frame
+ * @return True if the transform was found, otherwise false
+ */
+bool lookupShapeTransform(
+  const std_msgs::msg::Header & header,
+  const std::string & target_frame,
+  const nav2::TransformBuffer::SharedPtr & tf_buffer,
+  const double transform_tolerance,
+  geometry_msgs::msg::TransformStamped & transform);
 
 // ---------- Working with UUID-s ----------
 

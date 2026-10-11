@@ -41,6 +41,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
+#include "nav2_costmap_2d/voxel_layer.hpp"
 #include "../testing_helper.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -655,6 +656,51 @@ TEST_F(TestNodeWithoutUnknownOverwrite, testMaxWithoutUnknownOverwriteCombinatio
   int unknown_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::NO_INFORMATION);
 
   ASSERT_EQ(unknown_count, 100);
+}
+
+/**
+ * Adds an observation with no points, as ObservationBuffer leaves it when the height filter removes
+ * every point of a cloud.
+ */
+void addEmptyObservation(std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer)
+{
+  sensor_msgs::msg::PointCloud2 cloud;
+  sensor_msgs::PointCloud2Modifier modifier(cloud);
+  modifier.setPointCloud2FieldsByString(1, "xyz");
+  modifier.resize(0);
+
+  nav2_costmap_2d::Observation obs(geometry_msgs::msg::Point(), std::move(cloud), 100.0, 0.0, 100.0,
+    0.0);
+  olayer->addStaticObservation(std::move(obs), true, true);
+}
+
+TEST_F(TestNode, testEmptyObservationObstacleLayer) {
+  nav2::TransformBuffer tf(node_->get_clock());
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
+  addObstacleLayer(layers, tf, node_, olayer);
+  addEmptyObservation(olayer);
+
+  layers.updateMap(0, 0, 0);
+
+  ASSERT_EQ(countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE), 0);
+}
+
+TEST_F(TestNode, testEmptyObservationVoxelLayer) {
+  nav2::TransformBuffer tf(node_->get_clock());
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  auto vlayer = std::make_shared<nav2_costmap_2d::VoxelLayer>();
+  vlayer->initialize(&layers, "voxel", &tf, node_, nullptr);
+  layers.addPlugin(vlayer);
+  addEmptyObservation(vlayer);
+
+  layers.updateMap(0, 0, 0);
+
+  ASSERT_EQ(countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE), 0);
 }
 
 int main(int argc, char ** argv)

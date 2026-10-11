@@ -27,6 +27,7 @@
 #endif
 
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -75,6 +76,8 @@ AsymmetricInflationLayer::onInitialize()
       name_ + "." + "plan_topic", "plan");
     goal_distance_threshold_ = node->declare_or_get_parameter(
       name_ + "." + "goal_distance_threshold", 1.5);
+    transform_staleness_threshold_ = node->declare_or_get_parameter(
+      name_ + "." + "transform_staleness_threshold", 0.0);
 
     // Get costmap2d-level parameter
     node->get_parameter("transform_tolerance", temp_tf_tol);
@@ -224,15 +227,15 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   // Look up the current path frame -> costmap frame transform
   geometry_msgs::msg::TransformStamped transform;
   if (need_transform) {
-    try {
-      transform = tf_->lookupTransform(
-        global_frame, path_frame, tf2::TimePointZero, transform_tolerance_);
-    } catch (const tf2::TransformException & ex) {
+    if (!nav2_util::lookupTransformWithStalenessCheck(
+        *tf_, global_frame, path_frame, clock_->now(),
+        transform_staleness_threshold_, transform))
+    {
       RCLCPP_WARN_THROTTLE(
         logger_, *clock_, 1000,
-        "AsymmetricInflationLayer: TF lookup failed (%s -> %s): %s. "
+        "AsymmetricInflationLayer: TF lookup failed or returned stale data (%s -> %s). "
         "Falling back to symmetric inflation.",
-        path_frame.c_str(), global_frame.c_str(), ex.what());
+        path_frame.c_str(), global_frame.c_str());
       return local_path_segments;
     }
   }
@@ -712,6 +715,10 @@ AsymmetricInflationLayer::updateParametersCallback(
         goal_distance_threshold_ != parameter.as_double())
       {
         goal_distance_threshold_ = parameter.as_double();
+        need_reinflation_ = true;
+        setCurrent(false);
+      } else if (param_name == name_ + ".transform_staleness_threshold") {  // NOLINT
+        transform_staleness_threshold_ = parameter.as_double();
         need_reinflation_ = true;
         setCurrent(false);
       }

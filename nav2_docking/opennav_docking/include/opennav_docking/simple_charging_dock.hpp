@@ -156,6 +156,8 @@ protected:
   // If not using an external pose reference, this is the distance threshold
   double docking_threshold_;
   std::string base_frame_id_;
+  // Maximum age of latest dynamic TF in seconds; non-positive disables the check.
+  double transform_staleness_threshold_{0.0};
   // Offset for staging pose relative to dock pose
   double staging_x_offset_;
   double staging_yaw_offset_;

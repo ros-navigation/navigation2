@@ -28,6 +28,7 @@
 #include "opennav_docking/controller_plugins/pid_controller.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -219,8 +220,14 @@ TEST(ControllerTests, ObjectLifecycle)
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Pose target;
   geometry_msgs::msg::Twist cmd_out, cmd_init;
+  geometry_msgs::msg::TransformStamped base_to_fixed_transform;
+  base_to_fixed_transform.header.frame_id = "test_base_frame";
+  base_to_fixed_transform.header.stamp = node->now();
+  base_to_fixed_transform.child_frame_id = "test_base_frame";
+  base_to_fixed_transform.transform.rotation.w = 1.0;
   EXPECT_TRUE(controller->computeVelocityCommands(
-    robot_pose, geometry_msgs::msg::Twist(), target, DockingOptions(), 0.0, cmd_out));
+    nav2_util::transformToPoseStamped(base_to_fixed_transform), geometry_msgs::msg::Twist(),
+    target, DockingOptions(), 0.0, cmd_out));
   EXPECT_NE(cmd_init, cmd_out);
   controller.reset();
 }

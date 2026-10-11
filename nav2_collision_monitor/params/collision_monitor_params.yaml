@@ -6,7 +6,9 @@ collision_monitor:
     cmd_vel_in_topic: "cmd_vel_smoothed"
     cmd_vel_out_topic: "cmd_vel"
     state_topic: "collision_monitor_state"
-    transform_tolerance: 0.5
+    transform_tolerance: 0.5  # TF lookup wait timeout
+    # Maximum age for latest dynamic transforms; 0.0 disables the freshness check.
+    transform_staleness_threshold: 1.0
     source_timeout: 5.0
     base_shift_correction: true
     stop_pub_timeout: 2.0

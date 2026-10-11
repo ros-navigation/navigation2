@@ -290,24 +290,26 @@ void RangeSensorLayer::updateCostmap(
   in.header.stamp = range_message.header.stamp;
   in.header.frame_id = range_message.header.frame_id;
 
-  if (!tf_->canTransform(
-      in.header.frame_id, global_frame_,
+  geometry_msgs::msg::TransformStamped transform;
+  try {
+    transform = tf_->lookupTransform(
+      global_frame_, in.header.frame_id,
       tf2_ros::fromMsg(in.header.stamp),
-      tf2_ros::fromRclcpp(transform_tolerance_)))
-  {
+      tf2_ros::fromRclcpp(transform_tolerance_));
+  } catch (const tf2::TransformException &) {
     RCLCPP_INFO(
       logger_, "Range sensor layer can't transform from %s to %s",
-      global_frame_.c_str(), in.header.frame_id.c_str());
+      in.header.frame_id.c_str(), global_frame_.c_str());
     return;
   }
 
-  tf_->transform(in, out, global_frame_, transform_tolerance_);
+  tf2::doTransform(in, out, transform);
 
   double ox = out.point.x, oy = out.point.y;
 
   in.point.x = range_message.range;
 
-  tf_->transform(in, out, global_frame_, transform_tolerance_);
+  tf2::doTransform(in, out, transform);
 
   double tx = out.point.x, ty = out.point.y;
 

@@ -29,7 +29,6 @@
 #include "tf2/utils.hpp"
 #include "angles/angles.h"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 namespace nav2_util
 {
 
@@ -62,14 +61,14 @@ PathSearchResult distance_from_path(
   const double search_window_length = std::numeric_limits<double>::max());
 
 /**
-  * @brief get an arbitrary path in a target frame
-  * @param input_path Path to transform
-  * @param transformed_path Output transformation
-  * @param tf_buffer TF buffer to use for the transformation
-  * @param target_frame Frame to transform into
-  * @param transform_timeout TF Timeout to use for transformation
-  * @return bool Whether it could be transformed successfully
-  */
+ * @brief Transform a path into the target frame
+ * @param input_path Path to transform
+ * @param transformed_path Output transformation
+ * @param tf_buffer TF buffer to use for the transformation
+ * @param target_frame Frame to transform into
+ * @param transform_timeout TF lookup timeout
+ * @return Whether the path could be transformed
+ */
 bool transformPathInTargetFrame(
   const nav_msgs::msg::Path & input_path,
   nav_msgs::msg::Path & transformed_path,

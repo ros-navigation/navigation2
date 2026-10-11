@@ -100,6 +100,42 @@ TEST_F(StaticLayerRollingTest, MaximumMergeTreatsUnknownAsTransparent)
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
+TEST_F(StaticLayerRollingTest, FailedTransformMarksLayerNotCurrentAndRecovers)
+{
+  auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  map->header.frame_id = "map";
+  map->info.width = map->info.height = 10;
+  map->info.resolution = 1.0;
+  map->info.origin.orientation.w = 1.0;
+  map->data.assign(100, 0);
+  map->data[0] = 100;
+  layer_->incomingMap(map);
+
+  layers_->updateMap(5.0, 5.0, 0.0);
+  auto * master = layers_->getCostmap();
+  ASSERT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+  ASSERT_TRUE(layer_->isCurrent());
+  ASSERT_TRUE(layers_->isCurrent());
+
+  // A rolling update clears the master window before asking each plugin to repopulate it.
+  // If the map transform is unavailable, the static obstacle is therefore absent this cycle.
+  tf_->clear();
+  layers_->updateMap(5.0, 5.0, 0.0);
+  EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::NO_INFORMATION);
+  EXPECT_FALSE(layer_->isCurrent());
+  EXPECT_FALSE(layers_->isCurrent());
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "odom";
+  transform.child_frame_id = "map";
+  transform.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf_->setTransform(transform, "test", true));
+  layers_->updateMap(5.0, 5.0, 0.0);
+  EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_TRUE(layer_->isCurrent());
+  EXPECT_TRUE(layers_->isCurrent());
+}
+
 class StaticLayerRollingFootprintTest : public StaticLayerRollingTest
 {
 protected:

@@ -154,6 +154,16 @@ public:
   {
     route_planner_ = std::make_shared<RoutePlannerErrorTester>();
   }
+
+  void setRobotTransform()
+  {
+    geometry_msgs::msg::TransformStamped transform;
+    transform.header.frame_id = "map";
+    transform.child_frame_id = "base_link";
+    transform.header.stamp = now();
+    transform.transform.rotation.w = 1.0;
+    tf_->setTransform(transform, "test", false);
+  }
 };
 
 TEST(RouteServerTest, test_lifecycle)
@@ -292,6 +302,7 @@ TEST(RouteServerTest, test_complete_action_api)
   server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_file));
   auto node_thread = std::make_unique<nav2::NodeThread>(server);
   server->startup();
+  server->setRobotTransform();
 
   // Compute a simple route action request
   auto node2 = std::make_shared<rclcpp::Node>("my_node2");
