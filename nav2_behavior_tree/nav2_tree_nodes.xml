@@ -108,7 +108,7 @@
 
     <Action ID="ClassifyPath">
       <input_port name="path">Path to be classified</input_port>
-      <output_port name="classified_paths">Path segments classified by class type</output_port>
+      <output_port name="classified_path">Classified poses of the path</output_port>
       <output_port name="classification_time">Time taken to classify the path</output_port>
     </Action>
 
