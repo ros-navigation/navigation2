@@ -28,6 +28,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -50,10 +51,8 @@ void ControllerBase::configure(
   name_ = name;
   tf2_buffer_ = tf;
   logger_ = node->get_logger();
-  clock_ = node->get_clock();
 
-  // Frames are the server's; targets are given in its base frame
-  fixed_frame_ = node->declare_or_get_parameter("fixed_frame", std::string("odom"));
+  // The base frame is the server's; targets are given in it
   base_frame_ = node->declare_or_get_parameter("base_frame", std::string("base_link"));
 
   rotate_to_heading_angular_vel_ = node->declare_or_get_parameter(
@@ -103,7 +102,7 @@ void ControllerBase::deactivate()
 }
 
 bool ControllerBase::computeVelocityCommands(
-  const geometry_msgs::msg::PoseStamped & /*robot_pose*/,
+  const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & /*velocity*/,
   const geometry_msgs::msg::Pose & target,
   const DockingOptions & options,
@@ -112,7 +111,9 @@ bool ControllerBase::computeVelocityCommands(
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = computeCommand(target, options.reverse, dt);
-  return isTrajectoryCollisionFree(target, !options.undocking, options.reverse);
+  return isTrajectoryCollisionFree(
+    target, nav2_util::poseToTransformStamped(robot_pose, base_frame_),
+    !options.undocking, options.reverse);
 }
 
 geometry_msgs::msg::Twist ControllerBase::computeRotateToHeadingCommand(
@@ -143,30 +144,19 @@ geometry_msgs::msg::Twist ControllerBase::computeRotateToHeadingCommand(
 }
 
 bool ControllerBase::isTrajectoryCollisionFree(
-  const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward)
+  const geometry_msgs::msg::Pose & target_pose,
+  const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
+  bool is_docking, bool backward)
 {
   // Visualization of the trajectory
   auto trajectory = std::make_unique<nav_msgs::msg::Path>();
   trajectory->header.frame_id = base_frame_;
-  trajectory->header.stamp = clock_->now();
+  trajectory->header.stamp = base_to_fixed_transform.header.stamp;
 
   // First pose
   geometry_msgs::msg::PoseStamped next_pose;
   next_pose.header.frame_id = base_frame_;
   trajectory->poses.push_back(next_pose);
-
-  // Get the transform from base_frame to fixed_frame
-  geometry_msgs::msg::TransformStamped base_to_fixed_transform;
-  try {
-    base_to_fixed_transform = tf2_buffer_->lookupTransform(
-      fixed_frame_, base_frame_, trajectory->header.stamp,
-      tf2::durationFromSec(transform_tolerance_));
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(
-      logger_, "Could not get transform from %s to %s: %s",
-      base_frame_.c_str(), fixed_frame_.c_str(), ex.what());
-    return false;
-  }
 
   // Generate path
   double distance = std::numeric_limits<double>::max();

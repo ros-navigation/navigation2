@@ -150,21 +150,6 @@ TEST(GracefulControllerTests, ReverseDrivesBackwards)
   EXPECT_LT(cmd.linear.x, 0.0);
 }
 
-TEST(GracefulControllerTests, MissingTransformFails)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
-  nav2::declare_parameter_if_not_declared(
-    node, "fixed_frame", rclcpp::ParameterValue(std::string("nowhere")));
-  auto controller = makeController(node, tf, "c");
-
-  geometry_msgs::msg::PoseStamped robot_pose;
-  geometry_msgs::msg::Twist cmd;
-  EXPECT_FALSE(controller->computeVelocityCommands(
-    robot_pose, geometry_msgs::msg::Twist(), makeTarget(1.0, 0.0, 0.0), {}, 0.1, cmd));
-}
-
 TEST(GracefulControllerTests, RotateToHeadingUsesInstanceParameters)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");

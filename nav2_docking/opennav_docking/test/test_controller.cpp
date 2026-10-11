@@ -59,7 +59,12 @@ public:
   bool isTrajectoryCollisionFree(
     const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false)
   {
-    return GracefulController::isTrajectoryCollisionFree(target_pose, is_docking, backward);
+    geometry_msgs::msg::TransformStamped base_to_fixed_transform;
+    base_to_fixed_transform.header.frame_id = base_frame_;
+    base_to_fixed_transform.child_frame_id = base_frame_;
+    base_to_fixed_transform.transform.rotation.w = 1.0;
+    return GracefulController::isTrajectoryCollisionFree(
+      target_pose, base_to_fixed_transform, is_docking, backward);
   }
 
   void setCollisionTolerance(double tolerance)
@@ -217,7 +222,6 @@ TEST(ControllerTests, ObjectLifecycle)
 
   auto controller = makeController(node, tf, "test_base_frame", "test_base_frame");
 
-  geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Pose target;
   geometry_msgs::msg::Twist cmd_out, cmd_init;
   geometry_msgs::msg::TransformStamped base_to_fixed_transform;
@@ -320,20 +324,6 @@ TEST(ControllerTests, SharedParameterValidation)
       {rclcpp::Parameter("controller.projection_time", 1.0),
         rclcpp::Parameter("controller.use_collision_detection", true),
         rclcpp::Parameter("other.projection_time", -1.0)}).successful);
-}
-
-TEST(ControllerTests, TFException)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-
-  auto controller = makeController<ControllerFixture>(
-    node, tf, "test_fixed_frame", "test_base_frame");
-
-  geometry_msgs::msg::Pose pose;
-  EXPECT_FALSE(controller->isTrajectoryCollisionFree(pose, false));
-  controller.reset();
 }
 
 TEST(ControllerTests, CollisionCheckerDockForward) {

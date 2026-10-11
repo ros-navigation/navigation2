@@ -24,6 +24,7 @@
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
@@ -101,7 +102,7 @@ public:
   /**
    * @brief Compute a velocity command towards the target pose
    *
-   * @param robot_pose Current pose of the robot.
+   * @param robot_pose Current pose of the robot, in the fixed frame.
    * @param velocity Current velocity of the robot.
    * @param target Target pose, in the robot's base frame.
    * @param options How the target is to be driven to.
@@ -177,12 +178,15 @@ protected:
    * @brief Check if a trajectory is collision free.
    *
    * @param target_pose Target pose, in robot centric coordinates.
+   * @param base_to_fixed_transform Transform from the robot base to the fixed frame.
    * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
    * @return True if trajectory is collision free.
    */
   bool isTrajectoryCollisionFree(
-    const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false);
+    const geometry_msgs::msg::Pose & target_pose,
+    const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
+    bool is_docking, bool backward = false);
 
   /**
    * @brief Configure the collision checker.
@@ -220,7 +224,6 @@ protected:
 
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_{rclcpp::get_logger("Controller")};
-  rclcpp::Clock::SharedPtr clock_;
 
   // The trajectory of the robot while dock / undock for visualization / debug purposes
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr trajectory_pub_;
@@ -232,7 +235,7 @@ protected:
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
-  std::string fixed_frame_, base_frame_;
+  std::string base_frame_;
   std::string name_;
 };
 
