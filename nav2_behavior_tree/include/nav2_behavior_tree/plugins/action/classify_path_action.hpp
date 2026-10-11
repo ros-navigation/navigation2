@@ -16,9 +16,10 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__CLASSIFY_PATH_ACTION_HPP_
 
 #include <string>
+#include <vector>
 
 #include "nav2_msgs/action/classify_path.hpp"
-#include "nav2_msgs/msg/classified_path_array.hpp"
+#include "nav2_msgs/msg/classified_pose.hpp"
 #include "nav_msgs/msg/path.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
@@ -71,9 +72,9 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to be classified"),
-        BT::OutputPort<nav2_msgs::msg::ClassifiedPathArray>(
-          "classified_paths",
-          "Path segments classified by PathClassifierServer node"),
+        BT::OutputPort<std::vector<nav2_msgs::msg::ClassifiedPose>>(
+          "classified_path",
+          "Classified poses of the path from the PathClassifierServer node"),
         BT::OutputPort<double>("classification_time", "Time taken to classify path"),
       });
   }

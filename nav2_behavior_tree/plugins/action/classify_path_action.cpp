@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "nav2_behavior_tree/plugins/action/classify_path_action.hpp"
 
@@ -35,7 +36,7 @@ void ClassifyPathAction::on_tick()
 
 BT::NodeStatus ClassifyPathAction::on_success()
 {
-  setOutput("classified_paths", result_.result->classified_paths);
+  setOutput("classified_path", result_.result->classified_path);
   setOutput(
     "classification_time",
     rclcpp::Duration(result_.result->classification_time).seconds());
@@ -44,14 +45,14 @@ BT::NodeStatus ClassifyPathAction::on_success()
 
 BT::NodeStatus ClassifyPathAction::on_aborted()
 {
-  setOutput("classified_paths", nav2_msgs::msg::ClassifiedPathArray());
+  setOutput("classified_path", std::vector<nav2_msgs::msg::ClassifiedPose>());
   setOutput("classification_time", 0.0);
   return BT::NodeStatus::FAILURE;
 }
 
 BT::NodeStatus ClassifyPathAction::on_cancelled()
 {
-  setOutput("classified_paths", nav2_msgs::msg::ClassifiedPathArray());
+  setOutput("classified_path", std::vector<nav2_msgs::msg::ClassifiedPose>());
   setOutput("classification_time", 0.0);
   return BT::NodeStatus::SUCCESS;
 }

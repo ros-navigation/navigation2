@@ -32,7 +32,7 @@
 #include "nav2_msgs/action/wait.hpp"
 #include "nav2_msgs/action/drive_on_heading.hpp"
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
-#include "nav2_msgs/msg/classified_path.hpp"
+#include "nav2_msgs/msg/classified_pose.hpp"
 
 #include "geometry_msgs/msg/point_stamped.hpp"
 
@@ -82,17 +82,15 @@ public:
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.orientation.w = 1.0;
 
-    // Split the six pose path from ComputePathToPoseActionServer into two segments
-    nav2_msgs::msg::ClassifiedPath free_segment;
-    free_segment.class_type = nav2_msgs::msg::ClassifiedPath::FREE_SPACE;
-    nav2_msgs::msg::ClassifiedPath constrained_segment;
-    constrained_segment.class_type = nav2_msgs::msg::ClassifiedPath::CONFINED_SPACE;
-    for (int i = 0; i < 3; ++i) {
-      free_segment.path.poses.push_back(pose);
-      constrained_segment.path.poses.push_back(pose);
+    // Six pose path from ComputePathToPoseActionServer: first half free, second half confined
+    nav2_msgs::msg::ClassifiedPose classified_pose;
+    classified_pose.pose = pose;
+    for (int i = 0; i < 6; ++i) {
+      classified_pose.class_type = i < 3 ?
+        nav2_msgs::msg::ClassifiedPose::FREE_SPACE :
+        nav2_msgs::msg::ClassifiedPose::CONFINED_SPACE;
+      result_->classified_path.push_back(classified_pose);
     }
-    result_->classified_paths.paths.push_back(free_segment);
-    result_->classified_paths.paths.push_back(constrained_segment);
   }
 
   std::shared_ptr<nav2_msgs::action::ClassifyPath::Result> fillResult() override
