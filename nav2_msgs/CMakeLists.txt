@@ -14,8 +14,7 @@ nav2_package()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CollisionMonitorState.msg"
-  "msg/ClassifiedPath.msg"
-  "msg/ClassifiedPathArray.msg"
+  "msg/ClassifiedPose.msg"
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
   "msg/CostmapFilterInfo.msg"

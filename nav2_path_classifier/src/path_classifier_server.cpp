@@ -14,14 +14,13 @@
 
 #include "nav2_path_classifier/path_classifier_server.hpp"
 
-#include <array>
 #include <chrono>
-#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "nav2_util/node_utils.hpp"
+#include "nav2_path_classifier/utils.hpp"
 
 namespace nav2_path_classifier
 {
@@ -44,10 +43,12 @@ PathClassifierServer::PathClassifierServer(const rclcpp::NodeOptions & options)
   declare_parameter(
     "pose_classifier_plugins",
     rclcpp::ParameterValue(std::vector<std::string>{}));
-  declare_parameter("publish_classified_paths", rclcpp::ParameterValue(false));
+  declare_parameter("publish_classified_path", rclcpp::ParameterValue(false));
   declare_parameter(
     "default_class_type",
-    rclcpp::ParameterValue(static_cast<int>(nav2_msgs::msg::ClassifiedPath::FREE_SPACE)));
+    rclcpp::ParameterValue(static_cast<int>(nav2_msgs::msg::ClassifiedPose::FREE_SPACE)));
+  declare_parameter("use_classification_filter", rclcpp::ParameterValue(true));
+  declare_parameter("classification_filter.hysteresis_window", rclcpp::ParameterValue(4));
 }
 
 nav2_util::CallbackReturn
@@ -61,7 +62,7 @@ PathClassifierServer::on_configure(const rclcpp_lifecycle::State &)
   get_parameter("footprint_topic", footprint_topic);
   get_parameter("robot_base_frame", robot_base_frame);
   get_parameter("transform_tolerance", transform_tolerance);
-  get_parameter("publish_classified_paths", publish_classified_paths_);
+  get_parameter("publish_classified_path", publish_classified_path_);
   default_class_type_ = static_cast<uint16_t>(get_parameter("default_class_type").as_int());
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
@@ -78,14 +79,19 @@ PathClassifierServer::on_configure(const rclcpp_lifecycle::State &)
   // Configure pose classifier plugins (if any specified in params)
   configureClassifiers();
 
-  // Configure path splitter (reads hysteresis/merge parameters)
-  path_splitter_.configure(shared_from_this());
+  if (get_parameter("use_classification_filter").as_bool()) {
+    classification_filter_ = std::make_unique<ClassificationFilter>(
+      get_parameter("classification_filter.hysteresis_window").as_int(), get_logger());
+  }
 
-  if (publish_classified_paths_) {
-    classified_segments_marker_pub_ =
-      create_publisher<visualization_msgs::msg::MarkerArray>("classified_plan_markers", 1);
-    raw_classified_poses_marker_pub_ =
-      create_publisher<visualization_msgs::msg::MarkerArray>("raw_classified_poses_markers", 1);
+  if (publish_classified_path_) {
+    raw_classified_path_marker_pub_ =
+      create_publisher<visualization_msgs::msg::MarkerArray>("raw_classified_path_markers", 1);
+    if (classification_filter_) {
+      filtered_classified_path_marker_pub_ =
+        create_publisher<visualization_msgs::msg::MarkerArray>(
+        "filtered_classified_path_markers", 1);
+    }
   }
 
   // Create the action server that we implement with our classifyPath method
@@ -105,9 +111,11 @@ PathClassifierServer::on_activate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  if (publish_classified_paths_) {
-    classified_segments_marker_pub_->on_activate();
-    raw_classified_poses_marker_pub_->on_activate();
+  if (publish_classified_path_) {
+    raw_classified_path_marker_pub_->on_activate();
+  }
+  if (filtered_classified_path_marker_pub_) {
+    filtered_classified_path_marker_pub_->on_activate();
   }
   activateClassifiers();
   action_server_->activate();
@@ -125,9 +133,11 @@ PathClassifierServer::on_deactivate(const rclcpp_lifecycle::State &)
 
   action_server_->deactivate();
   deactivateClassifiers();
-  if (publish_classified_paths_) {
-    classified_segments_marker_pub_->on_deactivate();
-    raw_classified_poses_marker_pub_->on_deactivate();
+  if (publish_classified_path_) {
+    raw_classified_path_marker_pub_->on_deactivate();
+  }
+  if (filtered_classified_path_marker_pub_) {
+    filtered_classified_path_marker_pub_->on_deactivate();
   }
 
   // destroy bond connection
@@ -142,11 +152,11 @@ PathClassifierServer::on_cleanup(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   cleanupClassifiers();
-  path_splitter_.cleanup();
+  classification_filter_.reset();
 
   action_server_.reset();
-  classified_segments_marker_pub_.reset();
-  raw_classified_poses_marker_pub_.reset();
+  raw_classified_path_marker_pub_.reset();
+  filtered_classified_path_marker_pub_.reset();
   transform_listener_.reset();
   tf_.reset();
   footprint_sub_.reset();
@@ -221,23 +231,6 @@ void PathClassifierServer::deactivateClassifiers()
   }
 }
 
-uint16_t PathClassifierServer::classify(
-  const geometry_msgs::msg::PoseStamped & pose, bool fetch_data)
-{
-  // Priority order: first match wins
-  for (auto & classifier : classifiers_) {
-    if (classifier->matches(pose, fetch_data)) {
-      return classifier->classType();
-    }
-  }
-  return default_class_type_;
-}
-
-bool PathClassifierServer::hasClassifiers() const
-{
-  return !classifiers_.empty();
-}
-
 void PathClassifierServer::classifyPath()
 {
   auto start_time = this->now();
@@ -260,22 +253,44 @@ void PathClassifierServer::classifyPath()
       return;
     }
 
-    if (hasClassifiers()) {
-      auto split_result = path_splitter_.splitPath(
-        goal->path, *this, publish_classified_paths_);
-      result->classified_paths = split_result.classified_path_array;
+    const auto & poses = goal->path.poses;
 
-      if (publish_classified_paths_) {
-        classified_segments_marker_pub_->publish(
-          buildSegmentMarkers(split_result.classified_path_array, goal->path.header));
-        raw_classified_poses_marker_pub_->publish(
-          buildRawPoseMarkers(split_result.classified_poses, goal->path.header));
+    // Run every classifier on the whole path
+    std::vector<std::vector<nav2_msgs::msg::ClassifiedPose>> classifier_paths;
+    classifier_paths.reserve(classifiers_.size());
+    for (auto & classifier : classifiers_) {
+      classifier_paths.push_back(classifier->classify(goal->path));
+      if (classifier_paths.back().size() != poses.size()) {
+        throw std::runtime_error("Classifier returned a different number of poses than the path");
       }
-    } else {
-      nav2_msgs::msg::ClassifiedPath cp;
-      cp.class_type = default_class_type_;
-      cp.path = goal->path;
-      result->classified_paths.paths.push_back(cp);
+    }
+
+    // Each pose takes the class of the first classifier, in priority order, that classified it
+    auto & classified_path = result->classified_path;
+    classified_path.resize(poses.size());
+    for (size_t i = 0; i < poses.size(); ++i) {
+      classified_path[i].pose = poses[i];
+      classified_path[i].class_type = default_class_type_;
+      for (const auto & classifier_path : classifier_paths) {
+        if (classifier_path[i].class_type != nav2_msgs::msg::ClassifiedPose::UNKNOWN) {
+          classified_path[i].class_type = classifier_path[i].class_type;
+          break;
+        }
+      }
+    }
+
+    if (publish_classified_path_) {
+      // Published before filtering, so these show the raw per-pose classes
+      raw_classified_path_marker_pub_->publish(
+        utils::createRawPathMarkers(classified_path, goal->path.header));
+    }
+
+    if (classification_filter_) {
+      classification_filter_->filter(classified_path);
+      if (publish_classified_path_) {
+        filtered_classified_path_marker_pub_->publish(
+          utils::createFilteredPathMarkers(classified_path, goal->path.header));
+      }
     }
 
     result->classification_time = this->now() - start_time;
@@ -284,139 +299,6 @@ void PathClassifierServer::classifyPath()
     RCLCPP_WARN(get_logger(), "Failed to classify path: \"%s\"", ex.what());
     action_server_->terminate_current();
   }
-}
-
-/**
- * @brief Convert an HSV color to RGB.
- * @param hue Hue in [0, 1)
- * @param saturation Saturation in [0, 1]
- * @param value Brightness in [0, 1]
- * @return Equivalent RGB color with components in [0, 1]
- */
-static std_msgs::msg::ColorRGBA hsvToRgb(double hue, double saturation, double value)
-{
-  const double h6 = hue * 6.0;
-  const int sector = static_cast<int>(h6);
-  const double f = h6 - sector;
-  const double p = value * (1.0 - saturation);
-  const double q = value * (1.0 - saturation * f);
-  const double t = value * (1.0 - saturation * (1.0 - f));
-
-  double r, g, b;
-  switch (sector) {
-    case 0: r = value; g = t; b = p; break;
-    case 1: r = q; g = value; b = p; break;
-    case 2: r = p; g = value; b = t; break;
-    case 3: r = p; g = q; b = value; break;
-    case 4: r = t; g = p; b = value; break;
-    default: r = value; g = p; b = q; break;  // sector == 5
-  }
-
-  std_msgs::msg::ColorRGBA color;
-  color.r = static_cast<float>(r);
-  color.g = static_cast<float>(g);
-  color.b = static_cast<float>(b);
-  color.a = 1.0f;
-  return color;
-}
-
-std_msgs::msg::ColorRGBA PathClassifierServer::colorForClass(uint16_t class_type)
-{
-  constexpr std::array<std::array<float, 3>, 6> kClassPalette = {{
-    {{0.2f, 0.4f, 1.0f}},   // blue
-    {{0.2f, 0.8f, 0.2f}},   // green
-    {{0.9f, 0.1f, 0.1f}},   // red
-    {{1.0f, 0.6f, 0.0f}},   // orange
-    {{0.8f, 0.2f, 0.8f}},   // magenta
-    {{0.2f, 0.8f, 0.8f}}    // cyan
-  }};
-
-  if (class_type < kClassPalette.size()) {
-    const auto & c = kClassPalette[class_type];
-    std_msgs::msg::ColorRGBA color;
-    color.r = c[0];
-    color.g = c[1];
-    color.b = c[2];
-    color.a = 1.0f;
-    return color;
-  }
-
-  // Beyond the curated palette: step the hue by the golden ratio conjugate so
-  // colors stay spread across the full hue circle no matter how many classes exist,
-  // with no risk of repeating.
-  constexpr double kGoldenRatioConjugate = 0.6180339887498949;
-  constexpr double kSaturation = 0.85;
-  constexpr double kValue = 0.95;
-  const double hue = std::fmod(class_type * kGoldenRatioConjugate, 1.0);
-  return hsvToRgb(hue, kSaturation, kValue);
-}
-
-visualization_msgs::msg::MarkerArray
-PathClassifierServer::buildSegmentMarkers(
-  const nav2_msgs::msg::ClassifiedPathArray & paths,
-  const std_msgs::msg::Header & header)
-{
-  visualization_msgs::msg::MarkerArray markers;
-
-  // Delete previous markers
-  visualization_msgs::msg::Marker del;
-  del.action = visualization_msgs::msg::Marker::DELETEALL;
-  del.header = header;
-  del.ns = kSegmentMarkerNs;
-  markers.markers.push_back(del);
-
-  for (size_t s = 0; s < paths.paths.size(); ++s) {
-    const auto & seg = paths.paths[s];
-    visualization_msgs::msg::Marker m;
-    m.header = header;
-    m.ns = kSegmentMarkerNs;
-    m.id = static_cast<int>(s);
-    m.type = visualization_msgs::msg::Marker::LINE_STRIP;
-    m.action = visualization_msgs::msg::Marker::ADD;
-    m.scale.x = kSegmentLineWidth;
-    m.color = colorForClass(seg.class_type);
-    m.color.a = 0.9;
-    m.pose.orientation.w = 1.0;
-    for (const auto & pose : seg.path.poses) {
-      m.points.push_back(pose.pose.position);
-    }
-    markers.markers.push_back(m);
-  }
-
-  return markers;
-}
-
-visualization_msgs::msg::MarkerArray
-PathClassifierServer::buildRawPoseMarkers(
-  const std::vector<ClassifiedPose> & poses,
-  const std_msgs::msg::Header & header)
-{
-  visualization_msgs::msg::MarkerArray markers;
-
-  // Delete previous markers
-  visualization_msgs::msg::Marker del;
-  del.action = visualization_msgs::msg::Marker::DELETEALL;
-  del.header = header;
-  del.ns = kRawPoseMarkerNs;
-  markers.markers.push_back(del);
-
-  for (size_t i = 0; i < poses.size(); ++i) {
-    visualization_msgs::msg::Marker m;
-    m.header = header;
-    m.ns = kRawPoseMarkerNs;
-    m.id = static_cast<int>(i);
-    m.type = visualization_msgs::msg::Marker::SPHERE;
-    m.action = visualization_msgs::msg::Marker::ADD;
-    m.scale.x = kRawPoseSize;
-    m.scale.y = kRawPoseSize;
-    m.scale.z = kRawPoseSize;
-    m.color = colorForClass(poses[i].class_type);
-    m.color.a = 0.8;
-    m.pose = poses[i].pose.pose;
-    markers.markers.push_back(m);
-  }
-
-  return markers;
 }
 
 }  // namespace nav2_path_classifier

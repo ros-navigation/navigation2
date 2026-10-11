@@ -12,38 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_PATH_CLASSIFIER__CLASSIFIER_BASE_HPP_
-#define NAV2_PATH_CLASSIFIER__CLASSIFIER_BASE_HPP_
+#ifndef NAV2_PATH_CLASSIFIER__PATH_CLASSIFIER_HPP_
+#define NAV2_PATH_CLASSIFIER__PATH_CLASSIFIER_HPP_
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
+#include "nav2_msgs/msg/classified_pose.hpp"
 #include "tf2_ros/buffer.h"
 
 namespace nav2_path_classifier
 {
 
 /**
- * @class ClassifierBase
- * @brief Abstract interface for pose classification plugins.
+ * @class PathClassifier
+ * @brief Abstract interface for path classification plugins.
  *
- * Each plugin answers one question: "does this pose belong to my class?"
- * The path splitter in nav2_planner loads these via pluginlib and
- * iterates them in priority order per pose.
+ * Each plugin classifies every pose of a path. The server runs the plugins in
+ * priority order and merges their results, so a pose takes the class of the
+ * first plugin that does not leave it UNKNOWN.
  */
-class ClassifierBase
+class PathClassifier
 {
 public:
-  using Ptr = std::shared_ptr<ClassifierBase>;
+  using Ptr = std::shared_ptr<PathClassifier>;
 
   /**
    * @brief Virtual destructor
    */
-  virtual ~ClassifierBase() {}
+  virtual ~PathClassifier() {}
 
   /**
    * @brief Configure the classifier from ROS parameters.
@@ -76,21 +78,14 @@ public:
   virtual void deactivate() = 0;
 
   /**
-   * @brief Check if a pose belongs to this classifier's class.
-   * @param pose  The pose to classify
-   * @param fetch_data  Pull the latest data (costmap, footprint, ...) before evaluating
-   * @return true if the pose matches this class
+   * @brief Classify every pose of a path.
+   * @param path Path to classify
+   * @return One classified pose per path pose, UNKNOWN for poses this plugin does not classify
    */
-  virtual bool matches(
-    const geometry_msgs::msg::PoseStamped & pose,
-    bool fetch_data = true) = 0;
-
-  /**
-   * @brief Return the class_type value for this classifier, set via its class_type parameter.
-   */
-  virtual uint16_t classType() = 0;
+  virtual std::vector<nav2_msgs::msg::ClassifiedPose> classify(
+    const nav_msgs::msg::Path & path) = 0;
 };
 
 }  // namespace nav2_path_classifier
 
-#endif  // NAV2_PATH_CLASSIFIER__CLASSIFIER_BASE_HPP_
+#endif  // NAV2_PATH_CLASSIFIER__PATH_CLASSIFIER_HPP_

@@ -46,10 +46,6 @@ static bool footprintChanged(
   return false;
 }
 
-// ---------------------------------------------------------------------------
-// configure
-// ---------------------------------------------------------------------------
-
 void ConfinedSpaceClassifier::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & name,
@@ -73,11 +69,11 @@ void ConfinedSpaceClassifier::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".inflation_resolution",
-    rclcpp::ParameterValue(0.20));  // metres per iteration
+    rclcpp::ParameterValue(0.05));  // metres per iteration
 
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".max_constraint_clearance",
-    rclcpp::ParameterValue(1.0));  // metres from footprint edge
+    rclcpp::ParameterValue(0.1));  // metres from footprint edge
 
   class_type_ = static_cast<uint16_t>(
     node->get_parameter(name_ + ".class_type").as_int());
@@ -98,10 +94,6 @@ void ConfinedSpaceClassifier::configure(
 void ConfinedSpaceClassifier::cleanup() {}
 void ConfinedSpaceClassifier::activate() {}
 void ConfinedSpaceClassifier::deactivate() {}
-
-// ---------------------------------------------------------------------------
-// Private helpers
-// ---------------------------------------------------------------------------
 
 nav2_costmap_2d::Footprint ConfinedSpaceClassifier::inflateFootprint(
   const nav2_costmap_2d::Footprint & fp, double delta) const
@@ -218,63 +210,68 @@ std::vector<size_t> ConfinedSpaceClassifier::buildOppositePairs(
   return opposite;
 }
 
-// ---------------------------------------------------------------------------
-// matches: core classification
-// ---------------------------------------------------------------------------
-
-bool ConfinedSpaceClassifier::matches(
-  const geometry_msgs::msg::PoseStamped & pose, bool fetch_data)
+std::vector<nav2_msgs::msg::ClassifiedPose> ConfinedSpaceClassifier::classify(
+  const nav_msgs::msg::Path & path)
 {
-  // ── 1. Pose ───────────────────────────────────────────────────────────────
+  std::vector<nav2_msgs::msg::ClassifiedPose> classified_path(path.poses.size());
+  for (size_t i = 0; i < path.poses.size(); ++i) {
+    classified_path[i].pose = path.poses[i];
+    classified_path[i].class_type = nav2_msgs::msg::ClassifiedPose::UNKNOWN;
+  }
+  if (path.poses.empty()) {
+    return classified_path;
+  }
+
+  // Recompute opposite pairs only if the footprint has changed
+  nav2_costmap_2d::Footprint current_fp;
+  std_msgs::msg::Header fp_header;
+  if (!footprint_sub_->getFootprintInRobotFrame(current_fp, fp_header)) {
+    return classified_path;
+  }
+  if (footprintChanged(current_fp, raw_fp_)) {
+    raw_fp_ = current_fp;
+    opposites_ = buildOppositePairs(raw_fp_);
+  }
+  if (raw_fp_.size() < 3) {
+    return classified_path;
+  }
+
+  // Lock the costmap once for the whole path
+  costmap_ = costmap_sub_->getCostmap();
+  collision_checker_.setCostmap(costmap_.get());
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+
+  for (size_t i = 0; i < path.poses.size(); ++i) {
+    if (isConfined(path.poses[i])) {
+      classified_path[i].class_type = class_type_;
+    }
+  }
+  return classified_path;
+}
+
+bool ConfinedSpaceClassifier::isConfined(const geometry_msgs::msg::PoseStamped & pose)
+{
   const double x = pose.pose.position.x;
   const double y = pose.pose.position.y;
   const double theta = tf2::getYaw(pose.pose.orientation);
   const double cos_th = std::cos(theta);
   const double sin_th = std::sin(theta);
-
-  // ── 2. Footprint + opposite pairs (recompute only on change) ──────────
-  if (fetch_data) {
-    nav2_costmap_2d::Footprint current_fp;
-    std_msgs::msg::Header fp_header;
-    if (!footprint_sub_->getFootprintInRobotFrame(current_fp, fp_header)) {
-      return false;
-    }
-    // Recompute opposite pairs only if the footprint has changed
-    if (footprintChanged(current_fp, raw_fp_)) {
-      raw_fp_ = current_fp;
-      opposites_ = buildOppositePairs(raw_fp_);
-    }
-  }
-  if (raw_fp_.size() < 3) {
-    return false;
-  }
   const size_t n = raw_fp_.size();
-
-  // ── 3. Costmap + mutex ────────────────────────────────────────────────────
-  if (fetch_data) {
-    costmap_ = costmap_sub_->getCostmap();
-    collision_checker_.setCostmap(costmap_.get());
-  }
   auto * costmap = costmap_.get();
-  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
-  // ── 4. Track which edges have hit LETHAL ──────────────────────────────────
+  // Edges that have hit a lethal cell so far
   std::vector<bool> lethal_edges(n, false);
 
-  // ── 5. Iterative inflation loop ───────────────────────────────────────────
   const int max_steps = static_cast<int>(
     std::ceil(max_constraint_clearance_ / inflation_resolution_));
 
   for (int step = 1; step <= max_steps; ++step) {
     const double delta = step * inflation_resolution_;
 
-    // 5a. Inflate footprint in robot frame using Clipper mitered offset
+    // Inflate in the robot frame, then move to the world frame
     const auto inflated_fp = inflateFootprint(raw_fp_, delta);
-
-    // 5b. Orient to world frame
     const auto world_fp = orientFootprint(inflated_fp, x, y, cos_th, sin_th);
 
-    // 5c. worldToMap all vertices
     const size_t m = world_fp.size();
     std::vector<std::pair<unsigned int, unsigned int>> cells(m);
     bool all_in_map = true;
@@ -291,11 +288,9 @@ bool ConfinedSpaceClassifier::matches(
       continue;  // some vertices outside map, skip this step
     }
 
-    // 5d. Per-edge lineCost: check for LETHAL
-    // Clipper with jtMiter + etClosedPolygon preserves vertex count for
-    // convex polygons, so edge i of inflated == edge i of original.
+    // Mitered offset keeps the vertex count for convex footprints, so edge i still matches
     if (m != n) {
-      continue;  // unexpected vertex count change, skip step
+      continue;
     }
 
     for (size_t i = 0; i < n; ++i) {
@@ -306,10 +301,8 @@ bool ConfinedSpaceClassifier::matches(
 
       if (cost == static_cast<double>(nav2_costmap_2d::LETHAL_OBSTACLE)) {
         lethal_edges[i] = true;
-
-        // Check if the opposite edge (via centroid ray) already hit LETHAL
         if (opposites_[i] < n && lethal_edges[opposites_[i]]) {
-          return true;  // Both sides walled, so classify as confined space
+          return true;  // both opposite edges are walled
         }
       }
     }
@@ -318,18 +311,9 @@ bool ConfinedSpaceClassifier::matches(
   return false;
 }
 
-// ---------------------------------------------------------------------------
-// classType
-// ---------------------------------------------------------------------------
-
-uint16_t ConfinedSpaceClassifier::classType()
-{
-  return class_type_;
-}
-
 }  // namespace nav2_path_classifier
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(
   nav2_path_classifier::ConfinedSpaceClassifier,
-  nav2_path_classifier::ClassifierBase)
+  nav2_path_classifier::PathClassifier)

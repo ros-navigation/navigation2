@@ -20,9 +20,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_path_classifier/classifiers/confined_space_classifier.hpp"
 
-// ---------------------------------------------------------------------------
 // Test fixture. A wrapper subclass exposes the protected helpers for testing.
-// ---------------------------------------------------------------------------
 
 namespace nav2_path_classifier
 {
@@ -102,10 +100,6 @@ public:
   }
 };
 
-// ===========================================================================
-// inflateFootprint tests
-// ===========================================================================
-
 TEST_F(ConfinedSpaceClassifierHelperTest, InflateSquarePreservesVertexCount)
 {
   auto fp = makeSquare(0.5);
@@ -175,10 +169,6 @@ TEST_F(ConfinedSpaceClassifierHelperTest, InflateMultipleStepsGrowsMonotonically
     prev_max_x = max_x;
   }
 }
-
-// ===========================================================================
-// orientFootprint tests
-// ===========================================================================
 
 TEST_F(ConfinedSpaceClassifierHelperTest, OrientIdentityTransform)
 {
@@ -264,10 +254,6 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OrientPreservesVertexCount)
   auto oriented = classifier_.orientFootprint(fp, 5.0, 3.0, 0.707, 0.707);
   EXPECT_EQ(oriented.size(), fp.size());
 }
-
-// ===========================================================================
-// buildOppositePairs tests
-// ===========================================================================
 
 TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsSquareSymmetry)
 {
@@ -357,10 +343,6 @@ TEST_F(ConfinedSpaceClassifierHelperTest, OppositePairsNeverSelf)
     EXPECT_NE(opp[i], i) << "Edge " << i << " maps to itself";
   }
 }
-
-// ===========================================================================
-// Combined tests: inflate then orient
-// ===========================================================================
 
 TEST_F(ConfinedSpaceClassifierHelperTest, InflateThenOrientPreservesVertexCount)
 {

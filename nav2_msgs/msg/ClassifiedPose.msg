@@ -4,5 +4,5 @@ uint16 FREE_SPACE=1
 uint16 CONFINED_SPACE=2
 
 # Message Definition
-nav_msgs/Path path
+geometry_msgs/PoseStamped pose
 uint16 class_type
