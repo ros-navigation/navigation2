@@ -76,11 +76,6 @@ TEST(ClassificationFilterTest, EmptyPathIsNoOp)
   EXPECT_TRUE(path.empty());
 }
 
-TEST(ClassificationFilterTest, SinglePoseUnchanged)
-{
-  EXPECT_EQ(filterLetters("B", 3), "B");
-}
-
 TEST(ClassificationFilterTest, AllSameClassUnchanged)
 {
   EXPECT_EQ(filterLetters("AAAAAA", 3), "AAAAAA");

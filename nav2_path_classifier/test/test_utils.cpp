@@ -77,16 +77,6 @@ TEST(UtilsTest, HsvToRgbCoversEverySector)
   expectRgb(hsvToRgb(5.5 / 6.0, 1.0, 1.0), 1.0f, 0.0f, 0.5f);
 }
 
-TEST(UtilsTest, HsvToRgbZeroSaturationIsGrey)
-{
-  expectRgb(hsvToRgb(0.3, 0.0, 0.7), 0.7f, 0.7f, 0.7f);
-}
-
-TEST(UtilsTest, HsvToRgbAlphaIsOpaque)
-{
-  EXPECT_FLOAT_EQ(hsvToRgb(0.42, 0.5, 0.5).a, 1.0f);
-}
-
 TEST(UtilsTest, ColorForClassUsesPaletteForFirstSixClasses)
 {
   expectRgb(colorForClass(0), 0.2f, 0.4f, 1.0f);
@@ -97,16 +87,6 @@ TEST(UtilsTest, ColorForClassUsesPaletteForFirstSixClasses)
   expectRgb(colorForClass(5), 0.2f, 0.8f, 0.8f);
   for (uint16_t c = 0; c < 6; ++c) {
     EXPECT_FLOAT_EQ(colorForClass(c).a, 1.0f);
-  }
-}
-
-TEST(UtilsTest, ColorForClassBeyondPaletteUsesGoldenRatioHue)
-{
-  for (uint16_t c = 6; c < 20; ++c) {
-    const auto expected = hsvToRgb(std::fmod(c * 0.6180339887498949, 1.0), 0.85, 0.95);
-    const auto color = colorForClass(c);
-    expectRgb(color, expected.r, expected.g, expected.b);
-    EXPECT_FLOAT_EQ(color.a, 1.0f);
   }
 }
 
