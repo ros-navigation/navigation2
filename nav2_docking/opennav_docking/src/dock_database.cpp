@@ -109,16 +109,8 @@ bool DockDatabase::validateControllersExist(const DockMap & docks) const
 
   for (const auto & entry : type_controllers_) {
     const std::string & name = entry.second;
-    if (name.empty()) {
-      if (valid_controller_ids_.size() > 1) {
-        RCLCPP_ERROR(
-          node->get_logger(),
-          "Dock plugin '%s' names no controller, but %zu controllers are loaded so there is no "
-          "single default. Set `%s.controller`. Dock instances may still override it.",
-          entry.first.c_str(), valid_controller_ids_.size(), entry.first.c_str());
-        valid = false;
-      }
-    } else if (!isControllerLoaded(name)) {
+    // An empty name selects the server's default graceful controller
+    if (!name.empty() && !isControllerLoaded(name)) {
       RCLCPP_ERROR(
         node->get_logger(),
         "Dock plugin '%s' names controller '%s', which is not loaded.",

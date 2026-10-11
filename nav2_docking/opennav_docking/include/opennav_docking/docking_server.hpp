@@ -277,6 +277,7 @@ protected:
   pluginlib::ClassLoader<ControllerBase> controller_loader_;
   ControllerMap controllers_;
   std::string controller_ids_concat_;
+  std::string default_controller_id_;
   ControllerBase::Ptr controller_;
 
   nav2::TransformBuffer::SharedPtr tf2_buffer_;

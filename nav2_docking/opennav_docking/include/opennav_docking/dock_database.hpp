@@ -125,7 +125,7 @@ protected:
    * @brief Check every controller name in the database against the loaded controllers.
    *
    * @param docks Dock instances to check, against the already-loaded dock plugins
-   * @return True if every name resolves and is present where required, or if no controller ids
+   * @return True if every non-empty name is a loaded controller, or if no controller ids
    *         were supplied
    */
   bool validateControllersExist(const DockMap & docks) const;

@@ -669,7 +669,7 @@ TEST(DockingServerTests, ControllerDefaultInstance)
 
   // With no `controllers` list, a single instance named `controller` is synthesized so that
   // the `controller.*` namespace existing configuration files use keeps applying
-  EXPECT_EQ(node->getControllers().size(), 1u);
+  EXPECT_EQ(node->getControllers().size(), 2u);
   EXPECT_TRUE(node->getCurrentController().empty());
   EXPECT_EQ(
     node->get_parameter("controller.plugin").as_string(),
@@ -693,9 +693,13 @@ TEST(DockingServerTests, ControllerNamedInstances)
 
   ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
 
-  EXPECT_EQ(node->getControllers().size(), 2u);
+  // The listed instances plus the default graceful controller
+  EXPECT_EQ(node->getControllers().size(), 3u);
   EXPECT_NE(node->getControllers().find("c1"), node->getControllers().end());
   EXPECT_NE(node->getControllers().find("c2"), node->getControllers().end());
+  EXPECT_EQ(
+    node->get_parameter("default_graceful_controller.plugin").as_string(),
+    "opennav_docking::GracefulController");
 
   // Each instance owns its own parameter namespace
   EXPECT_EQ(node->get_parameter("c1.k_phi").as_double(), 3.0);
@@ -770,8 +774,9 @@ TEST(DockingServerTests, ControllerSelectRejectsUnknownController)
   std::string controller_id;
   EXPECT_TRUE(node->findControllerId("c2", controller_id));
   EXPECT_EQ(controller_id, "c2");
-  // When there are two controllers there is no default fallback
-  EXPECT_FALSE(node->findControllerId("", controller_id));
+  // No name selects the default graceful controller
+  EXPECT_TRUE(node->findControllerId("", controller_id));
+  EXPECT_EQ(controller_id, "default_graceful_controller");
   EXPECT_FALSE(node->findControllerId("not_loaded", controller_id));
 
   auto plugin = node->getDockPlugin("test_plugin");

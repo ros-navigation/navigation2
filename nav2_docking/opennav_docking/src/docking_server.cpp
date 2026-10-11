@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <cstdlib>
+
 #include "angles/angles.h"
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -161,16 +164,28 @@ bool DockingServer::loadControllerPlugins(
   const std::vector<std::string> default_controller_ids{"controller"};
   controller_ids = node->declare_or_get_parameter("controllers", default_controller_ids);
 
+  const std::string graceful_type = "opennav_docking::GracefulController";
   if (controller_ids == default_controller_ids) {
     nav2::declare_parameter_if_not_declared(
-      node, "controller.plugin",
-      rclcpp::ParameterValue("opennav_docking::GracefulController"));
+      node, "controller.plugin", rclcpp::ParameterValue(graceful_type));
   }
 
   if (controller_ids.empty()) {
     RCLCPP_ERROR(node->get_logger(), "Controllers empty! Must provide at least 1.");
     return false;
   }
+
+  // Docks naming no controller use a graceful controller
+  const std::string default_controller_name = "default_graceful_controller";
+  default_controller_id_ = default_controller_name;
+  while (std::find(controller_ids.begin(), controller_ids.end(), default_controller_id_) !=
+    controller_ids.end())
+  {
+    default_controller_id_ = default_controller_name + std::to_string(std::rand());
+  }
+  controller_ids.push_back(default_controller_id_);
+  nav2::declare_parameter_if_not_declared(
+    node, default_controller_id_ + ".plugin", rclcpp::ParameterValue(graceful_type));
 
   for (size_t i = 0; i != controller_ids.size(); i++) {
     if (controllers_.find(controller_ids[i]) != controllers_.end()) {
@@ -211,13 +226,12 @@ bool DockingServer::findControllerId(
   const std::string & c_name, std::string & controller_id)
 {
   if (controllers_.find(c_name) == controllers_.end()) {
-    if (controllers_.size() == 1 && c_name.empty()) {
+    if (c_name.empty()) {
       RCLCPP_WARN_ONCE(
         get_logger(),
         "No controller was specified in the dock configuration. "
-        "Server will use only plugin %s. "
-        "This warning will appear once.", controller_ids_concat_.c_str());
-      controller_id = controllers_.begin()->first;
+        "Server will use the graceful controller %s. ", default_controller_id_.c_str());
+      controller_id = default_controller_id_;
     } else {
       RCLCPP_ERROR(
         get_logger(), "Dock requested controller '%s', which does not exist. "
