@@ -312,7 +312,7 @@ void Smoother::findBoundaryExpansion(
 
     // Check for collision
     unsigned int mx, my;
-    if (!costmap->worldToMap(x, y, mx, my) || 
+    if (!costmap->worldToMap(x, y, mx, my) ||
       static_cast<float>(costmap->getCost(mx, my)) >= INSCRIBED_COST)
     {
       expansion.in_collision = true;
