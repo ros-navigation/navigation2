@@ -210,10 +210,6 @@ std::vector<nav2_msgs::msg::ClassifiedPose> ConfinedSpaceClassifier::classify(
   const nav_msgs::msg::Path & path)
 {
   std::vector<nav2_msgs::msg::ClassifiedPose> classified_path(path.poses.size());
-  for (size_t i = 0; i < path.poses.size(); ++i) {
-    classified_path[i].pose = path.poses[i];
-    classified_path[i].class_type = nav2_msgs::msg::ClassifiedPose::UNKNOWN;
-  }
   if (path.poses.empty()) {
     return classified_path;
   }
@@ -238,6 +234,7 @@ std::vector<nav2_msgs::msg::ClassifiedPose> ConfinedSpaceClassifier::classify(
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
 
   for (size_t i = 0; i < path.poses.size(); ++i) {
+    classified_path[i].pose = path.poses[i];
     if (isConfined(path.poses[i])) {
       classified_path[i].class_type = class_type_;
     }
