@@ -232,6 +232,7 @@ void AStarAlgorithm<NodeT>::setGoal(
     _goal_manager.setRefGoalCoordinates(ref_goal_coord);
 
     unsigned int num_bins = _shared_ctx->motion_table.num_angle_quantization;
+    const double yaw = goal_yaw.value_or(_shared_ctx->motion_table.getAngleFromBin(dim_3));
     // set goal based on heading mode
     switch (goal_heading_mode) {
       case GoalHeadingMode::DEFAULT:
@@ -243,7 +244,7 @@ void AStarAlgorithm<NodeT>::setGoal(
               static_cast<unsigned int>(my),
               dim_3));
           goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
-          _goal_manager.addGoal(goal);
+          _goal_manager.addGoal(goal, yaw);
           break;
         }
 
@@ -257,7 +258,7 @@ void AStarAlgorithm<NodeT>::setGoal(
               static_cast<unsigned int>(my),
               dim_3));
           goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
-          _goal_manager.addGoal(goal);
+          _goal_manager.addGoal(goal, yaw);
 
           // Add goal node in opposite (180°) direction
           unsigned int opposite_heading = (dim_3 + (num_bins / 2)) % num_bins;
@@ -268,7 +269,7 @@ void AStarAlgorithm<NodeT>::setGoal(
               opposite_heading));
           opposite_goal->setPose(
             typename NodeT::Coordinates(mx, my, static_cast<float>(opposite_heading)));
-          _goal_manager.addGoal(opposite_goal);
+          _goal_manager.addGoal(opposite_goal, yaw + M_PI);
           break;
         }
 
@@ -285,26 +286,12 @@ void AStarAlgorithm<NodeT>::setGoal(
                 static_cast<unsigned int>(my),
                 i));
             goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(i)));
-            _goal_manager.addGoal(goal);
+            _goal_manager.addGoal(goal, _shared_ctx->motion_table.getAngleFromBin(i));
           }
           break;
         }
       case GoalHeadingMode::UNKNOWN:
         throw std::runtime_error("Goal heading is UNKNOWN.");
-    }
-
-    // Collision check goals at their exact pose rather than their cell center and bin.
-    // The second BIDIRECTIONAL goal is the requested heading flipped.
-    if (_collision_checker) {
-      auto & goals_state = _goal_manager.getGoalsState();
-      for (unsigned int i = 0; i != goals_state.size(); i++) {
-        NodePtr & goal = goals_state[i].goal;
-        double yaw = _shared_ctx->motion_table.getAngleFromBin(goal->pose.theta);
-        if (goal_yaw && goal_heading_mode != GoalHeadingMode::ALL_DIRECTION) {
-          yaw = *goal_yaw + (i == 0 ? 0.0 : M_PI);
-        }
-        goal->isNodeValidAtPose(_traverse_unknown, _collision_checker, yaw);
-      }
     }
   }
 }

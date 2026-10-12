@@ -569,25 +569,29 @@ void testGoalCheckedAtExactPose(
   nav2_smac_planner::AStarAlgorithm<NodeT> & a_star,
   nav2_smac_planner::GridCollisionChecker * checker)
 {
-  auto isGoalValid = [&](const unsigned int & i) {
-      return a_star.getGoalManager().getGoalsState()[i].goal->isNodeValid(false, checker);
-    };
+  // Sets the goal and returns the validity of each goal state
   auto setGoal = [&](
     const float & mx, const nav2_smac_planner::GoalHeadingMode & mode,
     const std::optional<double> & yaw) {
       a_star.setCollisionChecker(checker);
       a_star.setStart(10u, 10u, 0u);
       a_star.setGoal(mx, 50.5f, 0u, mode, 1, yaw);
+      auto goal_manager = a_star.getGoalManager();
+      goal_manager.removeInvalidGoals(0.0f, checker, false);
+      std::vector<bool> is_valid;
+      for (const auto & goal_state : goal_manager.getGoalsState()) {
+        is_valid.push_back(goal_state.is_valid);
+      }
+      return is_valid;
     };
   const double yaw = 2.0 * M_PI / 180.0;
+  const auto default_mode = nav2_smac_planner::GoalHeadingMode::DEFAULT;
 
   // Cell center and bin 0 heading is free
-  setGoal(50.5f, nav2_smac_planner::GoalHeadingMode::DEFAULT, 0.0);
-  EXPECT_TRUE(isGoalValid(0));
+  EXPECT_TRUE(setGoal(50.5f, default_mode, 0.0)[0]);
 
   // 2 degrees snaps to bin 0, but is in collision
-  setGoal(50.5f, nav2_smac_planner::GoalHeadingMode::DEFAULT, yaw);
-  EXPECT_FALSE(isGoalValid(0));
+  EXPECT_FALSE(setGoal(50.5f, default_mode, yaw)[0]);
 
   typename NodeT::CoordinateVector path;
   int num_it = 0;
@@ -599,19 +603,17 @@ void testGoalCheckedAtExactPose(
     nav2_core::GoalOccupied);
 
   // Ahead of the cell center is in collision, with or without a heading
-  setGoal(50.9f, nav2_smac_planner::GoalHeadingMode::DEFAULT, 0.0);
-  EXPECT_FALSE(isGoalValid(0));
-  setGoal(50.9f, nav2_smac_planner::GoalHeadingMode::DEFAULT, std::nullopt);
-  EXPECT_FALSE(isGoalValid(0));
+  EXPECT_FALSE(setGoal(50.9f, default_mode, 0.0)[0]);
+  EXPECT_FALSE(setGoal(50.9f, default_mode, std::nullopt)[0]);
 
   // Only the requested heading is in collision, not the opposite
-  setGoal(50.5f, nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL, yaw);
-  EXPECT_FALSE(isGoalValid(0));
-  EXPECT_TRUE(isGoalValid(1));
+  const auto bidirectional =
+    setGoal(50.5f, nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL, yaw);
+  EXPECT_FALSE(bidirectional[0]);
+  EXPECT_TRUE(bidirectional[1]);
 
   // Any heading is accepted, so goals are checked at their bins
-  setGoal(50.5f, nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION, yaw);
-  EXPECT_TRUE(isGoalValid(0));
+  EXPECT_TRUE(setGoal(50.5f, nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION, yaw)[0]);
 }
 
 TEST(AStarTest, test_hybrid_goal_checked_at_exact_pose)

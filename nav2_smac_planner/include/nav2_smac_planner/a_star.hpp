@@ -317,7 +317,7 @@ protected:
   MotionModel _motion_model;
   NodeHeuristicPair _best_heuristic_node;
 
-  GridCollisionChecker * _collision_checker{nullptr};
+  GridCollisionChecker * _collision_checker;
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<AnalyticExpansion<NodeT>> _expander;
   std::shared_ptr<NodeContext> _shared_ctx;

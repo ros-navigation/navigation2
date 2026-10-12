@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
@@ -138,14 +139,20 @@ public:
 
 protected:
   /**
-   * @brief Check if the center cell cost alone is enough to decide collision status,
-   * without checking the full footprint
-   * @param center_cost Cost of the center cell
+   * @brief Check if in collision from the center cell cost alone, when it is enough to decide
    * @param traverse_unknown Whether or not to traverse in unknown space
-   * @return boolean if the center cost is sufficient
+   * @return Whether in collision, or std::nullopt if the full footprint must be checked
    */
-  bool isCenterCostSufficient(
-    const float & center_cost,
+  std::optional<bool> centerCostCollision(const bool & traverse_unknown) const;
+
+  /**
+   * @brief Check if a footprint cost is in collision
+   * @param footprint_cost Cost of the footprint at the pose
+   * @param traverse_unknown Whether or not to traverse in unknown space
+   * @return boolean if in collision or not.
+   */
+  bool footprintCostCollision(
+    const float & footprint_cost,
     const bool & traverse_unknown) const;
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
