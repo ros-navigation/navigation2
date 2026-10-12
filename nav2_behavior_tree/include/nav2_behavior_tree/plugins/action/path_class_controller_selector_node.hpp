@@ -37,10 +37,19 @@ namespace nav2_behavior_tree
 class PathClassControllerSelector : public BT::SyncActionNode
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::PathClassControllerSelector
+   * @param xml_tag_name Name for the XML tag for this node
+   * @param conf BT node configuration
+   */
   PathClassControllerSelector(
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return {
@@ -62,17 +71,43 @@ public:
   }
 
 private:
+  /**
+   * @brief Function to perform some user-defined operation on tick
+   * @return BT::NodeStatus Status of tick execution
+   */
   BT::NodeStatus tick() override;
 
+  /**
+   * @brief Parse the class_controller_map port into class_to_controller_
+   * @param map_str 'class:controller' pairs separated by ';'
+   */
   void parseClassControllerMap(const std::string & map_str);
 
+  /**
+   * @brief Find the pose closest to the robot within max_robot_pose_search_dist
+   * of arc length from start_idx
+   * @param path Path being followed
+   * @param robot_pose Robot pose in the global frame
+   * @param start_idx Index to start the search from
+   * @return Index of the closest pose
+   */
   size_t findClosestPoseIdx(
     const nav_msgs::msg::Path & path,
     const geometry_msgs::msg::PoseStamped & robot_pose,
     size_t start_idx) const;
 
+  /**
+   * @brief Find the pose lookahead_arc_dist of arc length past closest_idx
+   * @param path Path being followed
+   * @param closest_idx Index of the pose closest to the robot
+   * @return Index of the lookahead pose
+   */
   size_t findLookaheadPoseIdx(const nav_msgs::msg::Path & path, size_t closest_idx) const;
 
+  /**
+   * @brief Output the current selection, or the default controller if nothing is selected
+   * @return BT::NodeStatus Status of tick execution
+   */
   BT::NodeStatus keepSelectedController();
 
   rclcpp::Node::SharedPtr node_;

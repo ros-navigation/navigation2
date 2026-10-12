@@ -2,6 +2,7 @@
 uint16 UNKNOWN=0
 uint16 FREE_SPACE=1
 uint16 CONFINED_SPACE=2
+uint16 LAST_MILE=3
 
 # Message Definition
 geometry_msgs/PoseStamped pose
