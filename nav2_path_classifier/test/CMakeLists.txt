@@ -39,3 +39,15 @@ target_link_libraries(test_confined_space_classifier
   pose_classifiers
   ${POLYCLIPPING_LIBRARIES}
 )
+
+# Test the last mile classifier
+ament_add_gtest(test_last_mile_classifier
+  test_last_mile_classifier.cpp
+)
+ament_target_dependencies(test_last_mile_classifier
+  ${dependencies}
+)
+target_link_libraries(test_last_mile_classifier
+  pose_classifiers
+  ${POLYCLIPPING_LIBRARIES}
+)
