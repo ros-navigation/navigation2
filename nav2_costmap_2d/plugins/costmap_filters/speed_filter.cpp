@@ -345,7 +345,7 @@ void SpeedFilter::updateLookaheadStart(
   // Still on the cached segment. Moving forward along a segment moves the robot away from its
   // start point by at most one segment length, so only a larger increase over the closest
   // approach means the robot has backed away from the path.
-  const double dist = nav2_util::geometry_utils::euclidean_distance(
+  const double dist_to_cached_point = nav2_util::geometry_utils::euclidean_distance(
     robot_pose.position, poses[start].pose.position);
   const double segment_length = (start + 1 < poses.size()) ?
     nav2_util::geometry_utils::euclidean_distance(
@@ -353,14 +353,14 @@ void SpeedFilter::updateLookaheadStart(
   const double threshold = kBackupThresholdScale *
     std::max(segment_length, static_cast<double>(filter_mask_->info.resolution));
 
-  if (dist <= lookahead_ref_dist_ + threshold) {
-    lookahead_ref_dist_ = std::min(lookahead_ref_dist_, dist);
+  if (dist_to_cached_point <= lookahead_ref_dist_ + threshold) {
+    lookahead_ref_dist_ = std::min(lookahead_ref_dist_, dist_to_cached_point);
     return;
   }
 
   // Search back by as much path as the robot has moved away from the cached point. Bounding it
   // keeps a part of the path that passes near the robot, but is further back, out of reach.
-  const double window = dist - lookahead_ref_dist_;
+  const double window = dist_to_cached_point - lookahead_ref_dist_;
   size_t back_idx = start;
   double walked = 0.0;
   while (back_idx > 0 && walked < window) {
@@ -369,8 +369,10 @@ void SpeedFilter::updateLookaheadStart(
     back_idx--;
   }
 
-  lookahead_start_idx_ =
-    nav2_util::distance_from_path(path, robot_pose, back_idx).closest_segment_index;
+  // Segments from start onward were already searched above, so only back_idx..start (inclusive,
+  // hence the half segment margin) needs to be searched again.
+  lookahead_start_idx_ = nav2_util::distance_from_path(
+    path, robot_pose, back_idx, walked + 0.5 * segment_length).closest_segment_index;
   lookahead_ref_dist_ = nav2_util::geometry_utils::euclidean_distance(
     robot_pose.position, poses[lookahead_start_idx_].pose.position);
 }
