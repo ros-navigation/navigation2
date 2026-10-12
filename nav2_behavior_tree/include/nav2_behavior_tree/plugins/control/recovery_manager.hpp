@@ -191,6 +191,8 @@ private:
    * @brief Declares a parameter listing behaviors, e.g. a sequence, and turns their names into
    * child indices.
    * "none" entries are skipped
+   * For e.g. with the children [ClearCostmap, Wait, BackUp], ["BackUp", "none", "Wait"] gives
+   * [2, 1]
    * @param param_name Full name of the parameter
    * @param param_value Value of the parameter, expected to be a list of strings
    * @return RecoverySequence The child indices, empty for an empty list, or std::nullopt if
