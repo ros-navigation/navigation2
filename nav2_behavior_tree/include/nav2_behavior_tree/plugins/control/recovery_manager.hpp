@@ -54,30 +54,31 @@ namespace nav2_behavior_tree
  *       # code in
  *       compute_path_error_code:
  *         default: ["ClearGlobalCostmap", "Wait", "ClearGlobalCostmap"]
- *         # Keyed by error code, see ComputePathToPose.action
+ *         # Keyed by error code, see ComputePathToPose.action. Quote the codes: launch only
+ *         # accepts string keys
  *         error_specific:
- *           201: ["none"]  # INVALID_PLANNER
- *           202: ["Wait"]  # TF_ERROR
- *           203: ["none"]  # START_OUTSIDE_MAP
- *           204: ["none"]  # GOAL_OUTSIDE_MAP
- *           205: ["ClearGlobalCostmap", "BackUp"]  # START_OCCUPIED
- *           206: ["none"]  # GOAL_OCCUPIED
+ *           "201": ["none"]  # INVALID_PLANNER
+ *           "202": ["Wait"]  # TF_ERROR
+ *           "203": ["none"]  # START_OUTSIDE_MAP
+ *           "204": ["none"]  # GOAL_OUTSIDE_MAP
+ *           "205": ["ClearGlobalCostmap", "BackUp"]  # START_OCCUPIED
+ *           "206": ["none"]  # GOAL_OCCUPIED
  *       # follow_path_error_code is the blackboard key FollowPath stores its error code in
  *       follow_path_error_code:
  *         default: ["ClearLocalCostmap", "Wait", "ClearLocalCostmap"]
  *         # Keyed by error code, see FollowPath.action
  *         error_specific:
- *           101: ["none"]  # INVALID_CONTROLLER
- *           102: ["Wait"]  # TF_ERROR
- *           103: ["none"]  # INVALID_PATH
- *           105: ["ClearLocalCostmap", "BackUp", "Spin"]  # FAILED_TO_MAKE_PROGRESS
- *           106: ["ClearLocalCostmap", "BackUp"]  # NO_VALID_CONTROL
+ *           "101": ["none"]  # INVALID_CONTROLLER
+ *           "102": ["Wait"]  # TF_ERROR
+ *           "103": ["none"]  # INVALID_PATH
+ *           "105": ["ClearLocalCostmap", "BackUp", "Spin"]  # FAILED_TO_MAKE_PROGRESS
+ *           "106": ["ClearLocalCostmap", "BackUp"]  # NO_VALID_CONTROL
  *       # A custom action is configured the same way. Its prefix (my_action) also has to be in
  *       # error_code_name_prefixes
  *       my_action_error_code:
  *         default: ["Wait"]
  *         error_specific:
- *           950: ["BackUp"]
+ *           "950": ["BackUp"]
  * @endcode
  *
  * Error specific sequences are keyed by the numeric error code, and `[none]` means that nothing
