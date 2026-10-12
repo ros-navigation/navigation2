@@ -168,6 +168,18 @@
         <output_port name="selected_controller">Name of the selected controller received from the topic subcription</output_port>
     </Action>
 
+    <Action ID="PathClassControllerSelector">
+        <input_port name="path">Path being followed</input_port>
+        <input_port name="classified_path">Classified poses of the path</input_port>
+        <input_port name="class_controller_map">'class:controller' pairs separated by ';'</input_port>
+        <input_port name="default_controller">Controller used when no class is mapped</input_port>
+        <input_port name="lookahead_arc_dist" default="1.0">Arc length ahead of the robot to check</input_port>
+        <input_port name="max_robot_pose_search_dist" default="1.0">Arc length to search for the closest pose</input_port>
+        <input_port name="global_frame" default="map">Global frame</input_port>
+        <input_port name="robot_base_frame" default="base_link">Robot base frame</input_port>
+        <output_port name="selected_controller">Selected controller</output_port>
+    </Action>
+
     <Action ID="SmootherSelector">
         <input_port name="topic_name">Name of the topic to receive smoother selection commands</input_port>
         <input_port name="default_smoother">Default smoother of the smoother selector</input_port>

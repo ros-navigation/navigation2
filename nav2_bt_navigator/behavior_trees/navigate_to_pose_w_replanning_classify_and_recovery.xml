@@ -21,8 +21,19 @@
         </RateController>
         <RecoveryNode name="FollowPath"
                       number_of_retries="1">
-          <FollowPath controller_id="FollowPath"
-                      path="{path}"/>
+          <PipelineSequence name="FollowPathWithCorrectController">
+            <PathClassControllerSelector path="{path}"
+                                         classified_path="{classified_path}"
+                                         class_controller_map="1:FollowPath;2:ConfinedFollowPath"
+                                         default_controller="FollowPath"
+                                         lookahead_arc_dist="0.01"
+                                         max_robot_pose_search_dist="1.0"
+                                         global_frame="map"
+                                         robot_base_frame="base_link"
+                                         selected_controller="{selected_controller}"/>
+            <FollowPath controller_id="{selected_controller}"
+                        path="{path}"/>
+          </PipelineSequence>
           <ClearEntireCostmap name="ClearLocalCostmap-Context"
                               service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
