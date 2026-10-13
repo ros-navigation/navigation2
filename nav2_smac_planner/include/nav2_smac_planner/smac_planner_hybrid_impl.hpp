@@ -176,9 +176,26 @@ void SmacPlannerHybridT<NodeT>::configure(
     _coarse_search_resolution = 1;
   }
 
+  if (angle_quantizations <= 0 || angle_quantizations > 1024) {
+    std::string error_msg = "angle_quantization_bins must be in [1, 1024]";
+    throw nav2_core::PlannerException(error_msg);
+  }
+
   if (_angle_quantizations % _coarse_search_resolution != 0) {
     std::string error_msg = "coarse iteration should be an increment"
       " of the number of angular bins configured";
+    throw nav2_core::PlannerException(error_msg);
+  }
+
+  if (_analytic_expansion_max_length_m < 0.0 ||
+    _analytic_expansion_max_length_m > 1000.0)
+  {
+    std::string error_msg = "analytic_expansion_max_length must be in [0.0, 1000.0]";
+    throw nav2_core::PlannerException(error_msg);
+  }
+
+  if (_lookup_table_size < 0.0 || _lookup_table_size > 20.0) {
+    std::string error_msg = "lookup_table_size must be in [0.0, 20.0]";
     throw nav2_core::PlannerException(error_msg);
   }
 
@@ -625,6 +642,22 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
         "it should be >=0. Ignoring parameter update.",
         param_name.c_str(), parameter.as_double());
         result.successful = false;
+      } else if (param_name == _name + ".lookup_table_size" && // NOLINT
+        parameter.as_double() > 20.0)
+      {
+        RCLCPP_WARN(
+          _logger, "The value of parameter lookup_table_size is incorrectly set to %f, "
+          "it should be in [0.0, 20.0]. Ignoring parameter update.",
+          parameter.as_double());
+        result.successful = false;
+      } else if (param_name == _name + ".analytic_expansion_max_length" && // NOLINT
+        parameter.as_double() > 1000.0)
+      {
+        RCLCPP_WARN(
+          _logger, "The value of parameter analytic_expansion_max_length is incorrectly set "
+          "to %f, it should be <= 1000.0. Ignoring parameter update.",
+          parameter.as_double());
+        result.successful = false;
       } else if (param_name == _name + ".minimum_turning_radius" && // NOLINT
         parameter.as_double() < _costmap->getResolution() * _downsampling_factor)
       {
@@ -647,7 +680,14 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
         result.successful = false;
       } else if (param_name == _name + ".angle_quantization_bins") {
         unsigned int angle_quantizations = static_cast<unsigned int>(parameter.as_int());
-        if (angle_quantizations % _coarse_search_resolution != 0) {
+        if (angle_quantizations > 1024) {
+          RCLCPP_WARN(
+            _logger,
+            "The value of parameter angle_quantization_bins is incorrectly set to %u, "
+            "it should be <= 1024. Ignoring parameter update.",
+            angle_quantizations);
+          result.successful = false;
+        } else if (angle_quantizations % _coarse_search_resolution != 0) {
           RCLCPP_WARN(
             _logger,
             "The value of parameter angle_quantization_bins is incorrectly set to %u, "

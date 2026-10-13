@@ -28,6 +28,7 @@
 
 #include "behaviortree_cpp/action_node.h"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/clock.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -78,8 +79,10 @@ private:
   BT::NodeStatus tick() override;
 
   std::string global_frame_, robot_base_frame_;
+  rclcpp::Clock::SharedPtr clock_;
   nav2::TransformBuffer::SharedPtr tf_;
   double transform_tolerance_{0.1};
+  double transform_staleness_threshold_{0.0};
 };
 
 }  // namespace nav2_behavior_tree

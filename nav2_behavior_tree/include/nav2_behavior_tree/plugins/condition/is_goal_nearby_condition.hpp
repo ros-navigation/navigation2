@@ -25,8 +25,11 @@
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/clock.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -85,10 +88,12 @@ public:
 
 private:
   nav2::LifecycleNode::SharedPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
   nav2::TransformBuffer::SharedPtr tf_buffer_;
   nav_msgs::msg::Path path_;
   std::vector<geometry_msgs::msg::PoseStamped>::iterator closest_pose_detection_begin_;
   double transform_tolerance_;
+  double transform_staleness_threshold_;
   std::string global_frame_;
   std::string robot_base_frame_;
 };

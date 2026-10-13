@@ -18,7 +18,8 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 
 // Tests trajectory visualization

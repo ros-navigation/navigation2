@@ -18,7 +18,9 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/service_client.hpp"
@@ -89,6 +91,7 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   transform.header.stamp = node->now();
   transform.child_frame_id = "gps";
   broadcaster->sendTransform(transform);
+  tf->setTransform(transform, "test", false);
   EXPECT_NO_THROW(extractor.transformPose(pose, "map"));
 }
 

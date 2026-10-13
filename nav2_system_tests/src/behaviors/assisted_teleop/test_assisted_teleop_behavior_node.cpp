@@ -20,7 +20,7 @@
 #include <string>
 #include <algorithm>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 
 #include "assisted_teleop_behavior_tester.hpp"
 #include "nav2_msgs/action/back_up.hpp"

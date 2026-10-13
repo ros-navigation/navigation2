@@ -17,7 +17,7 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logging.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_theta_star_planner/theta_star_planner.hpp"

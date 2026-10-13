@@ -181,14 +181,15 @@ protected:
 
   /**
    * @brief Refreshes transformed_global_plan_ and transformed_end_pose_ for the current cycle
-   *
+   * @param current_robot_pose Pose of the robot to be used as reference
    * @throw nav2_core::ControllerTFError if the robot pose or end pose cannot be obtained
    */
-  void transformedPlanAndGoal();
+  void transformedPlanAndGoal(const geometry_msgs::msg::PoseStamped & current_robot_pose);
   /**
    * @brief Calculates velocity and publishes to "cmd_vel" topic
+   * @param current_robot_pose Pose of the robot to be used as reference
    */
-  void computeAndPublishVelocity();
+  void computeAndPublishVelocity(const geometry_msgs::msg::PoseStamped & current_robot_pose);
   /**
    * @brief Calls setPlannerPath method with an updated path received from
    * action server
@@ -215,15 +216,16 @@ protected:
   double waitForCostmap();
   /**
    * @brief Checks if goal is reached
+   * @param current_robot_pose The robot pose to be used as reference
    * @return true or false
    */
-  bool isGoalReached();
+  bool isGoalReached(const geometry_msgs::msg::PoseStamped & current_robot_pose);
   /**
-   * @brief Obtain current pose of the robot in costmap's frame
-   * @param pose To store current pose of the robot
-   * @return true if able to obtain current pose of the robot, else false
+   * @brief Obtain the current pose of the robot in the costmap frame
+   * @return Current robot pose
+   * @throw nav2_core::ControllerTFError if the pose cannot be obtained or its transform is stale
    */
-  bool getRobotPose(geometry_msgs::msg::PoseStamped & pose);
+  geometry_msgs::msg::PoseStamped getCurrentRobotPose();
 
   /**
    * @brief get the thresholded velocity

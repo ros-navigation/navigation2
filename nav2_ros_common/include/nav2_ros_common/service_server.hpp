@@ -17,7 +17,10 @@
 
 #include <string>
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
+#include "rclcpp/create_service.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/service.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 

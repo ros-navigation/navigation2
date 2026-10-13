@@ -170,6 +170,9 @@ void Source::getCommonParameters(std::string & source_topic)
   enabled_ = node->declare_or_get_parameter(
     source_name_ + ".enabled", true);
 
+  transform_staleness_threshold_ = node->declare_or_get_parameter("transform_staleness_threshold",
+      1.0);
+
   source_timeout_ = rclcpp::Duration::from_seconds(
     node->declare_or_get_parameter(
       source_name_ + ".source_timeout",
@@ -337,13 +340,14 @@ bool Source::getTransform(
       return false;
     }
   } else {
-    if (
-      !nav2_util::getTransform(
-        data_header.frame_id, base_frame_id_,
-        transform_tolerance_, tf_buffer_, tf_transform))
+    geometry_msgs::msg::TransformStamped transform_msg;
+    if (!nav2_util::lookupTransformWithStalenessCheck(
+        *tf_buffer_, base_frame_id_, data_header.frame_id, curr_time,
+        transform_staleness_threshold_, transform_msg))
     {
       return false;
     }
+    tf2::fromMsg(transform_msg.transform, tf_transform);
   }
   return true;
 }

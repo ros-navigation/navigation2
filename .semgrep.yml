@@ -169,3 +169,12 @@ rules:
     message: "Use nav2::create_transform_buffer() instead of tf2_ros::CreateTimerROS"
     severity: WARNING
     languages: [cpp]
+
+  - id: detect-rclcpp-umbrella-include
+    patterns:
+      - pattern-regex: "#include\\s+[\"<]rclcpp/rclcpp\\.hpp[\">]"
+      - pattern-not-regex: "^\\s*//.*"
+      - pattern-not-regex: ".*//.*rclcpp/rclcpp\\.hpp"
+    message: "Do not include the rclcpp/rclcpp.hpp umbrella header; include only the specific rclcpp headers you need (e.g. rclcpp/logging.hpp, rclcpp/time.hpp) to keep compile time and memory down"
+    severity: WARNING
+    languages: [cpp]

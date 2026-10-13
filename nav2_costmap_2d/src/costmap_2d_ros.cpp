@@ -41,6 +41,7 @@
 #include <memory>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -415,6 +416,8 @@ Costmap2DROS::getParameters()
     "track_unknown_space", false);
   transform_tolerance_ = declare_or_get_parameter(
     "transform_tolerance", 0.3);
+  transform_staleness_threshold_ = declare_or_get_parameter(
+    "transform_staleness_threshold", 0.0);
   initial_transform_timeout_ = declare_or_get_parameter(
     "initial_transform_timeout", 60.0);
   map_update_frequency_ = declare_or_get_parameter(
@@ -468,18 +471,25 @@ Costmap2DROS::getParameters()
   // 4. The width, height, and resolution of map cannot be negative or 0
   // (to avoid abnormal memory usage)
   if (map_width_meters_ <= 0) {
-    RCLCPP_ERROR(
-      get_logger(), "You try to set width of map to be negative or zero,"
-      " this isn't allowed, please give a positive value.");
+    throw std::invalid_argument(
+            "You try to set width of map to be negative or zero, "
+            "this isn't allowed, please give a positive value.");
   }
   if (map_height_meters_ <= 0) {
-    RCLCPP_ERROR(
-      get_logger(), "You try to set height of map to be negative or zero,"
-      " this isn't allowed, please give a positive value.");
-  }
-  if (resolution_ <= 0.0 || !std::isfinite(resolution_)) {
     throw std::invalid_argument(
-            "Costmap resolution must be a positive finite value.");
+            "You try to set height of map to be negative or zero, "
+            "this isn't allowed, please give a positive value.");
+  }
+  if (resolution_ <= 0.0) {
+    throw std::invalid_argument(
+            "Costmap resolution must be greater than zero.");
+  }
+
+  const double size_x = map_width_meters_ / resolution_;
+  const double size_y = map_height_meters_ / resolution_;
+  const double max_cells = std::numeric_limits<int>::max();
+  if (size_x > max_cells / size_y) {
+    throw std::invalid_argument("Costmap cell count exceeds the supported signed index range");
   }
 }
 
@@ -751,9 +761,13 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
-  return nav2_util::getCurrentPose(
-    global_pose, *tf_buffer_,
-    global_frame_, robot_base_frame_, transform_tolerance_);
+  if (!nav2_util::getFreshPose(
+      *tf_buffer_, global_frame_, robot_base_frame_, now(),
+      transform_staleness_threshold_, global_pose))
+  {
+    return false;
+  }
+  return true;
 }
 
 bool
@@ -776,6 +790,7 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
+
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
@@ -828,6 +843,7 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
       }
     }
   }
+
   return result;
 }
 
@@ -867,6 +883,8 @@ Costmap2DROS::updateParametersCallback(const std::vector<rclcpp::Parameter> & pa
         layered_costmap_->setFootprint(*padded);
       } else if (param_name == "transform_tolerance") {
         transform_tolerance_ = parameter.as_double();
+      } else if (param_name == "transform_staleness_threshold") {
+        transform_staleness_threshold_ = parameter.as_double();
       } else if (param_name == "publish_frequency") {
         map_publish_frequency_ = parameter.as_double();
         publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);

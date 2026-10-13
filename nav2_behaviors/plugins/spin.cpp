@@ -49,19 +49,20 @@ void Spin::onConfigure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  simulate_ahead_time_ = node->declare_or_get_parameter("simulate_ahead_time", 2.0);
-  max_rotational_vel_ = node->declare_or_get_parameter("max_rotational_vel", 1.0);
-  min_rotational_vel_ = node->declare_or_get_parameter("min_rotational_vel", 0.4);
-  rotational_acc_lim_ = node->declare_or_get_parameter("rotational_acc_lim", 3.2);
+  simulate_ahead_time_ = node->declare_or_get_parameter(
+    behavior_name_ + ".simulate_ahead_time", 2.0);
+  max_rotational_vel_ = node->declare_or_get_parameter(
+    behavior_name_ + ".max_rotational_vel", 1.0);
+  min_rotational_vel_ = node->declare_or_get_parameter(
+    behavior_name_ + ".min_rotational_vel", 0.4);
+  rotational_acc_lim_ = node->declare_or_get_parameter(
+    behavior_name_ + ".rotational_acc_lim", 3.2);
 }
 
 ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, local_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
+  if (!getCurrentPoseChecked(current_pose)) {
     std::string error_msg = "Current robot pose is not available.";
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
@@ -86,17 +87,13 @@ ResultStatus Spin::onCycleUpdate()
 {
   rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
-    stopRobot();
     std::string error_msg = "Exceeded time allowance before reaching the Spin goal - Exiting Spin";
     RCLCPP_WARN(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TIMEOUT, error_msg};
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, local_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
+  if (!getCurrentPoseChecked(current_pose)) {
     std::string error_msg = "Current robot pose is not available.";
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
@@ -131,8 +128,7 @@ ResultStatus Spin::onCycleUpdate()
 
   geometry_msgs::msg::Pose pose = current_pose.pose;
 
-  if (!isCollisionFree(relative_yaw_, cmd_vel->twist, pose)) {
-    stopRobot();
+  if (!isCollisionFree(remaining_yaw, cmd_vel->twist, pose)) {
     std::string error_msg = "Collision Ahead - Exiting Spin";
     RCLCPP_WARN(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::COLLISION_AHEAD, error_msg};

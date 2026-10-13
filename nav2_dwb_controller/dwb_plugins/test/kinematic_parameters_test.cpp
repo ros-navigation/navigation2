@@ -38,10 +38,10 @@
 
 #include "gtest/gtest.h"
 #include "dwb_plugins/kinematic_parameters.hpp"
+#include "rclcpp/parameter_client.hpp"
 
 using rcl_interfaces::msg::Parameter;
 using rcl_interfaces::msg::ParameterType;
-using rcl_interfaces::msg::ParameterEvent;
 
 TEST(KinematicParameters, SetAllParameters) {
   std::string nodeName = "test_node";
@@ -93,6 +93,19 @@ TEST(KinematicParameters, SetAllParameters) {
   EXPECT_EQ(kp.getMaxTheta(), 345.678);
   EXPECT_EQ(kp.getDecelTheta(), -456.789);
   EXPECT_EQ(kp.getMinSpeedTheta(), 567.890);
+
+  results = rec_param->set_parameters_atomically(
+  {
+    rclcpp::Parameter(nodeName + ".max_speed_xy", 0.5)
+  });
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  kp = kh.getKinematics();
+  EXPECT_EQ(kp.getMaxSpeedXY(), 0.5);
+  EXPECT_EQ(kp.getMaxSpeedXY_SQ(), 0.25);
 
   results = rec_param->set_parameters_atomically(
   {

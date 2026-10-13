@@ -18,7 +18,8 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
 template<class ActionT>

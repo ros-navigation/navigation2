@@ -19,7 +19,7 @@
 #include <limits>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"

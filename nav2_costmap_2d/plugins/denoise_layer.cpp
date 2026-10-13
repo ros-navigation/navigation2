@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logging.hpp"
 
 namespace nav2_costmap_2d
 {

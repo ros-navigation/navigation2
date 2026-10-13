@@ -23,7 +23,12 @@
 #include <string>
 #include <limits>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
@@ -797,8 +802,8 @@ TEST_F(Tester, testIncorrectFrameData)
 
   createSources();
 
-  // Send incorrect transform
-  sendTransforms(curr_time - 1s);
+  // Latest mode ignores the data timestamp, but still requires a fresh transform.
+  sendTransforms(curr_time - 50ms);
 
   // Publish data for sources
   test_node_->publishScan(curr_time, 1.0);
@@ -897,6 +902,15 @@ TEST_F(Tester, testIgnoreTimeShift)
   data.clear();
   polygon_->getData(curr_time, data);
   checkPolygon(data);
+
+  // Fresh messages must not make an old dynamic transform valid.
+  const auto later = curr_time + rclcpp::Duration::from_seconds(2.0);
+  data.clear();
+  EXPECT_FALSE(scan_->getData(later, data));
+  EXPECT_FALSE(pointcloud_->getData(later, data));
+  EXPECT_FALSE(range_->getData(later, data));
+  EXPECT_FALSE(polygon_->getData(later, data));
+  EXPECT_TRUE(data.empty());
 }
 
 TEST_F(Tester, testRangeGeneratedPointLimit)

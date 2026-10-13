@@ -46,6 +46,12 @@ public:
   {
   }
 
+  // Set the costmap resolution before configuring the planner server.
+  void setCostmapResolution(double resolution)
+  {
+    costmap_ros_->declare_parameter("resolution", resolution);
+  }
+
   void printCostmap()
   {
     // print costmap for debug

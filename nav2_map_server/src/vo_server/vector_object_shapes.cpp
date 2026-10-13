@@ -29,7 +29,6 @@
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/raytrace_line_2d.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_map_server
@@ -300,22 +299,23 @@ bool Polygon::toFrame(
   const nav2::TransformBuffer::SharedPtr tf_buffer,
   const double transform_tolerance)
 {
+  geometry_msgs::msg::TransformStamped transform;
+  if (!lookupShapeTransform(
+      params_->header, to_frame, tf_buffer, transform_tolerance, transform))
+  {
+    return false;
+  }
+
   geometry_msgs::msg::PoseStamped from_pose, to_pose;
   from_pose.header = params_->header;
   for (unsigned int i = 0; i < params_->points.size(); i++) {
     from_pose.pose.position.x = params_->points[i].x;
     from_pose.pose.position.y = params_->points[i].y;
     from_pose.pose.position.z = params_->points[i].z;
-    if (
-      nav2_util::transformPoseInTargetFrame(
-        from_pose, to_pose, *tf_buffer, to_frame, transform_tolerance))
-    {
-      polygon_->points[i].x = to_pose.pose.position.x;
-      polygon_->points[i].y = to_pose.pose.position.y;
-      polygon_->points[i].z = to_pose.pose.position.z;
-    } else {
-      return false;
-    }
+    tf2::doTransform(from_pose, to_pose, transform);
+    polygon_->points[i].x = to_pose.pose.position.x;
+    polygon_->points[i].y = to_pose.pose.position.y;
+    polygon_->points[i].z = to_pose.pose.position.z;
   }
 
   return true;
@@ -542,21 +542,22 @@ bool Circle::toFrame(
   const nav2::TransformBuffer::SharedPtr tf_buffer,
   const double transform_tolerance)
 {
+  geometry_msgs::msg::TransformStamped transform;
+  if (!lookupShapeTransform(
+      params_->header, to_frame, tf_buffer, transform_tolerance, transform))
+  {
+    return false;
+  }
+
   geometry_msgs::msg::PoseStamped from_pose, to_pose;
   from_pose.header = params_->header;
   from_pose.pose.position.x = params_->center.x;
   from_pose.pose.position.y = params_->center.y;
   from_pose.pose.position.z = params_->center.z;
-  if (
-    nav2_util::transformPoseInTargetFrame(
-      from_pose, to_pose, *tf_buffer, to_frame, transform_tolerance))
-  {
-    center_->x = to_pose.pose.position.x;
-    center_->y = to_pose.pose.position.y;
-    center_->z = to_pose.pose.position.z;
-  } else {
-    return false;
-  }
+  tf2::doTransform(from_pose, to_pose, transform);
+  center_->x = to_pose.pose.position.x;
+  center_->y = to_pose.pose.position.y;
+  center_->z = to_pose.pose.position.z;
 
   return true;
 }

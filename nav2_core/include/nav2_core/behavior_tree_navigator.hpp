@@ -23,7 +23,10 @@
 
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/rate.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
@@ -223,10 +226,11 @@ public:
     // get the default behavior tree for this navigator
     std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
 
+    const auto bt_tree_directory =
+      nav2::get_package_share_directory("nav2_bt_navigator") + "/behavior_trees";
     auto search_directories = node->declare_or_get_parameter(
       "bt_search_directories",
-      std::vector<std::string>{nav2::get_package_share_directory(
-          "nav2_bt_navigator") + "/behavior_trees"}
+      std::vector<std::string>{bt_tree_directory, bt_tree_directory + "/subtrees"}
     );
 
     allow_navigator_preemption_ = node->declare_or_get_parameter(

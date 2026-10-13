@@ -18,7 +18,7 @@
 
 #include "nav2_core/behavior_tree_navigator.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
 
 using NavigateToPose = nav2_msgs::action::NavigateToPose;
 

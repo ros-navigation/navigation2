@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
@@ -44,12 +45,11 @@ public:
    *
    * @param node Lifecycle node
    * @param tf tf2_ros TF buffer
-   * @param fixed_frame Fixed frame
    * @param base_frame Robot base frame
    */
   Controller(
     const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
-    std::string fixed_frame, std::string base_frame);
+    std::string base_frame);
 
   /**
    * @brief A destructor for opennav_docking::Controller
@@ -60,13 +60,15 @@ public:
    * @brief Compute a velocity command using control law.
    * @param pose Target pose, in robot centric coordinates.
    * @param cmd Command velocity.
+   * @param base_to_fixed_transform Transform from the robot base to the fixed frame.
    * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
    * @returns True if command is valid, false otherwise.
    */
   bool computeVelocityCommand(
-    const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
-    bool backward = false);
+    const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd,
+    const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
+    bool is_docking, bool backward = false);
 
   /**
    * @brief Perform a command for in-place rotation.
@@ -85,12 +87,15 @@ protected:
    * @brief Check if a trajectory is collision free.
    *
    * @param target_pose Target pose, in robot centric coordinates.
+   * @param base_to_fixed_transform Transform from the robot base to the fixed frame.
    * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
    * @return True if trajectory is collision free.
    */
   bool isTrajectoryCollisionFree(
-    const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false);
+    const geometry_msgs::msg::Pose & target_pose,
+    const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
+    bool is_docking, bool backward = false);
 
   /**
    * @brief Validate incoming parameter updates before applying them.
@@ -129,8 +134,6 @@ protected:
   std::mutex dynamic_params_lock_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("Controller")};
-  rclcpp::Clock::SharedPtr clock_;
-
   // Smooth control law
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
   double k_phi_, k_delta_, beta_, lambda_;
@@ -150,7 +153,7 @@ protected:
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
-  std::string fixed_frame_, base_frame_;
+  std::string base_frame_;
 };
 
 }  // namespace opennav_docking
