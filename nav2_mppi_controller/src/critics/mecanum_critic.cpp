@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+
 #include "nav2_mppi_controller/critics/mecanum_critic.hpp"
 
 namespace mppi::critics
@@ -30,7 +32,6 @@ void MecanumCritic::initialize()
   getParam(vx_max_, "vx_max", 0.5f);
   getParam(vy_max_, "vy_max", 0.5f);
   getParam(wz_max_, "wz_max", 1.7f);
-  getParam(center_projection_, "sum_of_robot_center_projection_on_X_Y_axis", 0.3f);
 }
 
 void MecanumCritic::score(CriticData & data)
@@ -43,21 +44,17 @@ void MecanumCritic::score(CriticData & data)
   auto & vy = data.state.vy;
   auto & wz = data.state.wz;
 
-  // |vx|/vx_max + |vy|/vy_max + |wz|/wz_max, which is 1 exactly on the wheel limit.
-  const auto normalized =
-    vx.abs() * utils::safeInverseAbs(vx_max_) +
-    vy.abs() * utils::safeInverseAbs(vy_max_) + wz.abs() * utils::safeInverseAbs(wz_max_);
-
-  // The speed given up in scaling the sample back onto the wheel limit
+  // Peak wheel demand as a fraction of the wheel limit, minus the part the wheels can deliver
   const auto violation =
-    ((vx.square() + vy.square()).sqrt() + wz.abs() * center_projection_) *
-    (1.0f - normalized.max(1.0f).inverse());
+    (vx.abs() * utils::safeInverseAbs(vx_max_) + vy.abs() * utils::safeInverseAbs(vy_max_) +
+    wz.abs() * utils::safeInverseAbs(wz_max_) - 1.0f).max(0.0f);
 
   Eigen::ArrayXf cost = Eigen::ArrayXf::Zero(vx.rows());
   for (int i = 0; i < vx.cols(); ++i) {
     cost += violation.col(i);
   }
-  cost *= data.model_dt * weight_;
+  // The faster axis is pure wheel rolling, so its limit is the wheel limit and the cost is in m/s
+  cost *= data.model_dt * weight_ * std::max(vx_max_, vy_max_);
   if (power_ > 1u) {
     data.costs += cost.pow(power_);
   } else {

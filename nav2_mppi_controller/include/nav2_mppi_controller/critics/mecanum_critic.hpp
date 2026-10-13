@@ -27,13 +27,12 @@ namespace mppi::critics
  * @brief Critic objective function for enforcing mecanum drive constraints
  *
  * A mecanum drivetrain produces vx, vy and wz from the same four wheels: with rollers at 45 degrees
- * a wheel turns at (vx ± vy ± (lx + ly) * wz) / r, so a wheel saturates once
- * |vx| / vx_max + |vy| / vy_max + |wz| / wz_max reaches 1, each per-axis limit being what that axis
- * could reach on its own.
+ * a wheel turns at (vx ± vy ± (lx + ly) * wz) / r, so the fastest wheel saturates once
+ * |vx| / vx_max + |vy| / vy_max + |wz| / wz_max reaches 1.
  *
- * The cost is the speed the sample has to give up to fit: the translational speed plus the rotation
- * converted to the same units by its moment arm lx + ly, times the fraction of the demand the
- * wheels cannot meet.
+ * The limits are what the drivetrain reaches when driving each axis alone, measured on the robot. *
+ * The cost is the speed by which the fastest wheel exceeds its limit. The faster of the x and y
+ * axes is pure wheel rolling, so the larger of vx_max and vy_max is that wheel limit.
  */
 class MecanumCritic : public CriticFunction
 {
@@ -56,7 +55,6 @@ protected:
   float vx_max_{0};
   float vy_max_{0};
   float wz_max_{0};
-  float center_projection_{0};  // sum_of_robot_center_projection_on_X_Y_axis
 };
 
 }  // namespace mppi::critics

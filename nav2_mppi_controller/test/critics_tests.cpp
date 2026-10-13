@@ -376,9 +376,9 @@ TEST(CriticTests, MecanumCritic)
   state.vy.row(999).setConstant(0.35f);
   critic.score(data);
   EXPECT_GT(costs.sum(), 0);
-  // speed sqrt(0.35^2 + 0.35^2) = 0.4950 is scaled by (1 - 1/1.4), leaving 0.1414 excess
-  // 4.0 weight * 0.1 model_dt * 0.1414 excess * 30 timesteps = 1.697
-  EXPECT_NEAR(costs(999), 1.697, 0.01);
+  // the fastest wheel runs at 1.4 of its limit, 0.5 wheel limit * 0.4 = 0.2 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.2 excess * 30 timesteps = 2.4
+  EXPECT_NEAR(costs(999), 2.4, 0.01);
   costs.setZero();
 
   // Corner of the per-axis box, which the diamond excludes twice over
@@ -388,9 +388,9 @@ TEST(CriticTests, MecanumCritic)
   state.vy.row(999).setConstant(0.5f);
   critic.score(data);
   EXPECT_GT(costs.sum(), 0);
-  // speed sqrt(0.5^2 + 0.5^2) = 0.7071 is scaled by (1 - 1/2), leaving 0.3536 excess
-  // 4.0 weight * 0.1 model_dt * 0.3536 excess * 30 timesteps = 4.243
-  EXPECT_NEAR(costs(999), 4.243, 0.01);
+  // the fastest wheel runs at 2.0 of its limit, 0.5 wheel limit * 1.0 = 0.5 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.5 excess * 30 timesteps = 6.0
+  EXPECT_NEAR(costs(999), 6.0, 0.01);
   costs.setZero();
 
   // Mecanum wheels drive both ways equally, so reverse is bounded by vx_max too
@@ -428,21 +428,49 @@ TEST(CriticTests, MecanumCritic)
   state.wz.row(999).setConstant(0.85f);
   critic.score(data);
   EXPECT_GT(costs.sum(), 0);
-  // 0.4 speed plus 0.85 * 0.3 m arm of rotation is scaled by (1 - 1/(0.8 + 0.5)), leaving 0.1511
-  // 4.0 weight * 0.1 model_dt * 0.1511 excess * 30 timesteps = 1.814
-  EXPECT_NEAR(costs(999), 1.814, 0.01);
+  // the fastest wheel runs at 0.8 + 0.5 = 1.3 of its limit, 0.5 wheel limit * 0.3 = 0.15 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.15 excess * 30 timesteps = 1.8
+  EXPECT_NEAR(costs(999), 1.8, 0.01);
   costs.setZero();
 
-  // Rotation alone is charged too, through the same moment arm
+  // Rotation alone is charged too
   state.vx.setConstant(0.0f);
   state.wz.setConstant(2.0f);
   critic.score(data);
   EXPECT_GT(costs.minCoeff(), 0);
-  // 2.0 * 0.3 m arm is scaled by (1 - 1/(2.0/1.7)), leaving 0.09 excess
-  // 4.0 weight * 0.1 model_dt * 0.09 excess * 30 timesteps = 1.08
-  EXPECT_NEAR(costs(0), 1.08, 0.01);
+  // the fastest wheel runs at 2.0 / 1.7 = 1.1765 of its limit, 0.5 * 0.1765 = 0.0882 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.0882 excess * 30 timesteps = 1.059
+  EXPECT_NEAR(costs(0), 1.059, 0.01);
   costs.setZero();
   state.wz.setConstant(0.0f);
+
+  // Roller slip lowers the limit of the axis driving through the rollers, the cost stays in wheel
+  // speed scaled by the limit of the pure rolling axis, whichever of x and y that is
+  node->set_parameter(rclcpp::Parameter("critic.vy_max", 0.4));
+  critic = MecanumCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.vy.row(999).setConstant(0.5f);
+  critic.score(data);
+  // the fastest wheel runs at 0.5 / 0.4 = 1.25 of its limit, 0.5 vx_max * 0.25 = 0.125 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.125 excess * 30 timesteps = 1.5
+  EXPECT_NEAR(costs(999), 1.5, 0.01);
+  costs.setZero();
+
+  node->set_parameter(rclcpp::Parameter("critic.vx_max", 0.4));
+  node->set_parameter(rclcpp::Parameter("critic.vy_max", 0.5));
+  critic = MecanumCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  state.vx.setConstant(0.0f);
+  state.vy.setConstant(0.0f);
+  state.vx.row(999).setConstant(0.5f);
+  critic.score(data);
+  // the fastest wheel runs at 0.5 / 0.4 = 1.25 of its limit, 0.5 vy_max * 0.25 = 0.125 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.125 excess * 30 timesteps = 1.5
+  EXPECT_NEAR(costs(999), 1.5, 0.01);
+  costs.setZero();
+  node->set_parameter(rclcpp::Parameter("critic.vx_max", 0.5));
 
   // A zero vertex collapses the diamond but must stay finite
   node->set_parameter(rclcpp::Parameter("critic.vy_max", 0.0));

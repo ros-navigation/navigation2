@@ -195,7 +195,6 @@ This critic does not default to the controller's velocity limits, as the control
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
  | cost_weight           | double | Default 4.0. Weight to apply to critic term.                                                                |
  | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
- | sum_of_robot_center_projection_on_X_Y_axis | double | Default 0.3. lx + ly in meters, half the wheelbase plus half the track. Use the same value as your ros2_control mecanum_drive_controller. |
  | vx_max                | double | Defaults to 0.5. Max speed the robot can reach along x.                                                     |
  | vy_max                | double | Defaults to 0.5. Max speed the robot can reach along y.                                                     |
  | wz_max                | double | Defaults to 1.7. Max speed at which the robot can rotate.                                                   |
@@ -326,7 +325,6 @@ controller_server:
       #   vx_max: 0.5
       #   vy_max: 0.5
       #   wz_max: 1.7
-      #   sum_of_robot_center_projection_on_X_Y_axis: 0.3
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
