@@ -15,6 +15,7 @@
 #ifndef NAV2_ROS_COMMON__TF_UTILS_HPP_
 #define NAV2_ROS_COMMON__TF_UTILS_HPP_
 
+#include <optional>
 #include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -67,6 +68,19 @@ namespace nav2
   return transform;
 }
 
+inline geometry_msgs::msg::TransformStamped invertTransform(
+  const geometry_msgs::msg::TransformStamped & transform)
+{
+  tf2::Transform tf_transform;
+  tf2::fromMsg(transform.transform, tf_transform);
+  geometry_msgs::msg::TransformStamped inverse;
+  inverse.header.stamp = transform.header.stamp;
+  inverse.header.frame_id = transform.child_frame_id;
+  inverse.child_frame_id = transform.header.frame_id;
+  inverse.transform = tf2::toMsg(tf_transform.inverse());
+  return inverse;
+}
+
 /**
  * @brief Get the latest transform from source_frame into target_frame.
  *
@@ -81,17 +95,15 @@ namespace nav2
  * @param source_frame Frame to transform from.
  * @param current_time Reference time for the age check and identity timestamp;
  *   must use the same time domain as TF.
- * @param[out] transform Result; unchanged on failure.
  * @param staleness_threshold Maximum age in seconds; non-positive disables the
  *   check. A result exactly at the threshold is accepted.
- * @return true on success; false on TF failure or stale TF.
+ * @return Transform on success; std::nullopt on TF failure or stale TF.
  */
-[[nodiscard]] inline bool getLatestTransform(
+[[nodiscard]] inline std::optional<geometry_msgs::msg::TransformStamped> getLatestTransform(
   nav2::TransformBuffer & tf_buffer,
   const std::string & target_frame,
   const std::string & source_frame,
   const rclcpp::Time & current_time,
-  geometry_msgs::msg::TransformStamped & transform,
   double staleness_threshold = 0.0)
 {
   geometry_msgs::msg::TransformStamped result;
@@ -104,19 +116,18 @@ namespace nav2
     try {
       result = tf_buffer.lookupTransform(target_frame, source_frame, tf2::TimePointZero);
     } catch (const tf2::TransformException &) {
-      return false;
+      return std::nullopt;
     }
 
     const bool has_timestamp = result.header.stamp.sec != 0 || result.header.stamp.nanosec != 0;
     if (staleness_threshold > 0.0 && has_timestamp) {
       const rclcpp::Time transform_time(result.header.stamp, current_time.get_clock_type());
       if ((current_time - transform_time).seconds() > staleness_threshold) {
-        return false;
+        return std::nullopt;
       }
     }
   }
-  transform = result;
-  return true;
+  return result;
 }
 
 /**
@@ -131,27 +142,23 @@ namespace nav2
  * @param source_frame Frame whose pose is requested.
  * @param current_time Reference time for the age check and identity timestamp;
  *   must use the same time domain as TF.
- * @param[out] pose Result; unchanged on failure.
  * @param staleness_threshold Maximum age in seconds; non-positive disables the
  *   check. Zero-stamped results are exempt from the age check.
- * @return true if getLatestTransform succeeds; false otherwise.
+ * @return Pose if getLatestTransform succeeds; std::nullopt otherwise.
  */
-[[nodiscard]] inline bool getLatestPose(
+[[nodiscard]] inline std::optional<geometry_msgs::msg::PoseStamped> getLatestPose(
   nav2::TransformBuffer & tf_buffer,
   const std::string & target_frame,
   const std::string & source_frame,
   const rclcpp::Time & current_time,
-  geometry_msgs::msg::PoseStamped & pose,
   double staleness_threshold = 0.0)
 {
-  geometry_msgs::msg::TransformStamped transform;
-  if (!getLatestTransform(
-      tf_buffer, target_frame, source_frame, current_time, transform, staleness_threshold))
-  {
-    return false;
+  const auto transform = getLatestTransform(
+    tf_buffer, target_frame, source_frame, current_time, staleness_threshold);
+  if (!transform) {
+    return std::nullopt;
   }
-  pose = transformToPoseStamped(transform);
-  return true;
+  return transformToPoseStamped(*transform);
 }
 
 /**
@@ -166,35 +173,33 @@ namespace nav2
  * @param source_frame Frame to transform from.
  * @param stamp Lookup timestamp in the TF time domain. Zero requests the latest
  *   common time along the TF chain, without a staleness check.
- * @param[out] transform Result; unchanged on failure.
  * @param transform_tolerance Maximum lookup wait duration; must be nonnegative.
  *   Zero performs the lookup without waiting. This does not permit timestamp
  *   error or extrapolation.
- * @return true on success; false on TF failure or invalid arguments.
+ * @return Transform on success; std::nullopt on TF failure or invalid arguments.
  */
-[[nodiscard]] inline bool getStampedTransform(
+[[nodiscard]] inline std::optional<geometry_msgs::msg::TransformStamped> getStampedTransform(
   nav2::TransformBuffer & tf_buffer,
   const std::string & target_frame,
   const std::string & source_frame,
   const rclcpp::Time & stamp,
-  geometry_msgs::msg::TransformStamped & transform,
-  const tf2::Duration & transform_tolerance = tf2::Duration::zero())
+  const tf2::Duration & transform_tolerance)
 {
   geometry_msgs::msg::TransformStamped result;
   if (target_frame == source_frame) {
     result.header.frame_id = target_frame;
     result.header.stamp = stamp;
     result.child_frame_id = source_frame;
+    result.transform.rotation.w = 1.0;
   } else {
     try {
       result = tf_buffer.lookupTransform(
         target_frame, source_frame, stamp, tf2_ros::toRclcpp(transform_tolerance));
     } catch (const tf2::TransformException &) {
-      return false;
+      return std::nullopt;
     }
   }
-  transform = result;
-  return true;
+  return result;
 }
 
 /**
@@ -205,6 +210,10 @@ namespace nav2
  * is applied and lookup failures are not logged. Equal frame names do not
  * imply identity when the times differ.
  *
+ * Use this variant to express an earlier sensor observation in the robot
+ * frame at a later time, accounting for robot motion through a fixed frame
+ * such as odom.
+ *
  * @param tf_buffer TF buffer used for the lookup.
  * @param target_frame Frame to transform into.
  * @param target_time Target timestamp in the TF time domain; zero requests the
@@ -213,20 +222,18 @@ namespace nav2
  * @param source_time Source timestamp in the TF time domain; zero requests the
  *   latest available transform between source_frame and fixed_frame.
  * @param fixed_frame Frame assumed constant across the two timestamps.
- * @param[out] transform Result; unchanged on failure.
  * @param transform_tolerance Maximum lookup wait duration; must be nonnegative.
  *   Zero performs the lookup without waiting.
- * @return true on success; false on TF failure or invalid arguments.
+ * @return Transform on success; std::nullopt on TF failure or invalid arguments.
  */
-[[nodiscard]] inline bool getStampedTransform(
+[[nodiscard]] inline std::optional<geometry_msgs::msg::TransformStamped> getStampedTransform(
   nav2::TransformBuffer & tf_buffer,
   const std::string & target_frame,
   const rclcpp::Time & target_time,
   const std::string & source_frame,
   const rclcpp::Time & source_time,
   const std::string & fixed_frame,
-  geometry_msgs::msg::TransformStamped & transform,
-  const tf2::Duration & transform_tolerance = tf2::Duration::zero())
+  const tf2::Duration & transform_tolerance)
 {
   geometry_msgs::msg::TransformStamped result;
   try {
@@ -234,10 +241,9 @@ namespace nav2
       target_frame, target_time, source_frame, source_time, fixed_frame,
       tf2_ros::toRclcpp(transform_tolerance));
   } catch (const tf2::TransformException &) {
-    return false;
+    return std::nullopt;
   }
-  transform = result;
-  return true;
+  return result;
 }
 
 }  // namespace nav2
