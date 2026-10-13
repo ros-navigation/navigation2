@@ -27,9 +27,11 @@ namespace mppi::critics
  * @brief Critic objective function penalizing combined translational velocities that exceed the
  *        ellipse spanned by the per-axis velocity limits
  *
- * The per-axis limits constrain vx and vy independently. Thus critic incentivizes the speed
- * driving diagonally. Constraining the translational velocity with an elliptical velocity space
- * ensures that the maximum translational velocity is limited by the per-axis limits.
+ * On holonomic robots the per-axis limits bound vx and vy independently. Thus critics rewarding progress
+ * incentivize diagonal driving, since sqrt(vx_max² + vy_max²) is faster than each axis individually.
+ * This critic bounds the translational velocity by the ellipse through vx_max, vx_min and vy_max instead.
+ *
+ * The cost is the speed the sample gives up when scaled back onto the ellipse.
  */
 class TranslationalVelocityCritic : public CriticFunction
 {
