@@ -14,6 +14,7 @@ nav2_package()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CollisionMonitorState.msg"
+  "msg/ClassifiedPose.msg"
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
   "msg/CostmapFilterInfo.msg"
@@ -40,6 +41,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetRouteGraph.srv"
   "action/AssistedTeleop.action"
   "action/BackUp.action"
+  "action/ClassifyPath.action"
   "action/ComputePathToPose.action"
   "action/ComputePathThroughPoses.action"
   "action/ComputeRoute.action"

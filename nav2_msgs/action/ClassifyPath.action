@@ -1,0 +1,8 @@
+#goal definition
+nav_msgs/Path path
+---
+#result definition
+ClassifiedPose[] classified_path
+builtin_interfaces/Duration classification_time
+---
+#feedback definition

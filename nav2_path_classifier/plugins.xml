@@ -1,0 +1,12 @@
+<library path="pose_classifiers">
+  <class name="nav2_path_classifier/ConfinedSpaceClassifier"
+         type="nav2_path_classifier::ConfinedSpaceClassifier"
+         base_class_type="nav2_path_classifier::PathClassifier">
+    <description>Classifies poses in confined space by detecting obstacles on opposite footprint edges</description>
+  </class>
+  <class name="nav2_path_classifier/LastMileClassifier"
+         type="nav2_path_classifier::LastMileClassifier"
+         base_class_type="nav2_path_classifier::PathClassifier">
+    <description>Classifies the last part of a path, by arc length, as last mile</description>
+  </class>
+</library>
