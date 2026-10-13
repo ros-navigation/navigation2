@@ -524,6 +524,9 @@
 
     <Control ID="RecoveryNode">
       <input_port name="number_of_retries" type="int" default="1">Number of retries.</input_port>
+      <input_port name="reset_distance" type="double" default="0.0">Displacement in meters from the first recovery attempt or last distance reset to reset retries. Non-positive disables distance resets.</input_port>
+      <input_port name="robot_frame" type="string" default="&quot;base_link&quot;">Robot frame.</input_port>
+      <input_port name="global_frame" type="string" default="&quot;map&quot;">Reference frame.</input_port>
     </Control>
 
     <Control ID="RoundRobin">

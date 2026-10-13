@@ -31,6 +31,9 @@ public:
     } else if (ticks_ == num_failure_) {
       setStatus(BT::NodeStatus::FAILURE);
     }
+    if (ticks_ == num_running_) {
+      setStatus(BT::NodeStatus::RUNNING);
+    }
     ticks_++;
     return status();
   }
@@ -47,7 +50,13 @@ public:
     ticks_ = 0;
   }
 
+  void returnRunningOn(int tick)
+  {
+    num_running_ = tick;
+  }
+
 private:
+  int num_running_{-1};
   int ticks_{0};
   int num_success_{-1};
   int num_failure_{-1};
@@ -58,7 +67,8 @@ class RecoveryNodeTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixtu
 public:
   void SetUp() override
   {
-    config_->input_ports["number_of_retries"] = 1;
+    config_->input_ports.clear();
+    config_->input_ports["number_of_retries"] = "1";
     bt_node_ = std::make_shared<nav2_behavior_tree::RecoveryNode>(
       "recovery_node", *config_);
     first_child_ = std::make_shared<RecoveryDummy>();
@@ -75,6 +85,44 @@ public:
   }
 
 protected:
+  void enableDistanceReset(double distance = 1.0)
+  {
+    // Use a private buffer and direct transforms to keep these tests deterministic.
+    distance_tf_ = nav2::create_transform_buffer(node_);
+    auto config = *config_;
+    config.blackboard = BT::Blackboard::create();
+    config.blackboard->set("node", node_);
+    config.blackboard->set("tf_buffer", distance_tf_);
+    config.input_ports["reset_distance"] = std::to_string(distance);
+    config.input_ports["robot_frame"] = "test_robot";
+    config.input_ports["global_frame"] = "test_world";
+    bt_node_ = std::make_shared<nav2_behavior_tree::RecoveryNode>("recovery_node", config);
+    bt_node_->addChild(first_child_.get());
+    bt_node_->addChild(second_child_.get());
+  }
+
+  void moveRobot(double x, double y = 0.0)
+  {
+    geometry_msgs::msg::TransformStamped transform;
+    transform.header.frame_id = "test_world";
+    transform.child_frame_id = "test_robot";
+    transform.header.stamp = node_->now();
+    transform.transform.translation.x = x;
+    transform.transform.translation.y = y;
+    transform.transform.rotation.w = 1.0;
+    ASSERT_TRUE(distance_tf_->setTransform(transform, "test", true));
+  }
+
+  BT::NodeStatus retryOnce()
+  {
+    first_child_->returnFailureOn(0);
+    first_child_->returnRunningOn(1);
+    first_child_->changeStatus(BT::NodeStatus::FAILURE);
+    second_child_->changeStatus(BT::NodeStatus::SUCCESS);
+    return bt_node_->executeTick();
+  }
+
+  nav2::TransformBuffer::SharedPtr distance_tf_;
   static std::shared_ptr<nav2_behavior_tree::RecoveryNode> bt_node_;
   static std::shared_ptr<RecoveryDummy> first_child_;
   static std::shared_ptr<RecoveryDummy> second_child_;
@@ -162,6 +210,74 @@ TEST_F(RecoveryNodeTestFixture, test_skipping)
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::FAILURE);
   EXPECT_EQ(first_child_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
+}
+
+
+TEST_F(RecoveryNodeTestFixture, test_distance_below_threshold)
+{
+  enableDistanceReset();
+  moveRobot(0.0);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  moveRobot(0.6);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+}
+
+TEST_F(RecoveryNodeTestFixture, test_distance_threshold_and_repeated_resets)
+{
+  enableDistanceReset();
+  moveRobot(0.0);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  // Both axes contribute, and equality with the threshold resets the count.
+  moveRobot(0.6, 0.8);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  moveRobot(0.6, 2.0);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  moveRobot(0.6, 2.5);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+}
+
+TEST_F(RecoveryNodeTestFixture, test_halt_clears_distance_reference)
+{
+  enableDistanceReset();
+  moveRobot(0.0);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  bt_node_->haltNode();
+  moveRobot(10.0);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  moveRobot(10.5);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+}
+
+TEST_F(RecoveryNodeTestFixture, test_missing_transform_preserves_retry_limit)
+{
+  enableDistanceReset();
+  moveRobot(0.0);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  distance_tf_->clear();
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+}
+
+TEST_F(RecoveryNodeTestFixture, test_initially_missing_transform)
+{
+  enableDistanceReset();
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  moveRobot(10.0);
+  // Acquiring a reference without measured progress does not restore retries.
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+}
+
+TEST_F(RecoveryNodeTestFixture, test_nonpositive_distance_needs_no_blackboard_dependencies)
+{
+  auto config = *config_;
+  config.blackboard = BT::Blackboard::create();
+  for (const auto & distance : {"0.0", "-1.0"}) {
+    config.input_ports["reset_distance"] = distance;
+    bt_node_ = std::make_shared<nav2_behavior_tree::RecoveryNode>("recovery_node", config);
+    bt_node_->addChild(first_child_.get());
+    bt_node_->addChild(second_child_.get());
+    EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+    EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+  }
 }
 
 
