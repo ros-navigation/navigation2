@@ -70,7 +70,6 @@ void TranslationalVelocityCritic::score(CriticData & data)
   const auto violation =
     (vx.square() + vy.square()).sqrt() * (1.0f - normalized_sq.max(1.0f).rsqrt());
 
-  // Use column loop to preserve vectorization.
   Eigen::ArrayXf cost = Eigen::ArrayXf::Zero(vx.rows());
   for (int i = 0; i < vx.cols(); ++i) {
     cost += violation.col(i);
