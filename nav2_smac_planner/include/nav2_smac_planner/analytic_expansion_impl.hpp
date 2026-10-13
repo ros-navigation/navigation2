@@ -319,8 +319,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
       }
     }
 
-    // Undo in reverse order: a curve can revisit the same graph node, whose
-    // later snapshots contain temporary poses rather than its original pose.
+    // Reset to initial poses to not impact future searches
     for (auto it = possible_nodes.nodes.rbegin(); it != possible_nodes.nodes.rend(); ++it) {
       it->node->setPose(it->initial_coords);
     }
