@@ -61,6 +61,7 @@ target_link_libraries(${library_name} PUBLIC
   visualization_msgs::visualization_msgs
   std_msgs::std_msgs
   tf2_ros::tf2_ros
+  nanoflann::nanoflann
   nlohmann_json::nlohmann_json
 )
 target_link_libraries(${library_name} PRIVATE
