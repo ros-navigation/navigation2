@@ -13,6 +13,10 @@
 // limitations under the License.
 
 #include <string>
+
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/plugins/control/recovery_node.hpp"
 
 namespace nav2_behavior_tree
@@ -26,6 +30,39 @@ RecoveryNode::RecoveryNode(
   number_of_retries_(1),
   retry_count_(0)
 {
+  getInput("reset_distance", reset_distance_);
+  if (reset_distance_ > 0.0) {
+    getInput("robot_frame", robot_frame_);
+    getInput("global_frame", global_frame_);
+    const auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+    clock_ = node->get_clock();
+    tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+    transform_staleness_threshold_ = node->declare_or_get_parameter(
+      "transform_staleness_threshold", 0.0);
+  }
+}
+
+void RecoveryNode::updateRetryCount()
+{
+  if (!(reset_distance_ > 0.0)) {
+    return;
+  }
+
+  geometry_msgs::msg::PoseStamped pose;
+  if (!nav2_util::getFreshPose(
+      *tf_, global_frame_, robot_frame_, clock_->now(), transform_staleness_threshold_, pose))
+  {
+    return;
+  }
+
+  if (!reset_pose_ || nav2_util::geometry_utils::euclidean_distance(
+      reset_pose_->pose, pose.pose) >= reset_distance_)
+  {
+    if (reset_pose_) {
+      retry_count_ = 0;
+    }
+    reset_pose_ = pose;
+  }
 }
 
 BT::NodeStatus RecoveryNode::tick()
@@ -35,6 +72,10 @@ BT::NodeStatus RecoveryNode::tick()
 
   if (children_count != 2) {
     throw BT::BehaviorTreeException("Recovery Node '" + name() + "' must only have 2 children.");
+  }
+
+  if (retry_count_ > 0) {
+    updateRetryCount();
   }
 
   setStatus(BT::NodeStatus::RUNNING);
@@ -62,6 +103,9 @@ BT::NodeStatus RecoveryNode::tick()
 
         case BT::NodeStatus::FAILURE:
           {
+            if (retry_count_ == 0 && !reset_pose_) {
+              updateRetryCount();
+            }
             if (retry_count_ < number_of_retries_) {
               // halt first child and tick second child in next iteration
               ControlNode::haltChild(0);
@@ -123,6 +167,7 @@ void RecoveryNode::halt()
   ControlNode::halt();
   retry_count_ = 0;
   current_child_idx_ = 0;
+  reset_pose_.reset();
 }
 
 }  // namespace nav2_behavior_tree
