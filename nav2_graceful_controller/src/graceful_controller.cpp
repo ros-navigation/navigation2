@@ -220,9 +220,10 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     }
 
     // Make sure target is far enough away to avoid instability,
-    // unless we are approaching the goal
+    // unless we are approaching the goal. Targets only get closer from here on,
+    // so none of the remaining ones would be valid either
     if (dist_to_goal >= params_->max_lookahead && dist_to_target < params_->min_lookahead) {
-      continue;
+      throw nav2_core::NoValidControl("No collision-free trajectory found beyond min_lookahead");
     }
 
     // Compute velocity at this moment if valid target pose is found
