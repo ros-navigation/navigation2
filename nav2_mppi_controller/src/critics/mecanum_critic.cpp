@@ -12,29 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
-#include <cmath>
-
 #include "nav2_mppi_controller/critics/mecanum_critic.hpp"
 
 namespace mppi::critics
 {
-
-namespace
-{
-
-/**
- * @brief Reciprocal of a velocity limit, floored so that a zero limit cannot divide by zero
- * @param limit Velocity limit of either sign
- * @return 1 / |limit|, at most 1e6
- */
-float invLimit(const float limit)
-{
-  constexpr float min_limit = 1e-6f;
-  return 1.0f / std::max(std::abs(limit), min_limit);
-}
-
-}  // namespace
 
 void MecanumCritic::initialize()
 {
@@ -64,8 +45,8 @@ void MecanumCritic::score(CriticData & data)
 
   // |vx|/vx_max + |vy|/vy_max + |wz|/wz_max, which is 1 exactly on the wheel limit.
   const auto normalized =
-    vx.abs() * invLimit(vx_max_) +
-    vy.abs() * invLimit(vy_max_) + wz.abs() * invLimit(wz_max_);
+    vx.abs() * utils::safeInverseAbs(vx_max_) +
+    vy.abs() * utils::safeInverseAbs(vy_max_) + wz.abs() * utils::safeInverseAbs(wz_max_);
 
   // The speed given up in scaling the sample back onto the wheel limit
   const auto violation =
