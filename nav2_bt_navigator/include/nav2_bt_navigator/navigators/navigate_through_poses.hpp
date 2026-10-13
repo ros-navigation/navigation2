@@ -25,7 +25,6 @@
 #include "nav2_msgs/action/navigate_through_poses.hpp"
 #include "nav2_msgs/msg/waypoint_status.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/odometry_utils.hpp"
 

@@ -18,13 +18,13 @@
 #include <string>
 #include <vector>
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "yaml-cpp/yaml.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/time.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "angles/angles.h"
 #include "opennav_docking/types.hpp"
 #include "opennav_docking_core/charging_dock.hpp"
@@ -182,22 +182,14 @@ inline geometry_msgs::msg::PoseStamped transformPoseToFrame(
   const rclcpp::Time & current_time,
   const double transform_staleness_threshold)
 {
-  auto transformed_pose = pose;
-  if (transformed_pose.header.frame_id == target_frame) {
-    return transformed_pose;
-  }
-
-  geometry_msgs::msg::TransformStamped transform;
-  if (!nav2_util::lookupTransformWithStalenessCheck(
-      tf_buffer, target_frame, transformed_pose.header.frame_id, current_time,
-      transform_staleness_threshold, transform))
-  {
+  const auto transformed_pose = nav2::transformLatestPose(
+    tf_buffer, target_frame, pose, current_time, transform_staleness_threshold);
+  if (!transformed_pose) {
     throw opennav_docking_core::DockingTFError(
             "Transform error: failed to get a fresh transform from " +
-            transformed_pose.header.frame_id + " to " + target_frame);
+            pose.header.frame_id + " to " + target_frame);
   }
-  tf2::doTransform(transformed_pose, transformed_pose, transform);
-  return transformed_pose;
+  return *transformed_pose;
 }
 
 inline double l2Norm(const geometry_msgs::msg::Pose & a, const geometry_msgs::msg::Pose & b)

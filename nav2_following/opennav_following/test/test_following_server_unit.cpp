@@ -32,6 +32,7 @@
 #include "opennav_following/following_server.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 // Testing unit functions in following server, smoke/system tests in python file
 

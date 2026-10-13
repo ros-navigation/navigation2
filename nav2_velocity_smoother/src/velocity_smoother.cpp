@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_velocity_smoother/velocity_smoother.hpp"
 
 using namespace std::chrono_literals;

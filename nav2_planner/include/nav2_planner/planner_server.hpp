@@ -29,7 +29,6 @@
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/service_server.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"

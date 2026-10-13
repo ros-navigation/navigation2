@@ -29,7 +29,6 @@
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_msgs/action/assisted_teleop.hpp"
 #include "nav2_ros_common/node_thread.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/node.hpp"
