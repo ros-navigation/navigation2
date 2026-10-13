@@ -25,7 +25,6 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/interfaces/graph_file_saver.hpp"
 #include "rclcpp/node_interfaces/node_parameters_interface.hpp"

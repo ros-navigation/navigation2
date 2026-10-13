@@ -26,7 +26,6 @@
 #include "nav2_behavior_tree/json_utils.hpp"
 #include "nav2_msgs/msg/waypoint_status.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "rclcpp/clock.hpp"

@@ -20,10 +20,10 @@
 
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "tf2/transform_datatypes.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 
 namespace nav2_collision_monitor

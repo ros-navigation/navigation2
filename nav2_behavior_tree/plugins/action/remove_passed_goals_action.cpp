@@ -16,6 +16,7 @@
 #include <memory>
 #include <limits>
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -63,11 +64,10 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   using namespace nav2_util::geometry_utils;  // NOLINT
 
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getFreshPose(
-      *tf_, goal_poses.goals[0].header.frame_id, robot_base_frame_, clock_->now(),
-      transform_staleness_threshold_, current_pose))
-  {
+  const auto current_pose = nav2::getLatestPose(
+    *tf_, goal_poses.goals[0].header.frame_id, robot_base_frame_, clock_->now(),
+    transform_staleness_threshold_);
+  if (!current_pose) {
     return BT::NodeStatus::FAILURE;
   }
 
@@ -80,7 +80,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   double dist_to_goal;
   while (goal_poses.goals.size() > 1) {
-    dist_to_goal = euclidean_distance(goal_poses.goals[0].pose, current_pose.pose);
+    dist_to_goal = euclidean_distance(goal_poses.goals[0].pose, current_pose->pose);
 
     if (dist_to_goal > viapoint_achieved_radius_) {
       break;

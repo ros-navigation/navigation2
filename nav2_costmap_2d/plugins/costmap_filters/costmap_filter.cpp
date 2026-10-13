@@ -42,8 +42,8 @@
 
 #include <exception>
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/point.hpp"
 
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -160,19 +160,19 @@ bool CostmapFilter::transformPose(
     // Filter mask and current layer are in different frames:
     // Transform (global_pose.position.x, global_pose.position.y) point from current layer frame
     // to mask_pose in mask_frame
-    geometry_msgs::msg::TransformStamped global_to_mask_transform;
+
     geometry_msgs::msg::Point in, out;
     in.x = global_pose.position.x;
     in.y = global_pose.position.y;
     in.z = 0.0;
 
-    if (!nav2_util::lookupTransformWithStalenessCheck(
-        *tf_, mask_frame, global_frame, clock_->now(), transform_staleness_threshold_,
-        global_to_mask_transform))
-    {
+    const auto global_to_mask_transform = nav2::getLatestTransform(
+      *tf_, mask_frame, global_frame, clock_->now(), transform_staleness_threshold_);
+    if (!global_to_mask_transform) {
       return false;
     }
-    tf2::doTransform(in, out, global_to_mask_transform);
+
+    tf2::doTransform(in, out, *global_to_mask_transform);
 
     mask_pose = global_pose;
     mask_pose.position.x = out.x;

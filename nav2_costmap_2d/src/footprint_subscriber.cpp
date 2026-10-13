@@ -16,6 +16,7 @@
 #include <vector>
 #include <memory>
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "tf2/utils.hpp"
 
@@ -56,12 +57,13 @@ FootprintSubscriber::getFootprintInRobotFrame(
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, tf_, footprint_header.frame_id, robot_base_frame_,
-      transform_tolerance_, footprint_header.stamp))
-  {
+  const auto current_pose_transform = nav2::getStampedTransform(
+    tf_, footprint_header.frame_id, robot_base_frame_, rclcpp::Time(footprint_header.stamp),
+    tf2::durationFromSec(transform_tolerance_));
+  if (!current_pose_transform) {
     return false;
   }
+  current_pose = nav2::transformToPoseStamped(*current_pose_transform);
 
   double x = current_pose.pose.position.x;
   double y = current_pose.pose.position.y;

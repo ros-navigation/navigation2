@@ -22,6 +22,7 @@
 #include <sstream>
 #include <iomanip>
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "assisted_teleop_behavior_tester.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -229,13 +230,13 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
 
   RCLCPP_INFO(node_->get_logger(), "result received");
 
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, *tf_buffer_, "odom")) {
+  const auto current_pose = nav2::getLatestPose(*tf_buffer_, "odom", "base_link");
+  if (!current_pose) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return false;
   }
 
-  if (!collision_checker_->isCollisionFree(current_pose.pose)) {
+  if (!collision_checker_->isCollisionFree(current_pose->pose)) {
     RCLCPP_ERROR(node_->get_logger(), "Ended in collision");
     return false;
   }

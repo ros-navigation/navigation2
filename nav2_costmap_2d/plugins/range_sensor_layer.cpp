@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "nav2_costmap_2d/range_sensor_layer.hpp"
@@ -296,17 +297,17 @@ void RangeSensorLayer::updateCostmap(
   in.header.frame_id = range_message.header.frame_id;
 
   geometry_msgs::msg::TransformStamped transform;
-  try {
-    transform = tf_->lookupTransform(
-      global_frame_, in.header.frame_id,
-      tf2_ros::fromMsg(in.header.stamp),
-      tf2_ros::fromRclcpp(transform_tolerance_));
-  } catch (const tf2::TransformException &) {
+
+  const auto transform_result = nav2::getStampedTransform(
+    *tf_, global_frame_, in.header.frame_id, rclcpp::Time(in.header.stamp),
+    tf2_ros::fromRclcpp(transform_tolerance_));
+  if (!transform_result) {
     RCLCPP_INFO(
       logger_, "Range sensor layer can't transform from %s to %s",
       in.header.frame_id.c_str(), global_frame_.c_str());
     return;
   }
+  transform = *transform_result;
 
   tf2::doTransform(in, out, transform);
 

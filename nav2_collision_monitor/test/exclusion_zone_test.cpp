@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/parameter.hpp"
@@ -243,8 +244,8 @@ protected:
     // Wait for both legs to propagate into the buffer.
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_buffer_->canTransform(child_frame, BASE_FRAME_ID, tf2::TimePointZero) &&
-        tf_buffer_->canTransform(BASE_FRAME_ID, GLOBAL_FRAME_ID, tf2::TimePointZero))
+      if (nav2::getLatestTransform(*tf_buffer_, child_frame, BASE_FRAME_ID) &&
+        nav2::getLatestTransform(*tf_buffer_, BASE_FRAME_ID, GLOBAL_FRAME_ID))
       {
         return;
       }
@@ -261,13 +262,10 @@ protected:
   {
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      try {
-        const auto t =
-          tf_buffer_->lookupTransform(GLOBAL_FRAME_ID, BASE_FRAME_ID, tf2::TimePointZero);
-        if (std::abs(t.transform.translation.x - expected_x) < 1e-6) {
-          return;
-        }
-      } catch (const tf2::TransformException &) {}
+      const auto transform = nav2::getLatestTransform(*tf_buffer_, GLOBAL_FRAME_ID, BASE_FRAME_ID);
+      if (transform && std::abs(transform->transform.translation.x - expected_x) < 1e-6) {
+        return;
+      }
       executor_->spin_some();
       std::this_thread::sleep_for(10ms);
     }
@@ -290,7 +288,7 @@ protected:
 
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_buffer_->canTransform(child_frame, parent_frame, tf2::TimePointZero)) {
+      if (nav2::getLatestTransform(*tf_buffer_, child_frame, parent_frame)) {
         return;
       }
       executor_->spin_some();
