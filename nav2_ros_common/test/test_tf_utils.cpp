@@ -34,6 +34,16 @@ protected:
     ASSERT_TRUE(buffer_.setTransform(transform, "test", is_static));
   }
 
+  geometry_msgs::msg::PoseStamped makePose(int seconds) const
+  {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = "base_link";
+    pose.header.stamp = rclcpp::Time(seconds, 0, RCL_ROS_TIME);
+    pose.pose.position.x = 1.0;
+    pose.pose.orientation.w = 1.0;
+    return pose;
+  }
+
   std::shared_ptr<rclcpp::Clock> clock_ = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
   nav2::TransformBuffer buffer_{clock_};
   const rclcpp::Time now_{10, 0, RCL_ROS_TIME};
@@ -47,16 +57,16 @@ TEST_F(TfUtilsTest, LatestStalenessAndDisabledCheck)
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(result->header.stamp.sec, 8);
   EXPECT_DOUBLE_EQ(result->transform.translation.x, 1.0);
-  EXPECT_TRUE(nav2::getLatestTransform(buffer_, "odom", "base_link", now_));
+  EXPECT_TRUE(nav2::getLatestTransform(buffer_, "odom", "base_link"));
   EXPECT_TRUE(nav2::getLatestTransform(buffer_, "odom", "base_link", now_, 0.0));
   EXPECT_TRUE(nav2::getLatestTransform(buffer_, "odom", "base_link", now_, -1.0));
-  EXPECT_EQ(nav2::getLatestTransform(buffer_, "odom", "missing", now_), std::nullopt);
+  EXPECT_EQ(nav2::getLatestTransform(buffer_, "odom", "missing"), std::nullopt);
 }
 
 TEST_F(TfUtilsTest, PoseTransformConversionsPreserveHeaderAndGeometry)
 {
   addTransform(9, 1.0);
-  auto transform = nav2::getLatestTransform(buffer_, "odom", "base_link", now_);
+  auto transform = nav2::getLatestTransform(buffer_, "odom", "base_link");
   ASSERT_TRUE(transform.has_value());
 
   const auto pose = nav2::transformToPoseStamped(*transform);
@@ -114,7 +124,7 @@ TEST_F(TfUtilsTest, LatestPosePreservesHeaderAndGeometry)
   EXPECT_DOUBLE_EQ(pose->pose.orientation.z, 0.6);
   EXPECT_DOUBLE_EQ(pose->pose.orientation.w, 0.8);
   EXPECT_EQ(nav2::getLatestPose(buffer_, "odom", "base_link", now_, 0.5), std::nullopt);
-  EXPECT_EQ(nav2::getLatestPose(buffer_, "odom", "missing", now_), std::nullopt);
+  EXPECT_EQ(nav2::getLatestPose(buffer_, "odom", "missing"), std::nullopt);
   EXPECT_TRUE(nav2::getLatestPose(buffer_, "odom", "base_link", now_, -1.0));
 }
 
@@ -216,4 +226,140 @@ TEST_F(TfUtilsTest, ZeroSourceAndTargetTimesLookUpLatestTransforms)
   EXPECT_NEAR(result->transform.rotation.w, 1.0, 1e-12);
   EXPECT_EQ(nav2::getStampedTransform(
     buffer_, "base_link", zero, "missing", zero, "odom", tf2::Duration::zero()), std::nullopt);
+}
+
+TEST_F(TfUtilsTest, TransformStampedPoseInterpolatesAndPreservesInput)
+{
+  addTransform(2, 2.0);
+  addTransform(4, 4.0);
+  const auto input = makePose(3);
+  const auto original = input;
+  const auto result = nav2::transformStampedPose(
+    buffer_, "odom", input, tf2::Duration::zero());
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result->header.frame_id, "odom");
+  EXPECT_EQ(result->header.stamp, input.header.stamp);
+  EXPECT_NEAR(result->pose.position.x, 3.28, 1e-12);
+  EXPECT_NEAR(result->pose.position.y, 2.96, 1e-12);
+  EXPECT_DOUBLE_EQ(result->pose.position.z, 3.0);
+  EXPECT_NEAR(result->pose.orientation.z, 0.6, 1e-12);
+  EXPECT_NEAR(result->pose.orientation.w, 0.8, 1e-12);
+  EXPECT_EQ(input, original);
+}
+
+TEST_F(TfUtilsTest, TransformStampedPoseZeroStampSelectsLatestWithoutAgeCheck)
+{
+  addTransform(2, 2.0);
+  addTransform(4, 4.0);
+  const auto result = nav2::transformStampedPose(
+    buffer_, "odom", makePose(0), tf2::Duration::zero());
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result->header.stamp.sec, 4);
+  EXPECT_NEAR(result->pose.position.x, 4.28, 1e-12);
+}
+
+TEST_F(TfUtilsTest, TransformLatestPoseIgnoresInputStampAndChecksConfiguredAge)
+{
+  addTransform(2, 2.0);
+  addTransform(4, 4.0);
+  const auto input = makePose(2);
+  const auto original = input;
+  auto result = nav2::transformLatestPose(buffer_, "odom", input, now_, 6.0);
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result->header.stamp.sec, 4);
+  EXPECT_NEAR(result->pose.position.x, 4.28, 1e-12);
+  EXPECT_EQ(nav2::transformLatestPose(buffer_, "odom", input, now_, 5.0), std::nullopt);
+  EXPECT_TRUE(nav2::transformLatestPose(buffer_, "odom", input));
+  EXPECT_TRUE(nav2::transformLatestPose(buffer_, "odom", input, now_, -1.0));
+  EXPECT_EQ(input, original);
+}
+
+TEST_F(TfUtilsTest, TransformPoseSameFramePreservesEntireInputWithoutTF)
+{
+  const auto input = makePose(2);
+  const auto stamped = nav2::transformStampedPose(
+    buffer_, "base_link", input, tf2::Duration::zero());
+  ASSERT_TRUE(stamped);
+  EXPECT_EQ(*stamped, input);
+  const auto latest = nav2::transformLatestPose(buffer_, "base_link", input, now_, 0.1);
+  ASSERT_TRUE(latest);
+  EXPECT_EQ(*latest, input);
+}
+
+TEST_F(TfUtilsTest, TransformPoseFailuresLeaveInputUnchanged)
+{
+  addTransform(2, 2.0);
+  const auto input = makePose(3);
+  const auto original = input;
+  EXPECT_EQ(nav2::transformStampedPose(
+      buffer_, "odom", input, tf2::Duration::zero()), std::nullopt);
+  EXPECT_EQ(nav2::transformStampedPose(
+      buffer_, "missing", input, tf2::Duration::zero()), std::nullopt);
+  EXPECT_EQ(nav2::transformLatestPose(buffer_, "missing", input), std::nullopt);
+  EXPECT_EQ(input, original);
+}
+
+TEST_F(TfUtilsTest, TransformLatestPoseAcceptsStaticAndFutureTransforms)
+{
+  addTransform(1, 1.0, true);
+  auto result = nav2::transformLatestPose(buffer_, "odom", makePose(2), now_, 0.1);
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result->header.stamp.sec, 0);
+  EXPECT_NEAR(result->pose.position.x, 1.28, 1e-12);
+  buffer_.clear();
+  addTransform(11, 2.0);
+  result = nav2::transformLatestPose(buffer_, "odom", makePose(2), now_, 0.1);
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result->header.stamp.sec, 11);
+}
+
+TEST_F(TfUtilsTest, LatestLookupsWithoutCurrentTime)
+{
+  addTransform(1, 1.0);
+  const auto transform = nav2::getLatestTransform(buffer_, "odom", "base_link");
+  ASSERT_TRUE(transform);
+  EXPECT_EQ(transform->header.stamp.sec, 1);
+  const auto pose = nav2::getLatestPose(buffer_, "odom", "base_link");
+  ASSERT_TRUE(pose);
+  EXPECT_EQ(pose->header, transform->header);
+
+  const auto identity = nav2::getLatestTransform(buffer_, "base_link", "base_link");
+  ASSERT_TRUE(identity);
+  EXPECT_EQ(identity->header.stamp.sec, 0);
+  EXPECT_EQ(identity->header.stamp.nanosec, 0u);
+  EXPECT_DOUBLE_EQ(identity->transform.rotation.w, 1.0);
+  const auto identity_pose = nav2::getLatestPose(buffer_, "base_link", "base_link");
+  ASSERT_TRUE(identity_pose);
+  EXPECT_EQ(identity_pose->header, identity->header);
+}
+
+TEST_F(TfUtilsTest, TransformLatestPoseWithoutCurrentTime)
+{
+  addTransform(1, 1.0);
+  const auto input = makePose(10);
+  const auto result = nav2::transformLatestPose(buffer_, "odom", input);
+  ASSERT_TRUE(result);
+  EXPECT_EQ(result->header.stamp.sec, 1);
+  EXPECT_NEAR(result->pose.position.x, 1.28, 1e-12);
+
+  const auto unchanged = nav2::transformLatestPose(buffer_, "base_link", input);
+  ASSERT_TRUE(unchanged);
+  EXPECT_EQ(*unchanged, input);
+}
+
+TEST_F(TfUtilsTest, PositiveStalenessThresholdRequiresCurrentTime)
+{
+  addTransform(9, 1.0);
+  const auto input = makePose(9);
+  EXPECT_EQ(nav2::getLatestTransform(
+      buffer_, "odom", "base_link", std::nullopt, 1.0), std::nullopt);
+  EXPECT_EQ(nav2::getLatestPose(
+      buffer_, "odom", "base_link", std::nullopt, 1.0), std::nullopt);
+  EXPECT_EQ(nav2::transformLatestPose(
+      buffer_, "odom", input, std::nullopt, 1.0), std::nullopt);
+  EXPECT_EQ(nav2::getLatestTransform(
+      buffer_, "base_link", "base_link", std::nullopt, 1.0), std::nullopt);
+  EXPECT_EQ(nav2::transformLatestPose(
+      buffer_, "base_link", input, std::nullopt, 1.0), std::nullopt);
+  EXPECT_TRUE(nav2::getLatestTransform(buffer_, "odom", "base_link", now_, 1.0));
 }
