@@ -18,6 +18,10 @@
 #include <memory>
 #include <string>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 
@@ -56,16 +60,25 @@ protected:
     * @param theta theta of pose
     * @return bool if in collision
     */
-  inline bool inCollision(float cost, float x, float y, float theta)
+  inline bool inCollision(
+    float cost, float x, float y, float theta,
+    const nav2_costmap_2d::Footprint & footprint)
   {
-    // If consider_footprint_ check footprint scort for collision
+    // if the center cost guarantees a collision, return before doing an expensive footprint check
+    if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+      cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+    {
+      return true;
+    }
+
+    // If consider_footprint_ check footprint score for collision
     float score_cost = cost;
     if (consider_footprint_ &&
       (cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))
     {
       score_cost = static_cast<float>(collision_checker_.footprintCostAtPose(
           static_cast<double>(x), static_cast<double>(y), static_cast<double>(theta),
-          costmap_ros_->getRobotFootprint()));
+          footprint));
     }
 
     switch (static_cast<unsigned char>(score_cost)) {
@@ -88,6 +101,15 @@ protected:
     * since some element of the robot could be in collision
     */
   inline float findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap);
+
+  /**
+   * @brief Determine the number of threads to use for OpenMP parallelization.
+   *        If num_threads_ > 0, use that value directly.
+   *        If num_threads_ == -1 (auto), use half the available cores (memory-bound heuristic).
+   *        If OpenMP is disabled at build time, always returns 1.
+   * @return Number of threads to use
+   */
+  int getOptimalThreadCount();
 
   /**
     * @brief An implementation of worldToMap fully using floats
@@ -143,6 +165,7 @@ protected:
   float near_goal_distance_;
   std::string inflation_layer_name_;
 
+  int num_threads_{-1};
   unsigned int power_{0};
 };
 
