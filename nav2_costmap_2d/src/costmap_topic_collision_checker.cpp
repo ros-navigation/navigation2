@@ -22,6 +22,7 @@
 #include <iostream>
 
 #include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 

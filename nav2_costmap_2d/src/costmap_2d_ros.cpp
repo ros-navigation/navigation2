@@ -47,13 +47,13 @@
 #include <vector>
 #include <utility>
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/execution_timer.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/rate.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 using namespace std::chrono_literals;
@@ -257,21 +257,18 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // First, make sure that the transform between the robot base frame
   // and the global frame is available
 
-  std::string tf_error;
-
   RCLCPP_INFO(get_logger(), "Checking transform");
   rclcpp::Rate r(2);
   const auto initial_transform_timeout = rclcpp::Duration::from_seconds(
     initial_transform_timeout_);
   const auto initial_transform_timeout_point = now() + initial_transform_timeout;
   while (rclcpp::ok() &&
-    !tf_buffer_->canTransform(
-      global_frame_, robot_base_frame_, tf2::TimePointZero, &tf_error))
+    !nav2::getLatestTransform(*tf_buffer_, global_frame_, robot_base_frame_).has_value())
   {
     RCLCPP_INFO(
       get_logger(), "Timed out waiting for transform from %s to %s"
-      " to become available, tf error: %s",
-      robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
+      " to become available",
+      robot_base_frame_.c_str(), global_frame_.c_str());
 
     // Check timeout
     if (now() > initial_transform_timeout_point) {
@@ -284,9 +281,6 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
       return nav2::CallbackReturn::FAILURE;
     }
 
-    // The error string will accumulate and errors will typically be the same, so the last
-    // will do for the warning above. Reset the string here to avoid accumulation
-    tf_error.clear();
     r.sleep();
   }
 
@@ -761,12 +755,12 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
-  if (!nav2_util::getFreshPose(
-      *tf_buffer_, global_frame_, robot_base_frame_, now(),
-      transform_staleness_threshold_, global_pose))
-  {
+  const auto global_pose_result = nav2::getLatestPose(
+    *tf_buffer_, global_frame_, robot_base_frame_, now(), transform_staleness_threshold_);
+  if (!global_pose_result) {
     return false;
   }
+  global_pose = *global_pose_result;
   return true;
 }
 
@@ -775,14 +769,13 @@ Costmap2DROS::transformPoseToGlobalFrame(
   const geometry_msgs::msg::PoseStamped & input_pose,
   geometry_msgs::msg::PoseStamped & transformed_pose)
 {
-  if (input_pose.header.frame_id == global_frame_) {
-    transformed_pose = input_pose;
-    return true;
-  } else {
-    return nav2_util::transformPoseInTargetFrame(
-      input_pose, transformed_pose, *tf_buffer_,
-      global_frame_, transform_tolerance_);
+  const auto result = nav2::transformStampedPose(
+    *tf_buffer_, global_frame_, input_pose, tf2::durationFromSec(transform_tolerance_));
+  if (!result) {
+    return false;
   }
+  transformed_pose = *result;
+  return true;
 }
 
 rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesCallback(
@@ -826,16 +819,15 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
     } else if (param_type == ParameterType::PARAMETER_STRING && param_name == "robot_base_frame") {
       // First, make sure that the transform between the robot base frame
       // and the global frame is available
-      std::string tf_error;
       RCLCPP_INFO(get_logger(), "Checking transform");
-      if (!tf_buffer_->canTransform(
-          global_frame_, parameter.as_string(), tf2::TimePointZero,
-          tf2::durationFromSec(1.0), &tf_error))
+      if (!nav2::getStampedTransform(
+    *tf_buffer_, global_frame_, parameter.as_string(), rclcpp::Time(0),
+          tf2::durationFromSec(1.0)).has_value())
       {
         RCLCPP_WARN(
           get_logger(), "Timed out waiting for transform from %s to %s"
-          " to become available, tf error: %s",
-          parameter.as_string().c_str(), global_frame_.c_str(), tf_error.c_str());
+          " to become available",
+          parameter.as_string().c_str(), global_frame_.c_str());
         RCLCPP_WARN(
           get_logger(), "Rejecting robot_base_frame change to %s , leaving it to its original"
           " value of %s", parameter.as_string().c_str(), robot_base_frame_.c_str());

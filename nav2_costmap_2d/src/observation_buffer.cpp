@@ -42,6 +42,7 @@
 #include <vector>
 #include <chrono>
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "tf2/convert.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 using namespace std::chrono_literals;
@@ -84,82 +85,90 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   // or whether we should get it from the cloud
   std::string origin_frame = sensor_frame_ == "" ? cloud.header.frame_id : sensor_frame_;
 
-  try {
-    // create a new observation to  add to the list after being populated
-    auto observation = Observation::make_shared();
+  // create a new observation to  add to the list after being populated
+  auto observation = Observation::make_shared();
 
-    // given these observations come from sensors...
-    // we'll need to store the origin pt of the sensor
-    geometry_msgs::msg::PointStamped local_origin;
-    local_origin.header.stamp = cloud.header.stamp;
-    local_origin.header.frame_id = origin_frame;
-    local_origin.point.x = 0;
-    local_origin.point.y = 0;
-    local_origin.point.z = 0;
-    tf2_buffer_.transform(local_origin, global_origin, global_frame_, tf_tolerance_);
-    tf2::convert(global_origin.point, observation->origin_);
-
-    // make sure to pass on the raytrace/obstacle range
-    // of the observation buffer to the observations
-    observation->raytrace_max_range_ = raytrace_max_range_;
-    observation->raytrace_min_range_ = raytrace_min_range_;
-    observation->obstacle_max_range_ = obstacle_max_range_;
-    observation->obstacle_min_range_ = obstacle_min_range_;
-
-    sensor_msgs::msg::PointCloud2 global_frame_cloud;
-
-    // transform the point cloud
-    tf2_buffer_.transform(cloud, global_frame_cloud, global_frame_, tf_tolerance_);
-    global_frame_cloud.header.stamp = cloud.header.stamp;
-
-    // now we need to remove observations from the cloud that are below
-    // or above our height thresholds
-    sensor_msgs::msg::PointCloud2 & observation_cloud = observation->cloud_;
-    observation_cloud.height = global_frame_cloud.height;
-    observation_cloud.width = global_frame_cloud.width;
-    observation_cloud.fields = global_frame_cloud.fields;
-    observation_cloud.is_bigendian = global_frame_cloud.is_bigendian;
-    observation_cloud.point_step = global_frame_cloud.point_step;
-    observation_cloud.row_step = global_frame_cloud.row_step;
-    observation_cloud.is_dense = global_frame_cloud.is_dense;
-
-    unsigned int cloud_size = global_frame_cloud.height * global_frame_cloud.width;
-    sensor_msgs::PointCloud2Modifier modifier(observation_cloud);
-    modifier.resize(cloud_size);
-    unsigned int point_count = 0;
-
-    // copy over the points that are within our height bounds
-    sensor_msgs::PointCloud2Iterator<float> iter_z(global_frame_cloud, "z");
-    std::vector<unsigned char>::const_iterator iter_global = global_frame_cloud.data.begin(),
-      iter_global_end = global_frame_cloud.data.end();
-    std::vector<unsigned char>::iterator iter_obs = observation_cloud.data.begin();
-    for (; iter_global != iter_global_end; ++iter_z, iter_global +=
-      global_frame_cloud.point_step)
-    {
-      if ((*iter_z) <= max_obstacle_height_ &&
-        (*iter_z) >= min_obstacle_height_)
-      {
-        std::copy(iter_global, iter_global + global_frame_cloud.point_step, iter_obs);
-        iter_obs += global_frame_cloud.point_step;
-        ++point_count;
-      }
-    }
-
-    // resize the cloud for the number of legal points
-    modifier.resize(point_count);
-    observation_cloud.header.stamp = cloud.header.stamp;
-    observation_cloud.header.frame_id = global_frame_cloud.header.frame_id;
-
-    observation_list_.push_front(std::move(observation));
-  } catch (tf2::TransformException & ex) {
-    // if an exception occurs, we need to remove the empty observation from the list
+  // given these observations come from sensors...
+  // we'll need to store the origin pt of the sensor
+  geometry_msgs::msg::PointStamped local_origin;
+  local_origin.header.stamp = cloud.header.stamp;
+  local_origin.header.frame_id = origin_frame;
+  local_origin.point.x = 0;
+  local_origin.point.y = 0;
+  local_origin.point.z = 0;
+  const auto global_origin_transform = nav2::getStampedTransform(
+    tf2_buffer_, global_frame_, local_origin.header.frame_id,
+    rclcpp::Time(local_origin.header.stamp), tf_tolerance_);
+  if (!global_origin_transform) {
     RCLCPP_ERROR(
-      logger_,
-      "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
-      sensor_frame_.c_str(),
-      cloud.header.frame_id.c_str(), ex.what());
+      logger_, "Failed to transform sensor origin from %s to %s",
+      origin_frame.c_str(), global_frame_.c_str());
     return;
   }
+  tf2::doTransform(local_origin, global_origin, *global_origin_transform);
+  tf2::convert(global_origin.point, observation->origin_);
+
+  // make sure to pass on the raytrace/obstacle range
+  // of the observation buffer to the observations
+  observation->raytrace_max_range_ = raytrace_max_range_;
+  observation->raytrace_min_range_ = raytrace_min_range_;
+  observation->obstacle_max_range_ = obstacle_max_range_;
+  observation->obstacle_min_range_ = obstacle_min_range_;
+
+  sensor_msgs::msg::PointCloud2 global_frame_cloud;
+
+  // transform the point cloud
+  const auto global_frame_cloud_transform = nav2::getStampedTransform(
+    tf2_buffer_, global_frame_, cloud.header.frame_id,
+    rclcpp::Time(cloud.header.stamp), tf_tolerance_);
+  if (!global_frame_cloud_transform) {
+    RCLCPP_ERROR(
+      logger_, "Failed to transform point cloud from %s to %s",
+      cloud.header.frame_id.c_str(), global_frame_.c_str());
+    return;
+  }
+  tf2::doTransform(cloud, global_frame_cloud, *global_frame_cloud_transform);
+  global_frame_cloud.header.stamp = cloud.header.stamp;
+
+  // now we need to remove observations from the cloud that are below
+  // or above our height thresholds
+  sensor_msgs::msg::PointCloud2 & observation_cloud = observation->cloud_;
+  observation_cloud.height = global_frame_cloud.height;
+  observation_cloud.width = global_frame_cloud.width;
+  observation_cloud.fields = global_frame_cloud.fields;
+  observation_cloud.is_bigendian = global_frame_cloud.is_bigendian;
+  observation_cloud.point_step = global_frame_cloud.point_step;
+  observation_cloud.row_step = global_frame_cloud.row_step;
+  observation_cloud.is_dense = global_frame_cloud.is_dense;
+
+  unsigned int cloud_size = global_frame_cloud.height * global_frame_cloud.width;
+  sensor_msgs::PointCloud2Modifier modifier(observation_cloud);
+  modifier.resize(cloud_size);
+  unsigned int point_count = 0;
+
+  // copy over the points that are within our height bounds
+  sensor_msgs::PointCloud2Iterator<float> iter_z(global_frame_cloud, "z");
+  std::vector<unsigned char>::const_iterator iter_global = global_frame_cloud.data.begin(),
+    iter_global_end = global_frame_cloud.data.end();
+  std::vector<unsigned char>::iterator iter_obs = observation_cloud.data.begin();
+  for (; iter_global != iter_global_end; ++iter_z, iter_global +=
+    global_frame_cloud.point_step)
+  {
+    if ((*iter_z) <= max_obstacle_height_ &&
+      (*iter_z) >= min_obstacle_height_)
+    {
+      std::copy(iter_global, iter_global + global_frame_cloud.point_step, iter_obs);
+      iter_obs += global_frame_cloud.point_step;
+      ++point_count;
+    }
+  }
+
+  // resize the cloud for the number of legal points
+  modifier.resize(point_count);
+  observation_cloud.header.stamp = cloud.header.stamp;
+  observation_cloud.header.frame_id = global_frame_cloud.header.frame_id;
+
+  observation_list_.push_front(std::move(observation));
 
   // if the update was successful, we want to update the last updated time
   last_updated_ = clock_->now();

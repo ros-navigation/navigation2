@@ -22,7 +22,6 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/string_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
 #include "nav2_behavior_tree/plugins_list.hpp"

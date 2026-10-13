@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "angles/angles.h"
 #include "nav2_ros_common/rate.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "opennav_docking/docking_server.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
@@ -244,7 +244,12 @@ void DockingServer::dockRobot()
 
     // Construct initial estimate of where the dock is located in fixed_frame
     auto dock_pose = utils::getDockPoseStamped(dock, rclcpp::Time(0));
-    tf2_buffer_->transform(dock_pose, dock_pose, params_->fixed_frame);
+    const auto dock_pose_result = nav2::transformStampedPose(
+      *tf2_buffer_, params_->fixed_frame, dock_pose, tf2::Duration::zero());
+    if (!dock_pose_result) {
+      throw tf2::TransformException("Failed to transform dock pose into fixed frame");
+    }
+    dock_pose = *dock_pose_result;
 
     // Get initial detection of dock before proceeding to move
     doInitialPerception(dock, dock_pose);
@@ -505,11 +510,11 @@ bool DockingServer::approachDock(
     target_pose.pose.position.x += cos(yaw) * backward_projection;
     target_pose.pose.position.y += sin(yaw) * backward_projection;
     const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
-    const auto base_to_fixed_transform = nav2_util::poseToTransformStamped(
+    const auto base_to_fixed_transform = nav2::poseToTransformStamped(
       robot_pose, params_->base_frame);
     // Transforming the target pose from the fixed frame into the robot's base frame,
     // using the inverse of the robot pose transform that is also passed to the controller.
-    tf2::doTransform(target_pose, target_pose, nav2_util::invertTransform(base_to_fixed_transform));
+    tf2::doTransform(target_pose, target_pose, nav2::invertTransform(base_to_fixed_transform));
 
     // Make sure that the target pose is pointing at the robot when moving backwards
     // This is to ensure that the robot doesn't try to dock from the wrong side
@@ -624,7 +629,7 @@ bool DockingServer::getCommandToPose(
 
   // Determine if we have reached pose yet & stop
   const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
-  const auto base_to_fixed_transform = nav2_util::poseToTransformStamped(robot_pose,
+  const auto base_to_fixed_transform = nav2::poseToTransformStamped(robot_pose,
       params_->base_frame);
   const double dist = std::hypot(
     robot_pose.pose.position.x - fixed_pose.pose.position.x,
@@ -637,7 +642,7 @@ bool DockingServer::getCommandToPose(
 
   // Transform target_pose into base_link frame
   geometry_msgs::msg::PoseStamped target_pose = fixed_pose;
-  tf2::doTransform(target_pose, target_pose, nav2_util::invertTransform(base_to_fixed_transform));
+  tf2::doTransform(target_pose, target_pose, nav2::invertTransform(base_to_fixed_transform));
 
   // Compute velocity command
   if (!controller_->computeVelocityCommand(
@@ -803,15 +808,13 @@ void DockingServer::undockRobot()
 
 geometry_msgs::msg::PoseStamped DockingServer::getRobotPoseInFrame(const std::string & frame)
 {
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::getFreshPose(
-      *tf2_buffer_, frame, params_->base_frame, now(),
-      params_->transform_staleness_threshold, robot_pose))
-  {
+  const auto robot_pose = nav2::getLatestPose(
+    *tf2_buffer_, frame, params_->base_frame, now(), params_->transform_staleness_threshold);
+  if (!robot_pose) {
     throw opennav_docking_core::DockingTFError(
             "Transform error: failed to get a fresh robot pose in frame " + frame);
   }
-  return robot_pose;
+  return *robot_pose;
 }
 
 void DockingServer::publishZeroVelocity()

@@ -31,7 +31,6 @@
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "../testing_helper.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"

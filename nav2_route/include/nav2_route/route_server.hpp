@@ -26,7 +26,6 @@
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/service_server.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"

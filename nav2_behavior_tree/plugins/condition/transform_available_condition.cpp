@@ -16,6 +16,7 @@
 #include <memory>
 #include <string>
 
+#include "nav2_ros_common/tf_utils.hpp"
 #include "rclcpp/logging.hpp"
 #include "tf2/time.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -67,9 +68,7 @@ BT::NodeStatus TransformAvailableCondition::tick()
     return BT::NodeStatus::SUCCESS;
   }
 
-  std::string tf_error;
-  bool found = tf_->canTransform(
-    child_frame_, parent_frame_, tf2::TimePointZero, &tf_error);
+  bool found = nav2::getLatestTransform(*tf_, child_frame_, parent_frame_).has_value();
 
   if (found) {
     was_found_ = true;
@@ -77,8 +76,8 @@ BT::NodeStatus TransformAvailableCondition::tick()
   }
 
   RCLCPP_INFO(
-    node_->get_logger(), "Transform from %s to %s was not found, tf error: %s",
-    child_frame_.c_str(), parent_frame_.c_str(), tf_error.c_str());
+    node_->get_logger(), "Transform from %s to %s was not found",
+    child_frame_.c_str(), parent_frame_.c_str());
 
   return BT::NodeStatus::FAILURE;
 }
