@@ -87,7 +87,6 @@ void RoutePlanner::findShortestGraphTraversal(
   const std::vector<unsigned int> & blocked_ids,
   const RouteRequest & route_request)
 {
-  // A previous search may have thrown while nodes were still queued.
   clearQueue();
 
   // Setup the Dijkstra's search
