@@ -265,10 +265,15 @@ void RangeSensorLayer::processFixedRangeMsg(sensor_msgs::msg::Range & range_mess
 
 void RangeSensorLayer::processVariableRangeMsg(sensor_msgs::msg::Range & range_message)
 {
-  if (range_message.range < range_message.min_range || range_message.range >
-    range_message.max_range)
-  {
+  if (std::isnan(range_message.range) || range_message.range < range_message.min_range) {
     return;
+  }
+
+  if (range_message.range > range_message.max_range) {
+    if (!clear_on_max_reading_) {
+      return;
+    }
+    range_message.range = range_message.max_range;
   }
 
   bool clear_sensor_cone = false;
