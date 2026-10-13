@@ -24,7 +24,7 @@
           <PipelineSequence name="FollowPathWithCorrectController">
             <PathClassControllerSelector path="{path}"
                                          classified_path="{classified_path}"
-                                         class_controller_map="1:FollowPath;2:ConfinedFollowPath"
+                                         class_controller_map="1:FollowPath;2:ConfinedFollowPath;3:ConfinedFollowPath"
                                          default_controller="FollowPath"
                                          lookahead_arc_dist="0.01"
                                          max_robot_pose_search_dist="1.0"

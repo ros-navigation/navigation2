@@ -94,6 +94,7 @@ public:
       "nav2_remove_passed_goals_action_bt_node",
       "nav2_planner_selector_bt_node",
       "nav2_controller_selector_bt_node",
+      "nav2_path_class_controller_selector_bt_node",
       "nav2_goal_checker_selector_bt_node",
       "nav2_controller_cancel_bt_node",
       "nav2_path_longer_on_approach_bt_node",
