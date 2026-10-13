@@ -53,7 +53,6 @@ void MecanumCritic::score(CriticData & data)
     ((vx.square() + vy.square()).sqrt() + wz.abs() * center_projection_) *
     (1.0f - normalized.max(1.0f).inverse());
 
-  // Use column loop to preserve vectorization.
   Eigen::ArrayXf cost = Eigen::ArrayXf::Zero(vx.rows());
   for (int i = 0; i < vx.cols(); ++i) {
     cost += violation.col(i);
