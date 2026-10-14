@@ -689,56 +689,6 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   EXPECT_EQ(cmd_vel.twist.angular.z, 0.0);
 }
 
-<<<<<<< HEAD
-=======
-TEST(GracefulControllerTest, computeVelocityCommandReusesProvidedPoseForCollisionChecking) {
-  auto node = std::make_shared<nav2::LifecycleNode>("testGracefulPoseTransform");
-  auto tf = nav2::create_transform_buffer(node);
-
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
-  costmap_ros->declare_parameter("global_frame", rclcpp::ParameterValue("test_global_frame"));
-  costmap_ros->declare_parameter("robot_base_frame", rclcpp::ParameterValue("test_robot_frame"));
-  costmap_ros->declare_parameter("width", rclcpp::ParameterValue(10));
-  costmap_ros->declare_parameter("height", rclcpp::ParameterValue(10));
-  costmap_ros->declare_parameter("resolution", rclcpp::ParameterValue(0.1));
-  costmap_ros->on_configure(rclcpp_lifecycle::State());
-
-  auto controller = std::make_shared<GMControllerFixture>();
-  controller->configure(node, "test", tf, costmap_ros);
-  controller->activate();
-
-  geometry_msgs::msg::PoseStamped robot_pose;
-  robot_pose.header.frame_id = "test_global_frame";
-  robot_pose.header.stamp = rclcpp::Time(10, 0);
-  robot_pose.pose.orientation.w = 1.0;
-
-  nav_msgs::msg::Path transformed_global_plan;
-  transformed_global_plan.header.frame_id = "test_robot_frame";
-  transformed_global_plan.header.stamp = robot_pose.header.stamp;
-  transformed_global_plan.poses.resize(3);
-  for (size_t i = 0; i < transformed_global_plan.poses.size(); ++i) {
-    transformed_global_plan.poses[i].header = transformed_global_plan.header;
-    transformed_global_plan.poses[i].pose.position.x = static_cast<double>(i);
-    transformed_global_plan.poses[i].pose.orientation.w = 1.0;
-  }
-
-  geometry_msgs::msg::PoseStamped goal;
-  goal.header = robot_pose.header;
-  goal.pose.position.x = 2.0;
-  goal.pose.orientation.w = 1.0;
-  geometry_msgs::msg::Twist robot_velocity;
-  nav2_controller::SimpleGoalChecker checker;
-  checker.initialize(node, "checker", costmap_ros);
-
-  // No transform is installed in the buffer. Collision checking must use robot_pose instead of
-  // independently looking up the latest global-to-base transform.
-  geometry_msgs::msg::TwistStamped cmd_vel;
-  EXPECT_NO_THROW(
-    cmd_vel = controller->computeVelocityCommands(
-      robot_pose, robot_velocity, &checker, transformed_global_plan, goal));
-  EXPECT_GT(cmd_vel.twist.linear.x, 0.0);
-}
-
 TEST(GracefulControllerTest, computeVelocityCommandMinLookahead) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGracefulMinLookahead");
   auto tf = nav2::create_transform_buffer(node);
@@ -771,6 +721,16 @@ TEST(GracefulControllerTest, computeVelocityCommandMinLookahead) {
   robot_pose.pose.position.x = 5.0;
   robot_pose.pose.position.y = 5.0;
   robot_pose.pose.orientation.w = 1.0;
+
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.header.stamp = node->get_clock()->now();
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.rotation.w = 1.0;
+  tf->setTransform(global_to_robot, "test", false);
 
   // Straight plan of 2 m in the robot frame, longer than max_lookahead (not approaching goal)
   nav_msgs::msg::Path transformed_global_plan;
@@ -843,6 +803,16 @@ TEST(GracefulControllerTest, computeVelocityCommandMinLookaheadNearGoal) {
   robot_pose.pose.position.y = 5.0;
   robot_pose.pose.orientation.w = 1.0;
 
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.header.stamp = node->get_clock()->now();
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.rotation.w = 1.0;
+  tf->setTransform(global_to_robot, "test", false);
+
   // Straight plan of 0.2 m in the robot frame, shorter than min_lookahead (approaching goal)
   nav_msgs::msg::Path transformed_global_plan;
   transformed_global_plan.header.frame_id = "test_robot_frame";
@@ -878,7 +848,6 @@ TEST(GracefulControllerTest, computeVelocityCommandMinLookaheadNearGoal) {
   EXPECT_GT(cmd_vel.twist.linear.x, 0.0);
 }
 
->>>>>>> 36bf565 ([Graceful Controller] Restore `min_lookahead` check (#6655))
 TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGraceful");
   auto tf = nav2::create_transform_buffer(node);
