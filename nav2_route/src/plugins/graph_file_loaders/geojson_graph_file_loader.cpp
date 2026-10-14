@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cinttypes>
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,7 +24,7 @@ namespace nav2_route
 {
 
 void GeoJsonGraphFileLoader::configure(
-  const nav2::LifecycleNode::SharedPtr node)
+  const nav2::LifecycleNode::SharedPtr node, const std::string & /*name*/)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring geojson graph file loader");
   logger_ = node->get_logger();
@@ -105,17 +106,19 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(
   for (const auto & edge : edges) {
     // Required data
     const auto properties = edge["properties"];
-    unsigned int id = properties["id"];
-    unsigned int start_id = properties["startid"];
-    unsigned int end_id = properties["endid"];
+    uint64_t id = properties["id"];
+    uint64_t start_id = properties["startid"];
+    uint64_t end_id = properties["endid"];
 
     if (graph_to_id_map.find(start_id) == graph_to_id_map.end()) {
-      RCLCPP_ERROR(logger_, "Start id %u does not exist for edge id %u", start_id, id);
+      RCLCPP_ERROR(
+        logger_, "Start id %" PRIu64 " does not exist for edge id %" PRIu64, start_id, id);
       throw nav2_core::NoValidGraph("Start id does not exist");
     }
 
     if (graph_to_id_map.find(end_id) == graph_to_id_map.end()) {
-      RCLCPP_ERROR(logger_, "End id of %u does not exist for edge id %u", end_id, id);
+      RCLCPP_ERROR(
+        logger_, "End id of %" PRIu64 " does not exist for edge id %" PRIu64, end_id, id);
       throw nav2_core::NoValidGraph("End id does not exist");
     }
 
