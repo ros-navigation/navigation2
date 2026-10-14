@@ -188,6 +188,11 @@ void BehaviorTreeEngine::registerTreeFromFile(
   factory_.registerBehaviorTreeFromFile(file_path);
 }
 
+void BehaviorTreeEngine::clearRegisteredBehaviorTrees()
+{
+  factory_.clearRegisteredBehaviorTrees();
+}
+
 void
 BehaviorTreeEngine::addGrootMonitoring(
   BT::Tree * tree,
