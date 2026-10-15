@@ -113,8 +113,6 @@ void RoutePlanner::findShortestGraphTraversal(
 
     // We have the shortest path
     if (isGoal(node)) {
-      // Reset states
-      clearQueue();
       return;
     }
 
@@ -140,8 +138,6 @@ void RoutePlanner::findShortestGraphTraversal(
   }
 
   if (iterations == max_iterations_) {
-    // Reset states
-    clearQueue();
     throw nav2_core::TimedOut("Maximum iterations was exceeded!");
   }
 }

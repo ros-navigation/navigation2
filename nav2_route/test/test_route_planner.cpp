@@ -177,6 +177,12 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   route = planner.findRoute(graph, start, goal, blocked_ids, route_request);
   EXPECT_NEAR(route.route_cost, 5.0, 0.001);
   EXPECT_EQ(route.edges.size(), 5u);
+
+  // Replace the graph after a successful search and plan again.
+  graph = create4x4Graph();
+  route = planner.findRoute(graph, 0u, 12u, blocked_ids, route_request);
+  EXPECT_NEAR(route.route_cost, 3.0, 0.001);
+  EXPECT_EQ(route.edges.size(), 3u);
 }
 
 TEST(RoutePlannerTest, test_route_planner_negative)
@@ -210,6 +216,12 @@ TEST(RoutePlannerTest, test_route_planner_negative)
     planner.findRoute(
       graph, start, goal, blocked_ids,
       route_request), nav2_core::TimedOut);
+
+  // Replace the graph after a timeout and request a shorter route.
+  graph = create4x4Graph();
+  const auto route = planner.findRoute(graph, 0u, 4u, blocked_ids, route_request);
+  EXPECT_NEAR(route.route_cost, 1.0, 0.001);
+  EXPECT_EQ(route.edges.size(), 1u);
 
   // If we try to plan but we both cannot override and has 0 cost, will throw
   graph[0].neighbors[1].edge_cost.overridable = false;
