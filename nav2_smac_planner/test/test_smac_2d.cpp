@@ -74,7 +74,7 @@ TEST(SmacTest, test_smac_2d) {
   std::vector<geometry_msgs::msg::PoseStamped> viapoints{viapoint};
   auto planner_2d = std::make_unique<nav2_smac_planner::SmacPlanner2D>();
   node2D->declare_parameter("test.max_traversal_cost", 253.0);
-  EXPECT_THROW(planner_2d->configure(node2D, "test", nullptr, costmap_ros), std::runtime_error);
+  EXPECT_NO_THROW(planner_2d->configure(node2D, "test", nullptr, costmap_ros));
   node2D->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 252.0));
   planner_2d->configure(node2D, "test", nullptr, costmap_ros);
   planner_2d->activate();

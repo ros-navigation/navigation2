@@ -153,18 +153,26 @@ TEST(SmacTest, test_smac_se2)
   EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
   nodeSE2->set_parameter(rclcpp::Parameter("test.lookup_table_size", 20.0));
 
+  // invalid max traversal cost is reset to the max non-obstacle cost
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 253.0));
-  EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
+  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 252.0f);
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 252.0));
 
+  // invalid relief radius is reset to 0
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost_relief_radius", -1.0));
-  EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
+  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 0.0f);
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost_relief_radius", 2.0));
 
-  // cached obstacle heuristic and max traversal cost with a relief radius are exclusive
+  // cached obstacle heuristic and max traversal cost with a relief radius are exclusive,
+  // so the relief radius is disabled
   nodeSE2->set_parameter(rclcpp::Parameter("test.cache_obstacle_heuristic", true));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 240.0));
-  EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
+  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
+  EXPECT_TRUE(planner->getSearchInfo().cache_obstacle_heuristic);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 0.0f);
   nodeSE2->set_parameter(rclcpp::Parameter("test.cache_obstacle_heuristic", false));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 252.0));
 

@@ -210,17 +210,22 @@ void SmacPlannerLatticeT<NodeT>::configure(
   if (_search_info.max_traversal_cost < 0.0f ||
     _search_info.max_traversal_cost > MAX_NON_OBSTACLE_COST)
   {
-    throw nav2_core::PlannerException("max_traversal_cost must be in [0, 252]");
+    RCLCPP_WARN(
+      _logger, "max_traversal_cost must be in [0, 252], setting to 252.");
+    _search_info.max_traversal_cost = MAX_NON_OBSTACLE_COST;
   }
 
   if (_search_info.max_traversal_cost_relief_radius < 0.0f) {
-    throw nav2_core::PlannerException("max_traversal_cost_relief_radius must be >= 0");
+    RCLCPP_WARN(
+      _logger, "max_traversal_cost_relief_radius must be >= 0, setting to 0.0.");
+    _search_info.max_traversal_cost_relief_radius = 0.0f;
   }
 
   if (cachedHeuristicConflicts(_search_info)) {
-    throw nav2_core::PlannerException(
-            "cache_obstacle_heuristic cannot be used with max_traversal_cost and a "
-            "max_traversal_cost_relief_radius > 0");
+    RCLCPP_WARN(
+      _logger, "cache_obstacle_heuristic cannot be used with max_traversal_cost and a "
+      "max_traversal_cost_relief_radius > 0, disabling the relief radius.");
+    _search_info.max_traversal_cost_relief_radius = 0.0f;
   }
 
   // Initialize A* template
