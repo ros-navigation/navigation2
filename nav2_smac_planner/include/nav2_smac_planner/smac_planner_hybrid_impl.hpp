@@ -667,6 +667,14 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
         "it should be >=0. Ignoring parameter update.",
         param_name.c_str(), parameter.as_double());
         result.successful = false;
+      } else if (param_name == _name + ".max_traversal_cost" && // NOLINT
+        parameter.as_double() > MAX_NON_OBSTACLE_COST)
+      {
+        RCLCPP_WARN(
+          _logger, "The value of parameter max_traversal_cost is incorrectly set to %f, "
+          "it should be in [0.0, 252.0]. Ignoring parameter update.",
+          parameter.as_double());
+        result.successful = false;
       } else if (param_name == _name + ".lookup_table_size" && // NOLINT
         parameter.as_double() > 20.0)
       {

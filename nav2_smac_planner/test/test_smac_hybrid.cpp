@@ -327,6 +327,14 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     results);
   EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 0.0f);
 
+  // test max traversal cost above the max non-obstacle cost is rejected
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.max_traversal_cost", 253.0)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
+
   EXPECT_EQ(nodeSE2->get_parameter("test.downsample_costmap").as_bool(), true);
   EXPECT_EQ(nodeSE2->get_parameter("test.downsampling_factor").as_int(), 2);
   EXPECT_EQ(nodeSE2->get_parameter("test.angle_quantization_bins").as_int(), 72);

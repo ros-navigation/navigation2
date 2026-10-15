@@ -337,6 +337,8 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   parameters = {rclcpp::Parameter("test.max_traversal_cost", -1.0)};
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  parameters = {rclcpp::Parameter("test.max_traversal_cost", 253.0)};
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
   EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 1.5f);
 
