@@ -324,6 +324,7 @@ bool GracefulController::validateTargetPoseOnApproach(
     return false;
   }
 
+  // Work on a copy so the approach heading does not leak into the fallback target pose
   geometry_msgs::msg::PoseStamped approach_pose = target_pose;
 
   // Avoid instability and big sweeping turns at the end of paths by
