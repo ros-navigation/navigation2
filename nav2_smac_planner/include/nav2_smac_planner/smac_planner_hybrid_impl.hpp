@@ -118,6 +118,10 @@ void SmacPlannerHybridT<NodeT>::configure(
     node->declare_or_get_parameter(name + ".use_quadratic_cost_penalty", false);
   _search_info.downsample_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
+  _search_info.max_traversal_cost = static_cast<float>(
+    node->declare_or_get_parameter(name + ".max_traversal_cost", 252.0));
+  _search_info.max_traversal_cost_relief_radius = static_cast<float>(
+    node->declare_or_get_parameter(name + ".max_traversal_cost_relief_radius", 2.0));
 
   _analytic_expansion_max_length_m =
     node->declare_or_get_parameter(name + ".analytic_expansion_max_length", 3.0);
@@ -217,6 +221,12 @@ void SmacPlannerHybridT<NodeT>::configure(
     _costmap_ros->getRobotFootprint(),
     _costmap_ros->getUseRadius(),
     findCircumscribedCost(_costmap_ros));
+
+  if (_search_info.max_traversal_cost < 0.0f ||
+    _search_info.max_traversal_cost > MAX_NON_OBSTACLE_COST)
+  {
+    throw nav2_core::PlannerException("max_traversal_cost must be in [0, 252]");
+  }
 
   // Initialize A* template
   _a_star = std::make_unique<AStarAlgorithm<NodeT>>(_motion_model, _search_info);
@@ -794,6 +804,14 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
       } else if (param_name == _name + ".analytic_expansion_max_cost") {
         reinit_a_star = true;
         _search_info.analytic_expansion_max_cost = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".max_traversal_cost") {
+        reinit_a_star = true;
+        reinit_lookup_table = true;
+        _search_info.max_traversal_cost = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".max_traversal_cost_relief_radius") {
+        reinit_a_star = true;
+        reinit_lookup_table = true;
+        _search_info.max_traversal_cost_relief_radius = static_cast<float>(parameter.as_double());
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == _name + ".downsample_costmap") {

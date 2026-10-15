@@ -213,7 +213,7 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
     costmap->setCost(50, j, 254);
   }
   ctx->obstacle_heuristic->resetObstacleHeuristic(
-    costmap_ros, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    checker.get(), testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
     info.downsample_obstacle_heuristic);
   float wide_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
     testA.pose,
@@ -230,7 +230,7 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
     costmap->setCost(50, j, 250);
   }
   ctx->obstacle_heuristic->resetObstacleHeuristic(
-    costmap_ros,
+    checker.get(),
     testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
   float two_passages_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
     testA.pose,
@@ -239,6 +239,36 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
     info.downsample_obstacle_heuristic);
 
   EXPECT_EQ(wide_passage_cost, two_passages_cost);
+
+  // then block the wide passage to make sure the cost spreads through the narrow path
+  for (unsigned int j = 0; j < 40; ++j) {
+    costmap->setCost(50, j, 254);
+    costmap->setCost(51, j, 254);
+  }
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
+  float narrow_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_GT(narrow_passage_cost, wide_passage_cost);
+
+  // then set a max traversal cost below the narrow passage's cost to make sure it's
+  // not traversable and the start is unreachable (0)
+  checker->setMaxCost(240.0f, 0.0f, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
+  float max_cost_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_EQ(max_cost_passage_cost, 0.0f);
 
   delete costmapA;
 }
@@ -316,7 +346,7 @@ TEST(NodeHybridTest, test_obstacle_heuristic_no_downsample)
     costmap->setCost(50, j, 254);
   }
   ctx->obstacle_heuristic->resetObstacleHeuristic(
-    costmap_ros, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    checker.get(), testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
     info.downsample_obstacle_heuristic);
   float wide_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
     testA.pose,
@@ -333,7 +363,7 @@ TEST(NodeHybridTest, test_obstacle_heuristic_no_downsample)
     costmap->setCost(50, j, 250);
   }
   ctx->obstacle_heuristic->resetObstacleHeuristic(
-    costmap_ros,
+    checker.get(),
     testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
   float two_passages_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
     testA.pose,
@@ -342,6 +372,35 @@ TEST(NodeHybridTest, test_obstacle_heuristic_no_downsample)
     info.downsample_obstacle_heuristic);
 
   EXPECT_EQ(wide_passage_cost, two_passages_cost);
+
+  // then block the wide passage to make sure the cost spreads through the narrow path
+  for (unsigned int j = 0; j < 40; ++j) {
+    costmap->setCost(50, j, 254);
+  }
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
+  float narrow_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_GT(narrow_passage_cost, wide_passage_cost);
+
+  // then set a max traversal cost below the narrow passage's cost to make sure it's
+  // not traversable and the start is unreachable (0)
+  checker->setMaxCost(240.0f, 0.0f, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
+  float max_cost_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_EQ(max_cost_passage_cost, 0.0f);
 
   delete costmapA;
 }

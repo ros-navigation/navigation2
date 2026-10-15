@@ -75,6 +75,10 @@ void SmacPlanner2DT<NodeT>::configure(
   _downsampling_factor = node->declare_or_get_parameter(name + ".downsampling_factor", 1);
   _search_info.cost_penalty =
     node->declare_or_get_parameter(name + ".cost_travel_multiplier", 1.0);
+  _search_info.max_traversal_cost = static_cast<float>(
+    node->declare_or_get_parameter(name + ".max_traversal_cost", 252.0));
+  _search_info.max_traversal_cost_relief_radius = static_cast<float>(
+    node->declare_or_get_parameter(name + ".max_traversal_cost_relief_radius", 2.0));
 
   _allow_unknown = node->declare_or_get_parameter(name + ".allow_unknown", true);
   _max_iterations = node->declare_or_get_parameter(name + ".max_iterations", 1000000);
@@ -109,6 +113,12 @@ void SmacPlanner2DT<NodeT>::configure(
     costmap_ros->getRobotFootprint(),
     true /*for 2D, most use radius*/,
     0.0 /*for 2D cost at inscribed isn't relevant*/);
+
+  if (_search_info.max_traversal_cost < 0.0f ||
+    _search_info.max_traversal_cost > MAX_NON_OBSTACLE_COST)
+  {
+    throw nav2_core::PlannerException("max_traversal_cost must be in [0, 252]");
+  }
 
   // Initialize A* template
   _a_star = std::make_unique<AStarAlgorithm<NodeT>>(_motion_model, _search_info);
@@ -435,6 +445,12 @@ SmacPlanner2DT<NodeT>::updateParametersCallback(const std::vector<rclcpp::Parame
       } else if (param_name == _name + ".max_planning_time") {
         reinit_a_star = true;
         _max_planning_time = parameter.as_double();
+      } else if (param_name == _name + ".max_traversal_cost") {
+        reinit_a_star = true;
+        _search_info.max_traversal_cost = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".max_traversal_cost_relief_radius") {
+        reinit_a_star = true;
+        _search_info.max_traversal_cost_relief_radius = static_cast<float>(parameter.as_double());
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == _name + ".downsample_costmap") {

@@ -65,6 +65,8 @@ public:
   {
     return _goal_heading_mode;
   }
+
+  nav2_smac_planner::SearchInfo getSearchInfo() {return _search_info;}
 };
 
 // SMAC smoke tests for plugin-level issues rather than algorithms
@@ -150,6 +152,10 @@ TEST(SmacTest, test_smac_se2)
   nodeSE2->set_parameter(rclcpp::Parameter("test.lookup_table_size", 21.0));
   EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
   nodeSE2->set_parameter(rclcpp::Parameter("test.lookup_table_size", 20.0));
+
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 253.0));
+  EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 252.0));
 
   // invalid coarse search resolution
   nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
@@ -283,11 +289,16 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP")),
       rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
-      rclcpp::Parameter("test.coarse_search_resolution", 1)});
+      rclcpp::Parameter("test.coarse_search_resolution", 1),
+      rclcpp::Parameter("test.max_traversal_cost", 240.0),
+      rclcpp::Parameter("test.max_traversal_cost_relief_radius", 1.5)});
 
   rclcpp::spin_until_future_complete(
     nodeSE2->get_node_base_interface(),
     results);
+
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 1.5f);
 
   EXPECT_EQ(nodeSE2->get_parameter("test.downsample_costmap").as_bool(), true);
   EXPECT_EQ(nodeSE2->get_parameter("test.downsampling_factor").as_int(), 2);

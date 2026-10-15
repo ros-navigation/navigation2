@@ -112,6 +112,10 @@ void SmacPlannerLatticeT<NodeT>::configure(
     node->declare_or_get_parameter(name + ".use_quadratic_cost_penalty", false);
   _search_info.downsample_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
+  _search_info.max_traversal_cost = static_cast<float>(
+    node->declare_or_get_parameter(name + ".max_traversal_cost", 252.0));
+  _search_info.max_traversal_cost_relief_radius = static_cast<float>(
+    node->declare_or_get_parameter(name + ".max_traversal_cost_relief_radius", 2.0));
 
   _max_planning_time = node->declare_or_get_parameter(name + ".max_planning_time", 5.0);
   _lookup_table_size = node->declare_or_get_parameter(name + ".lookup_table_size", 20.0);
@@ -202,6 +206,12 @@ void SmacPlannerLatticeT<NodeT>::configure(
     costmap_ros->getRobotFootprint(),
     costmap_ros->getUseRadius(),
     findCircumscribedCost(costmap_ros));
+
+  if (_search_info.max_traversal_cost < 0.0f ||
+    _search_info.max_traversal_cost > MAX_NON_OBSTACLE_COST)
+  {
+    throw nav2_core::PlannerException("max_traversal_cost must be in [0, 252]");
+  }
 
   // Initialize A* template
   _a_star = std::make_unique<AStarAlgorithm<NodeT>>(_motion_model, _search_info);
@@ -674,6 +684,14 @@ SmacPlannerLatticeT<NodeT>::updateParametersCallback(
       } else if (param_name == _name + ".analytic_expansion_max_cost") {
         reinit_a_star = true;
         _search_info.analytic_expansion_max_cost = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".max_traversal_cost") {
+        reinit_a_star = true;
+        reinit_lookup_table = true;
+        _search_info.max_traversal_cost = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".max_traversal_cost_relief_radius") {
+        reinit_a_star = true;
+        reinit_lookup_table = true;
+        _search_info.max_traversal_cost_relief_radius = static_cast<float>(parameter.as_double());
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == _name + ".allow_unknown") {
