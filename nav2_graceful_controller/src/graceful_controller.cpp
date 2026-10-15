@@ -332,13 +332,17 @@ bool GracefulController::validateTargetPoseOnApproach(
   if (dist_to_goal >= params_->max_lookahead || !params_->prefer_final_rotation) {
     return false;
   }
+
+  // Work on a copy so the approach heading does not leak into the fallback target pose
+  geometry_msgs::msg::PoseStamped approach_pose = target_pose;
+
   // Avoid instability and big sweeping turns at the end of paths by
   // ignoring final heading
-  double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
-  target_pose.pose.orientation =
+  double yaw = std::atan2(approach_pose.pose.position.y, approach_pose.pose.position.x);
+  approach_pose.pose.orientation =
     nav2_util::geometry_utils::orientationAroundZAxis(yaw);
 
-  if (validateTargetPose(target_pose, dist_to_target, trajectory, costmap_transform, cmd_vel)) {
+  if (validateTargetPose(approach_pose, dist_to_target, trajectory, costmap_transform, cmd_vel)) {
     // Determine the maximum valid cost based on robot footprint type
     double max_valid_cost =
       costmap_ros_->getUseRadius() ? static_cast<double>(nav2_costmap_2d::MAX_NON_OBSTACLE) :
@@ -349,8 +353,10 @@ bool GracefulController::validateTargetPoseOnApproach(
     if (getMaxCost(trajectory, costmap_transform) >= safety_threshold) {
       // Try to find a better approach by searching spiral curves
       findBestApproachTrajectory(
-            target_pose, dist_to_target, costmap_transform, max_valid_cost, trajectory, cmd_vel);
+            approach_pose, dist_to_target, costmap_transform, max_valid_cost, trajectory,
+            cmd_vel);
     }
+    target_pose = approach_pose;
     return true;
   }
   return false;
