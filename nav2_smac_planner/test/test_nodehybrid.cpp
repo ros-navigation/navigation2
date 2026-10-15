@@ -402,23 +402,46 @@ TEST(NodeHybridTest, test_obstacle_heuristic_no_downsample)
 
   EXPECT_EQ(max_cost_passage_cost, 0.0f);
 
-  // then search a different costmap than the costmap ros' (e.g. downsampled) to make sure
-  // the searched costmap is used: its free, so the start is reachable in a straight line
-  nav2_costmap_2d::Costmap2D * costmapB = new nav2_costmap_2d::Costmap2D(
-    100, 100, 0.1, 0.0, 0.0, 0);
-  checker->setCostmap(costmapB);
+  delete costmapA;
+}
+
+TEST(NodeHybridTest, test_obstacle_heuristic_searched_costmap)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  nav2_smac_planner::SearchInfo info;
+  info.downsample_obstacle_heuristic = false;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+  int max_iterations = 10000;
+  a_star.initialize(false, max_iterations, 10, 5000, 120.0, 401, 72);
+
+  // costmap ros' costmap is free, while the searched costmap (e.g. downsampled 2x) has a wall
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  *costmap_ros->getCostmap() = nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
+  nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
+    50, 50, 0.2, 0.0, 0.0, 0);
+  for (unsigned int j = 0; j < 50; ++j) {
+    costmapA->setCost(25, j, 254);
+  }
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  checker->setCostmap(costmapA);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  // the wall in the searched costmap makes the start unreachable from the goal (0)
   ctx->obstacle_heuristic->resetObstacleHeuristic(
-    checker.get(),
-    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
-  float searched_costmap_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
-    testA.pose,
+    checker.get(), 5u, 25u, 45u, 25u, info.downsample_obstacle_heuristic);
+  float cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    nav2_smac_planner::NodeHybrid::Coordinates(5.0f, 25.0f, 0.0f),
     info.cost_penalty,
     info.use_quadratic_cost_penalty,
     info.downsample_obstacle_heuristic);
+  EXPECT_EQ(cost, 0.0f);
 
-  EXPECT_NEAR(searched_costmap_cost, 80.0f, 1.0f);
-
-  delete costmapB;
   delete costmapA;
 }
 

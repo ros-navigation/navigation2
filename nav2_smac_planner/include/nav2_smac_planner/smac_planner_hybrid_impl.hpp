@@ -763,11 +763,19 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
   // The cached obstacle heuristic and max traversal cost relief zone are mutually exclusive
   SearchInfo search_info = _search_info;
   for (const auto & parameter : parameters) {
-    if (parameter.get_name() == _name + ".cache_obstacle_heuristic") {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_type == ParameterType::PARAMETER_BOOL &&
+      param_name == _name + ".cache_obstacle_heuristic")
+    {
       search_info.cache_obstacle_heuristic = parameter.as_bool();
-    } else if (parameter.get_name() == _name + ".max_traversal_cost") {
+    } else if (param_type == ParameterType::PARAMETER_DOUBLE &&  // NOLINT
+      param_name == _name + ".max_traversal_cost")
+    {
       search_info.max_traversal_cost = static_cast<float>(parameter.as_double());
-    } else if (parameter.get_name() == _name + ".max_traversal_cost_relief_radius") {
+    } else if (param_type == ParameterType::PARAMETER_DOUBLE &&  // NOLINT
+      param_name == _name + ".max_traversal_cost_relief_radius")
+    {
       search_info.max_traversal_cost_relief_radius = static_cast<float>(parameter.as_double());
     }
   }

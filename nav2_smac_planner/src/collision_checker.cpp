@@ -30,10 +30,6 @@ GridCollisionChecker::GridCollisionChecker(
     logger_ = node->get_logger();
   }
 
-  if (costmap_ros) {
-    costmap_ros_ = costmap_ros;
-  }
-
   // Convert number of regular bins into angles
   float bin_size = 2 * M_PI / static_cast<float>(num_quantizations);
   angles_.reserve(num_quantizations);

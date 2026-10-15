@@ -128,7 +128,6 @@ public:
     return dsx * dsx + dsy * dsy >= relief_radius_sq_ && dgx * dgx + dgy * dgy >= relief_radius_sq_;
   }
 
-
   /**
    * @brief Get cost at footprint pose in costmap
    * @return the cost at the pose in costmap
@@ -145,12 +144,6 @@ public:
   }
 
   /**
-   * @brief Get costmap ros object for inflation layer params
-   * @return Costmap ros
-   */
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> getCostmapROS() {return costmap_ros_;}
-
-  /**
    * @brief Check if value outside the range
    * @param min Minimum value of the range
    * @param max Maximum value of the range
@@ -160,7 +153,6 @@ public:
   bool outsideRange(const unsigned int & max, const float & value);
 
 protected:
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
   float center_cost_;
