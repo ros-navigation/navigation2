@@ -112,7 +112,22 @@ public:
    * @param y Y coordinate
    * @return If non-traversable
    */
-  bool exceedsMaxCost(const float & cost, const float & x, const float & y) const;
+  inline bool exceedsMaxCost(const float & cost, const float & x, const float & y) const
+  {
+    if (cost <= max_cost_) {
+      return false;
+    }
+    if (cost > MAX_NON_OBSTACLE_COST) {
+      return true;
+    }
+    // Allow higher costs within the relief radius of the start and goal
+    const float dsx = x - start_x_;
+    const float dsy = y - start_y_;
+    const float dgx = x - goal_x_;
+    const float dgy = y - goal_y_;
+    return dsx * dsx + dsy * dsy >= relief_radius_sq_ && dgx * dgx + dgy * dgy >= relief_radius_sq_;
+  }
+
 
   /**
    * @brief Get cost at footprint pose in costmap

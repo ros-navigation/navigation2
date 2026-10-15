@@ -213,6 +213,16 @@ void SmacPlannerLatticeT<NodeT>::configure(
     throw nav2_core::PlannerException("max_traversal_cost must be in [0, 252]");
   }
 
+  if (_search_info.max_traversal_cost_relief_radius < 0.0f) {
+    throw nav2_core::PlannerException("max_traversal_cost_relief_radius must be >= 0");
+  }
+
+  if (cachedHeuristicConflicts(_search_info)) {
+    throw nav2_core::PlannerException(
+            "cache_obstacle_heuristic cannot be used with max_traversal_cost and a "
+            "max_traversal_cost_relief_radius > 0");
+  }
+
   // Initialize A* template
   _a_star = std::make_unique<AStarAlgorithm<NodeT>>(_motion_model, _search_info);
   _a_star->initialize(
@@ -629,6 +639,24 @@ SmacPlannerLatticeT<NodeT>::validateParameterUpdatesCallback(
         }
       }
     }
+  }
+
+  // The cached obstacle heuristic and max traversal cost relief zone are mutually exclusive
+  SearchInfo search_info = _search_info;
+  for (const auto & parameter : parameters) {
+    if (parameter.get_name() == _name + ".cache_obstacle_heuristic") {
+      search_info.cache_obstacle_heuristic = parameter.as_bool();
+    } else if (parameter.get_name() == _name + ".max_traversal_cost") {
+      search_info.max_traversal_cost = static_cast<float>(parameter.as_double());
+    } else if (parameter.get_name() == _name + ".max_traversal_cost_relief_radius") {
+      search_info.max_traversal_cost_relief_radius = static_cast<float>(parameter.as_double());
+    }
+  }
+  if (cachedHeuristicConflicts(search_info)) {
+    RCLCPP_WARN(
+      _logger, "cache_obstacle_heuristic cannot be used with max_traversal_cost and a "
+      "max_traversal_cost_relief_radius > 0. Ignoring parameter update.");
+    result.successful = false;
   }
   return result;
 }

@@ -120,6 +120,10 @@ void SmacPlanner2DT<NodeT>::configure(
     throw nav2_core::PlannerException("max_traversal_cost must be in [0, 252]");
   }
 
+  if (_search_info.max_traversal_cost_relief_radius < 0.0f) {
+    throw nav2_core::PlannerException("max_traversal_cost_relief_radius must be >= 0");
+  }
+
   // Initialize A* template
   _a_star = std::make_unique<AStarAlgorithm<NodeT>>(_motion_model, _search_info);
   _a_star->initialize(

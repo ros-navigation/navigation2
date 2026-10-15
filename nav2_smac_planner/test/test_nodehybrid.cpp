@@ -402,6 +402,23 @@ TEST(NodeHybridTest, test_obstacle_heuristic_no_downsample)
 
   EXPECT_EQ(max_cost_passage_cost, 0.0f);
 
+  // then search a different costmap than the costmap ros' (e.g. downsampled) to make sure
+  // the searched costmap is used: its free, so the start is reachable in a straight line
+  nav2_costmap_2d::Costmap2D * costmapB = new nav2_costmap_2d::Costmap2D(
+    100, 100, 0.1, 0.0, 0.0, 0);
+  checker->setCostmap(costmapB);
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
+  float searched_costmap_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_NEAR(searched_costmap_cost, 80.0f, 1.0f);
+
+  delete costmapB;
   delete costmapA;
 }
 

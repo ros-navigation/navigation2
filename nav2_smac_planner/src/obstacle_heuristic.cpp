@@ -28,8 +28,7 @@ void ObstacleHeuristic::resetObstacleHeuristic(
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
   collision_checker_ = collision_checker;
-  costmap_ros = collision_checker_->getCostmapROS();
-  auto costmap = costmap_ros->getCostmap();
+  auto costmap = collision_checker_->getCostmap();
 
   // Clear lookup table
   unsigned int size = 0u;
@@ -84,7 +83,7 @@ float ObstacleHeuristic::getObstacleHeuristic(
   const float scale = downsample_obstacle_heuristic ? 2.0f : 1.0f;
 
   // If already expanded, return the cost
-  auto costmap = costmap_ros->getCostmap();
+  auto costmap = collision_checker_->getCostmap();
   unsigned int size_x = 0u;
   unsigned int size_y = 0u;
   size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / scale);
@@ -178,15 +177,15 @@ float ObstacleHeuristic::getObstacleHeuristic(
         my = new_idx / size_x;
         mx = new_idx - (my * size_x);
 
-        // Check the cell center cost if exceeds max cost
-        if (collision_checker_->exceedsMaxCost(cost, scale * (mx + 0.5f), scale * (my + 0.5f))) {
-          continue;
-        }
-
         if (mx >= size_x - 3 || mx <= 3) {
           continue;
         }
         if (my >= size_y - 3 || my <= 3) {
+          continue;
+        }
+
+        // Check the cell center cost if exceeds max cost
+        if (collision_checker_->exceedsMaxCost(cost, scale * (mx + 0.5f), scale * (my + 0.5f))) {
           continue;
         }
 

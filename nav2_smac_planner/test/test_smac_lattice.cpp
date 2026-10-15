@@ -331,13 +331,19 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   EXPECT_EQ(planner->getCoarseSearchResolution(), 4);
 
   // Max traversal cost and relief radius, invalid negative values are ignored
-  parameters = {rclcpp::Parameter("test.max_traversal_cost", 240.0),
+  parameters = {rclcpp::Parameter("test.cache_obstacle_heuristic", false),
+    rclcpp::Parameter("test.max_traversal_cost", 240.0),
     rclcpp::Parameter("test.max_traversal_cost_relief_radius", 1.5)};
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   parameters = {rclcpp::Parameter("test.max_traversal_cost", -1.0)};
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
   EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 1.5f);
+
+  // Cached obstacle heuristic cannot be used with the max traversal cost's relief radius
+  parameters = {rclcpp::Parameter("test.cache_obstacle_heuristic", true)};
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_FALSE(planner->getSearchInfo().cache_obstacle_heuristic);
 
 
   // So instead, let's call manually on a change
