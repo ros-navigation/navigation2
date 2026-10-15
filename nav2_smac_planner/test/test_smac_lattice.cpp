@@ -372,10 +372,10 @@ TEST(SmacTest, test_smac_lattice_omni_configure)
   nodeLattice->declare_parameter("test_omni.max_traversal_cost", 253.0);
 
   auto planner = std::make_unique<LatticeWrap>();
-  EXPECT_THROW(
-    planner->configure(nodeLattice, "test_omni", nullptr, costmap_ros), std::runtime_error);
-  nodeLattice->set_parameter(rclcpp::Parameter("test_omni.max_traversal_cost", 252.0));
   planner->configure(nodeLattice, "test_omni", nullptr, costmap_ros);
+
+  // Out of range max traversal cost is set to the max non-obstacle cost
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 252.0f);
 
   // Verify OMNI was loaded and reverse expansion was auto-disabled
   EXPECT_EQ(planner->getMotionModelName(), "omni");
