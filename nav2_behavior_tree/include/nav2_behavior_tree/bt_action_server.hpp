@@ -40,6 +40,7 @@ public:
   using ActionServer = nav2::SimpleActionServer<ActionT>;
 
   typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
+  typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalStartedCallback;
   typedef std::function<void ()> OnLoopCallback;
   typedef std::function<void (typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
   typedef std::function<void (typename ActionT::Result::SharedPtr,
@@ -47,6 +48,19 @@ public:
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
+   * @param parent Parent node used to create the action server
+   * @param action_name Name of the action server
+   * @param plugin_lib_names BT node plugin libraries to load
+   * @param default_bt_xml_filename Default behavior tree XML filename
+   * @param on_goal_received_callback Callback to validate a goal before accepting it
+   * @param on_goal_started_callback Initialization callback on the execution thread,
+   * called for each fresh BT execution, including a pending goal promoted after completion.
+   * Returns false to abort that goal before running the BT. Preemption uses
+   * on_preempt_callback instead of this callback.
+   * @param on_loop_callback Callback called on each running BT iteration
+   * @param on_preempt_callback Callback to process a pending preemption request
+   * @param on_completion_callback Callback to populate the result after BT execution
+   * @param search_directories Directories to search for behavior tree XML files
    */
   explicit BtActionServer(
     const typename NodeT::WeakPtr & parent,
@@ -54,6 +68,7 @@ public:
     const std::vector<std::string> & plugin_lib_names,
     const std::string & default_bt_xml_filename,
     OnGoalReceivedCallback on_goal_received_callback,
+    OnGoalStartedCallback on_goal_started_callback,
     OnLoopCallback on_loop_callback,
     OnPreemptCallback on_preempt_callback,
     OnCompletionCallback on_completion_callback,
@@ -135,19 +150,25 @@ public:
 
   /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
-   * @return Shared pointer to pending action goal
+   * @param expected_goal Goal validated by the caller; nullptr accepts any pending goal
+   * @return Shared pointer to the accepted goal, or nullptr if no active pending goal
+   * exists or it no longer matches expected_goal
    */
-  const std::shared_ptr<const typename ActionT::Goal> acceptPendingGoal()
+  const std::shared_ptr<const typename ActionT::Goal> acceptPendingGoal(
+    const std::shared_ptr<const typename ActionT::Goal> & expected_goal = nullptr)
   {
-    return action_server_->accept_pending_goal();
+    return action_server_->accept_pending_goal(expected_goal);
   }
 
   /**
    * @brief Wrapper function to terminate pending goal if a preempt has been requested
+   * @param expected_goal Goal to terminate; nullptr terminates any pending goal
+   * A pending goal that no longer matches expected_goal is left untouched.
    */
-  void terminatePendingGoal()
+  void terminatePendingGoal(
+    const std::shared_ptr<const typename ActionT::Goal> & expected_goal = nullptr)
   {
-    action_server_->terminate_pending_goal();
+    action_server_->terminate_pending_goal(expected_goal);
   }
 
   /**
@@ -302,6 +323,7 @@ protected:
 
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;
+  OnGoalStartedCallback on_goal_started_callback_;
   OnLoopCallback on_loop_callback_;
   OnPreemptCallback on_preempt_callback_;
   OnCompletionCallback on_completion_callback_;
