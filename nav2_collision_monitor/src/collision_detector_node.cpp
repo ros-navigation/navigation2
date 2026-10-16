@@ -44,7 +44,7 @@ CollisionDetector::on_configure(const rclcpp_lifecycle::State & state)
 
   // Transform buffer and listener initialization
   tf_buffer_ = nav2::create_transform_buffer(this);
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, this, true);
+  tf_buffer_->createListener(this, true);
 
   state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionDetectorState>(
     "collision_detector_state");
@@ -136,7 +136,9 @@ CollisionDetector::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   polygons_.clear();
   sources_.clear();
 
-  tf_listener_.reset();
+  if (tf_buffer_) {
+    tf_buffer_->resetListener();
+  }
   tf_buffer_.reset();
 
   return nav2::CallbackReturn::SUCCESS;

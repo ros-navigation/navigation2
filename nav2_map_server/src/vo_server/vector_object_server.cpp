@@ -46,7 +46,7 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   if (!enforce_global_frame_id_) {
     // Transform buffer and listener initialization
     tf_buffer_ = nav2::create_transform_buffer(this);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, this);
+    tf_buffer_->createListener(this);
   } else {
     RCLCPP_INFO(
       get_logger(),
@@ -124,7 +124,9 @@ VectorObjectServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   shapes_.clear();
 
-  tf_listener_.reset();
+  if (tf_buffer_) {
+    tf_buffer_->resetListener();
+  }
   tf_buffer_.reset();
 
   return nav2::CallbackReturn::SUCCESS;

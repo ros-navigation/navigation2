@@ -111,7 +111,7 @@ TEST(GraphSaver, test_transformation_api)
   executor.add_node(node->get_node_base_interface());
   auto tf = nav2::create_transform_buffer(node);
   tf->setUsingDedicatedThread(true);
-  auto tf_listener = nav2::create_transform_listener(*tf, node);
+  tf->createListener(node);
   auto tf_broadcaster = nav2::create_static_transform_broadcaster(node);
 
   std::string frame = "map";

@@ -217,7 +217,6 @@ protected:
 
   // TF
   nav2::TransformBuffer::SharedPtr tf_;
-  nav2::TransformListener::SharedPtr transform_listener_;
 
   // Publish the route graph for visualization
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr

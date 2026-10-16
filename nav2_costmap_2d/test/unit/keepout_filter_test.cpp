@@ -138,7 +138,6 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
 
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
   nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   std::unique_ptr<geometry_msgs::msg::TransformStamped> transform_;
 
@@ -229,7 +228,7 @@ void TestNode::createKeepoutFilter(const std::string & global_frame, bool overri
   node_ = std::make_shared<nav2::LifecycleNode>("test_node");
   tf_buffer_ = nav2::create_transform_buffer(node_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
+  tf_buffer_->createListener(node_);
 
   layered_costmap_ = std::make_unique<nav2_costmap_2d::LayeredCostmap>(
     global_frame, false, false);
@@ -363,7 +362,9 @@ void TestNode::reset()
   keepout_filter_.reset();
   layered_costmap_.reset();
   node_.reset();
-  tf_listener_.reset();
+  if (tf_buffer_) {
+    tf_buffer_->resetListener();
+  }
   tf_broadcaster_.reset();
   tf_buffer_.reset();
   keepout_points_.clear();

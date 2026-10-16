@@ -71,7 +71,6 @@ private:
   bool initial_pose_received_;
 
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
 
   rclcpp::Node::SharedPtr node_;
 

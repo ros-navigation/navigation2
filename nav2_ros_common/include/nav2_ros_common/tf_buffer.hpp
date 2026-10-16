@@ -27,11 +27,13 @@
 #include "rclcpp/logger.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/time.hpp"
+#include "rclcpp/version.h"
 #include "tf2/LinearMath/Transform.hpp"
 #include "tf2/exceptions.hpp"
 #include "tf2/time.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
 namespace nav2
 {
@@ -59,6 +61,57 @@ public:
       throw std::invalid_argument("TransformBuffer requires a non-null clock");
     }
     buffer_ = std::make_shared<tf2_ros::Buffer>(clock_);
+  }
+
+  TransformBuffer(const TransformBuffer &) = delete;
+  TransformBuffer & operator=(const TransformBuffer &) = delete;
+
+  /**
+   * @brief Create and own a listener using the supplied node.
+   * @param node Pointer-like node (shared_ptr or raw pointer).
+   * @param spin_thread Whether to spin a dedicated listener thread.
+   *   When false, the caller must spin the node to receive transforms.
+   * @throws std::logic_error if a listener already exists. Reset it before recreating it.
+   * Listener creation and reset must be serialized by the caller.
+   */
+  template<typename NodeT>
+  void createListener(const NodeT & node, bool spin_thread = true)
+  {
+    if (listener_) {
+      throw std::logic_error("TransformBuffer already has a listener");
+    }
+#if RCLCPP_VERSION_GTE(30, 0, 0)
+    listener_ = std::make_unique<tf2_ros::TransformListener>(*buffer_, *node, spin_thread);
+#else
+    listener_ = std::make_unique<tf2_ros::TransformListener>(*buffer_, node, spin_thread);
+#endif
+  }
+
+  /**
+   * @brief Create and own a listener with its own hidden node and dedicated thread.
+   * @throws std::logic_error if a listener already exists. Reset it before recreating it.
+   */
+  void createListener()
+  {
+    if (listener_) {
+      throw std::logic_error("TransformBuffer already has a listener");
+    }
+    listener_ = std::make_unique<tf2_ros::TransformListener>(*buffer_);
+  }
+
+  /** @brief Stop and destroy the owned listener, retaining buffered transforms. */
+  void resetListener()
+  {
+    if (listener_) {
+      listener_.reset();
+      buffer_->setUsingDedicatedThread(false);
+    }
+  }
+
+  /** @brief Whether this buffer owns a listener. */
+  [[nodiscard]] bool hasListener() const
+  {
+    return static_cast<bool>(listener_);
   }
 
   /**
@@ -420,6 +473,8 @@ private:
   rclcpp::Clock::SharedPtr clock_;
   tf2_ros::Buffer::SharedPtr buffer_;
   rclcpp::Logger logger_;
+  // Destroy the listener and join its thread before destroying the native buffer.
+  std::unique_ptr<tf2_ros::TransformListener> listener_;
 };
 
 }  // namespace nav2

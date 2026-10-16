@@ -105,7 +105,7 @@ public:
     callback_group_ = create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive, false);
     tf_buffer_ = nav2::create_transform_buffer(shared_from_this());
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, shared_from_this());
+    tf_buffer_->createListener(shared_from_this());
     tf_broadcaster_ = nav2::create_transform_broadcaster(shared_from_this());
 
     std::string costmap_topic = "costmap_raw";
@@ -276,7 +276,6 @@ protected:
   }
 
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
   nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
 
   rclcpp::CallbackGroup::SharedPtr callback_group_;

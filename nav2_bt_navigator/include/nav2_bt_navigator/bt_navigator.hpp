@@ -100,7 +100,6 @@ protected:
 
   // Spinning transform that can be used by the node
   nav2::TransformBuffer::SharedPtr tf_;
-  nav2::TransformListener::SharedPtr tf_listener_;
 };
 
 }  // namespace nav2_bt_navigator

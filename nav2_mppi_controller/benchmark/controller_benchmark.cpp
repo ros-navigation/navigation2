@@ -89,7 +89,7 @@ void prepareAndRunBenchmark(
   tf_buffer->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   auto broadcaster = nav2::create_transform_broadcaster(node);
-  auto tf_listener = nav2::create_transform_listener(*tf_buffer, node);
+  tf_buffer->createListener(node);
 
   auto map_odom_broadcaster = std::async(
     std::launch::async, sendTf, "map", "odom", broadcaster, node,

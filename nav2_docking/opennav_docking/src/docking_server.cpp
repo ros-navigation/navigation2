@@ -80,7 +80,7 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
-  tf2_listener_ = nav2::create_transform_listener(*tf2_buffer_, this, true);
+  tf2_buffer_->createListener(this, true);
   dock_db_->activate();
   navigator_->activate();
   vel_publisher_->on_activate();
@@ -106,7 +106,9 @@ DockingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   navigator_->deactivate();
   vel_publisher_->on_deactivate();
   param_handler_->deactivate();
-  tf2_listener_.reset();
+  if (tf2_buffer_) {
+    tf2_buffer_->resetListener();
+  }
 
   // Destroy bond connection
   destroyBond();

@@ -55,7 +55,7 @@ TEST(RouteTrackerTest, test_get_robot_pose)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("router_test");
   auto tf = nav2::create_transform_buffer(node);
-  auto transform_listener = nav2::create_transform_listener(*tf, node);
+  tf->createListener(node);
   auto broadcaster = nav2::create_transform_broadcaster(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
 

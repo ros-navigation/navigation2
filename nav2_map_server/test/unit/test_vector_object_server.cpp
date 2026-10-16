@@ -104,7 +104,7 @@ public:
 
   bool hasTfListener() const
   {
-    return static_cast<bool>(tf_listener_);
+    return tf_buffer_ && tf_buffer_->hasListener();
   }
 };  // VOServerWrapper
 
@@ -145,7 +145,6 @@ public:
 
 protected:
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
 
   // Service clients for calling AddShapes.srv, GetShapes.srv, RemoveShapes.srv
   nav2::ServiceClient<nav2_msgs::srv::AddShapes>::SharedPtr add_shapes_client_;
@@ -183,7 +182,7 @@ Tester::Tester()
   // Transform buffer and listener initialization
   tf_buffer_ = nav2::create_transform_buffer(vo_server_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, vo_server_);
+  tf_buffer_->createListener(vo_server_);
   executor_.add_node(vo_server_->get_node_base_interface());
 }
 
@@ -197,7 +196,9 @@ Tester::~Tester()
 
   vo_server_.reset();
 
-  tf_listener_.reset();
+  if (tf_buffer_) {
+    tf_buffer_->resetListener();
+  }
   tf_buffer_.reset();
 }
 

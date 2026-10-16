@@ -124,35 +124,6 @@ inline nav2::StaticTransformBroadcaster::SharedPtr create_static_transform_broad
 }
 
 /**
- * @brief Create a transform listener
- * @param buffer Transform buffer reference
- * @param node Pointer-like node (shared_ptr or raw pointer)
- * @param spin_thread Whether to spin a dedicated thread
- * @return Shared pointer to the TransformListener
- */
-template<typename NodeT>
-inline nav2::TransformListener::SharedPtr create_transform_listener(
-  nav2::TransformBuffer & buffer, const NodeT & node, bool spin_thread = true)
-{
-#if RCLCPP_VERSION_GTE(30, 0, 0)
-  return std::make_shared<nav2::TransformListener>(buffer.getRawBuffer(), *node, spin_thread);
-#else
-  return std::make_shared<nav2::TransformListener>(buffer.getRawBuffer(), node, spin_thread);
-#endif
-}
-
-/**
- * @brief Create a transform listener with a new temp hidden node
- * @param buffer Transform buffer reference
- * @return Shared pointer to the TransformListener
- */
-inline nav2::TransformListener::SharedPtr create_transform_listener(
-  nav2::TransformBuffer & buffer)
-{
-  return std::make_shared<nav2::TransformListener>(buffer.getRawBuffer());
-}
-
-/**
  * @brief Create a message filter for transform-aware message subscription
  * @param sub Subscriber to filter
  * @param buffer Transform buffer reference

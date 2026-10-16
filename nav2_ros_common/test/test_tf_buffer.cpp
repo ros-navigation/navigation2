@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <limits>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include "gtest/gtest.h"
 #include "rcl/time.h"
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/utilities.hpp"
 
 class TransformBufferTest : public ::testing::Test
 {
@@ -505,4 +510,105 @@ TEST_F(TransformBufferTest, LoggingOptionPreservesSuccessfulResults)
     buffer_.getStampedTransform("odom", "base_link", rclcpp::Time(8, 0), no_wait));
   EXPECT_EQ(buffer_.transformStampedPose("odom", makePose(8), no_wait, nav2::Log::Disabled),
     buffer_.transformStampedPose("odom", makePose(8), no_wait));
+}
+
+class TransformListenerTest : public ::testing::Test
+{
+protected:
+  void SetUp() override
+  {
+    node_ = std::make_shared<nav2::LifecycleNode>("transform_listener_test");
+    executor_.add_node(node_->get_node_base_interface());
+    buffer_ = nav2::create_transform_buffer(node_);
+    broadcaster_ = nav2::create_transform_broadcaster(node_);
+    static_broadcaster_ = nav2::create_static_transform_broadcaster(node_);
+  }
+
+  void expectTransforms()
+  {
+    geometry_msgs::msg::TransformStamped dynamic_transform;
+    dynamic_transform.header.frame_id = "listener_parent";
+    dynamic_transform.child_frame_id = "listener_dynamic";
+    dynamic_transform.header.stamp = node_->now();
+    dynamic_transform.transform.translation.x = 2.0;
+    auto static_transform = dynamic_transform;
+    static_transform.child_frame_id = "listener_static";
+    static_transform.transform.translation.x = 3.0;
+    static_broadcaster_->sendTransform(static_transform);
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (std::chrono::steady_clock::now() < deadline) {
+      broadcaster_->sendTransform(dynamic_transform);
+      executor_.spin_some();
+      const auto dynamic_result = buffer_->getLatestTransform(
+        "listener_parent", "listener_dynamic", 0.0, nav2::Log::Disabled);
+      const auto static_result = buffer_->getLatestTransform(
+        "listener_parent", "listener_static", 0.0, nav2::Log::Disabled);
+      if (dynamic_result && static_result) {
+        EXPECT_DOUBLE_EQ(dynamic_result->transform.translation.x, 2.0);
+        EXPECT_DOUBLE_EQ(static_result->transform.translation.x, 3.0);
+        return;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    FAIL() << "Owned listener did not receive dynamic and static TF";
+  }
+
+  nav2::LifecycleNode::SharedPtr node_;
+  rclcpp::executors::SingleThreadedExecutor executor_;
+  nav2::TransformBuffer::SharedPtr buffer_;
+  nav2::TransformBroadcaster::SharedPtr broadcaster_;
+  nav2::StaticTransformBroadcaster::SharedPtr static_broadcaster_;
+};
+
+TEST_F(TransformListenerTest, OptionalListenerCanBeResetAndRecreated)
+{
+  EXPECT_FALSE(buffer_->hasListener());
+  EXPECT_FALSE(buffer_->getRawBuffer().isUsingDedicatedThread());
+  buffer_->resetListener();
+  buffer_->createListener(node_);
+  EXPECT_TRUE(buffer_->hasListener());
+  EXPECT_TRUE(buffer_->getRawBuffer().isUsingDedicatedThread());
+  EXPECT_THROW(buffer_->createListener(node_), std::logic_error);
+  EXPECT_THROW(buffer_->createListener(), std::logic_error);
+  expectTransforms();
+
+  buffer_->resetListener();
+  EXPECT_FALSE(buffer_->hasListener());
+  EXPECT_FALSE(buffer_->getRawBuffer().isUsingDedicatedThread());
+  EXPECT_TRUE(buffer_->getLatestTransform("listener_parent", "listener_dynamic"));
+  buffer_->resetListener();
+  buffer_->clear();
+  buffer_->createListener(node_, false);
+  EXPECT_FALSE(buffer_->getRawBuffer().isUsingDedicatedThread());
+  expectTransforms();
+}
+
+TEST_F(TransformListenerTest, HiddenNodeListenerReceivesTransforms)
+{
+  buffer_->createListener();
+  EXPECT_TRUE(buffer_->hasListener());
+  EXPECT_TRUE(buffer_->getRawBuffer().isUsingDedicatedThread());
+  expectTransforms();
+
+  // Destruction must join the listener thread while the native buffer is still alive.
+  std::weak_ptr<tf2_ros::Buffer> native_buffer;
+  auto native = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  native_buffer = native;
+  buffer_ = std::make_shared<nav2::TransformBuffer>(native, node_->get_clock());
+  buffer_->createListener(node_);
+  native.reset();
+  expectTransforms();
+  EXPECT_FALSE(native_buffer.expired());
+  buffer_.reset();
+  EXPECT_TRUE(native_buffer.expired());
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  const int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }

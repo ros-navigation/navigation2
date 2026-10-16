@@ -157,7 +157,6 @@ private:
 
   // Tf's for initial pose
   nav2::TransformBuffer::SharedPtr tf2_buffer_;
-  nav2::TransformListener::SharedPtr transform_listener_;
 
   // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;
