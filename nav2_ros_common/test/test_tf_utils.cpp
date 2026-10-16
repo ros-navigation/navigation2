@@ -258,22 +258,6 @@ TEST_F(TfUtilsTest, TransformStampedPoseZeroStampSelectsLatestWithoutAgeCheck)
   EXPECT_NEAR(result->pose.position.x, 4.28, 1e-12);
 }
 
-TEST_F(TfUtilsTest, TransformLatestPoseIgnoresInputStampAndChecksConfiguredAge)
-{
-  addTransform(2, 2.0);
-  addTransform(4, 4.0);
-  const auto input = makePose(2);
-  const auto original = input;
-  auto result = nav2::transformLatestPose(buffer_, "odom", input, now_, 6.0);
-  ASSERT_TRUE(result);
-  EXPECT_EQ(result->header.stamp.sec, 4);
-  EXPECT_NEAR(result->pose.position.x, 4.28, 1e-12);
-  EXPECT_EQ(nav2::transformLatestPose(buffer_, "odom", input, now_, 5.0), std::nullopt);
-  EXPECT_TRUE(nav2::transformLatestPose(buffer_, "odom", input));
-  EXPECT_TRUE(nav2::transformLatestPose(buffer_, "odom", input, now_, -1.0));
-  EXPECT_EQ(input, original);
-}
-
 TEST_F(TfUtilsTest, TransformPoseSameFramePreservesEntireInputWithoutTF)
 {
   const auto input = makePose(2);
@@ -281,9 +265,6 @@ TEST_F(TfUtilsTest, TransformPoseSameFramePreservesEntireInputWithoutTF)
     buffer_, "base_link", input, tf2::Duration::zero());
   ASSERT_TRUE(stamped);
   EXPECT_EQ(*stamped, input);
-  const auto latest = nav2::transformLatestPose(buffer_, "base_link", input, now_, 0.1);
-  ASSERT_TRUE(latest);
-  EXPECT_EQ(*latest, input);
 }
 
 TEST_F(TfUtilsTest, TransformPoseFailuresLeaveInputUnchanged)
@@ -295,22 +276,7 @@ TEST_F(TfUtilsTest, TransformPoseFailuresLeaveInputUnchanged)
       buffer_, "odom", input, tf2::Duration::zero()), std::nullopt);
   EXPECT_EQ(nav2::transformStampedPose(
       buffer_, "missing", input, tf2::Duration::zero()), std::nullopt);
-  EXPECT_EQ(nav2::transformLatestPose(buffer_, "missing", input), std::nullopt);
   EXPECT_EQ(input, original);
-}
-
-TEST_F(TfUtilsTest, TransformLatestPoseAcceptsStaticAndFutureTransforms)
-{
-  addTransform(1, 1.0, true);
-  auto result = nav2::transformLatestPose(buffer_, "odom", makePose(2), now_, 0.1);
-  ASSERT_TRUE(result);
-  EXPECT_EQ(result->header.stamp.sec, 0);
-  EXPECT_NEAR(result->pose.position.x, 1.28, 1e-12);
-  buffer_.clear();
-  addTransform(11, 2.0);
-  result = nav2::transformLatestPose(buffer_, "odom", makePose(2), now_, 0.1);
-  ASSERT_TRUE(result);
-  EXPECT_EQ(result->header.stamp.sec, 11);
 }
 
 TEST_F(TfUtilsTest, LatestLookupsWithoutCurrentTime)
@@ -333,33 +299,14 @@ TEST_F(TfUtilsTest, LatestLookupsWithoutCurrentTime)
   EXPECT_EQ(identity_pose->header, identity->header);
 }
 
-TEST_F(TfUtilsTest, TransformLatestPoseWithoutCurrentTime)
-{
-  addTransform(1, 1.0);
-  const auto input = makePose(10);
-  const auto result = nav2::transformLatestPose(buffer_, "odom", input);
-  ASSERT_TRUE(result);
-  EXPECT_EQ(result->header.stamp.sec, 1);
-  EXPECT_NEAR(result->pose.position.x, 1.28, 1e-12);
-
-  const auto unchanged = nav2::transformLatestPose(buffer_, "base_link", input);
-  ASSERT_TRUE(unchanged);
-  EXPECT_EQ(*unchanged, input);
-}
-
 TEST_F(TfUtilsTest, PositiveStalenessThresholdRequiresCurrentTime)
 {
   addTransform(9, 1.0);
-  const auto input = makePose(9);
   EXPECT_EQ(nav2::getLatestTransform(
       buffer_, "odom", "base_link", std::nullopt, 1.0), std::nullopt);
   EXPECT_EQ(nav2::getLatestPose(
       buffer_, "odom", "base_link", std::nullopt, 1.0), std::nullopt);
-  EXPECT_EQ(nav2::transformLatestPose(
-      buffer_, "odom", input, std::nullopt, 1.0), std::nullopt);
   EXPECT_EQ(nav2::getLatestTransform(
       buffer_, "base_link", "base_link", std::nullopt, 1.0), std::nullopt);
-  EXPECT_EQ(nav2::transformLatestPose(
-      buffer_, "base_link", input, std::nullopt, 1.0), std::nullopt);
   EXPECT_TRUE(nav2::getLatestTransform(buffer_, "odom", "base_link", now_, 1.0));
 }

@@ -85,8 +85,8 @@ inline geometry_msgs::msg::TransformStamped invertTransform(
  * @brief Get the latest transform from source_frame into target_frame.
  *
  * Uses tf2::TimePointZero to select the latest common time along the TF chain.
- * Does not wait for unavailable TF. Zero-stamped results (including static-only
- * chains) are exempt from the age check. Future-dated results pass the age check.
+ * Does not wait for unavailable TF. Static-only chains
+ * are exempt from the age check. Other results pass the age check.
  * Equal frames return an identity transform stamped with current_time, or zero
  * when current_time is omitted; otherwise the TF timestamp is preserved.
  * Does not log lookup failures.
@@ -95,8 +95,7 @@ inline geometry_msgs::msg::TransformStamped invertTransform(
  * @param target_frame Frame to transform into.
  * @param source_frame Frame to transform from.
  * @param current_time Optional reference time for the age check and identity
- *   timestamp; must use the same time domain as TF. Required when
- *   staleness_threshold is positive; otherwise it may be omitted.
+ *   timestamp. Required when staleness_threshold is positive.
  * @param staleness_threshold Maximum age in seconds; non-positive disables the
  *   check. A result exactly at the threshold is accepted.
  * @return Transform on success; std::nullopt on TF failure, stale TF, or a positive
@@ -118,7 +117,6 @@ inline geometry_msgs::msg::TransformStamped invertTransform(
     result.header.frame_id = target_frame;
     result.header.stamp = current_time.value_or(rclcpp::Time(0));
     result.child_frame_id = source_frame;
-    result.transform.rotation.w = 1.0;
   } else {
     try {
       result = tf_buffer.lookupTransform(target_frame, source_frame, tf2::TimePointZero);
@@ -126,7 +124,7 @@ inline geometry_msgs::msg::TransformStamped invertTransform(
       return std::nullopt;
     }
 
-    const bool has_timestamp = result.header.stamp.sec != 0 || result.header.stamp.nanosec != 0;
+    const bool has_timestamp = rclcpp::Time(result.header.stamp).nanoseconds() != 0;
     if (staleness_threshold > 0.0 && has_timestamp) {
       const rclcpp::Time transform_time(result.header.stamp, current_time->get_clock_type());
       if ((*current_time - transform_time).seconds() > staleness_threshold) {
@@ -148,8 +146,7 @@ inline geometry_msgs::msg::TransformStamped invertTransform(
  * @param target_frame Frame in which to express the pose.
  * @param source_frame Frame whose pose is requested.
  * @param current_time Optional reference time for the age check and identity
- *   timestamp; must use the same time domain as TF. Required when
- *   staleness_threshold is positive; otherwise it may be omitted.
+ *   timestamp. Required when staleness_threshold is positive.
  * @param staleness_threshold Maximum age in seconds; non-positive disables the
  *   check. Zero-stamped results are exempt from the age check.
  * @return Pose if getLatestTransform succeeds; std::nullopt otherwise.
@@ -282,50 +279,6 @@ inline geometry_msgs::msg::TransformStamped invertTransform(
   const auto transform = getStampedTransform(
     tf_buffer, target_frame, input.header.frame_id,
     rclcpp::Time(input.header.stamp), transform_tolerance);
-  if (!transform) {
-    return std::nullopt;
-  }
-
-  geometry_msgs::msg::PoseStamped result;
-  tf2::doTransform(input, result, *transform);
-  return result;
-}
-
-/**
- * @brief Transform an arbitrary pose using latest TF, ignoring its timestamp.
- *
- * Does not wait for unavailable TF. Equal frames return the input unchanged;
- * otherwise the output header uses the selected transform's frame and timestamp.
- * Does not log lookup failures. Staleness checking is disabled by default.
- *
- * @param tf_buffer TF buffer used for the lookup.
- * @param target_frame Frame in which to express the input pose.
- * @param input Pose to transform; unchanged on success or failure.
- * @param current_time Optional reference time for the age check; must use the TF
- *   time domain. Required when staleness_threshold is positive; otherwise it may
- *   be omitted.
- * @param staleness_threshold Maximum transform age in seconds; non-positive
- *   disables the check. Zero-stamped transforms are exempt from the age check.
- * @return Transformed pose on success; std::nullopt on TF lookup failure, stale TF,
- *   or a positive staleness_threshold without current_time.
- */
-[[nodiscard]] inline std::optional<geometry_msgs::msg::PoseStamped> transformLatestPose(
-  nav2::TransformBuffer & tf_buffer,
-  const std::string & target_frame,
-  const geometry_msgs::msg::PoseStamped & input,
-  const std::optional<rclcpp::Time> & current_time = std::nullopt,
-  double staleness_threshold = 0.0)
-{
-  if (staleness_threshold > 0.0 && !current_time) {
-    return std::nullopt;
-  }
-
-  if (input.header.frame_id == target_frame) {
-    return input;
-  }
-
-  const auto transform = getLatestTransform(
-    tf_buffer, target_frame, input.header.frame_id, current_time, staleness_threshold);
   if (!transform) {
     return std::nullopt;
   }
