@@ -189,7 +189,7 @@ Penalizes combined translational velocities that leave the ellipse spanned by `v
 #### Mecanum Critic
 
 Penalizes velocities outside the reachable velocity space of a mecanum drivetrain. This critic bounds what velocity combination of vx, vy and wz the drivetrain can deliver.
-This critic does not default to the controller's velocity limits, as the controller's limits are defined by the environment, while the mecanum critic is be defined by the drivetrain.
+The mecanum critic's velocity limits are defined by the drivetrain's wheels on each axis, rather than body-fixed velocities.
 
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
