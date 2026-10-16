@@ -13,7 +13,12 @@
 // limitations under the License.
 
 #include <string>
+
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/plugins/control/recovery_node.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -28,8 +33,60 @@ RecoveryNode::RecoveryNode(
 {
 }
 
+void RecoveryNode::initialize()
+{
+  getInput("reset_distance", reset_distance_);
+  if (reset_distance_ > 0.0) {
+    const auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+    robot_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+      node, "robot_base_frame", this);
+    global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+      node, "global_frame", this);
+    clock_ = node->get_clock();
+    tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+    transform_staleness_threshold_ = node->declare_or_get_parameter(
+      "transform_staleness_threshold", 0.0);
+  }
+}
+
+void RecoveryNode::captureResetPose()
+{
+  if (reset_distance_ <= 0.0 || reset_pose_) {
+    return;
+  }
+  geometry_msgs::msg::PoseStamped pose;
+  if (nav2_util::getFreshPose(
+      *tf_, global_frame_, robot_frame_, clock_->now(), transform_staleness_threshold_, pose))
+  {
+    reset_pose_ = pose;
+  }
+}
+
+void RecoveryNode::checkRetryReset()
+{
+  if (reset_distance_ <= 0.0 || !reset_pose_) {
+    return;
+  }
+
+  geometry_msgs::msg::PoseStamped pose;
+  if (!nav2_util::getFreshPose(
+      *tf_, global_frame_, robot_frame_, clock_->now(), transform_staleness_threshold_, pose))
+  {
+    return;
+  }
+
+  if (nav2_util::geometry_utils::euclidean_distance(
+      reset_pose_->pose, pose.pose) >= reset_distance_)
+  {
+    retry_count_ = 0;
+  }
+}
+
 BT::NodeStatus RecoveryNode::tick()
 {
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
   getInput("number_of_retries", number_of_retries_);
   const unsigned children_count = children_nodes_.size();
 
@@ -41,9 +98,13 @@ BT::NodeStatus RecoveryNode::tick()
 
   while (current_child_idx_ < children_count && retry_count_ <= number_of_retries_) {
     TreeNode * child_node = children_nodes_[current_child_idx_];
+    if (current_child_idx_ == 0) {
+      captureResetPose();
+    }
     const BT::NodeStatus child_status = child_node->executeTick();
 
     if (current_child_idx_ == 0) {
+      checkRetryReset();
       switch (child_status) {
         case BT::NodeStatus::SKIPPED:
           // If first child is skipped, the entire branch is considered skipped
@@ -62,6 +123,8 @@ BT::NodeStatus RecoveryNode::tick()
 
         case BT::NodeStatus::FAILURE:
           {
+            // Reanchor when the main child resumes so recovery motion cannot reset retries.
+            reset_pose_.reset();
             if (retry_count_ < number_of_retries_) {
               // halt first child and tick second child in next iteration
               ControlNode::haltChild(0);
@@ -123,6 +186,7 @@ void RecoveryNode::halt()
   ControlNode::halt();
   retry_count_ = 0;
   current_child_idx_ = 0;
+  reset_pose_.reset();
 }
 
 }  // namespace nav2_behavior_tree
