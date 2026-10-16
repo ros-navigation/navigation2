@@ -64,7 +64,7 @@ bool validateMsg(const double & num)
 
 bool validateMsgInfValid(const double & num)
 {
-  /*  @brief validate a numeric value 
+  /*  @brief validate a numeric value
    *  allowing positive infinity as a ranger sensor
    *  'beam no-return' value.
    *  @return true for finite values and positive infinity;
