@@ -781,8 +781,7 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
   auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
   nav2::TransformBuffer::SharedPtr tf_buffer =
     nav2::create_transform_buffer(node);
-  nav2::TransformListener::SharedPtr tf_listener =
-    nav2::create_transform_listener(*tf_buffer, node);
+  tf_buffer->createListener(node);
 
   node->declare_parameter(
     "edge_cost_functions",
@@ -868,8 +867,7 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
   auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
   nav2::TransformBuffer::SharedPtr tf_buffer =
     nav2::create_transform_buffer(node);
-  nav2::TransformListener::SharedPtr tf_listener =
-    nav2::create_transform_listener(*tf_buffer, node);
+  tf_buffer->createListener(node);
 
   double orientation_weight = 100.0;
 

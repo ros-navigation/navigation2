@@ -92,7 +92,7 @@ FollowingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating %s", get_name());
 
-  tf2_listener_ = nav2::create_transform_listener(*tf2_buffer_, this, true);
+  tf2_buffer_->createListener(this, true);
   vel_publisher_->on_activate();
   filtered_dynamic_pose_pub_->on_activate();
   following_action_server_->activate();
@@ -114,7 +114,9 @@ FollowingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   filtered_dynamic_pose_pub_->on_deactivate();
   param_handler_->deactivate();
 
-  tf2_listener_.reset();
+  if (tf2_buffer_) {
+    tf2_buffer_->resetListener();
+  }
 
   // Destroy bond connection
   destroyBond();

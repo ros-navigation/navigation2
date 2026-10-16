@@ -93,7 +93,7 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   if (publish_scan_) {
     map_client_ = create_client<nav_msgs::srv::GetMap>("/map_server/map");
     tf_buffer_ = nav2::create_transform_buffer(this);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_);
+    tf_buffer_->createListener();
   }
 
   if (publish_clock_) {
@@ -187,7 +187,9 @@ LoopbackSimulator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   odom_pub_.reset();
   scan_pub_.reset();
   map_client_.reset();
-  tf_listener_.reset();
+  if (tf_buffer_) {
+    tf_buffer_->resetListener();
+  }
   tf_buffer_.reset();
   tf_broadcaster_.reset();
   clock_publisher_.reset();

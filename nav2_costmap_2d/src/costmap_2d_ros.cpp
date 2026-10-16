@@ -153,7 +153,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create the transform-related objects
   tf_buffer_ = nav2::create_transform_buffer(this, callback_group_);
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_);
+  tf_buffer_->createListener();
 
   // Then load and add the plug-ins to the costmap
   for (unsigned int i = 0; i < plugin_names_.size(); ++i) {
@@ -355,7 +355,9 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   layered_costmap_.reset();
 
-  tf_listener_.reset();
+  if (tf_buffer_) {
+    tf_buffer_->resetListener();
+  }
   tf_buffer_.reset();
 
   footprint_sub_.reset();

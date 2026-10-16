@@ -210,7 +210,9 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   nomotion_update_srv_.reset();
   initial_pose_sub_.reset();
   laser_scan_connection_.disconnect();
-  tf_listener_.reset();  //  listener may access lase_scan_filter_, so it should be reset earlier
+  if (tf_buffer_) {  // Stop the listener before destroying laser_scan_filter_.
+    tf_buffer_->resetListener();
+  }
   laser_scan_filter_.reset();
   laser_scan_sub_.reset();
 
@@ -1383,7 +1385,7 @@ AmclNode::initTransforms()
 
   // Initialize transform listener and broadcaster
   tf_buffer_ = nav2::create_transform_buffer(this, callback_group_);
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, this, true);
+  tf_buffer_->createListener(this, true);
   tf_broadcaster_ = nav2::create_transform_broadcaster(shared_from_this());
 
   sent_first_transform_ = false;

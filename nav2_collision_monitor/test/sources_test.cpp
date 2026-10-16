@@ -441,7 +441,6 @@ public:
   explicit Tester(const rclcpp::Clock::SharedPtr & tf_clock = nullptr);
   ~Tester();
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
 
 protected:
   // Data sources creation routine
@@ -481,7 +480,7 @@ Tester::Tester(const rclcpp::Clock::SharedPtr & tf_clock)
   tf_buffer_ = tf_clock ? std::make_shared<nav2::TransformBuffer>(tf_clock_) :
     nav2::create_transform_buffer(test_node_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, test_node_);
+  tf_buffer_->createListener(test_node_);
 }
 
 Tester::~Tester()
@@ -494,7 +493,9 @@ Tester::~Tester()
 
   test_node_.reset();
 
-  tf_listener_.reset();
+  if (tf_buffer_) {
+    tf_buffer_->resetListener();
+  }
   tf_buffer_.reset();
 }
 

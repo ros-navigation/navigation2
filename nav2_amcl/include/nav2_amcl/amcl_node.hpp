@@ -174,7 +174,6 @@ protected:
    */
   void initTransforms();
   nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
-  nav2::TransformListener::SharedPtr tf_listener_;
   nav2::TransformBuffer::SharedPtr tf_buffer_;
   bool sent_first_transform_{false};
   bool latest_tf_valid_{false};
