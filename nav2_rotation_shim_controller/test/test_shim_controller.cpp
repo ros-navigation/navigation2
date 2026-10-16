@@ -224,7 +224,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = nav2::create_transform_buffer(node);
-  auto listener = nav2::create_transform_listener(*tf, node, true);
+  tf->createListener(node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   costmap->declare_parameter("origin_x", 0.0);
   costmap->declare_parameter("origin_y", 0.0);
@@ -289,7 +289,7 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = nav2::create_transform_buffer(node);
-  auto listener = nav2::create_transform_listener(*tf, node, true);
+  tf->createListener(node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -383,7 +383,7 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = nav2::create_transform_buffer(node);
-  auto listener = nav2::create_transform_listener(*tf, node, true);
+  tf->createListener(node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -466,7 +466,7 @@ TEST(RotationShimControllerTest, accelerationTests) {
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = nav2::create_transform_buffer(node);
-  auto listener = nav2::create_transform_listener(*tf, node, true);
+  tf->createListener(node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -561,7 +561,7 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = nav2::create_transform_buffer(node);
-  auto listener = nav2::create_transform_listener(*tf, node, true);
+  tf->createListener(node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);

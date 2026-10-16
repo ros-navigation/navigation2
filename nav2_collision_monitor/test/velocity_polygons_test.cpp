@@ -160,7 +160,6 @@ protected:
   std::shared_ptr<VelocityPolygonWrapper> velocity_polygon_;
 
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
 };  // Tester
 
 Tester::Tester()
@@ -173,7 +172,7 @@ Tester::Tester()
 
   tf_buffer_ = nav2::create_transform_buffer(test_node_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, test_node_);
+  tf_buffer_->createListener(test_node_);
 }
 
 Tester::~Tester()
@@ -182,7 +181,9 @@ Tester::~Tester()
 
   test_node_.reset();
 
-  tf_listener_.reset();
+  if (tf_buffer_) {
+    tf_buffer_->resetListener();
+  }
   tf_buffer_.reset();
 }
 

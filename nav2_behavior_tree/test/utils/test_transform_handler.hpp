@@ -49,7 +49,7 @@ public:
     tf_broadcaster_(nullptr)
   {
     tf_buffer_ = nav2::create_transform_buffer(node_);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
+    tf_buffer_->createListener(node_);
   }
 
   virtual ~TransformHandler()
@@ -57,7 +57,9 @@ public:
     if (is_active_) {
       deactivate();
     }
-    tf_listener_.reset();
+    if (tf_buffer_) {
+      tf_buffer_->resetListener();
+    }
     tf_buffer_.reset();
   }
 
@@ -170,7 +172,6 @@ protected:
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
   nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
   rclcpp::TimerBase::SharedPtr transform_timer_;
 };
 

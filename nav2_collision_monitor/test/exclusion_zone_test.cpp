@@ -206,7 +206,7 @@ public:
     setTime(node_->now());
     tf_buffer_ = std::make_shared<nav2::TransformBuffer>(tf_clock_, node_->get_logger());
     tf_buffer_->setUsingDedicatedThread(true);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_, false);
+    tf_buffer_->createListener(node_, false);
     tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_node(node_->get_node_base_interface());
@@ -215,7 +215,9 @@ public:
   ~ExclusionZoneTester() override
   {
     tf_broadcaster_.reset();
-    tf_listener_.reset();
+    if (tf_buffer_) {
+      tf_buffer_->resetListener();
+    }
     tf_buffer_.reset();
     node_.reset();
   }
@@ -333,7 +335,6 @@ protected:
   std::shared_ptr<TestNode> node_;
   rclcpp::Clock::SharedPtr tf_clock_;
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
   nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 };  // ExclusionZoneTester

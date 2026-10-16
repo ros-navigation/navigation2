@@ -21,7 +21,15 @@ Thus, see the migration guide below for how to migrate from the previous version
 ### Transform buffer
 
 `nav2::TransformBuffer` in `nav2_ros_common/tf_buffer.hpp` owns the underlying TF buffer.
-Create it with `nav2::create_transform_buffer(node)` and pass it to servers, plugins, listeners, and message filters.
+Create it with `nav2::create_transform_buffer(node)` and pass it to servers, plugins, and message filters.
+Call `buffer->createListener(node)` to receive TF using a dedicated listener thread, or
+`buffer->createListener(node, false)` when the application spins the node itself.
+`buffer->createListener()` creates a listener with its own hidden node and dedicated thread.
+The buffer owns at most one listener through a unique pointer and destroys it before the native buffer.
+Creating a second listener throws `std::logic_error`; call `resetListener()` before recreating it.
+`resetListener()` stops the listener without clearing transform data, supporting lifecycle deactivation
+and teardown before dependent message filters. `hasListener()` reports whether a listener is owned.
+Serialize listener creation and reset; buffers used only for inserted transforms need no listener.
 Application code uses `getLatestTransform`, `getLatestPose`, `getStampedTransform`, and `transformStampedPose`.
 Lookups return `std::optional` and log failures with the node's logger.
 Pass `nav2::Log::Disabled` as the final lookup argument to suppress diagnostics for expected failures, retries, or caller-managed logging; the default is `nav2::Log::Enabled`.
@@ -36,7 +44,8 @@ This also allows several messages to share one transform snapshot.
 An arbitrary pose that intentionally ignores its timestamp, such as a held docking target, uses `getLatestTransform` followed by `tf2::doTransform`.
 
 Listeners and message filters require TF's native buffer interfaces for subscription updates and asynchronous transform requests.
-The factories in `tf2_factories.hpp` and the custom base footprint listener use `getRawBuffer()` for these integrations.
+Listener creation is internal to `TransformBuffer`. Message-filter factories in `tf2_factories.hpp`
+and the custom base footprint listener use `getRawBuffer()` for these integrations.
 `laser_geometry` also requires `tf2::BufferCore` for scan projection and interpolation.
 Obstacle layers pass `getRawBuffer()` directly to the projector, preserving its exception behavior and projection fallback.
 Use `setTransform(transform, authority, is_static)` to insert transforms, including in test fixtures; `is_static` defaults to false.

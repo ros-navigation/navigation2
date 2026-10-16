@@ -150,8 +150,6 @@ protected:
 
   /// @brief TF buffer
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  /// @brief TF listener
-  nav2::TransformListener::SharedPtr tf_listener_;
 
   /// @brief Polygons array
   std::vector<std::shared_ptr<Polygon>> polygons_;

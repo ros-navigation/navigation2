@@ -105,7 +105,6 @@ protected:
     nav2_msgs::msg::CircleObject::SharedPtr c2);
 
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
 
   std::shared_ptr<PolygonWrapper> polygon_;
   std::shared_ptr<CircleWrapper> circle_;
@@ -124,7 +123,7 @@ Tester::Tester()
   // Transform buffer and listener initialization
   tf_buffer_ = nav2::create_transform_buffer(node_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
+  tf_buffer_->createListener(node_);
 }
 
 Tester::~Tester()
@@ -134,7 +133,9 @@ Tester::~Tester()
 
   node_.reset();
 
-  tf_listener_.reset();
+  if (tf_buffer_) {
+    tf_buffer_->resetListener();
+  }
   tf_buffer_.reset();
 }
 

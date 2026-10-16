@@ -138,7 +138,7 @@ protected:
       "global_footprint_topic", std::string("global_costmap/published_footprint"));
 
     tf_buffer_ = nav2::create_transform_buffer(node_lifecycle_);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_lifecycle_);
+    tf_buffer_->createListener(node_lifecycle_);
 
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> local_costmap_sub_ =
       std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
@@ -246,7 +246,6 @@ protected:
   nav2::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_vel_sub_;
   std::vector<double> velocities_;
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
 };
 
 // Define the tests

@@ -42,7 +42,7 @@ WaitBehaviorTester::WaitBehaviorTester()
       {rclcpp::Parameter("use_sim_time", true)}));
 
   tf_buffer_ = nav2::create_transform_buffer(node_);
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_);
+  tf_buffer_->createListener();
 
   client_ptr_ = rclcpp_action::create_client<Wait>(
     node_->get_node_base_interface(),

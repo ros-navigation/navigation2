@@ -155,7 +155,6 @@ protected:
 
   // Transforms
   nav2::TransformBuffer::SharedPtr tf_;
-  nav2::TransformListener::SharedPtr transform_listener_;
 
   // Publishers and subscribers
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
