@@ -219,15 +219,16 @@ void KeepoutFilter::updateBounds(
       tf2::doTransform(pose, mask_pose, mask_transform);
       const auto & footprint = layered_costmap_->getFootprint();
       unsigned int mask_x, mask_y;
-      if (!footprint.empty() &&
-        filter_mask_costmap_->worldToMap(
+      if (filter_mask_costmap_->worldToMap(
           mask_pose.position.x, mask_pose.position.y, mask_x, mask_y))
       {
-        const auto footprint_cost = footprint_collision_checker_->footprintCostAtPose(
+        // With an empty footprint, fall back to checking the cost at the robot's position
+        const double cost = footprint.empty() ?
+          static_cast<double>(filter_mask_costmap_->getCost(mask_x, mask_y)) :
+          footprint_collision_checker_->footprintCostAtPose(
           mask_pose.position.x, mask_pose.position.y, tf2::getYaw(mask_pose.orientation),
           footprint);
-        is_pose_lethal_ =
-          footprint_cost == INSCRIBED_INFLATED_OBSTACLE || footprint_cost == LETHAL_OBSTACLE;
+        is_pose_lethal_ = cost == INSCRIBED_INFLATED_OBSTACLE || cost == LETHAL_OBSTACLE;
       }
       if (is_pose_lethal_) {
         RCLCPP_WARN_THROTTLE(

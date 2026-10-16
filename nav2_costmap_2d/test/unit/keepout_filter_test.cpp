@@ -598,7 +598,8 @@ TEST_F(TestNode, testOverrideLethalCostWithEmptyFootprint)
 
   EXPECT_NO_THROW(
     keepout_filter_->updateBounds(4.0, 4.0, 0.0, &min_x, &min_y, &max_x, &max_y));
-  EXPECT_FALSE(keepout_filter_->isPoseLethal());
+  // Empty footprint falls back to a point check at the robot's position
+  EXPECT_TRUE(keepout_filter_->isPoseLethal());
 
   keepout_filter_->resetFilter();
   reset();
