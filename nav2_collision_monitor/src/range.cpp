@@ -89,7 +89,6 @@ bool Range::getSourceData(
   }
 
   // A fresh positive-infinity reading is a valid no-return observation.
-  // Check freshness first so a disconnected sensor still causes a stop.
   if (std::isinf(data_->range) && data_->range > 0.0) {
     return true;
   }
