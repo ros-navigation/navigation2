@@ -14,7 +14,7 @@
 
 #include <memory>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_route/graph_saver.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -109,8 +109,7 @@ bool GraphSaver::transformGraph(Graph & graph)
     // Find the transform to convert node from node frame to route frame
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
-      const auto transform = nav2::getLatestTransform(
-        *tf_, route_frame_, node_frame);
+      const auto transform = tf_->getLatestTransform(route_frame_, node_frame);
 
       if (!transform) {
         RCLCPP_WARN(

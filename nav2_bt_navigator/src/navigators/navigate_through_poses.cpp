@@ -18,7 +18,7 @@
 #include <memory>
 #include <limits>
 #include <stdexcept>
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "nav2_msgs/msg/tracking_feedback.hpp"
@@ -148,9 +148,8 @@ NavigateThroughPosesNavigator::onLoop()
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
-  const auto current_pose_result = nav2::getLatestPose(
-    *feedback_utils_.tf, feedback_utils_.global_frame, feedback_utils_.robot_frame, clock_->now(),
-    transform_staleness_threshold_);
+  const auto current_pose_result = feedback_utils_.tf->getLatestPose(
+    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_);
   if (!current_pose_result) {
     RCLCPP_ERROR(logger_, "Robot pose is not available.");
     return;
@@ -245,9 +244,8 @@ bool
 NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  const auto current_pose_result = nav2::getLatestPose(
-    *feedback_utils_.tf, feedback_utils_.global_frame, feedback_utils_.robot_frame, clock_->now(),
-    transform_staleness_threshold_);
+  const auto current_pose_result = feedback_utils_.tf->getLatestPose(
+    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_);
   if (!current_pose_result) {
     bt_action_server_->setInternalError(
       ActionT::Result::TF_ERROR,
@@ -259,8 +257,8 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   nav_msgs::msg::Goals goals_array = goal->poses;
   int i = 0;
   for (auto & goal_pose : goals_array.goals) {
-    const auto goal_pose_result = nav2::transformStampedPose(
-      *feedback_utils_.tf, feedback_utils_.global_frame, goal_pose,
+    const auto goal_pose_result = feedback_utils_.tf->transformStampedPose(
+      feedback_utils_.global_frame, goal_pose,
       tf2::durationFromSec(feedback_utils_.transform_tolerance));
     if (!goal_pose_result) {
       bt_action_server_->setInternalError(

@@ -40,7 +40,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "nav2_costmap_2d/range_sensor_layer.hpp"
@@ -298,8 +298,8 @@ void RangeSensorLayer::updateCostmap(
 
   geometry_msgs::msg::TransformStamped transform;
 
-  const auto transform_result = nav2::getStampedTransform(
-    *tf_, global_frame_, in.header.frame_id, rclcpp::Time(in.header.stamp),
+  const auto transform_result = tf_->getStampedTransform(
+    global_frame_, in.header.frame_id, rclcpp::Time(in.header.stamp),
     tf2_ros::fromRclcpp(transform_tolerance_));
   if (!transform_result) {
     RCLCPP_INFO(

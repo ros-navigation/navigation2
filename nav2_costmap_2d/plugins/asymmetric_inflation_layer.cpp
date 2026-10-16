@@ -26,7 +26,7 @@
 #include <omp.h>
 #endif
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -227,8 +227,8 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   // Look up the current path frame -> costmap frame transform
   geometry_msgs::msg::TransformStamped transform;
   if (need_transform) {
-    const auto transform_result = nav2::getLatestTransform(
-      *tf_, global_frame, path_frame, clock_->now(), transform_staleness_threshold_);
+    const auto transform_result = tf_->getLatestTransform(
+      global_frame, path_frame, transform_staleness_threshold_, nav2::Log::Disabled);
     if (!transform_result) {
       RCLCPP_WARN_THROTTLE(
         logger_, *clock_, 1000,

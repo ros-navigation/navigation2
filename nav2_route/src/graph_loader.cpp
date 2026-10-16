@@ -14,7 +14,7 @@
 
 #include <memory>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_route/graph_loader.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -128,8 +128,7 @@ bool GraphLoader::transformGraph(Graph & graph)
 
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
-      const auto transform = nav2::getLatestTransform(
-        *tf_, route_frame_, node_frame);
+      const auto transform = tf_->getLatestTransform(route_frame_, node_frame);
 
       if (!transform) {
         return false;

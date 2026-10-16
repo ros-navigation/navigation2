@@ -42,7 +42,7 @@
 #include <algorithm>
 #include <string>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -485,8 +485,8 @@ StaticLayer::updateCosts(
   // global_frame_ -> map_frame_; only needed for rolling costmaps, where the frames differ
   tf2::Transform tf2_transform = tf2::Transform::getIdentity();
   if (layered_costmap_->isRolling()) {
-    const auto transform_result = nav2::getLatestTransform(
-      *tf_, map_frame_, global_frame_, clock_->now(), transform_staleness_threshold_);
+    const auto transform_result = tf_->getLatestTransform(
+      map_frame_, global_frame_, transform_staleness_threshold_);
     if (!transform_result) {
       RCLCPP_ERROR(logger_, "StaticLayer: transform lookup failed or returned stale data");
       has_updated_data_ = true;

@@ -43,7 +43,7 @@
 #include <memory>
 #include <string>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
 
@@ -420,9 +420,8 @@ void SpeedFilter::process(
     return;
   }
 
-  const auto mask_transform = nav2::getLatestTransform(
-    *tf_, filter_mask_->header.frame_id, global_frame_, clock_->now(),
-    transform_staleness_threshold_);
+  const auto mask_transform = tf_->getLatestTransform(
+    filter_mask_->header.frame_id, global_frame_, transform_staleness_threshold_);
   if (!mask_transform) {
     return;
   }

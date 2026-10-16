@@ -18,7 +18,7 @@
 #include <cmath>
 #include <stdexcept>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -106,8 +106,8 @@ bool transformPathInTargetFrame(
     return true;
   }
 
-  const auto transform_result = nav2::getStampedTransform(
-    tf_buffer, target_frame, input_path.header.frame_id, rclcpp::Time(input_path.header.stamp),
+  const auto transform_result = tf_buffer.getStampedTransform(
+    target_frame, input_path.header.frame_id, rclcpp::Time(input_path.header.stamp),
     tf2::durationFromSec(transform_timeout));
   if (!transform_result) {
     RCLCPP_ERROR(

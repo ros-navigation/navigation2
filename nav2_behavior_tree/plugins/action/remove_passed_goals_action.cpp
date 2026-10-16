@@ -16,7 +16,7 @@
 #include <memory>
 #include <limits>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -64,9 +64,8 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   using namespace nav2_util::geometry_utils;  // NOLINT
 
-  const auto current_pose = nav2::getLatestPose(
-    *tf_, goal_poses.goals[0].header.frame_id, robot_base_frame_, clock_->now(),
-    transform_staleness_threshold_);
+  const auto current_pose = tf_->getLatestPose(
+    goal_poses.goals[0].header.frame_id, robot_base_frame_, transform_staleness_threshold_);
   if (!current_pose) {
     return BT::NodeStatus::FAILURE;
   }
