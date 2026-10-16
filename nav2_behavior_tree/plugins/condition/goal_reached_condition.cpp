@@ -15,7 +15,7 @@
 #include <string>
 #include <memory>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -71,8 +71,8 @@ bool GoalReachedCondition::isGoalReached()
   geometry_msgs::msg::PoseStamped goal;
   getInput("goal", goal);
 
-  const auto current_pose = nav2::getLatestPose(
-    *tf_, goal.header.frame_id, robot_base_frame_, clock_->now(), transform_staleness_threshold_);
+  const auto current_pose = tf_->getLatestPose(
+    goal.header.frame_id, robot_base_frame_, transform_staleness_threshold_);
   if (!current_pose) {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return false;

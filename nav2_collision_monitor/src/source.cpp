@@ -19,7 +19,7 @@
 #include <iterator>
 #include <string>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
@@ -331,16 +331,16 @@ bool Source::getTransform(
   tf2::Transform & tf_transform) const
 {
   if (base_shift_correction_) {
-    const auto transform = nav2::getStampedTransform(
-      *tf_buffer_, base_frame_id_, rclcpp::Time(curr_time), data_header.frame_id,
+    const auto transform = tf_buffer_->getStampedTransform(
+      base_frame_id_, rclcpp::Time(curr_time), data_header.frame_id,
       rclcpp::Time(data_header.stamp), global_frame_id_, transform_tolerance_);
     if (!transform) {
       return false;
     }
     tf2::fromMsg(transform->transform, tf_transform);
   } else {
-    const auto transform_msg = nav2::getLatestTransform(
-      *tf_buffer_, base_frame_id_, data_header.frame_id, curr_time, transform_staleness_threshold_);
+    const auto transform_msg = tf_buffer_->getLatestTransform(
+      base_frame_id_, data_header.frame_id, transform_staleness_threshold_);
     if (!transform_msg) {
       return false;
     }

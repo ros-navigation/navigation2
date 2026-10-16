@@ -16,7 +16,7 @@
 #include <memory>
 #include <string>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "rclcpp/logging.hpp"
 #include "tf2/time.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -68,7 +68,8 @@ BT::NodeStatus TransformAvailableCondition::tick()
     return BT::NodeStatus::SUCCESS;
   }
 
-  bool found = nav2::getLatestTransform(*tf_, child_frame_, parent_frame_).has_value();
+  bool found = tf_->getLatestTransform(child_frame_, parent_frame_, 0.0,
+      nav2::Log::Disabled).has_value();
 
   if (found) {
     was_found_ = true;

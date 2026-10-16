@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "angles/angles.h"
 #include "nav2_ros_common/rate.hpp"
 #include "opennav_docking_core/docking_exceptions.hpp"
@@ -357,7 +357,7 @@ bool FollowingServer::approachObject(
     // Use one robot pose and timestamp for all geometry and control in this iteration.
     const auto robot_pose = getRobotPose();
     iteration_start_time_ = robot_pose.header.stamp;
-    const auto base_to_fixed_transform = nav2::poseToTransformStamped(
+    const auto base_to_fixed_transform = nav2::TransformBuffer::poseToTransformStamped(
       robot_pose, params_->base_frame);
 
     publishFollowingFeedback(FollowObject::Feedback::CONTROLLING);
@@ -382,7 +382,7 @@ bool FollowingServer::approachObject(
 
     // ... and transform the target_pose into base_frame using the same transform
     tf2::doTransform(
-      target_pose, target_pose, nav2::invertTransform(base_to_fixed_transform));
+      target_pose, target_pose, nav2::TransformBuffer::invertTransform(base_to_fixed_transform));
 
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
@@ -528,11 +528,12 @@ bool FollowingServer::getRefinedPose(
 
   // Transform detected pose into fixed frame
   if (detected.header.frame_id != params_->fixed_frame) {
-    const auto detected_result = nav2::transformStampedPose(
-      *tf2_buffer_, params_->fixed_frame, detected,
-      tf2::durationFromSec(params_->transform_tolerance));
+    const auto detected_result = tf2_buffer_->transformStampedPose(
+      params_->fixed_frame, detected,
+      tf2::durationFromSec(params_->transform_tolerance), nav2::Log::Disabled);
     if (!detected_result) {
-      RCLCPP_WARN(this->get_logger(), "Failed to transform detected object pose");
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
+        "Failed to transform detected object pose");
       return false;
     }
     detected = *detected_result;
@@ -562,8 +563,8 @@ bool FollowingServer::getFramePose(
 {
   // Matching the target to the staleness-checked robot snapshot used by this control
   // iteration.
-  const auto transform_result = nav2::getStampedTransform(
-    *tf2_buffer_, params_->fixed_frame, frame_id, rclcpp::Time(iteration_start_time_),
+  const auto transform_result = tf2_buffer_->getStampedTransform(
+    params_->fixed_frame, frame_id, rclcpp::Time(iteration_start_time_),
     tf2::durationFromSec(params_->transform_tolerance));
   if (!transform_result) {
     RCLCPP_WARN(
@@ -571,7 +572,7 @@ bool FollowingServer::getFramePose(
       "Failed to get transform for frame %s", frame_id.c_str());
     return false;
   }
-  pose = nav2::transformToPoseStamped(*transform_result);
+  pose = nav2::TransformBuffer::transformToPoseStamped(*transform_result);
 
   // Filter the detected pose
   auto filtered_pose = filter_->update(pose);
@@ -602,9 +603,8 @@ bool FollowingServer::getTrackingPose(
 
 geometry_msgs::msg::PoseStamped FollowingServer::getRobotPose()
 {
-  const auto robot_pose = nav2::getLatestPose(
-    *tf2_buffer_, params_->fixed_frame, params_->base_frame, now(),
-    params_->transform_staleness_threshold);
+  const auto robot_pose = tf2_buffer_->getLatestPose(
+    params_->fixed_frame, params_->base_frame, params_->transform_staleness_threshold);
   if (!robot_pose) {
     throw opennav_docking_core::DockingTFError("Failed to get a fresh robot pose");
   }

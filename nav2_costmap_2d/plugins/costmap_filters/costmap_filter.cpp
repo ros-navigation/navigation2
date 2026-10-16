@@ -42,7 +42,7 @@
 
 #include <exception>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/point.hpp"
 
@@ -166,8 +166,8 @@ bool CostmapFilter::transformPose(
     in.y = global_pose.position.y;
     in.z = 0.0;
 
-    const auto global_to_mask_transform = nav2::getLatestTransform(
-      *tf_, mask_frame, global_frame, clock_->now(), transform_staleness_threshold_);
+    const auto global_to_mask_transform = tf_->getLatestTransform(
+      mask_frame, global_frame, transform_staleness_threshold_);
     if (!global_to_mask_transform) {
       return false;
     }

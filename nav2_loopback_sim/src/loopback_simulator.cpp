@@ -23,7 +23,7 @@
 #include <tuple>
 #include <chrono>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using namespace std::chrono_literals;
@@ -232,7 +232,8 @@ void LoopbackSimulator::getMap()
 
 void LoopbackSimulator::getBaseToLaserTf()
 {
-  const auto transform = nav2::getLatestTransform(*tf_buffer_, base_frame_id_, scan_frame_id_);
+  const auto transform = tf_buffer_->getLatestTransform(
+    base_frame_id_, scan_frame_id_, 0.0);
   if (!transform) {
     RCLCPP_ERROR(get_logger(), "Transform lookup failed from %s to %s",
       scan_frame_id_.c_str(), base_frame_id_.c_str());

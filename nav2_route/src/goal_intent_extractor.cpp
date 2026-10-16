@@ -17,7 +17,7 @@
 #include <mutex>
 #include <vector>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_route/goal_intent_extractor.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -81,8 +81,8 @@ geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
       logger_,
       "Request pose in %s frame. Converting to route server frame: %s.",
       pose.header.frame_id.c_str(), target_frame.c_str());
-    const auto pose_result = nav2::transformStampedPose(
-      *tf_, target_frame, pose, tf2::durationFromSec(0.1));
+    const auto pose_result = tf_->transformStampedPose(
+      target_frame, pose, tf2::durationFromSec(0.1));
     if (!pose_result) {
       throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame);
     }
@@ -119,8 +119,8 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   if (goal->use_start) {
     start_pose = goal->start;
   } else {
-    const auto start_pose_result = nav2::getLatestPose(
-      *tf_, route_frame_, base_frame_, clock_->now(), transform_staleness_threshold_);
+    const auto start_pose_result = tf_->getLatestPose(
+      route_frame_, base_frame_, transform_staleness_threshold_);
     if (!start_pose_result) {
       throw nav2_core::RouteTFError("Failed to obtain starting pose in: " + route_frame_);
     }

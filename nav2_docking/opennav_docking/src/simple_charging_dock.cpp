@@ -15,7 +15,7 @@
 #include <cmath>
 #include <chrono>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "opennav_docking/simple_charging_dock.hpp"
 #include "opennav_docking/utils.hpp"
@@ -229,8 +229,8 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
       RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 3000,
             "Provided a detection pose without a timestamp, unexpected");
     }
-    const auto detected_pose = nav2::transformStampedPose(
-        *tf2_buffer_, pose.header.frame_id, detected, tf2::durationFromSec(0.2));
+    const auto detected_pose = tf2_buffer_->transformStampedPose(
+      pose.header.frame_id, detected, tf2::durationFromSec(0.2));
     if (!detected_pose) {
       RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
       return false;
@@ -281,9 +281,8 @@ bool SimpleChargingDock::isDocked()
     return false;
   }
 
-  const auto base_pose = nav2::getLatestPose(
-    *tf2_buffer_, dock_pose_.header.frame_id, base_frame_id_, node_->now(),
-    transform_staleness_threshold_);
+  const auto base_pose = tf2_buffer_->getLatestPose(
+    dock_pose_.header.frame_id, base_frame_id_, transform_staleness_threshold_);
   if (!base_pose) {
     return false;
   }

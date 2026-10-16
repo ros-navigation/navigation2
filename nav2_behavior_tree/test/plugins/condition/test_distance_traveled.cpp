@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "utils/test_behavior_tree_fixture.hpp"
@@ -55,7 +55,8 @@ TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
   pose.header.frame_id = "map";
   pose.header.stamp = node_->now();
   pose.pose.orientation.w = 1.0;
-  ASSERT_TRUE(buffer->setTransform(nav2::poseToTransformStamped(pose, "base_link"), "test", false));
+  ASSERT_TRUE(buffer->setTransform(
+    nav2::TransformBuffer::poseToTransformStamped(pose, "base_link"), "test", false));
 
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
@@ -63,9 +64,9 @@ TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
   for (int i = 1; i <= 20; i++) {
     pose.pose.position.x = i * 0.51;
     pose.header.stamp = node_->now();
-    ASSERT_TRUE(buffer->setTransform(nav2::poseToTransformStamped(pose, "base_link"), "test",
-      false));
-    const auto current_pose = nav2::getLatestPose(*buffer, "map", "base_link");
+    ASSERT_TRUE(buffer->setTransform(
+      nav2::TransformBuffer::poseToTransformStamped(pose, "base_link"), "test", false));
+    const auto current_pose = buffer->getLatestPose("map", "base_link");
     ASSERT_TRUE(current_pose);
     EXPECT_DOUBLE_EQ(current_pose->pose.position.x, pose.pose.position.x);
 

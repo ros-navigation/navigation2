@@ -23,6 +23,7 @@
 #include <string>
 #include <limits>
 
+#include "rcl/time.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/parameter_value.hpp"
@@ -437,7 +438,7 @@ public:
 class Tester : public ::testing::Test
 {
 public:
-  Tester();
+  explicit Tester(const rclcpp::Clock::SharedPtr & tf_clock = nullptr);
   ~Tester();
   nav2::TransformBuffer::SharedPtr tf_buffer_;
   nav2::TransformListener::SharedPtr tf_listener_;
@@ -461,6 +462,7 @@ protected:
   void checkPolygon(const std::vector<nav2_collision_monitor::Point> & data);
 
   std::shared_ptr<TestNode> test_node_;
+  rclcpp::Clock::SharedPtr tf_clock_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::shared_ptr<ScanWrapper> scan_;
   std::shared_ptr<PointCloudWrapper> pointcloud_;
@@ -469,13 +471,15 @@ protected:
   std::shared_ptr<CostmapWrapper> costmap_;
 };  // Tester
 
-Tester::Tester()
+Tester::Tester(const rclcpp::Clock::SharedPtr & tf_clock)
 {
   test_node_ = std::make_shared<TestNode>();
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_node(test_node_->get_node_base_interface());
 
-  tf_buffer_ = nav2::create_transform_buffer(test_node_);
+  tf_clock_ = tf_clock ? tf_clock : test_node_->get_clock();
+  tf_buffer_ = tf_clock ? std::make_shared<nav2::TransformBuffer>(tf_clock_) :
+    nav2::create_transform_buffer(test_node_);
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = nav2::create_transform_listener(*tf_buffer_, test_node_);
 }
@@ -862,9 +866,19 @@ TEST_F(Tester, testIncorrectData)
   ASSERT_EQ(data.size(), 0u);
 }
 
-TEST_F(Tester, testIgnoreTimeShift)
+class ClockTester : public Tester
+{
+public:
+  ClockTester()
+  : Tester(std::make_shared<rclcpp::Clock>(RCL_ROS_TIME)) {}
+};
+
+TEST_F(ClockTester, testIgnoreTimeShift)
 {
   rclcpp::Time curr_time = test_node_->now();
+  ASSERT_EQ(rcl_enable_ros_time_override(tf_clock_->get_clock_handle()), RCL_RET_OK);
+  ASSERT_EQ(rcl_set_ros_time_override(tf_clock_->get_clock_handle(), curr_time.nanoseconds()),
+    RCL_RET_OK);
 
   createSources(false);
 
@@ -905,6 +919,8 @@ TEST_F(Tester, testIgnoreTimeShift)
 
   // Fresh messages must not make an old dynamic transform valid.
   const auto later = curr_time + rclcpp::Duration::from_seconds(2.0);
+  ASSERT_EQ(rcl_set_ros_time_override(tf_clock_->get_clock_handle(), later.nanoseconds()),
+    RCL_RET_OK);
   data.clear();
   EXPECT_FALSE(scan_->getData(later, data));
   EXPECT_FALSE(pointcloud_->getData(later, data));

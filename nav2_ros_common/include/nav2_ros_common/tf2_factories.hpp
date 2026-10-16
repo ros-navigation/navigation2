@@ -20,6 +20,7 @@
 
 #include "rclcpp/version.h"
 #include "rclcpp/callback_group.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/create_timer_ros.hpp"
@@ -30,11 +31,6 @@
 
 namespace nav2
 {
-
-/**
- * @brief Nav2 type alias for tf2_ros::Buffer
- */
-using TransformBuffer = tf2_ros::Buffer;
 
 /**
  * @brief Nav2 type wrapper for tf2_ros::TransformListener
@@ -84,14 +80,14 @@ inline nav2::TransformBuffer::SharedPtr create_transform_buffer(
   const NodeT & node,
   rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
 {
-  auto buffer = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto buffer = std::make_shared<nav2::TransformBuffer>(node->get_clock(), node->get_logger());
 #if RCLCPP_VERSION_GTE(30, 0, 0)
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(*node, callback_group);
 #else
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     node->get_node_base_interface(), node->get_node_timers_interface(), callback_group);
 #endif
-  buffer->setCreateTimerInterface(timer_interface);
+  buffer->getRawBuffer().setCreateTimerInterface(timer_interface);
   return buffer;
 }
 
@@ -139,9 +135,9 @@ inline nav2::TransformListener::SharedPtr create_transform_listener(
   nav2::TransformBuffer & buffer, const NodeT & node, bool spin_thread = true)
 {
 #if RCLCPP_VERSION_GTE(30, 0, 0)
-  return std::make_shared<nav2::TransformListener>(buffer, *node, spin_thread);
+  return std::make_shared<nav2::TransformListener>(buffer.getRawBuffer(), *node, spin_thread);
 #else
-  return std::make_shared<nav2::TransformListener>(buffer, node, spin_thread);
+  return std::make_shared<nav2::TransformListener>(buffer.getRawBuffer(), node, spin_thread);
 #endif
 }
 
@@ -153,7 +149,7 @@ inline nav2::TransformListener::SharedPtr create_transform_listener(
 inline nav2::TransformListener::SharedPtr create_transform_listener(
   nav2::TransformBuffer & buffer)
 {
-  return std::make_shared<nav2::TransformListener>(buffer);
+  return std::make_shared<nav2::TransformListener>(buffer.getRawBuffer());
 }
 
 /**
@@ -174,10 +170,10 @@ inline typename nav2::MessageFilter<MessageT>::SharedPtr create_message_filter(
 {
 #if RCLCPP_VERSION_GTE(30, 0, 0)
   return std::make_shared<nav2::MessageFilter<MessageT>>(
-    sub, buffer, target_frame, queue_size, *node, tolerance);
+    sub, buffer.getRawBuffer(), target_frame, queue_size, *node, tolerance);
 #else
   return std::make_shared<nav2::MessageFilter<MessageT>>(
-    sub, buffer, target_frame, queue_size,
+    sub, buffer.getRawBuffer(), target_frame, queue_size,
     node->get_node_logging_interface(), node->get_node_clock_interface(), tolerance);
 #endif
 }

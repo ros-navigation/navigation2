@@ -18,7 +18,7 @@
 #include <memory>
 #include <cmath>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -62,8 +62,8 @@ inline BT::NodeStatus DistanceController::tick()
 
     // Reset the starting position since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
-    const auto start_pose_result = nav2::getLatestPose(
-      *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_);
+    const auto start_pose_result = tf_->getLatestPose(
+      global_frame_, robot_base_frame_, transform_staleness_threshold_);
     if (!start_pose_result) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return BT::NodeStatus::FAILURE;
@@ -76,8 +76,8 @@ inline BT::NodeStatus DistanceController::tick()
 
   // Determine distance travelled since we've started this iteration
 
-  const auto current_pose = nav2::getLatestPose(
-    *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_);
+  const auto current_pose = tf_->getLatestPose(
+    global_frame_, robot_base_frame_, transform_staleness_threshold_);
   if (!current_pose) {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return BT::NodeStatus::FAILURE;
@@ -101,8 +101,8 @@ inline BT::NodeStatus DistanceController::tick()
       case BT::NodeStatus::RUNNING:
         return child_state;
       case BT::NodeStatus::SUCCESS: {
-          const auto start_pose_result = nav2::getLatestPose(
-            *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_);
+          const auto start_pose_result = tf_->getLatestPose(
+            global_frame_, robot_base_frame_, transform_staleness_threshold_);
           if (!start_pose_result) {
             RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
             return BT::NodeStatus::FAILURE;

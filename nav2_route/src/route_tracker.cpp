@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_route/route_tracker.hpp"
 
 #include "nav2_ros_common/rate.hpp"
@@ -51,8 +51,8 @@ void RouteTracker::configure(
 
 geometry_msgs::msg::PoseStamped RouteTracker::getRobotPose()
 {
-  const auto pose_result = nav2::getLatestPose(
-    *tf_buffer_, route_frame_, base_frame_, clock_->now(), transform_staleness_threshold_);
+  const auto pose_result = tf_buffer_->getLatestPose(
+    route_frame_, base_frame_, transform_staleness_threshold_);
   if (!pose_result) {
     throw nav2_core::RouteTFError("Unable to get robot pose in route frame: " + route_frame_);
   }

@@ -19,7 +19,7 @@
 #include <utility>
 #include <limits>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -722,9 +722,8 @@ void ControllerServer::transformedPlanAndGoal(
   const geometry_msgs::msg::PoseStamped & current_robot_pose)
 {
   end_pose_.header.stamp = current_robot_pose.header.stamp;
-  const auto transformed_end_pose_result = nav2::transformStampedPose(
-    *costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(), end_pose_,
-    tf2::durationFromSec(transform_tolerance_));
+  const auto transformed_end_pose_result = costmap_ros_->getTfBuffer()->transformStampedPose(
+    costmap_ros_->getGlobalFrameID(), end_pose_, tf2::durationFromSec(transform_tolerance_));
   if (!transformed_end_pose_result) {
     throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
   }
@@ -802,8 +801,8 @@ void ControllerServer::computeAndPublishVelocity(
 
     // Transform robot pose to path frame for path tracking calculations
 
-    const auto robot_pose_in_path_frame = nav2::transformStampedPose(
-      *costmap_ros_->getTfBuffer(), current_path_.header.frame_id, current_robot_pose,
+    const auto robot_pose_in_path_frame = costmap_ros_->getTfBuffer()->transformStampedPose(
+      current_path_.header.frame_id, current_robot_pose,
       tf2::durationFromSec(transform_tolerance_));
     if (!robot_pose_in_path_frame) {
       throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
@@ -971,9 +970,9 @@ bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & cur
 
 geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
-  const auto pose_result = nav2::getLatestPose(
-    *costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(), costmap_ros_->getBaseFrameID(),
-    now(), params_->transform_staleness_threshold);
+  const auto pose_result = costmap_ros_->getTfBuffer()->getLatestPose(
+    costmap_ros_->getGlobalFrameID(), costmap_ros_->getBaseFrameID(),
+      params_->transform_staleness_threshold);
   if (!pose_result) {
     throw nav2_core::ControllerTFError(
             "Failed to obtain robot pose in frame '" + costmap_ros_->getGlobalFrameID() +

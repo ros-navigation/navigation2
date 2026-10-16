@@ -28,7 +28,7 @@
 #include <fstream>
 #include <string>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "nav2_rviz_plugins/utils.hpp"
 #include "rclcpp/duration.hpp"
@@ -1144,8 +1144,8 @@ Nav2Panel::onAccumulatedWp()
 
     // Looking up transform to get initial pose
     if (store_initial_pose_) {
-      const auto initial_pose = nav2::getLatestPose(
-        *tf2_buffer_, acummulated_poses_.goals[0].header.frame_id, base_frame_);
+      const auto initial_pose = tf2_buffer_->getLatestPose(
+        acummulated_poses_.goals[0].header.frame_id, base_frame_);
       if (!initial_pose) {
         RCLCPP_INFO(
           client_node_->get_logger(), "Could not transform %s to %s",

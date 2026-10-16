@@ -15,7 +15,7 @@
 // limitations under the License.
 
 #include <memory>
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "angles/angles.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_controller/plugins/feasible_path_handler.hpp"
@@ -151,8 +151,8 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
 
   // let's get the pose of the robot in the frame of the plan
 
-  const auto robot_pose = nav2::transformStampedPose(
-    *tf_, global_plan_up_to_constraint_.header.frame_id, pose,
+  const auto robot_pose = tf_->transformStampedPose(
+    global_plan_up_to_constraint_.header.frame_id, pose,
     tf2::durationFromSec(transform_tolerance_));
   if (!robot_pose) {
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
@@ -209,8 +209,8 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   unsigned int mx, my;
 
   // Uses timestamp which has already been validated for staleness
-  const auto plan_to_costmap = nav2::getStampedTransform(
-    *tf_, costmap_ros_->getGlobalFrameID(), global_plan_.header.frame_id,
+  const auto plan_to_costmap = tf_->getStampedTransform(
+    costmap_ros_->getGlobalFrameID(), global_plan_.header.frame_id,
     rclcpp::Time(global_pose_.header.stamp), tf2::durationFromSec(transform_tolerance_));
   if (!plan_to_costmap) {
     throw nav2_core::ControllerTFError(
@@ -269,9 +269,8 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::getTransformedGoal(
     throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
   }
 
-  const auto transformed_goal = nav2::transformStampedPose(
-    *costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(), goal,
-    tf2::durationFromSec(transform_tolerance_));
+  const auto transformed_goal = costmap_ros_->getTfBuffer()->transformStampedPose(
+    costmap_ros_->getGlobalFrameID(), goal, tf2::durationFromSec(transform_tolerance_));
   if (!transformed_goal) {
     throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
   }

@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "behaviortree_cpp/decorator_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -128,8 +128,8 @@ inline bool TruncatePathLocal::getRobotPose(
         "Neither pose nor robot_base_frame specified for %s", name().c_str());
       return false;
     }
-    const auto pose_result = nav2::getLatestPose(
-      *tf_buffer_, path_frame_id, robot_frame, clock_->now(), transform_staleness_threshold_);
+    const auto pose_result = tf_buffer_->getLatestPose(
+      path_frame_id, robot_frame, transform_staleness_threshold_);
     if (!pose_result) {
       RCLCPP_WARN(
         node->get_logger(),

@@ -395,7 +395,8 @@ ObstacleLayer::laserScanCallback(
 
   // project the scan into a point cloud
   try {
-    projector_.transformLaserScanToPointCloud(message->header.frame_id, *message, cloud, *tf_);
+    projector_.transformLaserScanToPointCloud(
+      message->header.frame_id, *message, cloud, tf_->getRawBuffer());
   } catch (tf2::TransformException & ex) {
     RCLCPP_WARN(
       logger_,
@@ -439,7 +440,8 @@ ObstacleLayer::laserScanValidInfCallback(
 
   // project the scan into a point cloud
   try {
-    projector_.transformLaserScanToPointCloud(message.header.frame_id, message, cloud, *tf_);
+    projector_.transformLaserScanToPointCloud(
+      message.header.frame_id, message, cloud, tf_->getRawBuffer());
   } catch (tf2::TransformException & ex) {
     RCLCPP_WARN(
       logger_,

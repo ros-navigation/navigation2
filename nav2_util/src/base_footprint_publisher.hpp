@@ -39,9 +39,9 @@ namespace nav2_util
 class BaseFootprintPublisherListener : public nav2::TransformListener
 {
 public:
-  //  nosemgrep
-  BaseFootprintPublisherListener(tf2::BufferCore & buffer, bool spin_thread, rclcpp::Node & node)
-  : nav2::TransformListener(buffer, spin_thread)
+  BaseFootprintPublisherListener(
+    nav2::TransformBuffer & buffer, bool spin_thread, rclcpp::Node & node)  //  nosemgrep
+  : nav2::TransformListener(buffer.getRawBuffer(), spin_thread)
   {
     base_link_frame_ = nav2::declare_or_get_parameter(
       &node, "base_link_frame", std::string("base_link"));

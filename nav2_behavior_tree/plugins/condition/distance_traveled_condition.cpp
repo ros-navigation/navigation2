@@ -16,7 +16,7 @@
 #include <string>
 #include <memory>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -55,8 +55,8 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
-    const auto start_pose_result = nav2::getLatestPose(
-      *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_);
+    const auto start_pose_result = tf_->getLatestPose(
+      global_frame_, robot_base_frame_, transform_staleness_threshold_, nav2::Log::Disabled);
     if (!start_pose_result) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     }
@@ -66,8 +66,8 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 
   // Determine distance travelled since we've started this iteration
 
-  const auto current_pose = nav2::getLatestPose(
-    *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_);
+  const auto current_pose = tf_->getLatestPose(
+    global_frame_, robot_base_frame_, transform_staleness_threshold_, nav2::Log::Disabled);
   if (!current_pose) {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return BT::NodeStatus::FAILURE;

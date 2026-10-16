@@ -18,7 +18,7 @@
 #include <cmath>
 #include <limits>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/transform_datatypes.hpp"
@@ -285,8 +285,8 @@ bool ExclusionZone::getZoneToBaseTransform(
   tf2::Transform tf_zone_to_global;
   tf_zone_to_global.setIdentity();
   if (frame_id_ != global_frame_id_) {
-    const auto zone_to_global_msg = nav2::getLatestTransform(
-      *tf_buffer_, global_frame_id_, frame_id_, curr_time, transform_staleness_threshold_);
+    const auto zone_to_global_msg = tf_buffer_->getLatestTransform(
+      global_frame_id_, frame_id_, transform_staleness_threshold_);
     if (!zone_to_global_msg) {
       return false;
     }
@@ -298,12 +298,11 @@ bool ExclusionZone::getZoneToBaseTransform(
   // Re-project the world pose into the current base frame.
   tf2::Transform tf_global_to_base;
   const auto global_to_base = base_shift_correction_ ?
-    nav2::getStampedTransform(
-    *tf_buffer_, base_frame_id_, curr_time, global_frame_id_, curr_time,
-    global_frame_id_, non_blocking) :
-    nav2::getLatestTransform(
-    *tf_buffer_, base_frame_id_, global_frame_id_, curr_time,
-    base_transform_staleness_threshold_);
+    tf_buffer_->getStampedTransform(
+      base_frame_id_, curr_time, global_frame_id_, curr_time,
+      global_frame_id_, non_blocking, nav2::Log::Disabled) :
+    tf_buffer_->getLatestTransform(
+      base_frame_id_, global_frame_id_, base_transform_staleness_threshold_, nav2::Log::Disabled);
   if (!global_to_base) {
     RCLCPP_WARN_THROTTLE(
       logger_, *node_clock_, 2000,

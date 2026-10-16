@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/future_return_code.hpp"
 #include "rclcpp/logging.hpp"
@@ -156,8 +156,8 @@ private:
   void waitForTransform()
   {
     auto transformAvailable = [this]()-> bool {
-        return nav2::getStampedTransform(
-          *costmap_->getTfBuffer(), "map", "base_link", rclcpp::Time(0), 1s).has_value();
+        return costmap_->getTfBuffer()->getStampedTransform(
+          "map", "base_link", rclcpp::Time(0), 1s, nav2::Log::Disabled).has_value();
       };
 
     rclcpp::Time start_time = costmap_->now();

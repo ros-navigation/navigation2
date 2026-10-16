@@ -42,7 +42,7 @@
 #include <vector>
 #include <chrono>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "tf2/convert.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 using namespace std::chrono_literals;
@@ -96,8 +96,8 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   local_origin.point.x = 0;
   local_origin.point.y = 0;
   local_origin.point.z = 0;
-  const auto global_origin_transform = nav2::getStampedTransform(
-    tf2_buffer_, global_frame_, local_origin.header.frame_id,
+  const auto global_origin_transform = tf2_buffer_.getStampedTransform(
+    global_frame_, local_origin.header.frame_id,
     rclcpp::Time(local_origin.header.stamp), tf_tolerance_);
   if (!global_origin_transform) {
     RCLCPP_ERROR(
@@ -118,9 +118,8 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   sensor_msgs::msg::PointCloud2 global_frame_cloud;
 
   // transform the point cloud
-  const auto global_frame_cloud_transform = nav2::getStampedTransform(
-    tf2_buffer_, global_frame_, cloud.header.frame_id,
-    rclcpp::Time(cloud.header.stamp), tf_tolerance_);
+  const auto global_frame_cloud_transform = tf2_buffer_.getStampedTransform(
+    global_frame_, cloud.header.frame_id, rclcpp::Time(cloud.header.stamp), tf_tolerance_);
   if (!global_frame_cloud_transform) {
     RCLCPP_ERROR(
       logger_, "Failed to transform point cloud from %s to %s",

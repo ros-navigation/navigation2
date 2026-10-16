@@ -32,7 +32,7 @@
 #include <utility>
 #include <vector>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_amcl/angleutils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_amcl/pf/pf.hpp"
@@ -296,8 +296,8 @@ AmclNode::getOdomPose(
   const rclcpp::Time & sensor_timestamp, const std::string & frame_id)
 {
   // Get the robot's pose at the sensor timestamp.
-  const auto odom_pose_transform = nav2::getStampedTransform(
-    *tf_buffer_, odom_frame_id_, frame_id, sensor_timestamp, tf2::Duration::zero());
+  const auto odom_pose_transform = tf_buffer_->getStampedTransform(
+    odom_frame_id_, frame_id, sensor_timestamp, tf2::Duration::zero(), nav2::Log::Disabled);
   if (!odom_pose_transform) {
     ++scan_error_count_;
     if (scan_error_count_ % 20 == 0) {
@@ -306,7 +306,7 @@ AmclNode::getOdomPose(
     }
     return false;
   }
-  odom_pose = nav2::transformToPoseStamped(*odom_pose_transform);
+  odom_pose = nav2::TransformBuffer::transformToPoseStamped(*odom_pose_transform);
 
   scan_error_count_ = 0;  // reset since we got a good transform
   x = odom_pose.pose.position.x;
@@ -452,8 +452,8 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
   rclcpp::Time rclcpp_time = now();
 
   // Check if the transform is available
-  const auto tx_odom_result = nav2::getStampedTransform(
-    *tf_buffer_, base_frame_id_, rclcpp::Time(msg.header.stamp), base_frame_id_, rclcpp_time,
+  const auto tx_odom_result = tf_buffer_->getStampedTransform(
+    base_frame_id_, rclcpp::Time(msg.header.stamp), base_frame_id_, rclcpp_time,
     odom_frame_id_, tf2::Duration::zero());
   if (!tx_odom_result) {
     // If we've never sent a transform, then this is normal, because the
@@ -633,8 +633,8 @@ bool AmclNode::addNewScanner(
   lasers_update_.push_back(true);
   laser_index = frame_to_laser_.size();
 
-  const auto laser_pose_transform = nav2::getLatestTransform(
-    *tf_buffer_, base_frame_id_, laser_scan_frame_id);
+  const auto laser_pose_transform = tf_buffer_->getLatestTransform(
+    base_frame_id_, laser_scan_frame_id, 0.0);
   if (!laser_pose_transform) {
     RCLCPP_ERROR(
       get_logger(), "Couldn't transform from %s to %s, "
@@ -643,7 +643,7 @@ bool AmclNode::addNewScanner(
       base_frame_id_.c_str());
     return false;
   }
-  laser_pose = nav2::transformToPoseStamped(*laser_pose_transform);
+  laser_pose = nav2::TransformBuffer::transformToPoseStamped(*laser_pose_transform);
 
   pf_vector_t laser_pose_v;
   laser_pose_v.v[0] = laser_pose.pose.position.x;
@@ -689,9 +689,8 @@ bool AmclNode::updateFilter(
 
   inc_q.header = min_q.header;
   inc_q.quaternion = orientationAroundZAxis(laser_scan->angle_min + laser_scan->angle_increment);
-  const auto min_q_transform = nav2::getStampedTransform(
-    *tf_buffer_, base_frame_id_, min_q.header.frame_id,
-    rclcpp::Time(min_q.header.stamp), tf2::Duration::zero());
+  const auto min_q_transform = tf_buffer_->getStampedTransform(
+    base_frame_id_, min_q.header.frame_id, rclcpp::Time(min_q.header.stamp), tf2::Duration::zero());
   if (!min_q_transform) {
     RCLCPP_WARN(
       get_logger(), "Unable to transform min/max laser angles into base frame");
@@ -892,8 +891,8 @@ AmclNode::calculateMaptoOdomTransform(
   tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
   tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
-  const auto odom_to_map = nav2::transformStampedPose(
-    *tf_buffer_, odom_frame_id_, tmp_tf_stamped, tf2::Duration::zero());
+  const auto odom_to_map = tf_buffer_->transformStampedPose(
+    odom_frame_id_, tmp_tf_stamped, tf2::Duration::zero(), nav2::Log::Disabled);
   if (!odom_to_map) {
     RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform:");
     return;
