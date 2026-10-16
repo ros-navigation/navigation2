@@ -101,7 +101,12 @@ public:
 
   virtual bool rotateToObject(geometry_msgs::msg::PoseStamped &, const std::string &)
   {
-    return true;
+    return rotate_to_object_result_;
+  }
+
+  void setRotateToObjectResult(bool result)
+  {
+    rotate_to_object_result_ = result;
   }
 
   geometry_msgs::msg::PoseStamped getPoseAtDistance(
@@ -127,6 +132,9 @@ public:
   {
     iteration_start_time_ = stamp;
   }
+
+private:
+  bool rotate_to_object_result_{true};
 };
 
 TEST(FollowingServerTests, ObjectLifecycle)
@@ -157,6 +165,7 @@ TEST(FollowingServerTests, ErrorExceptions)
   node->declare_parameter("exception_to_throw", rclcpp::ParameterValue(""));
   node->declare_parameter("follow_action_called", rclcpp::ParameterValue(false));
   node->set_parameter(rclcpp::Parameter("fixed_frame", rclcpp::ParameterValue("test_frame")));
+  node->set_parameter(rclcpp::Parameter("target_loss_hold_timeout", 0.0));
 
   // Error codes following
   std::vector<std::string> error_ids{
@@ -194,6 +203,27 @@ TEST(FollowingServerTests, ErrorExceptions)
       EXPECT_TRUE(false);
     }
   }
+
+  // Exercise the terminal path when recovery rotation cannot continue.
+  node->setRotateToObjectResult(false);
+  node->set_parameter(rclcpp::Parameter("search_by_rotating", true));
+  node->set_parameter(
+    rclcpp::Parameter("exception_to_throw", rclcpp::ParameterValue("FailedToDetectObject")));
+
+  auto client = rclcpp_action::create_client<FollowObject>(node2, "follow_object");
+  ASSERT_TRUE(client->wait_for_action_server(1s));
+  auto goal_msg = FollowObject::Goal();
+  goal_msg.pose_topic = "dynamic_pose";
+  auto future_goal_handle = client->async_send_goal(goal_msg);
+  pub->publish(detected_pose);
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(node2, future_goal_handle, 2s),
+    rclcpp::FutureReturnCode::SUCCESS);
+  auto future_result = client->async_get_result(future_goal_handle.get());
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(node2, future_result, 2s),
+    rclcpp::FutureReturnCode::SUCCESS);
+  EXPECT_EQ(future_result.get().code, rclcpp_action::ResultCode::ABORTED);
 
   // Set follow_action_called to true to simulate robot following object
   node->set_parameter(rclcpp::Parameter("follow_action_called", true));
@@ -465,6 +495,7 @@ TEST(FollowingServerTests, DynamicParams)
   auto results = params->set_parameters_atomically(
     {rclcpp::Parameter("controller_frequency", 1.0),
       rclcpp::Parameter("detection_timeout", 2.0),
+      rclcpp::Parameter("target_loss_hold_timeout", 2.5),
       rclcpp::Parameter("rotate_to_object_timeout", 3.0),
       rclcpp::Parameter("static_object_timeout", 4.0),
       rclcpp::Parameter("desired_distance", 5.0),
@@ -485,6 +516,7 @@ TEST(FollowingServerTests, DynamicParams)
   // Check parameters
   EXPECT_EQ(node->get_parameter("controller_frequency").as_double(), 1.0);
   EXPECT_EQ(node->get_parameter("detection_timeout").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("target_loss_hold_timeout").as_double(), 2.5);
   EXPECT_EQ(node->get_parameter("rotate_to_object_timeout").as_double(), 3.0);
   EXPECT_EQ(node->get_parameter("static_object_timeout").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("desired_distance").as_double(), 5.0);
@@ -513,6 +545,11 @@ TEST(FollowingServerTests, DynamicParams)
     {rclcpp::Parameter("transform_staleness_threshold", -1.0)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_EQ(node->get_parameter("transform_staleness_threshold").as_double(), 10.0);
+
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("target_loss_hold_timeout", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("target_loss_hold_timeout").as_double(), 2.5);
 }
 
 }  // namespace opennav_following

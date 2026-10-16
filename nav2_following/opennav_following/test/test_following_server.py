@@ -48,6 +48,8 @@ from tf2_ros import TransformBroadcaster
 # @pytest.mark.flaky
 # @pytest.mark.flaky(max_runs=5, min_passes=3)
 def generate_test_description():
+    mode_env = os.getenv('FOLLOWING_MODE', 'topic')
+    waiting_mode = mode_env.startswith('waiting_')
 
     return LaunchDescription([
         # SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
@@ -57,12 +59,17 @@ def generate_test_description():
             executable='opennav_following',
             name='following_server',
             parameters=[{'desired_distance': 0.5,
-                         'detection_timeout': 0.75,
+                         'detection_timeout': 0.2 if waiting_mode else 0.75,
+                         'target_loss_hold_timeout': (
+                             8.0 if mode_env == 'waiting_max_duration' else 0.8),
                          'linear_tolerance': 0.05,
                          'angular_tolerance': 0.05,
                          'transform_tolerance': 0.5,
-                         'static_object_timeout': 0.5,
-                         'search_by_rotating': True,
+                         'transform_staleness_threshold': (
+                             0.25 if mode_env == 'waiting_tf' else 0.0),
+                         'static_object_timeout': -1.0 if waiting_mode else 0.5,
+                         'search_by_rotating': (
+                             not waiting_mode or mode_env == 'waiting_rotate'),
                          'controller': {
                              'use_collision_detection': False,
                              'rotate_to_heading_max_angular_accel': 25.0,
@@ -104,6 +111,7 @@ class ObjectPublisher:
         self._at_distance_getter = at_distance_getter
         self._mode = mode
         self._frame_name = frame_name
+        self._paused = threading.Event()
 
         # Timer will drive publishing for both modes
         self._timer = self._node.create_timer(1.0 / rate_hz, self._timer_cb)
@@ -123,7 +131,7 @@ class ObjectPublisher:
 
     def _timer_cb(self):
         # Called in executor context at the configured rate
-        if self._at_distance_getter():
+        if self._paused.is_set() or self._at_distance_getter():
             return
         if self._mode == 'topic':
             p = PoseStamped()
@@ -156,6 +164,12 @@ class ObjectPublisher:
         except Exception:
             # Ensure we don't crash the main test thread
             pass
+
+    def pause(self):
+        self._paused.set()
+
+    def resume(self):
+        self._paused.clear()
 
     def shutdown(self):
         self._stop_event.set()
@@ -190,18 +204,26 @@ class TestFollowingServer(unittest.TestCase):
         # Track states
         self.at_distance = False
         self.retry_state = False
+        self.feedback_history = []
+        self.command_history = []
+        self.broadcast_tf = True
         # Latest command velocity
         self.command = Twist()
         self.node = rclpy.create_node('test_following_server')
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.node)
-        # Determine test mode from environment: 'topic, 'frame' or 'search'
+        # Determine test mode from environment.
         mode_env = os.getenv('FOLLOWING_MODE', 'topic')
+        self.mode_env = mode_env
         # In 'search' mode stop publishing once the robot reaches 0.75m so the server must
         # perform its recovery behavior (object lost)
         if mode_env == 'search':
             def at_distance_getter():
                 return bool(((self.x ** 2 + self.y ** 2) ** 0.5) >= 0.75)
+            pub_mode = 'topic'
+        elif mode_env.startswith('waiting_'):
+            def at_distance_getter():
+                return self.at_distance
             pub_mode = 'topic'
         else:
             def at_distance_getter():
@@ -244,6 +266,8 @@ class TestFollowingServer(unittest.TestCase):
     def command_velocity_callback(self, msg):
         self.node.get_logger().info(f'Command: {msg.twist.linear.x:f} {msg.twist.angular.z:f}')
         self.command = msg.twist
+        self.command_history.append(
+            (time.monotonic(), msg.twist.linear.x, msg.twist.angular.z))
 
     def timer_callback(self):
         # Propagate command
@@ -252,7 +276,8 @@ class TestFollowingServer(unittest.TestCase):
         self.y += sin(self.theta) * self.command.linear.x * period
         self.theta += self.command.angular.z * period
         # Need to publish updated TF
-        self.publish()
+        if self.broadcast_tf:
+            self.publish()
 
     def publish(self):
         # Publish base->odom transform
@@ -282,6 +307,8 @@ class TestFollowingServer(unittest.TestCase):
         self,
         msg
     ):
+        self.feedback_history.append(
+            (time.monotonic(), msg.feedback.state, msg.feedback.num_retries))
         # Force the following action to run a full recovery loop when
         # the robot is at distance
         if msg.feedback.state == msg.feedback.STOPPING:
@@ -289,6 +316,185 @@ class TestFollowingServer(unittest.TestCase):
         elif msg.feedback.state == msg.feedback.RETRY:
             self.at_distance = False
             self.retry_state = True
+
+    def spin_until(self, predicate, timeout_sec):
+        start = time.monotonic()
+        while time.monotonic() - start < timeout_sec:
+            rclpy.spin_once(self.node, timeout_sec=0.05)
+            if predicate():
+                return True
+        return False
+
+    def run_waiting_for_target_test(self, result_future):
+        # Establish real control before forcing the target dropout.
+        self.assertTrue(
+            self.spin_until(
+                lambda: any(abs(x) > 1e-6 or abs(z) > 1e-6
+                            for _, x, z in self.command_history),
+                3.0),
+            'Expected a non-zero control command before target dropout')
+
+        history_start = len(self.feedback_history)
+        command_start = len(self.command_history)
+        self.object_publisher.pause()
+
+        self.assertTrue(
+            self.spin_until(
+                lambda: any(
+                    state == FollowObject.Feedback.WAITING_FOR_TARGET
+                    for _, state, _ in self.feedback_history[history_start:]),
+                2.0),
+            'WAITING_FOR_TARGET feedback was not observed')
+
+        waiting_event = next(
+            item for item in self.feedback_history[history_start:]
+            if item[1] == FollowObject.Feedback.WAITING_FOR_TARGET)
+        waiting_time, _, waiting_retries = waiting_event
+        self.assertEqual(waiting_retries, 0)
+
+        self.assertTrue(
+            self.spin_until(
+                lambda: any(
+                    abs(x) < 1e-9 and abs(z) < 1e-9
+                    for _, x, z in self.command_history[command_start:]),
+                0.5),
+            'A zero velocity command was not observed after target dropout')
+
+        stop_index = next(
+            i for i in range(command_start, len(self.command_history))
+            if abs(self.command_history[i][1]) < 1e-9 and
+            abs(self.command_history[i][2]) < 1e-9)
+        observe_start = time.monotonic()
+        while time.monotonic() - observe_start < 0.15:
+            rclpy.spin_once(self.node, timeout_sec=0.02)
+
+        waiting_commands = [
+            (x, z) for _, x, z in self.command_history[stop_index:]]
+        self.assertTrue(waiting_commands)
+        self.assertTrue(
+            all(abs(x) < 1e-9 and abs(z) < 1e-9 for x, z in waiting_commands),
+            'Non-zero command published while WAITING_FOR_TARGET')
+        self.assertEqual(
+            len(waiting_commands), 1,
+            'A redundant zero velocity command was published during the hold')
+
+        if self.mode_env == 'waiting_max_duration':
+            self.assertTrue(
+                self.spin_until(lambda: result_future.done(), 6.0),
+                'max_duration was not enforced during WAITING_FOR_TARGET')
+            result = result_future.result()
+            self.assertEqual(result.status, GoalStatus.STATUS_SUCCEEDED)
+            self.assertEqual(result.result.num_retries, 0)
+            self.assertFalse(
+                any(stamp >= waiting_time and state == FollowObject.Feedback.RETRY
+                    for stamp, state, _ in self.feedback_history),
+                'max_duration consumed a retry')
+            return
+        elif self.mode_env == 'waiting_tf':
+            self.broadcast_tf = False
+            self.assertTrue(
+                self.spin_until(lambda: result_future.done(), 3.0),
+                'Stale robot TF did not terminate the action')
+            result = result_future.result()
+            self.assertEqual(result.status, GoalStatus.STATUS_ABORTED)
+            self.assertEqual(result.result.error_code, FollowObject.Result.TF_ERROR)
+            self.assertEqual(result.result.num_retries, 0)
+            return
+        elif self.mode_env == 'waiting_cancel':
+            # Cancellation must terminate the action before the hold timeout expires.
+            cancel_start = time.monotonic()
+            cancel_future = self.goal_handle.cancel_goal_async()
+            rclpy.spin_until_future_complete(self.node, cancel_future, timeout_sec=0.5)
+            self.assertTrue(cancel_future.done(), 'Cancel request did not complete promptly')
+            rclpy.spin_until_future_complete(self.node, result_future, timeout_sec=0.5)
+            self.assertTrue(result_future.done(), 'Cancel did not terminate during target hold')
+            self.assertLess(
+                time.monotonic() - cancel_start, 0.7,
+                'Cancel waited for target_loss_hold_timeout to expire')
+            return
+        elif self.mode_env == 'waiting_preempt':
+            # A new goal must preempt the current action before the hold timeout expires.
+            preempt_start = time.monotonic()
+            new_goal = FollowObject.Goal()
+            new_goal.pose_topic = 'tested_pose'
+            new_goal.max_duration = Duration(seconds=10.0).to_msg()
+            goal_future = self.follow_action_client.send_goal_async(
+                new_goal, feedback_callback=self.action_feedback_callback)
+            rclpy.spin_until_future_complete(self.node, goal_future, timeout_sec=0.5)
+            self.assertTrue(goal_future.done(), 'Preempting goal was not accepted promptly')
+            new_goal_handle = goal_future.result()
+            self.assertIsNotNone(new_goal_handle)
+            self.assertTrue(new_goal_handle.accepted)
+
+            rclpy.spin_until_future_complete(self.node, result_future, timeout_sec=0.5)
+            self.assertTrue(result_future.done(), 'Preempt did not terminate during target hold')
+            self.assertLess(
+                time.monotonic() - preempt_start, 0.7,
+                'Preempt waited for target_loss_hold_timeout to expire')
+
+            new_result_future = new_goal_handle.get_result_async()
+            rclpy.spin_until_future_complete(self.node, new_result_future, timeout_sec=0.5)
+            self.assertTrue(new_result_future.done(), 'Preempted goals were not terminated')
+            return
+        elif self.mode_env == 'waiting_short':
+            # Reacquire within the hold interval: control resumes without RETRY.
+            self.object_publisher.resume()
+            self.assertTrue(
+                self.spin_until(
+                    lambda: any(
+                        stamp >= waiting_time and
+                        state == FollowObject.Feedback.CONTROLLING and retries == 0
+                        for stamp, state, retries in self.feedback_history),
+                    1.0),
+                'CONTROLLING did not resume after short target dropout')
+            self.assertFalse(
+                any(
+                    stamp >= waiting_time and state == FollowObject.Feedback.RETRY
+                    for stamp, state, _ in self.feedback_history),
+                'Short target dropout consumed a retry')
+        elif self.mode_env == 'waiting_long':
+            # Keep the target absent beyond the hold interval: exactly one retry is consumed.
+            self.assertTrue(
+                self.spin_until(
+                    lambda: any(
+                        stamp >= waiting_time and
+                        state == FollowObject.Feedback.RETRY and retries == 1
+                        for stamp, state, retries in self.feedback_history),
+                    1.5),
+                'RETRY was not observed after target loss hold expired')
+            self.object_publisher.resume()
+        elif self.mode_env == 'waiting_rotate':
+            self.assertTrue(
+                self.spin_until(
+                    lambda: any(
+                        stamp >= waiting_time and
+                        state == FollowObject.Feedback.RETRY and retries == 1
+                        for stamp, state, retries in self.feedback_history),
+                    2.0),
+                'Rotation did not enter RETRY after the hold timeout')
+            retry_time = next(
+                stamp for stamp, state, retries in self.feedback_history
+                if stamp >= waiting_time and
+                state == FollowObject.Feedback.RETRY and retries == 1)
+            self.assertTrue(
+                self.spin_until(
+                    lambda: any(
+                        stamp >= retry_time and abs(z) > 1e-4
+                        for stamp, _, z in self.command_history),
+                    2.0),
+                'Rotation did not publish an angular command')
+            self.assertFalse(
+                any(
+                    stamp >= waiting_time and
+                    state == FollowObject.Feedback.RETRY and retries > 1
+                    for stamp, state, retries in self.feedback_history),
+                'More than one retry consumed before rotation began')
+        else:
+            self.fail(f'Unexpected waiting test mode: {self.mode_env}')
+
+        cancel_future = self.goal_handle.cancel_goal_async()
+        rclpy.spin_until_future_complete(self.node, cancel_future, timeout_sec=2.0)
+        rclpy.spin_until_future_complete(self.node, result_future, timeout_sec=2.0)
 
     def test_following_server(self):
         # Publish TF for odometry
@@ -333,9 +539,12 @@ class TestFollowingServer(unittest.TestCase):
 
         # Create the goal
         goal = FollowObject.Goal()
-        if os.getenv('FOLLOWING_MODE') == 'topic' or os.getenv('FOLLOWING_MODE') == 'search':
+        if (self.mode_env == 'topic' or self.mode_env == 'search' or
+                self.mode_env.startswith('waiting_')):
             goal.pose_topic = 'tested_pose'
-            goal.max_duration = Duration(seconds=10.0).to_msg()
+            goal.max_duration = Duration(
+                seconds=5.0 if self.mode_env == 'waiting_max_duration' else 10.0
+            ).to_msg()
         elif os.getenv('FOLLOWING_MODE') == 'frame':
             goal.tracked_frame = 'object_frame'
             goal.max_duration = Duration(seconds=4.0).to_msg()
@@ -349,6 +558,10 @@ class TestFollowingServer(unittest.TestCase):
         assert self.goal_handle is not None, 'goal_handle should not be None'
         assert self.goal_handle.accepted, 'goal_handle not accepted'
         result_future_original = self.goal_handle.get_result_async()
+
+        if self.mode_env.startswith('waiting_'):
+            self.run_waiting_for_target_test(result_future_original)
+            return
 
         # Run for 2 seconds
         for _ in range(20):
