@@ -37,8 +37,8 @@ namespace nav2_behavior_tree
  *
  * - If the second child returns FAILURE, this control node will stop the loop and returns FAILURE.
  *
- * When reset_distance is positive, retries reset after the robot moves that far
- * from the first recovery attempt (or the last distance reset). Halting clears this reference.
+ * When reset_distance is positive, retries reset after the main child moves the robot that far.
+ * Each main-child attempt starts a new reference; recovery motion does not count.
  *
  * Usage in XML:
  * @code
@@ -73,9 +73,10 @@ public:
     return {
       BT::InputPort<int>("number_of_retries", 1, "Number of retries"),
       BT::InputPort<double>(
-        "reset_distance", 0.0, "Displacement in meters to reset retries; non-positive disables"),
-      BT::InputPort<std::string>("robot_frame", "base_link", "Robot frame"),
-      BT::InputPort<std::string>("global_frame", "map", "Reference frame")
+        "reset_distance", 0.0,
+          "Main action displacement (m) to reset retries; non-positive disables"),
+      BT::InputPort<std::string>("robot_base_frame", "Robot frame"),
+      BT::InputPort<std::string>("global_frame", "odom", "Reference frame")
     };
   }
 
@@ -90,8 +91,19 @@ private:
   nav2::TransformBuffer::SharedPtr tf_;
   std::optional<geometry_msgs::msg::PoseStamped> reset_pose_;
 
-  // Capture the first recovery position or reset retries once enough progress is made.
-  void updateRetryCount();
+  /**
+   * @brief Initializes the execution
+   */
+  void initialize();
+
+  /**
+   * @brief Capture the reference pose before the main child executes if none is available.
+   */
+  void captureResetPose();
+  /**
+   * @brief Reset retries once the main child has made enough progress.
+   */
+  void checkRetryReset();
 
   /**
    * @brief The main override required by a BT action

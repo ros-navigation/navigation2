@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 #include <memory>
+#include <functional>
 
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "utils/test_dummy_tree_node.hpp"
@@ -24,8 +25,12 @@
 class RecoveryDummy : public nav2_behavior_tree::DummyNode
 {
 public:
+  std::function<void()> on_tick;
   BT::NodeStatus tick() override
   {
+    if (on_tick) {
+      on_tick();
+    }
     if (ticks_ == num_success_) {
       setStatus(BT::NodeStatus::SUCCESS);
     } else if (ticks_ == num_failure_) {
@@ -85,18 +90,24 @@ public:
   }
 
 protected:
-  void enableDistanceReset(double distance = 1.0)
+  void enableDistanceReset(double distance = 1.0, unsigned int retries = 1)
   {
     // Use a private buffer and direct transforms to keep these tests deterministic.
     distance_tf_ = nav2::create_transform_buffer(node_);
     auto config = *config_;
-    config.blackboard = BT::Blackboard::create();
+    config.input_ports["number_of_retries"] = std::to_string(retries);
+    distance_blackboard_ = BT::Blackboard::create();
+    config.blackboard = distance_blackboard_;
     config.blackboard->set("node", node_);
     config.blackboard->set("tf_buffer", distance_tf_);
-    config.input_ports["reset_distance"] = std::to_string(distance);
-    config.input_ports["robot_frame"] = "test_robot";
-    config.input_ports["global_frame"] = "test_world";
+    config.input_ports["reset_distance"] = "{reset_distance}";
+    config.input_ports["robot_base_frame"] = "{robot_frame}";
+    config.input_ports["global_frame"] = "{global_frame}";
     bt_node_ = std::make_shared<nav2_behavior_tree::RecoveryNode>("recovery_node", config);
+    // Populate remapped ports after construction, as earlier tree nodes may do.
+    config.blackboard->set("reset_distance", distance);
+    config.blackboard->set("robot_frame", std::string("test_robot"));
+    config.blackboard->set("global_frame", std::string("test_world"));
     bt_node_->addChild(first_child_.get());
     bt_node_->addChild(second_child_.get());
   }
@@ -109,7 +120,6 @@ protected:
     transform.header.stamp = node_->now();
     transform.transform.translation.x = x;
     transform.transform.translation.y = y;
-    transform.transform.rotation.w = 1.0;
     ASSERT_TRUE(distance_tf_->setTransform(transform, "test", true));
   }
 
@@ -122,6 +132,7 @@ protected:
     return bt_node_->executeTick();
   }
 
+  BT::Blackboard::Ptr distance_blackboard_;
   nav2::TransformBuffer::SharedPtr distance_tf_;
   static std::shared_ptr<nav2_behavior_tree::RecoveryNode> bt_node_;
   static std::shared_ptr<RecoveryDummy> first_child_;
@@ -236,15 +247,16 @@ TEST_F(RecoveryNodeTestFixture, test_distance_threshold_and_repeated_resets)
   EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
 }
 
-TEST_F(RecoveryNodeTestFixture, test_halt_clears_distance_reference)
+TEST_F(RecoveryNodeTestFixture, test_halt_clears_distance_reference_and_reloads_ports)
 {
   enableDistanceReset();
   moveRobot(0.0);
   EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
   bt_node_->haltNode();
+  distance_blackboard_->set("reset_distance", 2.0);
   moveRobot(10.0);
   EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
-  moveRobot(10.5);
+  moveRobot(11.5);
   EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
 }
 
@@ -266,6 +278,85 @@ TEST_F(RecoveryNodeTestFixture, test_initially_missing_transform)
   EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
 }
 
+TEST_F(RecoveryNodeTestFixture, test_recovery_completion_motion_does_not_reset_retries)
+{
+  enableDistanceReset();
+  moveRobot(0.0);
+  second_child_->on_tick = [this]() {moveRobot(5.0);};
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  second_child_->on_tick = nullptr;
+  moveRobot(5.5);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+}
+TEST_F(RecoveryNodeTestFixture, test_running_recovery_motion_does_not_reset_retries)
+{
+  enableDistanceReset(1.0, 2);
+  moveRobot(0.0);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  first_child_->returnFailureOn(0);
+  second_child_->changeStatus(BT::NodeStatus::RUNNING);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+  moveRobot(5.0);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+  second_child_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+  moveRobot(5.5);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+}
+TEST_F(RecoveryNodeTestFixture, test_main_attempt_distances_do_not_accumulate)
+{
+  enableDistanceReset(1.0, 2);
+  moveRobot(0.0);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  moveRobot(0.6);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  moveRobot(1.2);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+}
+TEST_F(RecoveryNodeTestFixture, test_motion_during_failing_main_tick_resets_retries)
+{
+  enableDistanceReset();
+  moveRobot(0.0);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  first_child_->on_tick = [this]() {moveRobot(1.0);};
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  first_child_->on_tick = nullptr;
+  moveRobot(1.5);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+}
+TEST_F(RecoveryNodeTestFixture, test_omitted_robot_frame_uses_parameter)
+{
+  enableDistanceReset();
+  moveRobot(0.0);
+  auto parameter_node = std::make_shared<nav2::LifecycleNode>("recovery_frame_test");
+  parameter_node->declare_parameter("robot_base_frame", std::string("test_robot"));
+  distance_blackboard_->set("node", parameter_node);
+  BT::BehaviorTreeFactory factory;
+  factory.registerNodeType<nav2_behavior_tree::RecoveryNode>("RecoveryNode");
+  factory.registerBuilder<RecoveryDummy>(
+    "RecoveryDummy", [](const std::string &, const BT::NodeConfiguration &) {
+      return std::make_unique<RecoveryDummy>();
+    });
+  auto tree = factory.createTreeFromText(
+    R"(<root BTCPP_format="4"><BehaviorTree ID="Test">
+      <RecoveryNode number_of_retries="1" reset_distance="1.0" global_frame="test_world">
+        <RecoveryDummy/><RecoveryDummy/>
+      </RecoveryNode>
+    </BehaviorTree></root>)",
+    distance_blackboard_);
+  auto * recovery = static_cast<BT::ControlNode *>(tree.rootNode());
+  auto * main_child = static_cast<RecoveryDummy *>(recovery->children()[0]);
+  auto * recovery_child = static_cast<RecoveryDummy *>(recovery->children()[1]);
+  main_child->returnFailureOn(0);
+  main_child->returnRunningOn(1);
+  recovery_child->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::RUNNING);
+  moveRobot(1.0);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::RUNNING);
+  main_child->returnFailureOn(0);
+  recovery_child->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::RUNNING);
+}
 TEST_F(RecoveryNodeTestFixture, test_nonpositive_distance_needs_no_blackboard_dependencies)
 {
   auto config = *config_;
