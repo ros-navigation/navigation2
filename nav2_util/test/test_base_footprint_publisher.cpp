@@ -15,7 +15,7 @@
 #include <string>
 #include <memory>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "base_footprint_publisher.hpp"
 #include "gtest/gtest.h"
 #include "tf2/exceptions.hpp"
@@ -43,7 +43,7 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   transform.child_frame_id = "test1";
   tf_broadcaster->sendTransform(transform);
   executor.spin_some();
-  EXPECT_FALSE(nav2::getLatestTransform(*buffer, base_link, base_footprint));
+  EXPECT_FALSE(buffer->getLatestTransform(base_link, base_footprint));
 
   // This is valid, should work now and communicate the Z-removed info
   transform.header.stamp = node->now();
@@ -56,7 +56,7 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   rclcpp::Rate r(1.0);
   r.sleep();
   executor.spin_some();
-  const auto t = nav2::getLatestTransform(*buffer, base_link, base_footprint);
+  const auto t = buffer->getLatestTransform(base_link, base_footprint);
   ASSERT_TRUE(t);
   EXPECT_EQ(t->transform.translation.x, 1.0);
   EXPECT_EQ(t->transform.translation.y, 1.0);

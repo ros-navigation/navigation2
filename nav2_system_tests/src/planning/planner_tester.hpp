@@ -22,7 +22,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -87,7 +87,7 @@ public:
     const geometry_msgs::msg::PoseStamped & goal,
     nav_msgs::msg::Path & path)
   {
-    const auto start = nav2::getLatestPose(*tf_, "map", "base_link");
+    const auto start = tf_->getLatestPose("map", "base_link");
     if (!start) {
       return false;
     }

@@ -22,7 +22,7 @@
 #include <chrono>
 #include <algorithm>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/timer.hpp"
@@ -101,7 +101,9 @@ public:
   virtual void waitForTransform() const
   {
     if (is_active_) {
-      while (!nav2::getLatestTransform(*tf_buffer_, "map", "base_link")) {
+      while (!tf_buffer_->getLatestTransform("map", "base_link", 0.0,
+          nav2::Log::Disabled).has_value())
+      {
         std::this_thread::sleep_for(100ms);
       }
       RCLCPP_INFO(node_->get_logger(), "Transforms are available now!");

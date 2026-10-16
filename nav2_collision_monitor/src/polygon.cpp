@@ -18,7 +18,7 @@
 #include <exception>
 #include <utility>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "tf2/transform_datatypes.hpp"
@@ -269,8 +269,7 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
 
     // Get the transform from PolygonStamped frame to base_frame_id_
     tf2::Stamped<tf2::Transform> tf_transform;
-    const auto transform = nav2::getLatestTransform(
-      *tf_buffer_, base_frame_id_, polygon_.header.frame_id);
+    const auto transform = tf_buffer_->getLatestTransform(base_frame_id_, polygon_.header.frame_id);
     if (!transform) {
       return;
     }
@@ -612,8 +611,7 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
 
   // Get the transform from PolygonStamped frame to base_frame_id_
   tf2::Stamped<tf2::Transform> tf_transform;
-  const auto transform = nav2::getLatestTransform(
-    *tf_buffer_, base_frame_id_, msg->header.frame_id);
+  const auto transform = tf_buffer_->getLatestTransform(base_frame_id_, msg->header.frame_id);
   if (!transform) {
     return;
   }

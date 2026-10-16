@@ -47,7 +47,7 @@
 #include <vector>
 #include <utility>
 
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/execution_timer.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -263,7 +263,8 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
     initial_transform_timeout_);
   const auto initial_transform_timeout_point = now() + initial_transform_timeout;
   while (rclcpp::ok() &&
-    !nav2::getLatestTransform(*tf_buffer_, global_frame_, robot_base_frame_).has_value())
+    !tf_buffer_->getLatestTransform(global_frame_, robot_base_frame_, 0.0,
+      nav2::Log::Disabled).has_value())
   {
     RCLCPP_INFO(
       get_logger(), "Timed out waiting for transform from %s to %s"
@@ -755,8 +756,8 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
-  const auto global_pose_result = nav2::getLatestPose(
-    *tf_buffer_, global_frame_, robot_base_frame_, now(), transform_staleness_threshold_);
+  const auto global_pose_result = tf_buffer_->getLatestPose(
+    global_frame_, robot_base_frame_, transform_staleness_threshold_);
   if (!global_pose_result) {
     return false;
   }
@@ -769,8 +770,8 @@ Costmap2DROS::transformPoseToGlobalFrame(
   const geometry_msgs::msg::PoseStamped & input_pose,
   geometry_msgs::msg::PoseStamped & transformed_pose)
 {
-  const auto result = nav2::transformStampedPose(
-    *tf_buffer_, global_frame_, input_pose, tf2::durationFromSec(transform_tolerance_));
+  const auto result = tf_buffer_->transformStampedPose(
+    global_frame_, input_pose, tf2::durationFromSec(transform_tolerance_));
   if (!result) {
     return false;
   }
@@ -820,9 +821,9 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
       // First, make sure that the transform between the robot base frame
       // and the global frame is available
       RCLCPP_INFO(get_logger(), "Checking transform");
-      if (!nav2::getStampedTransform(
-    *tf_buffer_, global_frame_, parameter.as_string(), rclcpp::Time(0),
-          tf2::durationFromSec(1.0)).has_value())
+      if (!tf_buffer_->getStampedTransform(
+        global_frame_, parameter.as_string(), rclcpp::Time(0),
+          tf2::durationFromSec(1.0), nav2::Log::Disabled).has_value())
       {
         RCLCPP_WARN(
           get_logger(), "Timed out waiting for transform from %s to %s"

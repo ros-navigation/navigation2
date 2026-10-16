@@ -40,7 +40,7 @@
 #include <string>
 #include <memory>
 #include <algorithm>
-#include "nav2_ros_common/tf_utils.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
@@ -209,9 +209,8 @@ void KeepoutFilter::updateBounds(
     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
     geometry_msgs::msg::Pose mask_pose;
 
-    const auto mask_transform = nav2::getLatestTransform(
-      *tf_, filter_mask_->header.frame_id, global_frame_, clock_->now(),
-      transform_staleness_threshold_);
+    const auto mask_transform = tf_->getLatestTransform(
+      filter_mask_->header.frame_id, global_frame_, transform_staleness_threshold_);
     if (mask_transform) {
       tf2::doTransform(pose, mask_pose, *mask_transform);
       unsigned int mask_robot_i, mask_robot_j;
@@ -276,8 +275,8 @@ void KeepoutFilter::process(
     // Filter mask and current layer are in different frames:
     // prepare frame transformation if mask_frame != global_frame_
 
-    const auto mask_transform = nav2::getLatestTransform(
-      *tf_, mask_frame, global_frame_, clock_->now(), transform_staleness_threshold_);
+    const auto mask_transform = tf_->getLatestTransform(
+      mask_frame, global_frame_, transform_staleness_threshold_);
     if (!mask_transform) {
       return;
     }
