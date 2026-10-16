@@ -24,9 +24,11 @@
 #include "rclcpp/utilities.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose.hpp"
-#include "opennav_docking/controller.hpp"
+#include "opennav_docking/controller_plugins/graceful_controller.hpp"
+#include "opennav_docking/controller_plugins/pid_controller.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -36,26 +38,32 @@
 namespace opennav_docking
 {
 
-class ControllerFixture : public opennav_docking::Controller
+// Helper for initializing controller plugins tf frames.
+template<typename ControllerT = GracefulController>
+std::unique_ptr<ControllerT> makeController(
+  const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
+  std::string fixed_frame, std::string base_frame)
+{
+  nav2::declare_parameter_if_not_declared(
+    node, "fixed_frame", rclcpp::ParameterValue(fixed_frame));
+  nav2::declare_parameter_if_not_declared(
+    node, "base_frame", rclcpp::ParameterValue(base_frame));
+  auto controller = std::make_unique<ControllerT>();
+  controller->configure(node, "controller", tf);
+  return controller;
+}
+
+class ControllerFixture : public GracefulController
 {
 public:
-  ControllerFixture(
-    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
-    std::string fixed_frame, std::string base_frame)
-  : Controller(node, tf, base_frame), fixed_frame_(fixed_frame)
-  {
-  }
-
-  ~ControllerFixture() = default;
-
   bool isTrajectoryCollisionFree(
     const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false)
   {
     geometry_msgs::msg::TransformStamped base_to_fixed_transform;
-    base_to_fixed_transform.header.frame_id = fixed_frame_;
+    base_to_fixed_transform.header.frame_id = base_frame_;
     base_to_fixed_transform.child_frame_id = base_frame_;
     base_to_fixed_transform.transform.rotation.w = 1.0;
-    return opennav_docking::Controller::isTrajectoryCollisionFree(
+    return GracefulController::isTrajectoryCollisionFree(
       target_pose, base_to_fixed_transform, is_docking, backward);
   }
 
@@ -64,8 +72,7 @@ public:
     dock_collision_threshold_ = tolerance;
   }
 
-private:
-  std::string fixed_frame_;
+  using GracefulController::validateParameterUpdatesCallback;
 };
 
 class TestCollisionChecker : public nav2::LifecycleNode
@@ -213,26 +220,26 @@ TEST(ControllerTests, ObjectLifecycle)
   nav2::declare_parameter_if_not_declared(
     node, "controller.use_collision_detection", rclcpp::ParameterValue(false));
 
-  auto controller = std::make_unique<opennav_docking::Controller>(
-    node, tf, "test_base_frame");
+  auto controller = makeController(node, tf, "test_base_frame", "test_base_frame");
 
-  geometry_msgs::msg::Pose pose;
+  geometry_msgs::msg::Pose target;
   geometry_msgs::msg::Twist cmd_out, cmd_init;
   geometry_msgs::msg::TransformStamped base_to_fixed_transform;
   base_to_fixed_transform.header.frame_id = "test_base_frame";
   base_to_fixed_transform.header.stamp = node->now();
   base_to_fixed_transform.child_frame_id = "test_base_frame";
   base_to_fixed_transform.transform.rotation.w = 1.0;
-  EXPECT_TRUE(
-    controller->computeVelocityCommand(pose, cmd_out, base_to_fixed_transform, true));
+  EXPECT_TRUE(controller->computeVelocityCommands(
+    nav2_util::transformToPoseStamped(base_to_fixed_transform), geometry_msgs::msg::Twist(),
+    target, DockingOptions(), 0.0, cmd_out));
   EXPECT_NE(cmd_init, cmd_out);
   controller.reset();
 }
 
 TEST(ControllerTests, DynamicParameters) {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto controller = std::make_unique<opennav_docking::Controller>(
-    node, nullptr, "test_base_frame");
+  auto controller = makeController(node, nullptr, "test_base_frame", "test_base_frame");
+  controller->activate();
 
   auto params = std::make_shared<rclcpp::AsyncParametersClient>(
     node->get_node_base_interface(), node->get_node_topics_interface(),
@@ -281,6 +288,42 @@ TEST(ControllerTests, DynamicParameters) {
     {rclcpp::Parameter("controller.k_phi", -1.0)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_EQ(node->get_parameter("controller.k_phi").as_double(), 1.0);
+
+  // Rejected updates
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("controller.dock_collision_threshold", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("controller.dock_collision_threshold").as_double(), 11.0);
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("controller.simulation_time_step", 0.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("controller.simulation_time_step").as_double(), 10.0);
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("controller.v_linear_min", 7.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("controller.v_linear_min").as_double(), 5.0);
+
+  controller->deactivate();
+}
+
+TEST(ControllerTests, SharedParameterValidation)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto controller = makeController<ControllerFixture>(
+    node, nullptr, "test_base_frame", "test_base_frame");
+
+  EXPECT_FALSE(
+    controller->validateParameterUpdatesCallback(
+      {rclcpp::Parameter("controller.projection_time", -1.0)}).successful);
+  EXPECT_FALSE(
+    controller->validateParameterUpdatesCallback(
+      {rclcpp::Parameter("controller.simulation_time_step", 0.0)}).successful);
+
+  EXPECT_TRUE(
+    controller->validateParameterUpdatesCallback(
+      {rclcpp::Parameter("controller.projection_time", 1.0),
+        rclcpp::Parameter("controller.use_collision_detection", true),
+        rclcpp::Parameter("other.projection_time", -1.0)}).successful);
 }
 
 TEST(ControllerTests, CollisionCheckerDockForward) {
@@ -300,7 +343,7 @@ TEST(ControllerTests, CollisionCheckerDockForward) {
   nav2::declare_parameter_if_not_declared(
     node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
 
-  auto controller = std::make_unique<opennav_docking::ControllerFixture>(
+  auto controller = makeController<ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
   collision_tester->configure();
   collision_tester->activate();
@@ -366,7 +409,7 @@ TEST(ControllerTests, CollisionCheckerDockBackward) {
   nav2::declare_parameter_if_not_declared(
     node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
 
-  auto controller = std::make_unique<opennav_docking::ControllerFixture>(
+  auto controller = makeController<ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
   collision_tester->configure();
   collision_tester->activate();
@@ -432,7 +475,7 @@ TEST(ControllerTests, CollisionCheckerUndockBackward) {
   nav2::declare_parameter_if_not_declared(
     node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
 
-  auto controller = std::make_unique<opennav_docking::ControllerFixture>(
+  auto controller = makeController<ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
   collision_tester->configure();
   collision_tester->activate();
@@ -506,7 +549,7 @@ TEST(ControllerTests, CollisionCheckerUndockForward) {
   nav2::declare_parameter_if_not_declared(
     node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
 
-  auto controller = std::make_unique<opennav_docking::ControllerFixture>(
+  auto controller = makeController<ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
   collision_tester->configure();
   collision_tester->activate();
@@ -574,8 +617,7 @@ TEST(ControllerTests, RotateToHeading) {
     node, "controller.rotate_to_heading_max_angular_accel",
     rclcpp::ParameterValue(rotate_to_heading_max_angular_accel));
 
-  auto controller = std::make_unique<opennav_docking::Controller>(
-    node, nullptr, "test_base_frame");
+  auto controller = makeController(node, nullptr, "test_base_frame", "test_base_frame");
 
   geometry_msgs::msg::Twist current_velocity;
   double angular_distance_to_heading;
@@ -628,6 +670,108 @@ TEST(ControllerTests, RotateToHeading) {
   EXPECT_DOUBLE_EQ(cmd_vel.angular.z, 0.0);
 
   controller.reset();
+}
+
+TEST(ControllerTests, PIDControlTests) {
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto controller = makeController<PIDController>(
+    node, nullptr, "test_base_frame", "test_base_frame");
+
+  // Case 1: Target ahead and to the left
+  geometry_msgs::msg::Pose target;
+  target.position.x = 1.0;
+  target.position.y = 0.2;
+  target.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.1);
+  auto cmd = controller->computeCommand(target, false, 0.1);
+  EXPECT_GT(cmd.linear.x, 0.0);
+  EXPECT_GT(cmd.angular.z, 0.0);
+
+  // Case 2: Same target behind the robot
+  target.position.x = -1.0;
+  target.position.y = -0.2;
+  controller->reset();
+  cmd = controller->computeCommand(target, true, 0.1);
+  EXPECT_LT(cmd.linear.x, 0.0);
+
+  // Case 3: Far target, linear velocity saturates
+  target = geometry_msgs::msg::Pose();
+  target.position.x = 10.0;
+  controller->reset();
+  cmd = controller->computeCommand(target, false, 0.1);
+  EXPECT_DOUBLE_EQ(cmd.linear.x, 0.25);
+  EXPECT_DOUBLE_EQ(cmd.angular.z, 0.0);
+
+  // Case 4: One prediction step moves the robot towards the target
+  geometry_msgs::msg::Pose current;
+  auto next = controller->predictNextPose(0.1, target, current, false);
+  EXPECT_NEAR(next.position.x, 0.025, 1e-9);
+  EXPECT_NEAR(next.position.y, 0.0, 1e-9);
+  target.position.x = -10.0;
+  next = controller->predictNextPose(0.1, target, current, true);
+  EXPECT_NEAR(next.position.x, -0.025, 1e-9);
+
+  // Case 5: Target passed in dock axis
+  target = geometry_msgs::msg::Pose();
+  target.position.x = 0.02;
+  controller->reset();
+  cmd = controller->computeCommand(target, true, 0.1);
+  EXPECT_DOUBLE_EQ(cmd.linear.x, 0.02);
+  EXPECT_DOUBLE_EQ(cmd.angular.z, 0.0);
+
+  target.position.x = -0.02;
+  controller->reset();
+  cmd = controller->computeCommand(target, false, 0.1);
+  EXPECT_DOUBLE_EQ(cmd.linear.x, -0.02);
+  EXPECT_DOUBLE_EQ(cmd.angular.z, 0.0);
+
+  // Case 6: Target passed on the left
+  target.position.x = -0.1;
+  target.position.y = 0.01;
+  controller->reset();
+  cmd = controller->computeCommand(target, false, 0.1);
+  EXPECT_LT(cmd.linear.x, 0.0);
+  EXPECT_LT(cmd.angular.z, 0.0);
+
+  controller.reset();
+}
+
+TEST(ControllerTests, PIDDynamicParameters) {
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto controller = makeController<PIDController>(
+    node, nullptr, "test_base_frame", "test_base_frame");
+  controller->activate();
+
+  auto params = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  const std::vector<std::string> names{
+    "kp_x", "ki_x", "kd_x", "i_clamp_x", "kp_y", "ki_y", "kd_y", "i_clamp_y",
+    "v_angular_max", "lookahead_distance", "passed_target_hysteresis"};
+  std::vector<rclcpp::Parameter> values;
+  for (size_t i = 0; i < names.size(); ++i) {
+    values.emplace_back("controller." + names[i], 1.0 + i);
+  }
+  values.emplace_back("controller.v_linear_max", 0.1);
+  auto results = params->set_parameters_atomically(values);
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  for (size_t i = 0; i < names.size(); ++i) {
+    EXPECT_EQ(node->get_parameter("controller." + names[i]).as_double(), 1.0 + i);
+  }
+
+  // Parameters are applied on the next command
+  geometry_msgs::msg::Pose target;
+  target.position.x = 10.0;
+  auto cmd = controller->computeCommand(target, false, 0.1);
+  EXPECT_DOUBLE_EQ(cmd.linear.x, 0.1);
+
+  // Negative values are rejected
+  results = params->set_parameters_atomically({rclcpp::Parameter("controller.kp_x", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("controller.kp_x").as_double(), 1.0);
+
+  controller->deactivate();
 }
 
 }  // namespace opennav_docking

@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef OPENNAV_DOCKING__CONTROLLER_HPP_
-#define OPENNAV_DOCKING__CONTROLLER_HPP_
+#ifndef OPENNAV_FOLLOWING__CONTROLLER_HPP_
+#define OPENNAV_FOLLOWING__CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -31,10 +31,10 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
-namespace opennav_docking
+namespace opennav_following
 {
 /**
- * @class opennav_docking::Controller
+ * @class opennav_following::Controller
  * @brief Default control law for approaching a dock target
  */
 class Controller
@@ -52,7 +52,7 @@ public:
     std::string base_frame);
 
   /**
-   * @brief A destructor for opennav_docking::Controller
+   * @brief A destructor for opennav_following::Controller
    */
   ~Controller();
 
@@ -156,6 +156,6 @@ protected:
   std::string base_frame_;
 };
 
-}  // namespace opennav_docking
+}  // namespace opennav_following
 
-#endif  // OPENNAV_DOCKING__CONTROLLER_HPP_
+#endif  // OPENNAV_FOLLOWING__CONTROLLER_HPP_
