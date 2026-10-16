@@ -332,8 +332,7 @@ void VelocitySmoother::smootherTimer()
       stopped_ = true;
       return;
     }
-    command_ = geometry_msgs::msg::TwistStamped();
-    command_.header.stamp = now();
+    command_.twist = geometry_msgs::msg::Twist();
   }
 
   stopped_ = false;
