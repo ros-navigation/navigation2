@@ -167,18 +167,10 @@ protected:
    */
   void followObject();
 
-  enum class TargetWaitResult
-  {
-    REACQUIRED,
-    TIMED_OUT,
-    INTERRUPTED,
-    MAX_DURATION
-  };
-
   /**
-   * @brief Wait for short target detection dropouts without consuming retries.
+   * @brief Wait briefly for a lost target; return true if it is reacquired.
    */
-  TargetWaitResult waitForTarget(
+  bool waitForTarget(
     geometry_msgs::msg::PoseStamped & object_pose, const std::string & target_frame,
     const rclcpp::Duration & max_duration);
 

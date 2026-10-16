@@ -290,22 +290,17 @@ void FollowingServer::followObject()
         const bool target_lost =
           dynamic_cast<opennav_docking_core::FailedToDetectDock *>(&e) != nullptr;
         if (target_lost) {
-          const auto wait_result = waitForTarget(object_pose, target_frame, max_duration);
-          if (wait_result == TargetWaitResult::REACQUIRED) {
+          if (waitForTarget(object_pose, target_frame, max_duration)) {
             continue;
           }
-          if (wait_result == TargetWaitResult::INTERRUPTED ||
-            wait_result == TargetWaitResult::MAX_DURATION)
+          // Reuse the main loop's existing max-duration and interruption handling.
+          if (!rclcpp::ok() ||
+            following_action_server_->is_cancel_requested() ||
+            following_action_server_->is_preempt_requested() ||
+            (max_duration.seconds() > 0.0 &&
+            this->now() - action_start_time_ > max_duration))
           {
-            result->total_elapsed_time = this->now() - action_start_time_;
-            result->num_retries = num_retries_;
-            if (wait_result == TargetWaitResult::MAX_DURATION) {
-              following_action_server_->succeeded_current(result);
-            } else {
-              following_action_server_->terminate_all(result);
-            }
-            dynamic_pose_sub_.reset();
-            return;
+            continue;
           }
         }
         if (++num_retries_ > params_->max_retries) {
@@ -366,64 +361,37 @@ void FollowingServer::followObject()
   dynamic_pose_sub_.reset();
 }
 
-FollowingServer::TargetWaitResult FollowingServer::waitForTarget(
+bool FollowingServer::waitForTarget(
   geometry_msgs::msg::PoseStamped & object_pose, const std::string & target_frame,
   const rclcpp::Duration & max_duration)
 {
   publishZeroVelocity();
-
-  if (max_duration.seconds() > 0.0 &&
-    this->now() - action_start_time_ > max_duration)
-  {
-    return TargetWaitResult::MAX_DURATION;
-  }
-  if (params_->target_loss_hold_timeout <= 0.0) {
-    return TargetWaitResult::TIMED_OUT;
-  }
-
   const auto start = this->now();
   const auto timeout = rclcpp::Duration::from_seconds(params_->target_loss_hold_timeout);
   nav2::Rate loop_rate(this, params_->controller_frequency);
 
   while (rclcpp::ok() && this->now() - start < timeout) {
-    publishFollowingFeedback(FollowObject::Feedback::WAITING_FOR_TARGET);
-
     if (checkAndWarnIfCancelled<FollowObject>(following_action_server_, "follow_object") ||
-      checkAndWarnIfPreempted<FollowObject>(following_action_server_, "follow_object"))
+      checkAndWarnIfPreempted<FollowObject>(following_action_server_, "follow_object") ||
+      (max_duration.seconds() > 0.0 &&
+      this->now() - action_start_time_ > max_duration))
     {
-      return TargetWaitResult::INTERRUPTED;
-    }
-    if (max_duration.seconds() > 0.0 &&
-      this->now() - action_start_time_ > max_duration)
-    {
-      return TargetWaitResult::MAX_DURATION;
+      return false;
     }
 
-    // Use the same fresh robot pose for tracking as approachObject().
+    publishFollowingFeedback(FollowObject::Feedback::WAITING_FOR_TARGET);
     const auto robot_pose = getRobotPose();
     iteration_start_time_ = robot_pose.header.stamp;
     try {
       if (getTrackingPose(object_pose, target_frame, robot_pose)) {
-        return TargetWaitResult::REACQUIRED;
+        return true;
       }
     } catch (const opennav_docking_core::FailedToDetectDock &) {
-      // The target is still absent; other exceptions reach the action handler.
+      // The target is still absent. Other exceptions propagate unchanged.
     }
     loop_rate.sleep();
   }
-
-  if (!rclcpp::ok() ||
-    checkAndWarnIfCancelled<FollowObject>(following_action_server_, "follow_object") ||
-    checkAndWarnIfPreempted<FollowObject>(following_action_server_, "follow_object"))
-  {
-    return TargetWaitResult::INTERRUPTED;
-  }
-  if (max_duration.seconds() > 0.0 &&
-    this->now() - action_start_time_ > max_duration)
-  {
-    return TargetWaitResult::MAX_DURATION;
-  }
-  return TargetWaitResult::TIMED_OUT;
+  return false;
 }
 
 bool FollowingServer::approachObject(
