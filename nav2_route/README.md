@@ -241,7 +241,7 @@ This route operation will check the graph at each state change (e.g. node passed
 
 #### `ApproachNotifier`
 
-This route operation will publish a node ahead on the route when the robot comes within its approach radius, measured along the route (so a node right after a turn is notified before the robot reaches the turn), before the node is achieved, so other systems may prepare for the robot's arrival (e.g. call an elevator, request traffic lock). It is an `ON_APPROACH` operation, so it is triggered (and reported in `operations_triggered`) only once per approach to a node with the `approach_tag` metadata key set to `true`. The approach radius should be larger than the tracker's node achievement radius for the notification to arrive before the node is achieved.
+This route operation will publish a node ahead on the route when the robot comes within its approach radius, measured along the route (so a node right after a turn is notified before the robot reaches the turn), before the node is achieved, so other systems may prepare for the robot's arrival (e.g. call an elevator, request traffic lock). It is an `ON_APPROACH` operation, so it is triggered (and reported in `operations_triggered`) only once per node with the `approach_tag` metadata key set to `true` on each route tracked (a new goal or a reroute is a new route). The approach radius should be larger than the tracker's node achievement radius for the notification to arrive before the node is achieved.
 
 | Parameter             | Description                                                         |
 |-----------------------|---------------------------------------------------------------------|

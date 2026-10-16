@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <memory>
-#include <optional>
 #include <string>
 
 #include "nav2_route/plugins/route_operations/approach_notifier.hpp"
@@ -47,12 +46,9 @@ void ApproachNotifier::configure(
   approach_pub_->on_activate();
 }
 
-std::optional<float> ApproachNotifier::approachRadius(const NodePtr node)
+bool ApproachNotifier::isApproachNode(const NodePtr node)
 {
-  if (!node->metadata.getValue<bool>(approach_tag_, false)) {
-    return std::nullopt;
-  }
-  return approach_radius_;
+  return node->metadata.getValue<bool>(approach_tag_, false);
 }
 
 OperationResult ApproachNotifier::perform(

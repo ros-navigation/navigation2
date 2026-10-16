@@ -101,20 +101,31 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const ReroutingState & rerouting_info);
 
+  /**
+   * @brief Resets the nodes approached by the ON_APPROACH operations, so they may trigger
+   * again. To be called when starting to track a new route (e.g. a new goal or a reroute)
+   */
+  void resetApproaches();
+
 protected:
   /**
-   * @brief Processes the ON_APPROACH operations, triggering each once per approach to a node
-   * ahead on the route, when within its approach radius along the route
-   * @param state The route tracking state to check for state info
+   * @brief Processes a vector of ON_APPROACH operations plugins, triggering each once per
+   * node on the route being tracked, when within its approach radius along the route
+   * @param operations Operations to trigger
+   * @param result Results to populate from operations
+   * @param node Last node achieved, if any
+   * @param edge_entered Current edge being traversed, if any
+   * @param edge_exited Last edge exited, unused
    * @param route The raw route being tracked
    * @param pose Robot pose
-   * @param result Results to populate from operations
    */
   void processApproachOperations(
-    const RouteTrackingState & state,
+    const std::vector<RouteOperation::Ptr> & operations, OperationsResult & result,
+    const NodePtr node,
+    const EdgePtr edge_entered,
+    const EdgePtr edge_exited,
     const Route & route,
-    const geometry_msgs::msg::PoseStamped & pose,
-    OperationsResult & result);
+    const geometry_msgs::msg::PoseStamped & pose);
 
   /**
    * @brief Processes a vector of operations plugins, by trigger
@@ -134,7 +145,8 @@ protected:
   std::vector<RouteOperation::Ptr> change_operations_;
   std::vector<RouteOperation::Ptr> query_operations_;
   std::vector<RouteOperation::Ptr> approach_operations_;
-  std::vector<std::pair<size_t, unsigned int>> approached_;
+  std::vector<std::pair<std::string, unsigned int>> approached_;
+  float max_approach_radius_{0.0f};
   rclcpp::Logger logger_{rclcpp::get_logger("OperationsManager")};
 };
 

@@ -608,8 +608,16 @@ TEST(OperationsManagerTest, test_approach_notifier)
   EXPECT_EQ(result.operations_triggered[0], std::string("ApproachNotifier"));
   EXPECT_FALSE(result.reroute);
 
-  // But only once per approach
+  // But only once per route
   pose.pose.position.x = 4.0;
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // Even if leaving and coming back within its approach radius
+  pose.pose.position.x = 2.5;
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+  pose.pose.position.x = 3.5;
   result = manager.process(false, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 0u);
 
@@ -638,7 +646,8 @@ TEST(OperationsManagerTest, test_approach_notifier)
   result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 0u);
 
-  // Passed nodes are re-armed, so tracking the route again triggers again
+  // Tracking a new route triggers its nodes again
+  manager.resetApproaches();
   setState(state, 0);
   pose.pose.position.x = 3.5;
   result = manager.process(false, state, route, pose, info);
@@ -788,7 +797,8 @@ TEST(OperationsTest, test_interface)
   TestRouteOperations op;
   EXPECT_EQ(op.processType(), nav2_route::RouteOperationType::ON_GRAPH);
   Node node;
-  EXPECT_FALSE(op.approachRadius(&node).has_value());
+  EXPECT_EQ(op.approachRadius(), 0.0f);
+  EXPECT_FALSE(op.isApproachNode(&node));
 }
 
 int main(int argc, char ** argv)

@@ -16,7 +16,6 @@
 #define NAV2_ROUTE__INTERFACES__ROUTE_OPERATION_HPP_
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -113,17 +112,23 @@ public:
   /**
    * @brief For ON_APPROACH operations only: the distance along the route from a node ahead
    * within which the robot is considered to be approaching it. The operations manager checks
-   * every node ahead on the route each tick, measuring the distance left along the route
-   * (from the robot's projection onto the current edge to the next node, plus the lengths of
-   * the edges after it), and calls perform() once when a node comes within it. A node is armed
-   * again once it is no longer within it (e.g. passed, rerouted away, or on a new route from
-   * further away), so a later approach to it triggers again.
+   * the nodes ahead on the route each tick, up to the largest approach radius of its operations,
+   * measuring the distance left along the route (from the robot's projection onto the current
+   * edge to the next node, plus the lengths of the edges after it), and calls perform() once
+   * per node of interest on the route being tracked, when it comes within it. Each new route
+   * tracked (e.g. a new goal or a reroute) may trigger its nodes again.
    * Should be larger than the tracker's node achievement radius to trigger before achievement.
-   * @param node A node ahead on the route
-   * @return The approach radius for this node, or std::nullopt if this operation
-   * is not interested in this node
+   * @return The approach radius
    */
-  virtual std::optional<float> approachRadius(const NodePtr /*node*/) {return std::nullopt;}
+  virtual float approachRadius() {return 0.0f;}
+
+  /**
+   * @brief For ON_APPROACH operations only: whether this operation should be triggered
+   * when approaching a node ahead on the route
+   * @param node A node ahead on the route
+   * @return Whether this operation is interested in approaching this node
+   */
+  virtual bool isApproachNode(const NodePtr /*node*/) {return false;}
 
   /**
    * @brief The main route operation API to perform an operation when triggered.

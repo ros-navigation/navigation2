@@ -16,7 +16,6 @@
 #define NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__APPROACH_NOTIFIER_HPP_
 
 #include <memory>
-#include <optional>
 #include <string>
 
 #include "rclcpp/logger.hpp"
@@ -70,11 +69,17 @@ public:
   RouteOperationType processType() override {return RouteOperationType::ON_APPROACH;}
 
   /**
-   * @brief The approach radius of a node, if it is tagged for approach notification
-   * @param node A node ahead on the route
-   * @return The approach radius, or std::nullopt if the node is not tagged
+   * @brief The approach radius within which tagged nodes are notified
+   * @return The approach radius
    */
-  std::optional<float> approachRadius(const NodePtr node) override;
+  float approachRadius() override {return approach_radius_;}
+
+  /**
+   * @brief Whether a node is tagged for approach notification
+   * @param node A node ahead on the route
+   * @return Whether the node contains the `approach_tag` metadata set to true
+   */
+  bool isApproachNode(const NodePtr node) override;
 
   /**
    * @brief The main approach notifier operation to publish the node being approached
