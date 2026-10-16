@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <cmath>
+#include <iterator>
+#include <utility>
+#include <vector>
+
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -47,7 +53,8 @@ OperationsManager::OperationsManager(
     }
   }
 
-  // Create plugins and sort them into On Query, Status Change, and Graph-calling Operations
+  // Create plugins and sort them into On Query, Status Change, On Approach,
+  // and Graph-calling Operations
   for (size_t i = 0; i != operation_ids.size(); i++) {
     try {
       std::string type = nav2::get_plugin_type_param(node, operation_ids[i]);
@@ -61,6 +68,9 @@ OperationsManager::OperationsManager(
         query_operations_.push_back(std::move(operation));
       } else if (process_type == RouteOperationType::ON_STATUS_CHANGE) {
         change_operations_.push_back(std::move(operation));
+      } else if (process_type == RouteOperationType::ON_APPROACH) {
+        max_approach_radius_ = std::max(max_approach_radius_, operation->approachRadius());
+        approach_operations_.push_back(std::move(operation));
       } else {
         graph_operations_[operation->getName()] = operation;
       }
@@ -122,6 +132,59 @@ void OperationsManager::processOperationsPluginVector(
   }
 }
 
+void OperationsManager::processApproachOperations(
+  const std::vector<RouteOperation::Ptr> & route_operations,
+  OperationsResult & result,
+  const NodePtr node,
+  const EdgePtr edge_entered,
+  const EdgePtr /*edge_exited*/,
+  const Route & route,
+  const geometry_msgs::msg::PoseStamped & pose)
+{
+  const NodePtr next_node = edge_entered ? edge_entered->end : (node ? nullptr : route.start_node);
+  if (route_operations.empty() || !next_node) {
+    return;
+  }
+
+  // Triggers each approach operation once per node on the route being tracked, when it comes
+  // within approach radius, until reset for a new route
+  const auto approach = [&](const NodePtr ahead, const EdgePtr edge, const float route_dist) {
+      for (const RouteOperation::Ptr & plugin : route_operations) {
+        if (route_dist > plugin->approachRadius() || !plugin->isApproachNode(ahead)) {continue;}
+        const auto key = std::make_pair(plugin->getName(), ahead->nodeid);
+        if (std::find(approached_.begin(), approached_.end(), key) == approached_.end()) {
+          approached_.push_back(key);
+          OperationResult op_result = plugin->perform(
+            ahead, edge, nullptr, route, pose, &ahead->metadata);
+          updateResult(plugin->getName(), op_result, result);
+        }
+      }
+    };
+
+  // The next node is reached along the current edge, or directly when approaching the
+  // route's start node. Each node after it adds its edge's length
+  float route_dist = utils::distance(next_node->coords, pose);
+  if (edge_entered) {
+    const Coordinates closest = utils::findClosestPoint(
+      pose, edge_entered->start->coords, next_node->coords);
+    route_dist = hypotf(next_node->coords.x - closest.x, next_node->coords.y - closest.y);
+  }
+  approach(next_node, edge_entered, route_dist);
+
+  auto it = std::find(route.edges.begin(), route.edges.end(), edge_entered);
+  it = (it == route.edges.end()) ? route.edges.begin() : std::next(it);
+  for (; it != route.edges.end(); ++it) {
+    route_dist += (*it)->getEdgeLength();
+    if (route_dist > max_approach_radius_) {break;}
+    approach((*it)->end, *it, route_dist);
+  }
+}
+
+void OperationsManager::resetApproaches()
+{
+  approached_.clear();
+}
+
 OperationsResult OperationsManager::process(
   const bool status_change,
   const RouteTrackingState & state,
@@ -166,6 +229,10 @@ OperationsResult OperationsManager::process(
   // Process operations which trigger regardless of status change or nodes / edges
   processOperationsPluginVector(
     query_operations_, result, node, edge_entered /*edge_curr*/, edge_exited, route, pose);
+
+  // Process operations which trigger on approaching upcoming nodes
+  processApproachOperations(
+    approach_operations_, result, node, edge_entered, edge_exited, route, pose);
   return result;
 }
 

@@ -155,6 +155,7 @@ TrackerResult RouteTracker::trackRoute(
   path_ = path;
   RouteTrackingState state;
   state.next_node = route.start_node;
+  operations_manager_->resetApproaches();
 
   // If we're rerouted but still covering the same previous edge to
   // start, retain the state so we can continue as previously set with
