@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <memory>
 #include <string>
@@ -102,6 +103,20 @@ public:
 
 protected:
   /**
+   * @brief Processes the ON_APPROACH operations, triggering each once per approach to a node
+   * ahead on the route, when within its approach radius along the route
+   * @param state The route tracking state to check for state info
+   * @param route The raw route being tracked
+   * @param pose Robot pose
+   * @param result Results to populate from operations
+   */
+  void processApproachOperations(
+    const RouteTrackingState & state,
+    const Route & route,
+    const geometry_msgs::msg::PoseStamped & pose,
+    OperationsResult & result);
+
+  /**
    * @brief Processes a vector of operations plugins, by trigger
    * @param operations Operations to trigger
    * @param Results to populate from operations
@@ -118,6 +133,8 @@ protected:
   std::unordered_map<std::string, RouteOperation::Ptr> graph_operations_;
   std::vector<RouteOperation::Ptr> change_operations_;
   std::vector<RouteOperation::Ptr> query_operations_;
+  std::vector<RouteOperation::Ptr> approach_operations_;
+  std::vector<std::pair<size_t, unsigned int>> approached_;
   rclcpp::Logger logger_{rclcpp::get_logger("OperationsManager")};
 };
 

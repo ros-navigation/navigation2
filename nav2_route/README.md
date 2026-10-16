@@ -12,7 +12,7 @@ The Nav2 Route Server may also live monitor and analyze the route's process to e
 
 There are plugin interfaces throughout the server to enable a great deal of application-specific customization:
 - Custom search-prioritization behavior with edge scoring plugins (e.g. minimize distance or time, mark blocked routes, enact static or dynamic penalties for danger and application-specific knowledge, prefer main arteries)
-- Custom operations to perform during route execution: (a) triggered when entering or leaving an edge, (b) achieving a graph node on the route, (c) performed consistently (e.g. open door, pause at node to wait for clearance, adjust maximum speed, turn on lights, change mode, check for future collisions)
+- Custom operations to perform during route execution: (a) triggered when entering or leaving an edge, (b) achieving a graph node on the route, (c) performed consistently (e.g. open door, pause at node to wait for clearance, adjust maximum speed, turn on lights, change mode, check for future collisions), (d) triggered when approaching a graph node on the route, before it is achieved (e.g. call elevator, flash warning lights before a blind corner, request traffic lock)
 - Parsers of navigation graph files to use any type of format desirable (e.g. geoJSON, OpenStreetMap)
 
 Additionally, the server leverages **additional arbitrary metadata** specified within the navigation graph files to store information such as speed limits, added costs, or operations to perform.
@@ -36,6 +36,7 @@ Note that plugins may also use outside information from topics, services, and ac
 - Graph file parsing dynamic plugins allow for use of custom or proprietary formats
 - Operation dynamic plugins to perform arbitrary tasks at a given node or when entering or leaving an edge on the route
 - Operation may be graph-centric (e.g. graph file identifies operation to perform at a time) or plugin-centric (e.g. plugins self-identify nodes and edges to act upon during execution)
+- Operations may be triggered on approach to nodes ahead on the route, before they're achieved, with the distance along the route computed once by the operations manager and each approach triggering only once
 - Operations may trigger rerouting if necessary (e.g. due to new information, blockages, multi-robot data, etc)
 - The nodes and edges metadata may be modified or used to communicate information across plugins including different types across different runs
 - The Route Tracking action returns regular feedback on important events or state updates (e.g. rerouting requests, passed a node, triggered an operation, etc)
@@ -238,6 +239,16 @@ This route operation will check the graph at each state change (e.g. node passed
 | speed_limit_topic     | Topic to publish new speed limits to (speed_limit)                  |
 | speed_tag             | Graph metadata key to look for % speed limits (speed_limit)         |
 
+#### `ApproachNotifier`
+
+This route operation will publish a node ahead on the route when the robot comes within its approach radius, measured along the route (so a node right after a turn is notified before the robot reaches the turn), before the node is achieved, so other systems may prepare for the robot's arrival (e.g. call an elevator, request traffic lock). It is an `ON_APPROACH` operation, so it is triggered (and reported in `operations_triggered`) only once per approach to a node with the `approach_tag` metadata key set to `true`. The approach radius should be larger than the tracker's node achievement radius for the notification to arrive before the node is achieved.
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| approach_topic        | Topic to publish approached nodes to, as `nav2_msgs/RouteNode` (approached_node) |
+| approach_tag          | Graph node metadata key to look for nodes to notify approach of (notify_on_approach) |
+| approach_radius       | Distance along the route from a node within which it is approached (2.0 m) |
+
 #### `CollisionMonitor`
 
 This route operation will evaluate a future-looking portion of the route for validity w.r.t. collision in the costmap. If it is blocked, it sets the edge blocked as blocked for rerouting around the blocked edge.
@@ -359,6 +370,7 @@ A set of conventions are shown in the table below. The details regarding the con
 | `class`    | The semanic class this node belongs to.  |
 | `service_name`    | Which service to call, if node or edge should trigger an event.  |
 | `abs_time_taken`    | Time taken to traverse an edge in `s`.  |
+| `notify_on_approach`    | Whether to notify when approaching a node.  |
 
 <details>
   <summary>Click me to see expansive detail about these conventions and uses</summary>
@@ -384,6 +396,8 @@ The Route Operation `TriggerEvent` and more broadly any operation plugins derive
   - A `open_doors` general service specified in the parameter file to call to open a door specified in the service's `request` field, so that one service is called for all instances of doors in the graph file without repetition in the graph file and storing client resources (just adding info about which one from the node metadata).
 
   Thus, we say that `service_name` is a key to correspond to a string of the service's name to call in an operation to use `TriggerEvent` and `RouteOperationClient<SrvT>` plugins and base classes.
+
+  By convention, the `ApproachNotifier` route operation looks for nodes whose `notify_on_approach` metadata field (reconfigurable using the `approach_tag` parameter) is `true`.
 
   By convention, we reserve the edge metadata field `abs_time_taken` for representing actual navigation times along the edge. This is populated by the `TimeMarker` route operation plugin and utilized by the `TimeScorer` to more accurately represent the times to navigate along an edge based on the real execution time. While this is used as an internal mechanism to share data between live operations and route planning, it is also possible to set `last_time_taken` in your navigation graph file based on many execution runs to use in the `TimeScorer` to optimize system performance for a fleet or over long durations (and remove `TimeMarker` operation for live updates).
 
