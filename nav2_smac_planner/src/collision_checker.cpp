@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <algorithm>
+
 #include "nav2_smac_planner/collision_checker.hpp"
 
 namespace nav2_smac_planner
@@ -26,10 +28,6 @@ GridCollisionChecker::GridCollisionChecker(
   if (node) {
     clock_ = node->get_clock();
     logger_ = node->get_logger();
-  }
-
-  if (costmap_ros) {
-    costmap_ros_ = costmap_ros;
   }
 
   // Convert number of regular bins into angles
@@ -107,9 +105,9 @@ bool GridCollisionChecker::inCollision(
   const float & angle_bin,
   const bool & traverse_unknown)
 {
-  // Check to make sure cell is inside the map
-  if (outsideRange(costmap_->getSizeInCellsX(), x) ||
-    outsideRange(costmap_->getSizeInCellsY(), y))
+  // Check to make sure the rounded cell is inside the map
+  if (outsideRange(costmap_->getSizeInCellsX(), x + 0.5f) ||
+    outsideRange(costmap_->getSizeInCellsY(), y + 0.5f))
   {
     return true;
   }
@@ -118,6 +116,11 @@ bool GridCollisionChecker::inCollision(
   center_cost_ = static_cast<float>(costmap_->getCost(
       static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
 
+  // Lethal, or above the max cost outside of the start and goal relief zones
+  if (center_cost_ != UNKNOWN_COST && exceedsMaxCost(center_cost_, x, y)) {
+    return true;
+  }
+
   if (!footprint_is_radius_) {
     // if footprint, then we check for the footprint's points, but first see
     // if the robot is even potentially in an inscribed collision
@@ -125,13 +128,8 @@ bool GridCollisionChecker::inCollision(
       return false;
     }
 
-    // If its inscribed, in collision, or unknown in the middle,
-    // no need to even check the footprint, its invalid
+    // If its unknown, no need to even check the footprint, its invalid
     if (center_cost_ == UNKNOWN_COST && !traverse_unknown) {
-      return true;
-    }
-
-    if (center_cost_ == INSCRIBED_COST || center_cost_ == OCCUPIED_COST) {
       return true;
     }
 
@@ -159,13 +157,8 @@ bool GridCollisionChecker::inCollision(
     // if occupied or unknown and not to traverse unknown space
     return footprint_cost >= OCCUPIED_COST;
   } else {
-    // if radius, then we can check the center of the cost assuming inflation is used
-    if (center_cost_ == UNKNOWN_COST && traverse_unknown) {
-      return false;
-    }
-
-    // if occupied or unknown and not to traverse unknown space
-    return center_cost_ >= INSCRIBED_COST;
+    // if radius, then the center cost's unknown state, we know its valid already
+    return center_cost_ == UNKNOWN_COST && !traverse_unknown;
   }
 }
 
@@ -174,12 +167,27 @@ bool GridCollisionChecker::inCollision(
   const bool & traverse_unknown)
 {
   center_cost_ = costmap_->getCost(i);
-  if (center_cost_ == UNKNOWN_COST && traverse_unknown) {
-    return false;
+
+  // Lethal, or above the max cost outside of the start and goal relief zones
+  const unsigned int size_x = costmap_->getSizeInCellsX();
+  if (center_cost_ != UNKNOWN_COST && exceedsMaxCost(center_cost_, i % size_x, i / size_x)) {
+    return true;
   }
 
-  // if occupied or unknown and not to traverse unknown space
-  return center_cost_ >= INSCRIBED_COST;
+  // if unknown and not to traverse unknown space
+  return center_cost_ == UNKNOWN_COST && !traverse_unknown;
+}
+
+void GridCollisionChecker::setMaxCost(
+  const float max_cost, const float relief_radius,
+  const float start_x, const float start_y, const float goal_x, const float goal_y)
+{
+  max_cost_ = std::min(max_cost, MAX_NON_OBSTACLE_COST);
+  relief_radius_sq_ = relief_radius * relief_radius;
+  start_x_ = start_x;
+  start_y_ = start_y;
+  goal_x_ = goal_x;
+  goal_y_ = goal_y;
 }
 
 float GridCollisionChecker::getCost()
@@ -190,7 +198,7 @@ float GridCollisionChecker::getCost()
 
 bool GridCollisionChecker::outsideRange(const unsigned int & max, const float & value)
 {
-  return value < 0.0f || value > max;
+  return value < 0.0f || value >= max;
 }
 
 }  // namespace nav2_smac_planner

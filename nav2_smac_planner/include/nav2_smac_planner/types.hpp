@@ -22,6 +22,7 @@
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_smac_planner/constants.hpp"
 
 namespace nav2_smac_planner
 {
@@ -53,6 +54,8 @@ struct SearchInfo
   bool allow_primitive_interpolation{false};
   bool downsample_obstacle_heuristic{true};
   bool use_quadratic_cost_penalty{false};
+  float max_traversal_cost{MAX_NON_OBSTACLE_COST};
+  float max_traversal_cost_relief_radius{2.0};
 };
 
 /**

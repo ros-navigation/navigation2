@@ -118,6 +118,10 @@ void SmacPlannerHybridT<NodeT>::configure(
     node->declare_or_get_parameter(name + ".use_quadratic_cost_penalty", false);
   _search_info.downsample_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
+  _search_info.max_traversal_cost = static_cast<float>(
+    node->declare_or_get_parameter(name + ".max_traversal_cost", 252.0));
+  _search_info.max_traversal_cost_relief_radius = static_cast<float>(
+    node->declare_or_get_parameter(name + ".max_traversal_cost_relief_radius", 2.0));
 
   _analytic_expansion_max_length_m =
     node->declare_or_get_parameter(name + ".analytic_expansion_max_length", 3.0);
@@ -217,6 +221,27 @@ void SmacPlannerHybridT<NodeT>::configure(
     _costmap_ros->getRobotFootprint(),
     _costmap_ros->getUseRadius(),
     findCircumscribedCost(_costmap_ros));
+
+  if (_search_info.max_traversal_cost < 0.0f ||
+    _search_info.max_traversal_cost > MAX_NON_OBSTACLE_COST)
+  {
+    RCLCPP_WARN(
+      _logger, "max_traversal_cost must be in [0, 252], setting to 252.");
+    _search_info.max_traversal_cost = MAX_NON_OBSTACLE_COST;
+  }
+
+  if (_search_info.max_traversal_cost_relief_radius < 0.0f) {
+    RCLCPP_WARN(
+      _logger, "max_traversal_cost_relief_radius must be >= 0, setting to 0.0.");
+    _search_info.max_traversal_cost_relief_radius = 0.0f;
+  }
+
+  if (cachedHeuristicConflicts(_search_info)) {
+    RCLCPP_WARN(
+      _logger, "cache_obstacle_heuristic cannot be used with max_traversal_cost and a "
+      "max_traversal_cost_relief_radius > 0, disabling the relief radius.");
+    _search_info.max_traversal_cost_relief_radius = 0.0f;
+  }
 
   // Initialize A* template
   _a_star = std::make_unique<AStarAlgorithm<NodeT>>(_motion_model, _search_info);
@@ -642,6 +667,14 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
         "it should be >=0. Ignoring parameter update.",
         param_name.c_str(), parameter.as_double());
         result.successful = false;
+      } else if (param_name == _name + ".max_traversal_cost" && // NOLINT
+        parameter.as_double() > MAX_NON_OBSTACLE_COST)
+      {
+        RCLCPP_WARN(
+          _logger, "The value of parameter max_traversal_cost is incorrectly set to %f, "
+          "it should be in [0.0, 252.0]. Ignoring parameter update.",
+          parameter.as_double());
+        result.successful = false;
       } else if (param_name == _name + ".lookup_table_size" && // NOLINT
         parameter.as_double() > 20.0)
       {
@@ -734,6 +767,32 @@ SmacPlannerHybridT<NodeT>::validateParameterUpdatesCallback(
       }
     }
   }
+
+  // The cached obstacle heuristic and max traversal cost relief zone are mutually exclusive
+  SearchInfo search_info = _search_info;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_type == ParameterType::PARAMETER_BOOL &&
+      param_name == _name + ".cache_obstacle_heuristic")
+    {
+      search_info.cache_obstacle_heuristic = parameter.as_bool();
+    } else if (param_type == ParameterType::PARAMETER_DOUBLE &&  // NOLINT
+      param_name == _name + ".max_traversal_cost")
+    {
+      search_info.max_traversal_cost = static_cast<float>(parameter.as_double());
+    } else if (param_type == ParameterType::PARAMETER_DOUBLE &&  // NOLINT
+      param_name == _name + ".max_traversal_cost_relief_radius")
+    {
+      search_info.max_traversal_cost_relief_radius = static_cast<float>(parameter.as_double());
+    }
+  }
+  if (cachedHeuristicConflicts(search_info)) {
+    RCLCPP_WARN(
+      _logger, "cache_obstacle_heuristic cannot be used with max_traversal_cost and a "
+      "max_traversal_cost_relief_radius > 0. Ignoring parameter update.");
+    result.successful = false;
+  }
   return result;
 }
 
@@ -794,6 +853,14 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
       } else if (param_name == _name + ".analytic_expansion_max_cost") {
         reinit_a_star = true;
         _search_info.analytic_expansion_max_cost = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".max_traversal_cost") {
+        reinit_a_star = true;
+        reinit_lookup_table = true;
+        _search_info.max_traversal_cost = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".max_traversal_cost_relief_radius") {
+        reinit_a_star = true;
+        reinit_lookup_table = true;
+        _search_info.max_traversal_cost_relief_radius = static_cast<float>(parameter.as_double());
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == _name + ".downsample_costmap") {

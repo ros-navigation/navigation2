@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <memory>
 #include <thread>
 
@@ -198,18 +200,19 @@ public:
 
   void server_thread_func()
   {
-    auto node = std::make_shared<FibonacciServerNode>();
-    node->on_init();
+    node_ = std::make_shared<FibonacciServerNode>();
+    node_->on_init();
     rclcpp::executors::SingleThreadedExecutor executor;
-    executor.add_node(node->get_node_base_interface());
+    executor.add_node(node_->get_node_base_interface());
     while (rclcpp::ok() && !stop_.load()) {
       executor.spin_some();
       std::this_thread::sleep_for(10ms);
     }
-    node->on_term();
-    node.reset();
+    node_->on_term();
+    // node_ is intentionally not destroyed, see main()
   }
 
+  std::shared_ptr<FibonacciServerNode> node_;
   std::shared_ptr<std::thread> server_thread_;
   std::atomic<bool> stop_{false};
 };
@@ -670,5 +673,9 @@ int main(int argc, char ** argv)
   auto result = RUN_ALL_TESTS();
   g_rclcppfixture.TearDown();
   rclcpp::shutdown();
-  return result;
+  // Cyclone DDS asserts on leaked type registrations during domain teardown after an
+  // in-process action client/server session. All results are already reported, so exit
+  // without DDS teardown while keeping the test result.
+  std::fflush(nullptr);
+  std::_Exit(result);
 }

@@ -192,6 +192,17 @@ void AStarAlgorithm<NodeT>::setGoal(
   const GoalHeadingMode & goal_heading_mode,
   const int & coarse_search_resolution)
 {
+  if (!_start) {
+    throw std::runtime_error("Start must be set before goal.");
+  }
+
+  // Restrict traversal to the max cost
+  const Coordinates start = NodeT::getCoords(_start->getIndex(), getSizeX(), getSizeDim3());
+  _collision_checker->setMaxCost(
+    _search_info.max_traversal_cost,
+    _search_info.max_traversal_cost_relief_radius / _costmap->getResolution(),
+    start.x, start.y, mx, my);
+
   if constexpr (std::is_base_of_v<Node2D, NodeT>) {
     // Node2D-specific: simplified goal setting, no heading modes
     if (dim_3 != 0) {
@@ -219,12 +230,8 @@ void AStarAlgorithm<NodeT>::setGoal(
     if (!_search_info.cache_obstacle_heuristic ||
       _goal_manager.hasGoalChanged(ref_goal_coord))
     {
-      if (!_start) {
-        throw std::runtime_error("Start must be set before goal.");
-      }
-
       _shared_ctx->obstacle_heuristic->resetObstacleHeuristic(
-        _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my,
+        _collision_checker, _start->pose.x, _start->pose.y, mx, my,
         _shared_ctx->motion_table.downsample_obstacle_heuristic);
     }
 
