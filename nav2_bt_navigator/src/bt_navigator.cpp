@@ -22,7 +22,6 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/string_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
 #include "nav2_behavior_tree/plugins_list.hpp"
@@ -51,7 +50,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 
   tf_ = nav2::create_transform_buffer(this);
   tf_->setUsingDedicatedThread(true);
-  tf_listener_ = nav2::create_transform_listener(*tf_, this, true);
+  tf_->createListener(this, true);
 
   global_frame_ = this->declare_or_get_parameter("global_frame", std::string("map"));
   robot_frame_ = this->declare_or_get_parameter("robot_base_frame", std::string("base_link"));
@@ -165,7 +164,9 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   // Reset the listener before the buffer
-  tf_listener_.reset();
+  if (tf_) {
+    tf_->resetListener();
+  }
   tf_.reset();
 
   for (size_t i = 0; i != navigators_.size(); i++) {

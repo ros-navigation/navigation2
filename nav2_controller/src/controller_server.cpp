@@ -19,6 +19,7 @@
 #include <utility>
 #include <limits>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -721,12 +722,12 @@ void ControllerServer::transformedPlanAndGoal(
   const geometry_msgs::msg::PoseStamped & current_robot_pose)
 {
   end_pose_.header.stamp = current_robot_pose.header.stamp;
-  if (!nav2_util::transformPoseInTargetFrame(
-      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
-      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
-  {
+  const auto transformed_end_pose_result = costmap_ros_->getTfBuffer()->transformStampedPose(
+    costmap_ros_->getGlobalFrameID(), end_pose_, tf2::durationFromSec(transform_tolerance_));
+  if (!transformed_end_pose_result) {
     throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
   }
+  transformed_end_pose_ = *transformed_end_pose_result;
 
   auto [closest_point, pruned_plan_end] =
     path_handlers_[current_path_handler_]->findPlanSegment(current_robot_pose);
@@ -799,17 +800,17 @@ void ControllerServer::computeAndPublishVelocity(
       current_robot_pose, transformed_end_pose_);
 
     // Transform robot pose to path frame for path tracking calculations
-    geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
-    if (!nav2_util::transformPoseInTargetFrame(
-        current_robot_pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
-        current_path_.header.frame_id, transform_tolerance_))
-    {
+
+    const auto robot_pose_in_path_frame = costmap_ros_->getTfBuffer()->transformStampedPose(
+      current_path_.header.frame_id, current_robot_pose,
+      tf2::durationFromSec(transform_tolerance_));
+    if (!robot_pose_in_path_frame) {
       throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
     }
 
     // Calculate closest point and position error from path
     const auto path_search_result = nav2_util::distance_from_path(
-      current_path_, robot_pose_in_path_frame.pose, start_index_, params_->search_window);
+      current_path_, robot_pose_in_path_frame->pose, start_index_, params_->search_window);
 
     // Calculate heading error
     double heading_tracking_error = 0.0;
@@ -823,7 +824,7 @@ void ControllerServer::computeAndPublishVelocity(
       double path_yaw = std::atan2(
         path_segment_end.position.y - path_segment_start.position.y,
         path_segment_end.position.x - path_segment_start.position.x);
-      double robot_yaw = tf2::getYaw(robot_pose_in_path_frame.pose.orientation);
+      double robot_yaw = tf2::getYaw(robot_pose_in_path_frame->pose.orientation);
       heading_tracking_error = angles::shortest_angular_distance(
         robot_yaw, path_yaw);
     }
@@ -969,17 +970,15 @@ bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & cur
 
 geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
-  geometry_msgs::msg::PoseStamped pose;
-  if (!nav2_util::getFreshPose(
-      *costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
-      costmap_ros_->getBaseFrameID(), now(),
-      params_->transform_staleness_threshold, pose))
-  {
+  const auto pose_result = costmap_ros_->getTfBuffer()->getLatestPose(
+    costmap_ros_->getGlobalFrameID(), costmap_ros_->getBaseFrameID(),
+      params_->transform_staleness_threshold);
+  if (!pose_result) {
     throw nav2_core::ControllerTFError(
             "Failed to obtain robot pose in frame '" + costmap_ros_->getGlobalFrameID() +
             "' for base frame '" + costmap_ros_->getBaseFrameID() + "'");
   }
-  return pose;
+  return *pose_result;
 }
 
 void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::ConstSharedPtr & msg)

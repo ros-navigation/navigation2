@@ -20,6 +20,7 @@
 
 #include "rclcpp/version.h"
 #include "rclcpp/callback_group.hpp"
+#include "nav2_ros_common/tf_buffer.hpp"
 
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/create_timer_ros.hpp"
@@ -30,11 +31,6 @@
 
 namespace nav2
 {
-
-/**
- * @brief Nav2 type alias for tf2_ros::Buffer
- */
-using TransformBuffer = tf2_ros::Buffer;
 
 /**
  * @brief Nav2 type wrapper for tf2_ros::TransformListener
@@ -84,14 +80,14 @@ inline nav2::TransformBuffer::SharedPtr create_transform_buffer(
   const NodeT & node,
   rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
 {
-  auto buffer = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto buffer = std::make_shared<nav2::TransformBuffer>(node->get_clock(), node->get_logger());
 #if RCLCPP_VERSION_GTE(30, 0, 0)
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(*node, callback_group);
 #else
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     node->get_node_base_interface(), node->get_node_timers_interface(), callback_group);
 #endif
-  buffer->setCreateTimerInterface(timer_interface);
+  buffer->getRawBuffer().setCreateTimerInterface(timer_interface);
   return buffer;
 }
 
@@ -128,35 +124,6 @@ inline nav2::StaticTransformBroadcaster::SharedPtr create_static_transform_broad
 }
 
 /**
- * @brief Create a transform listener
- * @param buffer Transform buffer reference
- * @param node Pointer-like node (shared_ptr or raw pointer)
- * @param spin_thread Whether to spin a dedicated thread
- * @return Shared pointer to the TransformListener
- */
-template<typename NodeT>
-inline nav2::TransformListener::SharedPtr create_transform_listener(
-  nav2::TransformBuffer & buffer, const NodeT & node, bool spin_thread = true)
-{
-#if RCLCPP_VERSION_GTE(30, 0, 0)
-  return std::make_shared<nav2::TransformListener>(buffer, *node, spin_thread);
-#else
-  return std::make_shared<nav2::TransformListener>(buffer, node, spin_thread);
-#endif
-}
-
-/**
- * @brief Create a transform listener with a new temp hidden node
- * @param buffer Transform buffer reference
- * @return Shared pointer to the TransformListener
- */
-inline nav2::TransformListener::SharedPtr create_transform_listener(
-  nav2::TransformBuffer & buffer)
-{
-  return std::make_shared<nav2::TransformListener>(buffer);
-}
-
-/**
  * @brief Create a message filter for transform-aware message subscription
  * @param sub Subscriber to filter
  * @param buffer Transform buffer reference
@@ -174,10 +141,10 @@ inline typename nav2::MessageFilter<MessageT>::SharedPtr create_message_filter(
 {
 #if RCLCPP_VERSION_GTE(30, 0, 0)
   return std::make_shared<nav2::MessageFilter<MessageT>>(
-    sub, buffer, target_frame, queue_size, *node, tolerance);
+    sub, buffer.getRawBuffer(), target_frame, queue_size, *node, tolerance);
 #else
   return std::make_shared<nav2::MessageFilter<MessageT>>(
-    sub, buffer, target_frame, queue_size,
+    sub, buffer.getRawBuffer(), target_frame, queue_size,
     node->get_node_logging_interface(), node->get_node_clock_interface(), tolerance);
 #endif
 }

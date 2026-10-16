@@ -19,10 +19,10 @@
 #include <iterator>
 #include <string>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_collision_monitor
@@ -331,23 +331,21 @@ bool Source::getTransform(
   tf2::Transform & tf_transform) const
 {
   if (base_shift_correction_) {
-    if (
-      !nav2_util::getTransform(
-        data_header.frame_id, data_header.stamp,
-        base_frame_id_, curr_time, global_frame_id_,
-        transform_tolerance_, tf_buffer_, tf_transform))
-    {
+    const auto transform = tf_buffer_->getStampedTransform(
+      base_frame_id_, rclcpp::Time(curr_time), data_header.frame_id,
+      rclcpp::Time(data_header.stamp), global_frame_id_, transform_tolerance_);
+    if (!transform) {
       return false;
     }
+    tf2::fromMsg(transform->transform, tf_transform);
   } else {
-    geometry_msgs::msg::TransformStamped transform_msg;
-    if (!nav2_util::lookupTransformWithStalenessCheck(
-        *tf_buffer_, base_frame_id_, data_header.frame_id, curr_time,
-        transform_staleness_threshold_, transform_msg))
-    {
+    const auto transform_msg = tf_buffer_->getLatestTransform(
+      base_frame_id_, data_header.frame_id, transform_staleness_threshold_);
+    if (!transform_msg) {
       return false;
     }
-    tf2::fromMsg(transform_msg.transform, tf_transform);
+
+    tf2::fromMsg(transform_msg->transform, tf_transform);
   }
   return true;
 }

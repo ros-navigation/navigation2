@@ -26,8 +26,8 @@
 #include <omp.h>
 #endif
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -227,10 +227,9 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   // Look up the current path frame -> costmap frame transform
   geometry_msgs::msg::TransformStamped transform;
   if (need_transform) {
-    if (!nav2_util::lookupTransformWithStalenessCheck(
-        *tf_, global_frame, path_frame, clock_->now(),
-        transform_staleness_threshold_, transform))
-    {
+    const auto transform_result = tf_->getLatestTransform(
+      global_frame, path_frame, transform_staleness_threshold_, nav2::Log::Disabled);
+    if (!transform_result) {
       RCLCPP_WARN_THROTTLE(
         logger_, *clock_, 1000,
         "AsymmetricInflationLayer: TF lookup failed or returned stale data (%s -> %s). "
@@ -238,6 +237,7 @@ AsymmetricInflationLayer::extractLocalPathSegments(
         path_frame.c_str(), global_frame.c_str());
       return local_path_segments;
     }
+    transform = *transform_result;
   }
 
   // Transform the goal pose from the path frame to the costmap frame (e.g., map -> odom)

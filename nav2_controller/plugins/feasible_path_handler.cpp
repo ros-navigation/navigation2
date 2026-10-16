@@ -15,6 +15,7 @@
 // limitations under the License.
 
 #include <memory>
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "angles/angles.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_controller/plugins/feasible_path_handler.hpp"
@@ -149,15 +150,14 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
   }
 
   // let's get the pose of the robot in the frame of the plan
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_,
-      global_plan_up_to_constraint_.header.frame_id,
-      transform_tolerance_))
-  {
+
+  const auto robot_pose = tf_->transformStampedPose(
+    global_plan_up_to_constraint_.header.frame_id, pose,
+    tf2::durationFromSec(transform_tolerance_));
+  if (!robot_pose) {
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
   }
-
-  return robot_pose;
+  return *robot_pose;
 }
 
 nav2_core::PathSegment FeasiblePathHandler::findPlanSegment(
@@ -207,18 +207,14 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
   transformed_plan.header.stamp = global_pose_.header.stamp;
   unsigned int mx, my;
-  geometry_msgs::msg::TransformStamped plan_to_costmap;
-  try {
-    // Uses timestamp which has already been validated for staleness
-    plan_to_costmap = tf_->lookupTransform(
-      costmap_ros_->getGlobalFrameID(),
-      global_plan_.header.frame_id,
-      global_pose_.header.stamp,
-      tf2::durationFromSec(transform_tolerance_));
-  } catch (const tf2::TransformException & ex) {
+
+  // Uses timestamp which has already been validated for staleness
+  const auto plan_to_costmap = tf_->getStampedTransform(
+    costmap_ros_->getGlobalFrameID(), global_plan_.header.frame_id,
+    rclcpp::Time(global_pose_.header.stamp), tf2::durationFromSec(transform_tolerance_));
+  if (!plan_to_costmap) {
     throw nav2_core::ControllerTFError(
-      std::string("Unable to transform global plan into costmap frame: ") +
-      ex.what());
+      "Unable to transform global plan into costmap frame");
   }
 
   // Find the furthest relevant pose on the path to consider within costmap
@@ -232,7 +228,7 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
     geometry_msgs::msg::PoseStamped plan_pose = *global_plan_pose;
     plan_pose.header = global_pose_.header;
     geometry_msgs::msg::PoseStamped costmap_plan_pose;
-    tf2::doTransform(plan_pose, costmap_plan_pose, plan_to_costmap);
+    tf2::doTransform(plan_pose, costmap_plan_pose, *plan_to_costmap);
     if (!costmap_ros_->getCostmap()->worldToMap(
         costmap_plan_pose.pose.position.x,
         costmap_plan_pose.pose.position.y, mx, my))
@@ -272,13 +268,13 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::getTransformedGoal(
   if (goal.header.frame_id.empty()) {
     throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
   }
-  geometry_msgs::msg::PoseStamped transformed_goal;
-  if (!nav2_util::transformPoseInTargetFrame(goal, transformed_goal, *costmap_ros_->getTfBuffer(),
-      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
-  {
+
+  const auto transformed_goal = costmap_ros_->getTfBuffer()->transformStampedPose(
+    costmap_ros_->getGlobalFrameID(), goal, tf2::durationFromSec(transform_tolerance_));
+  if (!transformed_goal) {
     throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
   }
-  return transformed_goal;
+  return *transformed_goal;
 }
 
 rcl_interfaces::msg::SetParametersResult

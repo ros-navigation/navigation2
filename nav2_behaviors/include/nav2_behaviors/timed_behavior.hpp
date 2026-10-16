@@ -25,6 +25,7 @@
 #include <thread>
 #include <utility>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/logger.hpp"
@@ -33,7 +34,6 @@
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/rate.hpp"
@@ -184,12 +184,12 @@ protected:
    */
   bool getCurrentPoseChecked(geometry_msgs::msg::PoseStamped & pose)
   {
-    if (!nav2_util::getFreshPose(
-        *tf_, local_frame_, robot_base_frame_, clock_->now(),
-        transform_staleness_threshold_, pose))
-    {
+    const auto pose_result = tf_->getLatestPose(
+      local_frame_, robot_base_frame_, transform_staleness_threshold_);
+    if (!pose_result) {
       return false;
     }
+    pose = *pose_result;
     return true;
   }
 

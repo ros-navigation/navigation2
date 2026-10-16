@@ -61,7 +61,7 @@ public:
 
     tf_ = nav2::create_transform_buffer(node_);
     tf_->setUsingDedicatedThread(true);
-    tf_listener_ = nav2::create_transform_listener(*tf_, node_, false);
+    tf_->createListener(node_, false);
 
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
 
@@ -221,7 +221,6 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
 
   nav2::TransformBuffer::SharedPtr tf_;
-  nav2::TransformListener::SharedPtr tf_listener_;
 
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 

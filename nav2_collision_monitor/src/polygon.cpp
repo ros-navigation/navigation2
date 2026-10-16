@@ -18,6 +18,7 @@
 #include <exception>
 #include <utility>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "tf2/transform_datatypes.hpp"
@@ -25,7 +26,6 @@
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
 #include "nav2_collision_monitor/polygon_utils.hpp"
@@ -269,13 +269,11 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
 
     // Get the transform from PolygonStamped frame to base_frame_id_
     tf2::Stamped<tf2::Transform> tf_transform;
-    if (
-      !nav2_util::getTransform(
-        polygon_.header.frame_id, base_frame_id_,
-        transform_tolerance_, tf_buffer_, tf_transform))
-    {
+    const auto transform = tf_buffer_->getLatestTransform(base_frame_id_, polygon_.header.frame_id);
+    if (!transform) {
       return;
     }
+    tf2::fromMsg(*transform, tf_transform);
 
     // Correct main poly_ vertices
     poly_.resize(new_size);
@@ -613,13 +611,11 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
 
   // Get the transform from PolygonStamped frame to base_frame_id_
   tf2::Stamped<tf2::Transform> tf_transform;
-  if (
-    !nav2_util::getTransform(
-      msg->header.frame_id, base_frame_id_,
-      transform_tolerance_, tf_buffer_, tf_transform))
-  {
+  const auto transform = tf_buffer_->getLatestTransform(base_frame_id_, msg->header.frame_id);
+  if (!transform) {
     return;
   }
+  tf2::fromMsg(*transform, tf_transform);
 
   // Set main poly_ vertices first time
   poly_.resize(new_size);

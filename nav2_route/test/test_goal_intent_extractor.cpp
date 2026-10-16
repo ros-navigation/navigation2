@@ -71,7 +71,7 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   Graph graph;
   GraphToIDMap id_map;
   auto tf = nav2::create_transform_buffer(node);
-  auto transform_listener = nav2::create_transform_listener(*tf, node);
+  tf->createListener(node);
   auto broadcaster = nav2::create_transform_broadcaster(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
   extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");

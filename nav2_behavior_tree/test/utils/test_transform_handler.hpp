@@ -22,6 +22,7 @@
 #include <chrono>
 #include <algorithm>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/timer.hpp"
@@ -48,7 +49,7 @@ public:
     tf_broadcaster_(nullptr)
   {
     tf_buffer_ = nav2::create_transform_buffer(node_);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
+    tf_buffer_->createListener(node_);
   }
 
   virtual ~TransformHandler()
@@ -56,7 +57,9 @@ public:
     if (is_active_) {
       deactivate();
     }
-    tf_listener_.reset();
+    if (tf_buffer_) {
+      tf_buffer_->resetListener();
+    }
     tf_buffer_.reset();
   }
 
@@ -100,7 +103,9 @@ public:
   virtual void waitForTransform() const
   {
     if (is_active_) {
-      while (!tf_buffer_->canTransform("map", "base_link", rclcpp::Time(0))) {
+      while (!tf_buffer_->getLatestTransform("map", "base_link", 0.0,
+          nav2::Log::Disabled).has_value())
+      {
         std::this_thread::sleep_for(100ms);
       }
       RCLCPP_INFO(node_->get_logger(), "Transforms are available now!");
@@ -167,7 +172,6 @@ protected:
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
   nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
   rclcpp::TimerBase::SharedPtr transform_timer_;
 };
 

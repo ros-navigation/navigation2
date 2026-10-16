@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_map_server/vector_object_utils.hpp"
 
 namespace nav2_map_server
@@ -24,14 +25,14 @@ bool lookupShapeTransform(
   const double transform_tolerance,
   geometry_msgs::msg::TransformStamped & transform)
 {
-  try {
-    transform = tf_buffer->lookupTransform(
-      target_frame, header.frame_id, rclcpp::Time(header.stamp),
-      tf2::durationFromSec(transform_tolerance));
-    return true;
-  } catch (const tf2::TransformException &) {
+  const auto result = tf_buffer->getStampedTransform(
+    target_frame, header.frame_id, rclcpp::Time(header.stamp),
+    tf2::durationFromSec(transform_tolerance));
+  if (!result) {
     return false;
   }
+  transform = *result;
+  return true;
 }
 
 }  // namespace nav2_map_server

@@ -48,7 +48,7 @@ protected:
     node_->declare_parameter("trinary_costmap", true);
     node_->declare_parameter("transform_tolerance", 0.0);
     node_->declare_parameter("static.footprint_clearing_enabled", footprint_clearing);
-    tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
     geometry_msgs::msg::TransformStamped transform;
     transform.header.frame_id = "odom";
     transform.child_frame_id = "map";
@@ -70,7 +70,7 @@ protected:
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformBuffer> tf_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
   std::shared_ptr<TestStaticLayer> layer_;
 };
@@ -193,7 +193,7 @@ protected:
     node_->declare_parameter("unknown_cost_value", 255);
     node_->declare_parameter("trinary_costmap", true);
     node_->declare_parameter("transform_tolerance", 0.0);
-    tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
     layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, true);
     layers_->resizeMap(20, 20, 1.0, 0.0, 0.0);
   }
@@ -229,7 +229,7 @@ protected:
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformBuffer> tf_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
 };
 

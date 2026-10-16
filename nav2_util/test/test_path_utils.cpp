@@ -384,8 +384,7 @@ TEST(TransformPathTest, SuccessfulTransform)
   rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
   nav2::TransformBuffer::SharedPtr tf_buffer_ =
     nav2::create_transform_buffer(node_);
-  nav2::TransformListener::SharedPtr tf_listener_ =
-    nav2::create_transform_listener(*tf_buffer_, node_);
+  tf_buffer_->createListener(node_);
 
   geometry_msgs::msg::TransformStamped tf;
   tf.header.stamp = rclcpp::Time(0.0);
@@ -423,8 +422,7 @@ TEST(TransformPathTest, PathAlreadyInTargetFrame)
   rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
   nav2::TransformBuffer::SharedPtr tf_buffer_ =
     nav2::create_transform_buffer(node_);
-  nav2::TransformListener::SharedPtr tf_listener_ =
-    nav2::create_transform_listener(*tf_buffer_, node_);
+  tf_buffer_->createListener(node_);
   nav_msgs::msg::Path input_path, transformed_path;
   input_path.header.frame_id = "map";
 
@@ -448,8 +446,7 @@ TEST(TransformPathTest, MissingTransform)
   rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
   nav2::TransformBuffer::SharedPtr tf_buffer_ =
     nav2::create_transform_buffer(node_);
-  nav2::TransformListener::SharedPtr tf_listener_ =
-    nav2::create_transform_listener(*tf_buffer_, node_);
+  tf_buffer_->createListener(node_);
   nav_msgs::msg::Path input_path, transformed_path;
   input_path.header.frame_id = "odom";
 

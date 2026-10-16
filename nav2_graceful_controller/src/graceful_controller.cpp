@@ -15,6 +15,7 @@
 #include <memory>
 #include <mutex>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "angles/angles.h"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -149,8 +150,8 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
 
   // ControllerServer supplies pose in the local costmap's global frame, so it already
   // represents the transform from the robot base frame to the costmap's global frame.
-  geometry_msgs::msg::TransformStamped costmap_transform = nav2_util::poseToTransformStamped(pose,
-      costmap_ros_->getBaseFrameID());
+  geometry_msgs::msg::TransformStamped costmap_transform =
+    nav2::TransformBuffer::poseToTransformStamped(pose, costmap_ros_->getBaseFrameID());
 
   // Compute distance to goal as the path's integrated distance to account for path curvatures
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);

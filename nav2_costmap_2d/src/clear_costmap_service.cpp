@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_costmap_2d/clear_costmap_service.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
@@ -136,26 +137,16 @@ bool ClearCostmapService::clearAroundPose(
   const double reset_distance,
   const std::vector<std::string> & plugins)
 {
-  double x, y;
-
-  // Transform pose to costmap frame if necessary
-  geometry_msgs::msg::PoseStamped global_pose;
-  try {
-    if (pose.header.frame_id == costmap_.getGlobalFrameID()) {
-      global_pose = pose;
-    } else {
-      costmap_.getTfBuffer()->transform(pose, global_pose, costmap_.getGlobalFrameID());
-    }
-  } catch (tf2::TransformException & ex) {
+  const auto global_pose = costmap_.getTfBuffer()->transformStampedPose(
+    costmap_.getGlobalFrameID(), pose, tf2::Duration::zero());
+  if (!global_pose) {
     RCLCPP_ERROR(
-      logger_,
-      "Cannot clear map around pose because pose cannot be transformed to costmap frame: %s",
-      ex.what());
+      logger_, "Cannot clear map around pose because pose cannot be transformed to costmap frame");
     return false;
   }
 
-  x = global_pose.pose.position.x;
-  y = global_pose.pose.position.y;
+  const double x = global_pose->pose.position.x;
+  const double y = global_pose->pose.position.y;
 
   auto layers = costmap_.getLayeredCostmap()->getPlugins();
 

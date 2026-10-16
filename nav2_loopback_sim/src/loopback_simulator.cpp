@@ -23,6 +23,7 @@
 #include <tuple>
 #include <chrono>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using namespace std::chrono_literals;
@@ -92,7 +93,7 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   if (publish_scan_) {
     map_client_ = create_client<nav_msgs::srv::GetMap>("/map_server/map");
     tf_buffer_ = nav2::create_transform_buffer(this);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_);
+    tf_buffer_->createListener();
   }
 
   if (publish_clock_) {
@@ -186,7 +187,9 @@ LoopbackSimulator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   odom_pub_.reset();
   scan_pub_.reset();
   map_client_.reset();
-  tf_listener_.reset();
+  if (tf_buffer_) {
+    tf_buffer_->resetListener();
+  }
   tf_buffer_.reset();
   tf_broadcaster_.reset();
   clock_publisher_.reset();
@@ -231,14 +234,15 @@ void LoopbackSimulator::getMap()
 
 void LoopbackSimulator::getBaseToLaserTf()
 {
-  try {
-    auto transform = tf_buffer_->lookupTransform(
-      base_frame_id_, scan_frame_id_, tf2::TimePointZero);
-    tf2::fromMsg(transform.transform, tf_base_to_laser_);
-    has_base_to_laser_ = true;
-  } catch (const tf2::TransformException & ex) {
-    RCLCPP_ERROR(get_logger(), "Transform lookup failed: %s", ex.what());
+  const auto transform = tf_buffer_->getLatestTransform(
+    base_frame_id_, scan_frame_id_, 0.0);
+  if (!transform) {
+    RCLCPP_ERROR(get_logger(), "Transform lookup failed from %s to %s",
+      scan_frame_id_.c_str(), base_frame_id_.c_str());
+    return;
   }
+  tf2::fromMsg(transform->transform, tf_base_to_laser_);
+  has_base_to_laser_ = true;
 }
 
 void LoopbackSimulator::setupTimerCallback()

@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "nav2_ros_common/tf_buffer.hpp"
+#include "rcl/time.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/parameter.hpp"
@@ -199,9 +201,12 @@ public:
   ExclusionZoneTester()
   {
     node_ = std::make_shared<TestNode>();
-    tf_buffer_ = nav2::create_transform_buffer(node_);
+    tf_clock_ = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+    EXPECT_EQ(rcl_enable_ros_time_override(tf_clock_->get_clock_handle()), RCL_RET_OK);
+    setTime(node_->now());
+    tf_buffer_ = std::make_shared<nav2::TransformBuffer>(tf_clock_, node_->get_logger());
     tf_buffer_->setUsingDedicatedThread(true);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
+    tf_buffer_->createListener(node_, false);
     tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_node(node_->get_node_base_interface());
@@ -210,12 +215,20 @@ public:
   ~ExclusionZoneTester() override
   {
     tf_broadcaster_.reset();
-    tf_listener_.reset();
+    if (tf_buffer_) {
+      tf_buffer_->resetListener();
+    }
     tf_buffer_.reset();
     node_.reset();
   }
 
 protected:
+  void setTime(const rclcpp::Time & time)
+  {
+    ASSERT_EQ(rcl_set_ros_time_override(tf_clock_->get_clock_handle(), time.nanoseconds()),
+      RCL_RET_OK);
+  }
+
   // Broadcast a base_frame -> child transform and wait for it to be available.
   // Also publishes an identity odom -> base_link leg, because the zone resolves
   // its (possibly held) pose through the global frame, so that leg must exist.
@@ -243,8 +256,10 @@ protected:
     // Wait for both legs to propagate into the buffer.
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_buffer_->canTransform(child_frame, BASE_FRAME_ID, tf2::TimePointZero) &&
-        tf_buffer_->canTransform(BASE_FRAME_ID, GLOBAL_FRAME_ID, tf2::TimePointZero))
+      if (tf_buffer_->getLatestTransform(child_frame, BASE_FRAME_ID, 0.0,
+        nav2::Log::Disabled).has_value() &&
+        tf_buffer_->getLatestTransform(BASE_FRAME_ID, GLOBAL_FRAME_ID, 0.0,
+        nav2::Log::Disabled).has_value())
       {
         return;
       }
@@ -261,13 +276,11 @@ protected:
   {
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      try {
-        const auto t =
-          tf_buffer_->lookupTransform(GLOBAL_FRAME_ID, BASE_FRAME_ID, tf2::TimePointZero);
-        if (std::abs(t.transform.translation.x - expected_x) < 1e-6) {
-          return;
-        }
-      } catch (const tf2::TransformException &) {}
+      const auto transform = tf_buffer_->getLatestTransform(
+        GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, nav2::Log::Disabled);
+      if (transform && std::abs(transform->transform.translation.x - expected_x) < 1e-6) {
+        return;
+      }
       executor_->spin_some();
       std::this_thread::sleep_for(10ms);
     }
@@ -290,7 +303,9 @@ protected:
 
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_buffer_->canTransform(child_frame, parent_frame, tf2::TimePointZero)) {
+      if (tf_buffer_->getLatestTransform(child_frame, parent_frame, 0.0,
+        nav2::Log::Disabled).has_value())
+      {
         return;
       }
       executor_->spin_some();
@@ -318,8 +333,8 @@ protected:
   }
 
   std::shared_ptr<TestNode> node_;
+  rclcpp::Clock::SharedPtr tf_clock_;
   nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
   nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 };  // ExclusionZoneTester
@@ -635,6 +650,7 @@ TEST_F(ExclusionZoneTester, DynamicTransformStalenessThresholdUpdateExtendsWindo
 
   // 3 s after the last detection exceeds the 1 s hold window -> fail safe.
   const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(3.0);
+  setTime(later);
   geometry_msgs::msg::TransformStamped fresh_base;
   fresh_base.header.frame_id = GLOBAL_FRAME_ID;
   fresh_base.child_frame_id = BASE_FRAME_ID;
@@ -722,7 +738,9 @@ TEST_F(ExclusionZoneTester, HeldZoneDoesNotMaskWithStaleRobotPose)
   ASSERT_TRUE(zone->configure());
 
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}};
-  zone->apply(node_->now() + rclcpp::Duration::from_seconds(2.0), data);
+  const auto later = node_->now() + rclcpp::Duration::from_seconds(2.0);
+  setTime(later);
+  zone->apply(later, data);
   EXPECT_EQ(data.size(), 1u);
 }
 
@@ -744,6 +762,7 @@ TEST_F(ExclusionZoneTester, HeldZoneKeepsMaskingWithinWindow)
   // 2 s later the frame has not refreshed, but that is within the 5 s hold
   // window, so the zone must keep masking at its last known pose.
   const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(2.0);
+  setTime(later);
   geometry_msgs::msg::TransformStamped fresh_base;
   fresh_base.header.frame_id = GLOBAL_FRAME_ID;
   fresh_base.child_frame_id = BASE_FRAME_ID;
@@ -772,6 +791,7 @@ TEST_F(ExclusionZoneTester, HeldZoneFailsSafeAfterWindowExpires)
 
   // 3 s later exceeds the 1 s hold window -> fail safe, keep all points.
   const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(3.0);
+  setTime(later);
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
   zone->apply(later, data);
   EXPECT_EQ(data.size(), 2u);

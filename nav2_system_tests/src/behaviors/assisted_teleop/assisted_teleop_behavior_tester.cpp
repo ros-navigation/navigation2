@@ -22,6 +22,7 @@
 #include <sstream>
 #include <iomanip>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "assisted_teleop_behavior_tester.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -42,7 +43,7 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
       {rclcpp::Parameter("use_sim_time", true)}));
 
   tf_buffer_ = nav2::create_transform_buffer(node_);
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_);
+  tf_buffer_->createListener();
 
   client_ptr_ = rclcpp_action::create_client<AssistedTeleop>(
     node_->get_node_base_interface(),
@@ -229,13 +230,13 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
 
   RCLCPP_INFO(node_->get_logger(), "result received");
 
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, *tf_buffer_, "odom")) {
+  const auto current_pose = tf_buffer_->getLatestPose("odom", "base_link");
+  if (!current_pose) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return false;
   }
 
-  if (!collision_checker_->isCollisionFree(current_pose.pose)) {
+  if (!collision_checker_->isCollisionFree(current_pose->pose)) {
     RCLCPP_ERROR(node_->get_logger(), "Ended in collision");
     return false;
   }

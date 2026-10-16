@@ -18,10 +18,10 @@
 #include <vector>
 #include <utility>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "angles/angles.h"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 #include "nav2_rotation_shim_controller/nav2_rotation_shim_controller.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -244,13 +244,13 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt(
 geometry_msgs::msg::Pose
 RotationShimController::transformPoseToBaseFrame(const geometry_msgs::msg::PoseStamped & pt)
 {
-  geometry_msgs::msg::PoseStamped pt_base;
-  if (!nav2_util::transformPoseInTargetFrame(pt, pt_base, *tf_, costmap_ros_->getBaseFrameID(),
-      costmap_ros_->getTransformTolerance()))
-  {
+  const auto pt_base = tf_->transformStampedPose(
+    costmap_ros_->getBaseFrameID(), pt,
+    tf2::durationFromSec(costmap_ros_->getTransformTolerance()));
+  if (!pt_base) {
     throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
   }
-  return pt_base.pose;
+  return pt_base->pose;
 }
 
 geometry_msgs::msg::TwistStamped

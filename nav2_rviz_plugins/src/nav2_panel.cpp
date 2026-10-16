@@ -28,6 +28,7 @@
 #include <fstream>
 #include <string>
 
+#include "nav2_ros_common/tf_buffer.hpp"
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "nav2_rviz_plugins/utils.hpp"
 #include "rclcpp/duration.hpp"
@@ -676,7 +677,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   // Setting up tf for initial pose
   tf2_buffer_ = nav2::create_transform_buffer(client_node_);
-  transform_listener_ = nav2::create_transform_listener(*tf2_buffer_);
+  tf2_buffer_->createListener();
 
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
@@ -1141,35 +1142,19 @@ Nav2Panel::onAccumulatedWp()
     // Setting the final loop value on the text box for sanity
     nr_of_loops_->setText(QString::fromStdString(loop_no_));
 
-    // Variable to store initial pose
-    geometry_msgs::msg::TransformStamped init_transform;
-
     // Looking up transform to get initial pose
     if (store_initial_pose_) {
-      try {
-        init_transform = tf2_buffer_->lookupTransform(
-          acummulated_poses_.goals[0].header.frame_id, base_frame_,
-          tf2::TimePointZero);
-      } catch (const tf2::TransformException & ex) {
+      const auto initial_pose = tf2_buffer_->getLatestPose(
+        acummulated_poses_.goals[0].header.frame_id, base_frame_);
+      if (!initial_pose) {
         RCLCPP_INFO(
-          client_node_->get_logger(), "Could not transform %s to %s: %s",
-          acummulated_poses_.goals[0].header.frame_id.c_str(), base_frame_.c_str(), ex.what());
+          client_node_->get_logger(), "Could not transform %s to %s",
+          base_frame_.c_str(), acummulated_poses_.goals[0].header.frame_id.c_str());
         return;
       }
 
-      // Converting TransformStamped to PoseStamped
-      geometry_msgs::msg::PoseStamped initial_pose;
-      initial_pose.header = init_transform.header;
-      initial_pose.pose.position.x = init_transform.transform.translation.x;
-      initial_pose.pose.position.y = init_transform.transform.translation.y;
-      initial_pose.pose.position.z = init_transform.transform.translation.z;
-      initial_pose.pose.orientation.x = init_transform.transform.rotation.x;
-      initial_pose.pose.orientation.y = init_transform.transform.rotation.y;
-      initial_pose.pose.orientation.z = init_transform.transform.rotation.z;
-      initial_pose.pose.orientation.w = init_transform.transform.rotation.w;
-
       // inserting the acummulated pose
-      acummulated_poses_.goals.insert(acummulated_poses_.goals.begin(), initial_pose);
+      acummulated_poses_.goals.insert(acummulated_poses_.goals.begin(), *initial_pose);
       syncTabsWithAccumulatedPoses();
       updateWpNavigationMarkers();
       initial_pose_stored_ = true;
