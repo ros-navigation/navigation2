@@ -242,7 +242,11 @@ bool validateMsg(const sensor_msgs::msg::Range & msg)
   if (!validateMsg(static_cast<double>(msg.field_of_view))) {return false;}
   if (!validateMsg(static_cast<double>(msg.min_range))) {return false;}
   if (!validateMsg(static_cast<double>(msg.max_range))) {return false;}
-  if (!validateMsg(static_cast<double>(msg.range))) {return false;}
+  // Positive infinity denotes no return within the sensor's range.
+  // Keep rejecting NaN and negative infinity, and validate all metadata below.
+  if (std::isnan(msg.range) || (std::isinf(msg.range) && msg.range < 0.0)) {
+    return false;
+  }
 
   if (msg.field_of_view <= 0.0 || msg.field_of_view > MAX_RANGE_FIELD_OF_VIEW) {
     return false;
