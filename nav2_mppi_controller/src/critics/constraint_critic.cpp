@@ -80,7 +80,10 @@ void ConstraintCritic::score(CriticData & data)
 
     const float epsilon = 1e-6f;
     auto wz_safe = wz.abs().max(epsilon);  // Replace small wz values to avoid division by 0
-    auto out_of_turning_rad_motion = (min_turning_rad - (vx.abs() / wz_safe)).max(0.0f);
+    // Penalize only motions whose turning radius |vx| / |wz| is below the minimum
+    auto turning_radius_feasible = vx.abs() >= min_turning_rad * wz.abs();
+    auto out_of_turning_rad_motion = turning_radius_feasible.select(
+      0.0f, (min_turning_rad - (vx.abs() / wz_safe)).max(0.0f));
 
     if (power_ > 1u) {
       data.costs += ((((vx - vx_max_).max(0.0f) + (vx_min_ - vx).max(0.0f) +
