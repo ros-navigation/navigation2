@@ -15,7 +15,8 @@
 
 <root BTCPP_format="4" main_tree_to_execute="NavigateWRoutingGlobalPlanningAndControlWRecovery">
   <BehaviorTree ID="NavigateWRoutingGlobalPlanningAndControlWRecovery">
-    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+    <RecoveryNode number_of_retries="6" reset_distance="3.0"
+                  global_frame="odom" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
         <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
         <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>

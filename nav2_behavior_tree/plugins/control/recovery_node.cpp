@@ -18,6 +18,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/plugins/control/recovery_node.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -30,11 +31,17 @@ RecoveryNode::RecoveryNode(
   number_of_retries_(1),
   retry_count_(0)
 {
+}
+
+void RecoveryNode::initialize()
+{
   getInput("reset_distance", reset_distance_);
   if (reset_distance_ > 0.0) {
-    getInput("robot_frame", robot_frame_);
-    getInput("global_frame", global_frame_);
     const auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+    robot_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+      node, "robot_base_frame", this);
+    global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+      node, "global_frame", this);
     clock_ = node->get_clock();
     tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
     transform_staleness_threshold_ = node->declare_or_get_parameter(
@@ -42,9 +49,22 @@ RecoveryNode::RecoveryNode(
   }
 }
 
-void RecoveryNode::updateRetryCount()
+void RecoveryNode::captureResetPose()
 {
-  if (!(reset_distance_ > 0.0)) {
+  if (reset_distance_ <= 0.0 || reset_pose_) {
+    return;
+  }
+  geometry_msgs::msg::PoseStamped pose;
+  if (nav2_util::getFreshPose(
+      *tf_, global_frame_, robot_frame_, clock_->now(), transform_staleness_threshold_, pose))
+  {
+    reset_pose_ = pose;
+  }
+}
+
+void RecoveryNode::checkRetryReset()
+{
+  if (reset_distance_ <= 0.0 || !reset_pose_) {
     return;
   }
 
@@ -55,18 +75,18 @@ void RecoveryNode::updateRetryCount()
     return;
   }
 
-  if (!reset_pose_ || nav2_util::geometry_utils::euclidean_distance(
+  if (nav2_util::geometry_utils::euclidean_distance(
       reset_pose_->pose, pose.pose) >= reset_distance_)
   {
-    if (reset_pose_) {
-      retry_count_ = 0;
-    }
-    reset_pose_ = pose;
+    retry_count_ = 0;
   }
 }
 
 BT::NodeStatus RecoveryNode::tick()
 {
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
   getInput("number_of_retries", number_of_retries_);
   const unsigned children_count = children_nodes_.size();
 
@@ -74,17 +94,17 @@ BT::NodeStatus RecoveryNode::tick()
     throw BT::BehaviorTreeException("Recovery Node '" + name() + "' must only have 2 children.");
   }
 
-  if (retry_count_ > 0) {
-    updateRetryCount();
-  }
-
   setStatus(BT::NodeStatus::RUNNING);
 
   while (current_child_idx_ < children_count && retry_count_ <= number_of_retries_) {
     TreeNode * child_node = children_nodes_[current_child_idx_];
+    if (current_child_idx_ == 0) {
+      captureResetPose();
+    }
     const BT::NodeStatus child_status = child_node->executeTick();
 
     if (current_child_idx_ == 0) {
+      checkRetryReset();
       switch (child_status) {
         case BT::NodeStatus::SKIPPED:
           // If first child is skipped, the entire branch is considered skipped
@@ -103,9 +123,8 @@ BT::NodeStatus RecoveryNode::tick()
 
         case BT::NodeStatus::FAILURE:
           {
-            if (retry_count_ == 0 && !reset_pose_) {
-              updateRetryCount();
-            }
+            // Reanchor when the main child resumes so recovery motion cannot reset retries.
+            reset_pose_.reset();
             if (retry_count_ < number_of_retries_) {
               // halt first child and tick second child in next iteration
               ControlNode::haltChild(0);
