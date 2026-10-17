@@ -54,6 +54,13 @@ void GridCollisionChecker::setFootprint(
   const double & possible_collision_cost)
 {
   possible_collision_cost_ = static_cast<float>(possible_collision_cost);
+  footprint_is_radius_ = radius;
+
+  // Use radius, no caching or inflation field required
+  if (radius) {
+    return;
+  }
+
   if (possible_collision_cost_ <= 0.0f) {
     RCLCPP_ERROR_THROTTLE(
       logger_, *clock_, 1000,
@@ -62,13 +69,6 @@ void GridCollisionChecker::setFootprint(
       " the inflation radius to be at MINIMUM half of the robot's largest cross-section. See "
       "github.com/ros-planning/navigation2/tree/main/nav2_smac_planner#potential-fields"
       " for full instructions. This will substantially impact run-time performance.");
-  }
-
-  footprint_is_radius_ = radius;
-
-  // Use radius, no caching required
-  if (radius) {
-    return;
   }
 
   // No change, no updates required

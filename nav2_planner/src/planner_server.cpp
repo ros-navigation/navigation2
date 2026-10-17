@@ -438,11 +438,12 @@ void PlannerServer::computePlanThroughPoses()
 
       // Concatenate paths together, but skip the first pose of subsequent paths
       // to avoid duplicating the connection point
-      if (i == 0) {
-        // First path: add all poses
+      size_t curr_path_size = curr_path.poses.size();
+      if (i == 0 || curr_path_size == 1) {
+        // First path or single-posed path: add all poses
         concat_path.poses.insert(
           concat_path.poses.end(), curr_path.poses.begin(), curr_path.poses.end());
-      } else if (curr_path.poses.size() > 1) {
+      } else if (curr_path_size > 1) {
         // Subsequent paths: skip the first pose to avoid duplication
         concat_path.poses.insert(
           concat_path.poses.end(), curr_path.poses.begin() + 1, curr_path.poses.end());
