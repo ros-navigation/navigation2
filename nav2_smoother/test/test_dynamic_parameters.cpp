@@ -24,6 +24,7 @@
 #include "gtest/gtest.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smoother/simple_smoother_parameter_handler.hpp"
+#include "nav2_smoother/savitzky_golay_smoother_parameter_handler.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/parameter_client.hpp"
@@ -131,6 +132,110 @@ TEST(SimpleSmootherParamTest, test_reject_while_smoothing)
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_TRUE(results.get().successful);
   EXPECT_EQ(params->tolerance, 0.5);
+}
+
+TEST(SavitzkyGolayParamTest, test_dynamic_parameters)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  std::string plugin_name = "test";
+  auto logger = node->get_logger();
+  auto param_handler = std::make_unique<nav2_smoother::SavitzkyGolaySmootherParameterHandler>(
+    node, plugin_name, logger);
+  param_handler->activate();
+  auto params = param_handler->getParams();
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  // Valid updates are applied
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.window_size", 9),
+      rclcpp::Parameter("test.poly_order", 4),
+      rclcpp::Parameter("test.do_refinement", false)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->window_size, 9);
+  EXPECT_EQ(params->poly_order, 4);
+  EXPECT_FALSE(params->do_refinement);
+
+  // Even window size is rejected
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.window_size", 8)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->window_size, 9);
+
+  // Window size below 3 is rejected
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.window_size", 1)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->window_size, 9);
+
+  // poly_order not less than window_size is rejected
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.poly_order", 9)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->poly_order, 4);
+
+  // Negative poly_order is rejected
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.poly_order", -1)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->poly_order, 4);
+
+  // Negative refinement_num is rejected, default unchanged
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.refinement_num", -1)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->refinement_num, 2);
+
+  // A pair that is only valid together is accepted when set atomically
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.window_size", 3),
+      rclcpp::Parameter("test.poly_order", 1)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->window_size, 3);
+  EXPECT_EQ(params->poly_order, 1);
+}
+
+TEST(SavitzkyGolayParamTest, test_reject_while_smoothing)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  std::string plugin_name = "test";
+  auto logger = node->get_logger();
+  auto param_handler = std::make_unique<nav2_smoother::SavitzkyGolaySmootherParameterHandler>(
+    node, plugin_name, logger);
+  param_handler->activate();
+  auto params = param_handler->getParams();
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  std::atomic<bool> release{false};
+  std::thread holder([&]() {
+      std::lock_guard<std::mutex> lock(param_handler->getMutex());
+      while (!release) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+    });
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.window_size", 9)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+  EXPECT_EQ(params->window_size, 7);
+
+  release = true;
+  holder.join();
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.window_size", 9)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_TRUE(results.get().successful);
+  EXPECT_EQ(params->window_size, 9);
 }
 
 

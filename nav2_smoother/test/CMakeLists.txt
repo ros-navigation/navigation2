@@ -84,6 +84,7 @@ target_include_directories(test_savitzky_golay_smoother
 )
 target_link_libraries(test_dynamic_parameters
   simple_smoother
+  savitzky_golay_smoother
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
