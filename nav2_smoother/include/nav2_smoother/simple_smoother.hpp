@@ -34,6 +34,7 @@
 #include "tf2/utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_smoother/simple_smoother_parameter_handler.hpp"
 
 namespace nav2_smoother
 {
@@ -64,17 +65,17 @@ public:
   /**
    * @brief Method to cleanup resources.
    */
-  void cleanup() override {costmap_sub_.reset();}
+  void cleanup() override;
 
   /**
    * @brief Method to activate smoother and any threads involved in execution.
    */
-  void activate() override {}
+  void activate() override;
 
   /**
    * @brief Method to deactivate smoother and any threads involved in execution.
    */
-  void deactivate() override {}
+  void deactivate() override;
 
   /**
    * @brief Method to smooth given path
@@ -121,9 +122,9 @@ protected:
     geometry_msgs::msg::PoseStamped & msg, const unsigned int dim,
     const double & value);
 
-  double tolerance_, data_w_, smooth_w_;
-  int max_its_, refinement_ctr_, refinement_num_;
-  bool do_refinement_, enforce_path_inversion_;
+  int refinement_ctr_;
+  SimpleSmootherParameters * params_;
+  std::unique_ptr<SimpleSmootherParameterHandler> param_handler_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   rclcpp::Logger logger_{rclcpp::get_logger("SimpleSmoother")};
 };

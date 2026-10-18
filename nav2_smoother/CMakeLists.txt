@@ -63,6 +63,7 @@ target_link_libraries(${executable_name} PRIVATE rclcpp::rclcpp ${library_name})
 # Simple Smoother plugin
 add_library(simple_smoother SHARED
   src/simple_smoother.cpp
+  src/simple_smoother_parameter_handler.cpp
 )
 target_include_directories(simple_smoother
   PUBLIC
