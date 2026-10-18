@@ -78,3 +78,14 @@ target_include_directories(test_savitzky_golay_smoother
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+
+  nav2_add_gtest(test_dynamic_parameters
+  test_dynamic_parameters.cpp
+)
+target_link_libraries(test_dynamic_parameters
+  simple_smoother
+  nav2_util::nav2_util_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  nav2_ros_common::nav2_ros_common
+)
