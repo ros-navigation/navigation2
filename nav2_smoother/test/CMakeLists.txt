@@ -83,6 +83,7 @@ target_include_directories(test_savitzky_golay_smoother
   test_dynamic_parameters.cpp
 )
 target_link_libraries(test_dynamic_parameters
+  ${library_name}
   simple_smoother
   savitzky_golay_smoother
   nav2_util::nav2_util_core

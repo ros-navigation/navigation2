@@ -25,6 +25,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smoother/simple_smoother_parameter_handler.hpp"
 #include "nav2_smoother/savitzky_golay_smoother_parameter_handler.hpp"
+#include "nav2_smoother/smoother_server_parameter_handler.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/parameter_client.hpp"
@@ -238,6 +239,101 @@ TEST(SavitzkyGolayParamTest, test_reject_while_smoothing)
   EXPECT_EQ(params->window_size, 9);
 }
 
+
+TEST(SmootherServerParamTest, test_dynamic_parameters)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  auto logger = node->get_logger();
+  auto param_handler = std::make_unique<nav2_smoother::SmootherServerParameterHandler>(
+    node, logger);
+  param_handler->activate();
+  auto params = param_handler->getParams();
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  // Valid updates are applied
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("transform_tolerance", 0.5),
+      rclcpp::Parameter("footprint_topic", "new_footprint")});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->transform_tolerance, 0.5);
+  EXPECT_EQ(params->footprint_topic, "new_footprint");
+
+  // Negative tolerance is rejected, value unchanged
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("transform_tolerance", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->transform_tolerance, 0.5);
+
+  // Empty topic is rejected, value unchanged
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("footprint_topic", "")});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->footprint_topic, "new_footprint");
+
+  // costmap_topic is not reconfigurable at runtime
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("costmap_topic", "other")});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+  EXPECT_EQ(params->costmap_topic, "global_costmap/costmap_raw");
+
+  // smoother_plugins is not reconfigurable at runtime
+  std::vector<std::string> new_plugins = {"other_smoother"};
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("smoother_plugins", new_plugins)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+  EXPECT_EQ(params->smoother_plugins, std::vector<std::string>{"simple_smoother"});
+
+  // Frame change is accepted
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("robot_base_frame", "base_footprint")});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(params->robot_base_frame, "base_footprint");
+}
+
+TEST(SmootherServerParamTest, test_reject_while_smoothing)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  auto logger = node->get_logger();
+  auto param_handler = std::make_unique<nav2_smoother::SmootherServerParameterHandler>(
+    node, logger);
+  param_handler->activate();
+  auto params = param_handler->getParams();
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  std::atomic<bool> release{false};
+  std::thread holder([&]() {
+      std::lock_guard<std::mutex> lock(param_handler->getMutex());
+      while (!release) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+    });
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("transform_tolerance", 0.5)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+  EXPECT_EQ(params->transform_tolerance, 0.1);
+
+  release = true;
+  holder.join();
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("transform_tolerance", 0.5)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_TRUE(results.get().successful);
+  EXPECT_EQ(params->transform_tolerance, 0.5);
+}
 
 int main(int argc, char ** argv)
 {
