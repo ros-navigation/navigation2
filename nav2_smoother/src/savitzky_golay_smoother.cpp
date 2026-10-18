@@ -32,16 +32,10 @@ void SavitzkyGolaySmoother::configure(
   auto node = parent.lock();
   logger_ = node->get_logger();
 
-  do_refinement_ = node->declare_or_get_parameter(
-    name + ".do_refinement", true);
-  refinement_num_ = node->declare_or_get_parameter(
-    name + ".refinement_num", 2);
-  enforce_path_inversion_ = node->declare_or_get_parameter(
-    name + ".enforce_path_inversion", true);
-  window_size_ = node->declare_or_get_parameter(
-    name + ".window_size", 7);
-  poly_order_ = node->declare_or_get_parameter(
-    name + ".poly_order", 3);
+  param_handler_ = std::make_unique<SavitzkyGolaySmootherParameterHandler>(node, name, logger_);
+  params_ = param_handler_->getParams();
+  window_size_ = params_->window_size;
+  poly_order_ = params_->poly_order;
 
   if (window_size_ % 2 == 0 || window_size_ <= 2) {
     throw nav2_core::SmootherException(
@@ -49,6 +43,21 @@ void SavitzkyGolaySmoother::configure(
   }
   half_window_size_ = (window_size_ - 1) / 2;
   calculateCoefficients();
+}
+
+void SavitzkyGolaySmoother::cleanup()
+{
+  param_handler_.reset();
+}
+
+void SavitzkyGolaySmoother::activate()
+{
+  param_handler_->activate();
+}
+
+void SavitzkyGolaySmoother::deactivate()
+{
+  param_handler_->deactivate();
 }
 
 // For more details on calculating Savitzky–Golay filter coefficients,
@@ -77,6 +86,13 @@ bool SavitzkyGolaySmoother::smooth(
   nav_msgs::msg::Path & path,
   const rclcpp::Duration & max_time)
 {
+  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
+  if (params_->window_size != window_size_ || params_->poly_order != poly_order_) {
+    window_size_ = params_->window_size;
+    poly_order_ = params_->poly_order;
+    half_window_size_ = (window_size_ - 1) / 2;
+    calculateCoefficients();
+  }
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time.seconds();
 
@@ -86,7 +102,7 @@ bool SavitzkyGolaySmoother::smooth(
 
   std::vector<PathSegment> path_segments{
     PathSegment{0u, static_cast<unsigned int>(path.poses.size() - 1)}};
-  if (enforce_path_inversion_) {
+  if (params_->enforce_path_inversion) {
     path_segments = nav2_util::findDirectionalPathSegments(path);
   }
 
@@ -161,8 +177,8 @@ bool SavitzkyGolaySmoother::smoothImpl(
   applyFilterOverAxes(path.poses, initial_path_poses);
 
   // Let's do additional refinement, it shouldn't take more than a couple milliseconds
-  if (do_refinement_) {
-    for (int i = 0; i < refinement_num_; i++) {
+  if (params_->do_refinement) {
+    for (int i = 0; i < params_->refinement_num; i++) {
       std::vector<Eigen::Vector2d> reined_initial_path_poses(path.poses.size());
       std::transform(
         path.poses.begin(), path.poses.end(),

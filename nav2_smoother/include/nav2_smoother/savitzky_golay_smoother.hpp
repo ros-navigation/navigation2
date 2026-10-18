@@ -34,6 +34,7 @@
 #include "angles/angles.h"
 #include "tf2/utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_smoother/savitzky_golay_smoother_parameter_handler.hpp"
 
 namespace nav2_smoother
 {
@@ -64,17 +65,17 @@ public:
   /**
    * @brief Method to cleanup resources.
    */
-  void cleanup() override {}
+  void cleanup() override;
 
   /**
    * @brief Method to activate smoother and any threads involved in execution.
    */
-  void activate() override {}
+  void activate() override;
 
   /**
    * @brief Method to deactivate smoother and any threads involved in execution.
    */
-  void deactivate() override {}
+  void deactivate() override;
 
   /**
    * @brief Method to smooth given path
@@ -105,8 +106,9 @@ protected:
     nav_msgs::msg::Path & path,
     bool & reversing_segment);
 
-  bool do_refinement_, enforce_path_inversion_;
-  int refinement_num_, window_size_, half_window_size_, poly_order_;
+  int window_size_, half_window_size_, poly_order_;
+  SavitzkyGolaySmootherParameters * params_;
+  std::unique_ptr<SavitzkyGolaySmootherParameterHandler> param_handler_;
   Eigen::VectorXd sg_coeffs_;
   rclcpp::Logger logger_{rclcpp::get_logger("SGSmoother")};
 };

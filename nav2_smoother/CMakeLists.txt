@@ -89,6 +89,7 @@ target_link_libraries(simple_smoother PRIVATE
 # Savitzky Golay Smoother plugin
 add_library(savitzky_golay_smoother SHARED
   src/savitzky_golay_smoother.cpp
+  src/savitzky_golay_smoother_parameter_handler.cpp
 )
 target_include_directories(savitzky_golay_smoother
   PUBLIC
