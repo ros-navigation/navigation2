@@ -34,6 +34,7 @@
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "pluginlib/class_loader.hpp"
+#include "nav2_smoother/smoother_server_parameter_handler.hpp"
 
 namespace nav2_smoother
 {
@@ -151,6 +152,12 @@ protected:
    */
   bool validate(const nav_msgs::msg::Path & path);
 
+  /**
+   * @brief Recreate the footprint subscriber and collision checker if the
+   * footprint parameters have changed since they were last built
+   */
+  void updateFootprintSubscriber();
+
   // Our action server implements the SmoothPath action
   typename ActionServer::SharedPtr action_server_;
 
@@ -174,6 +181,13 @@ protected:
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
+
+  // Parameters
+  SmootherServerParameters * params_;
+  std::unique_ptr<SmootherServerParameterHandler> param_handler_;
+  // Values the current footprint subscriber was built with, to detect live changes
+  std::string footprint_topic_, robot_base_frame_;
+  double transform_tolerance_;
 };
 
 }  // namespace nav2_smoother
