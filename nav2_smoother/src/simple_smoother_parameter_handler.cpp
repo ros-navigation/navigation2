@@ -50,6 +50,14 @@ SimpleSmootherParameterHandler::validateParameterUpdatesCallback(
     if (param_name.find(plugin_name_ + ".") != 0) {
       continue;
     }
+    if (!mutex_.try_lock()) {
+      RCLCPP_WARN(
+        logger_, "Unable to change parameter '%s' while smoothing is in progress. "
+        "Rejecting update.", param_name.c_str());
+      result.successful = false;
+      return result;
+    }
+    mutex_.unlock();
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       const bool is_weight = param_name == plugin_name_ + ".w_data" ||
         param_name == plugin_name_ + ".w_smooth";

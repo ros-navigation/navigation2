@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <atomic>
+#include <chrono>
 #include <cmath>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -83,6 +87,52 @@ TEST(SimpleSmootherParamTest, test_dynamic_parameters)
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_EQ(params->w_smooth, 0.0);
 }
+
+
+TEST(SimpleSmootherParamTest, test_reject_while_smoothing)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  std::string plugin_name = "test";
+  auto logger = node->get_logger();
+  auto param_handler = std::make_unique<nav2_smoother::SimpleSmootherParameterHandler>(
+    node, plugin_name, logger);
+  param_handler->activate();
+  auto params = param_handler->getParams();
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  // A second thread holds the handler mutex, standing in for a smooth() in progress
+  std::atomic<bool> release{false};
+  std::thread holder([&]() {
+      std::lock_guard<std::mutex> lock(param_handler->getMutex());
+      while (!release) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+    });
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+  // Update arrives while "smoothing": must be rejected, value unchanged
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.tolerance", 0.5)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+  EXPECT_EQ(params->tolerance, 1e-10);
+
+  // "Smoothing" finishes
+  release = true;
+  holder.join();
+
+  // Same update now succeeds
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.tolerance", 0.5)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_TRUE(results.get().successful);
+  EXPECT_EQ(params->tolerance, 0.5);
+}
+
 
 int main(int argc, char ** argv)
 {
