@@ -116,7 +116,6 @@ protected:
   // Store mask as Costmap2D, drop OccupancyGrid msg
   std::unique_ptr<Costmap2D> filter_mask_costmap_;
   std::string filter_mask_frame_;
-  std::unique_ptr<FootprintCollisionChecker<Costmap2D *>> footprint_collision_checker_;
 
   std::string global_frame_;  // Frame of current layer (master_grid)
 

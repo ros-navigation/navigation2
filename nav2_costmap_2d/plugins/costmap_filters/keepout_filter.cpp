@@ -162,8 +162,6 @@ void KeepoutFilter::maskCallback(
 
   filter_mask_costmap_ = std::make_unique<Costmap2D>(*msg);
   filter_mask_frame_ = msg->header.frame_id;
-  footprint_collision_checker_ =
-    std::make_unique<FootprintCollisionChecker<Costmap2D *>>(filter_mask_costmap_.get());
   has_updated_data_ = true;
   x_ = y_ = 0;
   width_ = msg->info.width;
@@ -225,9 +223,12 @@ void KeepoutFilter::updateBounds(
           mask_pose.position.x, mask_pose.position.y, mask_x, mask_y))
       {
         // With an empty footprint, fall back to checking the cost at the robot's position
+        // Create FootprintCollisionChecker inline to avoid fragile
+        // raw pointer to filter_mask_costmap_
+        // (constructor only stores pointer so it's cheap)
         const double cost = footprint.empty() ?
           static_cast<double>(filter_mask_costmap_->getCost(mask_x, mask_y)) :
-          footprint_collision_checker_->footprintCostAtPose(
+          FootprintCollisionChecker<Costmap2D *>(filter_mask_costmap_.get()).footprintCostAtPose(
           mask_pose.position.x, mask_pose.position.y, tf2::getYaw(mask_pose.orientation),
           footprint);
         is_pose_lethal_ = cost == INSCRIBED_INFLATED_OBSTACLE || cost == LETHAL_OBSTACLE;
