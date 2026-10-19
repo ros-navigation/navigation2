@@ -178,6 +178,8 @@ void KeepoutFilter::updateBounds(
     return;
   }
 
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
+
   CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 
   if (!filter_mask_costmap_) {
