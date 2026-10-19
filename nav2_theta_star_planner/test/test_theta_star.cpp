@@ -312,6 +312,58 @@ TEST(ThetaStarTest, test_los_cost_is_direction_independent) {
   delete planner_->costmap_;
 }
 
+// A robot starting in an obstacle can still plan, and only its start cell is cleared
+TEST(ThetaStarPlanner, test_clear_start_clears_the_current_start) {
+  nav2::LifecycleNode::SharedPtr life_node =
+    std::make_shared<nav2::LifecycleNode>("ThetaStarClearStartTest");
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto planner_2d = std::make_unique<nav2_theta_star_planner::ThetaStarPlanner>();
+  planner_2d->configure(life_node, "test", nullptr, costmap_ros);
+  planner_2d->activate();
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+  std::vector<geometry_msgs::msg::PoseStamped> viapoints;
+
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = 2.0;
+  start.pose.position.y = 2.0;
+  start.pose.orientation.w = 1.0;
+  goal = start;
+  goal.pose.position.x = 3.0;
+  goal.pose.position.y = 3.0;
+
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros->getCostmap();
+  unsigned int mx_start, my_start;
+  ASSERT_TRUE(
+    costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start));
+  ASSERT_NE(mx_start, 0u);
+
+  // (0, 0) is what gets cleared if clearStart() runs before the start is set
+  costmap->setCost(mx_start, my_start, nav2_costmap_2d::LETHAL_OBSTACLE);
+  costmap->setCost(0, 0, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  nav_msgs::msg::Path path = planner_2d->createPlan(
+    start, goal, viapoints, dummy_cancel_checker);
+  EXPECT_GT(static_cast<int>(path.poses.size()), 0);
+
+  EXPECT_EQ(costmap->getCost(mx_start, my_start), nav2_costmap_2d::FREE_SPACE);
+  EXPECT_EQ(costmap->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  planner_2d->deactivate();
+  planner_2d->cleanup();
+
+  planner_2d.reset();
+  costmap_ros->on_cleanup(rclcpp_lifecycle::State());
+  life_node.reset();
+  costmap_ros.reset();
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
