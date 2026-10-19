@@ -48,7 +48,7 @@ bool ThetaStar::generatePath(std::vector<coordsW> & raw_path, std::function<bool
 {
   resetContainers();
   addToNodesData(index_generated_);
-  double src_g_cost = getTraversalCost(src_.x, src_.y), src_h_cost = getHCost(src_.x, src_.y);
+  double src_g_cost = 0.0, src_h_cost = getHCost(src_.x, src_.y);
   nodes_data_[index_generated_] =
   {src_.x, src_.y, src_g_cost, src_h_cost, &nodes_data_[index_generated_], true,
     src_g_cost + src_h_cost};
