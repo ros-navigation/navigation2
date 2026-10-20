@@ -655,8 +655,8 @@ void CollisionMonitor::notifyActionState(
       RCLCPP_WARN(
         get_logger(),
         "Robot to stop due to %s polygon whose shape is not set yet."
-        " Either the polygon/footprint topic was not published yet, or the shape could not"
-        " be transformed to the base frame",
+        " Either the polygon/footprint topic was not published yet, the shape could not"
+        " be transformed to the base frame, or no velocity polygon covers the current velocity",
         action_polygon->getName().c_str());
     } else {
       RCLCPP_INFO(

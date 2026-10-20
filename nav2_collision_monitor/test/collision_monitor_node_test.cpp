@@ -1781,6 +1781,27 @@ TEST_F(Tester, testVelocityPolygonStop)
   ASSERT_EQ(action_state_->action_type, DO_NOTHING);
   ASSERT_EQ(action_state_->polygon_name, "");
 
+  // 3b. Velocity not covered by any sub-polygon: no zone applies, robot must stop
+  // even though the obstacle (ahead at 3.0 m) is outside every configured polygon
+  publishCmdVel(0.8, 0.0, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "VelocityPolygon");
+
+  // 3c. Back to a covered velocity: normal operation resumes
+  publishCmdVel(-0.4, 0.0, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, -0.4, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
+
   // 4. Obstacle is in Backward velocity polygon
   publishPointCloud(-1.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(-1.5, 0.01), 500ms, curr_time));
