@@ -35,6 +35,7 @@ RecoveryNode::RecoveryNode(
 
 void RecoveryNode::initialize()
 {
+  setOutput("retry_count", retry_count_);
   getInput("reset_distance", reset_distance_);
   if (reset_distance_ > 0.0) {
     const auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
@@ -79,6 +80,7 @@ void RecoveryNode::checkRetryReset()
       reset_pose_->pose, pose.pose) >= reset_distance_)
   {
     retry_count_ = 0;
+    setOutput("retry_count", retry_count_);
   }
 }
 
@@ -161,6 +163,7 @@ BT::NodeStatus RecoveryNode::tick()
             // halt second child, increment recovery count, and tick first child in next iteration
             ControlNode::haltChild(1);
             retry_count_++;
+            setOutput("retry_count", retry_count_);
             current_child_idx_ = 0;
           }
           break;
@@ -185,6 +188,7 @@ void RecoveryNode::halt()
 {
   ControlNode::halt();
   retry_count_ = 0;
+  setOutput("retry_count", retry_count_);
   current_child_idx_ = 0;
   reset_pose_.reset();
 }

@@ -72,6 +72,7 @@ class RecoveryNodeTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixtu
 public:
   void SetUp() override
   {
+    config_->output_ports["retry_count"] = "{recovery_retry_count}";
     config_->input_ports.clear();
     config_->input_ports["number_of_retries"] = "1";
     bt_node_ = std::make_shared<nav2_behavior_tree::RecoveryNode>(
@@ -223,6 +224,40 @@ TEST_F(RecoveryNodeTestFixture, test_skipping)
   EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
 }
 
+
+TEST_F(RecoveryNodeTestFixture, test_retry_count_output)
+{
+  first_child_->on_tick = []() {
+      EXPECT_EQ(config_->blackboard->get<unsigned int>("recovery_retry_count"), 0u);
+    };
+  first_child_->changeStatus(BT::NodeStatus::RUNNING);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+  first_child_->on_tick = nullptr;
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  EXPECT_EQ(config_->blackboard->get<unsigned int>("recovery_retry_count"), 1u);
+  bt_node_->haltNode();
+  EXPECT_EQ(config_->blackboard->get<unsigned int>("recovery_retry_count"), 0u);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  first_child_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(config_->blackboard->get<unsigned int>("recovery_retry_count"), 0u);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(config_->blackboard->get<unsigned int>("recovery_retry_count"), 0u);
+}
+
+TEST_F(RecoveryNodeTestFixture, test_distance_reset_updates_retry_count_output)
+{
+  enableDistanceReset(1.0, 2);
+  moveRobot(0.0);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  EXPECT_EQ(distance_blackboard_->get<unsigned int>("recovery_retry_count"), 1u);
+  EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
+  EXPECT_EQ(distance_blackboard_->get<unsigned int>("recovery_retry_count"), 2u);
+  moveRobot(1.0);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+  EXPECT_EQ(distance_blackboard_->get<unsigned int>("recovery_retry_count"), 0u);
+}
 
 TEST_F(RecoveryNodeTestFixture, test_distance_below_threshold)
 {
