@@ -1329,7 +1329,7 @@ TEST_F(Tester, testPolygonShapeNotSet)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "polygon shape not set");
+  ASSERT_EQ(action_state_->polygon_name, "Stop");
 
   // Once the shapes arrive, normal operation resumes
   publishFootprint(1.0, curr_time);

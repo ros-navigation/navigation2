@@ -509,8 +509,8 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
 
     if (!polygon->isShapeSet()) {
       // A dynamic polygon/footprint with no valid shape yet gives no protection: stop
-      action_polygon = nullptr;
-      robot_action.polygon_name = "polygon shape not set";
+      action_polygon = polygon;
+      robot_action.polygon_name = polygon->getName();
       robot_action.action_type = STOP;
       robot_action.req_vel.x = 0.0;
       robot_action.req_vel.y = 0.0;
@@ -651,12 +651,13 @@ void CollisionMonitor::notifyActionState(
         "Robot to stop due to invalid source."
         " Either due to data not published yet, or to lack of new data received within the"
         " sensor timeout, or if impossible to transform data to base frame");
-    } else if (robot_action.polygon_name == "polygon shape not set") {
+    } else if (!action_polygon->isShapeSet()) {
       RCLCPP_WARN(
         get_logger(),
-        "Robot to stop due to a polygon whose shape is not set yet."
+        "Robot to stop due to %s polygon whose shape is not set yet."
         " Either the polygon/footprint topic was not published yet, or the shape could not"
-        " be transformed to the base frame");
+        " be transformed to the base frame",
+        action_polygon->getName().c_str());
     } else {
       RCLCPP_INFO(
         get_logger(),
