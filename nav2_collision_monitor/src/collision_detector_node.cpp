@@ -205,9 +205,12 @@ bool CollisionDetector::configurePolygons(
           std::make_shared<Circle>(
             node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
       } else if (polygon_type == "velocity_polygon") {
-        polygons_.push_back(
-          std::make_shared<VelocityPolygon>(
-            node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
+        // The detector has no cmd_vel, so no sub-polygon could ever be selected
+        RCLCPP_ERROR(
+          get_logger(),
+          "[%s]: velocity_polygon type is not supported by the Collision Detector",
+          polygon_name.c_str());
+        return false;
       } else {  // Error if something else
         RCLCPP_ERROR(
           get_logger(),

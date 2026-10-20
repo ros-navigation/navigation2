@@ -651,6 +651,19 @@ TEST_F(Tester, testIncorrectActionType)
   cd_->cant_configure();
 }
 
+TEST_F(Tester, testVelocityPolygonNotSupported)
+{
+  setCommonParameters();
+  cd_->declare_parameter(
+    "DetectionRegion.type", rclcpp::ParameterValue("velocity_polygon"));
+  cd_->declare_parameter("DetectionRegion.action_type", rclcpp::ParameterValue("none"));
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"DetectionRegion"}, {SCAN_NAME});
+
+  // Detector has no velocity input: velocity_polygon must be rejected at configure
+  cd_->cant_configure();
+}
+
 TEST_F(Tester, testIncorrectSourceType)
 {
   setCommonParameters();
