@@ -36,25 +36,8 @@ Pass `nav2::Log::Disabled` as the final lookup argument to suppress diagnostics 
 The option applies to nested lookups and argument validation for that call without changing the shared buffer's logging policy.
 For availability probes, use `getLatestTransform` or `getStampedTransform` with `nav2::Log::Disabled` and check the returned optional.
 Latest lookups measure staleness against the buffer's stored clock; callers pass only the threshold and optional logging mode.
-Equal-frame latest lookups return an identity stamped with that clock's current time.
-Stamped lookups preserve the requested timestamp and wait tolerance.
 
-Points, quaternions, and point clouds use a wrapper lookup followed by `tf2::doTransform` with the returned transform.
-This also allows several messages to share one transform snapshot.
-An arbitrary pose that intentionally ignores its timestamp, such as a held docking target, uses `getLatestTransform` followed by `tf2::doTransform`.
-
-Listeners and message filters require TF's native buffer interfaces for subscription updates and asynchronous transform requests.
-Listener creation is internal to `TransformBuffer`. Message-filter factories in `tf2_factories.hpp`
-and the custom base footprint listener use `getRawBuffer()` for these integrations.
-`laser_geometry` also requires `tf2::BufferCore` for scan projection and interpolation.
-Obstacle layers pass `getRawBuffer()` directly to the projector, preserving its exception behavior and projection fallback.
-Use `setTransform(transform, authority, is_static)` to insert transforms, including in test fixtures; `is_static` defaults to false.
-Use `setUsingDedicatedThread(bool)` to tell TF whether another thread services its subscriptions; this does not create a thread.
-Use `clear()` to reset transform data with the native TF buffer's clearing behavior.
-Configuration unsupported by the wrapper uses `getRawBuffer()`.
-The accessor returns a reference whose lifetime is tied to the wrapper's ownership of the native buffer; use it only when the normal wrapper methods do not suffice.
-Python integration tests retain `tf2_ros.Buffer` because this wrapper is a C++ API.
-RViz displays using RViz's frame manager continue to use that API, which owns its own TF state.
+The method`getRawBuffer()` should be used only exceptionally for objects requiring the native buffer implementation.
 
 ## Migration Guide
 
