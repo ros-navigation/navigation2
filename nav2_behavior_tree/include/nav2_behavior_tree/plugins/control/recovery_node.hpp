@@ -42,7 +42,7 @@ namespace nav2_behavior_tree
  *
  * Usage in XML:
  * @code
- * <RecoveryNode number_of_retries="1">
+ * <RecoveryNode number_of_retries="1" retry_count="{recovery_retry_count}">
  *     <!--Add tree components here-->
  * </RecoveryNode>
  * @endcode
@@ -72,6 +72,8 @@ public:
   {
     return {
       BT::InputPort<int>("number_of_retries", 1, "Number of retries"),
+      BT::OutputPort<unsigned int>("retry_count",
+          "Current retry count; resets on halt or progress"),
       BT::InputPort<double>(
         "reset_distance", 0.0,
           "Main action displacement (m) to reset retries; non-positive disables"),
