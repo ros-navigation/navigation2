@@ -59,6 +59,7 @@ BT::NodeStatus DistanceTraveledCondition::tick()
       global_frame_, robot_base_frame_, transform_staleness_threshold_, nav2::Log::Disabled);
     if (!start_pose_result) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+      return BT::NodeStatus::FAILURE;
     }
     start_pose_ = *start_pose_result;
     return BT::NodeStatus::FAILURE;
