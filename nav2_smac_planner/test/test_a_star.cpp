@@ -14,6 +14,7 @@
 
 #include <math.h>
 #include <memory>
+#include <unordered_map>
 #include <string>
 #include <vector>
 #include <limits>
@@ -291,6 +292,60 @@ TEST(AStarTest, test_a_star_analytic_expansion)
   }
 
   delete costmapA;
+}
+
+TEST(AStarTest, analytic_expansion_restores_revisited_goal)
+{
+  using Node = nav2_smac_planner::NodeHybrid;
+  auto node = std::make_shared<nav2::LifecycleNode>("rollback_test");
+  nav2_smac_planner::SearchInfo info;
+  info.minimum_turning_radius = 82.5;
+  info.analytic_expansion_max_length = 200.0;
+  nav2_smac_planner::AStarAlgorithm<Node> a_star(
+    nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
+  int max_iterations = 10000;
+  a_star.initialize(false, max_iterations, 1000, 5000, 5.0, 401, 64);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  *costmap_ros->getCostmap() = nav2_costmap_2d::Costmap2D(1000, 400, 0.1, 0, 0, 0);
+  nav2_smac_planner::GridCollisionChecker checker(costmap_ros, 64, node);
+  checker.setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(&checker);
+  auto * ctx = a_star.getContext();
+  Node start(Node::getIndex(537, 125, 16, 1000, 64), ctx);
+  Node goal(Node::getIndex(530, 66, 1, 1000, 64), ctx);
+  start.pose = {537.454773f, 125.400085f, 16.0f};
+  goal.pose = {530.467102f, 66.557159f, 1.0f};
+  const auto original = goal.pose;
+  std::unordered_map<uint64_t, std::unique_ptr<Node>> nodes;
+  Node::NodePtr start_ptr = &start, goal_ptr = &goal;
+  auto getter = [&](const uint64_t & index, Node::NodePtr & result) {
+      if (index == goal.getIndex()) {
+        result = goal_ptr;
+      } else if (index == start.getIndex()) {
+        result = start_ptr;
+      } else {
+        auto & stored = nodes[index];
+        if (!stored) {stored = std::make_unique<Node>(index, ctx);}
+        result = stored.get();
+      }
+      return true;
+    };
+  nav2_smac_planner::AnalyticExpansion<Node> expansion(
+    nav2_smac_planner::MotionModel::REEDS_SHEPP, info, false, 64);
+  expansion.setContext(ctx);
+  expansion.setCollisionChecker(&checker);
+  auto candidate = expansion.getAnalyticPath(
+    start_ptr, goal_ptr, getter, ctx->motion_table.state_space);
+  ASSERT_FALSE(candidate.nodes.empty());
+  size_t goal_visits = 0;
+  for (const auto & sample : candidate.nodes) {
+    if (sample.node == goal_ptr) {++goal_visits;}
+  }
+  ASSERT_GE(goal_visits, 2u);
+  EXPECT_FLOAT_EQ(goal.pose.x, original.x);
+  EXPECT_FLOAT_EQ(goal.pose.y, original.y);
+  EXPECT_FLOAT_EQ(goal.pose.theta, original.theta);
 }
 
 TEST(AStarTest, test_a_star_lattice)
