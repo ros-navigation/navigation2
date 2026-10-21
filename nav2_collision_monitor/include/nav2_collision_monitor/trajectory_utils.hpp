@@ -16,65 +16,31 @@
 #define NAV2_COLLISION_MONITOR__TRAJECTORY_UTILS_HPP_
 
 #include <string>
-#include <vector>
 
 #include "nav_msgs/msg/trajectory.hpp"
-#include "rclcpp/time.hpp"
 #include "tf2/LinearMath/Transform.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 
 namespace nav2_collision_monitor
 {
-namespace trajectory_utils
-{
 
 /**
- * @brief Frame of a trajectory: the first point's frame_id, or the header's when that is empty
- * @param trajectory Trajectory to inspect
- * @return Frame ID, empty if the trajectory has no points
+ * @brief Converts a trajectory message to a base frame trajectory.
+ * The first point is time 0 and each later point is its stamp difference from the first.
+ * Fails on an empty trajectory, non-finite poses, a point frame_id other than the header's,
+ * non-increasing stamps, and a time step above max_time_step_s.
+ * @param message Trajectory message
+ * @param to_base Transform from the message frame to the base frame
+ * @param max_time_step_s Largest allowed time between points
+ * @param trajectory Output trajectory
+ * @param reason Output description of the failure
+ * @return True if the trajectory was converted
  */
-std::string getFrameId(const nav_msgs::msg::Trajectory & trajectory);
+bool toTrajectory(
+  const nav_msgs::msg::Trajectory & message, const tf2::Transform & to_base,
+  const double max_time_step_s, Trajectory & trajectory, std::string & reason);
 
-/**
- * @brief Checks that a trajectory can be swept.
- * Rejects empty, non-finite, zero-stamped, non-monotonic and mixed-frame trajectories.
- * An empty point frame_id inherits the header's.
- * @param trajectory Trajectory to check
- * @param require_time_span If true, a trajectory with several points needs a non-zero time span
- * @param reason Output description of the first failure
- * @return True if the trajectory is usable
- */
-bool validate(
-  const nav_msgs::msg::Trajectory & trajectory, bool require_time_span, std::string & reason);
-
-/**
- * @brief Poses of a trajectory in the base frame, labelled with a time.
- * With use_trajectory_time the label is stamp - now, points before now are dropped,
- * and a pose interpolated at label 0 is inserted when now lies between two points.
- * Otherwise the label is stamp - first stamp.
- * TODO: (zeerek) With use_trajectory_time false, drop poses before the pose closest to the origin, or require a tighter trajectory_timeout.
- * @param trajectory Validated trajectory
- * @param to_base Transform from the trajectory frame to the base frame
- * @param now Current time
- * @param use_trajectory_time Label by absolute stamps against now
- * @return Labelled poses, empty if no point is usable
- */
-std::vector<TimedPose> toBasePoses(
-  const nav_msgs::msg::Trajectory & trajectory, const tf2::Transform & to_base,
-  const rclcpp::Time & now, bool use_trajectory_time);
-
-/**
- * @brief Resamples labelled poses (linear xy, shortest-arc yaw).
- * @param poses Poses with non-decreasing labels
- * @param horizon_s Last label to keep, inclusive
- * @param step_s Sample spacing from the first label; 0 or less keeps the input poses
- * @return Poses with labels up to horizon_s
- */
-std::vector<TimedPose> interpolate(
-  const std::vector<TimedPose> & poses, double horizon_s, double step_s);
-
-}  // namespace trajectory_utils
 }  // namespace nav2_collision_monitor
 
 #endif  // NAV2_COLLISION_MONITOR__TRAJECTORY_UTILS_HPP_

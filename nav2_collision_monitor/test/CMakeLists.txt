@@ -10,7 +10,6 @@ nav2_add_gtest(trajectory_utils_test trajectory_utils_test.cpp)
 target_link_libraries(trajectory_utils_test
   ${monitor_library_name}
   nav_msgs::nav_msgs
-  rclcpp::rclcpp
   tf2::tf2
 )
 

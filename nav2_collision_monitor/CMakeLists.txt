@@ -80,7 +80,6 @@ add_library(${detector_library_name} SHARED
   src/costmap.cpp
   src/range.cpp
   src/kinematics.cpp
-  src/trajectory_utils.cpp
 )
 target_include_directories(${detector_library_name}
   PUBLIC
@@ -93,7 +92,6 @@ target_link_libraries(${detector_library_name} PUBLIC
   nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
-  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   sensor_msgs::sensor_msgs

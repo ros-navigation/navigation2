@@ -26,6 +26,7 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "nav_msgs/msg/trajectory.hpp"
 
 #include "tf2/time.hpp"
 
@@ -107,6 +108,13 @@ protected:
   void cmdVelInCallbackStamped(const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg);
   void cmdVelInCallbackUnstamped(const geometry_msgs::msg::Twist::ConstSharedPtr & msg);
   /**
+   * @brief Callback for input trajectory, an alternative to cmd_vel.
+   * The velocity of the first point is the desired robot velocity.
+   * An invalid trajectory stops the robot.
+   * @param msg Input trajectory message
+   */
+  void trajectoryCallback(const nav_msgs::msg::Trajectory::ConstSharedPtr & msg);
+  /**
    * @brief Publishes output cmd_vel. If robot was stopped more than stop_pub_timeout_ seconds,
    * quit to publish 0-velocity.
    * @param robot_action Robot action to publish
@@ -120,12 +128,14 @@ protected:
    * @param cmd_vel_out_topic Output name of cmd_vel_out topic
    * is required.
    * @param state_topic topic name for publishing collision monitor state
+   * @param trajectory_topic Output name of trajectory topic. Empty, if no trajectory input
    * @return True if all parameters were obtained or false in failure case
    */
   bool getParameters(
     std::string & cmd_vel_in_topic,
     std::string & cmd_vel_out_topic,
-    std::string & state_topic);
+    std::string & state_topic,
+    std::string & trajectory_topic);
   /**
    * @brief Supporting routine creating and configuring all polygons
    * @param base_frame_id Robot base frame ID
@@ -156,9 +166,19 @@ protected:
   /**
    * @brief Main processing routine
    * @param cmd_vel_in Input desired robot velocity
+   * @param trajectory Input trajectory for APPROACH polygons, or nullptr to project cmd_vel_in
    * @param header Twist header
    */
-  void process(const Velocity & cmd_vel_in, const std_msgs::msg::Header & header);
+  void process(
+    const Velocity & cmd_vel_in, const Trajectory * trajectory,
+    const std_msgs::msg::Header & header);
+
+  /**
+   * @brief Stops the robot because the input trajectory is invalid
+   * @param reason Description of why the trajectory is invalid, for the log
+   * @param header Twist header
+   */
+  void stopForInvalidTrajectory(const std::string & reason, const std_msgs::msg::Header & header);
 
   /**
    * @brief Processes the polygon of STOP, SLOWDOWN and LIMIT action type
@@ -176,12 +196,12 @@ protected:
     Action & robot_action) const;
 
   /**
-   * @brief Processes APPROACH and TRAJECTORY_APPROACH action types
+   * @brief Processes APPROACH action type
    * @param polygon Polygon to process
    * @param sources_collision_points_map Map containing source name as key and
    * array of source's 2D obstacle points as value
    * @param velocity Desired robot velocity
-   * @param now Current time
+   * @param trajectory Robot trajectory to check
    * @param robot_action Output processed robot action
    * @return True if returned action is caused by current polygon, otherwise false
    */
@@ -189,7 +209,7 @@ protected:
     const std::shared_ptr<Polygon> polygon,
     const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
     const Velocity & velocity,
-    const rclcpp::Time & now,
+    const Trajectory & trajectory,
     Action & robot_action) const;
 
   /**
@@ -239,6 +259,8 @@ protected:
   std::unique_ptr<nav2_util::TwistSubscriber> cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
   std::unique_ptr<nav2_util::TwistPublisher> cmd_vel_out_pub_;
+  /// @brief Input trajectory subscription
+  nav2::Subscription<nav_msgs::msg::Trajectory>::SharedPtr trajectory_sub_;
 
   /// @brief CollisionMonitor state publisher
   nav2::Publisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
@@ -260,6 +282,9 @@ protected:
 
   /// @brief Robot base frame ID
   std::string base_frame_id_;
+
+  /// @brief Transform tolerance
+  tf2::Duration transform_tolerance_;
 
   /// @brief Whether collision monitor is enabled
   bool enabled_;

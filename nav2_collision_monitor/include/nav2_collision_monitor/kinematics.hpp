@@ -41,6 +41,17 @@ void transformPoints(const Pose & pose, std::vector<Point> & points);
  */
 void projectState(const double & dt, Pose & pose, Velocity & velocity);
 
+/**
+ * @brief Projects the robot forward at a constant velocity.
+ * Each point is labelled with the time at the start of its step.
+ * @param velocity Robot velocity
+ * @param horizon_s Last point label, inclusive
+ * @param time_step_s Time between points. Must be positive
+ * @return Trajectory starting from the (0, 0) base frame origin
+ */
+Trajectory projectConstantVelocity(
+  const Velocity & velocity, const double horizon_s, const double time_step_s);
+
 }  // namespace nav2_collision_monitor
 
 #endif  // NAV2_COLLISION_MONITOR__KINEMATICS_HPP_

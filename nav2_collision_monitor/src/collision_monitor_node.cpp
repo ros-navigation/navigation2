@@ -18,11 +18,14 @@
 #include <exception>
 #include <utility>
 #include <functional>
+#include <limits>
+#include <string>
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
+#include "nav2_collision_monitor/trajectory_utils.hpp"
 
 using namespace std::placeholders;
 
@@ -55,9 +58,10 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
   std::string cmd_vel_in_topic;
   std::string cmd_vel_out_topic;
   std::string state_topic;
+  std::string trajectory_topic;
 
   // Obtaining ROS parameters
-  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic, state_topic)) {
+  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic, state_topic, trajectory_topic)) {
     on_cleanup(state);
     return nav2::CallbackReturn::FAILURE;
   }
@@ -67,6 +71,12 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
     cmd_vel_in_topic,
     std::bind(&CollisionMonitor::cmdVelInCallbackUnstamped, this, std::placeholders::_1),
     std::bind(&CollisionMonitor::cmdVelInCallbackStamped, this, std::placeholders::_1));
+
+  if (!trajectory_topic.empty()) {
+    trajectory_sub_ = this->create_subscription<nav_msgs::msg::Trajectory>(
+      trajectory_topic,
+      std::bind(&CollisionMonitor::trajectoryCallback, this, std::placeholders::_1));
+  }
 
   auto node = shared_from_this();
   cmd_vel_out_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, cmd_vel_out_topic);
@@ -186,6 +196,7 @@ CollisionMonitor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   cmd_vel_in_sub_.reset();
+  trajectory_sub_.reset();
   cmd_vel_out_pub_.reset();
   state_pub_.reset();
   collision_points_marker_pub_.reset();
@@ -217,7 +228,8 @@ void CollisionMonitor::cmdVelInCallbackStamped(
     return;
   }
 
-  process({msg->twist.linear.x, msg->twist.linear.y, msg->twist.angular.z}, msg->header);
+  process(
+    {msg->twist.linear.x, msg->twist.linear.y, msg->twist.angular.z}, nullptr, msg->header);
 }
 
 void CollisionMonitor::cmdVelInCallbackUnstamped(
@@ -226,6 +238,51 @@ void CollisionMonitor::cmdVelInCallbackUnstamped(
   auto twist_stamped = std::make_shared<geometry_msgs::msg::TwistStamped>();
   twist_stamped->twist = *msg;
   cmdVelInCallbackStamped(twist_stamped);
+}
+
+void CollisionMonitor::trajectoryCallback(const nav_msgs::msg::Trajectory::ConstSharedPtr & msg)
+{
+  if (!process_active_) {
+    return;
+  }
+
+  // The output velocity is in the base frame, whatever the frame of the trajectory
+  std_msgs::msg::Header header;
+  header.stamp = msg->header.stamp;
+  header.frame_id = base_frame_id_;
+
+  if (msg->points.empty() || !nav2_util::validateTwist(msg->points.front().velocity)) {
+    stopForInvalidTrajectory("trajectory has no valid first velocity", header);
+    return;
+  }
+  const geometry_msgs::msg::Twist & twist = msg->points.front().velocity;
+  const Velocity velocity{twist.linear.x, twist.linear.y, twist.angular.z};
+  if (!enabled_) {
+    process(velocity, nullptr, header);
+    return;
+  }
+
+  // The trajectory may not be sampled coarser than any APPROACH polygon's simulation time step
+  double max_time_step_s = std::numeric_limits<double>::max();
+  for (const std::shared_ptr<Polygon> & polygon : polygons_) {
+    if (polygon->getActionType() == APPROACH) {
+      max_time_step_s = std::min(max_time_step_s, polygon->getSimulationTimeStep());
+    }
+  }
+
+  tf2::Transform to_base;
+  Trajectory trajectory;
+  std::string reason;
+  if (!nav2_util::getTransform(
+      msg->header.frame_id, base_frame_id_, transform_tolerance_, tf_buffer_, to_base))
+  {
+    stopForInvalidTrajectory(
+      "no transform from " + msg->header.frame_id + " to " + base_frame_id_, header);
+  } else if (!toTrajectory(*msg, to_base, max_time_step_s, trajectory, reason)) {
+    stopForInvalidTrajectory(reason, header);
+  } else {
+    process(velocity, &trajectory, header);
+  }
 }
 
 void CollisionMonitor::publishVelocity(
@@ -255,10 +312,10 @@ void CollisionMonitor::publishVelocity(
 bool CollisionMonitor::getParameters(
   std::string & cmd_vel_in_topic,
   std::string & cmd_vel_out_topic,
-  std::string & state_topic)
+  std::string & state_topic,
+  std::string & trajectory_topic)
 {
   std::string odom_frame_id;
-  tf2::Duration transform_tolerance;
   rclcpp::Duration source_timeout(2.0, 0.0);
 
   auto node = shared_from_this();
@@ -268,11 +325,12 @@ bool CollisionMonitor::getParameters(
   cmd_vel_out_topic = node->declare_or_get_parameter(
     "cmd_vel_out_topic", std::string("cmd_vel"));
   state_topic = node->declare_or_get_parameter("state_topic", std::string(""));
+  trajectory_topic = node->declare_or_get_parameter("trajectory_topic", std::string(""));
 
   base_frame_id_ = node->declare_or_get_parameter(
     "base_frame_id", std::string("base_footprint"));
   odom_frame_id = node->declare_or_get_parameter("odom_frame_id", std::string("odom"));
-  transform_tolerance = tf2::durationFromSec(
+  transform_tolerance_ = tf2::durationFromSec(
     node->declare_or_get_parameter("transform_tolerance", 0.1));
   source_timeout = rclcpp::Duration::from_seconds(
     node->declare_or_get_parameter("source_timeout", 2.0));
@@ -284,12 +342,13 @@ bool CollisionMonitor::getParameters(
 
   if (
     !configureSources(
-        base_frame_id_, odom_frame_id, transform_tolerance, source_timeout, base_shift_correction))
+        base_frame_id_, odom_frame_id, transform_tolerance_, source_timeout,
+        base_shift_correction))
   {
     return false;
   }
 
-  if (!configurePolygons(base_frame_id_, transform_tolerance)) {
+  if (!configurePolygons(base_frame_id_, transform_tolerance_)) {
     return false;
   }
 
@@ -426,7 +485,9 @@ bool CollisionMonitor::configureSources(
   return true;
 }
 
-void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg::Header & header)
+void CollisionMonitor::process(
+  const Velocity & cmd_vel_in, const Trajectory * trajectory,
+  const std_msgs::msg::Header & header)
 {
   // Current timestamp for all inner routines prolongation
   rclcpp::Time curr_time = this->now();
@@ -527,10 +588,16 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
       {
         action_polygon = polygon;
       }
-    } else if (at == APPROACH || at == TRAJECTORY_APPROACH) {
-      // Process APPROACH for the selected polygon
+    } else if (at == APPROACH) {
+      // Process APPROACH along the input trajectory, or along the cmd_vel projection
+      Trajectory projected;
+      if (trajectory == nullptr) {
+        projected = projectConstantVelocity(
+          cmd_vel_in, polygon->getTimeBeforeCollision(), polygon->getSimulationTimeStep());
+      }
       if (processApproach(
-          polygon, sources_collision_points_map, cmd_vel_in, curr_time, robot_action))
+          polygon, sources_collision_points_map, cmd_vel_in,
+          trajectory != nullptr ? *trajectory : projected, robot_action))
       {
         action_polygon = polygon;
       }
@@ -619,28 +686,13 @@ bool CollisionMonitor::processApproach(
   const std::shared_ptr<Polygon> polygon,
   const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
   const Velocity & velocity,
-  const rclcpp::Time & now,
+  const Trajectory & trajectory,
   Action & robot_action) const
 {
   // Obtain time before a collision, capturing the responsible points at the collision step.
   std::vector<Point> triggering_points;
-  double collision_time;
-  if (polygon->getActionType() == TRAJECTORY_APPROACH) {
-    const auto trajectory_time = polygon->getTrajectoryCollisionTime(
-      sources_collision_points_map, velocity, now, triggering_points);
-    if (!trajectory_time) {
-      // Unusable trajectory with the "stop" stale action
-      robot_action.polygon_name = polygon->getName();
-      robot_action.action_type = STOP;
-      robot_action.req_vel = {0.0, 0.0, 0.0};
-      robot_action.triggering_points.clear();
-      return true;
-    }
-    collision_time = *trajectory_time;
-  } else {
-    collision_time = polygon->getCollisionTime(
-      sources_collision_points_map, velocity, triggering_points);
-  }
+  const double collision_time = polygon->getCollisionTime(
+    sources_collision_points_map, trajectory, triggering_points);
   if (collision_time >= 0.0) {
     // If collision will occur, reduce robot speed
     const double change_ratio = collision_time / polygon->getTimeBeforeCollision();
@@ -659,11 +711,36 @@ bool CollisionMonitor::processApproach(
   return false;
 }
 
+void CollisionMonitor::stopForInvalidTrajectory(
+  const std::string & reason, const std_msgs::msg::Header & header)
+{
+  if (!process_active_ || !enabled_) {
+    return;
+  }
+
+  RCLCPP_WARN_THROTTLE(
+    get_logger(), *get_clock(), 2000, "Robot to stop due to invalid trajectory: %s",
+    reason.c_str());
+
+  const Action robot_action{STOP, {0.0, 0.0, 0.0}, "invalid trajectory", std::vector<Point>()};
+  if (triggering_points_pub_->get_subscription_count() > 0) {
+    publishTriggeringPoints(robot_action);
+  }
+  if (robot_action.polygon_name != robot_action_prev_.polygon_name) {
+    notifyActionState(robot_action, nullptr);
+  }
+  publishVelocity(robot_action, header);
+  publishVisualizations();
+  robot_action_prev_ = robot_action;
+}
+
 void CollisionMonitor::notifyActionState(
   const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const
 {
   if (robot_action.action_type == STOP) {
-    if (robot_action.polygon_name == "invalid source") {
+    if (robot_action.polygon_name == "invalid trajectory") {
+      // The reason is logged where the trajectory is rejected
+    } else if (robot_action.polygon_name == "invalid source") {
       RCLCPP_WARN(
         get_logger(),
         "Robot to stop due to invalid source."

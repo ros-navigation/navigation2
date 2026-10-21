@@ -16,8 +16,6 @@
 #define NAV2_COLLISION_MONITOR__POLYGON_HPP_
 
 #include <memory>
-#include <mutex>
-#include <optional>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -27,7 +25,6 @@
 #include "rclcpp/node_interfaces/node_parameters_interface.hpp"
 #include "rclcpp/parameter.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
-#include "nav_msgs/msg/trajectory.hpp"
 
 #include "tf2/time.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -143,6 +140,12 @@ public:
    * @return Time before collision in seconds
    */
   double getTimeBeforeCollision() const;
+  /**
+   * @brief Obtains the time step of the robot movement simulation.
+   * Applicable for APPROACH model.
+   * @return Time step in seconds
+   */
+  double getSimulationTimeStep() const;
 
   /**
    * @brief Gets polygon points
@@ -204,55 +207,20 @@ public:
 
 
   /**
-   * @brief Obtains estimated (simulated) time before a collision.
+   * @brief Obtains the time before a collision along a trajectory.
    * Applicable for APPROACH model.
-   * @param collision_points Input 2D obstacle points
-   * @param velocity Simulated robot velocity
+   * @param sources_collision_points_map Map containing source name as key,
+   * and input array of source's points to be checked as value
+   * @param trajectory Robot trajectory, checked up to time_before_collision
    * @param out_triggering_points Output vector receiving the original points
    * responsible for the collision (populated only on a triggering step)
-   * @return Estimated time before a collision. If there is no collision,
-   * return value will be negative.
+   * @return Time of the first trajectory point with the footprint over min_points,
+   * or 0.0 if they are already inside. If there is no collision, return value will be negative.
    */
   double getCollisionTime(
     const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
-    const Velocity & velocity,
+    const Trajectory & trajectory,
     std::vector<Point> & out_triggering_points) const;
-
-  /**
-   * @brief Obtains estimated time before a collision along a pose sequence.
-   * Applicable for TRAJECTORY_APPROACH model.
-   * @param sources_collision_points_map Map containing source name as key,
-   * and input array of source's points to be checked as value
-   * @param poses Robot poses in the base frame with times relative to now
-   * @param out_triggering_points Output vector receiving the original points
-   * responsible for the collision. Points inside at the current pose are
-   * always added, even if the collision is found at a later pose.
-   * @return Time of the first pose with min_points inside, or 0.0 if the
-   * current pose already has them. If there is no collision, return value will be negative.
-   */
-  double getCollisionTime(
-    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
-    const std::vector<TimedPose> & poses,
-    std::vector<Point> & out_triggering_points) const;
-
-  /**
-   * @brief Obtains estimated time before a collision along the received trajectory.
-   * Applicable for TRAJECTORY_APPROACH model.
-   * An unusable trajectory is handled by trajectory_stale_action:
-   * "none" returns a negative time, "projection" uses the velocity projection.
-   * @param sources_collision_points_map Map containing source name as key,
-   * and input array of source's points to be checked as value
-   * @param velocity Robot velocity for the "projection" stale action
-   * @param now Current time
-   * @param out_triggering_points Output vector receiving the original points
-   * responsible for the collision
-   * @return Time before a collision (negative if there is none),
-   * or no value if the trajectory is unusable and the stale action is "stop".
-   */
-  std::optional<double> getTrajectoryCollisionTime(
-    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
-    const Velocity & velocity, const rclcpp::Time & now,
-    std::vector<Point> & out_triggering_points);
 
   /**
    * @brief Publishes polygon message into a its own topic
@@ -293,27 +261,6 @@ protected:
     std::string & polygon_sub_topic,
     std::string & polygon_pub_topic,
     std::string & footprint_topic);
-
-  /**
-   * @brief Whether the action type uses the approach parameters
-   * @return True for APPROACH and TRAJECTORY_APPROACH
-   */
-  bool isApproach() const;
-
-  /**
-   * @brief Poses to sweep for the received trajectory, in the base frame.
-   * @param now Current time
-   * @param reason Output description of why there are no poses
-   * @return Poses (possibly none within the horizon), or no value if the trajectory is unusable
-   */
-  std::optional<std::vector<TimedPose>> getTrajectoryPoses(
-    const rclcpp::Time & now, std::string & reason);
-
-  /**
-   * @brief Trajectory callback
-   * @param msg Shared pointer to the trajectory message
-   */
-  void trajectoryCallback(nav_msgs::msg::Trajectory::ConstSharedPtr msg);
 
   /**
    * @brief Creates polygon or radius topic subscription
@@ -408,25 +355,6 @@ protected:
   nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-
-  /// @brief What a TRAJECTORY_APPROACH polygon does with an unusable trajectory
-  enum class StaleAction {STOP, NONE, PROJECTION};
-  /// @brief Trajectory topic
-  std::string trajectory_topic_;
-  /// @brief Maximum age of the trajectory header stamp, in seconds. Zero disables the check
-  double trajectory_timeout_;
-  /// @brief Whether sample times come from absolute stamps against now
-  bool use_trajectory_time_;
-  /// @brief Action for an unusable trajectory
-  StaleAction stale_action_;
-  /// @brief Trajectory subscription
-  nav2::Subscription<nav_msgs::msg::Trajectory>::SharedPtr trajectory_sub_;
-  /// @brief Guards latest_trajectory_
-  std::mutex trajectory_mutex_;
-  /// @brief Latest received trajectory
-  nav_msgs::msg::Trajectory::ConstSharedPtr latest_trajectory_;
-  /// @brief Whether the last trajectory query was usable, for transition logging
-  bool trajectory_usable_;
   /// @brief Name of the observation sources to check for polygon
   std::vector<std::string> sources_names_;
 
