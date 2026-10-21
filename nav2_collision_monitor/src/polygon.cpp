@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <exception>
 #include <utility>
+#include <vector>
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
@@ -29,6 +30,7 @@
 
 #include "nav2_collision_monitor/kinematics.hpp"
 #include "nav2_collision_monitor/polygon_utils.hpp"
+#include "nav2_collision_monitor/trajectory_utils.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -41,7 +43,8 @@ Polygon::Polygon(
   const tf2::Duration & transform_tolerance)
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
   slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
-  footprint_sub_(nullptr), tf_buffer_(tf_buffer),
+  footprint_sub_(nullptr), trajectory_timeout_(0.5), use_trajectory_time_(true),
+  stale_action_(StaleAction::NONE), trajectory_usable_(true), tf_buffer_(tf_buffer),
   base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance),
   node_clock_(nullptr)
 {
@@ -52,6 +55,7 @@ Polygon::~Polygon()
 {
   RCLCPP_INFO(logger_, "[%s]: Destroying Polygon", polygon_name_.c_str());
   polygon_sub_.reset();
+  trajectory_sub_.reset();
   polygon_pub_.reset();
   poly_.clear();
   node_clock_.reset();
@@ -81,6 +85,17 @@ bool Polygon::configure()
   }
 
   createSubscription(polygon_sub_topic);
+
+  if (action_type_ == TRAJECTORY_APPROACH) {
+    RCLCPP_INFO(
+      logger_,
+      "[%s]: Subscribing on %s topic for trajectory",
+      polygon_name_.c_str(), trajectory_topic_.c_str());
+    trajectory_sub_ = node->create_subscription<nav_msgs::msg::Trajectory>(
+      trajectory_topic_,
+      std::bind(&Polygon::trajectoryCallback, this, std::placeholders::_1),
+      nav2::qos::StandardTopicQoS());
+  }
 
   if (!footprint_topic.empty()) {
     RCLCPP_INFO(
@@ -392,6 +407,132 @@ double Polygon::getCollisionTime(
   return -1.0;
 }
 
+double Polygon::getCollisionTime(
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+  const std::vector<TimedPose> & poses,
+  std::vector<Point> & out_triggering_points) const
+{
+  std::vector<Point> collision_points;
+  for (const auto & source_name : getSourcesNames()) {
+    const auto & iter = sources_collision_points_map.find(source_name);
+    if (iter != sources_collision_points_map.end()) {
+      collision_points.insert(collision_points.end(), iter->second.begin(), iter->second.end());
+    }
+  }
+
+  // Check static polygon
+  if (getPointsInside(collision_points, out_triggering_points) >= min_points_) {
+    return 0.0;
+  }
+
+  for (const TimedPose & timed_pose : poses) {
+    std::vector<Point> points_transformed = collision_points;
+    transformPoints(timed_pose.pose, points_transformed);
+    std::vector<std::size_t> triggering_indices;
+    if (getPointsInside(points_transformed, triggering_indices) >= min_points_) {
+      for (std::size_t i : triggering_indices) {
+        out_triggering_points.push_back(collision_points[i]);
+      }
+      return timed_pose.time_s;
+    }
+  }
+
+  // There is no collision
+  return -1.0;
+}
+
+std::optional<double> Polygon::getTrajectoryCollisionTime(
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+  const Velocity & velocity, const rclcpp::Time & now,
+  std::vector<Point> & out_triggering_points)
+{
+  std::string reason;
+  const auto poses = getTrajectoryPoses(now, reason);
+  if (poses) {
+    if (!trajectory_usable_) {
+      RCLCPP_INFO(logger_, "[%s]: Trajectory is usable again", polygon_name_.c_str());
+      trajectory_usable_ = true;
+    }
+    return getCollisionTime(sources_collision_points_map, *poses, out_triggering_points);
+  }
+
+  if (trajectory_usable_) {
+    RCLCPP_WARN(
+      logger_, "[%s]: Trajectory is unusable: %s", polygon_name_.c_str(), reason.c_str());
+    trajectory_usable_ = false;
+  } else {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *node_clock_, 5000,
+      "[%s]: Trajectory is unusable: %s", polygon_name_.c_str(), reason.c_str());
+  }
+
+  switch (stale_action_) {
+    case StaleAction::STOP:
+      return std::nullopt;
+    case StaleAction::PROJECTION:
+      return getCollisionTime(sources_collision_points_map, velocity, out_triggering_points);
+    case StaleAction::NONE:
+      break;
+  }
+  return -1.0;
+}
+
+std::optional<std::vector<TimedPose>> Polygon::getTrajectoryPoses(
+  const rclcpp::Time & now, std::string & reason)
+{
+  nav_msgs::msg::Trajectory::ConstSharedPtr trajectory;
+  {
+    std::lock_guard<std::mutex> lock(trajectory_mutex_);
+    trajectory = latest_trajectory_;
+  }
+  if (!trajectory) {
+    reason = "no trajectory received";
+    return std::nullopt;
+  }
+
+  if (trajectory_timeout_ > 0.0) {
+    const double age =
+      (now - rclcpp::Time(trajectory->header.stamp, now.get_clock_type())).seconds();
+    if (age > trajectory_timeout_) {
+      reason = "trajectory is " + std::to_string(age) + " s old";
+      return std::nullopt;
+    }
+  }
+
+  if (!trajectory_utils::validate(*trajectory, !use_trajectory_time_, reason)) {
+    return std::nullopt;
+  }
+
+  tf2::Transform to_base;
+  if (!nav2_util::getTransform(
+      trajectory_utils::getFrameId(*trajectory), base_frame_id_,
+      transform_tolerance_, tf_buffer_, to_base))
+  {
+    reason = "no transform from " + trajectory_utils::getFrameId(*trajectory) + " to " +
+      base_frame_id_;
+    return std::nullopt;
+  }
+
+  const auto poses =
+    trajectory_utils::toBasePoses(*trajectory, to_base, now, use_trajectory_time_);
+  if (poses.empty()) {
+    reason = "no trajectory point at or after now";
+    return std::nullopt;
+  }
+  return trajectory_utils::interpolate(poses, time_before_collision_, simulation_time_step_);
+}
+
+void Polygon::trajectoryCallback(nav_msgs::msg::Trajectory::ConstSharedPtr msg)
+{
+  std::lock_guard<std::mutex> lock(trajectory_mutex_);
+  latest_trajectory_ = std::move(msg);
+}
+
+bool Polygon::isApproach() const
+{
+  return action_type_ == APPROACH || action_type_ == TRAJECTORY_APPROACH;
+}
+
 void Polygon::publish()
 {
   if (!visualize_) {
@@ -433,6 +574,8 @@ bool Polygon::getCommonParameters(
       action_type_ = LIMIT;
     } else if (at_str == "approach") {
       action_type_ = APPROACH;
+    } else if (at_str == "trajectory_approach") {
+      action_type_ = TRAJECTORY_APPROACH;
     } else if (at_str == "none") {
       action_type_ = DO_NOTHING;
     } else {  // Error if something else
@@ -477,11 +620,61 @@ bool Polygon::getCommonParameters(
       angular_limit_ = node->declare_or_get_parameter(polygon_name_ + ".angular_limit", 0.5);
     }
 
-    if (action_type_ == APPROACH) {
+    if (isApproach()) {
       time_before_collision_ = node->declare_or_get_parameter(
         polygon_name_ + ".time_before_collision", 2.0);
+      // For TRAJECTORY_APPROACH, 0.0 keeps the trajectory's own sample spacing
       simulation_time_step_ = node->declare_or_get_parameter(
-        polygon_name_ + ".simulation_time_step", 0.1);
+        polygon_name_ + ".simulation_time_step",
+        action_type_ == TRAJECTORY_APPROACH ? 0.0 : 0.1);
+    }
+
+    if (action_type_ == TRAJECTORY_APPROACH) {
+      trajectory_topic_ = node->declare_or_get_parameter<std::string>(
+        polygon_name_ + ".trajectory_topic");
+      trajectory_timeout_ = node->declare_or_get_parameter(
+        polygon_name_ + ".trajectory_timeout", 0.5);
+      use_trajectory_time_ = node->declare_or_get_parameter(
+        polygon_name_ + ".use_trajectory_time", true);
+      const std::string stale_str = node->declare_or_get_parameter(
+        polygon_name_ + ".trajectory_stale_action", std::string("none"));
+      if (stale_str == "stop") {
+        stale_action_ = StaleAction::STOP;
+      } else if (stale_str == "none") {
+        stale_action_ = StaleAction::NONE;
+      } else if (stale_str == "projection") {
+        stale_action_ = StaleAction::PROJECTION;
+      } else {
+        RCLCPP_ERROR(
+          logger_, "[%s]: Unknown trajectory_stale_action: %s",
+          polygon_name_.c_str(), stale_str.c_str());
+        return false;
+      }
+
+      if (simulation_time_step_ < 0.0) {
+        RCLCPP_ERROR(
+          logger_, "[%s]: simulation_time_step must not be negative", polygon_name_.c_str());
+        return false;
+      }
+      if (trajectory_timeout_ < 0.0) {
+        RCLCPP_ERROR(
+          logger_, "[%s]: trajectory_timeout must not be negative", polygon_name_.c_str());
+        return false;
+      }
+      if (stale_action_ == StaleAction::PROJECTION && simulation_time_step_ <= 0.0) {
+        RCLCPP_ERROR(
+          logger_,
+          "[%s]: trajectory_stale_action \"projection\" needs a positive simulation_time_step",
+          polygon_name_.c_str());
+        return false;
+      }
+      if (!use_trajectory_time_ && trajectory_timeout_ <= 0.0) {
+        RCLCPP_ERROR(
+          logger_,
+          "[%s]: use_trajectory_time false needs a positive trajectory_timeout",
+          polygon_name_.c_str());
+        return false;
+      }
     }
 
     visualize_ = node->declare_or_get_parameter(polygon_name_ + ".visualize", false);
@@ -495,7 +688,7 @@ bool Polygon::getCommonParameters(
       polygon_name_ + ".polygon_subscribe_transient_local", false);
 
     if (use_dynamic_sub_topic) {
-      if (action_type_ != APPROACH) {
+      if (!isApproach()) {
         // Get polygon sub topic
         polygon_sub_topic = node->declare_or_get_parameter<std::string>(
           polygon_name_ + ".polygon_sub_topic");

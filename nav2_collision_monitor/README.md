@@ -30,6 +30,7 @@ The following models of safety behaviors are employed by Collision Monitor:
 * **Stop model**: Define a zone and a point threshold. If more that `N` obstacle points appear inside this area, stop the robot until the obstacles will disappear.
 * **Slowdown model**: Define a zone around the robot and slow the maximum speed for a `%S` percent, if more than `N` points will appear inside the area.
 * **Approach model**: Using the current robot speed, estimate the time to collision to sensor data. If the time is less than `M` seconds (0.5, 2, 5, etc...), the robot will slow such that it is now at least `M` seconds to collision. The effect here would be to keep the robot always `M` seconds from any collision.
+* **Trajectory approach model**: Like the approach model, but the footprint is swept along a received `nav_msgs::msg::Trajectory` (for example the MPPI optimal trajectory) instead of along the current robot speed.
 
 The zones around the robot can take the following shapes:
 
@@ -84,6 +85,31 @@ For `stop`, `slowdown`, and `limit` polygons, temporal debounce can be tuned wit
 
 A value of `1/1` behaves like the historical behavior (single-cycle trigger/release). In practice, values larger than `1` are recommended to reduce sensor noise flicker while keeping response times reasonable.
 
+
+#### Trajectory approach
+
+A `trajectory_approach` polygon is an alternative to an `approach` polygon.
+It uses the same footprint, `time_before_collision` and velocity scaling, and sweeps the footprint along the trajectory received on its own `trajectory_topic`.
+Each polygon has its own subscription, so different polygons can use different trajectories.
+The trajectory is transformed into the robot base frame when it is used.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `trajectory_topic` | required | `nav_msgs::msg::Trajectory` topic. |
+| `trajectory_timeout` | `0.5` | Maximum age of the message `header.stamp`, in seconds. `0.0` disables the check. |
+| `use_trajectory_time` | `true` | `true` times each point by its `header.stamp` relative to now. `false` treats the first point as now and times the rest by the time differences between points. |
+| `trajectory_stale_action` | `none` | What to do when the trajectory is unusable: `none` skips the polygon, `stop` stops the robot, `projection` falls back to the current-speed projection of the `approach` model. |
+| `simulation_time_step` | `0.0` | `0.0` uses the trajectory's own point spacing. A positive value resamples the trajectory at that step. |
+
+A trajectory is unusable if none has arrived, it is older than `trajectory_timeout`, it is empty, has non-finite poses, zero or decreasing stamps or mixed frames, cannot be transformed to the base frame, or (with `use_trajectory_time: true`) has no point at or after now.
+With `none`, an unusable trajectory leaves no state message; the node logs a warning.
+`projection` needs a positive `simulation_time_step`, and `use_trajectory_time: false` needs a positive `trajectory_timeout`.
+The trajectory parameters are read at configuration and are not reconfigurable at runtime.
+
+With `use_trajectory_time: false` the trajectory is assumed to start at the robot's current pose.
+Time is measured from the first point, so the age of the message adds to every time to collision, bounded by `trajectory_timeout`.
+Only the trajectory itself is checked, up to `time_before_collision`.
+Pair a `trajectory_approach` polygon with a static `stop` polygon.
 
 ### Metrics
 

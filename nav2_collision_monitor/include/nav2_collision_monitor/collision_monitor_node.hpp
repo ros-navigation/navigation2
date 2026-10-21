@@ -176,11 +176,12 @@ protected:
     Action & robot_action) const;
 
   /**
-   * @brief Processes APPROACH action type
+   * @brief Processes APPROACH and TRAJECTORY_APPROACH action types
    * @param polygon Polygon to process
    * @param sources_collision_points_map Map containing source name as key and
    * array of source's 2D obstacle points as value
    * @param velocity Desired robot velocity
+   * @param now Current time
    * @param robot_action Output processed robot action
    * @return True if returned action is caused by current polygon, otherwise false
    */
@@ -188,6 +189,7 @@ protected:
     const std::shared_ptr<Polygon> polygon,
     const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
     const Velocity & velocity,
+    const rclcpp::Time & now,
     Action & robot_action) const;
 
   /**

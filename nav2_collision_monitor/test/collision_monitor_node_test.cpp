@@ -39,6 +39,7 @@
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "nav_msgs/msg/trajectory.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -59,6 +60,7 @@ static const char STATE_TOPIC[]{"collision_monitor_state"};
 static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_monitor/collision_points_marker"};
 static const char TRIGGERING_POINTS_TOPIC[]{"/collision_monitor/triggering_points"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
+static const char TRAJECTORY_TOPIC[]{"trajectory"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
@@ -158,6 +160,7 @@ public:
     const std::string & polygon_name, const PolygonType type,
     const double size, const std::string & at,
     const std::vector<std::string> & sources_names = std::vector<std::string>());
+  void addTrajectoryParameters(const std::string & polygon_name, const std::string & stale_action);
   void addPolygonVelocitySubPolygon(
     const std::string & polygon_name, const std::string & sub_polygon_name,
     const double linear_min, const double linear_max,
@@ -177,6 +180,9 @@ public:
 
   // Publish robot footprint
   void publishFootprint(const double radius, const rclcpp::Time & stamp);
+
+  // Publish a straight trajectory along +x in the base frame
+  void publishTrajectory(const double speed, const double duration, const rclcpp::Time & stamp);
 
   // Main topic/data working routines
   void publishScan(const double dist, const rclcpp::Time & stamp);
@@ -215,6 +221,9 @@ protected:
   // Footprint publisher
   nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
     footprint_pub_;
+
+  // Trajectory publisher
+  nav2::Publisher<nav_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
 
   // Data source publishers
   nav2::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
@@ -261,6 +270,9 @@ Tester::Tester()
     FOOTPRINT_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   footprint_pub_->on_activate();
 
+  trajectory_pub_ = cm_->create_publisher<nav_msgs::msg::Trajectory>(TRAJECTORY_TOPIC);
+  trajectory_pub_->on_activate();
+
   scan_pub_ = cm_->create_publisher<sensor_msgs::msg::LaserScan>(
     SCAN_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   scan_pub_->on_activate();
@@ -301,6 +313,7 @@ Tester::Tester()
 Tester::~Tester()
 {
   footprint_pub_.reset();
+  trajectory_pub_.reset();
 
   scan_pub_->on_deactivate();
   scan_pub_.reset();
@@ -419,6 +432,19 @@ void Tester::addPolygon(
     cm_->declare_parameter(
       polygon_name + ".sources_names", rclcpp::ParameterValue(sources_names));
   }
+}
+
+void Tester::addTrajectoryParameters(
+  const std::string & polygon_name, const std::string & stale_action)
+{
+  cm_->declare_parameter(
+    polygon_name + ".trajectory_topic", rclcpp::ParameterValue(std::string(TRAJECTORY_TOPIC)));
+  cm_->declare_parameter(
+    polygon_name + ".trajectory_timeout", rclcpp::ParameterValue(5.0));
+  cm_->declare_parameter(
+    polygon_name + ".use_trajectory_time", rclcpp::ParameterValue(false));
+  cm_->declare_parameter(
+    polygon_name + ".trajectory_stale_action", rclcpp::ParameterValue(stale_action));
 }
 
 void Tester::addPolygonVelocitySubPolygon(
@@ -564,6 +590,31 @@ void Tester::publishFootprint(const double radius, const rclcpp::Time & stamp)
   msg->polygon.points.push_back(p);
 
   footprint_pub_->publish(std::move(msg));
+}
+
+void Tester::publishTrajectory(
+  const double speed, const double duration, const rclcpp::Time & stamp)
+{
+  nav_msgs::msg::Trajectory msg;
+  msg.header.frame_id = BASE_FRAME_ID;
+  msg.header.stamp = stamp;
+
+  const double dt = 0.05;
+  for (double t = 0.0; t <= duration; t += dt) {
+    nav_msgs::msg::TrajectoryPoint point;
+    point.header.frame_id = BASE_FRAME_ID;
+    point.header.stamp = stamp + rclcpp::Duration::from_seconds(t);
+    point.pose.position.x = speed * t;
+    point.pose.orientation.w = 1.0;
+    msg.points.push_back(point);
+  }
+
+  // The subscription may not be matched yet: publish a few times
+  for (int i = 0; i < 10; i++) {
+    trajectory_pub_->publish(msg);
+    executor_->spin_some();
+    std::this_thread::sleep_for(20ms);
+  }
 }
 
 void Tester::publishScan(const double dist, const rclcpp::Time & stamp)
@@ -1118,6 +1169,122 @@ TEST_F(Tester, testProcessApproach)
   ASSERT_EQ(action_state_->polygon_name, "");
 
   // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testProcessTrajectoryApproach)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Set Collision Monitor parameters.
+  // Making one circle footprint for trajectory approach.
+  setCommonParameters();
+  addPolygon("Approach", CIRCLE, 1.0, "trajectory_approach");
+  addTrajectoryParameters("Approach", "none");
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"Approach"}, {SCAN_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF and the trajectory: straight along +x at 0.5 m/s
+  sendTransforms(curr_time);
+  publishTrajectory(0.5, 2.0, curr_time);
+
+  // 1. Obstacle is far away from robot
+  publishScan(3.0, curr_time);
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+
+  // 2. Approaching obstacle (0.2 m ahead from robot footprint)
+  publishScan(1.2, curr_time);
+  ASSERT_TRUE(waitData(1.2, 500ms, curr_time));
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  // The trajectory reaches the obstacle in 0.2 m / 0.5 m/s = 0.4 s
+  const double change_ratio = 0.4 / TIME_BEFORE_COLLISION;
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * change_ratio, 0.01);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, APPROACH);
+  ASSERT_EQ(action_state_->polygon_name, "Approach");
+
+  // 3. Obstacle is inside robot footprint
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+
+  // 4. Restoring back normal operation
+  publishScan(3.0, curr_time);
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testProcessTrajectoryApproachIgnoresCmdVelCurvature)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  setCommonParameters();
+  addPolygon("Approach", CIRCLE, 0.5, "trajectory_approach");
+  addTrajectoryParameters("Approach", "none");
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"Approach"}, {POINTCLOUD_NAME});
+
+  cm_->start();
+  sendTransforms(curr_time);
+  publishTrajectory(0.5, 2.0, curr_time);
+
+  // The trajectory is straight: the footprint reaches the points 0.4 m ahead in 0.8 s
+  publishPointCloud(0.9, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(0.9, 0.01), 500ms, curr_time));
+  publishCmdVel(0.5, 0.0, 1.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  const double change_ratio = 0.8 / TIME_BEFORE_COLLISION;
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * change_ratio, 0.01);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 1.0 * change_ratio, 0.02);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testTrajectoryApproachStaleStop)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  setCommonParameters();
+  addPolygon("Approach", CIRCLE, 1.0, "trajectory_approach");
+  addTrajectoryParameters("Approach", "stop");
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"Approach"}, {SCAN_NAME});
+
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // No trajectory has been received and the obstacle is far away
+  publishScan(3.0, curr_time);
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "Approach");
+
+  // A trajectory restores normal operation
+  publishTrajectory(0.5, 2.0, curr_time);
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+
   cm_->stop();
 }
 

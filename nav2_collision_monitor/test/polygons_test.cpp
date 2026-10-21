@@ -16,6 +16,7 @@
 
 #include <math.h>
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -33,6 +34,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "nav_msgs/msg/trajectory.hpp"
 
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -50,6 +52,7 @@ static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char POLYGON_SUB_TOPIC[]{"polygon_sub"};
 static const char POLYGON_PUB_TOPIC[]{"polygon_pub"};
 static const char POLYGON_NAME[]{"TestPolygon"};
+static const char TRAJECTORY_TOPIC[]{"trajectory"};
 static const char CIRCLE_NAME[]{"TestCircle"};
 static const char OBSERVATION_SOURCE_NAME[]{"source"};
 static const std::vector<double> SQUARE_POLYGON {
@@ -89,6 +92,7 @@ public:
   {
     polygon_pub_.reset();
     footprint_pub_.reset();
+    trajectory_pub_.reset();
   }
 
   nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & /*previous_state*/) override
@@ -162,6 +166,15 @@ public:
     footprint_pub_->publish(std::move(msg));
   }
 
+  void publishTrajectory(const nav_msgs::msg::Trajectory & trajectory)
+  {
+    if (!trajectory_pub_) {
+      trajectory_pub_ = this->create_publisher<nav_msgs::msg::Trajectory>(TRAJECTORY_TOPIC);
+      trajectory_pub_->on_activate();
+    }
+    trajectory_pub_->publish(trajectory);
+  }
+
   void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
   {
     polygon_received_ = msg;
@@ -177,6 +190,7 @@ private:
   nav2::Publisher<std_msgs::msg::Float32>::SharedPtr radius_pub_;
   nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
     footprint_pub_;
+  nav2::Publisher<nav_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
   nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
 
   geometry_msgs::msg::PolygonStamped::ConstSharedPtr polygon_received_;
@@ -205,6 +219,12 @@ public:
   {
     return visualize_;
   }
+
+  bool hasTrajectory()
+  {
+    std::lock_guard<std::mutex> lock(trajectory_mutex_);
+    return latest_trajectory_ != nullptr;
+  }
 };  // PolygonWrapper
 
 class CircleWrapper : public nav2_collision_monitor::Circle
@@ -221,6 +241,12 @@ public:
   {
   }
 
+  bool hasTrajectory()
+  {
+    std::lock_guard<std::mutex> lock(trajectory_mutex_);
+    return latest_trajectory_ != nullptr;
+  }
+
   double getRadius() const
   {
     return radius_;
@@ -231,6 +257,15 @@ public:
     return radius_squared_;
   }
 };  // CircleWrapper
+
+struct TrajectoryParameters
+{
+  bool declare_topic = true;
+  bool use_trajectory_time = true;
+  std::string stale_action = "none";
+  double simulation_time_step = 0.0;
+  double trajectory_timeout = 0.5;
+};
 
 class Tester : public ::testing::Test
 {
@@ -255,6 +290,14 @@ protected:
   void createCircle(const std::string & action_type, const bool is_static);
 
   void sendTransforms(double shift);
+
+  // Configures a static square TRAJECTORY_APPROACH polygon or circle
+  bool configureTrajectoryPolygon(const TrajectoryParameters & params);
+  bool configureTrajectoryCircle(const TrajectoryParameters & params);
+  void setTrajectoryParameters(const std::string & name, const TrajectoryParameters & params);
+  // Publishes the trajectory until the shape has received it
+  bool sendTrajectory(
+    const nav_msgs::msg::Trajectory & trajectory, const std::function<bool()> & received);
 
   // Wait until polygon will be received
   bool waitPolygon(
@@ -439,6 +482,69 @@ void Tester::sendTransforms(double shift)
   transform.transform.rotation.w = 1.0;
 
   tf_broadcaster->sendTransform(transform);
+}
+
+void Tester::setTrajectoryParameters(const std::string & name, const TrajectoryParameters & params)
+{
+  if (params.declare_topic) {
+    test_node_->declare_parameter(
+      name + ".trajectory_topic", rclcpp::ParameterValue(std::string(TRAJECTORY_TOPIC)));
+  }
+  test_node_->declare_parameter(
+    name + ".trajectory_timeout", rclcpp::ParameterValue(params.trajectory_timeout));
+  test_node_->declare_parameter(
+    name + ".use_trajectory_time", rclcpp::ParameterValue(params.use_trajectory_time));
+  test_node_->declare_parameter(
+    name + ".trajectory_stale_action", rclcpp::ParameterValue(params.stale_action));
+  test_node_->set_parameter(
+    rclcpp::Parameter(name + ".simulation_time_step", params.simulation_time_step));
+}
+
+bool Tester::configureTrajectoryPolygon(const TrajectoryParameters & params)
+{
+  setCommonParameters(POLYGON_NAME, "trajectory_approach");
+  setPolygonParameters(SQUARE_POLYGON_STR, true);
+  setTrajectoryParameters(POLYGON_NAME, params);
+
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_->weak_from_this(), POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  if (!polygon_->configure()) {
+    return false;
+  }
+  polygon_->activate();
+  return true;
+}
+
+bool Tester::configureTrajectoryCircle(const TrajectoryParameters & params)
+{
+  setCommonParameters(CIRCLE_NAME, "trajectory_approach");
+  setCircleParameters(CIRCLE_RADIUS, true);
+  setTrajectoryParameters(CIRCLE_NAME, params);
+
+  circle_ = std::make_shared<CircleWrapper>(
+    test_node_->weak_from_this(), CIRCLE_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  if (!circle_->configure()) {
+    return false;
+  }
+  circle_->activate();
+  return true;
+}
+
+bool Tester::sendTrajectory(
+  const nav_msgs::msg::Trajectory & trajectory, const std::function<bool()> & received)
+{
+  rclcpp::Time start_time = test_node_->now();
+  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(2s)) {
+    test_node_->publishTrajectory(trajectory);
+    executor_->spin_some();
+    if (received()) {
+      return true;
+    }
+    std::this_thread::sleep_for(20ms);
+  }
+  return false;
 }
 
 geometry_msgs::msg::PolygonStamped::ConstSharedPtr Tester::waitPolygonReceived(
@@ -1199,6 +1305,333 @@ TEST_F(Tester, testPolygonDebounceRejectsInvalidDynamicParameters)
     test_node_->set_parameters({
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".release_consecutive_points", 0)}),
     rclcpp::exceptions::InvalidParameterValueException);
+}
+
+
+namespace
+{
+
+// Straight line along +x from the base frame origin: point i is stamped start + i * dt
+nav_msgs::msg::Trajectory makeTrajectory(
+  const rclcpp::Time & start, const std::string & frame_id, const std::size_t count,
+  const double dt, const double speed)
+{
+  nav_msgs::msg::Trajectory trajectory;
+  trajectory.header.stamp = start;
+  trajectory.header.frame_id = frame_id;
+  for (std::size_t i = 0; i < count; i++) {
+    nav_msgs::msg::TrajectoryPoint point;
+    const double t = static_cast<double>(i) * dt;
+    point.header.stamp = start + rclcpp::Duration::from_seconds(t);
+    point.header.frame_id = frame_id;
+    point.pose.position.x = speed * t;
+    point.pose.orientation.w = 1.0;
+    trajectory.points.push_back(point);
+  }
+  return trajectory;
+}
+
+// Two points 0.75 m ahead of the square footprint's front edge at x = 0.5
+std::unordered_map<std::string, std::vector<nav2_collision_monitor::Point>> obstacleAhead()
+{
+  return {{OBSERVATION_SOURCE_NAME, {{1.25, -0.01}, {1.25, 0.01}}}};
+}
+
+}  // namespace
+
+TEST_F(Tester, testTrajectoryApproachRejectsMissingTopic)
+{
+  TrajectoryParameters params;
+  params.declare_topic = false;
+  EXPECT_FALSE(configureTrajectoryPolygon(params));
+}
+
+TEST_F(Tester, testTrajectoryApproachRejectsUnknownStaleAction)
+{
+  TrajectoryParameters params;
+  params.stale_action = "wait";
+  EXPECT_FALSE(configureTrajectoryPolygon(params));
+}
+
+TEST_F(Tester, testTrajectoryApproachRejectsNegativeStep)
+{
+  TrajectoryParameters params;
+  params.simulation_time_step = -0.1;
+  EXPECT_FALSE(configureTrajectoryPolygon(params));
+}
+
+TEST_F(Tester, testTrajectoryApproachRejectsProjectionWithoutStep)
+{
+  TrajectoryParameters params;
+  params.stale_action = "projection";
+  params.simulation_time_step = 0.0;
+  EXPECT_FALSE(configureTrajectoryPolygon(params));
+}
+
+TEST_F(Tester, testTrajectoryApproachRejectsTrajectoryTimeFalseWithoutTimeout)
+{
+  TrajectoryParameters params;
+  params.use_trajectory_time = false;
+  params.trajectory_timeout = 0.0;
+  EXPECT_FALSE(configureTrajectoryPolygon(params));
+}
+
+TEST_F(Tester, testPolygonGetCollisionTimeAlongPoses)
+{
+  createPolygon("approach", true);
+  const auto points_map = obstacleAhead();
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+
+  // The footprint front edge reaches the points at x = 0.75
+  const std::vector<nav2_collision_monitor::TimedPose> poses{
+    {0.0, {0.0, 0.0, 0.0}}, {0.5, {0.5, 0.0, 0.0}}, {0.6, {0.6, 0.0, 0.0}},
+    {0.8, {0.8, 0.0, 0.0}}, {1.0, {1.0, 0.0, 0.0}}};
+  EXPECT_NEAR(polygon_->getCollisionTime(points_map, poses, triggering_points), 0.8, EPSILON);
+  ASSERT_EQ(triggering_points.size(), 2u);
+  EXPECT_NEAR(triggering_points[0].x, 1.25, EPSILON);
+
+  // No pose reaches the points
+  triggering_points.clear();
+  const std::vector<nav2_collision_monitor::TimedPose> short_poses{
+    {0.0, {0.0, 0.0, 0.0}}, {0.5, {0.5, 0.0, 0.0}}};
+  EXPECT_LT(polygon_->getCollisionTime(points_map, short_poses, triggering_points), 0.0);
+  EXPECT_TRUE(triggering_points.empty());
+
+  // No poses: only the current footprint is checked
+  const std::vector<nav2_collision_monitor::TimedPose> no_poses;
+  EXPECT_LT(polygon_->getCollisionTime(points_map, no_poses, triggering_points), 0.0);
+
+  // Points already inside the current footprint
+  const std::unordered_map<std::string, std::vector<nav2_collision_monitor::Point>> inside_map{
+    {OBSERVATION_SOURCE_NAME, {{0.1, -0.01}, {0.1, 0.01}}}};
+  triggering_points.clear();
+  EXPECT_NEAR(polygon_->getCollisionTime(inside_map, poses, triggering_points), 0.0, EPSILON);
+  EXPECT_EQ(triggering_points.size(), 2u);
+}
+
+TEST_F(Tester, testTrajectoryCollisionTimeUsesTrajectorySpacing)
+{
+  TrajectoryParameters params;
+  params.use_trajectory_time = false;
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  const rclcpp::Time start = test_node_->now();
+  const auto trajectory = makeTrajectory(start, BASE_FRAME_ID, 21, 0.1, 1.0);
+  ASSERT_TRUE(sendTrajectory(trajectory, [this]() {return polygon_->hasTrajectory();}));
+
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  const auto time = polygon_->getTrajectoryCollisionTime(
+    obstacleAhead(), {0.0, 0.0, 0.0}, start, triggering_points);
+  ASSERT_TRUE(time.has_value());
+  // Samples are 0.1 s apart: the first one with the footprint over the points is at 0.8 s
+  EXPECT_NEAR(*time, 0.8, EPSILON);
+  EXPECT_EQ(triggering_points.size(), 2u);
+}
+
+TEST_F(Tester, testTrajectoryCollisionTimeResamplesWithStep)
+{
+  TrajectoryParameters params;
+  params.use_trajectory_time = false;
+  params.simulation_time_step = 0.01;
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  const rclcpp::Time start = test_node_->now();
+  const auto trajectory = makeTrajectory(start, BASE_FRAME_ID, 21, 0.1, 1.0);
+  ASSERT_TRUE(sendTrajectory(trajectory, [this]() {return polygon_->hasTrajectory();}));
+
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  const auto time = polygon_->getTrajectoryCollisionTime(
+    obstacleAhead(), {0.0, 0.0, 0.0}, start, triggering_points);
+  ASSERT_TRUE(time.has_value());
+  EXPECT_NEAR(*time, 0.75, 0.011);
+}
+
+TEST_F(Tester, testTrajectoryCollisionTimeAgainstNow)
+{
+  TrajectoryParameters params;
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  const rclcpp::Time start = test_node_->now();
+  const auto trajectory = makeTrajectory(start, BASE_FRAME_ID, 21, 0.1, 1.0);
+  ASSERT_TRUE(sendTrajectory(trajectory, [this]() {return polygon_->hasTrajectory();}));
+
+  // Now is 0.2 s into the trajectory: the 0.8 s sample is 0.6 s away
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  const auto time = polygon_->getTrajectoryCollisionTime(
+    obstacleAhead(), {0.0, 0.0, 0.0}, start + rclcpp::Duration::from_seconds(0.2),
+    triggering_points);
+  ASSERT_TRUE(time.has_value());
+  EXPECT_NEAR(*time, 0.6, EPSILON);
+}
+
+TEST_F(Tester, testTrajectoryCollisionTimeNoCollisionWithinHorizon)
+{
+  TrajectoryParameters params;
+  params.use_trajectory_time = false;
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  const rclcpp::Time start = test_node_->now();
+  // 0.4 s of trajectory: the footprint never reaches the points
+  const auto trajectory = makeTrajectory(start, BASE_FRAME_ID, 5, 0.1, 1.0);
+  ASSERT_TRUE(sendTrajectory(trajectory, [this]() {return polygon_->hasTrajectory();}));
+
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  const auto time = polygon_->getTrajectoryCollisionTime(
+    obstacleAhead(), {0.0, 0.0, 0.0}, start, triggering_points);
+  ASSERT_TRUE(time.has_value());
+  EXPECT_LT(*time, 0.0);
+}
+
+TEST_F(Tester, testTrajectoryCollisionTimeCircle)
+{
+  TrajectoryParameters params;
+  params.use_trajectory_time = false;
+  ASSERT_TRUE(configureTrajectoryCircle(params));
+
+  const rclcpp::Time start = test_node_->now();
+  const auto trajectory = makeTrajectory(start, BASE_FRAME_ID, 21, 0.1, 1.0);
+  ASSERT_TRUE(sendTrajectory(trajectory, [this]() {return circle_->hasTrajectory();}));
+
+  // Radius 0.5: the circle reaches the points at x = 0.75
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  const auto time = circle_->getTrajectoryCollisionTime(
+    obstacleAhead(), {0.0, 0.0, 0.0}, start, triggering_points);
+  ASSERT_TRUE(time.has_value());
+  EXPECT_NEAR(*time, 0.8, EPSILON);
+}
+
+TEST_F(Tester, testTrajectoryStaleActionNone)
+{
+  TrajectoryParameters params;
+  params.stale_action = "none";
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  // No trajectory received
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  const auto time = polygon_->getTrajectoryCollisionTime(
+    obstacleAhead(), {1.0, 0.0, 0.0}, test_node_->now(), triggering_points);
+  ASSERT_TRUE(time.has_value());
+  EXPECT_LT(*time, 0.0);
+}
+
+TEST_F(Tester, testTrajectoryStaleActionStop)
+{
+  TrajectoryParameters params;
+  params.stale_action = "stop";
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  EXPECT_FALSE(
+    polygon_->getTrajectoryCollisionTime(
+      obstacleAhead(), {1.0, 0.0, 0.0}, test_node_->now(), triggering_points).has_value());
+}
+
+TEST_F(Tester, testTrajectoryStaleActionProjection)
+{
+  TrajectoryParameters params;
+  params.stale_action = "projection";
+  params.simulation_time_step = 0.01;
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  // The velocity projection reaches the points at 0.75 s with 1 m/s
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  const auto time = polygon_->getTrajectoryCollisionTime(
+    obstacleAhead(), {1.0, 0.0, 0.0}, test_node_->now(), triggering_points);
+  ASSERT_TRUE(time.has_value());
+  EXPECT_NEAR(*time, 0.75, 0.011);
+}
+
+TEST_F(Tester, testTrajectoryStaleWhenOld)
+{
+  TrajectoryParameters params;
+  params.stale_action = "stop";
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  const rclcpp::Time start = test_node_->now();
+  const auto trajectory = makeTrajectory(start, BASE_FRAME_ID, 21, 0.1, 1.0);
+  ASSERT_TRUE(sendTrajectory(trajectory, [this]() {return polygon_->hasTrajectory();}));
+
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  EXPECT_TRUE(
+    polygon_->getTrajectoryCollisionTime(
+      obstacleAhead(), {0.0, 0.0, 0.0}, start + rclcpp::Duration::from_seconds(0.4),
+      triggering_points).has_value());
+  EXPECT_FALSE(
+    polygon_->getTrajectoryCollisionTime(
+      obstacleAhead(), {0.0, 0.0, 0.0}, start + rclcpp::Duration::from_seconds(0.6),
+      triggering_points).has_value());
+}
+
+TEST_F(Tester, testTrajectoryTimeoutZeroDisablesAgeCheck)
+{
+  TrajectoryParameters params;
+  params.stale_action = "stop";
+  params.trajectory_timeout = 0.0;
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  const rclcpp::Time start = test_node_->now();
+  const auto trajectory = makeTrajectory(start, BASE_FRAME_ID, 21, 0.1, 1.0);
+  ASSERT_TRUE(sendTrajectory(trajectory, [this]() {return polygon_->hasTrajectory();}));
+
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  EXPECT_TRUE(
+    polygon_->getTrajectoryCollisionTime(
+      obstacleAhead(), {0.0, 0.0, 0.0}, start + rclcpp::Duration::from_seconds(1.0),
+      triggering_points).has_value());
+}
+
+TEST_F(Tester, testTrajectoryStaleWhenAllPointsAreInThePast)
+{
+  TrajectoryParameters params;
+  params.stale_action = "stop";
+  params.trajectory_timeout = 0.0;
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  const rclcpp::Time start = test_node_->now();
+  const auto trajectory = makeTrajectory(start, BASE_FRAME_ID, 5, 0.1, 1.0);
+  ASSERT_TRUE(sendTrajectory(trajectory, [this]() {return polygon_->hasTrajectory();}));
+
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  EXPECT_FALSE(
+    polygon_->getTrajectoryCollisionTime(
+      obstacleAhead(), {0.0, 0.0, 0.0}, start + rclcpp::Duration::from_seconds(5.0),
+      triggering_points).has_value());
+}
+
+TEST_F(Tester, testTrajectoryStaleWhenFrameIsUnknown)
+{
+  TrajectoryParameters params;
+  params.stale_action = "stop";
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  const rclcpp::Time start = test_node_->now();
+  const auto trajectory = makeTrajectory(start, "missing_frame", 21, 0.1, 1.0);
+  ASSERT_TRUE(sendTrajectory(trajectory, [this]() {return polygon_->hasTrajectory();}));
+
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  EXPECT_FALSE(
+    polygon_->getTrajectoryCollisionTime(
+      obstacleAhead(), {0.0, 0.0, 0.0}, start, triggering_points).has_value());
+}
+
+TEST_F(Tester, testTrajectoryMinPointsAlongTrajectory)
+{
+  TrajectoryParameters params;
+  params.use_trajectory_time = false;
+  ASSERT_TRUE(configureTrajectoryPolygon(params));
+
+  const rclcpp::Time start = test_node_->now();
+  const auto trajectory = makeTrajectory(start, BASE_FRAME_ID, 21, 0.1, 1.0);
+  ASSERT_TRUE(sendTrajectory(trajectory, [this]() {return polygon_->hasTrajectory();}));
+
+  // min_points is 2: the first point is reached at x = 0.75, the second only at x = 0.85
+  const std::unordered_map<std::string, std::vector<nav2_collision_monitor::Point>> points_map{
+    {OBSERVATION_SOURCE_NAME, {{1.25, 0.0}, {1.35, 0.0}}}};
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  const auto time = polygon_->getTrajectoryCollisionTime(
+    points_map, {0.0, 0.0, 0.0}, start, triggering_points);
+  ASSERT_TRUE(time.has_value());
+  EXPECT_NEAR(*time, 0.9, 1e-6);
 }
 
 int main(int argc, char ** argv)

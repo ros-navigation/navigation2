@@ -527,9 +527,11 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
       {
         action_polygon = polygon;
       }
-    } else if (at == APPROACH) {
+    } else if (at == APPROACH || at == TRAJECTORY_APPROACH) {
       // Process APPROACH for the selected polygon
-      if (processApproach(polygon, sources_collision_points_map, cmd_vel_in, robot_action)) {
+      if (processApproach(
+          polygon, sources_collision_points_map, cmd_vel_in, curr_time, robot_action))
+      {
         action_polygon = polygon;
       }
     }
@@ -617,12 +619,28 @@ bool CollisionMonitor::processApproach(
   const std::shared_ptr<Polygon> polygon,
   const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
   const Velocity & velocity,
+  const rclcpp::Time & now,
   Action & robot_action) const
 {
   // Obtain time before a collision, capturing the responsible points at the collision step.
   std::vector<Point> triggering_points;
-  const double collision_time = polygon->getCollisionTime(sources_collision_points_map, velocity,
-      triggering_points);
+  double collision_time;
+  if (polygon->getActionType() == TRAJECTORY_APPROACH) {
+    const auto trajectory_time = polygon->getTrajectoryCollisionTime(
+      sources_collision_points_map, velocity, now, triggering_points);
+    if (!trajectory_time) {
+      // Unusable trajectory with the "stop" stale action
+      robot_action.polygon_name = polygon->getName();
+      robot_action.action_type = STOP;
+      robot_action.req_vel = {0.0, 0.0, 0.0};
+      robot_action.triggering_points.clear();
+      return true;
+    }
+    collision_time = *trajectory_time;
+  } else {
+    collision_time = polygon->getCollisionTime(
+      sources_collision_points_map, velocity, triggering_points);
+  }
   if (collision_time >= 0.0) {
     // If collision will occur, reduce robot speed
     const double change_ratio = collision_time / polygon->getTimeBeforeCollision();

@@ -8,6 +8,7 @@ find_package(nav2_common REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -38,6 +39,7 @@ add_library(${monitor_library_name} SHARED
   src/polygon_source.cpp
   src/range.cpp
   src/kinematics.cpp
+  src/trajectory_utils.cpp
   src/costmap.cpp
 )
 
@@ -52,6 +54,7 @@ target_link_libraries(${monitor_library_name} PUBLIC
   nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   sensor_msgs::sensor_msgs
@@ -77,6 +80,7 @@ add_library(${detector_library_name} SHARED
   src/costmap.cpp
   src/range.cpp
   src/kinematics.cpp
+  src/trajectory_utils.cpp
 )
 target_include_directories(${detector_library_name}
   PUBLIC
@@ -89,6 +93,7 @@ target_link_libraries(${detector_library_name} PUBLIC
   nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
+  nav_msgs::nav_msgs
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   sensor_msgs::sensor_msgs
@@ -170,6 +175,7 @@ ament_export_dependencies(
   nav2_costmap_2d
   nav2_msgs
   nav2_util
+  nav_msgs
   rosgraph_msgs
   rclcpp
   rclcpp_lifecycle

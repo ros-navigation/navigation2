@@ -64,6 +64,13 @@ struct Pose
   double theta;  // rotation angle of pose
 };
 
+/// @brief 2D pose labelled with a time in seconds relative to now
+struct TimedPose
+{
+  double time_s;  // time of the pose, seconds relative to now
+  Pose pose;  // pose in the robot base frame
+};
+
 /// @brief Action type for robot
 enum ActionType
 {
@@ -71,7 +78,8 @@ enum ActionType
   STOP = 1,  // Stop the robot
   SLOWDOWN = 2,  // Slowdown in percentage from current operating speed
   APPROACH = 3,  // Keep constant time interval before collision
-  LIMIT = 4  // Limit absolute velocity from current operating speed
+  LIMIT = 4,  // Limit absolute velocity from current operating speed
+  TRAJECTORY_APPROACH = 5  // APPROACH along a received trajectory (polygon-internal)
 };
 
 /// @brief Action for robot
