@@ -176,9 +176,11 @@ Uses inflated costmap cost directly to avoid obstacles
 | threshold_to_consider | double | Default 0.5. Distance between robot and goal above which prefer forward cost is considered         |
 
 
-#### Translational Velocity Critic
+#### Omni Constraint Critic
 
-Penalizes combined translational velocities that leave the ellipse spanned by `vx_max`, `vx_min` and `vy_max`. This prevents a diagonal command from reaching a higher speed than one along the robot's x and y axes.
+Intended to replace the Constraint Critic when using an omnidirectional robot. Penalizes combined translational velocities that leave the ellipse spanned by the controller's `vx_max`, `vx_min` and `vy_max`. This prevents a diagonal command from reaching a higher speed than one along the robot's x and y axes.
+
+If using a mecanum drivetrain, use this critic together with the Mecanum Critic, which limits wheel velocities.
 
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
@@ -314,7 +316,7 @@ controller_server:
       #   cost_power: 1
       #   cost_weight: 35.0
       #   deadband_velocities: [0.05, 0.05, 0.05]
-      # TranslationalVelocityCritic:
+      # OmniConstraintCritic:
       #   enabled: true
       #   cost_power: 1
       #   cost_weight: 4.0

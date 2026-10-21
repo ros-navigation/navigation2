@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_mppi_controller/critics/translational_velocity_critic.hpp"
+#include "nav2_mppi_controller/critics/omni_constraint_critic.hpp"
 
 namespace mppi::critics
 {
 
-void TranslationalVelocityCritic::initialize()
+void OmniConstraintCritic::initialize()
 {
   auto getParam = parameters_handler_->getParamGetter(name_);
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
@@ -25,7 +25,7 @@ void TranslationalVelocityCritic::initialize()
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 4.0f);
   RCLCPP_INFO(
-    logger_, "TranslationalVelocityCritic instantiated with %d power and %f weight.",
+    logger_, "OmniConstraintCritic instantiated with %d power and %f weight.",
     power_, weight_);
 
   getParentParam(vx_max_, "vx_max", 0.5f);
@@ -33,7 +33,7 @@ void TranslationalVelocityCritic::initialize()
   getParentParam(vx_min_, "vx_min", -0.35f);
 }
 
-void TranslationalVelocityCritic::score(CriticData & data)
+void OmniConstraintCritic::score(CriticData & data)
 {
   if (!enabled_ || !data.motion_model->isHolonomic()) {
     return;
@@ -69,5 +69,5 @@ void TranslationalVelocityCritic::score(CriticData & data)
 #include <pluginlib/class_list_macros.hpp>
 
 PLUGINLIB_EXPORT_CLASS(
-  mppi::critics::TranslationalVelocityCritic,
+  mppi::critics::OmniConstraintCritic,
   mppi::critics::CriticFunction)

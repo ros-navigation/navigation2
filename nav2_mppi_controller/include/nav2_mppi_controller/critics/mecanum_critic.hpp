@@ -30,7 +30,7 @@ namespace mppi::critics
  * a wheel turns at (vx ± vy ± (lx + ly) * wz) / r, so the fastest wheel saturates once
  * |vx| / vx_max + |vy| / vy_max + |wz| / wz_max reaches 1.
  *
- * The limits are what the drivetrain reaches when driving each axis alone, measured on the robot. *
+ * The limits are what the drivetrain reaches when driving each axis alone, measured on the robot.
  * The cost is the speed by which the fastest wheel exceeds its limit. The faster of the x and y
  * axes is pure wheel rolling, so the larger of vx_max and vy_max is that wheel limit.
  */

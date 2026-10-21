@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MPPI_CONTROLLER__CRITICS__TRANSLATIONAL_VELOCITY_CRITIC_HPP_
-#define NAV2_MPPI_CONTROLLER__CRITICS__TRANSLATIONAL_VELOCITY_CRITIC_HPP_
+#ifndef NAV2_MPPI_CONTROLLER__CRITICS__OMNI_CONSTRAINT_CRITIC_HPP_
+#define NAV2_MPPI_CONTROLLER__CRITICS__OMNI_CONSTRAINT_CRITIC_HPP_
 
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
@@ -23,17 +23,19 @@ namespace mppi::critics
 {
 
 /**
- * @class mppi::critics::TranslationalVelocityCritic
- * @brief Critic objective function penalizing combined translational velocities that exceed the
- *        ellipse spanned by the per-axis velocity limits
+ * @class mppi::critics::OmniConstraintCritic
+ * @brief Critic objective function for enforcing velocity limits on omnidirectional robots.
  *
- * On holonomic robots the per-axis limits bound vx and vy independently. Thus critics rewarding progress
- * incentivize diagonal driving, since sqrt(vx_max² + vy_max²) is faster than each axis individually.
- * This critic bounds the translational velocity by the ellipse through vx_max, vx_min and vy_max instead.
+ * Bounding omnidirectional robot velocities per axis individually makes critics rewarding progress
+ * incentivize diagonal driving, since sqrt(vx_max² + vy_max²) exceeds vx_max and vy_max
+ * individually. This critic bounds vx and vy by the ellipse spanned by the controller's vx_max,
+ * vx_min and vy_max instead. This penalizes translational speeds above the individual axis limits.
+ *
+ * For mecanum drivetrains use this critic together with the MecanumCritic, which enforces the wheel speed limits.
  *
  * The cost is the speed the sample gives up when scaled back onto the ellipse.
  */
-class TranslationalVelocityCritic : public CriticFunction
+class OmniConstraintCritic : public CriticFunction
 {
 public:
   /**
@@ -58,4 +60,4 @@ protected:
 
 }  // namespace mppi::critics
 
-#endif  // NAV2_MPPI_CONTROLLER__CRITICS__TRANSLATIONAL_VELOCITY_CRITIC_HPP_
+#endif  // NAV2_MPPI_CONTROLLER__CRITICS__OMNI_CONSTRAINT_CRITIC_HPP_

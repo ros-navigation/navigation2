@@ -26,12 +26,12 @@
 #include "nav2_mppi_controller/critics/goal_critic.hpp"
 #include "nav2_mppi_controller/critics/mecanum_critic.hpp"
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
+#include "nav2_mppi_controller/critics/omni_constraint_critic.hpp"
 #include "nav2_mppi_controller/critics/cost_critic.hpp"
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
 #include "nav2_mppi_controller/critics/path_angle_critic.hpp"
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
-#include "nav2_mppi_controller/critics/translational_velocity_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 #include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
 #include "utils_test.cpp"  // NOLINT
@@ -205,7 +205,7 @@ TEST(CriticTests, ConstraintsCritic)
   costs.setZero();
 }
 
-TEST(CriticTests, TranslationalVelocityCritic)
+TEST(CriticTests, OmniConstraintCritic)
 {
   // Standard preamble
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
@@ -232,7 +232,7 @@ TEST(CriticTests, TranslationalVelocityCritic)
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Make sure initializes correctly and that defaults are reasonable
-  TranslationalVelocityCritic critic;
+  OmniConstraintCritic critic;
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   EXPECT_EQ(critic.getName(), "critic");
 
@@ -244,7 +244,7 @@ TEST(CriticTests, TranslationalVelocityCritic)
 
   // Semi-axes are vx_max = 0.5 forward, vx_min = -0.35 reverse and vy_max = 0.3 lateral
   node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.3));
-  critic = TranslationalVelocityCritic();
+  critic = OmniConstraintCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   data.motion_model = std::make_shared<OmniMotionModel>();
 
@@ -288,7 +288,7 @@ TEST(CriticTests, TranslationalVelocityCritic)
 
   // Test with different cost power
   node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
-  critic = TranslationalVelocityCritic();
+  critic = OmniConstraintCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   critic.score(data);
   EXPECT_GT(costs.sum(), 0);
@@ -299,7 +299,7 @@ TEST(CriticTests, TranslationalVelocityCritic)
   // A zero semi-axis collapses the ellipse but must stay finite
   node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
   node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.0));
-  critic = TranslationalVelocityCritic();
+  critic = OmniConstraintCritic();
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   state.vx.setConstant(0.4f);
   state.vy.setConstant(0.0f);
