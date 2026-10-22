@@ -34,26 +34,33 @@ void SimpleSmoother::configure(
   auto node = parent.lock();
   logger_ = node->get_logger();
 
-  tolerance_ = node->declare_or_get_parameter(
-    name + ".tolerance", 1e-10);
-  max_its_ = node->declare_or_get_parameter(
-    name + ".max_its", 1000);
-  data_w_ = node->declare_or_get_parameter(
-    name + ".w_data", 0.2);
-  smooth_w_ = node->declare_or_get_parameter(
-    name + ".w_smooth", 0.3);
-  do_refinement_ = node->declare_or_get_parameter(
-    name + ".do_refinement", true);
-  refinement_num_ = node->declare_or_get_parameter(
-    name + ".refinement_num", 2);
-  enforce_path_inversion_ = node->declare_or_get_parameter(
-    name + ".enforce_path_inversion", true);
+  param_handler_ = std::make_unique<SimpleSmootherParameterHandler>(node, name, logger_);
+  params_ = param_handler_->getParams();
 }
+
+
+void SimpleSmoother::cleanup()
+{
+  costmap_sub_.reset();
+  param_handler_.reset();
+}
+
+void SimpleSmoother::activate()
+{
+  param_handler_->activate();
+}
+
+void SimpleSmoother::deactivate()
+{
+  param_handler_->deactivate();
+}
+
 
 bool SimpleSmoother::smooth(
   nav_msgs::msg::Path & path,
   const rclcpp::Duration & max_time)
 {
+  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
   auto costmap = costmap_sub_->getCostmap();
 
   steady_clock::time_point start = steady_clock::now();
@@ -65,9 +72,10 @@ bool SimpleSmoother::smooth(
 
   std::vector<nav2_util::PathSegment> path_segments{PathSegment{
       0u, static_cast<unsigned int>(path.poses.size() - 1)}};
-  if (enforce_path_inversion_) {
+  if (params_->enforce_path_inversion) {
     path_segments = nav2_util::findDirectionalPathSegments(path);
   }
+
 
   std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
@@ -110,7 +118,7 @@ void SimpleSmoother::smoothImpl(
   rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);
 
   int its = 0;
-  double change = tolerance_;
+  double change = params_->tolerance;
   const unsigned int & path_size = path.poses.size();
   double x_i, y_i, y_m1, y_ip1, y_i_org;
   unsigned int mx, my;
@@ -118,15 +126,15 @@ void SimpleSmoother::smoothImpl(
   nav_msgs::msg::Path new_path = path;
   nav_msgs::msg::Path last_path = path;
 
-  while (change >= tolerance_) {
+  while (change >= params_->tolerance) {
     its += 1;
     change = 0.0;
 
     // Make sure the smoothing function will converge
-    if (its >= max_its_) {
+    if (its >= params_->max_its) {
       RCLCPP_WARN(
         logger_,
-        "Number of iterations has exceeded limit of %i.", max_its_);
+        "Number of iterations has exceeded limit of %i.", params_->max_its);
       path = last_path;
       nav2_util::updateApproximatePathOrientations(path, reversing_segment);
       return;
@@ -153,7 +161,7 @@ void SimpleSmoother::smoothImpl(
         y_i_org = y_i;
 
         // Smooth based on local 3 point neighborhood and original data locations
-        y_i += data_w_ * (x_i - y_i) + smooth_w_ * (y_ip1 + y_m1 - (2.0 * y_i));
+        y_i += params_->w_data * (x_i - y_i) + params_->w_smooth * (y_ip1 + y_m1 - (2.0 * y_i));
         setFieldByDim(new_path.poses[i], j, y_i);
         change += abs(y_i - y_i_org);
       }
@@ -184,7 +192,7 @@ void SimpleSmoother::smoothImpl(
 
   // Let's do additional refinement, it shouldn't take more than a couple milliseconds
   // but really puts the path quality over the top.
-  if (do_refinement_ && refinement_ctr_ < refinement_num_) {
+  if (params_->do_refinement && refinement_ctr_ < params_->refinement_num) {
     refinement_ctr_++;
     smoothImpl(new_path, reversing_segment, costmap, max_time);
   }

@@ -51,16 +51,10 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  std::string costmap_topic, footprint_topic, robot_base_frame;
-  double transform_tolerance = 0.1;
-  costmap_topic = node->declare_or_get_parameter(
-    "costmap_topic", std::string("global_costmap/costmap_raw"));
-  footprint_topic = node->declare_or_get_parameter(
-    "footprint_topic", std::string("global_costmap/published_footprint"));
-  robot_base_frame = node->declare_or_get_parameter(
-    "robot_base_frame", std::string("base_link"));
-  transform_tolerance = node->declare_or_get_parameter("transform_tolerance", 0.1);
-  smoother_ids_ = node->declare_or_get_parameter("smoother_plugins", default_ids_);
+  auto logger = get_logger();
+  param_handler_ = std::make_unique<SmootherServerParameterHandler>(node, logger);
+  params_ = param_handler_->getParams();
+  smoother_ids_ = params_->smoother_plugins;
 
   if (smoother_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
@@ -74,9 +68,12 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
   transform_listener_ = nav2::create_transform_listener(*tf_, this, true);
 
   costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
-    shared_from_this(), costmap_topic);
+    shared_from_this(), params_->costmap_topic);
+  footprint_topic_ = params_->footprint_topic;
+  robot_base_frame_ = params_->robot_base_frame;
+  transform_tolerance_ = params_->transform_tolerance;
   footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
-    shared_from_this(), footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+    shared_from_this(), footprint_topic_, *tf_, robot_base_frame_, transform_tolerance_);
 
   collision_checker_ =
     std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
@@ -145,6 +142,7 @@ SmootherServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
+  param_handler_->activate();
   plan_publisher_->on_activate();
   SmootherMap::iterator it;
   for (it = smoothers_.begin(); it != smoothers_.end(); ++it) {
@@ -164,6 +162,7 @@ SmootherServer::on_deactivate(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   action_server_->deactivate();
+  param_handler_->deactivate();
   SmootherMap::iterator it;
   for (it = smoothers_.begin(); it != smoothers_.end(); ++it) {
     it->second->deactivate();
@@ -196,8 +195,31 @@ SmootherServer::on_cleanup(const rclcpp_lifecycle::State &)
   footprint_sub_.reset();
   costmap_sub_.reset();
   collision_checker_.reset();
+  param_handler_.reset();
 
   return nav2::CallbackReturn::SUCCESS;
+}
+
+void SmootherServer::updateFootprintSubscriber()
+{
+  if (params_->footprint_topic == footprint_topic_ &&
+    params_->robot_base_frame == robot_base_frame_ &&
+    params_->transform_tolerance == transform_tolerance_)
+  {
+    return;
+  }
+
+  RCLCPP_INFO(
+    get_logger(), "Footprint parameters changed, recreating footprint subscriber on topic '%s'",
+    params_->footprint_topic.c_str());
+  footprint_topic_ = params_->footprint_topic;
+  robot_base_frame_ = params_->robot_base_frame;
+  transform_tolerance_ = params_->transform_tolerance;
+  footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
+    shared_from_this(), footprint_topic_, *tf_, robot_base_frame_, transform_tolerance_);
+  collision_checker_ =
+    std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+    *costmap_sub_, *footprint_sub_, this->get_name());
 }
 
 nav2::CallbackReturn
@@ -260,6 +282,9 @@ void SmootherServer::smoothPlan()
 
   auto result = std::make_shared<Action::Result>();
   try {
+    std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
+    updateFootprintSubscriber();
+
     auto goal = action_server_->get_current_goal();
     if (!goal) {
       return;  //  if action_server_ is deactivate, goal would be a nullptr

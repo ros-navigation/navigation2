@@ -26,6 +26,7 @@ set(library_name ${executable_name}_core)
 # Main library
 add_library(${library_name} SHARED
   src/nav2_smoother.cpp
+  src/smoother_server_parameter_handler.cpp
 )
 target_include_directories(${library_name}
   PUBLIC
@@ -63,6 +64,7 @@ target_link_libraries(${executable_name} PRIVATE rclcpp::rclcpp ${library_name})
 # Simple Smoother plugin
 add_library(simple_smoother SHARED
   src/simple_smoother.cpp
+  src/simple_smoother_parameter_handler.cpp
 )
 target_include_directories(simple_smoother
   PUBLIC
@@ -88,6 +90,7 @@ target_link_libraries(simple_smoother PRIVATE
 # Savitzky Golay Smoother plugin
 add_library(savitzky_golay_smoother SHARED
   src/savitzky_golay_smoother.cpp
+  src/savitzky_golay_smoother_parameter_handler.cpp
 )
 target_include_directories(savitzky_golay_smoother
   PUBLIC
