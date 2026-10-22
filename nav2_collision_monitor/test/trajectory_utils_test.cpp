@@ -16,7 +16,6 @@
 
 #include <cmath>
 #include <functional>
-#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -100,9 +99,12 @@ TEST(TrajectoryUtilsTest, testToTrajectoryRejectsInvalid)
   };
   const std::vector<Case> cases{
     {"empty", [](auto & t) {t.points.clear();}},
-    {"invalid pose", [](auto & t) {
-        t.points[1].pose.position.x = std::numeric_limits<double>::quiet_NaN();
-      }},
+    {"invalid pose", [](auto & t) {t.points[1].pose.position.x = NAN;}},
+    {"invalid pose", [](auto & t) {t.points[1].pose.position.y = NAN;}},
+    {"invalid pose", [](auto & t) {t.points[1].pose.orientation.x = NAN;}},
+    {"invalid pose", [](auto & t) {t.points[1].pose.orientation.y = NAN;}},
+    {"invalid pose", [](auto & t) {t.points[1].pose.orientation.z = NAN;}},
+    {"invalid pose", [](auto & t) {t.points[1].pose.orientation.w = NAN;}},
     {"invalid pose", [](auto & t) {t.points[1].pose.orientation.w = 0.0;}},
     {"increase", [](auto & t) {t.points[2].header.stamp = t.points[1].header.stamp;}},
     {"increase", [](auto & t) {t.points[2].header.stamp = stamp(100.05);}},

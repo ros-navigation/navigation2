@@ -1182,8 +1182,9 @@ TEST_F(Tester, testProcessTrajectory)
   setCommonParameters();
   cm_->declare_parameter("trajectory_topic", rclcpp::ParameterValue(std::string(TRAJECTORY_TOPIC)));
   addPolygon("Approach", CIRCLE, 1.0, "approach");
+  addPolygon("Stop", POLYGON, 0.1, "stop");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"Approach"}, {SCAN_NAME});
+  setVectors({"Approach", "Stop"}, {SCAN_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -1231,6 +1232,28 @@ TEST_F(Tester, testProcessTrajectory)
   publishTrajectory(makeTrajectory(0.5, curr_time, "unknown_frame"));
   ASSERT_TRUE(waitCmdVel(1500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+
+  // 6. A trajectory without points has no velocity: robot stops
+  publishTrajectory(makeTrajectory(0.5, curr_time, BASE_FRAME_ID));
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  nav_msgs::msg::Trajectory empty = makeTrajectory(0.5, curr_time, BASE_FRAME_ID);
+  empty.points.clear();
+  publishTrajectory(empty);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+
+  // 7. A disabled monitor passes the first velocity through and ignores an invalid trajectory
+  auto request = std::make_shared<nav2_msgs::srv::Toggle::Request>();
+  request->enable = false;
+  ASSERT_TRUE(waitToggle(toggle_client_->async_call(request), 2s));
+  publishScan(1.2, curr_time);
+  ASSERT_TRUE(waitData(1.2, 500ms, curr_time));
+  publishTrajectory(makeTrajectory(0.5, curr_time, BASE_FRAME_ID));
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  publishTrajectory(empty);
+  ASSERT_FALSE(waitCmdVel(100ms));
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -1696,6 +1719,7 @@ TEST_F(Tester, testProcessNonActive)
   rclcpp::Time curr_time = cm_->now();
 
   setCommonParameters();
+  cm_->declare_parameter("trajectory_topic", rclcpp::ParameterValue(std::string(TRAJECTORY_TOPIC)));
   addPolygon("Stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
   setVectors({"Stop"}, {SCAN_NAME});
@@ -1709,6 +1733,10 @@ TEST_F(Tester, testProcessNonActive)
   // Call CollisionMonitor::process()
   publishCmdVel(1.0, 0.0, 0.0);
   // ... and check that cmd_vel_out was not published
+  ASSERT_FALSE(waitCmdVel(100ms));
+
+  // The same for a trajectory
+  publishTrajectory(makeTrajectory(0.5, curr_time, BASE_FRAME_ID));
   ASSERT_FALSE(waitCmdVel(100ms));
 
   // Stop Collision Monitor node

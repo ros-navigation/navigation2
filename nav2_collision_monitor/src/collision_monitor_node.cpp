@@ -714,7 +714,7 @@ bool CollisionMonitor::processApproach(
 void CollisionMonitor::stopForInvalidTrajectory(
   const std::string & reason, const std_msgs::msg::Header & header)
 {
-  if (!process_active_ || !enabled_) {
+  if (!enabled_) {
     return;
   }
 
