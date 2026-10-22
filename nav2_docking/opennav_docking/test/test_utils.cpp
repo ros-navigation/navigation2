@@ -17,6 +17,8 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
 #include "opennav_docking/utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "tf2/utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
 // Test parsing dock plugins and database files (see test_dock_file.yaml).
@@ -109,6 +111,18 @@ TEST(UtilsTests, parseDockFile)
   EXPECT_NE(db["dock2"].pose.orientation.w, 1.0);
   EXPECT_EQ(db["dock1"].id, std::string(""));
   EXPECT_EQ(db["dock2"].id, std::string("2"));
+}
+
+TEST(UtilsTests, parseDockFileController)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test4");
+  DockMap db;
+  std::string filepath = nav2::get_package_share_directory("opennav_docking") +
+    "/dock_files/test_dock_controller_file.yaml";
+  EXPECT_TRUE(utils::parseDockFile(filepath, node, db));
+  EXPECT_EQ(db.size(), 2u);
+  EXPECT_EQ(db["dock1"].controller_name, std::string("pid"));
+  EXPECT_EQ(db["dock2"].controller_name, std::string(""));
 }
 
 TEST(UtilsTests, parseDockFile2)
