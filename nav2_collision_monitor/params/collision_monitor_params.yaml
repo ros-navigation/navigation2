@@ -6,6 +6,9 @@ collision_monitor:
     cmd_vel_in_topic: "cmd_vel_smoothed"
     cmd_vel_out_topic: "cmd_vel"
     state_topic: "collision_monitor_state"
+    # Optional trajectory input, an alternative to cmd_vel_in_topic. For the MPPI optimal trajectory
+    # the controller needs publish_optimal_trajectory: true
+    # trajectory_topic: "/controller_server/optimal_trajectory"
     transform_tolerance: 0.5  # TF lookup wait timeout
     # Maximum age for latest dynamic transforms; 0.0 disables the freshness check.
     transform_staleness_threshold: 1.0

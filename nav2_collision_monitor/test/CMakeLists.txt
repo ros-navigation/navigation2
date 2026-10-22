@@ -5,6 +5,14 @@ target_link_libraries(kinematics_test
   rclcpp::rclcpp
 )
 
+# Trajectory utils test
+nav2_add_gtest(trajectory_utils_test trajectory_utils_test.cpp)
+target_link_libraries(trajectory_utils_test
+  ${monitor_library_name}
+  nav_msgs::nav_msgs
+  tf2::tf2
+)
+
 # Data sources test
 nav2_add_gtest(sources_test sources_test.cpp)
 target_link_libraries(sources_test
