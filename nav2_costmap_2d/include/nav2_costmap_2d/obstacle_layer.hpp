@@ -161,19 +161,23 @@ public:
    * @brief  A callback to handle buffering LaserScan messages
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
-   */
+   * @param projector Per-source projector for thread safety
+  */
   void laserScanCallback(
     sensor_msgs::msg::LaserScan::ConstSharedPtr message,
-    const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
+    const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer,
+    const std::shared_ptr<laser_geometry::LaserProjection> & projector);
 
   /**
    * @brief A callback to handle buffering LaserScan messages which need filtering to turn Inf values into range_max.
    * @param message The message returned from a message notifier
    * @param buffer A pointer to the observation buffer to update
+   * @param projector Per-source projector for thread safety
    */
   void laserScanValidInfCallback(
     sensor_msgs::msg::LaserScan::ConstSharedPtr message,
-    const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
+    const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer,
+    const std::shared_ptr<laser_geometry::LaserProjection> & projector);
 
   /**
    * @brief  A callback to handle buffering PointCloud2 messages
@@ -244,7 +248,7 @@ protected:
   double max_obstacle_height_;  ///< @brief Max Obstacle Height
 
   /// @brief Used to project laser scans into point clouds
-  laser_geometry::LaserProjection projector_;
+  std::vector<std::shared_ptr<laser_geometry::LaserProjection>> projectors_;
   /// @brief Used for the observation message filters
   #if RCLCPP_VERSION_GTE(29, 6, 0)
   std::vector<std::shared_ptr<message_filters::SubscriberBase>>
