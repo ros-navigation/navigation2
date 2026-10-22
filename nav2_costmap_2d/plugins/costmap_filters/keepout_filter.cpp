@@ -231,7 +231,7 @@ void KeepoutFilter::updateBounds(
           FootprintCollisionChecker<Costmap2D *>(filter_mask_costmap_.get()).footprintCostAtPose(
           mask_pose.position.x, mask_pose.position.y, tf2::getYaw(mask_pose.orientation),
           footprint);
-        is_pose_lethal_ = cost == INSCRIBED_INFLATED_OBSTACLE || cost == LETHAL_OBSTACLE;
+        is_pose_lethal_ = (cost == INSCRIBED_INFLATED_OBSTACLE || cost == LETHAL_OBSTACLE);
       }
       if (is_pose_lethal_) {
         RCLCPP_WARN_THROTTLE(
