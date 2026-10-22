@@ -73,6 +73,9 @@ TEST(SmacTest, test_smac_2d) {
   goal.pose.orientation.w = 1.0;
   std::vector<geometry_msgs::msg::PoseStamped> viapoints{viapoint};
   auto planner_2d = std::make_unique<nav2_smac_planner::SmacPlanner2D>();
+  node2D->declare_parameter("test.max_traversal_cost", 253.0);
+  EXPECT_NO_THROW(planner_2d->configure(node2D, "test", nullptr, costmap_ros));
+  node2D->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 252.0));
   planner_2d->configure(node2D, "test", nullptr, costmap_ros);
   planner_2d->activate();
   try {
@@ -128,7 +131,9 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
       rclcpp::Parameter("test.max_iterations", -1),
       rclcpp::Parameter("test.max_on_approach_iterations", -1),
       rclcpp::Parameter("test.terminal_checking_interval", 100),
-      rclcpp::Parameter("test.use_final_approach_orientation", false)});
+      rclcpp::Parameter("test.use_final_approach_orientation", false),
+      rclcpp::Parameter("test.max_traversal_cost", 240.0),
+      rclcpp::Parameter("test.max_traversal_cost_relief_radius", 1.5)});
 
   rclcpp::spin_until_future_complete(
     node2D->get_node_base_interface(),
@@ -150,6 +155,8 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
   EXPECT_EQ(
     node2D->get_parameter("test.terminal_checking_interval").as_int(),
     100);
+  EXPECT_EQ(node2D->get_parameter("test.max_traversal_cost").as_double(), 240.0);
+  EXPECT_EQ(node2D->get_parameter("test.max_traversal_cost_relief_radius").as_double(), 1.5);
 
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.max_planning_time", -10.0)});
