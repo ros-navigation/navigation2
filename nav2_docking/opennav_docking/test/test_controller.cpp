@@ -392,6 +392,64 @@ TEST(ControllerTests, CollisionCheckerDockForward) {
   collision_tester->deactivate();
 }
 
+TEST(ControllerTests, CollisionCheckerDockWithLookahead) {
+  auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto tf = nav2::create_transform_buffer(node);
+  tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
+
+  nav2::declare_parameter_if_not_declared(
+    node, "controller.footprint_topic", rclcpp::ParameterValue("test_footprint"));
+  nav2::declare_parameter_if_not_declared(
+    node, "controller.costmap_topic", rclcpp::ParameterValue("test_costmap_raw"));
+  nav2::declare_parameter_if_not_declared(
+    node, "controller.projection_time", rclcpp::ParameterValue(10.0));
+  nav2::declare_parameter_if_not_declared(
+    node, "controller.simulation_time_step", rclcpp::ParameterValue(0.1));
+  nav2::declare_parameter_if_not_declared(
+    node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.6));
+
+  auto controller = makeController<ControllerFixture>(
+    node, tf, "test_base_frame", "test_base_frame");
+  collision_tester->configure();
+  collision_tester->activate();
+  auto executor_thread = std::make_unique<nav2::NodeThread>(node->get_node_base_interface());
+
+  // Approach lookahead puts the target 0.35m in front of the robot by default
+  auto target_pose = collision_tester->setPose(0.35, 0.0, 0.0);
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_base_frame";
+  robot_pose.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist cmd;
+  DockingOptions options;
+
+  // Publish a footprint of 0.5m "radius" at origin
+  collision_tester->publishFootprint(0.5, 0.0, 0.0, "test_base_frame", node->now());
+
+  // Put an object in front of the robot
+  collision_tester->setRectangle(0.2, 0.2, 0.6, -0.1, nav2_costmap_2d::LETHAL_OBSTACLE);
+  collision_tester->publishCostmap();
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+  // options.dock_pose is not set, the trajectory is within the 0.35m lookahead distance
+  // less tham 0.6m collision threshold. Collision is disabled, no collision.
+  EXPECT_TRUE(controller->computeVelocityCommands(
+    robot_pose, geometry_msgs::msg::Twist(), target_pose, options, 0.1, cmd));
+
+  // Collision is checked until dock since options.dock_pose is set
+  // the object is outside the threshold and is hit
+  options.dock_pose = collision_tester->setPose(1.75, 0.0, 0.0);
+  EXPECT_FALSE(controller->computeVelocityCommands(
+    robot_pose, geometry_msgs::msg::Twist(), target_pose, options, 0.1, cmd));
+
+  // The same object close to the dock is in the collision threshold and is not checked
+  options.dock_pose = collision_tester->setPose(0.45, 0.0, 0.0);
+  EXPECT_TRUE(controller->computeVelocityCommands(
+    robot_pose, geometry_msgs::msg::Twist(), target_pose, options, 0.1, cmd));
+
+  collision_tester->deactivate();
+}
+
 TEST(ControllerTests, CollisionCheckerDockBackward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");

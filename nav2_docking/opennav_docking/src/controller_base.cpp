@@ -18,6 +18,7 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -113,7 +114,8 @@ bool ControllerBase::computeVelocityCommands(
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = computeCommand(target, options.reverse, dt);
   return isTrajectoryCollisionFree(
-    target, nav2_util::poseToTransformStamped(robot_pose, base_frame_),
+    options.dock_pose.value_or(target),
+    nav2_util::poseToTransformStamped(robot_pose, base_frame_),
     !options.undocking, options.reverse);
 }
 
