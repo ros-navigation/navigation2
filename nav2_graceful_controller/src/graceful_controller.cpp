@@ -582,12 +582,13 @@ bool GracefulController::findBestApproachTrajectory(
   bool found_valid = false;
   double best_eta = std::numeric_limits<double>::max();
 
+  // Prioritize previously selected approach angles by starting the search from them.
+  // The start angle is fixed here because safe_approach_angle_ is updated inside the loop.
+  const double start_angle = safe_approach_angle_.value_or(0.0);
+
   for (int i = 0; i < 2 * M_PI / params_->final_rotation_search_step; ++i) {
-    double angle = static_cast<double>(i) * params_->final_rotation_search_step;
-    // Prioritize previously selected approach angles
-    if (safe_approach_angle_.has_value()) {
-      angle += safe_approach_angle_.value();
-    }
+    double angle = angles::normalize_angle(
+      start_angle + static_cast<double>(i) * params_->final_rotation_search_step);
 
     // Create candidate pose
     auto candidate_pose = target_pose;
@@ -601,7 +602,11 @@ bool GracefulController::findBestApproachTrajectory(
           candidate_pose, dist_to_target, candidate_path, costmap_transform,
           candidate_cmd_vel))
     {
+      // Discard unsafe candidates before comparing them, so they cannot hide safe ones
       double candidate_cost = getMaxCost(candidate_path, costmap_transform);
+      if (candidate_cost >= safety_cost) {
+        continue;
+      }
 
       bool reversing = false;
       if (params_->allow_backward && target_pose.pose.position.x < 0.0) {
@@ -626,17 +631,15 @@ bool GracefulController::findBestApproachTrajectory(
       // Selection logic: Pick the fastest among the safe ones
       if (eta < best_eta) {
         best_eta = eta;
-        if (candidate_cost < safety_cost) {
-          best_trajectory = candidate_path;
-          best_cmd_vel = candidate_cmd_vel;
-          target_pose = candidate_pose;
-          found_valid = true;
-          // Reuse known safe approach angle if still valid
-          if (safe_approach_angle_.value_or(1e3 /*Never in (-PI, PI]*/) == angle) {
-            break;
-          }
-          safe_approach_angle_ = angle;
+        best_trajectory = candidate_path;
+        best_cmd_vel = candidate_cmd_vel;
+        target_pose = candidate_pose;
+        found_valid = true;
+        // Reuse known safe approach angle if still valid
+        if (i == 0 && safe_approach_angle_.has_value()) {
+          break;
         }
+        safe_approach_angle_ = angle;
       }
     }
   }
