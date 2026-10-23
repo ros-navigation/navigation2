@@ -225,7 +225,7 @@ void KeepoutFilter::updateBounds(
         // Create FootprintCollisionChecker inline to avoid fragile
         // raw pointer to filter_mask_costmap_ (constructor only stores pointer so it's cheap)
         const double cost = FootprintCollisionChecker<Costmap2D *>(
-          filter_mask_costmap_.get()).footprintCostAtPose(
+          filter_mask_costmap_.get(), true).footprintCostAtPose(
             mask_pose.position.x, mask_pose.position.y,
             tf2::getYaw(mask_pose.orientation),
             footprint);

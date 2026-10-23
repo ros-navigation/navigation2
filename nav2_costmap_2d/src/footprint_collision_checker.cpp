@@ -45,6 +45,13 @@ FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker(
 }
 
 template<typename CostmapT>
+FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker(
+  CostmapT costmap, bool unknown_is_valid)
+: costmap_(costmap), unknown_is_valid_(unknown_is_valid)
+{
+}
+
+template<typename CostmapT>
 double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & footprint)
 {
   // now we really have to lay down the footprint in the costmap_ grid
@@ -52,9 +59,11 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & foot
   double footprint_cost = 0.0;
 
   // get the cell coord of the first point
-  if (!worldToMap(footprint[0].x, footprint[0].y, x0, y0)) {
+  bool prev_valid = worldToMap(footprint[0].x, footprint[0].y, x0, y0);
+  if (!prev_valid && !unknown_is_valid_) {
     return static_cast<double>(LETHAL_OBSTACLE);
   }
+  const bool start_valid = prev_valid;
 
   // cache the start to eliminate a worldToMap call
   unsigned int xstart = x0;
@@ -63,15 +72,20 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & foot
   // we need to rasterize each line in the footprint
   for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
     // get the cell coord of the second point
-    if (!worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1)) {
+    const bool valid = worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1);
+    if (!valid && !unknown_is_valid_) {
       return static_cast<double>(LETHAL_OBSTACLE);
     }
 
-    footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
+    // points outside of the costmap carry no information if unknown is valid: skip their lines
+    if (prev_valid && valid) {
+      footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
+    }
 
     // the second point is next iteration's first point
     x0 = x1;
     y0 = y1;
+    prev_valid = valid;
 
     // if in collision, no need to continue
     if (footprint_cost == static_cast<double>(LETHAL_OBSTACLE)) {
@@ -81,7 +95,10 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & foot
 
   // we also need to connect the first point in the footprint to the last point
   // the last iteration's x1, y1 are the last footprint point's coordinates
-  return std::max(lineCost(xstart, x1, ystart, y1), footprint_cost);
+  if (start_valid && prev_valid) {
+    return std::max(lineCost(xstart, x1, ystart, y1), footprint_cost);
+  }
+  return footprint_cost;
 }
 
 template<typename CostmapT>
@@ -96,6 +113,11 @@ double FootprintCollisionChecker<CostmapT>::lineCost(int x0, int x1, int y0, int
     // if in collision, no need to continue
     if (point_cost == static_cast<double>(LETHAL_OBSTACLE)) {
       return point_cost;
+    }
+
+    // NO_INFORMATION is numerically above LETHAL_OBSTACLE, so it would mask lethal cells
+    if (unknown_is_valid_ && point_cost == static_cast<double>(NO_INFORMATION)) {
+      continue;
     }
 
     if (line_cost < point_cost) {
