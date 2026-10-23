@@ -118,8 +118,9 @@ protected:
    *
    * Scans forward from the cached index. If the robot stays on the cached segment but has moved
    * further from the cached start pose than its closest approach plus a scaled segment length
-   * (e.g. after backing up), also searches back along the path by the distance the robot moved
-   * away. The scaled segment length is at least the filter mask resolution.
+   * (e.g. after backing up), also searches back along the path by the distance the robot is
+   * away from the cached start pose. The scaled segment length is at least the filter mask
+   * resolution.
    * @param path Path in global_frame_
    * @param robot_pose Robot pose in global_frame_
    */
@@ -137,6 +138,11 @@ protected:
     const geometry_msgs::msg::Pose & robot_pose,
     double lookahead_dist,
     double & speed_limit);
+
+  // Growth in distance from the cached path point, in segment lengths (or mask cells if larger),
+  // that triggers a search back along the path. Moving forward along a segment never exceeds one
+  // segment length.
+  static constexpr double kBackupThresholdScale = 2.0;
 
   nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
