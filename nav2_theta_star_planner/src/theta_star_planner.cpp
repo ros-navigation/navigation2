@@ -18,7 +18,7 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "rclcpp/logging.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_theta_star_planner/theta_star_planner.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
@@ -27,7 +27,7 @@ namespace nav2_theta_star_planner
 {
 void ThetaStarPlanner::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, nav2::TransformBuffer::SharedPtr tf,
+  std::string name, nav2::TransformManager::SharedPtr tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   parent_node_ = parent;

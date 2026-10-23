@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_route/route_tracker.hpp"
 
 #include "nav2_ros_common/rate.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
 
 void RouteTracker::configure(
   nav2::LifecycleNode::SharedPtr node,
-  nav2::TransformBuffer::SharedPtr tf_buffer,
+  nav2::TransformManager::SharedPtr tf_buffer,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
   std::shared_ptr<ActionServerTrack> action_server,
   const std::string & route_frame,
@@ -35,7 +34,7 @@ void RouteTracker::configure(
   route_frame_ = route_frame;
   base_frame_ = base_frame;
   action_server_ = action_server;
-  tf_buffer_ = tf_buffer;
+  tf_manager_ = tf_buffer;
 
   radius_threshold_ = node->declare_or_get_parameter("radius_to_achieve_node", 2.0);
   boundary_radius_threshold_ = node->declare_or_get_parameter(
@@ -51,7 +50,7 @@ void RouteTracker::configure(
 
 geometry_msgs::msg::PoseStamped RouteTracker::getRobotPose()
 {
-  const auto pose_result = tf_buffer_->getLatestPose(
+  const auto pose_result = tf_manager_->getLatestPose(
     route_frame_, base_frame_, transform_staleness_threshold_);
   if (!pose_result) {
     throw nav2_core::RouteTFError("Unable to get robot pose in route frame: " + route_frame_);

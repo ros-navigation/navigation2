@@ -18,7 +18,7 @@
 #include <memory>
 #include <limits>
 #include <stdexcept>
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "nav2_msgs/msg/tracking_feedback.hpp"

@@ -22,7 +22,7 @@
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/utilities.hpp"
 #include "nav2_controller/plugins/feasible_path_handler.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using namespace std::chrono_literals;
 
@@ -124,14 +124,14 @@ TEST(PathHandlerTests, TestBounds)
   EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.5);
 
   // Set tf between map odom and base_link
-  auto tf_broadcaster_ = nav2::create_transform_broadcaster(node);
+  auto tf_manager_ = nav2::create_transform_manager(node, false);
   geometry_msgs::msg::TransformStamped t;
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
-  tf_broadcaster_->sendTransform(t);
+  tf_manager_->sendTransform(t);
   t.header.frame_id = "map";
   t.child_frame_id = "odom";
-  tf_broadcaster_->sendTransform(t);
+  tf_manager_->sendTransform(t);
   std::this_thread::sleep_for(10ms);
 
   // Test getting the global plans within a bounds window
@@ -168,13 +168,13 @@ TEST(PathHandlerTests, SearchDistanceSmallerThanPoseSpacing)
       rclcpp::Parameter("robot_base_frame", "base_link")});
   handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
 
-  auto tf_broadcaster_ = nav2::create_transform_broadcaster(node);
+  auto tf_manager_ = nav2::create_transform_manager(node, false);
   geometry_msgs::msg::TransformStamped t;
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
-  tf_broadcaster_->sendTransform(t);
+  tf_manager_->sendTransform(t);
   t.child_frame_id = "odom";
-  tf_broadcaster_->sendTransform(t);
+  tf_manager_->sendTransform(t);
   std::this_thread::sleep_for(10ms);
 
   nav_msgs::msg::Path path;
@@ -216,14 +216,14 @@ TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
   EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.5);
 
   // Set tf between map odom and base_link
-  auto tf_broadcaster_ = nav2::create_transform_broadcaster(node);
+  auto tf_manager_ = nav2::create_transform_manager(node, false);
   geometry_msgs::msg::TransformStamped t;
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
-  tf_broadcaster_->sendTransform(t);
+  tf_manager_->sendTransform(t);
   t.header.frame_id = "map";
   t.child_frame_id = "odom";
-  tf_broadcaster_->sendTransform(t);
+  tf_manager_->sendTransform(t);
   std::this_thread::sleep_for(10ms);
 
   // Test getting the global plans within a bounds window
@@ -266,14 +266,14 @@ TEST(PathHandlerTests, TestTransforms)
   handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
 
   // Set tf between map odom and base_link
-  auto tf_broadcaster_ = nav2::create_transform_broadcaster(node);
+  auto tf_manager_ = nav2::create_transform_manager(node, false);
   geometry_msgs::msg::TransformStamped t;
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
-  tf_broadcaster_->sendTransform(t);
+  tf_manager_->sendTransform(t);
   t.header.frame_id = "map";
   t.child_frame_id = "odom";
-  tf_broadcaster_->sendTransform(t);
+  tf_manager_->sendTransform(t);
   std::this_thread::sleep_for(10ms);
 
   nav_msgs::msg::Path path;

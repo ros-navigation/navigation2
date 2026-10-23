@@ -18,7 +18,7 @@
 #include <functional>
 
 #include "tf2/transform_datatypes.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 
 namespace nav2_collision_monitor
@@ -27,7 +27,7 @@ namespace nav2_collision_monitor
 Scan::Scan(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
-  const nav2::TransformBuffer::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,

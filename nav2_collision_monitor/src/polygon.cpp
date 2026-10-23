@@ -18,11 +18,10 @@
 #include <exception>
 #include <utility>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "tf2/transform_datatypes.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -36,12 +35,12 @@ namespace nav2_collision_monitor
 Polygon::Polygon(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
-  const nav2::TransformBuffer::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
   slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
-  footprint_sub_(nullptr), tf_buffer_(tf_buffer),
+  footprint_sub_(nullptr), tf_manager_(tf_buffer),
   base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance),
   node_clock_(nullptr)
 {
@@ -88,7 +87,7 @@ bool Polygon::configure()
       "[%s]: Making footprint subscriber on %s topic",
       polygon_name_.c_str(), footprint_topic.c_str());
     footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-      node, footprint_topic, *tf_buffer_,
+      node, footprint_topic, *tf_manager_,
       base_frame_id_, tf2::durationToSec(transform_tolerance_));
   }
 
@@ -274,7 +273,8 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
 
     // Get the transform from PolygonStamped frame to base_frame_id_
     tf2::Stamped<tf2::Transform> tf_transform;
-    const auto transform = tf_buffer_->getLatestTransform(base_frame_id_, polygon_.header.frame_id);
+    const auto transform = tf_manager_->getLatestTransform(base_frame_id_,
+        polygon_.header.frame_id);
     if (!transform) {
       return;
     }
@@ -616,7 +616,7 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
 
   // Get the transform from PolygonStamped frame to base_frame_id_
   tf2::Stamped<tf2::Transform> tf_transform;
-  const auto transform = tf_buffer_->getLatestTransform(base_frame_id_, msg->header.frame_id);
+  const auto transform = tf_manager_->getLatestTransform(base_frame_id_, msg->header.frame_id);
   if (!transform) {
     return;
   }

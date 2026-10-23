@@ -22,10 +22,9 @@
 #include <sstream>
 #include <iomanip>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "assisted_teleop_behavior_tester.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
@@ -42,8 +41,7 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
     rclcpp::NodeOptions().parameter_overrides(
       {rclcpp::Parameter("use_sim_time", true)}));
 
-  tf_buffer_ = nav2::create_transform_buffer(node_);
-  tf_buffer_->createListener();
+  tf_manager_ = nav2::create_transform_manager(node_);
 
   client_ptr_ = rclcpp_action::create_client<AssistedTeleop>(
     node_->get_node_base_interface(),
@@ -80,7 +78,7 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
   footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
     node_,
     footprint_topic,
-    *tf_buffer_);
+    *tf_manager_);
 
   collision_checker_ = std::make_unique<nav2_costmap_2d::CostmapTopicCollisionChecker>(
     *costmap_sub_,
@@ -230,7 +228,7 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
 
   RCLCPP_INFO(node_->get_logger(), "result received");
 
-  const auto current_pose = tf_buffer_->getLatestPose("odom", "base_link");
+  const auto current_pose = tf_manager_->getLatestPose("odom", "base_link");
   if (!current_pose) {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return false;

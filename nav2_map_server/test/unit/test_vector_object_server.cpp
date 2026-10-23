@@ -30,7 +30,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "unique_identifier_msgs/msg/uuid.hpp"
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_msgs/srv/add_shapes.hpp"
 #include "nav2_msgs/srv/get_shapes.hpp"
@@ -104,7 +104,7 @@ public:
 
   bool hasTfListener() const
   {
-    return tf_buffer_ && tf_buffer_->hasListener();
+    return tf_manager_ && tf_manager_->getRawBuffer().isUsingDedicatedThread();
   }
 };  // VOServerWrapper
 
@@ -144,7 +144,7 @@ public:
     nav2_msgs::msg::CircleObject::SharedPtr c2);
 
 protected:
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   // Service clients for calling AddShapes.srv, GetShapes.srv, RemoveShapes.srv
   nav2::ServiceClient<nav2_msgs::srv::AddShapes>::SharedPtr add_shapes_client_;
@@ -180,9 +180,9 @@ Tester::Tester()
     nav2::qos::LatchedSubscriptionQoS());
 
   // Transform buffer and listener initialization
-  tf_buffer_ = nav2::create_transform_buffer(vo_server_);
-  tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_buffer_->createListener(vo_server_);
+  tf_manager_ = nav2::create_transform_manager(vo_server_);
+  // One-thread broadcasting-listening model
+  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
   executor_.add_node(vo_server_->get_node_base_interface());
 }
 
@@ -196,10 +196,7 @@ Tester::~Tester()
 
   vo_server_.reset();
 
-  if (tf_buffer_) {
-    tf_buffer_->resetListener();
-  }
-  tf_buffer_.reset();
+  tf_manager_.reset();
 }
 
 void Tester::setVOServerParams()
@@ -341,9 +338,6 @@ void Tester::setCircleParams(const std::string & uuid)
 
 void Tester::sendTransform(const double frame_shift)
 {
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
-    nav2::create_transform_broadcaster(vo_server_);
-
   geometry_msgs::msg::TransformStamped transform;
 
   // global_frame -> shape_frame transform
@@ -359,7 +353,7 @@ void Tester::sendTransform(const double frame_shift)
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
 
-  tf_broadcaster->sendTransform(transform);
+  tf_manager_->sendTransform(transform);
 }
 
 nav2_msgs::msg::PolygonObject::SharedPtr Tester::makePolygonObject(

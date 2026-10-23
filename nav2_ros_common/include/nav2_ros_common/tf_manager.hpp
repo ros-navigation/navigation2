@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROS_COMMON__TF_BUFFER_HPP_
-#define NAV2_ROS_COMMON__TF_BUFFER_HPP_
+#ifndef NAV2_ROS_COMMON__TF_MANAGER_HPP_
+#define NAV2_ROS_COMMON__TF_MANAGER_HPP_
 
 #include <cmath>
+#include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
+#include "rclcpp/callback_group.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/logger.hpp"
 #include "rclcpp/logging.hpp"
@@ -33,6 +37,9 @@
 #include "tf2/time.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/buffer.hpp"
+#include "tf2_ros/create_timer_ros.hpp"
+#include "tf2_ros/static_transform_broadcaster.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
 #include "tf2_ros/transform_listener.hpp"
 
 namespace nav2
@@ -42,65 +49,100 @@ namespace nav2
 enum class Log {Enabled, Disabled};
 
 /**
- * @brief TF interface for Nav2 lookups, pose transforms, and conversions.
+ * @brief Own TF reception, broadcasting, lookups, and pose conversions for a node.
  *
  * Lookup failures and invalid arguments return std::nullopt and are logged by default.
  */
-class TransformBuffer
+class TransformManager
 {
 public:
-  using SharedPtr = std::shared_ptr<TransformBuffer>;
-
-  /** @brief Create a buffer using the given clock and diagnostic logger. */
-  explicit TransformBuffer(
-    const rclcpp::Clock::SharedPtr & clock,
-    const rclcpp::Logger & logger = rclcpp::get_logger("nav2_transform_buffer"))
-  : clock_(clock), logger_(logger)
-  {
-    if (!clock_) {
-      throw std::invalid_argument("TransformBuffer requires a non-null clock");
-    }
-    buffer_ = std::make_shared<tf2_ros::Buffer>(clock_);
-  }
-
-  TransformBuffer(const TransformBuffer &) = delete;
-  TransformBuffer & operator=(const TransformBuffer &) = delete;
+  using SharedPtr = std::shared_ptr<TransformManager>;
 
   /**
-   * @brief Create and own a listener using the supplied node.
+   * @brief Create a TF manager using the node's clock, logger, and interfaces.
    * @param node Pointer-like node (shared_ptr or raw pointer).
-   * @param spin_thread Whether to spin a dedicated listener thread.
-   *   When false, the caller must spin the node to receive transforms.
-   * @throws std::logic_error if a listener already exists. Reset it before recreating it.
-   * Listener creation and reset must be serialized by the caller.
+   * @param activate_listener Start receiving transforms immediately.
+   * @param spin_thread Spin a dedicated listener thread. When false, the caller
+   *   must spin the node to receive transforms, including after startListener().
+   * @param callback_group Optional callback group for the timer interface.
+   * @throws std::invalid_argument if node is null.
    */
   template<typename NodeT>
-  void createListener(const NodeT & node, bool spin_thread = true)
+  explicit TransformManager(
+    const NodeT & node, bool activate_listener = true, bool spin_thread = true,
+    rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
+  : clock_(node ? node->get_clock() : nullptr),
+    logger_(node ? node->get_logger() : rclcpp::get_logger("nav2_transform_manager")),
+    spin_thread_(spin_thread)
   {
-    if (listener_) {
-      throw std::logic_error("TransformBuffer already has a listener");
+    if (!node) {
+      throw std::invalid_argument("TransformManager requires a non-null node");
     }
+    buffer_ = std::make_shared<tf2_ros::Buffer>(clock_);
+    auto base = node->get_node_base_interface();
+    auto logging = node->get_node_logging_interface();
+    auto parameters = node->get_node_parameters_interface();
+    auto topics = node->get_node_topics_interface();
 #if RCLCPP_VERSION_GTE(30, 0, 0)
-    listener_ = std::make_unique<tf2_ros::TransformListener>(*buffer_, *node, spin_thread);
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(*node, callback_group);
 #else
-    listener_ = std::make_unique<tf2_ros::TransformListener>(*buffer_, node, spin_thread);
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+      base, node->get_node_timers_interface(), callback_group);
 #endif
+    buffer_->setCreateTimerInterface(timer_interface);
+    // Retain interfaces rather than the node, which may itself own this manager.
+    create_listener_ = [this, base, logging, parameters, topics]() {
+#if RCLCPP_VERSION_GTE(30, 0, 0)
+        return std::make_unique<tf2_ros::TransformListener>(
+          *buffer_, tf2_ros::TransformListener::RequiredInterfaces{
+          base, logging, parameters, topics}, spin_thread_);
+#else
+        return std::make_unique<tf2_ros::TransformListener>(
+          *buffer_, base, logging, parameters, topics, spin_thread_);
+#endif
+      };
+    create_broadcaster_ = [parameters, topics]() {
+#if RCLCPP_VERSION_GTE(30, 0, 0)
+        return std::make_unique<tf2_ros::TransformBroadcaster>(
+          tf2_ros::TransformBroadcaster::RequiredInterfaces{parameters, topics});
+#else
+        return std::make_unique<tf2_ros::TransformBroadcaster>(parameters, topics);
+#endif
+      };
+    create_static_broadcaster_ = [parameters, topics]() {
+#if RCLCPP_VERSION_GTE(30, 0, 0)
+        return std::make_unique<tf2_ros::StaticTransformBroadcaster>(
+          tf2_ros::StaticTransformBroadcaster::RequiredInterfaces{parameters, topics});
+#else
+        return std::make_unique<tf2_ros::StaticTransformBroadcaster>(parameters, topics);
+#endif
+      };
+    if (activate_listener) {
+      startListener();
+    }
+  }
+
+  TransformManager(const TransformManager &) = delete;
+  TransformManager & operator=(const TransformManager &) = delete;
+
+  /**
+   * @brief Start receiving transforms, retaining any buffered transforms.
+   * Has no effect if the listener is already running. Uses the threading mode
+   * selected at construction. Serialize listener start and stop calls.
+   */
+  void startListener()
+  {
+    if (!listener_) {
+      listener_ = create_listener_();
+    }
   }
 
   /**
-   * @brief Create and own a listener with its own hidden node and dedicated thread.
-   * @throws std::logic_error if a listener already exists. Reset it before recreating it.
+   * @brief Stop receiving transforms without clearing the buffer.
+   * Use for lifecycle deactivation or before destroying dependent TF consumers.
+   * Destruction also stops the listener. Has no effect if it is already stopped.
    */
-  void createListener()
-  {
-    if (listener_) {
-      throw std::logic_error("TransformBuffer already has a listener");
-    }
-    listener_ = std::make_unique<tf2_ros::TransformListener>(*buffer_);
-  }
-
-  /** @brief Stop and destroy the owned listener, retaining buffered transforms. */
-  void resetListener()
+  void stopListener()
   {
     if (listener_) {
       listener_.reset();
@@ -108,10 +150,30 @@ public:
     }
   }
 
-  /** @brief Whether this buffer owns a listener. */
-  [[nodiscard]] bool hasListener() const
+  /** @brief Broadcast a dynamic transform on /tf, advertising on first use. */
+  void sendTransform(const geometry_msgs::msg::TransformStamped & transform)
   {
-    return static_cast<bool>(listener_);
+    getBroadcaster().sendTransform(transform);
+  }
+
+  /** @brief Broadcast dynamic transforms together on /tf, advertising on first use. */
+  void sendTransform(const std::vector<geometry_msgs::msg::TransformStamped> & transforms)
+  {
+    getBroadcaster().sendTransform(transforms);
+  }
+
+  /** @brief Broadcast a static transform on /tf_static, advertising on first use. */
+  void sendStaticTransform(const geometry_msgs::msg::TransformStamped & transform)
+  {
+    std::lock_guard<std::mutex> lock(static_broadcaster_mutex_);
+    getStaticBroadcaster().sendTransform(transform);
+  }
+
+  /** @brief Broadcast static transforms together on /tf_static, advertising on first use. */
+  void sendStaticTransform(const std::vector<geometry_msgs::msg::TransformStamped> & transforms)
+  {
+    std::lock_guard<std::mutex> lock(static_broadcaster_mutex_);
+    getStaticBroadcaster().sendTransform(transforms);
   }
 
   /**
@@ -128,55 +190,6 @@ public:
   [[nodiscard]] const tf2_ros::Buffer & getRawBuffer() const
   {
     return *buffer_;
-  }
-
-  /**
-   * @brief Insert a transform into the buffer.
-   * @param transform Stamped transform to insert.
-   * @param authority Source of the transform, used in TF diagnostics.
-   * @param is_static Whether the transform is valid at all timestamps.
-   * @return True if TF accepted the transform; false if it was invalid.
-   */
-  bool setTransform(
-    const geometry_msgs::msg::TransformStamped & transform,
-    const std::string & authority, bool is_static = false)
-  {
-    return buffer_->setTransform(transform, authority, is_static);
-  }
-
-  /**
-   * @brief Configure TF timeout checks for a separately serviced buffer.
-   * @param using_dedicated_thread Whether another thread services TF subscriptions.
-   * This informs TF about the threading arrangement; it does not start a thread.
-   */
-  void setUsingDedicatedThread(bool using_dedicated_thread)
-  {
-    buffer_->setUsingDedicatedThread(using_dedicated_thread);
-  }
-
-  /** @brief Clear transform data using the native TF buffer's reset behavior. */
-  void clear()
-  {
-    buffer_->clear();
-  }
-
-  /**
-   * @brief Wrap a configured TF buffer, retaining shared ownership.
-   * @param buffer Buffer configured with the application's clock and timer interface.
-   * @param clock The same clock used to construct the native buffer.
-   * @param logger Logger used to report failures.
-   * @throws std::invalid_argument if buffer or clock is null.
-   */
-  explicit TransformBuffer(
-    const tf2_ros::Buffer::SharedPtr & buffer,
-    const rclcpp::Clock::SharedPtr & clock,
-    const rclcpp::Logger & logger = rclcpp::get_logger("nav2_transform_buffer"))
-  : clock_(clock), buffer_(buffer), logger_(logger)
-  {
-    if (!buffer_ || !clock_) {
-      RCLCPP_ERROR(logger_, "TransformBuffer requires a non-null TF buffer and clock");
-      throw std::invalid_argument("TransformBuffer requires a non-null TF buffer and clock");
-    }
   }
 
   /**
@@ -470,13 +483,54 @@ public:
   }
 
 private:
+  tf2_ros::TransformBroadcaster & getBroadcaster()
+  {
+    std::call_once(broadcaster_once_, [this]() {broadcaster_ = create_broadcaster_();});
+    return *broadcaster_;
+  }
+
+  tf2_ros::StaticTransformBroadcaster & getStaticBroadcaster()
+  {
+    std::call_once(static_broadcaster_once_, [this]() {
+        static_broadcaster_ = create_static_broadcaster_();
+      });
+    return *static_broadcaster_;
+  }
+
   rclcpp::Clock::SharedPtr clock_;
   tf2_ros::Buffer::SharedPtr buffer_;
   rclcpp::Logger logger_;
+  bool spin_thread_{true};
+  std::function<std::unique_ptr<tf2_ros::TransformListener>()> create_listener_;
+  std::function<std::unique_ptr<tf2_ros::TransformBroadcaster>()> create_broadcaster_;
+  std::function<std::unique_ptr<tf2_ros::StaticTransformBroadcaster>()> create_static_broadcaster_;
+  std::once_flag broadcaster_once_;
+  std::once_flag static_broadcaster_once_;
+  // Static broadcasts update a retained message containing all published transforms.
+  std::mutex static_broadcaster_mutex_;
+  std::unique_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
+  std::unique_ptr<tf2_ros::StaticTransformBroadcaster> static_broadcaster_;
   // Destroy the listener and join its thread before destroying the native buffer.
   std::unique_ptr<tf2_ros::TransformListener> listener_;
 };
 
+/**
+ * @brief Create a transform manager with timer interface configured.
+ * @param node Pointer-like node (shared_ptr or raw pointer).
+ * @param activate_listener Start receiving transforms immediately.
+ * @param spin_thread Whether to spin a dedicated listener thread.
+ * @param callback_group Optional callback group for the timer interface.
+ * @return Shared pointer to the configured TransformManager.
+ */
+template<typename NodeT>
+inline nav2::TransformManager::SharedPtr create_transform_manager(
+  const NodeT & node, bool activate_listener = true, bool spin_thread = true,
+  rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
+{
+  return std::make_shared<nav2::TransformManager>(
+    node, activate_listener, spin_thread, callback_group);
+}
+
 }  // namespace nav2
 
-#endif  // NAV2_ROS_COMMON__TF_BUFFER_HPP_
+#endif  // NAV2_ROS_COMMON__TF_MANAGER_HPP_

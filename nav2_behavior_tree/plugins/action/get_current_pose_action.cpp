@@ -17,12 +17,11 @@
 #include <memory>
 #include <limits>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "behaviortree_cpp/decorator_node.h"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/action/get_current_pose_action.hpp"
 
@@ -36,7 +35,7 @@ GetCurrentPoseAction::GetCurrentPoseAction(
 {
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node->get_clock();
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node->get_parameter("transform_tolerance", transform_tolerance_);
   transform_staleness_threshold_ = node->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);

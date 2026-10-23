@@ -28,7 +28,7 @@
 #include "tf2/time.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_msgs/msg/collision_detector_state.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
@@ -148,7 +148,7 @@ protected:
   // ----- Variables -----
 
   /// @brief TF buffer
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   /// @brief Polygons array
   std::vector<std::shared_ptr<Polygon>> polygons_;

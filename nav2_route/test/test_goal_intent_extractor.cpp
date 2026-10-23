@@ -21,7 +21,7 @@
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/utilities.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/service_client.hpp"
 #include "nav2_ros_common/node_thread.hpp"
@@ -70,9 +70,7 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   GoalIntentExtractor extractor;
   Graph graph;
   GraphToIDMap id_map;
-  auto tf = nav2::create_transform_buffer(node);
-  tf->createListener(node);
-  auto broadcaster = nav2::create_transform_broadcaster(node);
+  auto tf = nav2::create_transform_manager(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
   extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
 
@@ -90,8 +88,8 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   transform.header.frame_id = "map";
   transform.header.stamp = node->now();
   transform.child_frame_id = "gps";
-  broadcaster->sendTransform(transform);
-  tf->setTransform(transform, "test", false);
+  tf->sendTransform(transform);
+  tf->getRawBuffer().setTransform(transform, "test", false);
   EXPECT_NO_THROW(extractor.transformPose(pose, "map"));
 }
 
@@ -103,7 +101,7 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
   GoalIntentExtractorWrapper extractor;
   Graph graph;
   GraphToIDMap id_map;
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
 
   // Make a 3x3 graph of points 0,0 -> 2,2 (ROS logo)
   graph.resize(9);

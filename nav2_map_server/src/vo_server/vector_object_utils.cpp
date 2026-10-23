@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_map_server/vector_object_utils.hpp"
 
 namespace nav2_map_server
@@ -21,7 +21,7 @@ namespace nav2_map_server
 bool lookupShapeTransform(
   const std_msgs::msg::Header & header,
   const std::string & target_frame,
-  const nav2::TransformBuffer::SharedPtr & tf_buffer,
+  const nav2::TransformManager::SharedPtr & tf_buffer,
   const double transform_tolerance,
   geometry_msgs::msg::TransformStamped & transform)
 {

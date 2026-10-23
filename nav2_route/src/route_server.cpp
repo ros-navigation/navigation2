@@ -29,8 +29,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  tf_ = nav2::create_transform_buffer(this);
-  tf_->createListener(this, true);
+  tf_ = nav2::create_transform_manager(this);
 
   auto node = shared_from_this();
   graph_vis_publisher_ =
@@ -133,9 +132,6 @@ RouteServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   goal_intent_extractor_.reset();
   graph_vis_publisher_.reset();
   route_publisher_.reset();
-  if (tf_) {
-    tf_->resetListener();
-  }
   tf_.reset();
   graph_.clear();
   return nav2::CallbackReturn::SUCCESS;

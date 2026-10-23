@@ -24,7 +24,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smoother/simple_smoother.hpp"
 #include "nav2_core/smoother_exceptions.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
@@ -69,7 +69,7 @@ TEST(SmootherTest, test_simple_smoother)
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
-  nav2::TransformBuffer::SharedPtr dummy_tf;
+  nav2::TransformManager::SharedPtr dummy_tf;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   auto smoother = std::make_unique<SmootherWrapper>();
   smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);

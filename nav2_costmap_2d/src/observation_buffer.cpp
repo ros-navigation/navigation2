@@ -42,7 +42,7 @@
 #include <vector>
 #include <chrono>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "tf2/convert.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 using namespace std::chrono_literals;
@@ -56,7 +56,7 @@ ObservationBuffer::ObservationBuffer(
   double expected_update_rate,
   double min_obstacle_height, double max_obstacle_height, double obstacle_max_range,
   double obstacle_min_range,
-  double raytrace_max_range, double raytrace_min_range, nav2::TransformBuffer & tf2_buffer,
+  double raytrace_max_range, double raytrace_min_range, nav2::TransformManager & tf2_buffer,
   std::string global_frame,
   std::string sensor_frame,
   tf2::Duration tf_tolerance)

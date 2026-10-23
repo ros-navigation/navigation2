@@ -28,7 +28,7 @@
 #include "opennav_docking/simple_charging_dock.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 // Testing the simple charging dock plugin
 
@@ -69,7 +69,7 @@ TEST(SimpleChargingDockTests, DockedTransformFreshness)
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("base_frame", "base_link");
   node->declare_parameter("my_dock.transform_staleness_threshold", 0.5);
-  auto tf_buffer = nav2::create_transform_buffer(node);
+  auto tf_buffer = nav2::create_transform_manager(node);
   SimpleChargingDock dock;
   dock.configure(node, "my_dock", tf_buffer);
   dock.activate();
@@ -87,22 +87,22 @@ TEST(SimpleChargingDockTests, DockedTransformFreshness)
   transform.transform.translation.x = 2.0;
   transform.transform.rotation.w = 1.0;
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
-  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_buffer->getRawBuffer().setTransform(transform, "test", false));
   EXPECT_FALSE(dock.isDocked());  // Old TF must not report docking success.
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_buffer->getRawBuffer().setTransform(transform, "test", false));
   EXPECT_TRUE(dock.isDocked());  // Recover as soon as fresh TF arrives.
 
   transform.header.stamp = node->now() + rclcpp::Duration::from_seconds(0.01);
   transform.transform.translation.x = 3.0;
-  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_buffer->getRawBuffer().setTransform(transform, "test", false));
   EXPECT_FALSE(dock.isDocked());  // Do not retain the previous robot position.
 
-  tf_buffer->clear();
+  tf_buffer->getRawBuffer().clear();
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 2.0;
-  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", true));
+  ASSERT_TRUE(tf_buffer->getRawBuffer().setTransform(transform, "test", true));
   EXPECT_TRUE(dock.isDocked());  // Static transforms do not expire.
 
   pose.header.frame_id = "base_link";
@@ -122,8 +122,8 @@ TEST(SimpleChargingDockTests, DetectionUsesMeasurementTransform)
   node->declare_parameter("my_dock.external_detection_rotation_pitch", 0.0);
   node->declare_parameter("my_dock.external_detection_rotation_roll", 0.0);
   node->declare_parameter("my_dock.transform_staleness_threshold", 0.1);
-  auto tf_buffer = nav2::create_transform_buffer(node);
-  tf_buffer->setUsingDedicatedThread(true);
+  auto tf_buffer = nav2::create_transform_manager(node);
+  tf_buffer->getRawBuffer().setUsingDedicatedThread(true);
   SimpleChargingDockTestable dock;
   dock.configure(node, "my_dock", tf_buffer);
   dock.activate();
@@ -135,10 +135,10 @@ TEST(SimpleChargingDockTests, DetectionUsesMeasurementTransform)
   transform.header.stamp = measurement_time;
   transform.transform.translation.x = 2.0;
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_buffer->getRawBuffer().setTransform(transform, "test", false));
   transform.header.stamp = node->now();
   transform.transform.translation.x = 5.0;
-  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_buffer->getRawBuffer().setTransform(transform, "test", false));
 
   geometry_msgs::msg::PoseStamped detection;
   detection.header.frame_id = "camera";
@@ -166,8 +166,8 @@ TEST(SimpleChargingDockTests, DetectionWithoutTimestamp)
   node->declare_parameter("my_dock.external_detection_translation_x", 0.0);
   node->declare_parameter("my_dock.external_detection_rotation_pitch", 0.0);
   node->declare_parameter("my_dock.external_detection_rotation_roll", 0.0);
-  auto tf_buffer = nav2::create_transform_buffer(node);
-  tf_buffer->setUsingDedicatedThread(true);
+  auto tf_buffer = nav2::create_transform_manager(node);
+  tf_buffer->getRawBuffer().setUsingDedicatedThread(true);
   SimpleChargingDockTestable dock;
   dock.configure(node, "my_dock", tf_buffer);
   dock.activate();
@@ -177,7 +177,7 @@ TEST(SimpleChargingDockTests, DetectionWithoutTimestamp)
   transform.child_frame_id = "camera";
   transform.transform.translation.x = 2.0;
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_buffer->setTransform(transform, "test", true));
+  ASSERT_TRUE(tf_buffer->getRawBuffer().setTransform(transform, "test", true));
 
   geometry_msgs::msg::PoseStamped detection;
   detection.header.frame_id = "camera";
@@ -432,8 +432,8 @@ TEST(SimpleChargingDockTests, RefinedPoseNotTransform)
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
 
   // Create the TF
-  auto tf_buffer = nav2::create_transform_buffer(node);
-  tf_buffer->setUsingDedicatedThread(true);
+  auto tf_buffer = nav2::create_transform_manager(node);
+  tf_buffer->getRawBuffer().setUsingDedicatedThread(true);
 
   dock->configure(node, "my_dock", tf_buffer);
   dock->activate();
@@ -471,8 +471,8 @@ TEST(SimpleChargingDockTests, IsDockedTransformException)
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
 
   // Create the TF
-  auto tf_buffer = nav2::create_transform_buffer(node);
-  tf_buffer->setUsingDedicatedThread(true);
+  auto tf_buffer = nav2::create_transform_manager(node);
+  tf_buffer->getRawBuffer().setUsingDedicatedThread(true);
 
   dock->configure(node, "my_dock", tf_buffer);
   dock->activate();
@@ -489,7 +489,7 @@ TEST(SimpleChargingDockTests, IsDockedTransformException)
   transform.header.stamp = node->now();
   transform.header.frame_id = "my_frame";
   transform.child_frame_id = "other_frame";
-  tf_buffer->setTransform(transform, "test", true);
+  tf_buffer->getRawBuffer().setTransform(transform, "test", true);
 
   // First call to getRefinedPose starts detection
   EXPECT_FALSE(dock->getRefinedPose(pose, ""));

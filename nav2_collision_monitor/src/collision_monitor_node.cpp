@@ -49,8 +49,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   // Transform buffer and listener initialization
-  tf_buffer_ = nav2::create_transform_buffer(this);
-  tf_buffer_->createListener(this, true);
+  tf_manager_ = nav2::create_transform_manager(this);
 
   std::string cmd_vel_in_topic;
   std::string cmd_vel_out_topic;
@@ -194,10 +193,7 @@ CollisionMonitor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   polygons_.clear();
   sources_.clear();
 
-  if (tf_buffer_) {
-    tf_buffer_->resetListener();
-  }
-  tf_buffer_.reset();
+  tf_manager_.reset();
 
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -316,15 +312,15 @@ bool CollisionMonitor::configurePolygons(
       if (polygon_type == "polygon") {
         polygons_.push_back(
           std::make_shared<Polygon>(
-            node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
+            node, polygon_name, tf_manager_, base_frame_id, transform_tolerance));
       } else if (polygon_type == "circle") {
         polygons_.push_back(
           std::make_shared<Circle>(
-            node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
+            node, polygon_name, tf_manager_, base_frame_id, transform_tolerance));
       } else if (polygon_type == "velocity_polygon") {
         polygons_.push_back(
           std::make_shared<VelocityPolygon>(
-            node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
+            node, polygon_name, tf_manager_, base_frame_id, transform_tolerance));
       } else {  // Error if something else
         RCLCPP_ERROR(
           get_logger(),
@@ -365,7 +361,7 @@ bool CollisionMonitor::configureSources(
 
       if (source_type == "scan") {
         std::shared_ptr<Scan> s = std::make_shared<Scan>(
-          node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
+          node, source_name, tf_manager_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
         if (!s->configure()) {
@@ -375,7 +371,7 @@ bool CollisionMonitor::configureSources(
         sources_.push_back(s);
       } else if (source_type == "pointcloud") {
         std::shared_ptr<PointCloud> p = std::make_shared<PointCloud>(
-          node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
+          node, source_name, tf_manager_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
         if (!p->configure()) {
@@ -385,7 +381,7 @@ bool CollisionMonitor::configureSources(
         sources_.push_back(p);
       } else if (source_type == "range") {
         std::shared_ptr<Range> r = std::make_shared<Range>(
-          node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
+          node, source_name, tf_manager_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
         if (!r->configure()) {
@@ -395,7 +391,7 @@ bool CollisionMonitor::configureSources(
         sources_.push_back(r);
       } else if (source_type == "polygon") {
         std::shared_ptr<PolygonSource> ps = std::make_shared<PolygonSource>(
-          node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
+          node, source_name, tf_manager_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
         if (!ps->configure()) {
           return false;
@@ -404,7 +400,7 @@ bool CollisionMonitor::configureSources(
         sources_.push_back(ps);
       } else if (source_type == "costmap") {
         auto src = std::make_shared<CostmapSource>(
-          node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
+          node, source_name, tf_manager_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
 
         if (!src->configure()) {

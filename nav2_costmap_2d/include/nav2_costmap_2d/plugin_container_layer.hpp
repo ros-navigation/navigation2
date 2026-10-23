@@ -27,7 +27,7 @@
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "pluginlib/class_loader.hpp"
 
 using nav2_costmap_2d::LETHAL_OBSTACLE;

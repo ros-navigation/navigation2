@@ -25,7 +25,7 @@
 #include "std_msgs/msg/header.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 
@@ -44,7 +44,7 @@ namespace nav2_map_server
 bool lookupShapeTransform(
   const std_msgs::msg::Header & header,
   const std::string & target_frame,
-  const nav2::TransformBuffer::SharedPtr & tf_buffer,
+  const nav2::TransformManager::SharedPtr & tf_buffer,
   const double transform_tolerance,
   geometry_msgs::msg::TransformStamped & transform);
 

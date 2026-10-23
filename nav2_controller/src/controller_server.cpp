@@ -19,7 +19,7 @@
 #include <utility>
 #include <limits>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"

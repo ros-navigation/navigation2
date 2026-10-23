@@ -26,7 +26,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace mppi
 {
@@ -34,7 +34,7 @@ namespace mppi
 void Optimizer::initialize(
   nav2::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-  nav2::TransformBuffer::SharedPtr tf_buffer,
+  nav2::TransformManager::SharedPtr tf_buffer,
   ParametersHandler * param_handler)
 {
   parent_ = parent;
@@ -42,7 +42,7 @@ void Optimizer::initialize(
   costmap_ros_ = costmap_ros;
   costmap_ = costmap_ros_->getCostmap();
   parameters_handler_ = param_handler;
-  tf_buffer_ = tf_buffer;
+  tf_manager_ = tf_buffer;
 
   auto node = parent_.lock();
   logger_ = node->get_logger();
@@ -256,7 +256,7 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
   motion_model_->clearCommandHistory();
   trajectory_validator_->initialize(
     parent_, name_ + ".TrajectoryValidator",
-    costmap_ros_, parameters_handler_, tf_buffer_, settings_);
+    costmap_ros_, parameters_handler_, tf_manager_, settings_);
 
   RCLCPP_INFO(logger_, "Optimizer reset");
 }

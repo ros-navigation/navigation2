@@ -40,7 +40,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "nav2_costmap_2d/range_sensor_layer.hpp"

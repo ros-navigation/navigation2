@@ -29,7 +29,7 @@
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/raytrace_line_2d.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_map_server
 {
@@ -296,7 +296,7 @@ bool Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
 
 bool Polygon::toFrame(
   const std::string & to_frame,
-  const nav2::TransformBuffer::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_buffer,
   const double transform_tolerance)
 {
   geometry_msgs::msg::TransformStamped transform;
@@ -539,7 +539,7 @@ bool Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
 
 bool Circle::toFrame(
   const std::string & to_frame,
-  const nav2::TransformBuffer::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_buffer,
   const double transform_tolerance)
 {
   geometry_msgs::msg::TransformStamped transform;

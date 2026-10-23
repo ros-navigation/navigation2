@@ -26,7 +26,7 @@
 #include "rclcpp/time.hpp"
 
 #include "tf2/time.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_msgs/srv/add_exclusion_zone.hpp"
 #include "nav2_msgs/srv/remove_exclusion_zone.hpp"
@@ -62,7 +62,7 @@ public:
   Source(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
@@ -220,7 +220,7 @@ protected:
 
   // Global variables
   /// @brief TF buffer
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   /// @brief Robot base frame ID
   std::string base_frame_id_;
   /// @brief Global frame ID for correct transform calculation

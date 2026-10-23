@@ -22,7 +22,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -34,7 +34,6 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav2_planner/planner_server.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_system_tests
 {
@@ -210,7 +209,7 @@ private:
 
   // The tester must provide the robot pose through a transform
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   rclcpp::TimerBase::SharedPtr transform_timer_;
   void publishRobotTransform();
   void startRobotTransform();

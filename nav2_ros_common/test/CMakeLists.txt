@@ -1,8 +1,8 @@
 find_package(std_srvs REQUIRED)
 find_package(test_msgs REQUIRED)
 
-nav2_add_gtest(test_tf_buffer test_tf_buffer.cpp)
-target_link_libraries(test_tf_buffer ${PROJECT_NAME})
+nav2_add_gtest(test_tf_manager test_tf_manager.cpp)
+target_link_libraries(test_tf_manager ${PROJECT_NAME})
 
 nav2_add_gtest(test_node_utils test_node_utils.cpp)
 target_include_directories(test_node_utils PRIVATE

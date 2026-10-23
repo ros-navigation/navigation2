@@ -14,16 +14,15 @@
 
 #include <memory>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_route/graph_loader.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
 
 GraphLoader::GraphLoader(
   nav2::LifecycleNode::SharedPtr node,
-  nav2::TransformBuffer::SharedPtr tf,
+  nav2::TransformManager::SharedPtr tf,
   const std::string frame)
 : plugin_loader_("nav2_route", "nav2_route::GraphFileLoader"),
   default_plugin_id_("GeoJsonGraphFileLoader")

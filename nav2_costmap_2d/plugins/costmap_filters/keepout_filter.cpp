@@ -40,7 +40,7 @@
 #include <string>
 #include <memory>
 #include <algorithm>
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 

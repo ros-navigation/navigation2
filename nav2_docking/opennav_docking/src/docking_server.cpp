@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "angles/angles.h"
 #include "nav2_ros_common/rate.hpp"
 #include "opennav_docking/docking_server.hpp"
@@ -42,7 +42,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   params_ = param_handler_->getParams();
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
-  tf2_buffer_ = nav2::create_transform_buffer(node);
+  tf2_buffer_ = nav2::create_transform_manager(node, false);
 
   // Create odom subscriber for backward blind docking
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
@@ -80,7 +80,7 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
-  tf2_buffer_->createListener(this, true);
+  tf2_buffer_->startListener();
   dock_db_->activate();
   navigator_->activate();
   vel_publisher_->on_activate();
@@ -107,7 +107,7 @@ DockingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   vel_publisher_->on_deactivate();
   param_handler_->deactivate();
   if (tf2_buffer_) {
-    tf2_buffer_->resetListener();
+    tf2_buffer_->stopListener();
   }
 
   // Destroy bond connection
@@ -512,12 +512,12 @@ bool DockingServer::approachDock(
     target_pose.pose.position.x += cos(yaw) * backward_projection;
     target_pose.pose.position.y += sin(yaw) * backward_projection;
     const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
-    const auto base_to_fixed_transform = nav2::TransformBuffer::poseToTransformStamped(
+    const auto base_to_fixed_transform = nav2::TransformManager::poseToTransformStamped(
       robot_pose, params_->base_frame);
     // Transforming the target pose from the fixed frame into the robot's base frame,
     // using the inverse of the robot pose transform that is also passed to the controller.
     tf2::doTransform(target_pose, target_pose,
-        nav2::TransformBuffer::invertTransform(base_to_fixed_transform));
+        nav2::TransformManager::invertTransform(base_to_fixed_transform));
 
     // Make sure that the target pose is pointing at the robot when moving backwards
     // This is to ensure that the robot doesn't try to dock from the wrong side
@@ -631,7 +631,7 @@ bool DockingServer::getCommandToPose(
 
   // Determine if we have reached pose yet & stop
   const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
-  const auto base_to_fixed_transform = nav2::TransformBuffer::poseToTransformStamped(robot_pose,
+  const auto base_to_fixed_transform = nav2::TransformManager::poseToTransformStamped(robot_pose,
       params_->base_frame);
   const double dist = std::hypot(
     robot_pose.pose.position.x - fixed_pose.pose.position.x,
@@ -645,7 +645,7 @@ bool DockingServer::getCommandToPose(
   // Transform target_pose into base_link frame
   geometry_msgs::msg::PoseStamped target_pose = fixed_pose;
   tf2::doTransform(target_pose, target_pose,
-      nav2::TransformBuffer::invertTransform(base_to_fixed_transform));
+      nav2::TransformManager::invertTransform(base_to_fixed_transform));
 
   // Compute velocity command
   if (!controller_->computeVelocityCommand(

@@ -21,7 +21,7 @@
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/utilities.hpp"
 #include "nav2_costmap_2d/layer.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 class LayerWrapper : public nav2_costmap_2d::Layer
 {
@@ -36,7 +36,7 @@ TEST(DeclareParameter, useValidParameter)
   LayerWrapper layer;
   nav2::LifecycleNode::SharedPtr node =
     std::make_shared<nav2::LifecycleNode>("test_node");
-  nav2::TransformBuffer tf(node->get_clock());
+  nav2::TransformManager tf(node, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   layer.initialize(&layers, "test_layer", &tf, node, nullptr);
@@ -55,7 +55,7 @@ TEST(DeclareParameter, useInvalidParameter)
   LayerWrapper layer;
   nav2::LifecycleNode::SharedPtr node =
     std::make_shared<nav2::LifecycleNode>("test_node");
-  nav2::TransformBuffer tf(node->get_clock());
+  nav2::TransformManager tf(node, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   layer.initialize(&layers, "test_layer", &tf, node, nullptr);

@@ -15,7 +15,7 @@
 #include <memory>
 #include <mutex>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "angles/angles.h"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -23,14 +23,13 @@
 #include "nav2_util/path_utils.hpp"
 #include "nav2_graceful_controller/graceful_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_graceful_controller
 {
 
 void GracefulController::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, const nav2::TransformBuffer::SharedPtr tf,
+  std::string name, const nav2::TransformManager::SharedPtr tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   nav2::LifecycleNode::SharedPtr node = parent.lock();
@@ -39,7 +38,7 @@ void GracefulController::configure(
   }
 
   costmap_ros_ = costmap_ros;
-  tf_buffer_ = tf;
+  tf_manager_ = tf;
   plugin_name_ = name;
   logger_ = node->get_logger();
 
@@ -132,7 +131,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // Transform the plan from costmap's global frame to robot base frame
   nav_msgs::msg::Path transformed_plan;
   if (!nav2_util::transformPathInTargetFrame(
-      transformed_global_plan, transformed_plan, *tf_buffer_,
+      transformed_global_plan, transformed_plan, *tf_manager_,
       costmap_ros_->getBaseFrameID(), costmap_ros_->getTransformTolerance()))
   {
     throw nav2_core::ControllerTFError(
@@ -151,7 +150,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // ControllerServer supplies pose in the local costmap's global frame, so it already
   // represents the transform from the robot base frame to the costmap's global frame.
   geometry_msgs::msg::TransformStamped costmap_transform =
-    nav2::TransformBuffer::poseToTransformStamped(pose, costmap_ros_->getBaseFrameID());
+    nav2::TransformManager::poseToTransformStamped(pose, costmap_ros_->getBaseFrameID());
 
   // Compute distance to goal as the path's integrated distance to account for path curvatures
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);

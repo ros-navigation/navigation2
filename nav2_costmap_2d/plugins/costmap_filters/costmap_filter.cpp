@@ -42,7 +42,7 @@
 
 #include <exception>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/point.hpp"
 

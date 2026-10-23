@@ -31,7 +31,7 @@
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/parameter.hpp"
@@ -65,7 +65,7 @@ protected:
     node_->declare_parameter("transform_staleness_threshold", 10.0);
     // These tests exercise pose acquisition without requiring a costmap.
     node_->declare_parameter("behavior.projection_time", 0.0);
-    tf_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
+    tf_ = std::make_shared<nav2::TransformManager>(node_, false);
     behavior_ = std::make_unique<Behavior>();
     behavior_->configure(node_, "behavior", tf_, nullptr, nullptr);
     behavior_->activate();
@@ -79,7 +79,7 @@ protected:
 
   geometry_msgs::msg::TransformStamped setTransform(double age, bool is_static = false)
   {
-    tf_->clear();
+    tf_->getRawBuffer().clear();
     geometry_msgs::msg::TransformStamped transform;
     transform.header.frame_id = "odom";
     transform.child_frame_id = "base_link";
@@ -87,12 +87,12 @@ protected:
     transform.transform.translation.x = 1.0;
     transform.transform.translation.y = 2.0;
     transform.transform.rotation.w = 1.0;
-    EXPECT_TRUE(tf_->setTransform(transform, "test", is_static));
+    EXPECT_TRUE(tf_->getRawBuffer().setTransform(transform, "test", is_static));
     return transform;
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_;
   std::unique_ptr<Behavior> behavior_;
 };
 
@@ -155,7 +155,7 @@ TYPED_TEST(BehaviorPoseTest, RechecksPoseEachCycle)
   EXPECT_EQ(stale_result.status, nav2_behaviors::Status::FAILED);
   EXPECT_EQ(stale_result.error_code, Action::Result::TF_ERROR);
 
-  this->tf_->clear();
+  this->tf_->getRawBuffer().clear();
   const auto missing_result = this->behavior_->onCycleUpdate();
   EXPECT_EQ(missing_result.status, nav2_behaviors::Status::FAILED);
   EXPECT_EQ(missing_result.error_code, Action::Result::TF_ERROR);
@@ -216,7 +216,7 @@ TEST(SpinTest, ChecksTheRemainingMotionForCollisions)
   node->declare_parameter("behavior.min_rotational_vel", 0.4);
   node->declare_parameter("behavior.rotational_acc_lim", 3.2);
 
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf = std::make_shared<nav2::TransformManager>(node, false);
   geometry_msgs::msg::TransformStamped transform;
   transform.header.frame_id = "odom";
   transform.child_frame_id = "base_link";
@@ -224,7 +224,7 @@ TEST(SpinTest, ChecksTheRemainingMotionForCollisions)
   transform.transform.translation.x = 5.0;
   transform.transform.translation.y = 5.0;
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf->setTransform(transform, "test"));
+  ASSERT_TRUE(tf->getRawBuffer().setTransform(transform, "test"));
 
   auto costmap = std::make_shared<nav2_msgs::msg::Costmap>();
   costmap->metadata.resolution = 0.05;

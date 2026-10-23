@@ -28,7 +28,7 @@
 #include <fstream>
 #include <string>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "nav2_rviz_plugins/utils.hpp"
 #include "rclcpp/duration.hpp"
@@ -676,8 +676,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     "navigate_through_poses");
 
   // Setting up tf for initial pose
-  tf2_buffer_ = nav2::create_transform_buffer(client_node_);
-  tf2_buffer_->createListener();
+  tf2_buffer_ = nav2::create_transform_manager(client_node_);
 
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();

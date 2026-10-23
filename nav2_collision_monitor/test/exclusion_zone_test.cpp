@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rcl/time.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
@@ -32,7 +32,6 @@
 
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_msgs/srv/add_exclusion_zone.hpp"
 #include "nav2_msgs/srv/remove_exclusion_zone.hpp"
@@ -158,6 +157,15 @@ public:
   : nav2::LifecycleNode("exclusion_zone_test_node")
   {
   }
+
+  // Supply the TF clock while node time continues to advance for test timeouts.
+  rclcpp::Clock::SharedPtr get_clock()
+  {
+    return tf_clock_;
+  }
+
+private:
+  rclcpp::Clock::SharedPtr tf_clock_ = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
 };  // TestNode
 
 // Minimal concrete Source that appends a fixed set of points, used to exercise
@@ -168,7 +176,7 @@ public:
   FakeSource(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_buffer,
     const std::string & base_frame_id)
   : nav2_collision_monitor::Source(
       node, source_name, tf_buffer, base_frame_id, base_frame_id,
@@ -201,24 +209,18 @@ public:
   ExclusionZoneTester()
   {
     node_ = std::make_shared<TestNode>();
-    tf_clock_ = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+    tf_clock_ = node_->get_clock();
     EXPECT_EQ(rcl_enable_ros_time_override(tf_clock_->get_clock_handle()), RCL_RET_OK);
     setTime(node_->now());
-    tf_buffer_ = std::make_shared<nav2::TransformBuffer>(tf_clock_, node_->get_logger());
-    tf_buffer_->setUsingDedicatedThread(true);
-    tf_buffer_->createListener(node_, false);
-    tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
+    tf_manager_ = std::make_shared<nav2::TransformManager>(node_, true, false);
+    tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_node(node_->get_node_base_interface());
   }
 
   ~ExclusionZoneTester() override
   {
-    tf_broadcaster_.reset();
-    if (tf_buffer_) {
-      tf_buffer_->resetListener();
-    }
-    tf_buffer_.reset();
+    tf_manager_.reset();
     node_.reset();
   }
 
@@ -242,7 +244,7 @@ protected:
     odom_msg.child_frame_id = BASE_FRAME_ID;
     odom_msg.header.stamp = stamp;
     odom_msg.transform.rotation.w = 1.0;
-    tf_broadcaster_->sendTransform(odom_msg);
+    tf_manager_->sendTransform(odom_msg);
 
     geometry_msgs::msg::TransformStamped tf_msg;
     tf_msg.header.frame_id = BASE_FRAME_ID;
@@ -251,14 +253,14 @@ protected:
     tf_msg.transform.translation.x = tx;
     tf_msg.transform.translation.y = ty;
     tf_msg.transform.rotation.w = 1.0;
-    tf_broadcaster_->sendTransform(tf_msg);
+    tf_manager_->sendTransform(tf_msg);
 
     // Wait for both legs to propagate into the buffer.
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_buffer_->getLatestTransform(child_frame, BASE_FRAME_ID, 0.0,
+      if (tf_manager_->getLatestTransform(child_frame, BASE_FRAME_ID, 0.0,
         nav2::Log::Disabled).has_value() &&
-        tf_buffer_->getLatestTransform(BASE_FRAME_ID, GLOBAL_FRAME_ID, 0.0,
+        tf_manager_->getLatestTransform(BASE_FRAME_ID, GLOBAL_FRAME_ID, 0.0,
         nav2::Log::Disabled).has_value())
       {
         return;
@@ -276,7 +278,7 @@ protected:
   {
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      const auto transform = tf_buffer_->getLatestTransform(
+      const auto transform = tf_manager_->getLatestTransform(
         GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, nav2::Log::Disabled);
       if (transform && std::abs(transform->transform.translation.x - expected_x) < 1e-6) {
         return;
@@ -299,11 +301,11 @@ protected:
     tf_msg.transform.translation.x = tx;
     tf_msg.transform.translation.y = ty;
     tf_msg.transform.rotation.w = 1.0;
-    tf_broadcaster_->sendTransform(tf_msg);
+    tf_manager_->sendTransform(tf_msg);
 
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_buffer_->getLatestTransform(child_frame, parent_frame, 0.0,
+      if (tf_manager_->getLatestTransform(child_frame, parent_frame, 0.0,
         nav2::Log::Disabled).has_value())
       {
         return;
@@ -328,14 +330,13 @@ protected:
     bool base_shift_correction = false)
   {
     return std::make_shared<nav2_collision_monitor::ExclusionZone>(
-      node_, ZONE_NAME, tf_buffer_, BASE_FRAME_ID, GLOBAL_FRAME_ID,
+      node_, ZONE_NAME, tf_manager_, BASE_FRAME_ID, GLOBAL_FRAME_ID,
       TRANSFORM_TOLERANCE, base_shift_correction);
   }
 
   std::shared_ptr<TestNode> node_;
   rclcpp::Clock::SharedPtr tf_clock_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 };  // ExclusionZoneTester
 
@@ -656,7 +657,7 @@ TEST_F(ExclusionZoneTester, DynamicTransformStalenessThresholdUpdateExtendsWindo
   fresh_base.child_frame_id = BASE_FRAME_ID;
   fresh_base.header.stamp = later;
   fresh_base.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_buffer_->setTransform(fresh_base, "test"));
+  ASSERT_TRUE(tf_manager_->getRawBuffer().setTransform(fresh_base, "test"));
   {
     std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
     zone->apply(later, data);
@@ -768,7 +769,7 @@ TEST_F(ExclusionZoneTester, HeldZoneKeepsMaskingWithinWindow)
   fresh_base.child_frame_id = BASE_FRAME_ID;
   fresh_base.header.stamp = later;
   fresh_base.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_buffer_->setTransform(fresh_base, "test"));
+  ASSERT_TRUE(tf_manager_->getRawBuffer().setTransform(fresh_base, "test"));
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
   zone->apply(later, data);
   ASSERT_EQ(data.size(), 1u);
@@ -879,7 +880,7 @@ TEST_F(ExclusionZoneTester, SourceMasksOnlyNewlyAddedPoints)
     rclcpp::ParameterValue(std::vector<std::string>{ZONE_NAME}));
   broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
-  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_buffer_, BASE_FRAME_ID);
+  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_manager_, BASE_FRAME_ID);
   ASSERT_TRUE(source->setupExclusionZones());
 
   // The source will append one point inside the zone and one outside.
@@ -903,7 +904,7 @@ TEST_F(ExclusionZoneTester, SourceWithoutZonesLeavesDataUnchanged)
     std::string(SOURCE_NAME) + ".exclusion_zones",
     rclcpp::ParameterValue(std::vector<std::string>{}));
 
-  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_buffer_, BASE_FRAME_ID);
+  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_manager_, BASE_FRAME_ID);
   ASSERT_TRUE(source->setupExclusionZones());
 
   source->points_to_add = {{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
@@ -928,7 +929,7 @@ TEST_F(ExclusionZoneTester, SourceActivatePublishDeactivateForwardsToZones)
     [&](geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg) {received = msg;},
     nav2::qos::StandardTopicQoS());
 
-  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_buffer_, BASE_FRAME_ID);
+  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_manager_, BASE_FRAME_ID);
   ASSERT_TRUE(source->setupExclusionZones());
 
   // The source must forward activate() / publishExclusionZones() to its zones,
@@ -958,7 +959,7 @@ protected:
       std::string(SOURCE_NAME) + ".exclusion_zones",
       rclcpp::ParameterValue(std::vector<std::string>{}));
 
-    source_ = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_buffer_, BASE_FRAME_ID);
+    source_ = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_manager_, BASE_FRAME_ID);
     ASSERT_TRUE(source_->setupExclusionZones());
     source_->activate();
 

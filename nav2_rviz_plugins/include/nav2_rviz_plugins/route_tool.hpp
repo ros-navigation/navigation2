@@ -26,7 +26,7 @@
 #include "nav2_route/graph_saver.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/publisher.hpp"
 #include "rviz_common/panel.hpp"
 #include "std_msgs/msg/int16.hpp"
@@ -103,7 +103,7 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_route::GraphLoader> graph_loader_;
   std::shared_ptr<nav2_route::GraphSaver> graph_saver_;
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_;
   nav2_route::Graph graph_;
   nav2_route::GraphToIDMap graph_to_id_map_;
   nav2_route::GraphToIDMap edge_to_node_map_;

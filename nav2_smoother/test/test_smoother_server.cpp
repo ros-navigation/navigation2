@@ -26,7 +26,7 @@
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using SmoothAction = nav2_msgs::action::SmoothPath;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<SmoothAction>;
@@ -84,7 +84,7 @@ public:
   DummyFootprintSubscriber(
     nav2::LifecycleNode::SharedPtr node,
     const std::string & topic_name,
-    nav2::TransformBuffer & tf)
+    nav2::TransformManager & tf)
   : FootprintSubscriber(node, topic_name, tf)
   {
     auto footprint = std::make_shared<geometry_msgs::msg::PolygonStamped>();

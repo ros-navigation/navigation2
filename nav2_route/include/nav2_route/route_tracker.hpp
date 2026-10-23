@@ -16,7 +16,7 @@
 #include <string>
 #include <memory>
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -57,7 +57,7 @@ public:
    */
   void configure(
     nav2::LifecycleNode::SharedPtr node,
-    nav2::TransformBuffer::SharedPtr tf_buffer,
+    nav2::TransformManager::SharedPtr tf_buffer,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     typename ActionServerTrack::SharedPtr action_server,
     const std::string & route_frame,
@@ -127,7 +127,7 @@ protected:
   nav2::LifecycleNode::WeakPtr node_;
   typename ActionServerTrack::SharedPtr action_server_;
   std::unique_ptr<OperationsManager> operations_manager_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 };
 
 }  // namespace nav2_route

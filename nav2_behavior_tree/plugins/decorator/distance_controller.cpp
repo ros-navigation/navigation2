@@ -18,10 +18,9 @@
 #include <memory>
 #include <cmath>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
 
@@ -40,7 +39,7 @@ DistanceController::DistanceController(
   getInput("distance", distance_);
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);

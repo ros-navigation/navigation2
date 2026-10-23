@@ -47,13 +47,12 @@
 #include <vector>
 #include <utility>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/execution_timer.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/rate.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 using namespace std::chrono_literals;
@@ -152,8 +151,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Create the transform-related objects
-  tf_buffer_ = nav2::create_transform_buffer(this, callback_group_);
-  tf_buffer_->createListener();
+  tf_manager_ = nav2::create_transform_manager(this, true, true, callback_group_);
 
   // Then load and add the plug-ins to the costmap
   for (unsigned int i = 0; i < plugin_names_.size(); ++i) {
@@ -165,7 +163,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     try {
       plugin->initialize(
-        layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
+        layered_costmap_.get(), plugin_names_[i], tf_manager_.get(),
         shared_from_this(), callback_group_);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(
@@ -185,7 +183,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     layered_costmap_->addFilter(filter);
 
     filter->initialize(
-      layered_costmap_.get(), filter_names_[i], tf_buffer_.get(),
+      layered_costmap_.get(), filter_names_[i], tf_manager_.get(),
       shared_from_this(), callback_group_);
 
     RCLCPP_INFO(get_logger(), "Initialized costmap filter \"%s\"", filter_names_[i].c_str());
@@ -263,7 +261,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
     initial_transform_timeout_);
   const auto initial_transform_timeout_point = now() + initial_transform_timeout;
   while (rclcpp::ok() &&
-    !tf_buffer_->getLatestTransform(global_frame_, robot_base_frame_, 0.0,
+    !tf_manager_->getLatestTransform(global_frame_, robot_base_frame_, 0.0,
       nav2::Log::Disabled).has_value())
   {
     RCLCPP_INFO(
@@ -355,10 +353,10 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   layered_costmap_.reset();
 
-  if (tf_buffer_) {
-    tf_buffer_->resetListener();
+  if (tf_manager_) {
+    tf_manager_->stopListener();
   }
-  tf_buffer_.reset();
+  tf_manager_.reset();
 
   footprint_sub_.reset();
   footprint_pub_.reset();
@@ -758,7 +756,7 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
-  const auto global_pose_result = tf_buffer_->getLatestPose(
+  const auto global_pose_result = tf_manager_->getLatestPose(
     global_frame_, robot_base_frame_, transform_staleness_threshold_);
   if (!global_pose_result) {
     return false;
@@ -772,7 +770,7 @@ Costmap2DROS::transformPoseToGlobalFrame(
   const geometry_msgs::msg::PoseStamped & input_pose,
   geometry_msgs::msg::PoseStamped & transformed_pose)
 {
-  const auto result = tf_buffer_->transformStampedPose(
+  const auto result = tf_manager_->transformStampedPose(
     global_frame_, input_pose, tf2::durationFromSec(transform_tolerance_));
   if (!result) {
     return false;
@@ -823,7 +821,7 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
       // First, make sure that the transform between the robot base frame
       // and the global frame is available
       RCLCPP_INFO(get_logger(), "Checking transform");
-      if (!tf_buffer_->getStampedTransform(
+      if (!tf_manager_->getStampedTransform(
         global_frame_, parameter.as_string(), rclcpp::Time(0),
           tf2::durationFromSec(1.0), nav2::Log::Disabled).has_value())
       {
