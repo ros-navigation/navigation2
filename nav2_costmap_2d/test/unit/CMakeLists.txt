@@ -67,3 +67,9 @@ target_link_libraries(obstacle_layer_test
   ${PROJECT_NAME}::nav2_costmap_2d_core
   layers
 )
+
+ament_add_gtest(asymmetric_inflation_layer_test asymmetric_inflation_layer_test.cpp)
+target_link_libraries(asymmetric_inflation_layer_test
+  ${PROJECT_NAME}::nav2_costmap_2d_core
+  layers
+)
