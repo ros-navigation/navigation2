@@ -78,7 +78,7 @@ public:
         "reset_distance", 0.0,
           "Main action displacement (m) to reset retries; non-positive disables"),
       BT::InputPort<std::string>("robot_base_frame", "Robot frame"),
-      BT::InputPort<std::string>("global_frame", "odom", "Reference frame")
+      BT::InputPort<std::string>("global_frame", "Reference frame")
     };
   }
 
