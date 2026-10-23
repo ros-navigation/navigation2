@@ -182,7 +182,7 @@ TEST_F(TestNode, testClearingAboveMaxRange) {
   transform.child_frame_id = "base_link";
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 2;
-  tf_.setTransform(transform, "default_authority", true);
+  tf_.getRawBuffer().setTransform(transform, "default_authority", true);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);

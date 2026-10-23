@@ -235,7 +235,7 @@ TEST(RoutePlannerTest, test_route_planner_negative)
 TEST(RoutePlannerTest, test_route_planner_recovers_after_invalid_edge)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("router_test");
-  nav2::TransformBuffer::SharedPtr tf_buffer;
+  nav2::TransformManager::SharedPtr tf_buffer;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
   RoutePlanner planner;
   planner.configure(node, tf_buffer, collision_checker);
