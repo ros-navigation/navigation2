@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <string>
 #include <limits>
 #include <memory>
@@ -602,6 +603,17 @@ struct Pose2D
 {
   float x, y, theta;
 };
+
+/**
+ * @brief Inverse of the absolute value, floored so that zero cannot divide by zero
+ * @param value Value to invert
+ * @return 1 / |value|, at most 1e6
+ */
+inline float safeInverseAbs(const float value)
+{
+  constexpr float min_abs = 1e-6f;
+  return 1.0f / std::max(std::abs(value), min_abs);
+}
 
 }  // namespace mppi::utils
 

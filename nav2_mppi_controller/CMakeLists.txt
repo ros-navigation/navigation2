@@ -89,6 +89,8 @@ add_library(mppi_critics SHARED
   src/critics/twirling_critic.cpp
   src/critics/constraint_critic.cpp
   src/critics/velocity_deadband_critic.cpp
+  src/critics/mecanum_critic.cpp
+  src/critics/omni_constraint_critic.cpp
 )
 
 set(libraries mppi_controller mppi_critics)
