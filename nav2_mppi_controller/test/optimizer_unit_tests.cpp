@@ -13,10 +13,13 @@
 // limitations under the License.
 
 #include <chrono>
+#include <cmath>
 #include <thread>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_mppi_controller/optimizer.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -263,6 +266,28 @@ public:
   }
 };
 
+TEST(OptimizerTests, DefaultInvalidInitialSize)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(100001));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(1001));
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  EXPECT_EQ(optimizer_tester.grabSettings().batch_size, 1000u);
+  EXPECT_EQ(optimizer_tester.grabSettings().time_steps, 56u);
+}
+
 TEST(OptimizerTests, BasicInitializedFunctions)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
@@ -279,12 +304,22 @@ TEST(OptimizerTests, BasicInitializedFunctions)
     "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "test";
+  std::string name = "mppic";
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   auto tf_buffer = nav2::create_transform_buffer(node);
   optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  param_handler.start();
+
+  auto result = node->set_parameter(rclcpp::Parameter("mppic.batch_size", 0));
+  EXPECT_FALSE(result.successful);
+  result = node->set_parameter(rclcpp::Parameter("mppic.batch_size", 100001));
+  EXPECT_FALSE(result.successful);
+  result = node->set_parameter(rclcpp::Parameter("mppic.time_steps", 0));
+  EXPECT_FALSE(result.successful);
+  result = node->set_parameter(rclcpp::Parameter("mppic.time_steps", 1001));
+  EXPECT_FALSE(result.successful);
 
   // Test value of ax_min, ay_min it should be negative
   auto & constraints = optimizer_tester.getControlConstraints();
@@ -425,9 +460,12 @@ TEST(OptimizerTests, FallbackTests)
 
   // Test fallback logic, also tests getting set param retry_attempt_limit
   // Because retry set to 2, it should attempt soft resets 2x before throwing exception
-  // for hard reset
+  // for hard reset.
+  // A successful cycle on another optimizer must not reset this one.
   EXPECT_FALSE(optimizer_tester.fallbackWrapper(false));
   EXPECT_TRUE(optimizer_tester.fallbackWrapper(true));
+  OptimizerTester other_optimizer;
+  EXPECT_FALSE(other_optimizer.fallbackWrapper(false));
   EXPECT_TRUE(optimizer_tester.fallbackWrapper(true));
   EXPECT_THROW(optimizer_tester.fallbackWrapper(true), std::runtime_error);
 }
@@ -463,6 +501,59 @@ TEST(OptimizerTests, PrepareTests)
 
   optimizer_tester.testPrepare(pose, speed, path, goal, nullptr);
 }
+
+class OptimizerIterationTests : public ::testing::TestWithParam<int> {};
+
+TEST_P(OptimizerIterationTests, CostsOnlyIncludeLatestRollouts)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(32));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(12));
+  node->declare_parameter("mppic.iteration_count", rclcpp::ParameterValue(GetParam()));
+  node->declare_parameter("mppic.gamma", rclcpp::ParameterValue(0.0));
+  node->declare_parameter("mppic.regenerate_noises", rclcpp::ParameterValue(false));
+  node->declare_parameter(
+    "mppic.critics", rclcpp::ParameterValue(std::vector<std::string>{"GoalCritic"}));
+  node->declare_parameter("mppic.GoalCritic.cost_weight", rclcpp::ParameterValue(1.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  costmap_ros->on_configure(rclcpp_lifecycle::State{});
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist speed;
+  auto goal = pose.pose;
+  goal.position.x = 1.0;
+  goal.position.y = 0.6;
+  nav_msgs::msg::Path path;
+  path.poses = {pose, pose};
+  path.poses.back().pose = goal;
+  optimizer_tester.evalControl(pose, speed, path, goal, nullptr);
+
+  // With only GoalCritic and gamma zero, costs must equal the current mean goal distance.
+  const auto & trajectories = optimizer_tester.getGeneratedTrajectories();
+  const auto & costs = optimizer_tester.getCosts();
+  for (Eigen::Index row = 0; row < trajectories.x.rows(); ++row) {
+    double distance_sum = 0.0;
+    for (Eigen::Index col = 0; col < trajectories.x.cols(); ++col) {
+      distance_sum += std::hypot(
+        trajectories.x(row, col) - goal.position.x,
+        trajectories.y(row, col) - goal.position.y);
+    }
+    EXPECT_NEAR(costs(row), distance_sum / trajectories.x.cols(), 1e-5);
+  }
+  optimizer_tester.shutdown();
+}
+
+INSTANTIATE_TEST_SUITE_P(IterationCounts, OptimizerIterationTests, ::testing::Values(1, 2, 3));
 
 TEST(OptimizerTests, shiftControlSequenceTests)
 {

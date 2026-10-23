@@ -147,19 +147,10 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // Add proper orientations to plan, if needed
   validateOrientations(transformed_plan.poses);
 
-  // Transform local frame to global frame to use in collision checking
-  geometry_msgs::msg::TransformStamped costmap_transform;
-  try {
-    costmap_transform = tf_buffer_->lookupTransform(
-      costmap_ros_->getGlobalFrameID(), costmap_ros_->getBaseFrameID(),
-      tf2::TimePointZero);
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(
-      logger_, "Could not transform %s to %s: %s",
-      costmap_ros_->getBaseFrameID().c_str(), costmap_ros_->getGlobalFrameID().c_str(),
-      ex.what());
-    throw ex;
-  }
+  // ControllerServer supplies pose in the local costmap's global frame, so it already
+  // represents the transform from the robot base frame to the costmap's global frame.
+  geometry_msgs::msg::TransformStamped costmap_transform = nav2_util::poseToTransformStamped(pose,
+      costmap_ros_->getBaseFrameID());
 
   // Compute distance to goal as the path's integrated distance to account for path curvatures
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
@@ -226,6 +217,13 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       //  * Be feasible to reach in a collision free manner
       dist_to_target = target_distances[i];
       target_pose = transformed_plan.poses[i];
+    }
+
+    // Make sure target is far enough away to avoid instability,
+    // unless we are approaching the goal. Targets only get closer from here on,
+    // so none of the remaining ones would be valid either
+    if (dist_to_goal >= params_->max_lookahead && dist_to_target < params_->min_lookahead) {
+      throw nav2_core::NoValidControl("No collision-free trajectory found beyond min_lookahead");
     }
 
     // Compute velocity at this moment if valid target pose is found
@@ -325,13 +323,17 @@ bool GracefulController::validateTargetPoseOnApproach(
   if (dist_to_goal >= params_->max_lookahead || !params_->prefer_final_rotation) {
     return false;
   }
+
+  // Work on a copy so the approach heading does not leak into the fallback target pose
+  geometry_msgs::msg::PoseStamped approach_pose = target_pose;
+
   // Avoid instability and big sweeping turns at the end of paths by
   // ignoring final heading
-  double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
-  target_pose.pose.orientation =
+  double yaw = std::atan2(approach_pose.pose.position.y, approach_pose.pose.position.x);
+  approach_pose.pose.orientation =
     nav2_util::geometry_utils::orientationAroundZAxis(yaw);
 
-  if (validateTargetPose(target_pose, dist_to_target, trajectory, costmap_transform, cmd_vel)) {
+  if (validateTargetPose(approach_pose, dist_to_target, trajectory, costmap_transform, cmd_vel)) {
     // Determine the maximum valid cost based on robot footprint type
     double max_valid_cost =
       costmap_ros_->getUseRadius() ? static_cast<double>(nav2_costmap_2d::MAX_NON_OBSTACLE) :
@@ -342,8 +344,10 @@ bool GracefulController::validateTargetPoseOnApproach(
     if (getMaxCost(trajectory, costmap_transform) >= safety_threshold) {
       // Try to find a better approach by searching spiral curves
       findBestApproachTrajectory(
-            target_pose, dist_to_target, costmap_transform, max_valid_cost, trajectory, cmd_vel);
+            approach_pose, dist_to_target, costmap_transform, max_valid_cost, trajectory,
+            cmd_vel);
     }
+    target_pose = approach_pose;
     return true;
   }
   return false;
@@ -569,12 +573,13 @@ bool GracefulController::findBestApproachTrajectory(
   bool found_valid = false;
   double best_eta = std::numeric_limits<double>::max();
 
+  // Prioritize previously selected approach angles by starting the search from them.
+  // The start angle is fixed here because safe_approach_angle_ is updated inside the loop.
+  const double start_angle = safe_approach_angle_.value_or(0.0);
+
   for (int i = 0; i < 2 * M_PI / params_->final_rotation_search_step; ++i) {
-    double angle = static_cast<double>(i) * params_->final_rotation_search_step;
-    // Prioritize previously selected approach angles
-    if (safe_approach_angle_.has_value()) {
-      angle += safe_approach_angle_.value();
-    }
+    double angle = angles::normalize_angle(
+      start_angle + static_cast<double>(i) * params_->final_rotation_search_step);
 
     // Create candidate pose
     auto candidate_pose = target_pose;
@@ -588,7 +593,11 @@ bool GracefulController::findBestApproachTrajectory(
           candidate_pose, dist_to_target, candidate_path, costmap_transform,
           candidate_cmd_vel))
     {
+      // Discard unsafe candidates before comparing them, so they cannot hide safe ones
       double candidate_cost = getMaxCost(candidate_path, costmap_transform);
+      if (candidate_cost >= safety_cost) {
+        continue;
+      }
 
       bool reversing = false;
       if (params_->allow_backward && target_pose.pose.position.x < 0.0) {
@@ -613,17 +622,15 @@ bool GracefulController::findBestApproachTrajectory(
       // Selection logic: Pick the fastest among the safe ones
       if (eta < best_eta) {
         best_eta = eta;
-        if (candidate_cost < safety_cost) {
-          best_trajectory = candidate_path;
-          best_cmd_vel = candidate_cmd_vel;
-          target_pose = candidate_pose;
-          found_valid = true;
-          // Reuse known safe approach angle if still valid
-          if (safe_approach_angle_.value_or(1e3 /*Never in (-PI, PI]*/) == angle) {
-            break;
-          }
-          safe_approach_angle_ = angle;
+        best_trajectory = candidate_path;
+        best_cmd_vel = candidate_cmd_vel;
+        target_pose = candidate_pose;
+        found_valid = true;
+        // Reuse known safe approach angle if still valid
+        if (i == 0 && safe_approach_angle_.has_value()) {
+          break;
         }
+        safe_approach_angle_ = angle;
       }
     }
   }

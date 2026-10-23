@@ -22,6 +22,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/node.hpp"
 
 geometry_msgs::msg::PoseStamped createPoseStamped(double x, double y)
 {
@@ -460,6 +461,43 @@ TEST(TransformPathTest, MissingTransform)
 
   EXPECT_FALSE(nav2_util::transformPathInTargetFrame(
     input_path, transformed_path, *tf_buffer_, "base_link", 0.1));
+  rclcpp::shutdown();
+}
+
+TEST(TransformPathTest, ZeroStampUsesLatestTransform)
+{
+  rclcpp::init(0, nullptr);
+  auto node = std::make_shared<rclcpp::Node>("test_path_zero_stamp");
+  auto buffer = nav2::create_transform_buffer(node);
+  const rclcpp::Time now(100, 0, RCL_ROS_TIME);
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.child_frame_id = "odom";
+  transform.header.stamp = now - rclcpp::Duration::from_seconds(5.0);
+  transform.transform.translation.x = 1.0;
+  transform.transform.rotation.w = 1.0;
+  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "odom";
+  path.poses.push_back(createPoseStamped(2.0, 0.0));
+  nav_msgs::msg::Path output;
+  ASSERT_TRUE(nav2_util::transformPathInTargetFrame(
+    path, output, *buffer, "map", 0.0));
+  EXPECT_DOUBLE_EQ(output.poses.front().pose.position.x, 3.0);
+
+  output = nav_msgs::msg::Path();
+  transform.header.stamp = now;
+  transform.transform.translation.x = 4.0;
+  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(nav2_util::transformPathInTargetFrame(
+    path, output, *buffer, "map", 0.0));
+  EXPECT_DOUBLE_EQ(output.poses.front().pose.position.x, 6.0);
+
+  output = nav_msgs::msg::Path();
+  path.header.stamp = now - rclcpp::Duration::from_seconds(5.0);
+  ASSERT_TRUE(nav2_util::transformPathInTargetFrame(
+    path, output, *buffer, "map", 0.0));
+  EXPECT_DOUBLE_EQ(output.poses.front().pose.position.x, 3.0);
   rclcpp::shutdown();
 }
 

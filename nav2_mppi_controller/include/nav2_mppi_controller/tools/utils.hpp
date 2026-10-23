@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <string>
 #include <limits>
 #include <memory>
@@ -35,7 +36,8 @@
 #include "nav_msgs/msg/trajectory.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
@@ -679,6 +681,17 @@ inline float clampVelocityByAccel(
     return clamp(last_vel + min_delta, last_vel + max_delta, curr_vel);
   }
   return clamp(last_vel - max_delta, last_vel - min_delta, curr_vel);
+}
+
+/**
+ * @brief Inverse of the absolute value, floored so that zero cannot divide by zero
+ * @param value Value to invert
+ * @return 1 / |value|, at most 1e6
+ */
+inline float safeInverseAbs(const float value)
+{
+  constexpr float min_abs = 1e-6f;
+  return 1.0f / std::max(std::abs(value), min_abs);
 }
 
 }  // namespace mppi::utils

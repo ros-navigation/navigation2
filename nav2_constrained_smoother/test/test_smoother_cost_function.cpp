@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_constrained_smoother/smoother_cost_function.hpp"
 
 class TestableSmootherCostFunction : nav2_constrained_smoother::SmootherCostFunction

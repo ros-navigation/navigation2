@@ -15,7 +15,14 @@
 #include <memory>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/timer.hpp"
+#include "rclcpp/utilities.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -585,6 +592,53 @@ TEST_F(Tester, testPlannerWithoutPartialPlanning)
   waitForResult(gh_future, action_result, 2s);
 
   ASSERT_EQ(action_result.code, rclcpp_action::ResultCode::ABORTED);
+
+  planner_->stop();
+  stopTesterNode();
+}
+
+TEST_F(Tester, testPreemptUsesPendingGoal)
+{
+  using namespace std::chrono_literals;
+
+  setParameters();
+  startTesterNode();
+  planner_->start();
+
+  ASSERT_TRUE(action_client_->wait_for_action_server(2s));
+
+  geometry_msgs::msg::Pose start;
+  start.position.x = 0.5;
+  start.position.y = 0.1;
+  start.orientation.w = 1.0;
+
+  geometry_msgs::msg::Pose old_end = start;
+  old_end.position.y = 0.3;
+  geometry_msgs::msg::Pose new_end = start;
+  new_end.position.y = 0.9;
+
+  Action::Goal old_goal;
+  Action::Goal new_goal;
+  setGoalFromPoses({start, old_end}, old_goal);
+  setGoalFromPoses({start, new_end}, new_goal);
+
+  auto old_future = action_client_->async_send_goal(old_goal);
+  ASSERT_EQ(old_future.wait_for(2s), std::future_status::ready);
+  ASSERT_TRUE(old_future.get());
+
+  auto new_future = action_client_->async_send_goal(new_goal);
+  ASSERT_EQ(new_future.wait_for(2s), std::future_status::ready);
+  ASSERT_TRUE(new_future.get());
+
+  publishMap();
+
+  ActionGoalHandle::WrappedResult result;
+  waitForResult(new_future, result, 5s);
+  ASSERT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
+  ASSERT_FALSE(result.result->path.poses.empty());
+  EXPECT_NEAR(
+    result.result->path.poses.back().pose.position.y,
+    new_end.position.y, PLANNER_TOLERANCE);
 
   planner_->stop();
   stopTesterNode();

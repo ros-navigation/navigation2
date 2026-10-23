@@ -27,10 +27,6 @@ nav2_package()
 set(executable_name route_server)
 set(library_name ${executable_name}_core)
 
-include_directories(
-  include
-)
-
 # Main library
 add_library(${library_name} SHARED
   src/route_server.cpp
@@ -64,8 +60,8 @@ target_link_libraries(${library_name} PUBLIC
   geometry_msgs::geometry_msgs
   visualization_msgs::visualization_msgs
   std_msgs::std_msgs
-  nav_msgs::nav_msgs
   tf2_ros::tf2_ros
+  nanoflann::nanoflann
   nlohmann_json::nlohmann_json
 )
 target_link_libraries(${library_name} PRIVATE
@@ -113,7 +109,6 @@ target_link_libraries(edge_scorers PUBLIC
   geometry_msgs::geometry_msgs
   visualization_msgs::visualization_msgs
   std_msgs::std_msgs
-  nav_msgs::nav_msgs
   tf2_ros::tf2_ros
   angles::angles
   nlohmann_json::nlohmann_json
@@ -151,7 +146,6 @@ target_link_libraries(route_operations PUBLIC
   geometry_msgs::geometry_msgs
   visualization_msgs::visualization_msgs
   std_msgs::std_msgs
-  nav_msgs::nav_msgs
   tf2_ros::tf2_ros
   nlohmann_json::nlohmann_json
 )
@@ -184,7 +178,6 @@ target_link_libraries(graph_file_loaders PUBLIC
   geometry_msgs::geometry_msgs
   visualization_msgs::visualization_msgs
   std_msgs::std_msgs
-  nav_msgs::nav_msgs
   tf2_ros::tf2_ros
   nlohmann_json::nlohmann_json
 )
@@ -216,7 +209,6 @@ target_link_libraries(graph_file_savers PUBLIC
   geometry_msgs::geometry_msgs
   visualization_msgs::visualization_msgs
   std_msgs::std_msgs
-  nav_msgs::nav_msgs
   tf2_ros::tf2_ros
   nlohmann_json::nlohmann_json
 )
@@ -255,7 +247,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_dependencies(
   rclcpp
   rclcpp_lifecycle
@@ -272,6 +263,5 @@ ament_export_dependencies(
   nlohmann_json
   nav2_ros_common
 )
-ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()

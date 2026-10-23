@@ -362,10 +362,13 @@ void RouteServer::setRouteGraph(
   std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Setting new route graph: %s.", request->graph_filepath.c_str());
-  graph_.clear();
-  id_to_graph_map_.clear();
   try {
-    if (graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_, request->graph_filepath)) {
+    // Keep the active graph until its replacement loads successfully.
+    Graph graph;
+    GraphToIDMap id_to_graph_map;
+    if (graph_loader_->loadGraphFromFile(graph, id_to_graph_map, request->graph_filepath)) {
+      graph_ = std::move(graph);
+      id_to_graph_map_ = std::move(id_to_graph_map);
       goal_intent_extractor_->setGraph(graph_, &id_to_graph_map_);
       graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
       response->success = true;

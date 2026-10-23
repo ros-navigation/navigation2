@@ -26,6 +26,7 @@
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/clock.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 
@@ -128,6 +129,8 @@ private:
     const double angular_distance_weight);
 
   nav2::TransformBuffer::SharedPtr tf_buffer_;
+  rclcpp::Clock::SharedPtr clock_;
+  double transform_staleness_threshold_{0.0};
 
   nav_msgs::msg::Path path_;
   nav_msgs::msg::Path::_poses_type::iterator closest_pose_detection_begin_;

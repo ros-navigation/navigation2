@@ -89,11 +89,11 @@ struct HybridMotionTable
   unsigned int getClosestAngularBin(const double & theta);
 
   /**
-   * @brief Get the raw orientation from an angular bin
-   * @param bin_idx Index of the bin
+   * @brief Get the raw orientation from an angular bin coordinate
+   * @param bin_coordinate Bin coordinate, including fractional analytic-path headings
    * @return Raw orientation in radians
    */
-  float getAngleFromBin(const unsigned int & bin_idx);
+  float getAngleFromBin(const float & bin_coordinate);
 
   /**
    * @brief Get the angle scaled across bins from a raw orientation

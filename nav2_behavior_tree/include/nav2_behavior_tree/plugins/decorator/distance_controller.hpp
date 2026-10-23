@@ -21,6 +21,7 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/clock.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
 #include "nav2_behavior_tree/bt_utils.hpp"
@@ -73,9 +74,11 @@ private:
   BT::NodeStatus tick() override;
 
   nav2::LifecycleNode::SharedPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
 
   nav2::TransformBuffer::SharedPtr tf_;
   double transform_tolerance_;
+  double transform_staleness_threshold_;
 
   geometry_msgs::msg::PoseStamped start_pose_;
   double distance_;

@@ -37,7 +37,7 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 #include "dwb_critics/twirling.hpp"
 #include "dwb_core/exceptions.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"

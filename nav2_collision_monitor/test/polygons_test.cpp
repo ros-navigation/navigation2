@@ -22,7 +22,14 @@
 #include <string>
 #include <limits>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/exceptions.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
@@ -133,7 +140,7 @@ public:
     radius_pub_->publish(std::move(msg));
   }
 
-  void publishFootprint()
+  void publishFootprint(const std::string & frame_id = BASE_FRAME_ID)
   {
     footprint_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
       FOOTPRINT_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
@@ -142,7 +149,7 @@ public:
     std::unique_ptr<geometry_msgs::msg::PolygonStamped> msg =
       std::make_unique<geometry_msgs::msg::PolygonStamped>();
 
-    msg->header.frame_id = BASE_FRAME_ID;
+    msg->header.frame_id = frame_id;
     msg->header.stamp = this->now();
 
     geometry_msgs::msg::Point32 p;
@@ -791,6 +798,20 @@ TEST_F(Tester, testPolygonFootprintUpdate)
   EXPECT_NEAR(footprint[2].y, SQUARE_POLYGON[5], EPSILON);
   EXPECT_NEAR(footprint[3].x, SQUARE_POLYGON[6], EPSILON);
   EXPECT_NEAR(footprint[3].y, SQUARE_POLYGON[7], EPSILON);
+}
+
+TEST_F(Tester, testPolygonFootprintUpdateIncorrectFrame)
+{
+  createPolygon("approach", false);
+
+  // Footprint in a frame with no transform to base: shape must stay unset,
+  // not fall back to the untransformed points
+  test_node_->publishFootprint("incorrect_frame");
+
+  std::vector<nav2_collision_monitor::Point> footprint;
+  ASSERT_FALSE(waitFootprint(500ms, footprint));
+  ASSERT_FALSE(polygon_->isShapeSet());
+  ASSERT_EQ(footprint.size(), 0u);
 }
 
 TEST_F(Tester, testPolygonGetPointsInside)

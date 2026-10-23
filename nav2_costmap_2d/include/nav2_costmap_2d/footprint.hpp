@@ -42,7 +42,6 @@
 #include <vector>
 #include <utility>
 
-#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"

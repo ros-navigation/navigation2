@@ -31,7 +31,10 @@
 #include "nav2_ros_common/node_thread.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/publisher.hpp"
+#include "rclcpp/time.hpp"
 #include "std_msgs/msg/empty.hpp"
 
 #include "tf2/utils.hpp"

@@ -3,7 +3,9 @@ collision_detector:
     frequency: 10.0
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
-    transform_tolerance: 0.5
+    transform_tolerance: 0.5  # TF lookup wait timeout
+    # Maximum age for latest dynamic transforms; 0.0 disables the freshness check.
+    transform_staleness_threshold: 1.0
     source_timeout: 5.0
     base_shift_correction: true
     polygons: ["PolygonFront"]

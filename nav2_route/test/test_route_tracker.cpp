@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_core/route_exceptions.hpp"
@@ -69,6 +69,7 @@ TEST(RouteTrackerTest, test_get_robot_pose)
   transform.header.stamp = node->now();
   transform.child_frame_id = "base_link";
   broadcaster->sendTransform(transform);
+  tf->setTransform(transform, "test", false);
   EXPECT_NO_THROW(tracker.getRobotPose());
 }
 

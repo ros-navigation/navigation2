@@ -43,7 +43,7 @@ class LineIterator:
             y0 (float): Ordinate of the initial point
             x1 (float): Abscissa of the final point
             y1 (float): Ordinate of the final point
-            step_size (float): Optional, Increments' resolution, defaults to 1
+            step_size (float): Optional, step along the longer axis, defaults to 1
 
         Raises
         ------
@@ -77,59 +77,59 @@ class LineIterator:
         self.y_ = y0
         self.step_size_ = step_size
 
-        if x1 != x0 and y1 != y0:
-            self.valid_ = True
-            self.m_ = (y1 - y0) / (x1 - x0)
-            self.b_ = y1 - (self.m_ * x1)
-        elif x1 == x0 and y1 != y0:
-            self.valid_ = True
-        elif y1 == y0 and x1 != x0:
-            self.valid_ = True
-            self.m_ = (y1 - y0) / (x1 - x0)
-            self.b_ = y1 - (self.m_ * x1)
-        else:
+        if x1 == x0 and y1 == y0:
             self.valid_ = False
             raise ValueError('Line has zero length (All 4 points have same coordinates)')
+
+        self.valid_ = True
+        self.steep_ = abs(y1 - y0) > abs(x1 - x0)
+        if self.steep_:
+            self.m_ = (x1 - x0) / (y1 - y0)
+            self.b_ = x1 - (self.m_ * y1)
+        else:
+            self.m_ = (y1 - y0) / (x1 - x0)
+            self.b_ = y1 - (self.m_ * x1)
 
     def isValid(self):
         """Check if line is valid."""
         return self.valid_
 
     def advance(self):
-        """Advance to the next point in the line."""
-        if self.x1_ > self.x0_:
-            if self.x_ < self.x1_:
-                self.x_ = round(
-                    self.clamp(self.x_ + self.step_size_, self.x0_, self.x1_), 5
-                )
-                self.y_ = round(self.m_ * self.x_ + self.b_, 5)
-            else:
-                self.valid_ = False
-        elif self.x1_ < self.x0_:
-            if self.x_ > self.x1_:
-                self.x_ = round(
-                    self.clamp(self.x_ - self.step_size_, self.x1_, self.x0_), 5
-                )
-                self.y_ = round(self.m_ * self.x_ + self.b_, 5)
-            else:
-                self.valid_ = False
+        """Advance along the longer axis and interpolate the other coordinate."""
+        if self.steep_:
+            start, end, current = self.y0_, self.y1_, self.y_
         else:
-            if self.y1_ > self.y0_:
-                if self.y_ < self.y1_:
-                    self.y_ = round(
-                        self.clamp(self.y_ + self.step_size_, self.y0_, self.y1_), 5
-                    )
-                else:
-                    self.valid_ = False
-            elif self.y1_ < self.y0_:
-                if self.y_ > self.y1_:
-                    self.y_ = round(
-                        self.clamp(self.y_ - self.step_size_, self.y1_, self.y0_), 5
-                    )
-                else:
-                    self.valid_ = False
-            else:
+            start, end, current = self.x0_, self.x1_, self.x_
+
+        if end > start:
+            if current >= end:
                 self.valid_ = False
+                return
+            next_coordinate = self.clamp(current + self.step_size_, start, end)
+        else:
+            if current <= end:
+                self.valid_ = False
+                return
+            next_coordinate = self.clamp(current - self.step_size_, end, start)
+
+        if next_coordinate != end:
+            rounded = round(next_coordinate, 5)
+            # Keep rounding from erasing a small step or moving past the endpoint.
+            if (end > start and rounded > current) or (end < start and rounded < current):
+                next_coordinate = self.clamp(rounded, min(start, end), max(start, end))
+
+        if next_coordinate == end:
+            self.x_, self.y_ = self.x1_, self.y1_
+            return
+
+        if self.steep_:
+            self.y_ = next_coordinate
+            if self.x0_ != self.x1_:
+                self.x_ = round(self.m_ * self.y_ + self.b_, 5)
+        else:
+            self.x_ = next_coordinate
+            if self.y0_ != self.y1_:
+                self.y_ = round(self.m_ * self.x_ + self.b_, 5)
 
     def getX(self):
         """Get the abscissa of the current point."""

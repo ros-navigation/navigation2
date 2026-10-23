@@ -43,7 +43,8 @@
 #include <vector>
 
 #include "map_msgs/msg/occupancy_grid_update.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/parameter.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -135,6 +136,12 @@ protected:
   void processMap(const nav_msgs::msg::OccupancyGrid & new_map);
 
   /**
+   * @brief Whether this layer's grid is the master's grid (non-rolling, resize_master true).
+   * Otherwise the map keeps its own size, origin and resolution and is sampled into the master.
+   */
+  bool usesMasterCostmapSize() const;
+
+  /**
    * @brief  Callback to update the costmap's map from the map_server
    * @param new_map The map to put into the costmap. The origin of the new
    * map along with its size will determine what parts of the costmap's
@@ -197,6 +204,7 @@ protected:
   std::string map_frame_;  /// @brief frame that map is located in
 
   bool has_updated_data_{false};
+  bool resize_master_{true};
 
   unsigned int x_{0};
   unsigned int y_{0};
@@ -218,7 +226,8 @@ protected:
   bool trinary_costmap_;
   bool map_received_{false};
   bool map_received_in_update_bounds_{false};
-  tf2::Duration transform_tolerance_;
+  /// Maximum map-frame transform age in seconds; zero disables the check
+  double transform_staleness_threshold_{0.0};
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr map_buffer_;
   // Dynamic parameters handler
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;

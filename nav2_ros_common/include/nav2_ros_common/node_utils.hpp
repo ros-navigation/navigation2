@@ -21,8 +21,18 @@
 #include <chrono>
 #include <algorithm>
 #include <cctype>
+#include <stdexcept>
 #include "rclcpp/version.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/exceptions.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/qos.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
 #include "pluginlib/exceptions.hpp"
 #if RCLCPP_VERSION_GTE(30, 1, 4)
@@ -35,6 +45,11 @@
   #include <pthread.h>
   #include <mach/mach.h>
   #include <mach/thread_policy.h>
+#elif defined(_WIN32)
+  #ifndef NOMINMAX
+    #define NOMINMAX
+  #endif
+  #include <windows.h>
 #else
   #include <sched.h>
   #include <errno.h>
@@ -376,6 +391,14 @@ inline void setSoftRealTimePriority()
       "Thread remains at default priority. Mach Error Code: " +
       std::to_string(result);
     throw std::runtime_error(errmsg);
+  }
+#elif defined(_WIN32)
+  // Windows: Raise only the current thread one level above its normal priority
+  // within the existing process priority class.
+  if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL)) {
+    throw std::runtime_error(
+            "Failed to set soft real-time thread priority on Windows. Error: " +
+            std::to_string(GetLastError()));
   }
 #else
   // Linux: True real-time scheduling (requires privileges)

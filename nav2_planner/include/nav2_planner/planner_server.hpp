@@ -158,7 +158,7 @@ protected:
   template<typename T>
   void getPreemptedGoalIfRequested(
     typename nav2::SimpleActionServer<T>::SharedPtr & action_server,
-    typename std::shared_ptr<const typename T::Goal> goal);
+    typename std::shared_ptr<const typename T::Goal> & goal);
 
   /**
    * @brief Get the starting pose from costmap or message, if valid

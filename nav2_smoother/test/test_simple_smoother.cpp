@@ -17,7 +17,8 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"

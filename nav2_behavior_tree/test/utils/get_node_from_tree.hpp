@@ -19,7 +19,8 @@
 #include <vector>
 
 #include "behaviortree_cpp/bt_factory.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
 
 namespace nav2_behavior_tree
 {

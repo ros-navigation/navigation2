@@ -46,7 +46,10 @@
 
 #include "benchmark/benchmark.h"
 #include "rcutils/logging.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"

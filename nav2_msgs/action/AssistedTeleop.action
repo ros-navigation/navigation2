@@ -11,6 +11,7 @@ uint16 SEND_GOAL_FAILURE=2
 uint16 UNKNOWN=730
 uint16 TIMEOUT=731
 uint16 TF_ERROR=732
+uint16 TELEOP_INPUT_TIMEOUT=733
 
 builtin_interfaces/Duration total_elapsed_time
 uint16 error_code

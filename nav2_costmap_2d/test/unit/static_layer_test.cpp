@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "nav2_costmap_2d/static_layer.hpp"
@@ -99,6 +100,42 @@ TEST_F(StaticLayerRollingTest, MaximumMergeTreatsUnknownAsTransparent)
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
+TEST_F(StaticLayerRollingTest, FailedTransformMarksLayerNotCurrentAndRecovers)
+{
+  auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  map->header.frame_id = "map";
+  map->info.width = map->info.height = 10;
+  map->info.resolution = 1.0;
+  map->info.origin.orientation.w = 1.0;
+  map->data.assign(100, 0);
+  map->data[0] = 100;
+  layer_->incomingMap(map);
+
+  layers_->updateMap(5.0, 5.0, 0.0);
+  auto * master = layers_->getCostmap();
+  ASSERT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+  ASSERT_TRUE(layer_->isCurrent());
+  ASSERT_TRUE(layers_->isCurrent());
+
+  // A rolling update clears the master window before asking each plugin to repopulate it.
+  // If the map transform is unavailable, the static obstacle is therefore absent this cycle.
+  tf_->clear();
+  layers_->updateMap(5.0, 5.0, 0.0);
+  EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::NO_INFORMATION);
+  EXPECT_FALSE(layer_->isCurrent());
+  EXPECT_FALSE(layers_->isCurrent());
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "odom";
+  transform.child_frame_id = "map";
+  transform.transform.rotation.w = 1.0;
+  ASSERT_TRUE(tf_->setTransform(transform, "test", true));
+  layers_->updateMap(5.0, 5.0, 0.0);
+  EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_TRUE(layer_->isCurrent());
+  EXPECT_TRUE(layers_->isCurrent());
+}
+
 class StaticLayerRollingFootprintTest : public StaticLayerRollingTest
 {
 protected:
@@ -141,6 +178,154 @@ TEST_F(StaticLayerRollingFootprintTest, FootprintClearingFollowsTheMapFrame)
   unsigned int mx, my;
   ASSERT_TRUE(layer_->worldToMap(2.5, 5.5, mx, my));
   EXPECT_EQ(layer_->getCost(mx, my), nav2_costmap_2d::LETHAL_OBSTACLE);
+}
+
+class StaticLayerResizeMasterTest : public ::testing::Test
+{
+protected:
+  void SetUp() override
+  {
+    node_ = std::make_shared<nav2::LifecycleNode>("static_layer_resize_master_test");
+    node_->declare_parameter("track_unknown_space", true);
+    node_->declare_parameter("use_maximum", true);
+    node_->declare_parameter("lethal_cost_threshold", 100);
+    node_->declare_parameter("inscribed_obstacle_cost_value", 99);
+    node_->declare_parameter("unknown_cost_value", 255);
+    node_->declare_parameter("trinary_costmap", true);
+    node_->declare_parameter("transform_tolerance", 0.0);
+    tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, true);
+    layers_->resizeMap(20, 20, 1.0, 0.0, 0.0);
+  }
+
+  void TearDown() override
+  {
+    node_->shutdown();
+  }
+
+  std::shared_ptr<TestStaticLayer> addLayer(const std::string & name, bool resize_master)
+  {
+    node_->declare_parameter(name + ".resize_master", resize_master);
+    auto layer = std::make_shared<TestStaticLayer>();
+    layers_->addPlugin(layer);
+    layer->initialize(layers_.get(), name, tf_.get(), node_, nullptr);
+    layer->activate();
+    return layer;
+  }
+
+  // 2x2 cells of 1 m: one lethal cell at (origin_x .. +1, 5 .. 6), rest unknown
+  nav_msgs::msg::OccupancyGrid::SharedPtr makeMap(double origin_x = 5.0)
+  {
+    auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+    map->header.frame_id = "map";
+    map->info.width = 2;
+    map->info.height = 2;
+    map->info.resolution = 1.0;
+    map->info.origin.position.x = origin_x;
+    map->info.origin.position.y = 5.0;
+    map->info.origin.orientation.w = 1.0;
+    map->data = {100, -1, -1, -1};
+    return map;
+  }
+
+  nav2::LifecycleNode::SharedPtr node_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
+};
+
+TEST_F(StaticLayerResizeMasterTest, KeepsMasterGeometryAndProjectsCosts)
+{
+  auto layer = addLayer("annotations", false);
+  layer->incomingMap(makeMap());
+  auto * master = layers_->getCostmap();
+  EXPECT_EQ(master->getSizeInCellsX(), 20u);
+  EXPECT_EQ(master->getSizeInCellsY(), 20u);
+  EXPECT_DOUBLE_EQ(master->getResolution(), 1.0);
+  EXPECT_DOUBLE_EQ(master->getOriginX(), 0.0);
+
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_EQ(master->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_EQ(master->getCost(6, 6), nav2_costmap_2d::NO_INFORMATION);
+  EXPECT_EQ(master->getCost(7, 5), nav2_costmap_2d::NO_INFORMATION);
+  EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::NO_INFORMATION);
+  EXPECT_TRUE(layer->isCurrent());
+}
+
+TEST_F(StaticLayerResizeMasterTest, ReplacementMapClearsThePreviousExtent)
+{
+  auto layer = addLayer("annotations", false);
+  layer->incomingMap(makeMap());
+  layers_->updateMap(10.0, 10.0, 0.0);
+  ASSERT_EQ(layers_->getCostmap()->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  layer->incomingMap(makeMap(10.0));
+  layers_->updateMap(10.0, 10.0, 0.0);
+  auto * master = layers_->getCostmap();
+  EXPECT_EQ(master->getCost(10, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_EQ(master->getCost(5, 5), nav2_costmap_2d::NO_INFORMATION);
+  EXPECT_EQ(master->getSizeInCellsX(), 20u);
+}
+
+TEST_F(StaticLayerResizeMasterTest, TwoLayersShareOneMaster)
+{
+  auto first = addLayer("first", false);
+  auto second = addLayer("second", false);
+  first->incomingMap(makeMap(5.0));
+  second->incomingMap(makeMap(10.0));
+  layers_->updateMap(10.0, 10.0, 0.0);
+  auto * master = layers_->getCostmap();
+  EXPECT_EQ(master->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_EQ(master->getCost(10, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_EQ(master->getSizeInCellsX(), 20u);
+}
+
+TEST_F(StaticLayerResizeMasterTest, MasterResizeRepaintsTheLayer)
+{
+  auto layer = addLayer("annotations", false);
+  layer->incomingMap(makeMap());
+  layers_->updateMap(10.0, 10.0, 0.0);
+  ASSERT_EQ(layers_->getCostmap()->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // e.g. dynamic width/height parameters, or another layer with resize_master true
+  layers_->resizeMap(30, 30, 1.0, 0.0, 0.0);
+  layers_->updateMap(10.0, 10.0, 0.0);
+  auto * master = layers_->getCostmap();
+  EXPECT_EQ(master->getSizeInCellsX(), 30u);
+  EXPECT_EQ(master->getCost(5, 5), nav2_costmap_2d::LETHAL_OBSTACLE);
+}
+
+TEST_F(StaticLayerResizeMasterTest, MapInAnotherFrameIsRejected)
+{
+  auto layer = addLayer("annotations", false);
+  auto map = makeMap();
+  map->header.frame_id = "other";
+  layer->incomingMap(map);
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_EQ(layers_->getCostmap()->getCost(5, 5), nav2_costmap_2d::NO_INFORMATION);
+  EXPECT_FALSE(layer->isCurrent());
+}
+
+TEST_F(StaticLayerResizeMasterTest, DefaultStillResizesTheMaster)
+{
+  auto base = addLayer("static", true);
+  base->incomingMap(makeMap());
+  auto * master = layers_->getCostmap();
+  EXPECT_EQ(master->getSizeInCellsX(), 2u);
+  EXPECT_DOUBLE_EQ(master->getResolution(), 1.0);
+  EXPECT_DOUBLE_EQ(master->getOriginX(), 5.0);
+  layers_->updateMap(6.0, 6.0, 0.0);
+  EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+}
+
+TEST_F(StaticLayerResizeMasterTest, ResizeMasterIsNotDynamic)
+{
+  auto layer = addLayer("annotations", false);
+  layer->incomingMap(makeMap());
+  // Like map_topic, the parameter is read at initialization only: setting it later has no effect
+  node_->set_parameter(rclcpp::Parameter("annotations.resize_master", true));
+  layer->incomingMap(makeMap(10.0));
+  layers_->updateMap(10.0, 10.0, 0.0);
+  EXPECT_EQ(layers_->getCostmap()->getSizeInCellsX(), 20u);
 }
 
 int main(int argc, char ** argv)

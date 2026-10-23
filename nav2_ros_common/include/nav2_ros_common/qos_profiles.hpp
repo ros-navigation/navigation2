@@ -15,7 +15,7 @@
 #ifndef NAV2_ROS_COMMON__QOS_PROFILES_HPP_
 #define NAV2_ROS_COMMON__QOS_PROFILES_HPP_
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/qos.hpp"
 
 namespace nav2
 {

@@ -224,8 +224,8 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
   nav2_costmap_2d::Costmap2D * costmap = _costmap;
   if (_downsample_costmap && _downsampling_factor > 1) {
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
-    _collision_checker.setCostmap(costmap);
   }
+  _collision_checker.setCostmap(costmap);
 
   // Set collision checker and costmap information
   _a_star->setCollisionChecker(&_collision_checker);
