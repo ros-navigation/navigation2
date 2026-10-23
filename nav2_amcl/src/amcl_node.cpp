@@ -1383,7 +1383,7 @@ AmclNode::initTransforms()
   RCLCPP_INFO(get_logger(), "initTransforms");
 
   // Initialize transform listener and broadcaster
-  tf_manager_ = nav2::create_transform_manager(this, true, true, true, callback_group_);
+  tf_manager_ = nav2::create_transform_manager(this, true, true, callback_group_);
 
   sent_first_transform_ = false;
   latest_tf_valid_ = false;
