@@ -50,14 +50,6 @@
 namespace nav2_costmap_2d
 {
 
-namespace
-{
-// Growth in distance from the cached path point, in segment lengths (or mask cells if larger),
-// that triggers a search back along the path. Moving forward along a segment never exceeds one
-// segment length.
-constexpr double kBackupThresholdScale = 2.0;
-}  // namespace
-
 SpeedFilter::SpeedFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   speed_limit_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
@@ -358,12 +350,11 @@ void SpeedFilter::updateLookaheadStart(
     return;
   }
 
-  // Search back by as much path as the robot has moved away from the cached point. Bounding it
-  // keeps a part of the path that passes near the robot, but is further back, out of reach.
-  const double window = dist_to_cached_point - lookahead_ref_dist_;
+  // Search back by as much path as the robot is away from the cached point. Bounding it keeps
+  // a part of the path that passes near the robot, but is further back, out of reach.
   size_t back_idx = start;
   double walked = 0.0;
-  while (back_idx > 0 && walked < window) {
+  while (back_idx != 0 && walked < dist_to_cached_point) {
     walked += nav2_util::geometry_utils::euclidean_distance(
       poses[back_idx - 1].pose.position, poses[back_idx].pose.position);
     back_idx--;
