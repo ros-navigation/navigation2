@@ -27,7 +27,7 @@
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/utilities.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "utils/test_behavior_tree_fixture.hpp"
 
 using namespace std::chrono_literals;
@@ -49,7 +49,7 @@ public:
       factory_->registerBuilder<nav2_behavior_tree::IsGoalNearbyCondition>("IsGoalNearby", builder);
     } catch (BT::BehaviorTreeException const &) {
     }
-    tf_buffer_ = config_->blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+    tf_manager_ = config_->blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   }
 
   void TearDown() override {tree_.reset();}
@@ -66,7 +66,7 @@ protected:
     tf.transform.translation.z = 0.0;
     tf.transform.rotation.w = 1.0;
 
-    tf_buffer_->setTransform(tf, "unit_test", true);
+    tf_manager_->getRawBuffer().setTransform(tf, "unit_test", true);
   }
 
   static nav_msgs::msg::Path makePathInMap(const std::vector<std::pair<double, double>> & pts)
@@ -98,7 +98,7 @@ protected:
   }
 
 protected:
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 

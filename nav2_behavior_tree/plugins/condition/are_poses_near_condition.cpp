@@ -15,10 +15,9 @@
 #include <string>
 #include <memory>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/are_poses_near_condition.hpp"
 
@@ -38,7 +37,7 @@ ArePosesNearCondition::ArePosesNearCondition(
 void ArePosesNearCondition::initialize()
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 }
 

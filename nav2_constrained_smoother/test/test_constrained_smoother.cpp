@@ -27,7 +27,7 @@
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/utilities.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
@@ -116,7 +116,7 @@ protected:
     node_lifecycle_ =
       std::make_shared<nav2::LifecycleNode>("ConstrainedSmootherTestNode");
 
-    tf_buffer_ = nav2::create_transform_buffer(node_lifecycle_);
+    tf_manager_ = nav2::create_transform_manager(node_lifecycle_);
 
     costmap_sub_ =
       std::make_shared<DummyCostmapSubscriber>(
@@ -143,7 +143,7 @@ protected:
     smoother_ = std::make_shared<nav2_constrained_smoother::ConstrainedSmoother>();
 
     smoother_->configure(
-      node_lifecycle_, "SmoothPath", tf_buffer_, costmap_sub_,
+      node_lifecycle_, "SmoothPath", tf_manager_, costmap_sub_,
       std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>());
     smoother_->activate();
 
@@ -184,7 +184,7 @@ protected:
     smoother_->deactivate();
     smoother_->cleanup();
     smoother_->configure(
-      node_lifecycle_, "SmoothPath", tf_buffer_, costmap_sub_,
+      node_lifecycle_, "SmoothPath", tf_manager_, costmap_sub_,
       std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>());
     smoother_->activate();
   }
@@ -391,7 +391,7 @@ protected:
 
   nav2::LifecycleNode::SharedPtr node_lifecycle_;
   std::shared_ptr<nav2_constrained_smoother::ConstrainedSmoother> smoother_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 

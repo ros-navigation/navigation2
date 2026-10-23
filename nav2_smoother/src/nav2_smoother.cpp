@@ -23,7 +23,7 @@
 #include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using namespace std::chrono_literals;
 
@@ -70,8 +70,7 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  tf_ = nav2::create_transform_buffer(this);
-  tf_->createListener(this, true);
+  tf_ = nav2::create_transform_manager(this);
 
   costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), costmap_topic);
@@ -191,9 +190,6 @@ SmootherServer::on_cleanup(const rclcpp_lifecycle::State &)
   // Release any allocated resources
   action_server_.reset();
   plan_publisher_.reset();
-  if (tf_) {
-    tf_->resetListener();
-  }
   tf_.reset();
   footprint_sub_.reset();
   costmap_sub_.reset();

@@ -30,7 +30,7 @@
 #include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/dummy_behavior.hpp"
 #include "nav2_ros_common/subscription.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using nav2_behaviors::TimedBehavior;
 using nav2_behaviors::Status;
@@ -137,8 +137,7 @@ protected:
     std::string global_footprint_topic = node_lifecycle_->declare_or_get_parameter(
       "global_footprint_topic", std::string("global_costmap/published_footprint"));
 
-    tf_buffer_ = nav2::create_transform_buffer(node_lifecycle_);
-    tf_buffer_->createListener(node_lifecycle_);
+    tf_manager_ = nav2::create_transform_manager(node_lifecycle_);
 
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> local_costmap_sub_ =
       std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
@@ -150,11 +149,11 @@ protected:
 
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> local_footprint_sub_ =
       std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
-      node_lifecycle_, local_footprint_topic, *tf_buffer_);
+      node_lifecycle_, local_footprint_topic, *tf_manager_);
 
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> global_footprint_sub_ =
       std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
-      node_lifecycle_, global_footprint_topic, *tf_buffer_);
+      node_lifecycle_, global_footprint_topic, *tf_manager_);
 
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_ =
       std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
@@ -170,7 +169,7 @@ protected:
     behavior_->configure(
       node_lifecycle_,
       "Behavior",
-      tf_buffer_,
+      tf_manager_,
       local_collision_checker_,
       global_collision_checker_);
     behavior_->activate();
@@ -245,7 +244,7 @@ protected:
   std::shared_ptr<rclcpp_action::ClientGoalHandle<BehaviorAction>> goal_handle_;
   nav2::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_vel_sub_;
   std::vector<double> velocities_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 };
 
 // Define the tests

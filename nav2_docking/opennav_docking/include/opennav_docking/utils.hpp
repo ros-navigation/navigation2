@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "yaml-cpp/yaml.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/logging.hpp"
@@ -176,7 +176,7 @@ inline geometry_msgs::msg::PoseStamped getDockPoseStamped(
 }
 
 inline geometry_msgs::msg::PoseStamped transformPoseToFrame(
-  nav2::TransformBuffer & tf_buffer,
+  nav2::TransformManager & tf_buffer,
   const geometry_msgs::msg::PoseStamped & pose,
   const std::string & target_frame,
   const double transform_staleness_threshold)

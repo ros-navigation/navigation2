@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/future_return_code.hpp"
 #include "rclcpp/logging.hpp"
@@ -32,7 +32,6 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 
@@ -55,13 +54,13 @@ protected:
     costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("costmap");
 
     // Send identity transform to ensure costmap can transform robot poses during service calls
-    auto tf_broadcaster = nav2::create_static_transform_broadcaster(costmap_);
+    auto tf_manager = nav2::create_transform_manager(costmap_, false);
     geometry_msgs::msg::TransformStamped transform;
     transform.header.frame_id = "map";
     transform.child_frame_id = "base_link";
     transform.header.stamp = costmap_->now();
     transform.transform.rotation.w = 1.0;
-    tf_broadcaster->sendTransform(transform);
+    tf_manager->sendStaticTransform(transform);
 
     clear_costmap_client_ = costmap_->create_client<ServiceT>(service_name_);
     costmap_->on_configure(rclcpp_lifecycle::State());

@@ -31,7 +31,7 @@
 #include "nav2_mppi_controller/controller.hpp"
 
 #include "utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 class RosLockGuard
 {
@@ -85,21 +85,19 @@ void prepareAndRunBenchmark(
   options.parameter_overrides(params);
   auto node = getDummyNode(options);
 
-  auto tf_buffer = nav2::create_transform_buffer(node);
-  tf_buffer->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-
-  auto broadcaster = nav2::create_transform_broadcaster(node);
-  tf_buffer->createListener(node);
+  auto tf_manager = nav2::create_transform_manager(node);
+  // One-thread broadcasting-listening model
+  tf_manager->getRawBuffer().setUsingDedicatedThread(true);
 
   auto map_odom_broadcaster = std::async(
-    std::launch::async, sendTf, "map", "odom", broadcaster, node,
+    std::launch::async, sendTf, "map", "odom", tf_manager, node,
     20);
 
   auto odom_base_link_broadcaster = std::async(
-    std::launch::async, sendTf, "odom", "base_link", broadcaster, node,
+    std::launch::async, sendTf, "odom", "base_link", tf_manager, node,
     20);
 
-  auto controller = getDummyController(node, tf_buffer, costmap_ros);
+  auto controller = getDummyController(node, tf_manager, costmap_ros);
 
   // evalControl args
   auto pose = getDummyPointStamped(node, start_pose);

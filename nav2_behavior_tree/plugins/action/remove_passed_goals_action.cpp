@@ -16,10 +16,9 @@
 #include <memory>
 #include <limits>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/action/remove_passed_goals_action.hpp"
 
@@ -37,7 +36,7 @@ void RemovePassedGoals::initialize()
 {
   getInput("radius", viapoint_achieved_radius_);
 
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();
   node_->get_parameter("transform_tolerance", transform_tolerance_);

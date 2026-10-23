@@ -22,7 +22,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "../testing_helper.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 
 class TestLifecycleNode : public nav2::LifecycleNode
@@ -85,7 +85,7 @@ public:
 
     // 20x20 cells with origin at (0, 0)
     layers_.resizeMap(20, 20, resolution, 0, 0);
-    nav2::TransformBuffer tf(node_->get_clock());
+    nav2::TransformManager tf(node_, false);
     addObstacleLayer(layers_, tf, node_, obstacle_layer_);
   }
 

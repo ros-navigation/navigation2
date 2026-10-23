@@ -18,13 +18,12 @@
 #include <vector>
 #include <utility>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "angles/angles.h"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
 #include "nav2_rotation_shim_controller/nav2_rotation_shim_controller.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 
@@ -41,7 +40,7 @@ RotationShimController::RotationShimController()
 
 void RotationShimController::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, nav2::TransformBuffer::SharedPtr tf,
+  std::string name, nav2::TransformManager::SharedPtr tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   plugin_name_ = name;

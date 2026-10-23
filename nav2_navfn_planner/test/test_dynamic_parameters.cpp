@@ -25,7 +25,7 @@
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/parameter_client.hpp"
 #include "rclcpp/utilities.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 TEST(NavfnTest, testDynamicParameter)
 {
@@ -34,7 +34,7 @@ TEST(NavfnTest, testDynamicParameter)
   costmap->on_configure(rclcpp_lifecycle::State());
   auto planner =
     std::make_unique<nav2_navfn_planner::NavfnPlanner>();
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   planner->configure(node, "test", tf, costmap);
   planner->activate();
 

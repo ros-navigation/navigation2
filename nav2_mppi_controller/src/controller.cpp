@@ -16,7 +16,7 @@
 #include <chrono>
 #include "nav2_mppi_controller/controller.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -25,12 +25,12 @@ namespace nav2_mppi_controller
 
 void MPPIController::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, const nav2::TransformBuffer::SharedPtr tf,
+  std::string name, const nav2::TransformManager::SharedPtr tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   parent_ = parent;
   costmap_ros_ = costmap_ros;
-  tf_buffer_ = tf;
+  tf_manager_ = tf;
   name_ = name;
   parameters_handler_ = std::make_unique<ParametersHandler>(parent, name_);
 
@@ -43,7 +43,7 @@ void MPPIController::configure(
   getParam(publish_optimal_trajectory_, "publish_optimal_trajectory", false);
 
   // Configure composed objects
-  optimizer_.initialize(parent_, name_, costmap_ros_, tf_buffer_, parameters_handler_.get());
+  optimizer_.initialize(parent_, name_, costmap_ros_, tf_manager_, parameters_handler_.get());
   trajectory_visualizer_.on_configure(
     parent_, name_,
     costmap_ros_->getGlobalFrameID(), parameters_handler_.get());

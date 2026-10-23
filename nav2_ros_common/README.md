@@ -18,24 +18,27 @@ This is in some cases a big change from `rclcpp` versions, though most have dire
 It also allows a central and controlled location to make future changes such as adding tracing, replacing APIs, controlling QoS profiles, or enabling advanced settings.
 Thus, see the migration guide below for how to migrate from the previous versions of these objects to the new ones in this package from ROS 2 Kilted to Lyrical.
 
-### Transform buffer
+### Transform manager
 
-`nav2::TransformBuffer` in `nav2_ros_common/tf_buffer.hpp` owns the underlying TF buffer.
-Create it with `nav2::create_transform_buffer(node)` and pass it to servers, plugins, and message filters.
-Call `buffer->createListener(node)` to receive TF using a dedicated listener thread, or
-`buffer->createListener(node, false)` when the application spins the node itself.
-`buffer->createListener()` creates a listener with its own hidden node and dedicated thread.
-The buffer owns at most one listener through a unique pointer and destroys it before the native buffer.
-Creating a second listener throws `std::logic_error`; call `resetListener()` before recreating it.
-`resetListener()` stops the listener without clearing transform data, supporting lifecycle deactivation
-and teardown before dependent message filters. `hasListener()` reports whether a listener is owned.
-Serialize listener creation and reset; buffers used only for inserted transforms need no listener.
+`nav2::TransformManager` in `nav2_ros_common/tf_manager.hpp` owns a TF buffer, listener, and lazy dynamic and static broadcasters.
+Create it with `nav2::create_transform_manager(node)` or construct it directly with the node.
+The node supplies the clock, logger, and timer interfaces. The listener starts by default using a dedicated thread.
+Pass `activate_listener=false` to defer receiving transforms, and use `startListener()` and `stopListener()` for lifecycle transitions.
+Stopping the listener preserves buffered transforms. Starting an already running listener or stopping an already stopped listener has no effect.
+Serialize listener start and stop calls. The listener is destroyed before the native buffer.
+Set `spin_thread=false` when the application spins the node to receive transforms.
+Dynamic and static broadcasters are advertised independently on the first `sendTransform()` or `sendStaticTransform()` call.
+Both methods accept a single transform or a vector of transforms. Static transforms are retained for late subscribers.
+Broadcaster initialization is safe for concurrent sends; static sends are serialized to preserve the retained transform set.
+
 Application code uses `getLatestTransform`, `getLatestPose`, `getStampedTransform`, and `transformStampedPose`.
 Lookups return `std::optional` and log failures with the node's logger.
 Pass `nav2::Log::Disabled` as the final lookup argument to suppress diagnostics for expected failures, retries, or caller-managed logging; the default is `nav2::Log::Enabled`.
 The option applies to nested lookups and argument validation for that call without changing the shared buffer's logging policy.
 For availability probes, use `getLatestTransform` or `getStampedTransform` with `nav2::Log::Disabled` and check the returned optional.
 Latest lookups measure staleness against the buffer's stored clock; callers pass only the threshold and optional logging mode.
+
+For TF-aware subscriptions, include `nav2_ros_common/message_filter.hpp` and use `nav2::create_message_filter()`.
 
 The method`getRawBuffer()` should be used only exceptionally for objects requiring the native buffer implementation.
 

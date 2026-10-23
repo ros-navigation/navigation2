@@ -15,11 +15,10 @@
 #include <string>
 #include <memory>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "base_footprint_publisher.hpp"
 #include "gtest/gtest.h"
 #include "tf2/exceptions.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 #include "rclcpp/rate.hpp"
 
 TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
@@ -29,9 +28,7 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   executor.add_node(node->get_node_base_interface());
   executor.spin_some();
 
-  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
-  auto buffer = nav2::create_transform_buffer(node);
-  buffer->createListener(node);
+  auto buffer = nav2::create_transform_manager(node);
 
   std::string base_link = "base_link";
   std::string base_footprint = "base_footprint";
@@ -41,7 +38,7 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   transform.header.stamp = node->now();
   transform.header.frame_id = "test1_1";
   transform.child_frame_id = "test1";
-  tf_broadcaster->sendTransform(transform);
+  buffer->sendTransform(transform);
   executor.spin_some();
   EXPECT_FALSE(buffer->getLatestTransform(base_link, base_footprint));
 
@@ -52,7 +49,7 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   transform.transform.translation.x = 1.0;
   transform.transform.translation.y = 1.0;
   transform.transform.translation.z = 1.0;
-  tf_broadcaster->sendTransform(transform);
+  buffer->sendTransform(transform);
   rclcpp::Rate r(1.0);
   r.sleep();
   executor.spin_some();

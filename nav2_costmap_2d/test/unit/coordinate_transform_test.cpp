@@ -75,11 +75,11 @@ TEST(GetRobotPose, PreservesTransformAndRejectsStalePose)
   transform.transform.translation.x = 1.0;
   transform.transform.translation.y = 2.0;
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(costmap->getTfBuffer()->setTransform(transform, "test"));
+  ASSERT_TRUE(costmap->getTfBuffer()->getRawBuffer().setTransform(transform, "test"));
   EXPECT_FALSE(costmap->getRobotPose(pose));
 
   transform.header.stamp = costmap->now();
-  ASSERT_TRUE(costmap->getTfBuffer()->setTransform(transform, "test"));
+  ASSERT_TRUE(costmap->getTfBuffer()->getRawBuffer().setTransform(transform, "test"));
   ASSERT_TRUE(costmap->getRobotPose(pose));
   EXPECT_EQ(pose.header, transform.header);
   EXPECT_DOUBLE_EQ(pose.pose.position.x, 1.0);

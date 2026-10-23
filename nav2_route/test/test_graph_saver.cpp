@@ -26,7 +26,7 @@
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_route/graph_loader.hpp"
 #include "nav2_route/graph_saver.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 
 using namespace nav2_route; //NOLINT
@@ -34,7 +34,7 @@ using namespace nav2_route; //NOLINT
 TEST(GraphSaver, test_invalid_plugin)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -53,7 +53,7 @@ TEST(GraphSaver, test_invalid_plugin)
 TEST(GraphSaver, test_empty_filename)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -74,7 +74,7 @@ TEST(GraphSaver, test_empty_filename)
 TEST(GraphSaver, test_api)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -109,10 +109,8 @@ TEST(GraphSaver, test_transformation_api)
   auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
-  tf->createListener(node);
-  auto tf_broadcaster = nav2::create_static_transform_broadcaster(node);
+  auto tf = nav2::create_transform_manager(node);
+  tf->getRawBuffer().setUsingDedicatedThread(true);
 
   std::string frame = "map";
 
@@ -139,9 +137,9 @@ TEST(GraphSaver, test_transformation_api)
   transform.header.stamp = node->now();
   transform.transform.rotation.w = 1.0;
   transform.transform.translation.x = 1.0;
-  tf_broadcaster->sendTransform(transform);
+  tf->sendStaticTransform(transform);
   rclcpp::WallRate(1).sleep();
-  tf_broadcaster->sendTransform(transform);
+  tf->sendStaticTransform(transform);
   executor.spin_all(std::chrono::milliseconds(50));
 
   GraphSaver graph_saver(node, tf, frame);

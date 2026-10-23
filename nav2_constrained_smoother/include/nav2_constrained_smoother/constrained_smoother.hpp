@@ -27,7 +27,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_constrained_smoother
 {
@@ -58,7 +58,7 @@ public:
    */
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, nav2::TransformBuffer::SharedPtr tf,
+    std::string name, nav2::TransformManager::SharedPtr tf,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub) override;
 
@@ -89,7 +89,7 @@ public:
     const rclcpp::Duration & max_time) override;
 
 protected:
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   rclcpp::Logger logger_ {rclcpp::get_logger("ConstrainedSmoother")};

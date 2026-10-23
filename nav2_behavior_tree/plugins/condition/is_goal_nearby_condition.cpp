@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_goal_nearby_condition.hpp"
 
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -27,7 +26,7 @@ IsGoalNearbyCondition::IsGoalNearbyCondition(
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();
-  tf_buffer_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
@@ -61,7 +60,7 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
   }
 
   geometry_msgs::msg::PoseStamped pose;
-  const auto pose_result = tf_buffer_->getLatestPose(
+  const auto pose_result = tf_manager_->getLatestPose(
     global_frame_, robot_base_frame_, transform_staleness_threshold_);
   if (!pose_result) {
     RCLCPP_ERROR(node_->get_logger(), "Failed to get current robot pose");
@@ -71,7 +70,7 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
 
   // let's get the pose of the robot in the frame of the plan
 
-  const auto robot_pose = tf_buffer_->transformStampedPose(
+  const auto robot_pose = tf_manager_->transformStampedPose(
     path_.header.frame_id, pose, tf2::durationFromSec(0.1));
   if (!robot_pose) {
     RCLCPP_ERROR(

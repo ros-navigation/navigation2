@@ -20,7 +20,7 @@
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 
 namespace opennav_docking_core
@@ -53,7 +53,7 @@ public:
    */
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, nav2::TransformBuffer::SharedPtr tf) = 0;
+    const std::string & name, nav2::TransformManager::SharedPtr tf) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.

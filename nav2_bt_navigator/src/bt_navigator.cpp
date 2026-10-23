@@ -48,9 +48,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  tf_ = nav2::create_transform_buffer(this);
-  tf_->setUsingDedicatedThread(true);
-  tf_->createListener(this, true);
+  tf_ = nav2::create_transform_manager(this);
 
   global_frame_ = this->declare_or_get_parameter("global_frame", std::string("map"));
   robot_frame_ = this->declare_or_get_parameter("robot_base_frame", std::string("base_link"));
@@ -165,7 +163,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   // Reset the listener before the buffer
   if (tf_) {
-    tf_->resetListener();
+    tf_->stopListener();
   }
   tf_.reset();
 

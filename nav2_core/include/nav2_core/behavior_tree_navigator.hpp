@@ -22,7 +22,7 @@
 #include <chrono>
 
 #include "nav2_util/odometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/logger.hpp"
 #include "rclcpp/logging.hpp"
@@ -45,7 +45,7 @@ struct FeedbackUtils
   std::string robot_frame;
   std::string global_frame;
   double transform_tolerance;
-  nav2::TransformBuffer::SharedPtr tf;
+  nav2::TransformManager::SharedPtr tf;
 };
 
 /**

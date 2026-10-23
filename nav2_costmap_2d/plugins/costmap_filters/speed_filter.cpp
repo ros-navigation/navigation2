@@ -43,7 +43,7 @@
 #include <memory>
 #include <string>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
 

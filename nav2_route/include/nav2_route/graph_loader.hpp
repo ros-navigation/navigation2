@@ -23,7 +23,7 @@
 #include <pluginlib/class_loader.hpp>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/interfaces/graph_file_loader.hpp"
@@ -45,7 +45,7 @@ public:
    */
   explicit GraphLoader(
     nav2::LifecycleNode::SharedPtr node,
-    nav2::TransformBuffer::SharedPtr tf,
+    nav2::TransformManager::SharedPtr tf,
     const std::string frame);
 
   /**
@@ -90,7 +90,7 @@ public:
 
 protected:
   std::string route_frame_, graph_filepath_;
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_;
   rclcpp::Logger logger_{rclcpp::get_logger("GraphLoader")};
 
   // Graph Parser

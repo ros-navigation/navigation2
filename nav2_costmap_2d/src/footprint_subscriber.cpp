@@ -16,7 +16,7 @@
 #include <vector>
 #include <memory>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "tf2/utils.hpp"
 
@@ -63,7 +63,7 @@ FootprintSubscriber::getFootprintInRobotFrame(
   if (!current_pose_transform) {
     return false;
   }
-  current_pose = nav2::TransformBuffer::transformToPoseStamped(*current_pose_transform);
+  current_pose = nav2::TransformManager::transformToPoseStamped(*current_pose_transform);
 
   double x = current_pose.pose.position.x;
   double y = current_pose.pose.position.y;

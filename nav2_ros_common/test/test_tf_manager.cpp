@@ -20,12 +20,12 @@
 
 #include "gtest/gtest.h"
 #include "rcl/time.h"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/utilities.hpp"
 
-class TransformBufferTest : public ::testing::Test
+class TransformManagerTest : public ::testing::Test
 {
 protected:
   void SetUp() override
@@ -51,7 +51,7 @@ protected:
     transform.transform.translation.z = 3.0;
     transform.transform.rotation.z = 0.6;
     transform.transform.rotation.w = 0.8;
-    ASSERT_TRUE(buffer_.setTransform(transform, "test", is_static));
+    ASSERT_TRUE(buffer_.getRawBuffer().setTransform(transform, "test", is_static));
   }
 
   geometry_msgs::msg::PoseStamped makePose(int seconds) const
@@ -63,13 +63,13 @@ protected:
     return pose;
   }
 
-  std::shared_ptr<rclcpp::Clock> clock_ = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
-  tf2_ros::Buffer::SharedPtr tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock_);
-  nav2::TransformBuffer buffer_{tf_buffer_, clock_};
+  nav2::LifecycleNode::SharedPtr node_ = std::make_shared<nav2::LifecycleNode>("tf_manager_test");
+  rclcpp::Clock::SharedPtr clock_ = node_->get_clock();
+  nav2::TransformManager buffer_{node_, false};
   const rclcpp::Time now_{10, 0, RCL_ROS_TIME};
 };
 
-TEST_F(TransformBufferTest, LatestStalenessAndDisabledCheck)
+TEST_F(TransformManagerTest, LatestStalenessAndDisabledCheck)
 {
   addTransform(8, 1.0);
   EXPECT_EQ(buffer_.getLatestTransform("odom", "base_link", 1.0), std::nullopt);
@@ -83,7 +83,7 @@ TEST_F(TransformBufferTest, LatestStalenessAndDisabledCheck)
   EXPECT_EQ(buffer_.getLatestTransform("odom", "missing"), std::nullopt);
 }
 
-TEST_F(TransformBufferTest, QuietLookupsRespectTimestamp)
+TEST_F(TransformManagerTest, QuietLookupsRespectTimestamp)
 {
   addTransform(8, 1.0);
   addTransform(10, 3.0);
@@ -101,26 +101,26 @@ TEST_F(TransformBufferTest, QuietLookupsRespectTimestamp)
   EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
 }
 
-TEST_F(TransformBufferTest, PoseTransformConversionsPreserveHeaderAndGeometry)
+TEST_F(TransformManagerTest, PoseTransformConversionsPreserveHeaderAndGeometry)
 {
   addTransform(9, 1.0);
   auto transform = buffer_.getLatestTransform("odom", "base_link");
   ASSERT_TRUE(transform.has_value());
 
-  const auto pose = nav2::TransformBuffer::transformToPoseStamped(*transform);
+  const auto pose = nav2::TransformManager::transformToPoseStamped(*transform);
   EXPECT_EQ(pose.header, transform->header);
   EXPECT_DOUBLE_EQ(pose.pose.position.x, 1.0);
   EXPECT_DOUBLE_EQ(pose.pose.position.y, 2.0);
   EXPECT_DOUBLE_EQ(pose.pose.position.z, 3.0);
   EXPECT_EQ(pose.pose.orientation, transform->transform.rotation);
   EXPECT_EQ(
-    nav2::TransformBuffer::poseToTransformStamped(pose, transform->child_frame_id), *transform);
+    nav2::TransformManager::poseToTransformStamped(pose, transform->child_frame_id), *transform);
   EXPECT_EQ(
-    nav2::TransformBuffer::poseToTransformStamped(pose, "other_child").child_frame_id,
+    nav2::TransformManager::poseToTransformStamped(pose, "other_child").child_frame_id,
     "other_child");
 }
 
-TEST_F(TransformBufferTest, LatestStaticAndFutureTransforms)
+TEST_F(TransformManagerTest, LatestStaticAndFutureTransforms)
 {
   addTransform(1, 1.0, true);
   auto result = buffer_.getLatestTransform("odom", "base_link", 0.1);
@@ -128,14 +128,14 @@ TEST_F(TransformBufferTest, LatestStaticAndFutureTransforms)
   EXPECT_EQ(result->header.stamp.sec, 0);
   EXPECT_EQ(result->header.stamp.nanosec, 0u);
 
-  buffer_.clear();
+  buffer_.getRawBuffer().clear();
   addTransform(11, 2.0);
   result = buffer_.getLatestTransform("odom", "base_link", 0.1);
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(result->header.stamp.sec, 11);
 }
 
-TEST_F(TransformBufferTest, SameFrameIdentity)
+TEST_F(TransformManagerTest, SameFrameIdentity)
 {
   auto result = buffer_.getLatestTransform("base_link", "base_link", 0.1);
   ASSERT_TRUE(result.has_value());
@@ -152,7 +152,7 @@ TEST_F(TransformBufferTest, SameFrameIdentity)
   EXPECT_EQ(rclcpp::Time(result->header.stamp), stamp);
 }
 
-TEST_F(TransformBufferTest, LatestPosePreservesHeaderAndGeometry)
+TEST_F(TransformManagerTest, LatestPosePreservesHeaderAndGeometry)
 {
   addTransform(9, 1.0);
   auto pose = buffer_.getLatestPose("odom", "base_link", 1.0);
@@ -169,7 +169,7 @@ TEST_F(TransformBufferTest, LatestPosePreservesHeaderAndGeometry)
   EXPECT_TRUE(buffer_.getLatestPose("odom", "base_link", -1.0));
 }
 
-TEST_F(TransformBufferTest, StampedLookupInterpolatesHistoricalTransform)
+TEST_F(TransformManagerTest, StampedLookupInterpolatesHistoricalTransform)
 {
   addTransform(2, 2.0);
   addTransform(4, 4.0);
@@ -187,7 +187,7 @@ TEST_F(TransformBufferTest, StampedLookupInterpolatesHistoricalTransform)
     std::nullopt);
 }
 
-TEST_F(TransformBufferTest, ZeroStampLooksUpLatestTransform)
+TEST_F(TransformManagerTest, ZeroStampLooksUpLatestTransform)
 {
   addTransform(2, 2.0);
   addTransform(4, 4.0);
@@ -211,7 +211,7 @@ TEST_F(TransformBufferTest, ZeroStampLooksUpLatestTransform)
   EXPECT_DOUBLE_EQ(result->transform.rotation.w, 1.0);
 }
 
-TEST_F(TransformBufferTest, DifferentTimesInSameFrameAreNotIdentity)
+TEST_F(TransformManagerTest, DifferentTimesInSameFrameAreNotIdentity)
 {
   addTransform(2, 2.0);
   addTransform(4, 4.0);
@@ -235,7 +235,7 @@ TEST_F(TransformBufferTest, DifferentTimesInSameFrameAreNotIdentity)
     std::nullopt);
 }
 
-TEST_F(TransformBufferTest, ZeroSourceAndTargetTimesLookUpLatestTransforms)
+TEST_F(TransformManagerTest, ZeroSourceAndTargetTimesLookUpLatestTransforms)
 {
   addTransform(2, 2.0);
   addTransform(4, 4.0);
@@ -269,7 +269,7 @@ TEST_F(TransformBufferTest, ZeroSourceAndTargetTimesLookUpLatestTransforms)
     "base_link", zero, "missing", zero, "odom", tf2::Duration::zero()), std::nullopt);
 }
 
-TEST_F(TransformBufferTest, GetStampedPoseInterpolatesAndPreservesInput)
+TEST_F(TransformManagerTest, GetStampedPoseInterpolatesAndPreservesInput)
 {
   addTransform(2, 2.0);
   addTransform(4, 4.0);
@@ -287,7 +287,7 @@ TEST_F(TransformBufferTest, GetStampedPoseInterpolatesAndPreservesInput)
   EXPECT_EQ(input, original);
 }
 
-TEST_F(TransformBufferTest, GetStampedPoseZeroStampSelectsLatestWithoutAgeCheck)
+TEST_F(TransformManagerTest, GetStampedPoseZeroStampSelectsLatestWithoutAgeCheck)
 {
   addTransform(2, 2.0);
   addTransform(4, 4.0);
@@ -297,7 +297,7 @@ TEST_F(TransformBufferTest, GetStampedPoseZeroStampSelectsLatestWithoutAgeCheck)
   EXPECT_NEAR(result->pose.position.x, 4.28, 1e-12);
 }
 
-TEST_F(TransformBufferTest, TransformPoseSameFramePreservesEntireInputWithoutTF)
+TEST_F(TransformManagerTest, TransformPoseSameFramePreservesEntireInputWithoutTF)
 {
   const auto input = makePose(2);
   const auto stamped = buffer_.transformStampedPose("base_link", input, tf2::Duration::zero());
@@ -305,7 +305,7 @@ TEST_F(TransformBufferTest, TransformPoseSameFramePreservesEntireInputWithoutTF)
   EXPECT_EQ(*stamped, input);
 }
 
-TEST_F(TransformBufferTest, TransformPoseFailuresLeaveInputUnchanged)
+TEST_F(TransformManagerTest, TransformPoseFailuresLeaveInputUnchanged)
 {
   addTransform(2, 2.0);
   const auto input = makePose(3);
@@ -315,7 +315,7 @@ TEST_F(TransformBufferTest, TransformPoseFailuresLeaveInputUnchanged)
   EXPECT_EQ(input, original);
 }
 
-TEST_F(TransformBufferTest, LatestLookupsUseStoredClock)
+TEST_F(TransformManagerTest, LatestLookupsUseStoredClock)
 {
   addTransform(1, 1.0);
   const auto transform = buffer_.getLatestTransform("odom", "base_link");
@@ -334,7 +334,7 @@ TEST_F(TransformBufferTest, LatestLookupsUseStoredClock)
   EXPECT_EQ(identity_pose->header, identity->header);
 }
 
-TEST_F(TransformBufferTest, StalenessTracksClockAdvancement)
+TEST_F(TransformManagerTest, StalenessTracksClockAdvancement)
 {
   addTransform(9, 1.0);
   EXPECT_TRUE(buffer_.getLatestTransform("odom", "base_link", 1.0));
@@ -348,45 +348,40 @@ TEST_F(TransformBufferTest, StalenessTracksClockAdvancement)
   EXPECT_EQ(rclcpp::Time(identity->header.stamp), clock_->now());
 }
 
-TEST_F(TransformBufferTest, RejectsNullBuffer)
+TEST_F(TransformManagerTest, RejectsNullNode)
 {
-  EXPECT_THROW(nav2::TransformBuffer(tf2_ros::Buffer::SharedPtr{}, clock_), std::invalid_argument);
+  EXPECT_THROW(nav2::TransformManager(nav2::LifecycleNode::SharedPtr{}), std::invalid_argument);
 }
 
-TEST_F(TransformBufferTest, RejectsNullClock)
+TEST_F(TransformManagerTest, OwnedBufferUsesProvidedClockForStaleness)
 {
-  EXPECT_THROW(nav2::TransformBuffer(rclcpp::Clock::SharedPtr{}), std::invalid_argument);
-  EXPECT_THROW(nav2::TransformBuffer(tf_buffer_, rclcpp::Clock::SharedPtr{}),
-    std::invalid_argument);
-}
-
-TEST_F(TransformBufferTest, OwnedBufferUsesProvidedClockForStaleness)
-{
-  nav2::TransformBuffer owned(clock_);
-  ASSERT_TRUE(owned.setTransform(
-      nav2::TransformBuffer::poseToTransformStamped(makePose(9), "sensor"), "test"));
+  nav2::TransformManager owned(node_, false);
+  ASSERT_TRUE(owned.getRawBuffer().setTransform(
+      nav2::TransformManager::poseToTransformStamped(makePose(9), "sensor"), "test"));
   EXPECT_TRUE(owned.getLatestTransform("base_link", "sensor", 1.0));
   setTime(rclcpp::Time(11, 0, RCL_ROS_TIME));
   EXPECT_EQ(owned.getLatestTransform("base_link", "sensor", 1.0), std::nullopt);
 }
 
-TEST_F(TransformBufferTest, RetainsBufferOwnership)
+TEST_F(TransformManagerTest, RawBufferAccessReferencesOwnedBuffer)
 {
   addTransform(9, 1.0);
-  tf_buffer_.reset();
-  EXPECT_TRUE(buffer_.getLatestTransform("odom", "base_link"));
+  const auto & const_buffer = buffer_;
+  EXPECT_EQ(&const_buffer.getRawBuffer(), &buffer_.getRawBuffer());
+  EXPECT_EQ(const_buffer.getRawBuffer().lookupTransform("odom", "base_link", tf2::TimePointZero),
+    *buffer_.getLatestTransform("odom", "base_link"));
 }
 
-TEST_F(TransformBufferTest, InversePreservesTimestampAndExchangesFrames)
+TEST_F(TransformManagerTest, InversePreservesTimestampAndExchangesFrames)
 {
   addTransform(9, 1.0);
   const auto transform = buffer_.getLatestTransform("odom", "base_link");
   ASSERT_TRUE(transform);
-  const auto inverse = nav2::TransformBuffer::invertTransform(*transform);
+  const auto inverse = nav2::TransformManager::invertTransform(*transform);
   EXPECT_EQ(inverse.header.frame_id, transform->child_frame_id);
   EXPECT_EQ(inverse.child_frame_id, transform->header.frame_id);
   EXPECT_EQ(inverse.header.stamp, transform->header.stamp);
-  const auto restored = nav2::TransformBuffer::invertTransform(inverse);
+  const auto restored = nav2::TransformManager::invertTransform(inverse);
   EXPECT_NEAR(restored.transform.translation.x, transform->transform.translation.x, 1e-12);
   EXPECT_NEAR(restored.transform.translation.y, transform->transform.translation.y, 1e-12);
   EXPECT_NEAR(restored.transform.translation.z, transform->transform.translation.z, 1e-12);
@@ -394,7 +389,7 @@ TEST_F(TransformBufferTest, InversePreservesTimestampAndExchangesFrames)
   EXPECT_NEAR(restored.transform.rotation.w, transform->transform.rotation.w, 1e-12);
 }
 
-TEST_F(TransformBufferTest, RejectsNegativeToleranceIncludingIdentity)
+TEST_F(TransformManagerTest, RejectsNegativeToleranceIncludingIdentity)
 {
   addTransform(9, 1.0);
   const auto negative_tolerance = tf2::durationFromSec(-0.1);
@@ -409,7 +404,7 @@ TEST_F(TransformBufferTest, RejectsNegativeToleranceIncludingIdentity)
     std::nullopt);
 }
 
-TEST_F(TransformBufferTest, RejectsNonfiniteStalenessThreshold)
+TEST_F(TransformManagerTest, RejectsNonfiniteStalenessThreshold)
 {
   addTransform(9, 1.0);
   EXPECT_EQ(buffer_.getLatestTransform(
@@ -418,16 +413,19 @@ TEST_F(TransformBufferTest, RejectsNonfiniteStalenessThreshold)
       "odom", "base_link", std::numeric_limits<double>::infinity()), std::nullopt);
 }
 
-TEST_F(TransformBufferTest, LogsFailuresWithConfiguredLoggerAndFrameContext)
+TEST_F(TransformManagerTest, LogsFailuresWithConfiguredLoggerAndFrameContext)
 {
-  const nav2::TransformBuffer buffer(tf_buffer_, clock_, rclcpp::get_logger("tf_buffer_test"));
+  nav2::TransformManager configured_buffer(node_, false);
+  const auto & buffer = configured_buffer;
   testing::internal::CaptureStderr();
   EXPECT_EQ(buffer.getLatestPose("odom", "missing"), std::nullopt);
   const auto lookup_log = testing::internal::GetCapturedStderr();
-  EXPECT_NE(lookup_log.find("tf_buffer_test"), std::string::npos);
+  EXPECT_NE(lookup_log.find("tf_manager_test"), std::string::npos);
   EXPECT_NE(lookup_log.find("Failed to get transform from 'missing' to 'odom'"), std::string::npos);
 
   addTransform(8, 1.0);
+  ASSERT_TRUE(configured_buffer.getRawBuffer().setTransform(
+      *buffer_.getLatestTransform("odom", "base_link"), "test"));
   testing::internal::CaptureStderr();
   EXPECT_EQ(buffer.getLatestTransform("odom", "base_link", 1.0), std::nullopt);
   const auto stale_log = testing::internal::GetCapturedStderr();
@@ -452,12 +450,16 @@ TEST_F(TransformBufferTest, LogsFailuresWithConfiguredLoggerAndFrameContext)
   EXPECT_NE(fixed_frame_log.find("via 'missing'"), std::string::npos);
 }
 
-TEST_F(TransformBufferTest, DisabledLoggingSuppressesNestedLookupsAndValidationFailures)
+TEST_F(TransformManagerTest, DisabledLoggingSuppressesNestedLookupsAndValidationFailures)
 {
   addTransform(8, 1.0);
-  buffer_.setUsingDedicatedThread(true);
+  buffer_.getRawBuffer().setUsingDedicatedThread(true);
   const auto no_wait = tf2::Duration::zero();
   const auto negative_wait = tf2::durationFromSec(-0.1);
+  auto system_node = std::make_shared<nav2::LifecycleNode>(
+    "tf_manager_system_time", "", rclcpp::NodeOptions().clock_type(RCL_SYSTEM_TIME));
+  nav2::TransformManager timed_buffer(system_node, false);
+  timed_buffer.getRawBuffer().setUsingDedicatedThread(true);
   testing::internal::CaptureStderr();
   // Repeat the probes as a caller waiting for TF would do.
   for (int i = 0; i < 3; ++i) {
@@ -475,8 +477,6 @@ TEST_F(TransformBufferTest, DisabledLoggingSuppressesNestedLookupsAndValidationF
   }
   EXPECT_EQ(buffer_.getLatestTransform(
       "odom", "base_link", 1.0, nav2::Log::Disabled), std::nullopt);
-  nav2::TransformBuffer timed_buffer(std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME));
-  timed_buffer.setUsingDedicatedThread(true);
   EXPECT_EQ(timed_buffer.getStampedTransform(
       "odom", "missing", now_, tf2::durationFromSec(0.001), nav2::Log::Disabled), std::nullopt);
   EXPECT_EQ(buffer_.getLatestTransform(
@@ -497,7 +497,7 @@ TEST_F(TransformBufferTest, DisabledLoggingSuppressesNestedLookupsAndValidationF
   EXPECT_NE(testing::internal::GetCapturedStderr().find("missing"), std::string::npos);
 }
 
-TEST_F(TransformBufferTest, LoggingOptionPreservesSuccessfulResults)
+TEST_F(TransformManagerTest, LoggingOptionPreservesSuccessfulResults)
 {
   addTransform(8, 1.0);
   const auto no_wait = tf2::Duration::zero();
@@ -519,9 +519,7 @@ protected:
   {
     node_ = std::make_shared<nav2::LifecycleNode>("transform_listener_test");
     executor_.add_node(node_->get_node_base_interface());
-    buffer_ = nav2::create_transform_buffer(node_);
-    broadcaster_ = nav2::create_transform_broadcaster(node_);
-    static_broadcaster_ = nav2::create_static_transform_broadcaster(node_);
+    buffer_ = nav2::create_transform_manager(node_, false);
   }
 
   void expectTransforms()
@@ -534,11 +532,11 @@ protected:
     auto static_transform = dynamic_transform;
     static_transform.child_frame_id = "listener_static";
     static_transform.transform.translation.x = 3.0;
-    static_broadcaster_->sendTransform(static_transform);
+    buffer_->sendStaticTransform(static_transform);
 
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
     while (std::chrono::steady_clock::now() < deadline) {
-      broadcaster_->sendTransform(dynamic_transform);
+      buffer_->sendTransform(dynamic_transform);
       executor_.spin_some();
       const auto dynamic_result = buffer_->getLatestTransform(
         "listener_parent", "listener_dynamic", 0.0, nav2::Log::Disabled);
@@ -554,54 +552,187 @@ protected:
     FAIL() << "Owned listener did not receive dynamic and static TF";
   }
 
+  void expectStaticTransforms(
+    const nav2::TransformManager & receiver,
+    const std::vector<geometry_msgs::msg::TransformStamped> & transforms)
+  {
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (std::chrono::steady_clock::now() < deadline) {
+      bool all_received = true;
+      for (const auto & transform : transforms) {
+        const auto result = receiver.getLatestTransform(
+          transform.header.frame_id, transform.child_frame_id, 0.001, nav2::Log::Disabled);
+        if (!result) {
+          all_received = false;
+          break;
+        }
+        EXPECT_DOUBLE_EQ(result->transform.translation.x, transform.transform.translation.x);
+        EXPECT_EQ(rclcpp::Time(result->header.stamp).nanoseconds(), 0);
+      }
+      if (all_received) {
+        return;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    FAIL() << "Manager did not receive all retained static transforms";
+  }
+
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::executors::SingleThreadedExecutor executor_;
-  nav2::TransformBuffer::SharedPtr buffer_;
-  nav2::TransformBroadcaster::SharedPtr broadcaster_;
-  nav2::StaticTransformBroadcaster::SharedPtr static_broadcaster_;
+  nav2::TransformManager::SharedPtr buffer_;
 };
 
-TEST_F(TransformListenerTest, OptionalListenerCanBeResetAndRecreated)
+TEST_F(TransformListenerTest, ListenerReceivesTransformsByDefault)
 {
-  EXPECT_FALSE(buffer_->hasListener());
-  EXPECT_FALSE(buffer_->getRawBuffer().isUsingDedicatedThread());
-  buffer_->resetListener();
-  buffer_->createListener(node_);
-  EXPECT_TRUE(buffer_->hasListener());
-  EXPECT_TRUE(buffer_->getRawBuffer().isUsingDedicatedThread());
-  EXPECT_THROW(buffer_->createListener(node_), std::logic_error);
-  EXPECT_THROW(buffer_->createListener(), std::logic_error);
-  expectTransforms();
-
-  buffer_->resetListener();
-  EXPECT_FALSE(buffer_->hasListener());
-  EXPECT_FALSE(buffer_->getRawBuffer().isUsingDedicatedThread());
-  EXPECT_TRUE(buffer_->getLatestTransform("listener_parent", "listener_dynamic"));
-  buffer_->resetListener();
-  buffer_->clear();
-  buffer_->createListener(node_, false);
-  EXPECT_FALSE(buffer_->getRawBuffer().isUsingDedicatedThread());
-  expectTransforms();
-}
-
-TEST_F(TransformListenerTest, HiddenNodeListenerReceivesTransforms)
-{
-  buffer_->createListener();
-  EXPECT_TRUE(buffer_->hasListener());
+  buffer_ = nav2::create_transform_manager(node_);
   EXPECT_TRUE(buffer_->getRawBuffer().isUsingDedicatedThread());
   expectTransforms();
 
   // Destruction must join the listener thread while the native buffer is still alive.
-  std::weak_ptr<tf2_ros::Buffer> native_buffer;
-  auto native = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-  native_buffer = native;
-  buffer_ = std::make_shared<nav2::TransformBuffer>(native, node_->get_clock());
-  buffer_->createListener(node_);
-  native.reset();
-  expectTransforms();
-  EXPECT_FALSE(native_buffer.expired());
   buffer_.reset();
-  EXPECT_TRUE(native_buffer.expired());
+}
+
+TEST_F(TransformListenerTest, OptionalListenerCanBeStoppedAndRestarted)
+{
+  EXPECT_FALSE(buffer_->getRawBuffer().isUsingDedicatedThread());
+  buffer_->stopListener();
+  buffer_->startListener();
+  EXPECT_TRUE(buffer_->getRawBuffer().isUsingDedicatedThread());
+  buffer_->startListener();
+  expectTransforms();
+
+  buffer_->stopListener();
+  EXPECT_FALSE(buffer_->getRawBuffer().isUsingDedicatedThread());
+  EXPECT_TRUE(buffer_->getLatestTransform("listener_parent", "listener_dynamic"));
+  buffer_->stopListener();
+  buffer_->getRawBuffer().clear();
+  buffer_->startListener();
+  expectTransforms();
+}
+
+TEST_F(TransformListenerTest, CallerCanSpinListener)
+{
+  buffer_ = nav2::create_transform_manager(node_, false, false);
+  buffer_->startListener();
+  EXPECT_FALSE(buffer_->getRawBuffer().isUsingDedicatedThread());
+  expectTransforms();
+  buffer_->stopListener();
+  buffer_->startListener();
+  expectTransforms();
+}
+
+TEST_F(TransformListenerTest, BroadcasterIsAdvertisedOnFirstSend)
+{
+  const auto publishers = node_->count_publishers("/tf");
+  const auto static_publishers = node_->count_publishers("/tf_static");
+  buffer_ = nav2::create_transform_manager(node_, false);
+  EXPECT_EQ(node_->count_publishers("/tf"), publishers);
+  EXPECT_EQ(node_->count_publishers("/tf_static"), static_publishers);
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "broadcast_parent";
+  transform.child_frame_id = "broadcast_child";
+  buffer_->sendTransform(transform);
+  EXPECT_EQ(node_->count_publishers("/tf"), publishers + 1);
+  buffer_->sendTransform(transform);
+  EXPECT_EQ(node_->count_publishers("/tf"), publishers + 1);
+  EXPECT_EQ(node_->count_publishers("/tf_static"), static_publishers);
+}
+
+TEST_F(TransformListenerTest, StaticBroadcasterIsAdvertisedOnFirstSend)
+{
+  const auto publishers = node_->count_publishers("/tf");
+  const auto static_publishers = node_->count_publishers("/tf_static");
+  buffer_ = nav2::create_transform_manager(node_, false);
+  EXPECT_EQ(node_->count_publishers("/tf"), publishers);
+  EXPECT_EQ(node_->count_publishers("/tf_static"), static_publishers);
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "static_parent";
+  transform.child_frame_id = "static_child";
+  buffer_->sendStaticTransform(transform);
+  EXPECT_EQ(node_->count_publishers("/tf_static"), static_publishers + 1);
+  buffer_->sendStaticTransform(transform);
+  EXPECT_EQ(node_->count_publishers("/tf_static"), static_publishers + 1);
+  EXPECT_EQ(node_->count_publishers("/tf"), publishers);
+}
+
+TEST_F(TransformListenerTest, StaticTransformsAreRetainedForLateListeners)
+{
+  auto sender = nav2::create_transform_manager(node_, false);
+  std::vector<geometry_msgs::msg::TransformStamped> transforms(3);
+  for (size_t i = 0; i < transforms.size(); ++i) {
+    transforms[i].header.frame_id = "static_parent";
+    transforms[i].child_frame_id = "static_child_" + std::to_string(i);
+    transforms[i].header.stamp = node_->now();
+    transforms[i].transform.translation.x = static_cast<double>(i + 1);
+  }
+  sender->sendStaticTransform(transforms[0]);
+  sender->sendStaticTransform(
+    std::vector<geometry_msgs::msg::TransformStamped>{transforms[1], transforms[2]});
+
+  auto late_node = std::make_shared<nav2::LifecycleNode>("late_static_listener");
+  auto receiver = nav2::create_transform_manager(late_node);
+  expectStaticTransforms(*receiver, transforms);
+}
+
+TEST_F(TransformListenerTest, ConcurrentStaticSendsRetainEveryTransform)
+{
+  const auto static_publishers = node_->count_publishers("/tf_static");
+  auto sender = nav2::create_transform_manager(node_, false);
+  std::vector<geometry_msgs::msg::TransformStamped> transforms(8);
+  for (size_t i = 0; i < transforms.size(); ++i) {
+    transforms[i].header.frame_id = "concurrent_static_parent";
+    transforms[i].child_frame_id = "concurrent_static_child_" + std::to_string(i);
+    transforms[i].transform.translation.x = static_cast<double>(i + 1);
+  }
+  std::vector<std::thread> threads;
+  for (const auto & transform : transforms) {
+    threads.emplace_back([sender, transform]() {sender->sendStaticTransform(transform);});
+  }
+  for (auto & thread : threads) {
+    thread.join();
+  }
+  EXPECT_EQ(node_->count_publishers("/tf_static"), static_publishers + 1);
+  auto late_node = std::make_shared<nav2::LifecycleNode>("concurrent_static_listener");
+  auto receiver = nav2::create_transform_manager(late_node);
+  expectStaticTransforms(*receiver, transforms);
+}
+
+TEST_F(TransformListenerTest, BroadcastsTransformVector)
+{
+  buffer_->startListener();
+  geometry_msgs::msg::TransformStamped first;
+  first.header.frame_id = "broadcast_parent";
+  first.child_frame_id = "broadcast_first";
+  first.header.stamp = node_->now();
+  first.transform.translation.x = 2.0;
+  auto second = first;
+  second.child_frame_id = "broadcast_second";
+  second.transform.translation.x = 3.0;
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (std::chrono::steady_clock::now() < deadline) {
+    buffer_->sendTransform(std::vector<geometry_msgs::msg::TransformStamped>{first, second});
+    const auto first_result = buffer_->getLatestTransform(
+      "broadcast_parent", "broadcast_first", 0.0, nav2::Log::Disabled);
+    const auto second_result = buffer_->getLatestTransform(
+      "broadcast_parent", "broadcast_second", 0.0, nav2::Log::Disabled);
+    if (first_result && second_result) {
+      EXPECT_DOUBLE_EQ(first_result->transform.translation.x, 2.0);
+      EXPECT_DOUBLE_EQ(second_result->transform.translation.x, 3.0);
+      return;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  FAIL() << "Manager did not broadcast both transforms";
+}
+
+TEST_F(TransformListenerTest, ManagerDoesNotRetainOwningNode)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("tf_manager_lifetime");
+  const std::weak_ptr<nav2::LifecycleNode> weak_node = node;
+  auto manager = nav2::create_transform_manager(node, false);
+  node.reset();
+  EXPECT_TRUE(weak_node.expired());
+  manager.reset();
 }
 
 int main(int argc, char ** argv)

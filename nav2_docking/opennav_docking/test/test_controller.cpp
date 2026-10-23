@@ -28,7 +28,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 // Testing the controller at high level; the nav2_graceful_controller
 // Where the control law derives has over 98% test coverage
@@ -40,7 +40,7 @@ class ControllerFixture : public opennav_docking::Controller
 {
 public:
   ControllerFixture(
-    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf,
     std::string fixed_frame, std::string base_frame)
   : Controller(node, tf, base_frame), fixed_frame_(fixed_frame)
   {
@@ -206,8 +206,8 @@ private:
 TEST(ControllerTests, ObjectLifecycle)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
+  auto tf = nav2::create_transform_manager(node);
+  tf->getRawBuffer().setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   // Skip collision detection
   nav2::declare_parameter_if_not_declared(
@@ -286,8 +286,8 @@ TEST(ControllerTests, DynamicParameters) {
 TEST(ControllerTests, CollisionCheckerDockForward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
+  auto tf = nav2::create_transform_manager(node);
+  tf->getRawBuffer().setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
     node, "controller.footprint_topic", rclcpp::ParameterValue("test_footprint"));
@@ -352,8 +352,8 @@ TEST(ControllerTests, CollisionCheckerDockForward) {
 TEST(ControllerTests, CollisionCheckerDockBackward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
+  auto tf = nav2::create_transform_manager(node);
+  tf->getRawBuffer().setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
     node, "controller.footprint_topic", rclcpp::ParameterValue("test_footprint"));
@@ -418,8 +418,8 @@ TEST(ControllerTests, CollisionCheckerDockBackward) {
 TEST(ControllerTests, CollisionCheckerUndockBackward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
+  auto tf = nav2::create_transform_manager(node);
+  tf->getRawBuffer().setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
     node, "controller.footprint_topic", rclcpp::ParameterValue("test_footprint"));
@@ -492,8 +492,8 @@ TEST(ControllerTests, CollisionCheckerUndockBackward) {
 TEST(ControllerTests, CollisionCheckerUndockForward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
+  auto tf = nav2::create_transform_manager(node);
+  tf->getRawBuffer().setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
     node, "controller.footprint_topic", rclcpp::ParameterValue("test_footprint"));

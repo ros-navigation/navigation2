@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "angles/angles.h"
 #include "nav2_ros_common/rate.hpp"
 #include "opennav_docking_core/docking_exceptions.hpp"
@@ -45,7 +45,7 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   params_ = param_handler_->getParams();
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
-  tf2_buffer_ = nav2::create_transform_buffer(node);
+  tf2_buffer_ = nav2::create_transform_manager(node, false);
 
   // Create odom subscriber for backward blind docking
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
@@ -92,7 +92,7 @@ FollowingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating %s", get_name());
 
-  tf2_buffer_->createListener(this, true);
+  tf2_buffer_->startListener();
   vel_publisher_->on_activate();
   filtered_dynamic_pose_pub_->on_activate();
   following_action_server_->activate();
@@ -115,7 +115,7 @@ FollowingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   param_handler_->deactivate();
 
   if (tf2_buffer_) {
-    tf2_buffer_->resetListener();
+    tf2_buffer_->stopListener();
   }
 
   // Destroy bond connection
@@ -359,7 +359,7 @@ bool FollowingServer::approachObject(
     // Use one robot pose and timestamp for all geometry and control in this iteration.
     const auto robot_pose = getRobotPose();
     iteration_start_time_ = robot_pose.header.stamp;
-    const auto base_to_fixed_transform = nav2::TransformBuffer::poseToTransformStamped(
+    const auto base_to_fixed_transform = nav2::TransformManager::poseToTransformStamped(
       robot_pose, params_->base_frame);
 
     publishFollowingFeedback(FollowObject::Feedback::CONTROLLING);
@@ -384,7 +384,7 @@ bool FollowingServer::approachObject(
 
     // ... and transform the target_pose into base_frame using the same transform
     tf2::doTransform(
-      target_pose, target_pose, nav2::TransformBuffer::invertTransform(base_to_fixed_transform));
+      target_pose, target_pose, nav2::TransformManager::invertTransform(base_to_fixed_transform));
 
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
@@ -574,7 +574,7 @@ bool FollowingServer::getFramePose(
       "Failed to get transform for frame %s", frame_id.c_str());
     return false;
   }
-  pose = nav2::TransformBuffer::transformToPoseStamped(*transform_result);
+  pose = nav2::TransformManager::transformToPoseStamped(*transform_result);
 
   // Filter the detected pose
   auto filtered_pose = filter_->update(pose);

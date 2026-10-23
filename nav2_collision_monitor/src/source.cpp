@@ -19,11 +19,10 @@
 #include <iterator>
 #include <string>
 
-#include "nav2_ros_common/tf_buffer.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -31,13 +30,13 @@ namespace nav2_collision_monitor
 Source::Source(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
-  const nav2::TransformBuffer::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
   const rclcpp::Duration & source_timeout,
   const bool base_shift_correction)
-: node_(node), source_name_(source_name), tf_buffer_(tf_buffer),
+: node_(node), source_name_(source_name), tf_manager_(tf_buffer),
   base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
   transform_tolerance_(transform_tolerance), source_timeout_(source_timeout),
   base_shift_correction_(base_shift_correction)
@@ -73,7 +72,7 @@ bool Source::configure()
 
   for (const std::string & zone_name : zone_names) {
     auto zone = std::make_shared<ExclusionZone>(
-      node, zone_name, tf_buffer_, base_frame_id_, global_frame_id_,
+      node, zone_name, tf_manager_, base_frame_id_, global_frame_id_,
       transform_tolerance_, base_shift_correction_);
     if (!zone->configure()) {
       RCLCPP_ERROR(
@@ -265,7 +264,7 @@ void Source::addExclusionZoneCallback(
 
   auto node = node_.lock();
   auto zone = std::make_shared<ExclusionZone>(
-    node, desc.zone_name, tf_buffer_, base_frame_id_, global_frame_id_,
+    node, desc.zone_name, tf_manager_, base_frame_id_, global_frame_id_,
     transform_tolerance_, base_shift_correction_);
   if (!zone->configure(desc)) {
     response->success = false;
@@ -331,7 +330,7 @@ bool Source::getTransform(
   tf2::Transform & tf_transform) const
 {
   if (base_shift_correction_) {
-    const auto transform = tf_buffer_->getStampedTransform(
+    const auto transform = tf_manager_->getStampedTransform(
       base_frame_id_, rclcpp::Time(curr_time), data_header.frame_id,
       rclcpp::Time(data_header.stamp), global_frame_id_, transform_tolerance_);
     if (!transform) {
@@ -339,7 +338,7 @@ bool Source::getTransform(
     }
     tf2::fromMsg(transform->transform, tf_transform);
   } else {
-    const auto transform_msg = tf_buffer_->getLatestTransform(
+    const auto transform_msg = tf_manager_->getLatestTransform(
       base_frame_id_, data_header.frame_id, transform_staleness_threshold_);
     if (!transform_msg) {
       return false;

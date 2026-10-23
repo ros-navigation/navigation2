@@ -21,7 +21,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "tf2/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 
@@ -29,7 +29,7 @@ namespace opennav_docking
 {
 
 Controller::Controller(
-  const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
+  const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf,
   std::string base_frame)
 : tf2_buffer_(tf), base_frame_(base_frame)
 {

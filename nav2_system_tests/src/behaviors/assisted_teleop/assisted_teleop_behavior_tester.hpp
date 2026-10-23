@@ -37,7 +37,7 @@
 #include "std_msgs/msg/empty.hpp"
 
 #include "tf2/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_system_tests
 {
@@ -76,7 +76,7 @@ private:
   bool initial_pose_received_;
   rclcpp::Time stamp_;
 
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::executors::SingleThreadedExecutor executor_;

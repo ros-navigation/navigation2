@@ -31,7 +31,7 @@
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -105,7 +105,7 @@ public:
   VelocityPolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_buffer,
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance)
   : nav2_collision_monitor::VelocityPolygon(
@@ -159,7 +159,7 @@ protected:
 
   std::shared_ptr<VelocityPolygonWrapper> velocity_polygon_;
 
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 };  // Tester
 
 Tester::Tester()
@@ -170,9 +170,9 @@ Tester::Tester()
   test_node_->configure();
   test_node_->activate();
 
-  tf_buffer_ = nav2::create_transform_buffer(test_node_);
-  tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_buffer_->createListener(test_node_);
+  tf_manager_ = nav2::create_transform_manager(test_node_);
+  // One-thread broadcasting-listening model
+  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 }
 
 Tester::~Tester()
@@ -181,10 +181,7 @@ Tester::~Tester()
 
   test_node_.reset();
 
-  if (tf_buffer_) {
-    tf_buffer_->resetListener();
-  }
-  tf_buffer_.reset();
+  tf_manager_.reset();
 }
 
 void Tester::setCommonParameters(const std::string & polygon_name, const std::string & action_type)
@@ -310,7 +307,7 @@ void Tester::createVelocityPolygon(const std::string & action_type, const bool i
 
   velocity_polygon_ = std::make_shared<VelocityPolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(velocity_polygon_->configure());
   velocity_polygon_->activate();
 }
