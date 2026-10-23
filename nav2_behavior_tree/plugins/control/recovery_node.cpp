@@ -36,6 +36,7 @@ RecoveryNode::RecoveryNode(
 void RecoveryNode::initialize()
 {
   setOutput("retry_count", retry_count_);
+  reset_distance_ = 0.0;
   getInput("reset_distance", reset_distance_);
   if (reset_distance_ > 0.0) {
     const auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
