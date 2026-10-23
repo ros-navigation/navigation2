@@ -22,6 +22,7 @@
 #include <chrono>
 #include <algorithm>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/timer.hpp"
@@ -31,7 +32,6 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals; // NOLINT
 using namespace std::chrono;  // NOLINT
@@ -44,11 +44,9 @@ public:
   explicit TransformHandler(nav2::LifecycleNode::SharedPtr & node)
   : node_(node),
     is_active_(false),
-    base_transform_(nullptr),
-    tf_broadcaster_(nullptr)
+    base_transform_(nullptr)
   {
-    tf_buffer_ = nav2::create_transform_buffer(node_);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
+    tf_manager_ = nav2::create_transform_manager(node_);
   }
 
   virtual ~TransformHandler()
@@ -56,8 +54,7 @@ public:
     if (is_active_) {
       deactivate();
     }
-    tf_listener_.reset();
-    tf_buffer_.reset();
+    tf_manager_.reset();
   }
 
   // Activate the tester before running tests
@@ -89,18 +86,19 @@ public:
     }
 
     spin_thread_.reset();
-    tf_broadcaster_.reset();
   }
 
-  nav2::TransformBuffer::SharedPtr getBuffer() const
+  nav2::TransformManager::SharedPtr getBuffer() const
   {
-    return tf_buffer_;
+    return tf_manager_;
   }
 
   virtual void waitForTransform() const
   {
     if (is_active_) {
-      while (!tf_buffer_->canTransform("map", "base_link", rclcpp::Time(0))) {
+      while (!tf_manager_->getLatestTransform("map", "base_link", 0.0,
+          nav2::Log::Disabled).has_value())
+      {
         std::this_thread::sleep_for(100ms);
       }
       RCLCPP_INFO(node_->get_logger(), "Transforms are available now!");
@@ -128,14 +126,12 @@ protected:
   void publishRobotTransform()
   {
     base_transform_->header.stamp = node_->now();
-    tf_broadcaster_->sendTransform(*base_transform_);
+    tf_manager_->sendTransform(*base_transform_);
   }
 
   virtual void startRobotTransform(std::chrono::milliseconds tf_broadcast_period)
   {
     // Provide the robot pose transform
-    tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
-
     if (!base_transform_) {
       base_transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();
       base_transform_->header.frame_id = "map";
@@ -165,9 +161,7 @@ protected:
 
   // The tester must provide the robot pose through a transform
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   rclcpp::TimerBase::SharedPtr transform_timer_;
 };
 

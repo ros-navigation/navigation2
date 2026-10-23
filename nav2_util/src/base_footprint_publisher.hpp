@@ -22,8 +22,9 @@
 #include "rclcpp/node.hpp"
 #include "rclcpp/node_options.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
+#include "tf2_ros/transform_listener.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -36,18 +37,17 @@ namespace nav2_util
  * to inject base footprint publisher removing Z, Pitch, and Roll for
  * 3D state estimation but desiring a 2D frame for navigation, visualization, or other reasons
  */
-class BaseFootprintPublisherListener : public nav2::TransformListener
+class BaseFootprintPublisherListener : public tf2_ros::TransformListener
 {
 public:
-  //  nosemgrep
-  BaseFootprintPublisherListener(tf2::BufferCore & buffer, bool spin_thread, rclcpp::Node & node)
-  : nav2::TransformListener(buffer, spin_thread)
+  BaseFootprintPublisherListener(
+    nav2::TransformManager & buffer, bool spin_thread, rclcpp::Node & node)  //  nosemgrep
+  : tf2_ros::TransformListener(buffer.getRawBuffer(), spin_thread), tf_manager_(buffer)
   {
     base_link_frame_ = nav2::declare_or_get_parameter(
       &node, "base_link_frame", std::string("base_link"));
     base_footprint_frame_ = nav2::declare_or_get_parameter(
       &node, "base_footprint_frame", std::string("base_footprint"));
-    tf_broadcaster_ = nav2::create_transform_broadcaster(&node);
   }
 
   /**
@@ -55,7 +55,7 @@ public:
    */
   void subscription_callback(tf2_msgs::msg::TFMessage::ConstSharedPtr msg, bool is_static) override
   {
-    TransformListener::subscription_callback(msg, is_static);
+    tf2_ros::TransformListener::subscription_callback(msg, is_static);
 
     if (is_static) {
       return;
@@ -82,14 +82,14 @@ public:
         transform.transform.rotation.z = q.z();
         transform.transform.rotation.w = q.w();
 
-        tf_broadcaster_->sendTransform(transform);
+        tf_manager_.sendTransform(transform);
         return;
       }
     }
   }
 
 protected:
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformManager & tf_manager_;
   std::string base_link_frame_, base_footprint_frame_;
 };
 
@@ -109,13 +109,13 @@ public:
   : Node("base_footprint_publisher", options)
   {
     RCLCPP_INFO(get_logger(), "Creating base footprint publisher");
-    tf_buffer_ = nav2::create_transform_buffer(this);
+    tf_manager_ = nav2::create_transform_manager(this, false);
     listener_publisher_ = std::make_shared<BaseFootprintPublisherListener>(
-      *tf_buffer_, true, *this);
+      *tf_manager_, true, *this);
   }
 
 protected:
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::shared_ptr<BaseFootprintPublisherListener> listener_publisher_;
 };
 

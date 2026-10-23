@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/behavior.hpp"
@@ -85,8 +85,7 @@ protected:
    */
   nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
-  nav2::TransformBuffer::SharedPtr tf_;
-  nav2::TransformListener::SharedPtr transform_listener_;
+  nav2::TransformManager::SharedPtr tf_;
 
   // Plugins
   pluginlib::ClassLoader<nav2_core::Behavior> plugin_loader_;

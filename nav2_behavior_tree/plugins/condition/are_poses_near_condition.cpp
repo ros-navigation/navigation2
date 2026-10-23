@@ -15,10 +15,9 @@
 #include <string>
 #include <memory>
 
-#include "nav2_util/robot_utils.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/are_poses_near_condition.hpp"
 
@@ -38,7 +37,7 @@ ArePosesNearCondition::ArePosesNearCondition(
 void ArePosesNearCondition::initialize()
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 }
 
@@ -63,14 +62,16 @@ bool ArePosesNearCondition::arePosesNearby()
   getInput("tolerance", tol);
 
   if (pose1.header.frame_id != pose2.header.frame_id) {
-    if (!nav2_util::transformPoseInTargetFrame(
-        pose1, pose1, *tf_, global_frame_, transform_tolerance_) ||
-      !nav2_util::transformPoseInTargetFrame(
-        pose2, pose2, *tf_, global_frame_, transform_tolerance_))
-    {
+    const auto transformed_pose1 = tf_->transformStampedPose(
+      global_frame_, pose1, tf2::durationFromSec(transform_tolerance_));
+    const auto transformed_pose2 = tf_->transformStampedPose(
+      global_frame_, pose2, tf2::durationFromSec(transform_tolerance_));
+    if (!transformed_pose1 || !transformed_pose2) {
       RCLCPP_ERROR(node_->get_logger(), "Failed to transform poses to the same frame");
       return false;
     }
+    pose1 = *transformed_pose1;
+    pose2 = *transformed_pose2;
   }
 
   double dx = pose1.pose.position.x - pose2.pose.position.x;

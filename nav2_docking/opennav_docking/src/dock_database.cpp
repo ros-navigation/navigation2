@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "opennav_docking/dock_database.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace opennav_docking
 {
@@ -32,7 +32,7 @@ DockDatabase::~DockDatabase()
 
 bool DockDatabase::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
-  nav2::TransformBuffer::SharedPtr tf)
+  nav2::TransformManager::SharedPtr tf)
 {
   node_ = parent;
   auto node = node_.lock();
@@ -149,7 +149,7 @@ ChargingDock::Ptr DockDatabase::findDockPlugin(const std::string & type)
 
 bool DockDatabase::getDockPlugins(
   const nav2::LifecycleNode::SharedPtr & node,
-  nav2::TransformBuffer::SharedPtr tf)
+  nav2::TransformManager::SharedPtr tf)
 {
   std::vector<std::string> docks_plugins;
   try {

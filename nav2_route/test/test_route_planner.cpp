@@ -23,7 +23,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_route/route_planner.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 
 using namespace nav2_route;  // NOLINT
@@ -126,7 +126,7 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   RouteRequest route_request;
 
   auto node = std::make_shared<nav2::LifecycleNode>("router_test");
-  nav2::TransformBuffer::SharedPtr tf_buffer;
+  nav2::TransformManager::SharedPtr tf_buffer;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
   RoutePlanner planner;
   planner.configure(node, tf_buffer, collision_checker);
@@ -191,7 +191,7 @@ TEST(RoutePlannerTest, test_route_planner_negative)
   RouteRequest route_request;
 
   auto node = std::make_shared<nav2::LifecycleNode>("router_test");
-  nav2::TransformBuffer::SharedPtr tf_buffer;
+  nav2::TransformManager::SharedPtr tf_buffer;
   node->declare_parameter("max_iterations", rclcpp::ParameterValue(5));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
   RoutePlanner planner;

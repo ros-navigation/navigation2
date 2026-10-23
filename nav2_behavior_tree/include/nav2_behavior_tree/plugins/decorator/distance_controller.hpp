@@ -20,7 +20,7 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/clock.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
@@ -76,7 +76,7 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Clock::SharedPtr clock_;
 
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_;
   double transform_tolerance_;
   double transform_staleness_threshold_;
 

@@ -58,8 +58,7 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  tf_ = nav2::create_transform_buffer(this);
-  transform_listener_ = nav2::create_transform_listener(*tf_, this, true);
+  tf_ = nav2::create_transform_manager(this);
 
   behavior_types_.resize(behavior_ids_.size());
   if (!loadBehaviorPlugins()) {
@@ -206,7 +205,6 @@ BehaviorServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
 
   behaviors_.clear();
-  transform_listener_.reset();
   tf_.reset();
 
   local_costmap_sub_.reset();

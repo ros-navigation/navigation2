@@ -27,7 +27,7 @@
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "opennav_docking/docking_server.hpp"
 #include "nav2_ros_common/node_thread.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 // Testing unit functions in docking server, smoke/system tests in python file
 
@@ -60,7 +60,7 @@ class DockingServerTFShim : public DockingServerShim
 public:
   DockingServerTFShim()
   : DockingServerShim() {}
-  nav2::TransformBuffer::SharedPtr getTfBuffer() {return tf2_buffer_;}
+  nav2::TransformManager::SharedPtr getTfBuffer() {return tf2_buffer_;}
 };
 
 // Test shim that retains the production robot-pose lookup.
@@ -69,7 +69,7 @@ class DockingServerRealTFShim : public DockingServer
 public:
   DockingServerRealTFShim()
   : DockingServer() {}
-  nav2::TransformBuffer::SharedPtr getTfBuffer() {return tf2_buffer_;}
+  nav2::TransformManager::SharedPtr getTfBuffer() {return tf2_buffer_;}
 };
 
 TEST(DockingServerTests, RobotPoseFailureIsDockingTFError)
@@ -98,14 +98,14 @@ TEST(DockingServerTests, GetCommandTransformsPoseToFixedFrame)
   base_transform.header.frame_id = "odom";
   base_transform.child_frame_id = "base_link";
   base_transform.transform.rotation.w = 1.0;
-  node->getTfBuffer()->setTransform(base_transform, "test_authority", true);
+  node->getTfBuffer()->getRawBuffer().setTransform(base_transform, "test_authority", true);
 
   geometry_msgs::msg::TransformStamped sensor_transform;
   sensor_transform.header.frame_id = "odom";
   sensor_transform.child_frame_id = "sensor";
   sensor_transform.transform.translation.x = 1.0;
   sensor_transform.transform.rotation.w = 1.0;
-  node->getTfBuffer()->setTransform(sensor_transform, "test_authority", true);
+  node->getTfBuffer()->getRawBuffer().setTransform(sensor_transform, "test_authority", true);
 
   geometry_msgs::msg::PoseStamped target;
   target.header.frame_id = "sensor";
@@ -113,6 +113,42 @@ TEST(DockingServerTests, GetCommandTransformsPoseToFixedFrame)
   geometry_msgs::msg::Twist command;
 
   // The target is at x=1 in odom, rather than at the robot's x=0 position.
+  EXPECT_FALSE(node->getCommandToPose(command, target, 0.1, 0.1, false, false));
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+}
+
+TEST(DockingServerTests, GetCommandUsesLatestTransformDespitePoseTimestamp)
+{
+  auto node = std::make_shared<DockingServerRealTFShim>();
+  node->declare_parameter("controller.use_collision_detection", false);
+  node->declare_parameter("transform_staleness_threshold", 5.0);
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter(
+    "test_plugin.plugin", "opennav_docking::TestFailureDock");
+  node->on_configure(rclcpp_lifecycle::State());
+
+  geometry_msgs::msg::TransformStamped base_transform;
+  base_transform.header.frame_id = "odom";
+  base_transform.child_frame_id = "base_link";
+  ASSERT_TRUE(node->getTfBuffer()->getRawBuffer().setTransform(
+      base_transform, "test_authority", true));
+
+  geometry_msgs::msg::TransformStamped sensor_transform;
+  sensor_transform.header.frame_id = "odom";
+  sensor_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(2.0);
+  sensor_transform.child_frame_id = "sensor";
+  ASSERT_TRUE(node->getTfBuffer()->getRawBuffer().setTransform(sensor_transform, "test_authority"));
+
+  geometry_msgs::msg::PoseStamped target;
+  target.header = sensor_transform.header;
+  target.header.frame_id = "sensor";
+  sensor_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(1.0);
+  sensor_transform.transform.translation.x = 1.0;
+  ASSERT_TRUE(node->getTfBuffer()->getRawBuffer().setTransform(sensor_transform, "test_authority"));
+  geometry_msgs::msg::Twist command;
+
+  // The latest sensor transform puts the target at x=1, despite its older timestamp.
   EXPECT_FALSE(node->getCommandToPose(command, target, 0.1, 0.1, false, false));
 
   node->on_cleanup(rclcpp_lifecycle::State());
@@ -128,15 +164,22 @@ TEST(DockingServerTests, GetCommandRejectsStalePoseTransform)
     "test_plugin.plugin", "opennav_docking::TestFailureDock");
   node->on_configure(rclcpp_lifecycle::State());
 
+  geometry_msgs::msg::TransformStamped base_transform;
+  base_transform.header.frame_id = "odom";
+  base_transform.child_frame_id = "base_link";
+  ASSERT_TRUE(node->getTfBuffer()->getRawBuffer().setTransform(
+      base_transform, "test_authority", true));
+
   geometry_msgs::msg::TransformStamped sensor_transform;
   sensor_transform.header.frame_id = "odom";
   sensor_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(1.0);
   sensor_transform.child_frame_id = "sensor";
   sensor_transform.transform.rotation.w = 1.0;
-  node->getTfBuffer()->setTransform(sensor_transform, "test_authority");
+  node->getTfBuffer()->getRawBuffer().setTransform(sensor_transform, "test_authority");
 
   geometry_msgs::msg::PoseStamped target;
   target.header.frame_id = "sensor";
+  target.header.stamp = sensor_transform.header.stamp;
   target.pose.orientation.w = 1.0;
   geometry_msgs::msg::Twist command;
 
@@ -597,7 +640,7 @@ TEST(DockingServerTests, HandlesPluginStartFailure)
   identity_transform.header.frame_id = "odom";
   identity_transform.child_frame_id = "odom";
   identity_transform.transform.rotation.w = 1.0;
-  node->getTfBuffer()->setTransform(identity_transform, "test_authority", true);
+  node->getTfBuffer()->getRawBuffer().setTransform(identity_transform, "test_authority", true);
 
   node->on_activate(rclcpp_lifecycle::State());
 

@@ -15,10 +15,10 @@
 #include <string>
 #include <memory>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "base_footprint_publisher.hpp"
 #include "gtest/gtest.h"
 #include "tf2/exceptions.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 #include "rclcpp/rate.hpp"
 
 TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
@@ -28,9 +28,7 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   executor.add_node(node->get_node_base_interface());
   executor.spin_some();
 
-  auto tf_broadcaster = nav2::create_transform_broadcaster(node);
-  auto buffer = nav2::create_transform_buffer(node);
-  auto listener = nav2::create_transform_listener(*buffer, node);
+  auto buffer = nav2::create_transform_manager(node);
 
   std::string base_link = "base_link";
   std::string base_footprint = "base_footprint";
@@ -40,11 +38,9 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   transform.header.stamp = node->now();
   transform.header.frame_id = "test1_1";
   transform.child_frame_id = "test1";
-  tf_broadcaster->sendTransform(transform);
+  buffer->sendTransform(transform);
   executor.spin_some();
-  EXPECT_THROW(
-    buffer->lookupTransform(base_link, base_footprint, tf2::TimePointZero),
-    tf2::TransformException);
+  EXPECT_FALSE(buffer->getLatestTransform(base_link, base_footprint));
 
   // This is valid, should work now and communicate the Z-removed info
   transform.header.stamp = node->now();
@@ -53,14 +49,15 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   transform.transform.translation.x = 1.0;
   transform.transform.translation.y = 1.0;
   transform.transform.translation.z = 1.0;
-  tf_broadcaster->sendTransform(transform);
+  buffer->sendTransform(transform);
   rclcpp::Rate r(1.0);
   r.sleep();
   executor.spin_some();
-  auto t = buffer->lookupTransform(base_link, base_footprint, tf2::TimePointZero);
-  EXPECT_EQ(t.transform.translation.x, 1.0);
-  EXPECT_EQ(t.transform.translation.y, 1.0);
-  EXPECT_EQ(t.transform.translation.z, 0.0);
+  const auto t = buffer->getLatestTransform(base_link, base_footprint);
+  ASSERT_TRUE(t);
+  EXPECT_EQ(t->transform.translation.x, 1.0);
+  EXPECT_EQ(t->transform.translation.y, 1.0);
+  EXPECT_EQ(t->transform.translation.z, 0.0);
 }
 
 int main(int argc, char ** argv)

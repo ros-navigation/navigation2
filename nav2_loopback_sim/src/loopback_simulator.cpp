@@ -23,6 +23,7 @@
 #include <tuple>
 #include <chrono>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using namespace std::chrono_literals;
@@ -68,7 +69,7 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   t_odom_to_base_link_.header.frame_id = odom_frame_id_;
   t_odom_to_base_link_.child_frame_id = base_frame_id_;
 
-  tf_broadcaster_ = nav2::create_transform_broadcaster(this);
+  tf_manager_ = nav2::create_transform_manager(this, publish_scan_);
 
   // Subscriptions
   initial_pose_sub_ =
@@ -91,8 +92,6 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   if (publish_scan_) {
     map_client_ = create_client<nav_msgs::srv::GetMap>("/map_server/map");
-    tf_buffer_ = nav2::create_transform_buffer(this);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_);
   }
 
   if (publish_clock_) {
@@ -186,9 +185,7 @@ LoopbackSimulator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   odom_pub_.reset();
   scan_pub_.reset();
   map_client_.reset();
-  tf_listener_.reset();
-  tf_buffer_.reset();
-  tf_broadcaster_.reset();
+  tf_manager_.reset();
   clock_publisher_.reset();
   param_validator_.reset();
   param_updater_.reset();
@@ -231,20 +228,21 @@ void LoopbackSimulator::getMap()
 
 void LoopbackSimulator::getBaseToLaserTf()
 {
-  try {
-    auto transform = tf_buffer_->lookupTransform(
-      base_frame_id_, scan_frame_id_, tf2::TimePointZero);
-    tf2::fromMsg(transform.transform, tf_base_to_laser_);
-    has_base_to_laser_ = true;
-  } catch (const tf2::TransformException & ex) {
-    RCLCPP_ERROR(get_logger(), "Transform lookup failed: %s", ex.what());
+  const auto transform = tf_manager_->getLatestTransform(
+    base_frame_id_, scan_frame_id_, 0.0);
+  if (!transform) {
+    RCLCPP_ERROR(get_logger(), "Transform lookup failed from %s to %s",
+      scan_frame_id_.c_str(), base_frame_id_.c_str());
+    return;
   }
+  tf2::fromMsg(transform->transform, tf_base_to_laser_);
+  has_base_to_laser_ = true;
 }
 
 void LoopbackSimulator::setupTimerCallback()
 {
   t_odom_to_base_link_.header.stamp = this->now();
-  tf_broadcaster_->sendTransform(t_odom_to_base_link_);
+  tf_manager_->sendTransform(t_odom_to_base_link_);
   if (publish_scan_ && !has_map_) {
     getMap();
   }
@@ -399,9 +397,9 @@ void LoopbackSimulator::publishTransforms(
   map_to_odom.header.stamp = now + rclcpp::Duration::from_seconds(update_dur_);
   odom_to_base_link.header.stamp = now;
   if (publish_map_odom_tf_) {
-    tf_broadcaster_->sendTransform(map_to_odom);
+    tf_manager_->sendTransform(map_to_odom);
   }
-  tf_broadcaster_->sendTransform(odom_to_base_link);
+  tf_manager_->sendTransform(odom_to_base_link);
 }
 
 void LoopbackSimulator::publishOdometry(

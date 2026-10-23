@@ -18,6 +18,7 @@
 #include <cmath>
 #include <limits>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/transform_datatypes.hpp"
@@ -25,7 +26,6 @@
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 #include "nav2_collision_monitor/polygon_utils.hpp"
 
@@ -35,12 +35,12 @@ namespace nav2_collision_monitor
 ExclusionZone::ExclusionZone(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & zone_name,
-  const nav2::TransformBuffer::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_buffer,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
   const bool base_shift_correction)
-: node_(node), zone_name_(zone_name), tf_buffer_(tf_buffer),
+: node_(node), zone_name_(zone_name), tf_manager_(tf_buffer),
   base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
   transform_tolerance_(transform_tolerance), base_shift_correction_(base_shift_correction),
   min_height_(-std::numeric_limits<double>::max()),
@@ -285,35 +285,25 @@ bool ExclusionZone::getZoneToBaseTransform(
   tf2::Transform tf_zone_to_global;
   tf_zone_to_global.setIdentity();
   if (frame_id_ != global_frame_id_) {
-    geometry_msgs::msg::TransformStamped zone_to_global_msg;
-    if (!nav2_util::lookupTransformWithStalenessCheck(
-        *tf_buffer_, global_frame_id_, frame_id_, curr_time,
-        transform_staleness_threshold_, zone_to_global_msg))
-    {
+    const auto zone_to_global_msg = tf_manager_->getLatestTransform(
+      global_frame_id_, frame_id_, transform_staleness_threshold_);
+    if (!zone_to_global_msg) {
       return false;
     }
     // Freeze the pose in the smooth global frame so a held zone remains fixed
     // in the world while the robot continues moving.
-    tf2::fromMsg(zone_to_global_msg.transform, tf_zone_to_global);
+    tf2::fromMsg(zone_to_global_msg->transform, tf_zone_to_global);
   }
 
   // Re-project the world pose into the current base frame.
   tf2::Transform tf_global_to_base;
-  bool got_base;
-  if (base_shift_correction_) {
-    got_base = nav2_util::getTransform(
-      global_frame_id_, curr_time, base_frame_id_, curr_time, global_frame_id_,
-      non_blocking, tf_buffer_, tf_global_to_base);
-  } else {
-    geometry_msgs::msg::TransformStamped global_to_base_msg;
-    got_base = nav2_util::lookupTransformWithStalenessCheck(
-      *tf_buffer_, base_frame_id_, global_frame_id_, curr_time,
-      base_transform_staleness_threshold_, global_to_base_msg);
-    if (got_base) {
-      tf2::fromMsg(global_to_base_msg.transform, tf_global_to_base);
-    }
-  }
-  if (!got_base) {
+  const auto global_to_base = base_shift_correction_ ?
+    tf_manager_->getStampedTransform(
+      base_frame_id_, curr_time, global_frame_id_, curr_time,
+      global_frame_id_, non_blocking, nav2::Log::Disabled) :
+    tf_manager_->getLatestTransform(
+      base_frame_id_, global_frame_id_, base_transform_staleness_threshold_, nav2::Log::Disabled);
+  if (!global_to_base) {
     RCLCPP_WARN_THROTTLE(
       logger_, *node_clock_, 2000,
       "[%s]: cannot transform '%s' -> '%s'; not excluding any points",
@@ -321,6 +311,7 @@ bool ExclusionZone::getZoneToBaseTransform(
     return false;
   }
 
+  tf2::fromMsg(global_to_base->transform, tf_global_to_base);
   tf_zone_to_base = tf_global_to_base * tf_zone_to_global;
   return true;
 }

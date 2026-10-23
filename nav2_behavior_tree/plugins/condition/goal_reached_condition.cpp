@@ -15,10 +15,9 @@
 #include <string>
 #include <memory>
 
-#include "nav2_util/robot_utils.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/goal_reached_condition.hpp"
 
@@ -47,7 +46,7 @@ void GoalReachedCondition::initialize()
   clock_ = node_->get_clock();
 
   goal_reached_tol_ = node_->declare_or_get_parameter("goal_reached_tol", 0.25);
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
 
   node_->get_parameter("transform_tolerance", transform_tolerance_);
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
@@ -71,18 +70,15 @@ bool GoalReachedCondition::isGoalReached()
   geometry_msgs::msg::PoseStamped goal;
   getInput("goal", goal);
 
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getFreshPose(
-      *tf_, goal.header.frame_id, robot_base_frame_, clock_->now(), transform_staleness_threshold_,
-      current_pose))
-  {
+  const auto current_pose = tf_->getLatestPose(
+    goal.header.frame_id, robot_base_frame_, transform_staleness_threshold_);
+  if (!current_pose) {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return false;
   }
 
-  double dx = goal.pose.position.x - current_pose.pose.position.x;
-  double dy = goal.pose.position.y - current_pose.pose.position.y;
-
+  double dx = goal.pose.position.x - current_pose->pose.position.x;
+  double dy = goal.pose.position.y - current_pose->pose.position.y;
   return (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_);
 }
 

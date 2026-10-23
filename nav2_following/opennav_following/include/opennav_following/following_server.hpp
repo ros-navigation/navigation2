@@ -35,7 +35,7 @@
 #include "opennav_docking/controller.hpp"
 #include "opennav_docking/pose_filter.hpp"
 #include "opennav_following/parameter_handler.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace opennav_following
 {
@@ -261,8 +261,7 @@ protected:
 
   std::unique_ptr<opennav_docking::Controller> controller_;
 
-  nav2::TransformBuffer::SharedPtr tf2_buffer_;
-  nav2::TransformListener::SharedPtr tf2_listener_;
+  nav2::TransformManager::SharedPtr tf2_buffer_;
 };
 
 }  // namespace opennav_following

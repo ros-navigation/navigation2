@@ -48,13 +48,13 @@ protected:
     node_->declare_parameter("trinary_costmap", true);
     node_->declare_parameter("transform_tolerance", 0.0);
     node_->declare_parameter("static.footprint_clearing_enabled", footprint_clearing);
-    tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_ = std::make_shared<nav2::TransformManager>(node_, false);
     geometry_msgs::msg::TransformStamped transform;
     transform.header.frame_id = "odom";
     transform.child_frame_id = "map";
     transform.transform.translation.x = odom_to_map_x;
     transform.transform.rotation.w = 1.0;
-    ASSERT_TRUE(tf_->setTransform(transform, "test", true));
+    ASSERT_TRUE(tf_->getRawBuffer().setTransform(transform, "test", true));
     layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("odom", true, true);
     layers_->resizeMap(10, 10, 1.0, 0.0, 0.0);
     layer_ = std::make_shared<TestStaticLayer>();
@@ -70,7 +70,7 @@ protected:
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformManager> tf_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
   std::shared_ptr<TestStaticLayer> layer_;
 };
@@ -119,7 +119,7 @@ TEST_F(StaticLayerRollingTest, FailedTransformMarksLayerNotCurrentAndRecovers)
 
   // A rolling update clears the master window before asking each plugin to repopulate it.
   // If the map transform is unavailable, the static obstacle is therefore absent this cycle.
-  tf_->clear();
+  tf_->getRawBuffer().clear();
   layers_->updateMap(5.0, 5.0, 0.0);
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::NO_INFORMATION);
   EXPECT_FALSE(layer_->isCurrent());
@@ -129,7 +129,7 @@ TEST_F(StaticLayerRollingTest, FailedTransformMarksLayerNotCurrentAndRecovers)
   transform.header.frame_id = "odom";
   transform.child_frame_id = "map";
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_->setTransform(transform, "test", true));
+  ASSERT_TRUE(tf_->getRawBuffer().setTransform(transform, "test", true));
   layers_->updateMap(5.0, 5.0, 0.0);
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
   EXPECT_TRUE(layer_->isCurrent());
@@ -193,7 +193,7 @@ protected:
     node_->declare_parameter("unknown_cost_value", 255);
     node_->declare_parameter("trinary_costmap", true);
     node_->declare_parameter("transform_tolerance", 0.0);
-    tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_ = std::make_shared<nav2::TransformManager>(node_, false);
     layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, true);
     layers_->resizeMap(20, 20, 1.0, 0.0, 0.0);
   }
@@ -229,7 +229,7 @@ protected:
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2::TransformManager> tf_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
 };
 

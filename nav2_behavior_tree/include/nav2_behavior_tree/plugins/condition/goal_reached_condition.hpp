@@ -23,7 +23,7 @@
 #include "behaviortree_cpp/json_export.h"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/clock.hpp"
 
 
@@ -101,7 +101,7 @@ protected:
 private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Clock::SharedPtr clock_;
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_;
 
   double goal_reached_tol_;
   double transform_tolerance_;

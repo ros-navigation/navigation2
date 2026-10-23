@@ -22,12 +22,11 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "behaviortree_cpp/action_node.h"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/clock.hpp"
 
 namespace nav2_behavior_tree
@@ -80,7 +79,7 @@ private:
 
   std::string global_frame_, robot_base_frame_;
   rclcpp::Clock::SharedPtr clock_;
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_;
   double transform_tolerance_{0.1};
   double transform_staleness_threshold_{0.0};
 };

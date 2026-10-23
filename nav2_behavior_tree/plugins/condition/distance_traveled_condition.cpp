@@ -16,9 +16,8 @@
 #include <string>
 #include <memory>
 
-#include "nav2_util/robot_utils.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/distance_traveled_condition.hpp"
 
@@ -40,7 +39,7 @@ void DistanceTraveledCondition::initialize()
 
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
@@ -55,36 +54,35 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
-    if (!nav2_util::getFreshPose(
-        *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_,
-        start_pose_))
-    {
+    const auto start_pose_result = tf_->getLatestPose(
+      global_frame_, robot_base_frame_, transform_staleness_threshold_, nav2::Log::Disabled);
+    if (!start_pose_result) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+      return BT::NodeStatus::FAILURE;
     }
+    start_pose_ = *start_pose_result;
     return BT::NodeStatus::FAILURE;
   }
 
   // Determine distance travelled since we've started this iteration
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getFreshPose(
-      *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_,
-      current_pose))
-  {
+
+  const auto current_pose = tf_->getLatestPose(
+    global_frame_, robot_base_frame_, transform_staleness_threshold_, nav2::Log::Disabled);
+  if (!current_pose) {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return BT::NodeStatus::FAILURE;
   }
 
   // Get euclidean distance
   auto travelled = nav2_util::geometry_utils::euclidean_distance(
-    start_pose_.pose, current_pose.pose);
+    start_pose_.pose, current_pose->pose);
 
   if (travelled < distance_) {
     return BT::NodeStatus::FAILURE;
   }
 
   // Update start pose
-  start_pose_ = current_pose;
-
+  start_pose_ = *current_pose;
   return BT::NodeStatus::SUCCESS;
 }
 

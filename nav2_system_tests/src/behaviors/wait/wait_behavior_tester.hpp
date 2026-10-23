@@ -27,14 +27,13 @@
 #include "rclcpp/publisher.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_msgs/action/wait.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 #include "tf2/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_system_tests
 {
@@ -71,8 +70,7 @@ private:
   bool is_active_;
   bool initial_pose_received_;
 
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   rclcpp::Node::SharedPtr node_;
 

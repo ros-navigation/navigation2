@@ -32,7 +32,7 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -258,9 +258,7 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::executors::SingleThreadedExecutor node_executor_;
 
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::unique_ptr<geometry_msgs::msg::TransformStamped> transform_;
 
   std::shared_ptr<TestMask> mask_;
@@ -363,9 +361,9 @@ void TestNode::setDefaultState(bool default_state)
 bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_threshold)
 {
   node_ = std::make_shared<nav2::LifecycleNode>("test_node");
-  tf_buffer_ = nav2::create_transform_buffer(node_);
-  tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
+  tf_manager_ = nav2::create_transform_manager(node_);
+  // One-thread broadcasting-listening model
+  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 
   nav2_costmap_2d::LayeredCostmap layers(global_frame, false, false);
 
@@ -391,7 +389,7 @@ bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_
     rclcpp::Parameter(std::string(FILTER_NAME) + ".flip_threshold", flip_threshold));
 
   binary_filter_ = std::make_shared<nav2_costmap_2d::BinaryFilter>();
-  binary_filter_->initialize(&layers, FILTER_NAME, tf_buffer_.get(), node_, nullptr);
+  binary_filter_->initialize(&layers, FILTER_NAME, tf_manager_.get(), node_, nullptr);
   binary_filter_->initializeFilter(INFO_TOPIC);
 
   binary_state_subscriber_ =
@@ -414,8 +412,6 @@ bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_
 
 void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame)
 {
-  tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
-
   transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();
   transform_->header.frame_id = mask_frame;
   transform_->child_frame_id = global_frame;
@@ -429,17 +425,17 @@ void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::st
   transform_->transform.rotation.z = 0.0;
   transform_->transform.rotation.w = 1.0;
 
-  tf_broadcaster_->sendTransform(*transform_);
+  tf_manager_->sendTransform(*transform_);
 
-  // Allow tf_buffer_ to be filled by listener
+  // Allow tf_manager_ to be filled by listener
   waitSome(100ms);
 }
 
 void TestNode::publishTransform()
 {
-  if (tf_broadcaster_) {
+  if (transform_) {
     transform_->header.stamp = node_->now() + rclcpp::Duration(100ms);
-    tf_broadcaster_->sendTransform(*transform_);
+    tf_manager_->sendTransform(*transform_);
   }
 }
 
@@ -731,9 +727,8 @@ void TestNode::reset()
   binary_state_subscriber_.reset();
   binary_filter_.reset();
   node_.reset();
-  tf_listener_.reset();
-  tf_broadcaster_.reset();
-  tf_buffer_.reset();
+  transform_.reset();
+  tf_manager_.reset();
 }
 
 TEST_F(TestNode, testBinaryState)
@@ -909,7 +904,7 @@ TEST(BinaryFilterTF, StaleTransformPreservesState)
   auto node = std::make_shared<nav2::LifecycleNode>("tf_test");
   node->declare_parameter("filter.filter_info_topic", "filter_info");
   node->declare_parameter("filter.transform_staleness_threshold", 0.5);
-  auto buffer = nav2::create_transform_buffer(node);
+  auto buffer = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("odom", false, false);
   BinaryFilterTFTestable filter;
   filter.initialize(&layers, "filter", buffer.get(), node, nullptr);
@@ -934,31 +929,31 @@ TEST(BinaryFilterTF, StaleTransformPreservesState)
   transform.child_frame_id = "odom";
   transform.transform.rotation.w = 1.0;
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(buffer->getRawBuffer().setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 0);  // Stale TF cannot enter the marked zone.
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(buffer->getRawBuffer().setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 1);
 
-  buffer->clear();
+  buffer->getRawBuffer().clear();
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 1.0;
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(buffer->getRawBuffer().setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 1);  // Stale TF must not reset the active state.
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(buffer->getRawBuffer().setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 0);  // Fresh TF permits the transition.
 
-  buffer->clear();
+  buffer->getRawBuffer().clear();
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 0.0;
-  ASSERT_TRUE(buffer->setTransform(transform, "test", true));
+  ASSERT_TRUE(buffer->getRawBuffer().setTransform(transform, "test", true));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 1);  // Static transforms do not expire.
 

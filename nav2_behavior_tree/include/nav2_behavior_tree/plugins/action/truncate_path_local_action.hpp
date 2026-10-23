@@ -25,7 +25,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/clock.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
@@ -128,7 +128,7 @@ private:
     const geometry_msgs::msg::PoseStamped & pose2,
     const double angular_distance_weight);
 
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   rclcpp::Clock::SharedPtr clock_;
   double transform_staleness_threshold_{0.0};
 

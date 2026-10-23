@@ -18,8 +18,8 @@
 #include <cmath>
 #include <stdexcept>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 namespace nav2_util
 {
@@ -87,7 +87,7 @@ PathSearchResult distance_from_path(
 bool transformPathInTargetFrame(
   const nav_msgs::msg::Path & input_path,
   nav_msgs::msg::Path & transformed_path,
-  nav2::TransformBuffer & tf_buffer, const std::string target_frame,
+  nav2::TransformManager & tf_buffer, const std::string target_frame,
   const double transform_timeout)
 {
   static rclcpp::Logger logger = rclcpp::get_logger("transformPathInTargetFrame");
@@ -105,17 +105,14 @@ bool transformPathInTargetFrame(
     return true;
   }
 
-  geometry_msgs::msg::TransformStamped transform;
-  try {
-    transform = tf_buffer.lookupTransform(
-      target_frame, input_path.header.frame_id,
-      tf2_ros::fromMsg(input_path.header.stamp),
-      tf2::durationFromSec(transform_timeout));
-  } catch (const tf2::TransformException & ex) {
+  const auto transform_result = tf_buffer.getStampedTransform(
+    target_frame, input_path.header.frame_id, rclcpp::Time(input_path.header.stamp),
+    tf2::durationFromSec(transform_timeout));
+  if (!transform_result) {
     RCLCPP_ERROR(
       logger,
-      "Failed to transform path from '%s' to '%s': %s",
-      input_path.header.frame_id.c_str(), target_frame.c_str(), ex.what());
+      "Failed to transform path from '%s' to '%s'",
+      input_path.header.frame_id.c_str(), target_frame.c_str());
     return false;
   }
 
@@ -125,7 +122,7 @@ bool transformPathInTargetFrame(
     source_pose.header.stamp = input_path.header.stamp;
     source_pose.pose = input_pose.pose;
 
-    tf2::doTransform(source_pose, transformed_pose, transform);
+    tf2::doTransform(source_pose, transformed_pose, *transform_result);
     transformed_pose.pose.position.z = 0.0;
     transformed_path.poses.push_back(std::move(transformed_pose));
   }

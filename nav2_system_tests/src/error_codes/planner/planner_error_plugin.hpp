@@ -25,11 +25,10 @@
 
 #include "nav2_core/global_planner.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_core/planner_exceptions.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_system_tests
 {
@@ -42,7 +41,7 @@ public:
 
   void configure(
     const nav2::LifecycleNode::WeakPtr &,
-    std::string, nav2::TransformBuffer::SharedPtr,
+    std::string, nav2::TransformManager::SharedPtr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS>) override {}
 
   void cleanup() override {}

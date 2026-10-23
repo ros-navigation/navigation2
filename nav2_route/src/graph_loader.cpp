@@ -14,15 +14,15 @@
 
 #include <memory>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_route/graph_loader.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
 
 GraphLoader::GraphLoader(
   nav2::LifecycleNode::SharedPtr node,
-  nav2::TransformBuffer::SharedPtr tf,
+  nav2::TransformManager::SharedPtr tf,
   const std::string frame)
 : plugin_loader_("nav2_route", "nav2_route::GraphFileLoader"),
   default_plugin_id_("GeoJsonGraphFileLoader")
@@ -127,13 +127,13 @@ bool GraphLoader::transformGraph(Graph & graph)
 
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
-      bool got_transform = nav2_util::getTransform(
-        node_frame, route_frame_, tf2::durationFromSec(0.1), tf_, tf_transform);
+      const auto transform = tf_->getLatestTransform(route_frame_, node_frame);
 
-      if (!got_transform) {
+      if (!transform) {
         return false;
       }
 
+      tf2::fromMsg(transform->transform, tf_transform);
       cached_transforms.insert({node_frame, tf_transform});
     }
 

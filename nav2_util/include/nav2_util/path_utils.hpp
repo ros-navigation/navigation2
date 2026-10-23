@@ -25,7 +25,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "tf2/utils.hpp"
 #include "angles/angles.h"
 #include "nav2_util/geometry_utils.hpp"
@@ -72,7 +72,7 @@ PathSearchResult distance_from_path(
 bool transformPathInTargetFrame(
   const nav_msgs::msg::Path & input_path,
   nav_msgs::msg::Path & transformed_path,
-  nav2::TransformBuffer & tf_buffer, const std::string target_frame,
+  nav2::TransformManager & tf_buffer, const std::string target_frame,
   const double transform_timeout = 0.1);
 
 /**

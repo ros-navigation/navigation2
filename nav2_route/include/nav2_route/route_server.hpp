@@ -23,10 +23,9 @@
 #include <mutex>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/service_server.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
@@ -217,8 +216,7 @@ protected:
   typename ComputeAndTrackRouteServer::SharedPtr compute_and_track_route_server_;
 
   // TF
-  nav2::TransformBuffer::SharedPtr tf_;
-  nav2::TransformListener::SharedPtr transform_listener_;
+  nav2::TransformManager::SharedPtr tf_;
 
   // Publish the route graph for visualization
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
