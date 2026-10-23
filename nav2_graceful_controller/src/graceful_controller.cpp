@@ -381,8 +381,7 @@ bool GracefulController::simulateTrajectory(
   double dt = (params_->v_linear_max > 0.0) ? resolution / params_->v_linear_max : 0.0;
 
   // The control law slows down near the target, so the number of steps needed to reach it
-  // depends on the speed profile. Bound the simulation by the travelled distance instead:
-  // a spiral to the target is never longer than 3 times the straight line distance.
+  // depends on the speed profile. Bound the simulation by the travelled distance
   double target_dist = std::hypot(motion_target.pose.position.x, motion_target.pose.position.y);
   double max_travelled_dist = 3.0 * target_dist;
   double travelled_dist = 0.0;
