@@ -748,7 +748,7 @@ TEST(GracefulControllerTest, computeVelocityCommandReusesProvidedPoseForCollisio
 
 TEST(GracefulControllerTest, computeVelocityCommandMinLookahead) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGracefulMinLookahead");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
 
   // Create a costmap of 10x10 meters
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
@@ -827,7 +827,7 @@ TEST(GracefulControllerTest, computeVelocityCommandMinLookahead) {
 
 TEST(GracefulControllerTest, computeVelocityCommandMinLookaheadNearGoal) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGracefulMinLookaheadNearGoal");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
 
   // Create a costmap of 10x10 meters
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
@@ -1312,7 +1312,7 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
 
 TEST(GracefulControllerTest, computeVelocityCommandApproachFallbackUsesPlanHeading) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGracefulApproachFallback");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
 
   nav2::declare_parameter_if_not_declared(
     node, "test.initial_rotation", rclcpp::ParameterValue(false));
@@ -1401,7 +1401,7 @@ ApproachOutcome runApproachValidation(
   double target_x, double target_y, bool allow_backward, bool blocked)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("testGraceful");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
 
   nav2::declare_parameter_if_not_declared(
     node, "test.initial_rotation", rclcpp::ParameterValue(false));
@@ -1488,7 +1488,7 @@ TEST(GracefulControllerTest, validateTargetPoseOnApproachWritesHeadingOnSuccess)
 
 TEST(GracefulControllerTest, computeVelocityCommandUnsafeApproachDoesNotHideSafeOnes) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGracefulUnsafeApproach");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
 
   // Create a costmap of 10x10 meters with a polygonal footprint
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
