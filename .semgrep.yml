@@ -121,16 +121,20 @@ rules:
       - pattern-regex: "tf2_ros::Buffer\\b"
       - pattern-not-regex: "^\\s*//.*"
       - pattern-not-regex: ".*//.*tf2_ros::Buffer"
-    message: "Use nav2::TransformBuffer instead of tf2_ros::Buffer"
+    message: "Use nav2::TransformManager instead of tf2_ros::Buffer"
     severity: WARNING
     languages: [cpp]
 
   - id: detect-tf2-transform-listener
+    paths:
+      exclude:
+        # This specialized listener overrides TF2's subscription callback.
+        - '**/nav2_util/src/base_footprint_publisher.hpp'
     patterns:
       - pattern-regex: "tf2_ros::TransformListener\\b"
       - pattern-not-regex: "^\\s*//.*"
       - pattern-not-regex: ".*//.*tf2_ros::TransformListener"
-    message: "Use nav2::TransformListener instead of tf2_ros::TransformListener"
+    message: "Use nav2::TransformManager instead of tf2_ros::TransformListener"
     severity: WARNING
     languages: [cpp]
 
@@ -139,7 +143,7 @@ rules:
       - pattern-regex: "tf2_ros::TransformBroadcaster\\b"
       - pattern-not-regex: "^\\s*//.*"
       - pattern-not-regex: ".*//.*tf2_ros::TransformBroadcaster"
-    message: "Use nav2::TransformBroadcaster instead of tf2_ros::TransformBroadcaster"
+    message: "Use nav2::TransformManager::sendTransform() instead of tf2_ros::TransformBroadcaster"
     severity: WARNING
     languages: [cpp]
 
@@ -148,7 +152,7 @@ rules:
       - pattern-regex: "tf2_ros::StaticTransformBroadcaster\\b"
       - pattern-not-regex: "^\\s*//.*"
       - pattern-not-regex: ".*//.*tf2_ros::StaticTransformBroadcaster"
-    message: "Use nav2::StaticTransformBroadcaster instead of tf2_ros::StaticTransformBroadcaster"
+    message: "Use nav2::TransformManager::sendStaticTransform() instead of tf2_ros::StaticTransformBroadcaster"
     severity: WARNING
     languages: [cpp]
 
@@ -166,7 +170,7 @@ rules:
       - pattern-regex: "tf2_ros::CreateTimerROS\\b"
       - pattern-not-regex: "^\\s*//.*"
       - pattern-not-regex: ".*//.*tf2_ros::CreateTimerROS"
-    message: "Use nav2::create_transform_buffer() instead of tf2_ros::CreateTimerROS"
+    message: "Use nav2::create_transform_manager() instead of tf2_ros::CreateTimerROS"
     severity: WARNING
     languages: [cpp]
 
