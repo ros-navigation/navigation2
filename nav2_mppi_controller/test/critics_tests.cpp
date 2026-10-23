@@ -23,7 +23,9 @@
 #include "nav2_mppi_controller/critics/constraint_critic.hpp"
 #include "nav2_mppi_controller/critics/goal_angle_critic.hpp"
 #include "nav2_mppi_controller/critics/goal_critic.hpp"
+#include "nav2_mppi_controller/critics/mecanum_critic.hpp"
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
+#include "nav2_mppi_controller/critics/omni_constraint_critic.hpp"
 #include "nav2_mppi_controller/critics/cost_critic.hpp"
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
 #include "nav2_mppi_controller/critics/path_angle_critic.hpp"
@@ -127,6 +129,287 @@ TEST(CriticTests, ConstraintsCritic)
   EXPECT_GT(xt::sum(costs, immediate)(), 0);
   // 4.0 weight * 0.1 model_dt * (0.2 - 0.4/2.5) * 30 timesteps = 0.48
   EXPECT_NEAR(costs(1), 0.48, 0.01);
+}
+
+TEST(CriticTests, OmniConstraintCritic)
+{
+  // Standard preamble
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", "dummy_costmap", true);
+  ParametersHandler param_handler(node);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.vx = xt::zeros<float>({1000, 30});
+  state.vy = xt::zeros<float>({1000, 30});
+  state.wz = xt::zeros<float>({1000, 30});
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  // Make sure initializes correctly and that defaults are reasonable
+  OmniConstraintCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+
+  // Non-holonomic models have no vy to combine, so they are left to the constraint critic
+  state.vx.fill(0.6f);
+  critic.score(data);
+  EXPECT_NEAR(xt::sum(costs, immediate)(), 0, 1e-6);
+  costs = xt::zeros<float>({1000});
+
+  // Semi-axes are vx_max = 0.5 forward, vx_min = -0.35 reverse and vy_max = 0.3 lateral
+  node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.3));
+  critic = OmniConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  data.motion_model = std::make_shared<OmniMotionModel>();
+
+  // Inside the ellipse, no cost
+  state.vx.fill(0.4f);
+  state.vy.fill(0.0f);
+  critic.score(data);
+  EXPECT_LT(xt::amax(costs)(), 1e-5);
+  costs = xt::zeros<float>({1000});
+
+  // Exactly on the ellipse, no cost
+  state.vx.fill(0.0f);
+  state.vy.fill(0.3f);
+  critic.score(data);
+  EXPECT_LT(xt::amax(costs)(), 1e-5);
+  costs = xt::zeros<float>({1000});
+
+  // Corner of the per-axis box, which the ellipse excludes. Each axis is at its own limit, so the
+  // constraint critic would score this as feasible.
+  state.vx.fill(0.0f);
+  state.vy.fill(0.0f);
+  xt::view(state.vx, 999, xt::all()) = 0.5f;
+  xt::view(state.vy, 999, xt::all()) = 0.3f;
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  // speed sqrt(0.5^2 + 0.3^2) = 0.5831 is scaled by (1 - 1/sqrt(2)), leaving 0.1708 excess
+  // 4.0 weight * 0.1 model_dt * 0.1708 excess * 30 timesteps = 2.049
+  EXPECT_NEAR(costs(999), 2.049, 0.01);
+  costs = xt::zeros<float>({1000});
+
+  // The reverse semi-axis is shorter than the forward one
+  state.vx.fill(0.0f);
+  state.vy.fill(0.0f);
+  xt::view(state.vx, 1, xt::all()) = -0.7f;
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  // 4.0 weight * 0.1 model_dt * (0.7 - 0.35) excess * 30 timesteps = 4.2
+  EXPECT_NEAR(costs(1), 4.2, 0.01);
+  costs = xt::zeros<float>({1000});
+
+  // Test with different cost power
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
+  critic = OmniConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  // 4.2^2 = 17.64
+  EXPECT_NEAR(costs(1), 17.64, 0.01);
+  costs = xt::zeros<float>({1000});
+
+  // A zero semi-axis collapses the ellipse but must stay finite
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
+  node->set_parameter(rclcpp::Parameter("mppi.vy_max", 0.0));
+  critic = OmniConstraintCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  state.vx.fill(0.4f);
+  state.vy.fill(0.0f);
+  critic.score(data);
+  EXPECT_LT(xt::amax(costs)(), 1e-5);
+  costs = xt::zeros<float>({1000});
+
+  xt::view(state.vy, 999, xt::all()) = 0.1f;
+  critic.score(data);
+  EXPECT_TRUE(xt::all(xt::isfinite(costs)));
+  EXPECT_GT(costs(999), 0);
+  costs = xt::zeros<float>({1000});
+}
+
+TEST(CriticTests, MecanumCritic)
+{
+  // Standard preamble
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", "dummy_costmap", true);
+  ParametersHandler param_handler(node);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.vx = xt::zeros<float>({1000, 30});
+  state.vy = xt::zeros<float>({1000, 30});
+  state.wz = xt::zeros<float>({1000, 30});
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  // Make sure initializes correctly and that defaults are reasonable
+  MecanumCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+
+  // Non-holonomic models have no vy to combine, so they are left to the constraint critic
+  state.vx.fill(0.6f);
+  critic.score(data);
+  EXPECT_NEAR(xt::sum(costs, immediate)(), 0, 1e-6);
+  costs = xt::zeros<float>({1000});
+
+  // Test with a Omni motion model
+  data.motion_model = std::make_shared<OmniMotionModel>();
+
+  // Inside the diamond, no cost
+  state.vx.fill(0.4f);
+  state.vy.fill(0.0f);
+  critic.score(data);
+  EXPECT_LT(xt::amax(costs)(), 1e-5);
+  costs = xt::zeros<float>({1000});
+
+  // Exactly on the diamond, no cost.
+  state.vx.fill(0.25f);
+  state.vy.fill(0.25f);
+  critic.score(data);
+  EXPECT_LT(xt::amax(costs)(), 1e-5);
+  costs = xt::zeros<float>({1000});
+
+  // Feasible for an omni robot, infeasible for a mecanum: each axis is at 70% of its own limit,
+  // so the wheels are asked for 140% of what they can do
+  state.vx.fill(0.0f);
+  state.vy.fill(0.0f);
+  xt::view(state.vx, 999, xt::all()) = 0.35f;
+  xt::view(state.vy, 999, xt::all()) = 0.35f;
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  // the fastest wheel runs at 1.4 of its limit, 0.5 wheel limit * 0.4 = 0.2 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.2 excess * 30 timesteps = 2.4
+  EXPECT_NEAR(costs(999), 2.4, 0.01);
+  costs = xt::zeros<float>({1000});
+
+  // Corner of the per-axis box, which the diamond excludes twice over
+  state.vx.fill(0.0f);
+  state.vy.fill(0.0f);
+  xt::view(state.vx, 999, xt::all()) = 0.5f;
+  xt::view(state.vy, 999, xt::all()) = 0.5f;
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  // the fastest wheel runs at 2.0 of its limit, 0.5 wheel limit * 1.0 = 0.5 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.5 excess * 30 timesteps = 6.0
+  EXPECT_NEAR(costs(999), 6.0, 0.01);
+  costs = xt::zeros<float>({1000});
+
+  // Mecanum wheels drive both ways equally, so reverse is bounded by vx_max too
+  state.vx.fill(0.0f);
+  state.vy.fill(0.0f);
+  xt::view(state.vx, 1, xt::all()) = -0.7f;
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  // 4.0 weight * 0.1 model_dt * (0.7 - 0.5) excess * 30 timesteps = 2.4
+  EXPECT_NEAR(costs(1), 2.4, 0.01);
+  costs = xt::zeros<float>({1000});
+
+  // Test with different cost power
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
+  critic = MecanumCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  // 2.4^2 = 5.76
+  EXPECT_NEAR(costs(1), 5.76, 0.01);
+  costs = xt::zeros<float>({1000});
+
+  // Rotation draws on the same wheels: vx alone at 80% of its limit is feasible, and becomes
+  // infeasible once half the rotational budget is spent
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 1));
+  critic = MecanumCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  state.vx.fill(0.4f);
+  state.vy.fill(0.0f);
+  state.wz.fill(0.0f);
+  critic.score(data);
+  EXPECT_LT(xt::amax(costs)(), 1e-5);
+  costs = xt::zeros<float>({1000});
+
+  xt::view(state.wz, 999, xt::all()) = 0.85f;
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  // the fastest wheel runs at 0.8 + 0.5 = 1.3 of its limit, 0.5 wheel limit * 0.3 = 0.15 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.15 excess * 30 timesteps = 1.8
+  EXPECT_NEAR(costs(999), 1.8, 0.01);
+  costs = xt::zeros<float>({1000});
+
+  // Rotation alone is charged too
+  state.vx.fill(0.0f);
+  state.wz.fill(2.0f);
+  critic.score(data);
+  EXPECT_GT(xt::amin(costs)(), 0);
+  // the fastest wheel runs at 2.0 / 1.7 = 1.1765 of its limit, 0.5 * 0.1765 = 0.0882 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.0882 excess * 30 timesteps = 1.059
+  EXPECT_NEAR(costs(0), 1.059, 0.01);
+  costs = xt::zeros<float>({1000});
+  state.wz.fill(0.0f);
+
+  // Roller slip lowers the limit of the axis driving through the rollers, the cost stays in wheel
+  // speed scaled by the limit of the pure rolling axis, whichever of x and y that is
+  node->set_parameter(rclcpp::Parameter("critic.vy_max", 0.4));
+  critic = MecanumCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  state.vx.fill(0.0f);
+  state.vy.fill(0.0f);
+  xt::view(state.vy, 999, xt::all()) = 0.5f;
+  critic.score(data);
+  // the fastest wheel runs at 0.5 / 0.4 = 1.25 of its limit, 0.5 vx_max * 0.25 = 0.125 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.125 excess * 30 timesteps = 1.5
+  EXPECT_NEAR(costs(999), 1.5, 0.01);
+  costs = xt::zeros<float>({1000});
+
+  node->set_parameter(rclcpp::Parameter("critic.vx_max", 0.4));
+  node->set_parameter(rclcpp::Parameter("critic.vy_max", 0.5));
+  critic = MecanumCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  state.vx.fill(0.0f);
+  state.vy.fill(0.0f);
+  xt::view(state.vx, 999, xt::all()) = 0.5f;
+  critic.score(data);
+  // the fastest wheel runs at 0.5 / 0.4 = 1.25 of its limit, 0.5 vy_max * 0.25 = 0.125 m/s excess
+  // 4.0 weight * 0.1 model_dt * 0.125 excess * 30 timesteps = 1.5
+  EXPECT_NEAR(costs(999), 1.5, 0.01);
+  costs = xt::zeros<float>({1000});
+  node->set_parameter(rclcpp::Parameter("critic.vx_max", 0.5));
+
+  // A zero vertex collapses the diamond but must stay finite
+  node->set_parameter(rclcpp::Parameter("critic.vy_max", 0.0));
+  critic = MecanumCritic();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  state.vx.fill(0.4f);
+  state.vy.fill(0.0f);
+  critic.score(data);
+  EXPECT_LT(xt::amax(costs)(), 1e-5);
+  costs = xt::zeros<float>({1000});
+
+  xt::view(state.vy, 999, xt::all()) = 0.1f;
+  critic.score(data);
+  EXPECT_TRUE(xt::all(xt::isfinite(costs)));
+  EXPECT_GT(costs(999), 0);
+  costs = xt::zeros<float>({1000});
 }
 
 TEST(CriticTests, ObstacleCriticMisalignedParams) {
