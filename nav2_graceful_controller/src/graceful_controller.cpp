@@ -380,12 +380,15 @@ bool GracefulController::simulateTrajectory(
   double resolution = costmap_ros_->getCostmap()->getResolution();
   double dt = (params_->v_linear_max > 0.0) ? resolution / params_->v_linear_max : 0.0;
 
-  // Set max iter to avoid infinite loop
-  unsigned int max_iter = 3 *
-    std::hypot(motion_target.pose.position.x, motion_target.pose.position.y) / resolution;
+  // Stop when a step no longer gets closer to the target (rotating in place doesn't count)
+  double epsilon = 0.01 * resolution;
+  double previous_distance;
+  bool moved;
 
   // Generate path
   do{
+    previous_distance = distance;
+    moved = false;
     if (sim_initial_rotation) {
       // Compute rotation velocity
       double next_pose_yaw = tf2::getYaw(next_pose.pose.orientation);
@@ -412,6 +415,7 @@ bool GracefulController::simulateTrajectory(
       // Apply velocities to calculate next pose
       next_pose.pose = control_law_->calculateNextPose(
         dt, motion_target.pose, next_pose.pose, backward);
+      moved = true;
     }
 
     // Add the pose to the trajectory for visualization
@@ -441,9 +445,10 @@ bool GracefulController::simulateTrajectory(
 
     // Check if we reach the goal
     distance = nav2_util::geometry_utils::euclidean_distance(motion_target.pose, next_pose.pose);
-  }while(distance > resolution && trajectory.poses.size() < max_iter);
+  }while(distance > resolution && (!moved || previous_distance - distance >= epsilon));
 
-  return true;
+  // The trajectory is only valid if the target has been reached
+  return distance <= resolution;
 }
 
 geometry_msgs::msg::Twist GracefulController::rotateToTarget(double angle_to_target)
