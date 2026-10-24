@@ -13,10 +13,11 @@
 // limitations under the License.
 
 #include "nav2_rviz_plugins/route_tool.hpp"
-#include <QDesktopServices>
-#include <QUrl>
 #include <sys/types.h>
+#include <QDesktopServices>
 #include <QFileDialog>
+#include <QUrl>
+#include <cinttypes>
 #include "rviz_common/display_context.hpp"
 
 
@@ -78,7 +79,7 @@ void RouteTool::on_load_button_clicked(void)
   graph_to_incoming_edges_map_.clear();
   graph_.clear();
   graph_loader_->loadGraphFromFile(graph_, graph_to_id_map_, filename.toStdString());
-  unsigned int max_node_id = 0;
+  uint64_t max_node_id = 0;
   for (const auto & node : graph_) {
     max_node_id = std::max(node.nodeid, max_node_id);
     for (const auto & edge : node.neighbors) {
@@ -89,7 +90,7 @@ void RouteTool::on_load_button_clicked(void)
       {
         graph_to_incoming_edges_map_[edge.end->nodeid].push_back(edge.edgeid);
       } else {
-        graph_to_incoming_edges_map_[edge.end->nodeid] = std::vector<unsigned int> {edge.edgeid};
+        graph_to_incoming_edges_map_[edge.end->nodeid] = std::vector<uint64_t> {edge.edgeid};
       }
     }
   }
@@ -122,8 +123,8 @@ void RouteTool::on_create_button_clicked(void)
     RCLCPP_INFO(node_->get_logger(), "Adding node at: (%f, %f)", longitude, latitude);
     update_route_graph();
   } else if (ui_->add_edge_button->isChecked()) {
-    auto start_node = ui_->add_field_1->toPlainText().toInt();
-    auto end_node = ui_->add_field_2->toPlainText().toInt();
+    uint64_t start_node = ui_->add_field_1->toPlainText().toULongLong();
+    uint64_t end_node = ui_->add_field_2->toPlainText().toULongLong();
     nav2_route::EdgeCost edge_cost;
     graph_[graph_to_id_map_[start_node]].addEdge(
       edge_cost, &(graph_[graph_to_id_map_[end_node]]),
@@ -131,10 +132,11 @@ void RouteTool::on_create_button_clicked(void)
     if (graph_to_incoming_edges_map_.find(end_node) != graph_to_incoming_edges_map_.end()) {
       graph_to_incoming_edges_map_[end_node].push_back(next_node_id_);
     } else {
-      graph_to_incoming_edges_map_[end_node] = std::vector<unsigned int> {next_node_id_};
+      graph_to_incoming_edges_map_[end_node] = std::vector<uint64_t> {next_node_id_};
     }
     edge_to_node_map_[next_node_id_++] = start_node;
-    RCLCPP_INFO(node_->get_logger(), "Adding edge from %d to %d", start_node, end_node);
+    RCLCPP_INFO(
+      node_->get_logger(), "Adding edge from %" PRIu64 " to %" PRIu64, start_node, end_node);
     update_route_graph();
   }
   ui_->add_field_1->setText("");
@@ -146,7 +148,7 @@ void RouteTool::on_confirm_button_clicked(void)
   if (ui_->edit_id->toPlainText() == "" || ui_->edit_field_1->toPlainText() == "" ||
     ui_->edit_field_2->toPlainText() == "") {return;}
   if (ui_->edit_node_button->isChecked()) {
-    auto node_id = ui_->edit_id->toPlainText().toInt();
+    uint64_t node_id = ui_->edit_id->toPlainText().toULongLong();
     auto new_longitude = ui_->edit_field_1->toPlainText().toFloat();
     auto new_latitude = ui_->edit_field_2->toPlainText().toFloat();
     if (graph_to_id_map_.find(node_id) != graph_to_id_map_.end()) {
@@ -155,9 +157,9 @@ void RouteTool::on_confirm_button_clicked(void)
       update_route_graph();
     }
   } else if (ui_->edit_edge_button->isChecked()) {
-    auto edge_id = (unsigned int) ui_->edit_id->toPlainText().toInt();
-    auto new_start = ui_->edit_field_1->toPlainText().toInt();
-    auto new_end = ui_->edit_field_2->toPlainText().toInt();
+    uint64_t edge_id = ui_->edit_id->toPlainText().toULongLong();
+    uint64_t new_start = ui_->edit_field_1->toPlainText().toULongLong();
+    uint64_t new_end = ui_->edit_field_2->toPlainText().toULongLong();
     // Find and remove current edge
     auto current_start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
     for (auto itr = current_start_node->neighbors.begin();
@@ -177,7 +179,7 @@ void RouteTool::on_confirm_button_clicked(void)
     if (graph_to_incoming_edges_map_.find(new_end) != graph_to_incoming_edges_map_.end()) {
       graph_to_incoming_edges_map_[new_end].push_back(edge_id);
     } else {
-      graph_to_incoming_edges_map_[new_end] = std::vector<unsigned int> {edge_id};
+      graph_to_incoming_edges_map_[new_end] = std::vector<uint64_t> {edge_id};
     }
     update_route_graph();
   }
@@ -190,7 +192,7 @@ void RouteTool::on_delete_button_clicked(void)
 {
   if (ui_->remove_id->toPlainText() == "") {return;}
   if (ui_->remove_node_button->isChecked()) {
-    unsigned int node_id = ui_->remove_id->toPlainText().toInt();
+    uint64_t node_id = ui_->remove_id->toPlainText().toULongLong();
     // Remove edges pointing to the removed node
     for (auto edge_id : graph_to_incoming_edges_map_[node_id]) {
       auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
@@ -203,19 +205,19 @@ void RouteTool::on_delete_button_clicked(void)
       }
     }
     if (graph_[graph_to_id_map_[node_id]].nodeid == node_id) {
-      // Use max int to mark the node as deleted
-      graph_[graph_to_id_map_[node_id]].nodeid = std::numeric_limits<int>::max();
+      // Use max uint64 to mark the node as deleted (must match the graph saver sentinel)
+      graph_[graph_to_id_map_[node_id]].nodeid = std::numeric_limits<uint64_t>::max();
       graph_to_id_map_.erase(node_id);
       graph_to_incoming_edges_map_.erase(node_id);
-      RCLCPP_INFO(node_->get_logger(), "Removed node %d", node_id);
+      RCLCPP_INFO(node_->get_logger(), "Removed node %" PRIu64, node_id);
     }
     update_route_graph();
   } else if (ui_->remove_edge_button->isChecked()) {
-    auto edge_id = (unsigned int) ui_->remove_id->toPlainText().toInt();
+    uint64_t edge_id = ui_->remove_id->toPlainText().toULongLong();
     auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
     for (auto itr = start_node->neighbors.begin(); itr != start_node->neighbors.end(); itr++) {
       if (itr->edgeid == edge_id) {
-        RCLCPP_INFO(node_->get_logger(), "Removed edge %d", edge_id);
+        RCLCPP_INFO(node_->get_logger(), "Removed edge %" PRIu64, edge_id);
         start_node->neighbors.erase(itr);
         edge_to_node_map_.erase(edge_id);
         break;
