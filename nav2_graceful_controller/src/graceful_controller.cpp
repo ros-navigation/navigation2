@@ -380,18 +380,15 @@ bool GracefulController::simulateTrajectory(
   double resolution = costmap_ros_->getCostmap()->getResolution();
   double dt = (params_->v_linear_max > 0.0) ? resolution / params_->v_linear_max : 0.0;
 
-  // The control law slows down near the target, so the number of steps needed to reach it
-  // depends on the speed profile. Bound the simulation by the travelled distance
-  double target_dist = std::hypot(motion_target.pose.position.x, motion_target.pose.position.y);
-  double max_travelled_dist = 3.0 * target_dist;
-  double travelled_dist = 0.0;
-
-  // Hard limit on the number of iterations to avoid an infinite loop when the robot
-  // barely moves (e.g. v_linear_min = 0)
-  unsigned int max_iter = 30 * target_dist / resolution;
+  // Stop when a step no longer gets closer to the target (rotating in place doesn't count)
+  double epsilon = 0.01 * resolution;
+  double previous_distance;
+  bool moved;
 
   // Generate path
   do{
+    previous_distance = distance;
+    moved = false;
     if (sim_initial_rotation) {
       // Compute rotation velocity
       double next_pose_yaw = tf2::getYaw(next_pose.pose.orientation);
@@ -416,11 +413,9 @@ bool GracefulController::simulateTrajectory(
       }
 
       // Apply velocities to calculate next pose
-      auto current_pose = next_pose.pose;
       next_pose.pose = control_law_->calculateNextPose(
         dt, motion_target.pose, next_pose.pose, backward);
-      travelled_dist += nav2_util::geometry_utils::euclidean_distance(
-        current_pose, next_pose.pose);
+      moved = true;
     }
 
     // Add the pose to the trajectory for visualization
@@ -450,8 +445,7 @@ bool GracefulController::simulateTrajectory(
 
     // Check if we reach the goal
     distance = nav2_util::geometry_utils::euclidean_distance(motion_target.pose, next_pose.pose);
-  }while(distance > resolution && travelled_dist <= max_travelled_dist &&
-    trajectory.poses.size() < max_iter);
+  }while(distance > resolution && (!moved || previous_distance - distance >= epsilon));
 
   // The trajectory is only valid if the target has been reached
   return distance <= resolution;
