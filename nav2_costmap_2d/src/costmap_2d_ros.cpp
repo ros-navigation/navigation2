@@ -583,10 +583,10 @@ Costmap2DROS::mapUpdateLoop(double frequency)
         }
 
         auto current_time = now();
-        // last_publish_ is the scheduled time of the previous publication, not when it happened.
         const bool publish_due =
-          current_time - last_publish_ >= publish_cycle_ - publish_tolerance ||
-          current_time < last_publish_;  // Time moved backwards, e.g. switching to sim_time.
+          next_publish_time_ - current_time <= publish_tolerance ||
+          // Time moved backwards, e.g. switching to sim_time.
+          next_publish_time_ - current_time > publish_cycle_;
         if (publish_due || costmap_publisher_->isRepublishRequested()) {
           RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
           costmap_publisher_->publishCostmap();
@@ -600,12 +600,12 @@ Costmap2DROS::mapUpdateLoop(double frequency)
 
         // Subscriber requests do not postpone the regular publication schedule.
         if (publish_due) {
-          last_publish_ += publish_cycle_;
+          next_publish_time_ += publish_cycle_;
           // Resynchronize when more than a cycle behind or ahead, e.g. at startup or a time jump.
-          if (current_time - last_publish_ > publish_cycle_ ||
-            last_publish_ - current_time > publish_cycle_)
+          if (current_time > next_publish_time_ ||
+            next_publish_time_ - current_time > publish_cycle_ * 2.0)
           {
-            last_publish_ = current_time;
+            next_publish_time_ = current_time + publish_cycle_;
           }
         }
       }
