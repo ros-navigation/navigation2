@@ -134,22 +134,6 @@ TYPED_TEST(GoalReceptionTest, InvalidTFRejectedWithoutContaminatingActiveResult)
   EXPECT_FALSE(this->nav.hasInternalError());
 }
 
-TYPED_TEST(GoalReceptionTest, TFBecomingInvalidBeforePreemptionPreservesActiveState)
-{
-  ASSERT_TRUE(this->nav.goalStarted(this->goal(1.0)));
-  this->nav.blackboard()->set("number_recoveries", 7);
-  const auto start = this->nav.startTime();
-  // A pending request already validated at reception can lose its robot TF later.
-  auto replacement = this->goal(9.0);
-  ASSERT_TRUE(this->nav.goalReceived(replacement));
-  this->tf->clear();
-  EXPECT_NO_THROW(this->nav.onPreempt(replacement));
-  EXPECT_DOUBLE_EQ(this->activeX(), 1.0);
-  EXPECT_EQ(this->nav.startTime(), start);
-  EXPECT_EQ(this->nav.blackboard()->template get<int>("number_recoveries"), 7);
-  EXPECT_FALSE(this->nav.hasInternalError());
-}
-
 using ThroughPosesCompletionTest =
   GoalReceptionTest<nav2_bt_navigator::NavigateThroughPosesNavigator>;
 

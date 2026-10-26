@@ -97,15 +97,7 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 bool
 NavigateThroughPosesNavigator::goalStarted(ActionT::Goal::ConstSharedPtr goal)
 {
-  geometry_msgs::msg::PoseStamped current_pose;
-  nav_msgs::msg::Goals goals;
-  std::string error;
-  if (!prepareGoalPoses(goal, current_pose, goals, error)) {
-    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR, error);
-    return false;
-  }
-  setGoalPoses(goals);
-  return true;
+  return initializeGoalPoses(goal);
 }
 
 void
@@ -251,17 +243,10 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
     // if pending goal requests the same BT as the current goal, accept the pending goal
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
-    geometry_msgs::msg::PoseStamped current_pose;
-    nav_msgs::msg::Goals goals;
-    std::string error;
-    if (!prepareGoalPoses(goal, current_pose, goals, error)) {
-      RCLCPP_WARN(logger_, "Rejecting preemption: %s", error.c_str());
-      bt_action_server_->terminatePendingGoal(goal);
-      return;
-    }
-    // A newer request may have replaced this pending goal during TF lookup.
-    if (bt_action_server_->acceptPendingGoal(goal)) {
-      setGoalPoses(goals);
+    if (!initializeGoalPoses(bt_action_server_->acceptPendingGoal())) {
+      throw std::runtime_error(
+        "Preemption request was rejected since the goal poses could not be "
+        "transformed.");
     }
   } else {
     RCLCPP_WARN(
@@ -271,7 +256,7 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
       "since it would require cancellation of the previous goal instead of true preemption."
       "\nCancel the current goal and send a new action request if you want to use a "
       "different BT XML file. For now, continuing to track the last goal until completion.");
-    bt_action_server_->terminatePendingGoal(goal);
+    bt_action_server_->terminatePendingGoal();
   }
 }
 
@@ -308,9 +293,17 @@ NavigateThroughPosesNavigator::prepareGoalPoses(
   return true;
 }
 
-void
-NavigateThroughPosesNavigator::setGoalPoses(const nav_msgs::msg::Goals & goals_array)
+bool
+NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
+  geometry_msgs::msg::PoseStamped current_pose;
+  nav_msgs::msg::Goals goals_array;
+  std::string error;
+  if (!prepareGoalPoses(goal, current_pose, goals_array, error)) {
+    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR, error);
+    return false;
+  }
+
   if (goals_array.goals.size() > 0) {
     RCLCPP_INFO(
       logger_, "Begin navigating from current location through %zu poses to (%.2f, %.2f)",
@@ -327,7 +320,7 @@ NavigateThroughPosesNavigator::setGoalPoses(const nav_msgs::msg::Goals & goals_a
   // Update the goal pose and path on the blackboard
   blackboard->set<nav_msgs::msg::Goals>(
     goals_blackboard_id_,
-    goals_array);
+    std::move(goals_array));
   blackboard->set<nav_msgs::msg::Path>(
     path_blackboard_id_,
     nav_msgs::msg::Path());
@@ -342,6 +335,8 @@ NavigateThroughPosesNavigator::setGoalPoses(const nav_msgs::msg::Goals & goals_a
     waypoint_statuses_blackboard_id_,
     std::move(waypoint_statuses));
   goal_initialized_ = true;
+
+  return true;
 }
 
 }  // namespace nav2_bt_navigator

@@ -121,10 +121,10 @@ protected:
     nav_msgs::msg::Goals & goals, std::string & error);
 
   /**
-   * @brief Update the goal blackboard and reset feedback using prepared goal poses
-   * @param goals Goal poses already transformed into the global frame
+   * @brief Goal pose initialization on the blackboard
+   * @return bool if goal was initialized successfully to be processed
    */
-  void setGoalPoses(const nav_msgs::msg::Goals & goals);
+  bool initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal);
 
   rclcpp::Time start_time_;
   std::string goals_blackboard_id_;

@@ -133,13 +133,11 @@ protected:
     geometry_msgs::msg::PoseStamped & goal_pose, std::string & error);
 
   /**
-   * @brief Update the goal blackboard and reset feedback using prepared poses
-   * @param current_pose Current robot pose in the global frame
-   * @param goal_pose Goal pose already transformed into the global frame
+   * @brief Goal pose initialization on the blackboard
+   * @param goal Action template's goal message to process
+   * @return bool if goal was initialized successfully to be processed
    */
-  void setGoalPose(
-    const geometry_msgs::msg::PoseStamped & current_pose,
-    const geometry_msgs::msg::PoseStamped & goal_pose);
+  bool initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
 
   rclcpp::Time start_time_;
 

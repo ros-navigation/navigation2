@@ -150,25 +150,19 @@ public:
 
   /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
-   * @param expected_goal Goal validated by the caller; nullptr accepts any pending goal
-   * @return Shared pointer to the accepted goal, or nullptr if no active pending goal
-   * exists or it no longer matches expected_goal
+   * @return Shared pointer to pending action goal
    */
-  const std::shared_ptr<const typename ActionT::Goal> acceptPendingGoal(
-    const std::shared_ptr<const typename ActionT::Goal> & expected_goal = nullptr)
+  const std::shared_ptr<const typename ActionT::Goal> acceptPendingGoal()
   {
-    return action_server_->accept_pending_goal(expected_goal);
+    return action_server_->accept_pending_goal();
   }
 
   /**
    * @brief Wrapper function to terminate pending goal if a preempt has been requested
-   * @param expected_goal Goal to terminate; nullptr terminates any pending goal
-   * A pending goal that no longer matches expected_goal is left untouched.
    */
-  void terminatePendingGoal(
-    const std::shared_ptr<const typename ActionT::Goal> & expected_goal = nullptr)
+  void terminatePendingGoal()
   {
-    action_server_->terminate_pending_goal(expected_goal);
+    action_server_->terminate_pending_goal();
   }
 
   /**

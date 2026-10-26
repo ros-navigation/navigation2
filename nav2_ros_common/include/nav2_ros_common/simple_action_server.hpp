@@ -387,22 +387,15 @@ public:
 
   /**
    * @brief Accept pending goals
-   * @param expected_goal Goal validated by the caller; nullptr accepts any pending goal
-   * @return Shared pointer to the accepted goal, or nullptr if no active pending goal
-   * exists or it no longer matches expected_goal
+   * @return Goal Ptr to the  goal that's going to be accepted
    */
-  const std::shared_ptr<const typename ActionT::Goal> accept_pending_goal(
-    const std::shared_ptr<const typename ActionT::Goal> & expected_goal = nullptr)
+  const std::shared_ptr<const typename ActionT::Goal> accept_pending_goal()
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
     if (!pending_handle_ || !pending_handle_->is_active()) {
       error_msg("Attempting to get pending goal when not available");
       return std::shared_ptr<const typename ActionT::Goal>();
-    }
-
-    if (expected_goal && pending_handle_->get_goal() != expected_goal) {
-      return nullptr;
     }
 
     if (is_active(current_handle_) && current_handle_ != pending_handle_) {
@@ -421,20 +414,13 @@ public:
 
   /**
    * @brief Terminate pending goals
-   * @param expected_goal Goal to terminate; nullptr terminates any pending goal
-   * A pending goal that no longer matches expected_goal is left untouched.
    */
-  void terminate_pending_goal(
-    const std::shared_ptr<const typename ActionT::Goal> & expected_goal = nullptr)
+  void terminate_pending_goal()
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
     if (!pending_handle_ || !pending_handle_->is_active()) {
       error_msg("Attempting to terminate pending goal when not available");
-      return;
-    }
-
-    if (expected_goal && pending_handle_->get_goal() != expected_goal) {
       return;
     }
 

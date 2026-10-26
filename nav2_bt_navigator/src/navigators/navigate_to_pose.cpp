@@ -107,15 +107,7 @@ NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 bool
 NavigateToPoseNavigator::goalStarted(ActionT::Goal::ConstSharedPtr goal)
 {
-  geometry_msgs::msg::PoseStamped current_pose;
-  geometry_msgs::msg::PoseStamped goal_pose;
-  std::string error;
-  if (!prepareGoalPose(goal, current_pose, goal_pose, error)) {
-    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR, error);
-    return false;
-  }
-  setGoalPose(current_pose, goal_pose);
-  return true;
+  return initializeGoalPose(goal);
 }
 
 void
@@ -224,17 +216,12 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
     // if pending goal requests the same BT as the current goal, accept the pending goal
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
-    geometry_msgs::msg::PoseStamped current_pose;
-    geometry_msgs::msg::PoseStamped goal_pose;
-    std::string error;
-    if (!prepareGoalPose(goal, current_pose, goal_pose, error)) {
-      RCLCPP_WARN(logger_, "Rejecting preemption: %s", error.c_str());
-      bt_action_server_->terminatePendingGoal(goal);
-      return;
-    }
-    // A newer request may have replaced this pending goal during TF lookup.
-    if (bt_action_server_->acceptPendingGoal(goal)) {
-      setGoalPose(current_pose, goal_pose);
+    if (!initializeGoalPose(bt_action_server_->acceptPendingGoal())) {
+      RCLCPP_WARN(
+        logger_,
+        "Preemption request was rejected since the goal pose could not be "
+        "transformed. For now, continuing to track the last goal until completion.");
+      bt_action_server_->terminatePendingGoal();
     }
   } else {
     RCLCPP_WARN(
@@ -244,7 +231,7 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
       "since it would require cancellation of the previous goal instead of true preemption."
       "\nCancel the current goal and send a new action request if you want to use a "
       "different BT XML file. For now, continuing to track the last goal until completion.");
-    bt_action_server_->terminatePendingGoal(goal);
+    bt_action_server_->terminatePendingGoal();
   }
 }
 
@@ -276,11 +263,17 @@ NavigateToPoseNavigator::prepareGoalPose(
   return true;
 }
 
-void
-NavigateToPoseNavigator::setGoalPose(
-  const geometry_msgs::msg::PoseStamped & current_pose,
-  const geometry_msgs::msg::PoseStamped & goal_pose)
+bool
+NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 {
+  geometry_msgs::msg::PoseStamped current_pose;
+  geometry_msgs::msg::PoseStamped goal_pose;
+  std::string error;
+  if (!prepareGoalPose(goal, current_pose, goal_pose, error)) {
+    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR, error);
+    return false;
+  }
+
   RCLCPP_INFO(
     logger_, "Begin navigating from current location (%.2f, %.2f) to (%.2f, %.2f)",
     current_pose.pose.position.x, current_pose.pose.position.y,
@@ -295,6 +288,8 @@ NavigateToPoseNavigator::setGoalPose(
   // Update the goal pose and path on the blackboard
   blackboard->set(goal_blackboard_id_, goal_pose);
   blackboard->set(path_blackboard_id_, nav_msgs::msg::Path());
+
+  return true;
 }
 
 void
