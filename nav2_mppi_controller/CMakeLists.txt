@@ -138,8 +138,6 @@ target_link_libraries(mppi_critics PRIVATE
 )
 if(ENABLE_OPENMP)
   target_link_libraries(mppi_critics PRIVATE OpenMP::OpenMP_CXX)
-else()
-  target_compile_options(mppi_critics PRIVATE -Wno-unknown-pragmas)
 endif()
 
 add_library(mppi_trajectory_validators SHARED
