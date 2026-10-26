@@ -111,6 +111,9 @@ class FootprintCollisionChecker:
         """
         line_cost = 0.0
         point_cost = -1.0
+        if x0 == x1 and y0 == y1:
+            return float(self.pointCost(int(x0), int(y0)))
+
         line_iterator = LineIterator(x0, y0, x1, y1, step_size)
 
         while line_iterator.isValid():

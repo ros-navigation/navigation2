@@ -113,6 +113,54 @@ class TestFootprintCollisionChecker(unittest.TestCase):
                     checker.setCostmap(PyCostmap2D(message))
                     self.assertEqual(checker.lineCost(x0, x1, y0, y1), LETHAL_OBSTACLE)
 
+    def test_lineCost_zero_length(self):
+        for cost in (0, LETHAL_OBSTACLE):
+            with self.subTest(cost=cost):
+                message = Costmap()
+                message.metadata.resolution = 1.0
+                message.metadata.size_x = 10
+                message.metadata.size_y = 10
+                data = [0] * 100
+                data[3 * 10 + 2] = cost
+                message.data = data
+                checker = FootprintCollisionChecker()
+                checker.setCostmap(PyCostmap2D(message))
+                self.assertEqual(checker.lineCost(2.5, 2.5, 3.5, 3.5), cost)
+
+    def test_footprintCost_single_cell(self):
+        points = [
+            Point32(x=x, y=y)
+            for x, y in [(0.1, 0.1), (0.9, 0.1), (0.9, 0.9), (0.1, 0.9)]
+        ]
+        for cost in (0, LETHAL_OBSTACLE):
+            with self.subTest(cost=cost):
+                message = Costmap()
+                message.metadata.resolution = 1.0
+                message.metadata.size_x = 10
+                message.metadata.size_y = 10
+                message.data = [cost] + [0] * 99
+                checker = FootprintCollisionChecker()
+                checker.setCostmap(PyCostmap2D(message))
+                self.assertEqual(checker.footprintCost(Polygon(points=points)), cost)
+
+    def test_footprintCost_collapsed_edge(self):
+        points = [
+            Point32(x=x, y=y)
+            for x, y in [(0.1, 0.1), (0.9, 0.1), (2.1, 2.1), (0.1, 2.1)]
+        ]
+        for cost in (0, LETHAL_OBSTACLE):
+            message = Costmap()
+            message.metadata.resolution = 1.0
+            message.metadata.size_x = 10
+            message.metadata.size_y = 10
+            message.data = [cost] + [0] * 99
+            checker = FootprintCollisionChecker()
+            checker.setCostmap(PyCostmap2D(message))
+            # Place the collapsed edge first and then at the closing edge.
+            for vertices in (points, points[1:] + points[:1]):
+                with self.subTest(cost=cost, vertices=vertices):
+                    self.assertEqual(checker.footprintCost(Polygon(points=vertices)), cost)
+
     def test_footprintCost_steep_edge(self):
         # A valid rectangle with a steep side crosses lethal cell (2, 4).
         message = Costmap()
