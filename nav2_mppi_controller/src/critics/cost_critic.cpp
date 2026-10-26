@@ -15,6 +15,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <vector>
 #include "nav2_mppi_controller/critics/cost_critic.hpp"
 #include "nav2_costmap_2d/inflation_layer_interface.hpp"
 #include "nav2_core/controller_exceptions.hpp"
@@ -186,7 +188,6 @@ void CostCritic::score(CriticData & data)
 
   Eigen::ArrayXf repulsive_cost(data.costs.rows());
   repulsive_cost.setZero();
-  bool all_trajectories_collide = true;
 
   auto & collisions = data.trajectories_in_collision;
   const bool track_collisions = !collisions.empty();
@@ -208,17 +209,18 @@ void CostCritic::score(CriticData & data)
     data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
     Eigen::Stride<-1, -1>(outer_stride, 1));
 
+  // Per-trajectory collision flags using uint8_t for concurrent writes
+  std::vector<uint8_t> traj_collided(strided_traj_rows, 0u);
+
 #ifdef _OPENMP
   #pragma omp parallel for \
   default(none) \
-  shared(repulsive_cost, costmap, near_goal, footprint, \
+  shared(repulsive_cost, traj_collided, costmap, near_goal, footprint, \
   strided_traj_rows, strided_traj_cols, traj_x, traj_y, traj_yaw) \
-  reduction(&&:all_trajectories_collide) \
   schedule(dynamic) \
   num_threads(getOptimalThreadCount())
 #endif
   for (int i = 0; i < strided_traj_rows; ++i) {
-    bool trajectory_collide = false;
     float pose_cost = 0.0f;
     float traj_cost = 0.0f;
 
@@ -243,8 +245,7 @@ void CostCritic::score(CriticData & data)
 
       if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j), footprint)) {
         traj_cost = collision_cost_;
-        trajectory_collide = true;
-        if (track_collisions) {collisions[i] = true;}
+        traj_collided[i] = 1u;
         break;
       }
 
@@ -259,7 +260,14 @@ void CostCritic::score(CriticData & data)
     }
 
     repulsive_cost(i) = traj_cost;
-    all_trajectories_collide &= trajectory_collide;
+  }
+
+  // convert traj_collided (uint8) to collisions (bool)
+  bool all_trajectories_collide = true;
+  for (int i = 0; i < strided_traj_rows; ++i) {
+    const bool collided = traj_collided[i] != 0u;
+    all_trajectories_collide &= collided;
+    if (track_collisions && collided) {collisions[i] = true;}
   }
 
   if (power_ > 1u) {
