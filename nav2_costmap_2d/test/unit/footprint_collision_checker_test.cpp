@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <memory>
 
 #include "gtest/gtest.h"
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 
@@ -46,6 +48,39 @@ TEST(collision_footprint, test_basic)
   auto value = collision_checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint);
 
   EXPECT_NEAR(value, 0.0, 0.001);
+}
+
+TEST(collision_footprint, test_footprint_cost_lethal_precedence)
+{
+  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
+    std::make_shared<nav2_costmap_2d::Costmap2D>(10, 10, 1.0, 0, 0, 0);
+
+  geometry_msgs::msg::Point p1;
+  p1.x = 2.5;
+  p1.y = 2.5;
+  geometry_msgs::msg::Point p2;
+  p2.x = 6.5;
+  p2.y = 2.5;
+  geometry_msgs::msg::Point p3;
+  p3.x = 6.5;
+  p3.y = 6.5;
+  geometry_msgs::msg::Point p4;
+  p4.x = 2.5;
+  p4.y = 6.5;
+
+  nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
+  nav2_costmap_2d::FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>
+  collision_checker(costmap_);
+
+  costmap_->setCost(4, 2, nav2_costmap_2d::NO_INFORMATION);
+  EXPECT_EQ(collision_checker.footprintCost(footprint), 255.0);
+
+  costmap_->setCost(6, 4, nav2_costmap_2d::LETHAL_OBSTACLE);
+  // Check every starting vertex, including when the lethal edge is the closing edge.
+  for (size_t i = 0; i < footprint.size(); ++i) {
+    EXPECT_EQ(collision_checker.footprintCost(footprint), 254.0);
+    std::rotate(footprint.begin(), footprint.begin() + 1, footprint.end());
+  }
 }
 
 TEST(collision_footprint, test_point_cost)

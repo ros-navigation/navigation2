@@ -81,14 +81,18 @@ class FootprintCollisionChecker:
             if x1 is None or y1 is None:
                 return LETHAL_OBSTACLE
 
-            footprint_cost = max(float(self.lineCost(x0, x1, y0, y1)), footprint_cost)
+            line_cost = float(self.lineCost(x0, x1, y0, y1))
+            if line_cost == LETHAL_OBSTACLE:
+                return line_cost
+
+            footprint_cost = max(line_cost, footprint_cost)
             x0 = x1
             y0 = y1
 
-            if footprint_cost == LETHAL_OBSTACLE:
-                return footprint_cost
-
-        return max(float(self.lineCost(xstart, x1, ystart, y1)), footprint_cost)
+        line_cost = float(self.lineCost(xstart, x1, ystart, y1))
+        if line_cost == LETHAL_OBSTACLE:
+            return line_cost
+        return max(line_cost, footprint_cost)
 
     def lineCost(self, x0: float, x1: float,
                  y0: float, y1: float, step_size: float = 0.5):
