@@ -12,11 +12,11 @@ builtin_interfaces/Duration max_duration
 uint16 NONE=0
 uint16 GOAL_REJECTED=1
 uint16 SEND_GOAL_FAILURE=2
-uint16 TF_ERROR=901
-uint16 FAILED_TO_DETECT_OBJECT=902
-uint16 FAILED_TO_CONTROL=903
-uint16 TIMEOUT=904
-uint16 UNKNOWN=999
+uint16 TF_ERROR=801
+uint16 FAILED_TO_DETECT_OBJECT=802
+uint16 FAILED_TO_CONTROL=803
+uint16 TIMEOUT=804
+uint16 UNKNOWN=899
 
 builtin_interfaces/Duration total_elapsed_time
 uint16 error_code 0  # Contextual error code, if any

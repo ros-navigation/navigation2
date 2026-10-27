@@ -23,7 +23,15 @@
 #include <chrono>
 #include <type_traits>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node_interfaces/node_base_interface.hpp"
+#include "rclcpp/node_interfaces/node_clock_interface.hpp"
+#include "rclcpp/node_interfaces/node_logging_interface.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/node_interfaces/node_waitables_interface.hpp"
+#include "rclcpp/utilities.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "nav2_ros_common/node_utils.hpp"

@@ -12,7 +12,6 @@
 
   <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
-  <depend>rclcpp_lifecycle</depend>
   <depend>tf2_ros</depend>
   <depend>nav2_ros_common</depend>
 

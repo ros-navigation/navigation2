@@ -16,7 +16,9 @@
 
 #include "gtest/gtest.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/utilities.hpp"
 
 class LifecycleTransitionTestNode : public nav2::LifecycleNode
 {

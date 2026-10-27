@@ -19,7 +19,11 @@
 #include <vector>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/time.hpp"
 
 #include "tf2/time.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -223,6 +227,8 @@ protected:
   std::string global_frame_id_;
   /// @brief Transform tolerance
   tf2::Duration transform_tolerance_;
+  /// @brief Maximum age in seconds for transforms requested at the latest time
+  double transform_staleness_threshold_{1.0};
   /// @brief Maximum time interval in which data is considered valid
   rclcpp::Duration source_timeout_;
   /// @brief Whether to correct source data towards to base frame movement,

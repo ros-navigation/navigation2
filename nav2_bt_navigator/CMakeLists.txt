@@ -132,8 +132,6 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${library_name} nav2_navigate_to_pose_navigator nav2_navigate_through_poses)
 ament_export_dependencies(geometry_msgs nav2_core nav2_msgs nav2_util nav2_ros_common nav_msgs pluginlib rclcpp rclcpp_action tf2_ros)
 ament_export_targets(export_${library_name})
 ament_package()

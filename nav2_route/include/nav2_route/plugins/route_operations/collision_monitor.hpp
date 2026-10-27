@@ -19,7 +19,10 @@
 #include <memory>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/route_operation.hpp"
 #include "nav2_route/utils.hpp"

@@ -43,10 +43,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.hpp"
-#pragma GCC diagnostic pop
 
 #include "nav2_util/geometry_utils.hpp"
 

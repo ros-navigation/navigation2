@@ -22,7 +22,8 @@
 #include <mutex>
 #include <limits>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/logger.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/controller.hpp"
@@ -122,7 +123,7 @@ protected:
    * @return pt location of the output point
    */
   geometry_msgs::msg::PoseStamped getSampledPathPt(
-    const geometry_msgs::msg::PoseStamped & global_goal);
+    const geometry_msgs::msg::PoseStamped & global_goal, const rclcpp::Time & control_time);
 
   /**
    * @brief Uses TF to find the location of the sampled path point in base frame

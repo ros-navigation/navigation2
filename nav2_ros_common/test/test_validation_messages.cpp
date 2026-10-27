@@ -29,6 +29,18 @@ TEST(ValidateMessagesTest, DoubleValueCheck) {
   EXPECT_FALSE(nav2::validateMsg(std::numeric_limits<double>::quiet_NaN()));
 }
 
+TEST(ValidateMessagesTest, DoubleValueInfValidCheck)
+{
+  EXPECT_TRUE(nav2::validateMsgInfValid(3.14));
+  EXPECT_TRUE(nav2::validateMsgInfValid(-3.14));
+  EXPECT_TRUE(nav2::validateMsgInfValid(0.0));
+  EXPECT_TRUE(nav2::validateMsgInfValid(std::numeric_limits<double>::max()));
+  EXPECT_TRUE(nav2::validateMsgInfValid(std::numeric_limits<double>::lowest()));
+  EXPECT_TRUE(nav2::validateMsgInfValid(std::numeric_limits<double>::infinity()));
+  EXPECT_FALSE(nav2::validateMsgInfValid(-std::numeric_limits<double>::infinity()));
+  EXPECT_FALSE(nav2::validateMsgInfValid(std::numeric_limits<double>::quiet_NaN()));
+}
+
 TEST(ValidateMessagesTest, TimeStampCheck)
 {
   // Test valid time stamp
@@ -526,6 +538,39 @@ TEST(ValidateMessagesTest, RangeCheck)
   invalid_range = valid_range;
   invalid_range.max_range = invalid_range.min_range;
   EXPECT_FALSE(nav2::validateMsg(invalid_range));
+}
+
+TEST(ValidateMessagesTest, CostmapCheck)
+{
+  nav2_msgs::msg::Costmap valid_costmap;
+  valid_costmap.header.frame_id = "map";
+  valid_costmap.metadata.resolution = 0.05;
+  valid_costmap.metadata.size_x = 2;
+  valid_costmap.metadata.size_y = 2;
+  valid_costmap.metadata.origin.orientation.w = 1.0;
+  valid_costmap.data.resize(4);
+  EXPECT_TRUE(nav2::validateMsg(valid_costmap));
+
+  nav2_msgs::msg::Costmap invalid_costmap = valid_costmap;
+  invalid_costmap.header.frame_id.clear();
+  EXPECT_FALSE(nav2::validateMsg(invalid_costmap));
+
+  invalid_costmap = valid_costmap;
+  invalid_costmap.metadata.resolution = 0.0;
+  EXPECT_FALSE(nav2::validateMsg(invalid_costmap));
+
+  invalid_costmap = valid_costmap;
+  invalid_costmap.metadata.size_x = 0;
+  EXPECT_FALSE(nav2::validateMsg(invalid_costmap));
+
+  invalid_costmap = valid_costmap;
+  invalid_costmap.metadata.size_x = std::numeric_limits<uint32_t>::max();
+  invalid_costmap.metadata.size_y = 2;
+  EXPECT_FALSE(nav2::validateMsg(invalid_costmap));
+
+  invalid_costmap = valid_costmap;
+  invalid_costmap.data.resize(3);
+  EXPECT_FALSE(nav2::validateMsg(invalid_costmap));
 }
 
 

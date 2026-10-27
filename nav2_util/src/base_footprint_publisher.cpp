@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "base_footprint_publisher.hpp"
+#include "rclcpp/executors.hpp"
 
 int main(int argc, char ** argv)
 {

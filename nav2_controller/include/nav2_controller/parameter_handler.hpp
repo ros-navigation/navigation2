@@ -21,7 +21,9 @@
 #include <algorithm>
 #include <mutex>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/parameter.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/parameter_handler.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -40,6 +42,7 @@ struct Parameters
   bool use_realtime_priority;
   bool publish_zero_velocity;
   rclcpp::Duration costmap_update_timeout{0, 0};
+  double transform_staleness_threshold{0.0};
   std::string odom_topic;
   double odom_duration;
   double search_window;

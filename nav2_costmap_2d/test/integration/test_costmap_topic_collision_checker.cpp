@@ -18,7 +18,12 @@
 #include <chrono>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
@@ -30,10 +35,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.hpp"
-#pragma GCC diagnostic pop
 #include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;

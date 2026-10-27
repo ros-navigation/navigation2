@@ -46,6 +46,7 @@
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -207,7 +208,12 @@ void KeepoutFilter::updateBounds(
     pose.position.z = 0.0;
     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
     geometry_msgs::msg::Pose mask_pose;
-    if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
+    geometry_msgs::msg::TransformStamped mask_transform;
+    if (nav2_util::lookupTransformWithStalenessCheck(
+        *tf_, filter_mask_->header.frame_id, global_frame_, clock_->now(),
+        transform_staleness_threshold_, mask_transform))
+    {
+      tf2::doTransform(pose, mask_pose, mask_transform);
       unsigned int mask_robot_i, mask_robot_j;
       if (nav2_util::worldToMap(
           filter_mask_, mask_pose.position.x, mask_pose.position.y,
@@ -269,20 +275,14 @@ void KeepoutFilter::process(
   if (mask_frame != global_frame_) {
     // Filter mask and current layer are in different frames:
     // prepare frame transformation if mask_frame != global_frame_
-    geometry_msgs::msg::TransformStamped transform;
-    try {
-      transform = tf_->lookupTransform(
-        mask_frame, global_frame_, tf2::TimePointZero,
-        transform_tolerance_);
-    } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR_THROTTLE(
-        logger_, *(clock_), 2000,
-        "KeepoutFilter: Failed to get costmap frame (%s) "
-        "transformation to mask frame (%s) with error: %s",
-        global_frame_.c_str(), mask_frame.c_str(), ex.what());
+    geometry_msgs::msg::TransformStamped mask_transform;
+    if (!nav2_util::lookupTransformWithStalenessCheck(
+        *tf_, mask_frame, global_frame_, clock_->now(),
+        transform_staleness_threshold_, mask_transform))
+    {
       return;
     }
-    tf2::fromMsg(transform.transform, tf2_transform);
+    tf2::fromMsg(mask_transform.transform, tf2_transform);
 
     mg_min_x = min_i;
     mg_min_y = min_j;

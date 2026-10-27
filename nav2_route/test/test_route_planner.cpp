@@ -18,7 +18,8 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_route/route_planner.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
@@ -176,6 +177,12 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   route = planner.findRoute(graph, start, goal, blocked_ids, route_request);
   EXPECT_NEAR(route.route_cost, 5.0, 0.001);
   EXPECT_EQ(route.edges.size(), 5u);
+
+  // Replace the graph after a successful search and plan again.
+  graph = create4x4Graph();
+  route = planner.findRoute(graph, 0u, 12u, blocked_ids, route_request);
+  EXPECT_NEAR(route.route_cost, 3.0, 0.001);
+  EXPECT_EQ(route.edges.size(), 3u);
 }
 
 TEST(RoutePlannerTest, test_route_planner_negative)
@@ -210,6 +217,12 @@ TEST(RoutePlannerTest, test_route_planner_negative)
       graph, start, goal, blocked_ids,
       route_request), nav2_core::TimedOut);
 
+  // Replace the graph after a timeout and request a shorter route.
+  graph = create4x4Graph();
+  const auto route = planner.findRoute(graph, 0u, 4u, blocked_ids, route_request);
+  EXPECT_NEAR(route.route_cost, 1.0, 0.001);
+  EXPECT_EQ(route.edges.size(), 1u);
+
   // If we try to plan but we both cannot override and has 0 cost, will throw
   graph[0].neighbors[1].edge_cost.overridable = false;
   graph[0].neighbors[1].edge_cost.cost = 0.0;
@@ -217,6 +230,49 @@ TEST(RoutePlannerTest, test_route_planner_negative)
     planner.findRoute(
       graph, start, goal, blocked_ids,
       route_request), nav2_core::NoValidGraph);
+}
+
+TEST(RoutePlannerTest, test_route_planner_recovers_after_invalid_edge)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("router_test");
+  nav2::TransformBuffer::SharedPtr tf_buffer;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
+  RoutePlanner planner;
+  planner.configure(node, tf_buffer, collision_checker);
+  RouteRequest route_request;
+  std::vector<unsigned int> blocked_ids;
+
+  Graph previous_graph(3);
+  Graph graph(3);
+  for (unsigned int i = 0; i != 3; i++) {
+    previous_graph[i].nodeid = i + 1;
+    graph[i].nodeid = i + 1;
+  }
+
+  EdgeCost cost;
+  cost.overridable = false;
+  cost.cost = 1.0;
+  previous_graph[0].addEdge(cost, &previous_graph[1], 4);
+  cost.cost = 0.0;
+  previous_graph[0].addEdge(cost, &previous_graph[2], 5);
+
+  // The first edge is queued before the second edge aborts the search.
+  EXPECT_THROW(
+    planner.findRoute(previous_graph, 0, 1, blocked_ids, route_request),
+    nav2_core::NoValidGraph);
+
+  // A replacement graph has a cheaper two-edge route than the direct edge.
+  cost.cost = 10.0;
+  graph[0].addEdge(cost, &graph[1], 4);
+  cost.cost = 2.0;
+  graph[0].addEdge(cost, &graph[2], 5);
+  graph[2].addEdge(cost, &graph[1], 6);
+
+  const auto route = planner.findRoute(graph, 0, 1, blocked_ids, route_request);
+  EXPECT_FLOAT_EQ(route.route_cost, 4.0);
+  ASSERT_EQ(route.edges.size(), 2u);
+  EXPECT_EQ(route.edges[0]->edgeid, 5u);
+  EXPECT_EQ(route.edges[1]->edgeid, 6u);
 }
 
 int main(int argc, char ** argv)

@@ -12,14 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <cstdio>
 #include <fstream>
 #include <memory>
 #include <string>
 
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "gtest/gtest.h"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_amcl/amcl_node.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/future_return_code.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_client.hpp"
+#include "rclcpp/utilities.hpp"
+#include "std_srvs/srv/empty.hpp"
 
 class PosePersistenceTest : public ::testing::Test
 {
@@ -41,6 +52,81 @@ protected:
 
   std::string test_filepath_;
 };
+
+// Expose the map callback and state needed by the regression test.
+class AmclNodeTester : public nav2_amcl::AmclNode
+{
+public:
+  using nav2_amcl::AmclNode::AmclNode;
+
+  void receiveMap(double origin_x, double origin_y = 0.0)
+  {
+    auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+    map->header.frame_id = "map";
+    map->info.width = 10;
+    map->info.height = 10;
+    map->info.resolution = 1.0;
+    map->info.origin.position.x = origin_x;
+    map->info.origin.position.y = origin_y;
+    map->info.origin.orientation.w = 1.0;
+    map->data.assign(100, 0);
+    mapReceived(map);
+  }
+
+  void receiveInitialPose(
+    const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg)
+  {
+    initialPoseReceived(msg);
+  }
+
+  double mapOriginX() const {return map_->origin_x;}
+  double lastPoseX() const {return last_published_pose_.pose.pose.position.x;}
+
+  void updateMapTopic(const std::string & topic)
+  {
+    updateParametersCallback({rclcpp::Parameter("map_topic", topic)});
+  }
+};
+
+// Verify the first map from a replacement topic is accepted.
+TEST_F(PosePersistenceTest, map_topic_change_starts_new_first_map_epoch)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({{"random_seed", 42}, {"first_map_only", true}});
+
+  auto amcl = std::make_shared<AmclNodeTester>(options);
+  amcl->configure();
+  amcl->activate();
+  amcl->receiveMap(0.0);
+  EXPECT_EQ(amcl->mapOriginX(), 5.0);
+
+  amcl->updateMapTopic("replacement_map");
+  amcl->receiveMap(100.0);
+
+  EXPECT_EQ(amcl->mapOriginX(), 105.0);
+  amcl->deactivate();
+  amcl->cleanup();
+}
+
+TEST_F(PosePersistenceTest, initial_pose_bounds_use_map_coordinates)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({{"random_seed", 42}});
+
+  auto amcl = std::make_shared<AmclNodeTester>(options);
+  amcl->configure();
+  amcl->receiveMap(100.0, 200.0);
+
+  auto pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+  pose->header.frame_id = "map";
+  pose->pose.pose.position.x = 104.0;
+  pose->pose.pose.position.y = 204.0;
+  pose->pose.pose.orientation.w = 1.0;
+  amcl->receiveInitialPose(pose);
+
+  EXPECT_EQ(amcl->lastPoseX(), 104.0);
+  amcl->cleanup();
+}
 
 TEST_F(PosePersistenceTest, test_pose_persistence_parameters)
 {
@@ -321,6 +407,58 @@ TEST_F(PosePersistenceTest, test_ros_params_priority_over_saved_pose)
   EXPECT_EQ(amcl->get_parameter("initial_pose.x").as_double(), 1.0);
   EXPECT_EQ(amcl->get_parameter("initial_pose.y").as_double(), 2.0);
   EXPECT_EQ(amcl->get_parameter("initial_pose.yaw").as_double(), 0.5);
+
+  amcl->deactivate();
+  amcl->cleanup();
+}
+
+// Verify cleanup preserves configured parameters until a pose is known.
+TEST_F(PosePersistenceTest, cleanup_without_estimate_preserves_initial_pose)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides(
+    {{"random_seed", 42},
+      {"set_initial_pose", false},
+      {"initial_pose.x", 2.0}});
+
+  auto amcl = std::make_shared<nav2_amcl::AmclNode>(options);
+  amcl->configure();
+  amcl->activate();
+  amcl->set_parameter(rclcpp::Parameter("set_initial_pose", true));
+  amcl->deactivate();
+  amcl->cleanup();
+
+  EXPECT_EQ(amcl->get_parameter("initial_pose.x").as_double(), 2.0);
+}
+
+TEST_F(PosePersistenceTest, global_localization_before_map_returns_safely)
+{
+  using namespace std::chrono_literals;
+
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({
+    rclcpp::Parameter("random_seed", 42),
+    rclcpp::Parameter("bond_heartbeat_period", 0.0),
+  });
+
+  auto amcl = std::make_shared<nav2_amcl::AmclNode>(options);
+  ASSERT_EQ(amcl->configure().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  ASSERT_EQ(amcl->activate().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  auto client_node = std::make_shared<rclcpp::Node>("amcl_global_localization_test_client");
+  auto client = client_node->create_client<std_srvs::srv::Empty>(
+    "/reinitialize_global_localization");
+  ASSERT_TRUE(client->wait_for_service(2s));
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(amcl->get_node_base_interface());
+  executor.add_node(client_node);
+  auto future = client->async_send_request(std::make_shared<std_srvs::srv::Empty::Request>());
+  EXPECT_EQ(
+    executor.spin_until_future_complete(future, 2s),
+    rclcpp::FutureReturnCode::SUCCESS);
+  executor.remove_node(client_node);
+  executor.remove_node(amcl->get_node_base_interface());
 
   amcl->deactivate();
   amcl->cleanup();

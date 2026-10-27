@@ -20,7 +20,8 @@
 
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executor.hpp"
+#include "rclcpp/node.hpp"
 #include "action_msgs/msg/goal_status.hpp"
 
 namespace nav2_rviz_plugins

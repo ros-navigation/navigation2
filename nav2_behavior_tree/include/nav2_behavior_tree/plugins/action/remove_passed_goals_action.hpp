@@ -29,6 +29,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/clock.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -87,7 +88,9 @@ private:
 
   double viapoint_achieved_radius_;
   double transform_tolerance_;
+  double transform_staleness_threshold_;
   nav2::LifecycleNode::SharedPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
   nav2::TransformBuffer::SharedPtr tf_;
   std::string robot_base_frame_;
 };

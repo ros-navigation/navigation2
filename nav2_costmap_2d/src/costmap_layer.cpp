@@ -82,10 +82,10 @@ void CostmapLayer::clearArea(int start_x, int start_y, int end_x, int end_y, boo
   end_y = std::clamp(end_y, 0, size_y);
 
   for (int x = 0; x < size_x; x++) {
-    bool xrange = x > start_x && x < end_x;
+    bool xrange = x >= start_x && x < end_x;
 
     for (int y = 0; y < size_y; y++) {
-      if ((xrange && y > start_y && y < end_y) == invert) {
+      if ((xrange && y >= start_y && y < end_y) == invert) {
         continue;
       }
       int index = getIndex(x, y);

@@ -17,7 +17,9 @@
 #include <memory>
 #include <chrono>
 
-#include <rclcpp/rclcpp.hpp>
+#include "rclcpp/executors.hpp"
+#include "rclcpp/future_return_code.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_msgs/srv/get_costs.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 

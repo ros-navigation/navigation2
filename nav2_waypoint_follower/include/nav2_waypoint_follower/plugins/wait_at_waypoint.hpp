@@ -18,7 +18,8 @@
 
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/logger.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_core/waypoint_task_executor.hpp"
 

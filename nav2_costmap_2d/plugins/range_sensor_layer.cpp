@@ -265,10 +265,15 @@ void RangeSensorLayer::processFixedRangeMsg(sensor_msgs::msg::Range & range_mess
 
 void RangeSensorLayer::processVariableRangeMsg(sensor_msgs::msg::Range & range_message)
 {
-  if (range_message.range < range_message.min_range || range_message.range >
-    range_message.max_range)
-  {
+  if (std::isnan(range_message.range) || range_message.range < range_message.min_range) {
     return;
+  }
+
+  if (range_message.range > range_message.max_range) {
+    if (!clear_on_max_reading_) {
+      return;
+    }
+    range_message.range = range_message.max_range;
   }
 
   bool clear_sensor_cone = false;
@@ -290,24 +295,26 @@ void RangeSensorLayer::updateCostmap(
   in.header.stamp = range_message.header.stamp;
   in.header.frame_id = range_message.header.frame_id;
 
-  if (!tf_->canTransform(
-      in.header.frame_id, global_frame_,
+  geometry_msgs::msg::TransformStamped transform;
+  try {
+    transform = tf_->lookupTransform(
+      global_frame_, in.header.frame_id,
       tf2_ros::fromMsg(in.header.stamp),
-      tf2_ros::fromRclcpp(transform_tolerance_)))
-  {
+      tf2_ros::fromRclcpp(transform_tolerance_));
+  } catch (const tf2::TransformException &) {
     RCLCPP_INFO(
       logger_, "Range sensor layer can't transform from %s to %s",
-      global_frame_.c_str(), in.header.frame_id.c_str());
+      in.header.frame_id.c_str(), global_frame_.c_str());
     return;
   }
 
-  tf_->transform(in, out, global_frame_, transform_tolerance_);
+  tf2::doTransform(in, out, transform);
 
   double ox = out.point.x, oy = out.point.y;
 
   in.point.x = range_message.range;
 
-  tf_->transform(in, out, global_frame_, transform_tolerance_);
+  tf2::doTransform(in, out, transform);
 
   double tx = out.point.x, ty = out.point.y;
 
@@ -360,11 +367,12 @@ void RangeSensorLayer::updateCostmap(
   // Limit Bounds to Grid
   bx0 = std::max(0, bx0);
   by0 = std::max(0, by0);
-  bx1 = std::min(static_cast<int>(size_x_), bx1);
-  by1 = std::min(static_cast<int>(size_y_), by1);
+  bx1 = std::min(static_cast<int>(size_x_) - 1, bx1);
+  by1 = std::min(static_cast<int>(size_y_) - 1, by1);
 
-  for (unsigned int x = bx0; x <= (unsigned int)bx1; x++) {
-    for (unsigned int y = by0; y <= (unsigned int)by1; y++) {
+  // Signed indices, as the bounds are empty if the cone lies wholly off the grid
+  for (int x = bx0; x <= bx1; x++) {
+    for (int y = by0; y <= by1; y++) {
       bool update_xy_cell = true;
 
       // Unless inflate_cone_ is set to 100 %, we update cells only within the

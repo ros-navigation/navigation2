@@ -145,8 +145,6 @@ install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${library_name} simple_smoother savitzky_golay_smoother)
 ament_export_dependencies(
   angles
   nav2_core

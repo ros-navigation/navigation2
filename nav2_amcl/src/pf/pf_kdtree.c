@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -48,8 +49,10 @@ static pf_kdtree_node_t * pf_kdtree_find_node(
   pf_kdtree_t * self, pf_kdtree_node_t * node,
   int key[]);
 
-// Recursively label nodes in this cluster
-static void pf_kdtree_cluster_node(pf_kdtree_t * self, pf_kdtree_node_t * node, int depth);
+// Add neighboring nodes in this cluster to the queue
+static void pf_kdtree_cluster_node(
+  pf_kdtree_t * self, pf_kdtree_node_t * node,
+  pf_kdtree_node_t ** queue, int * queue_count);
 
 // Recursive node printing
 // static void pf_kdtree_print_node(pf_kdtree_t *self, pf_kdtree_node_t *node);
@@ -220,7 +223,7 @@ pf_kdtree_node_t * pf_kdtree_insert_node(
   pf_kdtree_node_t * node, int key[], double value)
 {
   int i;
-  int split, max_split;
+  int64_t split, max_split;
 
   // If the node doesn't exist yet...
   if (node == NULL) {
@@ -252,7 +255,7 @@ pf_kdtree_node_t * pf_kdtree_insert_node(
       max_split = 0;
       node->pivot_dim = -1;
       for (i = 0; i < 3; i++) {
-        split = abs(key[i] - node->key[i]);
+        split = llabs((int64_t)key[i] - node->key[i]);
         if (split > max_split) {
           max_split = split;
           node->pivot_dim = i;
@@ -260,7 +263,8 @@ pf_kdtree_node_t * pf_kdtree_insert_node(
       }
       assert(node->pivot_dim >= 0);
 
-      node->pivot_value = (key[node->pivot_dim] + node->key[node->pivot_dim]) / 2.0;
+      node->pivot_value =
+        ((double)key[node->pivot_dim] + node->key[node->pivot_dim]) / 2.0;
 
       if (key[node->pivot_dim] < node->pivot_value) {
         node->children[0] = pf_kdtree_insert_node(self, node, NULL, key, value);
@@ -351,13 +355,11 @@ void pf_kdtree_cluster(pf_kdtree_t * self)
   queue_count = 0;
   queue = calloc(self->node_count, sizeof(queue[0]));
 
-  // Put all the leaves in a queue
+  // Reset cluster labels
   for (i = 0; i < self->node_count; i++) {
     node = self->nodes + i;
     if (node->leaf) {
       node->cluster = -1;
-      assert(queue_count < self->node_count);
-      queue[queue_count++] = node;
 
       // TESTING; remove
       assert(node == pf_kdtree_find_node(self, self->root, node->key));
@@ -367,19 +369,24 @@ void pf_kdtree_cluster(pf_kdtree_t * self)
   cluster_count = 0;
 
   // Do connected components for each node
-  while (queue_count > 0) {
-    node = queue[--queue_count];
+  for (i = self->node_count - 1; i >= 0; i--) {
+    node = self->nodes + i;
 
     // If this node has already been labelled, skip it
-    if (node->cluster >= 0) {
+    if (!node->leaf || node->cluster >= 0) {
       continue;
     }
 
     // Assign a label to this cluster
     node->cluster = cluster_count++;
 
-    // Recursively label nodes in this cluster
-    pf_kdtree_cluster_node(self, node, 0);
+    // Iteratively label nodes in this cluster
+    assert(queue_count < self->node_count);
+    queue[queue_count++] = node;
+    while (queue_count > 0) {
+      node = queue[--queue_count];
+      pf_kdtree_cluster_node(self, node, queue, &queue_count);
+    }
   }
 
   free(queue);
@@ -387,8 +394,10 @@ void pf_kdtree_cluster(pf_kdtree_t * self)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Recursively label nodes in this cluster
-void pf_kdtree_cluster_node(pf_kdtree_t * self, pf_kdtree_node_t * node, int depth)
+// Add neighboring nodes in this cluster to the queue
+void pf_kdtree_cluster_node(
+  pf_kdtree_t * self, pf_kdtree_node_t * node,
+  pf_kdtree_node_t ** queue, int * queue_count)
 {
   int i;
   int nkey[3];
@@ -413,10 +422,10 @@ void pf_kdtree_cluster_node(pf_kdtree_t * self, pf_kdtree_node_t * node, int dep
       continue;
     }
 
-    // Label this node and recurse
+    // Label this node and add it to the work queue
     nnode->cluster = node->cluster;
-
-    pf_kdtree_cluster_node(self, nnode, depth + 1);
+    assert(*queue_count < self->node_count);
+    queue[(*queue_count)++] = nnode;
   }
 }
 

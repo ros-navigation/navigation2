@@ -123,6 +123,7 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("RouteTracker")};
   double radius_threshold_, boundary_radius_threshold_, tracker_update_rate_;
+  double transform_staleness_threshold_;
   bool aggregate_blocked_ids_;
   nav2::LifecycleNode::WeakPtr node_;
   typename ActionServerTrack::SharedPtr action_server_;

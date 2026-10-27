@@ -18,7 +18,14 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/rate.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "std_srvs/srv/trigger.hpp"
@@ -137,9 +144,25 @@ public:
     graph_.resize(1);
   }
 
+  // Expose graph size to verify failed replacement is non-destructive.
+  size_t graphSize() const
+  {
+    return graph_.size();
+  }
+
   void useErrorCodePlanner()
   {
     route_planner_ = std::make_shared<RoutePlannerErrorTester>();
+  }
+
+  void setRobotTransform()
+  {
+    geometry_msgs::msg::TransformStamped transform;
+    transform.header.frame_id = "map";
+    transform.child_frame_id = "base_link";
+    transform.header.stamp = now();
+    transform.transform.rotation.w = 1.0;
+    tf_->setTransform(transform, "test", false);
   }
 };
 
@@ -175,12 +198,15 @@ TEST(RouteServerTest, test_set_srv)
   req2->graph_filepath = real_filepath;
   auto resp2 = srv_client.invoke(req2, std::chrono::nanoseconds(1000000000));
   EXPECT_TRUE(resp2->success);
+  const auto graph_size = server->graphSize();
+  EXPECT_GT(graph_size, 0u);
 
   auto req3 = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
   req3->graph_filepath = nav2::get_package_share_directory("nav2_route") +
     "/test/test_graphs/invalid.json";
   auto resp3 = srv_client.invoke(req3, std::chrono::nanoseconds(1000000000));
   EXPECT_FALSE(resp3->success);
+  EXPECT_EQ(server->graphSize(), graph_size);
 
   server->shutdown();
   node_thread.reset();
@@ -276,6 +302,7 @@ TEST(RouteServerTest, test_complete_action_api)
   server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_file));
   auto node_thread = std::make_unique<nav2::NodeThread>(server);
   server->startup();
+  server->setRobotTransform();
 
   // Compute a simple route action request
   auto node2 = std::make_shared<rclcpp::Node>("my_node2");

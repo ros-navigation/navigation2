@@ -48,6 +48,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/parameter_client.hpp"
 
 using geometry_msgs::msg::Point;
 

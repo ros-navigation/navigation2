@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_mppi_controller/models/control_sequence.hpp"
 #include "nav2_mppi_controller/models/path.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
