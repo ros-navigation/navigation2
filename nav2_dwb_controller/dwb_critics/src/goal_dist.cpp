@@ -68,6 +68,7 @@ bool GoalDistCritic::getLastPoseOnCostmap(
     global_plan,
     costmap_->getResolution());
   bool started_path = false;
+  bool found_free = false;
 
   // skip global path points until we reach the border of the local map
   for (unsigned int i = 0; i < adjusted_global_plan.poses.size(); ++i) {
@@ -78,6 +79,12 @@ bool GoalDistCritic::getLastPoseOnCostmap(
         g_x, g_y, map_x,
         map_y) && costmap_->getCost(map_x, map_y) != nav2_costmap_2d::NO_INFORMATION)
     {
+      const bool blocked =
+        costmap_->getCost(map_x, map_y) >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
+      if (blocked && found_free) {
+        return true;
+      }
+      found_free = found_free || !blocked;
       // Still on the costmap. Continue.
       x = map_x;
       y = map_y;
