@@ -84,6 +84,15 @@ public:
   double getSpeedLinearMax() {return params_->v_linear_max;}
 
   double getSpeedAngularMax() {return params_->v_angular_max;}
+
+  bool validateTargetPoseOnApproach(
+    geometry_msgs::msg::PoseStamped & target_pose, double dist_to_target, double dist_to_goal,
+    nav_msgs::msg::Path & trajectory, geometry_msgs::msg::TransformStamped & costmap_transform,
+    geometry_msgs::msg::TwistStamped & cmd_vel)
+  {
+    return nav2_graceful_controller::GracefulController::validateTargetPoseOnApproach(
+      target_pose, dist_to_target, dist_to_goal, trajectory, costmap_transform, cmd_vel);
+  }
 };
 
 TEST(SmoothControlLawTest, setCurvatureConstants) {
@@ -1299,6 +1308,253 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
 
   // It is likely to turn, so angular z should be non-zero (or larger than safe case)
   EXPECT_GT(std::abs(cmd_vel_risky.twist.angular.z), 1e-3);
+}
+
+TEST(GracefulControllerTest, computeVelocityCommandApproachFallbackUsesPlanHeading) {
+  auto node = std::make_shared<nav2::LifecycleNode>("testGracefulApproachFallback");
+  auto tf = nav2::create_transform_buffer(node);
+
+  nav2::declare_parameter_if_not_declared(
+    node, "test.initial_rotation", rclcpp::ParameterValue(false));
+
+  // Create a costmap of 10x10 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  costmap_ros->declare_parameter("global_frame", rclcpp::ParameterValue("test_global_frame"));
+  costmap_ros->declare_parameter("robot_base_frame", rclcpp::ParameterValue("test_robot_frame"));
+  costmap_ros->declare_parameter("width", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("height", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("resolution", rclcpp::ParameterValue(0.05));
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  // Small obstacle on the straight line to the goal: it blocks the approach shortcut, which
+  // ends facing the goal, but not the curve needed to end with the plan's heading
+  auto costmap = costmap_ros->getCostmap();
+  unsigned int mx, my;
+  for (double x = 5.2; x <= 5.3; x += 0.05) {
+    for (double y = 5.1; y <= 5.2; y += 0.05) {
+      ASSERT_TRUE(costmap->worldToMap(x, y, mx, my));
+      costmap->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
+    }
+  }
+
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_global_frame";
+  robot_pose.pose.position.x = 5.0;
+  robot_pose.pose.position.y = 5.0;
+  robot_pose.pose.orientation.w = 1.0;
+
+  // The goal is close, so the approach shortcut is tried first. The heading of the plan
+  // (1.5 rad) differs a lot from the heading towards the goal (atan2(0.3, 0.5))
+  nav_msgs::msg::Path transformed_global_plan;
+  transformed_global_plan.header.frame_id = "test_robot_frame";
+  transformed_global_plan.poses.resize(1);
+  transformed_global_plan.poses[0].header = transformed_global_plan.header;
+  transformed_global_plan.poses[0].pose.position.x = 0.5;
+  transformed_global_plan.poses[0].pose.position.y = 0.3;
+  transformed_global_plan.poses[0].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 1.5));
+  controller->newPathReceived(transformed_global_plan);
+
+  geometry_msgs::msg::PoseStamped goal;
+  goal.header = robot_pose.header;
+  goal.pose.position.x = 5.5;
+  goal.pose.position.y = 5.3;
+  goal.pose.orientation = transformed_global_plan.poses[0].pose.orientation;
+  geometry_msgs::msg::Twist robot_velocity;
+  nav2_controller::SimpleGoalChecker checker;
+  checker.initialize(node, "checker", costmap_ros);
+
+  // The fallback must try the plan's own heading instead of repeating the blocked shortcut
+  geometry_msgs::msg::TwistStamped cmd_vel;
+  EXPECT_NO_THROW(
+    cmd_vel = controller->computeVelocityCommands(
+      robot_pose, robot_velocity, &checker, transformed_global_plan, goal));
+  EXPECT_GT(cmd_vel.twist.linear.x, 0.0);
+}
+
+/**
+ * @brief Outcome of one call to validateTargetPoseOnApproach.
+ */
+struct ApproachOutcome
+{
+  /** @brief Return value of validateTargetPoseOnApproach. */
+  bool valid;
+  /** @brief Yaw of the target pose before the call. */
+  double yaw_before;
+  /** @brief Yaw of the target pose after the call. */
+  double yaw_after;
+};
+
+/**
+ * @brief Call validateTargetPoseOnApproach on a target close to the goal.
+ *
+ * @param target_x X of the target in the robot frame.
+ * @param target_y Y of the target in the robot frame.
+ * @param allow_backward Whether the controller may drive backwards.
+ * @param blocked Whether a lethal wall is placed between the robot and the target.
+ * @return The return value and the yaw of the target pose before and after the call.
+ */
+ApproachOutcome runApproachValidation(
+  double target_x, double target_y, bool allow_backward, bool blocked)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("testGraceful");
+  auto tf = nav2::create_transform_buffer(node);
+
+  nav2::declare_parameter_if_not_declared(
+    node, "test.initial_rotation", rclcpp::ParameterValue(false));
+  nav2::declare_parameter_if_not_declared(
+    node, "test.prefer_final_rotation", rclcpp::ParameterValue(true));
+  nav2::declare_parameter_if_not_declared(
+    node, "test.allow_backward", rclcpp::ParameterValue(allow_backward));
+
+  // Create a costmap of 10x10 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  costmap_ros->declare_parameter("global_frame", rclcpp::ParameterValue("test_global_frame"));
+  costmap_ros->declare_parameter("robot_base_frame", rclcpp::ParameterValue("test_robot_frame"));
+  costmap_ros->declare_parameter("width", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("height", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("resolution", rclcpp::ParameterValue(0.1));
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  // Robot at (5, 5) facing +x in the costmap frame
+  geometry_msgs::msg::TransformStamped costmap_transform;
+  costmap_transform.header.frame_id = "test_global_frame";
+  costmap_transform.child_frame_id = "test_robot_frame";
+  costmap_transform.transform.translation.x = 5.0;
+  costmap_transform.transform.translation.y = 5.0;
+  costmap_transform.transform.rotation.w = 1.0;
+
+  if (blocked) {
+    // Wall across the way to the target, wide enough to stop any heading
+    auto costmap = costmap_ros->getCostmap();
+    unsigned int mx, my;
+    double wall_x = 5.0 + 0.6 * target_x;
+    for (double wall_y = 4.0; wall_y <= 6.5; wall_y += 0.05) {
+      costmap->worldToMap(wall_x, wall_y, mx, my);
+      costmap->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
+    }
+  }
+
+  // The plan's own heading (0.2 rad) differs from the heading towards the target
+  geometry_msgs::msg::PoseStamped target_pose;
+  target_pose.header.frame_id = "test_robot_frame";
+  target_pose.pose.position.x = target_x;
+  target_pose.pose.position.y = target_y;
+  target_pose.pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.2));
+
+  ApproachOutcome outcome;
+  outcome.yaw_before = tf2::getYaw(target_pose.pose.orientation);
+
+  nav_msgs::msg::Path trajectory;
+  geometry_msgs::msg::TwistStamped cmd_vel;
+  double dist_to_target = std::hypot(target_x, target_y);
+  outcome.valid = controller->validateTargetPoseOnApproach(
+    target_pose, dist_to_target, dist_to_target, trajectory, costmap_transform, cmd_vel);
+  outcome.yaw_after = tf2::getYaw(target_pose.pose.orientation);
+  return outcome;
+}
+
+TEST(GracefulControllerTest, validateTargetPoseOnApproachKeepsPoseWhenBlocked) {
+  auto outcome = runApproachValidation(0.5, 0.3, false, true);
+
+  // The target is blocked, so the approach check fails and the caller falls back to the
+  // original heading of the plan: the pose must not carry the shortcut heading
+  EXPECT_FALSE(outcome.valid);
+  EXPECT_NEAR(outcome.yaw_after, outcome.yaw_before, 1e-6);
+}
+
+TEST(GracefulControllerTest, validateTargetPoseOnApproachKeepsPoseWhenBlockedBackwards) {
+  auto outcome = runApproachValidation(-0.5, 0.3, true, true);
+
+  // A failed attempt must not leave the heading flipped by PI for the reversing fallback
+  EXPECT_FALSE(outcome.valid);
+  EXPECT_NEAR(outcome.yaw_after, outcome.yaw_before, 1e-6);
+}
+
+TEST(GracefulControllerTest, validateTargetPoseOnApproachWritesHeadingOnSuccess) {
+  auto outcome = runApproachValidation(0.5, 0.3, false, false);
+
+  // On success the pose carries the shortcut heading, pointing at the target
+  EXPECT_TRUE(outcome.valid);
+  EXPECT_NEAR(outcome.yaw_after, std::atan2(0.3, 0.5), 1e-6);
+}
+
+TEST(GracefulControllerTest, computeVelocityCommandUnsafeApproachDoesNotHideSafeOnes) {
+  auto node = std::make_shared<nav2::LifecycleNode>("testGracefulUnsafeApproach");
+  auto tf = nav2::create_transform_buffer(node);
+
+  // Create a costmap of 10x10 meters with a polygonal footprint
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  costmap_ros->declare_parameter("global_frame", rclcpp::ParameterValue("test_global_frame"));
+  costmap_ros->declare_parameter("robot_base_frame", rclcpp::ParameterValue("test_robot_frame"));
+  costmap_ros->declare_parameter("width", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("height", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("resolution", rclcpp::ParameterValue(0.05));
+  costmap_ros->declare_parameter(
+    "footprint", rclcpp::ParameterValue("[[-0.2, -0.2], [0.2, -0.2], [0.2, 0.2], [-0.2, 0.2]]"));
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  // Create controller
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  // Small slowdown radius so the simulated trajectories reach their targets
+  auto params = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(), node->get_node_services_interface());
+  auto fut = params->set_parameters_atomically(
+    {rclcpp::Parameter("test.prefer_final_rotation", true),
+      rclcpp::Parameter("test.slowdown_radius", 0.1)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), fut);
+
+  // A single inscribed cell in the straight approach: valid for a polygonal footprint,
+  // but unsafe. It makes the straight approach (the fastest one) risky and unsafe.
+  auto costmap = costmap_ros->getCostmap();
+  unsigned int mx, my;
+  ASSERT_TRUE(costmap->worldToMap(5.4, 5.0, mx, my));
+  costmap->setCost(mx, my, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+
+  // Robot in the middle of the costmap
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_global_frame";
+  robot_pose.pose.position.x = 5.0;
+  robot_pose.pose.position.y = 5.0;
+  robot_pose.pose.orientation.w = 1.0;
+
+  // Straight plan of 0.8 m in the robot frame, shorter than max_lookahead (approaching goal)
+  nav_msgs::msg::Path transformed_global_plan;
+  transformed_global_plan.header.frame_id = "test_robot_frame";
+  transformed_global_plan.poses.resize(9);
+  for (size_t i = 0; i < transformed_global_plan.poses.size(); ++i) {
+    transformed_global_plan.poses[i].header = transformed_global_plan.header;
+    transformed_global_plan.poses[i].pose.position.x = 0.1 * static_cast<double>(i);
+    transformed_global_plan.poses[i].pose.orientation.w = 1.0;
+  }
+  controller->newPathReceived(transformed_global_plan);
+
+  geometry_msgs::msg::PoseStamped goal;
+  goal.header = robot_pose.header;
+  goal.pose.position.x = 5.8;
+  goal.pose.position.y = 5.0;
+  goal.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist robot_velocity;
+  nav2_controller::SimpleGoalChecker checker;
+  checker.initialize(node, "checker", costmap_ros);
+
+  auto cmd_vel = controller->computeVelocityCommands(
+    robot_pose, robot_velocity, &checker, transformed_global_plan, goal);
+
+  // The straight approach is discarded and a safe curved one is selected
+  EXPECT_GT(cmd_vel.twist.linear.x, 0.0);
+  EXPECT_GT(std::abs(cmd_vel.twist.angular.z), 1e-3);
 }
 
 int main(int argc, char ** argv)

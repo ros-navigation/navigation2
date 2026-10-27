@@ -176,6 +176,32 @@ Uses inflated costmap cost directly to avoid obstacles
 | threshold_to_consider | double | Default 0.5. Distance between robot and goal above which prefer forward cost is considered         |
 
 
+#### Omni Constraint Critic
+
+Intended to replace the Constraint Critic when using an omnidirectional robot. Penalizes combined translational velocities that leave the ellipse spanned by the controller's `vx_max`, `vx_min` and `vy_max`. This prevents a diagonal command from reaching a higher speed than one along the robot's x and y axes.
+
+If using a mecanum drivetrain, use this critic together with the Mecanum Critic, which limits wheel velocities.
+
+ | Parameter             | Type   | Definition                                                                                                  |
+ | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double | Default 4.0. Weight to apply to critic term.                                                                |
+ | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
+
+
+#### Mecanum Critic
+
+Penalizes velocities outside the reachable velocity space of a mecanum drivetrain. This critic bounds what velocity combination of vx, vy and wz the drivetrain can deliver.
+The mecanum critic's velocity limits are defined by the drivetrain's wheels on each axis, rather than body-fixed velocities.
+
+ | Parameter             | Type   | Definition                                                                                                  |
+ | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double | Default 4.0. Weight to apply to critic term.                                                                |
+ | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
+ | vx_max                | double | Defaults to 0.5. Max speed the robot can reach along x.                                                     |
+ | vy_max                | double | Defaults to 0.5. Max speed the robot can reach along y.                                                     |
+ | wz_max                | double | Defaults to 1.7. Max speed at which the robot can rotate.                                                   |
+
+
 #### Twirling Critic
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
@@ -290,6 +316,17 @@ controller_server:
       #   cost_power: 1
       #   cost_weight: 35.0
       #   deadband_velocities: [0.05, 0.05, 0.05]
+      # OmniConstraintCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 4.0
+      # MecanumCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 4.0
+      #   vx_max: 0.5
+      #   vy_max: 0.5
+      #   wz_max: 1.7
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1

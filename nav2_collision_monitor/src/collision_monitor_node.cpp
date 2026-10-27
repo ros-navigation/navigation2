@@ -507,6 +507,18 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
     // Update polygon coordinates
     polygon->updatePolygon(cmd_vel_in);
 
+    if (!polygon->isShapeSet()) {
+      // A dynamic polygon/footprint with no valid shape yet gives no protection: stop
+      action_polygon = polygon;
+      robot_action.polygon_name = polygon->getName();
+      robot_action.action_type = STOP;
+      robot_action.req_vel.x = 0.0;
+      robot_action.req_vel.y = 0.0;
+      robot_action.req_vel.tw = 0.0;
+      robot_action.triggering_points.clear();
+      break;
+    }
+
     const ActionType at = polygon->getActionType();
     if (at == STOP || at == SLOWDOWN || at == LIMIT) {
       // Process STOP/SLOWDOWN for the selected polygon
@@ -547,10 +559,6 @@ bool CollisionMonitor::processStopSlowdownLimit(
   const Velocity & velocity,
   Action & robot_action) const
 {
-  if (!polygon->isShapeSet()) {
-    return false;
-  }
-
   // Single pass: collect in-polygon points while isTriggered counts them.
   std::vector<Point> triggering_points;
   if (polygon->isTriggered(sources_collision_points_map, triggering_points)) {
@@ -611,10 +619,6 @@ bool CollisionMonitor::processApproach(
   const Velocity & velocity,
   Action & robot_action) const
 {
-  if (!polygon->isShapeSet()) {
-    return false;
-  }
-
   // Obtain time before a collision, capturing the responsible points at the collision step.
   std::vector<Point> triggering_points;
   const double collision_time = polygon->getCollisionTime(sources_collision_points_map, velocity,
@@ -647,6 +651,13 @@ void CollisionMonitor::notifyActionState(
         "Robot to stop due to invalid source."
         " Either due to data not published yet, or to lack of new data received within the"
         " sensor timeout, or if impossible to transform data to base frame");
+    } else if (!action_polygon->isShapeSet()) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Robot to stop due to %s polygon whose shape is not set yet."
+        " Either the polygon/footprint topic was not published yet, the shape could not"
+        " be transformed to the base frame, or no velocity polygon covers the current velocity",
+        action_polygon->getName().c_str());
     } else {
       RCLCPP_INFO(
         get_logger(),
