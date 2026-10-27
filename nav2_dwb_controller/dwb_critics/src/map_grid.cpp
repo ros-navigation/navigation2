@@ -34,6 +34,7 @@
 
 #include "dwb_critics/map_grid.hpp"
 #include <cmath>
+#include <deque>
 #include <string>
 #include <vector>
 #include <utility>
@@ -102,10 +103,37 @@ void MapGridCritic::reset()
 
 void MapGridCritic::propagateManhattanDistances()
 {
-  while (!queue_->isEmpty()) {
-    costmap_queue::CellData cell = queue_->getNextCell();
-    cell_values_[cell.index_] = CellData::absolute_difference(cell.src_x_, cell.x_) +
-      CellData::absolute_difference(cell.src_y_, cell.y_);
+  const unsigned int size_x = costmap_->getSizeInCellsX();
+  const unsigned int size_y = costmap_->getSizeInCellsY();
+  std::deque<unsigned int> open;
+  for (unsigned int i = 0; i < cell_values_.size(); ++i) {
+    if (cell_values_[i] == 0.0) {
+      open.push_back(i);
+    }
+  }
+  while (!open.empty()) {
+    const unsigned int index = open.front();
+    open.pop_front();
+    const unsigned int x = index % size_x;
+    const unsigned int y = index / size_x;
+    const std::pair<bool, unsigned int> neighbors[] = {
+      {x > 0, index - 1}, {x + 1 < size_x, index + 1},
+      {y > 0, index - size_x}, {y + 1 < size_y, index + size_x}};
+    for (const auto & [valid, n] : neighbors) {
+      if (!valid || cell_values_[n] != unreachable_score_) {
+        continue;
+      }
+      const unsigned char cost = costmap_->getCost(n);
+      if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
+        cost == nav2_costmap_2d::NO_INFORMATION)
+      {
+        cell_values_[n] = obstacle_score_;
+        continue;
+      }
+      cell_values_[n] = cell_values_[index] + 1.0;
+      open.push_back(n);
+    }
   }
 }
 
