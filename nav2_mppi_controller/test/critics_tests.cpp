@@ -1169,11 +1169,10 @@ TEST(CriticTests, VelocityDeadbandCritic)
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "test";
+  std::string name = "FollowPath";
   ParametersHandler param_handler(node, name);
-  auto getParam = param_handler.getParamGetter("critic");
-  std::vector<double> deadband_velocities_;
-  getParam(deadband_velocities_, "deadband_velocities", std::vector<double>{0.08, 0.08, 0.08});
+  const std::string critic_name = name + ".VelocityDeadbandCritic";
+  const std::string deadband_param = critic_name + ".deadband_velocities";
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -1194,8 +1193,21 @@ TEST(CriticTests, VelocityDeadbandCritic)
 
   // Make sure initializes correctly and that defaults are reasonable
   VelocityDeadbandCritic critic;
-  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
-  EXPECT_EQ(critic.getName(), "critic");
+  critic.on_configure(node, name, critic_name, costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), critic_name);
+  param_handler.start();
+
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+
+  // Update after initialization has returned, without registering another callback first.
+  const std::vector<double> deadband_velocities{0.08, 0.08, 0.08};
+  ASSERT_TRUE(
+    node->set_parameter(
+      rclcpp::Parameter(deadband_param, deadband_velocities)).successful);
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 25.2, 0.01);
+  costs.setZero();
 
   // Scoring testing
 
@@ -1211,6 +1223,17 @@ TEST(CriticTests, VelocityDeadbandCritic)
   state.vy.setConstant(0.02f);
   state.wz.setConstant(0.021f);
   critic.score(data);
-  // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
+  // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 19.845
   EXPECT_NEAR(costs(1), 19.845, 0.01);
+
+  for (const auto & velocities : {
+    std::vector<double>{}, std::vector<double>{0.1, 0.1},
+    std::vector<double>{0.1, 0.1, 0.1, 0.1}})
+  {
+    EXPECT_FALSE(node->set_parameter(rclcpp::Parameter(deadband_param, velocities)).successful);
+    EXPECT_EQ(node->get_parameter(deadband_param).as_double_array(), deadband_velocities);
+    costs.setZero();
+    critic.score(data);
+    EXPECT_NEAR(costs(1), 19.845, 0.01);
+  }
 }
