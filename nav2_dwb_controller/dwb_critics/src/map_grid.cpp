@@ -96,10 +96,29 @@ void MapGridCritic::propagateManhattanDistances()
 {
   const unsigned int size_x = costmap_->getSizeInCellsX();
   const unsigned int size_y = costmap_->getSizeInCellsY();
+  const auto blocked = [this](unsigned int index) {
+      const unsigned char cost = costmap_->getCost(index);
+      return cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+             cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
+             cost == nav2_costmap_2d::NO_INFORMATION;
+    };
   std::deque<unsigned int> open;
+  std::vector<unsigned int> blocked_seeds;
   for (unsigned int i = 0; i < cell_values_.size(); ++i) {
-    if (cell_values_[i] == 0.0) {
+    if (cell_values_[i] != 0.0) {
+      continue;
+    }
+    if (blocked(i)) {
+      blocked_seeds.push_back(i);
+    } else {
       open.push_back(i);
+    }
+  }
+  if (open.empty()) {
+    open.assign(blocked_seeds.begin(), blocked_seeds.end());
+  } else {
+    for (const unsigned int i : blocked_seeds) {
+      cell_values_[i] = obstacle_score_;
     }
   }
   while (!open.empty()) {
@@ -114,11 +133,7 @@ void MapGridCritic::propagateManhattanDistances()
       if (!valid || cell_values_[n] != unreachable_score_) {
         continue;
       }
-      const unsigned char cost = costmap_->getCost(n);
-      if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
-        cost == nav2_costmap_2d::NO_INFORMATION)
-      {
+      if (blocked(n)) {
         cell_values_[n] = obstacle_score_;
         continue;
       }
