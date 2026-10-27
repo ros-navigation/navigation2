@@ -44,6 +44,35 @@ void PathAngleCritic::initialize()
 
   int mode = 0;
   getParam(mode, "mode", mode);
+  setMode(mode);
+
+  auto mode_guard = [](
+    const rclcpp::Parameter & param,
+    rcl_interfaces::msg::SetParametersResult & result)
+    {
+      if (param.as_int() < 0 || param.as_int() > 2) {
+        result.successful = false;
+        if (!result.reason.empty()) {
+          result.reason += "\n";
+        }
+        result.reason += "Path angle mode must be in [0, 2]";
+      }
+    };
+  parameters_handler_->addPreCallback(name_ + ".mode", mode_guard);
+
+  auto modeDynamicCb = [this](const rclcpp::Parameter & param) {
+      setMode(param.as_int());
+    };
+  parameters_handler_->addParamCallback(name_ + ".mode", modeDynamicCb);
+
+  RCLCPP_INFO(
+    logger_,
+    "PathAngleCritic instantiated with %d power and %f weight. Mode set to: %s",
+    power_, weight_, modeToStr(mode_).c_str());
+}
+
+void PathAngleCritic::setMode(int mode)
+{
   mode_ = static_cast<PathAngleMode>(mode);
   if (!reversing_allowed_ && mode_ == PathAngleMode::NO_DIRECTIONAL_PREFERENCE) {
     mode_ = PathAngleMode::FORWARD_PREFERENCE;
@@ -52,11 +81,6 @@ void PathAngleCritic::initialize()
       "Path angle mode set to no directional preference, but controller's settings "
       "don't allow for reversing! Setting mode to forward preference.");
   }
-
-  RCLCPP_INFO(
-    logger_,
-    "PathAngleCritic instantiated with %d power and %f weight. Mode set to: %s",
-    power_, weight_, modeToStr(mode_).c_str());
 }
 
 void PathAngleCritic::score(CriticData & data)

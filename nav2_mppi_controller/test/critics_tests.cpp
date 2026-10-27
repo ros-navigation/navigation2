@@ -44,20 +44,6 @@ using namespace mppi;  // NOLINT
 using namespace mppi::critics;  // NOLINT
 using namespace mppi::utils;  // NOLINT
 
-class PathAngleCriticWrapper : public PathAngleCritic
-{
-public:
-  PathAngleCriticWrapper()
-  : PathAngleCritic()
-  {
-  }
-
-  void setMode(int mode)
-  {
-    mode_ = static_cast<PathAngleMode>(mode);
-  }
-};
-
 TEST(CriticTests, ConstraintsCritic)
 {
   // Standard preamble
@@ -752,8 +738,10 @@ TEST(CriticTests, PathAngleCritic)
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "test";
+  std::string name = "FollowPath";
   ParametersHandler param_handler(node, name);
+  const std::string critic_name = name + ".PathAngleCritic";
+  const std::string mode_param = critic_name + ".mode";
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -776,9 +764,10 @@ TEST(CriticTests, PathAngleCritic)
   // Initialization testing
 
   // Make sure initializes correctly
-  PathAngleCriticWrapper critic;
-  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
-  EXPECT_EQ(critic.getName(), "critic");
+  PathAngleCritic critic;
+  critic.on_configure(node, name, critic_name, costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), critic_name);
+  param_handler.start();
 
   // Scoring testing
 
@@ -809,7 +798,7 @@ TEST(CriticTests, PathAngleCritic)
   EXPECT_NEAR(costs(0), 3.9947, 1e-2);  // atan2(4,-1) [1.81] * 2.2 weight
 
   // Set mode to no directional preferences + reset costs
-  critic.setMode(1);
+  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(mode_param, 1)).successful);
   costs.setZero();
 
   // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
@@ -833,7 +822,7 @@ TEST(CriticTests, PathAngleCritic)
   EXPECT_NEAR(costs(0), 2.9167, 1e-2);
 
   // Set mode to consider path directionality + reset costs
-  critic.setMode(2);
+  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(mode_param, 2)).successful);
   costs.setZero();
 
   // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
@@ -856,6 +845,19 @@ TEST(CriticTests, PathAngleCritic)
   // should use reverse orientation as the closer angle in no dir preference mode
   EXPECT_NEAR(costs(0), 2.9167, 1e-2);
 
+  for (int invalid_mode : {-1, 3}) {
+    EXPECT_FALSE(node->set_parameter(rclcpp::Parameter(mode_param, invalid_mode)).successful);
+    EXPECT_EQ(node->get_parameter(mode_param).as_int(), 2);
+    costs.setZero();
+    critic.score(data);
+    EXPECT_NEAR(costs(0), 2.9167, 1e-2);
+  }
+
+  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(mode_param, 0)).successful);
+  costs.setZero();
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 3.9947, 1e-2);
+
   PathAngleMode mode;
   mode = PathAngleMode::FORWARD_PREFERENCE;
   EXPECT_EQ(modeToStr(mode), std::string("Forward Preference"));
@@ -865,6 +867,56 @@ TEST(CriticTests, PathAngleCritic)
   EXPECT_EQ(modeToStr(mode), std::string("No Directional Preference"));
   mode = static_cast<PathAngleMode>(4);
   EXPECT_EQ(modeToStr(mode), std::string("Invalid mode!"));
+}
+
+TEST(CriticTests, PathAngleCriticNoReversing)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "FollowPath";
+  ParametersHandler param_handler(node, name);
+  const std::string critic_name = name + ".PathAngleCritic";
+  const std::string mode_param = critic_name + ".mode";
+  node->declare_parameter(name + ".vx_min", rclcpp::ParameterValue(0.0));
+  node->declare_parameter(mode_param, rclcpp::ParameterValue(1));
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.reset(1, 1);
+  state.pose.pose.orientation.w = 1.0;
+  state.local_path_length = 1.0;
+  models::Trajectories generated_trajectories;
+  generated_trajectories.reset(1, 1);
+  models::Path path;
+  path.reset(1);
+  path.x(0) = -1.0;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1);
+  float model_dt = 0.05;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, 0, {}};
+
+  PathAngleCritic critic;
+  critic.on_configure(node, name, critic_name, costmap_ros, &param_handler);
+  param_handler.start();
+
+  // No directional preference falls back to forward preference at initialization.
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 2.2 * M_PI, 1e-5);
+
+  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(mode_param, 2)).successful);
+  costs.setZero();
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0, 1e-6);
+
+  // The same fallback must apply when the mode changes dynamically.
+  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(mode_param, 1)).successful);
+  costs.setZero();
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 2.2 * M_PI, 1e-5);
 }
 
 TEST(CriticTests, PreferForwardCritic)
