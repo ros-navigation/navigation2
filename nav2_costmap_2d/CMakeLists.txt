@@ -24,6 +24,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 nav2_package()
 
@@ -61,6 +62,7 @@ target_link_libraries(nav2_costmap_2d_core PUBLIC
 
 add_library(layers SHARED
   plugins/inflation_layer.cpp
+  plugins/asymmetric_inflation_layer.cpp
   plugins/static_layer.cpp
   plugins/obstacle_layer.cpp
   src/observation_buffer.cpp
@@ -82,6 +84,7 @@ target_link_libraries(layers PUBLIC
   nav2_voxel_grid::voxel_grid
   nav2_costmap_2d_core
   tf2::tf2
+  Eigen3::Eigen
 )
 target_link_libraries(layers PRIVATE
   pluginlib::pluginlib
@@ -202,5 +205,7 @@ ament_export_dependencies(
   tf2_ros
   tf2_sensor_msgs
 )
+ament_export_dependencies(Eigen3)
+
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()
