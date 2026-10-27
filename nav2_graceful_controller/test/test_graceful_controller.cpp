@@ -1312,6 +1312,16 @@ TEST(GracefulControllerTest, computeVelocityCommandCollisionDetectionDisabled) {
   robot_pose.pose.position.y = 5.0;
   robot_pose.pose.orientation.w = 1.0;
 
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.header.stamp = node->get_clock()->now();
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.rotation.w = 1.0;
+  tf->setTransform(global_to_robot, "test", false);
+
   // The goal is within max_lookahead, but outside the XY goal tolerance
   nav_msgs::msg::Path transformed_global_plan;
   transformed_global_plan.header.frame_id = "test_robot_frame";
@@ -1410,6 +1420,16 @@ TEST(GracefulControllerTest, computeVelocityCommandApproachFallbackUsesPlanHeadi
   robot_pose.pose.position.x = 5.0;
   robot_pose.pose.position.y = 5.0;
   robot_pose.pose.orientation.w = 1.0;
+
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.header.stamp = node->get_clock()->now();
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.rotation.w = 1.0;
+  tf->setTransform(global_to_robot, "test", false);
 
   // The goal is close, so the approach shortcut is tried first. The heading of the plan
   // (1.5 rad) differs a lot from the heading towards the goal (atan2(0.3, 0.5))
@@ -1592,6 +1612,16 @@ TEST(GracefulControllerTest, computeVelocityCommandUnsafeApproachDoesNotHideSafe
   robot_pose.pose.position.x = 5.0;
   robot_pose.pose.position.y = 5.0;
   robot_pose.pose.orientation.w = 1.0;
+
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.header.stamp = node->get_clock()->now();
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.rotation.w = 1.0;
+  tf->setTransform(global_to_robot, "test", false);
 
   // Straight plan of 0.8 m in the robot frame, shorter than max_lookahead (approaching goal)
   nav_msgs::msg::Path transformed_global_plan;
