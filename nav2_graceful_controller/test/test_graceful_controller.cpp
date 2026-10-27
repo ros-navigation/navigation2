@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
+
 #include "gtest/gtest.h"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/parameter.hpp"
@@ -1308,6 +1310,84 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
 
   // It is likely to turn, so angular z should be non-zero (or larger than safe case)
   EXPECT_GT(std::abs(cmd_vel_risky.twist.angular.z), 1e-3);
+}
+
+TEST(GracefulControllerTest, computeVelocityCommandCollisionDetectionDisabled) {
+  auto node = std::make_shared<nav2::LifecycleNode>("testGracefulCollisionDetectionDisabled");
+  auto tf = nav2::create_transform_buffer(node);
+
+  nav2::declare_parameter_if_not_declared(
+    node, "test.use_collision_detection", rclcpp::ParameterValue(false));
+  nav2::declare_parameter_if_not_declared(
+    node, "test.slowdown_radius", rclcpp::ParameterValue(0.1));
+
+  // Create a costmap of 10x10 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  costmap_ros->declare_parameter("global_frame", rclcpp::ParameterValue("test_global_frame"));
+  costmap_ros->declare_parameter("robot_base_frame", rclcpp::ParameterValue("test_robot_frame"));
+  costmap_ros->declare_parameter("width", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("height", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("resolution", rclcpp::ParameterValue(0.05));
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_global_frame";
+  robot_pose.pose.position.x = 5.0;
+  robot_pose.pose.position.y = 5.0;
+  robot_pose.pose.orientation.w = 1.0;
+
+  // The goal is within max_lookahead, but outside the XY goal tolerance
+  nav_msgs::msg::Path transformed_global_plan;
+  transformed_global_plan.header.frame_id = "test_robot_frame";
+  transformed_global_plan.poses.resize(1);
+  transformed_global_plan.poses[0].header = transformed_global_plan.header;
+  transformed_global_plan.poses[0].pose.position.x = 0.8;
+  transformed_global_plan.poses[0].pose.orientation.w = 1.0;
+  controller->newPathReceived(transformed_global_plan);
+
+  geometry_msgs::msg::PoseStamped goal;
+  goal.header = robot_pose.header;
+  goal.pose.position.x = 5.8;
+  goal.pose.position.y = 5.0;
+  goal.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist robot_velocity;
+  nav2_controller::SimpleGoalChecker checker;
+  checker.initialize(node, "checker", costmap_ros);
+
+  // Approach validation must work when collision detection is disabled at startup
+  geometry_msgs::msg::TwistStamped cmd_vel;
+  ASSERT_NO_THROW(
+    cmd_vel = controller->computeVelocityCommands(
+      robot_pose, robot_velocity, &checker, transformed_global_plan, goal));
+  EXPECT_TRUE(std::isfinite(cmd_vel.twist.linear.x));
+  EXPECT_TRUE(std::isfinite(cmd_vel.twist.angular.z));
+  EXPECT_GT(cmd_vel.twist.linear.x, 0.0);
+  EXPECT_NEAR(cmd_vel.twist.angular.z, 0.0, 1e-6);
+
+  // Enabling collision detection dynamically must also detect obstacles
+  auto params = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(), node->get_node_services_interface());
+  auto fut = params->set_parameters_atomically(
+    {rclcpp::Parameter("test.use_collision_detection", true)});
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(node->get_node_base_interface(), fut),
+    rclcpp::FutureReturnCode::SUCCESS);
+  ASSERT_TRUE(fut.get().successful);
+
+  // Place a lethal cell at the first simulated pose
+  auto costmap = costmap_ros->getCostmap();
+  unsigned int mx, my;
+  ASSERT_TRUE(costmap->worldToMap(5.05, 5.0, mx, my));
+  costmap->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_THROW(
+    controller->computeVelocityCommands(
+      robot_pose, robot_velocity, &checker, transformed_global_plan, goal),
+    nav2_core::NoValidControl);
 }
 
 TEST(GracefulControllerTest, computeVelocityCommandApproachFallbackUsesPlanHeading) {
