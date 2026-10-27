@@ -214,7 +214,7 @@ The mecanum critic's velocity limits are defined by the drivetrain's wheels on e
  | ---------------       | ------   | ----------------------------------------------------------------------------------------------------------- |
  | cost_weight           | double   | Default 35.0. Weight to apply to critic term.                                                               |
  | cost_power            | int      | Default 1. Power order to apply to term.                                                                    |
- | deadband_velocities   | double[] | Default [0.0, 0.0, 0.0].  The array of deadband velocities [vx, vz, wz]. A zero array indicates that the critic will take no action.      |
+ | deadband_velocities   | double[] | Default [0.0, 0.0, 0.0].  The array of deadband velocities [vx, vy, wz]. A zero array indicates that the critic will take no action.      |
 
 
 ### XML configuration example
@@ -310,7 +310,7 @@ controller_server:
         offset_from_furthest: 4
         threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
-        forward_preference: true
+        mode: 0
       # VelocityDeadbandCritic:
       #   enabled: true
       #   cost_power: 1
