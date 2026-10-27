@@ -1368,6 +1368,20 @@ TEST(GracefulControllerTest, computeVelocityCommandCollisionDetectionDisabled) {
   EXPECT_GT(cmd_vel.twist.linear.x, 0.0);
   EXPECT_NEAR(cmd_vel.twist.angular.z, 0.0, 1e-6);
 
+  // A high-cost cell must not change the approach when collision detection is disabled
+  auto costmap = costmap_ros->getCostmap();
+  unsigned int mx, my;
+  ASSERT_TRUE(costmap->worldToMap(5.4, 5.0, mx, my));
+  costmap->setCost(mx, my, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+  controller->newPathReceived(transformed_global_plan);
+  geometry_msgs::msg::TwistStamped cmd_vel_high_cost;
+  ASSERT_NO_THROW(
+    cmd_vel_high_cost = controller->computeVelocityCommands(
+      robot_pose, robot_velocity, &checker, transformed_global_plan, goal));
+  EXPECT_DOUBLE_EQ(cmd_vel_high_cost.twist.linear.x, cmd_vel.twist.linear.x);
+  EXPECT_DOUBLE_EQ(cmd_vel_high_cost.twist.angular.z, cmd_vel.twist.angular.z);
+  costmap->setCost(mx, my, nav2_costmap_2d::FREE_SPACE);
+
   // Enabling collision detection dynamically must also detect obstacles
   auto params = std::make_shared<rclcpp::AsyncParametersClient>(
     node->get_node_base_interface(), node->get_node_topics_interface(),
@@ -1380,8 +1394,6 @@ TEST(GracefulControllerTest, computeVelocityCommandCollisionDetectionDisabled) {
   ASSERT_TRUE(fut.get().successful);
 
   // Place a lethal cell at the first simulated pose
-  auto costmap = costmap_ros->getCostmap();
-  unsigned int mx, my;
   ASSERT_TRUE(costmap->worldToMap(5.05, 5.0, mx, my));
   costmap->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
   EXPECT_THROW(

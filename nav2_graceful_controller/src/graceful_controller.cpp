@@ -339,7 +339,9 @@ bool GracefulController::validateTargetPoseOnApproach(
 
     // Check if the final rotation path is risky
     double safety_threshold = max_valid_cost - static_cast<double>(params_->obstacle_cost_margin);
-    if (getMaxCost(trajectory, costmap_transform) >= safety_threshold) {
+    if (params_->use_collision_detection &&
+      getMaxCost(trajectory, costmap_transform) >= safety_threshold)
+    {
       // Try to find a better approach by searching spiral curves
       findBestApproachTrajectory(
             approach_pose, dist_to_target, costmap_transform, max_valid_cost, trajectory,
