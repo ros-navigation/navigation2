@@ -443,9 +443,9 @@ bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
   bool collisionFree = true;
 
   for (auto pose : path.poses) {
-    collisionFree = costmap_->is_free(
-      static_cast<unsigned int>(std::round(pose.pose.position.x)),
-      static_cast<unsigned int>(std::round(pose.pose.position.y)));
+    unsigned int mx, my;
+    collisionFree = planner_tester_->getCostmap()->worldToMap(
+      pose.pose.position.x, pose.pose.position.y, mx, my) && costmap_->is_free(mx, my);
 
     if (!collisionFree) {
       RCLCPP_WARN(
