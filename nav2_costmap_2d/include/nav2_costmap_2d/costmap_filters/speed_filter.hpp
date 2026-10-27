@@ -146,7 +146,7 @@ protected:
   // Growth in distance from the cached path point, in segment lengths (or mask cells if larger),
   // that triggers a search back along the path. Moving forward along a segment never exceeds one
   // segment length.
-  static constexpr double kBackupThresholdScale = 2.0;
+  double backup_threshold_scale_ = 2.0;
 
   nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;

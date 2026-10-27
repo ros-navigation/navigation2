@@ -344,7 +344,7 @@ void SpeedFilter::updateLookaheadStart(
   const double segment_length = (start + 1 < poses.size()) ?
     nav2_util::geometry_utils::euclidean_distance(
     poses[start].pose.position, poses[start + 1].pose.position) : 0.0;
-  const double threshold = kBackupThresholdScale *
+  const double threshold = backup_threshold_scale_ *
     std::max(segment_length, static_cast<double>(filter_mask_->info.resolution));
 
   if (dist_to_cached_point <= lookahead_ref_dist_ + threshold) {
