@@ -114,7 +114,8 @@ void MapGridCritic::propagateManhattanDistances()
       open.push_back(i);
     }
   }
-  if (open.empty()) {
+  const bool all_blocked = open.empty();
+  if (all_blocked) {
     open.assign(blocked_seeds.begin(), blocked_seeds.end());
   } else {
     for (const unsigned int i : blocked_seeds) {
@@ -139,6 +140,12 @@ void MapGridCritic::propagateManhattanDistances()
       }
       cell_values_[n] = cell_values_[index] + 1.0;
       open.push_back(n);
+    }
+  }
+  // Every seed was blocked, so they started the search at 0; now score them as obstacles.
+  if (all_blocked) {
+    for (const unsigned int i : blocked_seeds) {
+      cell_values_[i] = obstacle_score_;
     }
   }
 }
