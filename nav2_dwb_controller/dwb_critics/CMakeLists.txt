@@ -4,7 +4,6 @@ project(dwb_critics)
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
 find_package(backward_ros REQUIRED)
-find_package(costmap_queue REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(dwb_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -40,7 +39,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC
-  costmap_queue::costmap_queue
   dwb_core::dwb_core
   dwb_msgs::dwb_msgs
   geometry_msgs::geometry_msgs
@@ -83,7 +81,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_dependencies(
-  costmap_queue
   dwb_core
   dwb_msgs
   geometry_msgs

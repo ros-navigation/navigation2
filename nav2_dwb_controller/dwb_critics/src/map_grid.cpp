@@ -44,21 +44,13 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 
 using std::abs;
-using costmap_queue::CellData;
 
 namespace dwb_critics
 {
 
-// Customization of the CostmapQueue validCellToQueue method
-bool MapGridCritic::MapGridQueue::validCellToQueue(const costmap_queue::CellData & /*cell*/)
-{
-  return true;
-}
-
 void MapGridCritic::onInit()
 {
   costmap_ = costmap_ros_->getCostmap();
-  queue_ = std::make_shared<MapGridQueue>(*costmap_, *this);
 
   // Always set to true, but can be overridden by subclasses
   stop_on_failure_ = true;
@@ -94,7 +86,6 @@ void MapGridCritic::setAsObstacle(unsigned int index)
 
 void MapGridCritic::reset()
 {
-  queue_->reset();
   cell_values_.resize(costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY());
   obstacle_score_ = static_cast<double>(cell_values_.size());
   unreachable_score_ = obstacle_score_ + 1.0;

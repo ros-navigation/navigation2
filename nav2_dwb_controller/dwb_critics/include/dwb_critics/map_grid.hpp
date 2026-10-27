@@ -41,7 +41,6 @@
 #include <utility>
 
 #include "dwb_core/trajectory_critic.hpp"
-#include "costmap_queue/costmap_queue.hpp"
 
 namespace dwb_critics
 {
@@ -105,32 +104,15 @@ protected:
   enum class ScoreAggregationType {Last, Sum, Product};
 
   /**
-   * @class MapGridQueue
-   * @brief Subclass of CostmapQueue that avoids Obstacles and Unknown Values
-   */
-  class MapGridQueue : public costmap_queue::CostmapQueue
-  {
-public:
-    MapGridQueue(nav2_costmap_2d::Costmap2D & costmap, MapGridCritic & parent)
-    : costmap_queue::CostmapQueue(costmap, true), parent_(parent) {}
-    virtual ~MapGridQueue() = default;
-    bool validCellToQueue(const costmap_queue::CellData & cell) override;
-
-protected:
-    MapGridCritic & parent_;
-  };
-
-  /**
-   * @brief Clear the queueDWB_CRITICS_MAP_GRID_He and set cell_values_ to the appropriate number of unreachableCellScore
+   * @brief Set cell_values_ to the appropriate number of unreachableCellScore
    */
   void reset() override;
 
   /**
-   * @brief Go through the queue and set the cells to the Manhattan distance from their parents
+   * @brief Set each cell to its 4-connected step distance from the cells holding 0, around obstacles
    */
   void propagateManhattanDistances();
 
-  std::shared_ptr<MapGridQueue> queue_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::vector<double> cell_values_;
   double obstacle_score_, unreachable_score_;  ///< Special cell_values

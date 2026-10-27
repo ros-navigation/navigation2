@@ -52,10 +52,8 @@ bool GoalDistCritic::prepare(
     return false;
   }
 
-  // Enqueue just the last pose
   int index = costmap_->getIndex(local_goal_x, local_goal_y);
   cell_values_[index] = 0.0;
-  queue_->enqueueCell(local_goal_x, local_goal_y);
 
   propagateManhattanDistances();
 
