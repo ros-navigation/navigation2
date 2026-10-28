@@ -755,8 +755,19 @@ void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
       s.constraints.vy = s.base_constraints.vy * ratio;
       s.constraints.wz = s.base_constraints.wz * ratio;
     } else {
-      // Speed limit is expressed in absolute value
-      double ratio = speed_limit / s.base_constraints.vx_max;
+      // Speed limit is expressed in absolute value. It is relative to vx_max,
+      // or to |vx_min| for reverse-only configurations (vx_max == 0).
+      const float v_ref = s.base_constraints.vx_max != 0.0f ?
+        s.base_constraints.vx_max : std::fabs(s.base_constraints.vx_min);
+      if (v_ref == 0.0f) {
+        RCLCPP_ERROR(
+          logger_,
+          "Rejected absolute speed limit of %f m/s: vx_max and vx_min are both zero, "
+          "so there is no reference speed to scale against. Keeping current constraints.",
+          speed_limit);
+        return;
+      }
+      double ratio = speed_limit / v_ref;
       s.constraints.vx_max = s.base_constraints.vx_max * ratio;
       s.constraints.vx_min = s.base_constraints.vx_min * ratio;
       s.constraints.vy = s.base_constraints.vy * ratio;
