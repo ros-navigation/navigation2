@@ -326,13 +326,14 @@ bool PlannerTester::defaultPlannerRandomTests(
     // Defined with respect to world coordinate system
     // Planner will do coordinate transformation to map internally
 
+    const double half_cell = 0.5 * costmap_->get_properties().resolution;
     auto vals = generate_random();
-    robot_position.x = vals.first;
-    robot_position.y = vals.second;
+    robot_position.x = vals.first + half_cell;
+    robot_position.y = vals.second + half_cell;
 
     vals = generate_random();
-    goal.pose.position.x = vals.first;
-    goal.pose.position.y = vals.second;
+    goal.pose.position.x = vals.first + half_cell;
+    goal.pose.position.y = vals.second + half_cell;
 
     if (!plannerTest(robot_position, goal, path)) {
       RCLCPP_WARN(
