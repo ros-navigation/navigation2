@@ -111,8 +111,10 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
       tf2::getYaw(start.pose.orientation),
       0.01);
   } else {
-    double dx = path.poses.back().pose.position.x - path.poses.front().pose.position.x;
-    double dy = path.poses.back().pose.position.y - path.poses.front().pose.position.y;
+    const auto & last_path_pose = path.poses.back().pose.position;
+    const auto & second_last_path_pose = path.poses[path_size - 2].pose.position;
+    double dx = last_path_pose.x - second_last_path_pose.x;
+    double dy = last_path_pose.y - second_last_path_pose.y;
     EXPECT_NEAR(
       tf2::getYaw(path.poses.back().pose.orientation),
       atan2(dy, dx),
