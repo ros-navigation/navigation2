@@ -26,32 +26,12 @@ void VelocityDeadbandCritic::initialize()
 
   // Recast double to float
   std::vector<double> deadband_velocities{0.0, 0.0, 0.0};
-  getParam(deadband_velocities, "deadband_velocities", std::vector<double>{0.0, 0.0, 0.0});
+  getParam(
+    deadband_velocities, "deadband_velocities", std::vector<double>{0.0, 0.0, 0.0},
+    ParameterType::Static);
   std::transform(
     deadband_velocities.begin(), deadband_velocities.end(), deadband_velocities_.begin(),
     [](double d) {return static_cast<float>(d);});
-
-  auto deadband_guard = [](
-    const rclcpp::Parameter & param,
-    rcl_interfaces::msg::SetParametersResult & result)
-    {
-      if (param.as_double_array().size() != 3) {
-        result.successful = false;
-        if (!result.reason.empty()) {
-          result.reason += "\n";
-        }
-        result.reason += "Velocity deadband must contain exactly 3 velocities";
-      }
-    };
-  parameters_handler_->addPreCallback(name_ + ".deadband_velocities", deadband_guard);
-
-  auto deadbandDynamicCb = [this](const rclcpp::Parameter & param) {
-      const auto & velocities = param.as_double_array();
-      std::transform(
-        velocities.begin(), velocities.end(), deadband_velocities_.begin(),
-        [](double d) {return static_cast<float>(d);});
-    };
-  parameters_handler_->addParamCallback(name_ + ".deadband_velocities", deadbandDynamicCb);
 
   RCLCPP_INFO_STREAM(
     logger_, "VelocityDeadbandCritic instantiated with "

@@ -72,12 +72,6 @@ public:
   void score(CriticData & data) override;
 
 protected:
-  /**
-   * @brief Set the mode, falling back to forward preference when reversing is disabled
-   * @param mode Requested path angle mode
-   */
-  void setMode(int mode);
-
   float max_angle_to_furthest_{0};
   float threshold_to_consider_{0};
 

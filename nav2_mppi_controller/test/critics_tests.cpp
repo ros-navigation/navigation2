@@ -767,6 +767,16 @@ TEST(CriticTests, PathAngleCritic)
   PathAngleCritic critic;
   critic.on_configure(node, name, critic_name, costmap_ros, &param_handler);
   EXPECT_EQ(critic.getName(), critic_name);
+  PathAngleCritic non_directional_critic;
+  const std::string non_directional_name = name + ".NonDirectionalCritic";
+  node->declare_parameter(non_directional_name + ".mode", rclcpp::ParameterValue(1));
+  non_directional_critic.on_configure(
+    node, name, non_directional_name, costmap_ros, &param_handler);
+  PathAngleCritic feasible_path_critic;
+  const std::string feasible_path_name = name + ".FeasiblePathCritic";
+  node->declare_parameter(feasible_path_name + ".mode", rclcpp::ParameterValue(2));
+  feasible_path_critic.on_configure(
+    node, name, feasible_path_name, costmap_ros, &param_handler);
   param_handler.start();
 
   // Scoring testing
@@ -797,79 +807,60 @@ TEST(CriticTests, PathAngleCritic)
   EXPECT_GT(costs.sum(), 0.0);
   EXPECT_NEAR(costs(0), 3.9947, 1e-2);  // atan2(4,-1) [1.81] * 2.2 weight
 
-  // Set mode to no directional preferences + reset costs
-  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(mode_param, 1)).successful);
-  costs.setZero();
-
-  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
-  path.x(6) = 1.0;  // angle between path point and pose < max_angle_to_furthest_
-  path.y(6) = 0.0;
-  critic.score(data);
-  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
-
-  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
-  path.x(6) = -1.0;  // angle between path pt and pose < max_angle_to_furthest_ IF non-directional
-  path.y(6) = 0.0;
-  critic.score(data);
-  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
-
-  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
-  path.x(6) = -1.0;  // angle between path point and pose < max_angle_to_furthest_
-  path.y(6) = 4.0;
-  critic.score(data);
-  EXPECT_GT(costs.sum(), 0.0);
-  // should use reverse orientation as the closer angle in no dir preference mode
-  EXPECT_NEAR(costs(0), 2.9167, 1e-2);
-
-  // Set mode to consider path directionality + reset costs
-  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(mode_param, 2)).successful);
-  costs.setZero();
-
-  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
-  path.x(6) = 1.0;  // angle between path point and pose < max_angle_to_furthest_
-  path.y(6) = 0.0;
-  critic.score(data);
-  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
-
-  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
-  path.x(6) = -1.0;  // angle between path pt and pose < max_angle_to_furthest_ IF non-directional
-  path.y(6) = 0.0;
-  critic.score(data);
-  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
-
-  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
-  path.x(6) = -1.0;  // angle between path point and pose < max_angle_to_furthest_
-  path.y(6) = 4.0;
-  critic.score(data);
-  EXPECT_GT(costs.sum(), 0.0);
-  // should use reverse orientation as the closer angle in no dir preference mode
-  EXPECT_NEAR(costs(0), 2.9167, 1e-2);
-
-  for (int invalid_mode : {-1, 3}) {
-    EXPECT_FALSE(node->set_parameter(rclcpp::Parameter(mode_param, invalid_mode)).successful);
-    EXPECT_EQ(node->get_parameter(mode_param).as_int(), 2);
-    costs.setZero();
-    critic.score(data);
-    EXPECT_NEAR(costs(0), 2.9167, 1e-2);
-  }
-
-  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(mode_param, 0)).successful);
+  // A static mode change must leave the configured mode and scoring unchanged.
+  const rclcpp::Parameter mode_update(mode_param, 1);
+  ASSERT_FALSE(param_handler.validateParameterUpdatesCallback({mode_update}).successful);
+  EXPECT_FALSE(node->set_parameter(mode_update).successful);
+  EXPECT_EQ(node->get_parameter(mode_param).as_int(), 0);
   costs.setZero();
   critic.score(data);
   EXPECT_NEAR(costs(0), 3.9947, 1e-2);
 
-  // An invalid mode is reported alongside other rejected parameters
-  param_handler.addPreCallback(
-    critic_name + ".cost_power",
-    [](const rclcpp::Parameter &, rcl_interfaces::msg::SetParametersResult & result) {
-      result.successful = false;
-      result.reason += "cost_power rejected";
-    });
-  auto result = node->set_parameters_atomically(
-    {rclcpp::Parameter(critic_name + ".cost_power", 2), rclcpp::Parameter(mode_param, 3)});
-  EXPECT_FALSE(result.successful);
-  EXPECT_EQ(result.reason, "cost_power rejected\nPath angle mode must be in [0, 2]");
-  EXPECT_EQ(node->get_parameter(mode_param).as_int(), 0);
+  // Score with no directional preference configured at initialization.
+  costs.setZero();
+
+  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
+  path.x(6) = 1.0;  // angle between path point and pose < max_angle_to_furthest_
+  path.y(6) = 0.0;
+  non_directional_critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+
+  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
+  path.x(6) = -1.0;  // angle between path pt and pose < max_angle_to_furthest_ IF non-directional
+  path.y(6) = 0.0;
+  non_directional_critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+
+  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
+  path.x(6) = -1.0;  // angle between path point and pose < max_angle_to_furthest_
+  path.y(6) = 4.0;
+  non_directional_critic.score(data);
+  EXPECT_GT(costs.sum(), 0.0);
+  // should use reverse orientation as the closer angle in no dir preference mode
+  EXPECT_NEAR(costs(0), 2.9167, 1e-2);
+
+  // Score with feasible path orientations configured at initialization.
+  costs.setZero();
+
+  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
+  path.x(6) = 1.0;  // angle between path point and pose < max_angle_to_furthest_
+  path.y(6) = 0.0;
+  feasible_path_critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+
+  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
+  path.x(6) = -1.0;  // angle between path pt and pose < max_angle_to_furthest_ IF non-directional
+  path.y(6) = 0.0;
+  feasible_path_critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+
+  // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
+  path.x(6) = -1.0;  // angle between path point and pose < max_angle_to_furthest_
+  path.y(6) = 4.0;
+  feasible_path_critic.score(data);
+  EXPECT_GT(costs.sum(), 0.0);
+  // should use reverse orientation as the closer angle in no dir preference mode
+  EXPECT_NEAR(costs(0), 2.9167, 1e-2);
 
   PathAngleMode mode;
   mode = PathAngleMode::FORWARD_PREFERENCE;
@@ -920,13 +911,10 @@ TEST(CriticTests, PathAngleCriticNoReversing)
   critic.score(data);
   EXPECT_NEAR(costs(0), 2.2 * M_PI, 1e-5);
 
-  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(mode_param, 2)).successful);
-  costs.setZero();
-  critic.score(data);
-  EXPECT_NEAR(costs(0), 0.0, 1e-6);
-
-  // The same fallback must apply when the mode changes dynamically.
-  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(mode_param, 1)).successful);
+  const rclcpp::Parameter mode_update(mode_param, 2);
+  ASSERT_FALSE(param_handler.validateParameterUpdatesCallback({mode_update}).successful);
+  EXPECT_FALSE(node->set_parameter(mode_update).successful);
+  EXPECT_EQ(node->get_parameter(mode_param).as_int(), 1);
   costs.setZero();
   critic.score(data);
   EXPECT_NEAR(costs(0), 2.2 * M_PI, 1e-5);
@@ -1238,6 +1226,8 @@ TEST(CriticTests, VelocityDeadbandCritic)
   ParametersHandler param_handler(node, name);
   const std::string critic_name = name + ".VelocityDeadbandCritic";
   const std::string deadband_param = critic_name + ".deadband_velocities";
+  const std::vector<double> deadband_velocities{0.08, 0.08, 0.08};
+  node->declare_parameter(deadband_param, rclcpp::ParameterValue(deadband_velocities));
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -1263,14 +1253,6 @@ TEST(CriticTests, VelocityDeadbandCritic)
   param_handler.start();
 
   critic.score(data);
-  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
-
-  // Update after initialization has returned, without registering another callback first.
-  const std::vector<double> deadband_velocities{0.08, 0.08, 0.08};
-  ASSERT_TRUE(
-    node->set_parameter(
-      rclcpp::Parameter(deadband_param, deadband_velocities)).successful);
-  critic.score(data);
   EXPECT_NEAR(costs(1), 25.2, 0.01);
   costs.setZero();
 
@@ -1291,29 +1273,12 @@ TEST(CriticTests, VelocityDeadbandCritic)
   // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 19.845
   EXPECT_NEAR(costs(1), 19.845, 0.01);
 
-  for (const auto & velocities : {
-    std::vector<double>{}, std::vector<double>{0.1, 0.1},
-    std::vector<double>{0.1, 0.1, 0.1, 0.1}})
-  {
-    EXPECT_FALSE(node->set_parameter(rclcpp::Parameter(deadband_param, velocities)).successful);
-    EXPECT_EQ(node->get_parameter(deadband_param).as_double_array(), deadband_velocities);
-    costs.setZero();
-    critic.score(data);
-    EXPECT_NEAR(costs(1), 19.845, 0.01);
-  }
-
-  // An invalid deadband is reported alongside other rejected parameters
-  param_handler.addPreCallback(
-    critic_name + ".cost_power",
-    [](const rclcpp::Parameter &, rcl_interfaces::msg::SetParametersResult & result) {
-      result.successful = false;
-      result.reason += "cost_power rejected";
-    });
-  auto result = node->set_parameters_atomically(
-    {rclcpp::Parameter(critic_name + ".cost_power", 2),
-      rclcpp::Parameter(deadband_param, std::vector<double>{0.1})});
-  EXPECT_FALSE(result.successful);
-  EXPECT_EQ(
-    result.reason, "cost_power rejected\nVelocity deadband must contain exactly 3 velocities");
+  // A static deadband change must leave the configured velocities and scoring unchanged.
+  const rclcpp::Parameter deadband_update(deadband_param, std::vector<double>{0.1, 0.1, 0.1});
+  ASSERT_FALSE(param_handler.validateParameterUpdatesCallback({deadband_update}).successful);
+  EXPECT_FALSE(node->set_parameter(deadband_update).successful);
   EXPECT_EQ(node->get_parameter(deadband_param).as_double_array(), deadband_velocities);
+  costs.setZero();
+  critic.score(data);
+  EXPECT_NEAR(costs(1), 19.845, 0.01);
 }
