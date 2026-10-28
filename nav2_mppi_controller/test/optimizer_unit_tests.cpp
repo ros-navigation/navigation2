@@ -152,6 +152,20 @@ public:
     EXPECT_EQ(path_.x.rows(), 17);
   }
 
+  void prepareWrapper(
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const geometry_msgs::msg::Twist & robot_speed,
+    const nav_msgs::msg::Path & plan)
+  {
+    // AI-assisted test seam for latency-compensation integration.
+    prepare(robot_pose, robot_speed, plan, geometry_msgs::msg::Pose(), nullptr);
+  }
+
+  void setLastCommandVelocity(const geometry_msgs::msg::Twist & command)
+  {
+    last_command_vel_ = command;
+  }
+
   void shiftControlSequenceWrapper()
   {
     return shiftControlSequence();
@@ -501,6 +515,55 @@ TEST(OptimizerTests, PrepareTests)
   path.poses.resize(17);
 
   optimizer_tester.testPrepare(pose, speed, path, goal, nullptr);
+}
+
+// AI-assisted test for trapezoidal latency-compensation integration.
+TEST(OptimizerTests, PrepareUsesTrapezoidalLatencyCompensation)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(10.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter("mppic.model_dt", rclcpp::ParameterValue(0.1));
+  node->declare_parameter("mppic.ax_max", rclcpp::ParameterValue(1.0));
+  node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(2.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  costmap_ros->on_configure(rclcpp_lifecycle::State{});
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist speed;
+  speed.linear.x = 1.0;
+  speed.angular.z = 0.2;
+  geometry_msgs::msg::Twist command;
+  command.linear.x = 2.0;
+  command.angular.z = 1.0;
+  optimizer_tester.setLastCommandVelocity(command);
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(1);
+  optimizer_tester.prepareWrapper(pose, speed, path);
+
+  const auto & state = optimizer_tester.grabState();
+  const float dt = 0.1f;
+  const float end_vx = 1.1f;
+  const float end_wz = 0.4f;
+  const float interval_vx = 0.5f * (speed.linear.x + end_vx);
+  const float interval_wz = 0.5f * (speed.angular.z + end_wz);
+  const float midpoint_yaw = 0.5f * interval_wz * dt;
+  EXPECT_NEAR(state.speed.linear.x, end_vx, 1e-6);
+  EXPECT_NEAR(state.speed.angular.z, end_wz, 1e-6);
+  EXPECT_NEAR(state.pose.pose.position.x, interval_vx * cosf(midpoint_yaw) * dt, 1e-6);
+  EXPECT_NEAR(state.pose.pose.position.y, interval_vx * sinf(midpoint_yaw) * dt, 1e-6);
+  EXPECT_NEAR(tf2::getYaw(state.pose.pose.orientation), interval_wz * dt, 1e-6);
 }
 
 class OptimizerIterationTests : public ::testing::TestWithParam<int> {};

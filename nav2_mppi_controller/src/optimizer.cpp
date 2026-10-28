@@ -32,6 +32,24 @@
 namespace mppi
 {
 
+// AI-assisted helpers for interval-endpoint velocity integration.
+namespace
+{
+
+inline float trapezoidalAverage(const float current, const float next)
+{
+  return 0.5f * (current + next);
+}
+
+template<typename Current, typename Next>
+void trapezoidalAverage(
+  const Current & current, const Next & next, Eigen::ArrayXf & average)
+{
+  average = 0.5f * (current + next);
+}
+
+}  // namespace
+
 void Optimizer::initialize(
   nav2::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
@@ -369,19 +387,30 @@ void Optimizer::prepare(
     float max_delta_vx = dt * c.ax_max;
     float min_delta_vx = dt * c.ax_min;
     float max_delta_wz = dt * c.az_max;
+    const bool is_holonomic = isHolonomic();
     state_.speed = robot_speed;
     state_.speed.linear.x = utils::clampVelocityByAccel(
       robot_speed.linear.x, last_command_vel_.linear.x, min_delta_vx, max_delta_vx);
     state_.speed.angular.z = utils::clampVelocityByAccel(
       robot_speed.angular.z, last_command_vel_.angular.z, -max_delta_wz, max_delta_wz);
-    if (isHolonomic()) {
+    if (is_holonomic) {
       float max_delta_vy = dt * c.ay_max;
       float min_delta_vy = dt * c.ay_min;
       state_.speed.linear.y = utils::clampVelocityByAccel(
-      robot_speed.linear.y, last_command_vel_.linear.y, min_delta_vy, max_delta_vy);
+        robot_speed.linear.y, last_command_vel_.linear.y, min_delta_vy, max_delta_vy);
     }
-    // Predict the robot pose at dt in future
-    motion_model_->predictPose(state_.pose.pose, robot_speed, dt);
+
+    // AI-assisted change: integrate latency compensation using both endpoint velocities.
+    auto interval_speed = state_.speed;
+    interval_speed.linear.x = trapezoidalAverage(
+      robot_speed.linear.x, state_.speed.linear.x);
+    interval_speed.angular.z = trapezoidalAverage(
+      robot_speed.angular.z, state_.speed.angular.z);
+    if (is_holonomic) {
+      interval_speed.linear.y = trapezoidalAverage(
+        robot_speed.linear.y, state_.speed.linear.y);
+    }
+    motion_model_->predictPose(state_.pose.pose, interval_speed, dt);
   }
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
@@ -566,18 +595,20 @@ void Optimizer::integrateStateVelocities(
     // Average the velocities at both ends of the interval. The terminal velocity
     // is held constant because the rollout has no sample beyond its horizon.
     const size_t next_i = std::min(i + 1, n_size - 1);
-    const float interval_vx = 0.5f * (vx(i) + vx(next_i));
-    const float current_vy = is_holonomic ? sequence(i, 2) : 0.0f;
-    const float next_vy = is_holonomic ? sequence(next_i, 2) : 0.0f;
-    const float interval_vy = 0.5f * (current_vy + next_vy);
-    const float interval_wz = 0.5f * (wz(i) + wz(next_i));
+    const float interval_vx = trapezoidalAverage(vx(i), vx(next_i));
+    const float interval_wz = trapezoidalAverage(wz(i), wz(next_i));
     const float delta_yaw = interval_wz * settings_.model_dt;
     const float midpoint_yaw = last_yaw + 0.5f * delta_yaw;
     const float yaw_cos = cosf(midpoint_yaw);
     const float yaw_sin = sinf(midpoint_yaw);
 
-    const float dx = interval_vx * yaw_cos - interval_vy * yaw_sin;
-    const float dy = interval_vx * yaw_sin + interval_vy * yaw_cos;
+    float dx = interval_vx * yaw_cos;
+    float dy = interval_vx * yaw_sin;
+    if (is_holonomic) {
+      const float interval_vy = trapezoidalAverage(sequence(i, 2), sequence(next_i, 2));
+      dx -= interval_vy * yaw_sin;
+      dy += interval_vy * yaw_cos;
+    }
     last_x += dx * settings_.model_dt;
     last_y += dy * settings_.model_dt;
     last_yaw += delta_yaw;
@@ -618,9 +649,8 @@ void Optimizer::integrateStateVelocities(
   // AI-assisted change: use interval-endpoint velocities and a midpoint heading.
   for (size_t i = 0; i != n_cols; i++) {
     const size_t next_i = std::min(i + 1, n_cols - 1);
-    interval_vx = 0.5f * (state.vx.col(i) + state.vx.col(next_i));
-    interval_vy = 0.5f * (state.vy.col(i) + state.vy.col(next_i));
-    interval_wz = 0.5f * (state.wz.col(i) + state.wz.col(next_i));
+    trapezoidalAverage(state.vx.col(i), state.vx.col(next_i), interval_vx);
+    trapezoidalAverage(state.wz.col(i), state.wz.col(next_i), interval_wz);
 
     delta_yaw = interval_wz * settings_.model_dt;
     midpoint_yaws = last_yaws + 0.5f * delta_yaw;
@@ -629,6 +659,7 @@ void Optimizer::integrateStateVelocities(
     dx = interval_vx * yaw_cos;
     dy = interval_vx * yaw_sin;
     if (is_holonomic) {
+      trapezoidalAverage(state.vy.col(i), state.vy.col(next_i), interval_vy);
       dx -= interval_vy * yaw_sin;
       dy += interval_vy * yaw_cos;
     }
