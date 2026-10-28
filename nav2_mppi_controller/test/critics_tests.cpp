@@ -858,6 +858,19 @@ TEST(CriticTests, PathAngleCritic)
   critic.score(data);
   EXPECT_NEAR(costs(0), 3.9947, 1e-2);
 
+  // An invalid mode is reported alongside other rejected parameters
+  param_handler.addPreCallback(
+    critic_name + ".cost_power",
+    [](const rclcpp::Parameter &, rcl_interfaces::msg::SetParametersResult & result) {
+      result.successful = false;
+      result.reason += "cost_power rejected";
+    });
+  auto result = node->set_parameters_atomically(
+    {rclcpp::Parameter(critic_name + ".cost_power", 2), rclcpp::Parameter(mode_param, 3)});
+  EXPECT_FALSE(result.successful);
+  EXPECT_EQ(result.reason, "cost_power rejected\nPath angle mode must be in [0, 2]");
+  EXPECT_EQ(node->get_parameter(mode_param).as_int(), 0);
+
   PathAngleMode mode;
   mode = PathAngleMode::FORWARD_PREFERENCE;
   EXPECT_EQ(modeToStr(mode), std::string("Forward Preference"));
@@ -1288,4 +1301,19 @@ TEST(CriticTests, VelocityDeadbandCritic)
     critic.score(data);
     EXPECT_NEAR(costs(1), 19.845, 0.01);
   }
+
+  // An invalid deadband is reported alongside other rejected parameters
+  param_handler.addPreCallback(
+    critic_name + ".cost_power",
+    [](const rclcpp::Parameter &, rcl_interfaces::msg::SetParametersResult & result) {
+      result.successful = false;
+      result.reason += "cost_power rejected";
+    });
+  auto result = node->set_parameters_atomically(
+    {rclcpp::Parameter(critic_name + ".cost_power", 2),
+      rclcpp::Parameter(deadband_param, std::vector<double>{0.1})});
+  EXPECT_FALSE(result.successful);
+  EXPECT_EQ(
+    result.reason, "cost_power rejected\nVelocity deadband must contain exactly 3 velocities");
+  EXPECT_EQ(node->get_parameter(deadband_param).as_double_array(), deadband_velocities);
 }
