@@ -250,26 +250,27 @@ bool PlannerTester::defaultPlannerTest(
   geometry_msgs::msg::Point robot_position;
   ComputePathToPoseCommand goal;
   auto costmap_properties = costmap_->get_properties();
+  const double half_cell = 0.5 * costmap_properties.resolution;
 
   if (using_fake_costmap_) {
     RCLCPP_DEBUG(this->get_logger(), "Planning using a fake costmap");
 
-    robot_position.x = 1.0;
-    robot_position.y = 1.0;
+    robot_position.x = 1.0 + half_cell;
+    robot_position.y = 1.0 + half_cell;
 
-    goal.pose.position.x = 8.0;
-    goal.pose.position.y = 8.0;
+    goal.pose.position.x = 8.0 + half_cell;
+    goal.pose.position.y = 8.0 + half_cell;
 
   } else {
     RCLCPP_DEBUG(this->get_logger(), "Planning using the provided map");
 
     // Defined with respect to world coordinate system
     //  Planner will do coordinate transformation to map internally
-    robot_position.x = 390.0;
-    robot_position.y = 10.0;
+    robot_position.x = 390.0 + half_cell;
+    robot_position.y = 10.0 + half_cell;
 
-    goal.pose.position.x = 10.0;
-    goal.pose.position.y = 390.0;
+    goal.pose.position.x = 10.0 + half_cell;
+    goal.pose.position.y = 390.0 + half_cell;
   }
 
   // TODO(orduno): #443 On a default test, provide the reference path to compare with the planner
