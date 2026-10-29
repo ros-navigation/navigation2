@@ -55,10 +55,8 @@ void GracefulController::configure(
     params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
   // Initialize footprint collision checker
-  if (params_->use_collision_detection) {
-    collision_checker_ = std::make_unique<nav2_costmap_2d::
-        FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
-  }
+  collision_checker_ = std::make_unique<nav2_costmap_2d::
+      FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
 
   double max_valid_cost = costmap_ros_->getUseRadius() ?
     static_cast<double>(nav2_costmap_2d::MAX_NON_OBSTACLE) :
@@ -341,7 +339,9 @@ bool GracefulController::validateTargetPoseOnApproach(
 
     // Check if the final rotation path is risky
     double safety_threshold = max_valid_cost - static_cast<double>(params_->obstacle_cost_margin);
-    if (getMaxCost(trajectory, costmap_transform) >= safety_threshold) {
+    if (params_->use_collision_detection &&
+      getMaxCost(trajectory, costmap_transform) >= safety_threshold)
+    {
       // Try to find a better approach by searching spiral curves
       findBestApproachTrajectory(
             approach_pose, dist_to_target, costmap_transform, max_valid_cost, trajectory,
