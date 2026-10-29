@@ -26,7 +26,9 @@ void VelocityDeadbandCritic::initialize()
 
   // Recast double to float
   std::vector<double> deadband_velocities{0.0, 0.0, 0.0};
-  getParam(deadband_velocities, "deadband_velocities", std::vector<double>{0.0, 0.0, 0.0});
+  getParam(
+    deadband_velocities, "deadband_velocities", std::vector<double>{0.0, 0.0, 0.0},
+    ParameterType::Static);
   std::transform(
     deadband_velocities.begin(), deadband_velocities.end(), deadband_velocities_.begin(),
     [](double d) {return static_cast<float>(d);});
