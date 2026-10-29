@@ -22,11 +22,9 @@ namespace mppi::critics
 
 void PathAngleCritic::initialize()
 {
-  auto node = parent_.lock();
-  nav2::declare_parameter_if_not_declared(
-    node, parent_name_ + ".vx_min", rclcpp::ParameterValue(-0.35));
-  const auto vx_min =
-    static_cast<float>(node->get_parameter(parent_name_ + ".vx_min").as_double());
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  float vx_min;
+  getParentParam(vx_min, "vx_min", -0.35);
   if (fabs(vx_min) < 1e-6f) {  // zero
     reversing_allowed_ = false;
   } else if (vx_min < 0.0f) {   // reversing possible

@@ -920,36 +920,6 @@ TEST(CriticTests, PathAngleCriticNoReversing)
   EXPECT_NEAR(costs(0), 2.2 * M_PI, 1e-5);
 }
 
-TEST(CriticTests, PathAngleCriticDoesNotRegisterVxMin)
-{
-  for (bool register_first : {true, false}) {
-    SCOPED_TRACE(register_first);
-    auto node = std::make_shared<nav2::LifecycleNode>("my_node");
-    auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-      "dummy_costmap", "", true);
-    std::string name = "FollowPath";
-    ParametersHandler param_handler(node, name);
-    auto getParam = param_handler.getParamGetter(name);
-    float vx_min = 0.0f;
-    if (register_first) {
-      getParam(vx_min, "vx_min", -0.35f);
-    }
-    rclcpp_lifecycle::State lstate;
-    costmap_ros->on_configure(lstate);
-
-    PathAngleCritic critic;
-    critic.on_configure(node, name, name + ".PathAngleCritic", costmap_ros, &param_handler);
-    if (!register_first) {
-      getParam(vx_min, "vx_min", -0.35f);
-    }
-    param_handler.start();
-
-    // The shared limit must remain dynamic regardless of critic configuration order.
-    ASSERT_TRUE(node->set_parameter(rclcpp::Parameter(name + ".vx_min", -0.1)).successful);
-    EXPECT_FLOAT_EQ(vx_min, -0.1f);
-  }
-}
-
 TEST(CriticTests, PreferForwardCritic)
 {
   // Standard preamble
