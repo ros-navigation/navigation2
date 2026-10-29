@@ -162,7 +162,7 @@ protected:
   bool stopped_{true};
   bool scale_velocities_;
   bool is_6dof_;
-  bool received_first_command_;
+  bool received_first_command_{false};
   std::vector<double> max_velocities_;
   std::vector<double> min_velocities_;
   std::vector<double> max_accels_;
