@@ -130,6 +130,12 @@ install(DIRECTORY behavior_trees DESTINATION share/${PROJECT_NAME})
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_gtest REQUIRED)
+  nav2_add_gtest(test_plan_with_lookahead test/test_plan_with_lookahead.cpp)
+  target_link_libraries(test_plan_with_lookahead behaviortree_cpp::behaviortree_cpp)
+  target_compile_definitions(test_plan_with_lookahead PRIVATE
+    TREE_FILE="${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/navigate_w_replanning_time.xml"
+    SUBTREE_FILE="${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/subtrees/plan_with_lookahead.xml")
 endif()
 
 ament_export_dependencies(geometry_msgs nav2_core nav2_msgs nav2_util nav2_ros_common nav_msgs pluginlib rclcpp rclcpp_action tf2_ros)
