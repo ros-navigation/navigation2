@@ -289,6 +289,84 @@ TEST(ThetaStarTest, test_unknown_cost_agrees_between_cost_sites) {
   delete planner_->costmap_;
 }
 
+// Traversal cost is charged per unit distance, so equal-length lines cost the same at any bearing
+TEST(ThetaStarTest, test_los_cost_is_direction_independent) {
+  auto node = std::make_shared<nav2::LifecycleNode>("ThetaStarDirectionTestNode");
+  auto plugin_name = std::string("test");
+  auto param_handler = std::make_unique<nav2_theta_star_planner::ParameterHandler>(
+    node, plugin_name, node->get_logger());
+  param_handler->activate();
+  auto params = param_handler->getParams();
+  auto planner_ = std::make_unique<test_theta_star>(params);
+
+  planner_->costmap_ = new nav2_costmap_2d::Costmap2D(10, 10, 1.0, 0.0, 0.0, 100);
+  params->w_traversal_cost = 2.0;
+
+  const int len = 8;
+  double axial = 0.0, diagonal = 0.0, oblique = 0.0;
+  ASSERT_TRUE(planner_->ulosCheck(1, 1, 1 + len, 1, axial));
+  ASSERT_TRUE(planner_->ulosCheck(1, 1, 1 + len, 1 + len, diagonal));
+  // the staircase equals the chord at 0 and 45 degrees, so an oblique bearing is needed too
+  ASSERT_TRUE(planner_->ulosCheck(1, 1, 1 + len, 1 + len / 2, oblique));
+
+  EXPECT_NEAR(axial / len, diagonal / std::hypot(len, len), 1e-9);
+  EXPECT_NEAR(axial / len, oblique / std::hypot(len, len / 2), 1e-9);
+
+  delete planner_->costmap_;
+}
+
+// A robot starting in an obstacle can still plan, and only its start cell is cleared
+TEST(ThetaStarPlanner, test_clear_start_clears_the_current_start) {
+  nav2::LifecycleNode::SharedPtr life_node =
+    std::make_shared<nav2::LifecycleNode>("ThetaStarClearStartTest");
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto planner_2d = std::make_unique<nav2_theta_star_planner::ThetaStarPlanner>();
+  planner_2d->configure(life_node, "test", nullptr, costmap_ros);
+  planner_2d->activate();
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+  std::vector<geometry_msgs::msg::PoseStamped> viapoints;
+
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = 2.0;
+  start.pose.position.y = 2.0;
+  start.pose.orientation.w = 1.0;
+  goal = start;
+  goal.pose.position.x = 3.0;
+  goal.pose.position.y = 3.0;
+
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros->getCostmap();
+  unsigned int mx_start, my_start;
+  ASSERT_TRUE(
+    costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start));
+  ASSERT_NE(mx_start, 0u);
+
+  // (0, 0) is what gets cleared if clearStart() runs before the start is set
+  costmap->setCost(mx_start, my_start, nav2_costmap_2d::LETHAL_OBSTACLE);
+  costmap->setCost(0, 0, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  nav_msgs::msg::Path path = planner_2d->createPlan(
+    start, goal, viapoints, dummy_cancel_checker);
+  EXPECT_GT(static_cast<int>(path.poses.size()), 0);
+
+  EXPECT_EQ(costmap->getCost(mx_start, my_start), nav2_costmap_2d::FREE_SPACE);
+  EXPECT_EQ(costmap->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  planner_2d->deactivate();
+  planner_2d->cleanup();
+
+  planner_2d.reset();
+  costmap_ros->on_cleanup(rclcpp_lifecycle::State());
+  life_node.reset();
+  costmap_ros.reset();
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
