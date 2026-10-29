@@ -39,6 +39,7 @@
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "nav_msgs/msg/trajectory.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -59,6 +60,7 @@ static const char STATE_TOPIC[]{"collision_monitor_state"};
 static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_monitor/collision_points_marker"};
 static const char TRIGGERING_POINTS_TOPIC[]{"/collision_monitor/triggering_points"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
+static const char TRAJECTORY_TOPIC[]{"trajectory"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
@@ -187,6 +189,7 @@ public:
   void publishRange(const double dist, const rclcpp::Time & stamp);
   void publishPolygon(const double dist, const rclcpp::Time & stamp);
   void publishCmdVel(const double x, const double y, const double tw);
+  void publishTrajectory(const nav_msgs::msg::Trajectory & trajectory);
   bool waitData(
     const double expected_dist,
     const std::chrono::nanoseconds & timeout,
@@ -226,6 +229,9 @@ protected:
   // Working with cmd_vel_in/cmd_vel_out
   nav2::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_pub_;
   nav2::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_sub_;
+
+  // Trajectory publisher
+  nav2::Publisher<nav_msgs::msg::Trajectory>::SharedPtr trajectory_pub_;
 
   geometry_msgs::msg::Twist::ConstSharedPtr cmd_vel_out_;
 
@@ -277,6 +283,8 @@ Tester::Tester()
   cmd_vel_in_pub_ = cm_->create_publisher<geometry_msgs::msg::Twist>(
     CMD_VEL_IN_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   cmd_vel_in_pub_->on_activate();
+  trajectory_pub_ = cm_->create_publisher<nav_msgs::msg::Trajectory>(TRAJECTORY_TOPIC);
+  trajectory_pub_->on_activate();
   cmd_vel_out_sub_ = cm_->create_subscription<geometry_msgs::msg::Twist>(
     CMD_VEL_OUT_TOPIC,
     std::bind(&Tester::cmdVelOutCallback, this, std::placeholders::_1));
@@ -313,6 +321,8 @@ Tester::~Tester()
 
   cmd_vel_in_pub_->on_deactivate();
   cmd_vel_in_pub_.reset();
+  trajectory_pub_->on_deactivate();
+  trajectory_pub_.reset();
   cmd_vel_out_sub_.reset();
 
   action_state_sub_.reset();
@@ -719,6 +729,24 @@ void Tester::publishCmdVel(const double x, const double y, const double tw)
   cmd_vel_in_pub_->publish(std::move(msg));
 }
 
+void Tester::publishTrajectory(const nav_msgs::msg::Trajectory & trajectory)
+{
+  // Wait for the node to subscribe, as the publisher is volatile
+  rclcpp::Time start_time = cm_->now();
+  while (rclcpp::ok() && trajectory_pub_->get_subscription_count() == 0 &&
+    cm_->now() - start_time <= rclcpp::Duration(1s))
+  {
+    executor_->spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+
+  // Reset the outputs before calling CollisionMonitor::trajectoryCallback()
+  cmd_vel_out_ = nullptr;
+  action_state_ = nullptr;
+
+  trajectory_pub_->publish(trajectory);
+}
+
 bool Tester::waitData(
   const double expected_dist,
   const std::chrono::nanoseconds & timeout,
@@ -1116,6 +1144,116 @@ TEST_F(Tester, testProcessApproach)
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, DO_NOTHING);
   ASSERT_EQ(action_state_->polygon_name, "");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
+namespace
+{
+
+// Straight trajectory along +x at the given speed, sampled at the polygon's simulation time step
+nav_msgs::msg::Trajectory makeTrajectory(
+  const double speed, const rclcpp::Time & start, const std::string & frame_id)
+{
+  const int64_t step_ns = static_cast<int64_t>(SIMULATION_TIME_STEP * 1e9);
+  nav_msgs::msg::Trajectory trajectory;
+  trajectory.header.stamp = start;
+  trajectory.header.frame_id = frame_id;
+  for (int i = 0; i <= 120; i++) {
+    nav_msgs::msg::TrajectoryPoint point;
+    point.header.stamp = start + rclcpp::Duration::from_nanoseconds(i * step_ns);
+    point.pose.position.x = speed * i * SIMULATION_TIME_STEP;
+    point.pose.orientation.w = 1.0;
+    point.velocity.linear.x = speed;
+    trajectory.points.push_back(point);
+  }
+  return trajectory;
+}
+
+}  // namespace
+
+TEST_F(Tester, testProcessTrajectory)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Set Collision Monitor parameters.
+  // Making one circle footprint for approach, with a trajectory input.
+  setCommonParameters();
+  cm_->declare_parameter("trajectory_topic", rclcpp::ParameterValue(std::string(TRAJECTORY_TOPIC)));
+  addPolygon("Approach", CIRCLE, 1.0, "approach");
+  addPolygon("Stop", POLYGON, 0.1, "stop");
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"Approach", "Stop"}, {SCAN_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // 1. Obstacle is far away from robot: output is the velocity of the first trajectory point
+  publishScan(3.0, curr_time);
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  publishTrajectory(makeTrajectory(0.5, curr_time, BASE_FRAME_ID));
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+
+  // 2. Approaching obstacle (0.2 m ahead from robot footprint): the trajectory reaches it in 0.4 s
+  publishScan(1.2, curr_time);
+  ASSERT_TRUE(waitData(1.2, 500ms, curr_time));
+  publishTrajectory(makeTrajectory(0.5, curr_time, BASE_FRAME_ID));
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * 0.4 / TIME_BEFORE_COLLISION, 2 * SIMULATION_TIME_STEP);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, APPROACH);
+  ASSERT_EQ(action_state_->polygon_name, "Approach");
+
+  // 3. Trajectory stamps do not increase: robot stops
+  publishScan(3.0, curr_time);
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  nav_msgs::msg::Trajectory invalid = makeTrajectory(0.5, curr_time, BASE_FRAME_ID);
+  invalid.points[10].header.stamp = invalid.points[9].header.stamp;
+  publishTrajectory(invalid);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "invalid trajectory");
+
+  // 4. A valid trajectory restores normal operation
+  publishTrajectory(makeTrajectory(0.5, curr_time, BASE_FRAME_ID));
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+
+  // 5. Trajectory frame cannot be transformed to the base frame: robot stops after the TF timeout
+  publishTrajectory(makeTrajectory(0.5, curr_time, "unknown_frame"));
+  ASSERT_TRUE(waitCmdVel(1500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+
+  // 6. A trajectory without points has no velocity: robot stops
+  publishTrajectory(makeTrajectory(0.5, curr_time, BASE_FRAME_ID));
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  nav_msgs::msg::Trajectory empty = makeTrajectory(0.5, curr_time, BASE_FRAME_ID);
+  empty.points.clear();
+  publishTrajectory(empty);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+
+  // 7. A disabled monitor passes the first velocity through and ignores an invalid trajectory
+  auto request = std::make_shared<nav2_msgs::srv::Toggle::Request>();
+  request->enable = false;
+  ASSERT_TRUE(waitToggle(toggle_client_->async_call(request), 2s));
+  publishScan(1.2, curr_time);
+  ASSERT_TRUE(waitData(1.2, 500ms, curr_time));
+  publishTrajectory(makeTrajectory(0.5, curr_time, BASE_FRAME_ID));
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  publishTrajectory(empty);
+  ASSERT_FALSE(waitCmdVel(100ms));
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -1581,6 +1719,7 @@ TEST_F(Tester, testProcessNonActive)
   rclcpp::Time curr_time = cm_->now();
 
   setCommonParameters();
+  cm_->declare_parameter("trajectory_topic", rclcpp::ParameterValue(std::string(TRAJECTORY_TOPIC)));
   addPolygon("Stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
   setVectors({"Stop"}, {SCAN_NAME});
@@ -1594,6 +1733,10 @@ TEST_F(Tester, testProcessNonActive)
   // Call CollisionMonitor::process()
   publishCmdVel(1.0, 0.0, 0.0);
   // ... and check that cmd_vel_out was not published
+  ASSERT_FALSE(waitCmdVel(100ms));
+
+  // The same for a trajectory
+  publishTrajectory(makeTrajectory(0.5, curr_time, BASE_FRAME_ID));
   ASSERT_FALSE(waitCmdVel(100ms));
 
   // Stop Collision Monitor node

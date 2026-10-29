@@ -67,4 +67,17 @@ void projectState(const double & dt, Pose & pose, Velocity & velocity)
   velocity.y = velocity_upd_y;
 }
 
+Trajectory projectConstantVelocity(
+  const Velocity & velocity, const double horizon_s, const double time_step_s)
+{
+  Trajectory trajectory;
+  Pose pose = {0.0, 0.0, 0.0};
+  Velocity vel = velocity;
+  for (double time = 0.0; time <= horizon_s; time += time_step_s) {
+    projectState(time_step_s, pose, vel);
+    trajectory.push_back({time, pose});
+  }
+  return trajectory;
+}
+
 }  // namespace nav2_collision_monitor

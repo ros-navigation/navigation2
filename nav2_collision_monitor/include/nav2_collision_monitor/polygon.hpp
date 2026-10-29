@@ -140,6 +140,12 @@ public:
    * @return Time before collision in seconds
    */
   double getTimeBeforeCollision() const;
+  /**
+   * @brief Obtains the time step of the robot movement simulation.
+   * Applicable for APPROACH model.
+   * @return Time step in seconds
+   */
+  double getSimulationTimeStep() const;
 
   /**
    * @brief Gets polygon points
@@ -201,18 +207,19 @@ public:
 
 
   /**
-   * @brief Obtains estimated (simulated) time before a collision.
+   * @brief Obtains the time before a collision along a trajectory.
    * Applicable for APPROACH model.
-   * @param collision_points Input 2D obstacle points
-   * @param velocity Simulated robot velocity
+   * @param sources_collision_points_map Map containing source name as key,
+   * and input array of source's points to be checked as value
+   * @param trajectory Robot trajectory, checked up to time_before_collision
    * @param out_triggering_points Output vector receiving the original points
    * responsible for the collision (populated only on a triggering step)
-   * @return Estimated time before a collision. If there is no collision,
-   * return value will be negative.
+   * @return Time of the first trajectory point with the footprint over min_points,
+   * or 0.0 if they are already inside. If there is no collision, return value will be negative.
    */
   double getCollisionTime(
     const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
-    const Velocity & velocity,
+    const Trajectory & trajectory,
     std::vector<Point> & out_triggering_points) const;
 
   /**

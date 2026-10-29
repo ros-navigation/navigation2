@@ -220,6 +220,11 @@ double Polygon::getTimeBeforeCollision() const
   return time_before_collision_;
 }
 
+double Polygon::getSimulationTimeStep() const
+{
+  return simulation_time_step_;
+}
+
 std::vector<std::string> Polygon::getSourcesNames() const
 {
   return sources_names_;
@@ -343,13 +348,9 @@ int Polygon::getPointsInside(
 
 double Polygon::getCollisionTime(
   const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
-  const Velocity & velocity,
+  const Trajectory & trajectory,
   std::vector<Point> & out_triggering_points) const
 {
-  // Initial robot pose is {0,0} in base_footprint coordinates
-  Pose pose = {0.0, 0.0, 0.0};
-  Velocity vel = velocity;
-
   std::vector<std::string> polygon_sources_names = getSourcesNames();
   std::vector<Point> collision_points;
 
@@ -361,30 +362,25 @@ double Polygon::getCollisionTime(
     }
   }
 
-  // Array of points transformed to the frame concerned with pose on each simulation step
-  std::vector<Point> points_transformed = collision_points;
-
   // Check static polygon
   if (getPointsInside(collision_points, out_triggering_points) >= min_points_) {
     return 0.0;
   }
 
-  // Robot movement simulation
-  for (double time = 0.0; time <= time_before_collision_; time += simulation_time_step_) {
-    // Shift the robot pose towards to the vel during simulation_time_step_ time interval
-    // NOTE: vel is changing during the simulation
-    projectState(simulation_time_step_, pose, vel);
-    // Transform collision_points to the frame concerned with current robot pose
-    points_transformed = collision_points;
-    transformPoints(pose, points_transformed);
-    // If the collision occurred on this stage, return the actual time before a collision
-    // as if robot was moved with given velocity
+  for (const TimePoint & time_point : trajectory) {
+    if (time_point.time_s > time_before_collision_) {
+      break;
+    }
+    // Transform collision_points to the frame concerned with the trajectory pose
+    std::vector<Point> points_transformed = collision_points;
+    transformPoints(time_point.pose, points_transformed);
+    // If the collision occurred on this point, return its time
     std::vector<std::size_t> triggering_indices;
     if (getPointsInside(points_transformed, triggering_indices) >= min_points_) {
       for (std::size_t i : triggering_indices) {
         out_triggering_points.push_back(collision_points[i]);
       }
-      return time;
+      return time_point.time_s;
     }
   }
 
