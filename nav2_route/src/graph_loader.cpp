@@ -50,7 +50,7 @@ GraphLoader::GraphLoader(
     RCLCPP_INFO(
       logger_, "Created GraphFileLoader %s of type %s",
       graph_file_loader_id.c_str(), plugin_type_.c_str());
-    graph_file_loader_->configure(node);
+    graph_file_loader_->configure(node, graph_file_loader_id);
   } catch (pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(
       logger_,
