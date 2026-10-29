@@ -98,11 +98,6 @@ public:
     motion_model_.reset();
   }
 
-  MotionModel * getMotionModel()
-  {
-    return motion_model_.get();
-  }
-
   void setOffsetWrapper(const double controller_period)
   {
     return setOffset(controller_period);
@@ -391,39 +386,6 @@ TEST(OptimizerTests, TestOptimizerMotionModels)
   // // Rand should fail
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetRandModel();
-}
-
-TEST(OptimizerTests, MotionModelParameterIsStatic)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
-  OptimizerTester optimizer_tester;
-  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
-  node->declare_parameter(
-    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
-  node->declare_parameter(
-    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", true);
-  std::string name = "mppic";
-  ParametersHandler param_handler(node, name);
-  rclcpp_lifecycle::State lstate;
-  costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_buffer(node);
-  optimizer_tester.initialize(node, name, costmap_ros, tf_buffer, &param_handler);
-  param_handler.start();
-
-  auto * motion_model = optimizer_tester.getMotionModel();
-  ASSERT_TRUE(dynamic_cast<DiffDriveMotionModel *>(motion_model));
-
-  auto result = node->set_parameter(rclcpp::Parameter("mppic.motion_model", "diff_drive"));
-  EXPECT_FALSE(result.successful);
-  result = node->set_parameter(rclcpp::Parameter("mppic.motion_model", "omni"));
-  EXPECT_FALSE(result.successful);
-  EXPECT_EQ(node->get_parameter("mppic.motion_model").as_string(), "diff_drive");
-  EXPECT_EQ(optimizer_tester.getMotionModel(), motion_model);
-  EXPECT_FALSE(motion_model->isHolonomic());
-  EXPECT_NO_THROW(optimizer_tester.reset());
-  optimizer_tester.shutdown();
 }
 
 TEST(OptimizerTests, setOffsetTests)

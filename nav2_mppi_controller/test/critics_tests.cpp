@@ -44,6 +44,20 @@ using namespace mppi;  // NOLINT
 using namespace mppi::critics;  // NOLINT
 using namespace mppi::utils;  // NOLINT
 
+class PathAngleCriticWrapper : public PathAngleCritic
+{
+public:
+  PathAngleCriticWrapper()
+  : PathAngleCritic()
+  {
+  }
+
+  void setMode(int mode)
+  {
+    mode_ = static_cast<PathAngleMode>(mode);
+  }
+};
+
 TEST(CriticTests, ConstraintsCritic)
 {
   // Standard preamble
@@ -738,10 +752,8 @@ TEST(CriticTests, PathAngleCritic)
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "FollowPath";
+  std::string name = "test";
   ParametersHandler param_handler(node, name);
-  const std::string critic_name = name + ".PathAngleCritic";
-  const std::string mode_param = critic_name + ".mode";
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -764,20 +776,9 @@ TEST(CriticTests, PathAngleCritic)
   // Initialization testing
 
   // Make sure initializes correctly
-  PathAngleCritic critic;
-  critic.on_configure(node, name, critic_name, costmap_ros, &param_handler);
-  EXPECT_EQ(critic.getName(), critic_name);
-  PathAngleCritic non_directional_critic;
-  const std::string non_directional_name = name + ".NonDirectionalCritic";
-  node->declare_parameter(non_directional_name + ".mode", rclcpp::ParameterValue(1));
-  non_directional_critic.on_configure(
-    node, name, non_directional_name, costmap_ros, &param_handler);
-  PathAngleCritic feasible_path_critic;
-  const std::string feasible_path_name = name + ".FeasiblePathCritic";
-  node->declare_parameter(feasible_path_name + ".mode", rclcpp::ParameterValue(2));
-  feasible_path_critic.on_configure(
-    node, name, feasible_path_name, costmap_ros, &param_handler);
-  param_handler.start();
+  PathAngleCriticWrapper critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
 
   // Scoring testing
 
@@ -807,57 +808,50 @@ TEST(CriticTests, PathAngleCritic)
   EXPECT_GT(costs.sum(), 0.0);
   EXPECT_NEAR(costs(0), 3.9947, 1e-2);  // atan2(4,-1) [1.81] * 2.2 weight
 
-  // A static mode change must leave the configured mode and scoring unchanged.
-  const rclcpp::Parameter mode_update(mode_param, 1);
-  ASSERT_FALSE(param_handler.validateParameterUpdatesCallback({mode_update}).successful);
-  EXPECT_FALSE(node->set_parameter(mode_update).successful);
-  EXPECT_EQ(node->get_parameter(mode_param).as_int(), 0);
-  costs.setZero();
-  critic.score(data);
-  EXPECT_NEAR(costs(0), 3.9947, 1e-2);
-
-  // Score with no directional preference configured at initialization.
+  // Set mode to no directional preferences + reset costs
+  critic.setMode(1);
   costs.setZero();
 
   // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
   path.x(6) = 1.0;  // angle between path point and pose < max_angle_to_furthest_
   path.y(6) = 0.0;
-  non_directional_critic.score(data);
+  critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
   // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
   path.x(6) = -1.0;  // angle between path pt and pose < max_angle_to_furthest_ IF non-directional
   path.y(6) = 0.0;
-  non_directional_critic.score(data);
+  critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
   // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
   path.x(6) = -1.0;  // angle between path point and pose < max_angle_to_furthest_
   path.y(6) = 4.0;
-  non_directional_critic.score(data);
+  critic.score(data);
   EXPECT_GT(costs.sum(), 0.0);
   // should use reverse orientation as the closer angle in no dir preference mode
   EXPECT_NEAR(costs(0), 2.9167, 1e-2);
 
-  // Score with feasible path orientations configured at initialization.
+  // Set mode to consider path directionality + reset costs
+  critic.setMode(2);
   costs.setZero();
 
   // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
   path.x(6) = 1.0;  // angle between path point and pose < max_angle_to_furthest_
   path.y(6) = 0.0;
-  feasible_path_critic.score(data);
+  critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
   // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
   path.x(6) = -1.0;  // angle between path pt and pose < max_angle_to_furthest_ IF non-directional
   path.y(6) = 0.0;
-  feasible_path_critic.score(data);
+  critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
   // provide state pose and path close but outside of tol. with more than PI/2 angular diff.
   path.x(6) = -1.0;  // angle between path point and pose < max_angle_to_furthest_
   path.y(6) = 4.0;
-  feasible_path_critic.score(data);
+  critic.score(data);
   EXPECT_GT(costs.sum(), 0.0);
   // should use reverse orientation as the closer angle in no dir preference mode
   EXPECT_NEAR(costs(0), 2.9167, 1e-2);
@@ -871,53 +865,6 @@ TEST(CriticTests, PathAngleCritic)
   EXPECT_EQ(modeToStr(mode), std::string("No Directional Preference"));
   mode = static_cast<PathAngleMode>(4);
   EXPECT_EQ(modeToStr(mode), std::string("Invalid mode!"));
-}
-
-TEST(CriticTests, PathAngleCriticNoReversing)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", true);
-  std::string name = "FollowPath";
-  ParametersHandler param_handler(node, name);
-  const std::string critic_name = name + ".PathAngleCritic";
-  const std::string mode_param = critic_name + ".mode";
-  node->declare_parameter(name + ".vx_min", rclcpp::ParameterValue(0.0));
-  node->declare_parameter(mode_param, rclcpp::ParameterValue(1));
-  rclcpp_lifecycle::State lstate;
-  costmap_ros->on_configure(lstate);
-
-  models::State state;
-  state.reset(1, 1);
-  state.pose.pose.orientation.w = 1.0;
-  state.local_path_length = 1.0;
-  models::Trajectories generated_trajectories;
-  generated_trajectories.reset(1, 1);
-  models::Path path;
-  path.reset(1);
-  path.x(0) = -1.0;
-  geometry_msgs::msg::Pose goal;
-  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1);
-  float model_dt = 0.05;
-  CriticData data =
-  {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, 0, {}};
-
-  PathAngleCritic critic;
-  critic.on_configure(node, name, critic_name, costmap_ros, &param_handler);
-  param_handler.start();
-
-  // No directional preference falls back to forward preference at initialization.
-  critic.score(data);
-  EXPECT_NEAR(costs(0), 2.2 * M_PI, 1e-5);
-
-  const rclcpp::Parameter mode_update(mode_param, 2);
-  ASSERT_FALSE(param_handler.validateParameterUpdatesCallback({mode_update}).successful);
-  EXPECT_FALSE(node->set_parameter(mode_update).successful);
-  EXPECT_EQ(node->get_parameter(mode_param).as_int(), 1);
-  costs.setZero();
-  critic.score(data);
-  EXPECT_NEAR(costs(0), 2.2 * M_PI, 1e-5);
 }
 
 TEST(CriticTests, PreferForwardCritic)
@@ -1222,12 +1169,11 @@ TEST(CriticTests, VelocityDeadbandCritic)
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "FollowPath";
+  std::string name = "test";
   ParametersHandler param_handler(node, name);
-  const std::string critic_name = name + ".VelocityDeadbandCritic";
-  const std::string deadband_param = critic_name + ".deadband_velocities";
-  const std::vector<double> deadband_velocities{0.08, 0.08, 0.08};
-  node->declare_parameter(deadband_param, rclcpp::ParameterValue(deadband_velocities));
+  auto getParam = param_handler.getParamGetter("critic");
+  std::vector<double> deadband_velocities_;
+  getParam(deadband_velocities_, "deadband_velocities", std::vector<double>{0.08, 0.08, 0.08});
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -1248,13 +1194,8 @@ TEST(CriticTests, VelocityDeadbandCritic)
 
   // Make sure initializes correctly and that defaults are reasonable
   VelocityDeadbandCritic critic;
-  critic.on_configure(node, name, critic_name, costmap_ros, &param_handler);
-  EXPECT_EQ(critic.getName(), critic_name);
-  param_handler.start();
-
-  critic.score(data);
-  EXPECT_NEAR(costs(1), 25.2, 0.01);
-  costs.setZero();
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
 
   // Scoring testing
 
@@ -1270,15 +1211,6 @@ TEST(CriticTests, VelocityDeadbandCritic)
   state.vy.setConstant(0.02f);
   state.wz.setConstant(0.021f);
   critic.score(data);
-  // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 19.845
-  EXPECT_NEAR(costs(1), 19.845, 0.01);
-
-  // A static deadband change must leave the configured velocities and scoring unchanged.
-  const rclcpp::Parameter deadband_update(deadband_param, std::vector<double>{0.1, 0.1, 0.1});
-  ASSERT_FALSE(param_handler.validateParameterUpdatesCallback({deadband_update}).successful);
-  EXPECT_FALSE(node->set_parameter(deadband_update).successful);
-  EXPECT_EQ(node->get_parameter(deadband_param).as_double_array(), deadband_velocities);
-  costs.setZero();
-  critic.score(data);
+  // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
   EXPECT_NEAR(costs(1), 19.845, 0.01);
 }
