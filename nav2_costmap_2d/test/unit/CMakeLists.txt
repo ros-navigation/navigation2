@@ -102,6 +102,13 @@ target_link_libraries(asymmetric_inflation_layer_test
   layers
 )
 
+nav2_add_gtest(geofence_layer_test geofence_layer_test.cpp)
+target_link_libraries(geofence_layer_test
+  nav2_costmap_2d_core
+  layers
+  nav2_msgs::nav2_msgs
+)
+
 nav2_add_gtest(costmap_publisher_test costmap_publisher_test.cpp)
 target_link_libraries(costmap_publisher_test
   nav2_costmap_2d_core
