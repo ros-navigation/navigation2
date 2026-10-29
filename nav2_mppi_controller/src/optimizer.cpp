@@ -185,7 +185,7 @@ void Optimizer::getParams()
       "Sign of the parameter ay_min is incorrect, consider setting it negative.");
   }
 
-  getParam(motion_model_name, "motion_model", std::string("diff_drive"));
+  getParam(motion_model_name, "motion_model", std::string("diff_drive"), ParameterType::Static);
 
   if (s.batch_size == 0u || s.batch_size > 100000u) {
     RCLCPP_WARN(
