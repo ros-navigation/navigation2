@@ -29,10 +29,10 @@ namespace nav2_collision_monitor
 Circle::Circle(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
-  const nav2::TransformManager::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_manager,
   const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
-: Polygon::Polygon(node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
+: Polygon::Polygon(node, polygon_name, tf_manager, base_frame_id, transform_tolerance)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Circle", polygon_name_.c_str());
 }

@@ -52,12 +52,12 @@ public:
   /**
    * @brief Configure the route planner, get parameters
    * @param node Node object to get parametersfrom
-   * @param tf_buffer TF buffer to use for transformations
+   * @param tf_manager TF manager to use for transformations
    * @param costmap_subscriber Costmap subscriber to use for blocked nodes
    */
   void configure(
     nav2::LifecycleNode::SharedPtr node,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber);
 
   /**

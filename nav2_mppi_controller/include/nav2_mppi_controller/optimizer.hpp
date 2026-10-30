@@ -76,12 +76,12 @@ public:
    * @param name Name of plugin
    * @param costmap_ros Costmap2DROS object of environment
    * @param dynamic_parameter_handler Parameter handler object
-   * @param tf_buffer TF buffer for transformations
+   * @param tf_manager TF manager for transformations
    */
   void initialize(
     nav2::LifecycleNode::WeakPtr parent, const std::string & name,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    nav2::TransformManager::SharedPtr tf_buffer,
+    nav2::TransformManager::SharedPtr tf_manager,
     ParametersHandler * dynamic_parameters_handler);
 
   /**

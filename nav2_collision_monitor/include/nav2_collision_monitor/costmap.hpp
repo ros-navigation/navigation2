@@ -53,7 +53,7 @@ public:
    * @brief Construct a CostmapSource.
    * @param node Weak pointer to the lifecycle node.
    * @param source_name Logical name of this source instance (for params/logs).
-   * @param tf_buffer Shared TF buffer for frame transforms.
+   * @param tf_manager Shared TF manager for frame transforms.
    * @param base_frame_id Robot base frame (e.g., "base_footprint").
    * @param global_frame_id Global frame of the costmap (e.g., "odom" or "map").
    * @param transform_tolerance Allowed TF age for transforms.
@@ -63,7 +63,7 @@ public:
   CostmapSource(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,

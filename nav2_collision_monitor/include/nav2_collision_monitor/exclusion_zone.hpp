@@ -59,7 +59,7 @@ public:
    * @brief ExclusionZone constructor
    * @param node Collision Monitor node pointer
    * @param zone_name Name of the exclusion zone
-   * @param tf_buffer Shared pointer to a TF buffer
+   * @param tf_manager Shared pointer to a TF manager
    * @param base_frame_id Robot base frame ID (source points are expressed in this frame)
    * @param global_frame_id Global (fixed) frame ID used to bridge the zone lookup in time
    * @param transform_tolerance Transform tolerance
@@ -68,7 +68,7 @@ public:
   ExclusionZone(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & zone_name,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,

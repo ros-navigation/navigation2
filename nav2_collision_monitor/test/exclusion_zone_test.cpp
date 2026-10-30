@@ -176,10 +176,10 @@ public:
   FakeSource(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id)
   : nav2_collision_monitor::Source(
-      node, source_name, tf_buffer, base_frame_id, base_frame_id,
+      node, source_name, tf_manager, base_frame_id, base_frame_id,
       TRANSFORM_TOLERANCE, SOURCE_TIMEOUT, false)
   {
   }

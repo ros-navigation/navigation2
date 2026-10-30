@@ -35,12 +35,12 @@ namespace nav2_collision_monitor
 Polygon::Polygon(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
-  const nav2::TransformManager::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_manager,
   const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
   slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
-  footprint_sub_(nullptr), tf_manager_(tf_buffer),
+  footprint_sub_(nullptr), tf_manager_(tf_manager),
   base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance),
   node_clock_(nullptr)
 {

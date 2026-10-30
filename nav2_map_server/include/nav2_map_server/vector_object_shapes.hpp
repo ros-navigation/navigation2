@@ -120,13 +120,13 @@ public:
    * @brief Transforms shape coordinates to a new frame.
    * Empty virtual method intended to be used in child implementations
    * @param to_frame Frame ID to transform to
-   * @param tf_buffer TF buffer to use for the transformation
+   * @param tf_manager TF manager to use for the transformation
    * @param transform_tolerance Transform tolerance
    * @return Whether it was transformed successfully
    */
   virtual bool toFrame(
     const std::string & to_frame,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const double transform_tolerance) = 0;
 
   /**
@@ -259,13 +259,13 @@ public:
   /**
    * @brief Transforms shape coordinates to a new frame.
    * @param to_frame Frame ID to transform to
-   * @param tf_buffer TF buffer to use for the transformation
+   * @param tf_manager TF manager to use for the transformation
    * @param transform_tolerance Transform tolerance
    * @return Whether it was transformed successfully
    */
   bool toFrame(
     const std::string & to_frame,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const double transform_tolerance);
 
   /**
@@ -376,13 +376,13 @@ public:
   /**
    * @brief Transforms shape coordinates to a new frame.
    * @param to_frame Frame ID to transform to
-   * @param tf_buffer TF buffer to use for the transformation
+   * @param tf_manager TF manager to use for the transformation
    * @param transform_tolerance Transform tolerance
    * @return Whether it was transformed successfully
    */
   bool toFrame(
     const std::string & to_frame,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const double transform_tolerance);
 
   /**

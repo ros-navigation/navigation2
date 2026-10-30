@@ -65,7 +65,7 @@ public:
    * @param name Name of the validator plugin
    * @param costmap Shared pointer to the costmap ROS wrapper
    * @param param_handler Pointer to the parameters handler
-   * @param tf_buffer Shared pointer to the TF buffer
+   * @param tf_manager Shared pointer to the TF manager
    * @param settings Settings for the MPPI optimizer
    */
   virtual void initialize(
@@ -73,14 +73,14 @@ public:
     const std::string & name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap,
     ParametersHandler * param_handler,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const models::OptimizerSettings & settings)
   {
     param_handler_ = param_handler;
     name_ = name;
     node_ = parent;
     costmap_ros_ = costmap;
-    tf_manager_ = tf_buffer;
+    tf_manager_ = tf_manager;
 
     auto node = node_.lock();
     auto getParam = param_handler_->getParamGetter(name_);

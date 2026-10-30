@@ -318,14 +318,14 @@ public:
   ScanWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::Scan(
-      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      node, source_name, tf_manager, base_frame_id, global_frame_id,
       transform_tolerance, data_timeout, base_shift_correction)
   {}
 
@@ -341,14 +341,14 @@ public:
   PointCloudWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::PointCloud(
-      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      node, source_name, tf_manager, base_frame_id, global_frame_id,
       transform_tolerance, data_timeout, base_shift_correction)
   {}
 
@@ -364,14 +364,14 @@ public:
   RangeWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::Range(
-      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      node, source_name, tf_manager, base_frame_id, global_frame_id,
       transform_tolerance, data_timeout, base_shift_correction)
   {}
 
@@ -402,14 +402,14 @@ public:
   PolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::PolygonSource(
-      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      node, source_name, tf_manager, base_frame_id, global_frame_id,
       transform_tolerance, data_timeout, base_shift_correction)
   {}
 
@@ -425,14 +425,14 @@ public:
   CostmapWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::CostmapSource(
-      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      node, source_name, tf_manager, base_frame_id, global_frame_id,
       transform_tolerance, data_timeout, base_shift_correction)
   {}
 

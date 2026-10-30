@@ -23,7 +23,7 @@ namespace nav2_route
 
 void StartPoseOrientationScorer::configure(
   const nav2::LifecycleNode::SharedPtr node,
-  const nav2::TransformManager::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_manager,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/* costmap_subscriber */,
   const std::string & name)
 {
@@ -38,7 +38,7 @@ void StartPoseOrientationScorer::configure(
   use_orientation_threshold_ = node->declare_or_get_parameter(
     getName() + ".use_orientation_threshold", false);
 
-  tf_manager_ = tf_buffer;
+  tf_manager_ = tf_manager;
 }
 
 bool StartPoseOrientationScorer::score(

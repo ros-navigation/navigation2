@@ -72,7 +72,7 @@ int main(int argc, char const * argv[])
 {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<nav2::LifecycleNode>("route_benchmarking2");
-  nav2::TransformManager::SharedPtr tf_buffer;
+  nav2::TransformManager::SharedPtr tf_manager;
 
   Graph graph = createGraph();
 
@@ -83,7 +83,7 @@ int main(int argc, char const * argv[])
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   RoutePlanner planner;
-  planner.configure(node, tf_buffer, costmap_subscriber);
+  planner.configure(node, tf_manager, costmap_subscriber);
   std::vector<unsigned int> blocked_ids;
   Route route;
 

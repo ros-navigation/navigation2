@@ -34,7 +34,7 @@ namespace mppi
 void Optimizer::initialize(
   nav2::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-  nav2::TransformManager::SharedPtr tf_buffer,
+  nav2::TransformManager::SharedPtr tf_manager,
   ParametersHandler * param_handler)
 {
   parent_ = parent;
@@ -42,7 +42,7 @@ void Optimizer::initialize(
   costmap_ros_ = costmap_ros;
   costmap_ = costmap_ros_->getCostmap();
   parameters_handler_ = param_handler;
-  tf_manager_ = tf_buffer;
+  tf_manager_ = tf_manager;
 
   auto node = parent_.lock();
   logger_ = node->get_logger();
@@ -63,7 +63,7 @@ void Optimizer::initialize(
   trajectory_validator_ = validator_loader_->createUniqueInstance(validator_plugin_type);
   trajectory_validator_->initialize(
     parent_, name_ + ".TrajectoryValidator",
-    costmap_ros_, parameters_handler_, tf_buffer, settings_);
+    costmap_ros_, parameters_handler_, tf_manager, settings_);
   RCLCPP_INFO(logger_, "Loaded trajectory validator plugin: %s", validator_plugin_type.c_str());
 
   reset();
