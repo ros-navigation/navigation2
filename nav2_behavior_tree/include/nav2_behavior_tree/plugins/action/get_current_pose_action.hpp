@@ -80,7 +80,6 @@ private:
   std::string global_frame_, robot_base_frame_;
   rclcpp::Clock::SharedPtr clock_;
   nav2::TransformManager::SharedPtr tf_;
-  double transform_tolerance_{0.1};
   double transform_staleness_threshold_{0.0};
 };
 

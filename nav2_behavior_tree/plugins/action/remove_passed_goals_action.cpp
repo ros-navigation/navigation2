@@ -39,7 +39,6 @@ void RemovePassedGoals::initialize()
   tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();
-  node_->get_parameter("transform_tolerance", transform_tolerance_);
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
 

@@ -71,7 +71,7 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
   // let's get the pose of the robot in the frame of the plan
 
   const auto robot_pose = tf_manager_->transformStampedPose(
-    path_.header.frame_id, pose, 0.1);
+    path_.header.frame_id, pose, transform_tolerance_);
   if (!robot_pose) {
     RCLCPP_ERROR(
       node_->get_logger(), "Failed to transform robot pose to path frame '%s'",
