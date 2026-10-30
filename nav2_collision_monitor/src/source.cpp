@@ -73,7 +73,7 @@ bool Source::configure()
   for (const std::string & zone_name : zone_names) {
     auto zone = std::make_shared<ExclusionZone>(
       node, zone_name, tf_manager_, base_frame_id_, global_frame_id_,
-      transform_tolerance_, base_shift_correction_);
+      base_shift_correction_);
     if (!zone->configure()) {
       RCLCPP_ERROR(
         logger_, "[%s]: Failed to configure exclusion zone '%s'",
@@ -265,7 +265,7 @@ void Source::addExclusionZoneCallback(
   auto node = node_.lock();
   auto zone = std::make_shared<ExclusionZone>(
     node, desc.zone_name, tf_manager_, base_frame_id_, global_frame_id_,
-    transform_tolerance_, base_shift_correction_);
+    base_shift_correction_);
   if (!zone->configure(desc)) {
     response->success = false;
     response->message = "Failed to configure zone '" + desc.zone_name + "'";

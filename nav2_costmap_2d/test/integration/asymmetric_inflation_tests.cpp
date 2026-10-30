@@ -110,7 +110,6 @@ static rclcpp::NodeOptions makeNodeOptions(
     rclcpp::Parameter("lethal_cost_threshold", 100),
     rclcpp::Parameter("unknown_cost_value", static_cast<unsigned char>(0xff)),
     rclcpp::Parameter("trinary_costmap", true),
-    rclcpp::Parameter("transform_tolerance", 0.3),
     rclcpp::Parameter("observation_sources", std::string("")),
   };
   // Apply overrides (later entries in the vector take precedence via parameter_overrides)

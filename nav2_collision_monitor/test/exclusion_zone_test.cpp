@@ -331,7 +331,7 @@ protected:
   {
     return std::make_shared<nav2_collision_monitor::ExclusionZone>(
       node_, ZONE_NAME, tf_manager_, BASE_FRAME_ID, GLOBAL_FRAME_ID,
-      TRANSFORM_TOLERANCE, base_shift_correction);
+      base_shift_correction);
   }
 
   std::shared_ptr<TestNode> node_;

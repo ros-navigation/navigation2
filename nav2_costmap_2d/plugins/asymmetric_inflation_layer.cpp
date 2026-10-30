@@ -77,9 +77,6 @@ AsymmetricInflationLayer::onInitialize()
     transform_staleness_threshold_ = node->declare_or_get_parameter(
       name_ + "." + "transform_staleness_threshold", 0.0);
 
-    // Get costmap2d-level parameter
-    node->get_parameter("transform_tolerance", transform_tolerance_);
-
     if (inflation_radius_ < 0.0) {
       throw std::runtime_error(
         "AsymmetricInflationLayer: inflation_radius must be >= 0");
@@ -99,10 +96,6 @@ AsymmetricInflationLayer::onInitialize()
     if (num_threads_ < -1) {
       throw std::runtime_error(
         "AsymmetricInflationLayer: num_threads must be -1 (auto) or > 0");
-    }
-    if (transform_tolerance_ < 0.0) {
-      throw std::runtime_error(
-        "AsymmetricInflationLayer: transform_tolerance must be >= 0");
     }
 
     cost_scaling_factor_ =

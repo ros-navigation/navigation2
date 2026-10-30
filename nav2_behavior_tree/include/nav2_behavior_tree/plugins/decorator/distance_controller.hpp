@@ -77,7 +77,6 @@ private:
   rclcpp::Clock::SharedPtr clock_;
 
   nav2::TransformManager::SharedPtr tf_;
-  double transform_tolerance_;
   double transform_staleness_threshold_;
 
   geometry_msgs::msg::PoseStamped start_pose_;

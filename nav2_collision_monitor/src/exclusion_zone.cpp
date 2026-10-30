@@ -38,11 +38,10 @@ ExclusionZone::ExclusionZone(
   const nav2::TransformManager::SharedPtr tf_manager,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
-  double transform_tolerance,
   const bool base_shift_correction)
 : node_(node), zone_name_(zone_name), tf_manager_(tf_manager),
   base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
-  transform_tolerance_(transform_tolerance), base_shift_correction_(base_shift_correction),
+  base_shift_correction_(base_shift_correction),
   min_height_(-std::numeric_limits<double>::max()),
   max_height_(std::numeric_limits<double>::max())
 {

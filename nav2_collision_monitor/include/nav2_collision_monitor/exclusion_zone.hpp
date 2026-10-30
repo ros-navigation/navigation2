@@ -62,7 +62,6 @@ public:
    * @param tf_manager Shared pointer to a TF manager
    * @param base_frame_id Robot base frame ID (source points are expressed in this frame)
    * @param global_frame_id Global (fixed) frame ID used to bridge the zone lookup in time
-   * @param transform_tolerance Transform tolerance
    * @param base_shift_correction Whether to correct the zone transform for base movement in time
    */
   ExclusionZone(
@@ -71,7 +70,6 @@ public:
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    double transform_tolerance,
     const bool base_shift_correction);
 
   /**
@@ -180,8 +178,6 @@ protected:
   std::string base_frame_id_;
   /// @brief Global (fixed) frame ID, used to bridge the zone lookup in time
   std::string global_frame_id_;
-  /// @brief Transform tolerance
-  double transform_tolerance_;
   /// @brief Maximum age in seconds for the zone-frame transform
   double transform_staleness_threshold_{1.0};
   /// @brief Maximum age in seconds for the robot's global-frame transform

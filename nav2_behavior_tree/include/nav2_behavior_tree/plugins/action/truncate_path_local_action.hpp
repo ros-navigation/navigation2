@@ -77,9 +77,6 @@ public:
       BT::InputPort<std::string>(
         "robot_base_frame",
         "Robot base frame id"),
-      BT::InputPort<double>(
-        "transform_tolerance", 0.2,
-        "Transform lookup tolerance"),
       BT::InputPort<geometry_msgs::msg::PoseStamped>(
         "pose", "Manually specified pose to be used"
         "if overriding current robot pose"),

@@ -86,7 +86,6 @@ private:
   geometry_msgs::msg::PoseStamped start_pose_;
 
   double distance_;
-  double transform_tolerance_;
   double transform_staleness_threshold_;
   std::string global_frame_, robot_base_frame_;
 };

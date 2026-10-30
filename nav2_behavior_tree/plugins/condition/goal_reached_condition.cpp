@@ -48,7 +48,6 @@ void GoalReachedCondition::initialize()
   goal_reached_tol_ = node_->declare_or_get_parameter("goal_reached_tol", 0.25);
   tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
 
-  node_->get_parameter("transform_tolerance", transform_tolerance_);
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
 }
