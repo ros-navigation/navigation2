@@ -81,6 +81,9 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
       init_timer_->cancel();
       createLifecyclePublishers();
       createLifecycleServiceClients();
+      if (!rclcpp::ok()) {
+        return;
+      }
       createLifecycleServiceServers();
       if (autostart_) {
         init_timer_ = nav2::create_timer(
@@ -88,9 +91,15 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
           0s,
           [this]() -> void {
             init_timer_->cancel();
+            if (!rclcpp::ok()) {
+              return;
+            }
             startup();
           },
           callback_group_);
+      }
+      if (!rclcpp::ok()) {
+        return;
       }
       auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
       executor->add_callback_group(callback_group_, get_node_base_interface());
@@ -103,7 +112,26 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
 LifecycleManager::~LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Destroying %s", get_name());
+  if (rcl_preshutdown_cb_handle_) {
+    rclcpp::Context::SharedPtr context = get_node_base_interface()->get_context();
+    if (context) {
+      context->remove_pre_shutdown_callback(*(rcl_preshutdown_cb_handle_.get()));
+    }
+    rcl_preshutdown_cb_handle_.reset();
+  }
+  destroyBondTimer();
+  if (init_timer_) {
+    init_timer_->cancel();
+    init_timer_.reset();
+  }
+  if (bond_respawn_timer_) {
+    bond_respawn_timer_->cancel();
+    bond_respawn_timer_.reset();
+  }
   service_thread_.reset();
+  node_names_.clear();
+  node_map_.clear();
+  bond_map_.clear();
 }
 
 void
@@ -509,6 +537,14 @@ LifecycleManager::onRclPreshutdown()
     this->get_name());
 
   destroyBondTimer();
+  if (init_timer_) {
+    init_timer_->cancel();
+    init_timer_.reset();
+  }
+  if (bond_respawn_timer_) {
+    bond_respawn_timer_->cancel();
+    bond_respawn_timer_.reset();
+  }
 
   /*
    * Dropping the bond map is what we really need here, but we drop the others
@@ -525,8 +561,10 @@ LifecycleManager::registerRclPreshutdownCallback()
 {
   rclcpp::Context::SharedPtr context = get_node_base_interface()->get_context();
 
-  context->add_pre_shutdown_callback(
-    std::bind(&LifecycleManager::onRclPreshutdown, this)
+  rcl_preshutdown_cb_handle_ = std::make_unique<rclcpp::PreShutdownCallbackHandle>(
+    context->add_pre_shutdown_callback(
+      std::bind(&LifecycleManager::onRclPreshutdown, this)
+    )
   );
 }
 

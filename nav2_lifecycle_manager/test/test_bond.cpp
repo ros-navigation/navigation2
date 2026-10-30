@@ -184,6 +184,20 @@ TEST(LifecycleBondTest, NEGATIVE)
     client.is_active(std::chrono::nanoseconds(1000000000)));
 }
 
+TEST(LifecycleBondTest, DestructionCleanExit)
+{
+  rclcpp::NodeOptions options;
+  options.append_parameter_override(
+    "node_names",
+    std::vector<std::string>{"destruction_tester"});
+  options.append_parameter_override("autostart", false);
+
+  {
+    auto lm = std::make_shared<nav2_lifecycle_manager::LifecycleManager>(options);
+  }
+  SUCCEED();
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
