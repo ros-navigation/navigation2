@@ -154,7 +154,7 @@ protected:
   typename ActionServer::SharedPtr action_server_;
 
   // Transforms
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   // Publishers and subscribers
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;

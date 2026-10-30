@@ -37,7 +37,7 @@ void GoalIntentExtractor::configure(
   logger_ = node->get_logger();
   id_to_graph_map_ = id_to_graph_map;
   graph_ = &graph;
-  tf_ = tf;
+  tf_manager_ = tf;
   clock_ = node->get_clock();
   costmap_subscriber_ = costmap_subscriber;
   route_frame_ = route_frame;
@@ -80,7 +80,7 @@ geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
       logger_,
       "Request pose in %s frame. Converting to route server frame: %s.",
       pose.header.frame_id.c_str(), target_frame.c_str());
-    const auto pose_result = tf_->transformStampedPose(
+    const auto pose_result = tf_manager_->transformStampedPose(
       target_frame, pose, 0.1);
     if (!pose_result) {
       throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame);
@@ -118,7 +118,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   if (goal->use_start) {
     start_pose = goal->start;
   } else {
-    const auto start_pose_result = tf_->getLatestPose(
+    const auto start_pose_result = tf_manager_->getLatestPose(
       route_frame_, base_frame_, transform_staleness_threshold_);
     if (!start_pose_result) {
       throw nav2_core::RouteTFError("Failed to obtain starting pose in: " + route_frame_);

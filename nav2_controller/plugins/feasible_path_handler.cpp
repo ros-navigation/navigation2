@@ -56,7 +56,7 @@ void FeasiblePathHandler::initialize(
   node_ = parent;
   auto node = node_.lock();
   costmap_ros_ = costmap_ros;
-  tf_ = tf;
+  tf_manager_ = tf;
   transform_tolerance_ = costmap_ros_->getTransformTolerance();
   reject_unit_path_ = node->declare_or_get_parameter(
     plugin_name + ".reject_unit_path", false);
@@ -150,7 +150,7 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
 
   // let's get the pose of the robot in the frame of the plan
 
-  const auto robot_pose = tf_->transformStampedPose(
+  const auto robot_pose = tf_manager_->transformStampedPose(
     global_plan_up_to_constraint_.header.frame_id, pose,
     transform_tolerance_);
   if (!robot_pose) {
@@ -208,7 +208,7 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   unsigned int mx, my;
 
   // Uses timestamp which has already been validated for staleness
-  const auto plan_to_costmap = tf_->getStampedTransform(
+  const auto plan_to_costmap = tf_manager_->getStampedTransform(
     costmap_ros_->getGlobalFrameID(), global_plan_.header.frame_id,
     rclcpp::Time(global_pose_.header.stamp), transform_tolerance_);
   if (!plan_to_costmap) {

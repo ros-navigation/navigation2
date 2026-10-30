@@ -34,7 +34,7 @@ TransformAvailableCondition::TransformAvailableCondition(
   was_found_(false)
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
 }
 
 TransformAvailableCondition::~TransformAvailableCondition()
@@ -67,7 +67,7 @@ BT::NodeStatus TransformAvailableCondition::tick()
     return BT::NodeStatus::SUCCESS;
   }
 
-  bool found = tf_->getLatestTransform(child_frame_, parent_frame_, 0.0,
+  bool found = tf_manager_->getLatestTransform(child_frame_, parent_frame_, 0.0,
       nav2::Log::Disabled).has_value();
 
   if (found) {

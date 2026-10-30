@@ -184,7 +184,7 @@ protected:
     double & linear_vel, double & sign);
 
   nav2::LifecycleNode::WeakPtr node_;
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;

@@ -99,7 +99,7 @@ protected:
   std::string odom_topic_;
 
   // Spinning transform that can be used by the node
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 };
 
 }  // namespace nav2_bt_navigator

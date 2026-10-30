@@ -209,7 +209,7 @@ void KeepoutFilter::updateBounds(
     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
     geometry_msgs::msg::Pose mask_pose;
 
-    const auto mask_transform = tf_->getLatestTransform(
+    const auto mask_transform = tf_manager_->getLatestTransform(
       filter_mask_->header.frame_id, global_frame_, transform_staleness_threshold_);
     if (mask_transform) {
       tf2::doTransform(pose, mask_pose, *mask_transform);
@@ -275,7 +275,7 @@ void KeepoutFilter::process(
     // Filter mask and current layer are in different frames:
     // prepare frame transformation if mask_frame != global_frame_
 
-    const auto mask_transform = tf_->getLatestTransform(
+    const auto mask_transform = tf_manager_->getLatestTransform(
       mask_frame, global_frame_, transform_staleness_threshold_);
     if (!mask_transform) {
       return;

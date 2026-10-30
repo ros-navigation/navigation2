@@ -28,7 +28,7 @@ GraphSaver::GraphSaver(
   default_plugin_id_("GeoJsonGraphFileSaver")
 {
   logger_ = node->get_logger();
-  tf_ = tf;
+  tf_manager_ = tf;
   route_frame_ = frame;
 
   graph_filepath_ = node->declare_or_get_parameter(
@@ -108,7 +108,7 @@ bool GraphSaver::transformGraph(Graph & graph)
     // Find the transform to convert node from node frame to route frame
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
-      const auto transform = tf_->getLatestTransform(route_frame_, node_frame);
+      const auto transform = tf_manager_->getLatestTransform(route_frame_, node_frame);
 
       if (!transform) {
         RCLCPP_WARN(

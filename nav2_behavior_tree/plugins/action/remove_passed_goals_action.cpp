@@ -36,7 +36,7 @@ void RemovePassedGoals::initialize()
 {
   getInput("radius", viapoint_achieved_radius_);
 
-  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
@@ -62,7 +62,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   using namespace nav2_util::geometry_utils;  // NOLINT
 
-  const auto current_pose = tf_->getLatestPose(
+  const auto current_pose = tf_manager_->getLatestPose(
     goal_poses.goals[0].header.frame_id, robot_base_frame_, transform_staleness_threshold_);
   if (!current_pose) {
     return BT::NodeStatus::FAILURE;

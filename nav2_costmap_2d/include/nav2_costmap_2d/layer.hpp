@@ -183,7 +183,7 @@ public:
 protected:
   LayeredCostmap * layered_costmap_;
   std::string name_;
-  nav2::TransformManager * tf_;
+  nav2::TransformManager * tf_manager_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Clock::SharedPtr clock_;
@@ -192,7 +192,7 @@ protected:
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.
    *
-   * tf_, name_, and layered_costmap_ will all be set already when this is called.
+   * tf_manager_, name_, and layered_costmap_ will all be set already when this is called.
    */
   virtual void onInitialize() {}
 

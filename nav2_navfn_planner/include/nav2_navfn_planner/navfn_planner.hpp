@@ -198,7 +198,7 @@ protected:
   std::unique_ptr<NavFn> planner_;
 
   // TF buffer
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   // Clock
   rclcpp::Clock::SharedPtr clock_;

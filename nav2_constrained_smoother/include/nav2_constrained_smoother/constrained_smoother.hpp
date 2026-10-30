@@ -89,7 +89,7 @@ public:
     const rclcpp::Duration & max_time) override;
 
 protected:
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   rclcpp::Logger logger_ {rclcpp::get_logger("ConstrainedSmoother")};

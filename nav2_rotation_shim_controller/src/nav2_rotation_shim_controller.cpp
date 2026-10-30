@@ -47,7 +47,7 @@ void RotationShimController::configure(
   node_ = parent;
   auto node = parent.lock();
 
-  tf_ = tf;
+  tf_manager_ = tf;
   costmap_ros_ = costmap_ros;
   logger_ = node->get_logger();
   clock_ = node->get_clock();
@@ -243,7 +243,7 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt(
 geometry_msgs::msg::Pose
 RotationShimController::transformPoseToBaseFrame(const geometry_msgs::msg::PoseStamped & pt)
 {
-  const auto pt_base = tf_->transformStampedPose(
+  const auto pt_base = tf_manager_->transformStampedPose(
     costmap_ros_->getBaseFrameID(), pt,
     costmap_ros_->getTransformTolerance());
   if (!pt_base) {

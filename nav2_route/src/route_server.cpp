@@ -29,7 +29,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  tf_ = nav2::create_transform_manager(this);
+  tf_manager_ = nav2::create_transform_manager(this);
 
   auto node = shared_from_this();
   graph_vis_publisher_ =
@@ -67,21 +67,22 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
 
   try {
-    graph_loader_ = std::make_shared<GraphLoader>(node, tf_, route_frame_);
+    graph_loader_ = std::make_shared<GraphLoader>(node, tf_manager_, route_frame_);
     if (!graph_loader_->loadGraphFromParameter(graph_, id_to_graph_map_)) {
       return nav2::CallbackReturn::FAILURE;
     }
 
     goal_intent_extractor_ = std::make_shared<GoalIntentExtractor>();
     goal_intent_extractor_->configure(
-      node, graph_, &id_to_graph_map_, tf_, costmap_subscriber_, route_frame_, base_frame_);
+      node, graph_, &id_to_graph_map_, tf_manager_, costmap_subscriber_, route_frame_, base_frame_);
 
     route_planner_ = std::make_shared<RoutePlanner>();
-    route_planner_->configure(node, tf_, costmap_subscriber_);
+    route_planner_->configure(node, tf_manager_, costmap_subscriber_);
 
     route_tracker_ = std::make_shared<RouteTracker>();
     route_tracker_->configure(
-      node, tf_, costmap_subscriber_, compute_and_track_route_server_, route_frame_, base_frame_);
+      node, tf_manager_, costmap_subscriber_, compute_and_track_route_server_, route_frame_,
+        base_frame_);
 
     path_converter_ = std::make_shared<PathConverter>();
     path_converter_->configure(node);
@@ -132,7 +133,7 @@ RouteServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   goal_intent_extractor_.reset();
   graph_vis_publisher_.reset();
   route_publisher_.reset();
-  tf_.reset();
+  tf_manager_.reset();
   graph_.clear();
   return nav2::CallbackReturn::SUCCESS;
 }

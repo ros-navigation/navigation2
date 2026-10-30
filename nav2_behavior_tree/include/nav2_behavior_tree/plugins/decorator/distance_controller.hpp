@@ -76,7 +76,7 @@ private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Clock::SharedPtr clock_;
 
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   double transform_staleness_threshold_;
 
   geometry_msgs::msg::PoseStamped start_pose_;

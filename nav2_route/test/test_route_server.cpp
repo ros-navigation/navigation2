@@ -162,7 +162,7 @@ public:
     transform.child_frame_id = "base_link";
     transform.header.stamp = now();
     transform.transform.rotation.w = 1.0;
-    tf_->getRawBuffer().setTransform(transform, "test", false);
+    tf_manager_->getRawBuffer().setTransform(transform, "test", false);
   }
 };
 

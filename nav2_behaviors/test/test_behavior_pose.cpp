@@ -65,9 +65,9 @@ protected:
     node_->declare_parameter("transform_staleness_threshold", 10.0);
     // These tests exercise pose acquisition without requiring a costmap.
     node_->declare_parameter("behavior.projection_time", 0.0);
-    tf_ = std::make_shared<nav2::TransformManager>(node_, false);
+    tf_manager_ = std::make_shared<nav2::TransformManager>(node_, false);
     behavior_ = std::make_unique<Behavior>();
-    behavior_->configure(node_, "behavior", tf_, nullptr, nullptr);
+    behavior_->configure(node_, "behavior", tf_manager_, nullptr, nullptr);
     behavior_->activate();
   }
 
@@ -79,7 +79,7 @@ protected:
 
   geometry_msgs::msg::TransformStamped setTransform(double age, bool is_static = false)
   {
-    tf_->getRawBuffer().clear();
+    tf_manager_->getRawBuffer().clear();
     geometry_msgs::msg::TransformStamped transform;
     transform.header.frame_id = "odom";
     transform.child_frame_id = "base_link";
@@ -87,12 +87,12 @@ protected:
     transform.transform.translation.x = 1.0;
     transform.transform.translation.y = 2.0;
     transform.transform.rotation.w = 1.0;
-    EXPECT_TRUE(tf_->getRawBuffer().setTransform(transform, "test", is_static));
+    EXPECT_TRUE(tf_manager_->getRawBuffer().setTransform(transform, "test", is_static));
     return transform;
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::unique_ptr<Behavior> behavior_;
 };
 
@@ -155,7 +155,7 @@ TYPED_TEST(BehaviorPoseTest, RechecksPoseEachCycle)
   EXPECT_EQ(stale_result.status, nav2_behaviors::Status::FAILED);
   EXPECT_EQ(stale_result.error_code, Action::Result::TF_ERROR);
 
-  this->tf_->getRawBuffer().clear();
+  this->tf_manager_->getRawBuffer().clear();
   const auto missing_result = this->behavior_->onCycleUpdate();
   EXPECT_EQ(missing_result.status, nav2_behaviors::Status::FAILED);
   EXPECT_EQ(missing_result.error_code, Action::Result::TF_ERROR);
@@ -179,7 +179,7 @@ TYPED_TEST(BehaviorPoseTest, ZeroThresholdDisablesAgeCheck)
   this->behavior_->deactivate();
   this->behavior_->cleanup();
   this->node_->set_parameter(rclcpp::Parameter("transform_staleness_threshold", 0.0));
-  this->behavior_->configure(this->node_, "behavior", this->tf_, nullptr, nullptr);
+  this->behavior_->configure(this->node_, "behavior", this->tf_manager_, nullptr, nullptr);
   this->behavior_->activate();
 
   this->setTransform(30.0);

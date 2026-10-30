@@ -80,7 +80,7 @@ public:
 
 private:
   nav2::LifecycleNode::SharedPtr node_;
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   std::atomic<bool> was_found_;
 

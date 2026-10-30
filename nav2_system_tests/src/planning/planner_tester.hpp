@@ -86,7 +86,7 @@ public:
     const geometry_msgs::msg::PoseStamped & goal,
     nav_msgs::msg::Path & path)
   {
-    const auto start = tf_->getLatestPose("map", "base_link");
+    const auto start = tf_manager_->getLatestPose("map", "base_link");
     if (!start) {
       return false;
     }

@@ -85,7 +85,7 @@ protected:
    */
   nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   // Plugins
   pluginlib::ClassLoader<nav2_core::Behavior> plugin_loader_;

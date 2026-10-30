@@ -217,7 +217,7 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   // Look up the current path frame -> costmap frame transform
   geometry_msgs::msg::TransformStamped transform;
   if (need_transform) {
-    const auto transform_result = tf_->getLatestTransform(
+    const auto transform_result = tf_manager_->getLatestTransform(
       global_frame, path_frame, transform_staleness_threshold_, nav2::Log::Disabled);
     if (!transform_result) {
       RCLCPP_WARN_THROTTLE(

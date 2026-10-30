@@ -332,7 +332,7 @@ bool SpeedFilter::getSpeedLimitFromLookahead(
   // Transform path if not in the global frame
   nav_msgs::msg::Path transformed_path;
   if (!nav2_util::transformPathInTargetFrame(
-      *current_path_, transformed_path, *tf_, global_frame_,
+      *current_path_, transformed_path, *tf_manager_, global_frame_,
       transform_tolerance_))
   {
     RCLCPP_ERROR_THROTTLE(
@@ -420,7 +420,7 @@ void SpeedFilter::process(
     return;
   }
 
-  const auto mask_transform = tf_->getLatestTransform(
+  const auto mask_transform = tf_manager_->getLatestTransform(
     filter_mask_->header.frame_id, global_frame_, transform_staleness_threshold_);
   if (!mask_transform) {
     return;

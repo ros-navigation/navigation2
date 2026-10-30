@@ -35,7 +35,7 @@ void ThetaStarPlanner::configure(
   logger_ = node->get_logger();
   clock_ = node->get_clock();
   name_ = name;
-  tf_ = tf;
+  tf_manager_ = tf;
   global_frame_ = costmap_ros->getGlobalFrameID();
 
   // Handles storage and dynamic configuration of parameters.

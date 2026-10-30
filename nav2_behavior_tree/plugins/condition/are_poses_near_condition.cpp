@@ -37,7 +37,7 @@ ArePosesNearCondition::ArePosesNearCondition(
 void ArePosesNearCondition::initialize()
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 }
 
@@ -62,9 +62,9 @@ bool ArePosesNearCondition::arePosesNearby()
   getInput("tolerance", tol);
 
   if (pose1.header.frame_id != pose2.header.frame_id) {
-    const auto transformed_pose1 = tf_->transformStampedPose(
+    const auto transformed_pose1 = tf_manager_->transformStampedPose(
       global_frame_, pose1, transform_tolerance_);
-    const auto transformed_pose2 = tf_->transformStampedPose(
+    const auto transformed_pose2 = tf_manager_->transformStampedPose(
       global_frame_, pose2, transform_tolerance_);
     if (!transformed_pose1 || !transformed_pose2) {
       RCLCPP_ERROR(node_->get_logger(), "Failed to transform poses to the same frame");

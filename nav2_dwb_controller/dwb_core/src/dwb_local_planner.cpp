@@ -74,7 +74,7 @@ void DWBLocalPlanner::configure(
   logger_ = node->get_logger();
   clock_ = node->get_clock();
   costmap_ros_ = costmap_ros;
-  tf_ = tf;
+  tf_manager_ = tf;
   dwb_plugin_name_ = name;
 
   debug_trajectory_details_ = node->declare_or_get_parameter(

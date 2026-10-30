@@ -165,7 +165,7 @@ bool CostmapFilter::transformPose(
     in.y = global_pose.position.y;
     in.z = 0.0;
 
-    const auto global_to_mask_transform = tf_->getLatestTransform(
+    const auto global_to_mask_transform = tf_manager_->getLatestTransform(
       mask_frame, global_frame, transform_staleness_threshold_);
     if (!global_to_mask_transform) {
       return false;

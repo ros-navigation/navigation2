@@ -58,7 +58,7 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  tf_ = nav2::create_transform_manager(this);
+  tf_manager_ = nav2::create_transform_manager(this);
 
   behavior_types_.resize(behavior_ids_.size());
   if (!loadBehaviorPlugins()) {
@@ -103,7 +103,7 @@ void BehaviorServer::configureBehaviorPlugins()
     behaviors_[i]->configure(
       node,
       behavior_ids_[i],
-      tf_,
+      tf_manager_,
       local_collision_checker_,
       global_collision_checker_);
   }
@@ -145,7 +145,8 @@ void BehaviorServer::setupResourcesForBehaviorPlugins()
       shared_from_this(), local_costmap_topic);
 
     local_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-      shared_from_this(), local_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+      shared_from_this(), local_footprint_topic, *tf_manager_, robot_base_frame,
+        transform_tolerance);
 
     local_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
       *local_costmap_sub_, *local_footprint_sub_, get_name());
@@ -156,7 +157,8 @@ void BehaviorServer::setupResourcesForBehaviorPlugins()
       shared_from_this(), global_costmap_topic);
 
     global_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-      shared_from_this(), global_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+      shared_from_this(), global_footprint_topic, *tf_manager_, robot_base_frame,
+        transform_tolerance);
 
     global_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
       *global_costmap_sub_, *global_footprint_sub_, get_name());
@@ -205,7 +207,7 @@ BehaviorServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
 
   behaviors_.clear();
-  tf_.reset();
+  tf_manager_.reset();
 
   local_costmap_sub_.reset();
   global_costmap_sub_.reset();
