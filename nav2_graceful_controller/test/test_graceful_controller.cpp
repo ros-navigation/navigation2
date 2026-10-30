@@ -95,6 +95,15 @@ public:
     return nav2_graceful_controller::GracefulController::validateTargetPoseOnApproach(
       target_pose, dist_to_target, dist_to_goal, trajectory, costmap_transform, cmd_vel);
   }
+
+  bool simulateTrajectory(
+    const geometry_msgs::msg::PoseStamped & motion_target,
+    const geometry_msgs::msg::TransformStamped & costmap_transform,
+    nav_msgs::msg::Path & trajectory, geometry_msgs::msg::TwistStamped & cmd_vel)
+  {
+    return nav2_graceful_controller::GracefulController::simulateTrajectory(
+      motion_target, costmap_transform, trajectory, cmd_vel, false);
+  }
 };
 
 TEST(SmoothControlLawTest, setCurvatureConstants) {
@@ -885,6 +894,60 @@ TEST(GracefulControllerTest, computeVelocityCommandMinLookaheadNearGoal) {
     cmd_vel = controller->computeVelocityCommands(
       robot_pose, robot_velocity, &checker, transformed_global_plan, goal));
   EXPECT_GT(cmd_vel.twist.linear.x, 0.0);
+}
+
+TEST(GracefulControllerTest, simulateTrajectoryReachesTarget) {
+  auto node = std::make_shared<nav2::LifecycleNode>("testGracefulSimulation");
+  auto tf = nav2::create_transform_buffer(node);
+
+  // Create a costmap of 10x10 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  costmap_ros->declare_parameter("global_frame", rclcpp::ParameterValue("test_global_frame"));
+  costmap_ros->declare_parameter("robot_base_frame", rclcpp::ParameterValue("test_robot_frame"));
+  costmap_ros->declare_parameter("width", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("height", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("resolution", rclcpp::ParameterValue(0.05));
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  // Create controller with default parameters
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+  controller->newPathReceived(nav_msgs::msg::Path());
+
+  // Robot in the middle of the costmap
+  geometry_msgs::msg::TransformStamped costmap_transform;
+  costmap_transform.header.frame_id = "test_global_frame";
+  costmap_transform.child_frame_id = "test_robot_frame";
+  costmap_transform.transform.translation.x = 5.0;
+  costmap_transform.transform.translation.y = 5.0;
+  costmap_transform.transform.rotation.w = 1.0;
+
+  geometry_msgs::msg::PoseStamped motion_target;
+  motion_target.header.frame_id = "test_robot_frame";
+  motion_target.pose.orientation.w = 1.0;
+  nav_msgs::msg::Path trajectory;
+  geometry_msgs::msg::TwistStamped cmd_vel;
+
+  // The robot slows down near the target, but the simulation must still reach it
+  motion_target.pose.position.x = 1.0;
+  EXPECT_TRUE(controller->simulateTrajectory(motion_target, costmap_transform, trajectory,
+    cmd_vel));
+  ASSERT_FALSE(trajectory.poses.empty());
+  EXPECT_LE(
+    nav2_util::geometry_utils::euclidean_distance(
+      trajectory.poses.back().pose, motion_target.pose), 0.05);
+
+  // A wall between the robot and the target must invalidate the trajectory
+  auto costmap = costmap_ros->getCostmap();
+  unsigned int mx, my;
+  for (double y = 4.5; y <= 5.5; y += 0.05) {
+    ASSERT_TRUE(costmap->worldToMap(5.45, y, mx, my));
+    costmap->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
+  }
+  motion_target.pose.position.x = 0.5;
+  EXPECT_FALSE(
+    controller->simulateTrajectory(motion_target, costmap_transform, trajectory, cmd_vel));
 }
 
 TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
