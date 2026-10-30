@@ -18,7 +18,7 @@ namespace nav2_smac_planner
 {
 
 void ObstacleHeuristic::resetObstacleHeuristic(
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_i,
+  GridCollisionChecker * collision_checker,
   const unsigned int & start_x, const unsigned int & start_y,
   const unsigned int & goal_x, const unsigned int & goal_y,
   const bool downsample_obstacle_heuristic)
@@ -27,8 +27,8 @@ void ObstacleHeuristic::resetObstacleHeuristic(
   // the planner considerably to search through 75% less cells with no detectable
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
-  costmap_ros = costmap_ros_i;
-  auto costmap = costmap_ros->getCostmap();
+  collision_checker_ = collision_checker;
+  auto costmap = collision_checker_->getCostmap();
 
   // Clear lookup table
   unsigned int size = 0u;
@@ -80,33 +80,25 @@ float ObstacleHeuristic::getObstacleHeuristic(
   const bool use_quadratic_cost_penalty,
   const bool downsample_obstacle_heuristic)
 {
+  const float scale = downsample_obstacle_heuristic ? 2.0f : 1.0f;
+
   // If already expanded, return the cost
-  auto costmap = costmap_ros->getCostmap();
+  auto costmap = collision_checker_->getCostmap();
   unsigned int size_x = 0u;
   unsigned int size_y = 0u;
-  if (downsample_obstacle_heuristic) {
-    size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
-    size_y = ceil(static_cast<float>(costmap->getSizeInCellsY()) / 2.0f);
-  } else {
-    size_x = costmap->getSizeInCellsX();
-    size_y = costmap->getSizeInCellsY();
-  }
+  size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / scale);
+  size_y = ceil(static_cast<float>(costmap->getSizeInCellsY()) / scale);
 
   // Divided by 2 due to downsampled costmap.
   unsigned int start_y, start_x;
-  if (downsample_obstacle_heuristic) {
-    start_y = floor(node_coords.y / 2.0f);
-    start_x = floor(node_coords.x / 2.0f);
-  } else {
-    start_y = floor(node_coords.y);
-    start_x = floor(node_coords.x);
-  }
+  start_y = floor(node_coords.y / scale);
+  start_x = floor(node_coords.x / scale);
 
   const unsigned int start_index = start_y * size_x + start_x;
   const float & requested_node_cost = obstacle_heuristic_lookup_table_[start_index];
   if (requested_node_cost > 0.0f) {
     // costs are doubled due to downsampling
-    return downsample_obstacle_heuristic ? 2.0f * requested_node_cost : requested_node_cost;
+    return scale * requested_node_cost;
   }
 
   // If not, expand until it is included. This dynamic programming ensures that
@@ -182,10 +174,6 @@ float ObstacleHeuristic::getObstacleHeuristic(
           cost = static_cast<float>(costmap->getCost(new_idx));
         }
 
-        if (cost >= INSCRIBED_COST) {
-          continue;
-        }
-
         my = new_idx / size_x;
         mx = new_idx - (my * size_x);
 
@@ -193,6 +181,11 @@ float ObstacleHeuristic::getObstacleHeuristic(
           continue;
         }
         if (my >= size_y - 3 || my <= 3) {
+          continue;
+        }
+
+        // Check the cell center cost if exceeds max cost
+        if (collision_checker_->exceedsMaxCost(cost, scale * (mx + 0.5f), scale * (my + 0.5f))) {
           continue;
         }
 
@@ -224,7 +217,7 @@ float ObstacleHeuristic::getObstacleHeuristic(
       break;
     }
   }
-  return downsample_obstacle_heuristic ? 2.0f * requested_node_cost : requested_node_cost;
+  return scale * requested_node_cost;
 }
 
 }  // namespace nav2_smac_planner

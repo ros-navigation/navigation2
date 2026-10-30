@@ -20,6 +20,7 @@
 #include <memory>
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"
+#include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 namespace nav2_smac_planner
@@ -55,11 +56,11 @@ public:
 
   /**
    * @brief Compute the wavefront heuristic
-   * @param costmap Costmap to use
+   * @param collision_checker Collision checker for the costmap and max traversal cost
    * @param goal_coords Coordinates to start heuristic expansion at
    */
   void resetObstacleHeuristic(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_i,
+    GridCollisionChecker * collision_checker,
     const unsigned int & start_x, const unsigned int & start_y,
     const unsigned int & goal_x, const unsigned int & goal_y,
     const bool downsample_obstacle_heuristic);
@@ -88,7 +89,7 @@ public:
 protected:
   LookupTable obstacle_heuristic_lookup_table_;
   ObstacleHeuristicQueue obstacle_heuristic_queue_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
+  GridCollisionChecker * collision_checker_{nullptr};
 };
 
 }  // namespace nav2_smac_planner
