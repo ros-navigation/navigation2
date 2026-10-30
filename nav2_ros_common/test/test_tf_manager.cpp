@@ -107,16 +107,16 @@ TEST_F(TransformManagerTest, PoseTransformConversionsPreserveHeaderAndGeometry)
   auto transform = buffer_.getLatestTransform("odom", "base_link");
   ASSERT_TRUE(transform.has_value());
 
-  const auto pose = nav2::TransformManager::transformToPoseStamped(*transform);
+  const auto pose = buffer_.transformToPoseStamped(*transform);
   EXPECT_EQ(pose.header, transform->header);
   EXPECT_DOUBLE_EQ(pose.pose.position.x, 1.0);
   EXPECT_DOUBLE_EQ(pose.pose.position.y, 2.0);
   EXPECT_DOUBLE_EQ(pose.pose.position.z, 3.0);
   EXPECT_EQ(pose.pose.orientation, transform->transform.rotation);
   EXPECT_EQ(
-    nav2::TransformManager::poseToTransformStamped(pose, transform->child_frame_id), *transform);
+    buffer_.poseToTransformStamped(pose, transform->child_frame_id), *transform);
   EXPECT_EQ(
-    nav2::TransformManager::poseToTransformStamped(pose, "other_child").child_frame_id,
+    buffer_.poseToTransformStamped(pose, "other_child").child_frame_id,
     "other_child");
 }
 
@@ -357,7 +357,7 @@ TEST_F(TransformManagerTest, OwnedBufferUsesProvidedClockForStaleness)
 {
   nav2::TransformManager owned(node_, false);
   ASSERT_TRUE(owned.getRawBuffer().setTransform(
-      nav2::TransformManager::poseToTransformStamped(makePose(9), "sensor"), "test"));
+      owned.poseToTransformStamped(makePose(9), "sensor"), "test"));
   EXPECT_TRUE(owned.getLatestTransform("base_link", "sensor", 1.0));
   setTime(rclcpp::Time(11, 0, RCL_ROS_TIME));
   EXPECT_EQ(owned.getLatestTransform("base_link", "sensor", 1.0), std::nullopt);
@@ -377,11 +377,11 @@ TEST_F(TransformManagerTest, InversePreservesTimestampAndExchangesFrames)
   addTransform(9, 1.0);
   const auto transform = buffer_.getLatestTransform("odom", "base_link");
   ASSERT_TRUE(transform);
-  const auto inverse = nav2::TransformManager::invertTransform(*transform);
+  const auto inverse = buffer_.invertTransform(*transform);
   EXPECT_EQ(inverse.header.frame_id, transform->child_frame_id);
   EXPECT_EQ(inverse.child_frame_id, transform->header.frame_id);
   EXPECT_EQ(inverse.header.stamp, transform->header.stamp);
-  const auto restored = nav2::TransformManager::invertTransform(inverse);
+  const auto restored = buffer_.invertTransform(inverse);
   EXPECT_NEAR(restored.transform.translation.x, transform->transform.translation.x, 1e-12);
   EXPECT_NEAR(restored.transform.translation.y, transform->transform.translation.y, 1e-12);
   EXPECT_NEAR(restored.transform.translation.z, transform->transform.translation.z, 1e-12);

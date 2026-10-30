@@ -160,11 +160,6 @@ nav2::CallbackReturn
 BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
-
-  // Reset the listener before the buffer
-  if (tf_) {
-    tf_->stopListener();
-  }
   tf_.reset();
 
   for (size_t i = 0; i != navigators_.size(); i++) {

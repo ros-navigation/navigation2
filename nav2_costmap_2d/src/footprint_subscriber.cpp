@@ -63,7 +63,7 @@ FootprintSubscriber::getFootprintInRobotFrame(
   if (!current_pose_transform) {
     return false;
   }
-  current_pose = nav2::TransformManager::transformToPoseStamped(*current_pose_transform);
+  current_pose = tf_.transformToPoseStamped(*current_pose_transform);
 
   double x = current_pose.pose.position.x;
   double y = current_pose.pose.position.y;
