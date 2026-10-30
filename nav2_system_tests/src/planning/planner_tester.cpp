@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <cmath>
 #include <string>
 #include <random>
 #include <tuple>
@@ -483,13 +482,15 @@ bool PlannerTester::isWithinTolerance(
   auto path_start = path.poses[0];
   auto path_end = path.poses.end()[-1];
 
-  // The path starts at the center of the robot's cell
-  const double start_tolerance = 0.5 * std::sqrt(2.0) * costmap_->get_properties().resolution;
+  // The path starts in the robot's cell
+  auto costmap = planner_tester_->getCostmap();
+  unsigned int robot_mx, robot_my, start_mx, start_my;
 
   if (
-    std::hypot(
-      path_start.pose.position.x - robot_position.x,
-      path_start.pose.position.y - robot_position.y) <= start_tolerance + 1e-6 &&
+    costmap->worldToMap(robot_position.x, robot_position.y, robot_mx, robot_my) &&
+    costmap->worldToMap(
+      path_start.pose.position.x, path_start.pose.position.y, start_mx, start_my) &&
+    start_mx == robot_mx && start_my == robot_my &&
     path_end.pose.position.x == goal.pose.position.x &&
     path_end.pose.position.y == goal.pose.position.y)
   {
