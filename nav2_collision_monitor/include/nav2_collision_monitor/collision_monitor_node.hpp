@@ -134,7 +134,7 @@ protected:
    */
   bool configurePolygons(
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance);
+    double transform_tolerance);
   /**
    * @brief Supporting routine creating and configuring all data sources
    * @param base_frame_id Robot base frame ID
@@ -149,7 +149,7 @@ protected:
   bool configureSources(
     const std::string & base_frame_id,
     const std::string & odom_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & source_timeout,
     const bool base_shift_correction);
 

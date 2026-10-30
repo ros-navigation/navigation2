@@ -63,9 +63,9 @@ bool ArePosesNearCondition::arePosesNearby()
 
   if (pose1.header.frame_id != pose2.header.frame_id) {
     const auto transformed_pose1 = tf_->transformStampedPose(
-      global_frame_, pose1, tf2::durationFromSec(transform_tolerance_));
+      global_frame_, pose1, transform_tolerance_);
     const auto transformed_pose2 = tf_->transformStampedPose(
-      global_frame_, pose2, tf2::durationFromSec(transform_tolerance_));
+      global_frame_, pose2, transform_tolerance_);
     if (!transformed_pose1 || !transformed_pose2) {
       RCLCPP_ERROR(node_->get_logger(), "Failed to transform poses to the same frame");
       return false;

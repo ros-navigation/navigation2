@@ -297,7 +297,7 @@ AmclNode::getOdomPose(
 {
   // Get the robot's pose at the sensor timestamp.
   const auto odom_pose_transform = tf_manager_->getStampedTransform(
-    odom_frame_id_, frame_id, sensor_timestamp, tf2::Duration::zero(), nav2::Log::Disabled);
+    odom_frame_id_, frame_id, sensor_timestamp, 0.0, nav2::Log::Disabled);
   if (!odom_pose_transform) {
     ++scan_error_count_;
     if (scan_error_count_ % 20 == 0) {
@@ -454,7 +454,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
   // Check if the transform is available
   const auto tx_odom_result = tf_manager_->getStampedTransform(
     base_frame_id_, rclcpp::Time(msg.header.stamp), base_frame_id_, rclcpp_time,
-    odom_frame_id_, tf2::Duration::zero());
+    odom_frame_id_, 0.0);
   if (!tx_odom_result) {
     // If we've never sent a transform, then this is normal, because the
     // global_frame_id_ frame doesn't exist.  We only care about in-time
@@ -605,7 +605,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         // We want to send a transform that is good up until a
         // tolerance time so that odom can be used
         auto stamp = tf2_ros::fromMsg(laser_scan->header.stamp);
-        tf2::TimePoint transform_expiration = stamp + transform_tolerance_;
+        tf2::TimePoint transform_expiration = stamp + tf2::durationFromSec(transform_tolerance_);
         sendMapToOdomTransform(transform_expiration);
         sent_first_transform_ = true;
       }
@@ -617,7 +617,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       // Nothing changed, so we'll just republish the last transform, to keep
       // everybody happy.
       tf2::TimePoint transform_expiration = tf2_ros::fromMsg(laser_scan->header.stamp) +
-        transform_tolerance_;
+        tf2::durationFromSec(transform_tolerance_);
       sendMapToOdomTransform(transform_expiration);
     }
   }
@@ -690,7 +690,7 @@ bool AmclNode::updateFilter(
   inc_q.header = min_q.header;
   inc_q.quaternion = orientationAroundZAxis(laser_scan->angle_min + laser_scan->angle_increment);
   const auto min_q_transform = tf_manager_->getStampedTransform(
-    base_frame_id_, min_q.header.frame_id, rclcpp::Time(min_q.header.stamp), tf2::Duration::zero());
+    base_frame_id_, min_q.header.frame_id, rclcpp::Time(min_q.header.stamp), 0.0);
   if (!min_q_transform) {
     RCLCPP_WARN(
       get_logger(), "Unable to transform min/max laser angles into base frame");
@@ -892,7 +892,7 @@ AmclNode::calculateMaptoOdomTransform(
   tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
   const auto odom_to_map = tf_manager_->transformStampedPose(
-    odom_frame_id_, tmp_tf_stamped, tf2::Duration::zero(), nav2::Log::Disabled);
+    odom_frame_id_, tmp_tf_stamped, 0.0, nav2::Log::Disabled);
   if (!odom_to_map) {
     RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform:");
     return;
@@ -941,8 +941,6 @@ AmclNode::createLaserObject()
 void
 AmclNode::initParameters()
 {
-  double tmp_tol;
-
   alpha1_ = this->declare_or_get_parameter("alpha1", 0.2);
   alpha2_ = this->declare_or_get_parameter("alpha2", 0.2);
   alpha3_ = this->declare_or_get_parameter("alpha3", 0.2);
@@ -982,7 +980,7 @@ AmclNode::initParameters()
     "saved_pose_filepath", std::string("/tmp/amcl_saved_pose"));
   sigma_hit_ = this->declare_or_get_parameter("sigma_hit", 0.2);
   tf_broadcast_ = this->declare_or_get_parameter("tf_broadcast", true);
-  tmp_tol = this->declare_or_get_parameter("transform_tolerance", 1.0);
+  transform_tolerance_ = this->declare_or_get_parameter("transform_tolerance", 1.0);
   a_thresh_ = this->declare_or_get_parameter("update_min_a", 0.2);
   d_thresh_ = this->declare_or_get_parameter("update_min_d", 0.25);
   z_hit_ = this->declare_or_get_parameter("z_hit", 0.5);
@@ -998,7 +996,6 @@ AmclNode::initParameters()
     "allow_parameter_qos_overrides", true);
   random_seed_ = this->declare_or_get_parameter("random_seed", -1);
 
-  transform_tolerance_ = tf2::durationFromSec(tmp_tol);
   last_time_printed_msg_ = now();
 
   // Semantic checks
@@ -1165,8 +1162,7 @@ AmclNode::updateParametersCallback(
         sigma_hit_ = parameter.as_double();
         reinit_laser = true;
       } else if (param_name == "transform_tolerance") {
-        double tmp_tol = parameter.as_double();
-        transform_tolerance_ = tf2::durationFromSec(tmp_tol);
+        transform_tolerance_ = parameter.as_double();
         reinit_laser = true;
       } else if (param_name == "update_min_a") {
         a_thresh_ = parameter.as_double();

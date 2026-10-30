@@ -138,7 +138,7 @@ bool ClearCostmapService::clearAroundPose(
   const std::vector<std::string> & plugins)
 {
   const auto global_pose = costmap_.getTfManager()->transformStampedPose(
-    costmap_.getGlobalFrameID(), pose, tf2::Duration::zero());
+    costmap_.getGlobalFrameID(), pose, 0.0);
   if (!global_pose) {
     RCLCPP_ERROR(
       logger_, "Cannot clear map around pose because pose cannot be transformed to costmap frame");

@@ -259,7 +259,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   for (auto & goal_pose : goals_array.goals) {
     const auto goal_pose_result = feedback_utils_.tf->transformStampedPose(
       feedback_utils_.global_frame, goal_pose,
-      tf2::durationFromSec(feedback_utils_.transform_tolerance));
+      feedback_utils_.transform_tolerance);
     if (!goal_pose_result) {
       bt_action_server_->setInternalError(
         ActionT::Result::TF_ERROR,

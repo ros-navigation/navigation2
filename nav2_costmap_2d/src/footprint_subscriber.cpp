@@ -59,7 +59,7 @@ FootprintSubscriber::getFootprintInRobotFrame(
   geometry_msgs::msg::PoseStamped current_pose;
   const auto current_pose_transform = tf_.getStampedTransform(
     footprint_header.frame_id, robot_base_frame_, rclcpp::Time(footprint_header.stamp),
-    tf2::durationFromSec(transform_tolerance_));
+    transform_tolerance_);
   if (!current_pose_transform) {
     return false;
   }

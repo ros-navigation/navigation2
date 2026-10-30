@@ -85,7 +85,7 @@ public:
     double raytrace_max_range, double raytrace_min_range, nav2::TransformManager & tf_manager,
     std::string global_frame,
     std::string sensor_frame,
-    tf2::Duration tf_tolerance);
+    double tf_tolerance);
 
   /**
    * @brief  Transforms a PointCloud to the global frame and buffers it
@@ -146,7 +146,7 @@ private:
   double min_obstacle_height_, max_obstacle_height_;
   std::recursive_mutex lock_;  ///< @brief A lock for accessing data in callbacks safely
   double obstacle_max_range_, obstacle_min_range_, raytrace_max_range_, raytrace_min_range_;
-  tf2::Duration tf_tolerance_;
+  double tf_tolerance_;
 };
 }  // namespace nav2_costmap_2d
 #endif  // NAV2_COSTMAP_2D__OBSERVATION_BUFFER_HPP_

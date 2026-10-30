@@ -51,7 +51,7 @@ static const char ZONE_FRAME_ID[]{"zone_frame"};
 static const char MISSING_FRAME_ID[]{"missing_frame"};
 static const char ZONE_NAME[]{"dock"};
 static const char SOURCE_NAME[]{"TestSource"};
-static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.5)};
+static const double TRANSFORM_TOLERANCE{0.5};
 static const rclcpp::Duration SOURCE_TIMEOUT{rclcpp::Duration::from_seconds(5.0)};
 
 // A square polygon (in VVF format) spanning x, y in [-1, 1].

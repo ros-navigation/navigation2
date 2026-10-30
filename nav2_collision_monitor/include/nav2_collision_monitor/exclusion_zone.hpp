@@ -71,7 +71,7 @@ public:
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const bool base_shift_correction);
 
   /**
@@ -181,7 +181,7 @@ protected:
   /// @brief Global (fixed) frame ID, used to bridge the zone lookup in time
   std::string global_frame_id_;
   /// @brief Transform tolerance
-  tf2::Duration transform_tolerance_;
+  double transform_tolerance_;
   /// @brief Maximum age in seconds for the zone-frame transform
   double transform_staleness_threshold_{1.0};
   /// @brief Maximum age in seconds for the robot's global-frame transform

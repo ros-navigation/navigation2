@@ -37,7 +37,7 @@ Polygon::Polygon(
   const std::string & polygon_name,
   const nav2::TransformManager::SharedPtr tf_manager,
   const std::string & base_frame_id,
-  const tf2::Duration & transform_tolerance)
+  double transform_tolerance)
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
   slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
   footprint_sub_(nullptr), tf_manager_(tf_manager),
@@ -88,7 +88,7 @@ bool Polygon::configure()
       polygon_name_.c_str(), footprint_topic.c_str());
     footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
       node, footprint_topic, *tf_manager_,
-      base_frame_id_, tf2::durationToSec(transform_tolerance_));
+      base_frame_id_, transform_tolerance_);
   }
 
   if (visualize_) {

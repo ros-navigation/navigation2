@@ -352,7 +352,7 @@ public:
    * @param source_frame Frame to transform from.
    * @param stamp Lookup timestamp in the TF time domain. Zero requests the latest
    *   common time along the TF chain, without a staleness check.
-   * @param transform_tolerance Maximum lookup wait duration; must be nonnegative.
+   * @param transform_tolerance Maximum lookup wait duration in seconds; must be nonnegative.
    *   Zero performs the lookup without waiting. This does not permit timestamp
    *   error or extrapolation.
    * @param log Enable or disable failure diagnostics for this call and nested lookups.
@@ -362,10 +362,10 @@ public:
     const std::string & target_frame,
     const std::string & source_frame,
     const rclcpp::Time & stamp,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     Log log = Log::Enabled) const
   {
-    if (transform_tolerance < tf2::Duration::zero()) {
+    if (transform_tolerance < 0.0) {
       RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
           "Transform tolerance must be nonnegative (target frame '%s')",
         target_frame.c_str());
@@ -379,7 +379,7 @@ public:
     } else {
       try {
         result = buffer_->lookupTransform(
-          target_frame, source_frame, stamp, tf2_ros::toRclcpp(transform_tolerance));
+          target_frame, source_frame, stamp, rclcpp::Duration::from_seconds(transform_tolerance));
       } catch (const tf2::TransformException & ex) {
         RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
             "Failed to get transform from '%s' to '%s': %s",
@@ -409,7 +409,7 @@ public:
    * @param source_time Source timestamp in the TF time domain; zero requests the
    *   latest available transform between source_frame and fixed_frame.
    * @param fixed_frame Frame assumed constant across the two timestamps.
-   * @param transform_tolerance Maximum lookup wait duration; must be nonnegative.
+   * @param transform_tolerance Maximum lookup wait duration in seconds; must be nonnegative.
    *   Zero performs the lookup without waiting.
    * @param log Enable or disable failure diagnostics for this call and nested lookups.
    * @return Transform on success; std::nullopt on TF failure or invalid arguments.
@@ -420,10 +420,10 @@ public:
     const std::string & source_frame,
     const rclcpp::Time & source_time,
     const std::string & fixed_frame,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     Log log = Log::Enabled) const
   {
-    if (transform_tolerance < tf2::Duration::zero()) {
+    if (transform_tolerance < 0.0) {
       RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
           "Transform tolerance must be nonnegative (target frame '%s')",
         target_frame.c_str());
@@ -433,7 +433,7 @@ public:
     try {
       result = buffer_->lookupTransform(
         target_frame, target_time, source_frame, source_time, fixed_frame,
-        tf2_ros::toRclcpp(transform_tolerance));
+        rclcpp::Duration::from_seconds(transform_tolerance));
     } catch (const tf2::TransformException & ex) {
       RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
         "Failed to get transform from '%s' at %.9f to '%s' at %.9f via '%s': %s",
@@ -453,7 +453,7 @@ public:
    *
    * @param target_frame Frame in which to express the input pose.
    * @param input Pose to transform; unchanged on success or failure.
-   * @param transform_tolerance Maximum lookup wait duration; must be nonnegative.
+   * @param transform_tolerance Maximum lookup wait duration in seconds; must be nonnegative.
    *   Zero performs the lookup without waiting. This does not permit timestamp
    *   error or extrapolation.
    * @param log Enable or disable failure diagnostics for this call and nested lookups.
@@ -462,10 +462,10 @@ public:
   [[nodiscard]] std::optional<geometry_msgs::msg::PoseStamped> transformStampedPose(
     const std::string & target_frame,
     const geometry_msgs::msg::PoseStamped & input,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     Log log = Log::Enabled) const
   {
-    if (transform_tolerance < tf2::Duration::zero()) {
+    if (transform_tolerance < 0.0) {
       RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
           "Transform tolerance must be nonnegative (target frame '%s')",
         target_frame.c_str());

@@ -229,7 +229,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
             "Provided a detection pose without a timestamp, unexpected");
     }
     const auto detected_pose = tf_manager_->transformStampedPose(
-      pose.header.frame_id, detected, tf2::durationFromSec(0.2));
+      pose.header.frame_id, detected, 0.2);
     if (!detected_pose) {
       RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
       return false;

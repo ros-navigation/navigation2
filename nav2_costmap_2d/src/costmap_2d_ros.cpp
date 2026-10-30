@@ -769,7 +769,7 @@ Costmap2DROS::transformPoseToGlobalFrame(
   geometry_msgs::msg::PoseStamped & transformed_pose)
 {
   const auto result = tf_manager_->transformStampedPose(
-    global_frame_, input_pose, tf2::durationFromSec(transform_tolerance_));
+    global_frame_, input_pose, transform_tolerance_);
   if (!result) {
     return false;
   }
@@ -821,7 +821,7 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
       RCLCPP_INFO(get_logger(), "Checking transform");
       if (!tf_manager_->getStampedTransform(
         global_frame_, parameter.as_string(), rclcpp::Time(0),
-          tf2::durationFromSec(1.0), nav2::Log::Disabled).has_value())
+          1.0, nav2::Log::Disabled).has_value())
       {
         RCLCPP_WARN(
           get_logger(), "Timed out waiting for transform from %s to %s"

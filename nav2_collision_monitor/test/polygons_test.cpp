@@ -76,7 +76,7 @@ static const double LINEAR_LIMIT{0.4};
 static const double ANGULAR_LIMIT{0.09};
 static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
-static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
+static const double TRANSFORM_TOLERANCE{0.1};
 
 class TestNode : public nav2::LifecycleNode
 {
@@ -190,7 +190,7 @@ public:
     const std::string & polygon_name,
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance)
+    double transform_tolerance)
   : nav2_collision_monitor::Polygon(
       node, polygon_name, tf_manager, base_frame_id, transform_tolerance)
   {
@@ -215,7 +215,7 @@ public:
     const std::string & polygon_name,
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance)
+    double transform_tolerance)
   : nav2_collision_monitor::Circle(
       node, polygon_name, tf_manager, base_frame_id, transform_tolerance)
   {

@@ -156,7 +156,7 @@ private:
   {
     auto transformAvailable = [this]()-> bool {
         return costmap_->getTfManager()->getStampedTransform(
-          "map", "base_link", rclcpp::Time(0), 1s, nav2::Log::Disabled).has_value();
+          "map", "base_link", rclcpp::Time(0), 1.0, nav2::Log::Disabled).has_value();
       };
 
     rclcpp::Time start_time = costmap_->now();

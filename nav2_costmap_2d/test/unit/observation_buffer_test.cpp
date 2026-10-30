@@ -106,7 +106,7 @@ protected:
   nav2::TransformManager tf_manager_{node_, false};
   nav2_costmap_2d::ObservationBuffer buffer_{node_, "/observations", 10.0, 0.1, 0.0,
     std::numeric_limits<double>::max(), 10.0, 1.0, 5.0, 2.0, tf_manager_, global_frame_,
-    sensor_frame_, tf2::Duration{0}};
+    sensor_frame_, 0.0};
 };
 
 TEST_F(ObservationBufferFixture, isCurrent)

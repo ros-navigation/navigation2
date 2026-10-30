@@ -152,7 +152,7 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
 
   const auto robot_pose = tf_->transformStampedPose(
     global_plan_up_to_constraint_.header.frame_id, pose,
-    tf2::durationFromSec(transform_tolerance_));
+    transform_tolerance_);
   if (!robot_pose) {
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
   }
@@ -210,7 +210,7 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   // Uses timestamp which has already been validated for staleness
   const auto plan_to_costmap = tf_->getStampedTransform(
     costmap_ros_->getGlobalFrameID(), global_plan_.header.frame_id,
-    rclcpp::Time(global_pose_.header.stamp), tf2::durationFromSec(transform_tolerance_));
+    rclcpp::Time(global_pose_.header.stamp), transform_tolerance_);
   if (!plan_to_costmap) {
     throw nav2_core::ControllerTFError(
       "Unable to transform global plan into costmap frame");
@@ -269,7 +269,7 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::getTransformedGoal(
   }
 
   const auto transformed_goal = costmap_ros_->getTfManager()->transformStampedPose(
-    costmap_ros_->getGlobalFrameID(), goal, tf2::durationFromSec(transform_tolerance_));
+    costmap_ros_->getGlobalFrameID(), goal, transform_tolerance_);
   if (!transformed_goal) {
     throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
   }

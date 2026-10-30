@@ -53,8 +53,6 @@ void
 AsymmetricInflationLayer::onInitialize()
 {
   {
-    double temp_tf_tol = 0.0;
-
     auto node = node_.lock();
     if (!node) {
       throw std::runtime_error{"Failed to lock node"};
@@ -80,8 +78,7 @@ AsymmetricInflationLayer::onInitialize()
       name_ + "." + "transform_staleness_threshold", 0.0);
 
     // Get costmap2d-level parameter
-    node->get_parameter("transform_tolerance", temp_tf_tol);
-    transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+    node->get_parameter("transform_tolerance", transform_tolerance_);
 
     if (inflation_radius_ < 0.0) {
       throw std::runtime_error(
@@ -103,7 +100,7 @@ AsymmetricInflationLayer::onInitialize()
       throw std::runtime_error(
         "AsymmetricInflationLayer: num_threads must be -1 (auto) or > 0");
     }
-    if (temp_tf_tol < 0.0) {
+    if (transform_tolerance_ < 0.0) {
       throw std::runtime_error(
         "AsymmetricInflationLayer: transform_tolerance must be >= 0");
     }

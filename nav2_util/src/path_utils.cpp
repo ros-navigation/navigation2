@@ -107,7 +107,7 @@ bool transformPathInTargetFrame(
 
   const auto transform_result = tf_manager.getStampedTransform(
     target_frame, input_path.header.frame_id, rclcpp::Time(input_path.header.stamp),
-    tf2::durationFromSec(transform_timeout));
+    transform_timeout);
   if (!transform_result) {
     RCLCPP_ERROR(
       logger,

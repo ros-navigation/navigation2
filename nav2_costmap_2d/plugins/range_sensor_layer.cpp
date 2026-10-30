@@ -86,9 +86,7 @@ void RangeSensorLayer::onInitialize()
   clear_on_max_reading_ = node->declare_or_get_parameter(
     name_ + "." + "clear_on_max_reading", false);
 
-  double temp_tf_tol = 0.0;
-  node->get_parameter("transform_tolerance", temp_tf_tol);
-  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+  node->get_parameter("transform_tolerance", transform_tolerance_);
 
   std::vector<std::string> topic_names = node->declare_or_get_parameter(
     name_ + "." + "topics", std::vector<std::string>{});
@@ -300,7 +298,7 @@ void RangeSensorLayer::updateCostmap(
 
   const auto transform_result = tf_->getStampedTransform(
     global_frame_, in.header.frame_id, rclcpp::Time(in.header.stamp),
-    tf2_ros::fromRclcpp(transform_tolerance_));
+    transform_tolerance_);
   if (!transform_result) {
     RCLCPP_INFO(
       logger_, "Range sensor layer can't transform from %s to %s",

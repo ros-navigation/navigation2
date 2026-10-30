@@ -93,11 +93,11 @@ TEST_F(TransformManagerTest, QuietLookupsRespectTimestamp)
   EXPECT_TRUE(tf_manager_.getLatestTransform("odom", "base_link", 0.0,
     nav2::Log::Disabled).has_value());
   EXPECT_TRUE(tf_manager_.getStampedTransform("odom", "base_link", rclcpp::Time(9, 0),
-    tf2::Duration::zero(), nav2::Log::Disabled).has_value());
+    0.0, nav2::Log::Disabled).has_value());
   EXPECT_FALSE(tf_manager_.getStampedTransform("odom", "base_link", rclcpp::Time(7, 0),
-    tf2::Duration::zero(), nav2::Log::Disabled).has_value());
+    0.0, nav2::Log::Disabled).has_value());
   EXPECT_FALSE(tf_manager_.getStampedTransform(
-      "odom", "base_link", now_, tf2::durationFromSec(-0.1), nav2::Log::Disabled).has_value());
+      "odom", "base_link", now_, -0.1, nav2::Log::Disabled).has_value());
   EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
 }
 
@@ -147,7 +147,7 @@ TEST_F(TransformManagerTest, SameFrameIdentity)
 
   const rclcpp::Time stamp(5, 123, RCL_ROS_TIME);
   result = tf_manager_.getStampedTransform("base_link", "base_link", stamp,
-    tf2::Duration::zero());
+    0.0);
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(rclcpp::Time(result->header.stamp), stamp);
 }
@@ -175,15 +175,15 @@ TEST_F(TransformManagerTest, StampedLookupInterpolatesHistoricalTransform)
   addTransform(4, 4.0);
   const rclcpp::Time stamp(3, 0, RCL_ROS_TIME);
   auto result = tf_manager_.getStampedTransform("odom", "base_link", stamp,
-    tf2::Duration::zero());
+    0.0);
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(rclcpp::Time(result->header.stamp), stamp);
   EXPECT_DOUBLE_EQ(result->transform.translation.x, 3.0);
   EXPECT_EQ(
-    tf_manager_.getStampedTransform("odom", "base_link", now_, tf2::Duration::zero()),
+    tf_manager_.getStampedTransform("odom", "base_link", now_, 0.0),
     std::nullopt);
   EXPECT_EQ(
-    tf_manager_.getStampedTransform("odom", "missing", stamp, tf2::Duration::zero()),
+    tf_manager_.getStampedTransform("odom", "missing", stamp, 0.0),
     std::nullopt);
 }
 
@@ -193,18 +193,18 @@ TEST_F(TransformManagerTest, ZeroStampLooksUpLatestTransform)
   addTransform(4, 4.0);
   const rclcpp::Time zero(0, 0, RCL_ROS_TIME);
   auto result = tf_manager_.getStampedTransform("odom", "base_link", zero,
-    tf2::Duration::zero());
+    0.0);
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(result->header.frame_id, "odom");
   EXPECT_EQ(result->child_frame_id, "base_link");
   EXPECT_EQ(result->header.stamp.sec, 4);
   EXPECT_DOUBLE_EQ(result->transform.translation.x, 4.0);
   EXPECT_EQ(
-    tf_manager_.getStampedTransform("odom", "missing", zero, tf2::Duration::zero()),
+    tf_manager_.getStampedTransform("odom", "missing", zero, 0.0),
     std::nullopt);
 
   result = tf_manager_.getStampedTransform("base_link", "base_link", zero,
-    tf2::Duration::zero());
+    0.0);
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(rclcpp::Time(result->header.stamp), zero);
   EXPECT_DOUBLE_EQ(result->transform.translation.x, 0.0);
@@ -218,7 +218,7 @@ TEST_F(TransformManagerTest, DifferentTimesInSameFrameAreNotIdentity)
   const rclcpp::Time source_time(2, 0, RCL_ROS_TIME);
   const rclcpp::Time target_time(4, 0, RCL_ROS_TIME);
   auto result = tf_manager_.getStampedTransform(
-    "base_link", target_time, "base_link", source_time, "odom", tf2::Duration::zero());
+    "base_link", target_time, "base_link", source_time, "odom", 0.0);
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(result->header.frame_id, "base_link");
   EXPECT_EQ(result->child_frame_id, "base_link");
@@ -228,10 +228,10 @@ TEST_F(TransformManagerTest, DifferentTimesInSameFrameAreNotIdentity)
   EXPECT_NEAR(result->transform.translation.y, 1.92, 1e-12);
   EXPECT_NEAR(result->transform.rotation.w, 1.0, 1e-12);
   EXPECT_EQ(tf_manager_.getStampedTransform(
-    "base_link", now_, "base_link", source_time, "odom", tf2::Duration::zero()),
+    "base_link", now_, "base_link", source_time, "odom", 0.0),
     std::nullopt);
   EXPECT_EQ(tf_manager_.getStampedTransform(
-    "base_link", target_time, "base_link", source_time, "missing", tf2::Duration::zero()),
+    "base_link", target_time, "base_link", source_time, "missing", 0.0),
     std::nullopt);
 }
 
@@ -244,14 +244,14 @@ TEST_F(TransformManagerTest, ZeroSourceAndTargetTimesLookUpLatestTransforms)
   const rclcpp::Time target_time(4, 0, RCL_ROS_TIME);
 
   auto result = tf_manager_.getStampedTransform(
-    "base_link", zero, "base_link", source_time, "odom", tf2::Duration::zero());
+    "base_link", zero, "base_link", source_time, "odom", 0.0);
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(rclcpp::Time(result->header.stamp), target_time);
   EXPECT_NEAR(result->transform.translation.x, -0.56, 1e-12);
   EXPECT_NEAR(result->transform.translation.y, 1.92, 1e-12);
 
   result = tf_manager_.getStampedTransform(
-    "base_link", target_time, "base_link", zero, "odom", tf2::Duration::zero());
+    "base_link", target_time, "base_link", zero, "odom", 0.0);
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(rclcpp::Time(result->header.stamp), target_time);
   EXPECT_NEAR(result->transform.translation.x, 0.0, 1e-12);
@@ -259,14 +259,14 @@ TEST_F(TransformManagerTest, ZeroSourceAndTargetTimesLookUpLatestTransforms)
   EXPECT_NEAR(result->transform.rotation.w, 1.0, 1e-12);
 
   result = tf_manager_.getStampedTransform(
-    "base_link", zero, "base_link", zero, "odom", tf2::Duration::zero());
+    "base_link", zero, "base_link", zero, "odom", 0.0);
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(rclcpp::Time(result->header.stamp), target_time);
   EXPECT_NEAR(result->transform.translation.x, 0.0, 1e-12);
   EXPECT_NEAR(result->transform.translation.y, 0.0, 1e-12);
   EXPECT_NEAR(result->transform.rotation.w, 1.0, 1e-12);
   EXPECT_EQ(tf_manager_.getStampedTransform(
-    "base_link", zero, "missing", zero, "odom", tf2::Duration::zero()), std::nullopt);
+    "base_link", zero, "missing", zero, "odom", 0.0), std::nullopt);
 }
 
 TEST_F(TransformManagerTest, GetStampedPoseInterpolatesAndPreservesInput)
@@ -275,7 +275,7 @@ TEST_F(TransformManagerTest, GetStampedPoseInterpolatesAndPreservesInput)
   addTransform(4, 4.0);
   const auto input = makePose(3);
   const auto original = input;
-  const auto result = tf_manager_.transformStampedPose("odom", input, tf2::Duration::zero());
+  const auto result = tf_manager_.transformStampedPose("odom", input, 0.0);
   ASSERT_TRUE(result);
   EXPECT_EQ(result->header.frame_id, "odom");
   EXPECT_EQ(result->header.stamp, input.header.stamp);
@@ -291,7 +291,7 @@ TEST_F(TransformManagerTest, GetStampedPoseZeroStampSelectsLatestWithoutAgeCheck
 {
   addTransform(2, 2.0);
   addTransform(4, 4.0);
-  const auto result = tf_manager_.transformStampedPose("odom", makePose(0), tf2::Duration::zero());
+  const auto result = tf_manager_.transformStampedPose("odom", makePose(0), 0.0);
   ASSERT_TRUE(result);
   EXPECT_EQ(result->header.stamp.sec, 4);
   EXPECT_NEAR(result->pose.position.x, 4.28, 1e-12);
@@ -300,7 +300,7 @@ TEST_F(TransformManagerTest, GetStampedPoseZeroStampSelectsLatestWithoutAgeCheck
 TEST_F(TransformManagerTest, TransformPoseSameFramePreservesEntireInputWithoutTF)
 {
   const auto input = makePose(2);
-  const auto stamped = tf_manager_.transformStampedPose("base_link", input, tf2::Duration::zero());
+  const auto stamped = tf_manager_.transformStampedPose("base_link", input, 0.0);
   ASSERT_TRUE(stamped);
   EXPECT_EQ(*stamped, input);
 }
@@ -310,8 +310,8 @@ TEST_F(TransformManagerTest, TransformPoseFailuresLeaveInputUnchanged)
   addTransform(2, 2.0);
   const auto input = makePose(3);
   const auto original = input;
-  EXPECT_EQ(tf_manager_.transformStampedPose("odom", input, tf2::Duration::zero()), std::nullopt);
-  EXPECT_EQ(tf_manager_.transformStampedPose("missing", input, tf2::Duration::zero()),
+  EXPECT_EQ(tf_manager_.transformStampedPose("odom", input, 0.0), std::nullopt);
+  EXPECT_EQ(tf_manager_.transformStampedPose("missing", input, 0.0),
     std::nullopt);
   EXPECT_EQ(input, original);
 }
@@ -394,7 +394,7 @@ TEST_F(TransformManagerTest, InversePreservesTimestampAndExchangesFrames)
 TEST_F(TransformManagerTest, RejectsNegativeToleranceIncludingIdentity)
 {
   addTransform(9, 1.0);
-  const auto negative_tolerance = tf2::durationFromSec(-0.1);
+  const auto negative_tolerance = -0.1;
   EXPECT_EQ(tf_manager_.getStampedTransform("odom", "base_link", now_, negative_tolerance),
     std::nullopt);
   EXPECT_EQ(tf_manager_.getStampedTransform("base_link", "base_link", now_, negative_tolerance),
@@ -442,14 +442,14 @@ TEST_F(TransformManagerTest, LogsFailuresWithConfiguredLoggerAndFrameContext)
   EXPECT_NE(argument_log.find("must be finite"), std::string::npos);
 
   testing::internal::CaptureStderr();
-  EXPECT_EQ(tf_manager.transformStampedPose("odom", makePose(9), tf2::Duration::zero()),
+  EXPECT_EQ(tf_manager.transformStampedPose("odom", makePose(9), 0.0),
     std::nullopt);
   const auto pose_log = testing::internal::GetCapturedStderr();
   EXPECT_NE(pose_log.find("Failed to get transform from 'base_link' to 'odom'"), std::string::npos);
 
   testing::internal::CaptureStderr();
   EXPECT_EQ(tf_manager.getStampedTransform(
-      "base_link", now_, "base_link", now_, "missing", tf2::Duration::zero()), std::nullopt);
+      "base_link", now_, "base_link", now_, "missing", 0.0), std::nullopt);
   const auto fixed_frame_log = testing::internal::GetCapturedStderr();
   EXPECT_NE(fixed_frame_log.find("via 'missing'"), std::string::npos);
 }
@@ -458,8 +458,8 @@ TEST_F(TransformManagerTest, DisabledLoggingSuppressesNestedLookupsAndValidation
 {
   addTransform(8, 1.0);
   tf_manager_.getRawBuffer().setUsingDedicatedThread(true);
-  const auto no_wait = tf2::Duration::zero();
-  const auto negative_wait = tf2::durationFromSec(-0.1);
+  const auto no_wait = 0.0;
+  const auto negative_wait = -0.1;
   auto system_node = std::make_shared<nav2::LifecycleNode>(
     "tf_manager_system_time", "", rclcpp::NodeOptions().clock_type(RCL_SYSTEM_TIME));
   nav2::TransformManager timed_tf_manager(system_node, false);
@@ -482,7 +482,7 @@ TEST_F(TransformManagerTest, DisabledLoggingSuppressesNestedLookupsAndValidation
   EXPECT_EQ(tf_manager_.getLatestTransform(
       "odom", "base_link", 1.0, nav2::Log::Disabled), std::nullopt);
   EXPECT_EQ(timed_tf_manager.getStampedTransform(
-      "odom", "missing", now_, tf2::durationFromSec(0.001), nav2::Log::Disabled), std::nullopt);
+      "odom", "missing", now_, 0.001, nav2::Log::Disabled), std::nullopt);
   EXPECT_EQ(tf_manager_.getLatestTransform(
       "odom", "base_link", std::numeric_limits<double>::quiet_NaN(), nav2::Log::Disabled),
     std::nullopt);
@@ -504,7 +504,7 @@ TEST_F(TransformManagerTest, DisabledLoggingSuppressesNestedLookupsAndValidation
 TEST_F(TransformManagerTest, LoggingOptionPreservesSuccessfulResults)
 {
   addTransform(8, 1.0);
-  const auto no_wait = tf2::Duration::zero();
+  const auto no_wait = 0.0;
   EXPECT_EQ(tf_manager_.getLatestTransform("odom", "base_link", 2.0, nav2::Log::Disabled),
     tf_manager_.getLatestTransform("odom", "base_link", 2.0, nav2::Log::Enabled));
   EXPECT_EQ(tf_manager_.getLatestPose("odom", "base_link", 2.0, nav2::Log::Disabled),
