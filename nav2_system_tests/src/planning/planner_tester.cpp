@@ -443,9 +443,9 @@ bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
   bool collisionFree = true;
 
   for (auto pose : path.poses) {
-    collisionFree = costmap_->is_free(
-      static_cast<unsigned int>(std::round(pose.pose.position.x)),
-      static_cast<unsigned int>(std::round(pose.pose.position.y)));
+    unsigned int mx, my;
+    collisionFree = planner_tester_->getCostmap()->worldToMap(
+      pose.pose.position.x, pose.pose.position.y, mx, my) && costmap_->is_free(mx, my);
 
     if (!collisionFree) {
       RCLCPP_WARN(
@@ -482,9 +482,15 @@ bool PlannerTester::isWithinTolerance(
   auto path_start = path.poses[0];
   auto path_end = path.poses.end()[-1];
 
+  // The path starts in the robot's cell
+  auto costmap = planner_tester_->getCostmap();
+  unsigned int robot_mx, robot_my, start_mx, start_my;
+
   if (
-    path_start.pose.position.x == robot_position.x &&
-    path_start.pose.position.y == robot_position.y &&
+    costmap->worldToMap(robot_position.x, robot_position.y, robot_mx, robot_my) &&
+    costmap->worldToMap(
+      path_start.pose.position.x, path_start.pose.position.y, start_mx, start_my) &&
+    start_mx == robot_mx && start_my == robot_my &&
     path_end.pose.position.x == goal.pose.position.x &&
     path_end.pose.position.y == goal.pose.position.y)
   {
