@@ -45,22 +45,24 @@ struct MessageFilter : tf2_ros::MessageFilter<MessageT>
  * @param target_frame Target frame for transforms
  * @param queue_size Queue size for the filter
  * @param node Pointer-like node (shared_ptr or raw pointer)
- * @param tolerance Transform tolerance duration
+ * @param tolerance Transform tolerance in seconds
  * @return Shared pointer to the MessageFilter
  */
 template<typename MessageT, typename SubscriberT, typename NodeT>
 inline typename nav2::MessageFilter<MessageT>::SharedPtr create_message_filter(
   SubscriberT & sub, nav2::TransformManager & tf_manager,
   const std::string & target_frame, uint32_t queue_size,
-  const NodeT & node, tf2::Duration tolerance)
+  const NodeT & node, double tolerance)
 {
 #if RCLCPP_VERSION_GTE(30, 0, 0)
   return std::make_shared<nav2::MessageFilter<MessageT>>(
-    sub, tf_manager.getRawBuffer(), target_frame, queue_size, *node, tolerance);
+    sub, tf_manager.getRawBuffer(), target_frame, queue_size, *node,
+      tf2::durationFromSec(tolerance));
 #else
   return std::make_shared<nav2::MessageFilter<MessageT>>(
     sub, tf_manager.getRawBuffer(), target_frame, queue_size,
-    node->get_node_logging_interface(), node->get_node_clock_interface(), tolerance);
+    node->get_node_logging_interface(), node->get_node_clock_interface(),
+      tf2::durationFromSec(tolerance));
 #endif
 }
 

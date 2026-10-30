@@ -27,7 +27,7 @@ bool lookupShapeTransform(
 {
   const auto result = tf_manager->getStampedTransform(
     target_frame, header.frame_id, rclcpp::Time(header.stamp),
-    tf2::durationFromSec(transform_tolerance));
+    transform_tolerance);
   if (!result) {
     return false;
   }

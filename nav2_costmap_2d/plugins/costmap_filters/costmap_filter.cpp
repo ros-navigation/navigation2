@@ -75,9 +75,8 @@ void CostmapFilter::onInitialize()
     enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
     filter_info_topic_ = node->declare_or_get_parameter<std::string>(name_ + "." +
       "filter_info_topic");
-    double transform_tolerance = node->declare_or_get_parameter(name_ + "." + "transform_tolerance",
+    transform_tolerance_ = node->declare_or_get_parameter(name_ + "." + "transform_tolerance",
       0.1);
-    transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
     transform_staleness_threshold_ = node->declare_or_get_parameter(
       name_ + ".transform_staleness_threshold", 0.0);
 

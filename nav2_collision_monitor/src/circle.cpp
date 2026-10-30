@@ -31,7 +31,7 @@ Circle::Circle(
   const std::string & polygon_name,
   const nav2::TransformManager::SharedPtr tf_manager,
   const std::string & base_frame_id,
-  const tf2::Duration & transform_tolerance)
+  double transform_tolerance)
 : Polygon::Polygon(node, polygon_name, tf_manager, base_frame_id, transform_tolerance)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Circle", polygon_name_.c_str());

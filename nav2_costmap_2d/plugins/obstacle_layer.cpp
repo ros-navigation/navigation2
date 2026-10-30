@@ -191,7 +191,7 @@ void ObstacleLayer::onInitialize()
           max_obstacle_height, obstacle_max_range, obstacle_min_range, raytrace_max_range,
           raytrace_min_range, *tf_,
           global_frame_,
-          sensor_frame, tf2::durationFromSec(transform_tolerance)));
+          sensor_frame, transform_tolerance));
 
     // check if we'll add this buffer to our marking observation buffers
     if (marking) {
@@ -247,7 +247,7 @@ void ObstacleLayer::onInitialize()
 
       auto filter = nav2::create_message_filter<sensor_msgs::msg::LaserScan>(
         *sub, *tf_, global_frame_, 50,
-        node, tf2::durationFromSec(transform_tolerance));
+        node, transform_tolerance);
 
       if (inf_is_valid) {
         filter->registerCallback(
@@ -316,7 +316,7 @@ void ObstacleLayer::onInitialize()
 
       auto filter = nav2::create_message_filter<sensor_msgs::msg::PointCloud2>(
         *sub, *tf_, global_frame_, 50,
-        node, tf2::durationFromSec(transform_tolerance));
+        node, transform_tolerance);
 
       filter->registerCallback(
         std::bind(

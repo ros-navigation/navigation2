@@ -245,7 +245,7 @@ RotationShimController::transformPoseToBaseFrame(const geometry_msgs::msg::PoseS
 {
   const auto pt_base = tf_->transformStampedPose(
     costmap_ros_->getBaseFrameID(), pt,
-    tf2::durationFromSec(costmap_ros_->getTransformTolerance()));
+    costmap_ros_->getTransformTolerance());
   if (!pt_base) {
     throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
   }

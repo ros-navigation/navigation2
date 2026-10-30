@@ -58,7 +58,7 @@ public:
     buffer_ =
       std::make_shared<nav2_costmap_2d::ObservationBuffer>(node_, "/observations", 10.0,
       0.1, 0.0, std::numeric_limits<double>::max(), 10.0, 1.0, 5.0, 2.0, *tf_manager_, global_frame,
-      sensor_frame, tf2::Duration{0});
+      sensor_frame, 0.0);
 
     auto clock_handle = node_->get_clock()->get_clock_handle();
     auto ret = rcl_enable_ros_time_override(clock_handle);

@@ -68,7 +68,7 @@ static const char RIGHT_POLYGON_STR[]{
 static const bool IS_HOLONOMIC{true};
 static const bool IS_NOT_HOLONOMIC{false};
 static const int MIN_POINTS{2};
-static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
+static const double TRANSFORM_TOLERANCE{0.1};
 
 class TestNode : public nav2::LifecycleNode
 {
@@ -107,7 +107,7 @@ public:
     const std::string & polygon_name,
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance)
+    double transform_tolerance)
   : nav2_collision_monitor::VelocityPolygon(
       node, polygon_name, tf_manager, base_frame_id, transform_tolerance)
   {

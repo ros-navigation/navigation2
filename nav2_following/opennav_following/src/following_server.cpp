@@ -532,7 +532,7 @@ bool FollowingServer::getRefinedPose(
   if (detected.header.frame_id != params_->fixed_frame) {
     const auto detected_result = tf_manager_->transformStampedPose(
       params_->fixed_frame, detected,
-      tf2::durationFromSec(params_->transform_tolerance), nav2::Log::Disabled);
+      params_->transform_tolerance, nav2::Log::Disabled);
     if (!detected_result) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
         "Failed to transform detected object pose");
@@ -567,7 +567,7 @@ bool FollowingServer::getFramePose(
   // iteration.
   const auto transform_result = tf_manager_->getStampedTransform(
     params_->fixed_frame, frame_id, rclcpp::Time(iteration_start_time_),
-    tf2::durationFromSec(params_->transform_tolerance));
+    params_->transform_tolerance);
   if (!transform_result) {
     RCLCPP_WARN(
       get_logger(),

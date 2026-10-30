@@ -65,7 +65,7 @@ public:
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & source_timeout,
     const bool base_shift_correction);
   /**
@@ -226,7 +226,7 @@ protected:
   /// @brief Global frame ID for correct transform calculation
   std::string global_frame_id_;
   /// @brief Transform tolerance
-  tf2::Duration transform_tolerance_;
+  double transform_tolerance_;
   /// @brief Maximum age in seconds for transforms requested at the latest time
   double transform_staleness_threshold_{1.0};
   /// @brief Maximum time interval in which data is considered valid

@@ -419,7 +419,7 @@ protected:
   rclcpp::TimerBase::SharedPtr save_pose_timer_;
   double sigma_hit_;
   bool tf_broadcast_;
-  tf2::Duration transform_tolerance_;
+  double transform_tolerance_;
   double a_thresh_;
   double d_thresh_;
   double z_hit_;

@@ -81,7 +81,7 @@ geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
       "Request pose in %s frame. Converting to route server frame: %s.",
       pose.header.frame_id.c_str(), target_frame.c_str());
     const auto pose_result = tf_->transformStampedPose(
-      target_frame, pose, tf2::durationFromSec(0.1));
+      target_frame, pose, 0.1);
     if (!pose_result) {
       throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame);
     }

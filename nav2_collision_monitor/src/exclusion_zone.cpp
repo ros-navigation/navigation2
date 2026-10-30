@@ -38,7 +38,7 @@ ExclusionZone::ExclusionZone(
   const nav2::TransformManager::SharedPtr tf_manager,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
-  const tf2::Duration & transform_tolerance,
+  double transform_tolerance,
   const bool base_shift_correction)
 : node_(node), zone_name_(zone_name), tf_manager_(tf_manager),
   base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
@@ -278,7 +278,7 @@ bool ExclusionZone::getZoneToBaseTransform(
   // timeout): they read the cached TF buffer and fail immediately. A blocking
   // lookup on a flaky zone frame would stall the monitor loop, make healthy sources look
   // stale and trip the source_timeout watchdog.
-  const tf2::Duration non_blocking = tf2::Duration::zero();
+  const double non_blocking = 0.0;
 
   // Look up the zone frame at the latest available time using this zone's
   // transform age limit.

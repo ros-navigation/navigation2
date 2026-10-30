@@ -33,7 +33,7 @@ Source::Source(
   const nav2::TransformManager::SharedPtr tf_manager,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
-  const tf2::Duration & transform_tolerance,
+  double transform_tolerance,
   const rclcpp::Duration & source_timeout,
   const bool base_shift_correction)
 : node_(node), source_name_(source_name), tf_manager_(tf_manager),

@@ -65,7 +65,7 @@ static const char POLYGON_TOPIC[]{"polygon"};
 static const char COSTMAP_NAME[]{"Costmap"};
 static const char COSTMAP_TOPIC[]{"costmap"};
 static const char INVALID_FRAME_ID[]{"invalid_frame"};
-static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
+static const double TRANSFORM_TOLERANCE{0.1};
 static const rclcpp::Duration DATA_TIMEOUT{rclcpp::Duration::from_seconds(5.0)};
 
 class TestNode : public nav2::LifecycleNode
@@ -321,7 +321,7 @@ public:
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::Scan(
@@ -344,7 +344,7 @@ public:
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::PointCloud(
@@ -367,7 +367,7 @@ public:
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::Range(
@@ -405,7 +405,7 @@ public:
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::PolygonSource(
@@ -428,7 +428,7 @@ public:
     const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::CostmapSource(

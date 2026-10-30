@@ -150,7 +150,7 @@ CollisionDetector::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 bool CollisionDetector::getParameters()
 {
   std::string odom_frame_id;
-  tf2::Duration transform_tolerance;
+  double transform_tolerance;
   rclcpp::Duration source_timeout(2.0, 0.0);
 
   auto node = shared_from_this();
@@ -158,8 +158,7 @@ bool CollisionDetector::getParameters()
   frequency_ = node->declare_or_get_parameter("frequency", 10.0);
   base_frame_id_ = node->declare_or_get_parameter("base_frame_id", std::string("base_footprint"));
   odom_frame_id = node->declare_or_get_parameter("odom_frame_id", std::string("odom"));
-  transform_tolerance = tf2::durationFromSec(
-    node->declare_or_get_parameter("transform_tolerance", 0.1));
+  transform_tolerance = node->declare_or_get_parameter("transform_tolerance", 0.1);
   source_timeout = rclcpp::Duration::from_seconds(
     node->declare_or_get_parameter("source_timeout", 2.0));
   const bool base_shift_correction = node->declare_or_get_parameter("base_shift_correction", true);
@@ -181,7 +180,7 @@ bool CollisionDetector::getParameters()
 
 bool CollisionDetector::configurePolygons(
   const std::string & base_frame_id,
-  const tf2::Duration & transform_tolerance)
+  double transform_tolerance)
 {
   try {
     auto node = shared_from_this();
@@ -244,7 +243,7 @@ bool CollisionDetector::configurePolygons(
 bool CollisionDetector::configureSources(
   const std::string & base_frame_id,
   const std::string & odom_frame_id,
-  const tf2::Duration & transform_tolerance,
+  double transform_tolerance,
   const rclcpp::Duration & source_timeout,
   const bool base_shift_correction)
 {

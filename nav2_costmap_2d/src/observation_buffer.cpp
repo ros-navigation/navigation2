@@ -59,7 +59,7 @@ ObservationBuffer::ObservationBuffer(
   double raytrace_max_range, double raytrace_min_range, nav2::TransformManager & tf_manager,
   std::string global_frame,
   std::string sensor_frame,
-  tf2::Duration tf_tolerance)
+  double tf_tolerance)
 : tf_manager_(tf_manager),
   observation_keep_time_(rclcpp::Duration::from_seconds(observation_keep_time)),
   expected_update_rate_(rclcpp::Duration::from_seconds(expected_update_rate)),
