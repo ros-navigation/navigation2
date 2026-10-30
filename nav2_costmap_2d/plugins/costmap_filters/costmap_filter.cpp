@@ -42,8 +42,8 @@
 
 #include <exception>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/point.hpp"
 
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -75,9 +75,8 @@ void CostmapFilter::onInitialize()
     enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
     filter_info_topic_ = node->declare_or_get_parameter<std::string>(name_ + "." +
       "filter_info_topic");
-    double transform_tolerance = node->declare_or_get_parameter(name_ + "." + "transform_tolerance",
+    transform_tolerance_ = node->declare_or_get_parameter(name_ + "." + "transform_tolerance",
       0.1);
-    transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
     transform_staleness_threshold_ = node->declare_or_get_parameter(
       name_ + ".transform_staleness_threshold", 0.0);
 
@@ -160,19 +159,19 @@ bool CostmapFilter::transformPose(
     // Filter mask and current layer are in different frames:
     // Transform (global_pose.position.x, global_pose.position.y) point from current layer frame
     // to mask_pose in mask_frame
-    geometry_msgs::msg::TransformStamped global_to_mask_transform;
+
     geometry_msgs::msg::Point in, out;
     in.x = global_pose.position.x;
     in.y = global_pose.position.y;
     in.z = 0.0;
 
-    if (!nav2_util::lookupTransformWithStalenessCheck(
-        *tf_, mask_frame, global_frame, clock_->now(), transform_staleness_threshold_,
-        global_to_mask_transform))
-    {
+    const auto global_to_mask_transform = tf_manager_->getLatestTransform(
+      mask_frame, global_frame, transform_staleness_threshold_);
+    if (!global_to_mask_transform) {
       return false;
     }
-    tf2::doTransform(in, out, global_to_mask_transform);
+
+    tf2::doTransform(in, out, *global_to_mask_transform);
 
     mask_pose = global_pose;
     mask_pose.position.x = out.x;

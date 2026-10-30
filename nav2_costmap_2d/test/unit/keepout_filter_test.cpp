@@ -30,7 +30,7 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -127,9 +127,7 @@ protected:
 private:
   nav2::LifecycleNode::SharedPtr node_;
 
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::unique_ptr<geometry_msgs::msg::TransformStamped> transform_;
 
   std::shared_ptr<nav_msgs::msg::OccupancyGrid> mask_;
@@ -217,9 +215,9 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
 void TestNode::createKeepoutFilter(const std::string & global_frame)
 {
   node_ = std::make_shared<nav2::LifecycleNode>("test_node");
-  tf_buffer_ = nav2::create_transform_buffer(node_);
-  tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
+  tf_manager_ = nav2::create_transform_manager(node_);
+  // One-thread broadcasting-listening model
+  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 
   nav2_costmap_2d::LayeredCostmap layers(global_frame, false, false);
 
@@ -233,7 +231,7 @@ void TestNode::createKeepoutFilter(const std::string & global_frame)
     rclcpp::Parameter(std::string(FILTER_NAME) + ".filter_info_topic", INFO_TOPIC));
 
   keepout_filter_ = std::make_shared<nav2_costmap_2d::KeepoutFilter>();
-  keepout_filter_->initialize(&layers, std::string(FILTER_NAME), tf_buffer_.get(), node_, nullptr);
+  keepout_filter_->initialize(&layers, std::string(FILTER_NAME), tf_manager_.get(), node_, nullptr);
   keepout_filter_->initializeFilter(INFO_TOPIC);
 
   // Wait until mask will be received by KeepoutFilter
@@ -247,8 +245,6 @@ void TestNode::createKeepoutFilter(const std::string & global_frame)
 
 void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame)
 {
-  tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
-
   transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();
   transform_->header.frame_id = mask_frame;
   transform_->child_frame_id = global_frame;
@@ -262,9 +258,9 @@ void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::st
   transform_->transform.rotation.z = 0.0;
   transform_->transform.rotation.w = 1.0;
 
-  tf_broadcaster_->sendTransform(*transform_);
+  tf_manager_->sendTransform(*transform_);
 
-  // Allow tf_buffer_ to be filled by listener
+  // Allow tf_manager_ to be filled by listener
   waitSome(100ms);
 }
 
@@ -344,9 +340,8 @@ void TestNode::reset()
   mask_publisher_.reset();
   keepout_filter_.reset();
   node_.reset();
-  tf_listener_.reset();
-  tf_broadcaster_.reset();
-  tf_buffer_.reset();
+  transform_.reset();
+  tf_manager_.reset();
   keepout_points_.clear();
 }
 
@@ -488,7 +483,7 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   auto node = std::make_shared<nav2::LifecycleNode>("tf_test");
   node->declare_parameter(std::string(FILTER_NAME) + ".filter_info_topic", INFO_TOPIC);
   node->declare_parameter(std::string(FILTER_NAME) + ".transform_staleness_threshold", 0.5);
-  auto buffer = nav2::create_transform_buffer(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("odom", false, false);
   layers.resizeMap(4, 1, 1.0, 0.0, 0.0);
   auto mask = std::make_shared<nav_msgs::msg::OccupancyGrid>();
@@ -502,7 +497,7 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   transform.child_frame_id = "odom";
   transform.transform.rotation.w = 1.0;
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
   geometry_msgs::msg::Pose pose;
   pose.position.x = 0.5;
   pose.position.y = 0.5;
@@ -510,7 +505,7 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   nav2_costmap_2d::Costmap2D grid(4, 1, 1.0, 0.0, 0.0, 0);
   node->declare_parameter(std::string(FILTER_NAME) + ".override_lethal_cost", true);
   KeepoutFilterTFTestable filter;
-  filter.initialize(&layers, FILTER_NAME, buffer.get(), node, nullptr);
+  filter.initialize(&layers, FILTER_NAME, tf_manager.get(), node, nullptr);
   filter.initializeFilter(INFO_TOPIC);
   mask->data = {100, 0, 0, 0};
   filter.maskCallback(mask);
@@ -518,7 +513,7 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   EXPECT_EQ(grid.getCost(0, 0), 0);  // Stale TF does not apply the mask.
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
   double min_x = 0.0, min_y = 0.0, max_x = 4.0, max_y = 1.0;
   filter.updateBounds(0.5, 0.5, 0.0, &min_x, &min_y, &max_x, &max_y);
   filter.process(grid, 0, 0, 4, 1, pose);  // Consume the new mask update.
@@ -533,7 +528,7 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   // The next update uses the changed transform for both pose and mask checks.
   transform.header.stamp = node->now() + rclcpp::Duration::from_seconds(0.01);
   transform.transform.translation.x = -1.0;
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
   grid.resetMap(0, 0, 4, 1);
   filter.updateBounds(0.5, 0.5, 0.0, &min_x, &min_y, &max_x, &max_y);
   filter.process(grid, 0, 0, 4, 1, pose);
@@ -541,10 +536,10 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   EXPECT_EQ(grid.getCost(1, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
 
   // Static transforms remain valid regardless of their original timestamp.
-  buffer->clear();
+  tf_manager->getRawBuffer().clear();
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 0.0;
-  ASSERT_TRUE(buffer->setTransform(transform, "test", true));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", true));
   grid.resetMap(0, 0, 4, 1);
   filter.process(grid, 0, 0, 4, 1, pose);
   EXPECT_EQ(grid.getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);

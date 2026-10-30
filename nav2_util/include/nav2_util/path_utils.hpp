@@ -25,7 +25,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "tf2/utils.hpp"
 #include "angles/angles.h"
 #include "nav2_util/geometry_utils.hpp"
@@ -64,7 +64,7 @@ PathSearchResult distance_from_path(
  * @brief Transform a path into the target frame
  * @param input_path Path to transform
  * @param transformed_path Output transformation
- * @param tf_buffer TF buffer to use for the transformation
+ * @param tf_manager TF manager to use for the transformation
  * @param target_frame Frame to transform into
  * @param transform_timeout TF lookup timeout
  * @return Whether the path could be transformed
@@ -72,7 +72,7 @@ PathSearchResult distance_from_path(
 bool transformPathInTargetFrame(
   const nav_msgs::msg::Path & input_path,
   nav_msgs::msg::Path & transformed_path,
-  nav2::TransformBuffer & tf_buffer, const std::string target_frame,
+  nav2::TransformManager & tf_manager, const std::string target_frame,
   const double transform_timeout = 0.1);
 
 /**

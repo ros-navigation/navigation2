@@ -30,7 +30,7 @@
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -110,7 +110,6 @@ static rclcpp::NodeOptions makeNodeOptions(
     rclcpp::Parameter("lethal_cost_threshold", 100),
     rclcpp::Parameter("unknown_cost_value", static_cast<unsigned char>(0xff)),
     rclcpp::Parameter("trinary_costmap", true),
-    rclcpp::Parameter("transform_tolerance", 0.3),
     rclcpp::Parameter("observation_sources", std::string("")),
   };
   // Apply overrides (later entries in the vector take precedence via parameter_overrides)
@@ -148,7 +147,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_inflation_radius)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.inflation_radius", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_infl", "", options);
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -163,7 +162,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_left_scaling)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.cost_scaling_factor_left", -1.0)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_left", "", options);
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -178,7 +177,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_right_scaling)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.cost_scaling_factor_right", -1.0)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_right", "", options);
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -193,7 +192,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_goal_distance_thr
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.goal_distance_threshold", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_goal", "", options);
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -208,7 +207,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_invalid_num_threads)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.num_threads", -2)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_threads", "", options);
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -222,7 +221,7 @@ TEST(AsymmetricInflationLayerInitTest, negative_transform_staleness_threshold_di
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.transform_staleness_threshold", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_tf_staleness", "", options);
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -242,7 +241,7 @@ protected:
     node_ = std::make_shared<nav2::LifecycleNode>(
       "asymmetric_inflation_test_node", "", makeNodeOptions());
 
-    tf_ = nav2::create_transform_buffer(node_);
+    tf_manager_ = nav2::create_transform_manager(node_);
 
     // 40x40 cells, 0.1 m resolution, origin at (0,0) — world range [0, 4] m.
     layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, false);
@@ -259,7 +258,7 @@ protected:
 
     layer_ = std::make_shared<TestableAsymmetricInflationLayer>();
     layer_->initialize(
-      layers_.get(), "asymmetric_inflation_layer", tf_.get(), node_, nullptr);
+      layers_.get(), "asymmetric_inflation_layer", tf_manager_.get(), node_, nullptr);
     layers_->addPlugin(std::static_pointer_cast<nav2_costmap_2d::Layer>(layer_));
   }
 
@@ -312,13 +311,13 @@ protected:
   {
     layer_.reset();
     layers_.reset();
-    tf_.reset();
+    tf_manager_.reset();
     node_->shutdown();
     node_.reset();
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
   std::shared_ptr<TestableAsymmetricInflationLayer> layer_;
 };
@@ -600,7 +599,7 @@ TEST_F(AsymmetricInflationIntegrationTest, transform_path_segments_with_rotated_
   rotated_tf.transform.translation.y = ty;
   rotated_tf.transform.rotation.z = std::sin(yaw / 2.0);
   rotated_tf.transform.rotation.w = std::cos(yaw / 2.0);
-  tf_->setTransform(rotated_tf, "test", true);  // static=true → available at all times
+  tf_manager_->getRawBuffer().setTransform(rotated_tf, "test", true);
 
   // Inject 4-pose path in "odom" frame.
   auto path = std::make_shared<nav_msgs::msg::Path>();
@@ -668,7 +667,7 @@ TEST_F(AsymmetricInflationIntegrationTest, live_transform_tracks_map_odom_drift)
       tf_msg.header.stamp = rclcpp::Time(stamp_sec, 0, RCL_ROS_TIME);
       tf_msg.transform.translation.y = ty;
       tf_msg.transform.rotation.w = 1.0;
-      tf_->setTransform(tf_msg, "test", false /* dynamic, not static */);
+      tf_manager_->getRawBuffer().setTransform(tf_msg, "test", false /* dynamic, not static */);
     };
 
   // --- Cycle 1: map == odom (no drift yet). The north obstacle sits 0.45 m
@@ -742,7 +741,7 @@ TEST_F(AsymmetricInflationIntegrationTest, live_lookup_recovers_once_transform_b
   tf_msg.child_frame_id = "odom";
   tf_msg.header.stamp = rclcpp::Time(1, 0, RCL_ROS_TIME);
   tf_msg.transform.rotation.w = 1.0;
-  tf_->setTransform(tf_msg, "test", false /* dynamic, not static */);
+  tf_manager_->getRawBuffer().setTransform(tf_msg, "test", false /* dynamic, not static */);
 
   costmap->resetMap(0, 0, w, h);
   seedLethalObstacle(20, 24);
@@ -777,7 +776,7 @@ TEST_F(AsymmetricInflationIntegrationTest, stale_transform_falls_back_to_symmetr
   tf_msg.child_frame_id = "odom";
   tf_msg.header.stamp = rclcpp::Time(1, 0, RCL_ROS_TIME);
   tf_msg.transform.rotation.w = 1.0;
-  tf_->setTransform(tf_msg, "test", false);
+  tf_manager_->getRawBuffer().setTransform(tf_msg, "test", false);
 
   seedLethalObstacle(20, 24);
   seedLethalObstacle(20, 16);

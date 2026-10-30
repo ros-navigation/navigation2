@@ -31,7 +31,7 @@
 #include "pluginlib/class_list_macros.hpp"
 
 #include "tf2/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using nav2_util::geometry_utils::euclidean_distance;
 using namespace nav2_costmap_2d;  // NOLINT
@@ -41,7 +41,7 @@ namespace nav2_constrained_smoother
 
 void ConstrainedSmoother::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, nav2::TransformBuffer::SharedPtr tf,
+  std::string name, nav2::TransformManager::SharedPtr tf,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>)
 {
@@ -51,7 +51,7 @@ void ConstrainedSmoother::configure(
   }
 
   costmap_sub_ = costmap_sub;
-  tf_ = tf;
+  tf_manager_ = tf;
   plugin_name_ = name;
   logger_ = node->get_logger();
 

@@ -23,7 +23,7 @@
 #include "nav2_mppi_controller/controller.hpp"
 
 #include "utils/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 // Tests basic transition from configure->active->process->deactivate->cleanup
 
@@ -40,11 +40,11 @@ TEST(ControllerStateTransitionTest, ControllerNotFail)
 
   auto node = getDummyNode(options);
   node->declare_parameter("publish_optimal_trajectory", true);
-  auto tf_buffer = nav2::create_transform_buffer(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap_ros = getDummyCostmapRos(costmap_settings);
   costmap_ros->setRobotFootprint(getDummySquareFootprint(0.01));
 
-  auto controller = getDummyController(node, tf_buffer, costmap_ros);
+  auto controller = getDummyController(node, tf_manager, costmap_ros);
 
   TestPose start_pose = costmap_settings.getCenterPose();
   const double path_step = costmap_settings.resolution;

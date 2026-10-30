@@ -31,7 +31,7 @@
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rcl_interfaces/msg/parameter_descriptor.hpp"
@@ -242,11 +242,12 @@ protected:
     node_executor_.add_node(node_->get_node_base_interface());
 
     layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, false);
-    tf_buffer_ = nav2::create_transform_buffer(node_);
-    tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
+    tf_manager_ = nav2::create_transform_manager(node_);
+    // One-thread broadcasting-listening model
+    tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 
     filter_ = std::make_shared<nav2_costmap_2d::ZoneParameterFilter>();
-    filter_->initialize(layers_.get(), kFilterName, tf_buffer_.get(), node_, nullptr);
+    filter_->initialize(layers_.get(), kFilterName, tf_manager_.get(), node_, nullptr);
     filter_->initializeFilter(kInfoTopic);
 
     info_pub_ = std::make_shared<InfoPublisher>(info_type, kMaskTopic, 0.0, 1.0);
@@ -335,7 +336,7 @@ protected:
   std::shared_ptr<StateEventSubscriber> state_event_sub_;
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::shared_ptr<nav2_costmap_2d::ZoneParameterFilter> filter_;
   std::shared_ptr<InfoPublisher> info_pub_;
   std::shared_ptr<MaskPublisher> mask_pub_;
@@ -784,10 +785,10 @@ TEST(ZoneParameterFilterTF, StaleTransformPreservesState)
   node->declare_parameter("filter.transform_staleness_threshold", 0.5);
   node->declare_parameter("filter.states", std::vector<std::string>{"restricted"});
   node->declare_parameter("filter.restricted.id", 1);
-  auto buffer = nav2::create_transform_buffer(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("odom", false, false);
   ZoneParameterFilterTFTestable filter;
-  filter.initialize(&layers, "filter", buffer.get(), node, nullptr);
+  filter.initialize(&layers, "filter", tf_manager.get(), node, nullptr);
   filter.initializeFilter("filter_info");
   auto mask = std::make_shared<nav_msgs::msg::OccupancyGrid>();
   mask->header.frame_id = "map";
@@ -809,31 +810,31 @@ TEST(ZoneParameterFilterTF, StaleTransformPreservesState)
   transform.child_frame_id = "odom";
   transform.transform.rotation.w = 1.0;
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 0);  // Stale TF cannot enter the marked zone.
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 1);
 
-  buffer->clear();
+  tf_manager->getRawBuffer().clear();
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 1.0;
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 1);  // Stale TF must not reset the active state.
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(buffer->setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 0);  // Fresh TF permits the transition.
 
-  buffer->clear();
+  tf_manager->getRawBuffer().clear();
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 0.0;
-  ASSERT_TRUE(buffer->setTransform(transform, "test", true));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", true));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 1);  // Static transforms do not expire.
 

@@ -30,7 +30,7 @@
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/utilities.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 class ControllerServerShim : public nav2_controller::ControllerServer
 {
@@ -44,7 +44,7 @@ public:
     transformedPlanAndGoal(current_robot_pose);
   }
   geometry_msgs::msg::PoseStamped callGetCurrentRobotPose() {return getCurrentRobotPose();}
-  nav2::TransformBuffer & getTfBuffer() {return *costmap_ros_->getTfBuffer();}
+  nav2::TransformManager & getTfManager() {return *costmap_ros_->getTfManager();}
 };
 
 TEST(ControllerServerTest, TransformedPlanAndGoalThrowsOnTfFailure)
@@ -69,7 +69,7 @@ TEST(ControllerServerTest, TransformedPlanAndGoalThrowsOnTfFailure)
   tf_msg.header.frame_id = "map";
   tf_msg.child_frame_id = "base_link";
   tf_msg.transform.rotation.w = 1.0;
-  server->getTfBuffer().setTransform(tf_msg, "test", true);
+  server->getTfManager().getRawBuffer().setTransform(tf_msg, "test", true);
 
   geometry_msgs::msg::PoseStamped current_robot_pose;
   current_robot_pose.header.stamp = server->now();
@@ -105,7 +105,7 @@ TEST(ControllerServerTest, RejectsStaleRobotPoseTransform)
   tf_msg.header.frame_id = "map";
   tf_msg.child_frame_id = "base_link";
   tf_msg.transform.rotation.w = 1.0;
-  server->getTfBuffer().setTransform(tf_msg, "test", false);
+  server->getTfManager().getRawBuffer().setTransform(tf_msg, "test", false);
 
   try {
     server->callGetCurrentRobotPose();
@@ -117,7 +117,7 @@ TEST(ControllerServerTest, RejectsStaleRobotPoseTransform)
   }
 
   tf_msg.header.stamp = server->now();
-  server->getTfBuffer().setTransform(tf_msg, "test", false);
+  server->getTfManager().getRawBuffer().setTransform(tf_msg, "test", false);
   EXPECT_NO_THROW(server->callGetCurrentRobotPose());
   server->cleanup();
 }
@@ -145,7 +145,7 @@ TEST(ControllerServerTest, SkipsRobotPoseTransformStalenessCheckWhenDisabled)
   tf_msg.header.frame_id = "map";
   tf_msg.child_frame_id = "base_link";
   tf_msg.transform.rotation.w = 1.0;
-  server->getTfBuffer().setTransform(tf_msg, "test", false);
+  server->getTfManager().getRawBuffer().setTransform(tf_msg, "test", false);
 
   EXPECT_NO_THROW(server->callGetCurrentRobotPose());
   server->cleanup();

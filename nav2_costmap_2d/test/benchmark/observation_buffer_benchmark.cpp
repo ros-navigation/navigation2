@@ -15,7 +15,7 @@
 #include <random>
 #include "benchmark/benchmark.h"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -36,7 +36,7 @@ public:
 
   static void addObstacleLayer(
     nav2_costmap_2d::LayeredCostmap & layers,
-    nav2::TransformBuffer & tf, nav2::LifecycleNode::SharedPtr node,
+    nav2::TransformManager & tf, nav2::LifecycleNode::SharedPtr node,
     std::shared_ptr<TestObstacleLayer> & olayer,
     rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
   {
@@ -54,11 +54,11 @@ public:
   {
     node_ = std::make_shared<nav2::LifecycleNode>(
         "observation_buffer_test_node");
-    tf_buffer_ = nav2::create_transform_buffer(node_);
+    tf_manager_ = nav2::create_transform_manager(node_);
     buffer_ =
       std::make_shared<nav2_costmap_2d::ObservationBuffer>(node_, "/observations", 10.0,
-      0.1, 0.0, std::numeric_limits<double>::max(), 10.0, 1.0, 5.0, 2.0, *tf_buffer_, global_frame,
-      sensor_frame, tf2::Duration{0});
+      0.1, 0.0, std::numeric_limits<double>::max(), 10.0, 1.0, 5.0, 2.0, *tf_manager_, global_frame,
+      sensor_frame, 0.0);
 
     auto clock_handle = node_->get_clock()->get_clock_handle();
     auto ret = rcl_enable_ros_time_override(clock_handle);
@@ -68,10 +68,10 @@ public:
     tf_msg.child_frame_id = sensor_frame;
     tf_msg.header.frame_id = global_frame;
     tf_msg.transform = tf2::toMsg(tf2::Transform::getIdentity());
-    tf_buffer_->setTransform(tf_msg, "", true);
+    tf_manager_->getRawBuffer().setTransform(tf_msg, "", true);
 
     layers_.resizeMap(100, 100, 0.1, 0, 0);
-    TestObstacleLayer::addObstacleLayer(layers_, *tf_buffer_, node_, olayer_);
+    TestObstacleLayer::addObstacleLayer(layers_, *tf_manager_, node_, olayer_);
     olayer_->addObservationBuffer(buffer_);
 
     constexpr auto num_points{1024 * 64};
@@ -84,7 +84,7 @@ public:
   {
     node_->shutdown();
     buffer_.reset();
-    tf_buffer_.reset();
+    tf_manager_.reset();
     node_.reset();
     olayer_.reset();
   }
@@ -128,7 +128,7 @@ public:
   }
 
   nav2::LifecycleNode::SharedPtr node_{};
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   nav2_costmap_2d::LayeredCostmap layers_{global_frame, false, false};
   std::shared_ptr<nav2_costmap_2d::ObservationBuffer> buffer_{};
   std::shared_ptr<TestObstacleLayer> olayer_;

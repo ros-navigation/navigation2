@@ -31,10 +31,9 @@
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "../testing_helper.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "tf2/utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
@@ -69,7 +68,7 @@ public:
   DummyFootprintSubscriber(
     nav2::LifecycleNode::SharedPtr node,
     std::string & topic_name,
-    nav2::TransformBuffer & tf)
+    nav2::TransformManager & tf)
   : FootprintSubscriber(node, topic_name, tf)
   {}
 
@@ -105,9 +104,7 @@ public:
     RCLCPP_INFO(get_logger(), "Configuring");
     callback_group_ = create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive, false);
-    tf_buffer_ = nav2::create_transform_buffer(shared_from_this());
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, shared_from_this());
-    tf_broadcaster_ = nav2::create_transform_broadcaster(shared_from_this());
+    tf_manager_ = nav2::create_transform_manager(shared_from_this());
 
     std::string costmap_topic = "costmap_raw";
     std::string footprint_topic = "published_footprint";
@@ -119,7 +116,7 @@ public:
     footprint_sub_ = std::make_shared<DummyFootprintSubscriber>(
       shared_from_this(),
       footprint_topic,
-      *tf_buffer_);
+      *tf_manager_);
 
     collision_checker_ = std::make_unique<nav2_costmap_2d::CostmapTopicCollisionChecker>(
       *costmap_sub_, *footprint_sub_, get_name());
@@ -127,7 +124,7 @@ public:
     layers_ = new nav2_costmap_2d::LayeredCostmap("map", false, false);
     // Add Static Layer
     std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = nullptr;
-    addStaticLayer(*layers_, *tf_buffer_, shared_from_this(), slayer, callback_group_);
+    addStaticLayer(*layers_, *tf_manager_, shared_from_this(), slayer, callback_group_);
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(this->get_node_base_interface());
     while (!slayer->isCurrent()) {
@@ -135,7 +132,7 @@ public:
     }
     // Add Inflation Layer
     std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer = nullptr;
-    addInflationLayer(*layers_, *tf_buffer_, shared_from_this(), ilayer, callback_group_);
+    addInflationLayer(*layers_, *tf_manager_, shared_from_this(), ilayer, callback_group_);
 
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_callback_group(callback_group_, get_node_base_interface());
@@ -165,7 +162,7 @@ public:
     layers_ = nullptr;
 
     executor_thread_.reset();
-    tf_buffer_.reset();
+    tf_manager_.reset();
 
     footprint_sub_.reset();
     costmap_sub_.reset();
@@ -243,7 +240,7 @@ protected:
     tf_stamped.transform.translation.x = x;
     tf_stamped.transform.translation.y = y;
     tf_stamped.transform.rotation.w = 1.0;
-    tf_broadcaster_->sendTransform(tf_stamped);
+    tf_manager_->sendTransform(tf_stamped);
   }
 
   nav2_msgs::msg::Costmap
@@ -276,9 +273,7 @@ protected:
     return costmap_msg;
   }
 
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;

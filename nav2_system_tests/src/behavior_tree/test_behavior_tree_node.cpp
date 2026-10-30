@@ -31,7 +31,7 @@
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/utils/shared_library.h"
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/string_utils.hpp"
@@ -59,9 +59,8 @@ public:
   {
     node_ = std::make_shared<nav2::LifecycleNode>("behavior_tree_handler");
 
-    tf_ = nav2::create_transform_buffer(node_);
-    tf_->setUsingDedicatedThread(true);
-    tf_listener_ = nav2::create_transform_listener(*tf_, node_, false);
+    tf_manager_ = nav2::create_transform_manager(node_, true, false);
+    tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
 
@@ -83,7 +82,7 @@ public:
     blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout",
       std::chrono::milliseconds(1000));
-    blackboard->set("tf_buffer", tf_);
+    blackboard->set("tf_buffer", tf_manager_);
     blackboard->set("initial_pose_received", false);
     blackboard->set("number_recoveries", 0);
     blackboard->set("odom_smoother", odom_smoother_);
@@ -220,8 +219,7 @@ public:
 private:
   nav2::LifecycleNode::SharedPtr node_;
 
-  nav2::TransformBuffer::SharedPtr tf_;
-  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 

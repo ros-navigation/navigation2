@@ -31,7 +31,7 @@
 #include "tf2/LinearMath/Transform.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_msgs/msg/exclusion_zone_description.hpp"
 
@@ -59,19 +59,17 @@ public:
    * @brief ExclusionZone constructor
    * @param node Collision Monitor node pointer
    * @param zone_name Name of the exclusion zone
-   * @param tf_buffer Shared pointer to a TF buffer
+   * @param tf_manager Shared pointer to a TF manager
    * @param base_frame_id Robot base frame ID (source points are expressed in this frame)
    * @param global_frame_id Global (fixed) frame ID used to bridge the zone lookup in time
-   * @param transform_tolerance Transform tolerance
    * @param base_shift_correction Whether to correct the zone transform for base movement in time
    */
   ExclusionZone(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & zone_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
     const bool base_shift_correction);
 
   /**
@@ -175,13 +173,11 @@ protected:
   std::string zone_name_;
 
   /// @brief TF buffer
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   /// @brief Robot base frame ID
   std::string base_frame_id_;
   /// @brief Global (fixed) frame ID, used to bridge the zone lookup in time
   std::string global_frame_id_;
-  /// @brief Transform tolerance
-  tf2::Duration transform_tolerance_;
   /// @brief Maximum age in seconds for the zone-frame transform
   double transform_staleness_threshold_{1.0};
   /// @brief Maximum age in seconds for the robot's global-frame transform

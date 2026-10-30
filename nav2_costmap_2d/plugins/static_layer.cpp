@@ -42,11 +42,11 @@
 #include <algorithm>
 #include <string>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_ros_common/validate_messages.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 #define EPSILON 1e-5
 
@@ -485,17 +485,15 @@ StaticLayer::updateCosts(
   // global_frame_ -> map_frame_; only needed for rolling costmaps, where the frames differ
   tf2::Transform tf2_transform = tf2::Transform::getIdentity();
   if (layered_costmap_->isRolling()) {
-    geometry_msgs::msg::TransformStamped transform;
-    if (!nav2_util::lookupTransformWithStalenessCheck(
-        *tf_, map_frame_, global_frame_, clock_->now(),
-        transform_staleness_threshold_, transform))
-    {
+    const auto transform_result = tf_manager_->getLatestTransform(
+      map_frame_, global_frame_, transform_staleness_threshold_);
+    if (!transform_result) {
       RCLCPP_ERROR(logger_, "StaticLayer: transform lookup failed or returned stale data");
       has_updated_data_ = true;
       setCurrent(false);
       return;
     }
-    tf2::fromMsg(transform.transform, tf2_transform);
+    tf2::fromMsg(transform_result->transform, tf2_transform);
   }
 
   std::vector<MapLocation> map_region_to_restore;

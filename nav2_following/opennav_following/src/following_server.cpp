@@ -13,12 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "angles/angles.h"
 #include "nav2_ros_common/rate.hpp"
 #include "opennav_docking_core/docking_exceptions.hpp"
 #include "opennav_following/following_server.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
 
@@ -45,7 +45,7 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   params_ = param_handler_->getParams();
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
-  tf2_buffer_ = nav2::create_transform_buffer(node);
+  tf_manager_ = nav2::create_transform_manager(node, false);
 
   // Create odom subscriber for backward blind docking
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
@@ -62,7 +62,7 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Note: Collision detection is not supported in following server so we force it off
   // and warn if the user has it enabled (from launch file or parameter file)
   controller_ =
-    std::make_unique<opennav_docking::Controller>(node, tf2_buffer_, params_->base_frame);
+    std::make_unique<opennav_docking::Controller>(node, tf_manager_, params_->base_frame);
 
   if (params_->use_collision_detection) {
     RCLCPP_ERROR(
@@ -92,7 +92,7 @@ FollowingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating %s", get_name());
 
-  tf2_listener_ = nav2::create_transform_listener(*tf2_buffer_, this, true);
+  tf_manager_->startListener();
   vel_publisher_->on_activate();
   filtered_dynamic_pose_pub_->on_activate();
   following_action_server_->activate();
@@ -114,7 +114,9 @@ FollowingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   filtered_dynamic_pose_pub_->on_deactivate();
   param_handler_->deactivate();
 
-  tf2_listener_.reset();
+  if (tf_manager_) {
+    tf_manager_->stopListener();
+  }
 
   // Destroy bond connection
   destroyBond();
@@ -126,7 +128,7 @@ nav2::CallbackReturn
 FollowingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up %s", get_name());
-  tf2_buffer_.reset();
+  tf_manager_.reset();
   following_action_server_.reset();
   controller_.reset();
   vel_publisher_.reset();
@@ -357,7 +359,7 @@ bool FollowingServer::approachObject(
     // Use one robot pose and timestamp for all geometry and control in this iteration.
     const auto robot_pose = getRobotPose();
     iteration_start_time_ = robot_pose.header.stamp;
-    const auto base_to_fixed_transform = nav2_util::poseToTransformStamped(
+    const auto base_to_fixed_transform = tf_manager_->poseToTransformStamped(
       robot_pose, params_->base_frame);
 
     publishFollowingFeedback(FollowObject::Feedback::CONTROLLING);
@@ -382,7 +384,7 @@ bool FollowingServer::approachObject(
 
     // ... and transform the target_pose into base_frame using the same transform
     tf2::doTransform(
-      target_pose, target_pose, nav2_util::invertTransform(base_to_fixed_transform));
+      target_pose, target_pose, tf_manager_->invertTransform(base_to_fixed_transform));
 
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
@@ -528,14 +530,15 @@ bool FollowingServer::getRefinedPose(
 
   // Transform detected pose into fixed frame
   if (detected.header.frame_id != params_->fixed_frame) {
-    try {
-      tf2_buffer_->transform(
-        detected, detected, params_->fixed_frame,
-          tf2::durationFromSec(params_->transform_tolerance));
-    } catch (const tf2::TransformException & ex) {
-      RCLCPP_WARN(this->get_logger(), "Failed to transform detected object pose");
+    const auto detected_result = tf_manager_->transformStampedPose(
+      params_->fixed_frame, detected,
+      params_->transform_tolerance, nav2::Log::Disabled);
+    if (!detected_result) {
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
+        "Failed to transform detected object pose");
       return false;
     }
+    detected = *detected_result;
   }
 
   // The control law can oscillate if the orientation in the perception
@@ -560,19 +563,18 @@ bool FollowingServer::getRefinedPose(
 bool FollowingServer::getFramePose(
   geometry_msgs::msg::PoseStamped & pose, const std::string & frame_id)
 {
-  try {
-    // Matching the target to the staleness-checked robot snapshot used by this control
-    // iteration.
-    const auto transform = tf2_buffer_->lookupTransform(
-      params_->fixed_frame, frame_id, iteration_start_time_,
-      tf2::durationFromSec(params_->transform_tolerance));
-    pose = nav2_util::transformToPoseStamped(transform);
-  } catch (const tf2::TransformException & ex) {
+  // Matching the target to the staleness-checked robot snapshot used by this control
+  // iteration.
+  const auto transform_result = tf_manager_->getStampedTransform(
+    params_->fixed_frame, frame_id, rclcpp::Time(iteration_start_time_),
+    params_->transform_tolerance);
+  if (!transform_result) {
     RCLCPP_WARN(
       get_logger(),
-      "Failed to get transform for frame %s: %s", frame_id.c_str(), ex.what());
+      "Failed to get transform for frame %s", frame_id.c_str());
     return false;
   }
+  pose = tf_manager_->transformToPoseStamped(*transform_result);
 
   // Filter the detected pose
   auto filtered_pose = filter_->update(pose);
@@ -603,14 +605,12 @@ bool FollowingServer::getTrackingPose(
 
 geometry_msgs::msg::PoseStamped FollowingServer::getRobotPose()
 {
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::getFreshPose(
-      *tf2_buffer_, params_->fixed_frame, params_->base_frame, now(),
-      params_->transform_staleness_threshold, robot_pose))
-  {
+  const auto robot_pose = tf_manager_->getLatestPose(
+    params_->fixed_frame, params_->base_frame, params_->transform_staleness_threshold);
+  if (!robot_pose) {
     throw opennav_docking_core::DockingTFError("Failed to get a fresh robot pose");
   }
-  return robot_pose;
+  return *robot_pose;
 }
 
 geometry_msgs::msg::PoseStamped FollowingServer::getPoseAtDistance(

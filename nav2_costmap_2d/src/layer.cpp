@@ -39,7 +39,7 @@ namespace nav2_costmap_2d
 Layer::Layer()
 : layered_costmap_(nullptr),
   name_(),
-  tf_(nullptr),
+  tf_manager_(nullptr),
   current_(false),
   enabled_(false)
 {}
@@ -48,13 +48,13 @@ void
 Layer::initialize(
   LayeredCostmap * parent,
   std::string name,
-  nav2::TransformBuffer * tf,
+  nav2::TransformManager * tf,
   const nav2::LifecycleNode::WeakPtr & node,
   rclcpp::CallbackGroup::SharedPtr callback_group)
 {
   layered_costmap_ = parent;
   name_ = name;
-  tf_ = tf;
+  tf_manager_ = tf;
   node_ = node;
   callback_group_ = callback_group;
   {

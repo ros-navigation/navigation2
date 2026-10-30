@@ -25,15 +25,14 @@
 #include <thread>
 #include <utility>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/logger.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/utilities.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/rate.hpp"
@@ -115,7 +114,7 @@ public:
   // configure the server on lifecycle setup
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, nav2::TransformBuffer::SharedPtr tf,
+    const std::string & name, nav2::TransformManager::SharedPtr tf,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker)
   override
@@ -128,7 +127,7 @@ public:
     RCLCPP_INFO(logger_, "Configuring %s", name.c_str());
 
     behavior_name_ = name;
-    tf_ = tf;
+    tf_manager_ = tf;
 
     node->get_parameter("cycle_frequency", cycle_frequency_);
     node->get_parameter("local_frame", local_frame_);
@@ -184,12 +183,12 @@ protected:
    */
   bool getCurrentPoseChecked(geometry_msgs::msg::PoseStamped & pose)
   {
-    if (!nav2_util::getFreshPose(
-        *tf_, local_frame_, robot_base_frame_, clock_->now(),
-        transform_staleness_threshold_, pose))
-    {
+    const auto pose_result = tf_manager_->getLatestPose(
+      local_frame_, robot_base_frame_, transform_staleness_threshold_);
+    if (!pose_result) {
       return false;
     }
+    pose = *pose_result;
     return true;
   }
 
@@ -200,7 +199,7 @@ protected:
   typename ActionServer::SharedPtr action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_;
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   double cycle_frequency_;
   double enabled_;

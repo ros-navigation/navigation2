@@ -28,7 +28,7 @@
 #include "tf2/time.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_msgs/msg/collision_detector_state.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
@@ -108,7 +108,7 @@ protected:
    */
   bool configurePolygons(
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance);
+    double transform_tolerance);
   /**
    * @brief Supporting routine creating and configuring all data sources
    * @param base_frame_id Robot base frame ID
@@ -123,7 +123,7 @@ protected:
   bool configureSources(
     const std::string & base_frame_id,
     const std::string & odom_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & source_timeout,
     const bool base_shift_correction);
 
@@ -148,9 +148,7 @@ protected:
   // ----- Variables -----
 
   /// @brief TF buffer
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  /// @brief TF listener
-  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   /// @brief Polygons array
   std::vector<std::shared_ptr<Polygon>> polygons_;

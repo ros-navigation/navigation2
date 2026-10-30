@@ -45,8 +45,7 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   if (!enforce_global_frame_id_) {
     // Transform buffer and listener initialization
-    tf_buffer_ = nav2::create_transform_buffer(this);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, this);
+    tf_manager_ = nav2::create_transform_manager(this);
   } else {
     RCLCPP_INFO(
       get_logger(),
@@ -124,8 +123,7 @@ VectorObjectServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   shapes_.clear();
 
-  tf_listener_.reset();
-  tf_buffer_.reset();
+  tf_manager_.reset();
 
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -224,7 +222,7 @@ bool VectorObjectServer::transformVectorObjects()
   for (auto shape : shapes_) {
     if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
       // Shape to be updated dynamically
-      if (!shape->toFrame(global_frame_id_, tf_buffer_, transform_tolerance_)) {
+      if (!shape->toFrame(global_frame_id_, tf_manager_, transform_tolerance_)) {
         RCLCPP_ERROR(
           get_logger(), "Can not transform vector object from %s to %s frame",
           shape->getFrameID().c_str(), global_frame_id_.c_str());

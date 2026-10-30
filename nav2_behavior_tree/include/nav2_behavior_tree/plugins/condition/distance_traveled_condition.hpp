@@ -23,7 +23,7 @@
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/clock.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
@@ -81,12 +81,11 @@ public:
 private:
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Clock::SharedPtr clock_;
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   geometry_msgs::msg::PoseStamped start_pose_;
 
   double distance_;
-  double transform_tolerance_;
   double transform_staleness_threshold_;
   std::string global_frame_, robot_base_frame_;
 };

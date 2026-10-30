@@ -27,7 +27,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
 #include "tf2/time.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
@@ -51,16 +51,16 @@ public:
    * @brief Polygon constructor
    * @param node Collision Monitor node pointer
    * @param polygon_name Name of polygon
-   * @param tf_buffer Shared pointer to a TF buffer
+   * @param tf_manager Shared pointer to a TF manager
    * @param base_frame_id Robot base frame ID
    * @param transform_tolerance Transform tolerance
    */
   Polygon(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance);
+    double transform_tolerance);
   /**
    * @brief Polygon destructor
    */
@@ -353,11 +353,11 @@ protected:
 
   // Global variables
   /// @brief TF buffer
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   /// @brief Base frame ID
   std::string base_frame_id_;
   /// @brief Transform tolerance
-  tf2::Duration transform_tolerance_;
+  double transform_tolerance_;
   /// @brief Collision monitor node's clock
   rclcpp::Clock::SharedPtr node_clock_;
 

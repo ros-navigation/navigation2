@@ -15,11 +15,10 @@
 #include <cmath>
 #include <chrono>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "opennav_docking/simple_charging_dock.hpp"
 #include "opennav_docking/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 using namespace std::chrono_literals;
 
@@ -28,10 +27,10 @@ namespace opennav_docking
 
 void SimpleChargingDock::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  const std::string & name, nav2::TransformBuffer::SharedPtr tf)
+  const std::string & name, nav2::TransformManager::SharedPtr tf)
 {
   name_ = name;
-  tf2_buffer_ = tf;
+  tf_manager_ = tf;
   is_charging_ = false;
   node_ = parent.lock();
   if (!node_) {
@@ -225,19 +224,17 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
   // is the output of detection, but also acts as the initial estimate
   // and contains the frame_id of docking
   if (detected.header.frame_id != pose.header.frame_id) {
-    try {
-      if (rclcpp::Time(detected.header.stamp).nanoseconds() == 0) {
-        RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 3000,
+    if (rclcpp::Time(detected.header.stamp).nanoseconds() == 0) {
+      RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 3000,
             "Provided a detection pose without a timestamp, unexpected");
-      }
-      geometry_msgs::msg::TransformStamped frame_transform = tf2_buffer_->lookupTransform(
-        pose.header.frame_id, detected.header.frame_id,
-        detected.header.stamp, rclcpp::Duration::from_seconds(0.2));
-      tf2::doTransform(detected, detected, frame_transform);
-    } catch (const tf2::TransformException & ex) {
-      RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose: %s", ex.what());
+    }
+    const auto detected_pose = tf_manager_->transformStampedPose(
+      pose.header.frame_id, detected, 0.2);
+    if (!detected_pose) {
+      RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
       return false;
     }
+    detected = *detected_pose;
   }
 
   // Filter the detected pose
@@ -283,18 +280,16 @@ bool SimpleChargingDock::isDocked()
     return false;
   }
 
-  geometry_msgs::msg::PoseStamped base_pose;
-  if (!nav2_util::getFreshPose(
-      *tf2_buffer_, dock_pose_.header.frame_id, base_frame_id_, node_->now(),
-      transform_staleness_threshold_, base_pose))
-  {
+  const auto base_pose = tf_manager_->getLatestPose(
+    dock_pose_.header.frame_id, base_frame_id_, transform_staleness_threshold_);
+  if (!base_pose) {
     return false;
   }
 
   // If we are close enough, pretend we are charging
   double d = std::hypot(
-    base_pose.pose.position.x - dock_pose_.pose.position.x,
-    base_pose.pose.position.y - dock_pose_.pose.position.y);
+    base_pose->pose.position.x - dock_pose_.pose.position.x,
+    base_pose->pose.position.y - dock_pose_.pose.position.y);
   return d < docking_threshold_;
 }
 

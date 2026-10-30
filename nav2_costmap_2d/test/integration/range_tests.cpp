@@ -46,7 +46,7 @@
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "../testing_helper.hpp"
 #include "sensor_msgs/msg/range.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using std::begin;
 using std::end;
@@ -100,9 +100,9 @@ class TestNode : public ::testing::Test
 public:
   TestNode()
   : node_(std::make_shared<TestLifecycleNode>("range_test_node")),
-    tf_(node_->get_clock())
+    tf_manager_(node_, false)
   {
-    tf_.setUsingDedicatedThread(true);
+    tf_manager_.getRawBuffer().setUsingDedicatedThread(true);
     // Standard non-plugin specific parameters
     node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
     node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
@@ -131,7 +131,7 @@ public:
 
 protected:
   std::shared_ptr<TestLifecycleNode> node_;
-  nav2::TransformBuffer tf_;
+  nav2::TransformManager tf_manager_;
 };
 
 // Test clearing at max range
@@ -142,13 +142,13 @@ TEST_F(TestNode, testClearingAtMaxRange) {
   transform.child_frame_id = "base_link";
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 2;
-  tf_.setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> rlayer{nullptr};
-  addRangeLayer(layers, tf_, node_, rlayer);
+  addRangeLayer(layers, tf_manager_, node_, rlayer);
 
   sensor_msgs::msg::Range msg;
   msg.min_range = 1.0;
@@ -182,13 +182,13 @@ TEST_F(TestNode, testClearingAboveMaxRange) {
   transform.child_frame_id = "base_link";
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 2;
-  tf_.setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> rlayer{nullptr};
-  addRangeLayer(layers, tf_, node_, rlayer);
+  addRangeLayer(layers, tf_manager_, node_, rlayer);
 
   sensor_msgs::msg::Range msg;
   msg.min_range = 1.0;
@@ -224,7 +224,7 @@ TEST_F(TestNode, testConeOutsideOfGrid) {
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> rlayer{nullptr};
-  addRangeLayer(layers, tf_, node_, rlayer);
+  addRangeLayer(layers, tf_manager_, node_, rlayer);
   const unsigned char initial_cost = rlayer->getCost(0, 0);
 
   sensor_msgs::msg::Range msg;
@@ -246,7 +246,7 @@ TEST_F(TestNode, testConeOutsideOfGrid) {
     transform.child_frame_id = "base_link";
     transform.transform.translation.x = position.first;
     transform.transform.translation.y = position.second;
-    tf_.setTransform(transform, "default_authority", true);
+    tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
 
     msg.header.stamp = node_->now();
     rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
@@ -268,13 +268,13 @@ TEST_F(TestNode, testProbabilisticModelForward) {
   transform.child_frame_id = "base_link";
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 2;
-  tf_.setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> rlayer{nullptr};
-  addRangeLayer(layers, tf_, node_, rlayer);
+  addRangeLayer(layers, tf_manager_, node_, rlayer);
 
   sensor_msgs::msg::Range msg;
   msg.min_range = 1.0;
@@ -292,7 +292,7 @@ TEST_F(TestNode, testProbabilisticModelForward) {
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 4;
-  tf_.setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
 //  printMap(*(layers.getCostmap()));
@@ -301,7 +301,7 @@ TEST_F(TestNode, testProbabilisticModelForward) {
 
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 6;
-  tf_.setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
 //  printMap(*(layers.getCostmap()));
@@ -321,13 +321,13 @@ TEST_F(TestNode, testProbabilisticModelDownward) {
   transform.child_frame_id = "base_link";
   transform.transform.translation.y = 3;
   transform.transform.translation.x = 2;
-  tf_.setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> rlayer{nullptr};
-  addRangeLayer(layers, tf_, node_, rlayer);
+  addRangeLayer(layers, tf_manager_, node_, rlayer);
 
   sensor_msgs::msg::Range msg;
   msg.min_range = 1.0;
@@ -346,7 +346,7 @@ TEST_F(TestNode, testProbabilisticModelDownward) {
 
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 2;
-  tf_.setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
 //  printMap(*(layers.getCostmap()));
@@ -355,7 +355,7 @@ TEST_F(TestNode, testProbabilisticModelDownward) {
 
   transform.transform.translation.y = 7;
   transform.transform.translation.x = 2;
-  tf_.setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
 //  printMap(*(layers.getCostmap()));

@@ -113,7 +113,6 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
             distance_forward="2.0"
             distance_backward="1.0"
             robot_base_frame="base_link"
-            transform_tolerance="0.2"
             angular_distance_weight="0.2"
             pose="{pose}"
             input_path="{path}"
@@ -207,7 +206,6 @@ TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
             distance_forward="2.0"
             distance_backward="1.0"
             robot_base_frame="base_link"
-            transform_tolerance="0.2"
             angular_distance_weight="0.2"
             pose="{pose}"
             input_path="{path}"
@@ -250,7 +248,6 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
           <TruncatePathLocal
             distance_forward="2.0"
             distance_backward="1.0"
-            transform_tolerance="0.2"
             angular_distance_weight="0.2"
             robot_base_frame="{robot_base_frame}"
             input_path="{path}"
@@ -292,7 +289,6 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_base_frame)
           <TruncatePathLocal
             distance_forward="2.0"
             distance_backward="1.0"
-            transform_tolerance="0.2"
             robot_base_frame="invalid_frame"
             angular_distance_weight="0.2"
             input_path="{path}"
@@ -334,7 +330,6 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
             distance_forward="2.0"
             distance_backward="1.0"
             robot_base_frame="base_link"
-            transform_tolerance="0.2"
             angular_distance_weight="0.0"
             pose="{pose}"
             input_path="{path}"
@@ -452,7 +447,6 @@ TEST_F(TruncatePathLocalTestFixture, test_param_fallback_without_port)
           <TruncatePathLocal
             distance_forward="2.0"
             distance_backward="1.0"
-            transform_tolerance="0.2"
             angular_distance_weight="0.2"
             input_path="{path}"
             output_path="{truncated_path}"

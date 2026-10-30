@@ -28,7 +28,7 @@
 #include "nav2_util/controller_utils.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using std::hypot;
 using std::min;
@@ -41,7 +41,7 @@ namespace nav2_regulated_pure_pursuit_controller
 
 void RegulatedPurePursuitController::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, nav2::TransformBuffer::SharedPtr tf,
+  std::string name, nav2::TransformManager::SharedPtr tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   auto node = parent.lock();
@@ -52,7 +52,7 @@ void RegulatedPurePursuitController::configure(
 
   costmap_ros_ = costmap_ros;
   costmap_ = costmap_ros_->getCostmap();
-  tf_ = tf;
+  tf_manager_ = tf;
   plugin_name_ = name;
   logger_ = node->get_logger();
 
@@ -173,7 +173,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Transform the plan from costmap's global frame to robot base frame
   nav_msgs::msg::Path transformed_plan;
   if (!nav2_util::transformPathInTargetFrame(
-      transformed_global_plan, transformed_plan, *tf_,
+      transformed_global_plan, transformed_plan, *tf_manager_,
       costmap_ros_->getBaseFrameID(), costmap_ros_->getTransformTolerance()))
   {
     throw nav2_core::ControllerTFError(

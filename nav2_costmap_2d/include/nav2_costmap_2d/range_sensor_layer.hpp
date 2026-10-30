@@ -209,7 +209,7 @@ protected:
   bool clear_on_max_reading_;
   bool was_reset_;
 
-  tf2::Duration transform_tolerance_;
+  double transform_tolerance_{0.0};
   double no_readings_timeout_;
   rclcpp::Time last_reading_time_;
   unsigned int buffered_readings_;

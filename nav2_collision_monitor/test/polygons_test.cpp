@@ -34,7 +34,7 @@
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -76,7 +76,7 @@ static const double LINEAR_LIMIT{0.4};
 static const double ANGULAR_LIMIT{0.09};
 static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
-static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
+static const double TRANSFORM_TOLERANCE{0.1};
 
 class TestNode : public nav2::LifecycleNode
 {
@@ -188,11 +188,11 @@ public:
   PolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance)
+    double transform_tolerance)
   : nav2_collision_monitor::Polygon(
-      node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
+      node, polygon_name, tf_manager, base_frame_id, transform_tolerance)
   {
   }
 
@@ -213,11 +213,11 @@ public:
   CircleWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance)
+    double transform_tolerance)
   : nav2_collision_monitor::Circle(
-      node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
+      node, polygon_name, tf_manager, base_frame_id, transform_tolerance)
   {
   }
 
@@ -278,8 +278,7 @@ protected:
   std::shared_ptr<PolygonWrapper> polygon_;
   std::shared_ptr<CircleWrapper> circle_;
 
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 };  // Tester
 
 Tester::Tester()
@@ -290,9 +289,9 @@ Tester::Tester()
   test_node_->configure();
   test_node_->activate();
 
-  tf_buffer_ = nav2::create_transform_buffer(test_node_);
-  tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, test_node_);
+  tf_manager_ = nav2::create_transform_manager(test_node_);
+  // One-thread broadcasting-listening model
+  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 }
 
 Tester::~Tester()
@@ -304,8 +303,7 @@ Tester::~Tester()
   test_node_->cleanup();
   test_node_.reset();
 
-  tf_listener_.reset();
-  tf_buffer_.reset();
+  tf_manager_.reset();
 }
 
 void Tester::setCommonParameters(
@@ -401,7 +399,7 @@ void Tester::createPolygon(const std::string & action_type, const bool is_static
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   polygon_->activate();
 }
@@ -413,16 +411,13 @@ void Tester::createCircle(const std::string & action_type, const bool is_static)
 
   circle_ = std::make_shared<CircleWrapper>(
     test_node_->weak_from_this(), CIRCLE_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(circle_->configure());
   circle_->activate();
 }
 
 void Tester::sendTransforms(double shift)
 {
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
-    nav2::create_transform_broadcaster(test_node_);
-
   geometry_msgs::msg::TransformStamped transform;
 
   // base_frame -> base2_frame transform
@@ -438,7 +433,7 @@ void Tester::sendTransforms(double shift)
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
 
-  tf_broadcaster->sendTransform(transform);
+  tf_manager_->sendTransform(transform);
 }
 
 geometry_msgs::msg::PolygonStamped::ConstSharedPtr Tester::waitPolygonReceived(
@@ -587,7 +582,7 @@ TEST_F(Tester, testPolygonUndeclaredActionType)
   // "action_type" parameter is not initialized
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
   // Check that "action_type" parameter is not set after configuring
   ASSERT_TRUE(checkUndeclaredParameter(POLYGON_NAME, "action_type"));
@@ -600,7 +595,7 @@ TEST_F(Tester, testPolygonUndeclaredPoints)
     std::string(POLYGON_NAME) + ".action_type", rclcpp::ParameterValue("stop"));
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
   // Check that "points" and "polygon_sub_topic" parameters are not set after configuring
   ASSERT_TRUE(checkUndeclaredParameter(POLYGON_NAME, "points"));
@@ -614,7 +609,7 @@ TEST_F(Tester, testPolygonIncorrectActionType)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
 
@@ -628,7 +623,7 @@ TEST_F(Tester, testPolygonIncorrectPoints1)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
 
@@ -642,7 +637,7 @@ TEST_F(Tester, testPolygonIncorrectPoints2)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
 
@@ -658,7 +653,7 @@ TEST_F(Tester, testPolygonMaxPoints)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   EXPECT_EQ(polygon_->getMinPoints(), max_points + 1);
 }
@@ -669,7 +664,7 @@ TEST_F(Tester, testCircleUndeclaredRadius)
 
   circle_ = std::make_shared<CircleWrapper>(
     test_node_->weak_from_this(), CIRCLE_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(circle_->configure());
 
   // Check that "radius" and "polygon_sub_topic" parameters are not set after configuring
@@ -846,7 +841,7 @@ TEST_F(Tester, testPolygonGetPointsInsideEdge)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
 
   std::vector<nav2_collision_monitor::Point> points;
@@ -1044,7 +1039,7 @@ TEST_F(Tester, testPolygonDefaultVisualize)
   // Create new polygon
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   polygon_->activate();
 
@@ -1065,7 +1060,7 @@ TEST_F(Tester, testPolygonInvalidPointsString)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
 
@@ -1077,7 +1072,7 @@ TEST_F(Tester, testPolygonSourceDefaultAssociation)
   setPolygonParameters(SQUARE_POLYGON_STR, true);
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   ASSERT_EQ(polygon_->getSourcesNames(), all_sources);
 }
@@ -1090,7 +1085,7 @@ TEST_F(Tester, testPolygonSourceInvalidAssociation)
   setPolygonParameters(SQUARE_POLYGON_STR, true);
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
 
@@ -1102,7 +1097,7 @@ TEST_F(Tester, testPolygonSourceAssociation)
   setPolygonParameters(SQUARE_POLYGON_STR, true);
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   ASSERT_EQ(polygon_->getSourcesNames(), poly_sources);
 }
@@ -1168,7 +1163,7 @@ TEST_F(Tester, testPolygonDebounceRejectsInvalidConfiguredTriggerParameter)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   EXPECT_FALSE(polygon_->configure());
 }
 
@@ -1182,7 +1177,7 @@ TEST_F(Tester, testPolygonDebounceRejectsInvalidConfiguredReleaseParameter)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), polygon_name,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   EXPECT_FALSE(polygon_->configure());
 }
 
