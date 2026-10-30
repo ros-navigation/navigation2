@@ -261,8 +261,8 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
     initial_transform_timeout_);
   const auto initial_transform_timeout_point = now() + initial_transform_timeout;
   while (rclcpp::ok() &&
-    !tf_manager_->getLatestTransform(global_frame_, robot_base_frame_, 0.0,
-      nav2::Log::Disabled).has_value())
+    !tf_manager_->getLatestTransform(global_frame_, robot_base_frame_,
+      transform_staleness_threshold_, nav2::Log::Disabled).has_value())
   {
     RCLCPP_INFO(
       get_logger(), "Timed out waiting for transform from %s to %s"
