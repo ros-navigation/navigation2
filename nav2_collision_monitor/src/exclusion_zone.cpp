@@ -35,12 +35,12 @@ namespace nav2_collision_monitor
 ExclusionZone::ExclusionZone(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & zone_name,
-  const nav2::TransformManager::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_manager,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
   const bool base_shift_correction)
-: node_(node), zone_name_(zone_name), tf_manager_(tf_buffer),
+: node_(node), zone_name_(zone_name), tf_manager_(tf_manager),
   base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
   transform_tolerance_(transform_tolerance), base_shift_correction_(base_shift_correction),
   min_height_(-std::numeric_limits<double>::max()),

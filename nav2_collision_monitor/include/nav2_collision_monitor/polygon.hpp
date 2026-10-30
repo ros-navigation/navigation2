@@ -51,14 +51,14 @@ public:
    * @brief Polygon constructor
    * @param node Collision Monitor node pointer
    * @param polygon_name Name of polygon
-   * @param tf_buffer Shared pointer to a TF buffer
+   * @param tf_manager Shared pointer to a TF manager
    * @param base_frame_id Robot base frame ID
    * @param transform_tolerance Transform tolerance
    */
   Polygon(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance);
   /**

@@ -50,7 +50,7 @@ public:
    */
   explicit EdgeScorer(
     nav2::LifecycleNode::SharedPtr node,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber);
 
   /**

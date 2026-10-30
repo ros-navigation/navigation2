@@ -36,7 +36,7 @@ namespace nav2_map_server
  * @brief Looks up the transform for a vector object's header.
  * @param header Header containing the source frame and timestamp
  * @param target_frame Frame to transform the object into
- * @param tf_buffer TF buffer to use for the lookup
+ * @param tf_manager TF manager to use for the lookup
  * @param transform_tolerance Maximum wait time for the transform
  * @param transform Output transform from the header frame to the target frame
  * @return True if the transform was found, otherwise false
@@ -44,7 +44,7 @@ namespace nav2_map_server
 bool lookupShapeTransform(
   const std_msgs::msg::Header & header,
   const std::string & target_frame,
-  const nav2::TransformManager::SharedPtr & tf_buffer,
+  const nav2::TransformManager::SharedPtr & tf_manager,
   const double transform_tolerance,
   geometry_msgs::msg::TransformStamped & transform);
 

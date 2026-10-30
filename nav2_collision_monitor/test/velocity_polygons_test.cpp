@@ -105,11 +105,11 @@ public:
   VelocityPolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const nav2::TransformManager::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance)
   : nav2_collision_monitor::VelocityPolygon(
-      node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
+      node, polygon_name, tf_manager, base_frame_id, transform_tolerance)
   {
   }
 

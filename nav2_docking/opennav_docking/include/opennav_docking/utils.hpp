@@ -176,7 +176,7 @@ inline geometry_msgs::msg::PoseStamped getDockPoseStamped(
 }
 
 inline geometry_msgs::msg::PoseStamped transformPoseToFrame(
-  nav2::TransformManager & tf_buffer,
+  nav2::TransformManager & tf_manager,
   const geometry_msgs::msg::PoseStamped & pose,
   const std::string & target_frame,
   const double transform_staleness_threshold)
@@ -184,7 +184,7 @@ inline geometry_msgs::msg::PoseStamped transformPoseToFrame(
   if (pose.header.frame_id == target_frame) {
     return pose;
   }
-  const auto transform = tf_buffer.getLatestTransform(
+  const auto transform = tf_manager.getLatestTransform(
     target_frame, pose.header.frame_id, transform_staleness_threshold);
   if (!transform) {
     throw opennav_docking_core::DockingTFError(

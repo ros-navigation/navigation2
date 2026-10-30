@@ -21,11 +21,11 @@ namespace nav2_map_server
 bool lookupShapeTransform(
   const std_msgs::msg::Header & header,
   const std::string & target_frame,
-  const nav2::TransformManager::SharedPtr & tf_buffer,
+  const nav2::TransformManager::SharedPtr & tf_manager,
   const double transform_tolerance,
   geometry_msgs::msg::TransformStamped & transform)
 {
-  const auto result = tf_buffer->getStampedTransform(
+  const auto result = tf_manager->getStampedTransform(
     target_frame, header.frame_id, rclcpp::Time(header.stamp),
     tf2::durationFromSec(transform_tolerance));
   if (!result) {

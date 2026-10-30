@@ -281,9 +281,9 @@ TEST(OptimizerTests, DefaultInvalidInitialSize)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
 
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
   EXPECT_EQ(optimizer_tester.grabSettings().batch_size, 1000u);
   EXPECT_EQ(optimizer_tester.grabSettings().time_steps, 56u);
 }
@@ -308,8 +308,8 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
   param_handler.start();
 
   auto result = node->set_parameter(rclcpp::Parameter("mppic.batch_size", 0));
@@ -364,8 +364,8 @@ TEST(OptimizerTests, TestOptimizerMotionModels)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Diff Drive should be non-holonomic
   optimizer_tester.resetMotionModel();
@@ -404,8 +404,8 @@ TEST(OptimizerTests, setOffsetTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Test offsets are properly set based on relationship of model_dt and controller period
   // Also tests getting set model_dt parameter.
@@ -431,8 +431,8 @@ TEST(OptimizerTests, resetTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Tests resetting the full state of all the functions after filling with garbage
   optimizer_tester.fillOptimizerWithGarbage();
@@ -455,8 +455,8 @@ TEST(OptimizerTests, FallbackTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Test fallback logic, also tests getting set param retry_attempt_limit
   // Because retry set to 2, it should attempt soft resets 2x before throwing exception
@@ -486,8 +486,8 @@ TEST(OptimizerTests, PrepareTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Test Prepare function to set the state of the robot pose/speed on new cycle
   // Populate the contents with things easily identifiable if correct
@@ -524,8 +524,8 @@ TEST_P(OptimizerIterationTests, CostsOnlyIncludeLatestRollouts)
   std::string name = "test";
   ParametersHandler param_handler(node, name);
   costmap_ros->on_configure(rclcpp_lifecycle::State{});
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   geometry_msgs::msg::PoseStamped pose;
   pose.pose.orientation.w = 1.0;
@@ -573,8 +573,8 @@ TEST(OptimizerTests, shiftControlSequenceTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Test shiftControlSequence by setting the 2nd value to something unique to neighbors
   auto & sequence = optimizer_tester.grabControlSequence();
@@ -620,8 +620,8 @@ TEST(OptimizerTests, SpeedLimitTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Test Speed limits API
   auto [v_min, v_max] = optimizer_tester.getVelLimits();
@@ -666,8 +666,8 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Test constraints being applied to ensure feasibility of trajectories
   // Also tests param get of set vx/vy/wz min/maxes
@@ -744,8 +744,8 @@ TEST(OptimizerTests, updateStateVelocitiesTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Test settings of the state to the initial robot speed to start rollout
   // Set model to omni to consider holonomic vy elements
@@ -775,8 +775,8 @@ TEST(OptimizerTests, getControlFromSequenceAsTwistTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Test conversion of control sequence into a Twist command to execute
   auto & sequence = optimizer_tester.grabControlSequence();
@@ -816,8 +816,8 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();
 
@@ -886,8 +886,8 @@ TEST(OptimizerTests, TestGetters)
   ParametersHandler param_handler(node, test);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
   EXPECT_EQ(optimizer_tester.getSettings().model_dt, 0.05f);
 }
 
@@ -913,8 +913,8 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();
 
@@ -987,8 +987,8 @@ TEST(OptimizerTests, SpeedLimitDynamicParameterGuard)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   // Start the parameter handler to enable dynamic parameter callbacks
   param_handler.start();
@@ -1055,8 +1055,8 @@ TEST(OptimizerTests, InterIterationConstraintsTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();
 
