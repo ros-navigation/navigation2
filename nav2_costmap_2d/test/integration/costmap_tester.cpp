@@ -150,7 +150,7 @@ void CostmapTester::compareCells(
 }   // namespace nav2_costmap_2d
 
 nav2_costmap_2d::CostmapTester * map_tester = NULL;
-nav2::TransformManager * tf_;
+nav2::TransformManager * tf_manager_;
 
 TEST(CostmapTester, checkConsistentCosts) {
   map_tester->checkConsistentCosts();
@@ -168,8 +168,8 @@ int main(int argc, char ** argv)
   auto node = nav2::LifecycleNode::make_shared("costmap_tester");
   testing::InitGoogleTest(&argc, argv);
 
-  tf_ = new nav2::TransformManager(node);
-  map_tester = new nav2_costmap_2d::CostmapTester(*tf_);
+  tf_manager_ = new nav2::TransformManager(node);
+  map_tester = new nav2_costmap_2d::CostmapTester(*tf_manager_);
   rclcpp::TimerBase::SharedPtr timer = node->create_wall_timer(30000ms, testCallback);
   rclcpp::spin(costmap_ros_);
   rclcpp::shutdown();

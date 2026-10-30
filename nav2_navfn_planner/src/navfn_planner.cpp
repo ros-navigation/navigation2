@@ -47,7 +47,7 @@ namespace nav2_navfn_planner
 {
 
 NavfnPlanner::NavfnPlanner()
-: tf_(nullptr), costmap_(nullptr)
+: tf_manager_(nullptr), costmap_(nullptr)
 {
 }
 
@@ -64,7 +64,7 @@ NavfnPlanner::configure(
   std::string name, nav2::TransformManager::SharedPtr tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  tf_ = tf;
+  tf_manager_ = tf;
   name_ = name;
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();

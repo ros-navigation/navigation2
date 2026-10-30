@@ -74,7 +74,7 @@ public:
 
 protected:
   std::string route_frame_, graph_filepath_;
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   rclcpp::Logger logger_{rclcpp::get_logger("GraphSaver")};
 
   // Graph Parser

@@ -127,7 +127,7 @@ public:
     RCLCPP_INFO(logger_, "Configuring %s", name.c_str());
 
     behavior_name_ = name;
-    tf_ = tf;
+    tf_manager_ = tf;
 
     node->get_parameter("cycle_frequency", cycle_frequency_);
     node->get_parameter("local_frame", local_frame_);
@@ -183,7 +183,7 @@ protected:
    */
   bool getCurrentPoseChecked(geometry_msgs::msg::PoseStamped & pose)
   {
-    const auto pose_result = tf_->getLatestPose(
+    const auto pose_result = tf_manager_->getLatestPose(
       local_frame_, robot_base_frame_, transform_staleness_threshold_);
     if (!pose_result) {
       return false;
@@ -199,7 +199,7 @@ protected:
   typename ActionServer::SharedPtr action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_;
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   double cycle_frequency_;
   double enabled_;

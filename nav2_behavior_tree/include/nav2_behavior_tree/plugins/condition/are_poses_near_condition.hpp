@@ -85,7 +85,7 @@ public:
 
 private:
   nav2::LifecycleNode::SharedPtr node_;
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   double transform_tolerance_;
   std::string global_frame_;
 };

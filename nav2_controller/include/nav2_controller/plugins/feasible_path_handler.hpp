@@ -139,7 +139,7 @@ protected:
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Logger logger_ {rclcpp::get_logger("FeasiblePathHandler")};
   std::string plugin_name_;
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav_msgs::msg::Path global_plan_;
   nav_msgs::msg::Path global_plan_up_to_constraint_;

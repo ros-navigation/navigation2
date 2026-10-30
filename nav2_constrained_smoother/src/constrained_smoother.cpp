@@ -51,7 +51,7 @@ void ConstrainedSmoother::configure(
   }
 
   costmap_sub_ = costmap_sub;
-  tf_ = tf;
+  tf_manager_ = tf;
   plugin_name_ = name;
   logger_ = node->get_logger();
 

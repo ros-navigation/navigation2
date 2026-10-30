@@ -163,7 +163,7 @@ protected:
   bool isGoalChanged(const geometry_msgs::msg::PoseStamped & goal);
 
   nav2::LifecycleNode::WeakPtr node_;
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::string plugin_name_;
   rclcpp::Logger logger_ {rclcpp::get_logger("RotationShimController")};
   rclcpp::Clock::SharedPtr clock_;

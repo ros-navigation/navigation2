@@ -216,7 +216,7 @@ protected:
   typename ComputeAndTrackRouteServer::SharedPtr compute_and_track_route_server_;
 
   // TF
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   // Publish the route graph for visualization
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr

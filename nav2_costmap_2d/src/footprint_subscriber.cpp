@@ -57,13 +57,13 @@ FootprintSubscriber::getFootprintInRobotFrame(
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
-  const auto current_pose_transform = tf_.getStampedTransform(
+  const auto current_pose_transform = tf_manager_.getStampedTransform(
     footprint_header.frame_id, robot_base_frame_, rclcpp::Time(footprint_header.stamp),
     transform_tolerance_);
   if (!current_pose_transform) {
     return false;
   }
-  current_pose = tf_.transformToPoseStamped(*current_pose_transform);
+  current_pose = tf_manager_.transformToPoseStamped(*current_pose_transform);
 
   double x = current_pose.pose.position.x;
   double y = current_pose.pose.position.y;

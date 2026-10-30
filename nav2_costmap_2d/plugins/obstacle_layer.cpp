@@ -189,7 +189,7 @@ void ObstacleLayer::onInitialize()
         expected_update_rate,
           min_obstacle_height,
           max_obstacle_height, obstacle_max_range, obstacle_min_range, raytrace_max_range,
-          raytrace_min_range, *tf_,
+          raytrace_min_range, *tf_manager_,
           global_frame_,
           sensor_frame, transform_tolerance));
 
@@ -246,7 +246,7 @@ void ObstacleLayer::onInitialize()
       sub->unsubscribe();
 
       auto filter = nav2::create_message_filter<sensor_msgs::msg::LaserScan>(
-        *sub, *tf_, global_frame_, 50,
+        *sub, *tf_manager_, global_frame_, 50,
         node, transform_tolerance);
 
       if (inf_is_valid) {
@@ -315,7 +315,7 @@ void ObstacleLayer::onInitialize()
       }
 
       auto filter = nav2::create_message_filter<sensor_msgs::msg::PointCloud2>(
-        *sub, *tf_, global_frame_, 50,
+        *sub, *tf_manager_, global_frame_, 50,
         node, transform_tolerance);
 
       filter->registerCallback(
@@ -396,7 +396,7 @@ ObstacleLayer::laserScanCallback(
   // project the scan into a point cloud
   try {
     projector_.transformLaserScanToPointCloud(
-      message->header.frame_id, *message, cloud, tf_->getRawBuffer());
+      message->header.frame_id, *message, cloud, tf_manager_->getRawBuffer());
   } catch (tf2::TransformException & ex) {
     RCLCPP_WARN(
       logger_,
@@ -441,7 +441,7 @@ ObstacleLayer::laserScanValidInfCallback(
   // project the scan into a point cloud
   try {
     projector_.transformLaserScanToPointCloud(
-      message.header.frame_id, message, cloud, tf_->getRawBuffer());
+      message.header.frame_id, message, cloud, tf_manager_->getRawBuffer());
   } catch (tf2::TransformException & ex) {
     RCLCPP_WARN(
       logger_,

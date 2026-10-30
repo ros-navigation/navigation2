@@ -52,7 +52,7 @@ void RegulatedPurePursuitController::configure(
 
   costmap_ros_ = costmap_ros;
   costmap_ = costmap_ros_->getCostmap();
-  tf_ = tf;
+  tf_manager_ = tf;
   plugin_name_ = name;
   logger_ = node->get_logger();
 
@@ -173,7 +173,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Transform the plan from costmap's global frame to robot base frame
   nav_msgs::msg::Path transformed_plan;
   if (!nav2_util::transformPathInTargetFrame(
-      transformed_global_plan, transformed_plan, *tf_,
+      transformed_global_plan, transformed_plan, *tf_manager_,
       costmap_ros_->getBaseFrameID(), costmap_ros_->getTransformTolerance()))
   {
     throw nav2_core::ControllerTFError(

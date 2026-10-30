@@ -38,7 +38,7 @@ void DistanceTraveledCondition::initialize()
 
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();
-  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
 
@@ -52,7 +52,7 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
-    const auto start_pose_result = tf_->getLatestPose(
+    const auto start_pose_result = tf_manager_->getLatestPose(
       global_frame_, robot_base_frame_, transform_staleness_threshold_, nav2::Log::Disabled);
     if (!start_pose_result) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
@@ -64,7 +64,7 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 
   // Determine distance travelled since we've started this iteration
 
-  const auto current_pose = tf_->getLatestPose(
+  const auto current_pose = tf_manager_->getLatestPose(
     global_frame_, robot_base_frame_, transform_staleness_threshold_, nav2::Log::Disabled);
   if (!current_pose) {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");

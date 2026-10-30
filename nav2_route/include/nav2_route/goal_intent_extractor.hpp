@@ -128,7 +128,7 @@ protected:
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   GraphToIDMap * id_to_graph_map_;
   Graph * graph_;
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   rclcpp::Clock::SharedPtr clock_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::string route_frame_;

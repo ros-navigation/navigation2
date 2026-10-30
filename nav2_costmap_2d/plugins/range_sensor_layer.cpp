@@ -296,7 +296,7 @@ void RangeSensorLayer::updateCostmap(
 
   geometry_msgs::msg::TransformStamped transform;
 
-  const auto transform_result = tf_->getStampedTransform(
+  const auto transform_result = tf_manager_->getStampedTransform(
     global_frame_, in.header.frame_id, rclcpp::Time(in.header.stamp),
     transform_tolerance_);
   if (!transform_result) {

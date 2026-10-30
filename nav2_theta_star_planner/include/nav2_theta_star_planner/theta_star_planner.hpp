@@ -70,7 +70,7 @@ public:
     std::function<bool()> cancel_checker) override;
 
 protected:
-  nav2::TransformManager::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("ThetaStarPlanner")};
   std::string global_frame_, name_;

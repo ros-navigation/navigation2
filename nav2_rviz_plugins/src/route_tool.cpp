@@ -33,9 +33,9 @@ RouteTool::RouteTool(QWidget * parent)
   graph_vis_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
     "route_graph", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   node_->activate();
-  tf_ = nav2::create_transform_manager(node_);
-  graph_loader_ = std::make_shared<nav2_route::GraphLoader>(node_, tf_, "map");
-  graph_saver_ = std::make_shared<nav2_route::GraphSaver>(node_, tf_, "map");
+  tf_manager_ = nav2::create_transform_manager(node_);
+  graph_loader_ = std::make_shared<nav2_route::GraphLoader>(node_, tf_manager_, "map");
+  graph_saver_ = std::make_shared<nav2_route::GraphSaver>(node_, tf_manager_, "map");
   ui_->add_node_button->setChecked(true);
   ui_->edit_node_button->setChecked(true);
   ui_->remove_node_button->setChecked(true);

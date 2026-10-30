@@ -28,7 +28,7 @@ GraphLoader::GraphLoader(
   default_plugin_id_("GeoJsonGraphFileLoader")
 {
   logger_ = node->get_logger();
-  tf_ = tf;
+  tf_manager_ = tf;
   route_frame_ = frame;
 
   graph_filepath_ = node->declare_or_get_parameter(
@@ -127,7 +127,7 @@ bool GraphLoader::transformGraph(Graph & graph)
 
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
-      const auto transform = tf_->getLatestTransform(route_frame_, node_frame);
+      const auto transform = tf_manager_->getLatestTransform(route_frame_, node_frame);
 
       if (!transform) {
         return false;

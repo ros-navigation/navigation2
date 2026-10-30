@@ -35,7 +35,7 @@ GetCurrentPoseAction::GetCurrentPoseAction(
 {
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node->get_clock();
-  tf_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   transform_staleness_threshold_ = node->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
@@ -48,7 +48,7 @@ inline BT::NodeStatus GetCurrentPoseAction::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
 
-  const auto current_pose = tf_->getLatestPose(
+  const auto current_pose = tf_manager_->getLatestPose(
     global_frame_, robot_base_frame_, transform_staleness_threshold_);
   if (!current_pose) {
     RCLCPP_WARN(

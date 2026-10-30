@@ -138,7 +138,7 @@ public:
       node, "costmap_topic");
     footprint_sub_ =
       std::make_shared<DummyFootprintSubscriber>(
-      node, "footprint_topic", *tf_);
+      node, "footprint_topic", *tf_manager_);
     collision_checker_ =
       std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
       *costmap_sub_, *footprint_sub_,
