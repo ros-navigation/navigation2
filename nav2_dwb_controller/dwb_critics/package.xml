@@ -12,7 +12,6 @@
   <build_depend>angles</build_depend>
 
   <depend>backward_ros</depend>
-  <depend>costmap_queue</depend>
   <depend>dwb_core</depend>
   <depend>dwb_msgs</depend>
   <depend>geometry_msgs</depend>

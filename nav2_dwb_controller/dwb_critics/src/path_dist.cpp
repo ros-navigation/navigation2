@@ -70,7 +70,6 @@ bool PathDistCritic::prepare(
     {
       int index = costmap_->getIndex(map_x, map_y);
       cell_values_[index] = 0.0;
-      queue_->enqueueCell(map_x, map_y);
       started_path = true;
     } else if (started_path) {
       break;
