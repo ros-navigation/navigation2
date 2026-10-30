@@ -246,12 +246,8 @@ void DockingServer::dockRobot()
 
     // Construct initial estimate of where the dock is located in fixed_frame
     auto dock_pose = utils::getDockPoseStamped(dock, rclcpp::Time(0));
-    const auto dock_pose_result = tf_manager_->transformStampedPose(
-      params_->fixed_frame, dock_pose, 0.0);
-    if (!dock_pose_result) {
-      throw tf2::TransformException("Failed to transform dock pose into fixed frame");
-    }
-    dock_pose = *dock_pose_result;
+    dock_pose = utils::transformPoseToFrame(
+      *tf_manager_, dock_pose, params_->fixed_frame, params_->transform_staleness_threshold);
 
     // Get initial detection of dock before proceeding to move
     doInitialPerception(dock, dock_pose);
