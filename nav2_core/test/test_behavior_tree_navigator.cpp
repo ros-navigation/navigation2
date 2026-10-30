@@ -48,13 +48,18 @@ public:
 
   std::string getName() override {return "test_navigator";}
   std::string getDefaultBTFilepath(nav2::LifecycleNode::WeakPtr) override {return "";}
-  bool goalReceived(NavigateToPose::Goal::ConstSharedPtr) override {return goal_accepted_;}
+  bool goalReceived(NavigateToPose::Goal::ConstSharedPtr) override
+  {
+    ++received_count_;
+    return goal_accepted_;
+  }
   bool goalStarted(NavigateToPose::Goal::ConstSharedPtr goal) override
   {
     ++started_count_;
     active_x_ = goal->pose.pose.position.x;
     return true;
   }
+  int received_count_ = 0;
   int started_count_ = 0;
   double active_x_ = 0.0;
   void onLoop() override {}
@@ -140,6 +145,8 @@ TEST(BTNavigatorOnGoalReceivedTest, PendingGoalStartsAfterCompletion)
   EXPECT_TRUE(muxer.isCurrentNavigator(&nav));
   EXPECT_EQ(nav.started_count_, 2);
   EXPECT_EQ(nav.active_x_, 9.0);
+  // Starting only acquires ownership; the goal is not validated by goalReceived again.
+  EXPECT_EQ(nav.received_count_, 2);
 }
 
 // This mock is used to simulate an already active navigator

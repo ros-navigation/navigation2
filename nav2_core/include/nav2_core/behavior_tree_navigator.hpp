@@ -329,9 +329,10 @@ public:
 
 protected:
   /**
-   * @brief An intermediate goal reception function to mux navigators.
+   * @brief Ensure no other navigator is processing a goal, preempting it if allowed
+   * @return bool If no other navigator holds the muxer
    */
-  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
+  bool stopOtherNavigator()
   {
     if (plugin_muxer_->isNavigating() && !plugin_muxer_->isCurrentNavigator(this)) {
       // A different navigator is processing; check if cross-navigator preemption is allowed
@@ -362,6 +363,17 @@ protected:
         r.sleep();
       }
     }
+    return true;
+  }
+
+  /**
+   * @brief An intermediate goal reception function to mux navigators.
+   */
+  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
+  {
+    if (!stopOtherNavigator()) {
+      return false;
+    }
 
     bool goal_accepted = goalReceived(goal);
 
@@ -381,8 +393,14 @@ protected:
   bool onGoalStarted(typename ActionT::Goal::ConstSharedPtr goal)
   {
     // Completion releases ownership before the action worker promotes a pending goal.
-    if (!plugin_muxer_->isCurrentNavigator(this) && !onGoalReceived(goal)) {
-      return false;
+    if (!plugin_muxer_->isCurrentNavigator(this)) {
+      if (!stopOtherNavigator()) {
+        bt_action_server_->setInternalError(
+          ActionT::Result::GOAL_REJECTED,
+          "Another navigator is processing a goal.");
+        return false;
+      }
+      plugin_muxer_->startNavigating(this);
     }
     return goalStarted(goal);
   }

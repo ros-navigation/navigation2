@@ -134,6 +134,8 @@ if(BUILD_TESTING)
     nav2_navigate_to_pose_navigator
     nav2_navigate_through_poses
   )
+  nav2_add_gtest(test_goal_start_failure test/test_goal_start_failure.cpp)
+  target_link_libraries(test_goal_start_failure nav2_navigate_to_pose_navigator)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 endif()
