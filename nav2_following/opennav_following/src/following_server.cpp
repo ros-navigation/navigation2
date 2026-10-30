@@ -359,7 +359,7 @@ bool FollowingServer::approachObject(
     // Use one robot pose and timestamp for all geometry and control in this iteration.
     const auto robot_pose = getRobotPose();
     iteration_start_time_ = robot_pose.header.stamp;
-    const auto base_to_fixed_transform = nav2::TransformManager::poseToTransformStamped(
+    const auto base_to_fixed_transform = tf2_buffer_->poseToTransformStamped(
       robot_pose, params_->base_frame);
 
     publishFollowingFeedback(FollowObject::Feedback::CONTROLLING);
@@ -384,7 +384,7 @@ bool FollowingServer::approachObject(
 
     // ... and transform the target_pose into base_frame using the same transform
     tf2::doTransform(
-      target_pose, target_pose, nav2::TransformManager::invertTransform(base_to_fixed_transform));
+      target_pose, target_pose, tf2_buffer_->invertTransform(base_to_fixed_transform));
 
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
@@ -574,7 +574,7 @@ bool FollowingServer::getFramePose(
       "Failed to get transform for frame %s", frame_id.c_str());
     return false;
   }
-  pose = nav2::TransformManager::transformToPoseStamped(*transform_result);
+  pose = tf2_buffer_->transformToPoseStamped(*transform_result);
 
   // Filter the detected pose
   auto filtered_pose = filter_->update(pose);

@@ -150,7 +150,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   // ControllerServer supplies pose in the local costmap's global frame, so it already
   // represents the transform from the robot base frame to the costmap's global frame.
   geometry_msgs::msg::TransformStamped costmap_transform =
-    nav2::TransformManager::poseToTransformStamped(pose, costmap_ros_->getBaseFrameID());
+    tf_manager_->poseToTransformStamped(pose, costmap_ros_->getBaseFrameID());
 
   // Compute distance to goal as the path's integrated distance to account for path curvatures
   double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);

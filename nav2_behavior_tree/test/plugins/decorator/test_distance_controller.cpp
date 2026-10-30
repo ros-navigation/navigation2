@@ -65,7 +65,7 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
   pose.header.stamp = node_->now();
   pose.pose.orientation.w = 1.0;
   ASSERT_TRUE(buffer->getRawBuffer().setTransform(
-    nav2::TransformManager::poseToTransformStamped(pose, "base_link"), "test", false));
+    buffer->poseToTransformStamped(pose, "base_link"), "test", false));
 
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
 
@@ -77,7 +77,7 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
     pose.pose.position.x = i * 0.51;
     pose.header.stamp = node_->now();
     ASSERT_TRUE(buffer->getRawBuffer().setTransform(
-      nav2::TransformManager::poseToTransformStamped(pose, "base_link"), "test", false));
+      buffer->poseToTransformStamped(pose, "base_link"), "test", false));
     const auto current_pose = buffer->getLatestPose("map", "base_link");
     ASSERT_TRUE(current_pose);
     EXPECT_DOUBLE_EQ(current_pose->pose.position.x, pose.pose.position.x);

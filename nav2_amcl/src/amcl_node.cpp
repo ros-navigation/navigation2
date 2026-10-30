@@ -306,7 +306,7 @@ AmclNode::getOdomPose(
     }
     return false;
   }
-  odom_pose = nav2::TransformManager::transformToPoseStamped(*odom_pose_transform);
+  odom_pose = tf_manager_->transformToPoseStamped(*odom_pose_transform);
 
   scan_error_count_ = 0;  // reset since we got a good transform
   x = odom_pose.pose.position.x;
@@ -643,7 +643,7 @@ bool AmclNode::addNewScanner(
       base_frame_id_.c_str());
     return false;
   }
-  laser_pose = nav2::TransformManager::transformToPoseStamped(*laser_pose_transform);
+  laser_pose = tf_manager_->transformToPoseStamped(*laser_pose_transform);
 
   pf_vector_t laser_pose_v;
   laser_pose_v.v[0] = laser_pose.pose.position.x;

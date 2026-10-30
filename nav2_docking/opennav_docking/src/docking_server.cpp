@@ -512,12 +512,12 @@ bool DockingServer::approachDock(
     target_pose.pose.position.x += cos(yaw) * backward_projection;
     target_pose.pose.position.y += sin(yaw) * backward_projection;
     const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
-    const auto base_to_fixed_transform = nav2::TransformManager::poseToTransformStamped(
+    const auto base_to_fixed_transform = tf2_buffer_->poseToTransformStamped(
       robot_pose, params_->base_frame);
     // Transforming the target pose from the fixed frame into the robot's base frame,
     // using the inverse of the robot pose transform that is also passed to the controller.
     tf2::doTransform(target_pose, target_pose,
-        nav2::TransformManager::invertTransform(base_to_fixed_transform));
+        tf2_buffer_->invertTransform(base_to_fixed_transform));
 
     // Make sure that the target pose is pointing at the robot when moving backwards
     // This is to ensure that the robot doesn't try to dock from the wrong side
@@ -631,7 +631,7 @@ bool DockingServer::getCommandToPose(
 
   // Determine if we have reached pose yet & stop
   const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
-  const auto base_to_fixed_transform = nav2::TransformManager::poseToTransformStamped(robot_pose,
+  const auto base_to_fixed_transform = tf2_buffer_->poseToTransformStamped(robot_pose,
       params_->base_frame);
   const double dist = std::hypot(
     robot_pose.pose.position.x - fixed_pose.pose.position.x,
@@ -645,7 +645,7 @@ bool DockingServer::getCommandToPose(
   // Transform target_pose into base_link frame
   geometry_msgs::msg::PoseStamped target_pose = fixed_pose;
   tf2::doTransform(target_pose, target_pose,
-      nav2::TransformManager::invertTransform(base_to_fixed_transform));
+      tf2_buffer_->invertTransform(base_to_fixed_transform));
 
   // Compute velocity command
   if (!controller_->computeVelocityCommand(
