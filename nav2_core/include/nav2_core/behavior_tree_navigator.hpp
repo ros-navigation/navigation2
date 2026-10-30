@@ -413,10 +413,10 @@ protected:
    * @brief Initialize blackboard and feedback state when a goal starts execution
    * The goal argument identifies the action whose BT is about to run.
    * Same-navigator preemption is initialized by onPreempt instead of this callback.
-   * The default preserves compatibility with plugins that initialize in goalReceived.
-   * @return bool If the goal was initialized successfully; the default returns true
+   * @param goal Action template's goal message to process
+   * @return bool If the goal was initialized successfully
    */
-  virtual bool goalStarted(typename ActionT::Goal::ConstSharedPtr) {return true;}
+  virtual bool goalStarted(typename ActionT::Goal::ConstSharedPtr goal) = 0;
 
   /**
    * @brief A callback that defines execution that happens on one iteration through the BT
