@@ -85,7 +85,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     get_logger(), "Costmap size: %d,%d",
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
-  tf_ = costmap_ros_->getTfBuffer();
+  tf_ = costmap_ros_->getTfManager();
   try {
     param_handler_ = std::make_unique<ParameterHandler>(
       node, get_logger());

@@ -88,7 +88,7 @@ public:
     spin_thread_.reset();
   }
 
-  nav2::TransformManager::SharedPtr getBuffer() const
+  nav2::TransformManager::SharedPtr getTfManager() const
   {
     return tf_manager_;
   }

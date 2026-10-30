@@ -156,7 +156,7 @@ private:
     nav_through_poses_goal_status_sub_;
 
   // Tf's for initial pose
-  nav2::TransformManager::SharedPtr tf2_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;

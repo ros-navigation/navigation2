@@ -155,7 +155,7 @@ private:
   void waitForTransform()
   {
     auto transformAvailable = [this]()-> bool {
-        return costmap_->getTfBuffer()->getStampedTransform(
+        return costmap_->getTfManager()->getStampedTransform(
           "map", "base_link", rclcpp::Time(0), 1s, nav2::Log::Disabled).has_value();
       };
 

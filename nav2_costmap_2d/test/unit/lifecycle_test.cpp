@@ -49,7 +49,7 @@ TEST(LifecylceTest, CheckInitialTfTimeout) {
   geometry_msgs::msg::TransformStamped transform_global_to_robot{};
   transform_global_to_robot.header.frame_id = costmap->getGlobalFrameID();
   transform_global_to_robot.child_frame_id = costmap->getBaseFrameID();
-  costmap->getTfBuffer()->getRawBuffer().setTransform(transform_global_to_robot, "test", true);
+  costmap->getTfManager()->getRawBuffer().setTransform(transform_global_to_robot, "test", true);
   // Now the costmap should successful transition into the active state
   {
     const auto state_after_activate = costmap->activate();

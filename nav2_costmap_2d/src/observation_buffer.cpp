@@ -56,11 +56,11 @@ ObservationBuffer::ObservationBuffer(
   double expected_update_rate,
   double min_obstacle_height, double max_obstacle_height, double obstacle_max_range,
   double obstacle_min_range,
-  double raytrace_max_range, double raytrace_min_range, nav2::TransformManager & tf2_buffer,
+  double raytrace_max_range, double raytrace_min_range, nav2::TransformManager & tf_manager,
   std::string global_frame,
   std::string sensor_frame,
   tf2::Duration tf_tolerance)
-: tf2_buffer_(tf2_buffer),
+: tf_manager_(tf_manager),
   observation_keep_time_(rclcpp::Duration::from_seconds(observation_keep_time)),
   expected_update_rate_(rclcpp::Duration::from_seconds(expected_update_rate)),
   global_frame_(global_frame),
@@ -96,7 +96,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   local_origin.point.x = 0;
   local_origin.point.y = 0;
   local_origin.point.z = 0;
-  const auto global_origin_transform = tf2_buffer_.getStampedTransform(
+  const auto global_origin_transform = tf_manager_.getStampedTransform(
     global_frame_, local_origin.header.frame_id,
     rclcpp::Time(local_origin.header.stamp), tf_tolerance_);
   if (!global_origin_transform) {
@@ -118,7 +118,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   sensor_msgs::msg::PointCloud2 global_frame_cloud;
 
   // transform the point cloud
-  const auto global_frame_cloud_transform = tf2_buffer_.getStampedTransform(
+  const auto global_frame_cloud_transform = tf_manager_.getStampedTransform(
     global_frame_, cloud.header.frame_id, rclcpp::Time(cloud.header.stamp), tf_tolerance_);
   if (!global_frame_cloud_transform) {
     RCLCPP_ERROR(

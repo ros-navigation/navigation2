@@ -163,7 +163,7 @@ protected:
   double staging_yaw_offset_;
 
   nav2::LifecycleNode::SharedPtr node_;
-  nav2::TransformManager::SharedPtr tf2_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   // Detector control parameters
   std::string detector_service_name_;

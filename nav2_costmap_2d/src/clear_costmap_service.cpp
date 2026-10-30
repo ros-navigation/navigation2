@@ -137,7 +137,7 @@ bool ClearCostmapService::clearAroundPose(
   const double reset_distance,
   const std::vector<std::string> & plugins)
 {
-  const auto global_pose = costmap_.getTfBuffer()->transformStampedPose(
+  const auto global_pose = costmap_.getTfManager()->transformStampedPose(
     costmap_.getGlobalFrameID(), pose, tf2::Duration::zero());
   if (!global_pose) {
     RCLCPP_ERROR(

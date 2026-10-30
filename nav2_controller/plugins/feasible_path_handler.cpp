@@ -268,7 +268,7 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::getTransformedGoal(
     throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
   }
 
-  const auto transformed_goal = costmap_ros_->getTfBuffer()->transformStampedPose(
+  const auto transformed_goal = costmap_ros_->getTfManager()->transformStampedPose(
     costmap_ros_->getGlobalFrameID(), goal, tf2::durationFromSec(transform_tolerance_));
   if (!transformed_goal) {
     throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
