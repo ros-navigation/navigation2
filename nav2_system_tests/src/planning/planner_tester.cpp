@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <cmath>
 #include <string>
 #include <random>
 #include <tuple>
@@ -250,27 +251,26 @@ bool PlannerTester::defaultPlannerTest(
   geometry_msgs::msg::Point robot_position;
   ComputePathToPoseCommand goal;
   auto costmap_properties = costmap_->get_properties();
-  const double half_cell = 0.5 * costmap_properties.resolution;
 
   if (using_fake_costmap_) {
     RCLCPP_DEBUG(this->get_logger(), "Planning using a fake costmap");
 
-    robot_position.x = 1.0 + half_cell;
-    robot_position.y = 1.0 + half_cell;
+    robot_position.x = 1.0;
+    robot_position.y = 1.0;
 
-    goal.pose.position.x = 8.0 + half_cell;
-    goal.pose.position.y = 8.0 + half_cell;
+    goal.pose.position.x = 8.0;
+    goal.pose.position.y = 8.0;
 
   } else {
     RCLCPP_DEBUG(this->get_logger(), "Planning using the provided map");
 
     // Defined with respect to world coordinate system
     //  Planner will do coordinate transformation to map internally
-    robot_position.x = 390.0 + half_cell;
-    robot_position.y = 10.0 + half_cell;
+    robot_position.x = 390.0;
+    robot_position.y = 10.0;
 
-    goal.pose.position.x = 10.0 + half_cell;
-    goal.pose.position.y = 390.0 + half_cell;
+    goal.pose.position.x = 10.0;
+    goal.pose.position.y = 390.0;
   }
 
   // TODO(orduno): #443 On a default test, provide the reference path to compare with the planner
@@ -327,14 +327,13 @@ bool PlannerTester::defaultPlannerRandomTests(
     // Defined with respect to world coordinate system
     // Planner will do coordinate transformation to map internally
 
-    const double half_cell = 0.5 * costmap_->get_properties().resolution;
     auto vals = generate_random();
-    robot_position.x = vals.first + half_cell;
-    robot_position.y = vals.second + half_cell;
+    robot_position.x = vals.first;
+    robot_position.y = vals.second;
 
     vals = generate_random();
-    goal.pose.position.x = vals.first + half_cell;
-    goal.pose.position.y = vals.second + half_cell;
+    goal.pose.position.x = vals.first;
+    goal.pose.position.y = vals.second;
 
     if (!plannerTest(robot_position, goal, path)) {
       RCLCPP_WARN(
@@ -484,9 +483,13 @@ bool PlannerTester::isWithinTolerance(
   auto path_start = path.poses[0];
   auto path_end = path.poses.end()[-1];
 
+  // The path starts at the center of the robot's cell
+  const double start_tolerance = 0.5 * std::sqrt(2.0) * costmap_->get_properties().resolution;
+
   if (
-    path_start.pose.position.x == robot_position.x &&
-    path_start.pose.position.y == robot_position.y &&
+    std::hypot(
+      path_start.pose.position.x - robot_position.x,
+      path_start.pose.position.y - robot_position.y) <= start_tolerance + 1e-6 &&
     path_end.pose.position.x == goal.pose.position.x &&
     path_end.pose.position.y == goal.pose.position.y)
   {

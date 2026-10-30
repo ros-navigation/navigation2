@@ -89,12 +89,12 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
   geometry_msgs::msg::PoseStamped goal;
   std::vector<geometry_msgs::msg::PoseStamped> no_viapoints;
 
-  start.pose.position.x = 0.5;
-  start.pose.position.y = 0.5;
+  start.pose.position.x = 0.55;
+  start.pose.position.y = 0.55;
   start.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
   start.header.frame_id = "map";
 
-  goal.pose.position.x = 0.5;
+  goal.pose.position.x = 0.55;
   goal.pose.position.y = start.pose.position.y + length;
   goal.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI);
   goal.header.frame_id = "map";
@@ -111,10 +111,8 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
       tf2::getYaw(start.pose.orientation),
       0.01);
   } else {
-    const auto & last_path_pose = path.poses.back().pose.position;
-    const auto & second_last_path_pose = path.poses[path_size - 2].pose.position;
-    double dx = last_path_pose.x - second_last_path_pose.x;
-    double dy = last_path_pose.y - second_last_path_pose.y;
+    double dx = path.poses.back().pose.position.x - path.poses.front().pose.position.x;
+    double dy = path.poses.back().pose.position.y - path.poses.front().pose.position.y;
     EXPECT_NEAR(
       tf2::getYaw(path.poses.back().pose.orientation),
       atan2(dy, dx),

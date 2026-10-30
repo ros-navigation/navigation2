@@ -313,10 +313,10 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
     std::floor(path.front().x) == std::floor(mx_goal) &&
     std::floor(path.front().y) == std::floor(my_goal);
 
-  // Convert to world coordinates
+  // Convert cell indices to world coordinates at cell centers
   plan.poses.reserve(path.size());
   for (int i = path.size() - 1; i >= 0; --i) {
-    pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
+    pose.pose = getWorldCoords(path[i].x + 0.5f, path[i].y + 0.5f, costmap);
     plan.poses.push_back(pose);
   }
 
