@@ -515,7 +515,6 @@ private:
   std::mutex static_broadcaster_mutex_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
   std::unique_ptr<tf2_ros::StaticTransformBroadcaster> static_broadcaster_;
-  // Explicitly stopped by the destructor before member destruction begins.
   std::unique_ptr<tf2_ros::TransformListener> listener_;
 };
 
