@@ -244,7 +244,7 @@ protected:
   std::unique_ptr<Controller> controller_;
   std::string curr_dock_type_;
 
-  nav2::TransformManager::SharedPtr tf2_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 };
 
 }  // namespace opennav_docking

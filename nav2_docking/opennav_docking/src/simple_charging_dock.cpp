@@ -30,7 +30,7 @@ void SimpleChargingDock::configure(
   const std::string & name, nav2::TransformManager::SharedPtr tf)
 {
   name_ = name;
-  tf2_buffer_ = tf;
+  tf_manager_ = tf;
   is_charging_ = false;
   node_ = parent.lock();
   if (!node_) {
@@ -228,7 +228,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
       RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 3000,
             "Provided a detection pose without a timestamp, unexpected");
     }
-    const auto detected_pose = tf2_buffer_->transformStampedPose(
+    const auto detected_pose = tf_manager_->transformStampedPose(
       pose.header.frame_id, detected, tf2::durationFromSec(0.2));
     if (!detected_pose) {
       RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
@@ -280,7 +280,7 @@ bool SimpleChargingDock::isDocked()
     return false;
   }
 
-  const auto base_pose = tf2_buffer_->getLatestPose(
+  const auto base_pose = tf_manager_->getLatestPose(
     dock_pose_.header.frame_id, base_frame_id_, transform_staleness_threshold_);
   if (!base_pose) {
     return false;

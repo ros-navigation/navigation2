@@ -676,7 +676,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     "navigate_through_poses");
 
   // Setting up tf for initial pose
-  tf2_buffer_ = nav2::create_transform_manager(client_node_);
+  tf_manager_ = nav2::create_transform_manager(client_node_);
 
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
@@ -1143,7 +1143,7 @@ Nav2Panel::onAccumulatedWp()
 
     // Looking up transform to get initial pose
     if (store_initial_pose_) {
-      const auto initial_pose = tf2_buffer_->getLatestPose(
+      const auto initial_pose = tf_manager_->getLatestPose(
         acummulated_poses_.goals[0].header.frame_id, base_frame_);
       if (!initial_pose) {
         RCLCPP_INFO(

@@ -149,7 +149,7 @@ protected:
   double simulation_time_step_;
   double dock_collision_threshold_;
   double transform_tolerance_;
-  nav2::TransformManager::SharedPtr tf2_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;

@@ -60,7 +60,7 @@ class DockingServerTFShim : public DockingServerShim
 public:
   DockingServerTFShim()
   : DockingServerShim() {}
-  nav2::TransformManager::SharedPtr getTfBuffer() {return tf2_buffer_;}
+  nav2::TransformManager::SharedPtr getTfManager() {return tf_manager_;}
 };
 
 // Test shim that retains the production robot-pose lookup.
@@ -69,7 +69,7 @@ class DockingServerRealTFShim : public DockingServer
 public:
   DockingServerRealTFShim()
   : DockingServer() {}
-  nav2::TransformManager::SharedPtr getTfBuffer() {return tf2_buffer_;}
+  nav2::TransformManager::SharedPtr getTfManager() {return tf_manager_;}
 };
 
 TEST(DockingServerTests, RobotPoseFailureIsDockingTFError)
@@ -98,14 +98,14 @@ TEST(DockingServerTests, GetCommandTransformsPoseToFixedFrame)
   base_transform.header.frame_id = "odom";
   base_transform.child_frame_id = "base_link";
   base_transform.transform.rotation.w = 1.0;
-  node->getTfBuffer()->getRawBuffer().setTransform(base_transform, "test_authority", true);
+  node->getTfManager()->getRawBuffer().setTransform(base_transform, "test_authority", true);
 
   geometry_msgs::msg::TransformStamped sensor_transform;
   sensor_transform.header.frame_id = "odom";
   sensor_transform.child_frame_id = "sensor";
   sensor_transform.transform.translation.x = 1.0;
   sensor_transform.transform.rotation.w = 1.0;
-  node->getTfBuffer()->getRawBuffer().setTransform(sensor_transform, "test_authority", true);
+  node->getTfManager()->getRawBuffer().setTransform(sensor_transform, "test_authority", true);
 
   geometry_msgs::msg::PoseStamped target;
   target.header.frame_id = "sensor";
@@ -131,21 +131,23 @@ TEST(DockingServerTests, GetCommandUsesLatestTransformDespitePoseTimestamp)
   geometry_msgs::msg::TransformStamped base_transform;
   base_transform.header.frame_id = "odom";
   base_transform.child_frame_id = "base_link";
-  ASSERT_TRUE(node->getTfBuffer()->getRawBuffer().setTransform(
+  ASSERT_TRUE(node->getTfManager()->getRawBuffer().setTransform(
       base_transform, "test_authority", true));
 
   geometry_msgs::msg::TransformStamped sensor_transform;
   sensor_transform.header.frame_id = "odom";
   sensor_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(2.0);
   sensor_transform.child_frame_id = "sensor";
-  ASSERT_TRUE(node->getTfBuffer()->getRawBuffer().setTransform(sensor_transform, "test_authority"));
+  ASSERT_TRUE(node->getTfManager()->getRawBuffer().setTransform(sensor_transform,
+      "test_authority"));
 
   geometry_msgs::msg::PoseStamped target;
   target.header = sensor_transform.header;
   target.header.frame_id = "sensor";
   sensor_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(1.0);
   sensor_transform.transform.translation.x = 1.0;
-  ASSERT_TRUE(node->getTfBuffer()->getRawBuffer().setTransform(sensor_transform, "test_authority"));
+  ASSERT_TRUE(node->getTfManager()->getRawBuffer().setTransform(sensor_transform,
+      "test_authority"));
   geometry_msgs::msg::Twist command;
 
   // The latest sensor transform puts the target at x=1, despite its older timestamp.
@@ -167,7 +169,7 @@ TEST(DockingServerTests, GetCommandRejectsStalePoseTransform)
   geometry_msgs::msg::TransformStamped base_transform;
   base_transform.header.frame_id = "odom";
   base_transform.child_frame_id = "base_link";
-  ASSERT_TRUE(node->getTfBuffer()->getRawBuffer().setTransform(
+  ASSERT_TRUE(node->getTfManager()->getRawBuffer().setTransform(
       base_transform, "test_authority", true));
 
   geometry_msgs::msg::TransformStamped sensor_transform;
@@ -175,7 +177,7 @@ TEST(DockingServerTests, GetCommandRejectsStalePoseTransform)
   sensor_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(1.0);
   sensor_transform.child_frame_id = "sensor";
   sensor_transform.transform.rotation.w = 1.0;
-  node->getTfBuffer()->getRawBuffer().setTransform(sensor_transform, "test_authority");
+  node->getTfManager()->getRawBuffer().setTransform(sensor_transform, "test_authority");
 
   geometry_msgs::msg::PoseStamped target;
   target.header.frame_id = "sensor";
@@ -640,7 +642,7 @@ TEST(DockingServerTests, HandlesPluginStartFailure)
   identity_transform.header.frame_id = "odom";
   identity_transform.child_frame_id = "odom";
   identity_transform.transform.rotation.w = 1.0;
-  node->getTfBuffer()->getRawBuffer().setTransform(identity_transform, "test_authority", true);
+  node->getTfManager()->getRawBuffer().setTransform(identity_transform, "test_authority", true);
 
   node->on_activate(rclcpp_lifecycle::State());
 

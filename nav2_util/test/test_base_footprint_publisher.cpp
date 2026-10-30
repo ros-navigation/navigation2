@@ -28,7 +28,7 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   executor.add_node(node->get_node_base_interface());
   executor.spin_some();
 
-  auto buffer = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
 
   std::string base_link = "base_link";
   std::string base_footprint = "base_footprint";
@@ -38,9 +38,9 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   transform.header.stamp = node->now();
   transform.header.frame_id = "test1_1";
   transform.child_frame_id = "test1";
-  buffer->sendTransform(transform);
+  tf_manager->sendTransform(transform);
   executor.spin_some();
-  EXPECT_FALSE(buffer->getLatestTransform(base_link, base_footprint));
+  EXPECT_FALSE(tf_manager->getLatestTransform(base_link, base_footprint));
 
   // This is valid, should work now and communicate the Z-removed info
   transform.header.stamp = node->now();
@@ -49,11 +49,11 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   transform.transform.translation.x = 1.0;
   transform.transform.translation.y = 1.0;
   transform.transform.translation.z = 1.0;
-  buffer->sendTransform(transform);
+  tf_manager->sendTransform(transform);
   rclcpp::Rate r(1.0);
   r.sleep();
   executor.spin_some();
-  const auto t = buffer->getLatestTransform(base_link, base_footprint);
+  const auto t = tf_manager->getLatestTransform(base_link, base_footprint);
   ASSERT_TRUE(t);
   EXPECT_EQ(t->transform.translation.x, 1.0);
   EXPECT_EQ(t->transform.translation.y, 1.0);

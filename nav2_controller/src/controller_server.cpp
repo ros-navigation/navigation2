@@ -174,7 +174,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
         params_->controller_ids[i].c_str(), params_->controller_types[i].c_str());
       controller->configure(
         node, params_->controller_ids[i],
-        costmap_ros_->getTfBuffer(), costmap_ros_);
+        costmap_ros_->getTfManager(), costmap_ros_);
       controllers_.insert({params_->controller_ids[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
@@ -253,7 +253,7 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   for (auto & ph : path_handlers_) {
     ph.second->initialize(
       node, get_logger(), ph.first, costmap_ros_,
-      costmap_ros_->getTfBuffer());
+      costmap_ros_->getTfManager());
   }
 
   // create bond connection
@@ -722,7 +722,7 @@ void ControllerServer::transformedPlanAndGoal(
   const geometry_msgs::msg::PoseStamped & current_robot_pose)
 {
   end_pose_.header.stamp = current_robot_pose.header.stamp;
-  const auto transformed_end_pose_result = costmap_ros_->getTfBuffer()->transformStampedPose(
+  const auto transformed_end_pose_result = costmap_ros_->getTfManager()->transformStampedPose(
     costmap_ros_->getGlobalFrameID(), end_pose_, tf2::durationFromSec(transform_tolerance_));
   if (!transformed_end_pose_result) {
     throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
@@ -801,7 +801,7 @@ void ControllerServer::computeAndPublishVelocity(
 
     // Transform robot pose to path frame for path tracking calculations
 
-    const auto robot_pose_in_path_frame = costmap_ros_->getTfBuffer()->transformStampedPose(
+    const auto robot_pose_in_path_frame = costmap_ros_->getTfManager()->transformStampedPose(
       current_path_.header.frame_id, current_robot_pose,
       tf2::durationFromSec(transform_tolerance_));
     if (!robot_pose_in_path_frame) {
@@ -970,7 +970,7 @@ bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & cur
 
 geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
-  const auto pose_result = costmap_ros_->getTfBuffer()->getLatestPose(
+  const auto pose_result = costmap_ros_->getTfManager()->getLatestPose(
     costmap_ros_->getGlobalFrameID(), costmap_ros_->getBaseFrameID(),
       params_->transform_staleness_threshold);
   if (!pose_result) {

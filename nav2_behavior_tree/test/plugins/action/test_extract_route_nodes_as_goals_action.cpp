@@ -48,7 +48,7 @@ public:
       node_);
     config_->blackboard->set(
       "tf_buffer",
-      transform_handler_->getBuffer());
+      transform_handler_->getTfManager());
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)

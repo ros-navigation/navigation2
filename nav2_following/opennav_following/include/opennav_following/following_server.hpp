@@ -261,7 +261,7 @@ protected:
 
   std::unique_ptr<opennav_docking::Controller> controller_;
 
-  nav2::TransformManager::SharedPtr tf2_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 };
 
 }  // namespace opennav_following

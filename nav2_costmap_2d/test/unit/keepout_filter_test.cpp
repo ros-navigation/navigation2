@@ -483,7 +483,7 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   auto node = std::make_shared<nav2::LifecycleNode>("tf_test");
   node->declare_parameter(std::string(FILTER_NAME) + ".filter_info_topic", INFO_TOPIC);
   node->declare_parameter(std::string(FILTER_NAME) + ".transform_staleness_threshold", 0.5);
-  auto buffer = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("odom", false, false);
   layers.resizeMap(4, 1, 1.0, 0.0, 0.0);
   auto mask = std::make_shared<nav_msgs::msg::OccupancyGrid>();
@@ -497,7 +497,7 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   transform.child_frame_id = "odom";
   transform.transform.rotation.w = 1.0;
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
-  ASSERT_TRUE(buffer->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
   geometry_msgs::msg::Pose pose;
   pose.position.x = 0.5;
   pose.position.y = 0.5;
@@ -505,7 +505,7 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   nav2_costmap_2d::Costmap2D grid(4, 1, 1.0, 0.0, 0.0, 0);
   node->declare_parameter(std::string(FILTER_NAME) + ".override_lethal_cost", true);
   KeepoutFilterTFTestable filter;
-  filter.initialize(&layers, FILTER_NAME, buffer.get(), node, nullptr);
+  filter.initialize(&layers, FILTER_NAME, tf_manager.get(), node, nullptr);
   filter.initializeFilter(INFO_TOPIC);
   mask->data = {100, 0, 0, 0};
   filter.maskCallback(mask);
@@ -513,7 +513,7 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   EXPECT_EQ(grid.getCost(0, 0), 0);  // Stale TF does not apply the mask.
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(buffer->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
   double min_x = 0.0, min_y = 0.0, max_x = 4.0, max_y = 1.0;
   filter.updateBounds(0.5, 0.5, 0.0, &min_x, &min_y, &max_x, &max_y);
   filter.process(grid, 0, 0, 4, 1, pose);  // Consume the new mask update.
@@ -528,7 +528,7 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   // The next update uses the changed transform for both pose and mask checks.
   transform.header.stamp = node->now() + rclcpp::Duration::from_seconds(0.01);
   transform.transform.translation.x = -1.0;
-  ASSERT_TRUE(buffer->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
   grid.resetMap(0, 0, 4, 1);
   filter.updateBounds(0.5, 0.5, 0.0, &min_x, &min_y, &max_x, &max_y);
   filter.process(grid, 0, 0, 4, 1, pose);
@@ -536,10 +536,10 @@ TEST(KeepoutFilterTF, FreshnessAndLethalOverride)
   EXPECT_EQ(grid.getCost(1, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
 
   // Static transforms remain valid regardless of their original timestamp.
-  buffer->getRawBuffer().clear();
+  tf_manager->getRawBuffer().clear();
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 0.0;
-  ASSERT_TRUE(buffer->getRawBuffer().setTransform(transform, "test", true));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", true));
   grid.resetMap(0, 0, 4, 1);
   filter.process(grid, 0, 0, 4, 1, pose);
   EXPECT_EQ(grid.getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);

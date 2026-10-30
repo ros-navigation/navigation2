@@ -30,7 +30,7 @@ void SimpleNonChargingDock::configure(
   const std::string & name, nav2::TransformManager::SharedPtr tf)
 {
   name_ = name;
-  tf2_buffer_ = tf;
+  tf_manager_ = tf;
   node_ = parent.lock();
   if (!node_) {
     throw std::runtime_error{"Failed to lock node"};
@@ -208,7 +208,7 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
       RCLCPP_ERROR_ONCE(node_->get_logger(),
             "Provided a detection pose without a timestamp, unexpected");
     }
-    const auto detected_pose = tf2_buffer_->transformStampedPose(
+    const auto detected_pose = tf_manager_->transformStampedPose(
       pose.header.frame_id, detected, tf2::durationFromSec(0.2), nav2::Log::Disabled);
     if (!detected_pose) {
       RCLCPP_WARN_THROTTLE(node_->get_logger(), *node_->get_clock(), 2000,
@@ -264,7 +264,7 @@ bool SimpleNonChargingDock::isDocked()
   // The latest base transform represents the current robot position, so reject
   // stale dynamic TF before using its translation to decide whether we are docked.
 
-  const auto base_pose = tf2_buffer_->getLatestPose(
+  const auto base_pose = tf_manager_->getLatestPose(
     dock_pose_.header.frame_id, base_frame_id_, transform_staleness_threshold_);
   if (!base_pose) {
     return false;

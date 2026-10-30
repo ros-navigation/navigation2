@@ -54,12 +54,12 @@ public:
   void setUsingDedicatedThread()
   {
     // One-thread broadcasting-listening model
-    tf2_buffer_->getRawBuffer().setUsingDedicatedThread(true);
+    tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
   }
 
   void setTransform(const geometry_msgs::msg::TransformStamped & transform)
   {
-    tf2_buffer_->getRawBuffer().setTransform(transform, "test", false);
+    tf_manager_->getRawBuffer().setTransform(transform, "test", false);
   }
 
   virtual bool approachObject(geometry_msgs::msg::PoseStamped &, const std::string &)

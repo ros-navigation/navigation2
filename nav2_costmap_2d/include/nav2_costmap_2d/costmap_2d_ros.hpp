@@ -329,7 +329,7 @@ public:
    * getUnpaddedRobotFootprint(). */
   void setRobotFootprintPolygon(const geometry_msgs::msg::Polygon & footprint);
 
-  nav2::TransformManager::SharedPtr getTfBuffer() {return tf_manager_;}
+  nav2::TransformManager::SharedPtr getTfManager() {return tf_manager_;}
 
   /**
    * @brief  Get the costmap's use_radius_ parameter, corresponding to

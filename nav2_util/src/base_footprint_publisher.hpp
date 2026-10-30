@@ -41,8 +41,8 @@ class BaseFootprintPublisherListener : public tf2_ros::TransformListener
 {
 public:
   BaseFootprintPublisherListener(
-    nav2::TransformManager & buffer, bool spin_thread, rclcpp::Node & node)  //  nosemgrep
-  : tf2_ros::TransformListener(buffer.getRawBuffer(), spin_thread), tf_manager_(buffer)
+    nav2::TransformManager & tf_manager, bool spin_thread, rclcpp::Node & node)  //  nosemgrep
+  : tf2_ros::TransformListener(tf_manager.getRawBuffer(), spin_thread), tf_manager_(tf_manager)
   {
     base_link_frame_ = nav2::declare_or_get_parameter(
       &node, "base_link_frame", std::string("base_link"));
