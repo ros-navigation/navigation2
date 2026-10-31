@@ -39,13 +39,6 @@ FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker()
 
 template<typename CostmapT>
 FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker(
-  CostmapT costmap)
-: costmap_(costmap)
-{
-}
-
-template<typename CostmapT>
-FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker(
   CostmapT costmap, bool unknown_is_valid)
 : costmap_(costmap), unknown_is_valid_(unknown_is_valid)
 {

@@ -45,12 +45,13 @@ public:
   FootprintCollisionChecker();
   /**
    * @brief A constructor.
+   * @param costmap Costmap to check against
+   * @param unknown_is_valid If true, NO_INFORMATION cells are ignored instead of being
+   * reported as the footprint cost. NO_INFORMATION (255) is numerically above LETHAL_OBSTACLE
+   * (254), so otherwise it shadows lethal cells along the footprint. Defaults to false, which
+   * keeps the cost of unknown space visible to the caller.
    */
-  explicit FootprintCollisionChecker(CostmapT costmap);
-  /**
-   * @brief A constructor.
-   */
-  FootprintCollisionChecker(CostmapT costmap, bool unknown_is_valid);
+  explicit FootprintCollisionChecker(CostmapT costmap, bool unknown_is_valid = false);
   /**
    * @brief Find the footprint cost in oriented footprint
    */
@@ -81,14 +82,6 @@ public:
   CostmapT getCostmap()
   {
     return costmap_;
-  }
-
-  /**
-  * @brief Set unknown_is_valid_
-  */
-  void setUnknownIsValid(bool unknown_is_valid)
-  {
-    unknown_is_valid_ = unknown_is_valid;
   }
 
 protected:
