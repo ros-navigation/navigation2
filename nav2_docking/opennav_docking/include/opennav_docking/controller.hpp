@@ -63,12 +63,13 @@ public:
    * @param base_to_fixed_transform Transform from the robot base to the fixed frame.
    * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
+   * @param projection Distance projected past the true target (for collision checking at the correct pose).
    * @returns True if command is valid, false otherwise.
    */
   bool computeVelocityCommand(
     const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd,
     const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
-    bool is_docking, bool backward = false);
+    bool is_docking, bool backward = false, double projection = 0.0);
 
   /**
    * @brief Perform a command for in-place rotation.
@@ -90,12 +91,13 @@ protected:
    * @param base_to_fixed_transform Transform from the robot base to the fixed frame.
    * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
+   * @param projection Distance projected past the true target (for collision checking at the correct pose).
    * @return True if trajectory is collision free.
    */
   bool isTrajectoryCollisionFree(
     const geometry_msgs::msg::Pose & target_pose,
     const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
-    bool is_docking, bool backward = false);
+    bool is_docking, bool backward = false, double projection = 0.0);
 
   /**
    * @brief Validate incoming parameter updates before applying them.
