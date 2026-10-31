@@ -97,6 +97,8 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 bool
 NavigateThroughPosesNavigator::goalStarted(ActionT::Goal::ConstSharedPtr goal)
 {
+  // Completion is skipped if the previous goal's execution exited with an exception.
+  goal_initialized_ = false;
   return initializeGoalPoses(goal);
 }
 

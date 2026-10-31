@@ -178,6 +178,17 @@ TEST_F(ThroughPosesCompletionTest, BTLoadFailureDoesNotReuseCompletedGoalWaypoin
   EXPECT_TRUE(failed->waypoint_statuses.empty());
 }
 
+TEST_F(ThroughPosesCompletionTest, FailedStartDoesNotReuseGoalThatSkippedCompletion)
+{
+  ASSERT_TRUE(nav.goalStarted(goal(1.0)));
+  EXPECT_FALSE(nav.goalStarted(goal(9.0, false)));
+  auto result = std::make_shared<ActionT::Result>();
+  auto status = nav2_behavior_tree::BtStatus::FAILED;
+  EXPECT_NO_THROW(nav.goalCompleted(result, status));
+  EXPECT_EQ(result->error_code, ActionT::Result::TF_ERROR);
+  EXPECT_TRUE(result->waypoint_statuses.empty());
+}
+
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
