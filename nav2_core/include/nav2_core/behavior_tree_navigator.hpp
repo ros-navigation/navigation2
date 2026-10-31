@@ -155,7 +155,10 @@ public:
   void preemptCurrentNavigator()
   {
     std::scoped_lock l(mutex_);
-    current_navigator_->preempt();
+    // The navigator may have completed since the caller checked it.
+    if (current_navigator_ != nullptr) {
+      current_navigator_->preempt();
+    }
   }
 
   /**
@@ -247,6 +250,7 @@ public:
       plugin_lib_names,
       default_bt_xml_filename,
       std::bind(&BehaviorTreeNavigator::onGoalReceived, this, std::placeholders::_1),
+      std::bind(&BehaviorTreeNavigator::onGoalStarted, this, std::placeholders::_1),
       std::bind(&BehaviorTreeNavigator::onLoop, this),
       std::bind(&BehaviorTreeNavigator::onPreempt, this, std::placeholders::_1),
       std::bind(
@@ -328,9 +332,10 @@ public:
 
 protected:
   /**
-   * @brief An intermediate goal reception function to mux navigators.
+   * @brief Ensure no other navigator is processing a goal, preempting it if allowed
+   * @return bool If no other navigator holds the muxer
    */
-  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
+  bool stopOtherNavigator()
   {
     if (plugin_muxer_->isNavigating() && !plugin_muxer_->isCurrentNavigator(this)) {
       // A different navigator is processing; check if cross-navigator preemption is allowed
@@ -361,14 +366,46 @@ protected:
         r.sleep();
       }
     }
+    return true;
+  }
+
+  /**
+   * @brief An intermediate goal reception function to mux navigators.
+   */
+  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
+  {
+    if (!stopOtherNavigator()) {
+      return false;
+    }
 
     bool goal_accepted = goalReceived(goal);
 
-    if (goal_accepted) {
+    if (goal_accepted && !plugin_muxer_->isCurrentNavigator(this)) {
       plugin_muxer_->startNavigating(this);
     }
 
     return goal_accepted;
+  }
+
+  /**
+   * @brief Acquire navigator ownership and initialize a goal on the execution thread
+   * Called for each fresh BT execution, including a pending goal promoted after completion.
+   * @param goal Action template's goal message to process
+   * @return bool If navigator ownership was acquired and goal initialization succeeded
+   */
+  bool onGoalStarted(typename ActionT::Goal::ConstSharedPtr goal)
+  {
+    // Completion releases ownership before the action worker promotes a pending goal.
+    if (!plugin_muxer_->isCurrentNavigator(this)) {
+      if (!stopOtherNavigator()) {
+        bt_action_server_->setInternalError(
+          ActionT::Result::GOAL_REJECTED,
+          "Another navigator is processing a goal.");
+        return false;
+      }
+      plugin_muxer_->startNavigating(this);
+    }
+    return goalStarted(goal);
   }
 
   /**
@@ -378,16 +415,29 @@ protected:
     typename ActionT::Result::SharedPtr result,
     nav2_behavior_tree::BtStatus & final_bt_status)
   {
-    plugin_muxer_->stopNavigating(this);
+    if (plugin_muxer_->isCurrentNavigator(this)) {
+      plugin_muxer_->stopNavigating(this);
+    }
     goalCompleted(result, final_bt_status);
   }
 
   /**
    * @brief A callback to be called when a new goal is received by the BT action server
-   * Can be used to check if goal is valid and put values on
-   * the blackboard which depend on the received goal
+   * Validate without modifying execution state: this also runs for pending goals
+   * while the current behavior tree is executing.
+   * @param goal Action template's goal message to validate
+   * @return bool If the goal is valid and can be accepted
    */
   virtual bool goalReceived(typename ActionT::Goal::ConstSharedPtr goal) = 0;
+
+  /**
+   * @brief Initialize blackboard and feedback state when a goal starts execution
+   * The goal argument identifies the action whose BT is about to run.
+   * Same-navigator preemption is initialized by onPreempt instead of this callback.
+   * @param goal Action template's goal message to process
+   * @return bool If the goal was initialized successfully
+   */
+  virtual bool goalStarted(typename ActionT::Goal::ConstSharedPtr goal) = 0;
 
   /**
    * @brief A callback that defines execution that happens on one iteration through the BT

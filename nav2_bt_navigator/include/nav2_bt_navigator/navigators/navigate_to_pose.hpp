@@ -84,12 +84,18 @@ public:
 protected:
   /**
    * @brief A callback to be called when a new goal is received by the BT action server
-   * Can be used to check if goal is valid and put values on
-   * the blackboard which depend on the received goal
+   * Validate transforms without modifying the running blackboard or feedback state.
    * @param goal Action template's goal message
    * @return bool if goal was received successfully to be processed
    */
   bool goalReceived(ActionT::Goal::ConstSharedPtr goal) override;
+
+  /**
+   * @brief Initialize the goal blackboard and feedback state on the execution thread
+   * @param goal Action template's goal message to process
+   * @return bool If the goal was transformed and initialized successfully
+   */
+  bool goalStarted(ActionT::Goal::ConstSharedPtr goal) override;
 
   /**
    * @brief A callback that defines execution that happens on one iteration through the BT
@@ -112,6 +118,19 @@ protected:
   void goalCompleted(
     typename ActionT::Result::SharedPtr result,
     nav2_behavior_tree::BtStatus & final_bt_status) override;
+
+  /**
+   * @brief Prepare poses without modifying the active goal, blackboard, or result state
+   * @param goal Action template's goal message to process
+   * @param current_pose Current robot pose in the global frame
+   * @param goal_pose Goal pose transformed into the global frame
+   * @param error Description of the failure if pose preparation is unsuccessful
+   * @return bool If the current robot pose and transformed goal pose are available
+   */
+  bool prepareGoalPose(
+    ActionT::Goal::ConstSharedPtr goal,
+    geometry_msgs::msg::PoseStamped & current_pose,
+    geometry_msgs::msg::PoseStamped & goal_pose, std::string & error);
 
   /**
    * @brief Goal pose initialization on the blackboard

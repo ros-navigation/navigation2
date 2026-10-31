@@ -42,6 +42,7 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   const std::vector<std::string> & plugin_lib_names,
   const std::string & default_bt_xml_filename,
   OnGoalReceivedCallback on_goal_received_callback,
+  OnGoalStartedCallback on_goal_started_callback,
   OnLoopCallback on_loop_callback,
   OnPreemptCallback on_preempt_callback,
   OnCompletionCallback on_completion_callback,
@@ -52,6 +53,7 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   plugin_lib_names_(plugin_lib_names),
   node_(parent),
   on_goal_received_callback_(on_goal_received_callback),
+  on_goal_started_callback_(on_goal_started_callback),
   on_loop_callback_(on_loop_callback),
   on_preempt_callback_(on_preempt_callback),
   on_completion_callback_(on_completion_callback),
@@ -409,7 +411,9 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
       "No current goal available when starting BT execution.");
   }
 
-  if (!current_goal || !loadBehaviorTree(current_goal->behavior_tree)) {
+  if (!current_goal || !loadBehaviorTree(current_goal->behavior_tree) ||
+    (on_goal_started_callback_ && !on_goal_started_callback_(current_goal)))
+  {
     auto result = std::make_shared<typename ActionT::Result>();
     populateErrorCode(result);
 
