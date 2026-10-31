@@ -105,7 +105,9 @@ public:
 
     if (rcl_preshutdown_cb_handle_) {
       rclcpp::Context::SharedPtr context = get_node_base_interface()->get_context();
-      context->remove_pre_shutdown_callback(*(rcl_preshutdown_cb_handle_.get()));
+      if (context) {
+        context->remove_pre_shutdown_callback(*(rcl_preshutdown_cb_handle_.get()));
+      }
       rcl_preshutdown_cb_handle_.reset();
     }
   }

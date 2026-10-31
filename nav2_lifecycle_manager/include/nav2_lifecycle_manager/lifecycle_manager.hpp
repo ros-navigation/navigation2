@@ -297,6 +297,9 @@ protected:
 
   rclcpp::Time bond_respawn_start_time_{0};
   rclcpp::Duration bond_respawn_max_duration_{10s};
+
+  // Pre-shutdown callback handle for context
+  std::unique_ptr<rclcpp::PreShutdownCallbackHandle> rcl_preshutdown_cb_handle_{nullptr};
 };
 
 }  // namespace nav2_lifecycle_manager
