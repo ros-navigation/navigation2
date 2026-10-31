@@ -81,6 +81,13 @@ TEST(NavigatorMuxerTest, PreemptCurrentNavigatorCallsPreempt)
   EXPECT_TRUE(nav.preempt_called_);
 }
 
+TEST(NavigatorMuxerTest, PreemptWithoutActiveNavigatorIsSafe)
+{
+  nav2_core::NavigatorMuxer muxer;
+  EXPECT_NO_THROW(muxer.preemptCurrentNavigator());
+  EXPECT_FALSE(muxer.isNavigating());
+}
+
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);

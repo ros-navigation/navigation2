@@ -155,7 +155,10 @@ public:
   void preemptCurrentNavigator()
   {
     std::scoped_lock l(mutex_);
-    current_navigator_->preempt();
+    // The navigator may have completed since the caller checked it.
+    if (current_navigator_ != nullptr) {
+      current_navigator_->preempt();
+    }
   }
 
   /**

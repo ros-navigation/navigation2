@@ -412,7 +412,7 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
   }
 
   if (!current_goal || !loadBehaviorTree(current_goal->behavior_tree) ||
-    !on_goal_started_callback_(current_goal))
+    (on_goal_started_callback_ && !on_goal_started_callback_(current_goal)))
   {
     auto result = std::make_shared<typename ActionT::Result>();
     populateErrorCode(result);
