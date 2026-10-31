@@ -52,11 +52,9 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & foot
   double footprint_cost = 0.0;
 
   // get the cell coord of the first point
-  bool prev_valid = worldToMap(footprint[0].x, footprint[0].y, x0, y0);
-  if (!prev_valid && !unknown_is_valid_) {
+  if (!worldToMap(footprint[0].x, footprint[0].y, x0, y0)) {
     return static_cast<double>(LETHAL_OBSTACLE);
   }
-  const bool start_valid = prev_valid;
 
   // cache the start to eliminate a worldToMap call
   unsigned int xstart = x0;
@@ -65,20 +63,15 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & foot
   // we need to rasterize each line in the footprint
   for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
     // get the cell coord of the second point
-    const bool valid = worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1);
-    if (!valid && !unknown_is_valid_) {
+    if (!worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1)) {
       return static_cast<double>(LETHAL_OBSTACLE);
     }
 
-    // points outside of the costmap carry no information if unknown is valid: skip their lines
-    if (prev_valid && valid) {
-      footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
-    }
+    footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
 
     // the second point is next iteration's first point
     x0 = x1;
     y0 = y1;
-    prev_valid = valid;
 
     // if in collision, no need to continue
     if (footprint_cost == static_cast<double>(LETHAL_OBSTACLE)) {
@@ -88,10 +81,7 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & foot
 
   // we also need to connect the first point in the footprint to the last point
   // the last iteration's x1, y1 are the last footprint point's coordinates
-  if (start_valid && prev_valid) {
-    return std::max(lineCost(xstart, x1, ystart, y1), footprint_cost);
-  }
-  return footprint_cost;
+  return std::max(lineCost(xstart, x1, ystart, y1), footprint_cost);
 }
 
 template<typename CostmapT>

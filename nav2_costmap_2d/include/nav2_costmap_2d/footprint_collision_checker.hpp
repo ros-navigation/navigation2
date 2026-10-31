@@ -86,7 +86,7 @@ public:
 
 protected:
   CostmapT costmap_;
-  bool unknown_is_valid_{false};  // Ignore unknown and out of bounds values for collision checking
+  bool unknown_is_valid_{false};  // Ignore unknown cells for collision checking
 };
 
 }  // namespace nav2_costmap_2d
