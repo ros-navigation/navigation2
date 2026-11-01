@@ -167,9 +167,8 @@ bool Controller::isTrajectoryCollisionFree(
     // and the initial segment for undocking
     // This avoids false positives when the robot is at the dock
     double dock_collision_distance = is_docking ?
-      nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose) :
+      nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose) - projection :
       std::hypot(next_pose.pose.position.x, next_pose.pose.position.y);
-    dock_collision_distance -= projection;
 
     // If this distance is greater than the dock_collision_threshold, check for collisions
     if (use_collision_detection_ &&
