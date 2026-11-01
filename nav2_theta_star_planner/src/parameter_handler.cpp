@@ -97,7 +97,8 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
         "it should be either 4 or 8. Ignoring parameter update.",
         param_name.c_str(), parameter.as_int());
         result.successful = false;
-      } else if (param_name == plugin_name_ + ".terminal_checking_interval" &&
+      }
+      if (param_name == plugin_name_ + ".terminal_checking_interval" &&
         parameter.as_int() <= 0)
       {
         RCLCPP_WARN(
