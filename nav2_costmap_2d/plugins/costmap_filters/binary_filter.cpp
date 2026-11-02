@@ -251,7 +251,6 @@ void BinaryFilter::resetFilter()
 void BinaryFilter::deactivate()
 {
   CostmapFilter::deactivate();
-  // Unlike a costmap reset, a lifecycle deactivation does not keep the current binary state
   binary_state_initialized_ = false;
 }
 
