@@ -82,6 +82,11 @@ public:
   void resetFilter() override;
 
   /**
+   * @brief Deactivate the filter. The next activation starts again from default_state
+   */
+  void deactivate() override;
+
+  /**
    * @brief If this filter is active
    */
   bool isActive();

@@ -95,8 +95,9 @@ void BinaryFilter::initializeFilter(
   base_ = BASE_DEFAULT;
   multiplier_ = MULTIPLIER_DEFAULT;
 
-  // Start from default_state_ on the first initialization only. A costmap reset calls
-  // resetFilter() and initializeFilter() again, and should keep the current binary state.
+  // Start from default_state_ on the first initialization after construction or deactivation.
+  // A costmap reset calls resetFilter() and initializeFilter() again, and should keep the
+  // current binary state.
   if (!binary_state_initialized_) {
     binary_state_ = default_state_;
     binary_state_initialized_ = true;
@@ -245,6 +246,13 @@ void BinaryFilter::resetFilter()
     binary_state_pub_->on_deactivate();
     binary_state_pub_.reset();
   }
+}
+
+void BinaryFilter::deactivate()
+{
+  CostmapFilter::deactivate();
+  // Unlike a costmap reset, a lifecycle deactivation does not keep the current binary state
+  binary_state_initialized_ = false;
 }
 
 bool BinaryFilter::isActive()

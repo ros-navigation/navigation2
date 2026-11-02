@@ -1002,6 +1002,11 @@ TEST(BinaryFilterState, DefaultStateOnStartupAndKeptOnReset)
   // A costmap reset re-initializes the filter, but must keep the current state
   filter.reset();
   EXPECT_EQ(filter.state(), 0);
+
+  // Lifecycle deactivate/activate starts over from default_state
+  filter.deactivate();
+  filter.activate();
+  EXPECT_EQ(filter.state(), 1);
   filter.resetFilter();
 }
 
