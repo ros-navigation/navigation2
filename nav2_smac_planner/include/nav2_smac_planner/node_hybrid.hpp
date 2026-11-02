@@ -110,6 +110,7 @@ struct HybridMotionTable
   float min_turning_radius;
   float bin_size;
   float change_penalty;
+  float direction_change_penalty;
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
@@ -230,6 +231,17 @@ public:
   inline TurnDirection & getTurnDirection()
   {
     return _turn_dir;
+  }
+
+  /**
+   * @brief Gets if the motion primitive used to achieve node in search is moving in reverse
+   * @return If the node's turning direction is a reversing motion
+   */
+  inline bool isReverse()
+  {
+    return _turn_dir == TurnDirection::REVERSE ||
+           _turn_dir == TurnDirection::REV_LEFT ||
+           _turn_dir == TurnDirection::REV_RIGHT;
   }
 
   /**

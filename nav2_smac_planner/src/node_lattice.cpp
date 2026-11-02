@@ -48,6 +48,7 @@ void LatticeMotionTable::initMotionModel(
 {
   size_x = size_x_in;
   change_penalty = search_info.change_penalty;
+  direction_change_penalty = search_info.direction_change_penalty;
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
@@ -344,6 +345,11 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
       travel_cost = travel_cost_raw *
         (_ctx->motion_table.non_straight_penalty + _ctx->motion_table.change_penalty);
     }
+  }
+
+  if (this->isBackward() != child->isBackward()) {
+    // Inverting direction of travel (forward <-> reverse): penalizes gear changes
+    travel_cost += travel_cost_raw * _ctx->motion_table.direction_change_penalty;
   }
 
   // If backwards flag is set, this primitive is moving in reverse

@@ -51,6 +51,7 @@ void HybridMotionTable::initDubin(
 {
   size_x = size_x_in;
   change_penalty = search_info.change_penalty;
+  direction_change_penalty = search_info.direction_change_penalty;
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
@@ -180,6 +181,7 @@ void HybridMotionTable::initReedsShepp(
 {
   size_x = size_x_in;
   change_penalty = search_info.change_penalty;
+  direction_change_penalty = search_info.direction_change_penalty;
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
@@ -422,10 +424,15 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     }
   }
 
-  if (child_turn_dir == TurnDirection::REV_RIGHT ||
-    child_turn_dir == TurnDirection::REV_LEFT ||
-    child_turn_dir == TurnDirection::REVERSE)
+  const bool is_child_reverse = child->isReverse();
+  if (getMotionPrimitiveIndex() != std::numeric_limits<unsigned int>::max() &&
+    isReverse() != is_child_reverse)
   {
+    // Inverting direction of travel (forward <-> reverse): penalizes gear changes
+    travel_cost += travel_cost_raw * _ctx->motion_table.direction_change_penalty;
+  }
+
+  if (is_child_reverse) {
     // reverse direction
     travel_cost *= _ctx->motion_table.reverse_penalty;
   }

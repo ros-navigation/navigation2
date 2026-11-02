@@ -263,6 +263,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.cache_obstacle_heuristic", true),
       rclcpp::Parameter("test.reverse_penalty", 5.0),
       rclcpp::Parameter("test.change_penalty", 1.0),
+      rclcpp::Parameter("test.direction_change_penalty", 3.0),
       rclcpp::Parameter("test.non_straight_penalty", 2.0),
       rclcpp::Parameter("test.cost_penalty", 2.0),
       rclcpp::Parameter("test.retrospective_penalty", 0.2),

@@ -536,6 +536,21 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
   testA.setMotionPrimitive(testA_prims[2]);
   float cost3 = testB.getTraversalCost(&testA);
   EXPECT_NEAR(cost3, 7.84f, 0.1);
+
+  // check direction change penalty only applies when inverting direction of travel
+  testA.backwards(true);
+  float cost_reverse = testB.getTraversalCost(&testA);
+  ctx->motion_table.direction_change_penalty = 1.0;
+  float cost_reverse_change = testB.getTraversalCost(&testA);
+  EXPECT_GT(cost_reverse_change, cost_reverse);
+  testB.backwards(true);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), cost_reverse, 0.01);
+  testA.backwards(false);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), cost_reverse_change / 2.0, 0.01);
+  ctx->motion_table.direction_change_penalty = 0.0;
+  testA.backwards(false);
+  testB.backwards(false);
+
   // will throw because never collision checked testB
   EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);
   delete costmapA;
