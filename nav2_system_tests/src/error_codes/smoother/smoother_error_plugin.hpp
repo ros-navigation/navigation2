@@ -20,7 +20,7 @@
 
 #include "nav2_core/smoother.hpp"
 #include "nav2_core/smoother_exceptions.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_system_tests
 {
@@ -30,7 +30,7 @@ class UnknownErrorSmoother : public nav2_core::Smoother
 public:
   void configure(
     const nav2::LifecycleNode::WeakPtr &,
-    std::string, nav2::TransformBuffer::SharedPtr,
+    std::string, nav2::TransformManager::SharedPtr,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>) override {}
 

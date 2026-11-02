@@ -43,7 +43,7 @@
 #include "rclcpp/logging.hpp"
 #include "rclcpp/utilities.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 
 class FootprintTestNode
@@ -109,7 +109,7 @@ protected:
 // Start with empty test before updating test footprints
 TEST_F(TestNode, footprint_empty)
 {
-  // FootprintTestNode cm("costmap_footprint_empty", *tf_);
+  // FootprintTestNode cm("costmap_footprint_empty", *tf_manager_);
   std::vector<geometry_msgs::msg::Point> footprint = footprint_tester_->getRobotFootprint();
   // With no specification of footprint or radius,
   // defaults to 0.1 meter radius plus 0.01 meter padding.

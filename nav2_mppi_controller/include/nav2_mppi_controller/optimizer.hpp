@@ -28,7 +28,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "nav2_core/controller_exceptions.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "pluginlib/class_loader.hpp"
 
 #include "geometry_msgs/msg/accel_stamped.hpp"
@@ -76,12 +76,12 @@ public:
    * @param name Name of plugin
    * @param costmap_ros Costmap2DROS object of environment
    * @param dynamic_parameter_handler Parameter handler object
-   * @param tf_buffer TF buffer for transformations
+   * @param tf_manager TF manager for transformations
    */
   void initialize(
     nav2::LifecycleNode::WeakPtr parent, const std::string & name,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    nav2::TransformBuffer::SharedPtr tf_buffer,
+    nav2::TransformManager::SharedPtr tf_manager,
     ParametersHandler * dynamic_parameters_handler);
 
   /**
@@ -300,7 +300,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::string name_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   std::shared_ptr<MotionModel> motion_model_;
 

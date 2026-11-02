@@ -22,7 +22,7 @@
 #include <mutex>
 #include <algorithm>
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/edge_scorer.hpp"
@@ -52,12 +52,12 @@ public:
   /**
    * @brief Configure the route planner, get parameters
    * @param node Node object to get parametersfrom
-   * @param tf_buffer TF buffer to use for transformations
+   * @param tf_manager TF manager to use for transformations
    * @param costmap_subscriber Costmap subscriber to use for blocked nodes
    */
   void configure(
     nav2::LifecycleNode::SharedPtr node,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber);
 
   /**
@@ -154,7 +154,7 @@ protected:
   unsigned int goal_id_{0};
   NodeQueue queue_;
   std::unique_ptr<EdgeScorer> edge_scorer_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 };
 
 }  // namespace nav2_route

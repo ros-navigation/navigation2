@@ -26,8 +26,8 @@
 #include <omp.h>
 #endif
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -53,8 +53,6 @@ void
 AsymmetricInflationLayer::onInitialize()
 {
   {
-    double temp_tf_tol = 0.0;
-
     auto node = node_.lock();
     if (!node) {
       throw std::runtime_error{"Failed to lock node"};
@@ -79,10 +77,6 @@ AsymmetricInflationLayer::onInitialize()
     transform_staleness_threshold_ = node->declare_or_get_parameter(
       name_ + "." + "transform_staleness_threshold", 0.0);
 
-    // Get costmap2d-level parameter
-    node->get_parameter("transform_tolerance", temp_tf_tol);
-    transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
-
     if (inflation_radius_ < 0.0) {
       throw std::runtime_error(
         "AsymmetricInflationLayer: inflation_radius must be >= 0");
@@ -102,10 +96,6 @@ AsymmetricInflationLayer::onInitialize()
     if (num_threads_ < -1) {
       throw std::runtime_error(
         "AsymmetricInflationLayer: num_threads must be -1 (auto) or > 0");
-    }
-    if (temp_tf_tol < 0.0) {
-      throw std::runtime_error(
-        "AsymmetricInflationLayer: transform_tolerance must be >= 0");
     }
 
     cost_scaling_factor_ =
@@ -227,10 +217,9 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   // Look up the current path frame -> costmap frame transform
   geometry_msgs::msg::TransformStamped transform;
   if (need_transform) {
-    if (!nav2_util::lookupTransformWithStalenessCheck(
-        *tf_, global_frame, path_frame, clock_->now(),
-        transform_staleness_threshold_, transform))
-    {
+    const auto transform_result = tf_manager_->getLatestTransform(
+      global_frame, path_frame, transform_staleness_threshold_, nav2::Log::Disabled);
+    if (!transform_result) {
       RCLCPP_WARN_THROTTLE(
         logger_, *clock_, 1000,
         "AsymmetricInflationLayer: TF lookup failed or returned stale data (%s -> %s). "
@@ -238,6 +227,7 @@ AsymmetricInflationLayer::extractLocalPathSegments(
         path_frame.c_str(), global_frame.c_str());
       return local_path_segments;
     }
+    transform = *transform_result;
   }
 
   // Transform the goal pose from the path frame to the costmap frame (e.g., map -> odom)

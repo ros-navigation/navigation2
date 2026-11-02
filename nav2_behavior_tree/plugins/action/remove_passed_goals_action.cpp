@@ -16,9 +16,9 @@
 #include <memory>
 #include <limits>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/action/remove_passed_goals_action.hpp"
 
@@ -36,10 +36,9 @@ void RemovePassedGoals::initialize()
 {
   getInput("radius", viapoint_achieved_radius_);
 
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();
-  node_->get_parameter("transform_tolerance", transform_tolerance_);
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
 
@@ -63,11 +62,9 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   using namespace nav2_util::geometry_utils;  // NOLINT
 
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getFreshPose(
-      *tf_, goal_poses.goals[0].header.frame_id, robot_base_frame_, clock_->now(),
-      transform_staleness_threshold_, current_pose))
-  {
+  const auto current_pose = tf_manager_->getLatestPose(
+    goal_poses.goals[0].header.frame_id, robot_base_frame_, transform_staleness_threshold_);
+  if (!current_pose) {
     return BT::NodeStatus::FAILURE;
   }
 
@@ -80,7 +77,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   double dist_to_goal;
   while (goal_poses.goals.size() > 1) {
-    dist_to_goal = euclidean_distance(goal_poses.goals[0].pose, current_pose.pose);
+    dist_to_goal = euclidean_distance(goal_poses.goals[0].pose, current_pose->pose);
 
     if (dist_to_goal > viapoint_achieved_radius_) {
       break;

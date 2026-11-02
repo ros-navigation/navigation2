@@ -16,8 +16,8 @@
 #include <gtest/gtest.h>
 #include <memory>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/distance_traveled_condition.hpp"
@@ -48,28 +48,27 @@ DistanceTraveledConditionTestFixture::bt_node_ = nullptr;
 
 TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
 {
+  // Stop the periodic broadcaster so the directly seeded poses remain authoritative.
+  transform_handler_->deactivate();
+  const auto tf_manager = transform_handler_->getTfManager();
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "map";
+  pose.header.stamp = node_->now();
+  pose.pose.orientation.w = 1.0;
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(
+    tf_manager->poseToTransformStamped(pose, "base_link"), "test", false));
+
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
-  geometry_msgs::msg::PoseStamped pose;
-  pose.pose.position.x = 0;
-  pose.pose.position.y = 0;
-  pose.pose.orientation.w = 1;
-
-  double traveled = 0;
   for (int i = 1; i <= 20; i++) {
     pose.pose.position.x = i * 0.51;
-    transform_handler_->updateRobotPose(pose.pose);
-
-    // Wait for transforms to actually update
-    // updated pose is i * 0.51
-    // we wait for the traveled distance to reach a value > i * 0.5
-    // we can assume the current transform has been updated at this point
-    while (traveled < i * 0.5) {
-      if (nav2_util::getCurrentPose(pose, *transform_handler_->getBuffer())) {
-        traveled = pose.pose.position.x;
-      }
-    }
+    pose.header.stamp = node_->now();
+    ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(
+      tf_manager->poseToTransformStamped(pose, "base_link"), "test", false));
+    const auto current_pose = tf_manager->getLatestPose("map", "base_link");
+    ASSERT_TRUE(current_pose);
+    EXPECT_DOUBLE_EQ(current_pose->pose.position.x, pose.pose.position.x);
 
     if (i % 2) {
       EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);

@@ -23,7 +23,7 @@
 #include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using namespace std::chrono_literals;
 
@@ -70,13 +70,12 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  tf_ = nav2::create_transform_buffer(this);
-  transform_listener_ = nav2::create_transform_listener(*tf_, this, true);
+  tf_manager_ = nav2::create_transform_manager(this);
 
   costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), costmap_topic);
   footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
-    shared_from_this(), footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+    shared_from_this(), footprint_topic, *tf_manager_, robot_base_frame, transform_tolerance);
 
   collision_checker_ =
     std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
@@ -118,7 +117,7 @@ bool SmootherServer::loadSmootherPlugins()
         get_logger(), "Created smoother : %s of type %s",
         smoother_ids_[i].c_str(), smoother_types_[i].c_str());
       smoother->configure(
-        node, smoother_ids_[i], tf_, costmap_sub_,
+        node, smoother_ids_[i], tf_manager_, costmap_sub_,
         footprint_sub_);
       smoothers_.insert({smoother_ids_[i], smoother});
     } catch (const std::exception & ex) {
@@ -191,8 +190,7 @@ SmootherServer::on_cleanup(const rclcpp_lifecycle::State &)
   // Release any allocated resources
   action_server_.reset();
   plan_publisher_.reset();
-  transform_listener_.reset();
-  tf_.reset();
+  tf_manager_.reset();
   footprint_sub_.reset();
   costmap_sub_.reset();
   collision_checker_.reset();

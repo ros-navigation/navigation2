@@ -46,7 +46,7 @@
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav2_ros_common/service_server.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/message_filter.hpp"
 
 #define NEW_UNIFORM_SAMPLING 1
 
@@ -173,9 +173,7 @@ protected:
    * @brief Initialize required ROS transformations
    */
   void initTransforms();
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
-  nav2::TransformListener::SharedPtr tf_listener_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   bool sent_first_transform_{false};
   bool latest_tf_valid_{false};
   tf2::Transform latest_tf_;
@@ -421,7 +419,7 @@ protected:
   rclcpp::TimerBase::SharedPtr save_pose_timer_;
   double sigma_hit_;
   bool tf_broadcast_;
-  tf2::Duration transform_tolerance_;
+  double transform_tolerance_;
   double a_thresh_;
   double d_thresh_;
   double z_hit_;

@@ -26,7 +26,7 @@
 #include "rclcpp/rate.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "std_srvs/srv/trigger.hpp"
 #include "nav2_ros_common/service_client.hpp"
@@ -162,7 +162,7 @@ public:
     transform.child_frame_id = "base_link";
     transform.header.stamp = now();
     transform.transform.rotation.w = 1.0;
-    tf_->setTransform(transform, "test", false);
+    tf_manager_->getRawBuffer().setTransform(transform, "test", false);
   }
 };
 

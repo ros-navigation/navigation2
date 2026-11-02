@@ -33,7 +33,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav2_controller/plugins/feasible_path_handler.hpp"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 class BasicAPIRPP : public nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
 {
@@ -105,7 +105,7 @@ TEST(RegulatedPurePursuitTest, basicAPI)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
 
   // instantiate
@@ -150,7 +150,7 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -208,7 +208,7 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
 
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -325,7 +325,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -428,7 +428,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   costmap->on_configure(rclcpp_lifecycle::State());
   auto ctrl =
     std::make_unique<nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController>();
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   ctrl->configure(node, "test", tf, costmap);
   ctrl->activate();
 
@@ -538,7 +538,7 @@ TEST(RegulatedPurePursuitTest, computeVelocityByDWPP)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -577,7 +577,7 @@ TEST(RegulatedPurePursuitTest, computeVelocityByDWPP)
   map_to_base.header.frame_id = "map";
   map_to_base.child_frame_id = "base_link";
   map_to_base.transform.rotation.w = 1.0;
-  tf->setTransform(map_to_base, "dwpp-controller-test");
+  tf->getRawBuffer().setTransform(map_to_base, "dwpp-controller-test");
 
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = "base_link";
@@ -606,7 +606,7 @@ TEST(RegulatedPurePursuitTest, testObstacleBeyondGoal)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -691,7 +691,7 @@ TEST(RegulatedPurePursuitTest, testParameterWarnings)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);

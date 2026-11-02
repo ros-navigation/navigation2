@@ -32,6 +32,7 @@
 #include "opennav_following/following_server.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 // Testing unit functions in following server, smoke/system tests in python file
 
@@ -52,12 +53,13 @@ public:
 
   void setUsingDedicatedThread()
   {
-    tf2_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
+    // One-thread broadcasting-listening model
+    tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
   }
 
   void setTransform(const geometry_msgs::msg::TransformStamped & transform)
   {
-    tf2_buffer_->setTransform(transform, "test", false);
+    tf_manager_->getRawBuffer().setTransform(transform, "test", false);
   }
 
   virtual bool approachObject(geometry_msgs::msg::PoseStamped &, const std::string &)

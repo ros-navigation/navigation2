@@ -31,7 +31,7 @@
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -68,7 +68,7 @@ static const char RIGHT_POLYGON_STR[]{
 static const bool IS_HOLONOMIC{true};
 static const bool IS_NOT_HOLONOMIC{false};
 static const int MIN_POINTS{2};
-static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
+static const double TRANSFORM_TOLERANCE{0.1};
 
 class TestNode : public nav2::LifecycleNode
 {
@@ -105,11 +105,11 @@ public:
   VelocityPolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance)
+    double transform_tolerance)
   : nav2_collision_monitor::VelocityPolygon(
-      node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
+      node, polygon_name, tf_manager, base_frame_id, transform_tolerance)
   {
   }
 
@@ -159,8 +159,7 @@ protected:
 
   std::shared_ptr<VelocityPolygonWrapper> velocity_polygon_;
 
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 };  // Tester
 
 Tester::Tester()
@@ -171,9 +170,9 @@ Tester::Tester()
   test_node_->configure();
   test_node_->activate();
 
-  tf_buffer_ = nav2::create_transform_buffer(test_node_);
-  tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, test_node_);
+  tf_manager_ = nav2::create_transform_manager(test_node_);
+  // One-thread broadcasting-listening model
+  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 }
 
 Tester::~Tester()
@@ -182,8 +181,7 @@ Tester::~Tester()
 
   test_node_.reset();
 
-  tf_listener_.reset();
-  tf_buffer_.reset();
+  tf_manager_.reset();
 }
 
 void Tester::setCommonParameters(const std::string & polygon_name, const std::string & action_type)
@@ -309,7 +307,7 @@ void Tester::createVelocityPolygon(const std::string & action_type, const bool i
 
   velocity_polygon_ = std::make_shared<VelocityPolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+    tf_manager_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(velocity_polygon_->configure());
   velocity_polygon_->activate();
 }

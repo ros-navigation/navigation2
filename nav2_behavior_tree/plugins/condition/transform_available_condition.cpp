@@ -16,9 +16,9 @@
 #include <memory>
 #include <string>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/logging.hpp"
 #include "tf2/time.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/transform_available_condition.hpp"
 
@@ -34,7 +34,7 @@ TransformAvailableCondition::TransformAvailableCondition(
   was_found_(false)
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
 }
 
 TransformAvailableCondition::~TransformAvailableCondition()
@@ -67,9 +67,8 @@ BT::NodeStatus TransformAvailableCondition::tick()
     return BT::NodeStatus::SUCCESS;
   }
 
-  std::string tf_error;
-  bool found = tf_->canTransform(
-    child_frame_, parent_frame_, tf2::TimePointZero, &tf_error);
+  bool found = tf_manager_->getLatestTransform(child_frame_, parent_frame_, 0.0,
+      nav2::Log::Disabled).has_value();
 
   if (found) {
     was_found_ = true;
@@ -77,8 +76,8 @@ BT::NodeStatus TransformAvailableCondition::tick()
   }
 
   RCLCPP_INFO(
-    node_->get_logger(), "Transform from %s to %s was not found, tf error: %s",
-    child_frame_.c_str(), parent_frame_.c_str(), tf_error.c_str());
+    node_->get_logger(), "Transform from %s to %s was not found",
+    child_frame_.c_str(), parent_frame_.c_str());
 
   return BT::NodeStatus::FAILURE;
 }

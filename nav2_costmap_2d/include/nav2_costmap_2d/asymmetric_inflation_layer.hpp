@@ -243,8 +243,6 @@ protected:
   /// Distance to goal where asymmetry disables to prevent docking oscillations
   double goal_distance_threshold_;
   std::string plan_topic_;
-  /// Timeout for path-frame TF lookups
-  tf2::Duration transform_tolerance_;
   /// Maximum path-frame transform age in seconds; zero disables the check
   double transform_staleness_threshold_{0.0};
 

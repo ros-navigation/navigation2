@@ -18,14 +18,14 @@
 #include <vector>
 
 #include "nav2_route/edge_scorer.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_route
 {
 
 EdgeScorer::EdgeScorer(
   nav2::LifecycleNode::SharedPtr node,
-  const nav2::TransformBuffer::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_manager,
   const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber)
 : plugin_loader_("nav2_route", "nav2_route::EdgeCostFunction")
 {
@@ -52,7 +52,7 @@ EdgeScorer::EdgeScorer(
       RCLCPP_INFO(
         node->get_logger(), "Created edge cost function plugin %s of type %s",
         edge_cost_function_ids[i].c_str(), type.c_str());
-      scorer->configure(node, tf_buffer, costmap_subscriber, edge_cost_function_ids[i]);
+      scorer->configure(node, tf_manager, costmap_subscriber, edge_cost_function_ids[i]);
       plugins_.push_back(std::move(scorer));
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(

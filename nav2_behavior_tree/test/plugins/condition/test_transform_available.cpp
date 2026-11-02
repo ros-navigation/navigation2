@@ -41,7 +41,7 @@ public:
       node_);
     config_->blackboard->set(
       "tf_buffer",
-      transform_handler_->getBuffer());
+      transform_handler_->getTfManager());
     config_->blackboard->set<std::chrono::milliseconds>(
       "server_timeout",
       std::chrono::milliseconds(20));

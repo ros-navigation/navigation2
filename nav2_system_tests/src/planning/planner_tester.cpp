@@ -100,7 +100,7 @@ void PlannerTester::deactivate()
   map_timer_.reset();
   map_pub_.reset();
   map_.reset();
-  tf_broadcaster_.reset();
+  tf_manager_.reset();
 }
 
 PlannerTester::~PlannerTester()
@@ -113,7 +113,7 @@ PlannerTester::~PlannerTester()
 void PlannerTester::startRobotTransform()
 {
   // Provide the robot pose transform
-  tf_broadcaster_ = nav2::create_transform_broadcaster(this);
+  tf_manager_ = nav2::create_transform_manager(this, false);
 
   // Set an initial pose
   geometry_msgs::msg::Point robot_position;
@@ -146,7 +146,7 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
 void PlannerTester::publishRobotTransform()
 {
   if (base_transform_) {
-    tf_broadcaster_->sendTransform(*base_transform_);
+    tf_manager_->sendTransform(*base_transform_);
   }
 }
 

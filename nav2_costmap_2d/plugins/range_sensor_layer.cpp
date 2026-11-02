@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "nav2_costmap_2d/range_sensor_layer.hpp"
@@ -85,9 +86,7 @@ void RangeSensorLayer::onInitialize()
   clear_on_max_reading_ = node->declare_or_get_parameter(
     name_ + "." + "clear_on_max_reading", false);
 
-  double temp_tf_tol = 0.0;
-  node->get_parameter("transform_tolerance", temp_tf_tol);
-  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+  node->get_parameter("transform_tolerance", transform_tolerance_);
 
   std::vector<std::string> topic_names = node->declare_or_get_parameter(
     name_ + "." + "topics", std::vector<std::string>{});
@@ -296,17 +295,17 @@ void RangeSensorLayer::updateCostmap(
   in.header.frame_id = range_message.header.frame_id;
 
   geometry_msgs::msg::TransformStamped transform;
-  try {
-    transform = tf_->lookupTransform(
-      global_frame_, in.header.frame_id,
-      tf2_ros::fromMsg(in.header.stamp),
-      tf2_ros::fromRclcpp(transform_tolerance_));
-  } catch (const tf2::TransformException &) {
+
+  const auto transform_result = tf_manager_->getStampedTransform(
+    global_frame_, in.header.frame_id, rclcpp::Time(in.header.stamp),
+    transform_tolerance_);
+  if (!transform_result) {
     RCLCPP_INFO(
       logger_, "Range sensor layer can't transform from %s to %s",
       in.header.frame_id.c_str(), global_frame_.c_str());
     return;
   }
+  transform = *transform_result;
 
   tf2::doTransform(in, out, transform);
 

@@ -14,12 +14,11 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <cmath>
 #include <memory>
 #include <set>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "utils/test_dummy_tree_node.hpp"
@@ -30,7 +29,6 @@ class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTes
 public:
   void SetUp()
   {
-    node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue{0.1});
     config_->input_ports["distance"] = 1.0;
     config_->input_ports["global_frame"] = "map";
     config_->input_ports["robot_base_frame"] = "base_link";
@@ -58,33 +56,30 @@ DistanceControllerTestFixture::dummy_node_ = nullptr;
 
 TEST_F(DistanceControllerTestFixture, test_behavior)
 {
+  // Stop the periodic broadcaster so the directly seeded poses remain authoritative.
+  transform_handler_->deactivate();
+  const auto tf_manager = transform_handler_->getTfManager();
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "map";
+  pose.header.stamp = node_->now();
+  pose.pose.orientation.w = 1.0;
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(
+    tf_manager->poseToTransformStamped(pose, "base_link"), "test", false));
+
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
 
   dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
 
-  geometry_msgs::msg::PoseStamped pose;
-  pose.pose.position.x = 0;
-  pose.pose.position.y = 0;
-  pose.pose.orientation.w = 1;
-
-  double traveled = 0;
   for (int i = 1; i <= 20; i++) {
     pose.pose.position.x = i * 0.51;
-    transform_handler_->updateRobotPose(pose.pose);
-
-    // Wait for transforms to actually update
-    // updated pose is i * 0.55
-    // we wait for the traveled distance to reach a value > i * 0.5
-    // we can assume the current transform has been updated at this point
-    while (traveled < i * 0.5) {
-      if (nav2_util::getCurrentPose(pose, *transform_handler_->getBuffer())) {
-        traveled = std::sqrt(
-          pose.pose.position.x * pose.pose.position.x +
-          pose.pose.position.y * pose.pose.position.y);
-      }
-    }
+    pose.header.stamp = node_->now();
+    ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(
+      tf_manager->poseToTransformStamped(pose, "base_link"), "test", false));
+    const auto current_pose = tf_manager->getLatestPose("map", "base_link");
+    ASSERT_TRUE(current_pose);
+    EXPECT_DOUBLE_EQ(current_pose->pose.position.x, pose.pose.position.x);
 
     dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
 

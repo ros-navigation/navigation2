@@ -32,8 +32,6 @@ class GoalReachedConditionTestFixture : public nav2_behavior_tree::BehaviorTreeT
 public:
   void SetUp()
   {
-    node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue{0.1});
-
     geometry_msgs::msg::PoseStamped goal;
     goal.header.stamp = node_->now();
     goal.header.frame_id = "map";

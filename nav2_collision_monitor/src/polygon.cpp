@@ -18,14 +18,13 @@
 #include <exception>
 #include <utility>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "tf2/transform_datatypes.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
 #include "nav2_collision_monitor/polygon_utils.hpp"
@@ -36,12 +35,12 @@ namespace nav2_collision_monitor
 Polygon::Polygon(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
-  const nav2::TransformBuffer::SharedPtr tf_buffer,
+  const nav2::TransformManager::SharedPtr tf_manager,
   const std::string & base_frame_id,
-  const tf2::Duration & transform_tolerance)
+  double transform_tolerance)
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
   slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
-  footprint_sub_(nullptr), tf_buffer_(tf_buffer),
+  footprint_sub_(nullptr), tf_manager_(tf_manager),
   base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance),
   node_clock_(nullptr)
 {
@@ -88,8 +87,8 @@ bool Polygon::configure()
       "[%s]: Making footprint subscriber on %s topic",
       polygon_name_.c_str(), footprint_topic.c_str());
     footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-      node, footprint_topic, *tf_buffer_,
-      base_frame_id_, tf2::durationToSec(transform_tolerance_));
+      node, footprint_topic, *tf_manager_,
+      base_frame_id_, transform_tolerance_);
   }
 
   if (visualize_) {
@@ -274,13 +273,12 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
 
     // Get the transform from PolygonStamped frame to base_frame_id_
     tf2::Stamped<tf2::Transform> tf_transform;
-    if (
-      !nav2_util::getTransform(
-        polygon_.header.frame_id, base_frame_id_,
-        transform_tolerance_, tf_buffer_, tf_transform))
-    {
+    const auto transform = tf_manager_->getLatestTransform(base_frame_id_,
+        polygon_.header.frame_id);
+    if (!transform) {
       return;
     }
+    tf2::fromMsg(*transform, tf_transform);
 
     // Correct main poly_ vertices
     poly_.resize(new_size);
@@ -618,13 +616,11 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
 
   // Get the transform from PolygonStamped frame to base_frame_id_
   tf2::Stamped<tf2::Transform> tf_transform;
-  if (
-    !nav2_util::getTransform(
-      msg->header.frame_id, base_frame_id_,
-      transform_tolerance_, tf_buffer_, tf_transform))
-  {
+  const auto transform = tf_manager_->getLatestTransform(base_frame_id_, msg->header.frame_id);
+  if (!transform) {
     return;
   }
+  tf2::fromMsg(*transform, tf_transform);
 
   // Set main poly_ vertices first time
   poly_.resize(new_size);

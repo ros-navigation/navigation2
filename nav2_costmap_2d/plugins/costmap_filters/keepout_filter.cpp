@@ -40,13 +40,13 @@
 #include <string>
 #include <memory>
 #include <algorithm>
+#include "nav2_ros_common/tf_manager.hpp"
 #include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -208,12 +208,11 @@ void KeepoutFilter::updateBounds(
     pose.position.z = 0.0;
     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
     geometry_msgs::msg::Pose mask_pose;
-    geometry_msgs::msg::TransformStamped mask_transform;
-    if (nav2_util::lookupTransformWithStalenessCheck(
-        *tf_, filter_mask_->header.frame_id, global_frame_, clock_->now(),
-        transform_staleness_threshold_, mask_transform))
-    {
-      tf2::doTransform(pose, mask_pose, mask_transform);
+
+    const auto mask_transform = tf_manager_->getLatestTransform(
+      filter_mask_->header.frame_id, global_frame_, transform_staleness_threshold_);
+    if (mask_transform) {
+      tf2::doTransform(pose, mask_pose, *mask_transform);
       unsigned int mask_robot_i, mask_robot_j;
       if (nav2_util::worldToMap(
           filter_mask_, mask_pose.position.x, mask_pose.position.y,
@@ -275,14 +274,14 @@ void KeepoutFilter::process(
   if (mask_frame != global_frame_) {
     // Filter mask and current layer are in different frames:
     // prepare frame transformation if mask_frame != global_frame_
-    geometry_msgs::msg::TransformStamped mask_transform;
-    if (!nav2_util::lookupTransformWithStalenessCheck(
-        *tf_, mask_frame, global_frame_, clock_->now(),
-        transform_staleness_threshold_, mask_transform))
-    {
+
+    const auto mask_transform = tf_manager_->getLatestTransform(
+      mask_frame, global_frame_, transform_staleness_threshold_);
+    if (!mask_transform) {
       return;
     }
-    tf2::fromMsg(mask_transform.transform, tf2_transform);
+
+    tf2::fromMsg(mask_transform->transform, tf2_transform);
 
     mg_min_x = min_i;
     mg_min_y = min_j;

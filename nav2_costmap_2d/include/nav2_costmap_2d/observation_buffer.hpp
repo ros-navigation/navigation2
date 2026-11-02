@@ -43,7 +43,7 @@
 
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "rclcpp/time.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav2_costmap_2d/observation.hpp"
@@ -70,7 +70,7 @@ public:
    * @param  obstacle_min_range The range from which the sensor should be trusted for inserting obstacles
    * @param  raytrace_max_range The range to which the sensor should be trusted for raytracing to clear out space
    * @param  raytrace_min_range The range from which the sensor should be trusted for raytracing to clear out space
-   * @param  tf2_buffer A reference to a tf2 Buffer
+   * @param  tf_manager A reference to a transform manager
    * @param  global_frame The frame to transform PointClouds into
    * @param  sensor_frame The frame of the origin of the sensor, can be left blank to be read from the messages
    * @param  tf_tolerance The amount of time to wait for a transform to be available when setting a new global frame
@@ -82,10 +82,10 @@ public:
     double expected_update_rate,
     double min_obstacle_height, double max_obstacle_height, double obstacle_max_range,
     double obstacle_min_range,
-    double raytrace_max_range, double raytrace_min_range, nav2::TransformBuffer & tf2_buffer,
+    double raytrace_max_range, double raytrace_min_range, nav2::TransformManager & tf_manager,
     std::string global_frame,
     std::string sensor_frame,
-    tf2::Duration tf_tolerance);
+    double tf_tolerance);
 
   /**
    * @brief  Transforms a PointCloud to the global frame and buffers it
@@ -135,7 +135,7 @@ private:
 
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
-  nav2::TransformBuffer & tf2_buffer_;
+  nav2::TransformManager & tf_manager_;
   const rclcpp::Duration observation_keep_time_;
   const rclcpp::Duration expected_update_rate_;
   rclcpp::Time last_updated_;
@@ -146,7 +146,7 @@ private:
   double min_obstacle_height_, max_obstacle_height_;
   std::recursive_mutex lock_;  ///< @brief A lock for accessing data in callbacks safely
   double obstacle_max_range_, obstacle_min_range_, raytrace_max_range_, raytrace_min_range_;
-  tf2::Duration tf_tolerance_;
+  double tf_tolerance_;
 };
 }  // namespace nav2_costmap_2d
 #endif  // NAV2_COSTMAP_2D__OBSERVATION_BUFFER_HPP_

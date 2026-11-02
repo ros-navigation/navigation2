@@ -24,7 +24,7 @@
 #include "../testing_helper.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/plugin_container_layer.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/parameter_client.hpp"
 
 using std::begin;
@@ -162,7 +162,7 @@ protected:
  */
 
 TEST_F(TestNode, testObstacleLayers) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -192,7 +192,7 @@ TEST_F(TestNode, testObstacleLayers) {
 }
 
 TEST_F(TestNode, testObstacleAndStaticLayers) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -228,7 +228,7 @@ TEST_F(TestNode, testObstacleAndStaticLayers) {
 }
 
 TEST_F(TestNode, testDifferentInflationLayers) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -280,7 +280,7 @@ TEST_F(TestNode, testDifferentInflationLayers) {
 }
 
 TEST_F(TestNode, testDifferentInflationLayers2) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -332,7 +332,7 @@ TEST_F(TestNode, testDifferentInflationLayers2) {
 }
 
 TEST_F(TestNode, testResetting) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -408,7 +408,7 @@ TEST_F(TestNode, testResetting) {
 }
 
 TEST_F(TestNode, testClearing) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -479,7 +479,7 @@ TEST_F(TestNode, testClearing) {
 }
 
 TEST_F(TestNode, testOverwriteCombinationMethods) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -545,7 +545,7 @@ TEST_F(TestNode, testOverwriteCombinationMethods) {
 }
 
 TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -612,7 +612,7 @@ TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
 }
 
 TEST_F(TestNode, testClearable) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 

@@ -39,7 +39,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 class QPushButton;
 
@@ -156,8 +156,7 @@ private:
     nav_through_poses_goal_status_sub_;
 
   // Tf's for initial pose
-  nav2::TransformBuffer::SharedPtr tf2_buffer_;
-  nav2::TransformListener::SharedPtr transform_listener_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;

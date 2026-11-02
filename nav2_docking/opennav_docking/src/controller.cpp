@@ -21,7 +21,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "tf2/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 
@@ -29,9 +29,9 @@ namespace opennav_docking
 {
 
 Controller::Controller(
-  const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
+  const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf,
   std::string base_frame)
-: tf2_buffer_(tf), base_frame_(base_frame)
+: tf_manager_(tf), base_frame_(base_frame)
 {
   logger_ = node->get_logger();
 
@@ -198,7 +198,7 @@ void Controller::configureCollisionChecker(
 {
   costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
   footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-    node, footprint_topic, *tf2_buffer_, base_frame_, transform_tolerance);
+    node, footprint_topic, *tf_manager_, base_frame_, transform_tolerance);
   collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
     *costmap_sub_, *footprint_sub_, node->get_name());
 }

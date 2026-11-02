@@ -43,9 +43,9 @@
 #include <memory>
 #include <string>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -332,8 +332,8 @@ bool SpeedFilter::getSpeedLimitFromLookahead(
   // Transform path if not in the global frame
   nav_msgs::msg::Path transformed_path;
   if (!nav2_util::transformPathInTargetFrame(
-      *current_path_, transformed_path, *tf_, global_frame_,
-      tf2::durationToSec(transform_tolerance_)))
+      *current_path_, transformed_path, *tf_manager_, global_frame_,
+      transform_tolerance_))
   {
     RCLCPP_ERROR_THROTTLE(
       logger_, *(clock_), 5000,
@@ -420,11 +420,9 @@ void SpeedFilter::process(
     return;
   }
 
-  geometry_msgs::msg::TransformStamped mask_transform;
-  if (!nav2_util::lookupTransformWithStalenessCheck(
-      *tf_, filter_mask_->header.frame_id, global_frame_, clock_->now(),
-      transform_staleness_threshold_, mask_transform))
-  {
+  const auto mask_transform = tf_manager_->getLatestTransform(
+    filter_mask_->header.frame_id, global_frame_, transform_staleness_threshold_);
+  if (!mask_transform) {
     return;
   }
 
@@ -448,12 +446,12 @@ void SpeedFilter::process(
       d_lookahead = std::max(d_lookahead, held_lookahead_dist_);
     }
 
-    if (!getSpeedLimitFromLookahead(pose, d_lookahead, mask_transform, speed_limit_)) {
+    if (!getSpeedLimitFromLookahead(pose, d_lookahead, *mask_transform, speed_limit_)) {
       RCLCPP_ERROR(logger_, "SpeedFilter: Failed to get speed limit from lookahead");
       return;
     }
   } else {
-    if (!getSpeedLimitAtPose(pose, mask_transform, speed_limit_)) {
+    if (!getSpeedLimitAtPose(pose, *mask_transform, speed_limit_)) {
       RCLCPP_ERROR(logger_, "SpeedFilter: Failed to get speed limit at pose");
       return;
     }

@@ -26,7 +26,7 @@
 #include "rclcpp/time.hpp"
 
 #include "tf2/time.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_msgs/srv/add_exclusion_zone.hpp"
 #include "nav2_msgs/srv/remove_exclusion_zone.hpp"
@@ -51,7 +51,7 @@ public:
    * @brief Source constructor
    * @param node Collision Monitor node pointer
    * @param source_name Name of data source
-   * @param tf_buffer Shared pointer to a TF buffer
+   * @param tf_manager Shared pointer to a TF manager
    * @param base_frame_id Robot base frame ID. The output data will be transformed into this frame.
    * @param global_frame_id Global frame ID for correct transform calculation
    * @param transform_tolerance Transform tolerance
@@ -62,10 +62,10 @@ public:
   Source(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & source_timeout,
     const bool base_shift_correction);
   /**
@@ -220,13 +220,13 @@ protected:
 
   // Global variables
   /// @brief TF buffer
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   /// @brief Robot base frame ID
   std::string base_frame_id_;
   /// @brief Global frame ID for correct transform calculation
   std::string global_frame_id_;
   /// @brief Transform tolerance
-  tf2::Duration transform_tolerance_;
+  double transform_tolerance_;
   /// @brief Maximum age in seconds for transforms requested at the latest time
   double transform_staleness_threshold_{1.0};
   /// @brief Maximum time interval in which data is considered valid

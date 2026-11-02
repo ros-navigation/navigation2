@@ -18,10 +18,9 @@
 #include <memory>
 #include <cmath>
 
-#include "nav2_util/robot_utils.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
 
@@ -40,8 +39,7 @@ DistanceController::DistanceController(
   getInput("distance", distance_);
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
-  node_->get_parameter("transform_tolerance", transform_tolerance_);
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
 
@@ -56,31 +54,30 @@ inline BT::NodeStatus DistanceController::tick()
   if (!BT::isStatusActive(status())) {
     // Reset the starting position since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
-    if (!nav2_util::getFreshPose(
-        *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_,
-        start_pose_))
-    {
+    const auto start_pose_result = tf_manager_->getLatestPose(
+      global_frame_, robot_base_frame_, transform_staleness_threshold_);
+    if (!start_pose_result) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
       return BT::NodeStatus::FAILURE;
     }
+    start_pose_ = *start_pose_result;
     first_time_ = true;
   }
 
   setStatus(BT::NodeStatus::RUNNING);
 
   // Determine distance travelled since we've started this iteration
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getFreshPose(
-      *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_,
-      current_pose))
-  {
+
+  const auto current_pose = tf_manager_->getLatestPose(
+    global_frame_, robot_base_frame_, transform_staleness_threshold_);
+  if (!current_pose) {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return BT::NodeStatus::FAILURE;
   }
 
   // Get euclidean distance
   auto travelled = nav2_util::geometry_utils::euclidean_distance(
-    start_pose_.pose, current_pose.pose);
+    start_pose_.pose, current_pose->pose);
 
   // The child gets ticked the first time through and every time the threshold
   // distance is crossed. In addition, once the child begins to run, it is
@@ -95,17 +92,16 @@ inline BT::NodeStatus DistanceController::tick()
       case BT::NodeStatus::SKIPPED:
       case BT::NodeStatus::RUNNING:
         return child_state;
-
-      case BT::NodeStatus::SUCCESS:
-        if (!nav2_util::getFreshPose(
-            *tf_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_,
-            start_pose_))
-        {
-          RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
-          return BT::NodeStatus::FAILURE;
+      case BT::NodeStatus::SUCCESS: {
+          const auto start_pose_result = tf_manager_->getLatestPose(
+            global_frame_, robot_base_frame_, transform_staleness_threshold_);
+          if (!start_pose_result) {
+            RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+            return BT::NodeStatus::FAILURE;
+          }
+          start_pose_ = *start_pose_result;
+          return BT::NodeStatus::SUCCESS;
         }
-        return BT::NodeStatus::SUCCESS;
-
       case BT::NodeStatus::FAILURE:
       default:
         return BT::NodeStatus::FAILURE;

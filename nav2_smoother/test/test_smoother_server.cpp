@@ -26,7 +26,7 @@
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 using SmoothAction = nav2_msgs::action::SmoothPath;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<SmoothAction>;
@@ -84,7 +84,7 @@ public:
   DummyFootprintSubscriber(
     nav2::LifecycleNode::SharedPtr node,
     const std::string & topic_name,
-    nav2::TransformBuffer & tf)
+    nav2::TransformManager & tf)
   : FootprintSubscriber(node, topic_name, tf)
   {
     auto footprint = std::make_shared<geometry_msgs::msg::PolygonStamped>();
@@ -138,7 +138,7 @@ public:
       node, "costmap_topic");
     footprint_sub_ =
       std::make_shared<DummyFootprintSubscriber>(
-      node, "footprint_topic", *tf_);
+      node, "footprint_topic", *tf_manager_);
     collision_checker_ =
       std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
       *costmap_sub_, *footprint_sub_,

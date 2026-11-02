@@ -44,7 +44,7 @@
 #include "nav2_costmap_2d/voxel_layer.hpp"
 #include "../testing_helper.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/parameter_client.hpp"
 
 using std::begin;
@@ -150,7 +150,7 @@ protected:
  * Test for ray tracing free space
  */
 TEST_F(TestNode, testRaytracing) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
@@ -173,7 +173,7 @@ TEST_F(TestNode, testRaytracing) {
  * Test for ray tracing free space
  */
 TEST_F(TestNode, testRaytracing2) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
   auto olayer = addObstacleLayer(layers, tf, node_);
@@ -228,7 +228,7 @@ TEST_F(TestNode, testRaytracing2) {
  * Test for wave interference
  */
 TEST_F(TestNode, testWaveInterference) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
   node_->set_parameter(rclcpp::Parameter("track_unknown_space", true));
   // Start with an empty map, no rolling window, tracking unknown
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
@@ -257,7 +257,7 @@ TEST_F(TestNode, testWaveInterference) {
  * Make sure we ignore points outside of our z threshold
  */
 TEST_F(TestNode, testZThreshold) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
   // Start with an empty map
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -278,7 +278,7 @@ TEST_F(TestNode, testZThreshold) {
  * Verify that dynamic obstacles are added
  */
 TEST_F(TestNode, testDynamicObstacles) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
 
@@ -303,7 +303,7 @@ TEST_F(TestNode, testDynamicObstacles) {
  * Verify that if we add a point that is already a static obstacle we do not end up with a new ostacle
  */
 TEST_F(TestNode, testMultipleAdditions) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   addStaticLayer(layers, tf, node_);
 
@@ -322,7 +322,7 @@ TEST_F(TestNode, testMultipleAdditions) {
  * Verify correct init/reset cycling of layer
  */
 TEST_F(TestNode, testRepeatedResets) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = nullptr;
@@ -371,7 +371,7 @@ TEST_F(TestNode, testRepeatedResets) {
  * Test for ray tracing free space
  */
 TEST_F(TestNode, testRaytracing) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -591,7 +591,7 @@ TEST_F(TestNode, testDynParamsSetStatic)
  * Test CombinationMethod::Max overwrites unknown value in ObstacleLayer.
  */
 TEST_F(TestNode, testMaxCombinationMethod) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   // Create a costmap with full unknown space
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
@@ -637,7 +637,7 @@ protected:
  * Test CombinationMethod::MaxWithoutUnknownOverwrite in ObstacleLayer.
  */
 TEST_F(TestNodeWithoutUnknownOverwrite, testMaxWithoutUnknownOverwriteCombinationMethod) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
 
   // Create a costmap with full unknown space
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
@@ -675,7 +675,7 @@ void addEmptyObservation(std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer)
 }
 
 TEST_F(TestNode, testEmptyObservationObstacleLayer) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -689,7 +689,7 @@ TEST_F(TestNode, testEmptyObservationObstacleLayer) {
 }
 
 TEST_F(TestNode, testEmptyObservationVoxelLayer) {
-  nav2::TransformBuffer tf(node_->get_clock());
+  nav2::TransformManager tf(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
