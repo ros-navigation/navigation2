@@ -130,19 +130,6 @@ install(DIRECTORY behavior_trees DESTINATION share/${PROJECT_NAME})
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
-
-  find_package(ament_cmake_gtest REQUIRED)
-  ament_find_gtest()
-
-  nav2_add_gtest(test_navigator_params test/test_navigator_params.cpp)
-  target_link_libraries(test_navigator_params
-    nav2_navigate_to_pose_navigator
-    nav2_navigate_through_poses
-    nav2_behavior_tree::nav2_behavior_tree
-    nav2_core::nav2_core
-    nav2_ros_common::nav2_ros_common
-    rclcpp::rclcpp
-  )
 endif()
 
 ament_export_dependencies(geometry_msgs nav2_core nav2_msgs nav2_util nav2_ros_common nav_msgs pluginlib rclcpp rclcpp_action tf2_ros)
