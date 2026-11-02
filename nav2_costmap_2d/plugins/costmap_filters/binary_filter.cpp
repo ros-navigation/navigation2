@@ -52,7 +52,7 @@ namespace nav2_costmap_2d
 BinaryFilter::BinaryFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   binary_state_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
-  default_state_(false), binary_state_(default_state_)
+  default_state_(false), binary_state_(false), binary_state_initialized_(false)
 {
 }
 
@@ -95,7 +95,12 @@ void BinaryFilter::initializeFilter(
   base_ = BASE_DEFAULT;
   multiplier_ = MULTIPLIER_DEFAULT;
 
-  // Initialize state binary_state_ which at start its equal to default_state_
+  // Start from default_state_ on the first initialization only. A costmap reset calls
+  // resetFilter() and initializeFilter() again, and should keep the current binary state.
+  if (!binary_state_initialized_) {
+    binary_state_ = default_state_;
+    binary_state_initialized_ = true;
+  }
   changeState(binary_state_);
 }
 
