@@ -46,13 +46,7 @@ NavigateThroughPosesNavigator::configure(
     getName() + ".waypoint_statuses_blackboard_id",
     std::string("waypoint_statuses"));
 
-<<<<<<< HEAD
-  search_window_ = node->declare_or_get_parameter(getName() + "search_window", 2.0);
-=======
   search_window_ = node->declare_or_get_parameter(getName() + ".search_window", 2.0);
-  transform_staleness_threshold_ = node->declare_or_get_parameter(
-    getName() + ".transform_staleness_threshold", 0.0);
->>>>>>> a8c6d7c (Fix search_window parameter name in NavigateToPose and NavigateThroughPoses navigators (#6730))
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
