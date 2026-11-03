@@ -42,7 +42,7 @@ NavigateToPoseNavigator::configure(
     getName() + ".tracking_feedback_blackboard_id",
     std::string("tracking_feedback"));
 
-  search_window_ = node->declare_or_get_parameter(getName() + "search_window", 2.0);
+  search_window_ = node->declare_or_get_parameter(getName() + ".search_window", 2.0);
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
