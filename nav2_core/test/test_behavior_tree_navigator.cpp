@@ -51,6 +51,7 @@ public:
   bool goalReceived(NavigateToPose::Goal::ConstSharedPtr) override
   {
     ++received_count_;
+    if (on_validate_) {on_validate_();}
     return goal_accepted_;
   }
   bool goalStarted(NavigateToPose::Goal::ConstSharedPtr goal) override
@@ -59,6 +60,7 @@ public:
     active_x_ = goal->pose.pose.position.x;
     return true;
   }
+  std::function<void()> on_validate_;
   int received_count_ = 0;
   int started_count_ = 0;
   double active_x_ = 0.0;
@@ -233,6 +235,19 @@ TEST(BTNavigatorOnGoalReceivedTest, AlreadyNavigatingPreemptionEnabledTimeout)
   EXPECT_TRUE(muxer.isNavigating());
   muxer.stopNavigating(&active_nav);
   EXPECT_FALSE(muxer.isNavigating());
+}
+
+TEST(BTNavigatorOnGoalReceivedTest, ReceptionRejectedWhenAnotherNavigatorStartsDuringValidation)
+{
+  nav2_core::NavigatorMuxer muxer;
+  MockNavigator other_nav;
+  TestBTNavigator nav;
+  nav.setup(&muxer, false);
+  nav.on_validate_ = [&]() {muxer.startNavigating(&other_nav);};
+
+  EXPECT_FALSE(nav.callOnGoalReceived(std::make_shared<NavigateToPose::Goal>()));
+  EXPECT_TRUE(muxer.isCurrentNavigator(&other_nav));
+  muxer.stopNavigating(&other_nav);
 }
 
 int main(int argc, char ** argv)

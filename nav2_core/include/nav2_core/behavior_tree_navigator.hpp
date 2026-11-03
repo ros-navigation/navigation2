@@ -120,18 +120,16 @@ public:
   /**
    * @brief Start navigating with a given navigator
    * @param string Name of the navigator to start
+   * @return bool If the navigator holds ownership; false if another navigator holds it
    */
-  void startNavigating(nav2_core::NavigatorBase * navigator)
+  bool startNavigating(nav2_core::NavigatorBase * navigator)
   {
     std::scoped_lock l(mutex_);
-    if (current_navigator_ != nullptr) {
-      RCLCPP_ERROR(
-        rclcpp::get_logger("NavigatorMutex"),
-        "Major error! Navigation requested while another navigation"
-        " task is in progress! This likely occurred from an incorrect"
-        "implementation of a navigator plugin.");
+    if (current_navigator_ != nullptr && current_navigator_ != navigator) {
+      return false;
     }
     current_navigator_ = navigator;
+    return true;
   }
 
   /**
@@ -332,10 +330,9 @@ public:
 
 protected:
   /**
-   * @brief Ensure no other navigator is processing a goal, preempting it if allowed
-   * @return bool If no other navigator holds the muxer
+   * @brief An intermediate goal reception function to mux navigators.
    */
-  bool stopOtherNavigator()
+  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
   {
     if (plugin_muxer_->isNavigating() && !plugin_muxer_->isCurrentNavigator(this)) {
       // A different navigator is processing; check if cross-navigator preemption is allowed
@@ -366,22 +363,16 @@ protected:
         r.sleep();
       }
     }
-    return true;
-  }
-
-  /**
-   * @brief An intermediate goal reception function to mux navigators.
-   */
-  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
-  {
-    if (!stopOtherNavigator()) {
-      return false;
-    }
 
     bool goal_accepted = goalReceived(goal);
 
-    if (goal_accepted && !plugin_muxer_->isCurrentNavigator(this)) {
-      plugin_muxer_->startNavigating(this);
+    // Another navigator may have started while this goal was being validated.
+    if (goal_accepted && !plugin_muxer_->startNavigating(this)) {
+      RCLCPP_ERROR(
+        logger_,
+        "Another navigator started while validating the goal for %s, rejecting request.",
+        getName().c_str());
+      return false;
     }
 
     return goal_accepted;
@@ -395,15 +386,13 @@ protected:
    */
   bool onGoalStarted(typename ActionT::Goal::ConstSharedPtr goal)
   {
-    // Completion releases ownership before the action worker promotes a pending goal.
-    if (!plugin_muxer_->isCurrentNavigator(this)) {
-      if (!stopOtherNavigator()) {
-        bt_action_server_->setInternalError(
-          ActionT::Result::GOAL_REJECTED,
-          "Another navigator is processing a goal.");
-        return false;
-      }
-      plugin_muxer_->startNavigating(this);
+    // Ownership is already held unless completion released it before a pending goal started.
+    // Never preempt here: a newer request to another navigator wins over this queued goal.
+    if (!plugin_muxer_->startNavigating(this)) {
+      bt_action_server_->setInternalError(
+        ActionT::Result::GOAL_REJECTED,
+        "Another navigator is processing a goal.");
+      return false;
     }
     return goalStarted(goal);
   }
