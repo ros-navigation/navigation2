@@ -251,6 +251,9 @@ protected:
    */
   void registerRclPreshutdownCallback();
 
+  // Handle for the rcl preshutdown callback, so it can be removed on destruction
+  std::unique_ptr<rclcpp::PreShutdownCallbackHandle> rcl_preshutdown_cb_handle_{nullptr};
+
   /**
    * @brief Set the state of managed nodes
    */
