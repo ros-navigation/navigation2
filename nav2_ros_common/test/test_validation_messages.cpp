@@ -29,6 +29,18 @@ TEST(ValidateMessagesTest, DoubleValueCheck) {
   EXPECT_FALSE(nav2::validateMsg(std::numeric_limits<double>::quiet_NaN()));
 }
 
+TEST(ValidateMessagesTest, DoubleValueInfValidCheck)
+{
+  EXPECT_TRUE(nav2::validateMsgInfValid(3.14));
+  EXPECT_TRUE(nav2::validateMsgInfValid(-3.14));
+  EXPECT_TRUE(nav2::validateMsgInfValid(0.0));
+  EXPECT_TRUE(nav2::validateMsgInfValid(std::numeric_limits<double>::max()));
+  EXPECT_TRUE(nav2::validateMsgInfValid(std::numeric_limits<double>::lowest()));
+  EXPECT_TRUE(nav2::validateMsgInfValid(std::numeric_limits<double>::infinity()));
+  EXPECT_FALSE(nav2::validateMsgInfValid(-std::numeric_limits<double>::infinity()));
+  EXPECT_FALSE(nav2::validateMsgInfValid(std::numeric_limits<double>::quiet_NaN()));
+}
+
 TEST(ValidateMessagesTest, TimeStampCheck)
 {
   // Test valid time stamp

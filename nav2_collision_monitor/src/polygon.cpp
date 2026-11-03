@@ -249,7 +249,12 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
     // Get latest robot footprint from footprint subscriber
     std::vector<geometry_msgs::msg::Point> footprint_vec;
     std_msgs::msg::Header footprint_header;
-    footprint_sub_->getFootprintInRobotFrame(footprint_vec, footprint_header);
+    if (!footprint_sub_->getFootprintInRobotFrame(footprint_vec, footprint_header)) {
+      // footprint_vec may hold untransformed points on TF failure: treat shape as not set
+      poly_.clear();
+      polygon_.polygon.points.clear();
+      return;
+    }
 
     std::size_t new_size = footprint_vec.size();
     poly_.resize(new_size);

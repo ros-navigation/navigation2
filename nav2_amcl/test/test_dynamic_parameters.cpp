@@ -140,6 +140,14 @@ TEST(WPTest, test_dynamic_parameters)
   rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
   EXPECT_EQ(amcl->get_parameter("beam_skip_distance").as_double(), 0.5);
 
+  // Negative laser ranges are valid: they mean "use the range reported by the laser scan"
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("laser_min_range", -1.0),
+      rclcpp::Parameter("laser_max_range", -1.0)});
+  rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
+  EXPECT_EQ(amcl->get_parameter("laser_min_range").as_double(), -1.0);
+  EXPECT_EQ(amcl->get_parameter("laser_max_range").as_double(), -1.0);
+
   results = rec_param->set_parameters_atomically({rclcpp::Parameter("resample_interval", 0)});
   rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
   EXPECT_EQ(amcl->get_parameter("resample_interval").as_int(), 1);

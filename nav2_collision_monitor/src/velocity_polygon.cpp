@@ -131,7 +131,9 @@ void VelocityPolygon::updatePolygon(const Velocity & cmd_vel_in)
     }
   }
 
-  // Log for uncovered velocity
+  // Uncovered velocity: no zone applies, drop the active sub-polygon so the monitor stops
+  poly_.clear();
+  polygon_.polygon.points.clear();
   RCLCPP_WARN_THROTTLE(
     logger_, *clock_, 2000,
     "Velocity is not covered by any of the velocity polygons. x: %.3f y: %.3f tw: %.3f ",

@@ -88,6 +88,11 @@ bool Range::getSourceData(
     return false;
   }
 
+  // A fresh positive-infinity reading is a valid no-return observation.
+  if (std::isinf(data_->range) && data_->range > 0.0) {
+    return true;
+  }
+
   // Ignore data, if its range is out of scope of range sensor abilities
   if (data_->range < data_->min_range || data_->range > data_->max_range) {
     RCLCPP_DEBUG(

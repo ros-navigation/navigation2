@@ -35,6 +35,7 @@
 #include <memory>
 #include <string>
 #include <algorithm>
+#include <limits>
 #include <utility>
 #include <vector>
 
@@ -169,6 +170,50 @@ TEST_F(TestNode, testClearingAtMaxRange) {
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
 //  printMap(*(layers.getCostmap()));
+
+  ASSERT_EQ(layers.getCostmap()->getCost(4, 5), 0);
+}
+
+// Test clearing above max range, as +Inf, and ignoring NaN
+TEST_F(TestNode, testClearingAboveMaxRange) {
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.stamp = node_->now();
+  transform.header.frame_id = "frame";
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.y = 5;
+  transform.transform.translation.x = 2;
+  tf_.setTransform(transform, "default_authority", true);
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> rlayer{nullptr};
+  addRangeLayer(layers, tf_, node_, rlayer);
+
+  sensor_msgs::msg::Range msg;
+  msg.min_range = 1.0;
+  msg.max_range = 7.0;
+  msg.range = 2.0;
+  msg.header.stamp = node_->now();
+  msg.header.frame_id = "base_link";
+  msg.radiation_type = msg.ULTRASOUND;
+  msg.field_of_view = 0.174533;  // 10 deg
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+
+  ASSERT_EQ(layers.getCostmap()->getCost(4, 5), 254);
+
+  msg.range = std::numeric_limits<float>::quiet_NaN();
+  msg.header.stamp = node_->now();
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+
+  ASSERT_EQ(layers.getCostmap()->getCost(4, 5), 254);
+
+  msg.range = std::numeric_limits<float>::infinity();
+  msg.header.stamp = node_->now();
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
 
   ASSERT_EQ(layers.getCostmap()->getCost(4, 5), 0);
 }

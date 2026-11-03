@@ -62,6 +62,19 @@ bool validateMsg(const double & num)
   return true;
 }
 
+bool validateMsgInfValid(const double & num)
+{
+  /*  @brief validate a numeric value
+   *  allowing positive infinity as a ranger sensor
+   *  'beam no-return' value.
+   *  @return true for finite values and positive infinity;
+   *  false for NaN and negative infinity.
+   */
+  if (std::isnan(num)) {return false;}
+  if (std::isinf(num) && num < 0.0) {return false;}
+  return true;
+}
+
 const double MAX_COVARIANCE = 1e9;
 const double MIN_COVARIANCE = 0;
 const double MIN_MAP_RESOLUTION = 1e-6;
@@ -242,7 +255,7 @@ bool validateMsg(const sensor_msgs::msg::Range & msg)
   if (!validateMsg(static_cast<double>(msg.field_of_view))) {return false;}
   if (!validateMsg(static_cast<double>(msg.min_range))) {return false;}
   if (!validateMsg(static_cast<double>(msg.max_range))) {return false;}
-  if (!validateMsg(static_cast<double>(msg.range))) {return false;}
+  if (!validateMsgInfValid(static_cast<double>(msg.range))) {return false;}
 
   if (msg.field_of_view <= 0.0 || msg.field_of_view > MAX_RANGE_FIELD_OF_VIEW) {
     return false;

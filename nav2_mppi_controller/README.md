@@ -40,7 +40,7 @@ This process is then repeated a number of times and returns a converged solution
 ### Controller
  | Parameter                  | Type   | Definition                                                                                                                                                                                                                                                                                                           |
  | ---------------------      | ------ | -------------------------------------------------------------------------------------------------------- |
- | motion_model               | string | Default: diff_drive. Name of the motion model plugin instance to use. A sub-namespace with the same name must declare the `plugin` type. |
+ | motion_model               | string | Default: diff_drive. Static; requires reconfiguration. Name of the motion model plugin instance to use. A sub-namespace with the same name must declare the `plugin` type. |
  | critics                    | string | Default: None. Critics (plugins) names                                                                   |
  | iteration_count            | int    | Default 1. Iteration count in MPPI algorithm. Recommend to keep as 1 and prefer more batches.            |
  | batch_size                 | int    | Default 1000. Count of randomly sampled candidate trajectories                                            |
@@ -157,7 +157,7 @@ Uses inflated costmap cost directly to avoid obstacles
  | threshold_to_consider     | double | Default 0.5. Distance between robot and goal above which path angle cost is considered             |
  | offset_from_furthest      | int    | Default 4. Number of path points after furthest one any trajectory achieves to compute path angle relative to.  |
  | max_angle_to_furthest     | double | Default 0.785398. Angular distance between robot and goal above which path angle cost starts being considered           |
- | mode     | int | Default 0 (Forward Preference). Enum type for mode of operations for the path angle critic depending on path input types and behavioral desires. 0: Forward Preference, penalizes high path angles relative to the robot's orientation to incentivize turning towards the path. 1: No directional preference, penalizes high path angles relative to the robot's orientation or mirrored orientation (e.g. reverse), which ever is less, when a particular direction of travel is not preferable. 2: Consider feasible path orientation, when using a feasible path whereas the path points have orientation information (e.g. Smac Planners), consider the path's requested direction of travel to penalize path angles such that the robot will follow the path in the requested direction. |
+ | mode     | int | Default 0 (Forward Preference). Static; requires reconfiguration. Enum type for mode of operations for the path angle critic depending on path input types and behavioral desires. 0: Forward Preference, penalizes high path angles relative to the robot's orientation to incentivize turning towards the path. 1: No directional preference, penalizes high path angles relative to the robot's orientation or mirrored orientation (e.g. reverse), which ever is less, when a particular direction of travel is not preferable. 2: Consider feasible path orientation, when using a feasible path whereas the path points have orientation information (e.g. Smac Planners), consider the path's requested direction of travel to penalize path angles such that the robot will follow the path in the requested direction. |
 
 
 #### Path Follow Critic
@@ -176,6 +176,32 @@ Uses inflated costmap cost directly to avoid obstacles
 | threshold_to_consider | double | Default 0.5. Distance between robot and goal above which prefer forward cost is considered         |
 
 
+#### Omni Constraint Critic
+
+Intended to replace the Constraint Critic when using an omnidirectional robot. Penalizes combined translational velocities that leave the ellipse spanned by the controller's `vx_max`, `vx_min` and `vy_max`. This prevents a diagonal command from reaching a higher speed than one along the robot's x and y axes.
+
+If using a mecanum drivetrain, use this critic together with the Mecanum Critic, which limits wheel velocities.
+
+ | Parameter             | Type   | Definition                                                                                                  |
+ | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double | Default 4.0. Weight to apply to critic term.                                                                |
+ | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
+
+
+#### Mecanum Critic
+
+Penalizes velocities outside the reachable velocity space of a mecanum drivetrain. This critic bounds what velocity combination of vx, vy and wz the drivetrain can deliver.
+The mecanum critic's velocity limits are defined by the drivetrain's wheels on each axis, rather than body-fixed velocities.
+
+ | Parameter             | Type   | Definition                                                                                                  |
+ | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double | Default 4.0. Weight to apply to critic term.                                                                |
+ | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
+ | vx_max                | double | Defaults to 0.5. Max speed the robot can reach along x.                                                     |
+ | vy_max                | double | Defaults to 0.5. Max speed the robot can reach along y.                                                     |
+ | wz_max                | double | Defaults to 1.7. Max speed at which the robot can rotate.                                                   |
+
+
 #### Twirling Critic
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
@@ -188,7 +214,7 @@ Uses inflated costmap cost directly to avoid obstacles
  | ---------------       | ------   | ----------------------------------------------------------------------------------------------------------- |
  | cost_weight           | double   | Default 35.0. Weight to apply to critic term.                                                               |
  | cost_power            | int      | Default 1. Power order to apply to term.                                                                    |
- | deadband_velocities   | double[] | Default [0.0, 0.0, 0.0].  The array of deadband velocities [vx, vz, wz]. A zero array indicates that the critic will take no action.      |
+ | deadband_velocities   | double[] | Default [0.0, 0.0, 0.0]. Static; requires reconfiguration.  The array of deadband velocities [vx, vy, wz]. A zero array indicates that the critic will take no action.      |
 
 
 ### XML configuration example
@@ -284,12 +310,23 @@ controller_server:
         offset_from_furthest: 4
         threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
-        forward_preference: true
+        mode: 0
       # VelocityDeadbandCritic:
       #   enabled: true
       #   cost_power: 1
       #   cost_weight: 35.0
       #   deadband_velocities: [0.05, 0.05, 0.05]
+      # OmniConstraintCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 4.0
+      # MecanumCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 4.0
+      #   vx_max: 0.5
+      #   vy_max: 0.5
+      #   wz_max: 1.7
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1

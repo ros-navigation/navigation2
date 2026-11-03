@@ -9,12 +9,12 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>libnanoflann-dev</build_depend>
+  <build_depend>nanoflann_vendor</build_depend>
   <build_depend>nav2_common</build_depend>
   <build_depend>nlohmann-json-dev</build_depend>
   <build_depend>angles</build_depend>
 
-  <build_export_depend>libnanoflann-dev</build_export_depend>
+  <build_export_depend>nanoflann_vendor</build_export_depend>
   <build_export_depend>nlohmann-json-dev</build_export_depend>
   <build_export_depend>angles</build_export_depend>
 

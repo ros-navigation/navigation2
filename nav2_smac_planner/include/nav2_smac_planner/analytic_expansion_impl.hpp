@@ -320,9 +320,8 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     }
 
     // Reset to initial poses to not impact future searches
-    for (const auto & node_pose : possible_nodes.nodes) {
-      const auto & n = node_pose.node;
-      n->setPose(node_pose.initial_coords);
+    for (auto it = possible_nodes.nodes.rbegin(); it != possible_nodes.nodes.rend(); ++it) {
+      it->node->setPose(it->initial_coords);
     }
 
     if (failure) {
