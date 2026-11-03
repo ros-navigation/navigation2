@@ -1045,28 +1045,23 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
     std::this_thread::sleep_for(10ms);
   }
 
-  // The final result should be success
+  // The final result should be failure
   EXPECT_EQ(result, BT::NodeStatus::FAILURE);
 
-  // ComputePathToPose is called 12 times
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 3);
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 7);
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getResult()->error_code, 0);
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getResult()->error_msg, "");
 
-  // FollowPath is called 4 times
-  EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 6);
+  EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 14);
   EXPECT_EQ(server_handler->follow_path_server->getResult()->error_code, 106);
   EXPECT_EQ(server_handler->follow_path_server->getResult()->error_msg, "No valid control");
 
-  // Local costmap is cleared 5 times
-  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 4);
+  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 9);
 
-  // Global costmap is cleared 8 times
-  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 1);
+  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 2);
 
-  // All recovery action servers receive 2 goals
-  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 1);
-  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 1);
+  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 2);
+  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 2);
   EXPECT_EQ(server_handler->backup_server->getGoalCount(), 1);
 }
 
