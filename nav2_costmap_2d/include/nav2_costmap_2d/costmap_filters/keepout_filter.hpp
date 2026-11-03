@@ -42,6 +42,7 @@
 #include <memory>
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
 
@@ -112,7 +113,9 @@ protected:
   nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
 
-  nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask_;
+  // Store mask as Costmap2D, drop OccupancyGrid msg
+  std::unique_ptr<Costmap2D> filter_mask_costmap_;
+  std::string filter_mask_frame_;
 
   std::string global_frame_;  // Frame of current layer (master_grid)
 
