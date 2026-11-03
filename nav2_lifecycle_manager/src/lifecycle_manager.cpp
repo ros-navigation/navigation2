@@ -113,6 +113,12 @@ LifecycleManager::~LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Destroying %s", get_name());
   service_thread_.reset();
+
+  if (rcl_preshutdown_cb_handle_) {
+    rclcpp::Context::SharedPtr context = get_node_base_interface()->get_context();
+    context->remove_pre_shutdown_callback(*(rcl_preshutdown_cb_handle_.get()));
+    rcl_preshutdown_cb_handle_.reset();
+  }
 }
 
 void
@@ -468,9 +474,9 @@ LifecycleManager::registerRclPreshutdownCallback()
 {
   rclcpp::Context::SharedPtr context = get_node_base_interface()->get_context();
 
-  context->add_pre_shutdown_callback(
-    std::bind(&LifecycleManager::onRclPreshutdown, this)
-  );
+  rcl_preshutdown_cb_handle_ = std::make_unique<rclcpp::PreShutdownCallbackHandle>(
+    context->add_pre_shutdown_callback(
+      std::bind(&LifecycleManager::onRclPreshutdown, this)));
 }
 
 void
