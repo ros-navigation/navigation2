@@ -65,6 +65,8 @@ public:
   {
     return _goal_heading_mode;
   }
+
+  nav2_smac_planner::SearchInfo getSearchInfo() {return _search_info;}
 };
 
 // SMAC smoke tests for plugin-level issues rather than algorithms

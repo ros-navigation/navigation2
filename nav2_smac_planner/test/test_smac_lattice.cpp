@@ -46,6 +46,7 @@ public:
     }
   }
 
+  nav2_smac_planner::SearchInfo getSearchInfo() {return _search_info;}
   float radiusInCells() {return _search_info.minimum_turning_radius;}
   float expansionInCells() {return _search_info.analytic_expansion_max_length;}
 
