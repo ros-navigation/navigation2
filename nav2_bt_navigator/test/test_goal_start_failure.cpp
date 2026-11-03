@@ -19,6 +19,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -29,7 +30,7 @@
 using Action = nav2_msgs::action::NavigateToPose;
 using namespace std::chrono_literals;
 
-enum class Failure {FreshStart, PromotedTf, PromotedMuxer};
+enum class Failure {None, FreshStart, PromotedTf, PromotedMuxer, Throw, SilentFalse};
 
 class OtherNavigator : public nav2_core::NavigatorBase
 {
@@ -67,6 +68,12 @@ protected:
   bool goalStarted(Action::Goal::ConstSharedPtr goal) override
   {
     const int count = ++started;
+    if (failure == Failure::Throw) {
+      throw std::runtime_error("goal started failure");
+    }
+    if (failure == Failure::SilentFalse) {
+      return false;
+    }
     if (failure == Failure::FreshStart || (failure == Failure::PromotedTf && count == 2)) {
       tf_buffer->clear();
     }
@@ -202,6 +209,56 @@ TEST_F(GoalStartFailure, PromotedGoalRejectedWhileOtherNavigatorOwnsMuxer)
   // The rejected goal must not take or release the other navigator's ownership.
   EXPECT_TRUE(muxer_.isCurrentNavigator(&other_));
   muxer_.stopNavigating(&other_);
+}
+
+TEST_F(GoalStartFailure, ExceptionAtStartReportsErrorAndReleasesMuxer)
+{
+  nav_.failure = Failure::Throw;
+  auto handle = send();
+  ASSERT_NE(handle, nullptr);
+  auto res = result(handle);
+
+  EXPECT_EQ(res.code, rclcpp_action::ResultCode::ABORTED);
+  EXPECT_EQ(res.result->error_code, Action::Result::UNKNOWN);
+  EXPECT_FALSE(muxer_.isNavigating());
+
+  // The server keeps working after the exception.
+  nav_.failure = Failure::None;
+  handle = send();
+  ASSERT_NE(handle, nullptr);
+  res = result(handle);
+  EXPECT_EQ(res.code, rclcpp_action::ResultCode::SUCCEEDED);
+}
+
+TEST_F(GoalStartFailure, StartFailureWithoutErrorReportsUnknown)
+{
+  nav_.failure = Failure::SilentFalse;
+  auto handle = send();
+  ASSERT_NE(handle, nullptr);
+  const auto res = result(handle);
+
+  EXPECT_EQ(res.code, rclcpp_action::ResultCode::ABORTED);
+  EXPECT_EQ(res.result->error_code, Action::Result::UNKNOWN);
+  EXPECT_FALSE(muxer_.isNavigating());
+}
+
+TEST_F(GoalStartFailure, PreemptionBeforeExecutionStartsIsNotLost)
+{
+  nav_.failure = Failure::None;
+  // The navigator owns the muxer, as after accepting a goal, and is preempted before executing.
+  muxer_.startNavigating(&nav_);
+  nav_.preempt();
+  auto handle = send();
+  ASSERT_NE(handle, nullptr);
+  auto res = result(handle);
+  EXPECT_NE(res.code, rclcpp_action::ResultCode::SUCCEEDED);
+  EXPECT_FALSE(muxer_.isNavigating());
+
+  // The request is consumed, so the next goal runs normally.
+  handle = send();
+  ASSERT_NE(handle, nullptr);
+  res = result(handle);
+  EXPECT_EQ(res.code, rclcpp_action::ResultCode::SUCCEEDED);
 }
 
 int main(int argc, char ** argv)
