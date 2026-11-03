@@ -337,11 +337,14 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
     // New motion is a straight motion, no additional costs to be applied
     travel_cost = travel_cost_raw;
   } else {
-    if (prim->left_turn == transition_prim->left_turn) {
+    // Reversing primitives are traversed backwards, which inverts their steering direction
+    const bool is_steering_left = (prim->left_turn != this->isBackward());
+    const bool is_child_steering_left = (transition_prim->left_turn != child->isBackward());
+    if (is_steering_left == is_child_steering_left) {
       // Turning motion but keeps in same general direction: encourages to commit to actions
       travel_cost = travel_cost_raw * _ctx->motion_table.non_straight_penalty;
     } else {
-      // Turning motion and velocity directions: penalizes wiggling.
+      // Turning motion and changing steering direction: penalizes wiggling.
       travel_cost = travel_cost_raw *
         (_ctx->motion_table.non_straight_penalty + _ctx->motion_table.change_penalty);
     }

@@ -303,6 +303,15 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getMaxPlanningTime(), 10.0);
 
+  // test direction change penalty is updated (A* reinit may throw from the invalid prims file)
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.direction_change_penalty", 4.0));
+  try {
+    planner->callDynamicParams(parameters);
+  } catch (...) {
+  }
+  EXPECT_EQ(planner->getSearchInfo().direction_change_penalty, 4.0f);
+
   // test coarse resolution edge cases.
   // Negative coarse search resolution
   parameters.clear();

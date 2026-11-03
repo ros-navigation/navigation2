@@ -538,6 +538,8 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
   EXPECT_NEAR(cost3, 7.84f, 0.1);
 
   // check direction change penalty only applies when inverting direction of travel
+  // (change penalty disabled to isolate it from steering direction changes)
+  ctx->motion_table.change_penalty = 0.0;
   testA.backwards(true);
   float cost_reverse = testB.getTraversalCost(&testA);
   ctx->motion_table.direction_change_penalty = 1.0;
@@ -547,9 +549,40 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
   EXPECT_NEAR(testB.getTraversalCost(&testA), cost_reverse, 0.01);
   testA.backwards(false);
   EXPECT_NEAR(testB.getTraversalCost(&testA), cost_reverse_change / 2.0, 0.01);
+  // no previous direction of travel from the start node
+  nav2_smac_planner::NodeLattice testStart(49, ctx);
+  testStart.backwards(true);
+  EXPECT_NEAR(
+    testStart.getTraversalCost(&testA), testA.getMotionPrimitive()->trajectory_length /
+    ctx->motion_table.lattice_metadata.grid_resolution, 1e-3);
   ctx->motion_table.direction_change_penalty = 0.0;
   testA.backwards(false);
   testB.backwards(false);
+
+  // check change penalty applies to steering direction changes, inverted when reversing
+  nav2_smac_planner::MotionPrimitive * left = nullptr, * right = nullptr;
+  for (auto & prim : testA_prims) {
+    if (prim->arc_length > 0.001) {
+      (prim->left_turn ? left : right) = prim;
+    }
+  }
+  auto isChangePenalized = [&]() {
+      ctx->motion_table.change_penalty = 0.0;
+      const float cost = testB.getTraversalCost(&testA);
+      ctx->motion_table.change_penalty = 1.0;
+      return testB.getTraversalCost(&testA) > cost + 1e-3;
+    };
+  testB.setMotionPrimitive(left);
+  testA.setMotionPrimitive(left);
+  EXPECT_FALSE(isChangePenalized());
+  testA.setMotionPrimitive(right);
+  EXPECT_TRUE(isChangePenalized());
+  testA.backwards(true);  // reversing a right turning primitive steers left
+  EXPECT_FALSE(isChangePenalized());
+  testA.setMotionPrimitive(left);
+  EXPECT_TRUE(isChangePenalized());
+  ctx->motion_table.change_penalty = 0.1;
+  testA.backwards(false);
 
   // will throw because never collision checked testB
   EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);

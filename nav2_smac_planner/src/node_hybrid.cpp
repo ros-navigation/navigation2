@@ -414,11 +414,11 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     // New motion is a straight motion, no additional costs to be applied
     travel_cost = travel_cost_raw;
   } else {
-    if (getTurnDirection() == child_turn_dir) {
+    if (getSteeringDirection() == child->getSteeringDirection()) {
       // Turning motion but keeps in same direction: encourages to commit to turning if starting it
       travel_cost = travel_cost_raw * _ctx->motion_table.non_straight_penalty;
     } else {
-      // Turning motion and changing direction: penalizes wiggling
+      // Turning motion and changing steering direction: penalizes wiggling
       travel_cost = travel_cost_raw *
         (_ctx->motion_table.non_straight_penalty + _ctx->motion_table.change_penalty);
     }

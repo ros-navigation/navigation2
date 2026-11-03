@@ -245,6 +245,28 @@ public:
   }
 
   /**
+   * @brief Gets the steering direction of the motion primitive used to achieve node in search,
+   * independent of the direction of travel (e.g. REV_LEFT steers LEFT)
+   * @return LEFT, RIGHT, or FORWARD for straight motions
+   */
+  inline TurnDirection getSteeringDirection()
+  {
+    switch (_turn_dir) {
+      case TurnDirection::LEFT:
+      case TurnDirection::REV_LEFT:
+        return TurnDirection::LEFT;
+      case TurnDirection::RIGHT:
+      case TurnDirection::REV_RIGHT:
+        return TurnDirection::RIGHT;
+      case TurnDirection::FORWARD:
+      case TurnDirection::REVERSE:
+        return TurnDirection::FORWARD;
+      default:
+        return _turn_dir;
+    }
+  }
+
+  /**
    * @brief Gets the costmap cost at this node
    * @return costmap cost
    */
