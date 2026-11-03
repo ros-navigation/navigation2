@@ -69,13 +69,19 @@ Costmap2DPublisher::Costmap2DPublisher(
 
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
-  // TODO(bpwilcox): port onNewSubscription functionality for publisher
+  auto matched_callback = [this](rclcpp::MatchedInfo & status) {
+      if (status.total_count_change > 0) {
+        republish_costmap_ = true;
+      }
+    };
+  rclcpp::PublisherOptions full_costmap_options;
+  full_costmap_options.event_callbacks.matched_callback = matched_callback;
   costmap_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name,
-    custom_qos);
+    custom_qos, full_costmap_options);
   costmap_raw_pub_ = node->create_publisher<nav2_msgs::msg::Costmap>(
     topic_name + "_raw",
-    custom_qos);
+    custom_qos, full_costmap_options);
   costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", custom_qos);
   costmap_raw_update_pub_ = node->create_publisher<nav2_msgs::msg::CostmapUpdate>(
@@ -110,15 +116,6 @@ Costmap2DPublisher::Costmap2DPublisher(
 }
 
 Costmap2DPublisher::~Costmap2DPublisher() {}
-
-// TODO(bpwilcox): find equivalent/workaround to ros::SingleSubscriberPublishr
-/*
-void Costmap2DPublisher::onNewSubscription(const ros::SingleSubscriberPublisher& pub)
-{
-  prepareGrid();
-  pub.publish(grid_);
-} */
-
 
 void Costmap2DPublisher::updateGridParams()
 {
@@ -237,13 +234,14 @@ void Costmap2DPublisher::publishCostmap()
     return;
   }
 
+  const bool republish = republish_costmap_.exchange(false);
   float resolution = costmap_->getResolution();
   if (always_send_full_costmap_ || grid_resolution_ != resolution ||
     grid_width_ != costmap_->getSizeInCellsX() ||
     grid_height_ != costmap_->getSizeInCellsY() ||
     saved_origin_x_ != costmap_->getOriginX() ||
     saved_origin_y_ != costmap_->getOriginY() ||
-    !costmap_published_once_)
+    !costmap_published_once_ || republish)
   {
     updateGridParams();
     if (costmap_pub_->get_subscription_count() > 0 || !costmap_published_once_) {

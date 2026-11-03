@@ -73,3 +73,8 @@ target_link_libraries(asymmetric_inflation_layer_test
   ${PROJECT_NAME}::nav2_costmap_2d_core
   layers
 )
+
+ament_add_gtest(costmap_publisher_test costmap_publisher_test.cpp)
+target_link_libraries(costmap_publisher_test
+  ${PROJECT_NAME}::nav2_costmap_2d_core
+)
