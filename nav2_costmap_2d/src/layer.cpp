@@ -66,7 +66,7 @@ Layer::initialize(
   onInitialize();
 }
 
-const std::vector<geometry_msgs::msg::Point> &
+std::vector<geometry_msgs::msg::Point>
 Layer::getFootprint() const
 {
   return layered_costmap_->getFootprint();
