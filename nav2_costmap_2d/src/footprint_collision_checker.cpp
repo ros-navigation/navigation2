@@ -39,8 +39,8 @@ FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker()
 
 template<typename CostmapT>
 FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker(
-  CostmapT costmap)
-: costmap_(costmap)
+  CostmapT costmap, bool unknown_is_valid)
+: costmap_(costmap), unknown_is_valid_(unknown_is_valid)
 {
 }
 
@@ -102,6 +102,11 @@ double FootprintCollisionChecker<CostmapT>::lineCost(int x0, int x1, int y0, int
     // if in collision, no need to continue
     if (point_cost == static_cast<double>(LETHAL_OBSTACLE)) {
       return point_cost;
+    }
+
+    // NO_INFORMATION is numerically above LETHAL_OBSTACLE, so it would mask lethal cells
+    if (unknown_is_valid_ && point_cost == static_cast<double>(NO_INFORMATION)) {
+      continue;
     }
 
     if (line_cost < point_cost) {
