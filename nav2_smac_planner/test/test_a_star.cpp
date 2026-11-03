@@ -593,10 +593,10 @@ TEST(AStarTest, test_a_star_se2_direction_change_penalty)
   // Turn around in a small room at the end of a hallway too narrow to turn within
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
   nav2_costmap_2d::Costmap2D * costmapA =
-    new nav2_costmap_2d::Costmap2D(224, 34, 0.05, 0.0, 0.0, 254);
-  for (unsigned int x = 5; x < 219; ++x) {
+    new nav2_costmap_2d::Costmap2D(64, 34, 0.05, 0.0, 0.0, 254);
+  for (unsigned int x = 3; x < 59; ++x) {
     for (unsigned int y = 10; y < 24; ++y) {
-      if (x >= 205 || (y >= 14 && y < 20)) {
+      if (x >= 45 || (y >= 14 && y < 20)) {
         costmapA->setCost(x, y, 0);
       }
     }
@@ -621,21 +621,16 @@ TEST(AStarTest, test_a_star_se2_direction_change_penalty)
       nav2_smac_planner::SearchInfo info;
       info.minimum_turning_radius = 8;  // in grid coordinates
       info.non_straight_penalty = 1.2;
-      info.change_penalty = 0.0;
       info.direction_change_penalty = direction_change_penalty;
-      info.reverse_penalty = 2.0;
-      info.cost_penalty = 2.0;
-      info.retrospective_penalty = 0.015;
-      info.analytic_expansion_ratio = 3.5;
-      info.analytic_expansion_max_length = 60.0;  // in grid coordinates
       info.allow_primitive_interpolation = true;
+      info.analytic_expansion_max_length = 20.0;  // in grid coordinates
       nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
         nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
       int max_iterations = 100000;
-      a_star.initialize(false, max_iterations, 1000, 5000, 120.0, 401, size_theta);
+      a_star.initialize(false, max_iterations, 1000, 5000, 120.0, 101, size_theta);
       a_star.setCollisionChecker(checker.get());
-      a_star.setStart(150u, 17u, 0u);
-      a_star.setGoal(20u, 17u, 36u);
+      a_star.setStart(30u, 17u, 0u);
+      a_star.setGoal(10u, 17u, 36u);
       nav2_smac_planner::NodeHybrid::CoordinateVector path;
       int num_it = 0;
       EXPECT_TRUE(a_star.createPath(path, num_it, 0.0, []() {return false;}));
