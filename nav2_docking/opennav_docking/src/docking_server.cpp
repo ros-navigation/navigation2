@@ -522,7 +522,8 @@ bool DockingServer::approachDock(
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
     if (!controller_->computeVelocityCommand(
-        target_pose.pose, command->twist, base_to_fixed_transform, true, backward))
+        target_pose.pose, command->twist, base_to_fixed_transform, true, backward,
+        backward_projection))
     {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
