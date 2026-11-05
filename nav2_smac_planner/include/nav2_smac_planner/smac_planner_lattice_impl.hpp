@@ -367,11 +367,12 @@ nav_msgs::msg::Path SmacPlannerLatticeT<NodeT>::createPlan(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
             std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
+  const double goal_yaw = tf2::getYaw(goal.pose.orientation);
   unsigned int goal_bin =
-    _a_star->getContext()->motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation));
+    _a_star->getContext()->motion_table.getClosestAngularBin(goal_yaw);
   _a_star->setGoal(
     mx_goal, my_goal, goal_bin,
-    _goal_heading_mode, _coarse_search_resolution);
+    _goal_heading_mode, _coarse_search_resolution, goal_yaw);
 
   // Setup message
   nav_msgs::msg::Path plan;

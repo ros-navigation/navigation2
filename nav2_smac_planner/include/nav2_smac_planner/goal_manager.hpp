@@ -87,10 +87,11 @@ public:
   /**
    * @brief Adds goal to the goal vector
    *@param goal Reference to the NodePtr
+   * @param yaw Exact heading in radians to collision check SE2 goals at
    */
-  void addGoal(NodePtr & goal)
+  void addGoal(NodePtr & goal, const double & yaw = 0.0)
   {
-    _goals_state.push_back({goal, true});
+    _goals_state.push_back({goal, true, yaw});
   }
 
   /**
@@ -214,7 +215,15 @@ public:
               "removeinvalidgoals");
     }
     for (unsigned int i = 0; i < _goals_state.size(); i++) {
-      if (_goals_state[i].goal->isNodeValid(traverse_unknown, collision_checker) ||
+      bool is_goal_valid = _goals_state[i].goal->isNodeValid(traverse_unknown, collision_checker);
+      if constexpr (!std::is_base_of_v<Node2D, NodeT>) {
+        // Also check SE2 goals at their exact pose, not only their cell center and bin
+        const Coordinates & pose = _goals_state[i].goal->pose;
+        is_goal_valid = is_goal_valid && !collision_checker->inCollisionAtPose(
+          pose.x, pose.y, _goals_state[i].yaw, traverse_unknown);
+      }
+
+      if (is_goal_valid ||
         isZoneValid(_goals_state[i].goal, tolerance, collision_checker, traverse_unknown))
       {
         _goals_state[i].is_valid = true;

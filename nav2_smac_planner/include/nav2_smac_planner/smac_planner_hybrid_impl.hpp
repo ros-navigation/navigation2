@@ -440,7 +440,8 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
             std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
-  double goal_orientation_bin = std::round(tf2::getYaw(goal.pose.orientation) / _angle_bin_size);
+  const double goal_yaw = tf2::getYaw(goal.pose.orientation);
+  double goal_orientation_bin = std::round(goal_yaw / _angle_bin_size);
   while (goal_orientation_bin < 0.0) {
     goal_orientation_bin += static_cast<float>(_angle_quantizations);
   }
@@ -452,7 +453,7 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
     static_cast<unsigned int>(goal_orientation_bin);
   _a_star->setGoal(
     mx_goal, my_goal, static_cast<unsigned int>(goal_orientation_bin_int),
-    _goal_heading_mode, _coarse_search_resolution);
+    _goal_heading_mode, _coarse_search_resolution, goal_yaw);
 
   // Setup message
   nav_msgs::msg::Path plan;

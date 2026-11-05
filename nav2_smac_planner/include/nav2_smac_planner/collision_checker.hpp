@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
@@ -72,14 +73,28 @@ public:
    * @brief Check if in collision with costmap and footprint at pose
    * @param x X coordinate of pose to check against
    * @param y Y coordinate of pose to check against
-   * @param theta Angle bin number of pose to check against (NOT radians)
+   * @param angle_bin Angle bin number of pose to check against (NOT radians)
    * @param traverse_unknown Whether or not to traverse in unknown space
    * @return boolean if in collision or not.
    */
   bool inCollision(
     const float & x,
     const float & y,
-    const float & theta,
+    const float & angle_bin,
+    const bool & traverse_unknown);
+
+  /**
+   * @brief Check if in collision with costmap and footprint at given pose.
+   * @param x Continuous X map coordinate of pose to check against
+   * @param y Continuous Y map coordinate of pose to check against
+   * @param yaw Heading of pose to check against, in radians
+   * @param traverse_unknown Whether or not to traverse in unknown space
+   * @return boolean if in collision or not.
+   */
+  bool inCollisionAtPose(
+    const float & x,
+    const float & y,
+    const double & yaw,
     const bool & traverse_unknown);
 
   /**
@@ -123,6 +138,23 @@ public:
   bool outsideRange(const unsigned int & max, const float & value);
 
 protected:
+  /**
+   * @brief Check if in collision from the center cell cost alone, when it is enough to decide
+   * @param traverse_unknown Whether or not to traverse in unknown space
+   * @return Whether in collision, or std::nullopt if the full footprint must be checked
+   */
+  std::optional<bool> centerCostCollision(const bool & traverse_unknown) const;
+
+  /**
+   * @brief Check if a footprint cost is in collision
+   * @param footprint_cost Cost of the footprint at the pose
+   * @param traverse_unknown Whether or not to traverse in unknown space
+   * @return boolean if in collision or not.
+   */
+  bool footprintCostCollision(
+    const float & footprint_cost,
+    const bool & traverse_unknown) const;
+
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
