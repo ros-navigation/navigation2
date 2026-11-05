@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
 #include <string>
 #include "nav2_behavior_tree/plugins/control/recovery_node.hpp"
 
@@ -30,7 +31,11 @@ RecoveryNode::RecoveryNode(
 
 BT::NodeStatus RecoveryNode::tick()
 {
-  getInput("number_of_retries", number_of_retries_);
+  int number_of_retries = 1;
+  getInput("number_of_retries", number_of_retries);
+  // A negative number retries forever, so only a failing second child ends the loop
+  number_of_retries_ = number_of_retries < 0 ?
+    std::numeric_limits<int>::max() : static_cast<unsigned int>(number_of_retries);
   const unsigned children_count = children_nodes_.size();
 
   if (children_count != 2) {
