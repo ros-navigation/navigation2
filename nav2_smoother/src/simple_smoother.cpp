@@ -22,6 +22,7 @@ namespace nav2_smoother
 using namespace nav2_util::geometry_utils;  // NOLINT
 using namespace std::chrono;  // NOLINT
 using nav2_util::PathSegment;
+using rcl_interfaces::msg::ParameterType;
 
 void SimpleSmoother::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
@@ -33,6 +34,8 @@ void SimpleSmoother::configure(
 
   auto node = parent.lock();
   logger_ = node->get_logger();
+  node_ = parent;
+  plugin_name_ = name;
 
   tolerance_ = node->declare_or_get_parameter(
     name + ".tolerance", 1e-10);
@@ -50,10 +53,44 @@ void SimpleSmoother::configure(
     name + ".enforce_path_inversion", true);
 }
 
+
+void SimpleSmoother::cleanup()
+{
+  costmap_sub_.reset();
+}
+
+void SimpleSmoother::activate()
+{
+  auto node = node_.lock();
+  // Add callback for dynamic parameters
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &SimpleSmoother::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &SimpleSmoother::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void SimpleSmoother::deactivate()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 bool SimpleSmoother::smooth(
   nav_msgs::msg::Path & path,
   const rclcpp::Duration & max_time)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   auto costmap = costmap_sub_->getCostmap();
 
   steady_clock::time_point start = steady_clock::now();
@@ -68,6 +105,7 @@ bool SimpleSmoother::smooth(
   if (enforce_path_inversion_) {
     path_segments = nav2_util::findDirectionalPathSegments(path);
   }
+
 
   std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
@@ -215,6 +253,97 @@ void SimpleSmoother::setFieldByDim(
     msg.pose.position.y = value;
   } else {
     msg.pose.position.z = value;
+  }
+}
+
+rcl_interfaces::msg::SetParametersResult
+SimpleSmoother::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (!mutex_.try_lock()) {
+      RCLCPP_WARN(
+        logger_, "Unable to change parameter '%s' while smoothing is in progress. "
+        "Rejecting update.", param_name.c_str());
+      result.successful = false;
+      return result;
+    }
+    mutex_.unlock();
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      const bool is_weight = param_name == plugin_name_ + ".w_data" ||
+        param_name == plugin_name_ + ".w_smooth";
+      if (param_name == plugin_name_ + ".tolerance" && parameter.as_double() <= 0.0) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      } else if (is_weight && parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == plugin_name_ + ".max_its" && parameter.as_int() <= 0) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
+        result.successful = false;
+      } else if (param_name == plugin_name_ + ".refinement_num" && parameter.as_int() < 0) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+SimpleSmoother::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".tolerance") {
+        tolerance_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".w_smooth") {
+        smooth_w_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".w_data") {
+        data_w_ = parameter.as_double();
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == plugin_name_ + ".max_its") {
+        max_its_ = parameter.as_int();
+      } else if (param_name == plugin_name_ + ".refinement_num") {
+        refinement_num_ = parameter.as_int();
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == plugin_name_ + ".do_refinement") {
+        do_refinement_ = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".enforce_path_inversion") {
+        enforce_path_inversion_ = parameter.as_bool();
+      }
+    }
   }
 }
 

@@ -34,6 +34,7 @@
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "pluginlib/class_loader.hpp"
+#include "nav2_smoother/smoother_server_parameter_handler.hpp"
 
 namespace nav2_smoother
 {
@@ -166,7 +167,6 @@ protected:
   SmootherMap smoothers_;
   std::vector<std::string> default_ids_;
   std::vector<std::string> default_types_;
-  std::vector<std::string> smoother_ids_;
   std::vector<std::string> smoother_types_;
   std::string smoother_ids_concat_, current_smoother_;
 
@@ -174,6 +174,10 @@ protected:
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
+
+  // Parameters
+  SmootherServerParameters * params_;
+  std::unique_ptr<SmootherServerParameterHandler> param_handler_;
 };
 
 }  // namespace nav2_smoother

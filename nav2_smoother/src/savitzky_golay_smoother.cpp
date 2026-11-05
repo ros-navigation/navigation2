@@ -22,6 +22,7 @@ namespace nav2_smoother
 using namespace nav2_util::geometry_utils;  // NOLINT
 using namespace std::chrono;  // NOLINT
 using nav2_util::PathSegment;
+using rcl_interfaces::msg::ParameterType;
 
 void SavitzkyGolaySmoother::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
@@ -31,6 +32,9 @@ void SavitzkyGolaySmoother::configure(
 {
   auto node = parent.lock();
   logger_ = node->get_logger();
+
+  node_ = parent;
+  plugin_name_ = name;
 
   do_refinement_ = node->declare_or_get_parameter(
     name + ".do_refinement", true);
@@ -49,6 +53,37 @@ void SavitzkyGolaySmoother::configure(
   }
   half_window_size_ = (window_size_ - 1) / 2;
   calculateCoefficients();
+}
+
+void SavitzkyGolaySmoother::cleanup()
+{
+}
+
+void SavitzkyGolaySmoother::activate()
+{
+  auto node = node_.lock();
+  // Add callback for dynamic parameters
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &SavitzkyGolaySmoother::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &SavitzkyGolaySmoother::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void SavitzkyGolaySmoother::deactivate()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
 // For more details on calculating Savitzky–Golay filter coefficients,
@@ -77,6 +112,7 @@ bool SavitzkyGolaySmoother::smooth(
   nav_msgs::msg::Path & path,
   const rclcpp::Duration & max_time)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time.seconds();
 
@@ -173,6 +209,107 @@ bool SavitzkyGolaySmoother::smoothImpl(
 
   nav2_util::updateApproximatePathOrientations(path, reversing_segment);
   return true;
+}
+
+rcl_interfaces::msg::SetParametersResult
+SavitzkyGolaySmoother::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+
+  // window_size and poly_order constrain each other, so work out what the pair
+  // would be after this batch is applied and validate them together
+  int window_size = window_size_;
+  int poly_order = poly_order_;
+  for (const auto & parameter : parameters) {
+    if (parameter.get_name() == plugin_name_ + ".window_size") {
+      window_size = parameter.as_int();
+    } else if (parameter.get_name() == plugin_name_ + ".poly_order") {
+      poly_order = parameter.as_int();
+    }
+  }
+  const bool window_size_valid =
+    window_size % 2 == 1 && window_size >= 3 && window_size > poly_order;
+  const bool poly_order_valid = poly_order >= 0 && poly_order < window_size;
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (!mutex_.try_lock()) {
+      RCLCPP_WARN(
+        logger_, "Unable to change parameter '%s' while smoothing is in progress. "
+        "Rejecting update.", param_name.c_str());
+      result.successful = false;
+      return result;
+    }
+    mutex_.unlock();
+    if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == plugin_name_ + ".refinement_num" && parameter.as_int() < 0) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
+        result.successful = false;
+      } else if (param_name == plugin_name_ + ".window_size" && !window_size_valid) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %d, "
+          "it should be odd, at least 3, and greater than poly_order (%d). "
+          "Ignoring parameter update.",
+          param_name.c_str(), window_size, poly_order);
+        result.successful = false;
+      } else if (param_name == plugin_name_ + ".poly_order" && !poly_order_valid) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' is incorrectly set to %d, "
+          "it should be >=0 and less than window_size (%d). Ignoring parameter update.",
+          param_name.c_str(), poly_order, window_size);
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+SavitzkyGolaySmoother::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  bool reinit_coeffs = false;
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == plugin_name_ + ".refinement_num") {
+        refinement_num_ = parameter.as_int();
+      } else if (param_name == plugin_name_ + ".window_size") {
+        window_size_ = parameter.as_int();
+        reinit_coeffs = true;
+      } else if (param_name == plugin_name_ + ".poly_order") {
+        poly_order_ = parameter.as_int();
+        reinit_coeffs = true;
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == plugin_name_ + ".do_refinement") {
+        do_refinement_ = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".enforce_path_inversion") {
+        enforce_path_inversion_ = parameter.as_bool();
+      }
+    }
+  }
+
+  // Window or polynomial order changed, so the filter coefficients must be rebuilt
+  if (reinit_coeffs) {
+    half_window_size_ = (window_size_ - 1) / 2;
+    calculateCoefficients();
+  }
 }
 
 }  // namespace nav2_smoother

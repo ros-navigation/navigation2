@@ -26,6 +26,7 @@ set(library_name ${executable_name}_core)
 # Main library
 add_library(${library_name} SHARED
   src/nav2_smoother.cpp
+  src/smoother_server_parameter_handler.cpp
 )
 target_include_directories(${library_name}
   PUBLIC
