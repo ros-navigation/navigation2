@@ -124,7 +124,8 @@ planner_server:
       analytic_expansion_max_cost_override: false # For Hybrid/Lattice nodes: Whether or not to override the maximum cost setting if within critical distance to goal (ie probably required). If expansion is within 2*pi*min_r of the goal, then it will override the max cost if ``false``.
       minimum_turning_radius: 0.40        # For Hybrid/Lattice nodes: minimum turning radius in m of path / vehicle
       reverse_penalty: 2.1                # For Reeds-Shepp model: penalty to apply if motion is reversing, must be => 1
-      change_penalty: 0.0                 # For Hybrid nodes: penalty to apply if motion is changing directions, must be >= 0
+      change_penalty: 0.0                 # For Hybrid nodes: penalty to apply if motion is changing steering directions (e.g. left to right), independent of the direction of travel, must be >= 0. Use direction_change_penalty to penalize changes between forward and reverse
+      direction_change_penalty: 0.0       # For Hybrid/Lattice nodes: penalty to apply if motion inverts the direction of travel (forward to reverse or reverse to forward), must be >= 0. Only applies with Reeds-Shepp model or allow_reverse_expansion. Values of 2.0 - 8.0 are reasonable to minimize direction changes while still allowing them when beneficial
       non_straight_penalty: 1.20          # For Hybrid nodes: penalty to apply if motion is non-straight, must be => 1
       cost_penalty: 2.0                   # For Hybrid nodes: penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
       retrospective_penalty: 0.025        # For Hybrid/Lattice nodes: penalty to prefer later maneuvers before earlier along the path. Saves search time since earlier nodes are not expanded until it is necessary. Must be >= 0.0 and <= 1.0
