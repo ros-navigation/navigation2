@@ -142,12 +142,10 @@ protected:
     /**
      * @brief Enqueue a neighbor of a cell one step further from its source, if not seen yet
      * @param from The cell being expanded
-     * @param index The index of the neighbor in the costmap
      * @param x The x coordinate of the neighbor
      * @param y The y coordinate of the neighbor
      */
-    void enqueueNeighbor(
-      const costmap_queue::CellData & from, unsigned int index, unsigned int x, unsigned int y);
+    void enqueueNeighbor(const costmap_queue::CellData & from, unsigned int x, unsigned int y);
 
     MapGridCritic & parent_;
     bool avoid_obstacles_{false};

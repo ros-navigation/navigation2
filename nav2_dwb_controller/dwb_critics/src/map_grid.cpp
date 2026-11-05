@@ -80,25 +80,25 @@ CellData MapGridCritic::MapGridQueue::getNextCellAroundObstacles()
     return current;
   }
 
-  const unsigned int size_x = costmap_.getSizeInCellsX();
   if (current.x_ > 0) {
-    enqueueNeighbor(current, current.index_ - 1, current.x_ - 1, current.y_);
+    enqueueNeighbor(current, current.x_ - 1, current.y_);
   }
   if (current.y_ > 0) {
-    enqueueNeighbor(current, current.index_ - size_x, current.x_, current.y_ - 1);
+    enqueueNeighbor(current, current.x_, current.y_ - 1);
   }
-  if (current.x_ < size_x - 1) {
-    enqueueNeighbor(current, current.index_ + 1, current.x_ + 1, current.y_);
+  if (current.x_ < costmap_.getSizeInCellsX() - 1) {
+    enqueueNeighbor(current, current.x_ + 1, current.y_);
   }
   if (current.y_ < costmap_.getSizeInCellsY() - 1) {
-    enqueueNeighbor(current, current.index_ + size_x, current.x_, current.y_ + 1);
+    enqueueNeighbor(current, current.x_, current.y_ + 1);
   }
   return current;
 }
 
 void MapGridCritic::MapGridQueue::enqueueNeighbor(
-  const CellData & from, unsigned int index, unsigned int x, unsigned int y)
+  const CellData & from, unsigned int x, unsigned int y)
 {
+  const unsigned int index = costmap_.getIndex(x, y);
   if (seen_[index]) {
     return;
   }
