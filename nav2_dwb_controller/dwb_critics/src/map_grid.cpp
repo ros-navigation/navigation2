@@ -186,12 +186,14 @@ void MapGridCritic::propagateDistances(const geometry_msgs::msg::Pose & robot_po
 
   RCLCPP_DEBUG_THROTTLE(
     rclcpp::get_logger("MapGridCritic"), *costmap_ros_->get_clock(), 1000,
-    "The robot is not reachable around obstacles, falling back to Manhattan distances.");
+    "%s: the robot is not reachable around obstacles, falling back to Manhattan distances.",
+    name_.c_str());
   reset();
-  const unsigned int size_x = costmap_->getSizeInCellsX();
   for (const unsigned int index : seeds) {
+    unsigned int x, y;
+    costmap_->indexToCells(index, x, y);
     cell_values_[index] = 0.0;
-    queue_->enqueueCell(index % size_x, index / size_x);
+    queue_->enqueueCell(x, y);
   }
   propagateManhattanDistances();
 }
