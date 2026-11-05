@@ -41,7 +41,7 @@
 namespace dwb_critics
 {
 bool PathDistCritic::prepare(
-  const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
+  const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D &,
   const geometry_msgs::msg::Pose &,
   const nav_msgs::msg::Path & global_plan)
 {
@@ -85,7 +85,7 @@ bool PathDistCritic::prepare(
     return false;
   }
 
-  propagateManhattanDistances();
+  propagateDistances(pose);
 
   return true;
 }
