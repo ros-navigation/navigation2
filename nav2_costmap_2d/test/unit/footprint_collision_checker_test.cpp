@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <utility>
 
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -269,6 +270,98 @@ TEST(collision_footprint, unknown_is_valid_ignores_unknown_only_footprint)
   nav2_costmap_2d::FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>
   checker(costmap, true);
   EXPECT_EQ(checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint), 0.0);
+}
+
+nav2_costmap_2d::Footprint makeFootprint(const std::vector<std::pair<double, double>> & points)
+{
+  nav2_costmap_2d::Footprint footprint;
+  for (const auto & [x, y] : points) {
+    geometry_msgs::msg::Point point;
+    point.x = x;
+    point.y = y;
+    footprint.push_back(point);
+  }
+  return footprint;
+}
+
+TEST(collision_footprint, test_fill_cost_catches_interior_obstacle)
+{
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
+  costmap->setCost(50, 50, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  const auto footprint = makeFootprint({{-1.0, -1.0}, {1.0, -1.0}, {1.0, 1.0}, {-1.0, 1.0}});
+
+  nav2_costmap_2d::FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>
+  collision_checker(costmap);
+
+  EXPECT_NEAR(collision_checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint), 0.0, 0.001);
+  EXPECT_NEAR(collision_checker.footprintFillCostAtPose(5.0, 5.0, 0.0, footprint), 254.0, 0.001);
+}
+
+TEST(collision_footprint, test_fill_cost_reports_max_interior_cost)
+{
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
+  costmap->setCost(48, 52, 100);
+  costmap->setCost(52, 48, 200);
+
+  const auto footprint = makeFootprint({{-1.0, -1.0}, {1.0, -1.0}, {1.0, 1.0}, {-1.0, 1.0}});
+
+  nav2_costmap_2d::FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>
+  collision_checker(costmap);
+
+  EXPECT_NEAR(collision_checker.footprintFillCostAtPose(5.0, 5.0, 0.0, footprint), 200.0, 0.001);
+}
+
+TEST(collision_footprint, test_fill_cost_unknown_is_valid)
+{
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
+  costmap->setCost(50, 50, nav2_costmap_2d::NO_INFORMATION);
+
+  const auto footprint = makeFootprint({{-1.0, -1.0}, {1.0, -1.0}, {1.0, 1.0}, {-1.0, 1.0}});
+
+  nav2_costmap_2d::FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>
+  default_checker(costmap);
+  nav2_costmap_2d::FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>
+  checker(costmap, true);
+
+  // An unknown interior cell is reported by default and ignored otherwise
+  EXPECT_NEAR(default_checker.footprintFillCostAtPose(5.0, 5.0, 0.0, footprint), 255.0, 0.001);
+  EXPECT_NEAR(checker.footprintFillCostAtPose(5.0, 5.0, 0.0, footprint), 0.0, 0.001);
+
+  // Ignoring unknown cells still reports a lethal interior cell
+  costmap->setCost(52, 52, nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_NEAR(checker.footprintFillCostAtPose(5.0, 5.0, 0.0, footprint), 254.0, 0.001);
+}
+
+TEST(collision_footprint, test_fill_cost_off_map_is_lethal)
+{
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
+
+  const auto footprint = makeFootprint({{-1.0, -1.0}, {1.0, -1.0}, {1.0, 1.0}, {-1.0, 1.0}});
+
+  nav2_costmap_2d::FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>
+  collision_checker(costmap);
+
+  EXPECT_NEAR(collision_checker.footprintFillCostAtPose(9.5, 5.0, 0.0, footprint), 254.0, 0.001);
+}
+
+TEST(collision_footprint, test_fill_cost_over_approximates_concave_footprint)
+{
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
+  // Inside the notch of the footprint below, but outside the footprint itself
+  costmap->setCost(55, 50, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // forklift / C shape
+  const auto footprint = makeFootprint(
+    {{-1.0, -1.0}, {1.0, -1.0}, {1.0, -0.5}, {0.0, -0.5},
+      {0.0, 0.5}, {1.0, 0.5}, {1.0, 1.0}, {-1.0, 1.0}});
+
+  nav2_costmap_2d::FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>
+  collision_checker(costmap);
+
+  // The fill spans the notch, so it reports a collision the outline does not
+  EXPECT_NEAR(collision_checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint), 0.0, 0.001);
+  EXPECT_NEAR(collision_checker.footprintFillCostAtPose(5.0, 5.0, 0.0, footprint), 254.0, 0.001);
 }
 
 TEST(collision_footprint, not_enough_points)

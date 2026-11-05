@@ -154,6 +154,56 @@ double FootprintCollisionChecker<CostmapT>::footprintCostAtPose(
   return footprintCost(oriented_footprint);
 }
 
+template<typename CostmapT>
+double FootprintCollisionChecker<CostmapT>::footprintFillCost(const Footprint & footprint)
+{
+  // It needs at least a triangle, so fewer points fall back to the outline
+  if (footprint.size() < 3) {
+    return footprintCost(footprint);
+  }
+
+  std::vector<MapLocation> map_polygon;
+  map_polygon.reserve(footprint.size());
+  for (const auto & point : footprint) {
+    MapLocation location;
+    if (!worldToMap(point.x, point.y, location.x, location.y)) {
+      return static_cast<double>(LETHAL_OBSTACLE);
+    }
+    map_polygon.push_back(location);
+  }
+
+  std::vector<MapLocation> polygon_cells;
+  costmap_->convexFillCells(map_polygon, polygon_cells);
+
+  double footprint_cost = 0.0;
+  for (const auto & cell : polygon_cells) {
+    const double cell_cost = pointCost(cell.x, cell.y);
+
+    // if in collision, no need to continue
+    if (cell_cost == static_cast<double>(LETHAL_OBSTACLE)) {
+      return cell_cost;
+    }
+
+    // NO_INFORMATION is numerically above LETHAL_OBSTACLE, so it would mask lethal cells
+    if (unknown_is_valid_ && cell_cost == static_cast<double>(NO_INFORMATION)) {
+      continue;
+    }
+
+    footprint_cost = std::max(cell_cost, footprint_cost);
+  }
+
+  return footprint_cost;
+}
+
+template<typename CostmapT>
+double FootprintCollisionChecker<CostmapT>::footprintFillCostAtPose(
+  double x, double y, double theta, const Footprint & footprint)
+{
+  Footprint oriented_footprint;
+  transformFootprint(x, y, theta, footprint, oriented_footprint);
+  return footprintFillCost(oriented_footprint);
+}
+
 // declare our valid template parameters
 template class FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>;
 template class FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>;

@@ -171,6 +171,7 @@
       <input_port name="input_goals" type="nav_msgs::msg::Goals">A vector of goals to check if in collision.</input_port>
       <input_port name="cost_threshold" type="double" default="254.0">The cost threshold above which a waypoint is considered in collision and should be removed. If `use_footprint = false`, consider setting to 253 for occupied.</input_port>
       <input_port name="use_footprint" type="bool" default="true">Whether to use the footprint cost or the point cost.</input_port>
+      <input_port name="footprint_fill" type="bool" default="false">Whether to use the cost of every cell inside the footprint instead of its outline. Only used with `use_footprint = true`.</input_port>
       <input_port name="consider_unknown_as_obstacle" type="bool" default="false">Whether to consider unknown cost (255) as obstacle.</input_port>
       <input_port name="input_waypoint_statuses" type="vector&lt;nav2_msgs::msg::WaypointStatus&gt;">Original waypoint_statuses to mark waypoint status from.</input_port>
       <input_port name="service_name" type="string">Costmap service name responsible for getting the cost. If not specified, `/global_costmap/get_cost_global_costmap` is used.</input_port>
@@ -397,6 +398,7 @@
       <input_port name="pose" type="geometry_msgs::msg::PoseStamped">Pose to check if it is occupied.</input_port>
       <input_port name="cost_threshold" type="double" default="254.0">The cost threshold above which a waypoint is considered in collision and should be removed. If `use_footprint = false`, consider setting to 253 for occupied.</input_port>
       <input_port name="use_footprint" type="bool" default="true">Whether to use the footprint cost or the point cost.</input_port>
+      <input_port name="footprint_fill" type="bool" default="false">Whether to use the cost of every cell inside the footprint instead of its outline. Only used with `use_footprint = true`.</input_port>
       <input_port name="consider_unknown_as_obstacle" type="bool" default="false">Whether to consider unknown cost (255) as obstacle.</input_port>
       <input_port name="service_name" type="string">Costmap service name responsible for getting the cost. If not specified, `/global_costmap/get_cost_global_costmap` is used.</input_port>
       <input_port name="server_timeout" type="chrono::milliseconds">Action server timeout (ms). If not provided, uses the BT Navigator's `default_server_timeout` parameter value (20 ms by default).</input_port>
