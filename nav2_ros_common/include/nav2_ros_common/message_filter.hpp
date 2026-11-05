@@ -54,15 +54,23 @@ inline typename nav2::MessageFilter<MessageT>::SharedPtr create_message_filter(
   const std::string & target_frame, uint32_t queue_size,
   const NodeT & node, double tolerance)
 {
+  auto buffer = tf_manager.getRawBufferSharedPtr();
+  // The buffer must outlive the TF message filter's base destructor.
+  auto delete_filter = [buffer](nav2::MessageFilter<MessageT> * filter) mutable {
+      delete filter;
+      buffer.reset();
+    };
 #if RCLCPP_VERSION_GTE(30, 0, 0)
-  return std::make_shared<nav2::MessageFilter<MessageT>>(
-    sub, tf_manager.getRawBuffer(), target_frame, queue_size, *node,
-      tf2::durationFromSec(tolerance));
+  return typename nav2::MessageFilter<MessageT>::SharedPtr(
+    new nav2::MessageFilter<MessageT>(
+      sub, *buffer, target_frame, queue_size, *node,
+      tf2::durationFromSec(tolerance)), delete_filter);
 #else
-  return std::make_shared<nav2::MessageFilter<MessageT>>(
-    sub, tf_manager.getRawBuffer(), target_frame, queue_size,
-    node->get_node_logging_interface(), node->get_node_clock_interface(),
-      tf2::durationFromSec(tolerance));
+  return typename nav2::MessageFilter<MessageT>::SharedPtr(
+    new nav2::MessageFilter<MessageT>(
+      sub, *buffer, target_frame, queue_size,
+      node->get_node_logging_interface(), node->get_node_clock_interface(),
+      tf2::durationFromSec(tolerance)), delete_filter);
 #endif
 }
 

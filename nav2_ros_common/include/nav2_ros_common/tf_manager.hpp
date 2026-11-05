@@ -195,6 +195,15 @@ public:
   }
 
   /**
+   * @brief Share the native buffer with integrations that need it during cleanup.
+   * @return Shared buffer ownership without retaining the manager or its listener.
+   */
+  [[nodiscard]] tf2_ros::Buffer::SharedPtr getRawBufferSharedPtr()
+  {
+    return buffer_;
+  }
+
+  /**
    * @brief Convert a stamped transform to the equivalent stamped pose.
    * @param transform Transform to convert.
    * @return Pose containing the transform header, translation, and rotation.

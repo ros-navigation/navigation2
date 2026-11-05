@@ -210,9 +210,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   nomotion_update_srv_.reset();
   initial_pose_sub_.reset();
   laser_scan_connection_.disconnect();
-  if (tf_manager_) {  // Stop the listener before destroying laser_scan_filter_.
-    tf_manager_->stopListener();
-  }
+  tf_manager_.reset();
   laser_scan_filter_.reset();
   laser_scan_sub_.reset();
 
@@ -224,9 +222,6 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
   first_map_received_ = false;
   free_space_indices.resize(0);
-
-  // Transforms
-  tf_manager_.reset();
 
   // PubSub
   pose_pub_.reset();

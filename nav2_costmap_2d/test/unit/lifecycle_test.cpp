@@ -14,6 +14,7 @@
 
 #include <limits>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -84,5 +85,34 @@ TEST(LifecylceTest, RejectInvalidCostmapSize) {
     rclcpp::Parameter("resolution", 0.01),
   });
 
+  rclcpp::shutdown();
+}
+
+TEST(LifecylceTest, ObstacleFiltersRetainBufferAfterManagerCleanup) {
+  rclcpp::init(0, nullptr);
+  {
+    rclcpp::NodeOptions options;
+    options.parameter_overrides(
+    {
+      {"plugins", std::vector<std::string>{"obstacle_layer"}},
+      {"obstacle_layer.plugin", "nav2_costmap_2d::ObstacleLayer"},
+      {"obstacle_layer.observation_sources", "scan cloud"},
+      {"obstacle_layer.scan.data_type", "LaserScan"},
+      {"obstacle_layer.cloud.data_type", "PointCloud2"},
+    });
+    auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>(options);
+    EXPECT_EQ(costmap->configure().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+    std::weak_ptr<nav2::TransformManager> manager = costmap->getTfManager();
+    std::weak_ptr<tf2_ros::Buffer> buffer = costmap->getTfManager()->getRawBufferSharedPtr();
+    auto obstacle_layer = costmap->getLayeredCostmap()->getPlugins()->at(0);
+
+    EXPECT_EQ(costmap->cleanup().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED);
+    EXPECT_TRUE(manager.expired());
+    ASSERT_FALSE(buffer.expired());
+    EXPECT_FALSE(buffer.lock()->isUsingDedicatedThread());
+
+    obstacle_layer.reset();
+    EXPECT_TRUE(buffer.expired());
+  }
   rclcpp::shutdown();
 }

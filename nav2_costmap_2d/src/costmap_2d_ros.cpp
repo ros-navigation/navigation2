@@ -350,11 +350,8 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   clear_costmap_service_.reset();
 
   layer_publishers_.clear();
-  if (tf_manager_) {
-    tf_manager_->stopListener();
-  }
-  layered_costmap_.reset();
   tf_manager_.reset();
+  layered_costmap_.reset();
 
   footprint_sub_.reset();
   footprint_pub_.reset();
