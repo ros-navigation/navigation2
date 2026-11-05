@@ -12,7 +12,7 @@
 #     pre-commit autoupdate
 #
 # See https://github.com/pre-commit/pre-commit
-exclude: ".pgm$|.svg$"
+exclude: ".pgm$|.svg$|^pixi\\.lock$"
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

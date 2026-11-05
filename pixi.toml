@@ -1,0 +1,140 @@
+[workspace]
+authors = ["Open Navigation LLC"]
+channels = ["conda-forge"]
+name = "navigation2"
+platforms = ["linux-64"]
+
+[tasks]
+build = { cmd = ["colcon", "build"] }
+build-symlink = { cmd = ["colcon", "build", "--symlink-install"] }
+test = { cmd = ["colcon", "test"] }
+test-result = { cmd = ["colcon", "test-result", "--verbose"] }
+clean = { cmd = "rm -rf build install log" }
+# Launch the TurtleBot 4 Gazebo simulation with the full Nav2 stack.
+# Extra launch arguments are forwarded, e.g. `pixi run -e rolling tb4-sim headless:=True`.
+tb4-sim = { cmd = "ros2 launch nav2_bringup tb4_simulation_launch.py" }
+
+[dependencies]
+# Build deps
+c-compiler = "*"
+cxx-compiler = "*"
+cmake = "*"
+colcon-common-extensions = "*"
+make = "*"
+pkg-config = "*"
+
+# Non-ROS (rosdep system) dependencies of the Nav2 packages
+ceres-solver = "*"
+eigen = "*"
+graphicsmagick = "*"
+libuuid = "*"
+nanoflann = "*"
+nlohmann_json = "*"
+pyyaml = "*"
+pyzmq = "*"
+
+# Test deps
+benchmark = "*"
+gtest = "*"
+lcov = "*"
+pytest = "*"
+
+[activation]
+scripts = ["install/setup.sh"]
+
+# Define one environment per ROS 2 distro.
+[environments]
+# The distro feature comes first so its RoboStack channel takes priority over
+# conda-forge (features without channels inherit the workspace channels).
+rolling = { features = ["rolling", "ros2"] }
+lyrical = { features = ["lyrical", "ros2"] }
+jazzy = { features = ["jazzy", "ros2"] }
+
+################################
+## Shared ROS 2 dependencies  ##
+################################
+# RoboStack publishes distro-agnostic `ros2-*` package names; the distro is
+# selected by the channel each distro feature adds.
+[feature.ros2.dependencies]
+ros2-ros-base = "*"
+
+# Nav2 dependencies
+ros2-action-msgs = "*"
+ros2-ament-cmake-google-benchmark = "*"
+ros2-ament-cmake-pytest = "*"
+ros2-ament-cmake-ros = "*"
+ros2-ament-lint-auto = "*"
+ros2-ament-lint-common = "*"
+ros2-angles = "*"
+ros2-backward-ros = "*"
+ros2-behaviortree-cpp = "*"
+ros2-bond = "*"
+ros2-bondcpp = "*"
+ros2-cv-bridge = "*"
+ros2-diagnostic-updater = "*"
+ros2-geographic-msgs = "*"
+ros2-laser-geometry = "*"
+ros2-launch-testing-ament-cmake = "*"
+ros2-map-msgs = "*"
+ros2-message-filters = "*"
+ros2-ompl = "*"
+ros2-point-cloud-transport = "*"
+ros2-point-cloud-transport-plugins = "*"
+ros2-robot-localization = "*"
+ros2-robot-state-publisher = "*"
+ros2-rviz-common = "*"
+ros2-rviz-default-plugins = "*"
+ros2-rviz-ogre-vendor = "*"
+ros2-rviz-rendering = "*"
+ros2-rviz2 = "*"
+ros2-test-msgs = "*"
+ros2-tf2-geometry-msgs = "*"
+ros2-tf2-sensor-msgs = "*"
+ros2-xacro = "*"
+ros2-yaml-cpp-vendor = "*"
+
+# Simulation (nav2_bringup, nav2_system_tests)
+ros2-diff-drive-controller = "*"
+ros2-joint-state-broadcaster = "*"
+ros2-nav2-minimal-tb3-sim = "*"
+ros2-nav2-minimal-tb4-sim = "*"
+ros2-ros-gz-bridge = "*"
+ros2-ros-gz-sim = "*"
+
+#################
+## ROS 2 Jazzy ##
+#################
+[feature.jazzy]
+channels = ["https://prefix.dev/robostack-jazzy"]
+
+[feature.jazzy.dependencies]
+ros2-osrf-pycommon = "*"
+
+[feature.jazzy.activation.env]
+ROS_DISTRO = "jazzy"
+
+###################
+## ROS 2 Lyrical ##
+###################
+[feature.lyrical]
+channels = ["https://prefix.dev/robostack-lyrical"]
+
+[feature.lyrical.dependencies]
+osrf_pycommon = "*"
+qt6-scxml = "*"
+
+[feature.lyrical.activation.env]
+ROS_DISTRO = "lyrical"
+
+###################
+## ROS 2 Rolling ##
+###################
+[feature.rolling]
+channels = ["https://prefix.dev/robostack-rolling"]
+
+[feature.rolling.dependencies]
+osrf_pycommon = "*"
+qt6-scxml = "*"
+
+[feature.rolling.activation.env]
+ROS_DISTRO = "rolling"
