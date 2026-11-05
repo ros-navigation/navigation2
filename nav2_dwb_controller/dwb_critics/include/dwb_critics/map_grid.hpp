@@ -117,38 +117,26 @@ public:
     bool validCellToQueue(const costmap_queue::CellData & cell) override;
 
     /**
-     * @brief Clear the queue and stop rejecting obstacles
-     */
-    void reset() override;
-
-    /**
-     * @brief Set whether validCellToQueue rejects lethal, inscribed and unknown cells
-     * @param avoid_obstacles True to reject those cells and score them as obstacles
-     */
-    void setAvoidObstacles(bool avoid_obstacles) {avoid_obstacles_ = avoid_obstacles;}
-
-    /**
-     * @brief Get the next cell in order of steps walked from its source, and enqueue its neighbors
-     * @return The next cell, its distance_ holding the steps walked from its source
+     * @brief Enqueue the unseen 4-connected neighbors of a cell, one step further from its source
+     * @param cell The cell being expanded
      *
-     * A cell rejected by validCellToQueue is returned without enqueuing its neighbors.
      * getNextCell orders cells by their straight line distance to the source, which is not
-     * the distance walked once obstacles are rejected.
-     * NB: Assumes that isEmpty has been called before this call and returned false
+     * the distance walked around obstacles.
      */
-    costmap_queue::CellData getNextCellAroundObstacles();
+    void enqueueNeighbors(const costmap_queue::CellData & cell);
 
 protected:
     /**
      * @brief Enqueue a neighbor of a cell one step further from its source, if not seen yet
      * @param from The cell being expanded
+     * @param index The costmap index of the neighbor
      * @param x The x coordinate of the neighbor
      * @param y The y coordinate of the neighbor
      */
-    void enqueueNeighbor(const costmap_queue::CellData & from, unsigned int x, unsigned int y);
+    void enqueueNeighbor(
+      const costmap_queue::CellData & from, unsigned int index, unsigned int x, unsigned int y);
 
     MapGridCritic & parent_;
-    bool avoid_obstacles_{false};
   };
 
   /**
@@ -170,13 +158,6 @@ protected:
    * @param robot_pose The pose of the robot, assumed to be in the same frame as the costmap
    */
   void propagateDistances(const geometry_msgs::msg::Pose & robot_pose);
-
-  /**
-   * @brief Set the cells to their 4-connected distance around obstacles to the nearest seed
-   * @param robot_pose The pose of the robot, assumed to be in the same frame as the costmap
-   * @return True if the search reached the cell of the robot
-   */
-  bool propagateAroundObstacles(const geometry_msgs::msg::Pose & robot_pose);
 
   std::shared_ptr<MapGridQueue> queue_;
   nav2_costmap_2d::Costmap2D * costmap_;
