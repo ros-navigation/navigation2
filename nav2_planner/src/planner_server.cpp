@@ -216,9 +216,6 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   action_server_pose_.reset();
   action_server_poses_.reset();
   plan_publisher_.reset();
-  tf_manager_.reset();
-
-  costmap_ros_->cleanup();
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -226,6 +223,8 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
 
   planners_.clear();
+  tf_manager_.reset();
+  costmap_ros_->cleanup();
   is_path_valid_service_.reset();
   costmap_thread_.reset();
   costmap_ = nullptr;
