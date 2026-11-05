@@ -960,10 +960,17 @@ void Costmap2DROS::getCostsCallback(
         get_logger(), "Received request to get cost at footprint pose (%.2f, %.2f, %.2f)",
         pose_transformed.pose.position.x, pose_transformed.pose.position.y, yaw);
 
-      response->costs.push_back(
-        collision_checker.footprintCostAtPose(
-          pose_transformed.pose.position.x,
-          pose_transformed.pose.position.y, yaw, footprint));
+      if (request->footprint_fill) {
+        response->costs.push_back(
+          collision_checker.footprintFillCostAtPose(
+            pose_transformed.pose.position.x,
+            pose_transformed.pose.position.y, yaw, footprint));
+      } else {
+        response->costs.push_back(
+          collision_checker.footprintCostAtPose(
+            pose_transformed.pose.position.x,
+            pose_transformed.pose.position.y, yaw, footprint));
+      }
     } else {
       RCLCPP_DEBUG(
         get_logger(), "Received request to get cost at point (%f, %f)",
