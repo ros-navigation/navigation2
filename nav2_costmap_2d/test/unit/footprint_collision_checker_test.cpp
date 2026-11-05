@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <utility>
 
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/cost_values.hpp"
