@@ -15,8 +15,10 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_FILTERS__ZONE_PARAMETER_FILTER_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_FILTERS__ZONE_PARAMETER_FILTER_HPP_
 
+#include <chrono>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -105,16 +107,24 @@ protected:
   void resetToNominal();
 
   /**
-   * @brief Issue an async set_parameters call to the named target node.
+   * @brief Queue an async set_parameters call to the named target node. It is
+   *        sent as soon as the node's parameter service is ready.
    */
   void issueAsyncSetParameters(
     const std::string & target_node,
     const std::vector<rclcpp::Parameter> & params);
 
   /**
+   * @brief Send the queued set_parameters calls whose target node's parameter
+   *        service is ready, in the order they were issued.
+   */
+  void sendReadyParameterUpdates();
+
+  /**
    * @brief Process completed set_parameters results non-blockingly. Called
-   *        at the start of every process(); a failed set on any target
-   *        throws (a failed set on a safety parameter is a stop condition).
+   *        at the start of every process(); a failed set on any target, or
+   *        one not answered within parameter_update_timeout, throws (a failed
+   *        set on a safety parameter is a stop condition).
    */
   void checkPendingParameterUpdates();
 
@@ -139,8 +149,18 @@ protected:
   std::map<std::string, std::vector<rclcpp::Parameter>> nominal_defaults_;
   std::map<std::string, rclcpp::AsyncParametersClient::SharedPtr> param_clients_;
 
-  std::vector<std::shared_future<
-      std::vector<rcl_interfaces::msg::SetParametersResult>>> pending_futures_;
+  // A set_parameters call to one target node: sent once the node's parameter
+  // service is ready, and failed if not answered by `deadline`.
+  struct PendingParameterUpdate
+  {
+    std::string target_node;
+    std::vector<rclcpp::Parameter> params;
+    std::chrono::steady_clock::time_point deadline;
+    std::optional<std::shared_future<
+        std::vector<rcl_interfaces::msg::SetParametersResult>>> future;
+  };
+  std::vector<PendingParameterUpdate> pending_updates_;
+  double parameter_update_timeout_{1.0};  // seconds
 
   std::string state_event_topic_;
 

@@ -35,6 +35,12 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rcl_interfaces/msg/parameter_descriptor.hpp"
+#include "rcl_interfaces/srv/describe_parameters.hpp"
+#include "rcl_interfaces/srv/get_parameter_types.hpp"
+#include "rcl_interfaces/srv/get_parameters.hpp"
+#include "rcl_interfaces/srv/list_parameters.hpp"
+#include "rcl_interfaces/srv/set_parameters.hpp"
+#include "rcl_interfaces/srv/set_parameters_atomically.hpp"
 #include "std_msgs/msg/u_int8.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -176,6 +182,39 @@ public:
   double getSpeed() {return get_parameter("speed").as_double();}
 };
 
+// Serves the parameter services of a node but never answers them, as a node
+// whose executor is stuck would.
+class SilentTargetNode : public rclcpp::Node
+{
+public:
+  SilentTargetNode()
+  : rclcpp::Node("zpf_silent_target", rclcpp::NodeOptions().start_parameter_services(false))
+  {
+    ignore<rcl_interfaces::srv::GetParameters>("get_parameters");
+    ignore<rcl_interfaces::srv::GetParameterTypes>("get_parameter_types");
+    ignore<rcl_interfaces::srv::SetParameters>("set_parameters");
+    ignore<rcl_interfaces::srv::SetParametersAtomically>("set_parameters_atomically");
+    ignore<rcl_interfaces::srv::ListParameters>("list_parameters");
+    ignore<rcl_interfaces::srv::DescribeParameters>("describe_parameters");
+  }
+
+private:
+  template<typename ServiceT>
+  void ignore(const std::string & service)
+  {
+    // A callback taking the request header defers the response, which is
+    // never sent
+    services_.push_back(
+      create_service<ServiceT>(
+        std::string(get_name()) + "/" + service,
+        [](
+          const std::shared_ptr<rmw_request_id_t>,
+          const std::shared_ptr<typename ServiceT::Request>) {}));
+  }
+
+  std::vector<rclcpp::ServiceBase::SharedPtr> services_;
+};
+
 class TestZpf : public ::testing::Test
 {
 protected:
@@ -202,6 +241,10 @@ protected:
     if (second_target_node_) {
       target_executor_.remove_node(second_target_node_);
       second_target_node_.reset();
+    }
+    if (silent_target_node_) {
+      target_executor_.remove_node(silent_target_node_);
+      silent_target_node_.reset();
     }
     target_executor_.remove_node(target_node_);
     target_node_.reset();
@@ -301,6 +344,17 @@ protected:
     filter_->process(costmap, 0, 0, 4, 4, pose);
   }
 
+  // What the runtime_error thrown by runProcess() says, empty if none is
+  std::string processError()
+  {
+    try {
+      runProcess();
+    } catch (const std::runtime_error & e) {
+      return e.what();
+    }
+    return "";
+  }
+
   template<typename Pred>
   bool waitForCond(Pred pred, std::chrono::milliseconds timeout = 1500ms)
   {
@@ -332,6 +386,7 @@ protected:
 
   std::shared_ptr<TargetNode> target_node_;
   std::shared_ptr<SecondTargetNode> second_target_node_;
+  std::shared_ptr<SilentTargetNode> silent_target_node_;
   std::shared_ptr<StateEventSubscriber> state_event_sub_;
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
@@ -462,8 +517,8 @@ TEST_F(TestZpf, StateEventPublishedOnTransition)
 TEST_F(TestZpf, ProcessHotPathReturnsPromptlyEvenWithUnreachableTargets)
 {
   // The override explicitly names a node that does not exist. The async
-  // parameter client is built at config-load; its set_parameters future
-  // simply never completes. process() must neither block nor throw.
+  // parameter client is built at config-load; the update waits for its
+  // parameter service. process() must neither block nor throw.
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"remote_zone"}),
     rclcpp::Parameter(fp("remote_zone.id"), 1),
@@ -687,6 +742,80 @@ TEST_F(TestZpf, ParamSetFailureAlwaysThrows)
 
   EXPECT_NO_THROW(runProcess())
     << "failed future must be consumed by the throw, not re-surfaced";
+}
+
+TEST_F(TestZpf, UnreachableTargetThrowsAfterTimeout)
+{
+  // The target node never appears: once parameter_update_timeout passes, the
+  // update fails like a refused set, and the throw consumes it.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("parameter_update_timeout"), 0.2),
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"remote_zone"}),
+    rclcpp::Parameter(fp("remote_zone.id"), 1),
+    rclcpp::Parameter(fp("remote_zone.setpoints"), std::vector<std::string>{"remote_speed"}),
+  };
+  addEntry(cfg, "remote_zone.remote_speed", "nonexistent_node", "foo",
+    rclcpp::ParameterValue(0.5));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  EXPECT_EQ(processError(), "");
+  spinFor(300ms);
+  EXPECT_NE(
+    processError().find("parameter service of 'nonexistent_node' was not available"),
+    std::string::npos);
+  EXPECT_EQ(processError(), "") << "expired update must be consumed by the throw";
+}
+
+TEST_F(TestZpf, UnansweredSetThrowsAfterTimeout)
+{
+  // The target node is up but never answers: once parameter_update_timeout
+  // passes, the set fails like a refused one.
+  silent_target_node_ = std::make_shared<SilentTargetNode>();
+  target_executor_.add_node(silent_target_node_);
+
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("parameter_update_timeout"), 0.2),
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_silent_target", "speed",
+    rclcpp::ParameterValue(0.5));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  EXPECT_EQ(processError(), "");
+  spinFor(300ms);
+  EXPECT_NE(
+    processError().find("set_parameters on 'zpf_silent_target' was not answered"),
+    std::string::npos);
+}
+
+TEST_F(TestZpf, TargetStartingLateReceivesItsUpdate)
+{
+  // The target node appears after the update is issued, within
+  // parameter_update_timeout: the update reaches it, and nothing fails.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("parameter_update_timeout"), 2.0),
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_second_target", "speed",
+    rclcpp::ParameterValue(0.25));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  EXPECT_EQ(processError(), "");
+  second_target_node_ = std::make_shared<SecondTargetNode>();
+  target_executor_.add_node(second_target_node_);
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        runProcess();
+        return second_target_node_->getSpeed() == 0.25;
+      })) << "update issued before the target started never reached it";
 }
 
 TEST_F(TestZpf, CrossStateTransitionResetsParamTouchedByNOnly)

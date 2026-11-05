@@ -52,6 +52,8 @@ void ZoneParameterFilter::initializeFilter(
   state_event_topic_ =
     node->declare_or_get_parameter<std::string>(
     name_ + "." + "state_event_topic", std::string("zone_filter_state"));
+  parameter_update_timeout_ =
+    node->declare_or_get_parameter<double>(name_ + "." + "parameter_update_timeout", 1.0);
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   RCLCPP_INFO(
     logger_,
@@ -453,8 +455,7 @@ void ZoneParameterFilter::issueAsyncSetParameters(
   const std::string & target_node,
   const std::vector<rclcpp::Parameter> & params)
 {
-  auto client_it = param_clients_.find(target_node);
-  if (client_it == param_clients_.end()) {
+  if (param_clients_.find(target_node) == param_clients_.end()) {
     RCLCPP_ERROR(
       logger_,
       "ZoneParameterFilter: no client for target_node '%s' "
@@ -463,27 +464,64 @@ void ZoneParameterFilter::issueAsyncSetParameters(
     return;
   }
 
-  pending_futures_.push_back(client_it->second->set_parameters(params));
+  // A request sent before the target's parameter service is discovered is
+  // never answered, so it waits for the service, up to its deadline
+  const auto timeout = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+    std::chrono::duration<double>(parameter_update_timeout_));
+  pending_updates_.push_back(
+    {target_node, params, std::chrono::steady_clock::now() + timeout, std::nullopt});
+  sendReadyParameterUpdates();
+}
+
+void ZoneParameterFilter::sendReadyParameterUpdates()
+{
+  // Nothing goes to a node with an earlier update still unsent, so each node
+  // receives its updates in the order they were issued
+  std::set<std::string> waiting_nodes;
+  for (auto & update : pending_updates_) {
+    if (update.future || waiting_nodes.count(update.target_node) > 0) {
+      continue;
+    }
+    const auto client_it = param_clients_.find(update.target_node);
+    if (client_it == param_clients_.end() || !client_it->second->service_is_ready()) {
+      waiting_nodes.insert(update.target_node);
+      continue;
+    }
+    update.future = client_it->second->set_parameters(update.params);
+  }
 }
 
 void ZoneParameterFilter::checkPendingParameterUpdates()
 {
   // A silently-swallowed set failure would leave the robot on the value the
   // safety zone tried to change (worse than surfacing it), so failures throw
-  // rather than get logged-and-ignored.
+  // rather than get logged-and-ignored. So does a set whose target node is
+  // missing or does not answer: it would never complete.
   // wait_for(0s) polls without blocking the costmap update loop
-  auto it = pending_futures_.begin();
-  while (it != pending_futures_.end()) {
-    if (it->wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
-      ++it;
-      continue;
+  sendReadyParameterUpdates();
+
+  const auto now = std::chrono::steady_clock::now();
+  auto it = pending_updates_.begin();
+  while (it != pending_updates_.end()) {
+    if (!it->future || it->future->wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+      if (now < it->deadline) {
+        ++it;
+        continue;
+      }
+      const std::string failure = it->future ?
+        "set_parameters on '" + it->target_node + "' was not answered" :
+        "parameter service of '" + it->target_node + "' was not available";
+      pending_updates_.erase(it);
+      throw std::runtime_error(
+              "ZoneParameterFilter: " + failure + " within " +
+              std::to_string(parameter_update_timeout_) + " s");
     }
 
     // Copy the shared state out before erasing: the copy keeps the value that
     // get() returns a reference to alive for this iteration, and erasing first
     // means a service-side exception rethrown by get() surfaces exactly once.
-    const auto ready_future = *it;
-    it = pending_futures_.erase(it);
+    const auto ready_future = *it->future;
+    it = pending_updates_.erase(it);
 
     // get() returns a const reference; bind it rather than copy the vector.
     const auto & results = ready_future.get();
