@@ -37,8 +37,7 @@ public:
     const std::shared_ptr<nav2_msgs::srv::GetCosts::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
   {
-    (void)request_header;
-    (void)request;
+    TestService::handle_service(request_header, request, response);
     response->costs = {100, 50, 5, 254};
     response->success = true;
   }
@@ -179,6 +178,35 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_su
   EXPECT_EQ(output_poses.goals[0], poses.goals[0]);
   EXPECT_EQ(output_poses.goals[1], poses.goals[1]);
   EXPECT_EQ(output_poses.goals[2], poses.goals[2]);
+  EXPECT_FALSE(success_server_->getCurrentRequest()->footprint_fill);
+}
+
+TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_footprint_fill)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <RemoveInCollisionGoals service_name="/global_costmap/get_cost_global_costmap" input_goals="{goals}" output_goals="{goals}" cost_threshold="253" footprint_fill="true"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // the success service answers with four costs, so send four goals
+  nav_msgs::msg::Goals poses;
+  poses.goals.resize(4);
+  config_->blackboard->set("goals", poses);
+
+  // tick until node is not running
+  tree_->rootNode()->executeTick();
+  while (tree_->rootNode()->status() == BT::NodeStatus::RUNNING) {
+    tree_->rootNode()->executeTick();
+  }
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_TRUE(success_server_->getCurrentRequest()->use_footprint);
+  EXPECT_TRUE(success_server_->getCurrentRequest()->footprint_fill);
 }
 
 TEST_F(
