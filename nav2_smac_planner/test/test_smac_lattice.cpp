@@ -46,6 +46,7 @@ public:
     }
   }
 
+  nav2_smac_planner::SearchInfo getSearchInfo() {return _search_info;}
   float radiusInCells() {return _search_info.minimum_turning_radius;}
   float expansionInCells() {return _search_info.analytic_expansion_max_length;}
 
@@ -329,6 +330,23 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getCoarseSearchResolution(), 4);
 
+  // Max traversal cost and relief radius, invalid negative values are ignored
+  parameters = {rclcpp::Parameter("test.cache_obstacle_heuristic", false),
+    rclcpp::Parameter("test.max_traversal_cost", 240.0),
+    rclcpp::Parameter("test.max_traversal_cost_relief_radius", 1.5)};
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  parameters = {rclcpp::Parameter("test.max_traversal_cost", -1.0)};
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  parameters = {rclcpp::Parameter("test.max_traversal_cost", 253.0)};
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 1.5f);
+
+  // Cached obstacle heuristic cannot be used with the max traversal cost's relief radius
+  parameters = {rclcpp::Parameter("test.cache_obstacle_heuristic", true)};
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_FALSE(planner->getSearchInfo().cache_obstacle_heuristic);
+
 
   // So instead, let's call manually on a change
   parameters.clear();
@@ -353,9 +371,13 @@ TEST(SmacTest, test_smac_lattice_omni_configure)
 
   nodeLattice->declare_parameter("test_omni.lattice_filepath", omni_filepath);
   nodeLattice->declare_parameter("test_omni.allow_reverse_expansion", true);
+  nodeLattice->declare_parameter("test_omni.max_traversal_cost", 253.0);
 
   auto planner = std::make_unique<LatticeWrap>();
   planner->configure(nodeLattice, "test_omni", nullptr, costmap_ros);
+
+  // Out of range max traversal cost is set to the max non-obstacle cost
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 252.0f);
 
   // Verify OMNI was loaded and reverse expansion was auto-disabled
   EXPECT_EQ(planner->getMotionModelName(), "omni");
