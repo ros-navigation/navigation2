@@ -187,8 +187,8 @@ public:
    * layers. */
   void setFootprint(const std::vector<geometry_msgs::msg::Point> & footprint_spec);
 
-  /** @brief Returns the latest footprint stored with setFootprint(). */
-  const std::vector<geometry_msgs::msg::Point> & getFootprint()
+  /** @brief Returns a copy of the latest footprint stored with setFootprint(). */
+  std::vector<geometry_msgs::msg::Point> getFootprint()
   {
 #ifdef __cpp_lib_atomic_shared_ptr
     return *footprint_.load();
