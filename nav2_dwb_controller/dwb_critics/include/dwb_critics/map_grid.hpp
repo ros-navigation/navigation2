@@ -41,6 +41,7 @@
 #include <utility>
 
 #include "dwb_core/trajectory_critic.hpp"
+#include "costmap_queue/costmap_queue.hpp"
 
 namespace dwb_critics
 {
@@ -104,19 +105,87 @@ protected:
   enum class ScoreAggregationType {Last, Sum, Product};
 
   /**
-   * @brief Set cell_values_ to the appropriate number of unreachableCellScore
+   * @class MapGridQueue
+   * @brief Subclass of CostmapQueue that avoids Obstacles and Unknown Values
+   */
+  class MapGridQueue : public costmap_queue::CostmapQueue
+  {
+public:
+    MapGridQueue(nav2_costmap_2d::Costmap2D & costmap, MapGridCritic & parent)
+    : costmap_queue::CostmapQueue(costmap, true), parent_(parent) {}
+    virtual ~MapGridQueue() = default;
+    bool validCellToQueue(const costmap_queue::CellData & cell) override;
+
+    /**
+     * @brief Clear the queue and stop rejecting obstacles
+     */
+    void reset() override;
+
+    /**
+     * @brief Set whether validCellToQueue rejects lethal, inscribed and unknown cells
+     * @param avoid_obstacles True to reject those cells and score them as obstacles
+     */
+    void setAvoidObstacles(bool avoid_obstacles) {avoid_obstacles_ = avoid_obstacles;}
+
+    /**
+     * @brief Get the next cell in order of steps walked from its source, and enqueue its neighbors
+     * @return The next cell, its distance_ holding the steps walked from its source
+     *
+     * A cell rejected by validCellToQueue is returned without enqueuing its neighbors.
+     * getNextCell orders cells by their straight line distance to the source, which is not
+     * the distance walked once obstacles are rejected.
+     * NB: Assumes that isEmpty has been called before this call and returned false
+     */
+    costmap_queue::CellData getNextCellAroundObstacles();
+
+protected:
+    /**
+     * @brief Enqueue a neighbor of a cell one step further from its source, if not seen yet
+     * @param from The cell being expanded
+     * @param index The index of the neighbor in the costmap
+     * @param x The x coordinate of the neighbor
+     * @param y The y coordinate of the neighbor
+     */
+    void enqueueNeighbor(
+      const costmap_queue::CellData & from, unsigned int index, unsigned int x, unsigned int y);
+
+    MapGridCritic & parent_;
+    bool avoid_obstacles_{false};
+  };
+
+  /**
+   * @brief Clear the queueDWB_CRITICS_MAP_GRID_He and set cell_values_ to the appropriate number of unreachableCellScore
    */
   void reset() override;
 
   /**
-   * @brief Set each cell to its 4-connected step distance from the cells holding 0, around obstacles
+   * @brief Go through the queue and set the cells to the Manhattan distance from their parents
    */
   void propagateManhattanDistances();
 
+  /**
+   * @brief Set the cells to their distance from the queued seeds
+   *
+   * With obstacle_aware_propagation the distance goes around obstacles. If that does not reach
+   * the robot, as it is blocked or no seed is free, this uses propagateManhattanDistances.
+   *
+   * @param robot_pose The pose of the robot, assumed to be in the same frame as the costmap
+   */
+  void propagateDistances(const geometry_msgs::msg::Pose & robot_pose);
+
+  /**
+   * @brief Set the cells to their 4-connected distance around obstacles to the nearest seed
+   * @param robot_pose The pose of the robot, assumed to be in the same frame as the costmap
+   * @return True if the search reached the cell of the robot
+   */
+  bool propagateAroundObstacles(const geometry_msgs::msg::Pose & robot_pose);
+
+  std::shared_ptr<MapGridQueue> queue_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::vector<double> cell_values_;
   double obstacle_score_, unreachable_score_;  ///< Special cell_values
   bool stop_on_failure_;
+  bool obstacle_aware_propagation_;
   ScoreAggregationType aggregationType_;
 };
 }  // namespace dwb_critics

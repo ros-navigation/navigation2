@@ -41,7 +41,7 @@
 namespace dwb_critics
 {
 bool GoalDistCritic::prepare(
-  const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
+  const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D &,
   const geometry_msgs::msg::Pose &,
   const nav_msgs::msg::Path & global_plan)
 {
@@ -52,10 +52,12 @@ bool GoalDistCritic::prepare(
     return false;
   }
 
+  // Enqueue just the last pose
   int index = costmap_->getIndex(local_goal_x, local_goal_y);
   cell_values_[index] = 0.0;
+  queue_->enqueueCell(local_goal_x, local_goal_y);
 
-  propagateManhattanDistances();
+  propagateDistances(pose);
 
   return true;
 }
@@ -68,9 +70,6 @@ bool GoalDistCritic::getLastPoseOnCostmap(
     global_plan,
     costmap_->getResolution());
   bool started_path = false;
-  bool found_free = false;
-  bool crossed_obstacle = false;
-  bool free_after_obstacle = false;
 
   // skip global path points until we reach the border of the local map
   for (unsigned int i = 0; i < adjusted_global_plan.poses.size(); ++i) {
@@ -81,24 +80,9 @@ bool GoalDistCritic::getLastPoseOnCostmap(
         g_x, g_y, map_x,
         map_y) && costmap_->getCost(map_x, map_y) != nav2_costmap_2d::NO_INFORMATION)
     {
-      const bool blocked =
-        costmap_->getCost(map_x, map_y) >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
-      // Continue past the first obstacle on the path, and stop before the second one.
-      if (blocked && found_free) {
-        if (free_after_obstacle) {
-          return true;
-        }
-        crossed_obstacle = true;
-      }
-      if (!blocked && crossed_obstacle) {
-        free_after_obstacle = true;
-      }
-      found_free = found_free || !blocked;
       // Still on the costmap. Continue.
-      if (!crossed_obstacle || free_after_obstacle) {
-        x = map_x;
-        y = map_y;
-      }
+      x = map_x;
+      y = map_y;
       started_path = true;
     } else if (started_path) {
       // Off the costmap after being on the costmap. Return the last saved indices.

@@ -41,7 +41,7 @@
 namespace dwb_critics
 {
 bool PathDistCritic::prepare(
-  const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
+  const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D &,
   const geometry_msgs::msg::Pose &,
   const nav_msgs::msg::Path & global_plan)
 {
@@ -70,6 +70,7 @@ bool PathDistCritic::prepare(
     {
       int index = costmap_->getIndex(map_x, map_y);
       cell_values_[index] = 0.0;
+      queue_->enqueueCell(map_x, map_y);
       started_path = true;
     } else if (started_path) {
       break;
@@ -84,7 +85,7 @@ bool PathDistCritic::prepare(
     return false;
   }
 
-  propagateManhattanDistances();
+  propagateDistances(pose);
 
   return true;
 }

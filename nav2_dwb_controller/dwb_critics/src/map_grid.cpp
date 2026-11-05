@@ -34,7 +34,6 @@
 
 #include "dwb_critics/map_grid.hpp"
 #include <cmath>
-#include <deque>
 #include <string>
 #include <vector>
 #include <utility>
@@ -44,13 +43,74 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 
 using std::abs;
+using costmap_queue::CellData;
 
 namespace dwb_critics
 {
 
+// Customization of the CostmapQueue validCellToQueue method
+bool MapGridCritic::MapGridQueue::validCellToQueue(const costmap_queue::CellData & cell)
+{
+  if (!avoid_obstacles_) {
+    return true;
+  }
+  const unsigned char cost = costmap_.getCost(cell.x_, cell.y_);
+  if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+    cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
+    cost == nav2_costmap_2d::NO_INFORMATION)
+  {
+    parent_.setAsObstacle(cell.index_);
+    return false;
+  }
+  return true;
+}
+
+void MapGridCritic::MapGridQueue::reset()
+{
+  costmap_queue::CostmapQueue::reset();
+  avoid_obstacles_ = false;
+}
+
+CellData MapGridCritic::MapGridQueue::getNextCellAroundObstacles()
+{
+  const CellData current = front();
+  pop();
+
+  if (!validCellToQueue(current)) {
+    return current;
+  }
+
+  const unsigned int size_x = costmap_.getSizeInCellsX();
+  if (current.x_ > 0) {
+    enqueueNeighbor(current, current.index_ - 1, current.x_ - 1, current.y_);
+  }
+  if (current.y_ > 0) {
+    enqueueNeighbor(current, current.index_ - size_x, current.x_, current.y_ - 1);
+  }
+  if (current.x_ < size_x - 1) {
+    enqueueNeighbor(current, current.index_ + 1, current.x_ + 1, current.y_);
+  }
+  if (current.y_ < costmap_.getSizeInCellsY() - 1) {
+    enqueueNeighbor(current, current.index_ + size_x, current.x_, current.y_ + 1);
+  }
+  return current;
+}
+
+void MapGridCritic::MapGridQueue::enqueueNeighbor(
+  const CellData & from, unsigned int index, unsigned int x, unsigned int y)
+{
+  if (seen_[index]) {
+    return;
+  }
+  seen_[index] = true;
+  const double distance = from.distance_ + 1.0;
+  enqueue(distance, CellData(distance, index, x, y, from.src_x_, from.src_y_));
+}
+
 void MapGridCritic::onInit()
 {
   costmap_ = costmap_ros_->getCostmap();
+  queue_ = std::make_shared<MapGridQueue>(*costmap_, *this);
 
   // Always set to true, but can be overridden by subclasses
   stop_on_failure_ = true;
@@ -77,6 +137,9 @@ void MapGridCritic::onInit()
       aggro_str.c_str());
     aggregationType_ = ScoreAggregationType::Last;
   }
+
+  obstacle_aware_propagation_ = node->declare_or_get_parameter(
+    dwb_plugin_name_ + "." + name_ + ".obstacle_aware_propagation", false);
 }
 
 void MapGridCritic::setAsObstacle(unsigned int index)
@@ -86,6 +149,7 @@ void MapGridCritic::setAsObstacle(unsigned int index)
 
 void MapGridCritic::reset()
 {
+  queue_->reset();
   cell_values_.resize(costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY());
   obstacle_score_ = static_cast<double>(cell_values_.size());
   unreachable_score_ = obstacle_score_ + 1.0;
@@ -94,60 +158,56 @@ void MapGridCritic::reset()
 
 void MapGridCritic::propagateManhattanDistances()
 {
-  const unsigned int size_x = costmap_->getSizeInCellsX();
-  const unsigned int size_y = costmap_->getSizeInCellsY();
-  const auto blocked = [this](unsigned int index) {
-      const unsigned char cost = costmap_->getCost(index);
-      return cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-             cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
-             cost == nav2_costmap_2d::NO_INFORMATION;
-    };
-  std::deque<unsigned int> open;
-  std::vector<unsigned int> blocked_seeds;
+  while (!queue_->isEmpty()) {
+    costmap_queue::CellData cell = queue_->getNextCell();
+    cell_values_[cell.index_] = CellData::absolute_difference(cell.src_x_, cell.x_) +
+      CellData::absolute_difference(cell.src_y_, cell.y_);
+  }
+}
+
+void MapGridCritic::propagateDistances(const geometry_msgs::msg::Pose & robot_pose)
+{
+  if (!obstacle_aware_propagation_) {
+    propagateManhattanDistances();
+    return;
+  }
+
+  std::vector<unsigned int> seeds;
   for (unsigned int i = 0; i < cell_values_.size(); ++i) {
-    if (cell_values_[i] != 0.0) {
-      continue;
-    }
-    if (blocked(i)) {
-      blocked_seeds.push_back(i);
-    } else {
-      open.push_back(i);
+    if (cell_values_[i] == 0.0) {
+      seeds.push_back(i);
     }
   }
-  const bool all_blocked = open.empty();
-  if (all_blocked) {
-    open.assign(blocked_seeds.begin(), blocked_seeds.end());
-  } else {
-    for (const unsigned int i : blocked_seeds) {
-      cell_values_[i] = obstacle_score_;
+
+  queue_->setAvoidObstacles(true);
+  if (propagateAroundObstacles(robot_pose)) {
+    return;
+  }
+
+  RCLCPP_DEBUG_THROTTLE(
+    rclcpp::get_logger("MapGridCritic"), *costmap_ros_->get_clock(), 1000,
+    "The robot is not reachable around obstacles, falling back to Manhattan distances.");
+  reset();
+  const unsigned int size_x = costmap_->getSizeInCellsX();
+  for (const unsigned int index : seeds) {
+    cell_values_[index] = 0.0;
+    queue_->enqueueCell(index % size_x, index / size_x);
+  }
+  propagateManhattanDistances();
+}
+
+bool MapGridCritic::propagateAroundObstacles(const geometry_msgs::msg::Pose & robot_pose)
+{
+  while (!queue_->isEmpty()) {
+    const costmap_queue::CellData cell = queue_->getNextCellAroundObstacles();
+    if (cell_values_[cell.index_] != obstacle_score_) {
+      cell_values_[cell.index_] = cell.distance_;
     }
   }
-  while (!open.empty()) {
-    const unsigned int index = open.front();
-    open.pop_front();
-    const unsigned int x = index % size_x;
-    const unsigned int y = index / size_x;
-    const std::pair<bool, unsigned int> neighbors[] = {
-      {x > 0, index - 1}, {x + 1 < size_x, index + 1},
-      {y > 0, index - size_x}, {y + 1 < size_y, index + size_x}};
-    for (const auto & [valid, n] : neighbors) {
-      if (!valid || cell_values_[n] != unreachable_score_) {
-        continue;
-      }
-      if (blocked(n)) {
-        cell_values_[n] = obstacle_score_;
-        continue;
-      }
-      cell_values_[n] = cell_values_[index] + 1.0;
-      open.push_back(n);
-    }
-  }
-  // Every seed was blocked, so they started the search at 0; now score them as obstacles.
-  if (all_blocked) {
-    for (const unsigned int i : blocked_seeds) {
-      cell_values_[i] = obstacle_score_;
-    }
-  }
+
+  unsigned int robot_x, robot_y;
+  return costmap_->worldToMap(robot_pose.position.x, robot_pose.position.y, robot_x, robot_y) &&
+         getScore(robot_x, robot_y) < obstacle_score_;
 }
 
 double MapGridCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
