@@ -64,6 +64,16 @@ struct Pose
   double theta;  // rotation angle of pose
 };
 
+/// @brief Pose at a time offset from the start of a trajectory
+struct TimePoint
+{
+  double time_s;  // seconds since the first point of the trajectory
+  Pose pose;  // pose in the robot base frame
+};
+
+/// @brief Robot poses in the base frame over time, with increasing times
+using Trajectory = std::vector<TimePoint>;
+
 /// @brief Action type for robot
 enum ActionType
 {
