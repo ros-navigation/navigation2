@@ -112,12 +112,16 @@ void SmacPlannerHybridT<NodeT>::configure(
     node->declare_or_get_parameter(name + ".analytic_expansion_ratio", 3.5);
   _search_info.analytic_expansion_max_cost =
     node->declare_or_get_parameter(name + ".analytic_expansion_max_cost", 200.0);
+  _search_info.forward_expansion_multiplier =
+    node->declare_or_get_parameter(name + ".forward_expansion_multiplier", 3.0);
   _search_info.analytic_expansion_max_cost_override =
     node->declare_or_get_parameter(name + ".analytic_expansion_max_cost_override", false);
   _search_info.use_quadratic_cost_penalty =
     node->declare_or_get_parameter(name + ".use_quadratic_cost_penalty", false);
   _search_info.downsample_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
+  _search_info.prefer_forward_expansions =
+    node->declare_or_get_parameter(name + ".prefer_forward_expansions", false);
 
   _analytic_expansion_max_length_m =
     node->declare_or_get_parameter(name + ".analytic_expansion_max_length", 3.0);
@@ -794,6 +798,9 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
       } else if (param_name == _name + ".analytic_expansion_max_cost") {
         reinit_a_star = true;
         _search_info.analytic_expansion_max_cost = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".forward_expansion_multiplier") {
+        reinit_a_star = true;
+        _search_info.forward_expansion_multiplier = static_cast<float>(parameter.as_double());
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == _name + ".downsample_costmap") {
@@ -816,6 +823,9 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
         }
       } else if (param_name == _name + ".analytic_expansion_max_cost_override") {
         _search_info.analytic_expansion_max_cost_override = parameter.as_bool();
+        reinit_a_star = true;
+      } else if (param_name == _name + ".prefer_forward_expansions") {
+        _search_info.prefer_forward_expansions = parameter.as_bool();
         reinit_a_star = true;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
