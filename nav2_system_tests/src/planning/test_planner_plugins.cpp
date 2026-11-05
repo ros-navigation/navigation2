@@ -89,12 +89,16 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
   geometry_msgs::msg::PoseStamped goal;
   std::vector<geometry_msgs::msg::PoseStamped> no_viapoints;
 
-  start.pose.position.x = 0.55;
-  start.pose.position.y = 0.55;
+  // SmacPlanner2D returns cell corners rather than cell centers, so a straight
+  // path only stays collinear with the goal if the poses are on a cell corner.
+  const double xy = plugin == "nav2_smac_planner::SmacPlanner2D" ? 0.5 : 0.55;
+
+  start.pose.position.x = xy;
+  start.pose.position.y = xy;
   start.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
   start.header.frame_id = "map";
 
-  goal.pose.position.x = 0.55;
+  goal.pose.position.x = xy;
   goal.pose.position.y = start.pose.position.y + length;
   goal.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI);
   goal.header.frame_id = "map";
