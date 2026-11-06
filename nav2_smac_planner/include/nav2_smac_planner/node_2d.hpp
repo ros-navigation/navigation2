@@ -220,6 +220,7 @@ public:
 
   /**
    * @brief Get continuous map coordinates of the center of a cell using index
+   * Unique to Smac2D due to storing only index and not pose.
    * @param index Index of point
    * @param width width of costmap
    * @return coordinates of the center of the cell
