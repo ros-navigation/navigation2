@@ -158,7 +158,7 @@ bool Node2D::backtracePath(CoordinateVector & path)
 
   // A node represents a whole cell and the integer coordinates of its index are the cell's
   // lower corner in continuous map coordinates, so the path is reported at the cell's center.
-  const unsigned int size_x = _ctx->neighbors_grid_offsets[3];
+  const unsigned int size_x = _ctx->neighbors_grid_offsets[3];  // +size_x
   NodePtr current_node = this;
 
   while (current_node->parent) {
