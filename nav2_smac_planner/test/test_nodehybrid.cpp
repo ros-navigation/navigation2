@@ -53,6 +53,7 @@ TEST(NodeHybridTest, test_node_hybrid)
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
+  costmapA->setCost(2, 8, 200);
 
   // Convert raw costmap into a costmap ros object
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
@@ -130,6 +131,27 @@ TEST(NodeHybridTest, test_node_hybrid)
   testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::REVERSE);
   EXPECT_NEAR(testStart.getTraversalCost(&testA), straight_cost * 2.0, 0.01);
   ctx->motion_table.direction_change_penalty = 0.0;
+
+  // check direction change cost penalty applies when inverting direction of travel above threshold
+  nav2_smac_planner::NodeHybrid testHigh(1, ctx);
+  testHigh.setPose(nav2_smac_planner::NodeHybrid::Coordinates(2.0, 8.0, 0));
+  EXPECT_TRUE(testHigh.isNodeValid(false, checker.get()));
+  ctx->motion_table.direction_change_cost_penalty = 10.0;
+  ctx->motion_table.direction_change_cost_threshold = 100.0f / 252.0f;
+  // forward to reverse vs reverse to reverse: (penalty * cost) * reverse_penalty
+  auto cuspCost = [&](nav2_smac_planner::NodeHybrid & child) {
+      testB.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::FORWARD);
+      child.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::REVERSE);
+      const float cost = testB.getTraversalCost(&child);
+      testB.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::REVERSE);
+      return cost - testB.getTraversalCost(&child);
+    };
+  EXPECT_NEAR(cuspCost(testHigh), 10.0f * (200.0f / 252.0f) * 2.0f, 1e-3);
+  EXPECT_NEAR(cuspCost(testA), 0.0f, 1e-3);  // below threshold
+  ctx->motion_table.use_quadratic_cost_penalty = true;
+  EXPECT_NEAR(cuspCost(testHigh), 10.0f * powf(200.0f / 252.0f, 2) * 2.0f, 1e-3);
+  ctx->motion_table.use_quadratic_cost_penalty = false;
+  ctx->motion_table.direction_change_cost_penalty = 0.0;
   testA.setMotionPrimitiveIndex(2, nav2_smac_planner::TurnDirection::REV_LEFT);
 
   // will throw because never collision checked testB

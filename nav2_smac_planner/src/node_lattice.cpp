@@ -49,6 +49,9 @@ void LatticeMotionTable::initMotionModel(
   size_x = size_x_in;
   change_penalty = search_info.change_penalty;
   direction_change_penalty = search_info.direction_change_penalty;
+  direction_change_cost_penalty = search_info.direction_change_cost_penalty;
+  direction_change_cost_threshold =
+    search_info.direction_change_cost_threshold / MAX_NON_OBSTACLE_COST;
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
@@ -353,6 +356,12 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
   if (this->isBackward() != child->isBackward()) {
     // Inverting direction of travel (forward <-> reverse): penalizes gear changes
     travel_cost += travel_cost_raw * _ctx->motion_table.direction_change_penalty;
+    if (normalized_cost > _ctx->motion_table.direction_change_cost_threshold) {
+      // Inverting direction of travel in high cost space: penalizes cusping near obstacles
+      travel_cost += _ctx->motion_table.direction_change_cost_penalty *
+        (_ctx->motion_table.use_quadratic_cost_penalty ?
+        normalized_cost * normalized_cost : normalized_cost);
+    }
   }
 
   // If backwards flag is set, this primitive is moving in reverse

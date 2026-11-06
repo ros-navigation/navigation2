@@ -489,6 +489,7 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
       costmapA->setCost(x, y, 253);
     }
   }
+  costmapA->setCost(2, 8, 200);
 
   // Convert raw costmap into a costmap ros object
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
@@ -559,6 +560,23 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
   testA.backwards(false);
   testB.backwards(false);
 
+  // check direction change cost penalty applies when inverting direction of travel
+  nav2_smac_planner::NodeLattice testHigh(1, ctx);
+  testHigh.pose.x = 2;
+  testHigh.pose.y = 8;
+  EXPECT_TRUE(testHigh.isNodeValid(false, checker.get()));
+  testHigh.setMotionPrimitive(testA_prims[0]);
+  testHigh.backwards(true);
+  ctx->motion_table.direction_change_cost_penalty = 10.0;
+  ctx->motion_table.direction_change_cost_threshold = 100.0f / 252.0f;
+  const float cusp_cost = testB.getTraversalCost(&testHigh);
+  testB.backwards(true);
+  // (penalty * quadratic cost) * reverse_penalty
+  EXPECT_NEAR(
+    cusp_cost - testB.getTraversalCost(&testHigh), 10.0f * powf(200.0f / 252.0f, 2) * 2.0f, 1e-3);
+  testB.backwards(false);
+  ctx->motion_table.direction_change_cost_penalty = 0.0;
+
   // check change penalty applies to steering direction changes, inverted when reversing
   nav2_smac_planner::MotionPrimitive * left = nullptr, * right = nullptr;
   for (auto & prim : testA_prims) {
@@ -588,7 +606,6 @@ TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
   EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);
   delete costmapA;
 }
-
 
 TEST(NodeLatticeTest, test_omni_selects_se2_state_space)
 {

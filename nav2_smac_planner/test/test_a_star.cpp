@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <algorithm>
 #include <memory>
 #include <unordered_map>
 #include <string>
@@ -588,17 +589,41 @@ TEST(AStarTest, test_goal_heading_mode)
   delete costmapA;
 }
 
-TEST(AStarTest, test_a_star_se2_direction_change_penalty)
+TEST(AStarTest, test_a_star_se2_direction_change_penalties)
 {
-  // Turn around in a small room at the end of a hallway too narrow to turn within
+  // Turn around in a room at the end of a hallway too narrow to turn within
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
+  const unsigned int size_x = 81, size_y = 36;
+  const float resolution = 0.05;
+  std::vector<bool> occupied(size_x * size_y, true);
+  for (unsigned int x = 3; x < size_x - 3; ++x) {
+    for (unsigned int y = 3; y < size_y - 3; ++y) {
+      occupied[x + y * size_x] = !(x >= 45 || (y >= 11 && y < 25));
+    }
+  }
+
+  // Inflate costs with distance to obstacles, so cusps near walls are in high cost space
   nav2_costmap_2d::Costmap2D * costmapA =
-    new nav2_costmap_2d::Costmap2D(64, 34, 0.05, 0.0, 0.0, 254);
-  for (unsigned int x = 3; x < 59; ++x) {
-    for (unsigned int y = 10; y < 24; ++y) {
-      if (x >= 45 || (y >= 14 && y < 20)) {
-        costmapA->setCost(x, y, 0);
+    new nav2_costmap_2d::Costmap2D(size_x, size_y, resolution, 0.0, 0.0, 0);
+  for (unsigned int x = 0; x < size_x; ++x) {
+    for (unsigned int y = 0; y < size_y; ++y) {
+      float dist = std::numeric_limits<float>::max();
+      for (unsigned int i = 0; i < occupied.size(); ++i) {
+        if (occupied[i]) {
+          const float dx = static_cast<float>(i % size_x) - static_cast<float>(x);
+          const float dy = static_cast<float>(i / size_x) - static_cast<float>(y);
+          dist = std::min(dist, hypotf(dx, dy) * resolution);
+        }
       }
+      unsigned char cost = 0;
+      if (dist == 0.0f) {
+        cost = 254;
+      } else if (dist <= 0.15f) {
+        cost = 253;
+      } else if (dist <= 1.0f) {
+        cost = static_cast<unsigned char>(252.0f * std::exp(-3.0f * (dist - 0.15f)));
+      }
+      costmapA->setCost(x, y, cost);
     }
   }
 
@@ -606,54 +631,69 @@ TEST(AStarTest, test_a_star_se2_direction_change_penalty)
   costmap_ros->on_configure(rclcpp_lifecycle::State());
   *costmap_ros->getCostmap() = *costmapA;
 
-  // 0.4m x 0.2m robot
+  // 0.6m x 0.3m robot
   nav2_costmap_2d::Footprint footprint(4);
-  footprint[0].x = 0.2; footprint[0].y = 0.1;
-  footprint[1].x = 0.2; footprint[1].y = -0.1;
-  footprint[2].x = -0.2; footprint[2].y = -0.1;
-  footprint[3].x = -0.2; footprint[3].y = 0.1;
+  footprint[0].x = 0.3; footprint[0].y = 0.15;
+  footprint[1].x = 0.3; footprint[1].y = -0.15;
+  footprint[2].x = -0.3; footprint[2].y = -0.15;
+  footprint[3].x = -0.3; footprint[3].y = 0.15;
   unsigned int size_theta = 72;
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
-  checker->setFootprint(footprint, false, -1.0);
+  checker->setFootprint(footprint, false, 100.0);
 
-  auto countDirectionChanges = [&](const float direction_change_penalty) {
+  // Plans a turn around, returning the number of changes between moving along and against
+  // the heading and the highest cost at which they occur
+  auto planTurnAround = [&](const float direction_change_penalty,
+    const float direction_change_cost_penalty) {
       nav2_smac_planner::SearchInfo info;
       info.minimum_turning_radius = 8;  // in grid coordinates
       info.non_straight_penalty = 1.2;
+      info.cost_penalty = 2.0;
       info.direction_change_penalty = direction_change_penalty;
-      info.allow_primitive_interpolation = true;
-      info.analytic_expansion_max_length = 20.0;  // in grid coordinates
+      info.direction_change_cost_penalty = direction_change_cost_penalty;
+      info.direction_change_cost_threshold = 50.0;
+      // Short analytic expansions, which are not subject to the direction change penalties
+      info.analytic_expansion_max_length = 6.0;  // in grid coordinates
       nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
         nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
       int max_iterations = 100000;
       a_star.initialize(false, max_iterations, 1000, 5000, 120.0, 101, size_theta);
       a_star.setCollisionChecker(checker.get());
-      a_star.setStart(30u, 17u, 0u);
-      a_star.setGoal(10u, 17u, 36u);
+      a_star.setStart(30u, 18u, 0u);
+      a_star.setGoal(10u, 18u, 36u);
       nav2_smac_planner::NodeHybrid::CoordinateVector path;
       int num_it = 0;
       EXPECT_TRUE(a_star.createPath(path, num_it, 0.0, []() {return false;}));
 
-      // Count changes between moving along and against the heading
       unsigned int changes = 0;
+      float max_cost = 0.0f;
       int last_dir = 0;
       for (unsigned int i = 1; i < path.size(); ++i) {
         const float dx = path[i].x - path[i - 1].x;
         const float dy = path[i].y - path[i - 1].y;
         if (hypotf(dx, dy) > 1e-3) {
           const int dir = dx * cos(path[i].theta) + dy * sin(path[i].theta) >= 0.0 ? 1 : -1;
-          changes += (last_dir != 0 && dir != last_dir) ? 1 : 0;
+          if (last_dir != 0 && dir != last_dir) {
+            changes++;
+            max_cost = std::max(
+              max_cost, static_cast<float>(costmapA->getCost(
+                static_cast<unsigned int>(path[i - 1].x + 0.5),
+                static_cast<unsigned int>(path[i - 1].y + 0.5))));
+          }
           last_dir = dir;
         }
       }
-      return changes;
+      return std::make_pair(changes, max_cost);
     };
 
-  // Fewer direction changes to turn around with the direction change penalty
-  const unsigned int changes = countDirectionChanges(0.0);
+  const auto [changes, cusp_cost] = planTurnAround(0.0, 0.0);
   EXPECT_GT(changes, 0u);
-  EXPECT_LT(countDirectionChanges(3.0), changes);
+  EXPECT_GT(cusp_cost, 50.0f);
+  // Fewer direction changes to turn around with the direction change penalty
+  EXPECT_LT(planTurnAround(3.0, 0.0).first, changes);
+  // Direction changes move into lower cost space with the direction change cost penalty
+  EXPECT_LT(planTurnAround(0.0, 10.0).second, cusp_cost);
 
   delete costmapA;
 }
