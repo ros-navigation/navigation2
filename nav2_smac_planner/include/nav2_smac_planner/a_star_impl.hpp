@@ -490,7 +490,7 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
 {
   Coordinates node_coords;
   if constexpr (std::is_base_of_v<Node2D, NodeT>) {
-    // Node2D paths end at cell centers, so tolerance to the goal is measured from there
+    // Node2D needs cell-center coordinates due to how it uniquely represents pose
     node_coords = Node2D::getCellCenterCoords(node->getIndex(), getSizeX());
   } else {
     node_coords = NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
