@@ -488,8 +488,13 @@ void AStarAlgorithm<NodeT>::addNode(const float & cost, NodePtr & node)
 template<typename NodeT>
 float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
 {
-  const Coordinates node_coords =
-    NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
+  Coordinates node_coords;
+  if constexpr (std::is_base_of_v<Node2D, NodeT>) {
+    // Node2D paths end at cell centers, so tolerance to the goal is measured from there
+    node_coords = Node2D::getCellCenterCoords(node->getIndex(), getSizeX());
+  } else {
+    node_coords = NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
+  }
   float heuristic = node->getHeuristicCost(node_coords, _goal_manager.getGoalsCoordinates());
   if (heuristic < _best_heuristic_node.first) {
     _best_heuristic_node = {heuristic, node->getIndex()};
