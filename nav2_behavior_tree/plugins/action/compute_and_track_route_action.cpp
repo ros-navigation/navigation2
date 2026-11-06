@@ -117,8 +117,8 @@ void ComputeAndTrackRouteAction::on_wait_for_result(
     }
   } else {
     // Check if the start and goal IDs have changed
-    unsigned int start_id = 0;
-    unsigned int goal_id = 0;
+    uint64_t start_id = 0;
+    uint64_t goal_id = 0;
     getInput("start_id", start_id);
     getInput("goal_id", goal_id);
     if (goal_.start_id != start_id) {

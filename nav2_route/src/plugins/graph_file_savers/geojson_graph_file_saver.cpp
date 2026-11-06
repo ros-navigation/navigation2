@@ -62,7 +62,7 @@ void GeoJsonGraphFileSaver::loadNodesFromGraph(
   Graph & graph, std::vector<Json> & json_features)
 {
   for (const auto & node : graph) {
-    if (node.nodeid == std::numeric_limits<int>::max()) {  // Skip "deleted" nodes
+    if (node.nodeid == std::numeric_limits<uint64_t>::max()) {  // Skip "deleted" nodes
       continue;
     }
     Json json_feature, json_properties, json_geometry, json_metadata, json_operations;

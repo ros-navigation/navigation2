@@ -93,8 +93,8 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<unsigned int>("start_id", "ID of the start node"),
-        BT::InputPort<unsigned int>("goal_id", "ID of the goal node"),
+        BT::InputPort<uint64_t>("start_id", "ID of the start node"),
+        BT::InputPort<uint64_t>("goal_id", "ID of the goal node"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(
           "start",
           "Start pose of the path if overriding current robot pose and using poses over IDs"),
@@ -108,13 +108,13 @@ public:
         BT::OutputPort<builtin_interfaces::msg::Duration>(
           "execution_duration",
           "Time taken to compute and track route"),
-        BT::OutputPort<uint16_t>(
+        BT::OutputPort<uint64_t>(
           "last_node_id",
           "ID of the previous node"),
-        BT::OutputPort<uint16_t>(
+        BT::OutputPort<uint64_t>(
           "next_node_id",
           "ID of the next node"),
-        BT::OutputPort<uint16_t>(
+        BT::OutputPort<uint64_t>(
           "current_edge_id",
           "ID of current edge"),
         BT::OutputPort<nav2_msgs::msg::Route>(
