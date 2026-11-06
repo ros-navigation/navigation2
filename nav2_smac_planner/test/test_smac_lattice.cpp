@@ -265,6 +265,8 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.reverse_penalty", 5.0),
       rclcpp::Parameter("test.change_penalty", 1.0),
       rclcpp::Parameter("test.direction_change_penalty", 3.0),
+      rclcpp::Parameter("test.direction_change_cost_penalty", 5.0),
+      rclcpp::Parameter("test.direction_change_cost_threshold", 150.0),
       rclcpp::Parameter("test.non_straight_penalty", 2.0),
       rclcpp::Parameter("test.cost_penalty", 2.0),
       rclcpp::Parameter("test.retrospective_penalty", 0.2),
@@ -307,11 +309,15 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   // test direction change penalty is updated (A* reinit may throw from the invalid prims file)
   parameters.clear();
   parameters.push_back(rclcpp::Parameter("test.direction_change_penalty", 4.0));
+  parameters.push_back(rclcpp::Parameter("test.direction_change_cost_penalty", 6.0));
+  parameters.push_back(rclcpp::Parameter("test.direction_change_cost_threshold", 120.0));
   try {
     planner->callDynamicParams(parameters);
   } catch (...) {
   }
   EXPECT_EQ(planner->getSearchInfo().direction_change_penalty, 4.0f);
+  EXPECT_EQ(planner->getSearchInfo().direction_change_cost_penalty, 6.0f);
+  EXPECT_EQ(planner->getSearchInfo().direction_change_cost_threshold, 120.0f);
 
   // test coarse resolution edge cases.
   // Negative coarse search resolution
