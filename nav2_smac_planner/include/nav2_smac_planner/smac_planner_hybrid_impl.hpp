@@ -104,6 +104,10 @@ void SmacPlannerHybridT<NodeT>::configure(
     node->declare_or_get_parameter(name + ".change_penalty", 0.0);
   _search_info.direction_change_penalty =
     node->declare_or_get_parameter(name + ".direction_change_penalty", 0.0);
+  _search_info.direction_change_cost_penalty =
+    node->declare_or_get_parameter(name + ".direction_change_cost_penalty", 0.0);
+  _search_info.direction_change_cost_threshold =
+    node->declare_or_get_parameter(name + ".direction_change_cost_threshold", 200.0);
   _search_info.non_straight_penalty =
     node->declare_or_get_parameter(name + ".non_straight_penalty", 1.2);
   _search_info.cost_penalty =
@@ -784,6 +788,12 @@ SmacPlannerHybridT<NodeT>::updateParametersCallback(
       } else if (param_name == _name + ".direction_change_penalty") {
         reinit_a_star = true;
         _search_info.direction_change_penalty = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".direction_change_cost_penalty") {
+        reinit_a_star = true;
+        _search_info.direction_change_cost_penalty = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".direction_change_cost_threshold") {
+        reinit_a_star = true;
+        _search_info.direction_change_cost_threshold = static_cast<float>(parameter.as_double());
       } else if (param_name == _name + ".non_straight_penalty") {
         reinit_a_star = true;
         _search_info.non_straight_penalty = static_cast<float>(parameter.as_double());
