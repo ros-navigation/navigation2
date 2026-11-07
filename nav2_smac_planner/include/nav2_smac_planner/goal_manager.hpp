@@ -171,7 +171,7 @@ public:
       std::min(static_cast<float>(size_y - 1), std::ceil(center_point.y + radius));
     const float radius_sq = radius * radius;
 
-    Coordinates m;
+    Coordinates m = center_point;
     for (m.x = min_x; m.x <= max_x; m.x += 1.0f) {
       for (m.y = min_y; m.y <= max_y; m.y += 1.0f) {
         const float dx = m.x - center_point.x;
