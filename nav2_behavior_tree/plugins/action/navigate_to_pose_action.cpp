@@ -33,6 +33,7 @@ void NavigateToPoseAction::on_tick()
     RCLCPP_ERROR(
       node_->get_logger(),
       "NavigateToPoseAction: goal not provided");
+    should_send_goal_ = false;
     return;
   }
   getInput("behavior_tree", goal_.behavior_tree);
