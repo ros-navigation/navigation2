@@ -1197,7 +1197,7 @@ class BasicNavigator(Node):
                 # so if we're not successful, try forwarding the initial pose
                 while True:
                     rclpy.spin_until_future_complete(self, future, timeout_sec=0.10)
-                    if not future:
+                    if not future.done():
                         self._waitForInitialPose()
                     else:
                         break
