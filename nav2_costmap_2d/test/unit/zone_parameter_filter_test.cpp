@@ -35,6 +35,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rcl_interfaces/msg/parameter_descriptor.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 #include "rcl_interfaces/srv/describe_parameters.hpp"
 #include "rcl_interfaces/srv/get_parameter_types.hpp"
 #include "rcl_interfaces/srv/get_parameters.hpp"
@@ -192,27 +193,61 @@ public:
   {
     ignore<rcl_interfaces::srv::GetParameters>("get_parameters");
     ignore<rcl_interfaces::srv::GetParameterTypes>("get_parameter_types");
-    ignore<rcl_interfaces::srv::SetParameters>("set_parameters");
+    ignore<rcl_interfaces::srv::SetParameters>("set_parameters", &set_requests);
     ignore<rcl_interfaces::srv::SetParametersAtomically>("set_parameters_atomically");
     ignore<rcl_interfaces::srv::ListParameters>("list_parameters");
     ignore<rcl_interfaces::srv::DescribeParameters>("describe_parameters");
   }
 
+  int set_requests{0};
+
 private:
   template<typename ServiceT>
-  void ignore(const std::string & service)
+  void ignore(const std::string & service, int * requests = nullptr)
   {
     // A callback taking the request header defers the response, which is
     // never sent
     services_.push_back(
       create_service<ServiceT>(
         std::string(get_name()) + "/" + service,
-        [](
+        [requests](
           const std::shared_ptr<rmw_request_id_t>,
-          const std::shared_ptr<typename ServiceT::Request>) {}));
+          const std::shared_ptr<typename ServiceT::Request>) {
+          if (requests) {
+            ++*requests;
+          }
+        }));
   }
 
   std::vector<rclcpp::ServiceBase::SharedPtr> services_;
+};
+
+// Refuses every parameter change while `refuse` is set, and counts the
+// changes it is asked for
+class RefusingTargetNode : public rclcpp::Node
+{
+public:
+  RefusingTargetNode()
+  : rclcpp::Node("zpf_refusing_target")
+  {
+    declare_parameter("speed", 1.0);
+    on_set_handle_ = add_on_set_parameters_callback(
+      [this](const std::vector<rclcpp::Parameter> &) {
+        ++attempts;
+        rcl_interfaces::msg::SetParametersResult result;
+        result.successful = !refuse;
+        result.reason = refuse ? "refused by the test" : "";
+        return result;
+      });
+  }
+
+  double getSpeed() {return get_parameter("speed").as_double();}
+
+  bool refuse{true};
+  int attempts{0};
+
+private:
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_handle_;
 };
 
 class TestZpf : public ::testing::Test
@@ -245,6 +280,10 @@ protected:
     if (silent_target_node_) {
       target_executor_.remove_node(silent_target_node_);
       silent_target_node_.reset();
+    }
+    if (refusing_target_node_) {
+      target_executor_.remove_node(refusing_target_node_);
+      refusing_target_node_.reset();
     }
     target_executor_.remove_node(target_node_);
     target_node_.reset();
@@ -344,17 +383,6 @@ protected:
     filter_->process(costmap, 0, 0, 4, 4, pose);
   }
 
-  // What the runtime_error thrown by runProcess() says, empty if none is
-  std::string processError()
-  {
-    try {
-      runProcess();
-    } catch (const std::runtime_error & e) {
-      return e.what();
-    }
-    return "";
-  }
-
   template<typename Pred>
   bool waitForCond(Pred pred, std::chrono::milliseconds timeout = 1500ms)
   {
@@ -387,6 +415,7 @@ protected:
   std::shared_ptr<TargetNode> target_node_;
   std::shared_ptr<SecondTargetNode> second_target_node_;
   std::shared_ptr<SilentTargetNode> silent_target_node_;
+  std::shared_ptr<RefusingTargetNode> refusing_target_node_;
   std::shared_ptr<StateEventSubscriber> state_event_sub_;
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layers_;
@@ -476,10 +505,11 @@ TEST_F(TestZpf, State0ResetsToNominalDefaults)
     << "speed never restored to nominal default 1.0 after state 0";
 }
 
-TEST_F(TestZpf, UnknownStateThrows)
+TEST_F(TestZpf, UnknownStateKeepsTheParameters)
 {
   // Mask carries state 2, but only state id 1 is configured — applyState
-  // must throw and no parameter may change.
+  // logs it, nothing throws, no parameter changes and the state is not
+  // entered.
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
     rclcpp::Parameter(fp("slow_zone.id"), 1),
@@ -488,11 +518,13 @@ TEST_F(TestZpf, UnknownStateThrows)
   addEntry(cfg, "slow_zone.speed_override", "zpf_target_node", "speed",
     rclcpp::ParameterValue(0.3));
 
-  ASSERT_TRUE(createFilter(cfg, 2)) << "Filter did not become active";
+  ASSERT_TRUE(createFilter(cfg, 2, "/zpf_state")) << "Filter did not become active";
 
-  EXPECT_THROW(runProcess(), std::runtime_error);
+  EXPECT_NO_THROW(runProcess());
+  spinFor(250ms);
   EXPECT_DOUBLE_EQ(target_node_->getSpeed(), 1.0)
-    << "speed must NOT change when applyState throws on unknown state";
+    << "speed must NOT change on an unknown state";
+  EXPECT_FALSE(state_event_sub_->received()) << "an unknown state must not be entered";
 }
 
 TEST_F(TestZpf, StateEventPublishedOnTransition)
@@ -509,8 +541,13 @@ TEST_F(TestZpf, StateEventPublishedOnTransition)
 
   ASSERT_FALSE(state_event_sub_->received());
 
-  runProcess();
-  ASSERT_TRUE(waitForCond([this]() {return state_event_sub_->received();}));
+  // The state is entered, and its event published, once its update succeeds
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        runProcess();
+        return state_event_sub_->received();
+      }));
   EXPECT_EQ(state_event_sub_->lastState(), 1u);
 }
 
@@ -569,14 +606,29 @@ TEST_F(TestZpf, RobotOutsideMaskResetsToState0)
   addEntry(cfg, "nominal_defaults.speed_nominal", "zpf_target_node", "speed",
     rclcpp::ParameterValue(1.0));
 
-  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+  ASSERT_TRUE(createFilter(cfg, 1, "/zpf_state")) << "Filter did not become active";
 
-  runProcess();
-  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 0.4;}));
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        runProcess();
+        return target_node_->getSpeed() == 0.4 && state_event_sub_->received();
+      }));
+  EXPECT_EQ(state_event_sub_->lastState(), 1u);
 
-  runProcess(100.0, 100.0);
-  ASSERT_TRUE(waitForCond([this]() {return target_node_->getSpeed() == 1.0;}))
-    << "speed never restored to nominal after out-of-mask pose";
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        runProcess(100.0, 100.0);
+        return target_node_->getSpeed() == 1.0;
+      })) << "speed never restored to nominal after out-of-mask pose";
+
+  // Leaving the mask restores the parameters without a state event
+  for (int i = 0; i < 10; ++i) {
+    runProcess(100.0, 100.0);
+    spinFor(20ms);
+  }
+  EXPECT_EQ(state_event_sub_->lastState(), 1u) << "leaving the mask must not publish a state event";
 }
 
 TEST_F(TestZpf, ExplicitNodeRoutingAppliesOverridesToBothTargets)
@@ -687,11 +739,10 @@ TEST_F(TestZpf, EmptyAndInvalidConfigEdgesDoNotCrash)
 
 TEST_F(TestZpf, RemovedFailurePolicyParameterIsIgnored)
 {
-  // The rework removed the on_param_set_failure policy: a set failure on a
-  // safety zone always throws (stop-the-robot), never warn-and-continue.
-  // A leftover `on_param_set_failure: warn` in YAML is simply an undeclared,
-  // unused override — config-load must not raise, and the failure must
-  // STILL throw despite the requested "warn".
+  // The rework removed the on_param_set_failure policy. A leftover
+  // `on_param_set_failure: warn` in YAML is simply an undeclared, unused
+  // override — config-load must not raise, and a failed set is handled as
+  // any other: reported and retried, never thrown.
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("on_param_set_failure"), std::string("warn")),
     rclcpp::Parameter(fp("states"), std::vector<std::string>{"danger_zone"}),
@@ -709,68 +760,133 @@ TEST_F(TestZpf, RemovedFailurePolicyParameterIsIgnored)
       spinFor(300ms);  // drain: failed result becomes ready
       runProcess();    // checkPendingParameterUpdates surfaces it here
     };
-  EXPECT_THROW(drive_and_drain(), std::runtime_error)
-    << "always-throw semantics must hold even when YAML requests 'warn'";
+  EXPECT_NO_THROW(drive_and_drain());
+  EXPECT_DOUBLE_EQ(target_node_->get_parameter("readonly_speed").as_double(), 1.0);
 }
 
-TEST_F(TestZpf, ParamSetFailureAlwaysThrows)
+TEST_F(TestZpf, StateIsEnteredOnlyOnceItsUpdatesSucceed)
 {
-  // Routes state 1 to TargetNode's read-only parameter; set_parameters
-  // returns successful=false; checkPendingParameterUpdates must rethrow it
-  // (always-throw; there is no swallow policy). The failed future is erased
-  // before throwing, so a subsequent process() must not re-throw.
-  std::vector<rclcpp::Parameter> cfg = {
-    rclcpp::Parameter(fp("states"), std::vector<std::string>{"danger_zone"}),
-    rclcpp::Parameter(fp("danger_zone.id"), 1),
-    rclcpp::Parameter(fp("danger_zone.setpoints"), std::vector<std::string>{"ro_speed"}),
-  };
-  addEntry(cfg, "danger_zone.ro_speed", "zpf_target_node", "readonly_speed",
-    rclcpp::ParameterValue(0.5));
+  // The target refuses the set: process() reports it without throwing, does
+  // not enter the state, and applies it again every parameter_update_timeout
+  // until the target accepts it. Only then is the state entered.
+  refusing_target_node_ = std::make_shared<RefusingTargetNode>();
+  target_executor_.add_node(refusing_target_node_);
 
-  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
-
-  auto drive_and_drain = [this]() {
-      runProcess();
-      spinFor(300ms);  // drain pending futures; failure surfaces on next process
-      runProcess();
-    };
-  EXPECT_THROW(drive_and_drain(), std::runtime_error);
-
-  EXPECT_DOUBLE_EQ(
-    target_node_->get_parameter("readonly_speed").as_double(), 1.0)
-    << "read-only parameter must be untouched by the failed set";
-
-  EXPECT_NO_THROW(runProcess())
-    << "failed future must be consumed by the throw, not re-surfaced";
-}
-
-TEST_F(TestZpf, UnreachableTargetThrowsAfterTimeout)
-{
-  // The target node never appears: once parameter_update_timeout passes, the
-  // update fails like a refused set, and the throw consumes it.
   std::vector<rclcpp::Parameter> cfg = {
     rclcpp::Parameter(fp("parameter_update_timeout"), 0.2),
-    rclcpp::Parameter(fp("states"), std::vector<std::string>{"remote_zone"}),
-    rclcpp::Parameter(fp("remote_zone.id"), 1),
-    rclcpp::Parameter(fp("remote_zone.setpoints"), std::vector<std::string>{"remote_speed"}),
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
   };
-  addEntry(cfg, "remote_zone.remote_speed", "nonexistent_node", "foo",
+  addEntry(cfg, "slow_zone.speed_override", "zpf_refusing_target", "speed",
     rclcpp::ParameterValue(0.5));
+
+  ASSERT_TRUE(createFilter(cfg, 1, "/zpf_state")) << "Filter did not become active";
+
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        EXPECT_NO_THROW(runProcess());
+        return refusing_target_node_->attempts >= 2;
+      })) << "the refused state was not applied again";
+  EXPECT_DOUBLE_EQ(refusing_target_node_->getSpeed(), 1.0);
+  EXPECT_FALSE(state_event_sub_->received()) << "a state whose update failed must not be entered";
+
+  refusing_target_node_->refuse = false;
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        EXPECT_NO_THROW(runProcess());
+        return state_event_sub_->received();
+      })) << "the state was not entered once the target accepted its update";
+  EXPECT_EQ(state_event_sub_->lastState(), 1u);
+  EXPECT_DOUBLE_EQ(refusing_target_node_->getSpeed(), 0.5);
+}
+
+TEST_F(TestZpf, PartlyAppliedStateIsRestoredWhenLeft)
+{
+  // State 1 lands on zpf_target_node but is refused by zpf_refusing_target,
+  // so it is not entered. Leaving it for state 2, which only sets the
+  // refusing target, still restores what state 1 set on zpf_target_node.
+  refusing_target_node_ = std::make_shared<RefusingTargetNode>();
+  target_executor_.add_node(refusing_target_node_);
+
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("parameter_update_timeout"), 0.2),
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone", "crawl_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(
+      fp("slow_zone.setpoints"),
+      std::vector<std::string>{"host_speed", "refusing_speed"}),
+    rclcpp::Parameter(fp("crawl_zone.id"), 2),
+    rclcpp::Parameter(fp("crawl_zone.setpoints"), std::vector<std::string>{"refusing_speed"}),
+    rclcpp::Parameter(
+      fp("nominal_defaults"),
+      std::vector<std::string>{"host_speed", "refusing_speed"}),
+  };
+  addEntry(cfg, "slow_zone.host_speed", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(0.3));
+  addEntry(cfg, "slow_zone.refusing_speed", "zpf_refusing_target", "speed",
+    rclcpp::ParameterValue(0.5));
+  addEntry(cfg, "crawl_zone.refusing_speed", "zpf_refusing_target", "speed",
+    rclcpp::ParameterValue(0.2));
+  addEntry(cfg, "nominal_defaults.host_speed", "zpf_target_node", "speed",
+    rclcpp::ParameterValue(1.0));
+  addEntry(cfg, "nominal_defaults.refusing_speed", "zpf_refusing_target", "speed",
+    rclcpp::ParameterValue(1.0));
 
   ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
-  EXPECT_EQ(processError(), "");
-  spinFor(300ms);
-  EXPECT_NE(
-    processError().find("parameter service of 'nonexistent_node' was not available"),
-    std::string::npos);
-  EXPECT_EQ(processError(), "") << "expired update must be consumed by the throw";
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        EXPECT_NO_THROW(runProcess());
+        return target_node_->getSpeed() == 0.3 && refusing_target_node_->attempts >= 1;
+      })) << "state 1 was not partly applied";
+
+  refusing_target_node_->refuse = false;
+  rePublishMask(2);
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        EXPECT_NO_THROW(runProcess());
+        return refusing_target_node_->getSpeed() == 0.2 && target_node_->getSpeed() == 1.0;
+      })) << "leaving state 1 did not restore what it set on zpf_target_node";
 }
 
-TEST_F(TestZpf, UnansweredSetThrowsAfterTimeout)
+TEST_F(TestZpf, TargetStartingAfterTheTimeoutReceivesItsUpdate)
+{
+  // The target node appears after parameter_update_timeout: the expired
+  // update is reported without throwing, and the retry reaches the node.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("parameter_update_timeout"), 0.2),
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_second_target", "speed",
+    rclcpp::ParameterValue(0.25));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  EXPECT_NO_THROW(runProcess());
+  spinFor(300ms);
+  EXPECT_NO_THROW(runProcess());
+
+  second_target_node_ = std::make_shared<SecondTargetNode>();
+  target_executor_.add_node(second_target_node_);
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        EXPECT_NO_THROW(runProcess());
+        return second_target_node_->getSpeed() == 0.25;
+      })) << "the update that expired never reached the target once it started";
+}
+
+TEST_F(TestZpf, UnansweredSetIsSentAgain)
 {
   // The target node is up but never answers: once parameter_update_timeout
-  // passes, the set fails like a refused one.
+  // passes, the set is reported without throwing and sent again.
   silent_target_node_ = std::make_shared<SilentTargetNode>();
   target_executor_.add_node(silent_target_node_);
 
@@ -785,11 +901,54 @@ TEST_F(TestZpf, UnansweredSetThrowsAfterTimeout)
 
   ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
-  EXPECT_EQ(processError(), "");
-  spinFor(300ms);
-  EXPECT_NE(
-    processError().find("set_parameters on 'zpf_silent_target' was not answered"),
-    std::string::npos);
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        EXPECT_NO_THROW(runProcess());
+        return silent_target_node_->set_requests >= 2;
+      })) << "the unanswered set was not sent again";
+}
+
+TEST_F(TestZpf, RetryDoesNotUndoANewerState)
+{
+  // State 1's update expired, and state 1 waits to be applied again, when the
+  // robot enters state 2: the target ends on state 2's value.
+  std::vector<rclcpp::Parameter> cfg = {
+    rclcpp::Parameter(fp("parameter_update_timeout"), 0.5),
+    rclcpp::Parameter(fp("states"), std::vector<std::string>{"slow_zone", "crawl_zone"}),
+    rclcpp::Parameter(fp("slow_zone.id"), 1),
+    rclcpp::Parameter(fp("slow_zone.setpoints"), std::vector<std::string>{"speed_override"}),
+    rclcpp::Parameter(fp("crawl_zone.id"), 2),
+    rclcpp::Parameter(fp("crawl_zone.setpoints"), std::vector<std::string>{"speed_override"}),
+  };
+  addEntry(cfg, "slow_zone.speed_override", "zpf_second_target", "speed",
+    rclcpp::ParameterValue(0.25));
+  addEntry(cfg, "crawl_zone.speed_override", "zpf_second_target", "speed",
+    rclcpp::ParameterValue(0.1));
+
+  ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
+
+  runProcess();
+  spinFor(600ms);
+  runProcess();  // state 1's update expires
+  rePublishMask(2);
+  runProcess();  // state 2's update is issued before state 1 is due again
+
+  second_target_node_ = std::make_shared<SecondTargetNode>();
+  target_executor_.add_node(second_target_node_);
+  ASSERT_TRUE(
+    waitForCond(
+      [this]() {
+        runProcess();
+        return second_target_node_->getSpeed() == 0.1;
+      })) << "state 2's update never reached the target";
+
+  // Past the time state 1 would have been applied again
+  for (int i = 0; i < 60; ++i) {
+    runProcess();
+    spinFor(20ms);
+  }
+  EXPECT_DOUBLE_EQ(second_target_node_->getSpeed(), 0.1);
 }
 
 TEST_F(TestZpf, TargetStartingLateReceivesItsUpdate)
@@ -807,7 +966,7 @@ TEST_F(TestZpf, TargetStartingLateReceivesItsUpdate)
 
   ASSERT_TRUE(createFilter(cfg, 1)) << "Filter did not become active";
 
-  EXPECT_EQ(processError(), "");
+  EXPECT_NO_THROW(runProcess());
   second_target_node_ = std::make_shared<SecondTargetNode>();
   target_executor_.add_node(second_target_node_);
   ASSERT_TRUE(
