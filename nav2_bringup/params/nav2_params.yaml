@@ -277,7 +277,13 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      plugins: [static_layer, obstacle_layer, inflation_layer, route_corridor]
+      route_corridor:
+        plugin: nav2_costmap_2d::RouteCorridorLayer
+        enabled: true
+        graph_filepath: "$(find-pkg-share nav2_bringup)/graphs/turtlebot3_graph.geojson"  
+        max_deviation: 0.1
+        recovery_cost: 200
       filters: ["keepout_filter", "speed_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"

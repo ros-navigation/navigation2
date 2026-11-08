@@ -28,6 +28,7 @@
   <depend>nav2_util</depend>
   <depend>nav2_voxel_grid</depend>
   <depend>nav_msgs</depend>
+  <depend>nlohmann-json-dev</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>

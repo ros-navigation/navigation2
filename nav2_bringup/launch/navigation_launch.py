@@ -56,7 +56,11 @@ def generate_launch_description() -> LaunchDescription:
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     # Create our own temporary YAML files that include substitutions
-    param_substitutions = {'autostart': autostart}
+    param_substitutions = {
+        'autostart': autostart,
+        'global_costmap.global_costmap.ros__parameters.route_corridor.graph_filepath':
+            graph_filepath,
+    }
 
     configured_params = ParameterFile(
         RewrittenYaml(
