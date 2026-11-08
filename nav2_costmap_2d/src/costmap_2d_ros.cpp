@@ -922,6 +922,8 @@ Costmap2DROS::updateParametersCallback(const std::vector<rclcpp::Parameter> & pa
         footprint_ = parameter.as_string();
         std::vector<geometry_msgs::msg::Point> new_footprint;
         if (makeFootprintFromString(footprint_, new_footprint)) {
+          // A valid footprint replaces the robot radius, as it does on configure
+          use_radius_ = false;
           setRobotFootprint(new_footprint);
         }
       } else if (param_name == "robot_base_frame") {
