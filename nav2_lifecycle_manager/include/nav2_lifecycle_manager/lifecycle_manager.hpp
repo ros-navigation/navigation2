@@ -16,8 +16,10 @@
 #ifndef NAV2_LIFECYCLE_MANAGER__LIFECYCLE_MANAGER_HPP_
 #define NAV2_LIFECYCLE_MANAGER__LIFECYCLE_MANAGER_HPP_
 
+#include <atomic>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -81,6 +83,12 @@ protected:
   // Callback group used by services and timers
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   std::unique_ptr<nav2::NodeThread> service_thread_;
+
+  // Guards state shared by initialization and the rcl preshutdown callback, which run
+  // on different threads. Must not be held while waiting on a managed node's services,
+  // they only stop waiting once rcl shutdown continues after the preshutdown callback.
+  std::mutex preshutdown_mutex_;
+  std::atomic<bool> preshutdown_started_{false};
 
   // The services provided by this node
   nav2::ServiceServer<ManageLifecycleNodes>::SharedPtr manager_srv_;

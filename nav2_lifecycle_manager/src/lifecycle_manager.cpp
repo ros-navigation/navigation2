@@ -89,6 +89,9 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
       init_timer_->cancel();
       createLifecyclePublishers();
       createLifecycleServiceClients();
+      if (preshutdown_started_) {
+        return;
+      }
       createLifecycleServiceServers();
       if (autostart_) {
         init_timer_ = nav2::create_timer(
@@ -102,7 +105,10 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
       }
       auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
       executor->add_callback_group(callback_group_, get_node_base_interface());
-      service_thread_ = std::make_unique<nav2::NodeThread>(executor);
+      std::scoped_lock lock(preshutdown_mutex_);
+      if (!preshutdown_started_) {
+        service_thread_ = std::make_unique<nav2::NodeThread>(executor);
+      }
     });
   diagnostics_updater_.setHardwareID("Nav2");
   diagnostics_updater_.add("Nav2 Health", this, &LifecycleManager::CreateDiagnostic);
@@ -217,9 +223,20 @@ void
 LifecycleManager::createLifecycleServiceClients()
 {
   message("Creating and initializing lifecycle service clients");
-  for (auto & node_name : node_names_) {
-    node_map_[node_name] =
-      std::make_shared<LifecycleServiceClient>(node_name, shared_from_this());
+  std::vector<std::string> node_names;
+  {
+    std::scoped_lock lock(preshutdown_mutex_);
+    node_names = node_names_;
+  }
+
+  for (const auto & node_name : node_names) {
+    // Blocks until the managed node's services are available, so cannot hold the lock
+    auto client = std::make_shared<LifecycleServiceClient>(node_name, shared_from_this());
+    std::scoped_lock lock(preshutdown_mutex_);
+    if (preshutdown_started_) {
+      return;
+    }
+    node_map_[node_name] = client;
   }
 }
 
@@ -522,6 +539,8 @@ LifecycleManager::onRclPreshutdown()
     get_logger(), "Running Nav2 LifecycleManager rcl preshutdown (%s)",
     this->get_name());
 
+  std::scoped_lock lock(preshutdown_mutex_);
+  preshutdown_started_ = true;
   destroyBondTimer();
 
   /*

@@ -17,6 +17,14 @@ nav2_add_test(test_lifecycle
     TEST_EXECUTABLE=$<TARGET_FILE:test_lifecycle_gtest>
 )
 
+ament_add_gtest(test_preshutdown_during_init
+  test_preshutdown_during_init.cpp
+)
+target_link_libraries(test_preshutdown_during_init
+  ${library_name}
+  rclcpp::rclcpp
+)
+
 ament_add_gtest_executable(test_bond_gtest
   test_bond.cpp
 )
