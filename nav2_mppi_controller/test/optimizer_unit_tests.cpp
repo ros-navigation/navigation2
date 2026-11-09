@@ -645,6 +645,98 @@ TEST(OptimizerTests, SpeedLimitTests)
   EXPECT_NEAR(v_min5, -0.5249, 1e-2);
 }
 
+TEST(OptimizerTests, SpeedLimitReverseOnlyTests)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter("mppic.vx_max", rclcpp::ParameterValue(0.0));
+  node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-0.30));
+  node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(1.9));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  const auto base = optimizer_tester.getBaseConstraints();
+  EXPECT_EQ(base.vx_max, 0.0f);
+  EXPECT_EQ(base.vx_min, -0.30f);
+
+  // Absolute limit on a reverse-only base is relative to |vx_min|
+  optimizer_tester.setSpeedLimit(0.2, false);
+  const auto & c = optimizer_tester.getControlConstraints();
+  const double ratio = 0.2 / 0.30;
+  EXPECT_TRUE(std::isfinite(c.vx_max));
+  EXPECT_TRUE(std::isfinite(c.vx_min));
+  EXPECT_TRUE(std::isfinite(c.vy));
+  EXPECT_TRUE(std::isfinite(c.wz));
+  EXPECT_EQ(c.vx_max, 0.0f);
+  EXPECT_NEAR(c.vx_min, -0.2, 1e-4);
+  EXPECT_NEAR(c.vy, base.vy * ratio, 1e-4);
+  EXPECT_NEAR(c.wz, 1.9 * ratio, 1e-4);
+  EXPECT_TRUE(optimizer_tester.isSpeedLimitActiveWrapper());
+
+  // Clearing the limit restores the base constraints
+  optimizer_tester.setSpeedLimit(nav2_costmap_2d::NO_SPEED_LIMIT, false);
+  EXPECT_EQ(c.vx_max, 0.0f);
+  EXPECT_EQ(c.vx_min, -0.30f);
+  EXPECT_EQ(c.wz, 1.9f);
+  EXPECT_FALSE(optimizer_tester.isSpeedLimitActiveWrapper());
+}
+
+TEST(OptimizerTests, SpeedLimitZeroLinearVelocityTests)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter("mppic.vx_max", rclcpp::ParameterValue(0.0));
+  node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(0.0));
+  node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(1.9));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  const auto base = optimizer_tester.getBaseConstraints();
+  const auto & c = optimizer_tester.getControlConstraints();
+
+  // An absolute limit cannot be applied when vx_max and vx_min are both zero:
+  // the update is rejected and the constraints are left untouched
+  optimizer_tester.setSpeedLimit(0.2, false);
+  EXPECT_EQ(c.vx_max, 0.0f);
+  EXPECT_EQ(c.vx_min, 0.0f);
+  EXPECT_EQ(c.vy, base.vy);
+  EXPECT_EQ(c.wz, base.wz);
+  EXPECT_FALSE(optimizer_tester.isSpeedLimitActiveWrapper());
+
+  // A rejected update keeps the previously applied limit instead of resetting it
+  optimizer_tester.setSpeedLimit(50.0, true);
+  EXPECT_NEAR(c.wz, base.wz * 0.5, 1e-4);
+  optimizer_tester.setSpeedLimit(0.2, false);
+  EXPECT_EQ(c.vx_max, 0.0f);
+  EXPECT_EQ(c.vx_min, 0.0f);
+  EXPECT_NEAR(c.vy, base.vy * 0.5, 1e-4);
+  EXPECT_NEAR(c.wz, base.wz * 0.5, 1e-4);
+  EXPECT_TRUE(std::isfinite(c.vy));
+  EXPECT_TRUE(std::isfinite(c.wz));
+}
+
 TEST(OptimizerTests, applyControlSequenceConstraintsTests)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");

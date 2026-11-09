@@ -36,6 +36,7 @@ RemoveInCollisionGoals::RemoveInCollisionGoals(
 void RemoveInCollisionGoals::on_tick()
 {
   getInput("use_footprint", use_footprint_);
+  getInput("footprint_fill", footprint_fill_);
   getInput("cost_threshold", cost_threshold_);
   getInput("input_goals", input_goals_);
   getInput("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
@@ -47,6 +48,7 @@ void RemoveInCollisionGoals::on_tick()
   }
   request_ = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
   request_->use_footprint = use_footprint_;
+  request_->footprint_fill = footprint_fill_;
 
   for (const auto & goal : input_goals_.goals) {
     request_->poses.push_back(goal);

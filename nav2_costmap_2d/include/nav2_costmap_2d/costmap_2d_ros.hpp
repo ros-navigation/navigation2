@@ -389,7 +389,7 @@ protected:
   std::atomic<bool> stopped_{true};
   std::mutex _dynamic_parameter_mutex;
   std::unique_ptr<std::thread> map_update_thread_;  ///< @brief A thread for updating the map
-  rclcpp::Time last_publish_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time next_publish_time_{0, 0, RCL_ROS_TIME};  ///< @brief Scheduled time of next publish
   rclcpp::Duration publish_cycle_{1, 0};
   pluginlib::ClassLoader<Layer> plugin_loader_{"nav2_costmap_2d", "nav2_costmap_2d::Layer"};
 

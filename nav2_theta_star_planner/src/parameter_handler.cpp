@@ -59,6 +59,12 @@ ParameterHandler::ParameterHandler(
   params_.w_heuristic_cost = params_.w_euc_cost < 1.0 ? params_.w_euc_cost : 1.0;
   params_.terminal_checking_interval = node->declare_or_get_parameter(
     plugin_name_ + ".terminal_checking_interval", 5000);
+  if (params_.terminal_checking_interval <= 0) {
+    params_.terminal_checking_interval = 5000;
+    RCLCPP_WARN(
+      logger_,
+      "Your value for - .terminal_checking_interval  was overridden, and is now set to 5000");
+  }
   params_.use_final_approach_orientation = node->declare_or_get_parameter(
     plugin_name_ + ".use_final_approach_orientation", false);
 }
@@ -89,6 +95,15 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
         RCLCPP_WARN(
         logger_, "The value of parameter '%s' is incorrectly set to %ld, "
         "it should be either 4 or 8. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_int());
+        result.successful = false;
+      }
+      if (param_name == plugin_name_ + ".terminal_checking_interval" &&
+        parameter.as_int() <= 0)
+      {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %ld, "
+        "it should be >0. Ignoring parameter update.",
         param_name.c_str(), parameter.as_int());
         result.successful = false;
       }

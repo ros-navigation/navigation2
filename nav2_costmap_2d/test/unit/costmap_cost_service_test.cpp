@@ -45,6 +45,66 @@ TEST_F(GetCostServiceTest, TestWithoutFootprint)
 {
   auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
   geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = costmap_->getGlobalFrameID();
+  pose.pose.position.x = 0.5;
+  pose.pose.position.y = 1.0;
+  request->poses.push_back(pose);
+  request->use_footprint = false;
+
+  unsigned int mx, my;
+  ASSERT_TRUE(costmap_->getCostmap()->worldToMap(0.5, 1.0, mx, my));
+  costmap_->getCostmap()->setCost(mx, my, 100);
+
+  auto result_future = client_->async_call(request);
+  if (rclcpp::spin_until_future_complete(
+      costmap_,
+      result_future) == rclcpp::FutureReturnCode::SUCCESS)
+  {
+    auto response = result_future.get();
+    EXPECT_TRUE(response->success);
+    ASSERT_EQ(response->costs.size(), 1u);
+    EXPECT_FLOAT_EQ(response->costs[0], 100.0f);
+  } else {
+    FAIL() << "Failed to call service";
+  }
+}
+
+TEST_F(GetCostServiceTest, TestWithFootprint)
+{
+  auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = costmap_->getGlobalFrameID();
+  pose.pose.position.x = 0.5;
+  pose.pose.position.y = 1.0;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, 0.5);
+  pose.pose.orientation = tf2::toMsg(q);
+  request->poses.push_back(pose);
+  // Footprint partly off the map
+  pose.pose.position.x = 0.0;
+  request->poses.push_back(pose);
+  request->use_footprint = true;
+
+  auto result_future = client_->async_call(request);
+  if (rclcpp::spin_until_future_complete(
+      costmap_,
+      result_future) == rclcpp::FutureReturnCode::SUCCESS)
+  {
+    auto response = result_future.get();
+    EXPECT_TRUE(response->success);
+    ASSERT_EQ(response->costs.size(), 2u);
+    EXPECT_FLOAT_EQ(response->costs[0], static_cast<float>(nav2_costmap_2d::FREE_SPACE));
+    EXPECT_FLOAT_EQ(response->costs[1], static_cast<float>(nav2_costmap_2d::LETHAL_OBSTACLE));
+  } else {
+    FAIL() << "Failed to call service";
+  }
+}
+
+TEST_F(GetCostServiceTest, TestUnknownFrame)
+{
+  auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "unknown_frame";
   pose.pose.position.x = 0.5;
   pose.pose.position.y = 1.0;
   request->poses.push_back(pose);
@@ -56,36 +116,56 @@ TEST_F(GetCostServiceTest, TestWithoutFootprint)
       result_future) == rclcpp::FutureReturnCode::SUCCESS)
   {
     auto response = result_future.get();
-    EXPECT_GE(response->costs[0], 0.0) << "Cost is less than 0";
-    EXPECT_LE(response->costs[0], 255.0) << "Cost is greater than 255";
+    EXPECT_FALSE(response->success);
+    ASSERT_EQ(response->costs.size(), 1u);
+    EXPECT_FLOAT_EQ(response->costs[0], static_cast<float>(nav2_costmap_2d::NO_INFORMATION));
   } else {
     FAIL() << "Failed to call service";
   }
 }
 
-TEST_F(GetCostServiceTest, TestWithFootprint)
+TEST_F(GetCostServiceTest, TestFootprintFillCatchesInteriorObstacle)
 {
-  auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
-  geometry_msgs::msg::PoseStamped pose;
-  pose.pose.position.x = 0.5;
-  pose.pose.position.y = 1.0;
-  tf2::Quaternion q;
-  q.setRPY(0, 0, 0.5);
-  pose.pose.orientation = tf2::toMsg(q);
-  request->poses.push_back(pose);
-  request->use_footprint = true;
+  // Square footprint
+  std::vector<geometry_msgs::msg::Point> footprint(4);
+  footprint[0].x = -0.5;
+  footprint[0].y = -0.5;
+  footprint[1].x = 0.5;
+  footprint[1].y = -0.5;
+  footprint[2].x = 0.5;
+  footprint[2].y = 0.5;
+  footprint[3].x = -0.5;
+  footprint[3].y = 0.5;
+  costmap_->setRobotFootprint(footprint);
 
-  auto result_future = client_->async_call(request);
-  if (rclcpp::spin_until_future_complete(
-      costmap_,
-      result_future) == rclcpp::FutureReturnCode::SUCCESS)
-  {
-    auto response = result_future.get();
-    EXPECT_GE(response->costs[0], 0.0) << "Cost is less than 0";
-    EXPECT_LE(response->costs[0], 255.0) << "Cost is greater than 255";
-  } else {
-    FAIL() << "Failed to call service";
-  }
+  unsigned int mx, my;
+  ASSERT_TRUE(costmap_->getCostmap()->worldToMap(2.5, 2.5, mx, my));
+  costmap_->getCostmap()->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = costmap_->getGlobalFrameID();
+  pose.pose.position.x = 2.5;
+  pose.pose.position.y = 2.5;
+  pose.pose.orientation.w = 1.0;
+
+  const auto get_cost = [this, &pose](const bool footprint_fill) {
+      auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
+      request->poses.push_back(pose);
+      request->use_footprint = true;
+      request->footprint_fill = footprint_fill;
+
+      auto result_future = client_->async_call(request);
+      EXPECT_EQ(
+        rclcpp::spin_until_future_complete(costmap_, result_future),
+        rclcpp::FutureReturnCode::SUCCESS);
+      auto response = result_future.get();
+      EXPECT_TRUE(response->success);
+      EXPECT_EQ(response->costs.size(), 1u);
+      return response->costs.at(0);
+    };
+
+  EXPECT_FLOAT_EQ(get_cost(false), static_cast<float>(nav2_costmap_2d::FREE_SPACE));
+  EXPECT_FLOAT_EQ(get_cost(true), static_cast<float>(nav2_costmap_2d::LETHAL_OBSTACLE));
 }
 
 int main(int argc, char ** argv)

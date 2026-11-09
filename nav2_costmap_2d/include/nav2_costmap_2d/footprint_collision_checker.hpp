@@ -45,8 +45,13 @@ public:
   FootprintCollisionChecker();
   /**
    * @brief A constructor.
+   * @param costmap Costmap to check against
+   * @param unknown_is_valid If true, NO_INFORMATION cells are ignored instead of being
+   * reported as the footprint cost. NO_INFORMATION (255) is numerically above LETHAL_OBSTACLE
+   * (254), so otherwise it shadows lethal cells along the footprint. Defaults to false, which
+   * keeps the cost of unknown space visible to the caller.
    */
-  explicit FootprintCollisionChecker(CostmapT costmap);
+  explicit FootprintCollisionChecker(CostmapT costmap, bool unknown_is_valid = false);
   /**
    * @brief Find the footprint cost in oriented footprint
    */
@@ -55,6 +60,22 @@ public:
    * @brief Find the footprint cost a a post with an unoriented footprint
    */
   double footprintCostAtPose(double x, double y, double theta, const Footprint & footprint);
+  /**
+   * @brief Find the max cost over every cell inside an oriented footprint.
+   * A concave one may be over-approximated.
+   * @param footprint Footprint in world coordinates;
+   * @return Max cost inside the footprint, LETHAL_OBSTACLE if any vertex is off the map
+   */
+  double footprintFillCost(const Footprint & footprint);
+  /**
+   * @brief Find the max cost over every cell inside a footprint placed at a pose
+   * @param x Pose x in world coordinates
+   * @param y Pose y in world coordinates
+   * @param theta Pose yaw
+   * @param footprint Unoriented footprint
+   * @return Max cost inside the footprint, LETHAL_OBSTACLE if any vertex is off the map
+   */
+  double footprintFillCostAtPose(double x, double y, double theta, const Footprint & footprint);
   /**
    * @brief Get the cost for a line segment
    */
@@ -81,6 +102,7 @@ public:
 
 protected:
   CostmapT costmap_;
+  bool unknown_is_valid_{false};  // Ignore unknown cells for collision checking
 };
 
 }  // namespace nav2_costmap_2d
