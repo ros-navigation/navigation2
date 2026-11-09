@@ -30,7 +30,9 @@ class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTes
 public:
   void SetUp()
   {
-    node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue{0.1});
+    if (!node_->has_parameter("transform_tolerance")) {
+      node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue{0.1});
+    }
     config_->input_ports["distance"] = 1.0;
     config_->input_ports["global_frame"] = "map";
     config_->input_ports["robot_base_frame"] = "base_link";
@@ -95,6 +97,48 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
       EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
     }
   }
+}
+
+// The distance port may be remapped to a blackboard entry that is only set
+// after the tree is created, so it must be read when the node is (re)started
+TEST_F(DistanceControllerTestFixture, test_distance_from_blackboard)
+{
+  config_->input_ports["distance"] = "{controller_distance}";
+  auto bt_node = std::make_shared<nav2_behavior_tree::DistanceController>(
+    "distance_controller_blackboard", *config_);
+  auto dummy_node = std::make_shared<nav2_behavior_tree::DummyNode>();
+  bt_node->setChild(dummy_node.get());
+
+  config_->blackboard->set("controller_distance", 3.0);
+
+  geometry_msgs::msg::PoseStamped pose;
+  ASSERT_TRUE(nav2_util::getCurrentPose(pose, *transform_handler_->getBuffer()));
+  const double start_x = pose.pose.position.x;
+
+  auto move_robot_to = [&](double x) {
+      pose.pose.position.x = x;
+      transform_handler_->updateRobotPose(pose.pose);
+      // Wait for the transform to actually update
+      geometry_msgs::msg::PoseStamped current;
+      while (!nav2_util::getCurrentPose(current, *transform_handler_->getBuffer()) ||
+        std::abs(current.pose.position.x - x) > 1e-3)
+      {
+      }
+    };
+
+  // First tick always ticks the child and sets the starting pose
+  dummy_node->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // 2m traveled is less than the 3m set on the blackboard
+  move_robot_to(start_x + 2.0);
+  dummy_node->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node->executeTick(), BT::NodeStatus::RUNNING);
+
+  // 3.5m traveled exceeds it
+  move_robot_to(start_x + 3.5);
+  dummy_node->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)

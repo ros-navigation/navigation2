@@ -37,7 +37,6 @@ DistanceController::DistanceController(
   distance_(1.0),
   first_time_(false)
 {
-  getInput("distance", distance_);
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
@@ -48,9 +47,16 @@ DistanceController::DistanceController(
     node_, "robot_base_frame", this);
 }
 
+void DistanceController::initialize()
+{
+  getInput("distance", distance_);
+}
+
 inline BT::NodeStatus DistanceController::tick()
 {
   if (!BT::isStatusActive(status())) {
+    initialize();
+
     // Reset the starting position since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
     if (!nav2_util::getCurrentPose(
