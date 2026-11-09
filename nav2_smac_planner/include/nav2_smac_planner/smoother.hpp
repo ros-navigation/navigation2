@@ -146,12 +146,14 @@ protected:
    * @param path Path to modify for curvature constraints on start / end of path
    * @param costmap Costmap to check for collisions
    * @param reversing_segment Whether this path segment is in reverse
+   * @param footprint Robot footprint, if empty only the origin cell is checked
    */
   void enforceStartBoundaryConditions(
     const geometry_msgs::msg::Pose & start_pose,
     nav_msgs::msg::Path & path,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const bool & reversing_segment);
+    const bool & reversing_segment,
+    const std::vector<geometry_msgs::msg::Point> & footprint);
 
   /**
    * @brief Enforced minimum curvature boundary conditions on plan output
@@ -160,12 +162,14 @@ protected:
    * @param path Path to modify for curvature constraints on start / end of path
    * @param costmap Costmap to check for collisions
    * @param reversing_segment Whether this path segment is in reverse
+   * @param footprint Robot footprint, if empty only the origin cell is checked
    */
   void enforceEndBoundaryConditions(
     const geometry_msgs::msg::Pose & end_pose,
     nav_msgs::msg::Path & path,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const bool & reversing_segment);
+    const bool & reversing_segment,
+    const std::vector<geometry_msgs::msg::Point> & footprint);
 
   /**
    * @brief Given a set of boundary expansion, find the one which is shortest
@@ -183,13 +187,14 @@ protected:
    * @param end End pose of the feasible path to maintain
    * @param expansion Expansion object to populate
    * @param costmap Costmap to check for collisions
-   * @param reversing_segment Whether this path segment is in reverse
+   * @param footprint Robot footprint, if empty only the origin cell is checked
    */
   void findBoundaryExpansion(
     const geometry_msgs::msg::Pose & start,
     const geometry_msgs::msg::Pose & end,
     BoundaryExpansion & expansion,
-    const nav2_costmap_2d::Costmap2D * costmap);
+    const nav2_costmap_2d::Costmap2D * costmap,
+    const std::vector<geometry_msgs::msg::Point> & footprint);
 
   /**
    * @brief Generates boundary expansions with end idx at least strategic

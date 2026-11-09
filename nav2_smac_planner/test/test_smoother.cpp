@@ -40,6 +40,8 @@ public:
   explicit SmootherWrapper(const SmootherParams & params)
   : nav2_smac_planner::Smoother(params)
   {}
+
+  using nav2_smac_planner::Smoother::findBoundaryExpansion;
 };
 
 TEST(SmootherTest, test_full_smoother)
@@ -265,6 +267,59 @@ TEST(SmootherTest, rejects_non_circular_footprint_collision)
   // A smoother must reject and roll back an update that creates a collision.
   EXPECT_FALSE(success);
   EXPECT_FALSE(footprint_collision);
+}
+
+TEST(SmootherTest, boundary_expansion_checks_footprint)
+{
+  nav2_smac_planner::SmootherParams params;
+  params.tolerance_ = 2.0;
+  params.max_its_ = 1000;
+  params.w_data_ = 0.2;
+  params.w_smooth_ = 0.3;
+  params.do_refinement_ = false;
+  params.refinement_num_ = 0;
+  params.holonomic_ = false;
+
+  SmootherWrapper smoother(params);
+  smoother.initialize(0.4 /*turning radius*/);
+
+  // Reference point on the rear axle, so the body extends well ahead of it
+  std::vector<geometry_msgs::msg::Point> footprint(4);
+  footprint[0].x = 0.65;
+  footprint[0].y = 0.275;
+  footprint[1].x = -0.15;
+  footprint[1].y = 0.275;
+  footprint[2].x = -0.15;
+  footprint[2].y = -0.275;
+  footprint[3].x = 0.65;
+  footprint[3].y = -0.275;
+
+  geometry_msgs::msg::Pose start, end;
+  start.position.x = 1.0;
+  start.position.y = 2.5;
+  start.orientation.w = 1.0;
+  end.position.x = 2.2;
+  end.position.y = 2.9;
+  end.orientation.w = 1.0;
+
+  auto expand = [&](
+    const nav2_costmap_2d::Costmap2D & costmap,
+    const std::vector<geometry_msgs::msg::Point> & robot) {
+      nav2_smac_planner::BoundaryExpansion expansion;
+      expansion.path_end_idx = 40;
+      expansion.original_path_length = 10.0;
+      smoother.findBoundaryExpansion(start, end, expansion, &costmap, robot);
+      return expansion.in_collision;
+    };
+
+  // This cell is passed by the front corner, but is far from the reference point
+  nav2_costmap_2d::Costmap2D costmap(100, 100, 0.05, 0.0, 0.0, 0);
+  costmap.setCost(49, 66, nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_FALSE(expand(costmap, {}));
+  EXPECT_TRUE(expand(costmap, footprint));
+
+  nav2_costmap_2d::Costmap2D empty_costmap(100, 100, 0.05, 0.0, 0.0, 0);
+  EXPECT_FALSE(expand(empty_costmap, footprint));
 }
 
 int main(int argc, char ** argv)
