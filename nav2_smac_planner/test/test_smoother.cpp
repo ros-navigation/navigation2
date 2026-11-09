@@ -42,6 +42,8 @@ public:
   {}
 
   using nav2_smac_planner::Smoother::findBoundaryExpansion;
+  using nav2_smac_planner::Smoother::enforceStartBoundaryConditions;
+  using nav2_smac_planner::Smoother::enforceEndBoundaryConditions;
 };
 
 TEST(SmootherTest, test_full_smoother)
@@ -320,6 +322,85 @@ TEST(SmootherTest, boundary_expansion_checks_footprint)
 
   nav2_costmap_2d::Costmap2D empty_costmap(100, 100, 0.05, 0.0, 0.0, 0);
   EXPECT_FALSE(expand(empty_costmap, footprint));
+}
+
+TEST(SmootherTest, reversing_boundary_conditions_check_footprint)
+{
+  nav2_smac_planner::SmootherParams params;
+  params.tolerance_ = 2.0;
+  params.max_its_ = 1000;
+  params.w_data_ = 0.2;
+  params.w_smooth_ = 0.3;
+  params.do_refinement_ = false;
+  params.refinement_num_ = 0;
+  params.holonomic_ = false;
+
+  SmootherWrapper smoother(params);
+  smoother.initialize(0.4 /*turning radius*/);
+
+  // Reference point on the rear axle, so the body extends well ahead of it
+  std::vector<geometry_msgs::msg::Point> footprint(4);
+  footprint[0].x = 0.65;
+  footprint[0].y = 0.275;
+  footprint[1].x = -0.15;
+  footprint[1].y = 0.275;
+  footprint[2].x = -0.15;
+  footprint[2].y = -0.275;
+  footprint[3].x = 0.65;
+  footprint[3].y = -0.275;
+
+  // Facing +x while driving towards -x, offset from both boundary poses
+  nav_msgs::msg::Path reversing_path;
+  for (unsigned int i = 0; i <= 40; ++i) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = 3.0 - 0.05 * i;
+    pose.pose.position.y = 2.5;
+    pose.pose.orientation.w = 1.0;
+    reversing_path.poses.push_back(pose);
+  }
+
+  geometry_msgs::msg::Pose start_pose, end_pose;
+  start_pose.position.x = 3.0;
+  start_pose.position.y = 2.7;
+  start_pose.orientation.w = 1.0;
+  end_pose.position.x = 1.0;
+  end_pose.position.y = 2.7;
+  end_pose.orientation.w = 1.0;
+
+  auto start_y = [&](
+    const nav2_costmap_2d::Costmap2D & costmap,
+    const std::vector<geometry_msgs::msg::Point> & robot) {
+      nav_msgs::msg::Path path = reversing_path;
+      smoother.enforceStartBoundaryConditions(start_pose, path, &costmap, true, robot);
+      return path.poses.front().pose.position.y;
+    };
+  auto end_y = [&](
+    const nav2_costmap_2d::Costmap2D & costmap,
+    const std::vector<geometry_msgs::msg::Point> & robot) {
+      nav_msgs::msg::Path path = reversing_path;
+      smoother.enforceEndBoundaryConditions(end_pose, path, &costmap, true, robot);
+      return path.poses.back().pose.position.y;
+    };
+
+  // Every candidate curve includes the boundary pose, where these cells are
+  // under the front edge of the robot but far from its reference point
+  nav2_costmap_2d::Costmap2D start_blocked(100, 100, 0.05, 0.0, 0.0, 0);
+  nav2_costmap_2d::Costmap2D end_blocked(100, 100, 0.05, 0.0, 0.0, 0);
+  for (unsigned int offset = 0; offset != 3; ++offset) {
+    start_blocked.setCost(72 + offset, 54, nav2_costmap_2d::LETHAL_OBSTACLE);
+    end_blocked.setCost(32 + offset, 54, nav2_costmap_2d::LETHAL_OBSTACLE);
+  }
+  nav2_costmap_2d::Costmap2D empty_costmap(100, 100, 0.05, 0.0, 0.0, 0);
+
+  // A curve is applied, moving the boundary of the path onto the boundary pose,
+  // unless the footprint rejects every candidate and the path is left as it was
+  EXPECT_NEAR(start_y(start_blocked, {}), 2.7, 1e-3);
+  EXPECT_NEAR(start_y(start_blocked, footprint), 2.5, 1e-3);
+  EXPECT_NEAR(start_y(empty_costmap, footprint), 2.7, 1e-3);
+
+  EXPECT_NEAR(end_y(end_blocked, {}), 2.7, 1e-3);
+  EXPECT_NEAR(end_y(end_blocked, footprint), 2.5, 1e-3);
+  EXPECT_NEAR(end_y(empty_costmap, footprint), 2.7, 1e-3);
 }
 
 int main(int argc, char ** argv)
