@@ -52,6 +52,11 @@ public:
     costmap_ros_->declare_parameter("resolution", resolution);
   }
 
+  nav2_costmap_2d::Costmap2D * getCostmap()
+  {
+    return costmap_;
+  }
+
   void printCostmap()
   {
     // print costmap for debug
