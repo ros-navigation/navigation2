@@ -43,6 +43,12 @@ macro(nav2_package)
     if(NAV2_WARNINGS_AS_ERRORS)
       list(APPEND NAV2_COMPILE_OPTIONS -Werror)
     endif()
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
+        CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15 AND
+        CMAKE_CXX_COMPILER_VERSION VERSION_LESS 16)
+      # GCC 15 false positive: warns in BehaviorTree.CPP's ThreadSafeSignal subscriber vector copy.
+      list(APPEND NAV2_COMPILE_OPTIONS -Wno-error=null-dereference)
+    endif()
     add_compile_options(${NAV2_COMPILE_OPTIONS})
     add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>")
   endif()
