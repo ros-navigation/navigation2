@@ -86,8 +86,6 @@ void prepareAndRunBenchmark(
   auto node = getDummyNode(options);
 
   auto tf_manager = nav2::create_transform_manager(node);
-  // One-thread broadcasting-listening model
-  tf_manager->getRawBuffer().setUsingDedicatedThread(true);
 
   auto map_odom_broadcaster = std::async(
     std::launch::async, sendTf, "map", "odom", tf_manager, node,

@@ -213,7 +213,6 @@ public:
     EXPECT_EQ(rcl_enable_ros_time_override(tf_clock_->get_clock_handle()), RCL_RET_OK);
     setTime(node_->now());
     tf_manager_ = std::make_shared<nav2::TransformManager>(node_, true, false);
-    tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_node(node_->get_node_base_interface());
   }

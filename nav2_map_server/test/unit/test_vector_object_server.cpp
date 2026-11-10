@@ -181,8 +181,6 @@ Tester::Tester()
 
   // Transform buffer and listener initialization
   tf_manager_ = nav2::create_transform_manager(vo_server_);
-  // One-thread broadcasting-listening model
-  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
   executor_.add_node(vo_server_->get_node_base_interface());
 }
 

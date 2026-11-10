@@ -51,12 +51,6 @@ public:
 
   using FollowingServer::getRobotPose;
 
-  void setUsingDedicatedThread()
-  {
-    // One-thread broadcasting-listening model
-    tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
-  }
-
   void setTransform(const geometry_msgs::msg::TransformStamped & transform)
   {
     tf_manager_->getRawBuffer().setTransform(transform, "test", false);
@@ -270,7 +264,6 @@ TEST(FollowingServerTests, GetPoseAtDistance)
   auto node = std::make_shared<opennav_following::FollowingServerShim>();
   node->declare_parameter("base_frame", rclcpp::ParameterValue("my_frame"));
   node->on_configure(rclcpp_lifecycle::State());
-  node->setUsingDedicatedThread();
 
   geometry_msgs::msg::PoseStamped pose;
   pose.header.stamp = node->now();
@@ -309,7 +302,6 @@ TEST(FollowingServerTests, IsGoalReached)
   auto node = std::make_shared<opennav_following::FollowingServerShim>();
   node->declare_parameter("base_frame", rclcpp::ParameterValue("my_frame"));
   node->on_configure(rclcpp_lifecycle::State());
-  node->setUsingDedicatedThread();
 
   geometry_msgs::msg::PoseStamped pose;
   pose.header.stamp = node->now();

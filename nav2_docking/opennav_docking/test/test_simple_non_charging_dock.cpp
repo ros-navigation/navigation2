@@ -123,7 +123,6 @@ TEST(SimpleNonChargingDockTests, DetectionUsesMeasurementTransform)
   node->declare_parameter("my_dock.external_detection_rotation_roll", 0.0);
   node->declare_parameter("my_dock.transform_staleness_threshold", 0.1);
   auto tf_manager = nav2::create_transform_manager(node);
-  tf_manager->getRawBuffer().setUsingDedicatedThread(true);
   SimpleNonChargingDockTestable dock;
   dock.configure(node, "my_dock", tf_manager);
   dock.activate();
@@ -352,7 +351,6 @@ TEST(SimpleNonChargingDockTests, RefinedPoseNotTransform)
 
   // Create the TF
   auto tf_manager = nav2::create_transform_manager(node);
-  tf_manager->getRawBuffer().setUsingDedicatedThread(true);
 
   dock->configure(node, "my_dock", tf_manager);
   dock->activate();
@@ -391,7 +389,6 @@ TEST(SimpleNonChargingDockTests, IsDockedTransformException)
 
   // Create the TF
   auto tf_manager = nav2::create_transform_manager(node);
-  tf_manager->getRawBuffer().setUsingDedicatedThread(true);
 
   dock->configure(node, "my_dock", tf_manager);
   dock->activate();

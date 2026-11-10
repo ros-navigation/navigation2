@@ -243,8 +243,6 @@ protected:
 
     layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, false);
     tf_manager_ = nav2::create_transform_manager(node_);
-    // One-thread broadcasting-listening model
-    tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 
     filter_ = std::make_shared<nav2_costmap_2d::ZoneParameterFilter>();
     filter_->initialize(layers_.get(), kFilterName, tf_manager_.get(), node_, nullptr);

@@ -207,7 +207,6 @@ TEST(ControllerTests, ObjectLifecycle)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto tf = nav2::create_transform_manager(node);
-  tf->getRawBuffer().setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   // Skip collision detection
   nav2::declare_parameter_if_not_declared(
@@ -287,7 +286,6 @@ TEST(ControllerTests, CollisionCheckerDockForward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto tf = nav2::create_transform_manager(node);
-  tf->getRawBuffer().setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
     node, "controller.footprint_topic", rclcpp::ParameterValue("test_footprint"));
@@ -353,7 +351,6 @@ TEST(ControllerTests, CollisionCheckerDockBackward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto tf = nav2::create_transform_manager(node);
-  tf->getRawBuffer().setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
     node, "controller.footprint_topic", rclcpp::ParameterValue("test_footprint"));
@@ -419,7 +416,6 @@ TEST(ControllerTests, CollisionCheckerUndockBackward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto tf = nav2::create_transform_manager(node);
-  tf->getRawBuffer().setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
     node, "controller.footprint_topic", rclcpp::ParameterValue("test_footprint"));
@@ -493,7 +489,6 @@ TEST(ControllerTests, CollisionCheckerUndockForward) {
   auto collision_tester = std::make_shared<TestCollisionChecker>("collision_test");
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto tf = nav2::create_transform_manager(node);
-  tf->getRawBuffer().setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
 
   nav2::declare_parameter_if_not_declared(
     node, "controller.footprint_topic", rclcpp::ParameterValue("test_footprint"));

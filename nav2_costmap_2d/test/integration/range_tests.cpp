@@ -100,9 +100,8 @@ class TestNode : public ::testing::Test
 public:
   TestNode()
   : node_(std::make_shared<TestLifecycleNode>("range_test_node")),
-    tf_manager_(node_, false)
+    tf_manager_(node_)
   {
-    tf_manager_.getRawBuffer().setUsingDedicatedThread(true);
     // Standard non-plugin specific parameters
     node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
     node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));

@@ -226,8 +226,6 @@ void TestNode::createKeepoutFilter(const std::string & global_frame, bool overri
 {
   node_ = std::make_shared<nav2::LifecycleNode>("test_node");
   tf_manager_ = nav2::create_transform_manager(node_);
-  // One-thread broadcasting-listening model
-  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 
   layered_costmap_ = std::make_unique<nav2_costmap_2d::LayeredCostmap>(
     global_frame, false, false);

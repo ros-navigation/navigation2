@@ -362,8 +362,6 @@ bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_
 {
   node_ = std::make_shared<nav2::LifecycleNode>("test_node");
   tf_manager_ = nav2::create_transform_manager(node_);
-  // One-thread broadcasting-listening model
-  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 
   nav2_costmap_2d::LayeredCostmap layers(global_frame, false, false);
 

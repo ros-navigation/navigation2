@@ -435,8 +435,6 @@ bool TestNode::createSpeedFilter(
 {
   node_ = std::make_shared<nav2::LifecycleNode>("test_node");
   tf_manager_ = nav2::create_transform_manager(node_);
-  // One-thread broadcasting-listening model
-  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 
   nav2_costmap_2d::LayeredCostmap layers(global_frame, false, false);
 
@@ -1090,7 +1088,6 @@ TEST(SpeedFilterTF, LookaheadPathTransformFailure)
   node->declare_parameter(std::string(FILTER_NAME) + ".min_lookahead", 3.0);
   node->declare_parameter(std::string(FILTER_NAME) + ".transform_tolerance", 0.0);
   auto tf_manager = nav2::create_transform_manager(node);
-  tf_manager->getRawBuffer().setUsingDedicatedThread(true);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(4, 1, 1.0, 0.0, 0.0);
   SpeedFilterTFTestable filter;

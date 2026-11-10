@@ -110,7 +110,6 @@ TEST(GraphSaver, test_transformation_api)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
   auto tf = nav2::create_transform_manager(node);
-  tf->getRawBuffer().setUsingDedicatedThread(true);
 
   std::string frame = "map";
 
