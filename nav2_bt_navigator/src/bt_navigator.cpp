@@ -68,7 +68,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
     user_defined_plugins.end());
 
   nav2_core::FeedbackUtils feedback_utils;
-  feedback_utils.tf = tf_manager_;
+  feedback_utils.tf_manager = tf_manager_;
   feedback_utils.global_frame = global_frame_;
   feedback_utils.robot_frame = robot_frame_;
   feedback_utils.transform_tolerance = transform_tolerance_;

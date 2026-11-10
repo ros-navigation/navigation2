@@ -34,8 +34,8 @@ TEST(NavfnTest, testDynamicParameter)
   costmap->on_configure(rclcpp_lifecycle::State());
   auto planner =
     std::make_unique<nav2_navfn_planner::NavfnPlanner>();
-  auto tf = nav2::create_transform_manager(node);
-  planner->configure(node, "test", tf, costmap);
+  auto tf_manager = nav2::create_transform_manager(node);
+  planner->configure(node, "test", tf_manager, costmap);
   planner->activate();
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(

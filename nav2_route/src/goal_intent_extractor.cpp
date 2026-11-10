@@ -29,7 +29,7 @@ void GoalIntentExtractor::configure(
   nav2::LifecycleNode::SharedPtr node,
   Graph & graph,
   GraphToIDMap * id_to_graph_map,
-  nav2::TransformManager::SharedPtr tf,
+  nav2::TransformManager::SharedPtr tf_manager,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
   const std::string & route_frame,
   const std::string & base_frame)
@@ -37,7 +37,7 @@ void GoalIntentExtractor::configure(
   logger_ = node->get_logger();
   id_to_graph_map_ = id_to_graph_map;
   graph_ = &graph;
-  tf_manager_ = tf;
+  tf_manager_ = tf_manager;
   clock_ = node->get_clock();
   costmap_subscriber_ = costmap_subscriber;
   route_frame_ = route_frame;

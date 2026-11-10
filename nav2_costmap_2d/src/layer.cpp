@@ -48,13 +48,13 @@ void
 Layer::initialize(
   LayeredCostmap * parent,
   std::string name,
-  nav2::TransformManager * tf,
+  nav2::TransformManager * tf_manager,
   const nav2::LifecycleNode::WeakPtr & node,
   rclcpp::CallbackGroup::SharedPtr callback_group)
 {
   layered_costmap_ = parent;
   name_ = name;
-  tf_manager_ = tf;
+  tf_manager_ = tf_manager;
   node_ = node;
   callback_group_ = callback_group;
   {

@@ -179,7 +179,7 @@ Tester::Tester()
     "vo_map", std::bind(&Tester::mapCallback, this, std::placeholders::_1),
     nav2::qos::LatchedSubscriptionQoS());
 
-  // Transform buffer and listener initialization
+  // Transform manager initialization
   tf_manager_ = nav2::create_transform_manager(vo_server_);
   executor_.add_node(vo_server_->get_node_base_interface());
 }

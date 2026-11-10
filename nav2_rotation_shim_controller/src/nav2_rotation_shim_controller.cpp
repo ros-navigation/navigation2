@@ -40,14 +40,14 @@ RotationShimController::RotationShimController()
 
 void RotationShimController::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, nav2::TransformManager::SharedPtr tf,
+  std::string name, nav2::TransformManager::SharedPtr tf_manager,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   plugin_name_ = name;
   node_ = parent;
   auto node = parent.lock();
 
-  tf_manager_ = tf;
+  tf_manager_ = tf_manager;
   costmap_ros_ = costmap_ros;
   logger_ = node->get_logger();
   clock_ = node->get_clock();
@@ -70,7 +70,7 @@ void RotationShimController::configure(
     return;
   }
 
-  primary_controller_->configure(parent, name + ".primary_controller", tf, costmap_ros);
+  primary_controller_->configure(parent, name + ".primary_controller", tf_manager, costmap_ros);
 
   // initialize collision checker and set costmap
   collision_checker_ = std::make_unique<nav2_costmap_2d::

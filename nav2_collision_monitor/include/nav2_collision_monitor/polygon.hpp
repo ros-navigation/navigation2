@@ -352,7 +352,7 @@ protected:
   std::vector<std::string> sources_names_;
 
   // Global variables
-  /// @brief TF buffer
+  /// @brief Transform manager
   nav2::TransformManager::SharedPtr tf_manager_;
   /// @brief Base frame ID
   std::string base_frame_id_;

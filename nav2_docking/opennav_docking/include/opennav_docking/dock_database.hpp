@@ -48,11 +48,11 @@ public:
   /**
    * @brief A setup function to populate database
    * @param parent Weakptr to the node to use to get interances and parameters
-   * @param tf TF buffer
+   * @param tf_manager Transform manager
    * @return If successful
    */
   bool initialize(
-    const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformManager::SharedPtr tf);
+    const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformManager::SharedPtr tf_manager);
 
   /**
    * @brief A destructor for opennav_docking::DockDatabase
@@ -99,11 +99,11 @@ protected:
   /**
    * @brief Populate database of dock type plugins
    * @param Node Node to get values from
-   * @param tf TF buffer
+   * @param tf_manager Transform manager
    * @return bool If successful
    */
   bool getDockPlugins(
-    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf);
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf_manager);
 
   /**
    * @brief Populate database of dock instances

@@ -44,7 +44,7 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   if (!enforce_global_frame_id_) {
-    // Transform buffer and listener initialization
+    // Transform manager initialization
     tf_manager_ = nav2::create_transform_manager(this);
   } else {
     RCLCPP_INFO(

@@ -44,11 +44,11 @@ public:
    * @brief Create a controller instance. Configure ROS 2 parameters.
    *
    * @param node Lifecycle node
-   * @param tf tf2_ros TF buffer
+   * @param tf_manager Transform manager
    * @param base_frame Robot base frame
    */
   Controller(
-    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf,
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf_manager,
     std::string base_frame);
 
   /**

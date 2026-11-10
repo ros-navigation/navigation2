@@ -61,11 +61,11 @@ TEST(SmootherTest, test_sg_smoother_basics)
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
-  nav2::TransformManager::SharedPtr dummy_tf;
+  nav2::TransformManager::SharedPtr dummy_tf_manager;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
-  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf_manager, dummy_costmap, dummy_footprint);
   smoother->activate();
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
@@ -120,12 +120,12 @@ TEST(SmootherTest, test_sg_smoother_default_coefficients)
 {
   nav2::LifecycleNode::SharedPtr node =
     std::make_shared<nav2::LifecycleNode>("SmacSGSmootherCoeffTest");
-  nav2::TransformManager::SharedPtr dummy_tf;
+  nav2::TransformManager::SharedPtr dummy_tf_manager;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
 
   auto smoother = std::make_unique<SavitzkyGolaySmootherTester>();
-  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf_manager, dummy_costmap, dummy_footprint);
 
   const std::vector<double> expected_coefficients = {
     -2.0 / 21.0, 3.0 / 21.0, 6.0 / 21.0, 7.0 / 21.0,
@@ -157,11 +157,11 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
-  nav2::TransformManager::SharedPtr dummy_tf;
+  nav2::TransformManager::SharedPtr dummy_tf_manager;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
-  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf_manager, dummy_costmap, dummy_footprint);
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
   // Given nominal irregular/noisey path, test that the output is shorter and smoother
@@ -222,7 +222,7 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
 
   // Test again with refinement, even shorter and smoother
   node->set_parameter(rclcpp::Parameter("test.do_refinement", rclcpp::ParameterValue(true)));
-  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf_manager, dummy_costmap, dummy_footprint);
   nav_msgs::msg::Path noisey_path_refined = noisey_path_baseline;
   EXPECT_TRUE(smoother->smooth(noisey_path_refined, max_time));
 
@@ -257,11 +257,11 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
-  nav2::TransformManager::SharedPtr dummy_tf;
+  nav2::TransformManager::SharedPtr dummy_tf_manager;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
-  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf_manager, dummy_costmap, dummy_footprint);
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
   // Test reversing / multiple segments via a cusp

@@ -27,10 +27,10 @@ namespace opennav_docking
 
 void SimpleNonChargingDock::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  const std::string & name, nav2::TransformManager::SharedPtr tf)
+  const std::string & name, nav2::TransformManager::SharedPtr tf_manager)
 {
   name_ = name;
-  tf_manager_ = tf;
+  tf_manager_ = tf_manager;
   node_ = parent.lock();
   if (!node_) {
     throw std::runtime_error{"Failed to lock node"};

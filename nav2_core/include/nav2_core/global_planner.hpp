@@ -44,12 +44,12 @@ public:
   /**
    * @param  parent pointer to user's node
    * @param  name The name of this planner
-   * @param  tf A pointer to a TF buffer
+   * @param  tf_manager A pointer to a transform manager
    * @param  costmap_ros A pointer to the costmap
    */
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, nav2::TransformManager::SharedPtr tf,
+    std::string name, nav2::TransformManager::SharedPtr tf_manager,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) = 0;
 
   /**

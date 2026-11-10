@@ -22,13 +22,13 @@ namespace nav2_route
 
 GraphLoader::GraphLoader(
   nav2::LifecycleNode::SharedPtr node,
-  nav2::TransformManager::SharedPtr tf,
+  nav2::TransformManager::SharedPtr tf_manager,
   const std::string frame)
 : plugin_loader_("nav2_route", "nav2_route::GraphFileLoader"),
   default_plugin_id_("GeoJsonGraphFileLoader")
 {
   logger_ = node->get_logger();
-  tf_manager_ = tf;
+  tf_manager_ = tf_manager;
   route_frame_ = frame;
 
   graph_filepath_ = node->declare_or_get_parameter(

@@ -216,7 +216,7 @@ TEST(SpinTest, ChecksTheRemainingMotionForCollisions)
   node->declare_parameter("behavior.min_rotational_vel", 0.4);
   node->declare_parameter("behavior.rotational_acc_lim", 3.2);
 
-  auto tf = std::make_shared<nav2::TransformManager>(node, false);
+  auto tf_manager = std::make_shared<nav2::TransformManager>(node, false);
   geometry_msgs::msg::TransformStamped transform;
   transform.header.frame_id = "odom";
   transform.child_frame_id = "base_link";
@@ -224,7 +224,7 @@ TEST(SpinTest, ChecksTheRemainingMotionForCollisions)
   transform.transform.translation.x = 5.0;
   transform.transform.translation.y = 5.0;
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf->getRawBuffer().setTransform(transform, "test"));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test"));
 
   auto costmap = std::make_shared<nav2_msgs::msg::Costmap>();
   costmap->metadata.resolution = 0.05;
@@ -254,7 +254,7 @@ TEST(SpinTest, ChecksTheRemainingMotionForCollisions)
   ASSERT_FALSE(collision_checker->isCollisionFree(pose));
 
   nav2_behaviors::Spin spin;
-  spin.configure(node, "behavior", tf, collision_checker, nullptr);
+  spin.configure(node, "behavior", tf_manager, collision_checker, nullptr);
   spin.activate();
   auto goal = std::make_shared<nav2_msgs::action::Spin::Goal>();
   goal->target_yaw = 1.0;

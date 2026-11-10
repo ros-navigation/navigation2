@@ -221,7 +221,7 @@ protected:
 
   // ----- Variables -----
 
-  /// @brief TF buffer
+  /// @brief Transform manager
   nav2::TransformManager::SharedPtr tf_manager_;
 
   /// @brief Polygons array

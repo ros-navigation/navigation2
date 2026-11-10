@@ -147,12 +147,12 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_inflation_radius)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.inflation_radius", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_infl", "", options);
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
   EXPECT_THROW(
-    layer->initialize(&layers, "asymmetric_inflation_layer", tf.get(), node, nullptr),
+    layer->initialize(&layers, "asymmetric_inflation_layer", tf_manager.get(), node, nullptr),
     std::runtime_error);
 }
 
@@ -162,12 +162,12 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_left_scaling)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.cost_scaling_factor_left", -1.0)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_left", "", options);
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
   EXPECT_THROW(
-    layer->initialize(&layers, "asymmetric_inflation_layer", tf.get(), node, nullptr),
+    layer->initialize(&layers, "asymmetric_inflation_layer", tf_manager.get(), node, nullptr),
     std::runtime_error);
 }
 
@@ -177,12 +177,12 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_right_scaling)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.cost_scaling_factor_right", -1.0)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_right", "", options);
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
   EXPECT_THROW(
-    layer->initialize(&layers, "asymmetric_inflation_layer", tf.get(), node, nullptr),
+    layer->initialize(&layers, "asymmetric_inflation_layer", tf_manager.get(), node, nullptr),
     std::runtime_error);
 }
 
@@ -192,12 +192,12 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_goal_distance_thr
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.goal_distance_threshold", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_goal", "", options);
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
   EXPECT_THROW(
-    layer->initialize(&layers, "asymmetric_inflation_layer", tf.get(), node, nullptr),
+    layer->initialize(&layers, "asymmetric_inflation_layer", tf_manager.get(), node, nullptr),
     std::runtime_error);
 }
 
@@ -207,12 +207,12 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_invalid_num_threads)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.num_threads", -2)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_threads", "", options);
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
   EXPECT_THROW(
-    layer->initialize(&layers, "asymmetric_inflation_layer", tf.get(), node, nullptr),
+    layer->initialize(&layers, "asymmetric_inflation_layer", tf_manager.get(), node, nullptr),
     std::runtime_error);
 }
 
@@ -221,12 +221,12 @@ TEST(AsymmetricInflationLayerInitTest, negative_transform_staleness_threshold_di
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.transform_staleness_threshold", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_tf_staleness", "", options);
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
   EXPECT_NO_THROW(
-    layer->initialize(&layers, "asymmetric_inflation_layer", tf.get(), node, nullptr));
+    layer->initialize(&layers, "asymmetric_inflation_layer", tf_manager.get(), node, nullptr));
 }
 
 // ============================================================

@@ -234,7 +234,7 @@ protected:
   pluginlib::ClassLoader<nav2_core::GlobalPlanner> gp_loader_;
   std::string planner_ids_concat_;
 
-  // TF buffer
+  // Transform manager
   nav2::TransformManager::SharedPtr tf_manager_;
 
   // Global Costmap

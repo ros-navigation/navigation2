@@ -36,12 +36,12 @@ public:
 
   static void addObstacleLayer(
     nav2_costmap_2d::LayeredCostmap & layers,
-    nav2::TransformManager & tf, nav2::LifecycleNode::SharedPtr node,
+    nav2::TransformManager & tf_manager, nav2::LifecycleNode::SharedPtr node,
     std::shared_ptr<TestObstacleLayer> & olayer,
     rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
   {
     olayer = std::make_shared<TestObstacleLayer>();
-    olayer->initialize(&layers, "obstacles", &tf, node, callback_group);
+    olayer->initialize(&layers, "obstacles", &tf_manager, node, callback_group);
     layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(olayer));
   }
 };

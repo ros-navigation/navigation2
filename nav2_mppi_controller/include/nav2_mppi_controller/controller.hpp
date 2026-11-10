@@ -48,12 +48,12 @@ public:
     * @brief Configure controller on bringup
     * @param parent WeakPtr to node
     * @param name Name of plugin
-    * @param tf TF buffer to use
+    * @param tf_manager Transform manager to use
     * @param costmap_ros Costmap2DROS object of environment
     */
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, const nav2::TransformManager::SharedPtr tf,
+    std::string name, const nav2::TransformManager::SharedPtr tf_manager,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**

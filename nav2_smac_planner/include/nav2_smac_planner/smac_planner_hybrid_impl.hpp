@@ -58,7 +58,7 @@ SmacPlannerHybridT<NodeT>::~SmacPlannerHybridT()
 template<typename NodeT>
 void SmacPlannerHybridT<NodeT>::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, nav2::TransformManager::SharedPtr/*tf*/,
+  std::string name, nav2::TransformManager::SharedPtr/*tf_manager*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   _node = parent;

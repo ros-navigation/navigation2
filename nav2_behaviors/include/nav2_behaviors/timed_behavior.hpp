@@ -114,7 +114,7 @@ public:
   // configure the server on lifecycle setup
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, nav2::TransformManager::SharedPtr tf,
+    const std::string & name, nav2::TransformManager::SharedPtr tf_manager,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker)
   override
@@ -127,7 +127,7 @@ public:
     RCLCPP_INFO(logger_, "Configuring %s", name.c_str());
 
     behavior_name_ = name;
-    tf_manager_ = tf;
+    tf_manager_ = tf_manager;
 
     node->get_parameter("cycle_frequency", cycle_frequency_);
     node->get_parameter("local_frame", local_frame_);

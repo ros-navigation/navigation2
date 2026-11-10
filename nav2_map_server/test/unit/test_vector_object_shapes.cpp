@@ -120,7 +120,7 @@ Tester::Tester()
   polygon_ = std::make_shared<PolygonWrapper>(node_);
   circle_ = std::make_shared<CircleWrapper>(node_);
 
-  // Transform buffer and listener initialization
+  // Transform manager initialization
   tf_manager_ = nav2::create_transform_manager(node_);
 }
 

@@ -73,9 +73,9 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   GoalIntentExtractor extractor;
   Graph graph;
   GraphToIDMap id_map;
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
-  extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
+  extractor.configure(node, graph, &id_map, tf_manager, costmap_subscriber, "map", "base_link");
 
   // Test transformations same frame, should pass
   geometry_msgs::msg::PoseStamped pose;
@@ -91,8 +91,8 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   transform.header.frame_id = "map";
   transform.header.stamp = node->now();
   transform.child_frame_id = "gps";
-  tf->sendTransform(transform);
-  tf->getRawBuffer().setTransform(transform, "test", false);
+  tf_manager->sendTransform(transform);
+  tf_manager->getRawBuffer().setTransform(transform, "test", false);
   EXPECT_NO_THROW(extractor.transformPose(pose, "map"));
 }
 
@@ -104,7 +104,7 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
   GoalIntentExtractorWrapper extractor;
   Graph graph;
   GraphToIDMap id_map;
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
 
   // Make a 3x3 graph of points 0,0 -> 2,2 (ROS logo)
   graph.resize(9);
@@ -121,7 +121,7 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
     }
   }
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
-  extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
+  extractor.configure(node, graph, &id_map, tf_manager, costmap_subscriber, "map", "base_link");
 
   // Test sending goal and start IDs to search
   nav2_msgs::action::ComputeRoute::Goal raw_goal;

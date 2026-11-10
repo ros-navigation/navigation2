@@ -27,10 +27,10 @@ namespace opennav_docking
 
 void SimpleChargingDock::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  const std::string & name, nav2::TransformManager::SharedPtr tf)
+  const std::string & name, nav2::TransformManager::SharedPtr tf_manager)
 {
   name_ = name;
-  tf_manager_ = tf;
+  tf_manager_ = tf_manager;
   is_charging_ = false;
   node_ = parent.lock();
   if (!node_) {

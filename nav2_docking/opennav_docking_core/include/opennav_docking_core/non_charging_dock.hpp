@@ -42,11 +42,11 @@ public:
   /**
    * @param  parent pointer to user's node
    * @param  name The name of this planner
-   * @param  tf A pointer to a TF buffer
+   * @param  tf_manager A pointer to a transform manager
    */
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, nav2::TransformManager::SharedPtr tf) = 0;
+    const std::string & name, nav2::TransformManager::SharedPtr tf_manager) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.

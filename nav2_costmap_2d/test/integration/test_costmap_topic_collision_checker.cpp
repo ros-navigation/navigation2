@@ -68,8 +68,8 @@ public:
   DummyFootprintSubscriber(
     nav2::LifecycleNode::SharedPtr node,
     std::string & topic_name,
-    nav2::TransformManager & tf)
-  : FootprintSubscriber(node, topic_name, tf)
+    nav2::TransformManager & tf_manager)
+  : FootprintSubscriber(node, topic_name, tf_manager)
   {}
 
   void setFootprint(geometry_msgs::msg::PolygonStamped::SharedPtr msg)

@@ -205,7 +205,7 @@ void TestNode::initNode(double inflation_radius)
 TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
 {
   initNode(4.1);
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -214,10 +214,10 @@ TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
-  addObstacleLayer(layers, tf, node_, olayer);
+  addObstacleLayer(layers, tf_manager, node_, olayer);
 
   std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> ilayer = nullptr;
-  addLegacyInflationLayer(layers, tf, node_, ilayer);
+  addLegacyInflationLayer(layers, tf_manager, node_, ilayer);
 
   layers.setFootprint(polygon);
 
@@ -237,7 +237,7 @@ TEST_F(TestNode, testAdjacentToObstacleCanStillMove)
 TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
 {
   initNode(4.1);
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -246,10 +246,10 @@ TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
-  addObstacleLayer(layers, tf, node_, olayer);
+  addObstacleLayer(layers, tf_manager, node_, olayer);
 
   std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> ilayer = nullptr;
-  addLegacyInflationLayer(layers, tf, node_, ilayer);
+  addLegacyInflationLayer(layers, tf_manager, node_, ilayer);
 
   layers.setFootprint(polygon);
 
@@ -273,7 +273,7 @@ TEST_F(TestNode, testInflationInUnknown)
 
   node_->set_parameter(rclcpp::Parameter("track_unknown_space", true));
 
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
   layers.resizeMap(9, 9, 1, 0, 0);
 
@@ -282,9 +282,9 @@ TEST_F(TestNode, testInflationInUnknown)
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
-  addObstacleLayer(layers, tf, node_, olayer);
+  addObstacleLayer(layers, tf_manager, node_, olayer);
   std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> ilayer = nullptr;
-  addLegacyInflationLayer(layers, tf, node_, ilayer);
+  addLegacyInflationLayer(layers, tf_manager, node_, ilayer);
   layers.setFootprint(polygon);
 
   addObservation(olayer, 4, 4, MAX_Z, 0.0, 0.0, MAX_Z, true, false);
@@ -309,7 +309,7 @@ TEST_F(TestNode, testInflationAroundUnknown)
 
   node_->set_parameter(rclcpp::Parameter("track_unknown_space", true));
 
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -318,7 +318,7 @@ TEST_F(TestNode, testInflationAroundUnknown)
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
   std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> ilayer = nullptr;
-  addLegacyInflationLayer(layers, tf, node_, ilayer);
+  addLegacyInflationLayer(layers, tf_manager, node_, ilayer);
   layers.setFootprint(polygon);
   layers.updateMap(0, 0, 0);
 
@@ -334,7 +334,7 @@ TEST_F(TestNode, testInflationAroundUnknown)
 TEST_F(TestNode, testCostFunctionCorrectness)
 {
   initNode(10.5);
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   layers.resizeMap(100, 100, 1, 0, 0);
@@ -343,10 +343,10 @@ TEST_F(TestNode, testCostFunctionCorrectness)
   std::vector<Point> polygon = setRadii(layers, 5.0, 6.25);
 
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
-  addObstacleLayer(layers, tf, node_, olayer);
+  addObstacleLayer(layers, tf_manager, node_, olayer);
 
   std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> ilayer = nullptr;
-  addLegacyInflationLayer(layers, tf, node_, ilayer);
+  addLegacyInflationLayer(layers, tf_manager, node_, ilayer);
 
   layers.setFootprint(polygon);
 
@@ -409,7 +409,7 @@ TEST_F(TestNode, testInflationOrderCorrectness)
 {
   const double inflation_radius = 4.1;
   initNode(inflation_radius);
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -418,10 +418,10 @@ TEST_F(TestNode, testInflationOrderCorrectness)
   std::vector<Point> polygon = setRadii(layers, 2.1, 2.3);
 
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
-  addObstacleLayer(layers, tf, node_, olayer);
+  addObstacleLayer(layers, tf_manager, node_, olayer);
 
   std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> ilayer = nullptr;
-  addLegacyInflationLayer(layers, tf, node_, ilayer);
+  addLegacyInflationLayer(layers, tf_manager, node_, ilayer);
 
   layers.setFootprint(polygon);
 
@@ -442,7 +442,7 @@ TEST_F(TestNode, testInflationOrderCorrectness)
 TEST_F(TestNode, testInflation)
 {
   initNode(1);
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   // Footprint with inscribed radius = 2.1
@@ -450,13 +450,13 @@ TEST_F(TestNode, testInflation)
   std::vector<Point> polygon = setRadii(layers, 1, 1);
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = nullptr;
-  addStaticLayer(layers, tf, node_, slayer);
+  addStaticLayer(layers, tf_manager, node_, slayer);
 
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
-  addObstacleLayer(layers, tf, node_, olayer);
+  addObstacleLayer(layers, tf_manager, node_, olayer);
 
   std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> ilayer = nullptr;
-  addLegacyInflationLayer(layers, tf, node_, ilayer);
+  addLegacyInflationLayer(layers, tf_manager, node_, ilayer);
   layers.setFootprint(polygon);
 
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
@@ -520,7 +520,7 @@ TEST_F(TestNode, testInflation)
 TEST_F(TestNode, testInflation2)
 {
   initNode(1);
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   // Footprint with inscribed radius = 2.1
@@ -528,13 +528,13 @@ TEST_F(TestNode, testInflation2)
   std::vector<Point> polygon = setRadii(layers, 1, 1);
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = nullptr;
-  addStaticLayer(layers, tf, node_, slayer);
+  addStaticLayer(layers, tf_manager, node_, slayer);
 
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
-  addObstacleLayer(layers, tf, node_, olayer);
+  addObstacleLayer(layers, tf_manager, node_, olayer);
 
   std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> ilayer = nullptr;
-  addLegacyInflationLayer(layers, tf, node_, ilayer);
+  addLegacyInflationLayer(layers, tf_manager, node_, ilayer);
 
   layers.setFootprint(polygon);
 
@@ -558,7 +558,7 @@ TEST_F(TestNode, testInflation2)
 TEST_F(TestNode, testInflation3)
 {
   initNode(3);
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -566,10 +566,10 @@ TEST_F(TestNode, testInflation3)
   std::vector<Point> polygon = setRadii(layers, 1, 1.75);
 
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
-  addObstacleLayer(layers, tf, node_, olayer);
+  addObstacleLayer(layers, tf_manager, node_, olayer);
 
   std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> ilayer = nullptr;
-  addLegacyInflationLayer(layers, tf, node_, ilayer);
+  addLegacyInflationLayer(layers, tf_manager, node_, ilayer);
 
   layers.setFootprint(polygon);
 

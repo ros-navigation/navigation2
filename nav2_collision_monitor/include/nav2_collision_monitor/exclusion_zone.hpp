@@ -172,7 +172,7 @@ protected:
   /// @brief Name of the zone
   std::string zone_name_;
 
-  /// @brief TF buffer
+  /// @brief Transform manager
   nav2::TransformManager::SharedPtr tf_manager_;
   /// @brief Robot base frame ID
   std::string base_frame_id_;
