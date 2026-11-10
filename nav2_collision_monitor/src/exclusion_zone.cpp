@@ -296,17 +296,19 @@ bool ExclusionZone::getZoneToBaseTransform(
 
   // Re-project the world pose into the current base frame.
   tf2::Transform tf_global_to_base;
+  std::string tf_error;
   const auto global_to_base = base_shift_correction_ ?
     tf_manager_->getStampedTransform(
       base_frame_id_, curr_time, global_frame_id_, curr_time,
-      global_frame_id_, non_blocking, nav2::Log::Disabled) :
+      global_frame_id_, non_blocking, nav2::Log::Disabled, &tf_error) :
     tf_manager_->getLatestTransform(
-      base_frame_id_, global_frame_id_, base_transform_staleness_threshold_, nav2::Log::Disabled);
+      base_frame_id_, global_frame_id_, base_transform_staleness_threshold_,
+      nav2::Log::Disabled, &tf_error);
   if (!global_to_base) {
     RCLCPP_WARN_THROTTLE(
       logger_, *node_clock_, 2000,
-      "[%s]: cannot transform '%s' -> '%s'; not excluding any points",
-      zone_name_.c_str(), global_frame_id_.c_str(), base_frame_id_.c_str());
+      "[%s]: cannot transform '%s' -> '%s'; not excluding any points: %s",
+      zone_name_.c_str(), global_frame_id_.c_str(), base_frame_id_.c_str(), tf_error.c_str());
     return false;
   }
 

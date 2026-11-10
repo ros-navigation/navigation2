@@ -530,12 +530,13 @@ bool FollowingServer::getRefinedPose(
 
   // Transform detected pose into fixed frame
   if (detected.header.frame_id != params_->fixed_frame) {
+    std::string tf_error;
     const auto detected_result = tf_manager_->transformStampedPose(
       params_->fixed_frame, detected,
-      params_->transform_tolerance, nav2::Log::Disabled);
+      params_->transform_tolerance, nav2::Log::Disabled, &tf_error);
     if (!detected_result) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
-        "Failed to transform detected object pose");
+        "Failed to transform detected object pose: %s", tf_error.c_str());
       return false;
     }
     detected = *detected_result;

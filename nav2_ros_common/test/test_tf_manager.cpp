@@ -534,6 +534,115 @@ TEST_F(TransformManagerTest, DisabledLoggingSuppressesNestedLookupsAndValidation
   EXPECT_NE(testing::internal::GetCapturedStderr().find("missing"), std::string::npos);
 }
 
+TEST_F(TransformManagerTest, ErrorOutputPreservesExceptionsThroughNestedLookups)
+{
+  addTransform(8, 1.0);
+  std::string lookup_error;
+  try {
+    tf_manager_.getRawBuffer().lookupTransform("odom", "missing", tf2::TimePointZero);
+    FAIL() << "Expected a missing-frame exception";
+  } catch (const tf2::TransformException & ex) {
+    lookup_error = ex.what();
+  }
+  std::string stamped_error;
+  try {
+    tf_manager_.getRawBuffer().lookupTransform("odom", "base_link", rclcpp::Time(7, 0));
+    FAIL() << "Expected an extrapolation exception";
+  } catch (const tf2::TransformException & ex) {
+    stamped_error = ex.what();
+  }
+  auto pose = makePose(7);
+  std::string error;
+  testing::internal::CaptureStderr();
+  EXPECT_FALSE(tf_manager_.getLatestTransform(
+      "odom", "missing", 0.0, nav2::Log::Disabled, &error));
+  EXPECT_EQ(error, lookup_error);
+  error.clear();
+  EXPECT_FALSE(tf_manager_.getLatestPose(
+      "odom", "missing", 0.0, nav2::Log::Disabled, &error));
+  EXPECT_EQ(error, lookup_error);
+  error.clear();
+  EXPECT_FALSE(tf_manager_.getStampedTransform(
+      "odom", "base_link", rclcpp::Time(7, 0), 0.0, nav2::Log::Disabled, &error));
+  EXPECT_EQ(error, stamped_error);
+  error.clear();
+  EXPECT_FALSE(tf_manager_.transformStampedPose(
+      "odom", pose, 0.0, nav2::Log::Disabled, &error));
+  EXPECT_EQ(error, stamped_error);
+  error.clear();
+  EXPECT_FALSE(tf_manager_.getStampedTransform(
+      "odom", now_, "base_link", now_, "missing", 0.0, nav2::Log::Disabled, &error));
+  EXPECT_NE(error.find("missing"), std::string::npos);
+  EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
+
+  testing::internal::CaptureStderr();
+  EXPECT_FALSE(tf_manager_.getLatestPose(
+      "odom", "missing", 0.0, nav2::Log::Enabled, &error));
+  EXPECT_EQ(error, lookup_error);
+  EXPECT_NE(testing::internal::GetCapturedStderr().find(error), std::string::npos);
+}
+
+TEST_F(TransformManagerTest, ErrorOutputDescribesValidationAndStalenessFailures)
+{
+  addTransform(8, 1.0);
+  std::string error;
+  EXPECT_FALSE(tf_manager_.getLatestPose(
+      "odom", "base_link", 1.0, nav2::Log::Disabled, &error));
+  EXPECT_NE(error.find("Stale transform from 'base_link' to 'odom'"), std::string::npos);
+  EXPECT_NE(error.find("2.000000 s exceeds threshold 1.000000 s"), std::string::npos);
+  EXPECT_FALSE(tf_manager_.getLatestTransform(
+      "odom", "base_link", std::numeric_limits<double>::quiet_NaN(),
+      nav2::Log::Disabled, &error));
+  EXPECT_NE(error.find("must be finite"), std::string::npos);
+  EXPECT_FALSE(tf_manager_.getStampedTransform(
+      "odom", "base_link", now_, -0.1, nav2::Log::Disabled, &error));
+  EXPECT_NE(error.find("must be nonnegative"), std::string::npos);
+  EXPECT_FALSE(tf_manager_.getStampedTransform(
+      "odom", now_, "base_link", now_, "odom", -0.1, nav2::Log::Disabled, &error));
+  EXPECT_NE(error.find("must be nonnegative"), std::string::npos);
+  EXPECT_FALSE(tf_manager_.transformStampedPose(
+      "odom", makePose(8), -0.1, nav2::Log::Disabled, &error));
+  EXPECT_NE(error.find("must be nonnegative"), std::string::npos);
+  EXPECT_FALSE(tf_manager_.getStampedTransform(
+      "odom", "base_link", now_, 0.1, nav2::Log::Disabled, &error));
+  EXPECT_NE(error.find("without an active dedicated listener"), std::string::npos);
+  error.clear();
+  EXPECT_FALSE(tf_manager_.getStampedTransform(
+      "odom", now_, "base_link", now_, "odom", 0.1, nav2::Log::Disabled, &error));
+  EXPECT_NE(error.find("without an active dedicated listener"), std::string::npos);
+  error.clear();
+  EXPECT_FALSE(tf_manager_.transformStampedPose(
+      "odom", makePose(8), 0.1, nav2::Log::Disabled, &error));
+  EXPECT_NE(error.find("without an active dedicated listener"), std::string::npos);
+}
+
+TEST_F(TransformManagerTest, SuccessfulCallsClearPreviousErrors)
+{
+  addTransform(8, 1.0);
+  for (const auto log : {nav2::Log::Enabled, nav2::Log::Disabled}) {
+    std::string error = "previous failure";
+    EXPECT_TRUE(tf_manager_.getLatestTransform("odom", "base_link", 0.0, log, &error));
+    EXPECT_TRUE(error.empty());
+    error = "previous failure";
+    EXPECT_TRUE(tf_manager_.getLatestPose("odom", "base_link", 0.0, log, &error));
+    EXPECT_TRUE(error.empty());
+    error = "previous failure";
+    EXPECT_TRUE(tf_manager_.getStampedTransform(
+        "odom", "base_link", rclcpp::Time(8, 0), 0.0, log, &error));
+    EXPECT_TRUE(error.empty());
+    error = "previous failure";
+    EXPECT_TRUE(tf_manager_.getStampedTransform(
+        "odom", rclcpp::Time(8, 0), "base_link", rclcpp::Time(8, 0), "odom", 0.0, log, &error));
+    EXPECT_TRUE(error.empty());
+    error = "previous failure";
+    EXPECT_TRUE(tf_manager_.transformStampedPose("odom", makePose(8), 0.0, log, &error));
+    EXPECT_TRUE(error.empty());
+    error = "previous failure";
+    EXPECT_TRUE(tf_manager_.transformStampedPose("base_link", makePose(8), 0.0, log, &error));
+    EXPECT_TRUE(error.empty());
+  }
+}
+
 TEST_F(TransformManagerTest, LoggingOptionPreservesSuccessfulResults)
 {
   addTransform(8, 1.0);
