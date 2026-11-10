@@ -149,10 +149,7 @@ public:
    */
   void stopListener()
   {
-    if (listener_) {
-      listener_.reset();
-      buffer_->setUsingDedicatedThread(false);
-    }
+    listener_.reset();
   }
 
   /** @brief Broadcast a dynamic transform on /tf, advertising on first use. */
@@ -354,7 +351,7 @@ public:
    *   common time along the TF chain, without a staleness check.
    * @param transform_tolerance Maximum lookup wait duration in seconds; must be nonnegative.
    *   Zero performs the lookup without waiting. This does not permit timestamp
-   *   error or extrapolation.
+   *   error or extrapolation. Waiting requires an active dedicated listener.
    * @param log Enable or disable failure diagnostics for this call and nested lookups.
    * @return Transform on success; std::nullopt on TF failure or invalid arguments.
    */
@@ -377,6 +374,9 @@ public:
       result.header.stamp = stamp;
       result.child_frame_id = source_frame;
     } else {
+      if (!canWaitForTransform(transform_tolerance, target_frame, log)) {
+        return std::nullopt;
+      }
       try {
         result = buffer_->lookupTransform(
           target_frame, source_frame, stamp, rclcpp::Duration::from_seconds(transform_tolerance));
@@ -410,7 +410,7 @@ public:
    *   latest available transform between source_frame and fixed_frame.
    * @param fixed_frame Frame assumed constant across the two timestamps.
    * @param transform_tolerance Maximum lookup wait duration in seconds; must be nonnegative.
-   *   Zero performs the lookup without waiting.
+   *   Zero performs the lookup without waiting. Waiting requires an active dedicated listener.
    * @param log Enable or disable failure diagnostics for this call and nested lookups.
    * @return Transform on success; std::nullopt on TF failure or invalid arguments.
    */
@@ -427,6 +427,9 @@ public:
       RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
           "Transform tolerance must be nonnegative (target frame '%s')",
         target_frame.c_str());
+      return std::nullopt;
+    }
+    if (!canWaitForTransform(transform_tolerance, target_frame, log)) {
       return std::nullopt;
     }
     geometry_msgs::msg::TransformStamped result;
@@ -447,6 +450,7 @@ public:
   /**
    * @brief Transform an arbitrary pose using TF at the input timestamp.
    *
+   * Waiting for TF requires an active dedicated listener.
    * Zero timestamps request the latest common TF time without an age check.
    * Equal frames return the input unchanged; otherwise the output header uses
    * the selected transform's frame and timestamp. Logs lookup failures unless disabled.
@@ -488,6 +492,18 @@ public:
   }
 
 private:
+  bool canWaitForTransform(
+    double transform_tolerance, const std::string & target_frame, Log log) const
+  {
+    if (transform_tolerance > 0.0 && (!listener_ || !spin_thread_)) {
+      RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
+        "Cannot wait for a transform to '%s' without an active dedicated listener",
+        target_frame.c_str());
+      return false;
+    }
+    return true;
+  }
+
   tf2_ros::TransformBroadcaster & getBroadcaster()
   {
     std::call_once(broadcaster_once_, [this]() {broadcaster_ = create_broadcaster_();});

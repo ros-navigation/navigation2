@@ -101,6 +101,41 @@ TEST_F(TransformManagerTest, QuietLookupsRespectTimestamp)
   EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
 }
 
+TEST_F(TransformManagerTest, TimedLookupsRequireAnActiveDedicatedListener)
+{
+  addTransform(8, 1.0);
+  const rclcpp::Time stamp(8, 0, RCL_ROS_TIME);
+  const auto pose = makePose(8);
+  tf_manager_.startListener();
+  EXPECT_TRUE(tf_manager_.getStampedTransform("odom", "base_link", stamp, 0.1));
+  EXPECT_TRUE(tf_manager_.getStampedTransform(
+      "odom", stamp, "base_link", stamp, "odom", 0.1));
+  EXPECT_TRUE(tf_manager_.transformStampedPose("odom", pose, 0.1));
+
+  tf_manager_.stopListener();
+  testing::internal::CaptureStderr();
+  EXPECT_FALSE(tf_manager_.getStampedTransform(
+      "odom", "base_link", stamp, 0.1, nav2::Log::Disabled));
+  EXPECT_FALSE(tf_manager_.getStampedTransform(
+      "odom", stamp, "base_link", stamp, "odom", 0.1, nav2::Log::Disabled));
+  EXPECT_FALSE(tf_manager_.transformStampedPose("odom", pose, 0.1, nav2::Log::Disabled));
+  EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
+  EXPECT_TRUE(tf_manager_.getStampedTransform("odom", "base_link", stamp, 0.0));
+  EXPECT_TRUE(tf_manager_.getStampedTransform(
+      "odom", stamp, "base_link", stamp, "odom", 0.0));
+  EXPECT_TRUE(tf_manager_.transformStampedPose("odom", pose, 0.0));
+
+  testing::internal::CaptureStderr();
+  EXPECT_FALSE(tf_manager_.getStampedTransform("odom", "base_link", stamp, 0.1));
+  EXPECT_NE(testing::internal::GetCapturedStderr().find("active dedicated listener"),
+    std::string::npos);
+  tf_manager_.startListener();
+  EXPECT_TRUE(tf_manager_.getStampedTransform("odom", "base_link", stamp, 0.1));
+  EXPECT_TRUE(tf_manager_.getStampedTransform(
+      "odom", stamp, "base_link", stamp, "odom", 0.1));
+  EXPECT_TRUE(tf_manager_.transformStampedPose("odom", pose, 0.1));
+}
+
 TEST_F(TransformManagerTest, PoseTransformConversionsPreserveHeaderAndGeometry)
 {
   addTransform(9, 1.0);
@@ -457,13 +492,11 @@ TEST_F(TransformManagerTest, LogsFailuresWithConfiguredLoggerAndFrameContext)
 TEST_F(TransformManagerTest, DisabledLoggingSuppressesNestedLookupsAndValidationFailures)
 {
   addTransform(8, 1.0);
-  tf_manager_.getRawBuffer().setUsingDedicatedThread(true);
   const auto no_wait = 0.0;
   const auto negative_wait = -0.1;
   auto system_node = std::make_shared<nav2::LifecycleNode>(
     "tf_manager_system_time", "", rclcpp::NodeOptions().clock_type(RCL_SYSTEM_TIME));
-  nav2::TransformManager timed_tf_manager(system_node, false);
-  timed_tf_manager.getRawBuffer().setUsingDedicatedThread(true);
+  nav2::TransformManager timed_tf_manager(system_node);
   testing::internal::CaptureStderr();
   // Repeat the probes as a caller waiting for TF would do.
   for (int i = 0; i < 3; ++i) {
@@ -606,7 +639,8 @@ TEST_F(TransformListenerTest, OptionalListenerCanBeStoppedAndRestarted)
   expectTransforms();
 
   tf_manager_->stopListener();
-  EXPECT_FALSE(tf_manager_->getRawBuffer().isUsingDedicatedThread());
+  EXPECT_FALSE(tf_manager_->getStampedTransform(
+      "listener_parent", "listener_dynamic", rclcpp::Time(0), 0.1, nav2::Log::Disabled));
   EXPECT_TRUE(tf_manager_->getLatestTransform("listener_parent", "listener_dynamic"));
   tf_manager_->stopListener();
   tf_manager_->getRawBuffer().clear();

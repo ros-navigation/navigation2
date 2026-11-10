@@ -290,8 +290,6 @@ Tester::Tester()
   test_node_->activate();
 
   tf_manager_ = nav2::create_transform_manager(test_node_);
-  // One-thread broadcasting-listening model
-  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 }
 
 Tester::~Tester()

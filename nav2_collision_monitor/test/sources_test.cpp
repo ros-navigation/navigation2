@@ -485,8 +485,6 @@ Tester::Tester(const rclcpp::Clock::SharedPtr & tf_clock)
 
   tf_clock_ = test_node_->get_clock();
   tf_manager_ = nav2::create_transform_manager(test_node_);
-  // One-thread broadcasting-listening model
-  tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
 }
 
 Tester::~Tester()

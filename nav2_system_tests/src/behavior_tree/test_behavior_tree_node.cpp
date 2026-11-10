@@ -59,8 +59,7 @@ public:
   {
     node_ = std::make_shared<nav2::LifecycleNode>("behavior_tree_handler");
 
-    tf_manager_ = nav2::create_transform_manager(node_, true, false);
-    tf_manager_->getRawBuffer().setUsingDedicatedThread(true);
+    tf_manager_ = nav2::create_transform_manager(node_);
 
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
 

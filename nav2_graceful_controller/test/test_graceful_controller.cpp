@@ -888,7 +888,6 @@ TEST(GracefulControllerTest, computeVelocityCommandMinLookaheadNearGoal) {
 TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGraceful");
   auto tf = nav2::create_transform_manager(node);
-  tf->getRawBuffer().setUsingDedicatedThread(true);
 
   // Set initial rotation false and allow backward to true
   nav2::declare_parameter_if_not_declared(

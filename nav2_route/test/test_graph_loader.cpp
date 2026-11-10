@@ -74,7 +74,6 @@ TEST(GraphLoader, test_transformation_api)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
   auto tf = nav2::create_transform_manager(node);
-  tf->getRawBuffer().setUsingDedicatedThread(true);
 
   std::string frame = "map";
 
@@ -126,7 +125,6 @@ TEST(GraphLoader, test_transformation_api2)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
   auto tf = nav2::create_transform_manager(node);
-  tf->getRawBuffer().setUsingDedicatedThread(true);
 
   std::string frame = "map";
 
