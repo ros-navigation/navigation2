@@ -34,7 +34,9 @@
 
 #include <memory>
 #include <string>
+#include <thread>
 #include <algorithm>
+#include <atomic>
 #include <limits>
 #include <utility>
 #include <vector>
@@ -365,6 +367,46 @@ TEST_F(TestNode, testProbabilisticModelDownward) {
   ASSERT_EQ(layers.getCostmap()->getCost(3, 5), 254);
   ASSERT_EQ(layers.getCostmap()->getCost(3, 6), 0);
   ASSERT_EQ(layers.getCostmap()->getCost(3, 7), 254);
+}
+
+// deactivate() and activate() clear the message buffer while the subscription
+// and the map update threads are still using it
+TEST_F(TestNode, testBufferClearedWhileInUse) {
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> rlayer{nullptr};
+  addRangeLayer(layers, tf_, node_, rlayer);
+
+  // Below min_range, so each message is dropped without a transform lookup
+  auto msg = std::make_shared<sensor_msgs::msg::Range>();
+  msg->min_range = 1.0;
+  msg->max_range = 7.0;
+  msg->range = 0.5;
+  msg->header.frame_id = "base_link";
+  msg->radiation_type = msg->ULTRASOUND;
+  msg->field_of_view = 0.174533;  // 10 deg
+
+  std::atomic<bool> done{false};
+  std::thread subscriber([&]() {
+      while (!done) {
+        rlayer->bufferIncomingRangeMsg(msg);
+      }
+    });
+  std::thread updater([&]() {
+      while (!done) {
+        layers.updateMap(0, 0, 0);
+      }
+    });
+
+  for (int i = 0; i < 20000; ++i) {
+    rlayer->deactivate();
+    rlayer->activate();
+  }
+
+  done = true;
+  subscriber.join();
+  updater.join();
 }
 
 int main(int argc, char ** argv)
