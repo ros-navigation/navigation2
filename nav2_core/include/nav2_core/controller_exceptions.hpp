@@ -76,6 +76,55 @@ public:
   : ControllerException(description) {}
 };
 
+class CollisionDetected : public NoValidControl
+{
+public:
+  explicit CollisionDetected(const std::string & description)
+  : NoValidControl(description) {}
+};
+
+class OscillationDetected : public NoValidControl
+{
+public:
+  explicit OscillationDetected(const std::string & description)
+  : NoValidControl(description) {}
+};
+
+class BlockedPath : public NoValidControl
+{
+public:
+  explicit BlockedPath(const std::string & description)
+  : NoValidControl(description) {}
+};
+
+class BlockedGoal : public NoValidControl
+{
+public:
+  explicit BlockedGoal(const std::string & description)
+  : NoValidControl(description) {}
+};
+
+class MissedPath : public ControllerException
+{
+public:
+  explicit MissedPath(const std::string & description)
+  : ControllerException(description) {}
+};
+
+class MissedGoal : public ControllerException
+{
+public:
+  explicit MissedGoal(const std::string & description)
+  : ControllerException(description) {}
+};
+
+class RobotOutOfMap : public ControllerException
+{
+public:
+  explicit RobotOutOfMap(const std::string & description)
+  : ControllerException(description) {}
+};
+
 }  // namespace nav2_core
 
 #endif  // NAV2_CORE__CONTROLLER_EXCEPTIONS_HPP_

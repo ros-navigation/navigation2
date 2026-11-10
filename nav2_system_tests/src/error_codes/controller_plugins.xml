@@ -23,4 +23,32 @@
            base_class_type="nav2_core::Controller">
         <description>This local planner produces a no valid control exception.</description>
     </class>
+    <class type="nav2_system_tests::CollisionErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a collision exception.</description>
+    </class>
+    <class type="nav2_system_tests::OscillationErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces an oscillation exception.</description>
+    </class>
+    <class type="nav2_system_tests::BlockedPathErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a blocked path exception.</description>
+    </class>
+    <class type="nav2_system_tests::BlockedGoalErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a blocked goal exception.</description>
+    </class>
+    <class type="nav2_system_tests::MissedPathErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a missed path exception.</description>
+    </class>
+    <class type="nav2_system_tests::MissedGoalErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a missed goal exception.</description>
+    </class>
+    <class type="nav2_system_tests::OutOfMapErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a robot out of map exception.</description>
+    </class>
 </library>

@@ -67,6 +67,13 @@ def main(argv=sys.argv[1:]):
         'patience_exceeded': FollowPath.Result().PATIENCE_EXCEEDED,
         'failed_to_make_progress': FollowPath.Result().FAILED_TO_MAKE_PROGRESS,
         'no_valid_control': FollowPath.Result().NO_VALID_CONTROL,
+        'collision': FollowPath.Result().COLLISION,
+        'oscillation': FollowPath.Result().OSCILLATION,
+        'blocked_path': FollowPath.Result().BLOCKED_PATH,
+        'blocked_goal': FollowPath.Result().BLOCKED_GOAL,
+        'missed_path': FollowPath.Result().MISSED_PATH,
+        'missed_goal': FollowPath.Result().MISSED_GOAL,
+        'out_of_map': FollowPath.Result().OUT_OF_MAP,
     }
 
     for controller, error_code in follow_path.items():

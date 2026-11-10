@@ -65,6 +65,13 @@ TEST_F(WouldAControllerRecoveryHelpFixture, test_condition)
     {ActionResult::PATIENCE_EXCEEDED, BT::NodeStatus::SUCCESS},
     {ActionResult::FAILED_TO_MAKE_PROGRESS, BT::NodeStatus::SUCCESS},
     {ActionResult::NO_VALID_CONTROL, BT::NodeStatus::SUCCESS},
+    {ActionResult::COLLISION, BT::NodeStatus::SUCCESS},
+    {ActionResult::OSCILLATION, BT::NodeStatus::SUCCESS},
+    {ActionResult::BLOCKED_PATH, BT::NodeStatus::SUCCESS},
+    {ActionResult::BLOCKED_GOAL, BT::NodeStatus::SUCCESS},
+    {ActionResult::MISSED_PATH, BT::NodeStatus::FAILURE},
+    {ActionResult::MISSED_GOAL, BT::NodeStatus::FAILURE},
+    {ActionResult::OUT_OF_MAP, BT::NodeStatus::FAILURE},
   };
 
   for (const auto & error_to_status : error_to_status_map) {

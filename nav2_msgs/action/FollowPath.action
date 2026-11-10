@@ -21,6 +21,18 @@ uint16 FAILED_TO_MAKE_PROGRESS=105
 uint16 NO_VALID_CONTROL=106
 uint16 CONTROLLER_TIMED_OUT=107
 uint16 TIMEOUT=108
+uint16 COLLISION=109
+uint16 OSCILLATION=110
+# Obstacle on the path
+uint16 BLOCKED_PATH=111
+# Obstacle at the goal
+uint16 BLOCKED_GOAL=112
+# Robot diverged from the path and cannot rejoin it
+uint16 MISSED_PATH=113
+# Robot overshot the goal and cannot reach it
+uint16 MISSED_GOAL=114
+# Robot is outside the costmap
+uint16 OUT_OF_MAP=115
 
 std_msgs/Empty result
 uint16 error_code

@@ -122,6 +122,97 @@ class NoValidControlErrorController : public UnknownErrorController
   }
 };
 
+class CollisionErrorController : public UnknownErrorController
+{
+  virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
+    const geometry_msgs::msg::PoseStamped &,
+    const geometry_msgs::msg::Twist &,
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
+  {
+    throw nav2_core::CollisionDetected("Collision detected");
+  }
+};
+
+class OscillationErrorController : public UnknownErrorController
+{
+  virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
+    const geometry_msgs::msg::PoseStamped &,
+    const geometry_msgs::msg::Twist &,
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
+  {
+    throw nav2_core::OscillationDetected("Oscillation detected");
+  }
+};
+
+class BlockedPathErrorController : public UnknownErrorController
+{
+  virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
+    const geometry_msgs::msg::PoseStamped &,
+    const geometry_msgs::msg::Twist &,
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
+  {
+    throw nav2_core::BlockedPath("Blocked path");
+  }
+};
+
+class BlockedGoalErrorController : public UnknownErrorController
+{
+  virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
+    const geometry_msgs::msg::PoseStamped &,
+    const geometry_msgs::msg::Twist &,
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
+  {
+    throw nav2_core::BlockedGoal("Blocked goal");
+  }
+};
+
+class MissedPathErrorController : public UnknownErrorController
+{
+  virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
+    const geometry_msgs::msg::PoseStamped &,
+    const geometry_msgs::msg::Twist &,
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
+  {
+    throw nav2_core::MissedPath("Missed path");
+  }
+};
+
+class MissedGoalErrorController : public UnknownErrorController
+{
+  virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
+    const geometry_msgs::msg::PoseStamped &,
+    const geometry_msgs::msg::Twist &,
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
+  {
+    throw nav2_core::MissedGoal("Missed goal");
+  }
+};
+
+class OutOfMapErrorController : public UnknownErrorController
+{
+  virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
+    const geometry_msgs::msg::PoseStamped &,
+    const geometry_msgs::msg::Twist &,
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
+  {
+    throw nav2_core::RobotOutOfMap("Robot out of map");
+  }
+};
+
 }  // namespace nav2_system_tests
 
 #endif  // ERROR_CODES__CONTROLLER__CONTROLLER_ERROR_PLUGINS_HPP_

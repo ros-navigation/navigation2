@@ -27,7 +27,11 @@ WouldAControllerRecoveryHelp::WouldAControllerRecoveryHelp(
     ActionResult::UNKNOWN,
     ActionResult::PATIENCE_EXCEEDED,
     ActionResult::FAILED_TO_MAKE_PROGRESS,
-    ActionResult::NO_VALID_CONTROL
+    ActionResult::NO_VALID_CONTROL,
+    ActionResult::COLLISION,
+    ActionResult::OSCILLATION,
+    ActionResult::BLOCKED_PATH,
+    ActionResult::BLOCKED_GOAL
   };
 }
 

@@ -611,6 +611,38 @@ void ControllerServer::computeControl()
     result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
+  } catch (nav2_core::CollisionDetected & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    onGoalExit(true);
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Result::COLLISION;
+    result->error_msg = e.what();
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::OscillationDetected & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    onGoalExit(true);
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Result::OSCILLATION;
+    result->error_msg = e.what();
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::BlockedPath & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    onGoalExit(true);
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Result::BLOCKED_PATH;
+    result->error_msg = e.what();
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::BlockedGoal & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    onGoalExit(true);
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Result::BLOCKED_GOAL;
+    result->error_msg = e.what();
+    action_server_->terminate_current(result);
+    return;
   } catch (nav2_core::NoValidControl & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     onGoalExit(true);
@@ -648,6 +680,30 @@ void ControllerServer::computeControl()
     onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::CONTROLLER_TIMED_OUT;
+    result->error_msg = e.what();
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::MissedPath & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    onGoalExit(true);
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Result::MISSED_PATH;
+    result->error_msg = e.what();
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::MissedGoal & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    onGoalExit(true);
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Result::MISSED_GOAL;
+    result->error_msg = e.what();
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::RobotOutOfMap & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    onGoalExit(true);
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Result::OUT_OF_MAP;
     result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
@@ -785,7 +841,7 @@ void ControllerServer::computeAndPublishVelocity(
         throw nav2_core::PatienceExceeded("Controller patience exceeded");
       }
     } else {
-      throw nav2_core::NoValidControl(e.what());
+      throw;
     }
   }
 
