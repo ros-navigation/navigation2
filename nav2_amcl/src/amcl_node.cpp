@@ -172,7 +172,11 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  active_ = false;
+  {
+    // Wait for in-flight scan processing before deactivating its resources.
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    active_ = false;
+  }
 
   // Lifecycle publishers must be explicitly deactivated
   pose_pub_->on_deactivate();
