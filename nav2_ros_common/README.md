@@ -23,9 +23,8 @@ Thus, see the migration guide below for how to migrate from the previous version
 `nav2::TransformManager` in `nav2_ros_common/tf_manager.hpp` owns a TF buffer, listener, and lazy dynamic and static broadcasters.
 Create it with `nav2::create_transform_manager(node)` or construct it directly with the node.
 The node supplies the clock, logger, and timer interfaces. The listener starts by default using a dedicated thread.
-Pass `activate_listener=false` to defer receiving transforms, and use `startListener()` and `stopListener()` for lifecycle transitions.
-Stopping the listener preserves buffered transforms. Starting an already running listener or stopping an already stopped listener has no effect.
-Serialize listener start and stop calls. The listener is destroyed before the native buffer.
+Pass `activate_listener=false` to create a manager without a listener.
+The listener is destroyed before the native buffer.
 Set `spin_thread=false` when the application spins the node to receive transforms.
 Dynamic and static broadcasters are advertised independently on the first `sendTransform()` or `sendStaticTransform()` call.
 Both methods accept a single transform or a vector of transforms. Static transforms are retained for late subscribers.
