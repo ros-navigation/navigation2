@@ -44,8 +44,11 @@ void NoiseGenerator::initialize(
 
 void NoiseGenerator::shutdown()
 {
-  active_ = false;
-  ready_ = true;
+  {
+    std::unique_lock<std::mutex> guard(noise_lock_);
+    active_ = false;
+    ready_ = true;
+  }
   noise_cond_.notify_all();
   if (noise_thread_.joinable()) {
     noise_thread_.join();
@@ -100,8 +103,8 @@ void NoiseGenerator::reset(mppi::models::OptimizerSettings & settings, bool is_h
 
 void NoiseGenerator::noiseThread()
 {
+  std::unique_lock<std::mutex> guard(noise_lock_);
   do {
-    std::unique_lock<std::mutex> guard(noise_lock_);
     noise_cond_.wait(guard, [this]() {return ready_;});
     ready_ = false;
     generateNoisedControls();
