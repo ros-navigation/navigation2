@@ -15,7 +15,9 @@
 #include <chrono>
 #include <cstdio>
 #include <fstream>
+#include <future>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
@@ -79,6 +81,11 @@ public:
     initialPoseReceived(msg);
   }
 
+  std::unique_lock<std::recursive_mutex> lockScanProcessing()
+  {
+    return std::unique_lock<std::recursive_mutex>(mutex_);
+  }
+
   double mapOriginX() const {return map_->origin_x;}
   double lastPoseX() const {return last_published_pose_.pose.pose.position.x;}
 
@@ -87,6 +94,28 @@ public:
     updateParametersCallback({rclcpp::Parameter("map_topic", topic)});
   }
 };
+
+TEST_F(PosePersistenceTest, deactivation_waits_for_scan_processing)
+{
+  auto amcl = std::make_shared<AmclNodeTester>();
+  amcl->configure();
+  amcl->activate();
+
+  auto scan_lock = amcl->lockScanProcessing();
+  std::promise<void> started;
+  auto deactivation = std::async(std::launch::async, [&]() {
+        started.set_value();
+        amcl->deactivate();
+    });
+  started.get_future().wait();
+  EXPECT_EQ(deactivation.wait_for(std::chrono::milliseconds(100)), std::future_status::timeout);
+
+  scan_lock.unlock();
+  ASSERT_EQ(deactivation.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+  deactivation.get();
+  EXPECT_EQ(amcl->get_current_state().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  amcl->cleanup();
+}
 
 // Verify the first map from a replacement topic is accepted.
 TEST_F(PosePersistenceTest, map_topic_change_starts_new_first_map_epoch)

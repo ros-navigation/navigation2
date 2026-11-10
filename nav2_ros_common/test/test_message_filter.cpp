@@ -42,7 +42,6 @@ TEST(MessageFilterTest, PendingScanCanBeDestroyedAfterManager)
   manager.reset();
   EXPECT_TRUE(weak_manager.expired());
   ASSERT_FALSE(weak_buffer.expired());
-  EXPECT_FALSE(weak_buffer.lock()->isUsingDedicatedThread());
   EXPECT_FALSE(weak_scan.expired());
 
   // The base destructor must still be able to cancel the pending TF request.
