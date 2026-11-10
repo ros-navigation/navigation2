@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <atomic>
 #include <chrono>
 #include <cmath>
+#include <future>
+#include <memory>
+#include <string>
 #include <thread>
 
 #include "gtest/gtest.h"
@@ -254,6 +258,58 @@ TEST(NoiseGeneratorTest, ResetUsesUpdatedSamplingStd)
     EXPECT_NEAR(std::sqrt(state.cvx.square().mean()), settings.sampling_std.vx, 0.005f);
     EXPECT_NEAR(std::sqrt(state.cvy.square().mean()), settings.sampling_std.vy, 0.007f);
     EXPECT_NEAR(std::sqrt(state.cwz.square().mean()), settings.sampling_std.wz, 0.009f);
+  }
+}
+
+TEST(NoiseGeneratorTest, ShutdownWithRegeneratedNoisesDoesNotHang)
+{
+  // shutdown() must wake the noise thread even if it is just about to wait on the condition
+  // variable, so repeat short lifecycles many times to hit that window.
+  auto node = std::make_shared<nav2::LifecycleNode>("node");
+  node->declare_parameter("test.regenerate_noises", rclcpp::ParameterValue(true));
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+  models::OptimizerSettings settings;
+  settings.batch_size = 32;
+  settings.time_steps = 8;
+  settings.sampling_std.vx = 0.2f;
+  settings.sampling_std.vy = 0.2f;
+  settings.sampling_std.wz = 0.4f;
+
+  models::ControlSequence control_sequence;
+  control_sequence.reset(settings.time_steps);
+  models::State state;
+  state.reset(settings.batch_size, settings.time_steps);
+
+  for (int i = 0; i < 4000; ++i) {
+    auto generator = std::make_shared<NoiseGenerator>();
+    generator->initialize(settings, false, name, &handler);
+    // shutdown() runs on a helper thread that is already started and is called 0-63 us after
+    // the last generateNextNoises(), sweeping the moment the noise thread goes back to wait.
+    auto go = std::make_shared<std::atomic<bool>>(false);
+    const auto delay = std::chrono::microseconds(i % 64);
+    // A hung shutdown must fail the test, not block it: on failure the future is leaked
+    // instead of being destroyed, as its destructor would wait for shutdown() to return.
+    auto shutdown = std::make_unique<std::future<void>>(
+      std::async(
+        std::launch::async, [generator, go, delay]() {
+          while (!go->load()) {
+            std::this_thread::yield();
+          }
+          const auto start = std::chrono::steady_clock::now();
+          while (std::chrono::steady_clock::now() - start < delay) {
+          }
+          generator->shutdown();
+        }));
+    for (int cycle = 0; cycle < 3; ++cycle) {
+      generator->setNoisedControls(state, control_sequence);
+      generator->generateNextNoises();
+    }
+    go->store(true);
+    if (shutdown->wait_for(std::chrono::seconds(5)) != std::future_status::ready) {
+      shutdown.release();
+      FAIL() << "NoiseGenerator::shutdown() did not return in lifecycle " << i;
+    }
   }
 }
 
