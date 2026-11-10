@@ -273,8 +273,8 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
 
     // Get the transform from PolygonStamped frame to base_frame_id_
     tf2::Stamped<tf2::Transform> tf_transform;
-    const auto transform = tf_manager_->getLatestTransform(base_frame_id_,
-        polygon_.header.frame_id);
+    const auto transform = tf_manager_->getLatestTransform(
+      base_frame_id_, polygon_.header.frame_id, transform_staleness_threshold_);
     if (!transform) {
       return;
     }
@@ -438,6 +438,8 @@ bool Polygon::getCommonParameters(
       return false;
     }
 
+    transform_staleness_threshold_ = node->declare_or_get_parameter(
+      "transform_staleness_threshold", 0.0);
     enabled_ = node->declare_or_get_parameter(polygon_name_ + ".enabled", true);
     min_points_ = node->declare_or_get_parameter(polygon_name_ + ".min_points", 4);
     trigger_consecutive_points_ = node->declare_or_get_parameter(
@@ -616,7 +618,8 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
 
   // Get the transform from PolygonStamped frame to base_frame_id_
   tf2::Stamped<tf2::Transform> tf_transform;
-  const auto transform = tf_manager_->getLatestTransform(base_frame_id_, msg->header.frame_id);
+  const auto transform = tf_manager_->getLatestTransform(
+    base_frame_id_, msg->header.frame_id, transform_staleness_threshold_);
   if (!transform) {
     return;
   }

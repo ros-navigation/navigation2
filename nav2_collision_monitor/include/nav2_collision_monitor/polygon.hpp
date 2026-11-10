@@ -358,6 +358,8 @@ protected:
   std::string base_frame_id_;
   /// @brief Transform tolerance
   double transform_tolerance_;
+  /// @brief Maximum transform age in seconds; non-positive disables the check
+  double transform_staleness_threshold_;
   /// @brief Collision monitor node's clock
   rclcpp::Clock::SharedPtr node_clock_;
 
