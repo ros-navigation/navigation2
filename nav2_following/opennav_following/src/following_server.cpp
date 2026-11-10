@@ -45,7 +45,7 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   params_ = param_handler_->getParams();
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
-  tf_manager_ = nav2::create_transform_manager(node, false);
+  tf_manager_ = nav2::create_transform_manager(node);
 
   // Create odom subscriber for backward blind docking
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
@@ -92,7 +92,6 @@ FollowingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating %s", get_name());
 
-  tf_manager_->startListener();
   vel_publisher_->on_activate();
   filtered_dynamic_pose_pub_->on_activate();
   following_action_server_->activate();
@@ -113,10 +112,6 @@ FollowingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   vel_publisher_->on_deactivate();
   filtered_dynamic_pose_pub_->on_deactivate();
   param_handler_->deactivate();
-
-  if (tf_manager_) {
-    tf_manager_->stopListener();
-  }
 
   // Destroy bond connection
   destroyBond();

@@ -42,7 +42,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   params_ = param_handler_->getParams();
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
-  tf_manager_ = nav2::create_transform_manager(node, false);
+  tf_manager_ = nav2::create_transform_manager(node);
 
   // Create odom subscriber for backward blind docking
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
@@ -80,7 +80,6 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
-  tf_manager_->startListener();
   dock_db_->activate();
   navigator_->activate();
   vel_publisher_->on_activate();
@@ -106,9 +105,6 @@ DockingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   navigator_->deactivate();
   vel_publisher_->on_deactivate();
   param_handler_->deactivate();
-  if (tf_manager_) {
-    tf_manager_->stopListener();
-  }
 
   // Destroy bond connection
   destroyBond();

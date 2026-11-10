@@ -63,7 +63,7 @@ public:
    * @param node Pointer-like node (shared_ptr or raw pointer).
    * @param activate_listener Start receiving transforms immediately.
    * @param spin_thread Spin a dedicated listener thread. When false, the caller
-   *   must spin the node to receive transforms, including after startListener().
+   *   must spin the node to receive transforms.
    * @param callback_group Optional callback group for the timer interface.
    * @throws std::invalid_argument if node is null.
    */
@@ -91,16 +91,16 @@ public:
 #endif
     buffer_->setCreateTimerInterface(timer_interface);
     // Retain interfaces rather than the node, which may itself own this manager.
-    create_listener_ = [this, base, logging, parameters, topics]() {
+    if (activate_listener) {
 #if RCLCPP_VERSION_GTE(30, 0, 0)
-        return std::make_unique<tf2_ros::TransformListener>(
-          *buffer_, tf2_ros::TransformListener::RequiredInterfaces{
+      listener_ = std::make_unique<tf2_ros::TransformListener>(
+        *buffer_, tf2_ros::TransformListener::RequiredInterfaces{
           base, logging, parameters, topics}, spin_thread_);
 #else
-        return std::make_unique<tf2_ros::TransformListener>(
-          *buffer_, base, logging, parameters, topics, spin_thread_);
+      listener_ = std::make_unique<tf2_ros::TransformListener>(
+        *buffer_, base, logging, parameters, topics, spin_thread_);
 #endif
-      };
+    }
     create_broadcaster_ = [parameters, topics]() {
 #if RCLCPP_VERSION_GTE(30, 0, 0)
         return std::make_unique<tf2_ros::TransformBroadcaster>(
@@ -117,40 +117,10 @@ public:
         return std::make_unique<tf2_ros::StaticTransformBroadcaster>(parameters, topics);
 #endif
       };
-    if (activate_listener) {
-      startListener();
-    }
-  }
-
-  ~TransformManager()
-  {
-    stopListener();
   }
 
   TransformManager(const TransformManager &) = delete;
   TransformManager & operator=(const TransformManager &) = delete;
-
-  /**
-   * @brief Start receiving transforms, retaining any buffered transforms.
-   * Has no effect if the listener is already running. Uses the threading mode
-   * selected at construction. Serialize listener start and stop calls.
-   */
-  void startListener()
-  {
-    if (!listener_) {
-      listener_ = create_listener_();
-    }
-  }
-
-  /**
-   * @brief Stop receiving transforms without clearing the buffer.
-   * Use for lifecycle deactivation or before destroying dependent TF consumers.
-   * Destruction also stops the listener. Has no effect if it is already stopped.
-   */
-  void stopListener()
-  {
-    listener_.reset();
-  }
 
   /** @brief Broadcast a dynamic transform on /tf, advertising on first use. */
   void sendTransform(const geometry_msgs::msg::TransformStamped & transform)
@@ -596,7 +566,6 @@ private:
   tf2_ros::Buffer::SharedPtr buffer_;
   rclcpp::Logger logger_;
   bool spin_thread_{true};
-  std::function<std::unique_ptr<tf2_ros::TransformListener>()> create_listener_;
   std::function<std::unique_ptr<tf2_ros::TransformBroadcaster>()> create_broadcaster_;
   std::function<std::unique_ptr<tf2_ros::StaticTransformBroadcaster>()> create_static_broadcaster_;
   std::once_flag broadcaster_once_;

@@ -106,13 +106,6 @@ TEST_F(TransformManagerTest, TimedLookupsRequireAnActiveDedicatedListener)
   addTransform(8, 1.0);
   const rclcpp::Time stamp(8, 0, RCL_ROS_TIME);
   const auto pose = makePose(8);
-  tf_manager_.startListener();
-  EXPECT_TRUE(tf_manager_.getStampedTransform("odom", "base_link", stamp, 0.1));
-  EXPECT_TRUE(tf_manager_.getStampedTransform(
-      "odom", stamp, "base_link", stamp, "odom", 0.1));
-  EXPECT_TRUE(tf_manager_.transformStampedPose("odom", pose, 0.1));
-
-  tf_manager_.stopListener();
   testing::internal::CaptureStderr();
   EXPECT_FALSE(tf_manager_.getStampedTransform(
       "odom", "base_link", stamp, 0.1, nav2::Log::Disabled));
@@ -129,11 +122,6 @@ TEST_F(TransformManagerTest, TimedLookupsRequireAnActiveDedicatedListener)
   EXPECT_FALSE(tf_manager_.getStampedTransform("odom", "base_link", stamp, 0.1));
   EXPECT_NE(testing::internal::GetCapturedStderr().find("active dedicated listener"),
     std::string::npos);
-  tf_manager_.startListener();
-  EXPECT_TRUE(tf_manager_.getStampedTransform("odom", "base_link", stamp, 0.1));
-  EXPECT_TRUE(tf_manager_.getStampedTransform(
-      "odom", stamp, "base_link", stamp, "odom", 0.1));
-  EXPECT_TRUE(tf_manager_.transformStampedPose("odom", pose, 0.1));
 }
 
 TEST_F(TransformManagerTest, PoseTransformConversionsPreserveHeaderAndGeometry)
@@ -738,33 +726,10 @@ TEST_F(TransformListenerTest, ListenerReceivesTransformsByDefault)
   tf_manager_.reset();
 }
 
-TEST_F(TransformListenerTest, OptionalListenerCanBeStoppedAndRestarted)
-{
-  EXPECT_FALSE(tf_manager_->getRawBuffer().isUsingDedicatedThread());
-  tf_manager_->stopListener();
-  tf_manager_->startListener();
-  EXPECT_TRUE(tf_manager_->getRawBuffer().isUsingDedicatedThread());
-  tf_manager_->startListener();
-  expectTransforms();
-
-  tf_manager_->stopListener();
-  EXPECT_FALSE(tf_manager_->getStampedTransform(
-      "listener_parent", "listener_dynamic", rclcpp::Time(0), 0.1, nav2::Log::Disabled));
-  EXPECT_TRUE(tf_manager_->getLatestTransform("listener_parent", "listener_dynamic"));
-  tf_manager_->stopListener();
-  tf_manager_->getRawBuffer().clear();
-  tf_manager_->startListener();
-  expectTransforms();
-}
-
 TEST_F(TransformListenerTest, CallerCanSpinListener)
 {
-  tf_manager_ = nav2::create_transform_manager(node_, false, false);
-  tf_manager_->startListener();
+  tf_manager_ = nav2::create_transform_manager(node_, true, false);
   EXPECT_FALSE(tf_manager_->getRawBuffer().isUsingDedicatedThread());
-  expectTransforms();
-  tf_manager_->stopListener();
-  tf_manager_->startListener();
   expectTransforms();
 }
 
@@ -846,7 +811,7 @@ TEST_F(TransformListenerTest, ConcurrentStaticSendsRetainEveryTransform)
 
 TEST_F(TransformListenerTest, BroadcastsTransformVector)
 {
-  tf_manager_->startListener();
+  tf_manager_ = nav2::create_transform_manager(node_);
   geometry_msgs::msg::TransformStamped first;
   first.header.frame_id = "broadcast_parent";
   first.child_frame_id = "broadcast_first";
