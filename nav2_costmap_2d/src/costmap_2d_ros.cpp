@@ -260,14 +260,15 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   const auto initial_transform_timeout = rclcpp::Duration::from_seconds(
     initial_transform_timeout_);
   const auto initial_transform_timeout_point = now() + initial_transform_timeout;
+  std::string tf_error;
   while (rclcpp::ok() &&
     !tf_manager_->getLatestTransform(global_frame_, robot_base_frame_,
-      transform_staleness_threshold_, nav2::Log::Disabled).has_value())
+      transform_staleness_threshold_, nav2::Log::Disabled, &tf_error).has_value())
   {
     RCLCPP_INFO(
       get_logger(), "Timed out waiting for transform from %s to %s"
-      " to become available",
-      robot_base_frame_.c_str(), global_frame_.c_str());
+      " to become available: %s",
+      robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
 
     // Check timeout
     if (now() > initial_transform_timeout_point) {
@@ -816,14 +817,15 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
       // First, make sure that the transform between the robot base frame
       // and the global frame is available
       RCLCPP_INFO(get_logger(), "Checking transform");
+      std::string tf_error;
       if (!tf_manager_->getStampedTransform(
         global_frame_, parameter.as_string(), rclcpp::Time(0),
-          1.0, nav2::Log::Disabled).has_value())
+          1.0, nav2::Log::Disabled, &tf_error).has_value())
       {
         RCLCPP_WARN(
           get_logger(), "Timed out waiting for transform from %s to %s"
-          " to become available",
-          parameter.as_string().c_str(), global_frame_.c_str());
+          " to become available: %s",
+          parameter.as_string().c_str(), global_frame_.c_str(), tf_error.c_str());
         RCLCPP_WARN(
           get_logger(), "Rejecting robot_base_frame change to %s , leaving it to its original"
           " value of %s", parameter.as_string().c_str(), robot_base_frame_.c_str());

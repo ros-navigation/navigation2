@@ -67,8 +67,9 @@ BT::NodeStatus TransformAvailableCondition::tick()
     return BT::NodeStatus::SUCCESS;
   }
 
+  std::string tf_error;
   bool found = tf_manager_->getLatestTransform(child_frame_, parent_frame_, 0.0,
-      nav2::Log::Disabled).has_value();
+      nav2::Log::Disabled, &tf_error).has_value();
 
   if (found) {
     was_found_ = true;
@@ -76,8 +77,8 @@ BT::NodeStatus TransformAvailableCondition::tick()
   }
 
   RCLCPP_INFO(
-    node_->get_logger(), "Transform from %s to %s was not found",
-    child_frame_.c_str(), parent_frame_.c_str());
+    node_->get_logger(), "Transform from %s to %s was not found: %s",
+    child_frame_.c_str(), parent_frame_.c_str(), tf_error.c_str());
 
   return BT::NodeStatus::FAILURE;
 }

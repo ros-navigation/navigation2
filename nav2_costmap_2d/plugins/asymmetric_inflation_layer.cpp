@@ -217,14 +217,15 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   // Look up the current path frame -> costmap frame transform
   geometry_msgs::msg::TransformStamped transform;
   if (need_transform) {
+    std::string tf_error;
     const auto transform_result = tf_manager_->getLatestTransform(
-      global_frame, path_frame, transform_staleness_threshold_, nav2::Log::Disabled);
+      global_frame, path_frame, transform_staleness_threshold_, nav2::Log::Disabled, &tf_error);
     if (!transform_result) {
       RCLCPP_WARN_THROTTLE(
         logger_, *clock_, 1000,
         "AsymmetricInflationLayer: TF lookup failed or returned stale data (%s -> %s). "
-        "Falling back to symmetric inflation.",
-        path_frame.c_str(), global_frame.c_str());
+        "Falling back to symmetric inflation: %s",
+        path_frame.c_str(), global_frame.c_str(), tf_error.c_str());
       return local_path_segments;
     }
     transform = *transform_result;

@@ -291,13 +291,15 @@ AmclNode::getOdomPose(
   const rclcpp::Time & sensor_timestamp, const std::string & frame_id)
 {
   // Get the robot's pose at the sensor timestamp.
+  std::string tf_error;
   const auto odom_pose_transform = tf_manager_->getStampedTransform(
-    odom_frame_id_, frame_id, sensor_timestamp, 0.0, nav2::Log::Disabled);
+    odom_frame_id_, frame_id, sensor_timestamp, 0.0, nav2::Log::Disabled, &tf_error);
   if (!odom_pose_transform) {
     ++scan_error_count_;
     if (scan_error_count_ % 20 == 0) {
       RCLCPP_ERROR(
-        get_logger(), "(%d) consecutive laser scan transforms failed:", scan_error_count_);
+        get_logger(), "(%d) consecutive laser scan transforms failed: %s",
+        scan_error_count_, tf_error.c_str());
     }
     return false;
   }
@@ -886,10 +888,12 @@ AmclNode::calculateMaptoOdomTransform(
   tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
   tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
+  std::string tf_error;
   const auto odom_to_map = tf_manager_->transformStampedPose(
-    odom_frame_id_, tmp_tf_stamped, 0.0, nav2::Log::Disabled);
+    odom_frame_id_, tmp_tf_stamped, 0.0, nav2::Log::Disabled, &tf_error);
   if (!odom_to_map) {
-    RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform:");
+    RCLCPP_DEBUG(get_logger(), "Failed to subtract base to odom transform: %s",
+      tf_error.c_str());
     return;
   }
 
