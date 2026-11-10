@@ -58,7 +58,7 @@ public:
    * @param node Node to use to create any interface needed
    * @param graph Graph to populate kD tree using
    * @param id_to_graph_map Remapping vector to correlate nodeIDs
-   * @param tf TF buffer for transformations
+   * @param tf_manager Transform manager for transformations
    * @param costmap_subscriber Costmap subscriber to use for traversability
    * @param route_frame Planning frame
    * @param base_frame Robot reference frame
@@ -67,7 +67,7 @@ public:
     nav2::LifecycleNode::SharedPtr node,
     Graph & graph,
     GraphToIDMap * id_to_graph_map,
-    nav2::TransformManager::SharedPtr tf,
+    nav2::TransformManager::SharedPtr tf_manager,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & route_frame,
     const std::string & base_frame);

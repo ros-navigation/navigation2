@@ -25,12 +25,12 @@ namespace nav2_mppi_controller
 
 void MPPIController::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, const nav2::TransformManager::SharedPtr tf,
+  std::string name, const nav2::TransformManager::SharedPtr tf_manager,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   parent_ = parent;
   costmap_ros_ = costmap_ros;
-  tf_manager_ = tf;
+  tf_manager_ = tf_manager;
   name_ = name;
   parameters_handler_ = std::make_unique<ParametersHandler>(parent, name_);
 

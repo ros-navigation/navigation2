@@ -162,16 +162,16 @@ protected:
  */
 
 TEST_F(TestNode, testObstacleLayers) {
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_a, "pclayer_a");
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_b, "pclayer_b");
 
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_a =
     std::make_shared<nav2_costmap_2d::ObstacleLayer>();
@@ -192,7 +192,7 @@ TEST_F(TestNode, testObstacleLayers) {
 }
 
 TEST_F(TestNode, testObstacleAndStaticLayers) {
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -203,10 +203,10 @@ TEST_F(TestNode, testObstacleAndStaticLayers) {
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_a, "pclayer_a");
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_b, "pclayer_b");
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
     std::make_shared<nav2_costmap_2d::StaticLayer>();
@@ -228,7 +228,7 @@ TEST_F(TestNode, testObstacleAndStaticLayers) {
 }
 
 TEST_F(TestNode, testDifferentInflationLayers) {
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -247,10 +247,10 @@ TEST_F(TestNode, testDifferentInflationLayers) {
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_a, "pclayer_a");
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_b, "pclayer_b");
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
     std::make_shared<nav2_costmap_2d::StaticLayer>();
@@ -280,7 +280,7 @@ TEST_F(TestNode, testDifferentInflationLayers) {
 }
 
 TEST_F(TestNode, testDifferentInflationLayers2) {
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -299,10 +299,10 @@ TEST_F(TestNode, testDifferentInflationLayers2) {
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_a, "pclayer_a");
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_b, "pclayer_b");
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
     std::make_shared<nav2_costmap_2d::StaticLayer>();
@@ -332,7 +332,7 @@ TEST_F(TestNode, testDifferentInflationLayers2) {
 }
 
 TEST_F(TestNode, testResetting) {
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -359,10 +359,10 @@ TEST_F(TestNode, testResetting) {
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_a, "pclayer_a");
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_b, "pclayer_b");
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
     std::make_shared<nav2_costmap_2d::StaticLayer>();
@@ -408,7 +408,7 @@ TEST_F(TestNode, testResetting) {
 }
 
 TEST_F(TestNode, testClearing) {
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -435,10 +435,10 @@ TEST_F(TestNode, testClearing) {
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_a, "pclayer_a");
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_b, "pclayer_b");
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
     std::make_shared<nav2_costmap_2d::StaticLayer>();
@@ -479,7 +479,7 @@ TEST_F(TestNode, testClearing) {
 }
 
 TEST_F(TestNode, testOverwriteCombinationMethods) {
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -508,10 +508,10 @@ TEST_F(TestNode, testOverwriteCombinationMethods) {
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_a, "pclayer_a");
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_b, "pclayer_b");
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
     std::make_shared<nav2_costmap_2d::StaticLayer>();
@@ -545,7 +545,7 @@ TEST_F(TestNode, testOverwriteCombinationMethods) {
 }
 
 TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
 
   node_->declare_parameter(
     "pclayer_a.static.map_topic",
@@ -576,10 +576,10 @@ TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_a, "pclayer_a");
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_b, "pclayer_b");
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
     std::make_shared<nav2_costmap_2d::StaticLayer>();
@@ -612,15 +612,15 @@ TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
 }
 
 TEST_F(TestNode, testClearable) {
-  nav2::TransformManager tf(node_, false);
+  nav2::TransformManager tf_manager(node_, false);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_a, "pclayer_a");
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
-  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+  addPluginContainerLayer(layers, tf_manager, node_, pclayer_b, "pclayer_b");
 
   std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
     std::make_shared<nav2_costmap_2d::StaticLayer>();

@@ -65,7 +65,7 @@ DWBLocalPlanner::DWBLocalPlanner()
 
 void DWBLocalPlanner::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, nav2::TransformManager::SharedPtr tf,
+  std::string name, nav2::TransformManager::SharedPtr tf_manager,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   node_ = parent;
@@ -74,7 +74,7 @@ void DWBLocalPlanner::configure(
   logger_ = node->get_logger();
   clock_ = node->get_clock();
   costmap_ros_ = costmap_ros;
-  tf_manager_ = tf;
+  tf_manager_ = tf_manager;
   dwb_plugin_name_ = name;
 
   debug_trajectory_details_ = node->declare_or_get_parameter(

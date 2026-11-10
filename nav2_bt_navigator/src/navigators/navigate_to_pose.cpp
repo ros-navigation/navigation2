@@ -127,7 +127,7 @@ NavigateToPoseNavigator::onLoop()
   auto feedback_msg = std::make_shared<ActionT::Feedback>();
 
   geometry_msgs::msg::PoseStamped current_pose;
-  const auto current_pose_result = feedback_utils_.tf->getLatestPose(
+  const auto current_pose_result = feedback_utils_.tf_manager->getLatestPose(
     feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_);
   if (!current_pose_result) {
     RCLCPP_ERROR(logger_, "Robot pose is not available.");
@@ -225,7 +225,7 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 bool
 NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 {
-  const auto current_pose = feedback_utils_.tf->getLatestPose(
+  const auto current_pose = feedback_utils_.tf_manager->getLatestPose(
     feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_);
   if (!current_pose) {
     bt_action_server_->setInternalError(
@@ -234,7 +234,7 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
     return false;
   }
 
-  const auto goal_pose = feedback_utils_.tf->transformStampedPose(
+  const auto goal_pose = feedback_utils_.tf_manager->transformStampedPose(
     feedback_utils_.global_frame, goal->pose,
     feedback_utils_.transform_tolerance);
   if (!goal_pose) {

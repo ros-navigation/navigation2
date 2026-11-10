@@ -48,7 +48,7 @@ public:
 
 protected:
   /**
-   * @brief: Initializes TF buffer/listener, obtains ROS-parameters, creates incoming services,
+   * @brief: Initializes TF manager, obtains ROS-parameters, creates incoming services,
    * and output map publisher
    * @param state Lifecycle Node's state
    * @return Success or Failure
@@ -180,7 +180,7 @@ protected:
     std::shared_ptr<nav2_msgs::srv::RemoveShapes::Response> response);
 
 protected:
-  /// @brief TF buffer
+  /// @brief Transform manager
   nav2::TransformManager::SharedPtr tf_manager_;
 
   /// @brief All shapes vector

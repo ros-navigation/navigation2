@@ -85,8 +85,8 @@ public:
 
     // 20x20 cells with origin at (0, 0)
     layers_.resizeMap(20, 20, resolution, 0, 0);
-    nav2::TransformManager tf(node_, false);
-    addObstacleLayer(layers_, tf, node_, obstacle_layer_);
+    nav2::TransformManager tf_manager(node_, false);
+    addObstacleLayer(layers_, tf_manager, node_, obstacle_layer_);
   }
 
   ~ObstacleLayerTest() {}

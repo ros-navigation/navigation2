@@ -76,13 +76,13 @@ TEST(RotationShimControllerTest, lifecycleTransitions)
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
 
   // Should not populate primary controller, does not exist
-  EXPECT_THROW(ctrl->configure(node, name, tf, costmap), std::runtime_error);
+  EXPECT_THROW(ctrl->configure(node, name, tf_manager, costmap), std::runtime_error);
   EXPECT_EQ(ctrl->getPrimaryController(), nullptr);
 
   // Add a controller to the setup
@@ -98,7 +98,7 @@ TEST(RotationShimControllerTest, lifecycleTransitions)
     node->get_node_base_interface(),
     results);
 
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
   EXPECT_NE(ctrl->getPrimaryController(), nullptr);
 
   ctrl->activate();
@@ -114,7 +114,7 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -127,7 +127,7 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   node->declare_parameter("PathFollower.simulate_ahead_time", 0.0);
 
   auto controller = std::make_shared<RotationShimShim>();
-  controller->configure(node, name, tf, costmap);
+  controller->configure(node, name, tf_manager, costmap);
   controller->activate();
 
   // Test state update and path setting
@@ -163,7 +163,7 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap", "/", false);
   costmap->configure();
 
@@ -175,7 +175,7 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
   node->declare_parameter("controller_frequency", 1.0);
 
   auto controller = std::make_shared<RotationShimShim>();
-  controller->configure(node, name, tf, costmap);
+  controller->configure(node, name, tf_manager, costmap);
   controller->activate();
 
   // Test state update and path setting
@@ -223,7 +223,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   costmap->declare_parameter("origin_x", 0.0);
   costmap->declare_parameter("origin_y", 0.0);
@@ -236,7 +236,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   transform.transform.rotation.y = 0.0;
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
-  tf->sendTransform(transform);
+  tf_manager->sendTransform(transform);
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
@@ -245,10 +245,10 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   node->declare_parameter("controller_frequency", 1.0);
 
   auto controller = std::make_shared<RotationShimShim>();
-  controller->configure(node, name, tf, costmap);
+  controller->configure(node, name, tf_manager, costmap);
   controller->activate();
   nav2_controller::FeasiblePathHandler path_handler;
-  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf_manager);
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
@@ -275,7 +275,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   // is 0.5 and that should cause a rotation in place
   controller->newPathReceived(path);
   path_handler.setPlan(path);
-  tf->sendTransform(transform);
+  tf_manager->sendTransform(transform);
   geometry_msgs::msg::PoseStamped goal = path.poses.back();
   auto effort = controller->computeVelocityCommands(pose, velocity, &checker,
     path, goal);
@@ -286,7 +286,7 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -298,14 +298,14 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   transform.transform.rotation.y = 0.0;
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
-  tf->sendTransform(transform);
+  tf_manager->sendTransform(transform);
 
   geometry_msgs::msg::TransformStamped map_to_base_link;
   map_to_base_link.header.frame_id = "map";
   map_to_base_link.child_frame_id = "base_link";
   map_to_base_link.header.stamp = node->now();
   map_to_base_link.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf->getRawBuffer().setTransform(map_to_base_link, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(map_to_base_link, "test", false));
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
@@ -322,10 +322,10 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
     false);
 
   auto controller = std::make_shared<RotationShimShim>();
-  controller->configure(node, name, tf, costmap);
+  controller->configure(node, name, tf_manager, costmap);
   controller->activate();
   nav2_controller::FeasiblePathHandler path_handler;
-  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf_manager);
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
@@ -378,7 +378,7 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -390,7 +390,7 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   transform.transform.rotation.y = 0.0;
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
-  tf->sendTransform(transform);
+  tf_manager->sendTransform(transform);
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
@@ -403,10 +403,10 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   node->declare_parameter("PathFollower.primary_controller.use_collision_detection", false);
 
   auto controller = std::make_shared<RotationShimShim>();
-  controller->configure(node, name, tf, costmap);
+  controller->configure(node, name, tf_manager, costmap);
   controller->activate();
   nav2_controller::FeasiblePathHandler path_handler;
-  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf_manager);
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
@@ -459,7 +459,7 @@ TEST(RotationShimControllerTest, accelerationTests) {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -471,14 +471,14 @@ TEST(RotationShimControllerTest, accelerationTests) {
   transform.transform.rotation.y = 0.0;
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
-  tf->sendTransform(transform);
+  tf_manager->sendTransform(transform);
 
   geometry_msgs::msg::TransformStamped map_to_base_link;
   map_to_base_link.header.frame_id = "map";
   map_to_base_link.child_frame_id = "base_link";
   map_to_base_link.header.stamp = node->now();
   map_to_base_link.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf->getRawBuffer().setTransform(map_to_base_link, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(map_to_base_link, "test", false));
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
@@ -495,10 +495,10 @@ TEST(RotationShimControllerTest, accelerationTests) {
     0.5);
 
   auto controller = std::make_shared<RotationShimShim>();
-  controller->configure(node, name, tf, costmap);
+  controller->configure(node, name, tf_manager, costmap);
   controller->activate();
   nav2_controller::FeasiblePathHandler path_handler;
-  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf_manager);
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
@@ -552,7 +552,7 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -567,7 +567,7 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
   transform.transform.rotation.y = 0.0;
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
-  tf->sendTransform(transform);
+  tf_manager->sendTransform(transform);
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
@@ -580,7 +580,7 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
   node->declare_parameter("PathFollower.simulate_ahead_time", 0.0);
 
   auto controller = std::make_shared<RotationShimShim>();
-  controller->configure(node, name, tf, costmap);
+  controller->configure(node, name, tf_manager, costmap);
   controller->activate();
 
   nav_msgs::msg::Path path;
@@ -610,7 +610,7 @@ TEST(RotationShimControllerTest, testDynamicParameter)
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   std::string name = "test";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
 
@@ -620,7 +620,7 @@ TEST(RotationShimControllerTest, testDynamicParameter)
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
 
   auto controller = std::make_shared<RotationShimShim>();
-  controller->configure(node, name, tf, costmap);
+  controller->configure(node, name, tf_manager, costmap);
   controller->activate();
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -683,7 +683,7 @@ TEST(RotationShimControllerTest, maxCostThresholdTest)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "test";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   costmap->configure();
   // set a valid primary controller so we can do lifecycle
@@ -694,7 +694,7 @@ TEST(RotationShimControllerTest, maxCostThresholdTest)
   node->declare_parameter("test.max_cost_threshold",
     static_cast<double>(nav2_costmap_2d::FREE_SPACE));
   auto controller = std::make_shared<RotationShimShim>();
-  controller->configure(node, name, tf, costmap);
+  controller->configure(node, name, tf_manager, costmap);
   controller->activate();
   nav_msgs::msg::Path path;
   path.header.frame_id = "base_link";

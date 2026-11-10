@@ -76,7 +76,7 @@ public:
   void initialize(
     LayeredCostmap * parent,
     std::string name,
-    nav2::TransformManager * tf,
+    nav2::TransformManager * tf_manager,
     const nav2::LifecycleNode::WeakPtr & node,
     rclcpp::CallbackGroup::SharedPtr callback_group);
   /** @brief Stop publishers. */

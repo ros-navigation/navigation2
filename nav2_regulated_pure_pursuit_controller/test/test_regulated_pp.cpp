@@ -105,13 +105,13 @@ TEST(RegulatedPurePursuitTest, basicAPI)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
 
   // instantiate
   auto ctrl = std::make_shared<BasicAPIRPP>();
   costmap->on_configure(rclcpp_lifecycle::State());
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
   ctrl->activate();
   ctrl->deactivate();
   ctrl->cleanup();
@@ -150,11 +150,11 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
 
   geometry_msgs::msg::Twist twist;
 
@@ -208,11 +208,11 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
 
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
 
   nav2_controller::SimpleGoalChecker goal_checker;
   nav2::declare_parameter_if_not_declared(
@@ -289,7 +289,7 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   node->set_parameter(
     rclcpp::Parameter("checker.stateful", true));
 
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
 
   nav2_controller::SimpleGoalChecker stateful_goal_checker;
   node->set_parameter(rclcpp::Parameter("checker.stateful", true));
@@ -325,7 +325,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -336,7 +336,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
     name + ".approach_velocity_scaling_dist",
     rclcpp::ParameterValue(approach_velocity_scaling_dist));
 
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
 
   auto no_approach_path = path_utils::generate_path(
     geometry_msgs::msg::PoseStamped(), 0.1, {
@@ -428,8 +428,8 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   costmap->on_configure(rclcpp_lifecycle::State());
   auto ctrl =
     std::make_unique<nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController>();
-  auto tf = nav2::create_transform_manager(node);
-  ctrl->configure(node, "test", tf, costmap);
+  auto tf_manager = nav2::create_transform_manager(node);
+  ctrl->configure(node, "test", tf_manager, costmap);
   ctrl->activate();
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -538,7 +538,7 @@ TEST(RegulatedPurePursuitTest, computeVelocityByDWPP)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -553,10 +553,10 @@ TEST(RegulatedPurePursuitTest, computeVelocityByDWPP)
     node, name + ".use_collision_detection", rclcpp::ParameterValue(true));
   node->set_parameter(rclcpp::Parameter(name + ".use_collision_detection", false));
 
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
   ctrl->activate();
   nav2_controller::FeasiblePathHandler path_handler;
-  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf_manager);
 
   auto stamp = node->get_clock()->now();
 
@@ -577,7 +577,7 @@ TEST(RegulatedPurePursuitTest, computeVelocityByDWPP)
   map_to_base.header.frame_id = "map";
   map_to_base.child_frame_id = "base_link";
   map_to_base.transform.rotation.w = 1.0;
-  tf->getRawBuffer().setTransform(map_to_base, "dwpp-controller-test");
+  tf_manager->getRawBuffer().setTransform(map_to_base, "dwpp-controller-test");
 
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = "base_link";
@@ -606,7 +606,7 @@ TEST(RegulatedPurePursuitTest, testObstacleBeyondGoal)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -622,7 +622,7 @@ TEST(RegulatedPurePursuitTest, testObstacleBeyondGoal)
   nav2::declare_parameter_if_not_declared(
     node, name + ".allow_obstacle_checking_beyond_goal", rclcpp::ParameterValue(false));
 
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
   ctrl->activate();
 
   auto * raw_costmap = costmap->getCostmap();
@@ -673,7 +673,7 @@ TEST(RegulatedPurePursuitTest, testObstacleBeyondGoal)
 
   node->set_parameter(
     rclcpp::Parameter(name + ".allow_obstacle_checking_beyond_goal", true));
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
   ctrl->activate();
   ctrl->newPathReceived(plan);
 
@@ -691,7 +691,7 @@ TEST(RegulatedPurePursuitTest, testParameterWarnings)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
@@ -707,27 +707,27 @@ TEST(RegulatedPurePursuitTest, testParameterWarnings)
     node, name + ".min_distance_to_obstacle", rclcpp::ParameterValue(1.5));
   nav2::declare_parameter_if_not_declared(
     node, name + ".allow_obstacle_checking_beyond_goal", rclcpp::ParameterValue(false));
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
   ctrl->cleanup();
 
   // min_distance_to_obstacle > max_lookahead_dist (velocity scaled)
   node->set_parameter(rclcpp::Parameter(name + ".use_velocity_scaled_lookahead_dist", true));
   node->set_parameter(rclcpp::Parameter(name + ".max_lookahead_dist", 1.0));
   node->set_parameter(rclcpp::Parameter(name + ".min_distance_to_obstacle", 2.0));
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
   ctrl->cleanup();
 
   // allow_obstacle_checking_beyond_goal without velocity scaled lookahead
   node->set_parameter(rclcpp::Parameter(name + ".use_velocity_scaled_lookahead_dist", false));
   node->set_parameter(rclcpp::Parameter(name + ".allow_obstacle_checking_beyond_goal", true));
   node->set_parameter(rclcpp::Parameter(name + ".min_distance_to_obstacle", 1.0));
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
   ctrl->cleanup();
 
   // allow_obstacle_checking_beyond_goal with min_distance_to_obstacle <= 0.0
   node->set_parameter(rclcpp::Parameter(name + ".use_velocity_scaled_lookahead_dist", true));
   node->set_parameter(rclcpp::Parameter(name + ".min_distance_to_obstacle", -1.0));
-  ctrl->configure(node, name, tf, costmap);
+  ctrl->configure(node, name, tf_manager, costmap);
   ctrl->cleanup();
 }
 

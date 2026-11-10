@@ -36,10 +36,10 @@ TEST(DeclareParameter, useValidParameter)
   LayerWrapper layer;
   nav2::LifecycleNode::SharedPtr node =
     std::make_shared<nav2::LifecycleNode>("test_node");
-  nav2::TransformManager tf(node, false);
+  nav2::TransformManager tf_manager(node, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
-  layer.initialize(&layers, "test_layer", &tf, node, nullptr);
+  layer.initialize(&layers, "test_layer", &tf_manager, node, nullptr);
 
   node->declare_parameter("test_layer.test1", rclcpp::ParameterValue("test_val1"));
   try {
@@ -55,10 +55,10 @@ TEST(DeclareParameter, useInvalidParameter)
   LayerWrapper layer;
   nav2::LifecycleNode::SharedPtr node =
     std::make_shared<nav2::LifecycleNode>("test_node");
-  nav2::TransformManager tf(node, false);
+  nav2::TransformManager tf_manager(node, false);
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
-  layer.initialize(&layers, "test_layer", &tf, node, nullptr);
+  layer.initialize(&layers, "test_layer", &tf_manager, node, nullptr);
 
   node->declare_parameter("test_layer.test2", rclcpp::PARAMETER_STRING);
   try {

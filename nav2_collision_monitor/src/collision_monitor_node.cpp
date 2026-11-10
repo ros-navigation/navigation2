@@ -48,7 +48,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  // Transform buffer and listener initialization
+  // Transform manager initialization
   tf_manager_ = nav2::create_transform_manager(this);
 
   std::string cmd_vel_in_topic;

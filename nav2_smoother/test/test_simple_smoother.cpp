@@ -69,10 +69,10 @@ TEST(SmootherTest, test_simple_smoother)
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
-  nav2::TransformManager::SharedPtr dummy_tf;
+  nav2::TransformManager::SharedPtr dummy_tf_manager;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   auto smoother = std::make_unique<SmootherWrapper>();
-  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf_manager, dummy_costmap, dummy_footprint);
 
   // Test that an irregular distributed path becomes more distributed
   nav_msgs::msg::Path straight_irregular_path;

@@ -84,8 +84,8 @@ public:
   DummyFootprintSubscriber(
     nav2::LifecycleNode::SharedPtr node,
     const std::string & topic_name,
-    nav2::TransformManager & tf)
-  : FootprintSubscriber(node, topic_name, tf)
+    nav2::TransformManager & tf_manager)
+  : FootprintSubscriber(node, topic_name, tf_manager)
   {
     auto footprint = std::make_shared<geometry_msgs::msg::PolygonStamped>();
     footprint->header.frame_id = "base_link";  // global frame = robot frame to avoid tf lookup

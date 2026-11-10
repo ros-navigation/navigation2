@@ -45,7 +45,7 @@ public:
    */
   explicit GraphLoader(
     nav2::LifecycleNode::SharedPtr node,
-    nav2::TransformManager::SharedPtr tf,
+    nav2::TransformManager::SharedPtr tf_manager,
     const std::string frame);
 
   /**

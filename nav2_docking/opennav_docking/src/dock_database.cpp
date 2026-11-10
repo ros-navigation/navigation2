@@ -32,12 +32,12 @@ DockDatabase::~DockDatabase()
 
 bool DockDatabase::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
-  nav2::TransformManager::SharedPtr tf)
+  nav2::TransformManager::SharedPtr tf_manager)
 {
   node_ = parent;
   auto node = node_.lock();
 
-  if (!getDockPlugins(node, tf)) {
+  if (!getDockPlugins(node, tf_manager)) {
     RCLCPP_ERROR(
       node->get_logger(),
       "An error occurred while getting the dock plugins!");
@@ -149,7 +149,7 @@ ChargingDock::Ptr DockDatabase::findDockPlugin(const std::string & type)
 
 bool DockDatabase::getDockPlugins(
   const nav2::LifecycleNode::SharedPtr & node,
-  nav2::TransformManager::SharedPtr tf)
+  nav2::TransformManager::SharedPtr tf_manager)
 {
   std::vector<std::string> docks_plugins;
   try {
@@ -173,7 +173,7 @@ bool DockDatabase::getDockPlugins(
       RCLCPP_INFO(
         node->get_logger(), "Created charging dock plugin %s of type %s",
         docks_plugins[i].c_str(), plugin_type.c_str());
-      dock->configure(node, docks_plugins[i], tf);
+      dock->configure(node, docks_plugins[i], tf_manager);
       dock_plugins_.insert({docks_plugins[i], dock});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(

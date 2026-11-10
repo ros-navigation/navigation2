@@ -49,14 +49,14 @@ void FeasiblePathHandler::initialize(
   const rclcpp::Logger & logger,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-  nav2::TransformManager::SharedPtr tf)
+  nav2::TransformManager::SharedPtr tf_manager)
 {
   logger_ = logger;
   plugin_name_ = plugin_name;
   node_ = parent;
   auto node = node_.lock();
   costmap_ros_ = costmap_ros;
-  tf_manager_ = tf;
+  tf_manager_ = tf_manager;
   transform_tolerance_ = costmap_ros_->getTransformTolerance();
   reject_unit_path_ = node->declare_or_get_parameter(
     plugin_name + ".reject_unit_path", false);

@@ -452,16 +452,16 @@ std::shared_ptr<nav2_costmap_2d::DenoiseLayer> constructLayer(
   nav2::LifecycleNode::SharedPtr node =
   std::make_shared<nav2::LifecycleNode>("test_node"))
 {
-  auto tf = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto layers = std::make_shared<nav2_costmap_2d::LayeredCostmap>("frame", false, false);
 
-  auto deleter = [node, tf, layers](nav2_costmap_2d::DenoiseLayer * ptr)
+  auto deleter = [node, tf_manager, layers](nav2_costmap_2d::DenoiseLayer * ptr)
     {
       delete ptr;
     };
   auto layer = std::shared_ptr<nav2_costmap_2d::DenoiseLayer>(
     new nav2_costmap_2d::DenoiseLayer, deleter);
-  layer->initialize(layers.get(), "test_layer", tf.get(), node, nullptr);
+  layer->initialize(layers.get(), "test_layer", tf_manager.get(), node, nullptr);
   return layer;
 }
 

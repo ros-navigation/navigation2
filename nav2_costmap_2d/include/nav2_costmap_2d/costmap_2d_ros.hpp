@@ -372,7 +372,7 @@ protected:
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::unique_ptr<nav2::NodeThread> executor_thread_;
 
-  // Transform buffer with an owned listener
+  // Transform manager with an owned listener
   nav2::TransformManager::SharedPtr tf_manager_;
 
   std::unique_ptr<LayeredCostmap> layered_costmap_{nullptr};

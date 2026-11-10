@@ -42,12 +42,12 @@ public:
   /**
    * @brief A constructor for nav2_route::GraphSaver
    * @param node Lifecycle node encapsulated by the GraphSaver
-   * @param tf A tf buffer
+   * @param tf_manager A transform manager
    * @param frame Coordinate frame that the graph belongs to
    */
   explicit GraphSaver(
     nav2::LifecycleNode::SharedPtr node,
-    nav2::TransformManager::SharedPtr tf,
+    nav2::TransformManager::SharedPtr tf_manager,
     const std::string frame);
 
   /**

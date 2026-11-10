@@ -29,9 +29,9 @@ namespace opennav_docking
 {
 
 Controller::Controller(
-  const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf,
+  const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf_manager,
   std::string base_frame)
-: tf_manager_(tf), base_frame_(base_frame)
+: tf_manager_(tf_manager), base_frame_(base_frame)
 {
   logger_ = node->get_logger();
 

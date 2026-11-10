@@ -53,14 +53,14 @@ public:
    * @param logger Node logging interface
    * @param plugin_name Name of the plugin
    * @param costmap_ros Costmap2DROS object
-   * @param tf Shared ptr of TF2 buffer
+   * @param tf_manager Shared pointer to the transform manager
    */
   virtual void initialize(
     const nav2::LifecycleNode::WeakPtr & parent,
     const rclcpp::Logger & logger,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    nav2::TransformManager::SharedPtr tf) = 0;
+    nav2::TransformManager::SharedPtr tf_manager) = 0;
 
   /**
    * @brief Set new reference plan

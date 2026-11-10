@@ -41,7 +41,7 @@ namespace nav2_constrained_smoother
 
 void ConstrainedSmoother::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  std::string name, nav2::TransformManager::SharedPtr tf,
+  std::string name, nav2::TransformManager::SharedPtr tf_manager,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>)
 {
@@ -51,7 +51,7 @@ void ConstrainedSmoother::configure(
   }
 
   costmap_sub_ = costmap_sub;
-  tf_manager_ = tf;
+  tf_manager_ = tf_manager;
   plugin_name_ = name;
   logger_ = node->get_logger();
 

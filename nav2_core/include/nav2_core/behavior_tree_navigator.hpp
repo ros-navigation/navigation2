@@ -45,7 +45,7 @@ struct FeedbackUtils
   std::string robot_frame;
   std::string global_frame;
   double transform_tolerance;
-  nav2::TransformManager::SharedPtr tf;
+  nav2::TransformManager::SharedPtr tf_manager;
 };
 
 /**
@@ -260,7 +260,7 @@ public:
     }
 
     BT::Blackboard::Ptr blackboard = bt_action_server_->getBlackboard();
-    blackboard->set("tf_buffer", feedback_utils.tf);  // NOLINT
+    blackboard->set("tf_buffer", feedback_utils.tf_manager);  // NOLINT
     blackboard->set("initial_pose_received", false);  // NOLINT
     blackboard->set("number_recoveries", 0);  // NOLINT
     blackboard->set("odom_smoother", odom_smoother);  // NOLINT

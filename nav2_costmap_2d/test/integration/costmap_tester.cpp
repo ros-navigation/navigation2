@@ -54,7 +54,7 @@ std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 class CostmapTester : public testing::Test
 {
 public:
-  explicit CostmapTester(nav2::TransformManager & tf);
+  explicit CostmapTester(nav2::TransformManager & tf_manager);
   void checkConsistentCosts();
   void compareCellToNeighbors(
     nav2_costmap_2d::Costmap2D & costmap,
@@ -65,9 +65,9 @@ public:
   virtual void TestBody() {}
 };
 
-CostmapTester::CostmapTester(nav2::TransformManager & tf)
+CostmapTester::CostmapTester(nav2::TransformManager & tf_manager)
 {
-  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap", tf);
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap", tf_manager);
 }
 
 void CostmapTester::checkConsistentCosts()
