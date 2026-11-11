@@ -220,18 +220,9 @@ DWBLocalPlanner::computeVelocityCommands(
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.twist = nav_2d_utils::twist2Dto3D(cmd_vel2d.velocity);
     return cmd_vel;
-  } catch (const nav2_core::ControllerTFError & e) {
+  } catch (const nav2_core::ControllerException &) {
     pub_->publishEvaluation(results);
-    throw e;
-  } catch (const nav2_core::InvalidPath & e) {
-    pub_->publishEvaluation(results);
-    throw e;
-  } catch (const nav2_core::NoValidControl & e) {
-    pub_->publishEvaluation(results);
-    throw e;
-  } catch (const nav2_core::ControllerException & e) {
-    pub_->publishEvaluation(results);
-    throw e;
+    throw;
   }
 }
 
