@@ -28,6 +28,45 @@
 namespace nav2_controller
 {
 /**
+ * @struct PrunablePath
+ * @brief A path pruned by moving its start index rather than by erasing the passed
+ * poses, so pruning does not move every remaining pose in memory. The passed poses
+ * stay allocated until the path is replaced.
+ */
+struct PrunablePath
+{
+  nav_msgs::msg::Path path;
+  size_t start_index{0u};
+
+  /**
+   * @brief Get the first pose that has not been pruned
+   * @return Iterator to the first pose that has not been pruned
+   */
+  nav2_core::PathIterator begin() {return path.poses.begin() + start_index;}
+
+  /**
+   * @brief Get the end of the path
+   * @return Iterator past the last pose of the path
+   */
+  nav2_core::PathIterator end() {return path.poses.end();}
+
+  /**
+   * @brief Get the number of poses that have not been pruned
+   * @return Number of poses that have not been pruned
+   */
+  size_t size() const {return path.poses.size() - start_index;}
+
+  /**
+   * @brief Prune the poses before new_begin
+   * @param new_begin Iterator to the new first pose of the path
+   */
+  void prune(const nav2_core::PathIterator & new_begin)
+  {
+    start_index = new_begin - path.poses.begin();
+  }
+};
+
+/**
 * @class FeasiblePathHandler
 * @brief This plugin manages the global plan by clipping it to the local
 * segment, typically bounded by the local costmap size
@@ -142,7 +181,7 @@ protected:
   nav2::TransformManager::SharedPtr tf_manager_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav_msgs::msg::Path global_plan_;
-  nav_msgs::msg::Path global_plan_up_to_constraint_;
+  PrunablePath global_plan_up_to_constraint_;
   geometry_msgs::msg::PoseStamped global_pose_;
   unsigned int constraint_locale_{0u};
   bool reject_unit_path_, enforce_path_inversion_, enforce_path_rotation_;

@@ -113,7 +113,7 @@ bool FeasiblePathHandler::isWithinInversionTolerances(
   const geometry_msgs::msg::PoseStamped & robot_pose)
 {
   // Keep full path if we are within tolerance of the inversion pose
-  const auto last_pose = global_plan_up_to_constraint_.poses.back();
+  const auto last_pose = global_plan_up_to_constraint_.path.poses.back();
   float distance = hypotf(
     robot_pose.pose.position.x - last_pose.pose.position.x,
     robot_pose.pose.position.y - last_pose.pose.position.y);
@@ -130,21 +130,21 @@ void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
   global_plan_ = path;
-  global_plan_up_to_constraint_ = global_plan_;
+  global_plan_up_to_constraint_ = {global_plan_};
   if (enforce_path_inversion_ || enforce_path_rotation_) {
-    constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_,
-      enforce_path_inversion_, minimum_rotation_angle_);
+    constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(
+      global_plan_up_to_constraint_.path, enforce_path_inversion_, minimum_rotation_angle_);
   }
 }
 
 geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
   const geometry_msgs::msg::PoseStamped & pose)
 {
-  if (global_plan_up_to_constraint_.poses.empty()) {
+  if (global_plan_up_to_constraint_.size() == 0u) {
     throw nav2_core::InvalidPath("Received plan with zero length");
   }
 
-  if (reject_unit_path_ && global_plan_up_to_constraint_.poses.size() == 1) {
+  if (reject_unit_path_ && global_plan_up_to_constraint_.size() == 1u) {
     throw nav2_core::InvalidPath("Received plan with length of one");
   }
 
@@ -152,7 +152,7 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
 
   std::string robot_pose_error;
   const auto robot_pose = tf_manager_->transformStampedPose(
-    global_plan_up_to_constraint_.header.frame_id, pose,
+    global_plan_up_to_constraint_.path.header.frame_id, pose,
     transform_tolerance_, &robot_pose_error);
   if (!robot_pose) {
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame: " +
@@ -170,7 +170,7 @@ nav2_core::PathSegment FeasiblePathHandler::findPlanSegment(
   // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
-    global_plan_up_to_constraint_.poses.begin(), global_plan_up_to_constraint_.poses.end(),
+    global_plan_up_to_constraint_.begin(), global_plan_up_to_constraint_.end(),
       max_robot_pose_search_dist_);
 
   // First find the closest pose on the path to the robot
@@ -178,22 +178,22 @@ nav2_core::PathSegment FeasiblePathHandler::findPlanSegment(
   // portion of the path
   auto closest_point =
     nav2_util::geometry_utils::min_by(
-    global_plan_up_to_constraint_.poses.begin(), closest_pose_upper_bound,
+    global_plan_up_to_constraint_.begin(), closest_pose_upper_bound,
     [this](const geometry_msgs::msg::PoseStamped & ps) {
       return euclidean_distance(global_pose_, ps);
     });
 
   // Do not prune the global plan below 2 points, so there are enough points to interpolate the
   // end-of-path direction.
-  if (global_plan_up_to_constraint_.poses.size() > 1 &&
-    closest_point == std::prev(global_plan_up_to_constraint_.poses.end()))
+  if (global_plan_up_to_constraint_.size() > 1u &&
+    closest_point == std::prev(global_plan_up_to_constraint_.end()))
   {
     closest_point = std::prev(closest_point);
   }
 
   auto pruned_plan_end =
     nav2_util::geometry_utils::first_after_integrated_distance(
-    closest_point, global_plan_up_to_constraint_.poses.end(), prune_distance_);
+    closest_point, global_plan_up_to_constraint_.end(), prune_distance_);
 
   return {closest_point, pruned_plan_end};
 }
@@ -243,14 +243,14 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
 
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)
-  prunePlan(global_plan_up_to_constraint_, closest_point);
+  global_plan_up_to_constraint_.prune(closest_point);
 
   if ((enforce_path_inversion_ || enforce_path_rotation_) && constraint_locale_ != 0u) {
     if (isWithinInversionTolerances(global_pose_)) {
       prunePlan(global_plan_, global_plan_.poses.begin() + constraint_locale_);
-      global_plan_up_to_constraint_ = global_plan_;
-      constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_,
-        enforce_path_inversion_, minimum_rotation_angle_);
+      global_plan_up_to_constraint_ = {global_plan_};
+      constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(
+        global_plan_up_to_constraint_.path, enforce_path_inversion_, minimum_rotation_angle_);
     }
   }
 
