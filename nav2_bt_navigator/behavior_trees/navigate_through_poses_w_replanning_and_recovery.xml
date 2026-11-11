@@ -5,7 +5,8 @@
 -->
 <root BTCPP_format="4" main_tree_to_execute="NavigateThroughPosesWReplanningAndRecovery">
   <BehaviorTree ID="NavigateThroughPosesWReplanningAndRecovery">
-    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+    <RecoveryNode number_of_retries="6" reset_distance="3.0"
+                  global_frame="odom" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
         <ProgressCheckerSelector selected_progress_checker="{selected_progress_checker}" default_progress_checker="progress_checker" topic_name="progress_checker_selector"/>
         <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="general_goal_checker" topic_name="goal_checker_selector"/>
