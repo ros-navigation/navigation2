@@ -193,10 +193,6 @@ protected:
   bool verbose_{false};
 
   using param_callback_t = std::function<void (const rclcpp::Parameter &)>;
-  // Several objects may read the same parameter (e.g. the Optimizer and the ConstraintCritic both
-  // read vx_max), so each parameter keeps one callback per setting it updates, keyed by the
-  // setting's address. A callback added with addParamCallback() has a null key and replaces
-  // all others for that parameter.
   std::unordered_map<std::string,
     std::vector<std::pair<const void *, param_callback_t>>> get_param_callbacks_;
   std::unordered_map<std::string, std::function<get_param_func_t>> get_pre_callbacks_;
