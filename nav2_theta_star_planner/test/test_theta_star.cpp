@@ -262,6 +262,62 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
     life_node->get_node_base_interface(),
     results);
   EXPECT_EQ(life_node->get_parameter("test.w_euc_cost").as_double(), 1.0);
+
+  // Try setting invalid values for terminal_checking_interval
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.terminal_checking_interval", 0)});
+  rclcpp::spin_until_future_complete(
+    life_node->get_node_base_interface(),
+    results);
+  EXPECT_EQ(life_node->get_parameter("test.terminal_checking_interval").as_int(), 100);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.terminal_checking_interval", -1)});
+  rclcpp::spin_until_future_complete(
+    life_node->get_node_base_interface(),
+    results);
+  EXPECT_EQ(life_node->get_parameter("test.terminal_checking_interval").as_int(), 100);
+}
+
+TEST(ThetaStarPlanner, test_theta_star_invalid_terminal_checking_interval)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({rclcpp::Parameter("test.terminal_checking_interval", 0)});
+  nav2::LifecycleNode::SharedPtr life_node =
+    std::make_shared<nav2::LifecycleNode>("ThetaStarPlannerTest", "", options);
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto planner_2d = std::make_unique<nav2_theta_star_planner::ThetaStarPlanner>();
+  planner_2d->configure(life_node, "test", nullptr, costmap_ros);
+  planner_2d->activate();
+
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = 0.0;
+  start.pose.position.y = 0.0;
+  start.pose.orientation.w = 1.0;
+  goal = start;
+  goal.pose.position.x = 0.5;
+  goal.pose.position.y = 0.5;
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
+  // An interval of 0 must not reach the modulo in the search loop (SIGFPE)
+  nav_msgs::msg::Path path = planner_2d->createPlan(
+    start, goal, {}, dummy_cancel_checker);
+  EXPECT_GT(static_cast<int>(path.poses.size()), 0);
+
+  planner_2d->deactivate();
+  planner_2d->cleanup();
+
+  planner_2d.reset();
+  costmap_ros->on_cleanup(rclcpp_lifecycle::State());
+  life_node.reset();
+  costmap_ros.reset();
 }
 
 TEST(ThetaStarTest, test_unknown_cost_agrees_between_cost_sites) {

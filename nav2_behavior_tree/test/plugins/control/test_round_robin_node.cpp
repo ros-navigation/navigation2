@@ -172,6 +172,22 @@ TEST_F(RoundRobinNodeTestFixture, test_wrap_around_disabled)
   EXPECT_EQ(first_child_no_wrap->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(second_child_no_wrap->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(third_child_no_wrap->status(), BT::NodeStatus::IDLE);
+
+  // Reset and test scenario where only the last child succeeds - should return SUCCESS
+  bt_node_no_wrap->halt();
+  first_child_no_wrap->changeStatus(BT::NodeStatus::FAILURE);
+  second_child_no_wrap->changeStatus(BT::NodeStatus::FAILURE);
+  third_child_no_wrap->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_no_wrap->executeTick(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(first_child_no_wrap->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(second_child_no_wrap->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(third_child_no_wrap->status(), BT::NodeStatus::IDLE);
+
+  // The next tick should restart from the first child
+  first_child_no_wrap->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_no_wrap->executeTick(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(first_child_no_wrap->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(second_child_no_wrap->status(), BT::NodeStatus::IDLE);
 }
 
 int main(int argc, char ** argv)

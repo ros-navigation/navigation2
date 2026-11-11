@@ -1062,7 +1062,7 @@ rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallb
         // All values are valid
         continue;
       } else if (parameter.as_double() < 0.0 &&  // NOLINT(readability/braces)
-        (param_name != "laser_min_range" || param_name != "laser_max_range"))
+        (param_name != "laser_min_range" && param_name != "laser_max_range"))
       {
         RCLCPP_WARN(
           get_logger(), "The value of parameter '%s' is incorrectly set to %f, "

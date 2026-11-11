@@ -120,7 +120,7 @@ public:
   /**
    * @brief Deactivate the layer
    */
-  void deactivate() final;
+  void deactivate() override;
   /**
    * @brief Reset the layer
    */

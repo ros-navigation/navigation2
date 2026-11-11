@@ -20,6 +20,7 @@ from nav2_simple_commander.costmap_2d import PyCostmap2D
 from nav2_simple_commander.footprint_collision_checker import FootprintCollisionChecker
 
 LETHAL_OBSTACLE = 254
+NO_INFORMATION = 255
 
 
 class TestFootprintCollisionChecker(unittest.TestCase):
@@ -132,6 +133,30 @@ class TestFootprintCollisionChecker(unittest.TestCase):
             with self.subTest(vertices=vertices):
                 self.assertEqual(
                     checker.footprintCost(Polygon(points=vertices)), LETHAL_OBSTACLE)
+
+    def test_footprintCost_lethal_precedence(self):
+        message = Costmap()
+        message.metadata.resolution = 1.0
+        message.metadata.size_x = 10
+        message.metadata.size_y = 10
+        data = [0] * 100
+        data[2 * 10 + 4] = NO_INFORMATION
+        message.data = data
+        costmap = PyCostmap2D(message)
+        checker = FootprintCollisionChecker()
+        checker.setCostmap(costmap)
+        points = [
+            Point32(x=x, y=y)
+            for x, y in [(2.5, 2.5), (6.5, 2.5), (6.5, 6.5), (2.5, 6.5)]
+        ]
+        self.assertEqual(checker.footprintCost(Polygon(points=points)), NO_INFORMATION)
+
+        costmap.setCost(6, 4, LETHAL_OBSTACLE)
+        # Check every starting vertex, including when the lethal edge is the closing edge.
+        for start in range(len(points)):
+            with self.subTest(start=start):
+                footprint = Polygon(points=points[start:] + points[:start])
+                self.assertEqual(checker.footprintCost(footprint), LETHAL_OBSTACLE)
 
     def test_footprintCost(self):
         # Test if footprint cost is calculated correctly

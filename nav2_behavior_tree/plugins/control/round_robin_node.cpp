@@ -44,9 +44,11 @@ BT::NodeStatus RoundRobinNode::tick()
     const BT::NodeStatus child_status = child_node->executeTick();
 
     if (child_status != BT::NodeStatus::RUNNING) {
-      // Increment index and wrap around to the first child if enabled
+      // Increment index and wrap around to the first child if enabled.
+      // A success of the last child is still a success when wrap around is disabled,
+      // so restart from the first child on the next tick and report it below.
       if (++current_child_idx_ == num_children) {
-        if (wrap_around_) {
+        if (wrap_around_ || child_status == BT::NodeStatus::SUCCESS) {
           current_child_idx_ = 0;
         } else {
           if (child_status == BT::NodeStatus::SKIPPED) {

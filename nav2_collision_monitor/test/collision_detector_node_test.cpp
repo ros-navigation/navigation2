@@ -58,6 +58,7 @@ static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
 static const char POLYGON_NAME[]{"Polygon"};
 static const char COSTMAP_NAME[]{"Costmap"};
+static const char POLYGON_SHAPE_TOPIC[]{"polygon_shape"};
 static const char STATE_TOPIC[]{"collision_detector_state"};
 static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_detector/collision_points_marker"};
 static const char TRIGGERING_POINTS_TOPIC[]{"/collision_detector/triggering_points"};
@@ -148,6 +149,9 @@ public:
   // Publish robot footprint
   void publishFootprint(const double radius, const rclcpp::Time & stamp);
 
+  // Publish dynamic polygon shape on POLYGON_SHAPE_TOPIC
+  void publishPolygonShape(const double size, const rclcpp::Time & stamp);
+
   // Main topic/data working routines
   void publishScan(const double dist, const rclcpp::Time & stamp);
   void publishPointCloud(const double dist, const rclcpp::Time & stamp);
@@ -181,6 +185,8 @@ protected:
     polygon_source_pub_;
   nav2::Publisher<nav2_msgs::msg::Costmap>::SharedPtr
     costmap_pub_;
+  nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
+    polygon_shape_pub_;
 
   nav2::Subscription<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_sub_;
   nav2_msgs::msg::CollisionDetectorState::ConstSharedPtr state_msg_;
@@ -217,6 +223,9 @@ Tester::Tester()
   costmap_pub_ = cd_->create_publisher<nav2_msgs::msg::Costmap>(
     COSTMAP_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   costmap_pub_->on_activate();
+  polygon_shape_pub_ = cd_->create_publisher<geometry_msgs::msg::PolygonStamped>(
+    POLYGON_SHAPE_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  polygon_shape_pub_->on_activate();
 
   state_sub_ = cd_->create_subscription<nav2_msgs::msg::CollisionDetectorState>(
     STATE_TOPIC,
@@ -242,6 +251,8 @@ Tester::~Tester()
   polygon_source_pub_.reset();
   costmap_pub_->on_deactivate();
   costmap_pub_.reset();
+  polygon_shape_pub_->on_deactivate();
+  polygon_shape_pub_.reset();
   collision_points_marker_sub_.reset();
   triggering_points_sub_.reset();
 
@@ -443,6 +454,31 @@ void Tester::sendTransforms(const rclcpp::Time & stamp)
   }
 }
 
+void Tester::publishPolygonShape(const double size, const rclcpp::Time & stamp)
+{
+  std::unique_ptr<geometry_msgs::msg::PolygonStamped> msg =
+    std::make_unique<geometry_msgs::msg::PolygonStamped>();
+
+  msg->header.frame_id = BASE_FRAME_ID;
+  msg->header.stamp = stamp;
+
+  geometry_msgs::msg::Point32 p;
+  p.x = size;
+  p.y = size;
+  msg->polygon.points.push_back(p);
+  p.x = size;
+  p.y = -size;
+  msg->polygon.points.push_back(p);
+  p.x = -size;
+  p.y = -size;
+  msg->polygon.points.push_back(p);
+  p.x = -size;
+  p.y = size;
+  msg->polygon.points.push_back(p);
+
+  polygon_shape_pub_->publish(std::move(msg));
+}
+
 void Tester::publishScan(const double dist, const rclcpp::Time & stamp)
 {
   std::unique_ptr<sensor_msgs::msg::LaserScan> msg =
@@ -615,6 +651,19 @@ TEST_F(Tester, testIncorrectActionType)
   cd_->cant_configure();
 }
 
+TEST_F(Tester, testVelocityPolygonNotSupported)
+{
+  setCommonParameters();
+  cd_->declare_parameter(
+    "DetectionRegion.type", rclcpp::ParameterValue("velocity_polygon"));
+  cd_->declare_parameter("DetectionRegion.action_type", rclcpp::ParameterValue("none"));
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"DetectionRegion"}, {SCAN_NAME});
+
+  // Detector has no velocity input: velocity_polygon must be rejected at configure
+  cd_->cant_configure();
+}
+
 TEST_F(Tester, testIncorrectSourceType)
 {
   setCommonParameters();
@@ -721,6 +770,50 @@ TEST_F(Tester, testPolygonDetection)
   ASSERT_TRUE(waitState(300ms));
   ASSERT_NE(state_msg_->detections.size(), 0u);
   ASSERT_EQ(state_msg_->detections[0], true);
+
+  // Stop Collision Detector node
+  cd_->stop();
+}
+
+TEST_F(Tester, testPolygonShapeNotSet)
+{
+  rclcpp::Time curr_time = cd_->now();
+
+  // Dynamic polygon subscribed to a topic: no shape until the topic is published
+  setCommonParameters();
+  cd_->declare_parameter("DetectionRegion.type", rclcpp::ParameterValue("polygon"));
+  cd_->declare_parameter(
+    "DetectionRegion.polygon_sub_topic", rclcpp::ParameterValue(POLYGON_SHAPE_TOPIC));
+  cd_->declare_parameter("DetectionRegion.action_type", rclcpp::ParameterValue("none"));
+  cd_->declare_parameter("DetectionRegion.min_points", rclcpp::ParameterValue(MIN_POINTS));
+  addSource(RANGE_NAME, RANGE);
+  setVectors({"DetectionRegion"}, {RANGE_NAME});
+
+  // Start Collision Detector node
+  cd_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // Obstacle is far away, but the polygon has no shape yet: reported as detected
+  publishRange(3.0, curr_time);
+  ASSERT_TRUE(waitData(3.0, 300ms, curr_time));
+  ASSERT_TRUE(waitState(300ms));
+  ASSERT_EQ(state_msg_->detections.size(), 1u);
+  ASSERT_EQ(state_msg_->detections[0], true);
+
+  // Once the shape (half-size 2.0, obstacle outside) arrives, detection clears
+  publishPolygonShape(2.0, curr_time);
+  rclcpp::Time start_time = cd_->now();
+  bool cleared = false;
+  while (rclcpp::ok() && cd_->now() - start_time <= 1s) {
+    state_msg_ = nullptr;
+    if (waitState(300ms) && state_msg_->detections[0] == false) {
+      cleared = true;
+      break;
+    }
+  }
+  ASSERT_TRUE(cleared);
 
   // Stop Collision Detector node
   cd_->stop();

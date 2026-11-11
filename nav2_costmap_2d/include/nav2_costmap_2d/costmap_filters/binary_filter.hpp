@@ -82,6 +82,11 @@ public:
   void resetFilter() override;
 
   /**
+   * @brief Deactivate the filter. The next activation starts again from default_state
+   */
+  void deactivate() override;
+
+  /**
    * @brief If this filter is active
    */
   bool isActive();
@@ -118,6 +123,7 @@ protected:
 
   bool default_state_;  // Default Binary Filter state
   bool binary_state_;  // Current Binary Filter state
+  bool binary_state_initialized_;  // Whether binary_state_ was set from default_state_
 };
 
 }  // namespace nav2_costmap_2d

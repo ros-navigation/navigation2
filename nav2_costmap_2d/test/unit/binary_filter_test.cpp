@@ -971,6 +971,45 @@ TEST(BinaryFilterTF, StaleTransformPreservesState)
   filter.resetFilter();
 }
 
+TEST(BinaryFilterState, DefaultStateOnStartupAndKeptOnReset)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("default_state_test");
+  node->declare_parameter("filter.filter_info_topic", "filter_info");
+  node->declare_parameter("filter.default_state", true);
+  auto buffer = nav2::create_transform_buffer(node);
+  nav2_costmap_2d::LayeredCostmap layers("odom", false, false);
+  BinaryFilterTFTestable filter;
+  filter.initialize(&layers, "filter", buffer.get(), node, nullptr);
+  filter.initializeFilter("filter_info");
+  EXPECT_EQ(filter.state(), 1);  // default_state is applied on startup
+
+  // Flip the state away from the default. The mask is in the costmap frame, so no TF is needed.
+  auto mask = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  mask->header.frame_id = "odom";
+  mask->info.width = 2;
+  mask->info.height = 1;
+  mask->info.resolution = 1.0;
+  mask->info.origin.orientation.w = 1.0;
+  mask->data = {100, 0};
+  filter.maskCallback(mask);
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = pose.position.y = 0.5;
+  pose.orientation.w = 1.0;
+  nav2_costmap_2d::Costmap2D grid(2, 1, 1.0, 0.0, 0.0, 0);
+  filter.process(grid, 0, 0, 2, 1, pose);
+  EXPECT_EQ(filter.state(), 0);
+
+  // A costmap reset re-initializes the filter, but must keep the current state
+  filter.reset();
+  EXPECT_EQ(filter.state(), 0);
+
+  // Lifecycle deactivate/activate starts over from default_state
+  filter.deactivate();
+  filter.activate();
+  EXPECT_EQ(filter.state(), 1);
+  filter.resetFilter();
+}
+
 int main(int argc, char ** argv)
 {
   // Initialize the system

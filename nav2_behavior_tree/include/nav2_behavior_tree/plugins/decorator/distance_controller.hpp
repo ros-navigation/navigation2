@@ -68,6 +68,11 @@ public:
 
 private:
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
    */

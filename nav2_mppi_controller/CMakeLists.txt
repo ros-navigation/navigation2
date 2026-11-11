@@ -21,6 +21,14 @@ find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(Eigen3 REQUIRED)
 
+option(ENABLE_OPENMP "Enable OpenMP parallelization" OFF)
+if(ENABLE_OPENMP)
+  find_package(OpenMP REQUIRED)
+  message(STATUS "OpenMP ENABLED for nav2_mppi_controller (${OpenMP_CXX_VERSION})")
+else()
+  message(STATUS "OpenMP DISABLED for nav2_mppi_controller")
+endif()
+
 nav2_package()
 
 include(CheckCXXCompilerFlag)
@@ -63,6 +71,7 @@ target_link_libraries(mppi_controller PUBLIC
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
   visualization_msgs::visualization_msgs
+  Eigen3::Eigen
 )
 
 target_link_libraries(mppi_controller PRIVATE
@@ -89,7 +98,9 @@ add_library(mppi_critics SHARED
   src/critics/cost_critic.cpp
   src/critics/goal_critic.cpp
   src/critics/goal_angle_critic.cpp
+  src/critics/mecanum_critic.cpp
   src/critics/obstacles_critic.cpp
+  src/critics/omni_constraint_critic.cpp
   src/critics/path_align_critic.cpp
   src/critics/path_angle_critic.cpp
   src/critics/path_follow_critic.cpp
@@ -127,6 +138,9 @@ target_link_libraries(mppi_critics PUBLIC
 target_link_libraries(mppi_critics PRIVATE
   pluginlib::pluginlib
 )
+if(ENABLE_OPENMP)
+  target_link_libraries(mppi_critics PRIVATE OpenMP::OpenMP_CXX)
+endif()
 
 add_library(mppi_trajectory_validators SHARED
   src/trajectory_validators/optimal_trajectory_validator.cpp

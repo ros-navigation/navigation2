@@ -70,6 +70,12 @@ BeamModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
     p = 1.0;
 
     step = (data->range_count - 1) / (self->max_beams_ - 1);
+
+    // Step size must be at least 1
+    if (step < 1) {
+      step = 1;
+    }
+
     for (i = 0; i < data->range_count; i += step) {
       obs_range = data->ranges[i][0];
 

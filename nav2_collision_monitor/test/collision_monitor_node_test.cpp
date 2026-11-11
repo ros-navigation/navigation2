@@ -1298,6 +1298,60 @@ TEST_F(Tester, testSourceTimeout)
   cm_->stop();
 }
 
+TEST_F(Tester, testPolygonShapeNotSet)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Dynamic stop polygon subscribed to a topic, plus an approach footprint on the same topic.
+  // Neither has a shape until the topic is published.
+  setCommonParameters();
+  cm_->declare_parameter("Stop.type", rclcpp::ParameterValue("polygon"));
+  cm_->declare_parameter("Stop.polygon_sub_topic", rclcpp::ParameterValue(FOOTPRINT_TOPIC));
+  cm_->declare_parameter("Stop.action_type", rclcpp::ParameterValue("stop"));
+  cm_->declare_parameter("Stop.min_points", rclcpp::ParameterValue(MIN_POINTS));
+  addPolygon("Approach", POLYGON, 1.0, "approach");
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"Stop", "Approach"}, {SCAN_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // Source is valid and far away, but no polygon shape was received yet: robot must stop
+  publishScan(3.0, curr_time);
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "Stop");
+
+  // Once the shapes arrive, normal operation resumes
+  publishFootprint(1.0, curr_time);
+  // Give the subscription time to process the polygon before the next cmd_vel
+  rclcpp::Time start_time = cm_->now();
+  while (cm_->now() - start_time <= 500ms) {
+    executor_->spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
 TEST_F(Tester, testSourceTimeoutOverride)
 {
   rclcpp::Time curr_time = cm_->now();
@@ -1718,6 +1772,27 @@ TEST_F(Tester, testVelocityPolygonStop)
 
   // 3. Switch to Backward velocity polygon
   // Obstacle is far away from Backward velocity polygon
+  publishCmdVel(-0.4, 0.0, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, -0.4, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
+
+  // 3b. Velocity not covered by any sub-polygon: no zone applies, robot must stop
+  // even though the obstacle (ahead at 3.0 m) is outside every configured polygon
+  publishCmdVel(0.8, 0.0, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "VelocityPolygon");
+
+  // 3c. Back to a covered velocity: normal operation resumes
   publishCmdVel(-0.4, 0.0, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, -0.4, EPSILON);

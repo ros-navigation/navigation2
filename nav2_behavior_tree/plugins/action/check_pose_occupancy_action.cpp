@@ -34,12 +34,14 @@ void CheckPoseOccupancy::on_tick()
 {
   getInput<double>("cost_threshold", cost_threshold_);
   getInput<bool>("use_footprint", use_footprint_);
+  getInput<bool>("footprint_fill", footprint_fill_);
   getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
   geometry_msgs::msg::PoseStamped pose;
   getInput("pose", pose);
 
   request_ = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
   request_->use_footprint = use_footprint_;
+  request_->footprint_fill = footprint_fill_;
   request_->poses.push_back(pose);
 }
 
