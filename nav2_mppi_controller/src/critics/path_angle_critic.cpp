@@ -23,11 +23,10 @@ namespace mppi::critics
 void PathAngleCritic::initialize()
 {
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
-  float vx_min;
-  getParentParam(vx_min, "vx_min", -0.35);
-  if (fabs(vx_min) < 1e-6f) {  // zero
+  getParentParam(vx_min_, "vx_min", -0.35);
+  if (fabs(vx_min_) < 1e-6f) {  // zero
     reversing_allowed_ = false;
-  } else if (vx_min < 0.0f) {   // reversing possible
+  } else if (vx_min_ < 0.0f) {   // reversing possible
     reversing_allowed_ = true;
   }
 

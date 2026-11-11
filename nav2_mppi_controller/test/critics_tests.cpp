@@ -205,6 +205,54 @@ TEST(CriticTests, ConstraintsCritic)
   costs.setZero();
 }
 
+TEST(CriticTests, ConstraintsCriticDynamicLimits)
+{
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  // The handler only applies dynamic updates for parameters in its own namespace
+  std::string name = "mppi";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  // The Optimizer reads the controller's velocity limits before the critics are loaded
+  auto getParentParam = param_handler.getParamGetter("mppi");
+  float optimizer_vx_max;
+  getParentParam(optimizer_vx_max, "vx_max", 0.5f);
+
+  models::State state;
+  state.vx = 0.8 * Eigen::ArrayXXf::Ones(10, 30);
+  state.vy = Eigen::ArrayXXf::Zero(10, 30);
+  state.wz = Eigen::ArrayXXf::Zero(10, 30);
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(10);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  ConstraintCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  param_handler.start();
+
+  // 0.8 m/s exceeds the 0.5 m/s limit:
+  // 4.0 weight * 0.1 model_dt * 0.3 error introduced * 30 timesteps = 3.6
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 3.6, 0.01);
+  costs.setZero();
+
+  // Raising the limit at runtime updates both the Optimizer and the critic
+  node->set_parameter(rclcpp::Parameter("mppi.vx_max", 1.0));
+  EXPECT_FLOAT_EQ(optimizer_vx_max, 1.0f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+}
+
 TEST(CriticTests, OmniConstraintCritic)
 {
   // Standard preamble
