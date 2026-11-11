@@ -114,13 +114,12 @@ bool GridCollisionChecker::inCollision(
     return true;
   }
 
-  // AI-assisted change: evaluate the same continuous pose emitted in the path.
+  // Check the cell containing the continuous pose, matching the pose in the output path
   const unsigned int mx = static_cast<unsigned int>(x);
   const unsigned int my = static_cast<unsigned int>(y);
 
   // Assumes setFootprint already set
-  center_cost_ = static_cast<float>(costmap_->getCost(
-      mx, my));
+  center_cost_ = static_cast<float>(costmap_->getCost(mx, my));
 
   if (!footprint_is_radius_) {
     // if footprint, then we check for the footprint's points, but first see

@@ -215,7 +215,7 @@ TEST(collision_footprint, test_point_and_line_cost)
   delete costmap_;
 }
 
-// AI-assisted regression test for issue #5996.
+// Regression test for #5996: poses are checked at their continuous coordinates
 TEST(collision_footprint, test_fractional_pose_coordinates)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("testF");

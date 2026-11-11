@@ -409,7 +409,7 @@ TEST(AStarTest, test_a_star_lattice)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
 
   // check path is the right size and collision free
-  // AI-assisted update: exact-pose collision checks change the deterministic search witness.
+  // Footprint checks at the continuous pose change the expansion count
   EXPECT_EQ(num_it, 26);
   EXPECT_GT(path.size(), 45u);
   for (unsigned int i = 0; i != path.size(); i++) {
