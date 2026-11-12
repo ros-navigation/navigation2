@@ -45,6 +45,11 @@ public:
   MPPIController() = default;
 
   /**
+    * @brief Destructor for mppi::MPPIController
+    */
+  ~MPPIController() override;
+
+  /**
     * @brief Configure controller on bringup
     * @param parent WeakPtr to node
     * @param name Name of plugin
