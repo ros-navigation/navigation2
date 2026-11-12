@@ -28,7 +28,7 @@ The listener is destroyed before the native buffer.
 Set `spin_thread=false` when the application spins the node to receive transforms.
 Dynamic and static broadcasters are advertised independently on the first `sendTransform()` or `sendStaticTransform()` call.
 Both methods accept a single transform or a vector of transforms. Static transforms are retained for late subscribers.
-Broadcaster initialization is safe for concurrent sends; static sends are serialized to preserve the retained transform set.
+Applications must synchronize concurrent broadcaster calls on the same manager.
 
 Application code uses `getLatestTransform`, `getLatestPose`, `getStampedTransform`, and `transformStampedPose`.
 Lookups return `std::optional` and log failures with the node's logger.

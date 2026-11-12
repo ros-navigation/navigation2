@@ -18,7 +18,6 @@
 #include <cmath>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -137,14 +136,12 @@ public:
   /** @brief Broadcast a static transform on /tf_static, advertising on first use. */
   void sendStaticTransform(const geometry_msgs::msg::TransformStamped & transform)
   {
-    std::lock_guard<std::mutex> lock(static_broadcaster_mutex_);
     getStaticBroadcaster().sendTransform(transform);
   }
 
   /** @brief Broadcast static transforms together on /tf_static, advertising on first use. */
   void sendStaticTransform(const std::vector<geometry_msgs::msg::TransformStamped> & transforms)
   {
-    std::lock_guard<std::mutex> lock(static_broadcaster_mutex_);
     getStaticBroadcaster().sendTransform(transforms);
   }
 
@@ -159,6 +156,10 @@ public:
     return *buffer_;
   }
 
+  /**
+   * @brief Access the native TF buffer through a const reference.
+   * @return Native buffer reference, valid while this manager owns the buffer.
+   */
   [[nodiscard]] const tf2_ros::Buffer & getRawBuffer() const
   {
     return *buffer_;
@@ -532,6 +533,14 @@ public:
   }
 
 private:
+  /**
+   * @brief Check the buffer's threading configuration before a timed lookup.
+   * @param transform_tolerance Maximum lookup wait duration in seconds.
+   * @param target_frame Target frame included in failure diagnostics.
+   * @param log Enable or disable failure logging.
+   * @param error_msg Optional failure details; unchanged when the check succeeds.
+   * @return True if no wait is requested or the buffer declares a dedicated thread.
+   */
   bool canWaitForTransform(
     double transform_tolerance, const std::string & target_frame, Log log,
     std::string * error_msg) const
@@ -549,17 +558,27 @@ private:
     return true;
   }
 
+  /**
+   * @brief Get the dynamic broadcaster, initializing it once on first use.
+   * @return Broadcaster reference, valid for the remaining lifetime of this manager.
+   */
   tf2_ros::TransformBroadcaster & getBroadcaster()
   {
-    std::call_once(broadcaster_once_, [this]() {broadcaster_ = create_broadcaster_();});
+    if (!broadcaster_) {
+      broadcaster_ = create_broadcaster_();
+    }
     return *broadcaster_;
   }
 
+  /**
+   * @brief Get the static broadcaster, initializing it once on first use.
+   * @return Broadcaster reference, valid for the remaining lifetime of this manager.
+   */
   tf2_ros::StaticTransformBroadcaster & getStaticBroadcaster()
   {
-    std::call_once(static_broadcaster_once_, [this]() {
-        static_broadcaster_ = create_static_broadcaster_();
-      });
+    if (!static_broadcaster_) {
+      static_broadcaster_ = create_static_broadcaster_();
+    }
     return *static_broadcaster_;
   }
 
@@ -569,10 +588,6 @@ private:
   bool spin_thread_{true};
   std::function<std::unique_ptr<tf2_ros::TransformBroadcaster>()> create_broadcaster_;
   std::function<std::unique_ptr<tf2_ros::StaticTransformBroadcaster>()> create_static_broadcaster_;
-  std::once_flag broadcaster_once_;
-  std::once_flag static_broadcaster_once_;
-  // Static broadcasts update a retained message containing all published transforms.
-  std::mutex static_broadcaster_mutex_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
   std::unique_ptr<tf2_ros::StaticTransformBroadcaster> static_broadcaster_;
   std::unique_ptr<tf2_ros::TransformListener> listener_;
