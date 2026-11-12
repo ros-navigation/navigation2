@@ -260,7 +260,7 @@ public:
     }
 
     BT::Blackboard::Ptr blackboard = bt_action_server_->getBlackboard();
-    blackboard->set("tf_buffer", feedback_utils.tf_manager);  // NOLINT
+    blackboard->set("transform_manager", feedback_utils.tf_manager);  // NOLINT
     blackboard->set("initial_pose_received", false);  // NOLINT
     blackboard->set("number_recoveries", 0);  // NOLINT
     blackboard->set("odom_smoother", odom_smoother);  // NOLINT

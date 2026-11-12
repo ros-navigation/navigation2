@@ -49,7 +49,7 @@ public:
       factory_->registerBuilder<nav2_behavior_tree::IsGoalNearbyCondition>("IsGoalNearby", builder);
     } catch (BT::BehaviorTreeException const &) {
     }
-    tf_manager_ = config_->blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
+    tf_manager_ = config_->blackboard->get<nav2::TransformManager::SharedPtr>("transform_manager");
   }
 
   void TearDown() override {tree_.reset();}
