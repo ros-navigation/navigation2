@@ -354,7 +354,7 @@ public:
    *   common time along the TF chain, without a staleness check.
    * @param transform_tolerance Maximum lookup wait duration in seconds; must be nonnegative.
    *   Zero performs the lookup without waiting. This does not permit timestamp
-   *   error or extrapolation. Waiting requires an active dedicated listener.
+   *   error or extrapolation. Waiting requires a dedicated thread servicing the TF buffer.
    * @param log Enable or disable failure diagnostics for this call and nested lookups.
    * @param error_msg Optional failure details, including the TF exception text.
    *   Cleared on success, independently of the logging setting.
@@ -426,7 +426,8 @@ public:
    *   latest available transform between source_frame and fixed_frame.
    * @param fixed_frame Frame assumed constant across the two timestamps.
    * @param transform_tolerance Maximum lookup wait duration in seconds; must be nonnegative.
-   *   Zero performs the lookup without waiting. Waiting requires an active dedicated listener.
+   *   Zero performs the lookup without waiting. Waiting requires a dedicated thread
+   *   servicing the TF buffer.
    * @param log Enable or disable failure diagnostics for this call and nested lookups.
    * @param error_msg Optional failure details, including the TF exception text.
    *   Cleared on success, independently of the logging setting.
@@ -479,7 +480,7 @@ public:
   /**
    * @brief Transform an arbitrary pose using TF at the input timestamp.
    *
-   * Waiting for TF requires an active dedicated listener.
+   * Waiting for TF requires a dedicated thread servicing the TF buffer.
    * Zero timestamps request the latest common TF time without an age check.
    * Equal frames return the input unchanged; otherwise the output header uses
    * the selected transform's frame and timestamp. Logs lookup failures unless disabled.
@@ -535,13 +536,13 @@ private:
     double transform_tolerance, const std::string & target_frame, Log log,
     std::string * error_msg) const
   {
-    if (transform_tolerance > 0.0 && (!listener_ || !spin_thread_)) {
+    if (transform_tolerance > 0.0 && !buffer_->isUsingDedicatedThread()) {
       if (error_msg) {
         *error_msg = "Cannot wait for a transform to '" + target_frame +
-          "' without an active dedicated listener";
+          "' without a dedicated thread servicing the TF buffer";
       }
       RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
-        "Cannot wait for a transform to '%s' without an active dedicated listener",
+        "Cannot wait for a transform to '%s' without a dedicated thread servicing the TF buffer",
         target_frame.c_str());
       return false;
     }
