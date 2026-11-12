@@ -277,17 +277,11 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
-      plugins: [static_layer, obstacle_layer, inflation_layer, route_corridor]
-      route_corridor:
-        plugin: nav2_costmap_2d::RouteCorridorLayer
-        enabled: true
-        graph_filepath: "$(find-pkg-share nav2_bringup)/graphs/turtlebot3_graph.geojson"  
-        max_deviation: 0.1
-        recovery_cost: 200
-      filters: ["keepout_filter", "speed_filter"]
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer", "route_corridor_layer"]
+      filters: ["keepout_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
-        enabled: KEEPOUT_ZONE_ENABLED
+        enabled: False
         filter_info_topic: "keepout_costmap_filter_info"
         override_lethal_cost: True
         lethal_override_cost: 200
@@ -323,8 +317,15 @@ global_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
         inflation_radius: 0.7
+      route_corridor_layer:
+        plugin: "nav2_costmap_2d::RouteCorridorLayer"
+        enabled: True
+        graph_filepath: "$(find-pkg-share nav2_bringup)/graphs/turtlebot3_graph.geojson"
+        max_deviation: 0.2
+        recovery_cost: 200
       always_send_full_costmap: True
       service_introspection_mode: "disabled"
+      
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
 # If you'd rather set it in the yaml, remove the default "map" value in the launch file(s).

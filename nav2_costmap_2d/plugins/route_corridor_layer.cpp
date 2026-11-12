@@ -1,8 +1,11 @@
-// Copyright (c) 2026
+// Copyright (c) 2026 Ye_X
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +21,11 @@
 #include <string>
 #include "pluginlib/class_list_macros.hpp"
 #include "nlohmann/json.hpp"
+
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::RouteCorridorLayer, nav2_costmap_2d::Layer)
+
+using nav2_costmap_2d::LETHAL_OBSTACLE;
+using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 
 namespace nav2_costmap_2d
 {
@@ -61,7 +69,7 @@ void RouteCorridorLayer::onInitialize()
 
 void RouteCorridorLayer::loadGraph(const std::string & filepath)
 {
-  // Load every edge, including intermediate vertices, rather than a selected route.
+  // Load every edge from the GeoJSON file, splitting intermediate vertices into segments.
   std::vector<Segment> segments;
   try {
     std::ifstream input(filepath);
@@ -167,6 +175,7 @@ void RouteCorridorLayer::buildMask(const Costmap2D & master)
         const double dx = edge.end.x - edge.start.x;
         const double dy = edge.end.y - edge.start.y;
         const double length_sq = dx * dx + dy * dy;
+        // Clamp the projection factor to find the closest point on the segment.
         const double t = length_sq > 0.0 ? std::clamp(
           ((wx - edge.start.x) * dx + (wy - edge.start.y) * dy) / length_sq,
           0.0, 1.0) : 0.0;
@@ -200,6 +209,7 @@ bool RouteCorridorLayer::insideCorridor(double wx, double wy) const
 void RouteCorridorLayer::updateCosts(
   Costmap2D & master, int min_i, int min_j, int max_i, int max_j)
 {
+  // Apply lethal outside costs, or recovery costs when the robot is outside the corridor.
   std::lock_guard<std::mutex> lock(mutex_);
   if (!enabled_) {
     return;
@@ -228,5 +238,3 @@ void RouteCorridorLayer::updateCosts(
   }
 }
 }  // namespace nav2_costmap_2d
-
-PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::RouteCorridorLayer, nav2_costmap_2d::Layer)
