@@ -101,7 +101,7 @@ TEST_F(TransformManagerTest, QuietLookupsRespectTimestamp)
   EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
 }
 
-TEST_F(TransformManagerTest, TimedLookupsRequireAnActiveDedicatedListener)
+TEST_F(TransformManagerTest, TimedLookupsRequireDedicatedThreadConfiguration)
 {
   addTransform(8, 1.0);
   const rclcpp::Time stamp(8, 0, RCL_ROS_TIME);
@@ -120,7 +120,7 @@ TEST_F(TransformManagerTest, TimedLookupsRequireAnActiveDedicatedListener)
 
   testing::internal::CaptureStderr();
   EXPECT_FALSE(tf_manager_.getStampedTransform("odom", "base_link", stamp, 0.1));
-  EXPECT_NE(testing::internal::GetCapturedStderr().find("active dedicated listener"),
+  EXPECT_NE(testing::internal::GetCapturedStderr().find("dedicated thread servicing the TF buffer"),
     std::string::npos);
 }
 
@@ -593,15 +593,15 @@ TEST_F(TransformManagerTest, ErrorOutputDescribesValidationAndStalenessFailures)
   EXPECT_NE(error.find("must be nonnegative"), std::string::npos);
   EXPECT_FALSE(tf_manager_.getStampedTransform(
       "odom", "base_link", now_, 0.1, nav2::Log::Disabled, &error));
-  EXPECT_NE(error.find("without an active dedicated listener"), std::string::npos);
+  EXPECT_NE(error.find("without a dedicated thread servicing the TF buffer"), std::string::npos);
   error.clear();
   EXPECT_FALSE(tf_manager_.getStampedTransform(
       "odom", now_, "base_link", now_, "odom", 0.1, nav2::Log::Disabled, &error));
-  EXPECT_NE(error.find("without an active dedicated listener"), std::string::npos);
+  EXPECT_NE(error.find("without a dedicated thread servicing the TF buffer"), std::string::npos);
   error.clear();
   EXPECT_FALSE(tf_manager_.transformStampedPose(
       "odom", makePose(8), 0.1, nav2::Log::Disabled, &error));
-  EXPECT_NE(error.find("without an active dedicated listener"), std::string::npos);
+  EXPECT_NE(error.find("without a dedicated thread servicing the TF buffer"), std::string::npos);
 }
 
 TEST_F(TransformManagerTest, SuccessfulCallsClearPreviousErrors)
