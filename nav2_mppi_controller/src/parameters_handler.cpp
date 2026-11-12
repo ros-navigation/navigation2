@@ -106,10 +106,12 @@ void ParametersHandler::updateParametersCallback(
   if (!plugin_params.empty()) {
     for (auto & param : plugin_params) {
       const std::string & param_name = param.get_name();
-      if (auto callback = get_param_callbacks_.find(param_name);
-        callback != get_param_callbacks_.end())
+      if (auto callbacks = get_param_callbacks_.find(param_name);
+        callbacks != get_param_callbacks_.end())
       {
-        callback->second(param);
+        for (auto & callback : callbacks->second) {
+          callback.second(param);
+        }
       }
     }
     for (auto & post_cb : post_callbacks_) {
