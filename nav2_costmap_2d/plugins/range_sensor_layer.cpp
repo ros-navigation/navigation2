@@ -535,11 +535,13 @@ void RangeSensorLayer::reset()
 
 void RangeSensorLayer::deactivate()
 {
+  std::lock_guard<std::mutex> lock(range_message_mutex_);
   range_msgs_buffer_.clear();
 }
 
 void RangeSensorLayer::activate()
 {
+  std::lock_guard<std::mutex> lock(range_message_mutex_);
   range_msgs_buffer_.clear();
 }
 
