@@ -81,7 +81,7 @@ public:
     blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout",
       std::chrono::milliseconds(1000));
-    blackboard->set("tf_buffer", tf_manager_);
+    blackboard->set("transform_manager", tf_manager_);
     blackboard->set("initial_pose_received", false);
     blackboard->set("number_recoveries", 0);
     blackboard->set("odom_smoother", odom_smoother_);

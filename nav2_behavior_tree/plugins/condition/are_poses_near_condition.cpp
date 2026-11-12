@@ -37,7 +37,7 @@ ArePosesNearCondition::ArePosesNearCondition(
 void ArePosesNearCondition::initialize()
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("transform_manager");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 }
 

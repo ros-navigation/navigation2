@@ -38,7 +38,7 @@ TruncatePathLocal::TruncatePathLocal(
 {
   tf_manager_ =
     config().blackboard->template get<nav2::TransformManager::SharedPtr>(
-    "tf_buffer");
+    "transform_manager");
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node->get_clock();
   transform_staleness_threshold_ = node->declare_or_get_parameter(
