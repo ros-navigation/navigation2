@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "dwb_critics/goal_align.hpp"
 #include "dwb_critics/goal_dist.hpp"
 #include "dwb_critics/path_dist.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -185,6 +186,14 @@ TEST_F(MapGridTest, GoalDistGoesThroughInscribedAndUnknownCells)
   EXPECT_EQ(critic->getScore(5, 5), 10.0);
   EXPECT_EQ(critic->getScore(10, 5), 5.0);
   EXPECT_EQ(critic->getScore(10, 6), 6.0);
+}
+
+TEST_F(MapGridTest, GoalAlignIgnoresObstacleAwarePropagation)
+{
+  addWall();
+  auto critic = makeCritic<dwb_critics::GoalAlignCritic>(true);
+  ASSERT_TRUE(prepare(*critic, {5, 5}, {{5, 5}, {15, 5}}));
+  EXPECT_LT(critic->getScore(10, 5), obstacleScore());
 }
 
 TEST_F(MapGridTest, GoalDistFallsBackWhenEverySeedIsBlocked)

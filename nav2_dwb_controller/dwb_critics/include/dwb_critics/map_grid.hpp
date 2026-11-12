@@ -161,7 +161,8 @@ protected:
    *
    * With obstacle_aware_propagation this uses propagateObstacleAwareManhattanDistances. If that
    * does not reach the robot, as it is blocked or no seed is free, this uses
-   * propagateManhattanDistances from the same seeds.
+   * propagateManhattanDistances from the same seeds. GoalAlign and PathAlign ignore
+   * obstacle_aware_propagation.
    *
    * @param robot_pose The pose of the robot, assumed to be in the same frame as the costmap
    */
