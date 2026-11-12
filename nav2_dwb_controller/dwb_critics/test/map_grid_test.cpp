@@ -167,10 +167,24 @@ TEST_F(MapGridTest, GoalDistFallsBackWhenTheRobotCellIsUnreachable)
 
 TEST_F(MapGridTest, GoalDistFallsBackWhenTheRobotIsInAnObstacle)
 {
-  costmap_->setCost(5, 5, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+  costmap_->setCost(5, 5, nav2_costmap_2d::LETHAL_OBSTACLE);
   auto critic = makeCritic<dwb_critics::GoalDistCritic>(true);
   ASSERT_TRUE(prepare(*critic, {5, 5}, {{5, 5}, {15, 5}}));
   EXPECT_EQ(critic->getScore(5, 5), 10.0);
+}
+
+TEST_F(MapGridTest, GoalDistGoesThroughInscribedAndUnknownCells)
+{
+  for (unsigned int y = 0; y < 15; ++y) {
+    costmap_->setCost(
+      10, y, y % 2 ? nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE :
+      nav2_costmap_2d::NO_INFORMATION);
+  }
+  auto critic = makeCritic<dwb_critics::GoalDistCritic>(true);
+  ASSERT_TRUE(prepare(*critic, {5, 5}, {{5, 5}, {15, 5}}));
+  EXPECT_EQ(critic->getScore(5, 5), 10.0);
+  EXPECT_EQ(critic->getScore(10, 5), 5.0);
+  EXPECT_EQ(critic->getScore(10, 6), 6.0);
 }
 
 TEST_F(MapGridTest, GoalDistFallsBackWhenEverySeedIsBlocked)

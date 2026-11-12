@@ -151,7 +151,7 @@ protected:
 
   /**
    * @brief Go through the queue and set the cells to the Manhattan distance walked around
-   * obstacles. Obstacle cells are set as obstacles and the search does not pass them.
+   * lethal obstacles. Lethal cells are set as obstacles and the search does not pass them.
    * @return The source cells taken from the queue, blocked ones included
    */
   std::vector<costmap_queue::CellData> propagateObstacleAwareManhattanDistances();

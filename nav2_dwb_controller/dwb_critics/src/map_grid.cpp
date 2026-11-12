@@ -150,7 +150,8 @@ std::vector<CellData> MapGridCritic::propagateObstacleAwareManhattanDistances()
     if (cell.distance_ == 0.0) {
       seeds.push_back(cell);
     }
-    if (costmap_->getCost(cell.index_) > nav2_costmap_2d::MAX_NON_OBSTACLE) {
+    // Inscribed and unknown cells may be free for this footprint, so other critics judge them
+    if (costmap_->getCost(cell.index_) == nav2_costmap_2d::LETHAL_OBSTACLE) {
       setAsObstacle(cell.index_);
     } else {
       cell_values_[cell.index_] = cell.distance_;
