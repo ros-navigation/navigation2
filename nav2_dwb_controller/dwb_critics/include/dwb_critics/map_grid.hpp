@@ -150,10 +150,18 @@ protected:
   void propagateManhattanDistances();
 
   /**
+   * @brief Go through the queue and set the cells to the Manhattan distance walked around
+   * obstacles. Obstacle cells are set as obstacles and the search does not pass them.
+   * @return The source cells taken from the queue, blocked ones included
+   */
+  std::vector<costmap_queue::CellData> propagateObstacleAwareManhattanDistances();
+
+  /**
    * @brief Set the cells to their distance from the queued seeds
    *
-   * With obstacle_aware_propagation the distance goes around obstacles. If that does not reach
-   * the robot, as it is blocked or no seed is free, this uses propagateManhattanDistances.
+   * With obstacle_aware_propagation this uses propagateObstacleAwareManhattanDistances. If that
+   * does not reach the robot, as it is blocked or no seed is free, this uses
+   * propagateManhattanDistances from the same seeds.
    *
    * @param robot_pose The pose of the robot, assumed to be in the same frame as the costmap
    */

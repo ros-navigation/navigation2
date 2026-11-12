@@ -140,13 +140,8 @@ void MapGridCritic::propagateManhattanDistances()
   }
 }
 
-void MapGridCritic::propagateDistances(const geometry_msgs::msg::Pose & robot_pose)
+std::vector<CellData> MapGridCritic::propagateObstacleAwareManhattanDistances()
 {
-  if (!obstacle_aware_propagation_) {
-    propagateManhattanDistances();
-    return;
-  }
-
   // Seeds are the only cells at distance 0, so the search sees them all first
   std::vector<CellData> seeds;
   while (!queue_->isEmpty()) {
@@ -162,6 +157,17 @@ void MapGridCritic::propagateDistances(const geometry_msgs::msg::Pose & robot_po
       queue_->enqueueNeighbors(cell);
     }
   }
+  return seeds;
+}
+
+void MapGridCritic::propagateDistances(const geometry_msgs::msg::Pose & robot_pose)
+{
+  if (!obstacle_aware_propagation_) {
+    propagateManhattanDistances();
+    return;
+  }
+
+  const std::vector<CellData> seeds = propagateObstacleAwareManhattanDistances();
 
   unsigned int robot_x, robot_y;
   if (costmap_->worldToMap(robot_pose.position.x, robot_pose.position.y, robot_x, robot_y) &&
