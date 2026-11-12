@@ -70,7 +70,7 @@ void PathAngleCritic::score(CriticData & data)
 
   PathAngleMode mode = mode_;
   if (!reversingAllowed() && mode == PathAngleMode::NO_DIRECTIONAL_PREFERENCE) {
-    mode = PathAngleMode::FORWARD_PREFERENCE;
+    mode = PathAngleMode::FORWARD_PREFERENCE;  // See warning in initialize()
   }
 
   switch (mode) {
