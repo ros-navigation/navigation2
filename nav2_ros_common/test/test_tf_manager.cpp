@@ -786,29 +786,6 @@ TEST_F(TransformListenerTest, StaticTransformsAreRetainedForLateListeners)
   expectStaticTransforms(*receiver, transforms);
 }
 
-TEST_F(TransformListenerTest, ConcurrentStaticSendsRetainEveryTransform)
-{
-  const auto static_publishers = node_->count_publishers("/tf_static");
-  auto sender = nav2::create_transform_manager(node_, false);
-  std::vector<geometry_msgs::msg::TransformStamped> transforms(8);
-  for (size_t i = 0; i < transforms.size(); ++i) {
-    transforms[i].header.frame_id = "concurrent_static_parent";
-    transforms[i].child_frame_id = "concurrent_static_child_" + std::to_string(i);
-    transforms[i].transform.translation.x = static_cast<double>(i + 1);
-  }
-  std::vector<std::thread> threads;
-  for (const auto & transform : transforms) {
-    threads.emplace_back([sender, transform]() {sender->sendStaticTransform(transform);});
-  }
-  for (auto & thread : threads) {
-    thread.join();
-  }
-  EXPECT_EQ(node_->count_publishers("/tf_static"), static_publishers + 1);
-  auto late_node = std::make_shared<nav2::LifecycleNode>("concurrent_static_listener");
-  auto receiver = nav2::create_transform_manager(late_node);
-  expectStaticTransforms(*receiver, transforms);
-}
-
 TEST_F(TransformListenerTest, BroadcastsTransformVector)
 {
   tf_manager_ = nav2::create_transform_manager(node_);

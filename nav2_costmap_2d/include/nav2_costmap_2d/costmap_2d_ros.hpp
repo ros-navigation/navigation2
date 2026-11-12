@@ -329,6 +329,10 @@ public:
    * getUnpaddedRobotFootprint(). */
   void setRobotFootprintPolygon(const geometry_msgs::msg::Polygon & footprint);
 
+  /**
+   * @brief Get the transform manager used by this costmap.
+   * @return Shared pointer to the transform manager.
+   */
   nav2::TransformManager::SharedPtr getTfManager() {return tf_manager_;}
 
   /**
