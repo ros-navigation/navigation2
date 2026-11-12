@@ -124,6 +124,9 @@ void Costmap2DROS::init()
 
 Costmap2DROS::~Costmap2DROS()
 {
+  // The layers are plugin instances, they must be destroyed before plugin_loader_, which is
+  // declared after layered_costmap_. on_cleanup() does this, but it is not always called.
+  layered_costmap_.reset();
 }
 
 nav2::CallbackReturn
