@@ -15,6 +15,7 @@
 #ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_ANGLE_CRITIC_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITICS__PATH_ANGLE_CRITIC_HPP_
 
+#include <cmath>
 #include <string>
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
@@ -72,11 +73,16 @@ public:
   void score(CriticData & data) override;
 
 protected:
+  /**
+   * @brief Whether the controller's current vx_min allows reversing
+   */
+  bool reversingAllowed() const {return std::fabs(vx_min_) >= 1e-6f;}
+
   float max_angle_to_furthest_{0};
   float threshold_to_consider_{0};
 
   size_t offset_from_furthest_{0};
-  bool reversing_allowed_{true};
+  float vx_min_{0};
   PathAngleMode mode_{0};
 
   unsigned int power_{0};

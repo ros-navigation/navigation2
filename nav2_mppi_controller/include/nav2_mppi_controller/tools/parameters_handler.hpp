@@ -15,6 +15,7 @@
 #ifndef NAV2_MPPI_CONTROLLER__TOOLS__PARAMETERS_HANDLER_HPP_
 #define NAV2_MPPI_CONTROLLER__TOOLS__PARAMETERS_HANDLER_HPP_
 
+#include <algorithm>
 #include <functional>
 #include <string>
 #include <type_traits>
@@ -191,8 +192,9 @@ protected:
 
   bool verbose_{false};
 
+  using param_callback_t = std::function<void (const rclcpp::Parameter &)>;
   std::unordered_map<std::string,
-    std::function<void(const rclcpp::Parameter &)>> get_param_callbacks_;
+    std::vector<std::pair<const void *, param_callback_t>>> get_param_callbacks_;
   std::unordered_map<std::string, std::function<get_param_func_t>> get_pre_callbacks_;
 
   std::vector<std::function<post_callback_t>> post_callbacks_;
@@ -212,7 +214,7 @@ inline auto ParametersHandler::getParamGetter(const std::string & ns)
 template<typename T>
 void ParametersHandler::addParamCallback(const std::string & name, T && callback)
 {
-  get_param_callbacks_[name] = callback;
+  get_param_callbacks_[name] = {{nullptr, callback}};
 }
 
 template<typename T>
@@ -255,8 +257,15 @@ template<typename T>
 void ParametersHandler::setParamCallback(
   T & setting, const std::string & name, ParameterType param_type)
 {
-  if (get_param_callbacks_.find(name) != get_param_callbacks_.end()) {
-    return;
+  const void * key = &setting;
+  if (auto it = get_param_callbacks_.find(name); it != get_param_callbacks_.end()) {
+    const auto & callbacks = it->second;
+    const bool overridden_or_registered = std::any_of(
+      callbacks.begin(), callbacks.end(),
+      [key](const auto & callback) {return callback.first == nullptr || callback.first == key;});
+    if (overridden_or_registered || param_type != ParameterType::Dynamic) {
+      return;
+    }
   }
 
   auto dynamic_callback =
@@ -280,7 +289,7 @@ void ParametersHandler::setParamCallback(
     };
 
   if (param_type == ParameterType::Dynamic) {
-    addParamCallback(name, dynamic_callback);
+    get_param_callbacks_[name].emplace_back(key, dynamic_callback);
   } else {
     addPreCallback(name, static_callback);
   }
