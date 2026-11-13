@@ -69,6 +69,14 @@ void Optimizer::initialize(
   reset();
 }
 
+Optimizer::~Optimizer()
+{
+  shutdown();
+  // The motion model must be destroyed before motion_model_loader_, which is declared after it
+  critics_data_.motion_model.reset();
+  motion_model_.reset();
+}
+
 void Optimizer::shutdown()
 {
   noise_generator_.shutdown();
@@ -719,6 +727,9 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
   auto node = parent_.lock();
   const std::string plugin_ns = name_ + "." + motion_model_name;
   std::string plugin_type;
+  // Destroy the previous motion model before the loader that created it is replaced
+  critics_data_.motion_model.reset();
+  motion_model_.reset();
   motion_model_loader_ =
     std::make_unique<pluginlib::ClassLoader<MotionModel>>(
     "nav2_mppi_controller", "mppi::MotionModel");
