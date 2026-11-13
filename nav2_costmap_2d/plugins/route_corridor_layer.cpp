@@ -15,6 +15,7 @@
 #include "nav2_costmap_2d/route_corridor_layer.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <stdexcept>
@@ -29,12 +30,21 @@ using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 
 namespace nav2_costmap_2d
 {
+
+// Convert a world coordinate to a cell index.
+int world_to_cell(double world, double origin, double resolution, int limit)
+{
+  int cell = std::clamp(std::ceil((world - origin) / resolution - 0.5), 0.0, static_cast<double>(limit));
+  return cell;
+}
+
 void RouteCorridorLayer::onInitialize()
 {
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error("RouteCorridorLayer: failed to lock node");
   }
+  // Parameters
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("graph_filepath", rclcpp::ParameterValue(std::string("")));
   declareParameter("map_topic", rclcpp::ParameterValue("~/" + name_ + "/map"));
@@ -137,7 +147,7 @@ void RouteCorridorLayer::loadGraph(const std::string & filepath)
     edges_.size(), filepath.c_str());
 }
 
-void RouteCorridorLayer::updateBounds(
+void RouteCorridorLayer::updateBounds(// The bound is the entire costmap
   double robot_x, double robot_y, double /*robot_yaw*/,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
@@ -148,8 +158,8 @@ void RouteCorridorLayer::updateBounds(
   robot_x_ = robot_x;
   robot_y_ = robot_y;
   pose_valid_ = std::isfinite(robot_x) && std::isfinite(robot_y);
-  const auto * map = layered_costmap_->getCostmap();
-  *min_x = std::min(*min_x, map->getOriginX());
+  const auto * map = layered_costmap_->getCostmap(); 
+  *min_x = std::min(*min_x, map->getOriginX()); 
   *min_y = std::min(*min_y, map->getOriginY());
   *max_x = std::max(*max_x, map->getOriginX() + map->getSizeInMetersX());
   *max_y = std::max(*max_y, map->getOriginY() + map->getSizeInMetersY());
@@ -157,6 +167,7 @@ void RouteCorridorLayer::updateBounds(
 
 void RouteCorridorLayer::buildMask(const Costmap2D & master)
 {
+  const auto build_start = std::chrono::steady_clock::now();
   mask_.header.frame_id = layered_costmap_->getGlobalFrameID();
   mask_.header.stamp = clock_->now();
   mask_.info.map_load_time = mask_.header.stamp;
@@ -166,24 +177,78 @@ void RouteCorridorLayer::buildMask(const Costmap2D & master)
   mask_.info.origin.position.x = master.getOriginX();
   mask_.info.origin.position.y = master.getOriginY();
   mask_.info.origin.orientation.w = 1.0;
-  mask_.data.assign(static_cast<size_t>(mask_.info.width) * mask_.info.height, 100);
-  for (unsigned int y = 0; y < mask_.info.height; ++y) {
-    for (unsigned int x = 0; x < mask_.info.width; ++x) {
-      double wx, wy;
-      master.mapToWorld(x, y, wx, wy);
-      for (const auto & edge : edges_) {
-        const double dx = edge.end.x - edge.start.x;
-        const double dy = edge.end.y - edge.start.y;
-        const double length_sq = dx * dx + dy * dy;
-        // Clamp the projection factor to find the closest point on the segment.
+  const int width = static_cast<int>(mask_.info.width);
+  const int height = static_cast<int>(mask_.info.height);
+  const double resolution = master.getResolution();
+  const double origin_x = master.getOriginX();
+  const double origin_y = master.getOriginY();
+  const size_t cell_count = static_cast<size_t>(width) * height;
+  mask_.data.assign(cell_count, 0); 
+  corridor_cells_.assign(cell_count, false); // a boolean mask of corridor cells. For each route segment check only nearby cells
+  std::vector<size_t> corridor_indices;
+  for (const auto & edge : edges_) {
+    const double dx = edge.end.x - edge.start.x;
+    const double dy = edge.end.y - edge.start.y;
+    const double length_sq = dx * dx + dy * dy;
+    const int min_y = world_to_cell(
+      std::min(edge.start.y, edge.end.y) - max_deviation_, origin_y, resolution, height);
+    const int max_y = world_to_cell(
+      std::max(edge.start.y, edge.end.y) + max_deviation_, origin_y, resolution, height);
+    
+      // Iterate only the regin near the edges to save compute. Mark corridor cells and cache their indices for later boundary expansion.
+      for (int y = min_y; y < height && y <= max_y; ++y) {
+      const double wy = origin_y + (y + 0.5) * resolution; // Center of the cell in world coordinates.
+      double t_min = 0.0;
+      double t_max = 1.0;
+      if (dy != 0.0) {
+        const double t1 = (wy - max_deviation_ - edge.start.y) / dy;
+        const double t2 = (wy + max_deviation_ - edge.start.y) / dy;
+        t_min = std::clamp(std::min(t1, t2), 0.0, 1.0);
+        t_max = std::clamp(std::max(t1, t2), 0.0, 1.0);
+      }
+      const double x1 = edge.start.x + t_min * dx;
+      const double x2 = edge.start.x + t_max * dx;
+      const int min_x = world_to_cell(
+        std::min(x1, x2) - max_deviation_, origin_x, resolution, width);
+      const int max_x = world_to_cell(
+        std::max(x1, x2) + max_deviation_, origin_x, resolution, width);
+      for (int x = min_x; x < width && x <= max_x; ++x) {
+        const size_t index = static_cast<size_t>(y) * width + x;
+        if (corridor_cells_[index]) {
+          continue;
+        }
+        const double wx = origin_x + (x + 0.5) * resolution;
         const double t = length_sq > 0.0 ? std::clamp(
           ((wx - edge.start.x) * dx + (wy - edge.start.y) * dy) / length_sq,
           0.0, 1.0) : 0.0;
         if (std::hypot(wx - edge.start.x - t * dx, wy - edge.start.y - t * dy) <=
           max_deviation_)
         {
-          mask_.data[y * mask_.info.width + x] = 0;
-          break;
+          corridor_cells_[index] = true;
+          corridor_indices.push_back(index);
+        }
+      }
+    }
+  }
+  // Expand only from corridor cells and retain the exterior three-pixel band.
+  constexpr int boundary_width = 3;
+  boundary_indices_.clear();
+  for (const size_t index : corridor_indices) {
+    const int x = static_cast<int>(index % width);
+    const int y = static_cast<int>(index / width);
+    for (int dy = -boundary_width; dy <= boundary_width; ++dy) {
+      for (int dx = -boundary_width; dx <= boundary_width; ++dx) {
+        const int nx = x + dx;
+        const int ny = y + dy;
+        if (dx * dx + dy * dy > boundary_width * boundary_width ||
+          nx < 0 || ny < 0 || nx >= width || ny >= height)
+        {
+          continue;
+        }
+        const size_t neighbor = static_cast<size_t>(ny) * width + nx;
+        if (!corridor_cells_[neighbor] && mask_.data[neighbor] == 0) {
+          mask_.data[neighbor] = 100;
+          boundary_indices_.push_back(neighbor);
         }
       }
     }
@@ -191,8 +256,15 @@ void RouteCorridorLayer::buildMask(const Costmap2D & master)
   built_ = true;
   current_ = true;
   edges_.clear();  // Updates only sample the fixed mask.
+  // Measure construction time.
+  const double build_ms = std::chrono::duration<double, std::milli>(
+    std::chrono::steady_clock::now() - build_start).count();
   mask_pub_->publish(mask_);
-  RCLCPP_INFO(logger_, "Built fixed startup corridor mask");
+  RCLCPP_INFO(
+    logger_, "Built fixed startup corridor mask in %.3f ms (%u x %u cells, "
+    "%zu corridor cells, %zu boundary cells; excludes publishing)",
+    build_ms, mask_.info.width, mask_.info.height,
+    corridor_indices.size(), boundary_indices_.size());
 }
 
 bool RouteCorridorLayer::insideCorridor(double wx, double wy) const
@@ -203,13 +275,13 @@ bool RouteCorridorLayer::insideCorridor(double wx, double wy) const
   const double mx = std::floor((wx - mask_.info.origin.position.x) / mask_.info.resolution);
   const double my = std::floor((wy - mask_.info.origin.position.y) / mask_.info.resolution);
   return mx >= 0 && my >= 0 && mx < mask_.info.width && my < mask_.info.height &&
-         mask_.data[static_cast<size_t>(my) * mask_.info.width + static_cast<size_t>(mx)] == 0;
+         corridor_cells_[static_cast<size_t>(my) * mask_.info.width + static_cast<size_t>(mx)];
 }
 
 void RouteCorridorLayer::updateCosts(
   Costmap2D & master, int min_i, int min_j, int max_i, int max_j)
 {
-  // Apply lethal outside costs, or recovery costs when the robot is outside the corridor.
+  // Apply costs along the three-pixel exterior corridor boundary.
   std::lock_guard<std::mutex> lock(mutex_);
   if (!enabled_) {
     return;
@@ -219,17 +291,24 @@ void RouteCorridorLayer::updateCosts(
   }
   const unsigned char outside_cost = pose_valid_ && !insideCorridor(robot_x_, robot_y_) ?
     recovery_cost_ : LETHAL_OBSTACLE;
-  for (int y = std::max(0, min_j);
-    y < std::min(max_j, static_cast < int > (master.getSizeInCellsY()));
-    ++y)
-  {
-    for (int x = std::max(0, min_i);
-      x < std::min(max_i, static_cast < int > (master.getSizeInCellsX()));
-      ++x)
-    {
-      double wx, wy;
-      master.mapToWorld(x, y, wx, wy);
-      if (!insideCorridor(wx, wy)) {
+  // Visit only cached boundary cells. Rasterize their world extents into the current
+  // costmap so rolling origins and differing resolutions still sample the fixed mask.
+  const double resolution = master.getResolution();
+  for (const size_t index : boundary_indices_) {
+    const double wx = mask_.info.origin.position.x +
+      (index % mask_.info.width) * mask_.info.resolution;
+    const double wy = mask_.info.origin.position.y +
+      (index / mask_.info.width) * mask_.info.resolution;
+    const int x_begin = std::max(min_i, world_to_cell(
+      wx, master.getOriginX(), resolution, master.getSizeInCellsX()));
+    const int x_end = std::min(max_i, world_to_cell(
+      wx + mask_.info.resolution, master.getOriginX(), resolution, master.getSizeInCellsX()));
+    const int y_begin = std::max(min_j, world_to_cell(
+      wy, master.getOriginY(), resolution, master.getSizeInCellsY()));
+    const int y_end = std::min(max_j, world_to_cell(
+      wy + mask_.info.resolution, master.getOriginY(), resolution, master.getSizeInCellsY()));
+    for (int y = y_begin; y < y_end; ++y) {
+      for (int x = x_begin; x < x_end; ++x) {
         // Hard restriction includes unknown space. Recovery preserves all source costs.
         master.setCost(x, y, outside_cost == LETHAL_OBSTACLE ? LETHAL_OBSTACLE :
           std::max(master.getCost(x, y), outside_cost));
