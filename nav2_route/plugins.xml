@@ -77,4 +77,9 @@
       <description>Route operation to add actual times of traversal to edge's metadata for use in later more accurate planning by the TimeScorer</description>
     </class>
   </library>
+  <library path="route_operations">
+    <class type="nav2_route::ApproachNotifier" base_class_type="nav2_route::RouteOperation">
+      <description>Route operation to notify when the robot is approaching tagged upcoming nodes, before they are achieved</description>
+    </class>
+  </library>
 </class_libraries>

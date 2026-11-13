@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <memory>
 #include <string>
@@ -100,7 +101,32 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const ReroutingState & rerouting_info);
 
+  /**
+   * @brief Resets the nodes approached by the ON_APPROACH operations, so they may trigger
+   * again. To be called when starting to track a new route (e.g. a new goal or a reroute)
+   */
+  void resetApproaches();
+
 protected:
+  /**
+   * @brief Processes a vector of ON_APPROACH operations plugins, triggering each once per
+   * node on the route being tracked, when within its approach radius along the route
+   * @param operations Operations to trigger
+   * @param result Results to populate from operations
+   * @param node Last node achieved, if any
+   * @param edge_entered Current edge being traversed, if any
+   * @param edge_exited Last edge exited, unused
+   * @param route The raw route being tracked
+   * @param pose Robot pose
+   */
+  void processApproachOperations(
+    const std::vector<RouteOperation::Ptr> & operations, OperationsResult & result,
+    const NodePtr node,
+    const EdgePtr edge_entered,
+    const EdgePtr edge_exited,
+    const Route & route,
+    const geometry_msgs::msg::PoseStamped & pose);
+
   /**
    * @brief Processes a vector of operations plugins, by trigger
    * @param operations Operations to trigger
@@ -118,6 +144,9 @@ protected:
   std::unordered_map<std::string, RouteOperation::Ptr> graph_operations_;
   std::vector<RouteOperation::Ptr> change_operations_;
   std::vector<RouteOperation::Ptr> query_operations_;
+  std::vector<RouteOperation::Ptr> approach_operations_;
+  std::vector<std::pair<std::string, unsigned int>> approached_;
+  float max_approach_radius_{0.0f};
   rclcpp::Logger logger_{rclcpp::get_logger("OperationsManager")};
 };
 

@@ -126,6 +126,7 @@ add_library(route_operations SHARED
   src/plugins/route_operations/rerouting_service.cpp
   src/plugins/route_operations/collision_monitor.cpp
   src/plugins/route_operations/time_marker.cpp
+  src/plugins/route_operations/approach_notifier.cpp
 )
 target_include_directories(route_operations
   PUBLIC
