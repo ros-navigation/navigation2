@@ -168,7 +168,7 @@ public:
   }
 
   /**
-   * @brief With input pose, speed find the vehicle's output pose at pred_dt in future
+   * @brief Propagate a pose using interval-average speed and midpoint heading
    * @param pose pose of the robot
    * @param speed speed
    * @param pred_dt time in future to predict the pose
@@ -179,8 +179,11 @@ public:
   {
     const bool is_holo = isHolonomic();
     auto initial_yaw = static_cast<float>(tf2::getYaw(pose.orientation));
-    auto yaw_cos = cosf(initial_yaw);
-    auto yaw_sin = sinf(initial_yaw);
+    // AI-assisted change: evaluate translation at the interval midpoint heading.
+    const auto yaw_delta = static_cast<float>(speed.angular.z * pred_dt);
+    const auto midpoint_yaw = initial_yaw + 0.5f * yaw_delta;
+    auto yaw_cos = cosf(midpoint_yaw);
+    auto yaw_sin = sinf(midpoint_yaw);
     auto dx = static_cast<float>(speed.linear.x) * yaw_cos;
     auto dy = static_cast<float>(speed.linear.x) * yaw_sin;
     if (is_holo) {
@@ -189,7 +192,7 @@ public:
     }
     pose.position.x += dx * pred_dt;
     pose.position.y += dy * pred_dt;
-    initial_yaw += speed.angular.z * pred_dt;
+    initial_yaw += yaw_delta;
     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(initial_yaw);
   }
   /**
