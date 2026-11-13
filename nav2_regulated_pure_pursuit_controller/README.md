@@ -66,7 +66,21 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 This controller also implements the Dynamic Window Pure Pursuit (DWPP) algorithm, developed by [Fumiya Ohnishi](https://www.linkedin.com/in/fumiya-ohnishi-23b124202).
 Unlike conventional Pure Pursuit variants, DWPP computes command velocities that track the path as accurately as possible while respecting velocity and acceleration constraints. In particular, it automatically slows down in sharp turns without manual tuning, thereby reducing path tracking errors.
 
-- Fumiya Ohnishi and Masaki Takahashi, **DWPP: Dynamic Window Pure Pursuit Considering Velocity and Acceleration Constraints**, arXiv:2601.15006., 2026. https://arxiv.org/abs/2601.15006
+If you use the Dynamic Window Pure Pursuit algorithm, please cite this work in your papers!
+
+- F. Ohnishi, M. Takahashi, [**DWPP: Dynamic Window Pure Pursuit Considering Velocity and Acceleration Constraints**](https://doi.org/10.1016/j.robot.2026.105839). Robotics and Autonomous Systems, 2027.
+
+```bibtex
+@article{ohnishi2027dwpp,
+      title={DWPP: Dynamic Window Pure Pursuit Considering Velocity and Acceleration Constraints},
+      author={Fumiya Ohnishi and Masaki Takahashi},
+      year={2027},
+      journal = {Robotics and Autonomous Systems},
+      volume = {208},
+      pages = {105839},
+      doi = {10.1016/j.robot.2026.105839}
+}
+```
 
 
 ## Configuration
