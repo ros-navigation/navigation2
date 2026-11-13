@@ -10,3 +10,9 @@ target_link_libraries(test_behavior_tree_navigator
   nav2_core
   nav2_msgs::nav2_msgs
 )
+
+# Controller exceptions test
+nav2_add_gtest(test_controller_exceptions test_controller_exceptions.cpp)
+target_link_libraries(test_controller_exceptions
+  nav2_core
+)
