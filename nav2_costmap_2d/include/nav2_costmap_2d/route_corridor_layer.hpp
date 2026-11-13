@@ -49,7 +49,7 @@ namespace nav2_costmap_2d
 {
 /**
  * @class RouteCorridorLayer
- * @brief Builds a fixed graph corridor mask and applies pose-dependent outside costs.
+ * @brief Builds a fixed graph corridor and applies costs to its three-pixel boundary.
  */
 class RouteCorridorLayer : public Layer
 {
@@ -84,7 +84,7 @@ public:
     double * min_x, double * min_y, double * max_x, double * max_y) override;
 
   /**
-   * @brief Apply lethal outside costs, or recovery costs when the robot is outside the corridor.
+   * @brief Apply lethal boundary costs, or recovery costs when the robot is outside the corridor.
    * @param master Master costmap to update
    * @param min_i Minimum cell X index of the update window (inclusive)
    * @param min_j Minimum cell Y index of the update window (inclusive)
@@ -122,6 +122,8 @@ protected:
   std::mutex mutex_;
   std::vector<Segment> edges_;
   nav_msgs::msg::OccupancyGrid mask_;
+  std::vector<bool> corridor_cells_;
+  std::vector<size_t> boundary_indices_;
   double max_deviation_{1.0};
   bool built_{false};
   double robot_x_{0.0};
