@@ -14,6 +14,8 @@
 
 #include "nav2_mppi_controller/critic_manager.hpp"
 
+#include "nav2_core/controller_exceptions.hpp"
+
 namespace mppi
 {
 
@@ -61,9 +63,15 @@ void CriticManager::loadCritics()
     auto instance = std::unique_ptr<critics::CriticFunction>(
       loader_->createUnmanagedInstance(fullname));
     critics_.push_back(std::move(instance));
-    critics_.back()->on_configure(
-      parent_, name_, name_ + "." + name, costmap_ros_,
-      parameters_handler_);
+    try {
+      critics_.back()->on_configure(
+        parent_, name_, name_ + "." + name, costmap_ros_,
+        parameters_handler_);
+    } catch (const std::exception & e) {
+      // Rethrow from this library: the critic's library may be unloaded while the exception
+      // propagates, because the controller (and with it the critic loader) is destroyed
+      throw nav2_core::ControllerException(e.what());
+    }
     RCLCPP_INFO(logger_, "Critic loaded : %s", fullname.c_str());
   }
 }

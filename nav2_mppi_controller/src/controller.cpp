@@ -56,6 +56,13 @@ void MPPIController::configure(
   RCLCPP_INFO(logger_, "Configured MPPI Controller: %s", name_.c_str());
 }
 
+MPPIController::~MPPIController()
+{
+  // The parameter callbacks are created in the critic, motion model and trajectory validator
+  // libraries, so they must be destroyed before optimizer_ releases the loaders of those libraries.
+  parameters_handler_.reset();
+}
+
 void MPPIController::cleanup()
 {
   optimizer_.shutdown();
