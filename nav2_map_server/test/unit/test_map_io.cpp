@@ -152,6 +152,27 @@ TEST_F(MapIOTester, loadSaveValidPGM)
   verifyMapMsg(map_msg);
 }
 
+// Save a map whose resolution needs more than 3 decimals and check that loading
+// it back gives the same resolution
+TEST_F(MapIOTester, saveKeepsFineResolution)
+{
+  LoadParameters loadParameters;
+  fillLoadParameters(path(TEST_DIR) / path(g_valid_pgm_file), loadParameters);
+
+  nav_msgs::msg::OccupancyGrid map_msg;
+  ASSERT_NO_THROW(loadMapFromFile(loadParameters, map_msg));
+  map_msg.info.resolution = 0.0125;
+
+  SaveParameters saveParameters;
+  fillSaveParameters(path(g_tmp_dir) / path(g_valid_map_name), "pgm", saveParameters);
+  ASSERT_TRUE(saveMapToFile(map_msg, saveParameters));
+
+  LoadParameters savedParameters;
+  ASSERT_NO_THROW(
+    savedParameters = loadMapYaml(path(g_tmp_dir) / path(g_valid_yaml_file)));
+  EXPECT_FLOAT_EQ(savedParameters.resolution, 0.0125);
+}
+
 // Load a valid reference PNG file. Check obtained OccupancyGrid message for consistency:
 // loaded image should match the known dimensions and content of the file.
 // Save obtained OccupancyGrid message into a tmp PNG file. Then load back saved tmp file

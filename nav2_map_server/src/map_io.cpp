@@ -604,9 +604,9 @@ void tryWriteMapToFile(
     e << YAML::BeginMap;
     e << YAML::Key << "image" << YAML::Value << image_name;
     e << YAML::Key << "mode" << YAML::Value << map_mode_to_string(save_parameters.mode);
-    e << YAML::Key << "resolution" << YAML::Value << to_string_with_precision(
-      map.info.resolution,
-      3);
+    // Use the emitter precision, not a fixed 3 decimals, so that resolutions
+    // with more decimals (e.g. 0.0125) are not rounded
+    e << YAML::Key << "resolution" << YAML::Value << map.info.resolution;
     e << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq <<
       to_string_with_precision(map.info.origin.position.x, 3) <<
       to_string_with_precision(map.info.origin.position.y, 3) << yaw << YAML::EndSeq;
