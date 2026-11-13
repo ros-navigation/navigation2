@@ -190,7 +190,8 @@ void AStarAlgorithm<NodeT>::setGoal(
   const float & my,
   const unsigned int & dim_3,
   const GoalHeadingMode & goal_heading_mode,
-  const int & coarse_search_resolution)
+  const int & coarse_search_resolution,
+  const std::optional<double> & goal_yaw)
 {
   if constexpr (std::is_base_of_v<Node2D, NodeT>) {
     // Node2D-specific: simplified goal setting, no heading modes
@@ -231,6 +232,7 @@ void AStarAlgorithm<NodeT>::setGoal(
     _goal_manager.setRefGoalCoordinates(ref_goal_coord);
 
     unsigned int num_bins = _shared_ctx->motion_table.num_angle_quantization;
+    const double yaw = goal_yaw.value_or(_shared_ctx->motion_table.getAngleFromBin(dim_3));
     // set goal based on heading mode
     switch (goal_heading_mode) {
       case GoalHeadingMode::DEFAULT:
@@ -242,7 +244,7 @@ void AStarAlgorithm<NodeT>::setGoal(
               static_cast<unsigned int>(my),
               dim_3));
           goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
-          _goal_manager.addGoal(goal);
+          _goal_manager.addGoal(goal, yaw);
           break;
         }
 
@@ -256,7 +258,7 @@ void AStarAlgorithm<NodeT>::setGoal(
               static_cast<unsigned int>(my),
               dim_3));
           goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
-          _goal_manager.addGoal(goal);
+          _goal_manager.addGoal(goal, yaw);
 
           // Add goal node in opposite (180°) direction
           unsigned int opposite_heading = (dim_3 + (num_bins / 2)) % num_bins;
@@ -267,7 +269,7 @@ void AStarAlgorithm<NodeT>::setGoal(
               opposite_heading));
           opposite_goal->setPose(
             typename NodeT::Coordinates(mx, my, static_cast<float>(opposite_heading)));
-          _goal_manager.addGoal(opposite_goal);
+          _goal_manager.addGoal(opposite_goal, yaw + M_PI);
           break;
         }
 
@@ -284,7 +286,7 @@ void AStarAlgorithm<NodeT>::setGoal(
                 static_cast<unsigned int>(my),
                 i));
             goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(i)));
-            _goal_manager.addGoal(goal);
+            _goal_manager.addGoal(goal, _shared_ctx->motion_table.getAngleFromBin(i));
           }
           break;
         }
