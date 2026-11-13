@@ -12,6 +12,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_voxel_grid REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(nlohmann_json REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -68,6 +69,7 @@ add_library(layers SHARED
   src/observation_buffer.cpp
   plugins/voxel_layer.cpp
   plugins/range_sensor_layer.cpp
+  plugins/route_corridor_layer.cpp
   plugins/denoise_layer.cpp
   plugins/plugin_container_layer.cpp
 )
@@ -87,6 +89,7 @@ target_link_libraries(layers PUBLIC
   Eigen3::Eigen
 )
 target_link_libraries(layers PRIVATE
+  nlohmann_json::nlohmann_json
   pluginlib::pluginlib
 )
 
