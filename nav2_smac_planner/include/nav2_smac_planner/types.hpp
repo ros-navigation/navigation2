@@ -39,6 +39,7 @@ struct SearchInfo
   float minimum_turning_radius{8.0};
   float non_straight_penalty{1.05};
   float change_penalty{0.0};
+  float direction_change_penalty{0.0};
   float reverse_penalty{2.0};
   float cost_penalty{2.0};
   float retrospective_penalty{0.015};

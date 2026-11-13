@@ -100,6 +100,7 @@ struct LatticeMotionTable
   unsigned int size_x;
   unsigned int num_angle_quantization;
   float change_penalty;
+  float direction_change_penalty;
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;

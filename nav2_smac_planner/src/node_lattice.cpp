@@ -48,6 +48,7 @@ void LatticeMotionTable::initMotionModel(
 {
   size_x = size_x_in;
   change_penalty = search_info.change_penalty;
+  direction_change_penalty = search_info.direction_change_penalty;
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
@@ -336,14 +337,22 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
     // New motion is a straight motion, no additional costs to be applied
     travel_cost = travel_cost_raw;
   } else {
-    if (prim->left_turn == transition_prim->left_turn) {
+    // Reversing primitives are traversed backwards, which inverts their steering direction
+    const bool is_steering_left = (prim->left_turn != this->isBackward());
+    const bool is_child_steering_left = (transition_prim->left_turn != child->isBackward());
+    if (is_steering_left == is_child_steering_left) {
       // Turning motion but keeps in same general direction: encourages to commit to actions
       travel_cost = travel_cost_raw * _ctx->motion_table.non_straight_penalty;
     } else {
-      // Turning motion and velocity directions: penalizes wiggling.
+      // Turning motion and changing steering direction: penalizes wiggling.
       travel_cost = travel_cost_raw *
         (_ctx->motion_table.non_straight_penalty + _ctx->motion_table.change_penalty);
     }
+  }
+
+  if (this->isBackward() != child->isBackward()) {
+    // Inverting direction of travel (forward <-> reverse): penalizes gear changes
+    travel_cost += travel_cost_raw * _ctx->motion_table.direction_change_penalty;
   }
 
   // If backwards flag is set, this primitive is moving in reverse

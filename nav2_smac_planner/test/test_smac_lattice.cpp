@@ -46,6 +46,7 @@ public:
     }
   }
 
+  nav2_smac_planner::SearchInfo getSearchInfo() {return _search_info;}
   float radiusInCells() {return _search_info.minimum_turning_radius;}
   float expansionInCells() {return _search_info.analytic_expansion_max_length;}
 
@@ -263,6 +264,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.cache_obstacle_heuristic", true),
       rclcpp::Parameter("test.reverse_penalty", 5.0),
       rclcpp::Parameter("test.change_penalty", 1.0),
+      rclcpp::Parameter("test.direction_change_penalty", 3.0),
       rclcpp::Parameter("test.non_straight_penalty", 2.0),
       rclcpp::Parameter("test.cost_penalty", 2.0),
       rclcpp::Parameter("test.retrospective_penalty", 0.2),
@@ -301,6 +303,15 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   parameters.push_back(rclcpp::Parameter("test.max_planning_time", -1.0));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getMaxPlanningTime(), 10.0);
+
+  // test direction change penalty is updated (A* reinit may throw from the invalid prims file)
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.direction_change_penalty", 4.0));
+  try {
+    planner->callDynamicParams(parameters);
+  } catch (...) {
+  }
+  EXPECT_EQ(planner->getSearchInfo().direction_change_penalty, 4.0f);
 
   // test coarse resolution edge cases.
   // Negative coarse search resolution

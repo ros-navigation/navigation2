@@ -98,18 +98,59 @@ TEST(NodeHybridTest, test_node_hybrid)
   // opposite direction as parent, testB
   testA.setMotionPrimitiveIndex(2, nav2_smac_planner::TurnDirection::RIGHT);
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f * 0.9, 0.01);
-  // reverse direction as parent, testB
+  // reverse direction as parent and opposite steering direction, testB
   testA.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::REV_RIGHT);
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.513f * 0.9 * 2.0, 0.01);
-  // reverse direction as parent, testB
+  // reverse direction as parent but same steering direction, testB: no change penalty
   testA.setMotionPrimitiveIndex(2, nav2_smac_planner::TurnDirection::REV_LEFT);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.513f * 0.9 * 2.0, 0.01);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.304f * 0.9 * 2.0, 0.01);
+
+  // check direction change penalty only applies when inverting direction of travel
+  ctx->motion_table.direction_change_penalty = 1.0;
+  testB.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::LEFT);
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::FORWARD);
+  const float straight_cost = testB.getTraversalCost(&testA);
+  EXPECT_NEAR(straight_cost, 2.088f * 0.9, 0.1);
+  // forward to reverse: (raw + raw * direction_change_penalty) * reverse_penalty
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::REVERSE);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), straight_cost * 2.0 * 2.0, 0.01);
+  // reverse to forward: raw + raw * direction_change_penalty
+  testB.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::REV_LEFT);
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::FORWARD);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), straight_cost * 2.0, 0.01);
+  // reverse to reverse: no direction change, only reverse penalty
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::REVERSE);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), straight_cost * 2.0, 0.01);
+  // forward to reverse turning with the same steering: direction change but no change penalty
+  testB.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::LEFT);
+  testA.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::REV_LEFT);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.304f * 0.9 / 1.1 * (1.1 + 1.0) * 2.0, 0.02);
+  // no previous direction of travel from the start node
+  nav2_smac_planner::NodeHybrid testStart(49, ctx);
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::REVERSE);
+  EXPECT_NEAR(testStart.getTraversalCost(&testA), straight_cost * 2.0, 0.01);
+  ctx->motion_table.direction_change_penalty = 0.0;
+  testA.setMotionPrimitiveIndex(2, nav2_smac_planner::TurnDirection::REV_LEFT);
 
   // will throw because never collision checked testB
   EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);
 
   // check motion primitives
   EXPECT_EQ(testA.getMotionPrimitiveIndex(), 2u);
+
+  // check direction of travel and steering direction are decoupled
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::LEFT);
+  EXPECT_FALSE(testA.isReverse());
+  EXPECT_EQ(testA.getSteeringDirection(), nav2_smac_planner::TurnDirection::LEFT);
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::REV_LEFT);
+  EXPECT_TRUE(testA.isReverse());
+  EXPECT_EQ(testA.getSteeringDirection(), nav2_smac_planner::TurnDirection::LEFT);
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::REV_RIGHT);
+  EXPECT_TRUE(testA.isReverse());
+  EXPECT_EQ(testA.getSteeringDirection(), nav2_smac_planner::TurnDirection::RIGHT);
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::REVERSE);
+  EXPECT_TRUE(testA.isReverse());
+  EXPECT_EQ(testA.getSteeringDirection(), nav2_smac_planner::TurnDirection::FORWARD);
 
   // check operator== works on index
   nav2_smac_planner::NodeHybrid testC(49, ctx);
