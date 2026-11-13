@@ -84,6 +84,21 @@ NavigateThroughPosesNavigator::getDefaultBTFilepath(
 bool
 NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
+  geometry_msgs::msg::PoseStamped current_pose;
+  nav_msgs::msg::Goals goals;
+  std::string error;
+  if (!prepareGoalPoses(goal, current_pose, goals, error)) {
+    RCLCPP_WARN(logger_, "Rejecting goal: %s", error.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool
+NavigateThroughPosesNavigator::goalStarted(ActionT::Goal::ConstSharedPtr goal)
+{
+  // Completion is skipped if the previous goal's execution exited with an exception.
+  goal_initialized_ = false;
   return initializeGoalPoses(goal);
 }
 
@@ -106,6 +121,13 @@ NavigateThroughPosesNavigator::goalCompleted(
       result->error_code,
       result->error_msg.c_str());
   }
+
+  // A goal that failed before initialization has no waypoint state to report.
+  // Do not read uninitialized state or reuse statuses from a completed goal.
+  if (!goal_initialized_) {
+    return;
+  }
+  goal_initialized_ = false;
 
   // populate waypoint statuses in result
   auto blackboard = bt_action_server_->getBlackboard();
@@ -241,37 +263,47 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 }
 
 bool
-NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
+NavigateThroughPosesNavigator::prepareGoalPoses(
+  ActionT::Goal::ConstSharedPtr goal,
+  geometry_msgs::msg::PoseStamped & current_pose,
+  nav_msgs::msg::Goals & goals, std::string & error)
 {
-  geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getFreshPose(
       *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.robot_frame, clock_->now(),
       transform_staleness_threshold_, current_pose))
   {
-    bt_action_server_->setInternalError(
-      ActionT::Result::TF_ERROR,
-      "Initial robot pose is not available.");
+    error = "Initial robot pose is not available.";
     return false;
   }
 
-  nav_msgs::msg::Goals goals_array = goal->poses;
+  goals = goal->poses;
   int i = 0;
-  for (auto & goal_pose : goals_array.goals) {
+  for (auto & goal_pose : goals.goals) {
     if (!nav2_util::transformPoseInTargetFrame(
         goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
         feedback_utils_.transform_tolerance))
     {
-      bt_action_server_->setInternalError(
-        ActionT::Result::TF_ERROR,
-        "Failed to transform a goal pose (" + std::to_string(i) + ") provided with frame_id '" +
-        goal_pose.header.frame_id +
-        "' to the global frame '" +
-        feedback_utils_.global_frame +
-        "'.");
+      error = "Failed to transform a goal pose (" + std::to_string(i) +
+        ") provided with frame_id '" + goal_pose.header.frame_id +
+        "' to the global frame '" + feedback_utils_.global_frame + "'.";
       return false;
     }
     i++;
+  }
+
+  return true;
+}
+
+bool
+NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
+{
+  geometry_msgs::msg::PoseStamped current_pose;
+  nav_msgs::msg::Goals goals_array;
+  std::string error;
+  if (!prepareGoalPoses(goal, current_pose, goals_array, error)) {
+    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR, error);
+    return false;
   }
 
   if (goals_array.goals.size() > 0) {
@@ -304,6 +336,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   blackboard->set<decltype(waypoint_statuses)>(
     waypoint_statuses_blackboard_id_,
     std::move(waypoint_statuses));
+  goal_initialized_ = true;
 
   return true;
 }

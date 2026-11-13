@@ -42,6 +42,7 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   const std::vector<std::string> & plugin_lib_names,
   const std::string & default_bt_xml_filename,
   OnGoalReceivedCallback on_goal_received_callback,
+  OnGoalStartedCallback on_goal_started_callback,
   OnLoopCallback on_loop_callback,
   OnPreemptCallback on_preempt_callback,
   OnCompletionCallback on_completion_callback,
@@ -52,6 +53,7 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   plugin_lib_names_(plugin_lib_names),
   node_(parent),
   on_goal_received_callback_(on_goal_received_callback),
+  on_goal_started_callback_(on_goal_started_callback),
   on_loop_callback_(on_loop_callback),
   on_preempt_callback_(on_preempt_callback),
   on_completion_callback_(on_completion_callback),
@@ -400,29 +402,11 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
 template<class ActionT, class NodeT>
 void BtActionServer<ActionT, NodeT>::executeCallback()
 {
-  muxer_preemption_requested_ = false;
-
   auto current_goal = action_server_->get_current_goal();
   if (!current_goal) {
     setInternalError(
       ActionT::Result::GOAL_REJECTED,
       "No current goal available when starting BT execution.");
-  }
-
-  if (!current_goal || !loadBehaviorTree(current_goal->behavior_tree)) {
-    auto result = std::make_shared<typename ActionT::Result>();
-    populateErrorCode(result);
-
-    nav2_behavior_tree::BtStatus rc = nav2_behavior_tree::BtStatus::FAILED;
-    on_completion_callback_(result, rc);
-
-    action_server_->terminate_current(result);
-    RCLCPP_ERROR(
-      logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
-      result->error_msg.c_str());
-
-    cleanErrorCodes();
-    return;
   }
 
   auto is_canceling = [&]() {
@@ -445,12 +429,31 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
       on_loop_callback_();
     };
 
-  // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_duration_);
+  // Exceptions take the normal completion path so the result is sent and the navigator released
+  nav2_behavior_tree::BtStatus rc = nav2_behavior_tree::BtStatus::FAILED;
+  bool started = false;
+  try {
+    started = current_goal && loadBehaviorTree(current_goal->behavior_tree) &&
+      (!on_goal_started_callback_ || on_goal_started_callback_(current_goal));
+    if (!started) {
+      if (internal_error_code_ == ActionT::Result::NONE) {
+        setInternalError(ActionT::Result::UNKNOWN, "Goal failed to start.");
+      }
+    } else {
+      // Execute the BT that was previously created in the configure step
+      rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_duration_);
+    }
+  } catch (const std::exception & e) {
+    setInternalError(
+      ActionT::Result::UNKNOWN, std::string("Exception during BT execution: ") + e.what());
+    rc = nav2_behavior_tree::BtStatus::FAILED;
+  }
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
-  bt_->haltAllActions(tree_);
+  if (started) {
+    bt_->haltAllActions(tree_);
+  }
 
   // Give server an opportunity to populate the result message or simple give
   // an indication that the action is complete.
@@ -480,6 +483,9 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
   }
 
   cleanErrorCodes();
+  // Cleared only after completion released the navigator, so a preemption requested
+  // between acquiring the navigator and starting execution is not lost.
+  muxer_preemption_requested_ = false;
 }
 
 template<class ActionT, class NodeT>
