@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -134,6 +135,41 @@ TEST(DynParamTestNode, testDynParamsSet)
 
   EXPECT_EQ(costmap->get_parameter("width").as_int(), 2);
   EXPECT_EQ(costmap->get_parameter("height").as_int(), 3);
+
+  costmap->on_deactivate(rclcpp_lifecycle::State());
+  costmap->on_cleanup(rclcpp_lifecycle::State());
+  costmap->on_shutdown(rclcpp_lifecycle::State());
+}
+
+TEST(DynParamTestNode, testDynFootprintReplacesRadius)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("dyn_footprint_tester");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_footprint_costmap");
+  costmap->on_configure(rclcpp_lifecycle::State());
+
+  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_ =
+    nav2::create_transform_broadcaster(node);
+  geometry_msgs::msg::TransformStamped t;
+  t.header.stamp = node->get_clock()->now();
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster_->sendTransform(t);
+
+  costmap->on_activate(rclcpp_lifecycle::State());
+
+  // No footprint configured, so the robot radius is used
+  ASSERT_TRUE(costmap->getUseRadius());
+
+  const std::string footprint =
+    "[[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]";
+  ASSERT_TRUE(costmap->set_parameter(rclcpp::Parameter("footprint", footprint)).successful);
+  EXPECT_FALSE(costmap->getUseRadius());
+  EXPECT_EQ(costmap->getUnpaddedRobotFootprint().size(), 5u);
+
+  // Changing the radius must not overwrite the footprint that is now in use
+  ASSERT_TRUE(costmap->set_parameter(rclcpp::Parameter("robot_radius", 0.5)).successful);
+  EXPECT_FALSE(costmap->getUseRadius());
+  EXPECT_EQ(costmap->getUnpaddedRobotFootprint().size(), 5u);
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
