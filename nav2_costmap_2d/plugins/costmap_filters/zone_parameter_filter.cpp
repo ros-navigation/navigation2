@@ -52,6 +52,8 @@ void ZoneParameterFilter::initializeFilter(
   state_event_topic_ =
     node->declare_or_get_parameter<std::string>(
     name_ + "." + "state_event_topic", std::string("zone_filter_state"));
+  parameter_update_timeout_ =
+    node->declare_or_get_parameter<double>(name_ + "." + "parameter_update_timeout", 1.0);
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   RCLCPP_INFO(
     logger_,
@@ -77,7 +79,8 @@ void ZoneParameterFilter::filterInfoCallback(
 
   auto node = node_.lock();
   if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
+    RCLCPP_ERROR(logger_, "ZoneParameterFilter: Failed to lock node");
+    return;
   }
 
   if (!mask_sub_) {
@@ -321,12 +324,12 @@ void ZoneParameterFilter::process(
       filter_mask_, mask_pose.position.x, mask_pose.position.y,
       mask_robot_i, mask_robot_j))
   {
-    if (state_initialized_ && current_state_ != 0) {
+    if ((state_initialized_ || applying_state_) && needsApplying(0)) {
       RCLCPP_WARN(
         logger_,
         "ZoneParameterFilter: Robot outside filter mask; resetting to nominal defaults.");
-      applyState(0);
-      current_state_ = 0;
+      applyState(0, false);  // No state event outside the mask
+      enterAppliedState();
     }
     return;
   }
@@ -343,37 +346,46 @@ void ZoneParameterFilter::process(
 
   const uint8_t new_state = static_cast<uint8_t>(mask_data);
 
-  if (state_initialized_ && new_state == current_state_) {
+  if (!needsApplying(new_state)) {
     return;  // No change.
   }
 
-  applyState(new_state);
-
-  if (state_event_pub_) {
-    auto event_msg = std::make_unique<std_msgs::msg::UInt8>();
-    event_msg->data = new_state;
-    state_event_pub_->publish(std::move(event_msg));
+  if (applyState(new_state)) {
+    enterAppliedState();  // At once if it needs no update
   }
-
-  current_state_ = new_state;
-  state_initialized_ = true;
 }
 
-void ZoneParameterFilter::applyState(uint8_t new_state)
+bool ZoneParameterFilter::applyState(uint8_t new_state, bool publish_event)
 {
-  if (new_state == 0) {
-    resetToNominal();
-    RCLCPP_INFO(logger_, "ZoneParameterFilter: Entered state 0 (reset to nominal).");
-    return;
+  auto it = state_param_map_.find(new_state);
+  if (new_state != 0 && it == state_param_map_.end()) {
+    RCLCPP_ERROR_THROTTLE(
+      logger_, *(clock_), 2000,
+      "ZoneParameterFilter: unknown state %u encountered; declare a state with id %u "
+      "under the filter's `states` list. Keeping the current parameters.",
+      new_state, new_state);
+    return false;
   }
 
-  auto it = state_param_map_.find(new_state);
-  if (it == state_param_map_.end()) {
-    throw std::runtime_error(
-            std::string("ZoneParameterFilter: unknown state ") +
-            std::to_string(new_state) +
-            " encountered; declare a state with id " +
-            std::to_string(new_state) + " under the filter's `states` list.");
+  // The states whose parameters may be off nominal: the one entered last and
+  // those applied after it, whose updates may have partly succeeded
+  std::set<uint8_t> previous_states = unconfirmed_states_;
+  if (state_initialized_) {
+    previous_states.insert(current_state_);
+  }
+
+  // The updates issued from here carry this transition, and the state is
+  // entered once they have all succeeded
+  ++transition_;
+  applying_state_ = new_state;
+  publish_applying_state_ = publish_event;
+  retry_time_.reset();
+  unconfirmed_states_.insert(new_state);
+
+  if (new_state == 0) {
+    resetToNominal();
+    RCLCPP_INFO(logger_, "ZoneParameterFilter: Applying state 0 (reset to nominal).");
+    return true;
   }
 
   std::set<std::pair<std::string, std::string>> m_keys;
@@ -381,40 +393,45 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
     m_keys.emplace(entry.target_node, entry.param.get_name());
   }
 
-  // Reset params touched by the previous state N but not the destination M
+  // Reset params touched by a previous state N but not the destination M
   // back to nominal_defaults before applying M's overrides. This preserves
   // the invariant that all params equal state-0 defaults except those
   // specifically set in the active state.
-  // Reset params touched by the previous state N but not the destination M
-  // back to nominal_defaults before applying M's overrides.
   std::map<std::string, std::vector<rclcpp::Parameter>> reset_per_node;
-  if (state_initialized_ && current_state_ != 0) {
-    auto prev_it = state_param_map_.find(current_state_);
-    if (prev_it != state_param_map_.end()) {
-      for (const auto & entry : prev_it->second) {
-        const auto key = std::make_pair(entry.target_node, entry.param.get_name());
-        if (m_keys.count(key) > 0) {
-          continue;  // M will set this param; reset is wasted work.
-        }
-        const auto node_it = nominal_defaults_.find(entry.target_node);
-        if (node_it == nominal_defaults_.end()) {
-          // No nominal_defaults were declared for this node, so this param has
-          // nothing to reset to; it keeps state N's value. Warned at config-load.
-          continue;
-        }
-        for (const auto & nominal : node_it->second) {
-          if (nominal.get_name() == entry.param.get_name()) {
-            reset_per_node[entry.target_node].push_back(nominal);
-            break;
-          }
-        }
-      }
-    } else {
+  std::set<std::pair<std::string, std::string>> reset_keys;
+  for (const uint8_t previous_state : previous_states) {
+    if (previous_state == 0) {
+      continue;
+    }
+    auto prev_it = state_param_map_.find(previous_state);
+    if (prev_it == state_param_map_.end()) {
       RCLCPP_ERROR(
         logger_,
-        "ZoneParameterFilter: current state %u is not in state_param_map_ "
+        "ZoneParameterFilter: previous state %u is not in state_param_map_ "
         "(should have been recorded when the state was applied).",
-        current_state_);
+        previous_state);
+      continue;
+    }
+    for (const auto & entry : prev_it->second) {
+      const auto key = std::make_pair(entry.target_node, entry.param.get_name());
+      if (m_keys.count(key) > 0) {
+        continue;  // M will set this param; reset is wasted work.
+      }
+      if (!reset_keys.insert(key).second) {
+        continue;  // Another previous state set it too.
+      }
+      const auto node_it = nominal_defaults_.find(entry.target_node);
+      if (node_it == nominal_defaults_.end()) {
+        // No nominal_defaults were declared for this node, so this param has
+        // nothing to reset to; it keeps state N's value. Warned at config-load.
+        continue;
+      }
+      for (const auto & nominal : node_it->second) {
+        if (nominal.get_name() == entry.param.get_name()) {
+          reset_per_node[entry.target_node].push_back(nominal);
+          break;
+        }
+      }
     }
   }
 
@@ -437,9 +454,10 @@ void ZoneParameterFilter::applyState(uint8_t new_state)
 
   RCLCPP_INFO(
     logger_,
-    "ZoneParameterFilter: Entered state %u (reset %zu N-only parameter(s); "
+    "ZoneParameterFilter: Applying state %u (reset %zu N-only parameter(s); "
     "applied %zu parameter(s) across %zu node(s)).",
     new_state, reset_count, it->second.size(), per_node_params.size());
+  return true;
 }
 
 void ZoneParameterFilter::resetToNominal()
@@ -453,8 +471,7 @@ void ZoneParameterFilter::issueAsyncSetParameters(
   const std::string & target_node,
   const std::vector<rclcpp::Parameter> & params)
 {
-  auto client_it = param_clients_.find(target_node);
-  if (client_it == param_clients_.end()) {
+  if (param_clients_.find(target_node) == param_clients_.end()) {
     RCLCPP_ERROR(
       logger_,
       "ZoneParameterFilter: no client for target_node '%s' "
@@ -463,36 +480,120 @@ void ZoneParameterFilter::issueAsyncSetParameters(
     return;
   }
 
-  pending_futures_.push_back(client_it->second->set_parameters(params));
+  // A request sent before the target's parameter service is discovered is
+  // never answered, so it waits for the service, up to its deadline
+  const auto timeout = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+    std::chrono::duration<double>(parameter_update_timeout_));
+  pending_updates_.push_back(
+    {target_node, params, transition_, std::chrono::steady_clock::now() + timeout, std::nullopt});
+  sendReadyParameterUpdates();
+}
+
+void ZoneParameterFilter::sendReadyParameterUpdates()
+{
+  // Nothing goes to a node with an earlier update still unsent, so each node
+  // receives its updates in the order they were issued
+  std::set<std::string> waiting_nodes;
+  for (auto & update : pending_updates_) {
+    if (update.future || waiting_nodes.count(update.target_node) > 0) {
+      continue;
+    }
+    const auto client_it = param_clients_.find(update.target_node);
+    if (client_it == param_clients_.end() || !client_it->second->service_is_ready()) {
+      waiting_nodes.insert(update.target_node);
+      continue;
+    }
+    update.future = client_it->second->set_parameters(update.params);
+  }
 }
 
 void ZoneParameterFilter::checkPendingParameterUpdates()
 {
-  // A silently-swallowed set failure would leave the robot on the value the
-  // safety zone tried to change (worse than surfacing it), so failures throw
-  // rather than get logged-and-ignored.
+  // A set that fails, or whose target node is missing or does not answer,
+  // leaves the robot on the value the zone tried to change, so it is reported
+  // and its state applied again; throwing here would take the process down.
   // wait_for(0s) polls without blocking the costmap update loop
-  auto it = pending_futures_.begin();
-  while (it != pending_futures_.end()) {
-    if (it->wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
-      ++it;
-      continue;
-    }
+  sendReadyParameterUpdates();
 
-    // Copy the shared state out before erasing: the copy keeps the value that
-    // get() returns a reference to alive for this iteration, and erasing first
-    // means a service-side exception rethrown by get() surfaces exactly once.
-    const auto ready_future = *it;
-    it = pending_futures_.erase(it);
-
-    // get() returns a const reference; bind it rather than copy the vector.
-    const auto & results = ready_future.get();
-    for (const auto & r : results) {
-      if (!r.successful) {
-        throw std::runtime_error(
-                "ZoneParameterFilter: set_parameters failed: " + r.reason);
+  const auto now = std::chrono::steady_clock::now();
+  auto it = pending_updates_.begin();
+  while (it != pending_updates_.end()) {
+    std::string failure;
+    bool timed_out = false;
+    if (!it->future || it->future->wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+      if (now < it->deadline) {
+        ++it;
+        continue;
+      }
+      failure = it->future ?
+        "set_parameters on '" + it->target_node + "' was not answered" :
+        "parameter service of '" + it->target_node + "' was not available";
+      timed_out = true;
+    } else {
+      try {
+        for (const auto & result : it->future->get()) {
+          if (!result.successful) {
+            failure += (failure.empty() ?
+              "set_parameters on '" + it->target_node + "' failed: " : "; ") + result.reason;
+          }
+        }
+      } catch (const std::exception & e) {
+        failure = "set_parameters on '" + it->target_node + "' failed: " + e.what();
       }
     }
+
+    if (!failure.empty()) {
+      if (timed_out) {
+        RCLCPP_ERROR(
+          logger_, "ZoneParameterFilter: %s within %.2f s.",
+          failure.c_str(), parameter_update_timeout_);
+      } else {
+        RCLCPP_ERROR(logger_, "ZoneParameterFilter: %s.", failure.c_str());
+      }
+      if (applying_state_ && it->transition == transition_ && !retry_time_) {
+        retry_time_ = now + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+          std::chrono::duration<double>(parameter_update_timeout_));
+        RCLCPP_ERROR(
+          logger_, "ZoneParameterFilter: state %u not entered; applying it again in %.2f s.",
+          *applying_state_, parameter_update_timeout_);
+      }
+    }
+    it = pending_updates_.erase(it);
+  }
+
+  enterAppliedState();
+}
+
+bool ZoneParameterFilter::needsApplying(uint8_t state) const
+{
+  if (applying_state_) {
+    return state != *applying_state_ ||
+           (retry_time_ && std::chrono::steady_clock::now() >= *retry_time_);
+  }
+  return !state_initialized_ || state != current_state_;
+}
+
+void ZoneParameterFilter::enterAppliedState()
+{
+  if (!applying_state_ || retry_time_) {
+    return;
+  }
+  for (const auto & update : pending_updates_) {
+    if (update.transition == transition_) {
+      return;
+    }
+  }
+
+  current_state_ = *applying_state_;
+  state_initialized_ = true;
+  applying_state_.reset();
+  unconfirmed_states_.clear();
+  RCLCPP_INFO(logger_, "ZoneParameterFilter: Entered state %u.", current_state_);
+
+  if (publish_applying_state_ && state_event_pub_) {
+    auto event_msg = std::make_unique<std_msgs::msg::UInt8>();
+    event_msg->data = current_state_;
+    state_event_pub_->publish(std::move(event_msg));
   }
 }
 
