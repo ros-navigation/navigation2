@@ -14,9 +14,11 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <chrono>
 #include <memory>
 #include <set>
 #include <string>
+#include <thread>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
@@ -128,6 +130,9 @@ TEST_F(NavigateToPoseActionTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 1.5;
+  pose.pose.orientation.w = 1.0;
+  config_->blackboard->set("goal", pose);
 
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
@@ -153,6 +158,27 @@ TEST_F(NavigateToPoseActionTestFixture, test_tick)
 
   EXPECT_EQ(action_server_->getCurrentGoal()->pose, pose);
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+}
+
+TEST_F(NavigateToPoseActionTestFixture, test_tick_missing_goal)
+{
+  // goal port remapped to a blackboard entry that was never set
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <NavigateToPose goal="{unset_goal}" />
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  const auto last_goal = action_server_->getCurrentGoal();
+
+  // no goal must be sent; the node fails right away
+  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::FAILURE);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(action_server_->getCurrentGoal(), last_goal);
 }
 
 int main(int argc, char ** argv)
