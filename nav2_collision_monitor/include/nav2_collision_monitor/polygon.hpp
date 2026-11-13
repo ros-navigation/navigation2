@@ -25,6 +25,7 @@
 #include "rclcpp/node_interfaces/node_parameters_interface.hpp"
 #include "rclcpp/parameter.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "tf2/time.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -216,12 +217,27 @@ public:
     std::vector<Point> & out_triggering_points) const;
 
   /**
-   * @brief Publishes polygon message into a its own topic
+   * @brief Publishes polygon message into a its own topic.
+   * For APPROACH polygons with visualize_approach enabled, also publishes
+   * the footprints simulated by the latest getCollisionTime() call.
    */
   void publish();
 
+  /**
+   * @brief Whether the simulated approach footprints are being published
+   * @return True if visualize_approach is enabled
+   */
+  bool getVisualizeApproach() const;
+
 private:
   bool isTriggeredInternal(int points_inside);
+
+  /**
+   * @brief Publishes the footprints simulated by the latest getCollisionTime() call,
+   * colored by the velocity fraction that a collision at each step would result in
+   * @param stamp Time stamp for the markers
+   */
+  void publishApproachSimulation(const rclcpp::Time & stamp);
 
 protected:
   /**
@@ -368,6 +384,24 @@ protected:
   geometry_msgs::msg::PolygonStamped polygon_;
   /// @brief Polygon publisher for visualization purposes
   nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  /// @brief Whether to publish the footprints simulated by APPROACH model
+  bool visualize_approach_;
+  /// @brief Topic to publish the simulated APPROACH footprints
+  std::string approach_pub_topic_;
+  /// @brief Publisher of the simulated APPROACH footprints
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr approach_pub_;
+  /// @brief Robot poses simulated by the latest getCollisionTime() call
+  mutable std::vector<Pose> approach_poses_;
+  /// @brief Shape vertices used by the latest getCollisionTime() call
+  mutable std::vector<Point> approach_poly_;
+  /// @brief Index in approach_poses_ where collision occurred, -1 if no collision
+  mutable int approach_collision_step_;
+  /// @brief time_before_collision used by the latest getCollisionTime() call
+  mutable double approach_time_before_collision_;
+  /// @brief simulation_time_step used by the latest getCollisionTime() call
+  mutable double approach_simulation_time_step_;
+  /// @brief Whether a new simulation is pending to be published
+  mutable bool approach_updated_;
 
   /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;
