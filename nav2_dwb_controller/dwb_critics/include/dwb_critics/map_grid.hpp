@@ -116,7 +116,26 @@ public:
     virtual ~MapGridQueue() = default;
     bool validCellToQueue(const costmap_queue::CellData & cell) override;
 
+    /**
+     * @brief Enqueue the unseen 4-connected neighbors of a cell, one step further from its source
+     * @param cell The cell being expanded
+     *
+     * getNextCell orders cells by their straight line distance to the source, which is not
+     * the distance walked around obstacles.
+     */
+    void enqueueNeighbors(const costmap_queue::CellData & cell);
+
 protected:
+    /**
+     * @brief Enqueue a neighbor of a cell one step further from its source, if not seen yet
+     * @param from The cell being expanded
+     * @param index The costmap index of the neighbor
+     * @param x The x coordinate of the neighbor
+     * @param y The y coordinate of the neighbor
+     */
+    void enqueueNeighbor(
+      const costmap_queue::CellData & from, unsigned int index, unsigned int x, unsigned int y);
+
     MapGridCritic & parent_;
   };
 
@@ -130,11 +149,31 @@ protected:
    */
   void propagateManhattanDistances();
 
+  /**
+   * @brief Go through the queue and set the cells to the Manhattan distance walked around
+   * lethal obstacles. Lethal cells are set as obstacles and the search does not pass them.
+   * @return The source cells taken from the queue, blocked ones included
+   */
+  std::vector<costmap_queue::CellData> propagateObstacleAwareManhattanDistances();
+
+  /**
+   * @brief Set the cells to their distance from the queued seeds
+   *
+   * With obstacle_aware_propagation this uses propagateObstacleAwareManhattanDistances. If that
+   * does not reach the robot, as it is blocked or no seed is free, this uses
+   * propagateManhattanDistances from the same seeds. GoalAlign and PathAlign ignore
+   * obstacle_aware_propagation.
+   *
+   * @param robot_pose The pose of the robot, assumed to be in the same frame as the costmap
+   */
+  void propagateDistances(const geometry_msgs::msg::Pose & robot_pose);
+
   std::shared_ptr<MapGridQueue> queue_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::vector<double> cell_values_;
   double obstacle_score_, unreachable_score_;  ///< Special cell_values
   bool stop_on_failure_;
+  bool obstacle_aware_propagation_;
   ScoreAggregationType aggregationType_;
 };
 }  // namespace dwb_critics

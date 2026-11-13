@@ -54,6 +54,34 @@ bool MapGridCritic::MapGridQueue::validCellToQueue(const costmap_queue::CellData
   return true;
 }
 
+void MapGridCritic::MapGridQueue::enqueueNeighbors(const CellData & cell)
+{
+  const unsigned int size_x = costmap_.getSizeInCellsX();
+  if (cell.x_ > 0) {
+    enqueueNeighbor(cell, cell.index_ - 1, cell.x_ - 1, cell.y_);
+  }
+  if (cell.y_ > 0) {
+    enqueueNeighbor(cell, cell.index_ - size_x, cell.x_, cell.y_ - 1);
+  }
+  if (cell.x_ < size_x - 1) {
+    enqueueNeighbor(cell, cell.index_ + 1, cell.x_ + 1, cell.y_);
+  }
+  if (cell.y_ < costmap_.getSizeInCellsY() - 1) {
+    enqueueNeighbor(cell, cell.index_ + size_x, cell.x_, cell.y_ + 1);
+  }
+}
+
+void MapGridCritic::MapGridQueue::enqueueNeighbor(
+  const CellData & from, unsigned int index, unsigned int x, unsigned int y)
+{
+  if (seen_[index]) {
+    return;
+  }
+  seen_[index] = true;
+  const double distance = from.distance_ + 1.0;
+  enqueue(distance, CellData(distance, index, x, y, from.src_x_, from.src_y_));
+}
+
 void MapGridCritic::onInit()
 {
   costmap_ = costmap_ros_->getCostmap();
@@ -84,6 +112,9 @@ void MapGridCritic::onInit()
       aggro_str.c_str());
     aggregationType_ = ScoreAggregationType::Last;
   }
+
+  obstacle_aware_propagation_ = node->declare_or_get_parameter(
+    dwb_plugin_name_ + "." + name_ + ".obstacle_aware_propagation", false);
 }
 
 void MapGridCritic::setAsObstacle(unsigned int index)
@@ -107,6 +138,55 @@ void MapGridCritic::propagateManhattanDistances()
     cell_values_[cell.index_] = CellData::absolute_difference(cell.src_x_, cell.x_) +
       CellData::absolute_difference(cell.src_y_, cell.y_);
   }
+}
+
+std::vector<CellData> MapGridCritic::propagateObstacleAwareManhattanDistances()
+{
+  // Seeds are the only cells at distance 0, so the search sees them all first
+  std::vector<CellData> seeds;
+  while (!queue_->isEmpty()) {
+    const CellData cell = queue_->front();
+    queue_->pop();
+    if (cell.distance_ == 0.0) {
+      seeds.push_back(cell);
+    }
+    // Inscribed and unknown cells may be free for this footprint, so other critics judge them
+    if (costmap_->getCost(cell.index_) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      setAsObstacle(cell.index_);
+    } else {
+      cell_values_[cell.index_] = cell.distance_;
+      queue_->enqueueNeighbors(cell);
+    }
+  }
+  return seeds;
+}
+
+void MapGridCritic::propagateDistances(const geometry_msgs::msg::Pose & robot_pose)
+{
+  if (!obstacle_aware_propagation_) {
+    propagateManhattanDistances();
+    return;
+  }
+
+  const std::vector<CellData> seeds = propagateObstacleAwareManhattanDistances();
+
+  unsigned int robot_x, robot_y;
+  if (costmap_->worldToMap(robot_pose.position.x, robot_pose.position.y, robot_x, robot_y) &&
+    getScore(robot_x, robot_y) < obstacle_score_)
+  {
+    return;
+  }
+
+  RCLCPP_DEBUG_THROTTLE(
+    rclcpp::get_logger("MapGridCritic"), *costmap_ros_->get_clock(), 1000,
+    "%s: the robot is not reachable around obstacles, falling back to Manhattan distances.",
+    name_.c_str());
+  reset();
+  for (const CellData & seed : seeds) {
+    cell_values_[seed.index_] = 0.0;
+    queue_->enqueueCell(seed.x_, seed.y_);
+  }
+  propagateManhattanDistances();
 }
 
 double MapGridCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
