@@ -116,6 +116,20 @@ protected:
     const geometry_msgs::msg::TransformStamped & mask_transform,
     double & speed_limit);
   /**
+   * @brief Update the cached start index of the lookahead along the path
+   *
+   * Scans forward from the cached index. If the robot stays on the cached segment but has moved
+   * further from the cached start pose than its closest approach plus a scaled segment length
+   * (e.g. after backing up), also searches back along the path by the distance the robot is
+   * away from the cached start pose. The scaled segment length is at least the filter mask
+   * resolution.
+   * @param path Path in global_frame_
+   * @param robot_pose Robot pose in global_frame_
+   */
+  void updateLookaheadStart(
+    const nav_msgs::msg::Path & path,
+    const geometry_msgs::msg::Pose & robot_pose);
+  /**
    * @brief Get the speed limit from the path lookahead
    * @param robot_pose robot pose
    * @param lookahead_dist lookahead distance
@@ -128,6 +142,11 @@ protected:
     double lookahead_dist,
     const geometry_msgs::msg::TransformStamped & mask_transform,
     double & speed_limit);
+
+  // Growth in distance from the cached path point, in segment lengths (or mask cells if larger),
+  // that triggers a search back along the path. Moving forward along a segment never exceeds one
+  // segment length.
+  double backup_threshold_scale_ = 2.0;
 
   nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
@@ -151,10 +170,12 @@ protected:
   // Lookahead distance held when entering a speed zone to avoid oscillations
   double held_lookahead_dist_;
   size_t lookahead_start_idx_;  // Start index for closest pose search, cached for efficiency
+  double lookahead_ref_dist_;  // Closest distance (m) to the cached start pose since it was set
   bool enable_path_lookahead_;  // Whether to enable path lookahead
   double max_decel_;       // Deceleration (m/s^2) used to size lookahead
   double min_lookahead_;   // Lower limit on lookahead distance (m)
   double max_lookahead_;   // Upper limit on lookahead distance (m)
+  bool clear_path_on_reset_;  // Whether resetFilter() drops the cached path
 };
 
 }  // namespace nav2_costmap_2d

@@ -297,6 +297,14 @@ protected:
   void testPathLookaheadDetection(
     uint8_t type, double base, double multiplier, double linear_vel,
     double tr_x, double tr_y);
+  void testPathLookaheadRewind(
+    uint8_t type, double base, double multiplier, double linear_vel);
+  void testPathLookaheadRewindStaysOnLeg(
+    uint8_t type, double base, double multiplier, double linear_vel);
+  void testPathLookaheadForwardMotionDoesNotRewind(
+    uint8_t type, double base, double multiplier, double linear_vel);
+  void testPathLookaheadRewindGradual(
+    uint8_t type, double base, double multiplier, double linear_vel);
 
   void reset();
 
@@ -800,6 +808,157 @@ void TestNode::testPathLookaheadDetection(
   verifySpeedLimit(type, base, multiplier, 2, 1, speed_limit);
 }
 
+void TestNode::testPathLookaheadRewind(
+  uint8_t type, double base, double multiplier, double linear_vel)
+{
+  const int min_i = 0;
+  const int min_j = 0;
+  const int max_i = width_ + 4;
+  const int max_j = height_ + 4;
+
+  // Path runs (2, 0) -> (2, 5), entering the speed-restricted region (y >= 1)
+  publishOdom(linear_vel);
+  publishPath(createPath(2.0, 0.0, 2.0, 5.0, 0.5, "map"));
+
+  // Advance the cached start index past the first in-zone cell at (2, 1)
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 2.0;
+  pose.position.y = 4.0;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  auto speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  verifySpeedLimit(type, base, multiplier, 2, 3, speed_limit);
+
+  // A single update rewinds by the distance the robot moved away from the cached point
+  pose.position.y = 0.0;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+
+  verifySpeedLimit(type, base, multiplier, 2, 1, speed_limit);
+}
+
+void TestNode::testPathLookaheadRewindStaysOnLeg(
+  uint8_t type, double base, double multiplier, double linear_vel)
+{
+  const int min_i = 0;
+  const int min_j = 0;
+  const int max_i = width_ + 4;
+  const int max_j = height_ + 4;
+
+  // Out-and-back: the outbound leg (y = 0) is free in the mask, the return leg (y = 1) is not
+  nav_msgs::msg::Path path = createPath(0.0, 0.0, 5.0, 0.0, 0.25, "map");
+  const nav_msgs::msg::Path return_leg = createPath(5.0, 1.0, 0.0, 1.0, 0.25, "map");
+  path.poses.insert(path.poses.end(), return_leg.poses.begin(), return_leg.poses.end());
+
+  publishOdom(linear_vel);
+  publishPath(path);
+
+  // Put the cached index on the return leg
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 1.0;
+  pose.position.y = 1.0;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  auto speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  verifySpeedLimit(type, base, multiplier, 1, 1, speed_limit);
+
+  // Back up along the return leg to a spot closer to the outbound leg (0.4 m) than to the
+  // return leg (0.6 m). The search back only reaches as far as the robot moved away, which
+  // stays on the return leg.
+  pose.position.x = 4.0;
+  pose.position.y = 0.4;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+
+  verifySpeedLimit(type, base, multiplier, 4, 1, speed_limit);
+}
+
+void TestNode::testPathLookaheadForwardMotionDoesNotRewind(
+  uint8_t type, double base, double multiplier, double linear_vel)
+{
+  const int min_i = 0;
+  const int min_j = 0;
+  const int max_i = width_ + 4;
+  const int max_j = height_ + 4;
+
+  // Hairpin: a first leg along y = 0.9 (free row of the mask) ends 0.1 m from the start of a
+  // second leg along y = 1.0 (restricted row) that doubles back over it
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "map";
+  path.header.stamp = node_->now();
+  auto add_pose = [&path](double x, double y) {
+      geometry_msgs::msg::PoseStamped p;
+      p.header.frame_id = "map";
+      p.pose.position.x = x;
+      p.pose.position.y = y;
+      path.poses.push_back(p);
+    };
+  for (int i = 0; i <= 10; i++) {
+    add_pose(0.5 * i, 0.9);
+  }
+  add_pose(5.0, 1.0);
+  add_pose(3.0, 1.0);
+  add_pose(1.0, 1.0);
+
+  publishOdom(linear_vel);
+  publishPath(path);
+
+  // Put the cached index on the start of the second leg
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 4.9;
+  pose.position.y = 1.0;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  auto speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  verifySpeedLimit(type, base, multiplier, 4, 1, speed_limit);
+
+  // Drift to a spot closer to the first leg (0.02 m) than to the second (0.08 m). Moving
+  // forward along a segment must not start a search back, which would put the cursor on the
+  // nearby first leg.
+  pose.position.x = 4.8;
+  pose.position.y = 0.92;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+
+  verifySpeedLimit(type, base, multiplier, 5, 1, speed_limit);
+}
+
+void TestNode::testPathLookaheadRewindGradual(
+  uint8_t type, double base, double multiplier, double linear_vel)
+{
+  const int min_i = 0;
+  const int min_j = 0;
+  const int max_i = width_ + 4;
+  const int max_j = height_ + 4;
+
+  publishOdom(linear_vel);
+  publishPath(createPath(2.0, 0.0, 2.0, 5.0, 0.5, "map"));
+
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 2.0;
+  pose.position.y = 4.0;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  auto speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  verifySpeedLimit(type, base, multiplier, 2, 3, speed_limit);
+
+  // Back up in steps that are each too small to trigger a search on their own, the total
+  // distance moved away from the cached point still does
+  for (double y = 3.5; y >= 0.0; y -= 0.5) {
+    pose.position.y = y;
+    speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+    auto update = waitSpeedLimit();
+    if (update != nullptr) {
+      speed_limit = update;
+    }
+  }
+
+  verifySpeedLimit(type, base, multiplier, 2, 1, speed_limit);
+}
+
 void TestNode::reset()
 {
   mask_.reset();
@@ -1011,6 +1170,81 @@ TEST_F(TestNode, testPathLookaheadWithDifferentFrame)
   // Path is published in odom frame, but filter is in map frame
   testPathLookaheadDetection(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0, TRANSLATION_X,
     TRANSLATION_Y);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadRewindsAfterBackwardMotion)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.2;
+  params.min_lookahead = 0.0;
+  params.max_lookahead = 5.0;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadRewind(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadRewindStaysOnCurrentLeg)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.2;
+  params.min_lookahead = 0.0;
+  // Cap the window so only the cell at the cursor is sampled
+  params.max_lookahead = 0.1;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadRewindStaysOnLeg(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadForwardMotionDoesNotRewind)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.2;
+  params.min_lookahead = 0.0;
+  // Cap the window so only the cell at the cursor is sampled
+  params.max_lookahead = 0.1;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadForwardMotionDoesNotRewind(
+    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0);
+
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testPathLookaheadRewindsAfterGradualBackwardMotion)
+{
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+
+  PathLookaheadParams params;
+  params.enable_path_lookahead = true;
+  params.max_decel = -0.2;
+  params.min_lookahead = 0.0;
+  params.max_lookahead = 5.0;
+  EXPECT_TRUE(createSpeedFilter("map", params));
+
+  testPathLookaheadRewindGradual(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, 1.0);
 
   speed_filter_->resetFilter();
   reset();
