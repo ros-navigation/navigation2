@@ -69,7 +69,7 @@ BT::NodeStatus TransformAvailableCondition::tick()
 
   std::string tf_error;
   bool found = tf_manager_->getLatestTransform(child_frame_, parent_frame_, 0.0,
-      nav2::Log::Disabled, &tf_error).has_value();
+      &tf_error).has_value();
 
   if (found) {
     was_found_ = true;

@@ -228,11 +228,11 @@ void LoopbackSimulator::getMap()
 
 void LoopbackSimulator::getBaseToLaserTf()
 {
+  std::string transform_error;
   const auto transform = tf_manager_->getLatestTransform(
-    base_frame_id_, scan_frame_id_, 0.0);
+    base_frame_id_, scan_frame_id_, 0.0, &transform_error);
   if (!transform) {
-    RCLCPP_ERROR(get_logger(), "Transform lookup failed from %s to %s",
-      scan_frame_id_.c_str(), base_frame_id_.c_str());
+    RCLCPP_ERROR(get_logger(), "Transform lookup failed: %s", transform_error.c_str());
     return;
   }
   tf2::fromMsg(transform->transform, tf_base_to_laser_);

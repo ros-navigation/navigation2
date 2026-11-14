@@ -284,9 +284,12 @@ bool ExclusionZone::getZoneToBaseTransform(
   tf2::Transform tf_zone_to_global;
   tf_zone_to_global.setIdentity();
   if (frame_id_ != global_frame_id_) {
+    std::string tf_error_details;
     const auto zone_to_global_msg = tf_manager_->getLatestTransform(
-      global_frame_id_, frame_id_, transform_staleness_threshold_);
+      global_frame_id_, frame_id_, transform_staleness_threshold_, &tf_error_details);
     if (!zone_to_global_msg) {
+      RCLCPP_ERROR(logger_, "Failed to transform exclusion zone into global frame: %s",
+        tf_error_details.c_str());
       return false;
     }
     // Freeze the pose in the smooth global frame so a held zone remains fixed
@@ -300,10 +303,9 @@ bool ExclusionZone::getZoneToBaseTransform(
   const auto global_to_base = base_shift_correction_ ?
     tf_manager_->getStampedTransform(
       base_frame_id_, curr_time, global_frame_id_, curr_time,
-      global_frame_id_, non_blocking, nav2::Log::Disabled, &tf_error) :
+      global_frame_id_, non_blocking, &tf_error) :
     tf_manager_->getLatestTransform(
-      base_frame_id_, global_frame_id_, base_transform_staleness_threshold_,
-      nav2::Log::Disabled, &tf_error);
+      base_frame_id_, global_frame_id_, base_transform_staleness_threshold_, &tf_error);
   if (!global_to_base) {
     RCLCPP_WARN_THROTTLE(
       logger_, *node_clock_, 2000,

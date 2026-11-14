@@ -148,10 +148,12 @@ NavigateThroughPosesNavigator::onLoop()
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
+  std::string tf_error_details;
   const auto current_pose_result = feedback_utils_.tf_manager->getLatestPose(
-    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_);
+    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_,
+      &tf_error_details);
   if (!current_pose_result) {
-    RCLCPP_ERROR(logger_, "Robot pose is not available.");
+    RCLCPP_ERROR(logger_, "Robot pose is not available: %s", tf_error_details.c_str());
     return;
   }
   current_pose = *current_pose_result;
@@ -244,12 +246,14 @@ bool
 NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
   geometry_msgs::msg::PoseStamped current_pose;
+  std::string tf_error_details;
   const auto current_pose_result = feedback_utils_.tf_manager->getLatestPose(
-    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_);
+    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_,
+      &tf_error_details);
   if (!current_pose_result) {
     bt_action_server_->setInternalError(
       ActionT::Result::TF_ERROR,
-      "Initial robot pose is not available.");
+      "Initial robot pose is not available: " + tf_error_details);
     return false;
   }
   current_pose = *current_pose_result;
@@ -259,7 +263,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   for (auto & goal_pose : goals_array.goals) {
     const auto goal_pose_result = feedback_utils_.tf_manager->transformStampedPose(
       feedback_utils_.global_frame, goal_pose,
-      feedback_utils_.transform_tolerance);
+      feedback_utils_.transform_tolerance, &tf_error_details);
     if (!goal_pose_result) {
       bt_action_server_->setInternalError(
         ActionT::Result::TF_ERROR,
@@ -267,7 +271,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
         goal_pose.header.frame_id +
         "' to the global frame '" +
         feedback_utils_.global_frame +
-        "'.");
+        "': " + tf_error_details);
       return false;
     }
     goal_pose = *goal_pose_result;

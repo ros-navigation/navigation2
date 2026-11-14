@@ -62,12 +62,16 @@ bool ArePosesNearCondition::arePosesNearby()
   getInput("tolerance", tol);
 
   if (pose1.header.frame_id != pose2.header.frame_id) {
+    std::string pose1_error;
+    std::string pose2_error;
     const auto transformed_pose1 = tf_manager_->transformStampedPose(
-      global_frame_, pose1, transform_tolerance_);
+      global_frame_, pose1, transform_tolerance_, &pose1_error);
     const auto transformed_pose2 = tf_manager_->transformStampedPose(
-      global_frame_, pose2, transform_tolerance_);
+      global_frame_, pose2, transform_tolerance_, &pose2_error);
     if (!transformed_pose1 || !transformed_pose2) {
-      RCLCPP_ERROR(node_->get_logger(), "Failed to transform poses to the same frame");
+      RCLCPP_ERROR(node_->get_logger(), "Failed to transform poses to the same frame: %s",
+        (pose1_error + (!transformed_pose1 && !transformed_pose2 ? "; " : "") +
+        pose2_error).c_str());
       return false;
     }
     pose1 = *transformed_pose1;

@@ -184,12 +184,13 @@ inline geometry_msgs::msg::PoseStamped transformPoseToFrame(
   if (pose.header.frame_id == target_frame) {
     return pose;
   }
+  std::string transform_error;
   const auto transform = tf_manager.getLatestTransform(
-    target_frame, pose.header.frame_id, transform_staleness_threshold);
+    target_frame, pose.header.frame_id, transform_staleness_threshold, &transform_error);
   if (!transform) {
     throw opennav_docking_core::DockingTFError(
             "Transform error: failed to get a fresh transform from " +
-            pose.header.frame_id + " to " + target_frame);
+            pose.header.frame_id + " to " + target_frame + ": " + transform_error);
   }
   geometry_msgs::msg::PoseStamped transformed_pose;
   tf2::doTransform(pose, transformed_pose, *transform);

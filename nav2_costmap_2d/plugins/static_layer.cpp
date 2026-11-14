@@ -485,10 +485,12 @@ StaticLayer::updateCosts(
   // global_frame_ -> map_frame_; only needed for rolling costmaps, where the frames differ
   tf2::Transform tf2_transform = tf2::Transform::getIdentity();
   if (layered_costmap_->isRolling()) {
+    std::string tf_error_details;
     const auto transform_result = tf_manager_->getLatestTransform(
-      map_frame_, global_frame_, transform_staleness_threshold_);
+      map_frame_, global_frame_, transform_staleness_threshold_, &tf_error_details);
     if (!transform_result) {
-      RCLCPP_ERROR(logger_, "StaticLayer: transform lookup failed or returned stale data");
+      RCLCPP_ERROR(logger_, "StaticLayer: transform lookup failed or returned stale data: %s",
+          tf_error_details.c_str());
       has_updated_data_ = true;
       setCurrent(false);
       return;

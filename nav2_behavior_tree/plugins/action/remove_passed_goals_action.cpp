@@ -62,9 +62,13 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   using namespace nav2_util::geometry_utils;  // NOLINT
 
+  std::string current_pose_error;
   const auto current_pose = tf_manager_->getLatestPose(
-    goal_poses.goals[0].header.frame_id, robot_base_frame_, transform_staleness_threshold_);
+    goal_poses.goals[0].header.frame_id, robot_base_frame_, transform_staleness_threshold_,
+      &current_pose_error);
   if (!current_pose) {
+    RCLCPP_ERROR(node_->get_logger(), "Failed to get robot pose while removing passed goals: %s",
+      current_pose_error.c_str());
     return BT::NodeStatus::FAILURE;
   }
 

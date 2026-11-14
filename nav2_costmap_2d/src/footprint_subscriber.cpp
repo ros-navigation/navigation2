@@ -57,10 +57,13 @@ FootprintSubscriber::getFootprintInRobotFrame(
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
+  std::string tf_error_details;
   const auto current_pose_transform = tf_manager_.getStampedTransform(
     footprint_header.frame_id, robot_base_frame_, rclcpp::Time(footprint_header.stamp),
-    transform_tolerance_);
+    transform_tolerance_, &tf_error_details);
   if (!current_pose_transform) {
+    RCLCPP_ERROR(logger_, "Failed to transform footprint into robot frame: %s",
+      tf_error_details.c_str());
     return false;
   }
   current_pose = tf_manager_.transformToPoseStamped(*current_pose_transform);

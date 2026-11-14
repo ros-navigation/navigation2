@@ -50,10 +50,12 @@ void RouteTracker::configure(
 
 geometry_msgs::msg::PoseStamped RouteTracker::getRobotPose()
 {
+  std::string pose_result_error;
   const auto pose_result = tf_manager_->getLatestPose(
-    route_frame_, base_frame_, transform_staleness_threshold_);
+    route_frame_, base_frame_, transform_staleness_threshold_, &pose_result_error);
   if (!pose_result) {
-    throw nav2_core::RouteTFError("Unable to get robot pose in route frame: " + route_frame_);
+    throw nav2_core::RouteTFError("Unable to get robot pose in route frame: " + route_frame_ +
+        ": " + pose_result_error);
   }
   return *pose_result;
 }

@@ -127,9 +127,13 @@ bool GraphLoader::transformGraph(Graph & graph)
 
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
-      const auto transform = tf_manager_->getLatestTransform(route_frame_, node_frame);
+      std::string transform_error;
+      const auto transform = tf_manager_->getLatestTransform(route_frame_, node_frame, 0.0,
+          &transform_error);
 
       if (!transform) {
+        RCLCPP_ERROR(logger_, "Failed to transform graph node into route frame: %s",
+          transform_error.c_str());
         return false;
       }
 

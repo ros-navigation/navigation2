@@ -48,12 +48,13 @@ inline BT::NodeStatus GetCurrentPoseAction::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
 
+  std::string current_pose_error;
   const auto current_pose = tf_manager_->getLatestPose(
-    global_frame_, robot_base_frame_, transform_staleness_threshold_);
+    global_frame_, robot_base_frame_, transform_staleness_threshold_, &current_pose_error);
   if (!current_pose) {
     RCLCPP_WARN(
       config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node")->get_logger(),
-      "Current robot pose is not available.");
+      "Current robot pose is not available: %s", current_pose_error.c_str());
     return BT::NodeStatus::FAILURE;
   }
 

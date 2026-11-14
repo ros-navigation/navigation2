@@ -45,6 +45,7 @@ public:
     std::string robot_base_frame = "base_link",
     double transform_tolerance = 0.1)
   : tf_manager_(tf_manager),
+    logger_(parent->get_logger()),
     robot_base_frame_(robot_base_frame),
     transform_tolerance_(transform_tolerance)
   {
@@ -89,6 +90,7 @@ protected:
   void footprint_callback(const geometry_msgs::msg::PolygonStamped::ConstSharedPtr & msg);
 
   nav2::TransformManager & tf_manager_;
+  rclcpp::Logger logger_;
   std::string robot_base_frame_;
   double transform_tolerance_;
   std::atomic_bool footprint_received_{false};

@@ -257,10 +257,8 @@ protected:
     // Wait for both legs to propagate into the buffer.
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_manager_->getLatestTransform(child_frame, BASE_FRAME_ID, 0.0,
-        nav2::Log::Disabled).has_value() &&
-        tf_manager_->getLatestTransform(BASE_FRAME_ID, GLOBAL_FRAME_ID, 0.0,
-        nav2::Log::Disabled).has_value())
+      if (tf_manager_->getLatestTransform(child_frame, BASE_FRAME_ID, 0.0).has_value() &&
+        tf_manager_->getLatestTransform(BASE_FRAME_ID, GLOBAL_FRAME_ID, 0.0).has_value())
       {
         return;
       }
@@ -278,7 +276,7 @@ protected:
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
       const auto transform = tf_manager_->getLatestTransform(
-        GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, nav2::Log::Disabled);
+        GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0);
       if (transform && std::abs(transform->transform.translation.x - expected_x) < 1e-6) {
         return;
       }
@@ -304,9 +302,7 @@ protected:
 
     rclcpp::Time start = node_->now();
     while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_manager_->getLatestTransform(child_frame, parent_frame, 0.0,
-        nav2::Log::Disabled).has_value())
-      {
+      if (tf_manager_->getLatestTransform(child_frame, parent_frame, 0.0).has_value()) {
         return;
       }
       executor_->spin_some();

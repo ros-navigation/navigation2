@@ -569,7 +569,9 @@ TEST_F(Tester, testPolygonDifferentFrame)
   ASSERT_NEAR(poly->points[3].y, -1.0, EPSILON);
 
   // Transform shape coordinates to global frame
-  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_manager_, 1.0));
+  std::string error = "previous failure";
+  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_manager_, 1.0, &error));
+  EXPECT_TRUE(error.empty());
 
   // Verify that shape coordinates were transformed to global frame successfully
   poly = polygon_->getPoly();
@@ -583,7 +585,8 @@ TEST_F(Tester, testPolygonDifferentFrame)
   ASSERT_NEAR(poly->points[3].y, -1.0 + FRAME_SHIFT, EPSILON);
 
   // Try to transform to incorrect frame
-  ASSERT_FALSE(polygon_->toFrame("incorrect_frame", tf_manager_, 0.1));
+  ASSERT_FALSE(polygon_->toFrame("incorrect_frame", tf_manager_, 0.1, &error));
+  EXPECT_NE(error.find("incorrect_frame"), std::string::npos);
 }
 
 TEST_F(Tester, testPolygonTransformAtTimestamp)
@@ -802,7 +805,9 @@ TEST_F(Tester, testCircleDifferentFrame)
   ASSERT_NEAR(center->x, 0.0, EPSILON);
   ASSERT_NEAR(center->y, 0.0, EPSILON);
   // Transform shape coordinates to global frame
-  ASSERT_TRUE(circle_->toFrame(GLOBAL_FRAME_ID, tf_manager_, 1.0));
+  std::string error = "previous failure";
+  ASSERT_TRUE(circle_->toFrame(GLOBAL_FRAME_ID, tf_manager_, 1.0, &error));
+  EXPECT_TRUE(error.empty());
 
   // Verify that shape coordinates were transformed to global frame successfully
   center = circle_->getCenter();
@@ -810,7 +815,8 @@ TEST_F(Tester, testCircleDifferentFrame)
   ASSERT_NEAR(center->y, FRAME_SHIFT, EPSILON);
 
   // Try to transform to incorrect frame
-  ASSERT_FALSE(circle_->toFrame("incorrect_frame", tf_manager_, 0.1));
+  ASSERT_FALSE(circle_->toFrame("incorrect_frame", tf_manager_, 0.1, &error));
+  EXPECT_NE(error.find("incorrect_frame"), std::string::npos);
 }
 
 // Reference implementation: check every cell of the shape's bounding box

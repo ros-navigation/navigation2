@@ -420,9 +420,13 @@ void SpeedFilter::process(
     return;
   }
 
+  std::string mask_transform_error;
   const auto mask_transform = tf_manager_->getLatestTransform(
-    filter_mask_->header.frame_id, global_frame_, transform_staleness_threshold_);
+    filter_mask_->header.frame_id, global_frame_, transform_staleness_threshold_,
+      &mask_transform_error);
   if (!mask_transform) {
+    RCLCPP_ERROR(logger_, "SpeedFilter: Failed to transform global frame to mask frame: %s",
+      mask_transform_error.c_str());
     return;
   }
 

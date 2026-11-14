@@ -108,13 +108,15 @@ bool GraphSaver::transformGraph(Graph & graph)
     // Find the transform to convert node from node frame to route frame
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
-      const auto transform = tf_manager_->getLatestTransform(route_frame_, node_frame);
+      std::string transform_error;
+      const auto transform = tf_manager_->getLatestTransform(route_frame_, node_frame, 0.0,
+          &transform_error);
 
       if (!transform) {
         RCLCPP_WARN(
           logger_,
-          "Could not get transform from node frame %s to route frame %s",
-          node_frame.c_str(), route_frame_.c_str());
+          "Could not get transform from node frame %s to route frame %s: %s",
+          node_frame.c_str(), route_frame_.c_str(), transform_error.c_str());
         return false;
       }
 

@@ -60,22 +60,25 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
   }
 
   geometry_msgs::msg::PoseStamped pose;
+  std::string pose_result_error;
   const auto pose_result = tf_manager_->getLatestPose(
-    global_frame_, robot_base_frame_, transform_staleness_threshold_);
+    global_frame_, robot_base_frame_, transform_staleness_threshold_, &pose_result_error);
   if (!pose_result) {
-    RCLCPP_ERROR(node_->get_logger(), "Failed to get current robot pose");
+    RCLCPP_ERROR(node_->get_logger(), "Failed to get current robot pose: %s",
+        pose_result_error.c_str());
     return BT::NodeStatus::FAILURE;
   }
   pose = *pose_result;
 
   // let's get the pose of the robot in the frame of the plan
 
+  std::string robot_pose_error;
   const auto robot_pose = tf_manager_->transformStampedPose(
-    path_.header.frame_id, pose, transform_tolerance_);
+    path_.header.frame_id, pose, transform_tolerance_, &robot_pose_error);
   if (!robot_pose) {
     RCLCPP_ERROR(
-      node_->get_logger(), "Failed to transform robot pose to path frame '%s'",
-      path_.header.frame_id.c_str());
+      node_->get_logger(), "Failed to transform robot pose to path frame '%s': %s",
+      path_.header.frame_id.c_str(), robot_pose_error.c_str());
     return BT::NodeStatus::FAILURE;
   }
 

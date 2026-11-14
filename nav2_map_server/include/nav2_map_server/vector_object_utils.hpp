@@ -39,6 +39,7 @@ namespace nav2_map_server
  * @param tf_manager TF manager to use for the lookup
  * @param transform_tolerance Maximum wait time for the transform
  * @param transform Output transform from the header frame to the target frame
+ * @param error_msg Optional TF failure details; cleared on success
  * @return True if the transform was found, otherwise false
  */
 bool lookupShapeTransform(
@@ -46,7 +47,8 @@ bool lookupShapeTransform(
   const std::string & target_frame,
   const nav2::TransformManager::SharedPtr & tf_manager,
   const double transform_tolerance,
-  geometry_msgs::msg::TransformStamped & transform);
+  geometry_msgs::msg::TransformStamped & transform,
+  std::string * error_msg = nullptr);
 
 // ---------- Working with UUID-s ----------
 

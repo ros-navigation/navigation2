@@ -222,10 +222,11 @@ bool VectorObjectServer::transformVectorObjects()
   for (auto shape : shapes_) {
     if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
       // Shape to be updated dynamically
-      if (!shape->toFrame(global_frame_id_, tf_manager_, transform_tolerance_)) {
+      std::string tf_error;
+      if (!shape->toFrame(global_frame_id_, tf_manager_, transform_tolerance_, &tf_error)) {
         RCLCPP_ERROR(
-          get_logger(), "Can not transform vector object from %s to %s frame",
-          shape->getFrameID().c_str(), global_frame_id_.c_str());
+          get_logger(), "Can not transform vector object from %s to %s frame: %s",
+          shape->getFrameID().c_str(), global_frame_id_.c_str(), tf_error.c_str());
         return false;
       }
     }

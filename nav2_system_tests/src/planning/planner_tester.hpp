@@ -91,8 +91,11 @@ public:
     const geometry_msgs::msg::PoseStamped & goal,
     nav_msgs::msg::Path & path)
   {
-    const auto start = tf_manager_->getLatestPose("map", "base_link");
+    std::string start_error;
+    const auto start = tf_manager_->getLatestPose("map", "base_link", 0.0, &start_error);
     if (!start) {
+      RCLCPP_ERROR(get_logger(), "Failed to get robot start pose for planning: %s",
+        start_error.c_str());
       return false;
     }
     try {

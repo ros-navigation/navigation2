@@ -179,12 +179,14 @@ protected:
   /**
    * @brief Get one checked robot pose in the local frame, preserving the TF timestamp
    * @param pose Pose to reuse throughout the current run initialization or cycle
+   * @param error_msg Optional TF failure details; cleared on success
    * @return False if the transform is missing or stale; pose is unchanged on failure
    */
-  bool getCurrentPoseChecked(geometry_msgs::msg::PoseStamped & pose)
+  bool getCurrentPoseChecked(
+    geometry_msgs::msg::PoseStamped & pose, std::string * error_msg = nullptr)
   {
     const auto pose_result = tf_manager_->getLatestPose(
-      local_frame_, robot_base_frame_, transform_staleness_threshold_);
+      local_frame_, robot_base_frame_, transform_staleness_threshold_, error_msg);
     if (!pose_result) {
       return false;
     }

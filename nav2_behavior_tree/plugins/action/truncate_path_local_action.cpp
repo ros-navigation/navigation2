@@ -127,12 +127,14 @@ inline bool TruncatePathLocal::getRobotPose(
         "Neither pose nor robot_base_frame specified for %s", name().c_str());
       return false;
     }
+    std::string pose_result_error;
     const auto pose_result = tf_manager_->getLatestPose(
-      path_frame_id, robot_frame, transform_staleness_threshold_);
+      path_frame_id, robot_frame, transform_staleness_threshold_, &pose_result_error);
     if (!pose_result) {
       RCLCPP_WARN(
         node->get_logger(),
-        "Failed to lookup current robot pose for %s", name().c_str());
+        "Failed to lookup current robot pose for %s: %s", name().c_str(),
+          pose_result_error.c_str());
       return false;
     }
     pose = *pose_result;

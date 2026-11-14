@@ -807,11 +807,13 @@ void DockingServer::undockRobot()
 
 geometry_msgs::msg::PoseStamped DockingServer::getRobotPoseInFrame(const std::string & frame)
 {
+  std::string robot_pose_error;
   const auto robot_pose = tf_manager_->getLatestPose(
-    frame, params_->base_frame, params_->transform_staleness_threshold);
+    frame, params_->base_frame, params_->transform_staleness_threshold, &robot_pose_error);
   if (!robot_pose) {
     throw opennav_docking_core::DockingTFError(
-            "Transform error: failed to get a fresh robot pose in frame " + frame);
+            "Transform error: failed to get a fresh robot pose in frame " + frame + ": " +
+        robot_pose_error);
   }
   return *robot_pose;
 }

@@ -69,10 +69,12 @@ bool GoalReachedCondition::isGoalReached()
   geometry_msgs::msg::PoseStamped goal;
   getInput("goal", goal);
 
+  std::string current_pose_error;
   const auto current_pose = tf_manager_->getLatestPose(
-    goal.header.frame_id, robot_base_frame_, transform_staleness_threshold_);
+    goal.header.frame_id, robot_base_frame_, transform_staleness_threshold_, &current_pose_error);
   if (!current_pose) {
-    RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+    RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available: %s",
+        current_pose_error.c_str());
     return false;
   }
 

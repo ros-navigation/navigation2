@@ -137,11 +137,14 @@ bool ClearCostmapService::clearAroundPose(
   const double reset_distance,
   const std::vector<std::string> & plugins)
 {
+  std::string global_pose_error;
   const auto global_pose = costmap_.getTfManager()->transformStampedPose(
-    costmap_.getGlobalFrameID(), pose, 0.0);
+    costmap_.getGlobalFrameID(), pose, 0.0, &global_pose_error);
   if (!global_pose) {
     RCLCPP_ERROR(
-      logger_, "Cannot clear map around pose because pose cannot be transformed to costmap frame");
+      logger_,
+        "Cannot clear map around pose because pose cannot be transformed to costmap frame: %s",
+        global_pose_error.c_str());
     return false;
   }
 

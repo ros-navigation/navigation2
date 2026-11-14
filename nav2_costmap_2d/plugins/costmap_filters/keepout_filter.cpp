@@ -211,8 +211,10 @@ void KeepoutFilter::updateBounds(
     pose.position.z = 0.0;
     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
     geometry_msgs::msg::Pose mask_pose;
+    std::string mask_transform_error;
     const auto mask_transform = tf_manager_->getLatestTransform(
-      filter_mask_frame_, global_frame_, transform_staleness_threshold_);
+      filter_mask_frame_, global_frame_, transform_staleness_threshold_,
+        &mask_transform_error);
     if (mask_transform) {
       tf2::doTransform(pose, mask_pose, *mask_transform);
       const auto & footprint = layered_costmap_->getFootprint();
@@ -234,6 +236,9 @@ void KeepoutFilter::updateBounds(
           logger_, *(clock_), 2000,
           "KeepoutFilter: Footprint is in keepout zone, reducing cost override to navigate out.");
       }
+    } else {
+      RCLCPP_ERROR(logger_, "KeepoutFilter: Failed to transform robot pose to mask frame: %s",
+        mask_transform_error.c_str());
     }
 
     // If in lethal space or just exited lethal space,
@@ -283,9 +288,12 @@ void KeepoutFilter::process(
     // Filter mask and current layer are in different frames:
     // prepare frame transformation if mask_frame != global_frame_
 
+    std::string mask_transform_error;
     const auto mask_transform = tf_manager_->getLatestTransform(
-      mask_frame, global_frame_, transform_staleness_threshold_);
+      mask_frame, global_frame_, transform_staleness_threshold_, &mask_transform_error);
     if (!mask_transform) {
+      RCLCPP_ERROR(logger_, "KeepoutFilter: Failed to transform global frame to mask frame: %s",
+        mask_transform_error.c_str());
       return;
     }
 

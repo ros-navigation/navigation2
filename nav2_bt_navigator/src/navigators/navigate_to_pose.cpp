@@ -127,10 +127,12 @@ NavigateToPoseNavigator::onLoop()
   auto feedback_msg = std::make_shared<ActionT::Feedback>();
 
   geometry_msgs::msg::PoseStamped current_pose;
+  std::string tf_error_details;
   const auto current_pose_result = feedback_utils_.tf_manager->getLatestPose(
-    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_);
+    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_,
+      &tf_error_details);
   if (!current_pose_result) {
-    RCLCPP_ERROR(logger_, "Robot pose is not available.");
+    RCLCPP_ERROR(logger_, "Robot pose is not available: %s", tf_error_details.c_str());
     return;
   }
   current_pose = *current_pose_result;
@@ -225,18 +227,21 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 bool
 NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 {
+  std::string current_pose_error;
   const auto current_pose = feedback_utils_.tf_manager->getLatestPose(
-    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_);
+    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_,
+      &current_pose_error);
   if (!current_pose) {
     bt_action_server_->setInternalError(
       ActionT::Result::TF_ERROR,
-      "Initial robot pose is not available.");
+      "Initial robot pose is not available: " + current_pose_error);
     return false;
   }
 
+  std::string goal_pose_error;
   const auto goal_pose = feedback_utils_.tf_manager->transformStampedPose(
     feedback_utils_.global_frame, goal->pose,
-    feedback_utils_.transform_tolerance);
+    feedback_utils_.transform_tolerance, &goal_pose_error);
   if (!goal_pose) {
     bt_action_server_->setInternalError(
       ActionT::Result::TF_ERROR,
@@ -244,7 +249,7 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
       goal->pose.header.frame_id +
       "' to the global frame '" +
       feedback_utils_.global_frame +
-      "'.");
+      "': " + goal_pose_error);
     return false;
   }
 

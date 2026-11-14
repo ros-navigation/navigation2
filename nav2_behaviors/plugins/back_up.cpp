@@ -33,8 +33,9 @@ ResultStatus BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> comma
 
   end_time_ = this->clock_->now() + command_time_allowance_;
 
-  if (!getCurrentPoseChecked(initial_pose_)) {
-    std::string error_msg = "Initial robot pose is not available or not current.";
+  std::string tf_error;
+  if (!getCurrentPoseChecked(initial_pose_, &tf_error)) {
+    std::string error_msg = "Initial robot pose is not available or not current: " + tf_error;
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, BackUpActionResult::TF_ERROR, error_msg};
   }

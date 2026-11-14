@@ -122,12 +122,14 @@ public:
    * @param to_frame Frame ID to transform to
    * @param tf_manager TF manager to use for the transformation
    * @param transform_tolerance Transform tolerance
+   * @param error_msg Optional TF failure details; cleared on success
    * @return Whether it was transformed successfully
    */
   virtual bool toFrame(
     const std::string & to_frame,
     const nav2::TransformManager::SharedPtr tf_manager,
-    const double transform_tolerance) = 0;
+    const double transform_tolerance,
+    std::string * error_msg = nullptr) = 0;
 
   /**
    * @brief Gets shape box-boundaries.
@@ -261,12 +263,14 @@ public:
    * @param to_frame Frame ID to transform to
    * @param tf_manager TF manager to use for the transformation
    * @param transform_tolerance Transform tolerance
+   * @param error_msg Optional TF failure details; cleared on success
    * @return Whether it was transformed successfully
    */
   bool toFrame(
     const std::string & to_frame,
     const nav2::TransformManager::SharedPtr tf_manager,
-    const double transform_tolerance);
+    const double transform_tolerance,
+    std::string * error_msg = nullptr);
 
   /**
    * @brief Gets shape box-boundaries
@@ -378,12 +382,14 @@ public:
    * @param to_frame Frame ID to transform to
    * @param tf_manager TF manager to use for the transformation
    * @param transform_tolerance Transform tolerance
+   * @param error_msg Optional TF failure details; cleared on success
    * @return Whether it was transformed successfully
    */
   bool toFrame(
     const std::string & to_frame,
     const nav2::TransformManager::SharedPtr tf_manager,
-    const double transform_tolerance);
+    const double transform_tolerance,
+    std::string * error_msg = nullptr);
 
   /**
    * @brief Gets shape box-boundaries

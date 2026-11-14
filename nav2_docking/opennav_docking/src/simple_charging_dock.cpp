@@ -228,10 +228,12 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
       RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 3000,
             "Provided a detection pose without a timestamp, unexpected");
     }
+    std::string detected_pose_error;
     const auto detected_pose = tf_manager_->transformStampedPose(
-      pose.header.frame_id, detected, 0.2);
+      pose.header.frame_id, detected, 0.2, &detected_pose_error);
     if (!detected_pose) {
-      RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
+      RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose: %s",
+          detected_pose_error.c_str());
       return false;
     }
     detected = *detected_pose;
@@ -280,9 +282,12 @@ bool SimpleChargingDock::isDocked()
     return false;
   }
 
+  std::string base_pose_error;
   const auto base_pose = tf_manager_->getLatestPose(
-    dock_pose_.header.frame_id, base_frame_id_, transform_staleness_threshold_);
+    dock_pose_.header.frame_id, base_frame_id_, transform_staleness_threshold_, &base_pose_error);
   if (!base_pose) {
+    RCLCPP_ERROR(node_->get_logger(), "Failed to get robot pose while checking docking state: %s",
+      base_pose_error.c_str());
     return false;
   }
 

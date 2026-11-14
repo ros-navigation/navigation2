@@ -273,9 +273,12 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
 
     // Get the transform from PolygonStamped frame to base_frame_id_
     tf2::Stamped<tf2::Transform> tf_transform;
+    std::string transform_error;
     const auto transform = tf_manager_->getLatestTransform(
-      base_frame_id_, polygon_.header.frame_id, transform_staleness_threshold_);
+      base_frame_id_, polygon_.header.frame_id, transform_staleness_threshold_, &transform_error);
     if (!transform) {
+      RCLCPP_ERROR(logger_, "Failed to transform collision monitor polygon into base frame: %s",
+        transform_error.c_str());
       return;
     }
     tf2::fromMsg(*transform, tf_transform);
@@ -618,9 +621,12 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
 
   // Get the transform from PolygonStamped frame to base_frame_id_
   tf2::Stamped<tf2::Transform> tf_transform;
+  std::string transform_error;
   const auto transform = tf_manager_->getLatestTransform(
-    base_frame_id_, msg->header.frame_id, transform_staleness_threshold_);
+    base_frame_id_, msg->header.frame_id, transform_staleness_threshold_, &transform_error);
   if (!transform) {
+    RCLCPP_ERROR(logger_, "Failed to transform collision monitor polygon into base frame: %s",
+      transform_error.c_str());
     return;
   }
   tf2::fromMsg(*transform, tf_transform);

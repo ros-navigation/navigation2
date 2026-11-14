@@ -96,13 +96,15 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   local_origin.point.x = 0;
   local_origin.point.y = 0;
   local_origin.point.z = 0;
+  std::string tf_error_details;
   const auto global_origin_transform = tf_manager_.getStampedTransform(
     global_frame_, local_origin.header.frame_id,
-    rclcpp::Time(local_origin.header.stamp), tf_tolerance_);
+    rclcpp::Time(local_origin.header.stamp), tf_tolerance_, &tf_error_details);
   if (!global_origin_transform) {
     RCLCPP_ERROR(
-      logger_, "Failed to transform sensor origin from %s to %s",
-      origin_frame.c_str(), global_frame_.c_str());
+      logger_,
+      "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
+      sensor_frame_.c_str(), cloud.header.frame_id.c_str(), tf_error_details.c_str());
     return;
   }
   tf2::doTransform(local_origin, global_origin, *global_origin_transform);
@@ -119,11 +121,14 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
 
   // transform the point cloud
   const auto global_frame_cloud_transform = tf_manager_.getStampedTransform(
-    global_frame_, cloud.header.frame_id, rclcpp::Time(cloud.header.stamp), tf_tolerance_);
+    global_frame_, cloud.header.frame_id, rclcpp::Time(cloud.header.stamp), tf_tolerance_,
+      &tf_error_details);
   if (!global_frame_cloud_transform) {
     RCLCPP_ERROR(
-      logger_, "Failed to transform point cloud from %s to %s",
-      cloud.header.frame_id.c_str(), global_frame_.c_str());
+      logger_,
+      "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
+      sensor_frame_.c_str(), cloud.header.frame_id.c_str(),
+        tf_error_details.c_str());
     return;
   }
   tf2::doTransform(cloud, global_frame_cloud, *global_frame_cloud_transform);

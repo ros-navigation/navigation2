@@ -88,16 +88,14 @@ TEST_F(TransformManagerTest, QuietLookupsRespectTimestamp)
   addTransform(8, 1.0);
   addTransform(10, 3.0);
   testing::internal::CaptureStderr();
-  EXPECT_FALSE(tf_manager_.getLatestTransform("odom", "missing", 0.0,
-    nav2::Log::Disabled).has_value());
-  EXPECT_TRUE(tf_manager_.getLatestTransform("odom", "base_link", 0.0,
-    nav2::Log::Disabled).has_value());
+  EXPECT_FALSE(tf_manager_.getLatestTransform("odom", "missing", 0.0).has_value());
+  EXPECT_TRUE(tf_manager_.getLatestTransform("odom", "base_link", 0.0).has_value());
   EXPECT_TRUE(tf_manager_.getStampedTransform("odom", "base_link", rclcpp::Time(9, 0),
-    0.0, nav2::Log::Disabled).has_value());
+    0.0).has_value());
   EXPECT_FALSE(tf_manager_.getStampedTransform("odom", "base_link", rclcpp::Time(7, 0),
-    0.0, nav2::Log::Disabled).has_value());
+    0.0).has_value());
   EXPECT_FALSE(tf_manager_.getStampedTransform(
-      "odom", "base_link", now_, -0.1, nav2::Log::Disabled).has_value());
+      "odom", "base_link", now_, -0.1).has_value());
   EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
 }
 
@@ -108,10 +106,10 @@ TEST_F(TransformManagerTest, TimedLookupsRequireDedicatedThreadConfiguration)
   const auto pose = makePose(8);
   testing::internal::CaptureStderr();
   EXPECT_FALSE(tf_manager_.getStampedTransform(
-      "odom", "base_link", stamp, 0.1, nav2::Log::Disabled));
+      "odom", "base_link", stamp, 0.1));
   EXPECT_FALSE(tf_manager_.getStampedTransform(
-      "odom", stamp, "base_link", stamp, "odom", 0.1, nav2::Log::Disabled));
-  EXPECT_FALSE(tf_manager_.transformStampedPose("odom", pose, 0.1, nav2::Log::Disabled));
+      "odom", stamp, "base_link", stamp, "odom", 0.1));
+  EXPECT_FALSE(tf_manager_.transformStampedPose("odom", pose, 0.1));
   EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
   EXPECT_TRUE(tf_manager_.getStampedTransform("odom", "base_link", stamp, 0.0));
   EXPECT_TRUE(tf_manager_.getStampedTransform(
@@ -120,8 +118,7 @@ TEST_F(TransformManagerTest, TimedLookupsRequireDedicatedThreadConfiguration)
 
   testing::internal::CaptureStderr();
   EXPECT_FALSE(tf_manager_.getStampedTransform("odom", "base_link", stamp, 0.1));
-  EXPECT_NE(testing::internal::GetCapturedStderr().find("dedicated thread servicing the TF buffer"),
-    std::string::npos);
+  EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
 }
 
 TEST_F(TransformManagerTest, PoseTransformConversionsPreserveHeaderAndGeometry)
@@ -439,45 +436,7 @@ TEST_F(TransformManagerTest, RejectsNonfiniteStalenessThreshold)
       "odom", "base_link", std::numeric_limits<double>::infinity()), std::nullopt);
 }
 
-TEST_F(TransformManagerTest, LogsFailuresWithConfiguredLoggerAndFrameContext)
-{
-  nav2::TransformManager configured_tf_manager(node_, false);
-  const auto & tf_manager = configured_tf_manager;
-  testing::internal::CaptureStderr();
-  EXPECT_EQ(tf_manager.getLatestPose("odom", "missing"), std::nullopt);
-  const auto lookup_log = testing::internal::GetCapturedStderr();
-  EXPECT_NE(lookup_log.find("tf_manager_test"), std::string::npos);
-  EXPECT_NE(lookup_log.find("Failed to get transform from 'missing' to 'odom'"), std::string::npos);
-
-  addTransform(8, 1.0);
-  ASSERT_TRUE(configured_tf_manager.getRawBuffer().setTransform(
-      *tf_manager_.getLatestTransform("odom", "base_link"), "test"));
-  testing::internal::CaptureStderr();
-  EXPECT_EQ(tf_manager.getLatestTransform("odom", "base_link", 1.0), std::nullopt);
-  const auto stale_log = testing::internal::GetCapturedStderr();
-  EXPECT_NE(stale_log.find("Stale transform from 'base_link' to 'odom'"), std::string::npos);
-  EXPECT_NE(stale_log.find("2.000000 s"), std::string::npos);
-
-  testing::internal::CaptureStderr();
-  EXPECT_EQ(tf_manager.getLatestTransform(
-      "odom", "base_link", std::numeric_limits<double>::quiet_NaN()), std::nullopt);
-  const auto argument_log = testing::internal::GetCapturedStderr();
-  EXPECT_NE(argument_log.find("must be finite"), std::string::npos);
-
-  testing::internal::CaptureStderr();
-  EXPECT_EQ(tf_manager.transformStampedPose("odom", makePose(9), 0.0),
-    std::nullopt);
-  const auto pose_log = testing::internal::GetCapturedStderr();
-  EXPECT_NE(pose_log.find("Failed to get transform from 'base_link' to 'odom'"), std::string::npos);
-
-  testing::internal::CaptureStderr();
-  EXPECT_EQ(tf_manager.getStampedTransform(
-      "base_link", now_, "base_link", now_, "missing", 0.0), std::nullopt);
-  const auto fixed_frame_log = testing::internal::GetCapturedStderr();
-  EXPECT_NE(fixed_frame_log.find("via 'missing'"), std::string::npos);
-}
-
-TEST_F(TransformManagerTest, DisabledLoggingSuppressesNestedLookupsAndValidationFailures)
+TEST_F(TransformManagerTest, FailuresDoNotLog)
 {
   addTransform(8, 1.0);
   const auto no_wait = 0.0;
@@ -489,37 +448,32 @@ TEST_F(TransformManagerTest, DisabledLoggingSuppressesNestedLookupsAndValidation
   // Repeat the probes as a caller waiting for TF would do.
   for (int i = 0; i < 3; ++i) {
     EXPECT_EQ(tf_manager_.getLatestTransform(
-        "odom", "missing", 0.0, nav2::Log::Disabled), std::nullopt);
+        "odom", "missing", 0.0), std::nullopt);
     EXPECT_EQ(tf_manager_.getLatestPose(
-        "odom", "base_link", 1.0, nav2::Log::Disabled), std::nullopt);
+        "odom", "base_link", 1.0), std::nullopt);
     EXPECT_EQ(tf_manager_.getStampedTransform(
-        "odom", "missing", now_, no_wait, nav2::Log::Disabled), std::nullopt);
+        "odom", "missing", now_, no_wait), std::nullopt);
     EXPECT_EQ(tf_manager_.getStampedTransform(
-        "base_link", now_, "base_link", now_, "missing", no_wait, nav2::Log::Disabled),
+        "base_link", now_, "base_link", now_, "missing", no_wait),
       std::nullopt);
     EXPECT_EQ(tf_manager_.transformStampedPose(
-        "odom", makePose(9), no_wait, nav2::Log::Disabled), std::nullopt);
+        "odom", makePose(9), no_wait), std::nullopt);
   }
   EXPECT_EQ(tf_manager_.getLatestTransform(
-      "odom", "base_link", 1.0, nav2::Log::Disabled), std::nullopt);
+      "odom", "base_link", 1.0), std::nullopt);
   EXPECT_EQ(timed_tf_manager.getStampedTransform(
-      "odom", "missing", now_, 0.001, nav2::Log::Disabled), std::nullopt);
+      "odom", "missing", now_, 0.001), std::nullopt);
   EXPECT_EQ(tf_manager_.getLatestTransform(
-      "odom", "base_link", std::numeric_limits<double>::quiet_NaN(), nav2::Log::Disabled),
+      "odom", "base_link", std::numeric_limits<double>::quiet_NaN()),
     std::nullopt);
   EXPECT_EQ(tf_manager_.getStampedTransform(
-      "base_link", "base_link", now_, negative_wait, nav2::Log::Disabled), std::nullopt);
+      "base_link", "base_link", now_, negative_wait), std::nullopt);
   EXPECT_EQ(tf_manager_.getStampedTransform(
-      "base_link", now_, "base_link", now_, "odom", negative_wait, nav2::Log::Disabled),
+      "base_link", now_, "base_link", now_, "odom", negative_wait),
     std::nullopt);
   EXPECT_EQ(tf_manager_.transformStampedPose(
-      "base_link", makePose(8), negative_wait, nav2::Log::Disabled), std::nullopt);
+      "base_link", makePose(8), negative_wait), std::nullopt);
   EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
-
-  // A quiet probe must not change the shared manager's subsequent logging policy.
-  testing::internal::CaptureStderr();
-  EXPECT_EQ(tf_manager_.getLatestPose("odom", "missing"), std::nullopt);
-  EXPECT_NE(testing::internal::GetCapturedStderr().find("missing"), std::string::npos);
 }
 
 TEST_F(TransformManagerTest, ErrorOutputPreservesExceptionsThroughNestedLookups)
@@ -543,31 +497,31 @@ TEST_F(TransformManagerTest, ErrorOutputPreservesExceptionsThroughNestedLookups)
   std::string error;
   testing::internal::CaptureStderr();
   EXPECT_FALSE(tf_manager_.getLatestTransform(
-      "odom", "missing", 0.0, nav2::Log::Disabled, &error));
+      "odom", "missing", 0.0, &error));
   EXPECT_EQ(error, lookup_error);
   error.clear();
   EXPECT_FALSE(tf_manager_.getLatestPose(
-      "odom", "missing", 0.0, nav2::Log::Disabled, &error));
+      "odom", "missing", 0.0, &error));
   EXPECT_EQ(error, lookup_error);
   error.clear();
   EXPECT_FALSE(tf_manager_.getStampedTransform(
-      "odom", "base_link", rclcpp::Time(7, 0), 0.0, nav2::Log::Disabled, &error));
+      "odom", "base_link", rclcpp::Time(7, 0), 0.0, &error));
   EXPECT_EQ(error, stamped_error);
   error.clear();
   EXPECT_FALSE(tf_manager_.transformStampedPose(
-      "odom", pose, 0.0, nav2::Log::Disabled, &error));
+      "odom", pose, 0.0, &error));
   EXPECT_EQ(error, stamped_error);
   error.clear();
   EXPECT_FALSE(tf_manager_.getStampedTransform(
-      "odom", now_, "base_link", now_, "missing", 0.0, nav2::Log::Disabled, &error));
+      "odom", now_, "base_link", now_, "missing", 0.0, &error));
   EXPECT_NE(error.find("missing"), std::string::npos);
   EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
 
   testing::internal::CaptureStderr();
   EXPECT_FALSE(tf_manager_.getLatestPose(
-      "odom", "missing", 0.0, nav2::Log::Enabled, &error));
+      "odom", "missing", 0.0, &error));
   EXPECT_EQ(error, lookup_error);
-  EXPECT_NE(testing::internal::GetCapturedStderr().find(error), std::string::npos);
+  EXPECT_EQ(testing::internal::GetCapturedStderr(), "");
 }
 
 TEST_F(TransformManagerTest, ErrorOutputDescribesValidationAndStalenessFailures)
@@ -575,75 +529,57 @@ TEST_F(TransformManagerTest, ErrorOutputDescribesValidationAndStalenessFailures)
   addTransform(8, 1.0);
   std::string error;
   EXPECT_FALSE(tf_manager_.getLatestPose(
-      "odom", "base_link", 1.0, nav2::Log::Disabled, &error));
+      "odom", "base_link", 1.0, &error));
   EXPECT_NE(error.find("Stale transform from 'base_link' to 'odom'"), std::string::npos);
   EXPECT_NE(error.find("2.000000 s exceeds threshold 1.000000 s"), std::string::npos);
   EXPECT_FALSE(tf_manager_.getLatestTransform(
-      "odom", "base_link", std::numeric_limits<double>::quiet_NaN(),
-      nav2::Log::Disabled, &error));
+      "odom", "base_link", std::numeric_limits<double>::quiet_NaN(), &error));
   EXPECT_NE(error.find("must be finite"), std::string::npos);
   EXPECT_FALSE(tf_manager_.getStampedTransform(
-      "odom", "base_link", now_, -0.1, nav2::Log::Disabled, &error));
+      "odom", "base_link", now_, -0.1, &error));
   EXPECT_NE(error.find("must be nonnegative"), std::string::npos);
   EXPECT_FALSE(tf_manager_.getStampedTransform(
-      "odom", now_, "base_link", now_, "odom", -0.1, nav2::Log::Disabled, &error));
+      "odom", now_, "base_link", now_, "odom", -0.1, &error));
   EXPECT_NE(error.find("must be nonnegative"), std::string::npos);
   EXPECT_FALSE(tf_manager_.transformStampedPose(
-      "odom", makePose(8), -0.1, nav2::Log::Disabled, &error));
+      "odom", makePose(8), -0.1, &error));
   EXPECT_NE(error.find("must be nonnegative"), std::string::npos);
   EXPECT_FALSE(tf_manager_.getStampedTransform(
-      "odom", "base_link", now_, 0.1, nav2::Log::Disabled, &error));
+      "odom", "base_link", now_, 0.1, &error));
   EXPECT_NE(error.find("without a dedicated thread servicing the TF buffer"), std::string::npos);
   error.clear();
   EXPECT_FALSE(tf_manager_.getStampedTransform(
-      "odom", now_, "base_link", now_, "odom", 0.1, nav2::Log::Disabled, &error));
+      "odom", now_, "base_link", now_, "odom", 0.1, &error));
   EXPECT_NE(error.find("without a dedicated thread servicing the TF buffer"), std::string::npos);
   error.clear();
   EXPECT_FALSE(tf_manager_.transformStampedPose(
-      "odom", makePose(8), 0.1, nav2::Log::Disabled, &error));
+      "odom", makePose(8), 0.1, &error));
   EXPECT_NE(error.find("without a dedicated thread servicing the TF buffer"), std::string::npos);
 }
 
 TEST_F(TransformManagerTest, SuccessfulCallsClearPreviousErrors)
 {
   addTransform(8, 1.0);
-  for (const auto log : {nav2::Log::Enabled, nav2::Log::Disabled}) {
-    std::string error = "previous failure";
-    EXPECT_TRUE(tf_manager_.getLatestTransform("odom", "base_link", 0.0, log, &error));
-    EXPECT_TRUE(error.empty());
-    error = "previous failure";
-    EXPECT_TRUE(tf_manager_.getLatestPose("odom", "base_link", 0.0, log, &error));
-    EXPECT_TRUE(error.empty());
-    error = "previous failure";
-    EXPECT_TRUE(tf_manager_.getStampedTransform(
-        "odom", "base_link", rclcpp::Time(8, 0), 0.0, log, &error));
-    EXPECT_TRUE(error.empty());
-    error = "previous failure";
-    EXPECT_TRUE(tf_manager_.getStampedTransform(
-        "odom", rclcpp::Time(8, 0), "base_link", rclcpp::Time(8, 0), "odom", 0.0, log, &error));
-    EXPECT_TRUE(error.empty());
-    error = "previous failure";
-    EXPECT_TRUE(tf_manager_.transformStampedPose("odom", makePose(8), 0.0, log, &error));
-    EXPECT_TRUE(error.empty());
-    error = "previous failure";
-    EXPECT_TRUE(tf_manager_.transformStampedPose("base_link", makePose(8), 0.0, log, &error));
-    EXPECT_TRUE(error.empty());
-  }
-}
-
-TEST_F(TransformManagerTest, LoggingOptionPreservesSuccessfulResults)
-{
-  addTransform(8, 1.0);
-  const auto no_wait = 0.0;
-  EXPECT_EQ(tf_manager_.getLatestTransform("odom", "base_link", 2.0, nav2::Log::Disabled),
-    tf_manager_.getLatestTransform("odom", "base_link", 2.0, nav2::Log::Enabled));
-  EXPECT_EQ(tf_manager_.getLatestPose("odom", "base_link", 2.0, nav2::Log::Disabled),
-    tf_manager_.getLatestPose("odom", "base_link", 2.0));
-  EXPECT_EQ(tf_manager_.getStampedTransform("odom", "base_link", rclcpp::Time(8, 0), no_wait,
-      nav2::Log::Disabled),
-    tf_manager_.getStampedTransform("odom", "base_link", rclcpp::Time(8, 0), no_wait));
-  EXPECT_EQ(tf_manager_.transformStampedPose("odom", makePose(8), no_wait, nav2::Log::Disabled),
-    tf_manager_.transformStampedPose("odom", makePose(8), no_wait));
+  std::string error = "previous failure";
+  EXPECT_TRUE(tf_manager_.getLatestTransform("odom", "base_link", 0.0, &error));
+  EXPECT_TRUE(error.empty());
+  error = "previous failure";
+  EXPECT_TRUE(tf_manager_.getLatestPose("odom", "base_link", 0.0, &error));
+  EXPECT_TRUE(error.empty());
+  error = "previous failure";
+  EXPECT_TRUE(tf_manager_.getStampedTransform(
+      "odom", "base_link", rclcpp::Time(8, 0), 0.0, &error));
+  EXPECT_TRUE(error.empty());
+  error = "previous failure";
+  EXPECT_TRUE(tf_manager_.getStampedTransform(
+      "odom", rclcpp::Time(8, 0), "base_link", rclcpp::Time(8, 0), "odom", 0.0, &error));
+  EXPECT_TRUE(error.empty());
+  error = "previous failure";
+  EXPECT_TRUE(tf_manager_.transformStampedPose("odom", makePose(8), 0.0, &error));
+  EXPECT_TRUE(error.empty());
+  error = "previous failure";
+  EXPECT_TRUE(tf_manager_.transformStampedPose("base_link", makePose(8), 0.0, &error));
+  EXPECT_TRUE(error.empty());
 }
 
 class TransformListenerTest : public ::testing::Test
@@ -673,9 +609,9 @@ protected:
       tf_manager_->sendTransform(dynamic_transform);
       executor_.spin_some();
       const auto dynamic_result = tf_manager_->getLatestTransform(
-        "listener_parent", "listener_dynamic", 0.0, nav2::Log::Disabled);
+        "listener_parent", "listener_dynamic", 0.0);
       const auto static_result = tf_manager_->getLatestTransform(
-        "listener_parent", "listener_static", 0.0, nav2::Log::Disabled);
+        "listener_parent", "listener_static", 0.0);
       if (dynamic_result && static_result) {
         EXPECT_DOUBLE_EQ(dynamic_result->transform.translation.x, 2.0);
         EXPECT_DOUBLE_EQ(static_result->transform.translation.x, 3.0);
@@ -695,7 +631,7 @@ protected:
       bool all_received = true;
       for (const auto & transform : transforms) {
         const auto result = receiver.getLatestTransform(
-          transform.header.frame_id, transform.child_frame_id, 0.001, nav2::Log::Disabled);
+          transform.header.frame_id, transform.child_frame_id, 0.001);
         if (!result) {
           all_received = false;
           break;
@@ -801,9 +737,9 @@ TEST_F(TransformListenerTest, BroadcastsTransformVector)
   while (std::chrono::steady_clock::now() < deadline) {
     tf_manager_->sendTransform(std::vector<geometry_msgs::msg::TransformStamped>{first, second});
     const auto first_result = tf_manager_->getLatestTransform(
-      "broadcast_parent", "broadcast_first", 0.0, nav2::Log::Disabled);
+      "broadcast_parent", "broadcast_first", 0.0);
     const auto second_result = tf_manager_->getLatestTransform(
-      "broadcast_parent", "broadcast_second", 0.0, nav2::Log::Disabled);
+      "broadcast_parent", "broadcast_second", 0.0);
     if (first_result && second_result) {
       EXPECT_DOUBLE_EQ(first_result->transform.translation.x, 2.0);
       EXPECT_DOUBLE_EQ(second_result->transform.translation.x, 3.0);

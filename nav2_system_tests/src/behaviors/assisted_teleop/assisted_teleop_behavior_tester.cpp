@@ -228,9 +228,12 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
 
   RCLCPP_INFO(node_->get_logger(), "result received");
 
-  const auto current_pose = tf_manager_->getLatestPose("odom", "base_link");
+  std::string current_pose_error;
+  const auto current_pose = tf_manager_->getLatestPose("odom", "base_link", 0.0,
+      &current_pose_error);
   if (!current_pose) {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available: %s",
+        current_pose_error.c_str());
     return false;
   }
 

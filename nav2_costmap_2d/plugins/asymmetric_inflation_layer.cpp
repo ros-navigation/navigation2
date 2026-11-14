@@ -219,7 +219,7 @@ AsymmetricInflationLayer::extractLocalPathSegments(
   if (need_transform) {
     std::string tf_error;
     const auto transform_result = tf_manager_->getLatestTransform(
-      global_frame, path_frame, transform_staleness_threshold_, nav2::Log::Disabled, &tf_error);
+      global_frame, path_frame, transform_staleness_threshold_, &tf_error);
     if (!transform_result) {
       RCLCPP_WARN_THROTTLE(
         logger_, *clock_, 1000,

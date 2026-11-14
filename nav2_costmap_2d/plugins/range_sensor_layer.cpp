@@ -296,13 +296,14 @@ void RangeSensorLayer::updateCostmap(
 
   geometry_msgs::msg::TransformStamped transform;
 
+  std::string tf_error_details;
   const auto transform_result = tf_manager_->getStampedTransform(
     global_frame_, in.header.frame_id, rclcpp::Time(in.header.stamp),
-    transform_tolerance_);
+    transform_tolerance_, &tf_error_details);
   if (!transform_result) {
     RCLCPP_INFO(
-      logger_, "Range sensor layer can't transform from %s to %s",
-      in.header.frame_id.c_str(), global_frame_.c_str());
+      logger_, "Range sensor layer can't transform from %s to %s: %s",
+      in.header.frame_id.c_str(), global_frame_.c_str(), tf_error_details.c_str());
     return;
   }
   transform = *transform_result;

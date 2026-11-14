@@ -27,8 +27,6 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "rclcpp/callback_group.hpp"
 #include "rclcpp/clock.hpp"
-#include "rclcpp/logger.hpp"
-#include "rclcpp/logging.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/version.h"
 #include "tf2/LinearMath/Transform.hpp"
@@ -44,13 +42,11 @@
 namespace nav2
 {
 
-/** @brief Control diagnostic logging for an individual TF lookup. */
-enum class Log {Enabled, Disabled};
-
 /**
  * @brief Own TF reception, broadcasting, lookups, and pose conversions for a node.
  *
- * Lookup failures and invalid arguments return std::nullopt and are logged by default.
+ * Lookup failures and invalid arguments return std::nullopt. Optional error output contains
+ * the exception text or failure reason; callers own diagnostic logging.
  */
 class TransformManager
 {
@@ -58,7 +54,7 @@ public:
   using SharedPtr = std::shared_ptr<TransformManager>;
 
   /**
-   * @brief Create a TF manager using the node's clock, logger, and interfaces.
+   * @brief Create a TF manager using the node's clock and interfaces.
    * @param node Pointer-like node (shared_ptr or raw pointer).
    * @param activate_listener Start receiving transforms immediately.
    * @param spin_thread Spin a dedicated listener thread. When false, the caller
@@ -71,7 +67,6 @@ public:
     const NodeT & node, bool activate_listener = true, bool spin_thread = true,
     rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
   : clock_(node ? node->get_clock() : nullptr),
-    logger_(node ? node->get_logger() : rclcpp::get_logger("nav2_transform_manager")),
     spin_thread_(spin_thread)
   {
     if (!node) {
@@ -238,22 +233,19 @@ public:
    * Staleness is measured against the stored clock at lookup time. Equal frames
    * return an identity transform stamped with the current clock time; otherwise
    * the TF timestamp is preserved.
-   * Logs lookup failures and invalid arguments unless disabled.
    *
    * @param target_frame Frame to transform into.
    * @param source_frame Frame to transform from.
    * @param staleness_threshold Maximum age in seconds; non-positive disables the
    *   check. A result exactly at the threshold is accepted.
-   * @param log Enable or disable failure diagnostics for this call and nested lookups.
    * @param error_msg Optional failure details, including the TF exception text.
-   *   Cleared on success, independently of the logging setting.
+   *   Cleared on success.
    * @return Transform on success; std::nullopt on TF failure, stale TF, or a nonfinite threshold.
    */
   [[nodiscard]] std::optional<geometry_msgs::msg::TransformStamped> getLatestTransform(
     const std::string & target_frame,
     const std::string & source_frame,
     double staleness_threshold = 0.0,
-    Log log = Log::Enabled,
     std::string * error_msg = nullptr) const
   {
     if (error_msg) {
@@ -264,9 +256,6 @@ public:
         *error_msg = "Transform staleness threshold must be finite (target frame '" +
           target_frame + "')";
       }
-      RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
-          "Transform staleness threshold must be finite (target frame '%s')",
-        target_frame.c_str());
       return std::nullopt;
     }
     geometry_msgs::msg::TransformStamped result;
@@ -281,9 +270,6 @@ public:
         if (error_msg) {
           *error_msg = ex.what();
         }
-        RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
-            "Failed to get transform from '%s' to '%s': %s",
-          source_frame.c_str(), target_frame.c_str(), ex.what());
         return std::nullopt;
       }
 
@@ -298,9 +284,6 @@ public:
               "': age " + std::to_string(age) + " s exceeds threshold " +
               std::to_string(staleness_threshold) + " s";
           }
-          RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
-            "Stale transform from '%s' to '%s': age %.6f s exceeds threshold %.6f s",
-            source_frame.c_str(), target_frame.c_str(), age, staleness_threshold);
           return std::nullopt;
         }
       }
@@ -319,23 +302,21 @@ public:
    * @param source_frame Frame whose pose is requested.
    * @param staleness_threshold Maximum age in seconds; non-positive disables the
    *   check. Zero-stamped results are exempt from the age check.
-   * @param log Enable or disable failure diagnostics for this call and nested lookups.
    * @param error_msg Optional failure details, including the TF exception text.
-   *   Cleared on success, independently of the logging setting.
+   *   Cleared on success.
    * @return Pose if getLatestTransform succeeds; std::nullopt otherwise.
    */
   [[nodiscard]] std::optional<geometry_msgs::msg::PoseStamped> getLatestPose(
     const std::string & target_frame,
     const std::string & source_frame,
     double staleness_threshold = 0.0,
-    Log log = Log::Enabled,
     std::string * error_msg = nullptr) const
   {
     if (error_msg) {
       error_msg->clear();
     }
     const auto transform = getLatestTransform(
-      target_frame, source_frame, staleness_threshold, log, error_msg);
+      target_frame, source_frame, staleness_threshold, error_msg);
     if (!transform) {
       return std::nullopt;
     }
@@ -346,7 +327,7 @@ public:
    * @brief Get a transform from source_frame into target_frame at a specified time.
    *
    * Interpolates within available TF history when necessary. Does not apply an
-   * age check against the current clock. Logs lookup failures unless disabled. Equal frames
+   * age check against the current clock. Equal frames
    * return an identity transform stamped with stamp.
    *
    * @param target_frame Frame to transform into.
@@ -356,9 +337,8 @@ public:
    * @param transform_tolerance Maximum lookup wait duration in seconds; must be nonnegative.
    *   Zero performs the lookup without waiting. This does not permit timestamp
    *   error or extrapolation. Waiting requires a dedicated thread servicing the TF buffer.
-   * @param log Enable or disable failure diagnostics for this call and nested lookups.
    * @param error_msg Optional failure details, including the TF exception text.
-   *   Cleared on success, independently of the logging setting.
+   *   Cleared on success.
    * @return Transform on success; std::nullopt on TF failure or invalid arguments.
    */
   [[nodiscard]] std::optional<geometry_msgs::msg::TransformStamped> getStampedTransform(
@@ -366,7 +346,6 @@ public:
     const std::string & source_frame,
     const rclcpp::Time & stamp,
     double transform_tolerance,
-    Log log = Log::Enabled,
     std::string * error_msg = nullptr) const
   {
     if (error_msg) {
@@ -377,9 +356,6 @@ public:
         *error_msg = "Transform tolerance must be nonnegative (target frame '" + target_frame +
           "')";
       }
-      RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
-          "Transform tolerance must be nonnegative (target frame '%s')",
-        target_frame.c_str());
       return std::nullopt;
     }
     geometry_msgs::msg::TransformStamped result;
@@ -388,7 +364,7 @@ public:
       result.header.stamp = stamp;
       result.child_frame_id = source_frame;
     } else {
-      if (!canWaitForTransform(transform_tolerance, target_frame, log, error_msg)) {
+      if (!canWaitForTransform(transform_tolerance, target_frame, error_msg)) {
         return std::nullopt;
       }
       try {
@@ -398,9 +374,6 @@ public:
         if (error_msg) {
           *error_msg = ex.what();
         }
-        RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
-            "Failed to get transform from '%s' to '%s': %s",
-          source_frame.c_str(), target_frame.c_str(), ex.what());
         return std::nullopt;
       }
     }
@@ -412,7 +385,7 @@ public:
    *
    * Transforms from source_frame at source_time into target_frame at target_time,
    * using fixed_frame as the reference across time. No current-clock age check
-   * is applied. Lookup failures are logged unless disabled. Equal frame names do not
+   * is applied. Equal frame names do not
    * imply identity when the times differ.
    *
    * Use this variant to express an earlier sensor observation in the robot
@@ -429,9 +402,8 @@ public:
    * @param transform_tolerance Maximum lookup wait duration in seconds; must be nonnegative.
    *   Zero performs the lookup without waiting. Waiting requires a dedicated thread
    *   servicing the TF buffer.
-   * @param log Enable or disable failure diagnostics for this call and nested lookups.
    * @param error_msg Optional failure details, including the TF exception text.
-   *   Cleared on success, independently of the logging setting.
+   *   Cleared on success.
    * @return Transform on success; std::nullopt on TF failure or invalid arguments.
    */
   [[nodiscard]] std::optional<geometry_msgs::msg::TransformStamped> getStampedTransform(
@@ -441,7 +413,6 @@ public:
     const rclcpp::Time & source_time,
     const std::string & fixed_frame,
     double transform_tolerance,
-    Log log = Log::Enabled,
     std::string * error_msg = nullptr) const
   {
     if (error_msg) {
@@ -452,12 +423,9 @@ public:
         *error_msg = "Transform tolerance must be nonnegative (target frame '" + target_frame +
           "')";
       }
-      RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
-          "Transform tolerance must be nonnegative (target frame '%s')",
-        target_frame.c_str());
       return std::nullopt;
     }
-    if (!canWaitForTransform(transform_tolerance, target_frame, log, error_msg)) {
+    if (!canWaitForTransform(transform_tolerance, target_frame, error_msg)) {
       return std::nullopt;
     }
     geometry_msgs::msg::TransformStamped result;
@@ -469,10 +437,6 @@ public:
       if (error_msg) {
         *error_msg = ex.what();
       }
-      RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
-        "Failed to get transform from '%s' at %.9f to '%s' at %.9f via '%s': %s",
-        source_frame.c_str(), source_time.seconds(), target_frame.c_str(), target_time.seconds(),
-        fixed_frame.c_str(), ex.what());
       return std::nullopt;
     }
     return result;
@@ -484,23 +448,21 @@ public:
    * Waiting for TF requires a dedicated thread servicing the TF buffer.
    * Zero timestamps request the latest common TF time without an age check.
    * Equal frames return the input unchanged; otherwise the output header uses
-   * the selected transform's frame and timestamp. Logs lookup failures unless disabled.
+   * the selected transform's frame and timestamp.
    *
    * @param target_frame Frame in which to express the input pose.
    * @param input Pose to transform; unchanged on success or failure.
    * @param transform_tolerance Maximum lookup wait duration in seconds; must be nonnegative.
    *   Zero performs the lookup without waiting. This does not permit timestamp
    *   error or extrapolation.
-   * @param log Enable or disable failure diagnostics for this call and nested lookups.
    * @param error_msg Optional failure details, including the TF exception text.
-   *   Cleared on success, independently of the logging setting.
+   *   Cleared on success.
    * @return Transformed pose on success; std::nullopt on TF lookup failure.
    */
   [[nodiscard]] std::optional<geometry_msgs::msg::PoseStamped> transformStampedPose(
     const std::string & target_frame,
     const geometry_msgs::msg::PoseStamped & input,
     double transform_tolerance,
-    Log log = Log::Enabled,
     std::string * error_msg = nullptr) const
   {
     if (error_msg) {
@@ -511,9 +473,6 @@ public:
         *error_msg = "Transform tolerance must be nonnegative (target frame '" + target_frame +
           "')";
       }
-      RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
-          "Transform tolerance must be nonnegative (target frame '%s')",
-        target_frame.c_str());
       return std::nullopt;
     }
     if (input.header.frame_id == target_frame) {
@@ -522,7 +481,7 @@ public:
 
     const auto transform = getStampedTransform(
       target_frame, input.header.frame_id,
-      rclcpp::Time(input.header.stamp), transform_tolerance, log, error_msg);
+      rclcpp::Time(input.header.stamp), transform_tolerance, error_msg);
     if (!transform) {
       return std::nullopt;
     }
@@ -537,12 +496,11 @@ private:
    * @brief Check the buffer's threading configuration before a timed lookup.
    * @param transform_tolerance Maximum lookup wait duration in seconds.
    * @param target_frame Target frame included in failure diagnostics.
-   * @param log Enable or disable failure logging.
    * @param error_msg Optional failure details; unchanged when the check succeeds.
    * @return True if no wait is requested or the buffer declares a dedicated thread.
    */
   bool canWaitForTransform(
-    double transform_tolerance, const std::string & target_frame, Log log,
+    double transform_tolerance, const std::string & target_frame,
     std::string * error_msg) const
   {
     if (transform_tolerance > 0.0 && !buffer_->isUsingDedicatedThread()) {
@@ -550,9 +508,6 @@ private:
         *error_msg = "Cannot wait for a transform to '" + target_frame +
           "' without a dedicated thread servicing the TF buffer";
       }
-      RCLCPP_ERROR_EXPRESSION(logger_, log == Log::Enabled,
-        "Cannot wait for a transform to '%s' without a dedicated thread servicing the TF buffer",
-        target_frame.c_str());
       return false;
     }
     return true;
@@ -584,7 +539,6 @@ private:
 
   rclcpp::Clock::SharedPtr clock_;
   tf2_ros::Buffer::SharedPtr buffer_;
-  rclcpp::Logger logger_;
   bool spin_thread_{true};
   std::function<std::unique_ptr<tf2_ros::TransformBroadcaster>()> create_broadcaster_;
   std::function<std::unique_ptr<tf2_ros::StaticTransformBroadcaster>()> create_static_broadcaster_;

@@ -722,10 +722,13 @@ void ControllerServer::transformedPlanAndGoal(
   const geometry_msgs::msg::PoseStamped & current_robot_pose)
 {
   end_pose_.header.stamp = current_robot_pose.header.stamp;
+  std::string tf_error_details;
   const auto transformed_end_pose_result = costmap_ros_->getTfManager()->transformStampedPose(
-    costmap_ros_->getGlobalFrameID(), end_pose_, transform_tolerance_);
+    costmap_ros_->getGlobalFrameID(), end_pose_, transform_tolerance_,
+      &tf_error_details);
   if (!transformed_end_pose_result) {
-    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
+    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame: " +
+        tf_error_details);
   }
   transformed_end_pose_ = *transformed_end_pose_result;
 
@@ -801,11 +804,13 @@ void ControllerServer::computeAndPublishVelocity(
 
     // Transform robot pose to path frame for path tracking calculations
 
+    std::string tf_error_details;
     const auto robot_pose_in_path_frame = costmap_ros_->getTfManager()->transformStampedPose(
       current_path_.header.frame_id, current_robot_pose,
-      transform_tolerance_);
+      transform_tolerance_, &tf_error_details);
     if (!robot_pose_in_path_frame) {
-      throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
+      throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame: " +
+          tf_error_details);
     }
 
     // Calculate closest point and position error from path
@@ -970,13 +975,14 @@ bool ControllerServer::isGoalReached(const geometry_msgs::msg::PoseStamped & cur
 
 geometry_msgs::msg::PoseStamped ControllerServer::getCurrentRobotPose()
 {
+  std::string pose_result_error;
   const auto pose_result = costmap_ros_->getTfManager()->getLatestPose(
     costmap_ros_->getGlobalFrameID(), costmap_ros_->getBaseFrameID(),
-      params_->transform_staleness_threshold);
+      params_->transform_staleness_threshold, &pose_result_error);
   if (!pose_result) {
     throw nav2_core::ControllerTFError(
             "Failed to obtain robot pose in frame '" + costmap_ros_->getGlobalFrameID() +
-            "' for base frame '" + costmap_ros_->getBaseFrameID() + "'");
+            "' for base frame '" + costmap_ros_->getBaseFrameID() + "': " + pose_result_error);
   }
   return *pose_result;
 }

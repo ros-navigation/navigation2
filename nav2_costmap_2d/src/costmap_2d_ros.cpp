@@ -264,7 +264,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   std::string tf_error;
   while (rclcpp::ok() &&
     !tf_manager_->getLatestTransform(global_frame_, robot_base_frame_,
-      transform_staleness_threshold_, nav2::Log::Disabled, &tf_error).has_value())
+      transform_staleness_threshold_, &tf_error).has_value())
   {
     RCLCPP_INFO(
       get_logger(), "Timed out waiting for transform from %s to %s"
@@ -764,9 +764,12 @@ Costmap2DROS::resetLayers()
 bool
 Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
+  std::string tf_error_details;
   const auto global_pose_result = tf_manager_->getLatestPose(
-    global_frame_, robot_base_frame_, transform_staleness_threshold_);
+    global_frame_, robot_base_frame_, transform_staleness_threshold_, &tf_error_details);
   if (!global_pose_result) {
+    RCLCPP_ERROR(get_logger(), "Failed to obtain costmap pose: %s",
+      tf_error_details.c_str());
     return false;
   }
   global_pose = *global_pose_result;
@@ -778,9 +781,12 @@ Costmap2DROS::transformPoseToGlobalFrame(
   const geometry_msgs::msg::PoseStamped & input_pose,
   geometry_msgs::msg::PoseStamped & transformed_pose)
 {
+  std::string result_error;
   const auto result = tf_manager_->transformStampedPose(
-    global_frame_, input_pose, transform_tolerance_);
+    global_frame_, input_pose, transform_tolerance_, &result_error);
   if (!result) {
+    RCLCPP_ERROR(get_logger(), "Failed to transform pose into costmap global frame: %s",
+      result_error.c_str());
     return false;
   }
   transformed_pose = *result;
@@ -832,7 +838,7 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
       std::string tf_error;
       if (!tf_manager_->getStampedTransform(
         global_frame_, parameter.as_string(), rclcpp::Time(0),
-          1.0, nav2::Log::Disabled, &tf_error).has_value())
+          1.0, &tf_error).has_value())
       {
         RCLCPP_WARN(
           get_logger(), "Timed out waiting for transform from %s to %s"

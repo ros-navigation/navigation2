@@ -1143,12 +1143,14 @@ Nav2Panel::onAccumulatedWp()
 
     // Looking up transform to get initial pose
     if (store_initial_pose_) {
+      std::string initial_pose_error;
       const auto initial_pose = tf_manager_->getLatestPose(
-        acummulated_poses_.goals[0].header.frame_id, base_frame_);
+        acummulated_poses_.goals[0].header.frame_id, base_frame_, 0.0, &initial_pose_error);
       if (!initial_pose) {
         RCLCPP_INFO(
-          client_node_->get_logger(), "Could not transform %s to %s",
-          base_frame_.c_str(), acummulated_poses_.goals[0].header.frame_id.c_str());
+          client_node_->get_logger(), "Could not transform %s to %s: %s",
+          acummulated_poses_.goals[0].header.frame_id.c_str(), base_frame_.c_str(),
+            initial_pose_error.c_str());
         return;
       }
 

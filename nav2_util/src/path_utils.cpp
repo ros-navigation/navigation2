@@ -105,14 +105,15 @@ bool transformPathInTargetFrame(
     return true;
   }
 
+  std::string tf_error_details;
   const auto transform_result = tf_manager.getStampedTransform(
     target_frame, input_path.header.frame_id, rclcpp::Time(input_path.header.stamp),
-    transform_timeout);
+    transform_timeout, &tf_error_details);
   if (!transform_result) {
     RCLCPP_ERROR(
       logger,
-      "Failed to transform path from '%s' to '%s'",
-      input_path.header.frame_id.c_str(), target_frame.c_str());
+      "Failed to transform path from '%s' to '%s': %s",
+      input_path.header.frame_id.c_str(), target_frame.c_str(), tf_error_details.c_str());
     return false;
   }
 

@@ -101,10 +101,13 @@ TYPED_TEST_SUITE(BehaviorPoseTest, BehaviorTypes);
 TYPED_TEST(BehaviorPoseTest, CheckedPosePreservesTimestampAndRejectsStaleness)
 {
   geometry_msgs::msg::PoseStamped pose;
-  EXPECT_FALSE(this->behavior_->getCurrentPoseChecked(pose));
+  std::string error;
+  EXPECT_FALSE(this->behavior_->getCurrentPoseChecked(pose, &error));
+  EXPECT_FALSE(error.empty());
 
   const auto transform = this->setTransform(1.0);
-  ASSERT_TRUE(this->behavior_->getCurrentPoseChecked(pose));
+  ASSERT_TRUE(this->behavior_->getCurrentPoseChecked(pose, &error));
+  EXPECT_TRUE(error.empty());
   EXPECT_EQ(pose.header, transform.header);
   EXPECT_DOUBLE_EQ(pose.pose.position.x, 1.0);
   EXPECT_DOUBLE_EQ(pose.pose.position.y, 2.0);
@@ -112,7 +115,8 @@ TYPED_TEST(BehaviorPoseTest, CheckedPosePreservesTimestampAndRejectsStaleness)
 
   const auto previous_pose = pose;
   this->setTransform(30.0);
-  EXPECT_FALSE(this->behavior_->getCurrentPoseChecked(pose));
+  EXPECT_FALSE(this->behavior_->getCurrentPoseChecked(pose, &error));
+  EXPECT_NE(error.find("Stale transform"), std::string::npos);
   EXPECT_EQ(pose, previous_pose);
 
   this->setTransform(30.0, true);

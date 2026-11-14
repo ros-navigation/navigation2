@@ -23,11 +23,11 @@ bool lookupShapeTransform(
   const std::string & target_frame,
   const nav2::TransformManager::SharedPtr & tf_manager,
   const double transform_tolerance,
-  geometry_msgs::msg::TransformStamped & transform)
+  geometry_msgs::msg::TransformStamped & transform, std::string * error_msg)
 {
   const auto result = tf_manager->getStampedTransform(
     target_frame, header.frame_id, rclcpp::Time(header.stamp),
-    transform_tolerance);
+    transform_tolerance, error_msg);
   if (!result) {
     return false;
   }

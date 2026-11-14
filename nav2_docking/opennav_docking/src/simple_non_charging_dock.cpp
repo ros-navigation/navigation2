@@ -210,7 +210,7 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
     }
     std::string tf_error;
     const auto detected_pose = tf_manager_->transformStampedPose(
-      pose.header.frame_id, detected, 0.2, nav2::Log::Disabled, &tf_error);
+      pose.header.frame_id, detected, 0.2, &tf_error);
     if (!detected_pose) {
       RCLCPP_WARN_THROTTLE(node_->get_logger(), *node_->get_clock(), 2000,
         "Failed to transform detected dock pose: %s", tf_error.c_str());
@@ -265,9 +265,12 @@ bool SimpleNonChargingDock::isDocked()
   // The latest base transform represents the current robot position, so reject
   // stale dynamic TF before using its translation to decide whether we are docked.
 
+  std::string base_pose_error;
   const auto base_pose = tf_manager_->getLatestPose(
-    dock_pose_.header.frame_id, base_frame_id_, transform_staleness_threshold_);
+    dock_pose_.header.frame_id, base_frame_id_, transform_staleness_threshold_, &base_pose_error);
   if (!base_pose) {
+    RCLCPP_ERROR(node_->get_logger(), "Failed to get robot pose while checking docking state: %s",
+      base_pose_error.c_str());
     return false;
   }
 

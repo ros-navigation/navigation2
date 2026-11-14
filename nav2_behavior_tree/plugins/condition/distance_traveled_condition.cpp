@@ -54,8 +54,7 @@ BT::NodeStatus DistanceTraveledCondition::tick()
     initialize();
     std::string tf_error;
     const auto start_pose_result = tf_manager_->getLatestPose(
-      global_frame_, robot_base_frame_, transform_staleness_threshold_,
-      nav2::Log::Disabled, &tf_error);
+      global_frame_, robot_base_frame_, transform_staleness_threshold_, &tf_error);
     if (!start_pose_result) {
       RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available: %s",
         tf_error.c_str());
@@ -69,8 +68,7 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 
   std::string tf_error;
   const auto current_pose = tf_manager_->getLatestPose(
-    global_frame_, robot_base_frame_, transform_staleness_threshold_,
-    nav2::Log::Disabled, &tf_error);
+    global_frame_, robot_base_frame_, transform_staleness_threshold_, &tf_error);
   if (!current_pose) {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available: %s",
       tf_error.c_str());

@@ -165,9 +165,12 @@ bool CostmapFilter::transformPose(
     in.y = global_pose.position.y;
     in.z = 0.0;
 
+    std::string tf_error_details;
     const auto global_to_mask_transform = tf_manager_->getLatestTransform(
-      mask_frame, global_frame, transform_staleness_threshold_);
+      mask_frame, global_frame, transform_staleness_threshold_, &tf_error_details);
     if (!global_to_mask_transform) {
+      RCLCPP_ERROR(logger_, "Failed to transform pose into costmap filter mask frame: %s",
+        tf_error_details.c_str());
       return false;
     }
 

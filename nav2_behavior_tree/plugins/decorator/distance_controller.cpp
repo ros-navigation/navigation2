@@ -60,10 +60,12 @@ inline BT::NodeStatus DistanceController::tick()
 
     // Reset the starting position since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
+    std::string tf_error_details;
     const auto start_pose_result = tf_manager_->getLatestPose(
-      global_frame_, robot_base_frame_, transform_staleness_threshold_);
+      global_frame_, robot_base_frame_, transform_staleness_threshold_, &tf_error_details);
     if (!start_pose_result) {
-      RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+      RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available: %s",
+          tf_error_details.c_str());
       return BT::NodeStatus::FAILURE;
     }
     start_pose_ = *start_pose_result;
@@ -74,10 +76,12 @@ inline BT::NodeStatus DistanceController::tick()
 
   // Determine distance travelled since we've started this iteration
 
+  std::string current_pose_error;
   const auto current_pose = tf_manager_->getLatestPose(
-    global_frame_, robot_base_frame_, transform_staleness_threshold_);
+    global_frame_, robot_base_frame_, transform_staleness_threshold_, &current_pose_error);
   if (!current_pose) {
-    RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+    RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available: %s",
+        current_pose_error.c_str());
     return BT::NodeStatus::FAILURE;
   }
 
@@ -99,10 +103,13 @@ inline BT::NodeStatus DistanceController::tick()
       case BT::NodeStatus::RUNNING:
         return child_state;
       case BT::NodeStatus::SUCCESS: {
+          std::string tf_error_details;
           const auto start_pose_result = tf_manager_->getLatestPose(
-            global_frame_, robot_base_frame_, transform_staleness_threshold_);
+            global_frame_, robot_base_frame_, transform_staleness_threshold_,
+            &tf_error_details);
           if (!start_pose_result) {
-            RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
+            RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available: %s",
+              tf_error_details.c_str());
             return BT::NodeStatus::FAILURE;
           }
           start_pose_ = *start_pose_result;

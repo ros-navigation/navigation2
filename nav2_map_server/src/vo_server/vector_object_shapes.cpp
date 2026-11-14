@@ -297,11 +297,11 @@ bool Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
 bool Polygon::toFrame(
   const std::string & to_frame,
   const nav2::TransformManager::SharedPtr tf_manager,
-  const double transform_tolerance)
+  const double transform_tolerance, std::string * error_msg)
 {
   geometry_msgs::msg::TransformStamped transform;
   if (!lookupShapeTransform(
-      params_->header, to_frame, tf_manager, transform_tolerance, transform))
+      params_->header, to_frame, tf_manager, transform_tolerance, transform, error_msg))
   {
     return false;
   }
@@ -540,11 +540,11 @@ bool Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
 bool Circle::toFrame(
   const std::string & to_frame,
   const nav2::TransformManager::SharedPtr tf_manager,
-  const double transform_tolerance)
+  const double transform_tolerance, std::string * error_msg)
 {
   geometry_msgs::msg::TransformStamped transform;
   if (!lookupShapeTransform(
-      params_->header, to_frame, tf_manager, transform_tolerance, transform))
+      params_->header, to_frame, tf_manager, transform_tolerance, transform, error_msg))
   {
     return false;
   }

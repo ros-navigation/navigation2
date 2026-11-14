@@ -150,11 +150,13 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
 
   // let's get the pose of the robot in the frame of the plan
 
+  std::string robot_pose_error;
   const auto robot_pose = tf_manager_->transformStampedPose(
     global_plan_up_to_constraint_.header.frame_id, pose,
-    transform_tolerance_);
+    transform_tolerance_, &robot_pose_error);
   if (!robot_pose) {
-    throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
+    throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame: " +
+        robot_pose_error);
   }
   return *robot_pose;
 }
@@ -208,12 +210,13 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   unsigned int mx, my;
 
   // Uses timestamp which has already been validated for staleness
+  std::string tf_error_details;
   const auto plan_to_costmap = tf_manager_->getStampedTransform(
     costmap_ros_->getGlobalFrameID(), global_plan_.header.frame_id,
-    rclcpp::Time(global_pose_.header.stamp), transform_tolerance_);
+    rclcpp::Time(global_pose_.header.stamp), transform_tolerance_, &tf_error_details);
   if (!plan_to_costmap) {
     throw nav2_core::ControllerTFError(
-      "Unable to transform global plan into costmap frame");
+      "Unable to transform global plan into costmap frame: " + tf_error_details);
   }
 
   // Find the furthest relevant pose on the path to consider within costmap
@@ -268,10 +271,12 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::getTransformedGoal(
     throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
   }
 
+  std::string tf_error_details;
   const auto transformed_goal = costmap_ros_->getTfManager()->transformStampedPose(
-    costmap_ros_->getGlobalFrameID(), goal, transform_tolerance_);
+    costmap_ros_->getGlobalFrameID(), goal, transform_tolerance_, &tf_error_details);
   if (!transformed_goal) {
-    throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
+    throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame: " +
+        tf_error_details);
   }
   return *transformed_goal;
 }

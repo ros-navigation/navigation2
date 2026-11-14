@@ -528,7 +528,7 @@ bool FollowingServer::getRefinedPose(
     std::string tf_error;
     const auto detected_result = tf_manager_->transformStampedPose(
       params_->fixed_frame, detected,
-      params_->transform_tolerance, nav2::Log::Disabled, &tf_error);
+      params_->transform_tolerance, &tf_error);
     if (!detected_result) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
         "Failed to transform detected object pose: %s", tf_error.c_str());
@@ -561,13 +561,14 @@ bool FollowingServer::getFramePose(
 {
   // Matching the target to the staleness-checked robot snapshot used by this control
   // iteration.
+  std::string tf_error_details;
   const auto transform_result = tf_manager_->getStampedTransform(
     params_->fixed_frame, frame_id, rclcpp::Time(iteration_start_time_),
-    params_->transform_tolerance);
+    params_->transform_tolerance, &tf_error_details);
   if (!transform_result) {
     RCLCPP_WARN(
       get_logger(),
-      "Failed to get transform for frame %s", frame_id.c_str());
+      "Failed to get transform for frame %s: %s", frame_id.c_str(), tf_error_details.c_str());
     return false;
   }
   pose = tf_manager_->transformToPoseStamped(*transform_result);
@@ -601,10 +602,13 @@ bool FollowingServer::getTrackingPose(
 
 geometry_msgs::msg::PoseStamped FollowingServer::getRobotPose()
 {
+  std::string robot_pose_error;
   const auto robot_pose = tf_manager_->getLatestPose(
-    params_->fixed_frame, params_->base_frame, params_->transform_staleness_threshold);
+    params_->fixed_frame, params_->base_frame, params_->transform_staleness_threshold,
+      &robot_pose_error);
   if (!robot_pose) {
-    throw opennav_docking_core::DockingTFError("Failed to get a fresh robot pose");
+    throw opennav_docking_core::DockingTFError("Failed to get a fresh robot pose: " +
+        robot_pose_error);
   }
   return *robot_pose;
 }

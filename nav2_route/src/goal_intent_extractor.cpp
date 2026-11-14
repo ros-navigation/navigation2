@@ -80,10 +80,12 @@ geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
       logger_,
       "Request pose in %s frame. Converting to route server frame: %s.",
       pose.header.frame_id.c_str(), target_frame.c_str());
+    std::string pose_result_error;
     const auto pose_result = tf_manager_->transformStampedPose(
-      target_frame, pose, 0.1);
+      target_frame, pose, 0.1, &pose_result_error);
     if (!pose_result) {
-      throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame);
+      throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame + ": " +
+          pose_result_error);
     }
     pose = *pose_result;
   }
@@ -118,10 +120,12 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   if (goal->use_start) {
     start_pose = goal->start;
   } else {
+    std::string tf_error_details;
     const auto start_pose_result = tf_manager_->getLatestPose(
-      route_frame_, base_frame_, transform_staleness_threshold_);
+      route_frame_, base_frame_, transform_staleness_threshold_, &tf_error_details);
     if (!start_pose_result) {
-      throw nav2_core::RouteTFError("Failed to obtain starting pose in: " + route_frame_);
+      throw nav2_core::RouteTFError("Failed to obtain starting pose in: " + route_frame_ + ": " +
+          tf_error_details);
     }
     start_pose = *start_pose_result;
   }

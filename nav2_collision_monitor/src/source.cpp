@@ -330,17 +330,23 @@ bool Source::getTransform(
   tf2::Transform & tf_transform) const
 {
   if (base_shift_correction_) {
+    std::string transform_error;
     const auto transform = tf_manager_->getStampedTransform(
       base_frame_id_, rclcpp::Time(curr_time), data_header.frame_id,
-      rclcpp::Time(data_header.stamp), global_frame_id_, transform_tolerance_);
+      rclcpp::Time(data_header.stamp), global_frame_id_, transform_tolerance_, &transform_error);
     if (!transform) {
+      RCLCPP_ERROR(logger_, "Failed to transform collision monitor source into base frame: %s",
+        transform_error.c_str());
       return false;
     }
     tf2::fromMsg(transform->transform, tf_transform);
   } else {
+    std::string transform_msg_error;
     const auto transform_msg = tf_manager_->getLatestTransform(
-      base_frame_id_, data_header.frame_id, transform_staleness_threshold_);
+      base_frame_id_, data_header.frame_id, transform_staleness_threshold_, &transform_msg_error);
     if (!transform_msg) {
+      RCLCPP_ERROR(logger_, "Failed to transform collision monitor source into base frame: %s",
+        transform_msg_error.c_str());
       return false;
     }
 

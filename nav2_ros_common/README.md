@@ -22,7 +22,7 @@ Thus, see the migration guide below for how to migrate from the previous version
 
 `nav2::TransformManager` in `nav2_ros_common/tf_manager.hpp` owns a TF buffer, listener, and lazy dynamic and static broadcasters.
 Create it with `nav2::create_transform_manager(node)` or construct it directly with the node.
-The node supplies the clock, logger, and timer interfaces. The listener starts by default using a dedicated thread.
+The node supplies the clock and timer interfaces. The listener starts by default using a dedicated thread.
 Pass `activate_listener=false` to create a manager without a listener.
 The listener is destroyed before the native buffer.
 Set `spin_thread=false` when the application spins the node to receive transforms.
@@ -31,11 +31,13 @@ Both methods accept a single transform or a vector of transforms. Static transfo
 Applications must synchronize concurrent broadcaster calls on the same manager.
 
 Application code uses `getLatestTransform`, `getLatestPose`, `getStampedTransform`, and `transformStampedPose`.
-Lookups return `std::optional` and log failures with the node's logger.
-Pass `nav2::Log::Disabled` as the final lookup argument to suppress diagnostics for expected failures, retries, or caller-managed logging; the default is `nav2::Log::Enabled`.
-The option applies to nested lookups and argument validation for that call without changing the shared buffer's logging policy.
-For availability probes, use `getLatestTransform` or `getStampedTransform` with `nav2::Log::Disabled` and check the returned optional.
-Latest lookups measure staleness against the buffer's stored clock; callers pass only the threshold and optional logging mode.
+Lookups return `std::optional`.
+Lookup APIs do not log failures. Pass an optional `std::string * error_msg` as the final
+argument to receive the unmodified TF exception text, or the reason for validation or
+staleness failures. The output is cleared on success. Callers should log once with
+context, or propagate the details to the caller that owns logging.
+For availability probes, check the returned optional without emitting a diagnostic.
+Latest lookups measure staleness against the buffer's stored clock.
 
 For TF-aware subscriptions, include `nav2_ros_common/message_filter.hpp` and use `nav2::create_message_filter()`.
 

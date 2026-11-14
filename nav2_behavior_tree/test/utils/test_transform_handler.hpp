@@ -96,9 +96,7 @@ public:
   virtual void waitForTransform() const
   {
     if (is_active_) {
-      while (!tf_manager_->getLatestTransform("map", "base_link", 0.0,
-          nav2::Log::Disabled).has_value())
-      {
+      while (!tf_manager_->getLatestTransform("map", "base_link", 0.0).has_value()) {
         std::this_thread::sleep_for(100ms);
       }
       RCLCPP_INFO(node_->get_logger(), "Transforms are available now!");
