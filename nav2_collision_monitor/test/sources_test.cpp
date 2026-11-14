@@ -65,21 +65,15 @@ static const char POLYGON_TOPIC[]{"polygon"};
 static const char COSTMAP_NAME[]{"Costmap"};
 static const char COSTMAP_TOPIC[]{"costmap"};
 static const char INVALID_FRAME_ID[]{"invalid_frame"};
-static const double TRANSFORM_TOLERANCE{0.1};
+static const double TRANSFORM_TOLERANCE{0.0};
 static const rclcpp::Duration DATA_TIMEOUT{rclcpp::Duration::from_seconds(5.0)};
 
 class TestNode : public nav2::LifecycleNode
 {
 public:
-  explicit TestNode(const rclcpp::Clock::SharedPtr & tf_clock = nullptr)
-  : nav2::LifecycleNode("test_node"), tf_clock_(tf_clock)
+  TestNode()
+  : nav2::LifecycleNode("test_node")
   {
-  }
-
-  // Supply the TF clock while node time continues to advance for test timeouts.
-  rclcpp::Clock::SharedPtr get_clock()
-  {
-    return tf_clock_ ? tf_clock_ : nav2::LifecycleNode::get_clock();
   }
 
   ~TestNode()
@@ -309,7 +303,6 @@ private:
   nav2::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
     polygon_pub_;
   nav2::Publisher<nav2_msgs::msg::Costmap>::SharedPtr costmap_pub_;
-  rclcpp::Clock::SharedPtr tf_clock_;
 };  // TestNode
 
 class ScanWrapper : public nav2_collision_monitor::Scan
@@ -445,7 +438,7 @@ public:
 class Tester : public ::testing::Test
 {
 public:
-  explicit Tester(const rclcpp::Clock::SharedPtr & tf_clock = nullptr);
+  Tester();
   ~Tester();
   nav2::TransformManager::SharedPtr tf_manager_;
 
@@ -453,8 +446,8 @@ protected:
   // Data sources creation routine
   void createSources(const bool base_shift_correction = true);
 
-  // Setting TF chains
-  void sendTransforms(const rclcpp::Time & stamp);
+  // Populate TF chains synchronously without a listener thread
+  void setTransforms(const rclcpp::Time & stamp);
 
   // Data sources working routines
   bool waitScan(const std::chrono::nanoseconds & timeout);
@@ -477,14 +470,14 @@ protected:
   std::shared_ptr<CostmapWrapper> costmap_;
 };  // Tester
 
-Tester::Tester(const rclcpp::Clock::SharedPtr & tf_clock)
+Tester::Tester()
 {
-  test_node_ = std::make_shared<TestNode>(tf_clock);
+  test_node_ = std::make_shared<TestNode>();
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_node(test_node_->get_node_base_interface());
 
   tf_clock_ = test_node_->get_clock();
-  tf_manager_ = nav2::create_transform_manager(test_node_);
+  tf_manager_ = nav2::create_transform_manager(test_node_, false, false);
 }
 
 Tester::~Tester()
@@ -567,7 +560,7 @@ void Tester::createSources(const bool base_shift_correction)
   costmap_->configure();
 }
 
-void Tester::sendTransforms(const rclcpp::Time & stamp)
+void Tester::setTransforms(const rclcpp::Time & stamp)
 {
   geometry_msgs::msg::TransformStamped transform;
 
@@ -584,7 +577,7 @@ void Tester::sendTransforms(const rclcpp::Time & stamp)
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
 
-  tf_manager_->sendTransform(transform);
+  ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(transform, "test"));
 
   // global_frame -> base_frame transform
   transform.header.frame_id = GLOBAL_FRAME_ID;
@@ -593,13 +586,13 @@ void Tester::sendTransforms(const rclcpp::Time & stamp)
   transform.transform.translation.x = 0.0;
   transform.transform.translation.y = 0.0;
 
-  tf_manager_->sendTransform(transform);
+  ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(transform, "test"));
 }
 
 bool Tester::waitScan(const std::chrono::nanoseconds & timeout)
 {
-  rclcpp::Time start_time = test_node_->now();
-  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+  const auto start_time = std::chrono::steady_clock::now();
+  while (rclcpp::ok() && std::chrono::steady_clock::now() - start_time <= timeout) {
     if (scan_->dataReceived()) {
       return true;
     }
@@ -611,8 +604,8 @@ bool Tester::waitScan(const std::chrono::nanoseconds & timeout)
 
 bool Tester::waitPointCloud(const std::chrono::nanoseconds & timeout)
 {
-  rclcpp::Time start_time = test_node_->now();
-  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+  const auto start_time = std::chrono::steady_clock::now();
+  while (rclcpp::ok() && std::chrono::steady_clock::now() - start_time <= timeout) {
     if (pointcloud_->dataReceived()) {
       return true;
     }
@@ -624,8 +617,8 @@ bool Tester::waitPointCloud(const std::chrono::nanoseconds & timeout)
 
 bool Tester::waitRange(const std::chrono::nanoseconds & timeout)
 {
-  rclcpp::Time start_time = test_node_->now();
-  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+  const auto start_time = std::chrono::steady_clock::now();
+  while (rclcpp::ok() && std::chrono::steady_clock::now() - start_time <= timeout) {
     if (range_->dataReceived()) {
       return true;
     }
@@ -637,8 +630,8 @@ bool Tester::waitRange(const std::chrono::nanoseconds & timeout)
 
 bool Tester::waitPolygon(const std::chrono::nanoseconds & timeout)
 {
-  rclcpp::Time start_time = test_node_->now();
-  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+  const auto start_time = std::chrono::steady_clock::now();
+  while (rclcpp::ok() && std::chrono::steady_clock::now() - start_time <= timeout) {
     if (polygon_->dataReceived()) {
       return true;
     }
@@ -650,8 +643,8 @@ bool Tester::waitPolygon(const std::chrono::nanoseconds & timeout)
 
 bool Tester::waitCostmap(const std::chrono::nanoseconds & timeout)
 {
-  rclcpp::Time start_time = test_node_->now();
-  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+  const auto start_time = std::chrono::steady_clock::now();
+  while (rclcpp::ok() && std::chrono::steady_clock::now() - start_time <= timeout) {
     if (costmap_->dataReceived()) {
       return true;
     }
@@ -726,7 +719,7 @@ TEST_F(Tester, testGetData)
 
   createSources();
 
-  sendTransforms(curr_time);
+  setTransforms(curr_time);
 
   // Publish data for sources
   test_node_->publishScan(curr_time, 1.0);
@@ -767,7 +760,7 @@ TEST_F(Tester, testGetOutdatedData)
 
   createSources();
 
-  sendTransforms(curr_time);
+  setTransforms(curr_time);
 
   // Publish outdated data for sources
   test_node_->publishScan(curr_time - DATA_TIMEOUT - 1s, 1.0);
@@ -806,7 +799,7 @@ TEST_F(Tester, testIncorrectFrameData)
   createSources();
 
   // Latest mode ignores the data timestamp, but still requires a fresh transform.
-  sendTransforms(curr_time - 50ms);
+  setTransforms(curr_time - 50ms);
 
   // Publish data for sources
   test_node_->publishScan(curr_time, 1.0);
@@ -844,7 +837,7 @@ TEST_F(Tester, testIncorrectData)
 
   createSources();
 
-  sendTransforms(curr_time);
+  setTransforms(curr_time);
 
   // Publish data for sources
   test_node_->publishScan(curr_time, 2.0);
@@ -865,14 +858,7 @@ TEST_F(Tester, testIncorrectData)
   ASSERT_EQ(data.size(), 0u);
 }
 
-class ClockTester : public Tester
-{
-public:
-  ClockTester()
-  : Tester(std::make_shared<rclcpp::Clock>(RCL_ROS_TIME)) {}
-};
-
-TEST_F(ClockTester, testIgnoreTimeShift)
+TEST_F(Tester, testIgnoreTimeShift)
 {
   rclcpp::Time curr_time = test_node_->now();
   ASSERT_EQ(rcl_enable_ros_time_override(tf_clock_->get_clock_handle()), RCL_RET_OK);
@@ -882,7 +868,7 @@ TEST_F(ClockTester, testIgnoreTimeShift)
   createSources(false);
 
   // Send incorrect transform
-  sendTransforms(curr_time - 1s);
+  setTransforms(curr_time - 1s);
 
   // Publish data for sources
   test_node_->publishScan(curr_time, 1.0);
@@ -1036,7 +1022,7 @@ TEST_F(Tester, testPointCloudMinRange)
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, true);
   pointcloud_->configure();
 
-  sendTransforms(curr_time);
+  setTransforms(curr_time);
 
   // Publish pointcloud data with points at various ranges
   test_node_->publishPointCloudForMinRange(curr_time);
