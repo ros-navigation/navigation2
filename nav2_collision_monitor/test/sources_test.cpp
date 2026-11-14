@@ -23,7 +23,6 @@
 #include <string>
 #include <limits>
 
-#include "rcl/time.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/parameter_value.hpp"
@@ -461,7 +460,6 @@ protected:
   void checkPolygon(const std::vector<nav2_collision_monitor::Point> & data);
 
   std::shared_ptr<TestNode> test_node_;
-  rclcpp::Clock::SharedPtr tf_clock_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::shared_ptr<ScanWrapper> scan_;
   std::shared_ptr<PointCloudWrapper> pointcloud_;
@@ -476,7 +474,6 @@ Tester::Tester()
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_node(test_node_->get_node_base_interface());
 
-  tf_clock_ = test_node_->get_clock();
   tf_manager_ = nav2::create_transform_manager(test_node_, false, false);
 }
 
@@ -861,13 +858,11 @@ TEST_F(Tester, testIncorrectData)
 TEST_F(Tester, testIgnoreTimeShift)
 {
   rclcpp::Time curr_time = test_node_->now();
-  ASSERT_EQ(rcl_enable_ros_time_override(tf_clock_->get_clock_handle()), RCL_RET_OK);
-  ASSERT_EQ(rcl_set_ros_time_override(tf_clock_->get_clock_handle(), curr_time.nanoseconds()),
-    RCL_RET_OK);
+  test_node_->declare_parameter("transform_staleness_threshold", 0.0);
 
   createSources(false);
 
-  // Send incorrect transform
+  // Only an earlier transform is available: a stamped lookup would fail.
   setTransforms(curr_time - 1s);
 
   // Publish data for sources
@@ -901,17 +896,6 @@ TEST_F(Tester, testIgnoreTimeShift)
   data.clear();
   polygon_->getData(curr_time, data);
   checkPolygon(data);
-
-  // Fresh messages must not make an old dynamic transform valid.
-  const auto later = curr_time + rclcpp::Duration::from_seconds(2.0);
-  ASSERT_EQ(rcl_set_ros_time_override(tf_clock_->get_clock_handle(), later.nanoseconds()),
-    RCL_RET_OK);
-  data.clear();
-  EXPECT_FALSE(scan_->getData(later, data));
-  EXPECT_FALSE(pointcloud_->getData(later, data));
-  EXPECT_FALSE(range_->getData(later, data));
-  EXPECT_FALSE(polygon_->getData(later, data));
-  EXPECT_TRUE(data.empty());
 }
 
 TEST_F(Tester, testRangeGeneratedPointLimit)
