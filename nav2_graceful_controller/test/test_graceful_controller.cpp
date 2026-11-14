@@ -585,7 +585,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   global_to_robot.transform.translation.x = robot_pose.pose.position.x;
   global_to_robot.transform.translation.y = robot_pose.pose.position.y;
   global_to_robot.transform.translation.z = robot_pose.pose.position.z;
-  tf_manager->getRawBuffer().setTransform(global_to_robot, "test", false);
+  tf_manager->getRawBuffer()->setTransform(global_to_robot, "test", false);
 
   // Set a plan
   nav_msgs::msg::Path plan;
@@ -667,7 +667,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   global_to_robot.transform.translation.x = robot_pose.pose.position.x;
   global_to_robot.transform.translation.y = robot_pose.pose.position.y;
   global_to_robot.transform.translation.z = robot_pose.pose.position.z;
-  tf_manager->getRawBuffer().setTransform(global_to_robot, "test", false);
+  tf_manager->getRawBuffer()->setTransform(global_to_robot, "test", false);
 
   // Set a plan in a straight line from the robot
   nav_msgs::msg::Path plan;
@@ -992,7 +992,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   global_to_robot.transform.translation.x = robot_pose.pose.position.x;
   global_to_robot.transform.translation.y = robot_pose.pose.position.y;
   global_to_robot.transform.translation.z = robot_pose.pose.position.z;
-  tf_manager->getRawBuffer().setTransform(global_to_robot, "test", false);
+  tf_manager->getRawBuffer()->setTransform(global_to_robot, "test", false);
 
   // Set a plan in a straight line from the robot
   nav_msgs::msg::Path plan;
@@ -1072,7 +1072,7 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   global_to_robot.transform.translation.x = robot_pose.pose.position.x;
   global_to_robot.transform.translation.y = robot_pose.pose.position.y;
   global_to_robot.transform.translation.z = robot_pose.pose.position.z;
-  tf_manager->getRawBuffer().setTransform(global_to_robot, "test", false);
+  tf_manager->getRawBuffer()->setTransform(global_to_robot, "test", false);
 
   // Set a plan in a straight line from the robot
   nav_msgs::msg::Path plan;
@@ -1182,7 +1182,7 @@ TEST(GracefulControllerTest, slowDownForObstacle) {
   global_to_robot.transform.translation.x = 5.0;
   global_to_robot.transform.translation.y = 5.0;
   global_to_robot.transform.translation.z = 0.0;
-  tf_manager->getRawBuffer().setTransform(global_to_robot, "test", false);
+  tf_manager->getRawBuffer()->setTransform(global_to_robot, "test", false);
 
   // Set a plan in a straight line from the robot
   nav_msgs::msg::Path plan;
@@ -1286,7 +1286,7 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
   global_to_robot.transform.translation.x = 5.0;
   global_to_robot.transform.translation.y = 5.0;
   global_to_robot.transform.translation.z = 0.0;
-  tf_manager->getRawBuffer().setTransform(global_to_robot, "test", false);
+  tf_manager->getRawBuffer()->setTransform(global_to_robot, "test", false);
 
   // Set a plan in a straight line from the robot
   nav_msgs::msg::Path plan;

@@ -278,7 +278,7 @@ rclcpp::Time Tester::sendTransform()
   transform.transform.rotation.w = 1.0;
 
   tf_manager_->sendTransform(transform);
-  tf_manager_->getRawBuffer().setTransform(transform, "test", false);
+  tf_manager_->getRawBuffer()->setTransform(transform, "test", false);
 
   return transform.header.stamp;
 }

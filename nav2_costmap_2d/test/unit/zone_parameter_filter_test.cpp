@@ -808,31 +808,31 @@ TEST(ZoneParameterFilterTF, StaleTransformPreservesState)
   transform.child_frame_id = "odom";
   transform.transform.rotation.w = 1.0;
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 0);  // Stale TF cannot enter the marked zone.
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 1);
 
-  tf_manager->getRawBuffer().clear();
+  tf_manager->getRawBuffer()->clear();
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 1.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 1);  // Stale TF must not reset the active state.
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 0);  // Fresh TF permits the transition.
 
-  tf_manager->getRawBuffer().clear();
+  tf_manager->getRawBuffer()->clear();
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 0.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", true));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", true));
   filter.process(grid, 0, 0, 2, 1, pose);
   EXPECT_EQ(filter.state(), 1);  // Static transforms do not expire.
 

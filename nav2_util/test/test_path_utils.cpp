@@ -394,7 +394,7 @@ TEST(TransformPathTest, SuccessfulTransform)
   tf.transform.translation.z = 0.0;
   tf.transform.rotation.w = 1.0;
 
-  tf_manager_->getRawBuffer().setTransform(tf, "test_authority");
+  tf_manager_->getRawBuffer()->setTransform(tf, "test_authority");
   nav_msgs::msg::Path input_path, transformed_path;
   input_path.header.frame_id = "map";
   input_path.header.stamp = rclcpp::Time(0.0);
@@ -470,7 +470,7 @@ TEST(TransformPathTest, ZeroStampUsesLatestTransform)
   transform.header.stamp = now - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 1.0;
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   nav_msgs::msg::Path path;
   path.header.frame_id = "odom";
   path.poses.push_back(createPoseStamped(2.0, 0.0));
@@ -482,7 +482,7 @@ TEST(TransformPathTest, ZeroStampUsesLatestTransform)
   output = nav_msgs::msg::Path();
   transform.header.stamp = now;
   transform.transform.translation.x = 4.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   ASSERT_TRUE(nav2_util::transformPathInTargetFrame(
     path, output, *tf_manager, "map", 0.0));
   EXPECT_DOUBLE_EQ(output.poses.front().pose.position.x, 6.0);

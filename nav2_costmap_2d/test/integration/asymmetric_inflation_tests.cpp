@@ -599,7 +599,7 @@ TEST_F(AsymmetricInflationIntegrationTest, transform_path_segments_with_rotated_
   rotated_tf.transform.translation.y = ty;
   rotated_tf.transform.rotation.z = std::sin(yaw / 2.0);
   rotated_tf.transform.rotation.w = std::cos(yaw / 2.0);
-  tf_manager_->getRawBuffer().setTransform(rotated_tf, "test", true);
+  tf_manager_->getRawBuffer()->setTransform(rotated_tf, "test", true);
 
   // Inject 4-pose path in "odom" frame.
   auto path = std::make_shared<nav_msgs::msg::Path>();
@@ -667,7 +667,7 @@ TEST_F(AsymmetricInflationIntegrationTest, live_transform_tracks_map_odom_drift)
       tf_msg.header.stamp = rclcpp::Time(stamp_sec, 0, RCL_ROS_TIME);
       tf_msg.transform.translation.y = ty;
       tf_msg.transform.rotation.w = 1.0;
-      tf_manager_->getRawBuffer().setTransform(tf_msg, "test", false /* dynamic, not static */);
+      tf_manager_->getRawBuffer()->setTransform(tf_msg, "test", false /* dynamic, not static */);
     };
 
   // --- Cycle 1: map == odom (no drift yet). The north obstacle sits 0.45 m
@@ -741,7 +741,7 @@ TEST_F(AsymmetricInflationIntegrationTest, live_lookup_recovers_once_transform_b
   tf_msg.child_frame_id = "odom";
   tf_msg.header.stamp = rclcpp::Time(1, 0, RCL_ROS_TIME);
   tf_msg.transform.rotation.w = 1.0;
-  tf_manager_->getRawBuffer().setTransform(tf_msg, "test", false /* dynamic, not static */);
+  tf_manager_->getRawBuffer()->setTransform(tf_msg, "test", false /* dynamic, not static */);
 
   costmap->resetMap(0, 0, w, h);
   seedLethalObstacle(20, 24);
@@ -776,7 +776,7 @@ TEST_F(AsymmetricInflationIntegrationTest, stale_transform_falls_back_to_symmetr
   tf_msg.child_frame_id = "odom";
   tf_msg.header.stamp = rclcpp::Time(1, 0, RCL_ROS_TIME);
   tf_msg.transform.rotation.w = 1.0;
-  tf_manager_->getRawBuffer().setTransform(tf_msg, "test", false);
+  tf_manager_->getRawBuffer()->setTransform(tf_msg, "test", false);
 
   seedLethalObstacle(20, 24);
   seedLethalObstacle(20, 16);

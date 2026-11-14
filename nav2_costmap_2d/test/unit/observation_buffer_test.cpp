@@ -32,7 +32,7 @@ protected:
     tf_msg.child_frame_id = sensor_frame_;
     tf_msg.header.frame_id = global_frame_;
     tf_msg.transform = tf2::toMsg(tf2::Transform::getIdentity());
-    tf_manager_.getRawBuffer().setTransform(tf_msg, "", true);
+    tf_manager_.getRawBuffer()->setTransform(tf_msg, "", true);
   }
 
   ~ObservationBufferFixture()

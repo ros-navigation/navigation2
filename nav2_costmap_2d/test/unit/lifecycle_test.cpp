@@ -50,7 +50,7 @@ TEST(LifecylceTest, CheckInitialTfTimeout) {
   geometry_msgs::msg::TransformStamped transform_global_to_robot{};
   transform_global_to_robot.header.frame_id = costmap->getGlobalFrameID();
   transform_global_to_robot.child_frame_id = costmap->getBaseFrameID();
-  costmap->getTfManager()->getRawBuffer().setTransform(transform_global_to_robot, "test", true);
+  costmap->getTfManager()->getRawBuffer()->setTransform(transform_global_to_robot, "test", true);
   // Now the costmap should successful transition into the active state
   {
     const auto state_after_activate = costmap->activate();
@@ -103,7 +103,7 @@ TEST(LifecylceTest, ObstacleFiltersRetainBufferAfterManagerCleanup) {
     auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>(options);
     EXPECT_EQ(costmap->configure().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
     std::weak_ptr<nav2::TransformManager> manager = costmap->getTfManager();
-    std::weak_ptr<tf2_ros::Buffer> buffer = costmap->getTfManager()->getRawBufferSharedPtr();
+    std::weak_ptr<tf2_ros::Buffer> buffer = costmap->getTfManager()->getRawBuffer();
     auto obstacle_layer = costmap->getLayeredCostmap()->getPlugins()->at(0);
 
     EXPECT_EQ(costmap->cleanup().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED);

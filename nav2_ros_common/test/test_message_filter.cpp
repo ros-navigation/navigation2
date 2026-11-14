@@ -25,7 +25,7 @@ TEST(MessageFilterTest, PendingScanCanBeDestroyedAfterManager)
   auto node = std::make_shared<nav2::LifecycleNode>("message_filter_cleanup_test");
   auto manager = nav2::create_transform_manager(node);
   std::weak_ptr<nav2::TransformManager> weak_manager = manager;
-  std::weak_ptr<tf2_ros::Buffer> weak_buffer = manager->getRawBufferSharedPtr();
+  std::weak_ptr<tf2_ros::Buffer> weak_buffer = manager->getRawBuffer();
   message_filters::SimpleFilter<sensor_msgs::msg::LaserScan> input;
   auto filter = nav2::create_message_filter<sensor_msgs::msg::LaserScan>(
     input, *manager, "odom", 10, node, 30.0);
@@ -55,7 +55,7 @@ TEST(MessageFilterTest, BufferSurvivesUntilLastFilterIsDestroyed)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("shared_message_filter_cleanup_test");
   auto manager = nav2::create_transform_manager(node);
-  std::weak_ptr<tf2_ros::Buffer> weak_buffer = manager->getRawBufferSharedPtr();
+  std::weak_ptr<tf2_ros::Buffer> weak_buffer = manager->getRawBuffer();
   message_filters::SimpleFilter<sensor_msgs::msg::LaserScan> scans;
   message_filters::SimpleFilter<sensor_msgs::msg::PointCloud2> clouds;
   auto scan_filter = nav2::create_message_filter<sensor_msgs::msg::LaserScan>(

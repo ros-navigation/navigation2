@@ -92,7 +92,7 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   transform.header.stamp = node->now();
   transform.child_frame_id = "gps";
   tf_manager->sendTransform(transform);
-  tf_manager->getRawBuffer().setTransform(transform, "test", false);
+  tf_manager->getRawBuffer()->setTransform(transform, "test", false);
   EXPECT_NO_THROW(extractor.transformPose(pose, "map"));
 }
 

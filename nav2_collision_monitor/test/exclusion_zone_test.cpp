@@ -652,7 +652,7 @@ TEST_F(ExclusionZoneTester, DynamicTransformStalenessThresholdUpdateExtendsWindo
   fresh_base.child_frame_id = BASE_FRAME_ID;
   fresh_base.header.stamp = later;
   fresh_base.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_manager_->getRawBuffer().setTransform(fresh_base, "test"));
+  ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(fresh_base, "test"));
   {
     std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
     zone->apply(later, data);
@@ -764,7 +764,7 @@ TEST_F(ExclusionZoneTester, HeldZoneKeepsMaskingWithinWindow)
   fresh_base.child_frame_id = BASE_FRAME_ID;
   fresh_base.header.stamp = later;
   fresh_base.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_manager_->getRawBuffer().setTransform(fresh_base, "test"));
+  ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(fresh_base, "test"));
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
   zone->apply(later, data);
   ASSERT_EQ(data.size(), 1u);

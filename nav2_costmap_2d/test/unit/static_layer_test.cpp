@@ -54,7 +54,7 @@ protected:
     transform.child_frame_id = "map";
     transform.transform.translation.x = odom_to_map_x;
     transform.transform.rotation.w = 1.0;
-    ASSERT_TRUE(tf_manager_->getRawBuffer().setTransform(transform, "test", true));
+    ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(transform, "test", true));
     layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("odom", true, true);
     layers_->resizeMap(10, 10, 1.0, 0.0, 0.0);
     layer_ = std::make_shared<TestStaticLayer>();
@@ -119,7 +119,7 @@ TEST_F(StaticLayerRollingTest, FailedTransformMarksLayerNotCurrentAndRecovers)
 
   // A rolling update clears the master window before asking each plugin to repopulate it.
   // If the map transform is unavailable, the static obstacle is therefore absent this cycle.
-  tf_manager_->getRawBuffer().clear();
+  tf_manager_->getRawBuffer()->clear();
   layers_->updateMap(5.0, 5.0, 0.0);
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::NO_INFORMATION);
   EXPECT_FALSE(layer_->isCurrent());
@@ -129,7 +129,7 @@ TEST_F(StaticLayerRollingTest, FailedTransformMarksLayerNotCurrentAndRecovers)
   transform.header.frame_id = "odom";
   transform.child_frame_id = "map";
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_manager_->getRawBuffer().setTransform(transform, "test", true));
+  ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(transform, "test", true));
   layers_->updateMap(5.0, 5.0, 0.0);
   EXPECT_EQ(master->getCost(0, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
   EXPECT_TRUE(layer_->isCurrent());

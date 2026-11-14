@@ -104,7 +104,7 @@ public:
 
   bool hasTfListener() const
   {
-    return tf_manager_ && tf_manager_->getRawBuffer().isUsingDedicatedThread();
+    return tf_manager_ && tf_manager_->getRawBuffer()->isUsingDedicatedThread();
   }
 };  // VOServerWrapper
 

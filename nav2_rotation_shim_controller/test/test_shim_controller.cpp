@@ -305,7 +305,7 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   map_to_base_link.child_frame_id = "base_link";
   map_to_base_link.header.stamp = node->now();
   map_to_base_link.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(map_to_base_link, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(map_to_base_link, "test", false));
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
@@ -478,7 +478,7 @@ TEST(RotationShimControllerTest, accelerationTests) {
   map_to_base_link.child_frame_id = "base_link";
   map_to_base_link.header.stamp = node->now();
   map_to_base_link.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(map_to_base_link, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(map_to_base_link, "test", false));
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(

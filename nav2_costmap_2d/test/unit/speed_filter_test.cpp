@@ -1129,7 +1129,7 @@ TEST(SpeedFilterTF, LookaheadPathTransformFailure)
   path_transform.header.frame_id = "map";
   path_transform.child_frame_id = "plan";
   path_transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(path_transform, "test", true));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(path_transform, "test", true));
   filter.process(grid, 0, 0, 4, 1, pose);
   EXPECT_EQ(filter.publishedLimit(), 40.0);
   filter.resetFilter();
@@ -1154,7 +1154,7 @@ TEST(SpeedFilterTF, FreshnessAndLookaheadFrames)
   transform.child_frame_id = "odom";
   transform.transform.rotation.w = 1.0;
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   geometry_msgs::msg::Pose pose;
   pose.position.x = 0.5;
   pose.position.y = 0.5;
@@ -1171,7 +1171,7 @@ TEST(SpeedFilterTF, FreshnessAndLookaheadFrames)
   EXPECT_EQ(filter.publishedLimit(), nav2_costmap_2d::NO_SPEED_LIMIT);
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   filter.process(grid, 0, 0, 4, 1, pose);
   EXPECT_EQ(filter.publishedLimit(), 80.0);
 
@@ -1194,7 +1194,7 @@ TEST(SpeedFilterTF, FreshnessAndLookaheadFrames)
   path_transform.header.frame_id = "odom";
   path_transform.child_frame_id = "plan";
   path_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(path_transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(path_transform, "test", false));
   mask = std::make_shared<nav_msgs::msg::OccupancyGrid>(*mask);
   mask->data = {80, 40, 10, 0};
   filter.maskCallback(mask);
@@ -1202,7 +1202,7 @@ TEST(SpeedFilterTF, FreshnessAndLookaheadFrames)
   EXPECT_EQ(filter.publishedLimit(), 10.0);
 
   path_transform.header.stamp = node->now();
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(path_transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(path_transform, "test", false));
   filter.process(grid, 0, 0, 4, 1, pose);
   EXPECT_EQ(filter.publishedLimit(), 10.0);
 
@@ -1210,10 +1210,10 @@ TEST(SpeedFilterTF, FreshnessAndLookaheadFrames)
   // must not change that interpretation.
   const auto measurement_time = node->now() - rclcpp::Duration::from_seconds(1.0);
   path_transform.header.stamp = measurement_time;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(path_transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(path_transform, "test", false));
   path_transform.header.stamp = node->now();
   path_transform.transform.translation.x = 20.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(path_transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(path_transform, "test", false));
   path = std::make_shared<nav_msgs::msg::Path>(*path);
   path->header.stamp = measurement_time;
   filter.pathCallback(path);

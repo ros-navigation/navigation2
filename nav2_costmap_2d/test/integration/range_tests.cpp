@@ -141,7 +141,7 @@ TEST_F(TestNode, testClearingAtMaxRange) {
   transform.child_frame_id = "base_link";
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 2;
-  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer()->setTransform(transform, "default_authority", true);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -181,7 +181,7 @@ TEST_F(TestNode, testClearingAboveMaxRange) {
   transform.child_frame_id = "base_link";
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 2;
-  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer()->setTransform(transform, "default_authority", true);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -245,7 +245,7 @@ TEST_F(TestNode, testConeOutsideOfGrid) {
     transform.child_frame_id = "base_link";
     transform.transform.translation.x = position.first;
     transform.transform.translation.y = position.second;
-    tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
+    tf_manager_.getRawBuffer()->setTransform(transform, "default_authority", true);
 
     msg.header.stamp = node_->now();
     rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
@@ -267,7 +267,7 @@ TEST_F(TestNode, testProbabilisticModelForward) {
   transform.child_frame_id = "base_link";
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 2;
-  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer()->setTransform(transform, "default_authority", true);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -291,7 +291,7 @@ TEST_F(TestNode, testProbabilisticModelForward) {
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 4;
-  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer()->setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
 //  printMap(*(layers.getCostmap()));
@@ -300,7 +300,7 @@ TEST_F(TestNode, testProbabilisticModelForward) {
 
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 6;
-  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer()->setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
 //  printMap(*(layers.getCostmap()));
@@ -320,7 +320,7 @@ TEST_F(TestNode, testProbabilisticModelDownward) {
   transform.child_frame_id = "base_link";
   transform.transform.translation.y = 3;
   transform.transform.translation.x = 2;
-  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer()->setTransform(transform, "default_authority", true);
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
@@ -345,7 +345,7 @@ TEST_F(TestNode, testProbabilisticModelDownward) {
 
   transform.transform.translation.y = 5;
   transform.transform.translation.x = 2;
-  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer()->setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
 //  printMap(*(layers.getCostmap()));
@@ -354,7 +354,7 @@ TEST_F(TestNode, testProbabilisticModelDownward) {
 
   transform.transform.translation.y = 7;
   transform.transform.translation.x = 2;
-  tf_manager_.getRawBuffer().setTransform(transform, "default_authority", true);
+  tf_manager_.getRawBuffer()->setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
 //  printMap(*(layers.getCostmap()));

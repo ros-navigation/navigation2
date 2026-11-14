@@ -98,14 +98,14 @@ TEST(DockingServerTests, GetCommandTransformsPoseToFixedFrame)
   base_transform.header.frame_id = "odom";
   base_transform.child_frame_id = "base_link";
   base_transform.transform.rotation.w = 1.0;
-  node->getTfManager()->getRawBuffer().setTransform(base_transform, "test_authority", true);
+  node->getTfManager()->getRawBuffer()->setTransform(base_transform, "test_authority", true);
 
   geometry_msgs::msg::TransformStamped sensor_transform;
   sensor_transform.header.frame_id = "odom";
   sensor_transform.child_frame_id = "sensor";
   sensor_transform.transform.translation.x = 1.0;
   sensor_transform.transform.rotation.w = 1.0;
-  node->getTfManager()->getRawBuffer().setTransform(sensor_transform, "test_authority", true);
+  node->getTfManager()->getRawBuffer()->setTransform(sensor_transform, "test_authority", true);
 
   geometry_msgs::msg::PoseStamped target;
   target.header.frame_id = "sensor";
@@ -131,14 +131,14 @@ TEST(DockingServerTests, GetCommandUsesLatestTransformDespitePoseTimestamp)
   geometry_msgs::msg::TransformStamped base_transform;
   base_transform.header.frame_id = "odom";
   base_transform.child_frame_id = "base_link";
-  ASSERT_TRUE(node->getTfManager()->getRawBuffer().setTransform(
+  ASSERT_TRUE(node->getTfManager()->getRawBuffer()->setTransform(
       base_transform, "test_authority", true));
 
   geometry_msgs::msg::TransformStamped sensor_transform;
   sensor_transform.header.frame_id = "odom";
   sensor_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(2.0);
   sensor_transform.child_frame_id = "sensor";
-  ASSERT_TRUE(node->getTfManager()->getRawBuffer().setTransform(sensor_transform,
+  ASSERT_TRUE(node->getTfManager()->getRawBuffer()->setTransform(sensor_transform,
       "test_authority"));
 
   geometry_msgs::msg::PoseStamped target;
@@ -146,7 +146,7 @@ TEST(DockingServerTests, GetCommandUsesLatestTransformDespitePoseTimestamp)
   target.header.frame_id = "sensor";
   sensor_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(1.0);
   sensor_transform.transform.translation.x = 1.0;
-  ASSERT_TRUE(node->getTfManager()->getRawBuffer().setTransform(sensor_transform,
+  ASSERT_TRUE(node->getTfManager()->getRawBuffer()->setTransform(sensor_transform,
       "test_authority"));
   geometry_msgs::msg::Twist command;
 
@@ -169,7 +169,7 @@ TEST(DockingServerTests, GetCommandRejectsStalePoseTransform)
   geometry_msgs::msg::TransformStamped base_transform;
   base_transform.header.frame_id = "odom";
   base_transform.child_frame_id = "base_link";
-  ASSERT_TRUE(node->getTfManager()->getRawBuffer().setTransform(
+  ASSERT_TRUE(node->getTfManager()->getRawBuffer()->setTransform(
       base_transform, "test_authority", true));
 
   geometry_msgs::msg::TransformStamped sensor_transform;
@@ -177,7 +177,7 @@ TEST(DockingServerTests, GetCommandRejectsStalePoseTransform)
   sensor_transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(1.0);
   sensor_transform.child_frame_id = "sensor";
   sensor_transform.transform.rotation.w = 1.0;
-  node->getTfManager()->getRawBuffer().setTransform(sensor_transform, "test_authority");
+  node->getTfManager()->getRawBuffer()->setTransform(sensor_transform, "test_authority");
 
   geometry_msgs::msg::PoseStamped target;
   target.header.frame_id = "sensor";
@@ -642,7 +642,7 @@ TEST(DockingServerTests, HandlesPluginStartFailure)
   identity_transform.header.frame_id = "odom";
   identity_transform.child_frame_id = "odom";
   identity_transform.transform.rotation.w = 1.0;
-  node->getTfManager()->getRawBuffer().setTransform(identity_transform, "test_authority", true);
+  node->getTfManager()->getRawBuffer()->setTransform(identity_transform, "test_authority", true);
 
   node->on_activate(rclcpp_lifecycle::State());
 

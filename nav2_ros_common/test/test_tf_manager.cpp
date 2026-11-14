@@ -51,7 +51,7 @@ protected:
     transform.transform.translation.z = 3.0;
     transform.transform.rotation.z = 0.6;
     transform.transform.rotation.w = 0.8;
-    ASSERT_TRUE(tf_manager_.getRawBuffer().setTransform(transform, "test", is_static));
+    ASSERT_TRUE(tf_manager_.getRawBuffer()->setTransform(transform, "test", is_static));
   }
 
   geometry_msgs::msg::PoseStamped makePose(int seconds) const
@@ -148,7 +148,7 @@ TEST_F(TransformManagerTest, LatestStaticAndFutureTransforms)
   EXPECT_EQ(result->header.stamp.sec, 0);
   EXPECT_EQ(result->header.stamp.nanosec, 0u);
 
-  tf_manager_.getRawBuffer().clear();
+  tf_manager_.getRawBuffer()->clear();
   addTransform(11, 2.0);
   result = tf_manager_.getLatestTransform("odom", "base_link", 0.1);
   ASSERT_TRUE(result.has_value());
@@ -377,19 +377,19 @@ TEST_F(TransformManagerTest, RejectsNullNode)
 TEST_F(TransformManagerTest, OwnedBufferUsesProvidedClockForStaleness)
 {
   nav2::TransformManager owned(node_, false);
-  ASSERT_TRUE(owned.getRawBuffer().setTransform(
+  ASSERT_TRUE(owned.getRawBuffer()->setTransform(
       owned.poseToTransformStamped(makePose(9), "sensor"), "test"));
   EXPECT_TRUE(owned.getLatestTransform("base_link", "sensor", 1.0));
   setTime(rclcpp::Time(11, 0, RCL_ROS_TIME));
   EXPECT_EQ(owned.getLatestTransform("base_link", "sensor", 1.0), std::nullopt);
 }
 
-TEST_F(TransformManagerTest, RawBufferAccessReferencesOwnedBuffer)
+TEST_F(TransformManagerTest, RawBufferAccessSharesOwnedBuffer)
 {
   addTransform(9, 1.0);
-  const auto & const_tf_manager = tf_manager_;
-  EXPECT_EQ(&const_tf_manager.getRawBuffer(), &tf_manager_.getRawBuffer());
-  EXPECT_EQ(const_tf_manager.getRawBuffer().lookupTransform("odom", "base_link",
+  tf2_ros::Buffer::SharedPtr buffer = tf_manager_.getRawBuffer();
+  EXPECT_EQ(buffer, tf_manager_.getRawBuffer());
+  EXPECT_EQ(buffer->lookupTransform("odom", "base_link",
     tf2::TimePointZero),
     *tf_manager_.getLatestTransform("odom", "base_link"));
 }
@@ -481,14 +481,14 @@ TEST_F(TransformManagerTest, ErrorOutputPreservesExceptionsThroughNestedLookups)
   addTransform(8, 1.0);
   std::string lookup_error;
   try {
-    tf_manager_.getRawBuffer().lookupTransform("odom", "missing", tf2::TimePointZero);
+    tf_manager_.getRawBuffer()->lookupTransform("odom", "missing", tf2::TimePointZero);
     FAIL() << "Expected a missing-frame exception";
   } catch (const tf2::TransformException & ex) {
     lookup_error = ex.what();
   }
   std::string stamped_error;
   try {
-    tf_manager_.getRawBuffer().lookupTransform("odom", "base_link", rclcpp::Time(7, 0));
+    tf_manager_.getRawBuffer()->lookupTransform("odom", "base_link", rclcpp::Time(7, 0));
     FAIL() << "Expected an extrapolation exception";
   } catch (const tf2::TransformException & ex) {
     stamped_error = ex.what();
@@ -655,7 +655,7 @@ protected:
 TEST_F(TransformListenerTest, ListenerReceivesTransformsByDefault)
 {
   tf_manager_ = nav2::create_transform_manager(node_);
-  EXPECT_TRUE(tf_manager_->getRawBuffer().isUsingDedicatedThread());
+  EXPECT_TRUE(tf_manager_->getRawBuffer()->isUsingDedicatedThread());
   expectTransforms();
 
   // Destruction must join the listener thread while the native buffer is still alive.
@@ -665,7 +665,7 @@ TEST_F(TransformListenerTest, ListenerReceivesTransformsByDefault)
 TEST_F(TransformListenerTest, CallerCanSpinListener)
 {
   tf_manager_ = nav2::create_transform_manager(node_, true, false);
-  EXPECT_FALSE(tf_manager_->getRawBuffer().isUsingDedicatedThread());
+  EXPECT_FALSE(tf_manager_->getRawBuffer()->isUsingDedicatedThread());
   expectTransforms();
 }
 

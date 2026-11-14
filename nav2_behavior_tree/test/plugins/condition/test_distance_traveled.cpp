@@ -55,7 +55,7 @@ TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
   pose.header.frame_id = "map";
   pose.header.stamp = node_->now();
   pose.pose.orientation.w = 1.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(
     tf_manager->poseToTransformStamped(pose, "base_link"), "test", false));
 
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
@@ -64,7 +64,7 @@ TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
   for (int i = 1; i <= 20; i++) {
     pose.pose.position.x = i * 0.51;
     pose.header.stamp = node_->now();
-    ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(
+    ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(
       tf_manager->poseToTransformStamped(pose, "base_link"), "test", false));
     const auto current_pose = tf_manager->getLatestPose("map", "base_link");
     ASSERT_TRUE(current_pose);

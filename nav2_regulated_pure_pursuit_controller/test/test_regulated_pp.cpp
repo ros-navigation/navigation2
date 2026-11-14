@@ -577,7 +577,7 @@ TEST(RegulatedPurePursuitTest, computeVelocityByDWPP)
   map_to_base.header.frame_id = "map";
   map_to_base.child_frame_id = "base_link";
   map_to_base.transform.rotation.w = 1.0;
-  tf_manager->getRawBuffer().setTransform(map_to_base, "dwpp-controller-test");
+  tf_manager->getRawBuffer()->setTransform(map_to_base, "dwpp-controller-test");
 
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = "base_link";

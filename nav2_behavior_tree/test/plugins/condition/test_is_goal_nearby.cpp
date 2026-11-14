@@ -66,7 +66,7 @@ protected:
     tf.transform.translation.z = 0.0;
     tf.transform.rotation.w = 1.0;
 
-    tf_manager_->getRawBuffer().setTransform(tf, "unit_test", true);
+    tf_manager_->getRawBuffer()->setTransform(tf, "unit_test", true);
   }
 
   static nav_msgs::msg::Path makePathInMap(const std::vector<std::pair<double, double>> & pts)

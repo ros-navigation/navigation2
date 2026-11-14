@@ -79,7 +79,7 @@ protected:
 
   geometry_msgs::msg::TransformStamped setTransform(double age, bool is_static = false)
   {
-    tf_manager_->getRawBuffer().clear();
+    tf_manager_->getRawBuffer()->clear();
     geometry_msgs::msg::TransformStamped transform;
     transform.header.frame_id = "odom";
     transform.child_frame_id = "base_link";
@@ -87,7 +87,7 @@ protected:
     transform.transform.translation.x = 1.0;
     transform.transform.translation.y = 2.0;
     transform.transform.rotation.w = 1.0;
-    EXPECT_TRUE(tf_manager_->getRawBuffer().setTransform(transform, "test", is_static));
+    EXPECT_TRUE(tf_manager_->getRawBuffer()->setTransform(transform, "test", is_static));
     return transform;
   }
 
@@ -159,7 +159,7 @@ TYPED_TEST(BehaviorPoseTest, RechecksPoseEachCycle)
   EXPECT_EQ(stale_result.status, nav2_behaviors::Status::FAILED);
   EXPECT_EQ(stale_result.error_code, Action::Result::TF_ERROR);
 
-  this->tf_manager_->getRawBuffer().clear();
+  this->tf_manager_->getRawBuffer()->clear();
   const auto missing_result = this->behavior_->onCycleUpdate();
   EXPECT_EQ(missing_result.status, nav2_behaviors::Status::FAILED);
   EXPECT_EQ(missing_result.error_code, Action::Result::TF_ERROR);
@@ -228,7 +228,7 @@ TEST(SpinTest, ChecksTheRemainingMotionForCollisions)
   transform.transform.translation.x = 5.0;
   transform.transform.translation.y = 5.0;
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test"));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test"));
 
   auto costmap = std::make_shared<nav2_msgs::msg::Costmap>();
   costmap->metadata.resolution = 0.05;

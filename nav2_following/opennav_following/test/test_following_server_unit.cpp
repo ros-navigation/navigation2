@@ -53,7 +53,7 @@ public:
 
   void setTransform(const geometry_msgs::msg::TransformStamped & transform)
   {
-    tf_manager_->getRawBuffer().setTransform(transform, "test", false);
+    tf_manager_->getRawBuffer()->setTransform(transform, "test", false);
   }
 
   virtual bool approachObject(geometry_msgs::msg::PoseStamped &, const std::string &)

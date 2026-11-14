@@ -68,7 +68,7 @@ public:
     tf_msg.child_frame_id = sensor_frame;
     tf_msg.header.frame_id = global_frame;
     tf_msg.transform = tf2::toMsg(tf2::Transform::getIdentity());
-    tf_manager_->getRawBuffer().setTransform(tf_msg, "", true);
+    tf_manager_->getRawBuffer()->setTransform(tf_msg, "", true);
 
     layers_.resizeMap(100, 100, 0.1, 0, 0);
     TestObstacleLayer::addObstacleLayer(layers_, *tf_manager_, node_, olayer_);

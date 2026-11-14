@@ -87,22 +87,22 @@ TEST(SimpleNonChargingDockTests, DockedTransformFreshness)
   transform.transform.translation.x = 2.0;
   transform.transform.rotation.w = 1.0;
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   EXPECT_FALSE(dock.isDocked());  // Old TF must not report docking success.
 
   transform.header.stamp = node->now();
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   EXPECT_TRUE(dock.isDocked());  // Recover as soon as fresh TF arrives.
 
   transform.header.stamp = node->now() + rclcpp::Duration::from_seconds(0.01);
   transform.transform.translation.x = 3.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   EXPECT_FALSE(dock.isDocked());  // Do not retain the previous robot position.
 
-  tf_manager->getRawBuffer().clear();
+  tf_manager->getRawBuffer()->clear();
   transform.header.stamp = node->now() - rclcpp::Duration::from_seconds(5.0);
   transform.transform.translation.x = 2.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", true));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", true));
   EXPECT_TRUE(dock.isDocked());  // Static transforms do not expire.
 
   pose.header.frame_id = "base_link";
@@ -134,10 +134,10 @@ TEST(SimpleNonChargingDockTests, DetectionUsesMeasurementTransform)
   transform.header.stamp = measurement_time;
   transform.transform.translation.x = 2.0;
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
   transform.header.stamp = node->now();
   transform.transform.translation.x = 5.0;
-  ASSERT_TRUE(tf_manager->getRawBuffer().setTransform(transform, "test", false));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", false));
 
   geometry_msgs::msg::PoseStamped detection;
   detection.header.frame_id = "camera";
@@ -405,7 +405,7 @@ TEST(SimpleNonChargingDockTests, IsDockedTransformException)
   transform.header.stamp = node->now();
   transform.header.frame_id = "my_frame";
   transform.child_frame_id = "other_frame";
-  tf_manager->getRawBuffer().setTransform(transform, "test", true);
+  tf_manager->getRawBuffer()->setTransform(transform, "test", true);
 
   // First call to getRefinedPose starts detection
   EXPECT_FALSE(dock->getRefinedPose(pose, ""));

@@ -41,7 +41,7 @@ Latest lookups measure staleness against the buffer's stored clock.
 
 For TF-aware subscriptions, include `nav2_ros_common/message_filter.hpp` and use `nav2::create_message_filter()`.
 
-The method`getRawBuffer()` should be used only exceptionally for objects requiring the native buffer implementation.
+The method `getRawBuffer()` returns a shared pointer to the native TF buffer and should be used only exceptionally for objects requiring the native buffer implementation.
 
 ## Migration Guide
 

@@ -142,29 +142,11 @@ public:
 
   /**
    * @brief Access the native TF buffer for integrations unsupported by this interface.
-   * @return Native buffer reference, valid while this wrapper owns the buffer.
+   * @return Shared buffer ownership without retaining the manager or its listener.
    * Use only for native TF integrations, buffer configuration, and test setup.
    * Ordinary lookups and pose transforms should use this wrapper's methods.
    */
-  [[nodiscard]] tf2_ros::Buffer & getRawBuffer()
-  {
-    return *buffer_;
-  }
-
-  /**
-   * @brief Access the native TF buffer through a const reference.
-   * @return Native buffer reference, valid while this manager owns the buffer.
-   */
-  [[nodiscard]] const tf2_ros::Buffer & getRawBuffer() const
-  {
-    return *buffer_;
-  }
-
-  /**
-   * @brief Share the native buffer with integrations that need it during cleanup.
-   * @return Shared buffer ownership without retaining the manager or its listener.
-   */
-  [[nodiscard]] tf2_ros::Buffer::SharedPtr getRawBufferSharedPtr()
+  [[nodiscard]] tf2_ros::Buffer::SharedPtr getRawBuffer()
   {
     return buffer_;
   }

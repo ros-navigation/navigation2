@@ -54,7 +54,7 @@ inline typename nav2::MessageFilter<MessageT>::SharedPtr create_message_filter(
   const std::string & target_frame, uint32_t queue_size,
   const NodeT & node, double tolerance)
 {
-  auto buffer = tf_manager.getRawBufferSharedPtr();
+  auto buffer = tf_manager.getRawBuffer();
   // The buffer must outlive the TF message filter's base destructor.
   auto delete_filter = [buffer](nav2::MessageFilter<MessageT> * filter) mutable {
       delete filter;
