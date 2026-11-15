@@ -113,6 +113,12 @@ public:
       };
   }
 
+  ~TransformManager()
+  {
+    listener_.reset();
+    buffer_->setUsingDedicatedThread(false);
+  }
+
   TransformManager(const TransformManager &) = delete;
   TransformManager & operator=(const TransformManager &) = delete;
 

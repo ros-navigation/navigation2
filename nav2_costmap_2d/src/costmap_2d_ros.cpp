@@ -54,6 +54,7 @@
 #include "nav2_ros_common/rate.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
+#include "rcl/remap.h"
 
 using namespace std::chrono_literals;
 using std::placeholders::_1;
@@ -81,6 +82,28 @@ rclcpp::NodeOptions getChildNodeOptions(
   const rclcpp::NodeOptions & parent_options)
 {
   std::vector<std::string> new_arguments = parent_options.arguments();
+  // The listener belongs to the costmap node, but TF is shared with its parent.
+  // Resolve relative TF remappings before adding the costmap's child namespace.
+  const auto * options = parent_options.get_rcl_node_options();
+  const auto context = parent_options.context()->get_rcl_context();
+  const auto * global_arguments = parent_options.use_global_arguments() ?
+    &context->global_arguments : nullptr;
+  const auto allocator = rcl_get_default_allocator();
+  for (const auto * topic : {"/tf", "/tf_static"}) {
+    char * remapped = nullptr;
+    const auto ret = rcl_remap_topic_name(
+      &options->arguments, global_arguments, topic, name.c_str(), parent_namespace.c_str(),
+      allocator, &remapped);
+    if (ret != RCL_RET_OK) {
+      rclcpp::exceptions::throw_from_rcl_error(ret, "Could not resolve parent TF topic");
+    }
+    const auto free_name = [allocator](char * value) {
+        allocator.deallocate(value, allocator.state);
+      };
+    const std::unique_ptr<char, decltype(free_name)> resolved(remapped, free_name);
+    new_arguments.insert(new_arguments.begin(), {
+        "--ros-args", "-r", std::string(topic) + ":=" + (remapped ? remapped : topic)});
+  }
   bool use_intra_process_comms = parent_options.use_intra_process_comms();
   nav2::replaceOrAddArgument(
     new_arguments, "-r", "__ns",
@@ -244,6 +267,10 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_callback_group(callback_group_, get_node_base_interface());
   executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
+  // An immediate cleanup must not cancel the executor before spin() starts.
+  while (!executor_->is_spinning() && get_node_base_interface()->get_context()->is_valid()) {
+    std::this_thread::yield();
+  }
   return nav2::CallbackReturn::SUCCESS;
 }
 
