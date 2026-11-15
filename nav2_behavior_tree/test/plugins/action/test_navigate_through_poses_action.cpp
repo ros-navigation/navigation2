@@ -161,7 +161,8 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick_missing_goals)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <NavigateThroughPoses goals="{unset_goals}" />
+            <NavigateThroughPoses goals="{unset_goals}" error_code_id="{error_code}"
+                error_msg="{error_msg}" />
         </BehaviorTree>
       </root>)";
 
@@ -173,6 +174,12 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick_missing_goals)
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::FAILURE);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_EQ(action_server_->getCurrentGoal(), last_goal);
+  EXPECT_EQ(
+    config_->blackboard->get<uint16_t>("error_code"),
+    nav2_msgs::action::NavigateThroughPoses::Result::SEND_GOAL_FAILURE);
+  EXPECT_EQ(
+    config_->blackboard->get<std::string>("error_msg"),
+    "NavigateThroughPosesAction: goal not provided");
 }
 
 int main(int argc, char ** argv)
