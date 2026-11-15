@@ -82,6 +82,9 @@ public:
         "Cost threshold for considering a pose occupied"),
         BT::InputPort<bool>("use_footprint", true, "Whether to use footprint cost"),
         BT::InputPort<bool>(
+        "footprint_fill", false,
+        "Whether to use the cost of every cell inside the footprint instead of only its outline"),
+        BT::InputPort<bool>(
         "consider_unknown_as_obstacle", false,
         "Whether to consider unknown cost as obstacle")
     });
@@ -89,6 +92,7 @@ public:
 
 private:
   bool use_footprint_;
+  bool footprint_fill_;
   bool consider_unknown_as_obstacle_;
   double cost_threshold_;
 };

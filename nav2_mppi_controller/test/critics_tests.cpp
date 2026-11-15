@@ -205,6 +205,52 @@ TEST(CriticTests, ConstraintsCritic)
   costs.setZero();
 }
 
+TEST(CriticTests, ConstraintsCriticDynamicLimits)
+{
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "mppi";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  auto getParentParam = param_handler.getParamGetter("mppi");
+  float optimizer_vx_max;
+  getParentParam(optimizer_vx_max, "vx_max", 0.5f);
+
+  models::State state;
+  state.vx = 0.8 * Eigen::ArrayXXf::Ones(10, 30);
+  state.vy = Eigen::ArrayXXf::Zero(10, 30);
+  state.wz = Eigen::ArrayXXf::Zero(10, 30);
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(10);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  ConstraintCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  param_handler.start();
+
+  // 0.8 m/s exceeds the 0.5 m/s limit:
+  // 4.0 weight * 0.1 model_dt * 0.3 error introduced * 30 timesteps = 3.6
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 3.6, 0.01);
+  costs.setZero();
+
+  // Raising the limit at runtime updates both the Optimizer and the critic
+  node->set_parameter(rclcpp::Parameter("mppi.vx_max", 1.0));
+  EXPECT_FLOAT_EQ(optimizer_vx_max, 1.0f);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+}
+
 TEST(CriticTests, OmniConstraintCritic)
 {
   // Standard preamble
@@ -865,6 +911,62 @@ TEST(CriticTests, PathAngleCritic)
   EXPECT_EQ(modeToStr(mode), std::string("No Directional Preference"));
   mode = static_cast<PathAngleMode>(4);
   EXPECT_EQ(modeToStr(mode), std::string("Invalid mode!"));
+}
+
+TEST(CriticTests, PathAngleCriticDynamicVxMin)
+{
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "mppi";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  state.reset(1000, 30);
+  models::Trajectories generated_trajectories;
+  generated_trajectories.reset(1000, 30);
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  path.reset(10);
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt, {}};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  auto getParentParam = param_handler.getParamGetter("mppi");
+  float optimizer_vx_min;
+  getParentParam(optimizer_vx_min, "vx_min", -0.35f);
+
+  PathAngleCriticWrapper critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  param_handler.start();
+  critic.setMode(1);  // No directional preference
+
+  // Path point straight behind the robot, outside of the tolerance
+  state.local_path_length = 0.95;
+  data.furthest_reached_path_point = 2;
+  path.x(6) = -1.0;
+  path.y(6) = 0.0;
+
+  // Reversing is allowed by default, so a point behind the robot is acceptable
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
+
+  // Disabling reversing at runtime makes the critic prefer driving forward
+  node->set_parameter(rclcpp::Parameter("mppi.vx_min", 0.0));
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0.0);
+  costs.setZero();
+
+  // Allowing reversing again restores the configured mode
+  node->set_parameter(rclcpp::Parameter("mppi.vx_min", -0.35));
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 }
 
 TEST(CriticTests, PreferForwardCritic)

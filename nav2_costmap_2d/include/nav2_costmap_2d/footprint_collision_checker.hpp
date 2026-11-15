@@ -61,6 +61,22 @@ public:
    */
   double footprintCostAtPose(double x, double y, double theta, const Footprint & footprint);
   /**
+   * @brief Find the max cost over every cell inside an oriented footprint.
+   * A concave one may be over-approximated.
+   * @param footprint Footprint in world coordinates;
+   * @return Max cost inside the footprint, LETHAL_OBSTACLE if any vertex is off the map
+   */
+  double footprintFillCost(const Footprint & footprint);
+  /**
+   * @brief Find the max cost over every cell inside a footprint placed at a pose
+   * @param x Pose x in world coordinates
+   * @param y Pose y in world coordinates
+   * @param theta Pose yaw
+   * @param footprint Unoriented footprint
+   * @return Max cost inside the footprint, LETHAL_OBSTACLE if any vertex is off the map
+   */
+  double footprintFillCostAtPose(double x, double y, double theta, const Footprint & footprint);
+  /**
    * @brief Get the cost for a line segment
    */
   double lineCost(int x0, int x1, int y0, int y1) const;

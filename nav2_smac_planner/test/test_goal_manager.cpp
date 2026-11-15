@@ -214,6 +214,84 @@ TEST(GoalManagerTest, test_goal_manager)
   delete costmapA;
 }
 
+TEST(GoalManagerTest, test_goal_zone_checked_at_goal_heading)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.1;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = 2.0;
+  info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
+  info.cost_penalty = 1.7;
+  info.retrospective_penalty = 0.1;
+  unsigned int size_theta = 72;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+
+  nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = costmapA;
+
+  // 2m long footprint, so its heading decides what it reaches from around the goal
+  geometry_msgs::msg::Point p1;
+  p1.x = -0.05;
+  p1.y = 0.05;
+  geometry_msgs::msg::Point p2;
+  p2.x = 2.02;
+  p2.y = 0.05;
+  geometry_msgs::msg::Point p3;
+  p3.x = 2.02;
+  p3.y = -0.05;
+  geometry_msgs::msg::Point p4;
+  p4.x = -0.05;
+  p4.y = -0.05;
+  nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
+
+  auto checker = std::make_unique<nav2_smac_planner::GridCollisionChecker>(
+    costmap_ros, size_theta, node);
+  checker->setFootprint(footprint, false, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  // The goal cell itself is lethal, so only the zone around it can keep the goal
+  costmap->setCost(50, 50, 254);
+  auto isGoalKept = [&](const float & goal_bin) {
+      NodeHybrid goal(0, ctx);
+      goal.setPose(NodeHybrid::Coordinates(50, 50, goal_bin));
+      NodePtr goal_ptr = &goal;
+      GoalManagerHybrid goal_manager;
+      goal_manager.setContext(ctx);
+      goal_manager.addGoal(goal_ptr);
+      goal_manager.removeInvalidGoals(5.0f, checker.get(), false);
+      return goal_manager.getGoalsState()[0].is_valid;
+    };
+
+  // A wall below the goal only blocks the footprint when facing down, at 270 degrees
+  for (unsigned int i = 0; i < 100; ++i) {
+    costmap->setCost(i, 30, 254);
+  }
+  EXPECT_FALSE(isGoalKept(54.0f));
+  EXPECT_TRUE(isGoalKept(0.0f));
+
+  // Walls to each side as well leave room only when facing up, at 90 degrees
+  for (unsigned int j = 0; j < 100; ++j) {
+    costmap->setCost(30, j, 254);
+    costmap->setCost(70, j, 254);
+  }
+  EXPECT_TRUE(isGoalKept(18.0f));
+  EXPECT_FALSE(isGoalKept(0.0f));
+}
 
 int main(int argc, char ** argv)
 {
