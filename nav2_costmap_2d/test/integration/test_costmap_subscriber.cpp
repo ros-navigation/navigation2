@@ -315,6 +315,62 @@ TEST_F(TestCostmapSubscriberShould, rejectMalformedFullCostmapMsgs)
   ASSERT_ANY_THROW(costmapSubscriber->getCostmap());
 }
 
+TEST_F(TestCostmapSubscriberShould, rejectOutOfBoundsCostmapUpdate)
+{
+  auto costmap_msg = std::make_shared<nav2_msgs::msg::Costmap>();
+  costmap_msg->header.frame_id = "map";
+  costmap_msg->metadata.resolution = 1.0;
+  costmap_msg->metadata.origin.orientation.w = 1.0;
+  costmap_msg->metadata.size_x = 10;
+  costmap_msg->metadata.size_y = 10;
+  costmap_msg->data.resize(100);
+
+  costmapSubscriber->costmapCallback(costmap_msg);
+
+  auto update_msg = std::make_shared<nav2_msgs::msg::CostmapUpdate>();
+  update_msg->header.frame_id = "map";
+  update_msg->x = 0xFFFFFFFFu;
+  update_msg->y = 0;
+  update_msg->size_x = 2;
+  update_msg->size_y = 1;
+  update_msg->data = {1, 2};
+
+  ASSERT_NO_THROW(costmapSubscriber->costmapUpdateCallback(update_msg));
+
+  const auto costmap = costmapSubscriber->getCostmap();
+  for (unsigned int i = 0; i < 100; ++i) {
+    EXPECT_EQ(costmap->getCharMap()[i], 0);
+  }
+}
+
+TEST_F(TestCostmapSubscriberShould, rejectCostmapUpdateWithMismatchedDataSize)
+{
+  auto costmap_msg = std::make_shared<nav2_msgs::msg::Costmap>();
+  costmap_msg->header.frame_id = "map";
+  costmap_msg->metadata.resolution = 1.0;
+  costmap_msg->metadata.origin.orientation.w = 1.0;
+  costmap_msg->metadata.size_x = 10;
+  costmap_msg->metadata.size_y = 10;
+  costmap_msg->data.resize(100);
+
+  costmapSubscriber->costmapCallback(costmap_msg);
+
+  auto update_msg = std::make_shared<nav2_msgs::msg::CostmapUpdate>();
+  update_msg->header.frame_id = "map";
+  update_msg->x = 0;
+  update_msg->y = 0;
+  update_msg->size_x = 10;
+  update_msg->size_y = 10;
+  update_msg->data = {1, 2, 3, 4, 5};
+
+  ASSERT_NO_THROW(costmapSubscriber->costmapUpdateCallback(update_msg));
+
+  const auto costmap = costmapSubscriber->getCostmap();
+  for (unsigned int i = 0; i < 100; ++i) {
+    EXPECT_EQ(costmap->getCharMap()[i], 0);
+  }
+}
+
 TEST_F(
   TestCostmapSubscriberShould,
   throwExceptionIfGetCostmapMethodIsCalledBeforeAnyCostmapMsgReceived)
