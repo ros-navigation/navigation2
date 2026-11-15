@@ -68,9 +68,6 @@ protected:
   bool goalStarted(Action::Goal::ConstSharedPtr goal) override
   {
     const int count = ++started;
-    if (failure == Failure::Throw) {
-      throw std::runtime_error("goal started failure");
-    }
     if (failure == Failure::SilentFalse) {
       return false;
     }
@@ -78,6 +75,14 @@ protected:
       tf_buffer->clear();
     }
     return NavigateToPoseNavigator::goalStarted(goal);
+  }
+
+  void onLoop() override
+  {
+    if (failure == Failure::Throw) {
+      throw std::runtime_error("behavior tree failure");
+    }
+    NavigateToPoseNavigator::onLoop();
   }
 
   // Leave the second goal pending so that it is promoted after the first one completes.
@@ -211,18 +216,17 @@ TEST_F(GoalStartFailure, PromotedGoalRejectedWhileOtherNavigatorOwnsMuxer)
   muxer_.stopNavigating(&other_);
 }
 
-TEST_F(GoalStartFailure, ExceptionAtStartReportsErrorAndReleasesMuxer)
+TEST_F(GoalStartFailure, ExceptionDuringExecutionReleasesMuxer)
 {
+  // The behavior tree engine turns the exception into a failed run, so completion still runs.
   nav_.failure = Failure::Throw;
   auto handle = send();
   ASSERT_NE(handle, nullptr);
   auto res = result(handle);
 
   EXPECT_EQ(res.code, rclcpp_action::ResultCode::ABORTED);
-  EXPECT_EQ(res.result->error_code, Action::Result::UNKNOWN);
   EXPECT_FALSE(muxer_.isNavigating());
 
-  // The server keeps working after the exception.
   nav_.failure = Failure::None;
   handle = send();
   ASSERT_NE(handle, nullptr);

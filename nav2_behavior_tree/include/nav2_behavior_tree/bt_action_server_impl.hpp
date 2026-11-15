@@ -409,6 +409,28 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
       "No current goal available when starting BT execution.");
   }
 
+  if (!current_goal || !loadBehaviorTree(current_goal->behavior_tree) ||
+    (on_goal_started_callback_ && !on_goal_started_callback_(current_goal)))
+  {
+    if (internal_error_code_ == ActionT::Result::NONE) {
+      setInternalError(ActionT::Result::UNKNOWN, "Goal failed to start.");
+    }
+    auto result = std::make_shared<typename ActionT::Result>();
+    populateErrorCode(result);
+
+    nav2_behavior_tree::BtStatus rc = nav2_behavior_tree::BtStatus::FAILED;
+    on_completion_callback_(result, rc);
+
+    action_server_->terminate_current(result);
+    RCLCPP_ERROR(
+      logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
+      result->error_msg.c_str());
+
+    cleanErrorCodes();
+    muxer_preemption_requested_ = false;
+    return;
+  }
+
   auto is_canceling = [&]() {
       if (action_server_ == nullptr) {
         RCLCPP_DEBUG(logger_, "Action server unavailable. Canceling.");
@@ -429,31 +451,12 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
       on_loop_callback_();
     };
 
-  // Exceptions take the normal completion path so the result is sent and the navigator released
-  nav2_behavior_tree::BtStatus rc = nav2_behavior_tree::BtStatus::FAILED;
-  bool started = false;
-  try {
-    started = current_goal && loadBehaviorTree(current_goal->behavior_tree) &&
-      (!on_goal_started_callback_ || on_goal_started_callback_(current_goal));
-    if (!started) {
-      if (internal_error_code_ == ActionT::Result::NONE) {
-        setInternalError(ActionT::Result::UNKNOWN, "Goal failed to start.");
-      }
-    } else {
-      // Execute the BT that was previously created in the configure step
-      rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_duration_);
-    }
-  } catch (const std::exception & e) {
-    setInternalError(
-      ActionT::Result::UNKNOWN, std::string("Exception during BT execution: ") + e.what());
-    rc = nav2_behavior_tree::BtStatus::FAILED;
-  }
+  // Execute the BT that was previously created in the configure step
+  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_duration_);
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
-  if (started) {
-    bt_->haltAllActions(tree_);
-  }
+  bt_->haltAllActions(tree_);
 
   // Give server an opportunity to populate the result message or simple give
   // an indication that the action is complete.
