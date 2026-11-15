@@ -23,6 +23,7 @@
 #include "rclcpp/utilities.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 class DynParamTestNode
@@ -166,8 +167,15 @@ TEST(DynParamTestNode, testDynFootprintReplacesRadius)
   EXPECT_FALSE(costmap->getUseRadius());
   EXPECT_EQ(costmap->getUnpaddedRobotFootprint().size(), 5u);
 
-  // Changing the radius must not overwrite the footprint that is now in use
+  // Setting the radius afterwards switches back to it
   ASSERT_TRUE(costmap->set_parameter(rclcpp::Parameter("robot_radius", 0.5)).successful);
+  EXPECT_TRUE(costmap->getUseRadius());
+  EXPECT_EQ(
+    costmap->getUnpaddedRobotFootprint().size(),
+    nav2_costmap_2d::makeFootprintFromRadius(0.5).size());
+
+  // And the footprint again replaces it
+  ASSERT_TRUE(costmap->set_parameter(rclcpp::Parameter("footprint", footprint)).successful);
   EXPECT_FALSE(costmap->getUseRadius());
   EXPECT_EQ(costmap->getUnpaddedRobotFootprint().size(), 5u);
 
