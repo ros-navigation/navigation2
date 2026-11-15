@@ -20,6 +20,7 @@
 #include "gtest/gtest.h"
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/parameter.hpp"
@@ -113,6 +114,37 @@ TEST(LifecylceTest, ObstacleFiltersRetainBufferAfterManagerCleanup) {
 
     obstacle_layer.reset();
     EXPECT_TRUE(buffer.expired());
+  }
+  rclcpp::shutdown();
+}
+
+TEST(LifecylceTest, ChildCostmapUsesParentTfTopics) {
+  const char * argv[] = {
+    "test", "--ros-args", "-r", "/tf:=tf", "-r", "/tf_static:=tf_static"};
+  rclcpp::init(6, argv);
+  {
+    for (const auto & parent_namespace : {std::string("/"), std::string("/robot")}) {
+      const auto options = nav2_costmap_2d::getChildNodeOptions(
+        "local_costmap", parent_namespace, false, rclcpp::NodeOptions());
+      auto child = std::make_shared<rclcpp::Node>("local_costmap", options);
+      EXPECT_EQ(
+        child->get_node_topics_interface()->resolve_topic_name("/tf"),
+        nav2::add_namespaces(parent_namespace, "tf"));
+      EXPECT_EQ(
+        child->get_node_topics_interface()->resolve_topic_name("/tf_static"),
+        nav2::add_namespaces(parent_namespace, "tf_static"));
+    }
+    rclcpp::NodeOptions parent_options;
+    parent_options.arguments({
+      "--ros-args", "-r", "/tf:=transforms", "-r", "/tf_static:=/shared/static_transforms"});
+    auto child = std::make_shared<rclcpp::Node>(
+      "local_costmap", nav2_costmap_2d::getChildNodeOptions(
+        "local_costmap", "/robot", false, parent_options));
+    EXPECT_EQ(
+      child->get_node_topics_interface()->resolve_topic_name("/tf"), "/robot/transforms");
+    EXPECT_EQ(
+      child->get_node_topics_interface()->resolve_topic_name("/tf_static"),
+      "/shared/static_transforms");
   }
   rclcpp::shutdown();
 }

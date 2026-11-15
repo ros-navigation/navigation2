@@ -147,7 +147,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_inflation_radius)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.inflation_radius", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_infl", "", options);
-  auto tf_manager = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node, false);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -162,7 +162,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_left_scaling)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.cost_scaling_factor_left", -1.0)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_left", "", options);
-  auto tf_manager = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node, false);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -177,7 +177,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_right_scaling)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.cost_scaling_factor_right", -1.0)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_right", "", options);
-  auto tf_manager = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node, false);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -192,7 +192,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_negative_goal_distance_thr
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.goal_distance_threshold", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_goal", "", options);
-  auto tf_manager = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node, false);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -207,7 +207,7 @@ TEST(AsymmetricInflationLayerInitTest, init_throws_on_invalid_num_threads)
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.num_threads", -2)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_threads", "", options);
-  auto tf_manager = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node, false);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -221,7 +221,7 @@ TEST(AsymmetricInflationLayerInitTest, negative_transform_staleness_threshold_di
   auto options = makeNodeOptions(
     {rclcpp::Parameter("asymmetric_inflation_layer.transform_staleness_threshold", -0.1)});
   auto node = std::make_shared<nav2::LifecycleNode>("init_test_tf_staleness", "", options);
-  auto tf_manager = nav2::create_transform_manager(node);
+  auto tf_manager = nav2::create_transform_manager(node, false);
   nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 0.1, 0.0, 0.0);
   auto layer = std::make_shared<TestableAsymmetricInflationLayer>();
@@ -241,7 +241,8 @@ protected:
     node_ = std::make_shared<nav2::LifecycleNode>(
       "asymmetric_inflation_test_node", "", makeNodeOptions());
 
-    tf_manager_ = nav2::create_transform_manager(node_);
+    // Tests inject transforms directly; live TF can invalidate the empty-buffer cases.
+    tf_manager_ = nav2::create_transform_manager(node_, false);
 
     // 40x40 cells, 0.1 m resolution, origin at (0,0) — world range [0, 4] m.
     layers_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, false);
