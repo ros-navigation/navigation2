@@ -36,7 +36,7 @@ Note that plugins may also use outside information from topics, services, and ac
 - Graph file parsing dynamic plugins allow for use of custom or proprietary formats
 - Operation dynamic plugins to perform arbitrary tasks at a given node or when entering or leaving an edge on the route
 - Operation may be graph-centric (e.g. graph file identifies operation to perform at a time) or plugin-centric (e.g. plugins self-identify nodes and edges to act upon during execution)
-- Operations may be triggered on approach to nodes ahead on the route, before they're achieved, with the distance along the route computed once by the operations manager and each approach triggering only once
+- Operations may be triggered on approach to nodes ahead on the route, before they're achieved, with the distance along the route computed once by the operations manager (up to the largest approach radius of the operations) and each approach triggering only once
 - Operations may trigger rerouting if necessary (e.g. due to new information, blockages, multi-robot data, etc)
 - The nodes and edges metadata may be modified or used to communicate information across plugins including different types across different runs
 - The Route Tracking action returns regular feedback on important events or state updates (e.g. rerouting requests, passed a node, triggered an operation, etc)
@@ -241,13 +241,13 @@ This route operation will check the graph at each state change (e.g. node passed
 
 #### `ApproachNotifier`
 
-This route operation will publish a node ahead on the route when the robot comes within its approach radius, measured along the route (so a node right after a turn is notified before the robot reaches the turn), before the node is achieved, so other systems may prepare for the robot's arrival (e.g. call an elevator, request traffic lock). It is an `ON_APPROACH` operation, so it is triggered (and reported in `operations_triggered`) only once per node with the `approach_tag` metadata key set to `true` on each route tracked (a new goal or a reroute is a new route). The approach radius should be larger than the tracker's node achievement radius for the notification to arrive before the node is achieved.
+This route operation will publish a node ahead on the route when the robot comes within its approach radius, measured along the route (so a node right after a turn is notified before the robot reaches the turn), before the node is achieved, so other systems may prepare for the robot's arrival (e.g. call an elevator, request traffic lock). It is an `ON_APPROACH` operation, so it is triggered (and reported in the tracking feedback's `operations_triggered`, except when triggered before the route's start node is achieved, as no feedback is published then) once per approach to a node with the `approach_tag` metadata key set to `true`, and not again while it stays ahead, even if leaving and coming back within its approach radius. On a new route (e.g. a reroute or a new goal), a node already notified is only notified again if no longer within its approach radius, so a detour notifies it again closer to arrival. It is also notified again on a later approach once achieved. A new route starting at the node last achieved (e.g. rerouted before the robot passed it) does not notify it again. As route operations are not told when a request ends, cancelling and sending a new goal while still within the approach radius of a notified node does not notify it again, nor does a new goal giving an identical route, even if the robot moved outside the approach radius in between, as no new route is detected. The approach radius should be larger than the tracker's node achievement radius for the notification to arrive before the node is achieved.
 
 | Parameter             | Description                                                         |
 |-----------------------|---------------------------------------------------------------------|
 | approach_topic        | Topic to publish approached nodes to, as `nav2_msgs/RouteNode` (approached_node) |
 | approach_tag          | Graph node metadata key to look for nodes to notify approach of (notify_on_approach) |
-| approach_radius       | Distance along the route from a node within which it is approached (2.0 m) |
+| approach_radius       | Distance along the route from a node within which it is approached (3.0 m) |
 
 #### `CollisionMonitor`
 

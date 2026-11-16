@@ -78,6 +78,8 @@ OperationsManager::OperationsManager(
       throw ex;
     }
   }
+
+  prev_approached_nodes_.resize(approach_operations_.size());
 }
 
 template<typename T>
@@ -141,23 +143,47 @@ void OperationsManager::processApproachOperations(
   const Route & route,
   const geometry_msgs::msg::PoseStamped & pose)
 {
-  const NodePtr next_node = edge_entered ? edge_entered->end : (node ? nullptr : route.start_node);
-  if (route_operations.empty() || !next_node) {
-    return;
+  if (route_operations.empty()) {return;}
+
+  const auto contains = [](const std::vector<unsigned int> & ids, const unsigned int id) {
+      return std::find(ids.begin(), ids.end(), id) != ids.end();
+    };
+  // Remove achieved node from the list. The last achieved node is kept across
+  // routes, as a new route may start at it
+  if (node) {
+    if (node != approach_last_node_) {
+      for (std::vector<unsigned int> & ids : prev_approached_nodes_) {
+        ids.erase(std::remove(ids.begin(), ids.end(), node->nodeid), ids.end());
+      }
+    }
+    approach_last_node_ = node;
   }
 
-  // Triggers each approach operation once per node on the route being tracked, when it comes
-  // within approach radius, until reset for a new route
+  const NodePtr next_node = edge_entered ? edge_entered->end : (node ? nullptr : route.start_node);
+  if (!next_node) {return;}
+
+  // On a new route, previous approached nodes stay approached if still ahead and still approached
+  // The new route's list replaces the previous one only once processed.
+  const bool new_route =
+    route.start_node != approach_route_start_ || route.edges != approach_route_edges_;
+  std::vector<std::vector<unsigned int>> new_route_approached(
+    new_route ? route_operations.size() : 0);
+  std::vector<std::vector<unsigned int>> & approached =
+    new_route ? new_route_approached : prev_approached_nodes_;
+
+  // Triggers each approach operation once per approach to a node ahead on the route
   const auto approach = [&](const NodePtr ahead, const EdgePtr edge, const float route_dist) {
-      for (const RouteOperation::Ptr & plugin : route_operations) {
-        if (route_dist > plugin->approachRadius() || !plugin->isApproachNode(ahead)) {continue;}
-        const auto key = std::make_pair(plugin->getName(), ahead->nodeid);
-        if (std::find(approached_.begin(), approached_.end(), key) == approached_.end()) {
-          approached_.push_back(key);
+      for (size_t i = 0; i != route_operations.size(); ++i) {
+        const RouteOperation::Ptr & plugin = route_operations[i];
+        if (route_dist > plugin->approachRadius() || contains(approached[i], ahead->nodeid) ||
+          !plugin->isApproaching(ahead, route_dist)) {continue;}
+        if (!new_route || !contains(prev_approached_nodes_[i], ahead->nodeid)) {
           OperationResult op_result = plugin->perform(
             ahead, edge, nullptr, route, pose, &ahead->metadata);
           updateResult(plugin->getName(), op_result, result);
+          if (new_route) {prev_approached_nodes_[i].push_back(ahead->nodeid);}
         }
+        approached[i].push_back(ahead->nodeid);
       }
     };
 
@@ -169,20 +195,23 @@ void OperationsManager::processApproachOperations(
       pose, edge_entered->start->coords, next_node->coords);
     route_dist = hypotf(next_node->coords.x - closest.x, next_node->coords.y - closest.y);
   }
-  approach(next_node, edge_entered, route_dist);
+  if (edge_entered || next_node != approach_last_node_) {
+    approach(next_node, edge_entered, route_dist);
+  }
 
   auto it = std::find(route.edges.begin(), route.edges.end(), edge_entered);
   it = (it == route.edges.end()) ? route.edges.begin() : std::next(it);
   for (; it != route.edges.end(); ++it) {
     route_dist += (*it)->getEdgeLength();
-    if (route_dist > max_approach_radius_) {break;}
+    if (route_dist > max_approach_radius_) {break;}  // Beyond all operations' radii
     approach((*it)->end, *it, route_dist);
   }
-}
 
-void OperationsManager::resetApproaches()
-{
-  approached_.clear();
+  if (new_route) {
+    prev_approached_nodes_.swap(new_route_approached);
+    approach_route_start_ = route.start_node;
+    approach_route_edges_ = route.edges;
+  }
 }
 
 OperationsResult OperationsManager::process(

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <unordered_map>
-#include <utility>
 #include <vector>
 #include <memory>
 #include <string>
@@ -101,16 +100,11 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const ReroutingState & rerouting_info);
 
-  /**
-   * @brief Resets the nodes approached by the ON_APPROACH operations, so they may trigger
-   * again. To be called when starting to track a new route (e.g. a new goal or a reroute)
-   */
-  void resetApproaches();
-
 protected:
   /**
    * @brief Processes a vector of ON_APPROACH operations plugins, triggering each once per
-   * node on the route being tracked, when within its approach radius along the route
+   * approach to a node ahead on the route within its approach radius, given the distance
+   * along the route to it. Nodes beyond the largest approach radius are not checked
    * @param operations Operations to trigger
    * @param result Results to populate from operations
    * @param node Last node achieved, if any
@@ -145,7 +139,13 @@ protected:
   std::vector<RouteOperation::Ptr> change_operations_;
   std::vector<RouteOperation::Ptr> query_operations_;
   std::vector<RouteOperation::Ptr> approach_operations_;
-  std::vector<std::pair<std::string, unsigned int>> approached_;
+  std::vector<std::vector<unsigned int>> prev_approached_nodes_;
+  // Monitor for re-routes based on start node and edges, updated on processApproachOperations
+  NodePtr approach_route_start_{nullptr};
+  EdgePtrVector approach_route_edges_;
+  // Last node achieved, to re-arm approached nodes only when newly achieved
+  NodePtr approach_last_node_{nullptr};
+  // Largest approach radius of the ON_APPROACH operations, bounding the nodes ahead checked
   float max_approach_radius_{0.0f};
   rclcpp::Logger logger_{rclcpp::get_logger("OperationsManager")};
 };

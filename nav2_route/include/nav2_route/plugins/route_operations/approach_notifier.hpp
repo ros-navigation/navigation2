@@ -21,7 +21,6 @@
 #include "rclcpp/logger.hpp"
 #include "nav2_route/interfaces/route_operation.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_msgs/msg/route_node.hpp"
 
 namespace nav2_route
@@ -75,17 +74,18 @@ public:
   float approachRadius() override {return approach_radius_;}
 
   /**
-   * @brief Whether a node is tagged for approach notification
+   * @brief Whether a node ahead within the approach radius is tagged for approach notification
    * @param node A node ahead on the route
+   * @param route_dist Distance along the route from the robot to the node, unused
    * @return Whether the node contains the `approach_tag` metadata set to true
    */
-  bool isApproachNode(const NodePtr node) override;
+  bool isApproaching(const NodePtr node, const float route_dist) override;
 
   /**
    * @brief The main approach notifier operation to publish the node being approached
-   * @param node_achieved Node being approached
+   * @param node_approached Node being approached
    * @param edge_entered Route edge leading into the node being approached,
-   * for additional context
+   * for additional context (nullptr for the route's start node)
    * @param edge_exited Unused, nullptr
    * @param route Current route being tracked in full, for additional context
    * @param curr_pose Current robot pose in the route frame, for additional context
@@ -93,7 +93,7 @@ public:
    * @return Whether to perform rerouting and report blocked edges in that case
    */
   OperationResult perform(
-    NodePtr node_achieved,
+    NodePtr node_approached,
     EdgePtr edge_entered,
     EdgePtr edge_exited,
     const Route & route,
@@ -103,7 +103,7 @@ public:
 protected:
   std::string name_;
   std::string approach_tag_;
-  float approach_radius_{2.0f};
+  float approach_radius_{3.0f};
   rclcpp::Logger logger_{rclcpp::get_logger("ApproachNotifier")};
   nav2::Publisher<nav2_msgs::msg::RouteNode>::SharedPtr approach_pub_;
 };

@@ -110,25 +110,29 @@ public:
   virtual RouteOperationType processType() {return RouteOperationType::ON_GRAPH;}
 
   /**
-   * @brief For ON_APPROACH operations only: the distance along the route from a node ahead
-   * within which the robot is considered to be approaching it. The operations manager checks
-   * the nodes ahead on the route each tick, up to the largest approach radius of its operations,
-   * measuring the distance left along the route (from the robot's projection onto the current
-   * edge to the next node, plus the lengths of the edges after it), and calls perform() once
-   * per node of interest on the route being tracked, when it comes within it. Each new route
-   * tracked (e.g. a new goal or a reroute) may trigger its nodes again.
-   * Should be larger than the tracker's node achievement radius to trigger before achievement.
+   * @brief For ON_APPROACH operations only: the distance along the route from a node within
+   * which this operation may consider it approached, and so the upper bound of any
+   * node-specific radius applied in isApproaching(). Nodes further away are not given to
+   * isApproaching(), and the operations manager does not look further ahead than the largest
+   * radius of its operations. Should be larger than the tracker's node achievement radius
+   * to trigger before achievement.
    * @return The approach radius
    */
   virtual float approachRadius() {return 0.0f;}
 
   /**
-   * @brief For ON_APPROACH operations only: whether this operation should be triggered
-   * when approaching a node ahead on the route
+   * @brief For ON_APPROACH operations only: whether the robot is approaching a node ahead
+   * within approachRadius(), given the distance along the route to it (e.g. the node is
+   * tagged, optionally with a smaller node-specific radius). perform() is called with the node,
+   * the edge into it (nullptr for the route's start node) and its metadata the first time this
+   * returns true, and not again until the node is achieved or a new route no longer has it ahead
+   * and approached. Called each tick for the nodes ahead not yet approached, and on a new route
+   * for those approached.
    * @param node A node ahead on the route
-   * @return Whether this operation is interested in approaching this node
+   * @param route_dist Distance along the route from the robot to the node
+   * @return Whether this operation considers the node approached
    */
-  virtual bool isApproachNode(const NodePtr /*node*/) {return false;}
+  virtual bool isApproaching(const NodePtr /*node*/, const float /*route_dist*/) {return false;}
 
   /**
    * @brief The main route operation API to perform an operation when triggered.

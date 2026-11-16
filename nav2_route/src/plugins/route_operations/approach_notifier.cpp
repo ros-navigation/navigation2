@@ -31,7 +31,7 @@ void ApproachNotifier::configure(
   approach_tag_ = node->declare_or_get_parameter(
     getName() + ".approach_tag", std::string("notify_on_approach"));
   approach_radius_ = static_cast<float>(node->declare_or_get_parameter(
-    getName() + ".approach_radius", 2.0));
+    getName() + ".approach_radius", 3.0));
 
   if (approach_radius_ < 0.0f) {
     RCLCPP_WARN(node->get_logger(),
@@ -46,25 +46,25 @@ void ApproachNotifier::configure(
   approach_pub_->on_activate();
 }
 
-bool ApproachNotifier::isApproachNode(const NodePtr node)
+bool ApproachNotifier::isApproaching(const NodePtr node, const float /*route_dist*/)
 {
   return node->metadata.getValue<bool>(approach_tag_, false);
 }
 
 OperationResult ApproachNotifier::perform(
-  NodePtr node_achieved,
+  NodePtr node_approached,
   EdgePtr /*edge_entered*/,
   EdgePtr /*edge_exited*/,
   const Route & /*route*/,
   const geometry_msgs::msg::PoseStamped & /*curr_pose*/,
   const Metadata * /*mdata*/)
 {
-  RCLCPP_INFO(logger_, "%s: Approaching node %u.", name_.c_str(), node_achieved->nodeid);
+  RCLCPP_INFO(logger_, "%s: Approaching node %u.", name_.c_str(), node_approached->nodeid);
 
   auto msg = std::make_unique<nav2_msgs::msg::RouteNode>();
-  msg->nodeid = node_achieved->nodeid;
-  msg->position.x = node_achieved->coords.x;
-  msg->position.y = node_achieved->coords.y;
+  msg->nodeid = node_approached->nodeid;
+  msg->position.x = node_approached->coords.x;
+  msg->position.y = node_approached->coords.y;
   approach_pub_->publish(std::move(msg));
   return OperationResult();
 }
