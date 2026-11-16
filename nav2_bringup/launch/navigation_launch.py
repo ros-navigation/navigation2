@@ -64,8 +64,6 @@ def generate_launch_description() -> LaunchDescription:
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'autostart': autostart,
-        'global_costmap.global_costmap.ros__parameters.route_corridor.graph_filepath':
-            graph_filepath,
     }
 
     yaml_substitutions = {

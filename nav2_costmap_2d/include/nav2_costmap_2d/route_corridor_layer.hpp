@@ -44,23 +44,24 @@
 #include "nav2_costmap_2d/layer.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav_msgs/msg/path.hpp"
 
 namespace nav2_costmap_2d
 {
 /**
  * @class RouteCorridorLayer
- * @brief Builds a fixed graph corridor and applies costs to its three-pixel boundary.
+ * @brief Builds a path corridor and applies costs to its three-pixel boundary.
  */
 class RouteCorridorLayer : public Layer
 {
 public:
   /**
-   * @brief Load parameters and graph edges, and initialize the mask publisher.
+   * @brief Load parameters and initialize the path subscription and mask publisher.
    */
   void onInitialize() override;
 
   /**
-   * @brief Keep the startup mask across costmap clears and resets.
+   * @brief Keep the latest path across costmap clears and resets.
    */
   void reset() override {}
 
@@ -95,19 +96,19 @@ public:
 
 protected:
   /**
-   * @brief Load segments from all LineString and MultiLineString graph edges.
-   * @param filepath Path to the GeoJSON graph file
+   * @brief Replace corridor segments from a path in the costmap global frame.
+   * @param path Path defining the corridor; an empty path clears it
    */
-  void loadGraph(const std::string & filepath);
+  void pathCallback(const nav_msgs::msg::Path::SharedPtr path);
 
   /**
-   * @brief Build and publish the fixed corridor mask using the startup costmap geometry.
+   * @brief Build and publish the corridor mask using the current costmap geometry.
    * @param master Costmap providing the mask dimensions, resolution, and origin
    */
   void buildMask(const Costmap2D & master);
 
   /**
-   * @brief Check whether a world position lies inside the fixed corridor mask.
+   * @brief Check whether a world position lies inside the corridor mask.
    * @param wx World X coordinate
    * @param wy World Y coordinate
    * @return True if the position is inside a free corridor cell
@@ -119,6 +120,7 @@ protected:
     geometry_msgs::msg::Point start;
     geometry_msgs::msg::Point end;
   };
+  rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   std::mutex mutex_;
   std::vector<Segment> edges_;
   nav_msgs::msg::OccupancyGrid mask_;

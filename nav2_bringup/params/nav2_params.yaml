@@ -62,6 +62,7 @@ bt_navigator:
       plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
       enable_groot_monitoring: false
       groot_server_port: 1669
+<<<<<<< HEAD
       search_window: 2.0
       transform_staleness_threshold: 0.0
     bt_search_directories:
@@ -71,6 +72,11 @@ bt_navigator:
     # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
     # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
     # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
+=======
+    # Track and follow routes; the corridor uses the published /plan path.
+    # default_nav_to_pose_bt_xml: "$(find-pkg-share nav2_bt_navigator)/behavior_trees/navigate_with_route_tracking_w_recovery.xml"
+    # NavigateThroughPoses retains its standard behavior tree.
+>>>>>>> c1aa2b49 (Replace the geoJson file with path from global plan/plan from route server. However this has caused the route corridor to trap the robot. Need to make route corridor open/ clear costmap when robot reached goal.)
 
     # plugin_lib_names is used to add custom BT plugins to the executor (vector of strings).
     # Built-in plugins are added automatically
@@ -349,7 +355,7 @@ global_costmap:
       route_corridor_layer:
         plugin: "nav2_costmap_2d::RouteCorridorLayer"
         enabled: True
-        graph_filepath: "$(find-pkg-share nav2_bringup)/graphs/turtlebot3_graph.geojson"
+        path_topic: /plan
         max_deviation: 0.2
         recovery_cost: 200
       always_send_full_costmap: True
