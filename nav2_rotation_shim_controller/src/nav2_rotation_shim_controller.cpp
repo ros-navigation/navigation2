@@ -303,7 +303,9 @@ void RotationShimController::isCollisionFree(
     yaw = initial_yaw + cmd_vel.twist.angular.z * simulated_time;
 
     // Stop simulating past the point it would be passed onto the primary controller
-    if (angles::shortest_angular_distance(yaw, initial_yaw) >= remaining_rotation_before_thresh) {
+    if (fabs(angles::shortest_angular_distance(initial_yaw, yaw)) >=
+      remaining_rotation_before_thresh)
+    {
       break;
     }
 
