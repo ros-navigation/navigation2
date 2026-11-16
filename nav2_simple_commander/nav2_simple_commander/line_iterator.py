@@ -21,7 +21,7 @@ It provides the ability to iterate
 through the points of a line.
 """
 
-from cmath import sqrt
+import math
 
 
 class LineIterator:
@@ -157,7 +157,7 @@ class LineIterator:
 
     def get_line_length(self):
         """Get the length of the line."""
-        return sqrt(pow(self.x1_ - self.x0_, 2) + pow(self.y1_ - self.y0_, 2))
+        return math.hypot(self.x1_ - self.x0_, self.y1_ - self.y0_)
 
     def clamp(self, n: float, min_n: float, max_n: float):
         """
