@@ -19,7 +19,7 @@ New as of September 2023: the simple navigator constructor will accept a `namesp
 | Robot Navigator Method            | Description                                                                |
 | --------------------------------- | -------------------------------------------------------------------------- |
 | setInitialPose(initial_pose)      | Sets the initial pose (`PoseStamped`) of the robot to localization.        |
-| goThroughPoses(poses, behavior_tree='') | Requests the robot to drive through a set of poses (list of `PoseStamped`).|
+| goThroughPoses(poses, behavior_tree='') | Requests the robot to drive through a set of poses (list of `PoseStamped` or `nav_msgs/Goals`).|
 | goToPose(pose, behavior_tree='')  | Requests the robot to drive to a pose (`PoseStamped`).                     |
 | followWaypoints(poses, number_of_loops=0, goal_index=0) | Requests the robot to follow a set of waypoints (list of `PoseStamped`), repeating the full set `number_of_loops` additional times after the first pass (0 runs it once), starting from `goal_index` into `poses` rather than the beginning. This will execute the specific `TaskExecutor` at each pose.   |
 | followPath(path, controller_id='', goal_checker_id='', progress_checker_id='', path_handler_id='') | Requests the robot to follow a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.     |

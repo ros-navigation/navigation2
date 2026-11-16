@@ -213,12 +213,25 @@ class BasicNavigator(Node):
         self.initial_pose = initial_pose
         self._setInitialPose()
 
-    def goThroughPoses(self, poses: Goals, behavior_tree: str = ''):
-        """Send a `NavThroughPoses` action request."""
+    def goThroughPoses(
+        self, poses: Union[list[PoseStamped], Goals], behavior_tree: str = ''
+    ):
+        """
+        Send a `NavThroughPoses` action request.
+
+        `poses` may be a list of `PoseStamped` or a `nav_msgs/Goals` message.
+        """
         self.clearPreviousState()
         self.debug("Waiting for 'NavigateThroughPoses' action server")
         while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
             self.info("'NavigateThroughPoses' action server not available, waiting...")
+
+        if not isinstance(poses, Goals):
+            goals = Goals()
+            goals.goals = list(poses)
+            if goals.goals:
+                goals.header = goals.goals[0].header
+            poses = goals
 
         goal_msg = NavigateThroughPoses.Goal()
         goal_msg.poses = poses
