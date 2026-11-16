@@ -334,48 +334,45 @@ protected:
    */
   bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
   {
-    if (plugin_muxer_->isNavigating() && !plugin_muxer_->isCurrentNavigator(this)) {
-      // A different navigator is processing; check if cross-navigator preemption is allowed
-      if (!allow_navigator_preemption_) {
-        RCLCPP_ERROR(
-          logger_,
-          "Requested navigation from %s while another navigator is processing,"
-          " rejecting request.", getName().c_str());
-        return false;
-      }
-
-      RCLCPP_INFO(
-        logger_,
-        "Requested navigation from %s while another navigator is processing,"
-        " stopping current navigator.", getName().c_str());
-      plugin_muxer_->preemptCurrentNavigator();
-
-      const auto start = std::chrono::steady_clock::now();
-      rclcpp::Rate r(100);
-      while (plugin_muxer_->isNavigating()) {
-        if (std::chrono::steady_clock::now() - start > navigator_preemption_timeout_) {
-          RCLCPP_ERROR(
-            logger_,
-            "Timed out waiting for current navigator to stop before accepting"
-            " goal from %s. Rejecting request.", getName().c_str());
-          return false;
-        }
-        r.sleep();
-      }
-    }
-
-    bool goal_accepted = goalReceived(goal);
-
-    // Another navigator may have started while this goal was being validated.
-    if (goal_accepted && !plugin_muxer_->startNavigating(this)) {
-      RCLCPP_ERROR(
-        logger_,
-        "Another navigator started while validating the goal for %s, rejecting request.",
-        getName().c_str());
+    // Validate first, so that an invalid goal never preempts another navigator
+    if (!goalReceived(goal)) {
       return false;
     }
 
-    return goal_accepted;
+    if (plugin_muxer_->startNavigating(this)) {
+      return true;
+    }
+
+    // A different navigator is processing; check if cross-navigator preemption is allowed
+    if (!allow_navigator_preemption_) {
+      RCLCPP_ERROR(
+        logger_,
+        "Requested navigation from %s while another navigator is processing,"
+        " rejecting request.", getName().c_str());
+      return false;
+    }
+
+    RCLCPP_INFO(
+      logger_,
+      "Requested navigation from %s while another navigator is processing,"
+      " stopping current navigator.", getName().c_str());
+
+    const auto start = std::chrono::steady_clock::now();
+    rclcpp::Rate r(100);
+    while (!plugin_muxer_->startNavigating(this)) {
+      if (std::chrono::steady_clock::now() - start > navigator_preemption_timeout_) {
+        RCLCPP_ERROR(
+          logger_,
+          "Timed out waiting for current navigator to stop before accepting"
+          " goal from %s. Rejecting request.", getName().c_str());
+        return false;
+      }
+      // Requested every cycle, since the navigator holding the muxer can change while waiting,
+      // such as when a pending goal starts after the previous one completed
+      plugin_muxer_->preemptCurrentNavigator();
+      r.sleep();
+    }
+    return true;
   }
 
   /**
