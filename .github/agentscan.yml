@@ -1,0 +1,44 @@
+version: 1
+
+scan:
+  pull-requests: true
+  issues: true
+
+# full | comment | labels | silent
+mode: full
+
+# Exact, case-sensitive usernames. GitHub Apps (dependabot[bot], etc.) are skipped automatically.
+allowed-users: ["dependabot[bot]", "github-actions[bot]"]
+
+# Any of: owner, member, collaborator, contributor, first_timer, first_time_contributor
+trusted-author-associations: [owner, member, collaborator, contributor]
+
+comment-on-organic: false
+
+auto-close: false
+auto-close-classifications: [automation]   # any of: organic, mixed, automation
+
+honeypot: true
+
+labels:
+  community-flagged: agentscan:community-flagged-ai
+  mixed: agentscan:mixed-ai
+  automation: agentscan:automation-ai
+
+# Empty string = use the built-in text
+messages:
+  organic: ""
+  mixed: "This account has been flagged as a mixed human and AI bot/agent account.
+    Issues/PR descriptions are required to be written by authors and software reviewed by them.
+    If this does not comply with our contribution guidelines, consider revising your contribution accordingly."
+
+  automation: "This account has been flagged as being an automated account, AI bot, or agent. If an AI agent prepared this,
+    please say so and confirm a person has reviewed, tested the change, and wrote the PR description themselves.
+    Unreviewed automated contributions may be closed without review and violate our contribution guidelines.
+    Continued failure to comply with these guidelines may result in restrictions on your account."
+
+  community-flagged: "This account has been reported by other maintainers as automated. A maintainer
+    will verify before reviewing. Issues/PR descriptions are required to be written by authors and software reviewed by them."
+  insufficient-data: ""
+  honeypot: ""            # supports {username}, {type}
+  honeypot-first-time: "" # falls back to `honeypot` if empty
