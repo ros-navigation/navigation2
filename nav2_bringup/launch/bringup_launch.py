@@ -55,6 +55,16 @@ def generate_launch_description() -> LaunchDescription:
     use_keepout_zones = LaunchConfigAsBool('use_keepout_zones')
     use_speed_zones = LaunchConfigAsBool('use_speed_zones')
 
+    # component_container gained --isolated and --executor-type in Lyrical, older
+    # distributions still need the dedicated component_container_isolated executable
+    if os.environ.get('ROS_DISTRO', '') in ('jazzy', 'kilted'):
+        container_executable = 'component_container_isolated'
+        container_arguments = ['--ros-args', '--log-level', log_level]
+    else:
+        container_executable = 'component_container'
+        container_arguments = ['--isolated', '--executor-type', 'single-threaded',
+                               '--ros-args', '--log-level', log_level]
+
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
@@ -236,10 +246,9 @@ def generate_launch_description() -> LaunchDescription:
                 name=container_name,
                 namespace=namespace,
                 package='rclcpp_components',
-                executable='component_container',
+                executable=container_executable,
                 parameters=[configured_params, {'autostart': autostart}],
-                arguments=['--isolated', '--executor-type', 'single-threaded',
-                           '--ros-args', '--log-level', log_level],
+                arguments=container_arguments,
                 remappings=remappings,
                 output='screen',
             ),
