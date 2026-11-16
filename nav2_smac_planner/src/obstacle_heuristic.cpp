@@ -12,10 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <algorithm>
+
 #include "nav2_smac_planner/obstacle_heuristic.hpp"
 
 namespace nav2_smac_planner
 {
+
+bool ObstacleHeuristic::cellBlocked(
+  const unsigned int idx, const unsigned int size_x, const unsigned int size_y,
+  const bool downsample_obstacle_heuristic)
+{
+  auto costmap = collision_checker_->getCostmap();
+  const float scale = downsample_obstacle_heuristic ? 2.0f : 1.0f;
+  float cost;
+  if (downsample_obstacle_heuristic) {
+    const unsigned int y_offset = (idx / size_x) * 2;
+    const unsigned int x_offset = (idx % size_x) * 2;
+    cost = costmap->getCost(x_offset, y_offset);
+    for (unsigned int k = 0; k < 2u; ++k) {
+      for (unsigned int j = 0; j < 2u; ++j) {
+        if (x_offset + k < costmap->getSizeInCellsX() &&
+          y_offset + j < costmap->getSizeInCellsY())
+        {
+          cost = std::min(cost, static_cast<float>(costmap->getCost(x_offset + k, y_offset + j)));
+        }
+      }
+    }
+  } else {
+    cost = static_cast<float>(costmap->getCost(idx));
+  }
+  const unsigned int my = idx / size_x;
+  const unsigned int mx = idx % size_x;
+  return mx >= size_x - 3 || mx <= 3 || my >= size_y - 3 || my <= 3 ||
+         collision_checker_->exceedsMaxCost(cost, scale * (mx + 0.5f), scale * (my + 0.5f));
+}
 
 void ObstacleHeuristic::resetObstacleHeuristic(
   GridCollisionChecker * collision_checker,
@@ -99,6 +130,32 @@ float ObstacleHeuristic::getObstacleHeuristic(
   if (requested_node_cost > 0.0f) {
     // costs are doubled due to downsampling
     return scale * requested_node_cost;
+  }
+
+  // The expansion never reaches a cell it cannot enter and would exhaust the whole map
+  // looking for it, so estimate such a cell from its enterable neighbors instead
+  if (cellBlocked(start_index, size_x, size_y, downsample_obstacle_heuristic)) {
+    float best = -1.0f;
+    for (int dy = -1; dy <= 1; ++dy) {
+      for (int dx = -1; dx <= 1; ++dx) {
+        const int nx = static_cast<int>(start_x) + dx;
+        const int ny = static_cast<int>(start_y) + dy;
+        if ((dx == 0 && dy == 0) || nx < 0 || ny < 0 ||
+          nx >= static_cast<int>(size_x) || ny >= static_cast<int>(size_y) ||
+          cellBlocked(ny * size_x + nx, size_x, size_y, downsample_obstacle_heuristic))
+        {
+          continue;
+        }
+        const Coordinates neighbor((nx + 0.5f) * scale, (ny + 0.5f) * scale, node_coords.theta);
+        const float h = getObstacleHeuristic(
+          neighbor, cost_penalty, use_quadratic_cost_penalty, downsample_obstacle_heuristic);
+        if (h > 0.0f) {
+          const float step = scale * ((dx != 0 && dy != 0) ? sqrtf(2.0f) : 1.0f);
+          best = best < 0.0f ? h + step : std::min(best, h + step);
+        }
+      }
+    }
+    return std::max(best, 0.0f);
   }
 
   // If not, expand until it is included. This dynamic programming ensures that

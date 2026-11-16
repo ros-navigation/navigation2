@@ -87,6 +87,18 @@ public:
   }
 
 protected:
+  /**
+   * @brief Whether the heuristic expansion never enters a cell, due to max cost or map border
+   * @param idx Cell index in the (possibly downsampled) heuristic grid
+   * @param size_x Heuristic grid width
+   * @param size_y Heuristic grid height
+   * @param downsample_obstacle_heuristic Whether the heuristic grid is downsampled
+   * @return If the cell is never entered
+   */
+  bool cellBlocked(
+    const unsigned int idx, const unsigned int size_x, const unsigned int size_y,
+    const bool downsample_obstacle_heuristic);
+
   LookupTable obstacle_heuristic_lookup_table_;
   ObstacleHeuristicQueue obstacle_heuristic_queue_;
   GridCollisionChecker * collision_checker_{nullptr};
