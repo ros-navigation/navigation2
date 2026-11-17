@@ -28,7 +28,11 @@ namespace nav2_behavior_tree
 {
 
 /**
- * @brief A BT::ActionNodeBase to shorten path by some distance
+ * @brief A BT::ActionNodeBase to concatenate two paths
+ *
+ * Both paths must be in the same frame. If their frames differ the node fails,
+ * unless transform_path2 is set, in which case input_path2 is transformed into
+ * the frame of input_path1 before the poses are appended.
  *
  * Usage in XML:
  * @code
@@ -56,6 +60,10 @@ public:
     return {
       BT::InputPort<nav_msgs::msg::Path>("input_path1", "Input Path 1 to cancatenate"),
       BT::InputPort<nav_msgs::msg::Path>("input_path2", "Input Path 2 to cancatenate"),
+      BT::InputPort<bool>(
+        "transform_path2", false,
+        "Transform input_path2 into the frame of input_path1 when the frames differ, "
+        "instead of failing"),
       BT::OutputPort<nav_msgs::msg::Path>("output_path", "Paths concatenated"),
     };
   }

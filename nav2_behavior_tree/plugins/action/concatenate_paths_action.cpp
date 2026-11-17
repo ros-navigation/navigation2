@@ -19,6 +19,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/path_utils.hpp"
 #include "behaviortree_cpp/decorator_node.h"
 
 #include "nav2_behavior_tree/plugins/action/concatenate_paths_action.hpp"
@@ -46,6 +47,39 @@ inline BT::NodeStatus ConcatenatePaths::tick()
       config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node")->get_logger(),
       "No input paths provided to concatenate. Both paths are empty.");
     return BT::NodeStatus::FAILURE;
+  }
+
+  const std::string & frame1 = input_path1.header.frame_id;
+  const std::string & frame2 = input_path2.header.frame_id;
+  if (!input_path1.poses.empty() && !input_path2.poses.empty() &&
+    !frame1.empty() && !frame2.empty() && frame1 != frame2)
+  {
+    auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+    bool transform_path2 = false;
+    getInput("transform_path2", transform_path2);
+    if (!transform_path2) {
+      RCLCPP_ERROR(
+        node->get_logger(),
+        "Cannot concatenate paths in different frames ('%s' and '%s'). "
+        "Set transform_path2 to transform the second path into the frame of the first.",
+        frame1.c_str(), frame2.c_str());
+      return BT::NodeStatus::FAILURE;
+    }
+
+    auto tf_buffer = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+    double transform_tolerance = 0.1;
+    node->get_parameter("transform_tolerance", transform_tolerance);
+    nav_msgs::msg::Path transformed_path2;
+    if (!nav2_util::transformPathInTargetFrame(
+        input_path2, transformed_path2, *tf_buffer, frame1, transform_tolerance))
+    {
+      RCLCPP_ERROR(
+        node->get_logger(),
+        "Failed to transform the second path from '%s' to '%s' for concatenation.",
+        frame2.c_str(), frame1.c_str());
+      return BT::NodeStatus::FAILURE;
+    }
+    input_path2 = transformed_path2;
   }
 
   nav_msgs::msg::Path output_path;
