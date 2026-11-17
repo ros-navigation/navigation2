@@ -23,6 +23,7 @@ find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(angles REQUIRED)
 find_package(ompl REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -74,7 +75,7 @@ add_library(${library_name} SHARED
   src/node_basic.cpp
 )
 
-target_link_libraries(${library_name} ${OMPL_LIBRARIES})
+target_link_libraries(${library_name} ${OMPL_LIBRARIES} nlohmann_json::nlohmann_json)
 target_include_directories(${library_name} PUBLIC ${Eigen3_INCLUDE_DIRS})
 
 ament_target_dependencies(${library_name}
@@ -95,7 +96,7 @@ add_library(${library_name}_2d SHARED
   src/node_basic.cpp
 )
 
-target_link_libraries(${library_name}_2d ${OMPL_LIBRARIES})
+target_link_libraries(${library_name}_2d ${OMPL_LIBRARIES} nlohmann_json::nlohmann_json)
 target_include_directories(${library_name}_2d PUBLIC ${Eigen3_INCLUDE_DIRS})
 
 ament_target_dependencies(${library_name}_2d
@@ -116,7 +117,7 @@ add_library(${library_name}_lattice SHARED
   src/node_basic.cpp
 )
 
-target_link_libraries(${library_name}_lattice ${OMPL_LIBRARIES})
+target_link_libraries(${library_name}_lattice ${OMPL_LIBRARIES} nlohmann_json::nlohmann_json)
 target_include_directories(${library_name}_lattice PUBLIC ${Eigen3_INCLUDE_DIRS})
 
 ament_target_dependencies(${library_name}_lattice
@@ -149,5 +150,5 @@ endif()
 
 ament_export_include_directories(include ${OMPL_INCLUDE_DIRS})
 ament_export_libraries(${library_name} ${library_name}_2d ${library_name}_lattice)
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(${dependencies} nlohmann_json)
 ament_package()
