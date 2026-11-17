@@ -67,6 +67,7 @@ add_library(${library_name} SHARED
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
+target_link_libraries(${library_name} nlohmann_json::nlohmann_json nanoflann::nanoflann)
 
 # Main executable
 add_executable(${executable_name}
@@ -91,6 +92,7 @@ add_library(edge_scorers SHARED
 ament_target_dependencies(edge_scorers
   ${dependencies}
 )
+target_link_libraries(edge_scorers nlohmann_json::nlohmann_json nanoflann::nanoflann)
 
 # Route operations plugins
 add_library(route_operations SHARED
@@ -103,6 +105,7 @@ add_library(route_operations SHARED
 ament_target_dependencies(route_operations
   ${dependencies}
 )
+target_link_libraries(route_operations nlohmann_json::nlohmann_json nanoflann::nanoflann)
 
 # Graph Parser plugins
 add_library(graph_file_loaders SHARED
@@ -111,6 +114,7 @@ add_library(graph_file_loaders SHARED
 ament_target_dependencies(graph_file_loaders
   ${dependencies}
 )
+target_link_libraries(graph_file_loaders nlohmann_json::nlohmann_json nanoflann::nanoflann)
 
 add_library(graph_file_savers SHARED
     src/plugins/graph_file_savers/geojson_graph_file_saver.cpp
@@ -118,6 +122,7 @@ add_library(graph_file_savers SHARED
 ament_target_dependencies(graph_file_savers
   ${dependencies}
 )
+target_link_libraries(graph_file_savers nlohmann_json::nlohmann_json nanoflann::nanoflann)
 
 pluginlib_export_plugin_description_file(nav2_route plugins.xml)
 
@@ -149,7 +154,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(${dependencies} nanoflann)
 ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()
