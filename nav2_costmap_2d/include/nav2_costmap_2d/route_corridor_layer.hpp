@@ -37,11 +37,14 @@
 #ifndef NAV2_COSTMAP_2D__ROUTE_CORRIDOR_LAYER_HPP_
 #define NAV2_COSTMAP_2D__ROUTE_CORRIDOR_LAYER_HPP_
 
+#include <array>
+#include <cstdint>
 #include <mutex>
 #include <string>
 #include <vector>
 
 #include "nav2_costmap_2d/layer.hpp"
+#include "action_msgs/msg/goal_status_array.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -71,7 +74,7 @@ public:
   bool isClearable() override {return false;}
 
   /**
-   * @brief Record the robot pose and expand the update bounds to the full costmap.
+   * @brief Record the robot pose and expand update bounds to the full costmap.
    * @param robot_x Robot X position in the global frame
    * @param robot_y Robot Y position in the global frame
    * @param robot_yaw Robot orientation (unused)
@@ -87,25 +90,31 @@ public:
   /**
    * @brief Apply lethal boundary costs, or recovery costs when the robot is outside the corridor.
    * @param master Master costmap to update
-   * @param min_i Minimum cell X index of the update window (inclusive)
-   * @param min_j Minimum cell Y index of the update window (inclusive)
-   * @param max_i Maximum cell X index of the update window (exclusive)
-   * @param max_j Maximum cell Y index of the update window (exclusive)
+   * @param min_i Minimum cell X index of the update window 
+   * @param min_j Minimum cell Y index of the update window 
+   * @param max_i Maximum cell X index of the update window 
+   * @param max_j Maximum cell Y index of the update window 
    */
   void updateCosts(Costmap2D & master, int min_i, int min_j, int max_i, int max_j) override;
 
 protected:
   /**
-   * @brief Replace corridor segments from a path in the costmap global frame.
-   * @param path Path defining the corridor; an empty path clears it
+   * @brief Convert the new path in to segments (straight lines).
+   * @param path Path message in any frame, transformed to the costmap global frame
    */
   void pathCallback(const nav_msgs::msg::Path::SharedPtr path);
 
+  /** @brief Clear the corridor when the latest navigation goal succeeds or aborts. */
+  void goalStatusCallback(const action_msgs::msg::GoalStatusArray::SharedPtr status);
+
+  /** @brief Reset the master costmap and the other plugins and filters. */
+  void clearCostmaps(Costmap2D & master);
+
   /**
-   * @brief Build and publish the corridor mask using the current costmap geometry.
+   * @brief Build and publish the masks.
    * @param master Costmap providing the mask dimensions, resolution, and origin
    */
-  void buildMask(const Costmap2D & master);
+  void buildMask(Costmap2D & master);
 
   /**
    * @brief Check whether a world position lies inside the corridor mask.
@@ -121,8 +130,13 @@ protected:
     geometry_msgs::msg::Point end;
   };
   rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
+  std::vector<rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr> goal_status_subs_;
+  std::array<uint8_t, 16> latest_goal_id_{};
+  int64_t latest_goal_stamp_{-1};
+  bool goal_finished_{false};
+  bool goal_clear_pending_{false};
   std::mutex mutex_;
-  std::vector<Segment> edges_;
+  std::vector<Segment> path_segments_;
   nav_msgs::msg::OccupancyGrid mask_;
   std::vector<bool> corridor_cells_;
   std::vector<size_t> boundary_indices_;

@@ -4,7 +4,7 @@
     2. Follow the route while updating the path.
     3. Drive from the end of the route to the goal.
 
-  The corridor layer reads the path published on /plan.
+  The corridor layer reads the route path published on /route_plan.
 
   Keep the last nonempty route path when route tracking finishes.
   This lets the robot finish driving to the end of the route.
@@ -46,7 +46,7 @@
         -->
         <Parallel success_count="2" failure_count="1">
 
-          <!-- Track progress along the route and update tracked_path. /path output the selected route -->
+          <!-- Track progress along the route and update tracked_path. /route_plan outputs the selected route -->
           <ComputeAndTrackRoute goal="{goal}" path="{tracked_path}" use_poses="true" error_code_id="{route_error_code}" error_msg="{route_error_msg}"/>
 
           <PipelineSequence name="FollowTrackedRoute">
