@@ -123,7 +123,6 @@ protected:
 
   Optimizer optimizer_;
   TrajectoryVisualizer trajectory_visualizer_;
-  // Declared after the plugin owners, so their parameter callbacks are destroyed first
   std::unique_ptr<ParametersHandler> parameters_handler_;
 
   bool visualize_;
