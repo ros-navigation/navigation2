@@ -95,6 +95,8 @@ protected:
    */
   void createSubscription(std::string & polygon_sub_topic) override;
 
+  using Polygon::updatePolygon;
+
   /**
    * @brief Updates polygon from radius value
    * @param radius New circle radius to update polygon
