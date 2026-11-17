@@ -144,7 +144,7 @@ def generate_launch_description() -> LaunchDescription:
         'use_rviz', default_value='True', description='Whether to start RVIZ'
     )
 
-        declare_simulator_cmd = DeclareLaunchArgument(
+declare_simulator_cmd = DeclareLaunchArgument(
         'headless',
         default_value='True',
         description=(
