@@ -187,6 +187,7 @@ struct GoalState
 {
   NodeT * goal = nullptr;
   bool is_valid = true;
+  double yaw = 0.0;  // Exact heading in radians to collision check SE2 goals at
 };
 
 typedef std::vector<MotionPrimitive> MotionPrimitives;
