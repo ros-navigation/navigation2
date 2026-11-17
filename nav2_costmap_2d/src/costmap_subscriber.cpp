@@ -60,16 +60,29 @@ void CostmapSubscriber::costmapUpdateCallback(
 
     std::lock_guard<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
 
-    auto map_cell_size_x = costmap_->getSizeInCellsX();
-    auto map_call_size_y = costmap_->getSizeInCellsY();
+    const auto map_cell_size_x = costmap_->getSizeInCellsX();
+    const auto map_cell_size_y = costmap_->getSizeInCellsY();
 
-    if (map_cell_size_x < update_msg->x + update_msg->size_x ||
-      map_call_size_y < update_msg->y + update_msg->size_y)
+    // Compare before subtracting: adding the two uint32 fields first can wrap
+    // and let an out-of-range update pass the check.
+    if (update_msg->x > map_cell_size_x ||
+      update_msg->size_x > map_cell_size_x - update_msg->x ||
+      update_msg->y > map_cell_size_y ||
+      update_msg->size_y > map_cell_size_y - update_msg->y)
     {
       RCLCPP_WARN(
-        logger_, "Update area outside of original map area. Costmap bounds: %d X %d, "
-        "Update origin: %d, %d  bounds: %d X %d", map_cell_size_x, map_call_size_y,
+        logger_, "Update area outside of original map area. Costmap bounds: %u X %u, "
+        "Update origin: %u, %u  bounds: %u X %u", map_cell_size_x, map_cell_size_y,
         update_msg->x, update_msg->y, update_msg->size_x, update_msg->size_y);
+      return;
+    }
+
+    if (update_msg->data.size() !=
+      static_cast<size_t>(update_msg->size_x) * update_msg->size_y)
+    {
+      RCLCPP_WARN(
+        logger_, "Update data size %zu does not match update bounds %u X %u",
+        update_msg->data.size(), update_msg->size_x, update_msg->size_y);
       return;
     }
     unsigned char * master_array = costmap_->getCharMap();
