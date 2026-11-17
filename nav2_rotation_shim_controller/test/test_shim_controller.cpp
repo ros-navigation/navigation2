@@ -705,6 +705,62 @@ TEST(RotationShimControllerTest, maxCostThresholdTest)
     nav2_core::NoValidControl);
 }
 
+TEST(RotationShimControllerTest, collisionCheckStopsAtHandOffInBothDirections)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
+  std::string name = "test";
+  auto tf = nav2::create_transform_buffer(node);
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  // Long, thin footprint pointing along +x so a rotation sweeps it across obstacles
+  costmap->declare_parameter(
+    "footprint", std::string("[[1.0, 0.1], [1.0, -0.1], [-0.1, -0.1], [-0.1, 0.1]]"));
+  costmap->configure();
+  node->declare_parameter(
+    "test.primary_controller.plugin",
+    std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
+  node->declare_parameter("controller_frequency", 20.0);
+  auto controller = std::make_shared<RotationShimShim>();
+  controller->configure(node, name, tf, costmap);
+  controller->activate();
+
+  // Robot in the middle of the 5x5m costmap
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 2.5;
+  pose.pose.position.y = 2.5;
+  pose.pose.orientation.w = 1.0;
+
+  // Lethal walls 0.6m to the left and right of the robot, only reachable by the
+  // footprint after rotating more than ~60 degrees either way
+  auto * grid = costmap->getCostmap();
+  unsigned int mx, my;
+  for (double x = 2.2; x <= 2.8; x += 0.025) {
+    ASSERT_TRUE(grid->worldToMap(x, 3.1, mx, my));
+    grid->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
+    ASSERT_TRUE(grid->worldToMap(x, 1.9, mx, my));
+    grid->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
+  }
+
+  // Heading error of 1.0 rad with the default angular_dist_threshold (0.785) leaves
+  // ~0.215 rad of rotation before control is handed to the primary controller, so the
+  // walls must not be collision checked even though simulate_ahead_time (1s) at 1.8 rad/s
+  // would reach them.
+  geometry_msgs::msg::Twist velocity;
+  velocity.angular.z = -1.8;
+  EXPECT_NO_THROW(controller->computeRotateToHeadingCommandWrapper(-1.0, pose, velocity));
+  velocity.angular.z = 1.8;
+  EXPECT_NO_THROW(controller->computeRotateToHeadingCommandWrapper(1.0, pose, velocity));
+
+  // Sanity check: a rotation large enough to reach the walls before hand-off is rejected
+  velocity.angular.z = -1.8;
+  EXPECT_THROW(
+    controller->computeRotateToHeadingCommandWrapper(-3.0, pose, velocity),
+    nav2_core::NoValidControl);
+  velocity.angular.z = 1.8;
+  EXPECT_THROW(
+    controller->computeRotateToHeadingCommandWrapper(3.0, pose, velocity),
+    nav2_core::NoValidControl);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
