@@ -73,7 +73,7 @@ TEST(AStarTest, test_a_star_2d)
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
   a_star.setCollisionChecker(checker.get());
   a_star.setStart(20u, 20u, 0);
-  a_star.setGoal(80u, 80u, 0);
+  a_star.setGoal(80.5f, 80.5f, 0);
   nav2_smac_planner::Node2D::CoordinateVector path;
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
   EXPECT_EQ(num_it, 2414);

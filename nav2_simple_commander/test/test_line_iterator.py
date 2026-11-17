@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cmath import sqrt
+import math
 import unittest
 
 from nav2_simple_commander.line_iterator import LineIterator
@@ -61,7 +61,12 @@ class TestLineIterator(unittest.TestCase):
     def test_line_length(self):
         # Test if the line length is calculated correctly
         lt = LineIterator(0, 0, 5, 5, 1)
-        self.assertEqual(lt.get_line_length(), sqrt(pow(5, 2) + pow(5, 2)))
+        length = lt.get_line_length()
+        self.assertIsInstance(length, float)
+        self.assertAlmostEqual(length, math.sqrt(50))
+        # A real-valued length can be compared and used in arithmetic
+        self.assertGreater(length, 7.0)
+        self.assertEqual(LineIterator(0, 0, 3, 4).get_line_length(), 5.0)
 
     def test_straight_line(self):
         # Test if the calculations are correct for y = x

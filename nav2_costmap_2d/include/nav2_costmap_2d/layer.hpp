@@ -158,7 +158,7 @@ public:
   }
 
   /** @brief Convenience function for layered_costmap_->getFootprint(). */
-  const std::vector<geometry_msgs::msg::Point> & getFootprint() const;
+  std::vector<geometry_msgs::msg::Point> getFootprint() const;
   /** @brief Convenience functions for declaring ROS parameters */
   std::string getFullName(const std::string & param_name);
 

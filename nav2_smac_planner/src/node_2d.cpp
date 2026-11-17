@@ -156,16 +156,18 @@ bool Node2D::backtracePath(CoordinateVector & path)
     return false;
   }
 
+  const unsigned int size_x = _ctx->neighbors_grid_offsets[3];  // +size_x
   NodePtr current_node = this;
 
   while (current_node->parent) {
-    path.push_back(
-      Node2D::getCoords(current_node->getIndex()));
+    // A node represents a whole cell and the integer coordinates of its index are the cell's
+    // lower corner in continuous map coordinates, so the path is reported at the cell's center.
+    path.push_back(Node2D::getCellCenterCoords(current_node->getIndex(), size_x));
     current_node = current_node->parent;
   }
 
   // add the start pose
-  path.push_back(Node2D::getCoords(current_node->getIndex()));
+  path.push_back(Node2D::getCellCenterCoords(current_node->getIndex(), size_x));
 
   return true;
 }

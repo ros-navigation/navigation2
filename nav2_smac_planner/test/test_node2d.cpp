@@ -110,6 +110,8 @@ TEST(Node2DTest, test_node_2d)
   EXPECT_EQ(nav2_smac_planner::Node2D::getCoords(436u, 10u, 1u).x, 6u);
   EXPECT_EQ(nav2_smac_planner::Node2D::getCoords(436u, 10u, 1u).y, 43u);
   EXPECT_THROW(nav2_smac_planner::Node2D::getCoords(436u, 10u, 10u), std::runtime_error);
+  EXPECT_EQ(nav2_smac_planner::Node2D::getCellCenterCoords(436u, 10u).x, 6.5f);
+  EXPECT_EQ(nav2_smac_planner::Node2D::getCellCenterCoords(436u, 10u).y, 43.5f);
 }
 
 TEST(Node2DTest, test_node_2d_neighbors)

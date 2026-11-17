@@ -62,7 +62,7 @@ void RotateToGoalCritic::onInit()
     dwb_plugin_name_ + ".xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
   path_length_tolerance_ = node->declare_or_get_parameter(
-    dwb_plugin_name_ + "path_length_tolerance", 1.0);
+    dwb_plugin_name_ + ".path_length_tolerance", 1.0);
   double stopped_xy_velocity = node->declare_or_get_parameter(
     dwb_plugin_name_ + ".trans_stopped_velocity", 0.25);
   stopped_xy_velocity_sq_ = stopped_xy_velocity * stopped_xy_velocity;

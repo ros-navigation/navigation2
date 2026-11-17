@@ -17,3 +17,11 @@ nav2_add_gtest(test_max_cycles
 target_link_libraries(test_max_cycles
   ${library_name}
 )
+
+# Test planning from a start or to a goal next to inscribed cells
+nav2_add_gtest(test_start_cell
+  test_start_cell.cpp
+)
+target_link_libraries(test_start_cell
+  ${library_name}
+)
