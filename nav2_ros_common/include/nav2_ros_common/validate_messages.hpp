@@ -25,6 +25,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
+#include "nav2_msgs/msg/costmap_update.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "sensor_msgs/msg/range.hpp"
@@ -296,6 +297,14 @@ bool validateMsg(const nav2_msgs::msg::Costmap & msg)
   }
 
   return true;
+}
+
+bool validateMsg(const nav2_msgs::msg::CostmapUpdate & msg)
+{
+    if (!validateMsg(msg.header)) {return false;}
+    if (msg.data.size() != msg.size_x * msg.size_y) {return false;}
+
+    return true;
 }
 
 }  //  namespace nav2
