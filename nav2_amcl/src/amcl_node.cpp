@@ -68,6 +68,7 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 
 AmclNode::~AmclNode()
 {
+  motion_model_.reset();
 }
 
 nav2::CallbackReturn

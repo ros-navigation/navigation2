@@ -72,6 +72,8 @@ void Optimizer::initialize(
 void Optimizer::shutdown()
 {
   noise_generator_.shutdown();
+  critics_data_.motion_model.reset();
+  motion_model_.reset();
 }
 
 void Optimizer::getParams()
@@ -678,7 +680,8 @@ void Optimizer::updateControlSequence()
 
   auto costs_normalized = costs_ - costs_.minCoeff();
   const float inv_temp = 1.0f / s.temperature;
-  auto softmaxes = (-inv_temp * costs_normalized).exp().eval();
+  constexpr float kMaxExponent = 80.0f;
+  auto softmaxes = ((-inv_temp * costs_normalized).cwiseMax(-kMaxExponent)).exp().eval();
   softmaxes /= softmaxes.sum();
 
   auto softmax_mat = softmaxes.matrix();
@@ -718,6 +721,8 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
   auto node = parent_.lock();
   const std::string plugin_ns = name_ + "." + motion_model_name;
   std::string plugin_type;
+  critics_data_.motion_model.reset();
+  motion_model_.reset();
   motion_model_loader_ =
     std::make_unique<pluginlib::ClassLoader<MotionModel>>(
     "nav2_mppi_controller", "mppi::MotionModel");
