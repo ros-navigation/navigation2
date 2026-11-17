@@ -46,7 +46,7 @@ public:
   /**
    * @brief Initialization process of layer on startup
    */
-  virtual void onInitialize();
+  void onInitialize() override;
   /**
    * @brief Update the bounds of the master costmap by this layer's update
    *dimensions
@@ -58,14 +58,14 @@ public:
    * @param max_x X max map coord of the window to update
    * @param max_y Y max map coord of the window to update
    */
-  virtual void updateBounds(
+  void updateBounds(
     double robot_x,
     double robot_y,
     double robot_yaw,
     double * min_x,
     double * min_y,
     double * max_x,
-    double * max_y);
+    double * max_y) override;
   /**
    * @brief Update the costs in the master costmap in the window
    * @param master_grid The master costmap grid to update
@@ -74,31 +74,31 @@ public:
    * @param max_x X max map coord of the window to update
    * @param max_y Y max map coord of the window to update
    */
-  virtual void updateCosts(
+  void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i,
     int min_j,
     int max_i,
-    int max_j);
-  virtual void onFootprintChanged();
+    int max_j) override;
+  void onFootprintChanged() override;
   /** @brief Update the footprint to match size of the parent costmap. */
-  virtual void matchSize();
+  void matchSize() override;
   /**
    * @brief Deactivate the layer
    */
-  virtual void deactivate();
+  void deactivate() override;
   /**
    * @brief Activate the layer
    */
-  virtual void activate();
+  void activate() override;
   /**
    * @brief Reset this costmap
    */
-  virtual void reset();
+  void reset() override;
   /**
    * @brief If clearing operations should be processed on this layer or not
    */
-  virtual bool isClearable();
+  bool isClearable() override;
   /**
    * @brief Clear an area in the constituent costmaps with the given dimension
    * if invert, then clear everything except these dimensions
