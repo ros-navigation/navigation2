@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include "gtest/gtest.h"
 #include "rclcpp/executors/single_threaded_executor.hpp"
@@ -119,6 +121,33 @@ TEST(GraphLoader, test_transformation_api)
   EXPECT_FALSE(graph_loader.transformGraph(graph));
   EXPECT_EQ(graph[0].coords.frame_id, "map_test2");
   EXPECT_EQ(graph[0].coords.x, or_coord);
+}
+
+TEST(GraphLoader, test_waits_for_transform)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_wait_test");
+  auto tf_manager = nav2::create_transform_manager(node);
+  GraphLoader graph_loader(node, tf_manager, "map");
+
+  Graph graph(1);
+  graph[0].coords.frame_id = "graph_frame";
+  graph[0].coords.x = 2.0;
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.child_frame_id = "graph_frame";
+  transform.transform.translation.x = 1.0;
+
+  // Deliver TF after the lookup starts, without depending on DDS discovery timing.
+  std::thread delivery([&]() {
+      std::this_thread::sleep_for(std::chrono::milliseconds(250));
+      EXPECT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", true));
+    });
+  EXPECT_TRUE(graph_loader.transformGraph(graph));
+  delivery.join();
+
+  EXPECT_EQ(graph[0].coords.frame_id, "map");
+  EXPECT_FLOAT_EQ(graph[0].coords.x, 3.0);
 }
 
 TEST(GraphLoader, test_transformation_api2)
