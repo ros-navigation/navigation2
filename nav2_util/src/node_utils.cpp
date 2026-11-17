@@ -19,6 +19,15 @@
 #include <algorithm>
 #include <cctype>
 
+#ifdef __APPLE__
+  #include <pthread.h>
+  #include <mach/mach.h>
+  #include <mach/thread_policy.h>
+#else
+  #include <sched.h>
+  #include <errno.h>
+#endif
+
 using std::chrono::high_resolution_clock;
 using std::to_string;
 using std::string;
@@ -92,6 +101,32 @@ rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix)
 
 void setSoftRealTimePriority()
 {
+#ifdef __APPLE__
+  // macOS: Use Mach thread API to approximate real-time scheduling
+  thread_port_t thread = pthread_mach_thread_np(pthread_self());
+
+  thread_time_constraint_policy_data_t policy;
+  policy.period = 1000;       // in microseconds (1 kHz loop)
+  policy.computation = 800;   // expected compute time per period
+  policy.constraint = 1000;   // max latency
+  policy.preemptible = 1;     // allow preemption by higher-priority threads
+
+  kern_return_t result = thread_policy_set(
+    thread,
+    THREAD_TIME_CONSTRAINT_POLICY,
+    (thread_policy_t)&policy,
+    THREAD_TIME_CONSTRAINT_POLICY_COUNT
+  );
+
+  if (result != KERN_SUCCESS) {
+    std::string errmsg =
+      "Failed to set THREAD_TIME_CONSTRAINT_POLICY on macOS. "
+      "Thread remains at default priority. Mach Error Code: " +
+      std::to_string(result);
+    throw std::runtime_error(errmsg);
+  }
+#else
+  // Linux: True real-time scheduling (requires privileges)
   sched_param sch;
   sch.sched_priority = 49;
   if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
@@ -101,6 +136,7 @@ void setSoftRealTimePriority()
       "realtime prioritization! Error: ");
     throw std::runtime_error(errmsg + std::strerror(errno));
   }
+#endif
 }
 
 }  // namespace nav2_util
