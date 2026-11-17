@@ -68,7 +68,10 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i[3-6]86)$")
 endif()
 
 # If building one the same hardware to be deployed on, try `-march=native`!
-add_compile_options(-O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
+add_compile_options(-O3 -ffp-contract=fast -ffast-math -mtune=generic)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  add_compile_options(-finline-limit=10000000)
+endif()
 
 add_library(mppi_controller SHARED
   src/controller.cpp
@@ -99,7 +102,7 @@ add_library(mppi_critics SHARED
 set(libraries mppi_controller mppi_critics)
 
 foreach(lib IN LISTS libraries)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Clang: use C++20 and optimization, omit -fconcepts
     target_compile_features(${lib} PUBLIC cxx_std_20)
   else()
