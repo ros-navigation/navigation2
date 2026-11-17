@@ -45,11 +45,6 @@ public:
   MPPIController() = default;
 
   /**
-    * @brief Destructor for mppi::MPPIController
-    */
-  ~MPPIController() override;
-
-  /**
     * @brief Configure controller on bringup
     * @param parent WeakPtr to node
     * @param name Name of plugin
@@ -126,9 +121,10 @@ protected:
   nav2::TransformBuffer::SharedPtr tf_buffer_;
   nav2::Publisher<nav_msgs::msg::Trajectory>::SharedPtr opt_traj_pub_;
 
-  std::unique_ptr<ParametersHandler> parameters_handler_;
   Optimizer optimizer_;
   TrajectoryVisualizer trajectory_visualizer_;
+  // Declared after the plugin owners, so their parameter callbacks are destroyed first
+  std::unique_ptr<ParametersHandler> parameters_handler_;
 
   bool visualize_;
   int critic_index_to_visualize_;

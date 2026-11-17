@@ -56,11 +56,6 @@ void MPPIController::configure(
   RCLCPP_INFO(logger_, "Configured MPPI Controller: %s", name_.c_str());
 }
 
-MPPIController::~MPPIController()
-{
-  cleanup();
-}
-
 void MPPIController::cleanup()
 {
   optimizer_.shutdown();
