@@ -118,14 +118,14 @@ TEST(SmacTest, test_smac_se2)
 
   std::vector<geometry_msgs::msg::PoseStamped> no_viapoints{};
   geometry_msgs::msg::PoseStamped start, goal, viapoint;
-  start.pose.position.x = 0.0;
-  start.pose.position.y = 0.0;
+  start.pose.position.x = 1.0;
+  start.pose.position.y = 1.0;
   start.pose.orientation.w = 1.0;
-  goal.pose.position.x = 1.0;
-  goal.pose.position.y = 1.0;
+  goal.pose.position.x = 2.0;
+  goal.pose.position.y = 2.0;
   goal.pose.orientation.w = 1.0;
-  viapoint.pose.position.x = 0.5;
-  viapoint.pose.position.y = 0.5;
+  viapoint.pose.position.x = 1.5;
+  viapoint.pose.position.y = 1.5;
   viapoint.pose.orientation.w = 1.0;
   std::vector<geometry_msgs::msg::PoseStamped> viapoints{viapoint};
   auto planner = std::make_unique<HybridWrap>();
@@ -230,8 +230,8 @@ TEST(SmacTest, test_smac_se2)
   }
 
   // corner case where the start and goal are on the same cell
-  goal.pose.position.x = 0.01;
-  goal.pose.position.y = 0.01;
+  goal.pose.position.x = 1.01;
+  goal.pose.position.y = 1.01;
 
   nav_msgs::msg::Path plan = planner->createPlan(
     start, goal, no_viapoints, dummy_cancel_checker);

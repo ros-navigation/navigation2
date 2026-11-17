@@ -275,8 +275,8 @@ TEST(AStarTest, test_a_star_analytic_expansion)
 
   // should be a straight path running backwards
   a_star.setCollisionChecker(checker.get());
-  a_star.setStart(80u, 0u, 0u);
-  a_star.setGoal(20u, 0u, 0u);
+  a_star.setStart(80u, 50u, 0u);
+  a_star.setGoal(20u, 50u, 0u);
   nav2_smac_planner::NodeHybrid::CoordinateVector path;
   std::unique_ptr<std::vector<std::tuple<float, float, float>>> expansions = nullptr;
   expansions = std::make_unique<std::vector<std::tuple<float, float, float>>>();
@@ -410,7 +410,7 @@ TEST(AStarTest, test_a_star_lattice)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 22);
+  EXPECT_EQ(num_it, 21);
   EXPECT_GT(path.size(), 45u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);

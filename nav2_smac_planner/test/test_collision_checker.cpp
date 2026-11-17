@@ -257,21 +257,30 @@ TEST(collision_footprint, test_max_traversal_cost)
   EXPECT_TRUE(checker.inCollision(50.0f, 50.0f, 0.0f, false));
 }
 
-TEST(collision_footprint, test_outside_map_after_rounding)
+TEST(collision_footprint, test_pose_cell_and_bounds)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("testA");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
   costmap_ros->on_configure(rclcpp_lifecycle::State());
   *costmap_ros->getCostmap() = nav2_costmap_2d::Costmap2D(100, 100, 0.05, 0, 0, 0);
+  costmap_ros->getCostmap()->setCost(16, 50, 254);
 
   nav2_smac_planner::GridCollisionChecker checker(costmap_ros, 72, node);
   checker.setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
-  // Poses are rounded to the nearest cell, which must be within the map
-  EXPECT_FALSE(checker.inCollision(99.4f, 50.0f, 0.0f, false));
-  EXPECT_TRUE(checker.inCollision(99.6f, 50.0f, 0.0f, false));
-  EXPECT_TRUE(checker.inCollision(50.0f, 99.6f, 0.0f, false));
-  EXPECT_TRUE(checker.inCollision(-0.6f, 50.0f, 0.0f, false));
+  // Cell i spans [i, i+1) in continuous map coordinates
+  EXPECT_FALSE(checker.inCollision(15.9f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(16.0f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(16.9f, 50.0f, 0.0f, false));
+
+  // Poses must be within the map, excluding its border
+  EXPECT_FALSE(checker.inCollision(3.0f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(2.9f, 50.0f, 0.0f, false));
+  EXPECT_FALSE(checker.inCollision(96.9f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(97.0f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(50.0f, 97.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(50u * 100u + 2u, false));
+  EXPECT_FALSE(checker.inCollision(50u * 100u + 3u, false));
 }
 
 int main(int argc, char ** argv)

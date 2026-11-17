@@ -745,6 +745,7 @@ SmacPlannerLatticeT<NodeT>::updateParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == _name + ".allow_unknown") {
         reinit_a_star = true;
+        reinit_lookup_table = true;
         _allow_unknown = parameter.as_bool();
       } else if (param_name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;

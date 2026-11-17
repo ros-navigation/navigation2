@@ -83,7 +83,7 @@ public:
     const bool & traverse_unknown);
 
   /**
-   * @brief Check if in collision with costmap and footprint at pose
+   * @brief Check if in collision with costmap and footprint at the center of a cell
    * @param i Index to search collision status of
    * @param traverse_unknown Whether or not to traverse in unknown space
    * @return boolean if in collision or not.
@@ -144,13 +144,16 @@ public:
   }
 
   /**
-   * @brief Check if value outside the range
-   * @param min Minimum value of the range
+   * @brief Check if value outside the range, excluding a border at the map's edges
    * @param max Maximum value of the range
    * @param value the value to check if it is within the range
    * @return boolean if in range or not
    */
-  bool outsideRange(const unsigned int & max, const float & value);
+  inline bool outsideRange(const unsigned int & max, const float & value) const
+  {
+    // The value cannot be within 3 cells of the map border
+    return value < 3.0f || value + 3.0f >= max;
+  }
 
 protected:
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;

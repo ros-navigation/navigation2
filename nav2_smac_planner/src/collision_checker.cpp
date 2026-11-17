@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <algorithm>
+#include <cmath>
 
 #include "nav2_smac_planner/collision_checker.hpp"
 
@@ -105,19 +106,24 @@ bool GridCollisionChecker::inCollision(
   const float & angle_bin,
   const bool & traverse_unknown)
 {
-  // Check to make sure the rounded cell is inside the map
-  if (outsideRange(costmap_->getSizeInCellsX(), x + 0.5f) ||
-    outsideRange(costmap_->getSizeInCellsY(), y + 0.5f))
+  // Check to make sure cell is inside the map
+  if (outsideRange(costmap_->getSizeInCellsX(), x) ||
+    outsideRange(costmap_->getSizeInCellsY(), y))
   {
     return true;
   }
 
   // Assumes setFootprint already set
   center_cost_ = static_cast<float>(costmap_->getCost(
-      static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
+      static_cast<unsigned int>(x), static_cast<unsigned int>(y)));
 
-  // Lethal, or above the max cost outside of the start and goal relief zones
-  if (center_cost_ != UNKNOWN_COST && exceedsMaxCost(center_cost_, x, y)) {
+  // Lethal, or above the max cost outside of the start and goal relief zones. This is checked
+  // from the cell center, rather than the continuous pose because its validity is a property of
+  // the cell, like the cost is to keep consistency for any pose within a cell
+  if (center_cost_ != UNKNOWN_COST &&
+    exceedsMaxCost(
+      center_cost_, std::floor(x) + 0.5f, std::floor(y) + 0.5f))
+  {
     return true;
   }
 
@@ -166,16 +172,11 @@ bool GridCollisionChecker::inCollision(
   const unsigned int & i,
   const bool & traverse_unknown)
 {
-  center_cost_ = costmap_->getCost(i);
-
-  // Lethal, or above the max cost outside of the start and goal relief zones
+  // Check the center of the cell
   const unsigned int size_x = costmap_->getSizeInCellsX();
-  if (center_cost_ != UNKNOWN_COST && exceedsMaxCost(center_cost_, i % size_x, i / size_x)) {
-    return true;
-  }
-
-  // if unknown and not to traverse unknown space
-  return center_cost_ == UNKNOWN_COST && !traverse_unknown;
+  return inCollision(
+    static_cast<float>(i % size_x) + 0.5f, static_cast<float>(i / size_x) + 0.5f, 0.0f,
+    traverse_unknown);
 }
 
 void GridCollisionChecker::setMaxCost(
@@ -194,11 +195,6 @@ float GridCollisionChecker::getCost()
 {
   // Assumes inCollision called prior
   return static_cast<float>(center_cost_);
-}
-
-bool GridCollisionChecker::outsideRange(const unsigned int & max, const float & value)
-{
-  return value < 0.0f || value >= max;
 }
 
 }  // namespace nav2_smac_planner

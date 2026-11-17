@@ -142,7 +142,7 @@ void AStarAlgorithm<NodeT>::setStart(
   const unsigned int & dim_3)
 {
   if constexpr (std::is_base_of_v<Node2D, NodeT>) {
-    // Node2D-specific: different getIndex signature, no pose setting
+    // Node2D-specific: different getIndex signature
     if (dim_3 != 0) {
       throw std::runtime_error("Node type Node2D cannot be given non-zero starting dim 3.");
     }
@@ -151,6 +151,7 @@ void AStarAlgorithm<NodeT>::setStart(
         static_cast<unsigned int>(mx),
         static_cast<unsigned int>(my),
         getSizeX()));
+    _start->setPose(Node2D::Coordinates(mx, my));
   } else {
     // SE2 node: use full index and set pose
     _start = addToGraph(
@@ -178,8 +179,8 @@ void AStarAlgorithm<NodeT>::populateExpansionsLog(
     // SE2 node: include theta
     typename NodeT::Coordinates coords = node->pose;
     expansions_log->emplace_back(
-      _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
-      _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
+      _costmap->getOriginX() + (coords.x * _costmap->getResolution()),
+      _costmap->getOriginY() + (coords.y * _costmap->getResolution()),
       _shared_ctx->motion_table.getAngleFromBin(coords.theta));
   }
 }
@@ -197,11 +198,10 @@ void AStarAlgorithm<NodeT>::setGoal(
   }
 
   // Restrict traversal to the max cost
-  const Coordinates start = NodeT::getCoords(_start->getIndex(), getSizeX(), getSizeDim3());
   _collision_checker->setMaxCost(
     _search_info.max_traversal_cost,
     _search_info.max_traversal_cost_relief_radius / _costmap->getResolution(),
-    start.x, start.y, mx, my);
+    _start->pose.x, _start->pose.y, mx, my);
 
   if constexpr (std::is_base_of_v<Node2D, NodeT>) {
     // Node2D-specific: simplified goal setting, no heading modes
@@ -232,7 +232,7 @@ void AStarAlgorithm<NodeT>::setGoal(
     {
       _shared_ctx->obstacle_heuristic->resetObstacleHeuristic(
         _collision_checker, _start->pose.x, _start->pose.y, mx, my,
-        _shared_ctx->motion_table.downsample_obstacle_heuristic);
+        _shared_ctx->motion_table.downsample_obstacle_heuristic, _traverse_unknown);
     }
 
     _goal_manager.setRefGoalCoordinates(ref_goal_coord);
