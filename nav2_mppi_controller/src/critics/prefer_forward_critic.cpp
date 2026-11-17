@@ -42,11 +42,11 @@ void PreferForwardCritic::score(CriticData & data)
   if (power_ > 1u) {
     data.costs += xt::pow(
       xt::sum(
-        std::move(
+        (
           xt::maximum(-data.state.vx, 0)) * data.model_dt, {1}, immediate) * weight_, power_);
   } else {
     data.costs += xt::sum(
-      std::move(xt::maximum(-data.state.vx, 0)) * data.model_dt, {1}, immediate) * weight_;
+      (xt::maximum(-data.state.vx, 0)) * data.model_dt, {1}, immediate) * weight_;
   }
 }
 

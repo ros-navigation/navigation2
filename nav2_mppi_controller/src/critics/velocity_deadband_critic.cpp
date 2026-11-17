@@ -54,7 +54,7 @@ void VelocityDeadbandCritic::score(CriticData & data)
     if (power_ > 1u) {
       data.costs += xt::pow(
         xt::sum(
-          std::move(
+          (
             xt::maximum(fabs(deadband_velocities_.at(0)) - xt::fabs(vx), 0) +
             xt::maximum(fabs(deadband_velocities_.at(1)) - xt::fabs(vy), 0) +
             xt::maximum(fabs(deadband_velocities_.at(2)) - xt::fabs(wz), 0)) *
@@ -64,10 +64,10 @@ void VelocityDeadbandCritic::score(CriticData & data)
         power_);
     } else {
       data.costs += xt::sum(
-        (std::move(
+        (
           xt::maximum(fabs(deadband_velocities_.at(0)) - xt::fabs(vx), 0) +
           xt::maximum(fabs(deadband_velocities_.at(1)) - xt::fabs(vy), 0) +
-          xt::maximum(fabs(deadband_velocities_.at(2)) - xt::fabs(wz), 0))) *
+          xt::maximum(fabs(deadband_velocities_.at(2)) - xt::fabs(wz), 0)) *
         data.model_dt,
         {1}, immediate) *
         weight_;
@@ -78,7 +78,7 @@ void VelocityDeadbandCritic::score(CriticData & data)
   if (power_ > 1u) {
     data.costs += xt::pow(
       xt::sum(
-        std::move(
+        (
           xt::maximum(fabs(deadband_velocities_.at(0)) - xt::fabs(vx), 0) +
           xt::maximum(fabs(deadband_velocities_.at(2)) - xt::fabs(wz), 0)) *
         data.model_dt,
@@ -87,9 +87,9 @@ void VelocityDeadbandCritic::score(CriticData & data)
       power_);
   } else {
     data.costs += xt::sum(
-      (std::move(
+      (
         xt::maximum(fabs(deadband_velocities_.at(0)) - xt::fabs(vx), 0) +
-        xt::maximum(fabs(deadband_velocities_.at(2)) - xt::fabs(wz), 0))) *
+        xt::maximum(fabs(deadband_velocities_.at(2)) - xt::fabs(wz), 0)) *
       data.model_dt,
       {1}, immediate) *
       weight_;
