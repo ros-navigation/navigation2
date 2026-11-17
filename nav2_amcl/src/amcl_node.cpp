@@ -68,8 +68,6 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 
 AmclNode::~AmclNode()
 {
-  // The motion model is a plugin instance, it must be destroyed before plugin_loader_, which is
-  // declared after motion_model_. on_cleanup() does this, but it is not always called.
   motion_model_.reset();
 }
 
