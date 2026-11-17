@@ -124,6 +124,7 @@ void Costmap2DROS::init()
 
 Costmap2DROS::~Costmap2DROS()
 {
+  layered_costmap_.reset();
 }
 
 nav2::CallbackReturn
