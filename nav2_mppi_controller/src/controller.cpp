@@ -58,9 +58,7 @@ void MPPIController::configure(
 
 MPPIController::~MPPIController()
 {
-  // The parameter callbacks are created in the critic, motion model and trajectory validator
-  // libraries, so they must be destroyed before optimizer_ releases the loaders of those libraries.
-  parameters_handler_.reset();
+  cleanup();
 }
 
 void MPPIController::cleanup()

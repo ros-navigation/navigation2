@@ -68,8 +68,6 @@ void CriticManager::loadCritics()
         parent_, name_, name_ + "." + name, costmap_ros_,
         parameters_handler_);
     } catch (const std::exception & e) {
-      // Rethrow from this library: the critic's library may be unloaded while the exception
-      // propagates, because the controller (and with it the critic loader) is destroyed
       throw nav2_core::ControllerException(e.what());
     }
     RCLCPP_INFO(logger_, "Critic loaded : %s", fullname.c_str());
