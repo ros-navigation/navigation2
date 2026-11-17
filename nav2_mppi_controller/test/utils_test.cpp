@@ -16,7 +16,9 @@
 #include <thread>
 
 #pragma GCC diagnostic ignored "-Warray-bounds"
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 #include <xtensor/xrandom.hpp>
 #pragma GCC diagnostic pop
 
