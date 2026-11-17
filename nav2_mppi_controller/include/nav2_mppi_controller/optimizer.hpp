@@ -67,7 +67,7 @@ public:
   /**
    * @brief Destructor for mppi::Optimizer
    */
-  ~Optimizer();
+  ~Optimizer() {shutdown();}
 
 
   /**
