@@ -27,8 +27,12 @@
 // xtensor creates warnings that needs to be ignored as we are building with -Werror
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #include <xtensor/xarray.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xmath.hpp>
