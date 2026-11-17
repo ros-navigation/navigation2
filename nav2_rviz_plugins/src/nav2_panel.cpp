@@ -634,7 +634,7 @@ bool Nav2Panel::isLoopValueValid(std::string & loop_value)
   }
 
   try {
-    stoi(loop_value);
+    static_cast<void>(stoi(loop_value));  // validation only
   } catch (std::invalid_argument const & ex) {
     // Handling special symbols
     waypoint_status_indicator_->setText("<b> Note: </b> Set a valid value for the loop");
