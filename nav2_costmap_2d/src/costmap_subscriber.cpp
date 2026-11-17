@@ -63,7 +63,7 @@ void CostmapSubscriber::costmapUpdateCallback(
     const auto map_cell_size_x = costmap_->getSizeInCellsX();
     const auto map_cell_size_y = costmap_->getSizeInCellsY();
 
-    // Note: The upper bound comparision is rearranged to prevent overflow
+    // Note: The upper bound comparison is rearranged to prevent overflow
     if (update_msg->x > map_cell_size_x ||
       update_msg->size_x > map_cell_size_x - update_msg->x ||
       update_msg->y > map_cell_size_y ||
