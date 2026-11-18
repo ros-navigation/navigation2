@@ -255,6 +255,12 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
       theta = (reals[2] < 0.0) ? (reals[2] + 2.0 * M_PI) : reals[2];
       theta = (theta > 2.0 * M_PI) ? (theta - 2.0 * M_PI) : theta;
       angle = _ctx->motion_table.getAngle(theta);
+      // Float rounding can yield exactly num_angle_quantization for theta just under 2PI,
+      // which would index past the precomputed oriented footprints
+      const float num_bins = static_cast<float>(_ctx->motion_table.num_angle_quantization);
+      if (angle >= num_bins) {
+        angle -= num_bins;
+      }
 
       // Turn the pose into a node, and check if it is valid
       index = NodeT::getIndex(
