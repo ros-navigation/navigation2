@@ -349,6 +349,58 @@ TEST(AStarTest, analytic_expansion_restores_revisited_goal)
   EXPECT_FLOAT_EQ(goal.pose.theta, original.theta);
 }
 
+TEST(AStarTest, analytic_expansion_wraps_heading_bin)
+{
+  // With 68 bins the float bin size is slightly below 2PI / 68, so a heading just under 2PI
+  // maps to bin 68, past the last oriented footprint. Reversing straight along heading 0 makes
+  // Reeds-Shepp interpolation return headings of about -1e-16, which wrap to just under 2PI.
+  using Node = nav2_smac_planner::NodeHybrid;
+  const unsigned int size_theta = 68;
+  auto node = std::make_shared<nav2::LifecycleNode>("wrap_test");
+  nav2_smac_planner::SearchInfo info;
+  info.minimum_turning_radius = 16.0;
+  info.analytic_expansion_max_length = 200.0;
+  nav2_smac_planner::AStarAlgorithm<Node> a_star(
+    nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
+  int max_iterations = 10000;
+  a_star.initialize(false, max_iterations, 1000, 5000, 5.0, 401, size_theta);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  *costmap_ros->getCostmap() = nav2_costmap_2d::Costmap2D(400, 400, 0.05, 0, 0, 0);
+  nav2_smac_planner::GridCollisionChecker checker(costmap_ros, size_theta, node);
+  checker.setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(&checker);
+  auto * ctx = a_star.getContext();
+  Node start(Node::getIndex(212, 200, 0, 400, size_theta), ctx);
+  Node goal(Node::getIndex(200, 200, 0, 400, size_theta), ctx);
+  start.pose = {212.0f, 200.0f, 0.0f};
+  goal.pose = {200.0f, 200.0f, 0.0f};
+  std::unordered_map<uint64_t, std::unique_ptr<Node>> nodes;
+  Node::NodePtr start_ptr = &start, goal_ptr = &goal;
+  auto getter = [&](const uint64_t & index, Node::NodePtr & result) {
+      if (index == goal.getIndex()) {
+        result = goal_ptr;
+      } else if (index == start.getIndex()) {
+        result = start_ptr;
+      } else {
+        auto & stored = nodes[index];
+        if (!stored) {stored = std::make_unique<Node>(index, ctx);}
+        result = stored.get();
+      }
+      return true;
+    };
+  nav2_smac_planner::AnalyticExpansion<Node> expansion(
+    nav2_smac_planner::MotionModel::REEDS_SHEPP, info, false, size_theta);
+  expansion.setContext(ctx);
+  expansion.setCollisionChecker(&checker);
+  auto candidate = expansion.getAnalyticPath(
+    start_ptr, goal_ptr, getter, ctx->motion_table.state_space);
+  ASSERT_FALSE(candidate.nodes.empty());
+  for (const auto & sample : candidate.nodes) {
+    EXPECT_LT(sample.proposed_coords.theta, static_cast<float>(size_theta));
+  }
+}
+
 TEST(AStarTest, test_a_star_lattice)
 {
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
