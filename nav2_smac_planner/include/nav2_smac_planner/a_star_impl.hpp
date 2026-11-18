@@ -13,6 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+// [AI-generated] The incremental (LPA*) obstacle-heuristic decision block in this
+// file was written with AI assistance and reviewed by the author.
+
 #ifndef NAV2_SMAC_PLANNER__A_STAR_IMPL_HPP_
 #define NAV2_SMAC_PLANNER__A_STAR_IMPL_HPP_
 
@@ -216,7 +219,31 @@ void AStarAlgorithm<NodeT>::setGoal(
     _goal_manager.clear();
     Coordinates ref_goal_coord(mx, my, static_cast<float>(dim_3));
 
-    if (!_search_info.cache_obstacle_heuristic ||
+    // Select which obstacle-heuristic field getObstacleHeuristic() reads. Done every
+    // request so a runtime parameter toggle can never leave a stale field selected.
+    _shared_ctx->obstacle_heuristic->setIncrementalMode(
+      _search_info.incremental_obstacle_heuristic);
+
+    if (_search_info.incremental_obstacle_heuristic) {
+      // Incremental (LPA*) obstacle heuristic: keep a full goal-rooted cost field
+      // alive across requests and repair it locally when the costmap changes, rather
+      // than wiping and recomputing. Rebuild from scratch on a new goal (or when no
+      // valid field exists yet for this costmap size); otherwise repair only the
+      // cells that changed since the last request.
+      if (!_start) {
+        throw std::runtime_error("Start must be set before goal.");
+      }
+      if (_goal_manager.hasGoalChanged(ref_goal_coord) ||
+        !_shared_ctx->obstacle_heuristic->isIncrementalFieldValid(getSizeX(), getSizeY()))
+      {
+        _shared_ctx->obstacle_heuristic->resetIncrementalObstacleHeuristic(
+          _collision_checker->getCostmapROS(), mx, my,
+          _search_info.cost_penalty, _search_info.use_quadratic_cost_penalty);
+      } else {
+        _shared_ctx->obstacle_heuristic->updateIncrementalObstacleHeuristic(
+          _search_info.cost_penalty, _search_info.use_quadratic_cost_penalty);
+      }
+    } else if (!_search_info.cache_obstacle_heuristic ||  // NOLINT(readability/braces)
       _goal_manager.hasGoalChanged(ref_goal_coord))
     {
       if (!_start) {
