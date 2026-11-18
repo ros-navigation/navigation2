@@ -20,6 +20,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
+#include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "ompl/base/StateSpace.h"
@@ -94,6 +95,8 @@ public:
    * @param path Reference to path
    * @param costmap Pointer to minimal costmap
    * @param max_time Maximum time to compute, stop early if over limit
+   * @param footprint Footprint to collision check, or empty to check the center cost
+   * @param collision_checker Collision checker, sharing the costmap, to not exceed its max cost
    * @return If smoothing was successful
    */
   bool smooth(
@@ -101,7 +104,8 @@ public:
     const nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time,
     const std::vector<geometry_msgs::msg::Point> & footprint =
-    std::vector<geometry_msgs::msg::Point>());
+    std::vector<geometry_msgs::msg::Point>(),
+    const GridCollisionChecker * collision_checker = nullptr);
 
 protected:
   /**
@@ -192,6 +196,19 @@ protected:
     const nav2_costmap_2d::Costmap2D * costmap);
 
   /**
+   * @brief Whether a cell's cost exceeds the collision checker's max cost
+   * @param cost Cell cost
+   * @param mx Cell X coordinate
+   * @param my Cell Y coordinate
+   * @return If above the max cost, outside of the start and goal relief zones
+   */
+  inline bool exceedsMaxCost(const float cost, const unsigned int mx, const unsigned int my) const
+  {
+    return collision_checker_ && cost != UNKNOWN_COST &&
+           collision_checker_->exceedsMaxCost(cost, mx + 0.5f, my + 0.5f);
+  }
+
+  /**
    * @brief Generates boundary expansions with end idx at least strategic
    * distances away, using either Reverse or (Forward) Path Iterators.
    * @param start iterator to start search in path for
@@ -203,6 +220,7 @@ protected:
 
   double min_turning_rad_, tolerance_, data_w_, smooth_w_;
   int max_its_, refinement_ctr_, refinement_num_;
+  const GridCollisionChecker * collision_checker_{nullptr};
   bool is_holonomic_, do_refinement_;
   MotionModel motion_model_;
   ompl::base::StateSpacePtr state_space_;

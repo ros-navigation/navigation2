@@ -332,12 +332,12 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
 
   // Max traversal cost and relief radius, invalid negative values are ignored
   parameters = {rclcpp::Parameter("test.cache_obstacle_heuristic", false),
-    rclcpp::Parameter("test.max_traversal_cost", 240.0),
+    rclcpp::Parameter("test.max_traversal_cost", 240),
     rclcpp::Parameter("test.max_traversal_cost_relief_radius", 1.5)};
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
-  parameters = {rclcpp::Parameter("test.max_traversal_cost", -1.0)};
+  parameters = {rclcpp::Parameter("test.max_traversal_cost", -1)};
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
-  parameters = {rclcpp::Parameter("test.max_traversal_cost", 253.0)};
+  parameters = {rclcpp::Parameter("test.max_traversal_cost", 253)};
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
   EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 1.5f);
@@ -371,7 +371,7 @@ TEST(SmacTest, test_smac_lattice_omni_configure)
 
   nodeLattice->declare_parameter("test_omni.lattice_filepath", omni_filepath);
   nodeLattice->declare_parameter("test_omni.allow_reverse_expansion", true);
-  nodeLattice->declare_parameter("test_omni.max_traversal_cost", 253.0);
+  nodeLattice->declare_parameter("test_omni.max_traversal_cost", 253);
 
   auto planner = std::make_unique<LatticeWrap>();
   planner->configure(nodeLattice, "test_omni", nullptr, costmap_ros);

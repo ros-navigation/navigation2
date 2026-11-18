@@ -76,7 +76,7 @@ void SmacPlanner2DT<NodeT>::configure(
   _search_info.cost_penalty =
     node->declare_or_get_parameter(name + ".cost_travel_multiplier", 1.0);
   _search_info.max_traversal_cost = static_cast<float>(
-    node->declare_or_get_parameter(name + ".max_traversal_cost", 252.0));
+    node->declare_or_get_parameter(name + ".max_traversal_cost", 252));
   _search_info.max_traversal_cost_relief_radius = static_cast<float>(
     node->declare_or_get_parameter(name + ".max_traversal_cost_relief_radius", 2.0));
 
@@ -360,7 +360,8 @@ nav_msgs::msg::Path SmacPlanner2DT<NodeT>::createPlan(
   costmap,
   time_remaining,
   _costmap_ros->getUseRadius() ? std::vector<geometry_msgs::msg::Point>() :
-  _costmap_ros->getRobotFootprint());
+  _costmap_ros->getRobotFootprint(),
+  &_collision_checker);
 
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
@@ -412,17 +413,17 @@ SmacPlanner2DT<NodeT>::validateParameterUpdatesCallback(
         "it should be >=0. Ignoring parameter update.",
         param_name.c_str(), parameter.as_double());
         result.successful = false;
-      } else if (param_name == _name + ".max_traversal_cost" && // NOLINT
-        parameter.as_double() > MAX_NON_OBSTACLE_COST)
-      {
-        RCLCPP_WARN(
-          _logger, "The value of parameter max_traversal_cost is incorrectly set to %f, "
-          "it should be in [0.0, 252.0]. Ignoring parameter update.",
-          parameter.as_double());
-        result.successful = false;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (parameter.as_int() <= 0 &&
+      if (param_name == _name + ".max_traversal_cost") {
+        if (parameter.as_int() < 0 || parameter.as_int() > MAX_NON_OBSTACLE_COST) {
+          RCLCPP_WARN(
+            _logger, "The value of parameter max_traversal_cost is incorrectly set to %ld, "
+            "it should be in [0, 252]. Ignoring parameter update.",
+            parameter.as_int());
+          result.successful = false;
+        }
+      } else if (parameter.as_int() <= 0 &&  // NOLINT
         (param_name != _name + ".max_on_approach_iterations" &&
         param_name != _name + ".max_iterations"))
       {
@@ -461,9 +462,6 @@ SmacPlanner2DT<NodeT>::updateParametersCallback(const std::vector<rclcpp::Parame
       } else if (param_name == _name + ".max_planning_time") {
         reinit_a_star = true;
         _max_planning_time = parameter.as_double();
-      } else if (param_name == _name + ".max_traversal_cost") {
-        reinit_a_star = true;
-        _search_info.max_traversal_cost = static_cast<float>(parameter.as_double());
       } else if (param_name == _name + ".max_traversal_cost_relief_radius") {
         reinit_a_star = true;
         _search_info.max_traversal_cost_relief_radius = static_cast<float>(parameter.as_double());
@@ -479,7 +477,10 @@ SmacPlanner2DT<NodeT>::updateParametersCallback(const std::vector<rclcpp::Parame
         _use_final_approach_orientation = parameter.as_bool();
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == _name + ".downsampling_factor") {
+      if (param_name == _name + ".max_traversal_cost") {
+        reinit_a_star = true;
+        _search_info.max_traversal_cost = static_cast<float>(parameter.as_int());
+      } else if (param_name == _name + ".downsampling_factor") {
         reinit_downsampler = true;
         _downsampling_factor = parameter.as_int();
       } else if (param_name == _name + ".max_iterations") {

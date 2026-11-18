@@ -113,7 +113,7 @@ void SmacPlannerLatticeT<NodeT>::configure(
   _search_info.downsample_obstacle_heuristic =
     node->declare_or_get_parameter(name + ".downsample_obstacle_heuristic", true);
   _search_info.max_traversal_cost = static_cast<float>(
-    node->declare_or_get_parameter(name + ".max_traversal_cost", 252.0));
+    node->declare_or_get_parameter(name + ".max_traversal_cost", 252));
   _search_info.max_traversal_cost_relief_radius = static_cast<float>(
     node->declare_or_get_parameter(name + ".max_traversal_cost_relief_radius", 2.0));
 
@@ -546,7 +546,8 @@ nav_msgs::msg::Path SmacPlannerLatticeT<NodeT>::createPlan(
       _costmap,
       time_remaining,
       _costmap_ros->getUseRadius() ? std::vector<geometry_msgs::msg::Point>() :
-      _costmap_ros->getRobotFootprint());
+      _costmap_ros->getRobotFootprint(),
+      &_collision_checker);
   }
 
 #ifdef BENCHMARK_TESTING
@@ -600,17 +601,17 @@ SmacPlannerLatticeT<NodeT>::validateParameterUpdatesCallback(
         "it should be >=0. Ignoring parameter update.",
         param_name.c_str(), parameter.as_double());
         result.successful = false;
-      } else if (param_name == _name + ".max_traversal_cost" && // NOLINT
-        parameter.as_double() > MAX_NON_OBSTACLE_COST)
-      {
-        RCLCPP_WARN(
-          _logger, "The value of parameter max_traversal_cost is incorrectly set to %f, "
-          "it should be in [0.0, 252.0]. Ignoring parameter update.",
-          parameter.as_double());
-        result.successful = false;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == _name + ".coarse_search_resolution" && _metadata.number_of_headings %
+      if (param_name == _name + ".max_traversal_cost") {
+        if (parameter.as_int() < 0 || parameter.as_int() > MAX_NON_OBSTACLE_COST) {
+          RCLCPP_WARN(
+            _logger, "The value of parameter max_traversal_cost is incorrectly set to %ld, "
+            "it should be in [0, 252]. Ignoring parameter update.",
+            parameter.as_int());
+          result.successful = false;
+        }
+      } else if (param_name == _name + ".coarse_search_resolution" && _metadata.number_of_headings %  // NOLINT
         parameter.as_int() != 0)
       {
         RCLCPP_WARN(
@@ -663,10 +664,10 @@ SmacPlannerLatticeT<NodeT>::validateParameterUpdatesCallback(
       param_name == _name + ".cache_obstacle_heuristic")
     {
       search_info.cache_obstacle_heuristic = parameter.as_bool();
-    } else if (param_type == ParameterType::PARAMETER_DOUBLE &&  // NOLINT
+    } else if (param_type == ParameterType::PARAMETER_INTEGER &&  // NOLINT
       param_name == _name + ".max_traversal_cost")
     {
-      search_info.max_traversal_cost = static_cast<float>(parameter.as_double());
+      search_info.max_traversal_cost = static_cast<float>(parameter.as_int());
     } else if (param_type == ParameterType::PARAMETER_DOUBLE &&  // NOLINT
       param_name == _name + ".max_traversal_cost_relief_radius")
     {
@@ -733,10 +734,6 @@ SmacPlannerLatticeT<NodeT>::updateParametersCallback(
       } else if (param_name == _name + ".analytic_expansion_max_cost") {
         reinit_a_star = true;
         _search_info.analytic_expansion_max_cost = static_cast<float>(parameter.as_double());
-      } else if (param_name == _name + ".max_traversal_cost") {
-        reinit_a_star = true;
-        reinit_lookup_table = true;
-        _search_info.max_traversal_cost = static_cast<float>(parameter.as_double());
       } else if (param_name == _name + ".max_traversal_cost_relief_radius") {
         reinit_a_star = true;
         reinit_lookup_table = true;
@@ -765,7 +762,11 @@ SmacPlannerLatticeT<NodeT>::updateParametersCallback(
         reinit_a_star = true;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == _name + ".max_iterations") {
+      if (param_name == _name + ".max_traversal_cost") {
+        reinit_a_star = true;
+        reinit_lookup_table = true;
+        _search_info.max_traversal_cost = static_cast<float>(parameter.as_int());
+      } else if (param_name == _name + ".max_iterations") {
         reinit_a_star = true;
         _max_iterations = parameter.as_int();
         if (_max_iterations <= 0) {
