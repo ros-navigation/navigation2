@@ -248,7 +248,7 @@ RotationShimController::transformPoseToBaseFrame(const geometry_msgs::msg::PoseS
     costmap_ros_->getBaseFrameID(), pt,
     costmap_ros_->getTransformTolerance(), &pt_base_error);
   if (!pt_base) {
-    throw nav2_core::ControllerTFError("Failed to transform pose to base frame!: " + pt_base_error);
+    throw nav2_core::ControllerTFError("Failed to transform pose to base frame: " + pt_base_error);
   }
   return pt_base->pose;
 }
