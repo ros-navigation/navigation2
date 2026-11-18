@@ -246,7 +246,7 @@ TEST_F(ConcatenatePathsTestFixture, test_different_frames_transformed)
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <ConcatenatePaths input_path1="{path1}" input_path2="{path2}" output_path="{concat_path}"
-            transform_path2="true"/>
+            transform_to_path1_frame="true"/>
         </BehaviorTree>
       </root>)"),
     BT::NodeStatus::SUCCESS);
@@ -275,7 +275,7 @@ TEST_F(ConcatenatePathsTestFixture, test_transform_unavailable_fails)
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <ConcatenatePaths input_path1="{path1}" input_path2="{path2}" output_path="{concat_path}"
-            transform_path2="true"/>
+            transform_to_path1_frame="true"/>
         </BehaviorTree>
       </root>)"),
     BT::NodeStatus::FAILURE);
@@ -312,7 +312,7 @@ TEST_F(ConcatenatePathsTestFixture, test_empty_first_path_different_frame)
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <ConcatenatePaths input_path1="{path1}" input_path2="{path2}" output_path="{concat_path}"
-            transform_path2="true"/>
+            transform_to_path1_frame="true"/>
         </BehaviorTree>
       </root>)"),
     BT::NodeStatus::SUCCESS);
