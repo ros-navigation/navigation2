@@ -63,8 +63,7 @@ void CostmapSubscriber::costmapUpdateCallback(
     const auto map_cell_size_x = costmap_->getSizeInCellsX();
     const auto map_cell_size_y = costmap_->getSizeInCellsY();
 
-    // Compare before subtracting: adding the two uint32 fields first can wrap
-    // and let an out-of-range update pass the check.
+    // Note: The upper bound comparison is rearranged to prevent overflow
     if (update_msg->x > map_cell_size_x ||
       update_msg->size_x > map_cell_size_x - update_msg->x ||
       update_msg->y > map_cell_size_y ||
@@ -77,14 +76,12 @@ void CostmapSubscriber::costmapUpdateCallback(
       return;
     }
 
-    if (update_msg->data.size() !=
-      static_cast<size_t>(update_msg->size_x) * update_msg->size_y)
-    {
+    if (!nav2::validateMsg(*update_msg)) {
       RCLCPP_WARN(
-        logger_, "Update data size %zu does not match update bounds %u X %u",
-        update_msg->data.size(), update_msg->size_x, update_msg->size_y);
+        logger_, "Received costmap update message is malformed. Rejecting.");
       return;
     }
+
     unsigned char * master_array = costmap_->getCharMap();
     // copy update msg row-wise
     for (size_t y = 0; y < update_msg->size_y; ++y) {
