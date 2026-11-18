@@ -45,6 +45,12 @@ public:
   using nav2_smac_planner::Smoother::findBoundaryExpansion;
   using nav2_smac_planner::Smoother::enforceStartBoundaryConditions;
   using nav2_smac_planner::Smoother::enforceEndBoundaryConditions;
+
+  // smooth() sets the footprint checker's costmap, so do the same when testing its parts
+  void setFootprintCostmap(const nav2_costmap_2d::Costmap2D * costmap)
+  {
+    footprint_checker_.setCostmap(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
+  }
 };
 
 TEST(SmootherTest, test_full_smoother)
@@ -311,6 +317,7 @@ TEST(SmootherTest, boundary_expansion_checks_footprint)
       nav2_smac_planner::BoundaryExpansion expansion;
       expansion.path_end_idx = 40;
       expansion.original_path_length = 10.0;
+      smoother.setFootprintCostmap(&costmap);
       smoother.findBoundaryExpansion(start, end, expansion, &costmap, robot);
       return expansion.in_collision;
     };
@@ -372,6 +379,7 @@ TEST(SmootherTest, reversing_boundary_conditions_check_footprint)
     const nav2_costmap_2d::Costmap2D & costmap,
     const std::vector<geometry_msgs::msg::Point> & robot) {
       nav_msgs::msg::Path path = reversing_path;
+      smoother.setFootprintCostmap(&costmap);
       smoother.enforceStartBoundaryConditions(start_pose, path, &costmap, true, robot);
       return path.poses.front().pose.position.y;
     };
@@ -379,6 +387,7 @@ TEST(SmootherTest, reversing_boundary_conditions_check_footprint)
     const nav2_costmap_2d::Costmap2D & costmap,
     const std::vector<geometry_msgs::msg::Point> & robot) {
       nav_msgs::msg::Path path = reversing_path;
+      smoother.setFootprintCostmap(&costmap);
       smoother.enforceEndBoundaryConditions(end_pose, path, &costmap, true, robot);
       return path.poses.back().pose.position.y;
     };

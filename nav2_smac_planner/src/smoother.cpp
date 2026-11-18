@@ -62,6 +62,9 @@ bool Smoother::smooth(
   }
 
   collision_checker_ = collision_checker;
+  if (costmap && !footprint.empty()) {
+    footprint_checker_.setCostmap(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
+  }
 
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time;
@@ -179,10 +182,6 @@ bool Smoother::smoothImpl(
 
     // validate update is admissible, only checks cost if a valid costmap pointer is provided
     if (costmap) {
-      if (!footprint.empty()) {
-        footprint_checker_.setCostmap(
-          const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
-      }
 
       for (unsigned int i = 1; i != path_size - 1; i++) {
         // Center cost of the pose's cell, off the map is in collision
@@ -306,10 +305,6 @@ void Smoother::findBoundaryExpansion(
   double theta(0.0), x(0.0), y(0.0);
   double x_m = start.position.x;
   double y_m = start.position.y;
-
-  if (!footprint.empty()) {
-    footprint_checker_.setCostmap(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
-  }
 
   // Get intermediary poses
   for (double i = 0; i <= expansion.path_end_idx; i++) {
