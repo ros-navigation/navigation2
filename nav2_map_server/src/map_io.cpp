@@ -31,7 +31,9 @@
 
 #include "nav2_map_server/map_io.hpp"
 #include "nav2_ros_common/validate_messages.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
 
 #ifndef _WIN32
 #include <libgen.h>

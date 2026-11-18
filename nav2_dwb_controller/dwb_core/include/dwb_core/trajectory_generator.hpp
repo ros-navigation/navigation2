@@ -38,7 +38,6 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"

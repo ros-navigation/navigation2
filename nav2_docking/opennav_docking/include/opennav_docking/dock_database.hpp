@@ -20,7 +20,6 @@
 #include <string>
 #include <mutex>
 
-#include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_ros_common/service_server.hpp"

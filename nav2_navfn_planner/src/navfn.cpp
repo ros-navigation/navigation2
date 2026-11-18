@@ -41,7 +41,8 @@
 
 #include <algorithm>
 #include "nav2_core/planner_exceptions.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
 
 namespace nav2_navfn_planner
 {

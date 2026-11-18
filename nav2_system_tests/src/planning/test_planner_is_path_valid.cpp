@@ -18,7 +18,7 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 #include "planner_tester.hpp"
 
 using nav2_system_tests::PlannerTester;

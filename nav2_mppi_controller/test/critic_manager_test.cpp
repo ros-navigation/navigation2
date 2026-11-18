@@ -16,7 +16,8 @@
 #include <thread>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_mppi_controller/critic_manager.hpp"
 
 // Tests critic manager

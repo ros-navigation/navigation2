@@ -41,7 +41,7 @@ target_link_libraries(velocity_polygons_test
 nav2_add_gtest(exclusion_zone_test exclusion_zone_test.cpp)
 target_link_libraries(exclusion_zone_test
   ${monitor_library_name}
-  ${geometry_msgs_TARGETS}
+  geometry_msgs::geometry_msgs
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   tf2_ros::tf2_ros

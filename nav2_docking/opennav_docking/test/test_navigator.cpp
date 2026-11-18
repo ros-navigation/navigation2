@@ -15,7 +15,9 @@
 #include <functional>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "opennav_docking/navigator.hpp"
 

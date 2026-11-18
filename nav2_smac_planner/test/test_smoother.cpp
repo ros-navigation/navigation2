@@ -23,7 +23,7 @@
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"

@@ -18,6 +18,7 @@
 #include <thread>
 
 #include "server_handler.hpp"
+#include "rclcpp/executors.hpp"
 
 using namespace std::chrono_literals;  // NOLINT
 using namespace std::chrono;  // NOLINT

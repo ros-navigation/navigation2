@@ -23,7 +23,8 @@
 #include <algorithm>
 #include <memory>
 #include <vector>
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/logger.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav_msgs/msg/path.hpp"

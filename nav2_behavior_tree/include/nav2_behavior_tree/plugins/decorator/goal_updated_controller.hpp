@@ -24,7 +24,6 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 
 namespace nav2_behavior_tree

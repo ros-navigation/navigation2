@@ -16,6 +16,7 @@
 #define NAV2_SMAC_PLANNER__SMAC_PLANNER_LATTICE_IMPL_HPP_
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <string>

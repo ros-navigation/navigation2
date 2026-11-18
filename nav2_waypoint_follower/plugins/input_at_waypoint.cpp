@@ -59,7 +59,7 @@ void InputAtWaypoint::initialize(
     plugin_name + ".input_topic", std::string("input_at_waypoint/input"));
   timeout = node->declare_or_get_parameter(
     plugin_name + ".timeout", 10.0);
-  timeout_ = rclcpp::Duration(timeout, 0.0);
+  timeout_ = rclcpp::Duration::from_seconds(timeout);
 
   RCLCPP_INFO(
     logger_, "InputAtWaypoint: Subscribing to input topic %s.", input_topic.c_str());

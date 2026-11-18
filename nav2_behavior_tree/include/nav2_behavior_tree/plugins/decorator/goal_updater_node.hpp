@@ -27,7 +27,8 @@
 #include "nav_msgs/msg/goals.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 
 
 namespace nav2_behavior_tree

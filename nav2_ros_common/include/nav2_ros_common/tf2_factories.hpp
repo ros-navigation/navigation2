@@ -19,7 +19,7 @@
 #include <string>
 
 #include "rclcpp/version.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
 
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/create_timer_ros.hpp"

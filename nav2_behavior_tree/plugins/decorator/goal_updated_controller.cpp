@@ -15,7 +15,6 @@
 #include <chrono>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "behaviortree_cpp/decorator_node.h"
 #include "nav2_behavior_tree/plugins/decorator/goal_updated_controller.hpp"

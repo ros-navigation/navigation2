@@ -24,7 +24,9 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_goal_nearby_condition.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "utils/test_behavior_tree_fixture.hpp"
 

@@ -41,7 +41,7 @@
 #include "nav2_behavior_tree/plugins_list.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 

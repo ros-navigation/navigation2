@@ -23,7 +23,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logging.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 

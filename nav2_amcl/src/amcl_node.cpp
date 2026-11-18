@@ -421,12 +421,14 @@ AmclNode::initialPoseReceived(
       global_frame_id_.c_str());
     return;
   }
-  if (first_map_received_ && (abs(msg->pose.pose.position.x) > map_->size_x ||
-    abs(msg->pose.pose.position.y) > map_->size_y))
-  {
-    RCLCPP_ERROR(
-      get_logger(), "Received initialpose from message is out of the size of map. Rejecting.");
-    return;
+  if (first_map_received_) {
+    const int map_x = MAP_GXWX(map_, msg->pose.pose.position.x);
+    const int map_y = MAP_GYWY(map_, msg->pose.pose.position.y);
+    if (!MAP_VALID(map_, map_x, map_y)) {
+      RCLCPP_ERROR(
+        get_logger(), "Received initialpose from message is out of the size of map. Rejecting.");
+      return;
+    }
   }
 
   // Overriding last published pose to initial pose

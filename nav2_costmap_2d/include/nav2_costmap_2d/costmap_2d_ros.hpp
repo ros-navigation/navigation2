@@ -60,11 +60,7 @@
 #include "tf2/time.hpp"
 #include "tf2/transform_datatypes.hpp"
 #include "nav2_ros_common/service_server.hpp"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.hpp"
-#pragma GCC diagnostic pop
 
 namespace nav2_costmap_2d
 {
@@ -370,7 +366,6 @@ protected:
 
   nav2::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
   nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_stamped_sub_;
-  nav2::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
 
   // Dedicated callback group and executor for tf timer_interface and message filter
   rclcpp::CallbackGroup::SharedPtr callback_group_;

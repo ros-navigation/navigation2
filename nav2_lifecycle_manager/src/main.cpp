@@ -15,7 +15,8 @@
 #include <memory>
 
 #include "nav2_lifecycle_manager/lifecycle_manager.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/utilities.hpp"
 
 int main(int argc, char ** argv)
 {

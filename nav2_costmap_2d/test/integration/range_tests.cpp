@@ -38,6 +38,7 @@
 #include <utility>
 #include <vector>
 
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"

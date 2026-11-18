@@ -18,7 +18,10 @@
 #include <memory>
 #include <utility>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/duration.hpp"
+#include "rclcpp/rate.hpp"
+#include "rclcpp/time.hpp"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/behavior_tree.h"
 

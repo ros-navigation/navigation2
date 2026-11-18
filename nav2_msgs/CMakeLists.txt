@@ -10,7 +10,6 @@ find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geographic_msgs)
-find_package(action_msgs REQUIRED)
 find_package(unique_identifier_msgs REQUIRED)
 
 nav2_package()
@@ -82,7 +81,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/ComputeRoute.action"
   "action/ComputeAndTrackRoute.action"
   "action/FollowObject.action"
-  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs geographic_msgs unique_identifier_msgs
+  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs nav_msgs geographic_msgs unique_identifier_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)

@@ -12,16 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <cstdio>
 #include <fstream>
 #include <memory>
 #include <string>
 
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "gtest/gtest.h"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_amcl/amcl_node.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "rclcpp/executors.hpp"
+#include "rclcpp/future_return_code.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_client.hpp"
+#include "rclcpp/utilities.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 class PosePersistenceTest : public ::testing::Test
 {
@@ -50,7 +59,7 @@ class AmclNodeTester : public nav2_amcl::AmclNode
 public:
   using nav2_amcl::AmclNode::AmclNode;
 
-  void receiveMap(double origin_x)
+  void receiveMap(double origin_x, double origin_y = 0.0)
   {
     auto map = std::make_shared<nav_msgs::msg::OccupancyGrid>();
     map->header.frame_id = "map";
@@ -58,12 +67,20 @@ public:
     map->info.height = 10;
     map->info.resolution = 1.0;
     map->info.origin.position.x = origin_x;
+    map->info.origin.position.y = origin_y;
     map->info.origin.orientation.w = 1.0;
     map->data.assign(100, 0);
     mapReceived(map);
   }
 
+  void receiveInitialPose(
+    const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg)
+  {
+    initialPoseReceived(msg);
+  }
+
   double mapOriginX() const {return map_->origin_x;}
+  double lastPoseX() const {return last_published_pose_.pose.pose.position.x;}
 
   void updateMapTopic(const std::string & topic)
   {
@@ -88,6 +105,26 @@ TEST_F(PosePersistenceTest, map_topic_change_starts_new_first_map_epoch)
 
   EXPECT_EQ(amcl->mapOriginX(), 105.0);
   amcl->deactivate();
+  amcl->cleanup();
+}
+
+TEST_F(PosePersistenceTest, initial_pose_bounds_use_map_coordinates)
+{
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({{"random_seed", 42}});
+
+  auto amcl = std::make_shared<AmclNodeTester>(options);
+  amcl->configure();
+  amcl->receiveMap(100.0, 200.0);
+
+  auto pose = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+  pose->header.frame_id = "map";
+  pose->pose.pose.position.x = 104.0;
+  pose->pose.pose.position.y = 204.0;
+  pose->pose.pose.orientation.w = 1.0;
+  amcl->receiveInitialPose(pose);
+
+  EXPECT_EQ(amcl->lastPoseX(), 104.0);
   amcl->cleanup();
 }
 

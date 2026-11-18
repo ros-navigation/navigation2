@@ -20,7 +20,9 @@
 #include <vector>
 #include "tinyxml2.h" //NOLINT
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/utilities.hpp"
 #include "behaviortree_cpp/json_export.h"
 #include "behaviortree_cpp/utils/shared_library.h"
 #include "nav2_behavior_tree/json_utils.hpp"

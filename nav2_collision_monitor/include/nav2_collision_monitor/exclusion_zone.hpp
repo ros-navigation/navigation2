@@ -20,7 +20,11 @@
 #include <string>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
 #include "tf2/time.hpp"

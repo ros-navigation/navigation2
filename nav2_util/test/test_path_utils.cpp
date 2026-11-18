@@ -22,6 +22,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
+#include "rclcpp/node.hpp"
 
 geometry_msgs::msg::PoseStamped createPoseStamped(double x, double y)
 {

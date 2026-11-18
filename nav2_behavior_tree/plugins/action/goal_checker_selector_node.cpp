@@ -20,7 +20,7 @@
 
 #include "nav2_behavior_tree/plugins/action/goal_checker_selector_node.hpp"
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
 
 namespace nav2_behavior_tree
 {

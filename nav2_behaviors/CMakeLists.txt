@@ -218,14 +218,6 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${library_name}
-  nav2_spin_behavior
-  nav2_wait_behavior
-  nav2_assisted_teleop_behavior
-  nav2_drive_on_heading_behavior
-  nav2_back_up_behavior
-)
 ament_export_dependencies(
   geometry_msgs
   nav2_core

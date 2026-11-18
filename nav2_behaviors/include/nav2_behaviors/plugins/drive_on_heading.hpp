@@ -101,7 +101,6 @@ public:
   {
     rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
     if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
-      this->stopRobot();
       std::string error_msg =
         "Exceeded time allowance before reaching the DriveOnHeading goal - Exiting DriveOnHeading";
       RCLCPP_WARN(this->logger_, "%s", error_msg.c_str());
@@ -110,7 +109,6 @@ public:
 
     geometry_msgs::msg::PoseStamped current_pose;
     if (!this->getCurrentPoseChecked(current_pose)) {
-      this->stopRobot();
       std::string error_msg = "Current robot pose is not available.";
       RCLCPP_ERROR(this->logger_, "%s", error_msg.c_str());
       return ResultStatus{Status::FAILED, ActionT::Result::TF_ERROR, error_msg};
@@ -161,7 +159,6 @@ public:
     geometry_msgs::msg::Pose pose2d = current_pose.pose;
 
     if (!isCollisionFree(distance, cmd_vel->twist, pose2d)) {
-      this->stopRobot();
       std::string error_msg = "Collision Ahead - Exiting DriveOnHeading";
       RCLCPP_WARN(this->logger_, "%s", error_msg.c_str());
       return ResultStatus{Status::FAILED, ActionT::Result::COLLISION_AHEAD, error_msg};

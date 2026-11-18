@@ -20,7 +20,10 @@
 #include <memory>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/publisher.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/timer.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
 
 namespace nav2_loopback_sim

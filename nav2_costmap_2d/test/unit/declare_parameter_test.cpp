@@ -17,7 +17,9 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/exceptions.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 

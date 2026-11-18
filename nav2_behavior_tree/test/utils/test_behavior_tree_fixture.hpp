@@ -21,7 +21,6 @@
 #include <set>
 
 #include "behaviortree_cpp/bt_factory.h"
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 

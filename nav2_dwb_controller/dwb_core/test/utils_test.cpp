@@ -35,6 +35,7 @@
 #include "gtest/gtest.h"
 #include "dwb_core/trajectory_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "rclcpp/utilities.hpp"
 #include "tf2/utils.hpp"
 
 using dwb_core::getClosestPose;

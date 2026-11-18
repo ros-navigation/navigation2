@@ -41,7 +41,9 @@
 #include <vector>
 #include <stdexcept>
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/parameter.hpp"
 
 namespace dwb_plugins
 {

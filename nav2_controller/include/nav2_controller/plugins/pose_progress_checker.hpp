@@ -17,7 +17,9 @@
 
 #include <string>
 #include <vector>
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/parameter.hpp"
 #include "nav2_controller/plugins/simple_progress_checker.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 

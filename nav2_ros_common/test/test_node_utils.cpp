@@ -17,7 +17,11 @@
 
 #include "nav2_ros_common/node_utils.hpp"
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/exceptions.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/parameter_value.hpp"
+#include "rclcpp/utilities.hpp"
 
 using nav2::sanitize_node_name;
 using nav2::generate_internal_node_name;

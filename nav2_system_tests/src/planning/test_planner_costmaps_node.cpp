@@ -16,7 +16,7 @@
 #include <memory>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/utilities.hpp"
 #include "planner_tester.hpp"
 
 using namespace std::chrono_literals;

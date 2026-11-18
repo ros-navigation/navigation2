@@ -21,7 +21,10 @@
 #include <thread>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
+#include "rclcpp/parameter.hpp"
+#include "rclcpp/rate.hpp"
+#include "rclcpp/utilities.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_waypoint_follower/plugins/photo_at_waypoint.hpp"
@@ -60,6 +63,7 @@ TEST(WaypointFollowerTest, WaitAtWaypoint)
 TEST(WaypointFollowerTest, InputAtWaypoint)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("testWaypointNode");
+  node->declare_parameter("IAW.timeout", 1.5);
   auto pub = node->create_publisher<std_msgs::msg::Empty>("input_at_waypoint/input");
   pub->on_activate();
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -86,7 +90,7 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
 
   auto end_time = node->now();
 
-  EXPECT_NEAR((end_time - start_time).seconds(), 10.0, 0.1);
+  EXPECT_NEAR((end_time - start_time).seconds(), 1.5, 0.1);
 
   // has input now, should work
   std::thread t1(publish_message);

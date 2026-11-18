@@ -23,7 +23,7 @@
 #include "nav2_collision_monitor/polygon.hpp"
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/clock.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_collision_monitor
