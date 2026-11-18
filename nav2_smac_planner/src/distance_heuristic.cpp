@@ -177,7 +177,7 @@ float DistanceHeuristic<NodeT>::getDistanceHeuristic(
   if (abs(node_coords_relative.x) < floored_size && mirrored_relative_y < floored_size) {
     // Need to mirror angle if Y coordinate was mirrored
     int theta_pos;
-    if (node_coords_relative.y < 0.0) {
+    if (node_coords_relative.y < 0.0 && node_coords_relative.theta > 0.0) {
       theta_pos = motion_table.num_angle_quantization - node_coords_relative.theta;
     } else {
       theta_pos = node_coords_relative.theta;
