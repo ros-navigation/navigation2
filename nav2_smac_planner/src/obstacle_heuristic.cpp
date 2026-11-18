@@ -107,6 +107,10 @@ float ObstacleHeuristic::getObstacleHeuristic(
   const unsigned int scale_cells = downsample_obstacle_heuristic ? 2u : 1u;
   float cost;
   if (!isCellOpen(start_index, size_x, scale_cells, cost)) {
+    RCLCPP_WARN(
+      rclcpp::get_logger("ObstacleHeuristic"),
+      "Requested node is not reachable by the heuristic. This should not happen."
+      " Please report an error to maintainers.");
     return 0.0f;
   }
 
@@ -221,7 +225,7 @@ bool ObstacleHeuristic::isCellOpen(
     return is_valid(cost, x0, y0);
   }
 
-  // With downsampling, check if the heuristic cell's window is interior to bypass futher checks
+  // With downsampling, check if the heuristic cell's window is interior to bypass further checks
   const bool interior =
     !collision_checker_->outsideRange(costmap_size_x, x0) &&
     !collision_checker_->outsideRange(costmap_size_x, x0 + scale - 1) &&
