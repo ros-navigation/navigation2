@@ -588,6 +588,76 @@ TEST(AStarTest, test_goal_heading_mode)
   delete costmapA;
 }
 
+TEST(AStarTest, test_a_star_se2_direction_change_penalty)
+{
+  // Turn around in a small room at the end of a hallway too narrow to turn within
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
+  nav2_costmap_2d::Costmap2D * costmapA =
+    new nav2_costmap_2d::Costmap2D(64, 34, 0.05, 0.0, 0.0, 254);
+  for (unsigned int x = 3; x < 59; ++x) {
+    for (unsigned int y = 10; y < 24; ++y) {
+      if (x >= 45 || (y >= 14 && y < 20)) {
+        costmapA->setCost(x, y, 0);
+      }
+    }
+  }
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  *costmap_ros->getCostmap() = *costmapA;
+
+  // 0.4m x 0.2m robot
+  nav2_costmap_2d::Footprint footprint(4);
+  footprint[0].x = 0.2; footprint[0].y = 0.1;
+  footprint[1].x = 0.2; footprint[1].y = -0.1;
+  footprint[2].x = -0.2; footprint[2].y = -0.1;
+  footprint[3].x = -0.2; footprint[3].y = 0.1;
+  unsigned int size_theta = 72;
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
+  checker->setFootprint(footprint, false, -1.0);
+
+  auto countDirectionChanges = [&](const float direction_change_penalty) {
+      nav2_smac_planner::SearchInfo info;
+      info.minimum_turning_radius = 8;  // in grid coordinates
+      info.non_straight_penalty = 1.2;
+      info.direction_change_penalty = direction_change_penalty;
+      info.allow_primitive_interpolation = true;
+      info.analytic_expansion_max_length = 20.0;  // in grid coordinates
+      nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+        nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
+      int max_iterations = 100000;
+      a_star.initialize(false, max_iterations, 1000, 5000, 120.0, 101, size_theta);
+      a_star.setCollisionChecker(checker.get());
+      a_star.setStart(30u, 17u, 0u);
+      a_star.setGoal(10u, 17u, 36u);
+      nav2_smac_planner::NodeHybrid::CoordinateVector path;
+      int num_it = 0;
+      EXPECT_TRUE(a_star.createPath(path, num_it, 0.0, []() {return false;}));
+
+      // Count changes between moving along and against the heading
+      unsigned int changes = 0;
+      int last_dir = 0;
+      for (unsigned int i = 1; i < path.size(); ++i) {
+        const float dx = path[i].x - path[i - 1].x;
+        const float dy = path[i].y - path[i - 1].y;
+        if (hypotf(dx, dy) > 1e-3) {
+          const int dir = dx * cos(path[i].theta) + dy * sin(path[i].theta) >= 0.0 ? 1 : -1;
+          changes += (last_dir != 0 && dir != last_dir) ? 1 : 0;
+          last_dir = dir;
+        }
+      }
+      return changes;
+    };
+
+  // Fewer direction changes to turn around with the direction change penalty
+  const unsigned int changes = countDirectionChanges(0.0);
+  EXPECT_GT(changes, 0u);
+  EXPECT_LT(countDirectionChanges(3.0), changes);
+
+  delete costmapA;
+}
+
 TEST(AStarTest, test_constants)
 {
   nav2_smac_planner::MotionModel mm = nav2_smac_planner::MotionModel::UNKNOWN;  // unknown

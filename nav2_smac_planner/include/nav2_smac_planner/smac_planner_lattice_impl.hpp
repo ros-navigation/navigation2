@@ -92,6 +92,8 @@ void SmacPlannerLatticeT<NodeT>::configure(
     node->declare_or_get_parameter(name + ".reverse_penalty", 2.0);
   _search_info.change_penalty =
     node->declare_or_get_parameter(name + ".change_penalty", 0.05);
+  _search_info.direction_change_penalty =
+    node->declare_or_get_parameter(name + ".direction_change_penalty", 0.0);
   _search_info.non_straight_penalty =
     node->declare_or_get_parameter(name + ".non_straight_penalty", 1.05);
   _search_info.cost_penalty =
@@ -656,6 +658,9 @@ SmacPlannerLatticeT<NodeT>::updateParametersCallback(
       } else if (param_name == _name + ".change_penalty") {
         reinit_a_star = true;
         _search_info.change_penalty = static_cast<float>(parameter.as_double());
+      } else if (param_name == _name + ".direction_change_penalty") {
+        reinit_a_star = true;
+        _search_info.direction_change_penalty = static_cast<float>(parameter.as_double());
       } else if (param_name == _name + ".non_straight_penalty") {
         reinit_a_star = true;
         _search_info.non_straight_penalty = static_cast<float>(parameter.as_double());
