@@ -602,6 +602,10 @@ void VelocitySmoother::updateParametersCallback(const std::vector<rclcpp::Parame
           std::make_unique<nav2_util::OdomSmoother>(
           shared_from_this(), odom_duration_, odom_topic_);
       }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == "scale_velocities") {
+        scale_velocities_ = parameter.as_bool();
+      }
     } else if (param_type == ParameterType::PARAMETER_DOUBLE_ARRAY) {
       if (param_name == "max_velocity") {
         max_velocities_ = parameter.as_double_array();
