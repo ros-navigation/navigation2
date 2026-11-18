@@ -107,6 +107,10 @@ float ObstacleHeuristic::getObstacleHeuristic(
   const unsigned int scale_cells = downsample_obstacle_heuristic ? 2u : 1u;
   float cost;
   if (!isCellOpen(start_index, size_x, scale_cells, cost)) {
+    RCLCPP_WARN(
+      rclcpp::get_logger("ObstacleHeuristic"),
+      "Requested node is not reachable by the heuristic. This should not happen."
+      " Please report an error to maintainers.");
     return 0.0f;
   }
 
