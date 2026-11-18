@@ -14,9 +14,11 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <chrono>
 #include <memory>
 #include <set>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -150,6 +152,34 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick)
   // halt node so another goal can be sent
   tree_->haltTree();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
+}
+
+TEST_F(NavigateThroughPosesActionTestFixture, test_tick_missing_goals)
+{
+  // goals port remapped to a blackboard entry that was never set
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <NavigateThroughPoses goals="{unset_goals}" error_code_id="{error_code}"
+                error_msg="{error_msg}" />
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  const auto last_goal = action_server_->getCurrentGoal();
+
+  // no goal must be sent; the node fails right away
+  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::FAILURE);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(action_server_->getCurrentGoal(), last_goal);
+  EXPECT_EQ(
+    config_->blackboard->get<uint16_t>("error_code"),
+    nav2_msgs::action::NavigateThroughPoses::Result::SEND_GOAL_FAILURE);
+  EXPECT_EQ(
+    config_->blackboard->get<std::string>("error_msg"),
+    "NavigateThroughPosesAction: goal not provided");
 }
 
 int main(int argc, char ** argv)

@@ -83,7 +83,7 @@ public:
     const bool & traverse_unknown);
 
   /**
-   * @brief Check if in collision with costmap and footprint at pose
+   * @brief Check if in collision with costmap and footprint at the center of a cell
    * @param i Index to search collision status of
    * @param traverse_unknown Whether or not to traverse in unknown space
    * @return boolean if in collision or not.
@@ -91,6 +91,42 @@ public:
   bool inCollision(
     const unsigned int & i,
     const bool & traverse_unknown);
+
+  /**
+   * @brief Set the max center cost to traverse, except within a radius of the start and goal
+   * @param max_cost Max center cost, MAX_NON_OBSTACLE_COST to disable
+   * @param relief_radius Radius around the start and goal, in cells, to not apply the max cost
+   * @param start_x Start X coordinate
+   * @param start_y Start Y coordinate
+   * @param goal_x Goal X coordinate
+   * @param goal_y Goal Y coordinate
+   */
+  void setMaxCost(
+    const float max_cost, const float relief_radius,
+    const float start_x, const float start_y, const float goal_x, const float goal_y);
+
+  /**
+   * @brief Whether a center cost is non-traversable at a position due to lethal or max cost
+   * @param cost Center cost
+   * @param x X coordinate
+   * @param y Y coordinate
+   * @return If non-traversable
+   */
+  inline bool exceedsMaxCost(const float & cost, const float & x, const float & y) const
+  {
+    if (cost <= max_cost_) {
+      return false;
+    }
+    if (cost > MAX_NON_OBSTACLE_COST) {
+      return true;
+    }
+    // Allow higher costs within the relief radius of the start and goal
+    const float dsx = x - start_x_;
+    const float dsy = y - start_y_;
+    const float dgx = x - goal_x_;
+    const float dgy = y - goal_y_;
+    return dsx * dsx + dsy * dsy >= relief_radius_sq_ && dgx * dgx + dgy * dgy >= relief_radius_sq_;
+  }
 
   /**
    * @brief Get cost at footprint pose in costmap
@@ -108,28 +144,27 @@ public:
   }
 
   /**
-   * @brief Get costmap ros object for inflation layer params
-   * @return Costmap ros
-   */
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> getCostmapROS() {return costmap_ros_;}
-
-  /**
-   * @brief Check if value outside the range
-   * @param min Minimum value of the range
+   * @brief Check if value outside the range, excluding a border at the map's edges
    * @param max Maximum value of the range
    * @param value the value to check if it is within the range
    * @return boolean if in range or not
    */
-  bool outsideRange(const unsigned int & max, const float & value);
+  inline bool outsideRange(const unsigned int & max, const float & value) const
+  {
+    // The value cannot be within 3 cells of the map border
+    return value < 3.0f || value + 3.0f >= max;
+  }
 
 protected:
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
   float center_cost_;
   bool footprint_is_radius_{false};
   std::vector<float> angles_;
   float possible_collision_cost_{-1};
+  float max_cost_{MAX_NON_OBSTACLE_COST};
+  float relief_radius_sq_{0.0f};
+  float start_x_{0.0f}, start_y_{0.0f}, goal_x_{0.0f}, goal_y_{0.0f};
   rclcpp::Logger logger_{rclcpp::get_logger("SmacPlannerCollisionChecker")};
   rclcpp::Clock::SharedPtr clock_;
 };

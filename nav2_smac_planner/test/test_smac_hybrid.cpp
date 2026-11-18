@@ -65,6 +65,8 @@ public:
   {
     return _goal_heading_mode;
   }
+
+  nav2_smac_planner::SearchInfo getSearchInfo() {return _search_info;}
 };
 
 // SMAC smoke tests for plugin-level issues rather than algorithms
@@ -116,14 +118,14 @@ TEST(SmacTest, test_smac_se2)
 
   std::vector<geometry_msgs::msg::PoseStamped> no_viapoints{};
   geometry_msgs::msg::PoseStamped start, goal, viapoint;
-  start.pose.position.x = 0.0;
-  start.pose.position.y = 0.0;
+  start.pose.position.x = 1.0;
+  start.pose.position.y = 1.0;
   start.pose.orientation.w = 1.0;
-  goal.pose.position.x = 1.0;
-  goal.pose.position.y = 1.0;
+  goal.pose.position.x = 2.0;
+  goal.pose.position.y = 2.0;
   goal.pose.orientation.w = 1.0;
-  viapoint.pose.position.x = 0.5;
-  viapoint.pose.position.y = 0.5;
+  viapoint.pose.position.x = 1.5;
+  viapoint.pose.position.y = 1.5;
   viapoint.pose.orientation.w = 1.0;
   std::vector<geometry_msgs::msg::PoseStamped> viapoints{viapoint};
   auto planner = std::make_unique<HybridWrap>();
@@ -150,6 +152,29 @@ TEST(SmacTest, test_smac_se2)
   nodeSE2->set_parameter(rclcpp::Parameter("test.lookup_table_size", 21.0));
   EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
   nodeSE2->set_parameter(rclcpp::Parameter("test.lookup_table_size", 20.0));
+
+  // invalid max traversal cost is reset to the max non-obstacle cost
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 253));
+  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 252.0f);
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 252));
+
+  // invalid relief radius is reset to 0
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost_relief_radius", -1.0));
+  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 0.0f);
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost_relief_radius", 2.0));
+
+  // cached obstacle heuristic and max traversal cost with a relief radius are exclusive,
+  // so the relief radius is disabled
+  nodeSE2->set_parameter(rclcpp::Parameter("test.cache_obstacle_heuristic", true));
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 240));
+  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
+  EXPECT_TRUE(planner->getSearchInfo().cache_obstacle_heuristic);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 0.0f);
+  nodeSE2->set_parameter(rclcpp::Parameter("test.cache_obstacle_heuristic", false));
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_traversal_cost", 252));
 
   // invalid coarse search resolution
   nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
@@ -205,8 +230,8 @@ TEST(SmacTest, test_smac_se2)
   }
 
   // corner case where the start and goal are on the same cell
-  goal.pose.position.x = 0.01;
-  goal.pose.position.y = 0.01;
+  goal.pose.position.x = 1.01;
+  goal.pose.position.y = 1.01;
 
   nav_msgs::msg::Path plan = planner->createPlan(
     start, goal, no_viapoints, dummy_cancel_checker);
@@ -270,6 +295,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.cache_obstacle_heuristic", true),
       rclcpp::Parameter("test.reverse_penalty", 5.0),
       rclcpp::Parameter("test.change_penalty", 1.0),
+      rclcpp::Parameter("test.direction_change_penalty", 3.0),
       rclcpp::Parameter("test.non_straight_penalty", 2.0),
       rclcpp::Parameter("test.cost_penalty", 2.0),
       rclcpp::Parameter("test.tolerance", 0.2),
@@ -283,11 +309,32 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP")),
       rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
-      rclcpp::Parameter("test.coarse_search_resolution", 1)});
+      rclcpp::Parameter("test.coarse_search_resolution", 1),
+      rclcpp::Parameter("test.max_traversal_cost", 240),
+      rclcpp::Parameter("test.max_traversal_cost_relief_radius", 0.0)});
 
   rclcpp::spin_until_future_complete(
     nodeSE2->get_node_base_interface(),
     results);
+
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 0.0f);
+
+  // test relief radius cannot be used with the cached obstacle heuristic
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.max_traversal_cost_relief_radius", 1.5)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 0.0f);
+
+  // test max traversal cost above the max non-obstacle cost is rejected
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.max_traversal_cost", 253)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
 
   EXPECT_EQ(nodeSE2->get_parameter("test.downsample_costmap").as_bool(), true);
   EXPECT_EQ(nodeSE2->get_parameter("test.downsampling_factor").as_int(), 2);
@@ -298,6 +345,8 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(nodeSE2->get_parameter("test.cache_obstacle_heuristic").as_bool(), true);
   EXPECT_EQ(nodeSE2->get_parameter("test.reverse_penalty").as_double(), 5.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.change_penalty").as_double(), 1.0);
+  EXPECT_EQ(nodeSE2->get_parameter("test.direction_change_penalty").as_double(), 3.0);
+  EXPECT_EQ(planner->getSearchInfo().direction_change_penalty, 3.0f);
   EXPECT_EQ(nodeSE2->get_parameter("test.non_straight_penalty").as_double(), 2.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.cost_penalty").as_double(), 2.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.retrospective_penalty").as_double(), 0.2);

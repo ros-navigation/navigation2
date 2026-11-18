@@ -23,13 +23,7 @@ namespace mppi::critics
 void PathAngleCritic::initialize()
 {
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
-  float vx_min;
-  getParentParam(vx_min, "vx_min", -0.35);
-  if (fabs(vx_min) < 1e-6f) {  // zero
-    reversing_allowed_ = false;
-  } else if (vx_min < 0.0f) {   // reversing possible
-    reversing_allowed_ = true;
-  }
+  getParentParam(vx_min_, "vx_min", -0.35);
 
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(offset_from_furthest_, "offset_from_furthest", 4);
@@ -45,12 +39,11 @@ void PathAngleCritic::initialize()
   int mode = 0;
   getParam(mode, "mode", mode, ParameterType::Static);
   mode_ = static_cast<PathAngleMode>(mode);
-  if (!reversing_allowed_ && mode_ == PathAngleMode::NO_DIRECTIONAL_PREFERENCE) {
-    mode_ = PathAngleMode::FORWARD_PREFERENCE;
+  if (!reversingAllowed() && mode_ == PathAngleMode::NO_DIRECTIONAL_PREFERENCE) {
     RCLCPP_WARN(
       logger_,
       "Path angle mode set to no directional preference, but controller's settings "
-      "don't allow for reversing! Setting mode to forward preference.");
+      "don't allow for reversing! Using forward preference until reversing is allowed.");
   }
 
   RCLCPP_INFO(
@@ -75,7 +68,12 @@ void PathAngleCritic::score(CriticData & data)
   const float goal_yaw = data.path.yaws(offsetted_idx);
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
 
-  switch (mode_) {
+  PathAngleMode mode = mode_;
+  if (!reversingAllowed() && mode == PathAngleMode::NO_DIRECTIONAL_PREFERENCE) {
+    mode = PathAngleMode::FORWARD_PREFERENCE;  // See warning in initialize()
+  }
+
+  switch (mode) {
     case PathAngleMode::FORWARD_PREFERENCE:
       if (utils::posePointAngle(pose, goal_x, goal_y, true) < max_angle_to_furthest_) {
         return;
@@ -101,7 +99,7 @@ void PathAngleCritic::score(CriticData & data)
   auto yaws_between_points = diff_y.binaryExpr(
     diff_x, [&](const float & y, const float & x) {return atan2f(y, x);}).eval();
 
-  switch (mode_) {
+  switch (mode) {
     case PathAngleMode::FORWARD_PREFERENCE:
       {
         auto last_yaws = data.trajectories.yaws.col(last_idx);

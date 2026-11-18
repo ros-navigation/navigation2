@@ -18,17 +18,19 @@ namespace nav2_smac_planner
 {
 
 void ObstacleHeuristic::resetObstacleHeuristic(
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_i,
+  GridCollisionChecker * collision_checker,
   const unsigned int & start_x, const unsigned int & start_y,
   const unsigned int & goal_x, const unsigned int & goal_y,
-  const bool downsample_obstacle_heuristic)
+  const bool downsample_obstacle_heuristic,
+  const bool traverse_unknown)
 {
   // Downsample costmap 2x to compute a sparse obstacle heuristic. This speeds up
   // the planner considerably to search through 75% less cells with no detectable
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
-  costmap_ros = costmap_ros_i;
-  auto costmap = costmap_ros->getCostmap();
+  collision_checker_ = collision_checker;
+  traverse_unknown_ = traverse_unknown;
+  auto costmap = collision_checker_->getCostmap();
 
   // Clear lookup table
   unsigned int size = 0u;
@@ -80,33 +82,36 @@ float ObstacleHeuristic::getObstacleHeuristic(
   const bool use_quadratic_cost_penalty,
   const bool downsample_obstacle_heuristic)
 {
+  const float scale = downsample_obstacle_heuristic ? 2.0f : 1.0f;
+
   // If already expanded, return the cost
-  auto costmap = costmap_ros->getCostmap();
+  auto costmap = collision_checker_->getCostmap();
   unsigned int size_x = 0u;
   unsigned int size_y = 0u;
-  if (downsample_obstacle_heuristic) {
-    size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
-    size_y = ceil(static_cast<float>(costmap->getSizeInCellsY()) / 2.0f);
-  } else {
-    size_x = costmap->getSizeInCellsX();
-    size_y = costmap->getSizeInCellsY();
-  }
+  size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / scale);
+  size_y = ceil(static_cast<float>(costmap->getSizeInCellsY()) / scale);
 
   // Divided by 2 due to downsampled costmap.
   unsigned int start_y, start_x;
-  if (downsample_obstacle_heuristic) {
-    start_y = floor(node_coords.y / 2.0f);
-    start_x = floor(node_coords.x / 2.0f);
-  } else {
-    start_y = floor(node_coords.y);
-    start_x = floor(node_coords.x);
-  }
+  start_y = floor(node_coords.y / scale);
+  start_x = floor(node_coords.x / scale);
 
   const unsigned int start_index = start_y * size_x + start_x;
   const float & requested_node_cost = obstacle_heuristic_lookup_table_[start_index];
   if (requested_node_cost > 0.0f) {
     // costs are doubled due to downsampling
-    return downsample_obstacle_heuristic ? 2.0f * requested_node_cost : requested_node_cost;
+    return scale * requested_node_cost;
+  }
+
+  // Return early rather than expanding the full map for a non-traversable cell (unvalidated start)
+  const unsigned int scale_cells = downsample_obstacle_heuristic ? 2u : 1u;
+  float cost;
+  if (!isCellOpen(start_index, size_x, scale_cells, cost)) {
+    RCLCPP_WARN(
+      rclcpp::get_logger("ObstacleHeuristic"),
+      "Requested node is not reachable by the heuristic. This should not happen."
+      " Please report an error to maintainers.");
+    return 0.0f;
   }
 
   // If not, expand until it is included. This dynamic programming ensures that
@@ -127,8 +132,7 @@ float ObstacleHeuristic::getObstacleHeuristic(
 
   const int size_x_int = static_cast<int>(size_x);
   const float sqrt2 = sqrtf(2.0f);
-  float c_cost, cost, travel_cost, new_cost, existing_cost;
-  unsigned int mx, my;
+  float c_cost, travel_cost, new_cost, existing_cost;
   unsigned int idx, new_idx = 0;
 
   const std::vector<int> neighborhood = {1, -1,  // left right
@@ -157,42 +161,7 @@ float ObstacleHeuristic::getObstacleHeuristic(
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
       if (new_idx < size_x * size_y) {
-        if (downsample_obstacle_heuristic) {
-          // Get costmap values as if downsampled
-          unsigned int y_offset = (new_idx / size_x) * 2;
-          unsigned int x_offset = (new_idx - ((new_idx / size_x) * size_x)) * 2;
-          cost = costmap->getCost(x_offset, y_offset);
-          for (unsigned int k = 0; k < 2u; ++k) {
-            unsigned int mxd = x_offset + k;
-            if (mxd >= costmap->getSizeInCellsX()) {
-              continue;
-            }
-            for (unsigned int j = 0; j < 2u; ++j) {
-              unsigned int myd = y_offset + j;
-              if (myd >= costmap->getSizeInCellsY()) {
-                continue;
-              }
-              if (k == 0 && j == 0) {
-                continue;
-              }
-              cost = std::min(cost, static_cast<float>(costmap->getCost(mxd, myd)));
-            }
-          }
-        } else {
-          cost = static_cast<float>(costmap->getCost(new_idx));
-        }
-
-        if (cost >= INSCRIBED_COST) {
-          continue;
-        }
-
-        my = new_idx / size_x;
-        mx = new_idx - (my * size_x);
-
-        if (mx >= size_x - 3 || mx <= 3) {
-          continue;
-        }
-        if (my >= size_y - 3 || my <= 3) {
+        if (!isCellOpen(new_idx, size_x, scale_cells, cost)) {
           continue;
         }
 
@@ -224,7 +193,62 @@ float ObstacleHeuristic::getObstacleHeuristic(
       break;
     }
   }
-  return downsample_obstacle_heuristic ? 2.0f * requested_node_cost : requested_node_cost;
+  return scale * requested_node_cost;
+}
+
+bool ObstacleHeuristic::isCellOpen(
+  const unsigned int idx, const unsigned int size_x, const unsigned int scale,
+  float & cost) const
+{
+  // Open if any of its costmap cells pass the collision checker's center cost validity
+  const auto costmap = collision_checker_->getCostmap();
+  const unsigned int costmap_size_x = costmap->getSizeInCellsX();
+  const unsigned int costmap_size_y = costmap->getSizeInCellsY();
+  const unsigned char * char_map = costmap->getCharMap();
+  const unsigned int my = idx / size_x;
+  const unsigned int x0 = (idx - my * size_x) * scale;
+  const unsigned int y0 = my * scale;
+  auto is_valid = [&](const float cell_cost, const unsigned int cx, const unsigned int cy) {
+      return cell_cost == UNKNOWN_COST ?
+             traverse_unknown_ :
+             !collision_checker_->exceedsMaxCost(cell_cost, cx + 0.5f, cy + 0.5f);
+    };
+
+  // Without downsampling, the heuristic cells are the costmap cells
+  if (scale == 1u) {
+    if (collision_checker_->outsideRange(costmap_size_x, x0) ||
+      collision_checker_->outsideRange(costmap_size_y, y0))
+    {
+      return false;
+    }
+    cost = static_cast<float>(char_map[idx]);
+    return is_valid(cost, x0, y0);
+  }
+
+  // With downsampling, check if the heuristic cell's window is interior to bypass further checks
+  const bool interior =
+    !collision_checker_->outsideRange(costmap_size_x, x0) &&
+    !collision_checker_->outsideRange(costmap_size_x, x0 + scale - 1) &&
+    !collision_checker_->outsideRange(costmap_size_y, y0) &&
+    !collision_checker_->outsideRange(costmap_size_y, y0 + scale - 1);
+  bool is_open = false;
+  cost = UNKNOWN_COST;
+  for (unsigned int cy = y0; cy < y0 + scale; ++cy) {
+    for (unsigned int cx = x0; cx < x0 + scale; ++cx) {
+      if (!interior &&  // Skips interior checks if fully internal
+        (collision_checker_->outsideRange(costmap_size_x, cx) ||
+        collision_checker_->outsideRange(costmap_size_y, cy)))
+      {
+        continue;
+      }
+      const float cell_cost = static_cast<float>(char_map[cy * costmap_size_x + cx]);
+      if (is_valid(cell_cost, cx, cy)) {
+        is_open = true;
+        cost = std::min(cost, cell_cost);
+      }
+    }
+  }
+  return is_open;
 }
 
 }  // namespace nav2_smac_planner

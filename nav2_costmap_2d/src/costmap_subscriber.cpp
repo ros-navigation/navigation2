@@ -60,18 +60,28 @@ void CostmapSubscriber::costmapUpdateCallback(
 
     std::lock_guard<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
 
-    auto map_cell_size_x = costmap_->getSizeInCellsX();
-    auto map_call_size_y = costmap_->getSizeInCellsY();
+    const auto map_cell_size_x = costmap_->getSizeInCellsX();
+    const auto map_cell_size_y = costmap_->getSizeInCellsY();
 
-    if (map_cell_size_x < update_msg->x + update_msg->size_x ||
-      map_call_size_y < update_msg->y + update_msg->size_y)
+    // Note: The upper bound comparison is rearranged to prevent overflow
+    if (update_msg->x > map_cell_size_x ||
+      update_msg->size_x > map_cell_size_x - update_msg->x ||
+      update_msg->y > map_cell_size_y ||
+      update_msg->size_y > map_cell_size_y - update_msg->y)
     {
       RCLCPP_WARN(
-        logger_, "Update area outside of original map area. Costmap bounds: %d X %d, "
-        "Update origin: %d, %d  bounds: %d X %d", map_cell_size_x, map_call_size_y,
+        logger_, "Update area outside of original map area. Costmap bounds: %u X %u, "
+        "Update origin: %u, %u  bounds: %u X %u", map_cell_size_x, map_cell_size_y,
         update_msg->x, update_msg->y, update_msg->size_x, update_msg->size_y);
       return;
     }
+
+    if (!nav2::validateMsg(*update_msg)) {
+      RCLCPP_WARN(
+        logger_, "Received costmap update message is malformed. Rejecting.");
+      return;
+    }
+
     unsigned char * master_array = costmap_->getCharMap();
     // copy update msg row-wise
     for (size_t y = 0; y < update_msg->size_y; ++y) {

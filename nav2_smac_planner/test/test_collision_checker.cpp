@@ -265,6 +265,74 @@ TEST(collision_footprint, test_fractional_pose_coordinates)
   delete costmap_;
 }
 
+TEST(collision_footprint, test_max_traversal_cost)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("testA");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  *costmap_ros->getCostmap() = nav2_costmap_2d::Costmap2D(100, 100, 0.05, 0, 0, 0);
+  costmap_ros->getCostmap()->setCost(50, 50, 245);
+  costmap_ros->getCostmap()->setCost(70, 70, NO_INFORMATION);
+
+  nav2_smac_planner::GridCollisionChecker checker(costmap_ros, 72, node);
+  checker.setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  // Disabled by default, and when set above the max non-obstacle cost
+  EXPECT_FALSE(checker.inCollision(50.0f, 50.0f, 0.0f, false));
+  checker.setMaxCost(300.0f, 20.0f, 5.0f, 5.0f, 95.0f, 95.0f);
+  EXPECT_FALSE(checker.inCollision(50.0f, 50.0f, 0.0f, false));
+
+  // Above the max cost is blocked, except within the relief radius of the start or goal
+  checker.setMaxCost(240.0f, 20.0f, 5.0f, 5.0f, 95.0f, 95.0f);
+  EXPECT_TRUE(checker.inCollision(50.0f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(50u * 100u + 50u, false));
+  EXPECT_FALSE(checker.exceedsMaxCost(240.0f, 50.0f, 50.0f));  // at max cost
+  EXPECT_FALSE(checker.exceedsMaxCost(252.0f, 24.0f, 5.0f));  // in start relief
+  EXPECT_FALSE(checker.exceedsMaxCost(252.0f, 95.0f, 76.0f));  // in goal relief
+  EXPECT_TRUE(checker.exceedsMaxCost(252.0f, 26.0f, 5.0f));  // outside relief
+  EXPECT_TRUE(checker.exceedsMaxCost(253.0f, 5.0f, 5.0f));  // lethal, even in relief
+
+  // Unknown follows traverse unknown in both overloads
+  EXPECT_FALSE(checker.inCollision(70.0f, 70.0f, 0.0f, true));
+  EXPECT_TRUE(checker.inCollision(70.0f, 70.0f, 0.0f, false));
+  EXPECT_FALSE(checker.inCollision(70u * 100u + 70u, true));
+  EXPECT_TRUE(checker.inCollision(70u * 100u + 70u, false));
+
+  // With a footprint, only the center cost is limited, not the footprint's
+  geometry_msgs::msg::Point a, b, c, d;
+  a.x = -0.15; a.y = -0.15; b.x = 0.15; b.y = -0.15;
+  c.x = 0.15; c.y = 0.15; d.x = -0.15; d.y = 0.15;
+  checker.setFootprint({a, b, c, d}, false, 0.0);
+  EXPECT_FALSE(checker.inCollision(47.0f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(50.0f, 50.0f, 0.0f, false));
+}
+
+TEST(collision_footprint, test_pose_cell_and_bounds)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("testA");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  *costmap_ros->getCostmap() = nav2_costmap_2d::Costmap2D(100, 100, 0.05, 0, 0, 0);
+  costmap_ros->getCostmap()->setCost(16, 50, 254);
+
+  nav2_smac_planner::GridCollisionChecker checker(costmap_ros, 72, node);
+  checker.setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  // Cell i spans [i, i+1) in continuous map coordinates
+  EXPECT_FALSE(checker.inCollision(15.9f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(16.0f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(16.9f, 50.0f, 0.0f, false));
+
+  // Poses must be within the map, excluding its border
+  EXPECT_FALSE(checker.inCollision(3.0f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(2.9f, 50.0f, 0.0f, false));
+  EXPECT_FALSE(checker.inCollision(96.9f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(97.0f, 50.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(50.0f, 97.0f, 0.0f, false));
+  EXPECT_TRUE(checker.inCollision(50u * 100u + 2u, false));
+  EXPECT_FALSE(checker.inCollision(50u * 100u + 3u, false));
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

@@ -131,6 +131,37 @@ TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
   EXPECT_TRUE(post_triggered);
 }
 
+TEST(ParameterHandlerTest, SharedParameterDynamicCallbackTest)
+{
+  ParametersHandlerWrapper a;
+  double first = 0.0, second = 0.0, overridden = 0.0;
+  bool override_triggered = false;
+
+  // Two objects reading the same parameter are both updated
+  a.setParamCallback(first, ".shared");
+  a.setParamCallback(second, ".shared");
+  // Registering the same setting again does not add a second callback for it
+  a.setParamCallback(first, ".shared");
+  std::vector<rclcpp::Parameter> params{rclcpp::Parameter(".shared", rclcpp::ParameterValue(2.0))};
+  a.updateParametersCallback(params);
+  EXPECT_DOUBLE_EQ(first, 2.0);
+  EXPECT_DOUBLE_EQ(second, 2.0);
+
+  // A callback added with addParamCallback replaces the setting callbacks of that parameter
+  a.setParamCallback(overridden, ".custom");
+  a.addParamCallback(
+    ".custom", [&](const rclcpp::Parameter & param) {
+      override_triggered = true;
+      overridden = param.as_double() / 2.0;
+    });
+  a.setParamCallback(overridden, ".custom");
+  std::vector<rclcpp::Parameter> params2{
+    rclcpp::Parameter(".custom", rclcpp::ParameterValue(4.0))};
+  a.updateParametersCallback(params2);
+  EXPECT_TRUE(override_triggered);
+  EXPECT_DOUBLE_EQ(overridden, 2.0);
+}
+
 TEST(ParameterHandlerTest, GetSystemParamsTest)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");

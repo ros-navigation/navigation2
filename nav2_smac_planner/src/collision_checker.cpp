@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <algorithm>
+#include <cmath>
+
 #include "nav2_smac_planner/collision_checker.hpp"
 
 namespace nav2_smac_planner
@@ -26,10 +29,6 @@ GridCollisionChecker::GridCollisionChecker(
   if (node) {
     clock_ = node->get_clock();
     logger_ = node->get_logger();
-  }
-
-  if (costmap_ros) {
-    costmap_ros_ = costmap_ros;
   }
 
   // Convert number of regular bins into angles
@@ -121,6 +120,16 @@ bool GridCollisionChecker::inCollision(
   // Assumes setFootprint already set
   center_cost_ = static_cast<float>(costmap_->getCost(mx, my));
 
+  // Lethal, or above the max cost outside of the start and goal relief zones. This is checked
+  // from the cell center, rather than the continuous pose because its validity is a property of
+  // the cell, like the cost is to keep consistency for any pose within a cell
+  if (center_cost_ != UNKNOWN_COST &&
+    exceedsMaxCost(
+      center_cost_, std::floor(x) + 0.5f, std::floor(y) + 0.5f))
+  {
+    return true;
+  }
+
   if (!footprint_is_radius_) {
     // if footprint, then we check for the footprint's points, but first see
     // if the robot is even potentially in an inscribed collision
@@ -128,13 +137,8 @@ bool GridCollisionChecker::inCollision(
       return false;
     }
 
-    // If its inscribed, in collision, or unknown in the middle,
-    // no need to even check the footprint, its invalid
+    // If its unknown, no need to even check the footprint, its invalid
     if (center_cost_ == UNKNOWN_COST && !traverse_unknown) {
-      return true;
-    }
-
-    if (center_cost_ == INSCRIBED_COST || center_cost_ == OCCUPIED_COST) {
       return true;
     }
 
@@ -162,13 +166,8 @@ bool GridCollisionChecker::inCollision(
     // if occupied or unknown and not to traverse unknown space
     return footprint_cost >= OCCUPIED_COST;
   } else {
-    // if radius, then we can check the center of the cost assuming inflation is used
-    if (center_cost_ == UNKNOWN_COST && traverse_unknown) {
-      return false;
-    }
-
-    // if occupied or unknown and not to traverse unknown space
-    return center_cost_ >= INSCRIBED_COST;
+    // if radius, then the center cost's unknown state, we know its valid already
+    return center_cost_ == UNKNOWN_COST && !traverse_unknown;
   }
 }
 
@@ -176,24 +175,29 @@ bool GridCollisionChecker::inCollision(
   const unsigned int & i,
   const bool & traverse_unknown)
 {
-  center_cost_ = costmap_->getCost(i);
-  if (center_cost_ == UNKNOWN_COST && traverse_unknown) {
-    return false;
-  }
+  // Check the center of the cell
+  const unsigned int size_x = costmap_->getSizeInCellsX();
+  return inCollision(
+    static_cast<float>(i % size_x) + 0.5f, static_cast<float>(i / size_x) + 0.5f, 0.0f,
+    traverse_unknown);
+}
 
-  // if occupied or unknown and not to traverse unknown space
-  return center_cost_ >= INSCRIBED_COST;
+void GridCollisionChecker::setMaxCost(
+  const float max_cost, const float relief_radius,
+  const float start_x, const float start_y, const float goal_x, const float goal_y)
+{
+  max_cost_ = std::min(max_cost, MAX_NON_OBSTACLE_COST);
+  relief_radius_sq_ = relief_radius * relief_radius;
+  start_x_ = start_x;
+  start_y_ = start_y;
+  goal_x_ = goal_x;
+  goal_y_ = goal_y;
 }
 
 float GridCollisionChecker::getCost()
 {
   // Assumes inCollision called prior
   return static_cast<float>(center_cost_);
-}
-
-bool GridCollisionChecker::outsideRange(const unsigned int & max, const float & value)
-{
-  return value < 0.0f || value > max;
 }
 
 }  // namespace nav2_smac_planner

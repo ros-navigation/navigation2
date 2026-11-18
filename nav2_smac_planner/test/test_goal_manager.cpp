@@ -85,8 +85,8 @@ TEST(GoalManagerTest, test_goal_manager)
   // Create two valid goals
   NodePtr pose_a = new NodeHybrid(48, ctx);
   NodePtr pose_b = new NodeHybrid(49, ctx);
-  pose_a->setPose(NodeHybrid::Coordinates(0, 0, 0));
-  pose_b->setPose(NodeHybrid::Coordinates(0, 0, 10));
+  pose_a->setPose(NodeHybrid::Coordinates(10, 10, 0));
+  pose_b->setPose(NodeHybrid::Coordinates(10, 10, 10));
 
   goal_manager.addGoal(pose_a);
   goal_manager.addGoal(pose_b);
